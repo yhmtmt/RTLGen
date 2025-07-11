@@ -1,0 +1,12 @@
+{
+    "operand": {
+        "bit_width": 4,
+        "signed": false
+    },
+    "multiplier": {
+        "module_name": "booth4_multiplier",
+        "ppg_algorithm": "Booth4",
+        "compressor_structure": "AdderTree",
+        "pipeline_depth": 1
+    }
+}

@@ -1,0 +1,32 @@
+cmake_minimum_required(VERSION 3.10)
+project(verilib)
+
+set(CMAKE_CXX_STANDARD 17)
+
+# Enable testing
+enable_testing()
+
+# Add Google Test
+find_package(GTest REQUIRED)
+include_directories(${GTEST_INCLUDE_DIRS})
+
+# Add OR-Tools
+set(ORTOOLS_DIR /home/yhmtmt/work/or-tools_x86_64_Ubuntu-22.04_cpp_v9.10.4067)
+
+# Add the main executable
+add_executable(genwtm main.cpp multiplier.cpp adder.cpp)
+target_include_directories(genwtm PUBLIC ${ORTOOLS_DIR}/include ${PROJECT_SOURCE_DIR}/json/include)
+target_link_directories(genwtm PUBLIC ${ORTOOLS_DIR}/lib)
+target_link_libraries(genwtm ortools)
+
+set (CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR})
+install(TARGETS genwtm DESTINATION bin)
+
+# Add the test executable
+add_executable(test_boolexp test_boolexp.cpp multiplier.cpp adder.cpp)
+target_include_directories(test_boolexp PUBLIC ${ORTOOLS_DIR}/include ${PROJECT_SOURCE_DIR}/json/include)
+target_link_directories(test_boolexp PUBLIC ${ORTOOLS_DIR}/lib)
+target_link_libraries(test_boolexp ${GTEST_LIBRARIES} GTest::Main pthread ortools)
+
+# Add the test to CTest
+add_test(NAME BoolExpTest COMMAND test_boolexp)
