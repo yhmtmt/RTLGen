@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(verilib)
+project(RTLGen)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -14,13 +14,13 @@ include_directories(${GTEST_INCLUDE_DIRS})
 set(ORTOOLS_DIR /home/yhmtmt/work/or-tools_x86_64_Ubuntu-22.04_cpp_v9.10.4067)
 
 # Add the main executable
-add_executable(genwtm main.cpp multiplier.cpp adder.cpp)
-target_include_directories(genwtm PUBLIC ${ORTOOLS_DIR}/include ${PROJECT_SOURCE_DIR}/json/include)
-target_link_directories(genwtm PUBLIC ${ORTOOLS_DIR}/lib)
-target_link_libraries(genwtm ortools)
+add_executable(mult-gen main.cpp multiplier.cpp adder.cpp)
+target_include_directories(mult-gen PUBLIC ${ORTOOLS_DIR}/include ${PROJECT_SOURCE_DIR}/json/include)
+target_link_directories(mult-gen PUBLIC ${ORTOOLS_DIR}/lib)
+target_link_libraries(mult-gen ortools)
 
 set (CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR})
-install(TARGETS genwtm DESTINATION bin)
+install(TARGETS mult-gen DESTINATION bin)
 
 # Add the test executable
 add_executable(test_boolexp test_boolexp.cpp multiplier.cpp adder.cpp)

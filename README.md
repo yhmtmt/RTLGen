@@ -1,4 +1,4 @@
-# Verilog Multiplier Generator
+# RTLGen
 
 This project is a Verilog multiplier generator. It takes a JSON configuration file as input and generates a Verilog module for a multiplier with the specified parameters.
 
@@ -37,7 +37,7 @@ To run the generator, you will need to create a JSON configuration file. The con
 Once you have created the configuration file, you can run the generator with the following command:
 
 ```
-./bin/genwtm <config.json>
+./bin/mult-gen <config.json>
 ```
 
 This will generate a Verilog module for a multiplier with the specified parameters. The generated module will be placed in the `build` directory.
