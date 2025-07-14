@@ -128,21 +128,22 @@ void MultiplierGenerator::dump_hdl(Operand multiplicand, Operand multiplier, con
 void MultiplierGenerator::dump_hdl_tb(Operand multiplicand, Operand multiplier, const std::string &module_name)
 {
     std::ofstream tb_file(module_name + "_tb.v");
-    if (!tb_file.is_open()) {
+    if (!tb_file.is_open())
+    {
         std::cerr << "Error: Could not open file " << module_name << "_tb.v" << std::endl;
         return;
     }
 
-    int width_a = multiplicand.width > 32 ? 32 : multiplicand.width;
-    int width_b = multiplier.width > 32 ? 32 : multiplier.width;
+    int width_a = multiplicand.width;
+    int width_b = multiplier.width;
     int width_p = cols_pps;
     bool signed_a = multiplicand.is_signed;
     bool signed_b = multiplier.is_signed;
 
-    tb_file << "module " << module_name << "_tb();\n";
-    tb_file << "  reg [" << width_a-1 << ":0] multiplicand;\n";
-    tb_file << "  reg [" << width_b-1 << ":0] multiplier;\n";
-    tb_file << "  wire [" << width_p-1 << ":0] product;\n";
+    tb_file << "module " << module_name << "_tb;\n";
+    tb_file << "  reg [" << width_a - 1 << ":0] multiplicand;\n";
+    tb_file << "  reg [" << width_b - 1 << ":0] multiplier;\n";
+    tb_file << "  wire [" << width_p - 1 << ":0] product;\n";
     tb_file << "\n";
     tb_file << "  " << module_name << " uut(\n";
     tb_file << "    .multiplicand(multiplicand),\n";
@@ -154,41 +155,30 @@ void MultiplierGenerator::dump_hdl_tb(Operand multiplicand, Operand multiplier, 
     tb_file << "    $display(\"Testing " << module_name << "\");\n";
     tb_file << "    $dumpfile(\"" << module_name << "_tb.vcd\");\n";
     tb_file << "    $dumpvars(0, " << module_name << "_tb);\n";
-    tb_file << "    integer a, b;\n";
-    tb_file << "    integer min_a, max_a;\n";
-    tb_file << "    integer min_b, max_b;\n";
-    tb_file << "    integer expected;\n";
-    if (signed_a) {
-        tb_file << "    min_a = -(1 << (" << width_a << "-1));\n";
-        tb_file << "    max_a = (1 << (" << width_a << "-1)) - 1;\n";
-    } else {
-        tb_file << "    min_a = 0;\n";
-        tb_file << "    max_a = (1 << " << width_a << ") - 1;\n";
+    tb_file << "    integer i;\n";
+    tb_file << "    for (i = 0; i < 100; i = i + 1) begin\n";
+    tb_file << "      multiplicand = $random;\n";
+    tb_file << "      multiplier = $random;\n";
+    tb_file << "      #1;\n";
+    tb_file << "      automatic logic [" << width_p - 1 << ":0] expected;\n";
+    if (signed_a && signed_b)
+    {
+        tb_file << "      expected = $signed(multiplicand) * $signed(multiplier);\n";
     }
-    if (signed_b) {
-        tb_file << "    min_b = -(1 << (" << width_b << "-1));\n";
-        tb_file << "    max_b = (1 << (" << width_b << "-1)) - 1;\n";
-    } else {
-        tb_file << "    min_b = 0;\n";
-        tb_file << "    max_b = (1 << " << width_b << ") - 1;\n";
+    else if (signed_a)
+    {
+        tb_file << "      expected = $signed(multiplicand) * multiplier;\n";
     }
-    tb_file << "    for (a = min_a; a <= max_a; a = a + 1) begin\n";
-    tb_file << "      for (b = min_b; b <= max_b; b = b + 1) begin\n";
-    tb_file << "        multiplicand = a;\n";
-    tb_file << "        multiplier = b;\n";
-    tb_file << "        #1;\n";
-    if (signed_a && signed_b) {
-        tb_file << "        expected = $signed(multiplicand) * $signed(multiplier);\n";
-    } else if (signed_a) {
-        tb_file << "        expected = $signed(multiplicand) * multiplier;\n";
-    } else if (signed_b) {
-        tb_file << "        expected = multiplicand * $signed(multiplier);\n";
-    } else {
-        tb_file << "        expected = multiplicand * multiplier;\n";
+    else if (signed_b)
+    {
+        tb_file << "      expected = multiplicand * $signed(multiplier);\n";
     }
-    tb_file << "        if (product !== expected) begin\n";
-    tb_file << "          $display(\"FAIL: multiplicand=%0d multiplier=%0d product=%0d expected=%0d\", multiplicand, multiplier, product, expected);\n";
-    tb_file << "        end\n";
+    else
+    {
+        tb_file << "      expected = multiplicand * multiplier;\n";
+    }
+    tb_file << "      if (product !== expected) begin\n";
+    tb_file << "          $display(\"FAIL: multiplicand=%h, multiplier=%h, product=%h, expected=%h\", multiplicand, multiplier, product, expected);\n";
     tb_file << "      end\n";
     tb_file << "    end\n";
     tb_file << "    $display(\"Test completed.\");\n";
