@@ -54,6 +54,34 @@ def main():
 
     print(f"Generated files in {src_dir} and {platform_dir}")
 
+    # Move to /orfs/flow
+    dest_base = "/orfs/flow/designs"
+    dest_platform_dir = os.path.join(dest_base, platform_dir)
+    dest_src_dir = os.path.join(dest_base, src_dir)
+
+    # Create parent directories for destination
+    os.makedirs(os.path.dirname(dest_platform_dir), exist_ok=True)
+    os.makedirs(os.path.dirname(dest_src_dir), exist_ok=True)
+
+    # Remove destination if it exists to avoid nesting
+    if os.path.isdir(dest_platform_dir):
+        shutil.rmtree(dest_platform_dir)
+    shutil.move(platform_dir, dest_platform_dir)
+
+    if os.path.isdir(dest_src_dir):
+        shutil.rmtree(dest_src_dir)
+    shutil.move(src_dir, dest_src_dir)
+
+    print(f"Moved generated files to {dest_platform_dir} and {dest_src_dir}")
+
+    # Execute make
+    design_config_path = os.path.join(dest_platform_dir, "config.mk")
+    # Change current directory to /orfs/flow before running make
+    os.chdir("/orfs/flow")
+    make_command = ["make", f"DESIGN_CONFIG={design_config_path}"]
+    print(f"Executing: {' '.join(make_command)}")
+    subprocess.run(make_command, check=True)
+
 def generate_wrapper(config, src_dir):
     module_name = config["multiplier"]["module_name"]
     bit_width = config["operand"]["bit_width"]
@@ -96,7 +124,7 @@ def generate_config_mk(config, platform_dir, platform):
     content = f"""
 export PLATFORM = {platform}
 export DESIGN_NAME = {wrapper_name}
-export VERILOG_FILES = $(DESIGN_HOME)/src/{wrapper_name}/{module_name}.v $(DESIGN_HOME)/src/{wrapper_name}/{wrapper_name}.v
+export VERILOG_FILES = $(DESIGN_HOME)/src/{wrapper_name}/{module_name}.v $(DESIGN_HOME)/src/{wrapper_name}/{wrapper_name}.v $(DESIGN_HOME)/src/{wrapper_name}/MG_CPA.v
 export SDC_FILE = $(DESIGN_HOME)/{platform}/{wrapper_name}/constraint.sdc
 export TOP_MODULE = {wrapper_name}
 export CORE_UTILIZATION = 30

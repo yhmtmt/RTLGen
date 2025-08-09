@@ -41,6 +41,9 @@ RUN apt-get update && \
     libxtst6 \
     libxi6 \
     xauth \    
+    iverilog \
+    gtkwave \
+    jq \
     tzdata && \
     ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime && \
     dpkg-reconfigure --frontend noninteractive tzdata

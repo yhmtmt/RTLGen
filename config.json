@@ -1,6 +1,6 @@
 {
     "operand": {
-        "bit_width": 4,
+        "bit_width": 8,
         "signed": false
     },
     "multiplier": {
