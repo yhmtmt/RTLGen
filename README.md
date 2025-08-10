@@ -95,11 +95,7 @@ Die Area: 1689210000
 
 ### Generated GDS2 Sample
 
-The evaluation script generates a GDS2 file in the `results` directory. To visualize the layout, you can open the GDS2 file using [KLayout](https://www.klayout.de/) on your host machine. For example, you can use:
-
-```
-"$BROWSER" https://www.klayout.de/
-```
+The evaluation script generates a GDS2 file in the `results` directory. To visualize the layout, you can open the GDS2 file using [KLayout](https://www.klayout.de/) installed in the container. 
 
 Below is a sample layout image (`sample_gds2.png`) produced by opening the GDS2 file in KLayout and exporting it as PNG. The image is located in the `materials` directory:
 
