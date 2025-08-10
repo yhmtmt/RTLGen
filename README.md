@@ -1,6 +1,6 @@
 # RTLGen
 
-This project is a Verilog multiplier generator. It takes a JSON configuration file as input and generates a Verilog module for a multiplier with the specified parameters.
+This project is a Verilog generator. It takes a JSON configuration file as input and generates a Verilog module with the specified parameters. The current version of this tool only supports multiplier generation.
 
 ## Building the Project
 
@@ -40,7 +40,7 @@ Once you have created the configuration file, you can run the generator with the
 ./bin/mult-gen <config.json>
 ```
 
-This will generate a Verilog module for a multiplier with the specified parameters. The generated module will be placed in the `build` directory.
+This will generate a Verilog module for a multiplier with the specified parameters. The generated module will be placed in the  execution directory.
 
 Currently, `compressor_structure` and `pipeline_depth` are not configurable and are fixed to `AdderTree` and `1` respectively. The `ppg_algorithm` can be set to "Normal" or "Booth4" for any bit width greater than or equal to 4. The `AdderTree` is optimized using ILP as described in the paper [UFO-MAC: A Unified Framework for Optimization of High-Performance Multipliers and Multiply-Accumulators](https://arxiv.org/abs/2408.06935).
 
@@ -73,6 +73,8 @@ This allows the container to connect to your host's X server for GUI application
 ## Design Evaluation Script
 
 The `eval_design.py` script automates the process of preparing, running, and evaluating the generated Verilog designs. It handles configuration file generation, moves design files to the appropriate platform directories, executes the flow (such as invoking `make` in `/orfs/flow`), and extracts results. Make sure to run this script inside the dev container for correct environment setup and dependency resolution.
+
+Note that for extremely small circuits, the OpenROAD flow may fail due to the die size not satisfying the layout constraints for the power rail.
 
 ### Execution Example
 
