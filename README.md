@@ -23,13 +23,13 @@ To run the generator, you will need to create a JSON configuration file. The con
 {
   "operand": {
     "bit_width": 8,
-    "signed": true
+    "signed": false
   },
   "multiplier": {
-    "module_name": "my_multiplier",
+    "module_name": "booth4_multiplier",
     "ppg_algorithm": "Booth4",
-    "compressor_structure": "CSATree",
-    "pipeline_depth": 2
+    "compressor_structure": "AdderTree",
+    "pipeline_depth": 1
   }
 }
 ```
