@@ -71,3 +71,34 @@ This allows the container to connect to your host's X server for GUI application
 ## Design Evaluation Script
 
 The `eval_design.py` script automates the process of preparing, running, and evaluating the generated Verilog designs. It handles configuration file generation, moves design files to the appropriate platform directories, executes the flow (such as invoking `make` in `/orfs/flow`), and extracts results. Make sure to run this script inside the dev container for correct environment setup and dependency resolution.
+
+### Execution Example
+
+To evaluate a design using the Nangate45 platform, run the following command **in the project directory**:
+
+```
+./eval_design.py config.json nangate45
+```
+
+After execution, the results for delay, power, and die size will be displayed as the bottom line of the output, for example:
+
+```
+Critical Path Delay: 0.1603
+Total Power Consumption: 1.38e-05
+Die Size (WxH): 41100 x 41100
+Die Area: 1689210000
+```
+
+### Generated GDS2 Sample
+
+The evaluation script generates a GDS2 file in the `results` directory. To visualize the layout, you can open the GDS2 file using [KLayout](https://www.klayout.de/) on your host machine. For example, you can use:
+
+```
+"$BROWSER" https://www.klayout.de/
+```
+
+Below is a sample layout image (`sample_gds2.png`) produced by opening the GDS2 file in KLayout and exporting it as PNG. The image is located in the `materials` directory:
+
+![Generated GDS2 Sample](materials/sample_gds2.png)
+
+The GDS2 file is located at `/orfs/flow/results/nangate45/booth4_multiplier_wrapper/`, and the image was created with klayout.
