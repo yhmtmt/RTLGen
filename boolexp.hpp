@@ -223,7 +223,6 @@ public:
         }
 
         for(const auto & pair : expressions) {
-            std::cout << "Generating assignment for " << pair.first << std::endl;
             if (!pair.second->generateAssignments(os, operands)) {
                 std::cerr << "Error generating assignment for " << pair.first << std::endl;
             }
