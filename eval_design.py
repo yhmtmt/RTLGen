@@ -10,7 +10,14 @@ import shutil
 def main():
     parser = argparse.ArgumentParser(description="Generate multiplier Verilog and OpenROAD files.")
     parser.add_argument("config", help="Path to the configuration JSON file.")
-    parser.add_argument("platform", help="Name of the platform (e.g., sky130hd, nangate45)." )
+    parser.add_argument("platform", help="Name of the platform (e.g., sky130hd, nangate45).")
+    parser.add_argument("--optimization_target", default="area", choices=["area", "timing", "power"], help="Optimization target for autotuner.")
+    parser.add_argument("--core_utilization_min", type=int, default=20, help="Min value for CORE_UTILIZATION.")
+    parser.add_argument("--core_utilization_max", type=int, default=70, help="Max value for CORE_UTILIZATION.")
+    parser.add_argument("--place_density_min", type=float, default=0.2, help="Min value for PLACE_DENSITY.")
+    parser.add_argument("--place_density_max", type=float, default=0.7, help="Max value for PLACE_DENSITY.")
+    parser.add_argument("--clock_period_min", type=int, default=5, help="Min value for CLOCK_PERIOD.")
+    parser.add_argument("--clock_period_max", type=int, default=20, help="Max value for CLOCK_PERIOD.")
     args = parser.parse_args()
 
     with open(args.config, "r") as f:
@@ -40,7 +47,7 @@ def main():
     # Generate OpenROAD files
     generate_config_mk(config, platform_dir, args.platform)
     generate_constraint_sdc(config, platform_dir)
-    generate_autotuner_json(platform_dir)
+    generate_autotuner_json(platform_dir, args)
 
     # Move MG_CPA.v
     os.rename("MG_CPA.v", os.path.join(src_dir, "MG_CPA.v"))
@@ -155,13 +162,13 @@ set_load -pin_load 0.05 [all_outputs]
     with open(os.path.join(platform_dir, "constraint.sdc"), "w") as f:
         f.write(content)
 
-def generate_autotuner_json(platform_dir):
+def generate_autotuner_json(platform_dir, args):
     content = {
-        "optimization_target": "area",
+        "optimization_target": args.optimization_target,
         "hyperparameters": {
-            "CORE_UTILIZATION": {"min": 20, "max": 70},
-            "PLACE_DENSITY": {"min": 0.2, "max": 0.7},
-            "CLOCK_PERIOD": {"min": 5, "max": 20}
+            "CORE_UTILIZATION": {"min": args.core_utilization_min, "max": args.core_utilization_max},
+            "PLACE_DENSITY": {"min": args.place_density_min, "max": args.place_density_max},
+            "CLOCK_PERIOD": {"min": args.clock_period_min, "max": args.clock_period_max}
         }
     }
     with open(os.path.join(platform_dir, "autotuner.json"), "w") as f:
