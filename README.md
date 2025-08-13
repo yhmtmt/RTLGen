@@ -44,6 +44,28 @@ This will generate a Verilog module for a multiplier with the specified paramete
 
 Currently, `compressor_structure` and `pipeline_depth` are not configurable and are fixed to `AdderTree` and `1` respectively. The `ppg_algorithm` can be set to "Normal" or "Booth4" for any bit width greater than or equal to 4. The `AdderTree` is optimized using ILP as described in the paper [UFO-MAC: A Unified Framework for Optimization of High-Performance Multipliers and Multiply-Accumulators](https://arxiv.org/abs/2408.06935).
 
+## Implemented Algorithms
+
+The generator supports two partial product generation (PPG) algorithms: `Normal` and `Booth4`.
+
+- **Normal**: This is the conventional approach using a simple array of AND gates to generate partial products.
+- **Booth4**: This is the radix-4 modified Booth algorithm. The Booth encoder is implemented based on the paper ["High Performance Low-Power Left-to-Right Array Multiplier Design"](https://ieeexplore.ieee.org/document/1388192).
+
+For sign extension in both algorithms, a fast sign computation technique is used, as described in ["Minimizing Energy Dissipation in High-Speed Multipliers"](https://ieeexplore.ieee.org/document/621285).
+
+### Validation
+
+The generated Verilog modules are validated using a testbench that is automatically generated along with the core module. The testbench performs 100 random multiplications and verifies the results against expected values.
+
+You can run the validation using the `run_test.sh` script located in the project root directory. The script requires a configuration file as an argument and will automatically invoke Icarus Verilog (`iverilog`) to compile and run the simulation, reporting the test results.
+
+**Usage:**
+```sh
+./run_test.sh config.json
+```
+
+The generator has been tested by varying bit-widths, the signed flag, and the PPG algorithm, though more comprehensive testing is planned.
+
 ## Running the Tests
 
 To run the tests, you can use the following command:
