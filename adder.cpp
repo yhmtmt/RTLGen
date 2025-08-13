@@ -65,54 +65,58 @@ void CarryPropagatingAdder::init(int ninputs)
         fo[CP_P][i].resize(i + 1, 0);
         fo[CP_G][i].resize(i + 1, 0);
 
-        nodes[i][0] = i - 1; // ouptut node
         nodes[i][i] = i;     // input node
+        // (i,0) is <(i,i),(i-1,0)>
+        if(i != 0)
+            nodes[i][0] = i - 1; // ouptut node
     }
 }
 
 
 float CarryPropagatingAdder::do_sta()
 {
-    // funout
-    for (int i = 0; i < nodes.size(); i++)
-    {
-        fo[CP_G][i][0] = 1;
-        fo[CP_P][i][0] = 0;
+    // treq should be initialized FLT_MAX
+    // tarr should be initialized -FLT_MAX
+    for(int i = 0; i < nodes.size(); i++){
+        for(int j = 0; j < i; j++){
+            treq[CP_P][i][j] = treq[CP_G][i][j] = FLT_MAX;
+            tarr[CP_P][i][j] = tarr[CP_G][i][j] = -FLT_MAX;
+        }
     }
 
-    for (int w = 0; w < nodes.size(); w++)
+    for(int i = 0; i < nodes.size(); i++){
+        treq[CP_P][i][i] = FLT_MAX;
+        treq[CP_G][i][i] = FLT_MAX;
+        tarr[CP_P][i][i] = input_delays[i] + delay_p;
+        tarr[CP_G][i][i] = input_delays[i] + delay_g;
+    }
+
+    // funout computation
+    // initialization
+    for (int i = 0; i < nodes.size(); i++)
     {
-        // compute width w node
-        for (int i = 0; i < nodes.size(); i++)
+        for (int j = 1; j < nodes[i].size(); j++)
         {
-            int j = i - w;
-            if (i == j || j < 0)
-            {
-                break; // out of range
-            }
-            int k = nodes[i][j];
-            if (k == -1)
-            {
-                continue; // no path
-            }
-            if (fo[CP_P][i][j] == 0)
-            {
-                fo[CP_P][i][k]++;
-                fo[CP_P][k][j]++;
-            }
-            if (fo[CP_G][i][j] == 0)
-            {
-                fo[CP_G][i][k]++;
-                fo[CP_G][k][j]++;
-                fo[CP_P][k][j]++; // p1 to g
-            }
-            // upper parent
-            fo[CP_P][i][k] += fo[CP_P][i][j];
-            fo[CP_G][i][k] += fo[CP_G][i][j];
-            // lower parent
-            fo[CP_P][k][j] += fo[CP_P][i][j];
-            fo[CP_G][k][j] += fo[CP_G][i][j];
+            fo[CP_P][i][j] = 0;
+            fo[CP_G][i][j] = 0;
         }
+
+        // sum is computed as G(i-1,0)^P(i,i) for i>0, P(0,0) for i=0
+        // all G(i,0) has 1 funout for sum computation
+        fo[CP_G][i][0] = 1;
+        fo[CP_P][i][0] = 0;
+        // all P(i,i) has 1 funout for sum computation
+        fo[CP_G][i][i] = 0; 
+        fo[CP_P][i][i] = 1; 
+    }
+
+    // compute width w node
+    for (int i = 0; i < nodes.size(); i++)
+    {
+        if(!calc_gfo(i, 0))
+            return false; // error in the path
+        if(!calc_pfo(i, 0))
+            return false; // error in the path
     }
 
     // area computation (not including input and output nodes)
@@ -137,23 +141,15 @@ float CarryPropagatingAdder::do_sta()
         }
     }
 
-    // compute arival time
-    for (int w = 0; w < nodes.size(); w++)
-    {
-        // compute width w node
-        for (int i = 0; i < nodes.size(); i++)
-        {
-            int j = i - w;
-            if (j <= 0)
-            {
-                break; // out of range
-            }
-            calc_tarr(i, j);
-        }
-    }
-
     // compute critical path delay
     tcrit = 0.f;
+    for (int i = 0; i < nodes.size(); i++){
+        if(!calc_tarr(i, 0))
+            return false;
+        tcrit = std::max(tcrit, tarr[CP_G][i][0]);
+        output_delays[i] = tarr[CP_G][i][0];
+    }
+
     for (int i = 0; i < nodes.size(); i++)
     {
         output_delays[i] = tarr[CP_G][i][0];
@@ -163,62 +159,85 @@ float CarryPropagatingAdder::do_sta()
     // compute required time
     for (int i = 0; i < nodes.size(); i++)
     {
-        treq[CP_G][i][0] = tcrit;
-        treq[CP_P][i][0] = tcrit;
-    }
-
-    for (int w = nodes.size() - 1; w >= 0; w--)
-    {
-        // compute width w node
-        for (int i = 0; i < nodes.size(); i++)
-        {
-            int j = i - w;
-            int k = nodes[i][j];
-            if (j <= 0 || k == -1)
-            {
-                break; // out of range
-            }
-            // upper parent
-            treq[CP_P][i][k] = std::min((double)treq[CP_P][i][k], treq[CP_P][i][j] - delays[CP_P1][CP_P]);
-            treq[CP_G][i][k] = std::min((double)treq[CP_G][i][k], treq[CP_G][i][j] - delays[CP_G1][CP_G]);
-            // lower parent
-            treq[CP_P][k][j] = std::min((double)treq[CP_P][k][j], treq[CP_P][i][j] - delays[CP_P0][CP_P]);
-            treq[CP_G][k][j] = std::min((double)treq[CP_G][k][j], treq[CP_G][i][j] - delays[CP_G0][CP_G]);
-            treq[CP_G][k][j] = std::min((double)treq[CP_G][k][j], treq[CP_G][i][j] - delays[CP_P1][CP_G]); // p1 to g
-        }
+        if(!calc_tpreq(i, 0, tcrit))
+            return false;
+        if(!calc_tgreq(i, 0, tcrit))    
+            return false;
     }
 }
 
-float CarryPropagatingAdder::calc_tarr(int i, int j)
+bool CarryPropagatingAdder::calc_tarr(int i, int j)
 {
-    if (i == j)
-    {
-        tarr[CP_P][i][i] = input_delays[i] + delay_p;
-        tarr[CP_G][i][i] = input_delays[i] + delay_g;
-        return std::max(tarr[CP_P][i][i], tarr[CP_G][i][i]);
-    }
-
-    if (i < 0 || i >= nodes.size() || j < 0 || j >= nodes[i].size() || i <= j)
-    {
-        return FLT_MAX;
-    }
+    if (tarr[CP_P][i][j] > 0 || tarr[CP_G][i][j] > 0)
+        return true; // already calculated
 
     int k = nodes[i][j];
     if (k == -1)
+        return false;
+
+    if (i != j)
     {
-        return FLT_MAX; // No path
+        if (!calc_tarr(i, k + 1))
+            return false;
+        if (!calc_tarr(k, j))
+            return false;
     }
 
-    if (i == j || tarr[CP_P][i][j] != 0.f || tarr[CP_G][i][j] != 0.f)
-    {
-        return std::max(tarr[CP_P][i][j], tarr[CP_G][i][j]); // Already calculated
-    }
+    // g(i, j) = g(i, k+1)  + p(i, k+1) g(k, j)
+    // p(i, j) = p(i, k+1) p(k, j)
+    tarr[CP_P][i][j] = std::max(tarr[CP_P][i][k + 1] + delays[CP_P1][CP_P], tarr[CP_P][k][j] + delays[CP_P0][CP_P]);
+    tarr[CP_G][i][j] = std::max(tarr[CP_G][i][k + 1] + delays[CP_G1][CP_G], tarr[CP_G][k][j] + delays[CP_G0][CP_G]);
+    tarr[CP_G][i][j] = std::max((double)tarr[CP_G][i][j], tarr[CP_P][k][j] + delays[CP_P0][CP_G]);
+    return true;
+}
 
-    tarr[CP_P][i][j] = std::max(tarr[CP_P][i][k] + delays[CP_P1][CP_P], tarr[CP_P][k][j] + delays[CP_P0][CP_P]);
-    tarr[CP_G][i][j] = std::max(tarr[CP_G][i][k] + delays[CP_G1][CP_G], tarr[CP_G][k][j] + delays[CP_G0][CP_G]);
-    tarr[CP_G][i][j] = std::max((double)tarr[CP_G][i][j], tarr[CP_P][i][k] + delays[CP_P1][CP_G]); // p1 to g
+bool CarryPropagatingAdder::calc_tpreq(int i, int j, float tpreq)
+{
+    if (treq[CP_P][i][j] <= 0)
+        return true; // already calculated
+    treq[CP_P][i][j] = tpreq;
 
-    return std::max(tarr[CP_P][i][j], tarr[CP_G][i][j]);
+    int k = nodes[i][j];
+    if (k == -1)
+        return false;
+
+    // upper parent (p is derived only from p1)
+    tpreq = treq[CP_P][i][j] - delays[CP_P1][CP_P];
+    if (!calc_tpreq(k, j, tpreq))
+        return false;
+
+    // lower parent (p is derived from p0)
+    treq[CP_P][k][j] = treq[CP_P][i][j] - delays[CP_P0][CP_P]; // p0 to p
+    if (!calc_tpreq(k, j, tpreq))
+        return false;
+
+    return true;
+}
+bool CarryPropagatingAdder::calc_tgreq(int i, int j, float tgreq)
+{
+
+    if (treq[CP_G][i][j] <= tgreq)
+        return true; // already calculated
+    treq[CP_G][i][j] = tgreq;
+
+    int k = nodes[i][j];
+    if (k == -1)
+        return false;
+
+    // upper parent (g is derived both from (g1, p1))
+    tgreq = treq[CP_G][i][j] - delays[CP_G1][CP_G];
+    if (!calc_tgreq(i, k + 1, tgreq))
+        return false;
+    float tpreq = treq[CP_G][i][j] - delays[CP_P1][CP_G];
+    if (!calc_tpreq(i, k + 1, tpreq))
+        return false;
+
+    // lower parent
+    tgreq = treq[CP_G][i][j] - delays[CP_G0][CP_G]; // g0 to g
+    if (!calc_tgreq(k, j, tgreq))
+        return false;
+
+    return true;
 }
 
 void CarryPropagatingAdder::dump_hdl(const std::string& module_name)
@@ -232,36 +251,51 @@ void CarryPropagatingAdder::dump_hdl(const std::string& module_name)
 
     // Write the module header
     verilog_file << "module " << module_name << "(\n";
-    verilog_file << "  input [0:" << nodes.size() - 1 << "] a,\n";
-    verilog_file << "  input [0:" << nodes.size() - 1 << "] b,\n";
-    verilog_file << "  output [0:" << nodes.size() - 1 << "] sum,\n";
-    verilog_file << "  output [0:" << nodes.size() - 1 << "] cout\n";
+    verilog_file << "  input [" << nodes.size() - 1 << ":0] a,\n";
+    verilog_file << "  input [" << nodes.size() - 1 << ":0] b,\n";
+    verilog_file << "  output [" << nodes.size() - 1 << ":0] sum,\n";
+    verilog_file << "  output [" << nodes.size() - 1 << ":0] cout\n";
     verilog_file << ");\n\n";
 
     // Write the logic for the carry propagating adder
     // (This part is simplified and should be replaced with actual logic)
     for(int i = 0; i < nodes.size(); i++){
-        for(int j = 0; j < nodes[i].size(); j++){
-            if(i == j){
-                verilog_file << " wire p_" << i << "_" << i << " = a[" << i << "] ^ b[" << i << "];\n";
-                verilog_file << " wire g_" << i << "_" << i << " = a[" << i << "] & b[" << i << "];\n";      
-            }else{
-                int k = nodes[i][j];
-                if (k == -1) continue; // no path
-
-                // p_i_k, g_i_k, p_k_j, g_k_j
-                // p_i_j = p_i_k . p_k_j
-                // g_i_j = g_i_k + p_i_k . g_k_j
-                if(fo[CP_P][i][j] > 0)
-                    verilog_file << " wire p_" << i << "_" << j << " = p_" << i << "_" << k << " & p_" << k << "_" << j << ";\n";
-                if(fo[CP_G][i][j] > 0)               
-                    verilog_file << " wire g_" << i << "_" << j << " = g_" << i << "_" << k << " | (p_" << i << "_" << k << " & g_" << k << "_" << j << ");\n";
+        // input p,g wires
+        verilog_file << "  wire p_" << i <<  "_" <<  i << ";\n";
+        verilog_file << "  wire g_" << i <<  "_" <<  i << ";\n";
+        verilog_file << " assign p_" << i << "_" << i << " = a[" << i << "] ^ b[" << i << "];\n";
+        verilog_file << " assign g_" << i << "_" << i << " = a[" << i << "] & b[" << i << "];\n";
+        for (int j = 0; j < i; j++)
+        {
+            if (nodes[i][j] == -1)
+            {
+                continue; // no path
             }
+            if(fo[CP_P][i][j] >0)
+                verilog_file << "  wire p_" << i << "_" << j << ";\n";
+            if(fo[CP_G][i][j] >0)
+                verilog_file << "  wire g_" << i << "_" << j << ";\n";
+        }
+    }
+
+    for(int i = 0; i < nodes.size(); i++){
+        for(int j = 0; j < i; j++){
+            int k = nodes[i][j];
+            if (k == -1)
+                continue; // no path
+
+            // p_i_k+1, g_i_k+1, p_k_j, g_k_j
+            // p_i_j = p_i_k+1 . p_k_j
+            // g_i_j = g_i_k+1 + p_i_k+1 . g_k_j
+            if (fo[CP_P][i][j] > 0)
+                verilog_file << " assign p_" << i << "_" << j << " = p_" << i << "_" << k+1 << " & p_" << k << "_" << j << ";\n";
+            if (fo[CP_G][i][j] > 0)
+                verilog_file << " assign g_" << i << "_" << j << " = g_" << i << "_" << k+1 << " | (p_" << i << "_" << k+1 << " & g_" << k << "_" << j << ");\n";
         }
         if (i == 0)
-            verilog_file << " assign sum[" << i << "] = p_" << i << "_" << 0 << ";\n";
+            verilog_file << " assign sum[" << i << "] = p_0_0;\n";
         else
-            verilog_file << " assign sum[" << i << "] = p_" << i << "_" << 0 << "^ g_" << i - 1 << "_0;\n";
+            verilog_file << " assign sum[" << i << "] = p_" << i << "_" << i << "^ g_" << i - 1 << "_0;\n";
         
         verilog_file << " assign cout[" << i << "] = g_" << i << "_" << 0 << ";\n";
     }

@@ -114,7 +114,7 @@ void MultiplierGenerator::dump_hdl(Operand multiplicand, Operand multiplier, con
     // because partial products are generated in a way that the last row is not necessarily equal to the width of the multiplier.
     // thus if width_cpa is less than cols_pps, we need to add ctc[width_cpa-1] to the msb of the product.
     for (int icol = 0; icol < cpa_col_start; icol++)
-        verilog_file << "  assign product[" << icol << "] = pp_" << num_stages << "_" << icol << "_" << 0 << "\n"; // zero padding
+        verilog_file << "  assign product[" << icol << "] = pp_" << num_stages << "_" << icol << "_" << 0 << ";\n"; // zero padding
 
     verilog_file << "  assign product[" << cpa_col_end << ":" << cpa_col_start << "] = cts;\n"; // cts is the sum output of the cpa
     if (cpa_col_end + 1 <  cols_pps)
@@ -144,6 +144,8 @@ void MultiplierGenerator::dump_hdl_tb(Operand multiplicand, Operand multiplier, 
     tb_file << "  reg [" << width_a - 1 << ":0] multiplicand;\n";
     tb_file << "  reg [" << width_b - 1 << ":0] multiplier;\n";
     tb_file << "  wire [" << width_p - 1 << ":0] product;\n";
+    tb_file << "  reg [" << width_p - 1 << ":0] expected;\n";
+    tb_file << "  integer i;\n";
     tb_file << "\n";
     tb_file << "  " << module_name << " uut(\n";
     tb_file << "    .multiplicand(multiplicand),\n";
@@ -155,12 +157,10 @@ void MultiplierGenerator::dump_hdl_tb(Operand multiplicand, Operand multiplier, 
     tb_file << "    $display(\"Testing " << module_name << "\");\n";
     tb_file << "    $dumpfile(\"" << module_name << "_tb.vcd\");\n";
     tb_file << "    $dumpvars(0, " << module_name << "_tb);\n";
-    tb_file << "    integer i;\n";
     tb_file << "    for (i = 0; i < 100; i = i + 1) begin\n";
     tb_file << "      multiplicand = $random;\n";
     tb_file << "      multiplier = $random;\n";
     tb_file << "      #1;\n";
-    tb_file << "      automatic logic [" << width_p - 1 << ":0] expected;\n";
     if (signed_a && signed_b)
     {
         tb_file << "      expected = $signed(multiplicand) * $signed(multiplier);\n";
@@ -254,7 +254,10 @@ void MultiplierGenerator::dump_hdl_ct(std::ofstream &verilog_file)
                     verilog_file << "    .b(pp_" <<istage << "_" << icol << "_" << ib << "),\n";
                     verilog_file << "    .cin(pp_" <<istage << "_" << icol << "_" << icin << "),\n";
                     verilog_file << "    .sum(pp_" << istage + 1 << "_" << icol << "_" << isum << "),\n";
-                    verilog_file << "    .cout(pp_" << istage + 1 << "_" << icol + 1 << "_" << icout << ")\n";
+                    if(icout < 0)
+                        verilog_file << "    .cout()\n";
+                    else
+                        verilog_file << "    .cout(pp_" << istage + 1 << "_" << icol + 1 << "_" << icout << ")\n";
                     verilog_file << "  );\n\n";
                 }
                 else if(node.type == CT_2_2)
@@ -267,7 +270,10 @@ void MultiplierGenerator::dump_hdl_ct(std::ofstream &verilog_file)
                     verilog_file << "    .a(pp_" << istage << "_" << icol << "_" << ia << "),\n";
                     verilog_file << "    .b(pp_" << istage << "_" << icol << "_" << ib << "),\n";
                     verilog_file << "    .sum(pp_" << istage + 1 << "_" << icol << "_" << isum << "),\n";
-                    verilog_file << "    .cout(pp_" << istage + 1 << "_" << icol + 1 << "_" << icout << ")\n";
+                    if(icout < 0)
+                        verilog_file << "    .cout()\n";
+                    else
+                        verilog_file << "    .cout(pp_" << istage + 1 << "_" << icol + 1 << "_" << icout << ")\n";
                     verilog_file << "  );\n\n";
                 }else if(node.type == CT_1_1)
                 {
@@ -379,7 +385,7 @@ void MultiplierGenerator::gen_normal_pp(Operand multiplicand, Operand multiplier
             { // (0,1,j):negated multiplicand, (1,0,multiplier.width-1):multiplier's sign bit
                 pp[multiplier.width - 1 + j].expression->setInputs({(OpBit){0, 1, j}, (OpBit){1, 0, multiplier.width - 1}});
             }
-            pp[cols_pps - 2].expression->setOperation(XNOR);
+            pp[cols_pps - 2].expression->setOperation(NAND);
             pp[cols_pps - 1].bit_type = BIT_EXPRESSION;
             pp[cols_pps - 1].expression =
                 exp_manager.allocate("pp_" + std::to_string(pps.size() - 1) + "_" + std::to_string(cols_pps - 1),
@@ -537,17 +543,16 @@ void MultiplierGenerator::gen_booth4_pp(Operand multiplicand, Operand multiplier
         auto & pp = pps[i];
         auto & px = pxs[i];
         pp.resize(cols_pps, PPBit());
-        px.resize(multiplicand.width + ext_width, nullptr); // indices are shifted by 1
+        px.resize(multiplicand.width + ext_width + 1, nullptr); // indices are shifted by 1
+        px[0] = exp_manager.allocate("px_" + std::to_string(i) + "_" + std::to_string(0), NOP, (std::vector<BoolExp *>){bes[i].neg});
+        for (int j = 1; j < px.size(); j++)
         {
-            px[0] = exp_manager.allocate("px_" + std::to_string(i) + "_" + std::to_string(0), NOP, (std::vector<BoolExp *>){bes[i].neg});
-            // because px[-1] is zero, pp(0) = px(0)s1
-            pp[2 * i].bit_type = BIT_EXPRESSION;
-            pp[2 * i].expression = exp_manager.allocate("pp_" + std::to_string(i) + "_" + std::to_string(2*i), AND, (std::vector<BoolExp *>){x[0], bes[0].s1}); // px(0,0) s2(0)
+            px[j] = exp_manager.allocate("px_" + std::to_string(i) + "_" + std::to_string(j), XOR, (std::vector<BoolExp*>){bes[i].neg, x[j-1]});
         }
-        for (int j = 1; j  < (multiplicand.width + ext_width) && (2*i + j) < cols_pps; j++){
-            px[j] = exp_manager.allocate("px_" + std::to_string(i) + "_" + std::to_string(j), XOR, (std::vector<BoolExp*>){bes[i].neg, x[j]});
-            BoolExp *a = exp_manager.allocate("be_2x_" + std::to_string(i) + "_" + std::to_string(j), NAND, (std::vector<BoolExp*>){px[j-1], bes[i].s2});
-            BoolExp *b = exp_manager.allocate("be_x_" + std::to_string(i) + "_" + std::to_string(j), NAND, (std::vector<BoolExp*>){px[j], bes[i].s1});
+
+        for(int j = 0; j < (multiplicand.width + ext_width) && (2* i + j) < cols_pps; j++){
+            BoolExp *a = exp_manager.allocate("be_2x_" + std::to_string(i) + "_" + std::to_string(j), NAND, (std::vector<BoolExp*>){px[j], bes[i].s2});
+            BoolExp *b = exp_manager.allocate("be_x_" + std::to_string(i) + "_" + std::to_string(j), NAND, (std::vector<BoolExp*>){px[j+1], bes[i].s1});
             pp[2*i + j].bit_type = BIT_EXPRESSION;
             pp[2*i + j].expression = exp_manager.allocate("pp_" + std::to_string(i) + "_" + std::to_string(2*i + j), NAND, (std::vector<BoolExp*>){a, b});
         }
@@ -561,12 +566,12 @@ void MultiplierGenerator::gen_booth4_pp(Operand multiplicand, Operand multiplier
             int jmsb = multiplicand.width + ext_width - 1;
             int jext = jmsb;
             BoolExp * exp_msb = pps[0][jmsb].expression;
-            if (jext + 1 < cols_pps)
+            if(jext + 1 < cols_pps)
             {
                 pps[0][jext + 1].bit_type = BIT_EXPRESSION;
                 pps[0][jext + 1].expression = exp_msb;
             }
-            if(jext +2 < cols_pps){
+            if(jext + 2 < cols_pps){
                 pps[0][jext + 2].bit_type = BIT_EXPRESSION;
                 pps[0][jext + 2].expression = exp_manager.allocate("not_pp_" + std::to_string(i) + "_" + std::to_string(jext+2), NOT, {pps[i][jmsb].expression});
             }
@@ -1209,7 +1214,8 @@ double MultiplierGenerator::do_ct_sta()
 
 void MultiplierGenerator::opt_ct_wire_assignment()
 {
-
+    if(num_stages == 0) return; // no stages, nothing to do
+    
     double tmax = do_ct_sta();
     double dt = 0;
     do {
@@ -1245,8 +1251,8 @@ void MultiplierGenerator::opt_ct_wire_assignment()
                     double improvement = std::abs(tarr1 - tarr2 - tslack2 / 2);
 
                     if (improvement > best_improvement) {
-                        best_improvement = improvement;
                         best_swap = {ipin1, ipin2, istage, icol};
+                        best_improvement = improvement;
                     }
                 }
             }

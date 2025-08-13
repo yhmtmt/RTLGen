@@ -57,8 +57,14 @@ if [ ! -f "$VERILOG_FILE" ] || [ ! -f "$TESTBENCH_FILE" ]; then
 fi
 
 # Compile the Verilog files
+MG_CPA_FILE="MG_CPA.v"
+if [ ! -f "$MG_CPA_FILE" ]; then
+    echo "Error: MG_CPA.v not found."
+    exit 1
+fi
+
 echo "2. Compiling Verilog with iverilog..."
-iverilog -o "$COMPILED_FILE" "$VERILOG_FILE" "$TESTBENCH_FILE"
+iverilog -o "$COMPILED_FILE" "$VERILOG_FILE" "$TESTBENCH_FILE" "$MG_CPA_FILE"
 
 # Run the simulation
 echo "3. Running simulation..."
