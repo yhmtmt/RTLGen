@@ -48,6 +48,9 @@ RUN apt-get update && \
     ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime && \
     dpkg-reconfigure --frontend noninteractive tzdata
 
+    # for autotuner
+RUN apt-get update && apt-get install -y python3-venv
+
 RUN apt-get update && apt-get install -y qtbase5-dev libqt5charts5-dev qttools5-dev qttools5-dev-tools libqt5widgets5 libqt5svg5-dev
 
 
@@ -92,6 +95,11 @@ RUN git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD.git &
 # Clone the repository
 RUN git clone https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts.git /orfs
 
+RUN python3 -m pip install --upgrade pip setuptools wheel 
+
+RUN /orfs/tools/AutoTuner/installer.sh && /orfs/tools/AutoTuner/setup.sh 
+
+
 ENV PATH="/oss-cad-suite/bin:${PATH}"
 ENV OPENROAD_EXE="/usr/bin/openroad"
 ENV YOSYS_EXE="/oss-cad-suite/bin/yosys"
@@ -99,6 +107,3 @@ ENV LD_LIBRARY_PATH="/usr/bin/:${PATH}"
 
 # Set the working directory
 #WORKDIR /orfs
-
-# Run the build script
-#RUN ./build_openroad.sh
