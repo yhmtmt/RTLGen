@@ -221,11 +221,7 @@ public:
         for (const auto& pair : expressions) {
             os << "  wire " << pair.first << ";\n";
         }
-        for(const auto & pair : expressions) {
-            std::cout << "Generated expression: " << pair.first << std::endl;
-            if(pair.first == "be_x_0_4")
-                std::cout << "break" << std::endl;
-                
+        for(const auto & pair : expressions) {                
             if (!pair.second->generateAssignments(os, operands)) {
                 std::cerr << "Error generating assignment for " << pair.first << std::endl;
             }

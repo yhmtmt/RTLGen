@@ -8,16 +8,28 @@
 #include <numeric> // Include for std::accumulate
 #include <ortools/linear_solver/linear_solver.h>
 #include "multiplier.hpp"
+#include <chrono> // Add this include for timing
 
 ///////////////////////////////////////////////////////////////////////////////////////////////// MultiplierGenerator methods
 void MultiplierGenerator::build(Operand multiplicand, Operand multiplier,
                                            CTType ctype, PPType ptype, const std::string &module_name)
 {
+    std::cout << "[INFO] Generating partial products..." << std::endl;
     gen_pp(multiplicand, multiplier, ptype);
+
+    std::cout << "[INFO] Building compressor tree..." << std::endl;
     build_ct();
+
+    std::cout << "[INFO] Building carry-propagate adder..." << std::endl;
     build_cpa();
+
+    std::cout << "[INFO] Dumping Verilog HDL..." << std::endl;
     dump_hdl(multiplicand, multiplier, module_name);
+
+    std::cout << "[INFO] Dumping Verilog testbench..." << std::endl;
     dump_hdl_tb(multiplicand, multiplier, module_name);
+
+    std::cout << "[INFO] Multiplier generation completed." << std::endl;
 }
 
 void MultiplierGenerator::dump_hdl_fa(std::ofstream &verilog_file, const std::string &module_name)
@@ -304,6 +316,16 @@ void MultiplierGenerator::gen_pp(Operand multiplicand, Operand multiplier, PPTyp
         std::cerr << "Error: Unsupported PPType." << std::endl;
         return;
     }
+
+    // Print number of rows, columns, and total partial product bits
+    int total_pp_bits = 0;
+    for (const auto& row : pps) {
+        for (const auto& bit : row) {
+            if (bit.bit_type != BIT_NONE)
+                total_pp_bits++;
+        }
+    }
+    std::cout << "[INFO] Partial product matrix: " << rows_pps << " rows x " << cols_pps << " cols, total " << total_pp_bits << " bits." << std::endl;
 }
 
 // n bit multiplicand m bit multiplier. Normal radix-2 
@@ -982,6 +1004,8 @@ void MultiplierGenerator::opt_fas_and_has_assignment(
                                              std::vector<int> &num_fas, std::vector<int> &num_has,
                                              std::vector<std::vector<int>> &ct_fas, std::vector<std::vector<int>> &ct_has, int num_max_stages)
 {
+    auto t_start = std::chrono::high_resolution_clock::now();
+
     ct_fas.resize(num_max_stages, std::vector<int>(cols_pps, 0));
     ct_has.resize(num_max_stages, std::vector<int>(cols_pps, 0));
     ct_pps.resize(num_max_stages, std::vector<int>(cols_pps, 0));
@@ -1099,6 +1123,22 @@ void MultiplierGenerator::opt_fas_and_has_assignment(
             break;
         }
     }
+
+    // Print statistics and timing
+    int total_fas = 0, total_has = 0;
+    for (int i = 0; i < num_max_stages; ++i) {
+        for (int j = 0; j < cols_pps; ++j) {
+            total_fas += ct_fas[i][j];
+            total_has += ct_has[i][j];
+        }
+    }
+    auto t_end = std::chrono::high_resolution_clock::now();
+    double elapsed_sec = std::chrono::duration<double>(t_end - t_start).count();
+    std::cout << "[INFO] opt_fas_and_has_assignment: num_stages = " << num_stages
+              << ", num_max_stages = " << num_max_stages
+              << ", total FAs = " << total_fas
+              << ", total HAs = " << total_has
+              << ", elapsed = " << elapsed_sec << " sec" << std::endl;
 }
 
 double MultiplierGenerator::do_ct_sta()
@@ -1217,6 +1257,8 @@ void MultiplierGenerator::opt_ct_wire_assignment()
     if(num_stages == 0) return; // no stages, nothing to do
     
     double tmax = do_ct_sta();
+    double tmax_ini = tmax;
+    std::cout << "[INFO] Starting wire assignment optimization: initial max delay = " << tmax_ini << std::endl;
     double dt = 0;
     do {
         // List zero slack ct_opins in every stage
@@ -1269,6 +1311,7 @@ void MultiplierGenerator::opt_ct_wire_assignment()
 
     } while (true);
 
+    std::cout << "[INFO] Finished wire assignment optimization: final max delay = " << tmax << std::endl;
 }
 
 void MultiplierGenerator::build_cpa()
