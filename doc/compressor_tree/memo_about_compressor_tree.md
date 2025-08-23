@@ -1,6 +1,6 @@
 # Memo about Compressor Tree Optimization
 
-The implementation of the compressor tree optimization is based on UFO-MAC [1], as its results appeared credible. I attempted to implement the entire algorithm, but the part successfully integrated here is limited to counting and assigning full and half adders. Other parts, such as interconnect assignment and prefix adder optimization, were not implemented due to perceived issues in their formulation. Before explaining these problems, I should describe a subtle mistake in the ILP formulation for adder assignment that I encountered and corrected.
+The implementation of the compressor tree optimization is based on UFO-MAC [1]. I attempted to implement the entire algorithm, but the part successfully integrated here is limited to counting and assigning full and half adders. Other parts, such as interconnect assignment and prefix adder optimization, were not implemented due to perceived issues in their formulation. Before explaining these problems, I should describe a subtle mistake in the ILP formulation for adder assignment that I encountered and corrected.
 
 *   **My modification in adder assignment.**
 
@@ -28,9 +28,7 @@ The implementation of the compressor tree optimization is based on UFO-MAC [1], 
 
     This represents an upper bound, assuming an infinite number of columns in the partial product array. Considering a middle column in an infinite PP array, where the previous column produces carries identical to the column of interest, we can reduce the PPs in the column by 2/3 per stage using full adders. The solution must be an integer. The bound assumes that `pp_rows` is the nearest larger integer power of 3, and the stages where the number of PPs is reduced to two are rounded up. This might seem like a pessimistic bound, but you can observe that the value is quite close to the optimization results found in `compressor_tree_level_opt.dat`. This data concerns the number of compressor tree stages for Normal and Booth4 multipliers. The optimal values and maximum values expected by the equation above are close.
 
-    ### Comparison of Predicted vs. Optimal Stages
-
-![Compressor Tree Stages: Optimal vs. Predicted Max](compressor_tree_stages.png)
+    ![Compressor Tree Stages: Optimal vs. Predicted Max](compressor_tree_stages.png)
 
     I doubt if there is a more straightforward assignment algorithm.
 
