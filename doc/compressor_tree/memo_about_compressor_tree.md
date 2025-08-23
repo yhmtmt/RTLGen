@@ -6,25 +6,25 @@ The implementation of the compressor tree optimization is based on UFO-MAC [1]. 
 
     Equation (8) in paper [1] describes the constraint of the number of partial products (PPs) in the $i$-th stage's $j$-th column as follows:
 
-    $$pp_{i,j}=pp_{i-1,j} - 2f_{i,j} - h_{i,j} + f_{i-1,j-1} + h_{i-1,j-1} \quad (8)$$
+    ![equation](https://latex.codecogs.com/svg.latex?pp_{i,j}=pp_{i-1,j}%20-%202f_{i,j}%20-%20h_{i,j}%20+%20f_{i-1,j-1}%20+%20h_{i-1,j-1}%20%5Cquad%20(8))
 
     Where $f_{i,j}$ and $h_{i,j}$ denote the number of full and half adders in the $i$-th stage's $j$-th column. The last two terms describe the carry bits from the $(i-1)$-th stage's $(j-1)$-th column. The first three terms describe sum output bits from the $(i-1)$-th stage's $j$-th column. Therefore, the equation should correctly be:
 
-    $$pp_{i,j}=pp_{i-1,j} - 2f_{i-1,j} - h_{i-1,j} + f_{i-1,j-1} + h_{i-1,j-1}$$
+    ![equation](https://latex.codecogs.com/svg.latex?pp_{i,j}=pp_{i-1,j}%20-%202f_{i-1,j}%20-%20h_{i-1,j}%20+%20f_{i-1,j-1}%20+%20h_{i-1,j-1})
 
     My code was implemented with the corrected equation above.
 
     Moreover, to accelerate convergence, the number of variables in the problem should be minimized. There is an important bound, $stage\_max$, which appears in equations (6) and (7):
 
-    $$\sum_{i=0}^{stage\_max}f_{i,j}=F_j \quad (6)$$
+    ![equation](https://latex.codecogs.com/svg.latex?%5Csum_{i=0}^{stage%5C_max}f_{i,j}=F_j%20%5Cquad%20(6))
 
-    $$\sum_{i=0}^{stage\_max}h_{i,j}=H_j \quad (7)$$
+    ![equation](https://latex.codecogs.com/svg.latex?%5Csum_{i=0}^{stage%5C_max}h_{i,j}=H_j%20%5Cquad%20(7))
 
     Where $F_j$ and $H_j$ are constants calculated preliminarily. $stage\_max$ should be at least greater than or equal to the optimal value. If we can select a value for $stage\_max$ that is close to the optimal value, the optimization time can also be minimized.
 
     Paper [1] does not provide the exact value for $stage\_max$. In my implementation, I set the value of $stage\_max$ as follows:
 
-    $$stage\_max = \lceil \log_{3/2} \left( \frac{3^{\lceil \log_2 (pp\_rows/2) \rceil}}{2} \right) \rceil$$
+    ![equation](https://latex.codecogs.com/svg.latex?stage%5C_max%20=%20%5Clceil%20%5Clog_{3/2}%20%5Cleft(%20%5Cfrac{3%5E{%5Clceil%20%5Clog_2%20(pp%5C_rows/2)%20%5Crceil}}{2}%20%5Crright)%20%5Crceil)
 
     This represents an upper bound, assuming an infinite number of columns in the partial product array. Considering a middle column in an infinite PP array, where the previous column produces carries identical to the column of interest, we can reduce the PPs in the column by 2/3 per stage using full adders. The solution must be an integer. The bound assumes that `pp_rows` is the nearest larger integer power of 3, and the stages where the number of PPs is reduced to two are rounded up. This might seem like a pessimistic bound, but you can observe that the value is quite close to the optimization results found in `compressor_tree_level_opt.dat`. This data concerns the number of compressor tree stages for Normal and Booth4 multipliers. The optimal values and maximum values expected by the equation above are close.
 
