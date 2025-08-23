@@ -42,7 +42,7 @@ Once you have created the configuration file, you can run the generator with the
 
 This will generate a Verilog module for a multiplier with the specified parameters. The generated module will be placed in the  execution directory.
 
-Currently, `compressor_structure` and `pipeline_depth` are not configurable and are fixed to `AdderTree` and `1` respectively. The `ppg_algorithm` can be set to "Normal" or "Booth4" for any bit width greater than or equal to 4. The `AdderTree` is optimized using ILP as described in the paper [UFO-MAC: A Unified Framework for Optimization of High-Performance Multipliers and Multiply-Accumulators](https://arxiv.org/abs/2408.06935).
+Currently, `compressor_structure` and `pipeline_depth` are not configurable and are fixed to `AdderTree` and `1` respectively. The `ppg_algorithm` can be set to "Normal" or "Booth4" for any bit width greater than or equal to 4. The `AdderTree` is optimized using ILP as described in the paper [UFO-MAC: A Unified Framework for Optimization of High-Performance Multipliers and Multiply-Accumulators](https://arxiv.org/abs/2408.06935). For more details on the implementation and some insights, refer to the [Compressor Tree Memo](doc/compressor_tree/memo_about_compressor_tree.md).
 
 ## Implemented Algorithms
 
