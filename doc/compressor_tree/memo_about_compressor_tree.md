@@ -14,17 +14,17 @@ The implementation of the compressor tree optimization is based on UFO-MAC [1]. 
 
     My code was implemented with the corrected equation above.
 
-    Moreover, to accelerate convergence, the number of variables in the problem should be minimized. There is an important bound, $stage\_max$, which appears in equations (6) and (7):
+    Moreover, to accelerate convergence, the number of variables in the problem should be minimized. There is an important bound, 'stage_max', which appears in equations (6) and (7):
 
     ![equation](https://latex.codecogs.com/svg.latex?%5Csum_{i=0}^{stage_max}f_{i,j}=F_j%20%5Cquad%20(6))
 
     ![equation](https://latex.codecogs.com/svg.latex?%5Csum_{i=0}^{stage_max}h_{i,j}=H_j%20%5Cquad%20(7))
 
-    Where $F_j$ and $H_j$ are constants calculated preliminarily. $stage\_max$ should be at least greater than or equal to the optimal value. If we can select a value for $stage\_max$ that is close to the optimal value, the optimization time can also be minimized.
+    Where $F_j$ and $H_j$ are constants calculated preliminarily. 'stage_max' should be at least greater than or equal to the optimal value. If we can select a value for `stage_max` that is close to the optimal value, the optimization time can also be minimized.
 
-    Paper [1] does not provide the exact value for $stage\_max$. In my implementation, I set the value of $stage\_max$ as follows:
+    Paper [1] does not provide the exact value for 'stage_max'. In my implementation, I set the value of 'stage_max' as follows:
 
-    ![equation](https://latex.codecogs.com/svg.latex?stage_max%20=%20%5Clog_{3/2}%20(%203%5E{%5Clog_2%20(pp%5C_rows/2)}/2%20))
+    ![equation](https://latex.codecogs.com/svg.latex?stage%5C_max%20=%20%5Clog_{3/2}%20(%203%5E{%5Clog_2%20(pp%5C_rows/2)}/2%20))
 
     This represents an upper bound, assuming an infinite number of columns in the partial product array. Considering a middle column in an infinite PP array, where the previous column produces carries identical to the column of interest, we can reduce the PPs in the column by 2/3 per stage using full adders. The solution must be an integer. The bound assumes that `pp_rows` is the nearest larger integer power of 3, and the stages where the number of PPs is reduced to two are rounded up. This might seem like a pessimistic bound, but you can observe that the value is quite close to the optimization results found in `compressor_tree_level_opt.dat`. This data concerns the number of compressor tree stages for Normal and Booth4 multipliers. The optimal values and maximum values expected by the equation above are close.
 
