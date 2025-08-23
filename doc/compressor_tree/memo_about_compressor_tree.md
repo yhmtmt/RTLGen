@@ -24,13 +24,13 @@ The implementation of the compressor tree optimization is based on UFO-MAC [1]. 
 
     Paper [1] does not provide the exact value for `stage_max`. In my implementation, I set the value of `stage_max` as follows:
 
-    ![equation](https://latex.codecogs.com/svg.latex?stage%5C_max%20=%20%5Clog_{3/2}%20(%203%5E{%5Clog_2%20(pp%5C_rows/2)}/2%20))
+    ![equation](https://latex.codecogs.com/svg.latex?stage%5C_max%20=%20%5Clog_{3/2}%20(%203%5E{%5Clog_3%20(pp%5C_rows)}/2%20))
 
-    This represents an upper bound, assuming an infinite number of columns in the partial product array. Considering a middle column in an infinite PP array, where the previous column produces carries identical to the column of interest, we can reduce the PPs in the column by 2/3 per stage using full adders. The solution must be an integer. The bound assumes that `pp_rows` is the nearest larger integer power of 3, and the stages where the number of PPs is reduced to two are rounded up. This might seem like a pessimistic bound, but you can observe that the value is quite close to the optimization results found in `compressor_tree_level_opt.dat`. This data concerns the number of compressor tree stages for Normal and Booth4 multipliers. The optimal values and maximum values expected by the equation above are close.
+    This represents an upper bound, assuming an infinite number of columns in the partial product array. Considering a middle column in an infinite PP array, where the previous column produces carries identical to the column of interest, we can reduce the PPs in the column by 2/3 per stage using full adders. The solution must be an integer. The bound assumes that `pp_rows` is the nearest larger integer power of 3, and the stages where the number of PPs is reduced to two are rounded up. This might seem like a pessimistic bound, but you can observe that the value is quite close.  
 
     ![Compressor Tree Stages: Optimal vs. Predicted Max](compressor_tree_stages.png)
 
-    I doubt if there is a more straightforward assignment algorithm.
+    The graph concerns the number of compressor tree stages for Normal and Booth4 multipliers. The optimal values and maximum values expected by the equation above are close. I doubt if there is a more straightforward assignment algorithm.
 
 *   **Is the interconnection assignment formulation really ILP?**
 
