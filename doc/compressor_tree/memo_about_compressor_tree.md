@@ -14,15 +14,15 @@ The implementation of the compressor tree optimization is based on UFO-MAC [1]. 
 
     My code was implemented with the corrected equation above.
 
-    Moreover, to accelerate convergence, the number of variables in the problem should be minimized. There is an important bound, 'stage_max', which appears in equations (6) and (7):
+    Moreover, to accelerate convergence, the number of variables in the problem should be minimized. There is an important bound, `stage_max`, which appears in equations (6) and (7):
 
-    ![equation](https://latex.codecogs.com/svg.latex?%5Csum_{i=0}^{stage_max}f_{i,j}=F_j%20%5Cquad%20(6))
+    ![equation](https://latex.codecogs.com/svg.latex?%5Csum_{i=0}^{stage%5C_max}f_{i,j}=F_j%20%5Cquad%20(6))
 
-    ![equation](https://latex.codecogs.com/svg.latex?%5Csum_{i=0}^{stage_max}h_{i,j}=H_j%20%5Cquad%20(7))
+    ![equation](https://latex.codecogs.com/svg.latex?%5Csum_{i=0}^{stage%5C_max}h_{i,j}=H_j%20%5Cquad%20(7))
 
-    Where $F_j$ and $H_j$ are constants calculated preliminarily. 'stage_max' should be at least greater than or equal to the optimal value. If we can select a value for `stage_max` that is close to the optimal value, the optimization time can also be minimized.
+    Where $F_j$ and $H_j$ are constants calculated preliminarily. `stage_max` should be at least greater than or equal to the optimal value. If we can select a value for `stage_max` that is close to the optimal value, the optimization time can also be minimized.
 
-    Paper [1] does not provide the exact value for 'stage_max'. In my implementation, I set the value of 'stage_max' as follows:
+    Paper [1] does not provide the exact value for `stage_max`. In my implementation, I set the value of `stage_max` as follows:
 
     ![equation](https://latex.codecogs.com/svg.latex?stage%5C_max%20=%20%5Clog_{3/2}%20(%203%5E{%5Clog_2%20(pp%5C_rows/2)}/2%20))
 
