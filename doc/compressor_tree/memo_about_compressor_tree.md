@@ -28,9 +28,9 @@ The implementation of the compressor tree optimization is based on UFO-MAC [1], 
 
     This represents an upper bound, assuming an infinite number of columns in the partial product array. Considering a middle column in an infinite PP array, where the previous column produces carries identical to the column of interest, we can reduce the PPs in the column by 2/3 per stage using full adders. The solution must be an integer. The bound assumes that `pp_rows` is the nearest larger integer power of 3, and the stages where the number of PPs is reduced to two are rounded up. This might seem like a pessimistic bound, but you can observe that the value is quite close to the optimization results found in `compressor_tree_level_opt.dat`. This data concerns the number of compressor tree stages for Normal and Booth4 multipliers. The optimal values and maximum values expected by the equation above are close.
 
-    ### Comparison of Predicted vs. Optimal Stages (Graph Placeholder)
+    ### Comparison of Predicted vs. Optimal Stages
 
-    *(A graph comparing the `stage_max` values predicted by the formula above against the optimal values obtained from `compressor_tree_level_opt.dat` would be placed here. The x-axis could represent `pp_rows` or a similar parameter, and the y-axis would show the number of stages. Two lines would be plotted: one for the predicted `stage_max` and one for the optimal values, demonstrating their proximity.)*
+![Compressor Tree Stages: Optimal vs. Predicted Max](compressor_tree_stages.png)
 
     I doubt if there is a more straightforward assignment algorithm.
 
