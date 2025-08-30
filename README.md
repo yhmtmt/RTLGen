@@ -66,14 +66,6 @@ You can run the validation using the `run_test.sh` script located in the project
 
 The generator has been tested by varying bit-widths, the signed flag, and the PPG algorithm, though more comprehensive testing is planned.
 
-## Running the Tests
-
-To run the tests, you can use the following command:
-
-```
-ctest
-```
-
 ## Development Environment (Dev Container)
 
 This project supports development inside a dev container, which provides a consistent Ubuntu-based environment with all necessary dependencies pre-installed. The dev container is configured for use with Visual Studio Code and Docker.
@@ -124,3 +116,20 @@ Below is a sample layout image (`sample_gds2.png`) produced by opening the GDS2 
 ![Generated GDS2 Sample](materials/sample_gds2.png)
 
 The GDS2 file is located at `/orfs/flow/results/nangate45/booth4_multiplier_wrapper/`, and the image was created with klayout.
+
+## AutoTuner
+
+The AutoTuner is automatically installed in the dev container as part of the environment setup. However, please note that the current `distribute.py` and `utils.py` in `orfs/tools/AutoTuner/src/autotuner` have some bugs affecting the tuning operation. Bug fixes for these issues are available in my branch:
+
+[https://github.com/yhmtmt/orfs.git](https://github.com/yhmtmt/orfs.git)
+
+A brief description of the bugfixes is provided in the commit messages of that repository. One notable problem in the original tuner is that it cannot properly evaluate weighted PPA (Performance, Power, Area) metrics. If you wish to use the fixed version, pull my repository above into `/orfs` in the dev container:
+
+```
+cd /orfs
+git remote add yhmtmt https://github.com/yhmtmt/orfs.git
+git fetch yhmtmt
+git checkout yhmtmt/main
+```
+
+The usage of the AutoTuner remains the same as described in the ORFS manual. Please be aware that further revisions may be necessary for
