@@ -123,7 +123,7 @@ The AutoTuner is automatically installed in the dev container as part of the env
 
 [https://github.com/yhmtmt/orfs.git](https://github.com/yhmtmt/orfs.git)
 
-A brief description of the bugfixes is provided in the commit messages of that repository. One notable problem in the original tuner is that it cannot properly evaluate weighted PPA (Performance, Power, Area) metrics. If you wish to use the fixed version, pull my repository above into `/orfs` in the dev container:
+A brief description of the bugfixes is provided in the commit messages of that repository. you wish to use the fixed version, pull my repository above into `/orfs` in the dev container:
 
 ```
 cd /orfs
@@ -132,4 +132,4 @@ git fetch yhmtmt
 git checkout yhmtmt/main
 ```
 
-The usage of the AutoTuner remains the same as described in the ORFS manual. Please be aware that further revisions may be necessary for
+The usage of the AutoTuner remains the same as described in the ORFS manual.  If Please be aware that further revisions may be necessary for full functionality. (One notable problem is that it cannot properly evaluate weighted PPA (Performance, Power, Area) metrics. )
