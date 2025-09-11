@@ -3,6 +3,7 @@ import sys
 import argparse
 import json
 import re
+import csv
 
 def generate_coeff_combinations(step):
     if not (1/step).is_integer():
@@ -20,6 +21,8 @@ def main():
     parser.add_argument("--design", required=True, help="Design name (e.g., booth4_multiplier4s_wrapper).")
     parser.add_argument("--platform", required=True, help="Platform name (e.g., nangate45).")
     parser.add_argument("--step", type=float, default=0.25, help="Step value for PPA coefficient combinations.")
+    parser.add_argument("--output_csv", help="Path to save the evaluation results in CSV format. Defaults to <design_name>.csv.")
+    parser.add_argument("--no_output_csv", action="store_true", help="Disable saving results to a CSV file.")
     
     args, remaining_args = parser.parse_known_args()
 
@@ -126,6 +129,17 @@ def main():
                 print("--- All Evaluation Metrics ---")
                 for metrics in all_evaluation_metrics:
                     print(metrics)
+
+                # --- Save results to CSV ---
+                if not args.no_output_csv:
+                    csv_filename = args.output_csv if args.output_csv else f"{args.design}.csv"
+                    print(f"--- Saving results to {csv_filename} ---")
+                    header = ["coeff_perform", "coeff_area", "coeff_power", "metric", "effective_clk_period", "die_area", "total_power"]
+                    with open(csv_filename, 'w', newline='') as f:
+                        writer = csv.writer(f)
+                        writer.writerow(header)
+                        writer.writerows(all_evaluation_metrics)
+                    print("--- Results saved successfully. ---")
 
             else:
                 print("--- 'effective_clk_period' not found in best results file. ---", file=sys.stderr)
