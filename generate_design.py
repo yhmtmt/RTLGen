@@ -152,7 +152,7 @@ set_load -pin_load 0.05 [all_outputs]
         f.write(content)
 
 def generate_autotuner_json(platform_dir, args):
-    with open("autotuner.json", "r") as f:
+    with open("autotuner_base.json", "r") as f:
         content = json.load(f)
 
     content["_SDC_CLK_PERIOD"]["minmax"] = [args.clock_period_min, args.clock_period_max]
