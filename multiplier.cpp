@@ -986,9 +986,9 @@ void MultiplierGenerator::build_ct()
     std::vector<int> num_has(cols_pps, 0);
 
     count_fas_and_has(num_fas, num_has, num_max_stages);
-    num_max_stages += 1;
     int norder = (int)ceil(log(rows_pps) / log(3.0));
     num_max_stages = (int)ceil((norder * log(3.0) - log(2.0)) / (log(3.0)-log(2.0)));
+    num_max_stages += 1;
 
     std::vector<std::vector<int>> ct_fas;
     std::vector<std::vector<int>> ct_has;
