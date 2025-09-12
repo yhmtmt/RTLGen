@@ -41,10 +41,10 @@ def main():
     print("-------------------------------------")
 
     try:
-        result1 = subprocess.run(cmd1, check=True, capture_output=True, text=True)
+        result1 = subprocess.run(cmd1, check=True, capture_output=True)
         
         best_results_path_1 = None
-        for line in result1.stdout.splitlines():
+        for line in result1.stdout.decode('utf-8', errors='ignore').splitlines():
             if "Best results written to" in line:
                 match = re.search(r"Best results written to (.*)", line)
                 if match:
@@ -102,10 +102,10 @@ def main():
                         "--coeff_power", str(coeff_po),
                     ]
 
-                    result2 = subprocess.run(cmd2, check=True, capture_output=True, text=True)
+                    result2 = subprocess.run(cmd2, check=True, capture_output=True)
 
                     best_results_path_2 = None
-                    for line in result2.stdout.splitlines():
+                    for line in result2.stdout.decode('utf-8', errors='ignore').splitlines():
                         if "Best results written to" in line:
                             match = re.search(r"Best results written to (.*)", line)
                             if match:
@@ -151,10 +151,10 @@ def main():
         print(f"Error running openroad_autotuner: {e}", file=sys.stderr)
         if e.stdout:
             print("--- stdout ---", file=sys.stderr)
-            print(e.stdout, file=sys.stderr)
+            print(e.stdout.decode('utf-8', errors='ignore'), file=sys.stderr)
         if e.stderr:
             print("--- stderr ---", file=sys.stderr)
-            print(e.stderr, file=sys.stderr)
+            print(e.stderr.decode('utf-8', errors='ignore'), file=sys.stderr)
         sys.exit(1)
     except FileNotFoundError:
         print(f"Error: 'openroad_autotuner' not found. Make sure it is in your PATH.", file=sys.stderr)
