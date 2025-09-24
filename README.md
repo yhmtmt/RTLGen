@@ -133,3 +133,7 @@ git checkout yhmtmt/main
 ```
 
 The usage of the AutoTuner remains the same as described in the ORFS manual.  If Please be aware that further revisions may be necessary for full functionality. (One notable problem is that it cannot properly evaluate weighted PPA (Performance, Power, Area) metrics. )
+
+## Booth vs. Normal Multiplier Comparison
+
+A detailed comparison between the modified Booth algorithm and a normal partial product generator is available in the document [booth4_vs_normal/booth_vs_normal_multiplier_comparison.md](booth4_vs_normal/booth_vs_normal_multiplier_comparison.md). This document provides an in-depth analysis of the performance and area of both multiplier types, based on an evaluation using OpenROAD with the Nangate45 PDK.
