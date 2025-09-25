@@ -100,7 +100,7 @@ RUN python3 -m pip install --upgrade pip setuptools wheel
 RUN /orfs/tools/AutoTuner/installer.sh && /orfs/tools/AutoTuner/setup.sh 
 
 
-ENV PATH="/oss-cad-suite/bin:/orfs/tools/AutoTuner/autotuner_env/bin:${PATH}"
+ENV PATH="/oss-cad-suite/bin:/orfs/tools/AutoTuner/autotuner_env/bin:/workspaces/RTLGen/bin:${PATH}"
 ENV OPENROAD_EXE="/usr/bin/openroad"
 ENV YOSYS_EXE="/oss-cad-suite/bin/yosys"
 ENV LD_LIBRARY_PATH="/usr/bin/:${PATH}"

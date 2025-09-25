@@ -7,7 +7,7 @@ set -e # Exit immediately if a command exits with a non-zero status.
 
 # --- Configuration ---
 # The generator executable
-GENERATOR_EXE="./build/mult-gen"
+GENERATOR_EXE="mult-gen"
 
 # --- Script ---
 

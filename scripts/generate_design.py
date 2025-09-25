@@ -38,7 +38,7 @@ def main():
     env = os.environ.copy()
     env["LD_LIBRARY_PATH"] = f"{ld_library_path}:{env.get('LD_LIBRARY_PATH', '')}"
 
-    subprocess.run(["bin/mult-gen", args.config], env=env, check=True)
+    subprocess.run(["mult-gen", args.config], env=env, check=True)
     os.rename(f"{module_name}.v", os.path.join(src_dir, f"{module_name}.v"))
 
     # Generate Wrapper
