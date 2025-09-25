@@ -5,7 +5,7 @@ import os
 import subprocess
 import argparse
 import shutil
-
+current_file_path = os.path.dirname(os.path.abspath(__file__))
 
 def main():
     parser = argparse.ArgumentParser(description="Generate multiplier Verilog and OpenROAD files.")
@@ -18,7 +18,10 @@ def main():
     parser.add_argument("--place_density_max", type=float, default=0.7, help="Max value for PLACE_DENSITY.")
     parser.add_argument("--clock_period_min", type=float, default=5.0, help="Min value for CLOCK_PERIOD.")
     parser.add_argument("--clock_period_max", type=float, default=20.0, help="Max value for CLOCK_PERIOD.")
+    parser.add_argument("--force_gen", type=bool, default=False, help="Force generate if source files exist.")
+    
     args = parser.parse_args()
+
 
     with open(args.config, "r") as f:
         config = json.load(f)
@@ -33,53 +36,57 @@ def main():
     platform_dir = os.path.join(args.platform, wrapper_name)
     os.makedirs(platform_dir, exist_ok=True)
 
+    # Setting destination path. 
+    dest_base = "/orfs/flow/designs"
+    dest_platform_dir = os.path.join(dest_base, platform_dir)
+    dest_src_dir = os.path.join(dest_base, src_dir)
+
     # Generate Verilog
-    ld_library_path = os.path.expanduser("~/work/or-tools_x86_64_Ubuntu-22.04_cpp_v9.10.4067/lib")
-    env = os.environ.copy()
-    env["LD_LIBRARY_PATH"] = f"{ld_library_path}:{env.get('LD_LIBRARY_PATH', '')}"
+    if args.force_gen or not os.path.isdir(dest_src_dir):
+        ld_library_path = os.path.expanduser("~/work/or-tools_x86_64_Ubuntu-22.04_cpp_v9.10.4067/lib")
+        env = os.environ.copy()
+        env["LD_LIBRARY_PATH"] = f"{ld_library_path}:{env.get('LD_LIBRARY_PATH', '')}"
 
-    subprocess.run(["mult-gen", args.config], env=env, check=True)
-    os.rename(f"{module_name}.v", os.path.join(src_dir, f"{module_name}.v"))
+        subprocess.run(["mult-gen", args.config], env=env, check=True)
+        os.rename(f"{module_name}.v", os.path.join(src_dir, f"{module_name}.v"))
+        os.rename("MG_CPA.v", os.path.join(src_dir, "MG_CPA.v"))
 
-    # Generate Wrapper
-    generate_wrapper(config, src_dir)
+        # Generate Wrapper
+        generate_wrapper(config, src_dir)
+        print(f"Generated files in {src_dir}")
+        # Move to /orfs/flow
+        os.makedirs(os.path.dirname(dest_src_dir), exist_ok=True)
+        if os.path.isdir(dest_src_dir):
+            shutil.rmtree(dest_src_dir)
+        shutil.move(src_dir, dest_src_dir)
+        print(f"Moved generated src files to {dest_src_dir}")
 
     # Generate OpenROAD files
     generate_config_mk(config, platform_dir, args.platform)
     generate_constraint_sdc(config, platform_dir)
     generate_autotuner_json(platform_dir, args)
 
-    # Move MG_CPA.v
-    os.rename("MG_CPA.v", os.path.join(src_dir, "MG_CPA.v"))
 
     # Copy platform-specific files
     if args.platform == "nangate45":
-        shutil.copy("nangate45/grid_strategy-M1-M4-M7.tcl", platform_dir)
-        shutil.copy("nangate45/rules-base.json", platform_dir)
+        shutil.copy(current_file_path + "/nangate45/grid_strategy-M1-M4-M7.tcl", platform_dir)
+        shutil.copy(current_file_path + "/nangate45/rules-base.json", platform_dir)
     elif args.platform == "sky130hd":
-        shutil.copy("sky130hd/rules-base.json", platform_dir)
+        shutil.copy(current_file_path + "/sky130hd/rules-base.json", platform_dir)
+    elif args.platform == "asap7":
+        shutil.copy(current_file_path + "/asap7/rules-base.json", platform_dir)
 
-    print(f"Generated files in {src_dir} and {platform_dir}")
-
-    # Move to /orfs/flow
-    dest_base = "/orfs/flow/designs"
-    dest_platform_dir = os.path.join(dest_base, platform_dir)
-    dest_src_dir = os.path.join(dest_base, src_dir)
+    print(f"Generated platform files in {platform_dir}")
 
     # Create parent directories for destination
     os.makedirs(os.path.dirname(dest_platform_dir), exist_ok=True)
-    os.makedirs(os.path.dirname(dest_src_dir), exist_ok=True)
 
     # Remove destination if it exists to avoid nesting
     if os.path.isdir(dest_platform_dir):
         shutil.rmtree(dest_platform_dir)
     shutil.move(platform_dir, dest_platform_dir)
 
-    if os.path.isdir(dest_src_dir):
-        shutil.rmtree(dest_src_dir)
-    shutil.move(src_dir, dest_src_dir)
-
-    print(f"Moved generated files to {dest_platform_dir} and {dest_src_dir}")
+    print(f"Moved generated platform files to {dest_platform_dir}")
 
 def generate_wrapper(config, src_dir):
     module_name = config["multiplier"]["module_name"]
@@ -152,7 +159,7 @@ set_load -pin_load 0.05 [all_outputs]
         f.write(content)
 
 def generate_autotuner_json(platform_dir, args):
-    with open("autotuner_base.json", "r") as f:
+    with open(current_file_path+"/autotuner_base.json", "r") as f:
         content = json.load(f)
 
     content["_SDC_CLK_PERIOD"]["minmax"] = [args.clock_period_min, args.clock_period_max]

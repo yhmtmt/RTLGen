@@ -14,7 +14,10 @@ def main():
     parser.add_argument("--place_density_max", type=float, default=0.8, help="Max value for PLACE_DENSITY.")
     parser.add_argument("--clock_period_min", type=float, default=0.0, help="Min value for CLOCK_PERIOD.")
     parser.add_argument("--clock_period_max", type=float, default=20.0, help="Max value for CLOCK_PERIOD.")
+    parser.add_argument("--force_gen", type=bool, default=False, help="Force generate if source files exist.")
+
     args = parser.parse_args()
+
 
     if not os.path.isdir(args.config_dir):
         print(f"Error: Directory not found: {args.config_dir}", file=sys.stderr)
@@ -26,7 +29,7 @@ def main():
             print(f"--- Generating design for {config_path} ---")
             
             cmd = [
-                "python3", "generate_design.py",
+                "python3", os.path.dirname(os.path.abspath(__file__))+"/generate_design.py",
                 config_path,
                 args.platform,
                 "--optimization_target", args.optimization_target,
@@ -35,8 +38,10 @@ def main():
                 "--place_density_min", str(args.place_density_min),
                 "--place_density_max", str(args.place_density_max),
                 "--clock_period_min", str(args.clock_period_min),
-                "--clock_period_max", str(args.clock_period_max),
+                "--clock_period_max", str(args.clock_period_max),                
             ]
+            if args.force_gen:
+                cmd.append("--force_gen")
             
             try:
                 subprocess.run(cmd, check=True)
