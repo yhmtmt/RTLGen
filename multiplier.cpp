@@ -12,7 +12,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////////////// MultiplierGenerator methods
 void MultiplierGenerator::build(Operand multiplicand, Operand multiplier,
-                                           CTType ctype, PPType ptype, const std::string &module_name)
+                                           CPAType cptype, CTType ctype, PPType ptype, const std::string &module_name)
 {
     std::cout << "[INFO] Generating partial products..." << std::endl;
     gen_pp(multiplicand, multiplier, ptype);

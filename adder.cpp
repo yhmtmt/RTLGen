@@ -72,6 +72,96 @@ void CarryPropagatingAdder::init(int ninputs)
     }
 }
 
+void CarryPropagatingAdder::init_koggestone(int ninputs)
+{
+    // Resize and clear all relevant vectors
+    input_delays.resize(ninputs, 0.f);
+    output_delays.resize(ninputs, 0.f);
+    nodes.assign(ninputs, std::vector<int>());
+    tarr[CP_P].resize(ninputs);
+    treq[CP_P].resize(ninputs);
+    tarr[CP_G].resize(ninputs);
+    treq[CP_G].resize(ninputs);
+    fo[CP_P].resize(ninputs);
+    fo[CP_G].resize(ninputs);
+
+    for (int i = 0; i < ninputs; i++) {
+        nodes[i].resize(i + 1, -1);
+        tarr[CP_P][i].resize(i + 1, 0.f);
+        treq[CP_P][i].resize(i + 1, FLT_MAX);
+        tarr[CP_G][i].resize(i + 1, 0.f);
+        treq[CP_G][i].resize(i + 1, FLT_MAX);
+        fo[CP_P][i].resize(i + 1, 0);
+        fo[CP_G][i].resize(i + 1, 0);
+
+        nodes[i][i] = i; // input node
+    }
+
+    // Fill Kogge-Stone network
+    // For each bit i, for each j < i, set nodes[i][j] appropriately
+    for (int i = 0; i < ninputs; i++) {
+        for (int j = 0; j < i; j++) {
+            int span = i - j;
+            // Find the largest power of 2 less than or equal to span
+            int d = 1;
+            while (d * 2 <= span) d *= 2;
+            int k = i - d;
+            nodes[i][j] = k;
+        }
+    }
+}
+
+void CarryPropagatingAdder::init_brentkung(int ninputs)
+{
+    // Resize and clear all relevant vectors
+    input_delays.resize(ninputs, 0.f);
+    output_delays.resize(ninputs, 0.f);
+    nodes.assign(ninputs, std::vector<int>());
+    tarr[CP_P].resize(ninputs);
+    treq[CP_P].resize(ninputs);
+    tarr[CP_G].resize(ninputs);
+    treq[CP_G].resize(ninputs);
+    fo[CP_P].resize(ninputs);
+    fo[CP_G].resize(ninputs);
+
+    for (int i = 0; i < ninputs; i++) {
+        nodes[i].resize(i + 1, -1);
+        tarr[CP_P][i].resize(i + 1, 0.f);
+        treq[CP_P][i].resize(i + 1, FLT_MAX);
+        tarr[CP_G][i].resize(i + 1, 0.f);
+        treq[CP_G][i].resize(i + 1, FLT_MAX);
+        fo[CP_P][i].resize(i + 1, 0);
+        fo[CP_G][i].resize(i + 1, 0);
+
+        nodes[i][i] = i; // input node
+    }
+
+    // Brent-Kung network construction
+    // Up-sweep (reduce) phase
+    int levels = 0;
+    for (int t = 1; t < ninputs; t <<= 1) levels++;
+    for (int d = 2; d < ninputs; d <<= 1) {
+        for (int i = d - 1; i < ninputs; i += d) {
+            int j = i - d + 1;
+            if (j >= 0) {
+                nodes[i][j] = i - d / 2;
+            }
+        }
+    }
+
+    // Down-sweep (propagate) phase
+    for (int i = 2; i < ninputs; i++){
+        if(nodes[i][0] == -1){
+            for(int k = i - 1; k >= 0; k--){
+                if(nodes[k][0] != -1 && nodes[k][0] < i){
+                    nodes[i][0] = k;
+                    break;
+                }
+            }
+        }
+    } 
+}
+
 
 float CarryPropagatingAdder::do_sta()
 {

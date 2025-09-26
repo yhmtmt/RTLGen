@@ -17,6 +17,7 @@ struct MultiplierConfig {
     std::string module_name; // Added module name
     std::string ppg_algorithm;
     std::string compressor_structure;
+    std::string cpa_structure;
     int pipeline_depth;
 };
 
@@ -44,7 +45,7 @@ bool readConfig(const std::string& filename, CircuitConfig& config) {
         config.multiplier.ppg_algorithm = j["multiplier"]["ppg_algorithm"];
         config.multiplier.compressor_structure = j["multiplier"]["compressor_structure"];
         config.multiplier.pipeline_depth = j["multiplier"]["pipeline_depth"];
-
+        config.multiplier.cpa_structure = j["multiplier"]["cpa_structure"];
     } catch (const std::exception& e) {
         std::cerr << "Error: Invalid JSON format: " << e.what() << std::endl;
         return false;
@@ -87,10 +88,20 @@ int main(int argc, char** argv) {
         ctype = AdderTree;
     } else if (config.multiplier.compressor_structure == "CSATree") {
         ctype = CSATree;
-    } else if (config.multiplier.compressor_structure == "Sequential") {
-        ctype = Sequential;
     } else {
         std::cerr << "Error: Unknown compressor structure: " << config.multiplier.compressor_structure << "\n";
+        return 1;
+    }
+
+    CPAType cptype;
+    if (config.multiplier.cpa_structure == "Ripple") {
+        cptype = CPA_Ripple;
+    } else if (config.multiplier.cpa_structure == "KoggeStone") {
+        cptype = CPA_KoggeStone;
+    } else if (config.multiplier.cpa_structure == "BrentKung") {
+        cptype = CPA_BrentKung;
+    } else {
+        std::cerr << "Error: Unknown CPA structure: " << config.multiplier.cpa_structure << "\n";
         return 1;
     }
 
@@ -115,7 +126,7 @@ int main(int argc, char** argv) {
     }
 
     MultiplierGenerator mg;
-    mg.build(multiplicand, multiplier, ctype, ptype, config.multiplier.module_name);
+    mg.build(multiplicand, multiplier, cptype, ctype, ptype, config.multiplier.module_name);
 
     return 0;
 }

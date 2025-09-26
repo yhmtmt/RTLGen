@@ -316,8 +316,13 @@ enum PPType{
 // Compression Tree type
 enum CTType{
     AdderTree, // 2:1 Adder
-    CSATree,   // 3:2 FA and 2:2 HA
-    Sequential // Shift Register base
+    CSATree   // 3:2 FA and 2:2 HA
+};
+
+enum CPAType{
+    CPA_Ripple, // Ripple Carry Adder
+    CPA_KoggeStone, // Kogge-Stone Adder
+    CPA_BrentKung // Brent-Kung Adder
 };
 
 class MultiplierGenerator
@@ -401,7 +406,7 @@ public:
     }
 
     void build(Operand multiplicand, Operand multiplier,
-                          CTType ctype, PPType ppType, const std::string& module_name);
+                          CPAType cptype, CTType ctype, PPType ppType, const std::string& module_name);
 };
 
 #endif

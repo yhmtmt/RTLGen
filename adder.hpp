@@ -46,7 +46,9 @@ struct CarryPropagatingAdder
     void clear();
 
     void init(int ninputs);
-
+    void init_koggestone(int ninputs);
+    void init_brentkung(int ninputs);
+    
     bool calc_tarr(int i, int j);
 
     bool calc_tpreq(int i, int j, float tpreq);
