@@ -38,7 +38,7 @@ To run the generator, you will need to create a JSON configuration file. The con
 Once you have created the configuration file, you can run the generator with the following command:
 
 ```
-./bin/mult-gen <config.json>
+./bin/rtlgen <config.json>
 ```
 
 This will generate a Verilog module for a multiplier with the specified parameters. The generated module will be placed in the execution directory.
