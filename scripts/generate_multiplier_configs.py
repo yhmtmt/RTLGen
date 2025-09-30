@@ -10,31 +10,34 @@ def generate_configs(max_bit_width):
     os.makedirs(output_dir)
 
     algorithms = ["Booth4", "Normal"]
+    cpa_structures = ["KoggeStone", "BrentKung", "Sklansky", "Ripple"]
     
     bit_width = 4
     while bit_width <= max_bit_width:
         for signed in [True, False]:
             for algorithm in algorithms:
-                signed_str = "signed" if signed else "unsigned"
-                signed_suffix = "s" if signed else "u"
-                
-                config = {
-                    "operand": {
-                        "bit_width": bit_width,
-                        "signed": signed
-                    },
-                    "multiplier": {
-                        "module_name": f"{algorithm.lower()}_multiplier{bit_width}{signed_suffix}",
-                        "ppg_algorithm": algorithm,
-                        "compressor_structure": "AdderTree",
-                        "pipeline_depth": 1
+                for cpa_structure in cpa_structures:
+                    signed_str = "signed" if signed else "unsigned"
+                    signed_suffix = "s" if signed else "u"
+                    
+                    config = {
+                        "operand": {
+                            "bit_width": bit_width,
+                            "signed": signed
+                        },
+                        "multiplier": {
+                            "module_name": f"{algorithm.lower()}_multiplier_{cpa_structure.lower()}_{bit_width}{signed_suffix}",
+                            "ppg_algorithm": algorithm,
+                            "compressor_structure": "AdderTree",
+                            "cpa_structure": cpa_structure,
+                            "pipeline_depth": 1
+                        }
                     }
-                }
-                
-                filename = f"{output_dir}/config_{algorithm.lower()}_{signed_str}_{bit_width}bit.json"
-                
-                with open(filename, 'w') as f:
-                    json.dump(config, f, indent=4)
+                    
+                    filename = f"{output_dir}/config_{algorithm.lower()}_{cpa_structure.lower()}_{signed_str}_{bit_width}bit.json"
+                    
+                    with open(filename, 'w') as f:
+                        json.dump(config, f, indent=4)
         
         bit_width *= 2
 
