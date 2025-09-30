@@ -14,13 +14,13 @@ include_directories(${GTEST_INCLUDE_DIRS})
 set(ORTOOLS_DIR /home/yhmtmt/work/or-tools_x86_64_Ubuntu-22.04_cpp_v9.10.4067)
 
 # Add the main executable
-add_executable(mult-gen main.cpp multiplier.cpp adder.cpp)
-target_include_directories(mult-gen PUBLIC ${ORTOOLS_DIR}/include ${PROJECT_SOURCE_DIR}/json/include)
-target_link_directories(mult-gen PUBLIC ${ORTOOLS_DIR}/lib)
-target_link_libraries(mult-gen ortools)
+add_executable(rtlgen main.cpp multiplier.cpp adder.cpp)
+target_include_directories(rtlgen PUBLIC ${ORTOOLS_DIR}/include ${PROJECT_SOURCE_DIR}/json/include)
+target_link_directories(rtlgen PUBLIC ${ORTOOLS_DIR}/lib)
+target_link_libraries(rtlgen ortools)
 
 set (CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR})
-install(TARGETS mult-gen DESTINATION bin)
+install(TARGETS rtlgen DESTINATION bin)
 
 # Add the test executable
 add_executable(test_boolexp test_boolexp.cpp multiplier.cpp adder.cpp)

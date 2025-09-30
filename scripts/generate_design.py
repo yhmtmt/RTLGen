@@ -8,7 +8,7 @@ import shutil
 current_file_path = os.path.dirname(os.path.abspath(__file__))
 
 def main():
-    parser = argparse.ArgumentParser(description="Generate multiplier Verilog and OpenROAD files.")
+    parser = argparse.ArgumentParser(description="Generate Verilog and OpenROAD files.")
     parser.add_argument("config", help="Path to the configuration JSON file.")
     parser.add_argument("platform", help="Name of the platform (e.g., sky130hd, nangate45).")
     parser.add_argument("--optimization_target", default="area", choices=["area", "timing", "power"], help="Optimization target for autotuner.")
@@ -23,10 +23,13 @@ def main():
     args = parser.parse_args()
 
 
-    with open(args.config, "r") as f:
-        config = json.load(f)
+    if "multiplier" in config:
+        module_name = config["multiplier"]["module_name"]
+    elif "adder" in config:
+        module_name = config["adder"]["module_name"]
+    else:
+        raise ValueError("No multiplier or adder configuration found in the JSON file.")
 
-    module_name = config["multiplier"]["module_name"]
     wrapper_name = f"{module_name}_wrapper"
 
     # Create directories
@@ -47,9 +50,10 @@ def main():
         env = os.environ.copy()
         env["LD_LIBRARY_PATH"] = f"{ld_library_path}:{env.get('LD_LIBRARY_PATH', '')}"
 
-        subprocess.run(["mult-gen", args.config], env=env, check=True)
+        subprocess.run(["rtlgen", args.config], env=env, check=True)
         os.rename(f"{module_name}.v", os.path.join(src_dir, f"{module_name}.v"))
-        os.rename("MG_CPA.v", os.path.join(src_dir, "MG_CPA.v"))
+        if "multiplier" in config:
+            os.rename("MG_CPA.v", os.path.join(src_dir, "MG_CPA.v"))
 
         # Generate Wrapper
         generate_wrapper(config, src_dir)
@@ -89,10 +93,11 @@ def main():
     print(f"Moved generated platform files to {dest_platform_dir}")
 
 def generate_wrapper(config, src_dir):
-    module_name = config["multiplier"]["module_name"]
-    bit_width = config["operand"]["bit_width"]
-    wrapper_name = f"{module_name}_wrapper"
-    wrapper_content = f"""
+    if "multiplier" in config:
+        module_name = config["multiplier"]["module_name"]
+        bit_width = config["operand"]["bit_width"]
+        wrapper_name = f"{module_name}_wrapper"
+        wrapper_content = f"""
 module {wrapper_name}(
   input clk,
   input [{bit_width-1}:0] multiplicand,
@@ -121,11 +126,59 @@ module {wrapper_name}(
 
 endmodule
 """
+    elif "adder" in config:
+        module_name = config["adder"]["module_name"]
+        bit_width = config["operand"]["bit_width"]
+        wrapper_name = f"{module_name}_wrapper"
+        wrapper_content = f"""
+module {wrapper_name}(
+  input clk,
+  input [{bit_width-1}:0] a,
+  input [{bit_width-1}:0] b,
+  output [{bit_width-1}:0] sum,
+  output cout
+);
+
+  reg [{bit_width-1}:0] a_reg;
+  reg [{bit_width-1}:0] b_reg;
+  wire [{bit_width-1}:0] sum_wire;
+  wire cout_wire;
+  reg [{bit_width-1}:0] sum_reg;
+  reg cout_reg;
+
+  {module_name} dut (
+    .a(a_reg),
+    .b(b_reg),
+    .sum(sum_wire),
+    .cout(cout_wire)
+  );
+
+  always @(posedge clk) begin
+    a_reg <= a;
+    b_reg <= b;
+    sum_reg <= sum_wire;
+    cout_reg <= cout_wire;
+  end
+
+  assign sum = sum_reg;
+  assign cout = cout_reg;
+
+endmodule
+"""
+    else:
+        raise ValueError("No multiplier or adder configuration found in the JSON file.")
+
     with open(os.path.join(src_dir, f"{wrapper_name}.v"), "w") as f:
         f.write(wrapper_content)
 
 def generate_config_mk(config, platform_dir, platform):
-    module_name = config["multiplier"]["module_name"]
+    if "multiplier" in config:
+        module_name = config["multiplier"]["module_name"]
+    elif "adder" in config:
+        module_name = config["adder"]["module_name"]
+    else:
+        raise ValueError("No multiplier or adder configuration found in the JSON file.")
+
     wrapper_name = f"{module_name}_wrapper"
     content = f"""
 export PLATFORM = {platform}
