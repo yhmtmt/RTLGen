@@ -58,7 +58,7 @@ TEST(AdderText, RippleCarryAdder) {
     const int width = 11;
     const std::string module_name = "ripplecarry_adder";
     CarryPropagatingAdder adder;
-    adder.init(width);
+    adder.init(width, CPA_Ripple);
     adder.do_sta();
     adder.dump_hdl(module_name);
     generate_adder_testbench(module_name, width);
@@ -69,8 +69,7 @@ TEST(AdderTest, KoggeStoneAdder) {
     const int width = 11;
     const std::string module_name = "koggestone_adder";
     CarryPropagatingAdder adder;
-    adder.init_koggestone(width);
-    adder.do_sta();
+    adder.init(width, CPA_KoggeStone);
     adder.dump_hdl(module_name);
     generate_adder_testbench(module_name, width);
     run_iverilog_test(module_name);
@@ -80,7 +79,7 @@ TEST(AdderTest, BrentKungAdder) {
     const int width = 11;
     const std::string module_name = "brentkung_adder";
     CarryPropagatingAdder adder;
-    adder.init_brentkung(width);
+    adder.init(width, CPA_BrentKung);
     adder.do_sta();
     adder.dump_hdl(module_name);
     generate_adder_testbench(module_name, width);
@@ -91,7 +90,7 @@ TEST(AdderTest, SklanskyAdder) {
     const int width = 11;
     const std::string module_name = "sklansky_adder";
     CarryPropagatingAdder adder;
-    adder.init_sklansky(width);
+    adder.init(width, CPA_Sklansky);
     adder.do_sta();
     adder.dump_hdl(module_name);
     generate_adder_testbench(module_name, width);

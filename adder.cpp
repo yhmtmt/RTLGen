@@ -43,9 +43,8 @@ void CarryPropagatingAdder::clear(){
     fo[CP_G].clear();
 }
 
-void CarryPropagatingAdder::init(int ninputs)
+void CarryPropagatingAdder::init(int ninputs, CPAType cpatype)
 {
-    // initially ripple carry adder is configured.
     input_delays.resize(ninputs, 0.f);
     output_delays.resize(ninputs, 0.f);
     nodes.resize(ninputs);
@@ -66,6 +65,32 @@ void CarryPropagatingAdder::init(int ninputs)
         fo[CP_G][i].resize(i + 1, 0);
 
         nodes[i][i] = i;     // input node
+    }
+
+    switch(cpatype){
+        case CPA_Ripple:
+            init_ripple(ninputs);
+            break;
+        case CPA_KoggeStone:
+            init_koggestone(ninputs);
+            break;
+        case CPA_BrentKung:
+            init_brentkung(ninputs);
+            break;
+        case CPA_Sklansky:
+            init_sklansky(ninputs);
+            break;
+        default:
+            std::cerr << "[ERROR] Unknown CPAType in CarryPropagatingAdder::init" << std::endl;
+            exit(1);
+    }
+
+    do_sta();
+}
+
+void CarryPropagatingAdder::init_ripple(int ninputs)
+{
+    for (int i = 0; i < ninputs; i++){
         // (i,0) is <(i,i),(i-1,0)>
         if(i != 0)
             nodes[i][0] = i - 1; // ouptut node
@@ -74,29 +99,6 @@ void CarryPropagatingAdder::init(int ninputs)
 
 void CarryPropagatingAdder::init_koggestone(int ninputs)
 {
-    // Resize and clear all relevant vectors
-    input_delays.resize(ninputs, 0.f);
-    output_delays.resize(ninputs, 0.f);
-    nodes.assign(ninputs, std::vector<int>());
-    tarr[CP_P].resize(ninputs);
-    treq[CP_P].resize(ninputs);
-    tarr[CP_G].resize(ninputs);
-    treq[CP_G].resize(ninputs);
-    fo[CP_P].resize(ninputs);
-    fo[CP_G].resize(ninputs);
-
-    for (int i = 0; i < ninputs; i++) {
-        nodes[i].resize(i + 1, -1);
-        tarr[CP_P][i].resize(i + 1, 0.f);
-        treq[CP_P][i].resize(i + 1, FLT_MAX);
-        tarr[CP_G][i].resize(i + 1, 0.f);
-        treq[CP_G][i].resize(i + 1, FLT_MAX);
-        fo[CP_P][i].resize(i + 1, 0);
-        fo[CP_G][i].resize(i + 1, 0);
-
-        nodes[i][i] = i; // input node
-    }
-
     // Fill Kogge-Stone network
     // For each bit i, for each j < i, set nodes[i][j] appropriately
     for (int i = 0; i < ninputs; i++) {
@@ -113,29 +115,6 @@ void CarryPropagatingAdder::init_koggestone(int ninputs)
 
 void CarryPropagatingAdder::init_brentkung(int ninputs)
 {
-    // Resize and clear all relevant vectors
-    input_delays.resize(ninputs, 0.f);
-    output_delays.resize(ninputs, 0.f);
-    nodes.assign(ninputs, std::vector<int>());
-    tarr[CP_P].resize(ninputs);
-    treq[CP_P].resize(ninputs);
-    tarr[CP_G].resize(ninputs);
-    treq[CP_G].resize(ninputs);
-    fo[CP_P].resize(ninputs);
-    fo[CP_G].resize(ninputs);
-
-    for (int i = 0; i < ninputs; i++) {
-        nodes[i].resize(i + 1, -1);
-        tarr[CP_P][i].resize(i + 1, 0.f);
-        treq[CP_P][i].resize(i + 1, FLT_MAX);
-        tarr[CP_G][i].resize(i + 1, 0.f);
-        treq[CP_G][i].resize(i + 1, FLT_MAX);
-        fo[CP_P][i].resize(i + 1, 0);
-        fo[CP_G][i].resize(i + 1, 0);
-
-        nodes[i][i] = i; // input node
-    }
-
     // Brent-Kung network construction
     // Up-sweep (reduce) phase
     int levels = 0;
@@ -164,29 +143,6 @@ void CarryPropagatingAdder::init_brentkung(int ninputs)
 
 void CarryPropagatingAdder::init_sklansky(int ninputs)
 {
-    // Resize and clear all relevant vectors
-    input_delays.resize(ninputs, 0.f);
-    output_delays.resize(ninputs, 0.f);
-    nodes.assign(ninputs, std::vector<int>());
-    tarr[CP_P].resize(ninputs);
-    treq[CP_P].resize(ninputs);
-    tarr[CP_G].resize(ninputs);
-    treq[CP_G].resize(ninputs);
-    fo[CP_P].resize(ninputs);
-    fo[CP_G].resize(ninputs);
-
-    for (int i = 0; i < ninputs; i++) {
-        nodes[i].resize(i + 1, -1);
-        tarr[CP_P][i].resize(i + 1, 0.f);
-        treq[CP_P][i].resize(i + 1, FLT_MAX);
-        tarr[CP_G][i].resize(i + 1, 0.f);
-        treq[CP_G][i].resize(i + 1, FLT_MAX);
-        fo[CP_P][i].resize(i + 1, 0);
-        fo[CP_G][i].resize(i + 1, 0);
-
-        nodes[i][i] = i; // input node
-    }
-
     // Sklansky network construction (divide-and-conquer, "binary tree" adder)
     for (int d = 1; d < ninputs; d <<= 1) {
         for (int i = d; i < ninputs; i += 2*d) {

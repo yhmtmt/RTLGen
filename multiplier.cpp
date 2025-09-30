@@ -92,7 +92,7 @@ void MultiplierGenerator::dump_hdl(Operand multiplicand, Operand multiplier, con
     dump_hdl_ct(verilog_file);
 
     // instantiate carry propagating adder
-    int width_cpa = cpa.nodes.size();
+    int width_cpa = cpa.get_num_inputs();
     verilog_file << "  wire [" << width_cpa - 1 << ":0] cta;\n";
     verilog_file << "  wire [" << width_cpa - 1 << ":0] ctb;\n";
     verilog_file << "  wire [" << width_cpa - 1 << ":0] cts;\n";
@@ -1356,22 +1356,7 @@ void MultiplierGenerator::build_cpa(CPAType cptype)
     }
     
     // the lsbs and the msbs of the adder can only be 1 bit adder. 
-    switch(cptype){
-        case CPA_Ripple:
-            cpa.init(num_cpa_inputs.size());
-            break;
-        case CPA_BrentKung:
-            cpa.init_brentkung(num_cpa_inputs.size());
-            break;
-        case CPA_KoggeStone:
-            cpa.init_koggestone(num_cpa_inputs.size());
-            break;
-        case CPA_Sklansky:
-            cpa.init_sklansky(num_cpa_inputs.size());
-            break;
-
-    }   
-    cpa.do_sta();
+    cpa.init(num_cpa_inputs.size(), cptype);
 }
 
 

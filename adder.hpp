@@ -22,8 +22,9 @@ enum CPAType{
 enum CPOperatorInput { CP_P0, CP_G0, CP_P1, CP_G1 };
 enum CPOperatorOutput { CP_P, CP_G };
 
-struct CarryPropagatingAdder
+class CarryPropagatingAdder
 {
+private:
     std::vector<float> input_delays, output_delays;
     std::vector<std::vector<int>> nodes;
     std::vector<std::vector<float>> tarr[2]; // arrival time for each node. CP_P and CP_G
@@ -43,16 +44,7 @@ struct CarryPropagatingAdder
     double area[2]; // area for p and g
     double delay_p, delay_g; // delay generating  (p, g) from input (a, b)
 
-    CarryPropagatingAdder();
-
-    ~CarryPropagatingAdder()
-    {
-        clear();
-    }
-
-    void clear();
-
-    void init(int ninputs);
+    void init_ripple(int ninputs);
     void init_koggestone(int ninputs);
     void init_brentkung(int ninputs);
     void init_sklansky(int ninputs);
@@ -109,10 +101,23 @@ struct CarryPropagatingAdder
 
         return true;
     }
+
+public:
+    CarryPropagatingAdder();
+
+    ~CarryPropagatingAdder()
+    {
+        clear();
+    }
+
+    void clear();
+
+    void init(int ninputs, CPAType cpatype);
     float do_sta();
 
-    void dump_hdl(const std::string& module_name);
-};
+    void dump_hdl(const std::string &module_name);
 
+    const int get_num_inputs(){return nodes.size();};
+};
 
 #endif
