@@ -126,7 +126,7 @@ int main(int argc, char** argv) {
     }
 
     MultiplierGenerator mg;
-    mg.build(multiplicand, multiplier, cptype, ctype, ptype, config.multiplier.module_name);
+    mg.build(multiplicand, multiplier, ctype, ptype, cptype, config.multiplier.module_name);
 
     return 0;
 }

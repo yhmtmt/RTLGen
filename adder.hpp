@@ -7,6 +7,13 @@
 #include <cfloat>
 #include <list>
 
+enum CPAType{
+    CPA_Ripple, // Ripple Carry Adder
+    CPA_KoggeStone, // Kogge-Stone Adder
+    CPA_BrentKung, // Brent-Kung Adder
+    CPA_Sklansky // Sklansky Adder
+};
+
 // Carry Propagating Adder
 // takes generally 2 tuple of (p0,g0) and (p1,g1) as input
 // (p0,g0) aggregates lower inputs and (p1,g1) aggregates higher inputs.
@@ -48,7 +55,8 @@ struct CarryPropagatingAdder
     void init(int ninputs);
     void init_koggestone(int ninputs);
     void init_brentkung(int ninputs);
-    
+    void init_sklansky(int ninputs);
+
     bool calc_tarr(int i, int j);
 
     bool calc_tpreq(int i, int j, float tpreq);
@@ -61,7 +69,7 @@ struct CarryPropagatingAdder
             return false; // no path
 
         fo[CP_G][i][j] += 1; // g(i, j) is derived from g(i, k+1) and p(i, k+1) g(k, j)
-        if (fo[CP_G][i][j] != 1)
+        if (fo[CP_G][i][j] != 1 || i == j)
             return true; // already calculated
 
         int k = nodes[i][j];
@@ -84,7 +92,7 @@ struct CarryPropagatingAdder
             return false; // no path
 
         fo[CP_P][i][j] += 1; // p(i, j) is derived from p(i, k+1) p(k, j)
-        if (fo[CP_P][i][j] != 1)
+        if (fo[CP_P][i][j] != 1 || i == j)
             return true; // already calculated
 
         int k = nodes[i][j];
@@ -99,7 +107,7 @@ struct CarryPropagatingAdder
                 return false;
         }
 
-        // p(i, j) = p(i, k+1) . p(k, j)
+        return true;
     }
     float do_sta();
 

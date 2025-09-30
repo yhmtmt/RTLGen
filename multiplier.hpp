@@ -319,12 +319,6 @@ enum CTType{
     CSATree   // 3:2 FA and 2:2 HA
 };
 
-enum CPAType{
-    CPA_Ripple, // Ripple Carry Adder
-    CPA_KoggeStone, // Kogge-Stone Adder
-    CPA_BrentKung // Brent-Kung Adder
-};
-
 class MultiplierGenerator
 {
 private:
@@ -377,7 +371,7 @@ private:
     // final carry propagation adder
     CarryPropagatingAdder cpa; // carry propagating adder
     int cpa_col_start, cpa_col_end;
-    void build_cpa(); 
+    void build_cpa(CPAType cptype); 
 
     // dump hdl files of the multiplier. called from build function.
     void dump_hdl(Operand multiplicand, Operand multiplier, const std::string& module_name);
@@ -406,7 +400,7 @@ public:
     }
 
     void build(Operand multiplicand, Operand multiplier,
-                          CPAType cptype, CTType ctype, PPType ppType, const std::string& module_name);
+                          CTType ctype, PPType ppType, CPAType cptype, const std::string& module_name);
 };
 
 #endif

@@ -162,6 +162,43 @@ void CarryPropagatingAdder::init_brentkung(int ninputs)
     } 
 }
 
+void CarryPropagatingAdder::init_sklansky(int ninputs)
+{
+    // Resize and clear all relevant vectors
+    input_delays.resize(ninputs, 0.f);
+    output_delays.resize(ninputs, 0.f);
+    nodes.assign(ninputs, std::vector<int>());
+    tarr[CP_P].resize(ninputs);
+    treq[CP_P].resize(ninputs);
+    tarr[CP_G].resize(ninputs);
+    treq[CP_G].resize(ninputs);
+    fo[CP_P].resize(ninputs);
+    fo[CP_G].resize(ninputs);
+
+    for (int i = 0; i < ninputs; i++) {
+        nodes[i].resize(i + 1, -1);
+        tarr[CP_P][i].resize(i + 1, 0.f);
+        treq[CP_P][i].resize(i + 1, FLT_MAX);
+        tarr[CP_G][i].resize(i + 1, 0.f);
+        treq[CP_G][i].resize(i + 1, FLT_MAX);
+        fo[CP_P][i].resize(i + 1, 0);
+        fo[CP_G][i].resize(i + 1, 0);
+
+        nodes[i][i] = i; // input node
+    }
+
+    // Sklansky network construction (divide-and-conquer, "binary tree" adder)
+    for (int d = 1; d < ninputs; d <<= 1) {
+        for (int i = d; i < ninputs; i += 2*d) {
+            int j = i - d;
+            if (j >= 0) {
+                for(int k = 0; k < d && i + k < ninputs; k++){
+                    nodes[i+k][j] = i - 1;
+                }
+            }
+        }
+    }
+}
 
 float CarryPropagatingAdder::do_sta()
 {
@@ -185,29 +222,24 @@ float CarryPropagatingAdder::do_sta()
     // initialization
     for (int i = 0; i < nodes.size(); i++)
     {
-        for (int j = 1; j < nodes[i].size(); j++)
+        for (int j = 0; j < nodes[i].size(); j++)
         {
             fo[CP_P][i][j] = 0;
             fo[CP_G][i][j] = 0;
         }
-
-        // sum is computed as G(i-1,0)^P(i,i) for i>0, P(0,0) for i=0
-        // all G(i,0) has 1 funout for sum computation
-        fo[CP_G][i][0] = 1;
-        fo[CP_P][i][0] = 0;
-        // all P(i,i) has 1 funout for sum computation
-        fo[CP_G][i][i] = 0; 
-        fo[CP_P][i][i] = 1; 
     }
 
-    // compute width w node
+    // sum is computed as G(i-1,0)^P(i,i) for i>0, P(0,0) for i=0
     for (int i = 0; i < nodes.size(); i++)
     {
-        if(!calc_gfo(i, 0))
-            return false; // error in the path
-        if(!calc_pfo(i, 0))
-            return false; // error in the path
+        if (i > 0)
+        {
+            calc_gfo(i - 1, 0);
+        }
+        calc_pfo(i, i);
     }
+    // cout is g_{n-1}_0
+    calc_gfo(nodes.size() - 1, 0);
 
     // area computation (not including input and output nodes)
     for (int i = 0; i < nodes.size(); i++)
@@ -254,6 +286,7 @@ float CarryPropagatingAdder::do_sta()
         if(!calc_tgreq(i, 0, tcrit))    
             return false;
     }
+    return tcrit;
 }
 
 bool CarryPropagatingAdder::calc_tarr(int i, int j)
@@ -283,9 +316,15 @@ bool CarryPropagatingAdder::calc_tarr(int i, int j)
 
 bool CarryPropagatingAdder::calc_tpreq(int i, int j, float tpreq)
 {
-    if (treq[CP_P][i][j] <= 0)
+//    std::cout << "calc_tpreq(" << i << ", " << j << ", " << tpreq << ")\n";
+    if (treq[CP_P][i][j] <= tpreq)
         return true; // already calculated
+
     treq[CP_P][i][j] = tpreq;
+
+    if(i == j){ // input node
+        return true;
+    }
 
     int k = nodes[i][j];
     if (k == -1)
@@ -293,11 +332,11 @@ bool CarryPropagatingAdder::calc_tpreq(int i, int j, float tpreq)
 
     // upper parent (p is derived only from p1)
     tpreq = treq[CP_P][i][j] - delays[CP_P1][CP_P];
-    if (!calc_tpreq(k, j, tpreq))
+    if (!calc_tpreq(i, k+1, tpreq))
         return false;
 
     // lower parent (p is derived from p0)
-    treq[CP_P][k][j] = treq[CP_P][i][j] - delays[CP_P0][CP_P]; // p0 to p
+    tpreq = treq[CP_P][i][j] - delays[CP_P0][CP_P]; // p0 to p
     if (!calc_tpreq(k, j, tpreq))
         return false;
 
@@ -305,10 +344,14 @@ bool CarryPropagatingAdder::calc_tpreq(int i, int j, float tpreq)
 }
 bool CarryPropagatingAdder::calc_tgreq(int i, int j, float tgreq)
 {
-
+//    std::cout << "calc_tgreq(" << i << ", " << j << ", " << tgreq << ")\n";
     if (treq[CP_G][i][j] <= tgreq)
         return true; // already calculated
     treq[CP_G][i][j] = tgreq;
+
+    if(i == j){// input node
+        return true;
+    }
 
     int k = nodes[i][j];
     if (k == -1)
@@ -344,7 +387,7 @@ void CarryPropagatingAdder::dump_hdl(const std::string& module_name)
     verilog_file << "  input [" << nodes.size() - 1 << ":0] a,\n";
     verilog_file << "  input [" << nodes.size() - 1 << ":0] b,\n";
     verilog_file << "  output [" << nodes.size() - 1 << ":0] sum,\n";
-    verilog_file << "  output [" << nodes.size() - 1 << ":0] cout\n";
+    verilog_file << "  output cout\n";
     verilog_file << ");\n\n";
 
     // Write the logic for the carry propagating adder
@@ -357,14 +400,11 @@ void CarryPropagatingAdder::dump_hdl(const std::string& module_name)
         verilog_file << " assign g_" << i << "_" << i << " = a[" << i << "] & b[" << i << "];\n";
         for (int j = 0; j < i; j++)
         {
-            if (nodes[i][j] == -1)
+            if (nodes[i][j] != -1)
             {
-                continue; // no path
-            }
-            if(fo[CP_P][i][j] >0)
                 verilog_file << "  wire p_" << i << "_" << j << ";\n";
-            if(fo[CP_G][i][j] >0)
                 verilog_file << "  wire g_" << i << "_" << j << ";\n";
+            }
         }
     }
 
@@ -377,18 +417,15 @@ void CarryPropagatingAdder::dump_hdl(const std::string& module_name)
             // p_i_k+1, g_i_k+1, p_k_j, g_k_j
             // p_i_j = p_i_k+1 . p_k_j
             // g_i_j = g_i_k+1 + p_i_k+1 . g_k_j
-            if (fo[CP_P][i][j] > 0)
-                verilog_file << " assign p_" << i << "_" << j << " = p_" << i << "_" << k+1 << " & p_" << k << "_" << j << ";\n";
-            if (fo[CP_G][i][j] > 0)
-                verilog_file << " assign g_" << i << "_" << j << " = g_" << i << "_" << k+1 << " | (p_" << i << "_" << k+1 << " & g_" << k << "_" << j << ");\n";
+            verilog_file << " assign p_" << i << "_" << j << " = p_" << i << "_" << k+1 << " & p_" << k << "_" << j << ";\n";
+            verilog_file << " assign g_" << i << "_" << j << " = g_" << i << "_" << k+1 << " | (p_" << i << "_" << k+1 << " & g_" << k << "_" << j << ");\n";
         }
         if (i == 0)
             verilog_file << " assign sum[" << i << "] = p_0_0;\n";
         else
             verilog_file << " assign sum[" << i << "] = p_" << i << "_" << i << "^ g_" << i - 1 << "_0;\n";
-        
-        verilog_file << " assign cout[" << i << "] = g_" << i << "_" << 0 << ";\n";
     }
+    verilog_file << " assign cout = g_" << nodes.size() - 1 << "_0;\n";
     verilog_file << "endmodule\n";
 
     verilog_file.close();

@@ -30,3 +30,12 @@ target_link_libraries(test_boolexp ${GTEST_LIBRARIES} GTest::Main pthread ortool
 
 # Add the test to CTest
 add_test(NAME BoolExpTest COMMAND test_boolexp)
+
+# Add the test executable for adder
+add_executable(test_adder test_adder.cpp multiplier.cpp adder.cpp)
+target_include_directories(test_adder PUBLIC ${ORTOOLS_DIR}/include ${PROJECT_SOURCE_DIR}/json/include)
+target_link_directories(test_adder PUBLIC ${ORTOOLS_DIR}/lib)
+target_link_libraries(test_adder ${GTEST_LIBRARIES} GTest::Main pthread ortools)
+
+# Add the test to CTest
+add_test(NAME AdderTest COMMAND test_adder)

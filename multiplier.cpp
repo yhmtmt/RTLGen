@@ -12,7 +12,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////////////// MultiplierGenerator methods
 void MultiplierGenerator::build(Operand multiplicand, Operand multiplier,
-                                           CPAType cptype, CTType ctype, PPType ptype, const std::string &module_name)
+                                           CTType ctype, PPType ptype, CPAType cptype, const std::string &module_name)
 {
     std::cout << "[INFO] Generating partial products..." << std::endl;
     gen_pp(multiplicand, multiplier, ptype);
@@ -21,7 +21,7 @@ void MultiplierGenerator::build(Operand multiplicand, Operand multiplier,
     build_ct();
 
     std::cout << "[INFO] Building carry-propagate adder..." << std::endl;
-    build_cpa();
+    build_cpa(cptype);
 
     std::cout << "[INFO] Dumping Verilog HDL..." << std::endl;
     dump_hdl(multiplicand, multiplier, module_name);
@@ -1316,7 +1316,7 @@ void MultiplierGenerator::opt_ct_wire_assignment()
     std::cout << "[INFO] Finished wire assignment optimization: final max delay = " << tmax << std::endl;
 }
 
-void MultiplierGenerator::build_cpa()
+void MultiplierGenerator::build_cpa(CPAType cptype)
 {
     // ct_pps[0][icol] is the number of pps in 0th stage column icol. it could be 0 or 1. otherwise 2 because compression tree aligns the output to 2 
     // cols_pps number of columns in the pps.
@@ -1356,7 +1356,21 @@ void MultiplierGenerator::build_cpa()
     }
     
     // the lsbs and the msbs of the adder can only be 1 bit adder. 
-    cpa.init(num_cpa_inputs.size());
+    switch(cptype){
+        case CPA_Ripple:
+            cpa.init(num_cpa_inputs.size());
+            break;
+        case CPA_BrentKung:
+            cpa.init_brentkung(num_cpa_inputs.size());
+            break;
+        case CPA_KoggeStone:
+            cpa.init_koggestone(num_cpa_inputs.size());
+            break;
+        case CPA_Sklansky:
+            cpa.init_sklansky(num_cpa_inputs.size());
+            break;
+
+    }   
     cpa.do_sta();
 }
 
