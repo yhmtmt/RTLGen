@@ -29,6 +29,7 @@ To run the generator, you will need to create a JSON configuration file. The con
     "module_name": "booth4_multiplier",
     "ppg_algorithm": "Booth4",
     "compressor_structure": "AdderTree",
+    "cpa_structure": "KoggeStone",
     "pipeline_depth": 1
   }
 }
@@ -40,18 +41,29 @@ Once you have created the configuration file, you can run the generator with the
 ./bin/mult-gen <config.json>
 ```
 
-This will generate a Verilog module for a multiplier with the specified parameters. The generated module will be placed in the  execution directory.
+This will generate a Verilog module for a multiplier with the specified parameters. The generated module will be placed in the execution directory.
 
 Currently, `compressor_structure` and `pipeline_depth` are not configurable and are fixed to `AdderTree` and `1` respectively. The `ppg_algorithm` can be set to "Normal" or "Booth4" for any bit width greater than or equal to 4. The `AdderTree` is optimized using ILP as described in the paper [UFO-MAC: A Unified Framework for Optimization of High-Performance Multipliers and Multiply-Accumulators](https://arxiv.org/abs/2408.06935). For more details on the implementation and some insights, refer to the [Compressor Tree Memo](doc/compressor_tree/memo_about_compressor_tree.md).
 
-## Implemented Algorithms
+### Supported Adder Structures
 
-The generator supports two partial product generation (PPG) algorithms: `Normal` and `Booth4`.
+For the final stage of multiplication (carry-propagate adder), you can select one of four adder architectures using the `cpa_structure` field in the configuration file:
+
+- `Ripple`: Ripple Carry Adder (simple, area-efficient, but slow for large bit-widths)
+- `KoggeStone`: Kogge-Stone Adder (parallel prefix, very fast, higher area)
+- `BrentKung`: Brent-Kung Adder (parallel prefix, balanced delay and area)
+- `Sklansky`: Sklansky Adder (parallel prefix, fast, but can have high fanout)
+
+Specify the desired adder type by setting the `cpa_structure` field in your JSON config. 
+
+### Supported Partial Product Generation Algorithms
+
+The generator supports two partial product generation (PPG) algorithms: `Normal` and `Booth4`. 
 
 - **Normal**: This is the conventional approach using a simple array of AND gates to generate partial products.
 - **Booth4**: This is the radix-4 modified Booth algorithm. The Booth encoder is implemented based on the paper ["High Performance Low-Power Left-to-Right Array Multiplier Design"](https://ieeexplore.ieee.org/document/1388192).
 
-For sign extension in both algorithms, a fast sign computation technique is used, as described in ["Minimizing Energy Dissipation in High-Speed Multipliers"](https://ieeexplore.ieee.org/document/621285).
+Specifty your desired algorithm in 'ppg_algorithm' field with the name. For sign extension in both algorithms, a fast sign computation technique is used, as described in ["Minimizing Energy Dissipation in High-Speed Multipliers"](https://ieeexplore.ieee.org/document/621285).
 
 ### Validation
 
