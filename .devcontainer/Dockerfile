@@ -91,6 +91,8 @@ RUN git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD.git &
     cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DBUILD_GUI=on && \    
     make -j$(nproc) && \
     make install
+    
+RUN apt-get update && apt-get upgrade -y && apt-get install gdb
 
 # Clone the repository
 RUN git clone https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts.git /orfs
