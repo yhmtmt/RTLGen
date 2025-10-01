@@ -8,6 +8,16 @@
 #include "boolexp.hpp"
 #include "adder.hpp"
 
+// Forward declaration
+class RTLGen;
+
+struct MultiplierYosysConfig {
+    std::string module_name; // Added module name
+    std::string booth_type;
+    bool is_signed;
+    int bit_width;
+};
+
 struct BoothEncoder
 {
     // s2(i) = !y(2i+1) y(2i) y(2i-1) + y(2i+1) !y(2i) !y(2i-1)
@@ -401,6 +411,7 @@ public:
 
     void build(Operand multiplicand, Operand multiplier,
                           CTType ctype, PPType ppType, CPAType cptype, const std::string& module_name);
+    void build_yosys(const MultiplierYosysConfig& config, const std::string& module_name);
 };
 
 #endif

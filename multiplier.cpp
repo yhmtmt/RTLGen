@@ -9,6 +9,7 @@
 #include <ortools/linear_solver/linear_solver.h>
 #include "multiplier.hpp"
 #include <chrono> // Add this include for timing
+#include <cstdlib> // For system()
 
 ///////////////////////////////////////////////////////////////////////////////////////////////// MultiplierGenerator methods
 void MultiplierGenerator::build(Operand multiplicand, Operand multiplier,
@@ -30,6 +31,71 @@ void MultiplierGenerator::build(Operand multiplicand, Operand multiplier,
     dump_hdl_tb(multiplicand, multiplier, module_name);
 
     std::cout << "[INFO] Multiplier generation completed." << std::endl;
+}
+
+void MultiplierGenerator::build_yosys(const MultiplierYosysConfig& config, const std::string& module_name)
+{
+    if (config.booth_type == "lowpower-booth" && !config.is_signed) {
+        std::cerr << "[ERROR] Low-power Booth architecture is only supported on signed multipliers." << std::endl;
+        return;
+    }
+
+    // Generate Verilog file
+    std::string verilog_filename = module_name + "_yosys.v";
+    std::ofstream verilog_file(verilog_filename);
+    if (!verilog_file.is_open()) {
+        std::cerr << "Error: Could not open file " << verilog_filename << std::endl;
+        return;
+    }
+
+    verilog_file << "module " << module_name << "(" << std::endl;
+    if (config.is_signed) {
+        verilog_file << "  input signed [" << config.bit_width - 1 << ":0] a," << std::endl;
+        verilog_file << "  input signed [" << config.bit_width - 1 << ":0] b," << std::endl;
+        verilog_file << "  output signed [" << config.bit_width * 2 - 1 << ":0] p" << std::endl;
+    } else {
+        verilog_file << "  input [" << config.bit_width - 1 << ":0] a," << std::endl;
+        verilog_file << "  input [" << config.bit_width - 1 << ":0] b," << std::endl;
+        verilog_file << "  output [" << config.bit_width * 2 - 1 << ":0] p" << std::endl;
+    }
+    verilog_file << ");" << std::endl << std::endl;
+    verilog_file << "  assign p = a * b;" << std::endl;
+    verilog_file << "endmodule" << std::endl;
+    verilog_file.close();
+
+    // Generate Yosys script
+    std::string ys_filename = "synth.ys";
+    std::ofstream ys_file(ys_filename);
+    if (!ys_file.is_open()) {
+        std::cerr << "Error: Could not open file " << ys_filename << std::endl;
+        return;
+    }
+
+    ys_file << "read_verilog " << verilog_filename << std::endl;
+    ys_file << "proc; opt; fsm; opt; memory; opt" << std::endl;
+    if (config.booth_type == "booth") {
+        ys_file << "booth" << std::endl;
+    } else if (config.booth_type == "lowpower-booth") {
+        ys_file << "booth -lowpower" << std::endl;
+    }
+    ys_file << "techmap; opt" << std::endl;
+    ys_file << "write_verilog " << module_name << ".v" << std::endl;
+    ys_file.close();
+
+    // Run Yosys
+    std::string command = "yosys " + ys_filename;
+    int result = system(command.c_str());
+
+    if (result != 0) {
+        std::cerr << "Error: Yosys synthesis failed." << std::endl;
+        return;
+    }
+
+    std::cout << "[INFO] Yosys synthesis completed successfully." << std::endl;
+
+    // Clean up temporary files
+    remove(verilog_filename.c_str());
+    remove(ys_filename.c_str());
 }
 
 void MultiplierGenerator::dump_hdl_fa(std::ofstream &verilog_file, const std::string &module_name)
@@ -374,7 +440,7 @@ void MultiplierGenerator::gen_normal_pp(Operand multiplicand, Operand multiplier
         for (int j = 0; j < multiplicand.width; j++)
         {
             pp[i + j].bit_type = BIT_EXPRESSION;
-            pp[i + j].expression = exp_manager.allocate("pp_" + std::to_string(i) + "_" + std::to_string(i + j), AND, std::vector<OpBit>{(OpBit){0, 0, j}, (OpBit){1, 0, i}}); // multiplicand[j] * multiplier[i]
+            pp[i + j].expression = exp_manager.allocate("pp_" + std::to_string(i) + "_" + std::to_string(i + j), AND, std::vector<OpBit>{(OpBit){0, 0, static_cast<short int>(j)}, (OpBit){1, 0, static_cast<short int>(i)}}); // multiplicand[j] * multiplier[i]
         }
     }
 
@@ -388,7 +454,7 @@ void MultiplierGenerator::gen_normal_pp(Operand multiplicand, Operand multiplier
             pp[multiplicand.width].bit_type = BIT_EXPRESSION;
             pp[multiplicand.width].expression =
                 exp_manager.allocate("pp_" + std::to_string(0) + "_" + std::to_string(multiplicand.width),
-                                     NOP, std::vector<OpBit>({(OpBit){1, 0, multiplier.width - 1}})); // sign bit of multiplier
+                                     NOP, std::vector<OpBit>({(OpBit){1, 0, static_cast<short int>(multiplier.width - 1)}})); // sign bit of multiplier
 
             for (int i = 1; i < pps.size() - 1; i++)
             {
@@ -401,11 +467,11 @@ void MultiplierGenerator::gen_normal_pp(Operand multiplicand, Operand multiplier
         {
             auto &pp = pps[pps.size() - 1];
             pp[multiplicand.width - 1].expression->setOperation(NAND);
-            pp[multiplicand.width - 1].expression->setInputs({(OpBit){0, 0, 0}, (OpBit){1, 0, multiplier.width - 1}});
+            pp[multiplicand.width - 1].expression->setInputs({(OpBit){0, 0, 0}, (OpBit){1, 0, static_cast<short int>(multiplier.width - 1)}});
 
             for (int j = 1; j < multiplicand.width; j++)
             { // (0,1,j):negated multiplicand, (1,0,multiplier.width-1):multiplier's sign bit
-                pp[multiplier.width - 1 + j].expression->setInputs({(OpBit){0, 1, j}, (OpBit){1, 0, multiplier.width - 1}});
+                pp[multiplier.width - 1 + j].expression->setInputs({(OpBit){0, 1, static_cast<short int>(j)}, (OpBit){1, 0, static_cast<short int>(multiplier.width - 1)}});
             }
             pp[cols_pps - 2].expression->setOperation(NAND);
             pp[cols_pps - 1].bit_type = BIT_EXPRESSION;
@@ -491,10 +557,10 @@ void MultiplierGenerator::gen_booth4_pp(Operand multiplicand, Operand multiplier
     std::vector<BoolExp*> x;
     x.resize(ext_width + multiplicand.width);
     for(int i = 0; i < multiplicand.width; i++){
-       x[i] = exp_manager.allocate("x_" + std::to_string(i), NOP, {(OpBit){0, 0, i}});
+       x[i] = exp_manager.allocate("x_" + std::to_string(i), NOP, {(OpBit){0, 0, static_cast<short int>(i)}});
     }
     if(multiplier.is_signed){
-        x[multiplicand.width] = exp_manager.allocate("x_" + std::to_string(multiplicand.width), NOP, {(OpBit){0, 0, multiplicand.width-1}}); // sign bit
+        x[multiplicand.width] = exp_manager.allocate("x_" + std::to_string(multiplicand.width), NOP, {(OpBit){0, 0, static_cast<short int>(multiplicand.width-1)}}); // sign bit
     }else{
         x[multiplicand.width] = x[multiplicand.width + 1] = exp_manager.get("zero");
     }
@@ -512,8 +578,8 @@ void MultiplierGenerator::gen_booth4_pp(Operand multiplicand, Operand multiplier
     {
         if(i > multiplier.width){
             if(multiplier.is_signed){ // sign extension with msb
-                OpBit bit = (OpBit){1, 0, multiplier.width-1};
-                OpBit nbit = (OpBit){1, 1, multiplier.width-1};
+                OpBit bit = (OpBit){1, 0, static_cast<short int>(multiplier.width-1)};
+                OpBit nbit = (OpBit){1, 1, static_cast<short int>(multiplier.width-1)};
                 y[i] = exp_manager.allocate("y_" + std::to_string(i-1), NOP, std::vector<OpBit>({bit}));
                 ny[i] = exp_manager.allocate("ny_" + std::to_string(i-1), NOP, std::vector<OpBit>({nbit}));                      
             }else{ // sign extension with zero
@@ -523,8 +589,8 @@ void MultiplierGenerator::gen_booth4_pp(Operand multiplicand, Operand multiplier
         }
         else
         {
-            OpBit bit = (OpBit){1, 0, i - 1};
-            OpBit nbit = (OpBit){1, 1, i - 1};
+            OpBit bit = (OpBit){1, 0, static_cast<short int>(i - 1)};
+            OpBit nbit = (OpBit){1, 1, static_cast<short int>(i - 1)};
             y[i] = exp_manager.allocate("y_" + std::to_string(i - 1), NOP, std::vector<OpBit>({bit}));
             ny[i] = exp_manager.allocate("ny_" + std::to_string(i - 1), NOP, std::vector<OpBit>({nbit}));
         }
@@ -681,13 +747,13 @@ void MultiplierGenerator::gen_normal4_pp(Operand multiplicand, Operand multiplie
     y.resize(multiplier.width + multiplier.width % 2);
     ny.resize(multiplier.width + multiplier.width % 2);
     for(int i = 0; i < multiplier.width; i++){
-        y[i] = exp_manager.allocate("y_" + std::to_string(i), NOP, std::vector<OpBit>{(OpBit){1, 0, i}});
-        ny[i] = exp_manager.allocate("ny_" + std::to_string(i), NOP, std::vector<OpBit>{(OpBit){1, 1, i}});
+        y[i] = exp_manager.allocate("y_" + std::to_string(i), NOP, std::vector<OpBit>{(OpBit){1, 0, static_cast<short int>(i)}});
+        ny[i] = exp_manager.allocate("ny_" + std::to_string(i), NOP, std::vector<OpBit>{(OpBit){1, 1, static_cast<short int>(i)}});
     }
     if(multiplier.width % 2 == 1){ // extension for odd width multiplier
         if(multiplier.is_signed){
-            y[multiplier.width] = exp_manager.allocate("y_" + std::to_string(multiplier.width), NOP, std::vector<OpBit>{(OpBit){1, 0, multiplier.width-1}});
-            ny[multiplier.width] = exp_manager.allocate("ny_" + std::to_string(multiplier.width), NOP, std::vector<OpBit>{(OpBit){1, 1, multiplier.width-1}});
+            y[multiplier.width] = exp_manager.allocate("y_" + std::to_string(multiplier.width), NOP, std::vector<OpBit>{(OpBit){1, 0, static_cast<short int>(multiplier.width-1)}});
+            ny[multiplier.width] = exp_manager.allocate("ny_" + std::to_string(multiplier.width), NOP, std::vector<OpBit>{(OpBit){1, 1, static_cast<short int>(multiplier.width-1)}});
         }else{
             y[multiplier.width] = exp_manager.get("zero");
             ny[multiplier.width] = exp_manager.get("one");
@@ -699,19 +765,19 @@ void MultiplierGenerator::gen_normal4_pp(Operand multiplicand, Operand multiplie
     x.resize(multiplicand.width + 2);
     x2.resize(multiplicand.width + 2);
     for(int i = 0; i < multiplicand.width; i++){
-        x[i] = exp_manager.allocate("x_" + std::to_string(i), NOP, std::vector<OpBit>{(OpBit){0, 0, i}});
+        x[i] = exp_manager.allocate("x_" + std::to_string(i), NOP, std::vector<OpBit>{(OpBit){0, 0, static_cast<short int>(i)}});
         if(i == 0){
             x2[i] = exp_manager.get("zero");
         }
         else{
-            x2[i] = exp_manager.allocate("x2_" + std::to_string(i), NOP, std::vector<OpBit>{(OpBit){0, 0, i-1}});
+            x2[i] = exp_manager.allocate("x2_" + std::to_string(i), NOP, std::vector<OpBit>{(OpBit){0, 0, static_cast<short int>(i-1)}});
         }
     }
     if(multiplicand.is_signed){
-        x[multiplicand.width] = exp_manager.allocate("x_" + std::to_string(multiplicand.width), NOP, std::vector<OpBit>{(OpBit){0, 0, multiplicand.width-1}});
-        x2[multiplicand.width] = exp_manager.allocate("x2_" + std::to_string(multiplicand.width), NOP, std::vector<OpBit>{(OpBit){0, 0, multiplicand.width-1}});
-        x[multiplicand.width + 1] = exp_manager.allocate("x_" + std::to_string(multiplicand.width + 1), NOP, std::vector<OpBit>{(OpBit){0, 0, multiplicand.width-1}});
-        x2[multiplicand.width + 1] = exp_manager.allocate("x2_" + std::to_string(multiplicand.width), NOP, std::vector<OpBit>{(OpBit){0, 0, multiplicand.width-1}});
+        x[multiplicand.width] = exp_manager.allocate("x_" + std::to_string(multiplicand.width), NOP, std::vector<OpBit>{(OpBit){0, 0, static_cast<short int>(multiplicand.width-1)}});
+        x2[multiplicand.width] = exp_manager.allocate("x2_" + std::to_string(multiplicand.width), NOP, std::vector<OpBit>{(OpBit){0, 0, static_cast<short int>(multiplicand.width-1)}});
+        x[multiplicand.width + 1] = exp_manager.allocate("x_" + std::to_string(multiplicand.width + 1), NOP, std::vector<OpBit>{(OpBit){0, 0, static_cast<short int>(multiplicand.width-1)}});
+        x2[multiplicand.width + 1] = exp_manager.allocate("x2_" + std::to_string(multiplicand.width), NOP, std::vector<OpBit>{(OpBit){0, 0, static_cast<short int>(multiplicand.width-1)}});
     }else{
         x[multiplicand.width] = exp_manager.get("zero");
         x2[multiplicand.width] = exp_manager.get("zero");
@@ -755,7 +821,7 @@ void MultiplierGenerator::gen_normal4_pp(Operand multiplicand, Operand multiplie
             auto & pp_last = pps.back();
             pp_last.resize(cols_pps, PPBit());
             pp_last[2 * i].bit_type = BIT_EXPRESSION;
-            OpBit c = (OpBit){1, 0, multiplier.width - 1};
+            OpBit c = (OpBit){1, 0, static_cast<short int>(multiplier.width - 1)};
             pp_last[2 * i].expression = exp_manager.allocate("pp_last_" + std::to_string(i), AND, std::vector<OpBit>{c});
         }
 

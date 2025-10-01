@@ -32,6 +32,7 @@ struct CircuitConfig {
     OperandConfig operand;
     std::optional<MultiplierConfig> multiplier;
     std::optional<AdderConfig> adder;
+    std::optional<MultiplierYosysConfig> multiplier_yosys;
 };
 
 // Function to read JSON config from file
@@ -66,6 +67,15 @@ bool readConfig(const std::string& filename, CircuitConfig& config) {
             adder_config.pipeline_depth = j["adder"]["pipeline_depth"];
             config.adder = adder_config;
         }
+
+        if (j.contains("multiplier_yosys")) {
+            MultiplierYosysConfig yosys_config;
+            yosys_config.module_name = j["multiplier_yosys"]["module_name"];
+            yosys_config.booth_type = j["multiplier_yosys"]["booth_type"];
+            yosys_config.is_signed = j["operand"]["signed"];
+            yosys_config.bit_width = j["operand"]["bit_width"];
+            config.multiplier_yosys = yosys_config;
+        }
     } catch (const std::exception& e) {
         std::cerr << "Error: Invalid JSON format: " << e.what() << std::endl;
         return false;
@@ -94,6 +104,14 @@ int main(int argc, char** argv) {
             std::cout << "CPA Structure: " << config.multiplier->cpa_structure << "\n";
             std::cout << "Pipeline Depth: " << config.multiplier->pipeline_depth << "\n";
         }
+
+        if(config.multiplier_yosys){
+            std::cout << "Yosys Multiplier Module Name: " << config.multiplier_yosys->module_name << "\n";
+            std::cout << "Yosys Booth Type: " << config.multiplier_yosys->booth_type << "\n";
+            std::cout << "Yosys Multiplier Signed: " << (config.multiplier_yosys->is_signed ? "Yes" : "No") << "\n";
+            std::cout << "Yosys Multiplier Bit Width: " << config.multiplier_yosys->bit_width << "\n";
+        }
+
         if (config.adder) {
             std::cout << "Adder Module Name: " << config.adder->module_name << "\n";
             std::cout << "CPA Structure: " << config.adder->cpa_structure << "\n";
@@ -156,6 +174,11 @@ int main(int argc, char** argv) {
 
         MultiplierGenerator mg;
         mg.build(multiplicand, multiplier_operand, ctype, ptype, cptype, config.multiplier->module_name);
+    }
+
+    if (config.multiplier_yosys) {
+        MultiplierGenerator mg;
+        mg.build_yosys(*config.multiplier_yosys, config.multiplier_yosys->module_name);
     }
 
     if (config.adder) {
