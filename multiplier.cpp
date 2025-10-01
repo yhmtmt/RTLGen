@@ -27,8 +27,8 @@ void MultiplierGenerator::build(Operand multiplicand, Operand multiplier,
     std::cout << "[INFO] Dumping Verilog HDL..." << std::endl;
     dump_hdl(multiplicand, multiplier, module_name);
 
-    std::cout << "[INFO] Dumping Verilog testbench..." << std::endl;
-    dump_hdl_tb(multiplicand, multiplier, module_name);
+//    std::cout << "[INFO] Dumping Verilog testbench..." << std::endl;
+//    dump_hdl_tb(multiplicand, multiplier, module_name);
 
     std::cout << "[INFO] Multiplier generation completed." << std::endl;
 }
@@ -50,16 +50,16 @@ void MultiplierGenerator::build_yosys(const MultiplierYosysConfig& config, const
 
     verilog_file << "module " << module_name << "(" << std::endl;
     if (config.is_signed) {
-        verilog_file << "  input signed [" << config.bit_width - 1 << ":0] a," << std::endl;
-        verilog_file << "  input signed [" << config.bit_width - 1 << ":0] b," << std::endl;
-        verilog_file << "  output signed [" << config.bit_width * 2 - 1 << ":0] p" << std::endl;
+        verilog_file << "  input signed [" << config.bit_width - 1 << ":0] multiplicand," << std::endl;
+        verilog_file << "  input signed [" << config.bit_width - 1 << ":0] multiplier," << std::endl;
+        verilog_file << "  output signed [" << config.bit_width * 2 - 1 << ":0] product" << std::endl;
     } else {
-        verilog_file << "  input [" << config.bit_width - 1 << ":0] a," << std::endl;
-        verilog_file << "  input [" << config.bit_width - 1 << ":0] b," << std::endl;
-        verilog_file << "  output [" << config.bit_width * 2 - 1 << ":0] p" << std::endl;
+        verilog_file << "  input [" << config.bit_width - 1 << ":0] multiplicand," << std::endl;
+        verilog_file << "  input [" << config.bit_width - 1 << ":0] multiplier," << std::endl;
+        verilog_file << "  output [" << config.bit_width * 2 - 1 << ":0] product" << std::endl;
     }
     verilog_file << ");" << std::endl << std::endl;
-    verilog_file << "  assign p = a * b;" << std::endl;
+    verilog_file << "  assign product = multiplicand * multiplier;" << std::endl;
     verilog_file << "endmodule" << std::endl;
     verilog_file.close();
 
