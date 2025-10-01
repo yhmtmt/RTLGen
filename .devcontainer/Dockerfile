@@ -92,7 +92,7 @@ RUN git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD.git &
     make -j$(nproc) && \
     make install
     
-RUN apt-get update && apt-get upgrade -y && apt-get install gdb
+RUN apt-get update && apt-get install -y gdb
 
 # Clone the repository
 RUN git clone https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts.git /orfs
