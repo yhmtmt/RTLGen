@@ -59,7 +59,6 @@ TEST(AdderText, RippleCarryAdder) {
     const std::string module_name = "ripplecarry_adder";
     CarryPropagatingAdder adder;
     adder.init(width, CPA_Ripple);
-    adder.do_sta();
     adder.dump_hdl(module_name);
     generate_adder_testbench(module_name, width);
     run_iverilog_test(module_name);
@@ -80,7 +79,6 @@ TEST(AdderTest, BrentKungAdder) {
     const std::string module_name = "brentkung_adder";
     CarryPropagatingAdder adder;
     adder.init(width, CPA_BrentKung);
-    adder.do_sta();
     adder.dump_hdl(module_name);
     generate_adder_testbench(module_name, width);
     run_iverilog_test(module_name);
@@ -91,7 +89,6 @@ TEST(AdderTest, SklanskyAdder) {
     const std::string module_name = "sklansky_adder";
     CarryPropagatingAdder adder;
     adder.init(width, CPA_Sklansky);
-    adder.do_sta();
     adder.dump_hdl(module_name);
     generate_adder_testbench(module_name, width);
     run_iverilog_test(module_name);
