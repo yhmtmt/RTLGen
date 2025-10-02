@@ -35,7 +35,7 @@ void MultiplierGenerator::build(Operand multiplicand, Operand multiplier,
 
 void MultiplierGenerator::build_yosys(const MultiplierYosysConfig& config, const std::string& module_name)
 {
-    if (config.booth_type == "lowpower-booth" && !config.is_signed) {
+    if (config.booth_type == "LowpowerBooth" && !config.is_signed) {
         std::cerr << "[ERROR] Low-power Booth architecture is only supported on signed multipliers." << std::endl;
         return;
     }
@@ -75,7 +75,7 @@ void MultiplierGenerator::build_yosys(const MultiplierYosysConfig& config, const
     ys_file << "proc; opt; fsm; opt; memory; opt" << std::endl;
     if (config.booth_type == "booth") {
         ys_file << "booth" << std::endl;
-    } else if (config.booth_type == "lowpower-booth") {
+    } else if (config.booth_type == "LowpowerBooth") {
         ys_file << "booth -lowpower" << std::endl;
     }
     ys_file << "techmap; opt" << std::endl;
@@ -162,7 +162,7 @@ void MultiplierGenerator::dump_hdl(Operand multiplicand, Operand multiplier, con
     verilog_file << "  wire [" << width_cpa - 1 << ":0] cta;\n";
     verilog_file << "  wire [" << width_cpa - 1 << ":0] ctb;\n";
     verilog_file << "  wire [" << width_cpa - 1 << ":0] cts;\n";
-    verilog_file << "  wire [" << width_cpa - 1 << ":0] ctc;\n\n";
+    verilog_file << "  wire ctc;\n\n";
 
     verilog_file << "  MG_CPA cpa(\n";
     verilog_file << " .a(cta), .b(ctb), .sum(cts), .cout(ctc)\n";
@@ -190,14 +190,14 @@ void MultiplierGenerator::dump_hdl(Operand multiplicand, Operand multiplier, con
 
     // note cols_pps is the output width of the multiplier, but cts is not necessarily equal to cols_pps.
     // because partial products are generated in a way that the last row is not necessarily equal to the width of the multiplier.
-    // thus if width_cpa is less than cols_pps, we need to add ctc[width_cpa-1] to the msb of the product.
+    // thus if width_cpa is less than cols_pps, we need to connect ctc to the msb of the product.
     for (int icol = 0; icol < cpa_col_start; icol++)
         verilog_file << "  assign product[" << icol << "] = pp_" << num_stages << "_" << icol << "_" << 0 << ";\n"; // zero padding
 
     verilog_file << "  assign product[" << cpa_col_end << ":" << cpa_col_start << "] = cts;\n"; // cts is the sum output of the cpa
     if (cpa_col_end + 1 <  cols_pps)
     {
-        verilog_file << "  assign product[" << cols_pps - 1 << "] = ctc[" << width_cpa - 1 << "];\n";
+        verilog_file << "  assign product[" << cols_pps - 1 << "] = ctc;\n";
     }
 
     verilog_file << "endmodule\n";
@@ -214,7 +214,7 @@ void MultiplierGenerator::dump_hdl_tb(Operand multiplicand, Operand multiplier, 
 
     int width_a = multiplicand.width;
     int width_b = multiplier.width;
-    int width_p = cols_pps;
+    int width_p = width_a + width_b;
     bool signed_a = multiplicand.is_signed;
     bool signed_b = multiplier.is_signed;
 
@@ -257,6 +257,7 @@ void MultiplierGenerator::dump_hdl_tb(Operand multiplicand, Operand multiplier, 
     }
     tb_file << "      if (product !== expected) begin\n";
     tb_file << "          $display(\"FAIL: multiplicand=%h, multiplier=%h, product=%h, expected=%h\", multiplicand, multiplier, product, expected);\n";
+    tb_file << "          $finish;\n";
     tb_file << "      end\n";
     tb_file << "    end\n";
     tb_file << "    $display(\"Test completed.\");\n";

@@ -389,8 +389,6 @@ private:
     void dump_hdl_fa(std::ofstream & verilog_file, const std::string& module_name);
     void dump_hdl_ha(std::ofstream & verilog_file, const std::string& module_name);
 
-    // dump hdl testbench for the multiplier. called from build function.
-    void dump_hdl_tb(Operand multiplicand, Operand multiplier, const std::string& module_name);
 
 public:
     MultiplierGenerator(){
@@ -408,6 +406,9 @@ public:
 
     ~MultiplierGenerator(){
     }
+    
+    // dump hdl testbench for the multiplier. called from build function.
+    void dump_hdl_tb(Operand multiplicand, Operand multiplier, const std::string& module_name);
 
     void build(Operand multiplicand, Operand multiplier,
                           CTType ctype, PPType ppType, CPAType cptype, const std::string& module_name);
