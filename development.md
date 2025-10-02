@@ -41,13 +41,15 @@ This script prepares all necessary files for OpenROAD, enabling you to run the f
 
 **Usage:**
 ```sh
-python3 scripts/run_autotuner.py <config.json> <platform> [--optimization_target <target>] [--core_utilization_min <min>] [--core_utilization_max <max>] [--place_density_min <min>] [--place_density_max <max>] [--clock_period_min <min>] [--clock_period_max <max>]
+python3 scripts/run_autotuner.py --design <design_name> --platform <platform> [--step <step>] [--output_csv <path>] [--no_output_csv]
 ```
-- `<config.json>`: Path to your multiplier configuration file.
-- `<platform>`: Target platform (e.g., `sky130hd`, `nangate45`, `asap7`).
-- Optional arguments allow you to specify optimization targets and flow parameters.
+- `--design <design_name>`: Name of the design (e.g., `<module name>_wrapper`).
+- `--platform <platform>`: Target platform (e.g., `sky130hd`, `nangate45`, `asap7`).
+- `--step <step>`: Step value for PPA coefficient combinations (default: 0.25).
+- `--output_csv <path>`: Path to save the evaluation results in CSV format (default: `<design_name>.csv`).
+- `--no_output_csv`: Disable saving results to a CSV file.
 
-This script will invoke the AutoTuner to run multiple OpenROAD flows with different parameters, seeking the best trade-off between performance, power, and area.
+This script wraps the openroad_autotuner, automatically generates and updates the config path, and runs an evaluation sweep to find the best trade-off between performance, power, and area.
 
 ## AutoTuner
 
