@@ -8,7 +8,7 @@ import argparse
 def main():
     parser = argparse.ArgumentParser(description="Execute evaluation and extract results.")
     parser.add_argument("config", help="Path to the configuration JSON file.")
-    parser.add_argument("platform", help="Name of the platform (e.g., sky130hd, nangate45).")
+    parser.add_argument("platform", help="Name of the platform (e.g., sky130hd, nangate45 and asap7).")
     args = parser.parse_args()
 
     with open(args.config, "r") as f:
