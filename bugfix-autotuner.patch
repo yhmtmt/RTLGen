@@ -1,0 +1,700 @@
+diff --git a/tools/AutoTuner/src/autotuner/distributed.py b/tools/AutoTuner/src/autotuner/distributed.py
+index c5b07dc74..4a8caad1b 100644
+--- a/tools/AutoTuner/src/autotuner/distributed.py
++++ b/tools/AutoTuner/src/autotuner/distributed.py
+@@ -91,6 +91,7 @@ from autotuner.utils import (
+     parse_config,
+     read_config,
+     read_metrics,
++    read_reference,
+     prepare_ray_server,
+     CONSTRAINTS_SDC,
+     FASTROUTE_TCL,
+@@ -100,13 +101,6 @@ from autotuner.utils import (
+ METRIC = "metric"
+ # The worst of optimized metric
+ ERROR_METRIC = 9e99
+-# Path to the FLOW_HOME directory
+-ORFS_FLOW_DIR = os.path.abspath(
+-    os.path.join(os.path.dirname(__file__), "../../../../flow")
+-)
+-# Global variable for args
+-args = None
+-
+ 
+ class AutoTunerBase(tune.Trainable):
+     """
+@@ -117,20 +111,18 @@ class AutoTunerBase(tune.Trainable):
+         """
+         Setup current experiment step.
+         """
+-        # We create the following directory structure:
+-        #      1/     2/         3/       4/           5/
+-        # <repo>/<logs>/<platform>/<design>/<experiment/<cwd>
+-        self.repo_dir = os.path.abspath(LOCAL_DIR + "/../" * 4)
+-        self.parameters = parse_config(
++      
++        self.parameters, self.globals = parse_config(
+             config=config,
+-            base_dir=self.repo_dir,
+-            platform=args.platform,
+-            sdc_original=SDC_ORIGINAL,
+             constraints_sdc=CONSTRAINTS_SDC,
+-            fr_original=FR_ORIGINAL,
+             fastroute_tcl=FASTROUTE_TCL,
+             path=os.getcwd(),
+         )
++        # We create the following directory structure:
++        #      1/     2/         3/       4/           5/
++        # <repo>/<logs>/<platform>/<design>/<experiment/<cwd>
++        self.repo_dir = os.path.abspath(self.globals.get("local_dir") + "/../" * 4)
++        
+         self.step_ = 0
+         self.variant = f"variant-{self.__class__.__name__}-{self.trial_id}-or"
+         # Do a valid config check here, since we still have the config in a
+@@ -144,26 +136,30 @@ class AutoTunerBase(tune.Trainable):
+ 
+         # if not a valid config, then don't run and pass back an error
+         if not self.is_valid_config:
+-            return {METRIC: ERROR_METRIC, "effective_clk_period": "-", "num_drc": "-"}
++            return {METRIC: ERROR_METRIC, "effective_clk_period" : "-", "total_power" : "-", "die-area" : "-", "num_drc": "-"}
++        
+         self._variant = f"{self.variant}-{self.step_}"
++        print(f"parameters@step={self.parameters}")
+         metrics_file = openroad(
+-            args=args,
++            args=self.globals.get("args"),
+             base_dir=self.repo_dir,
+             parameters=self.parameters,
+             flow_variant=self._variant,
+-            install_path=INSTALL_PATH,
++            install_path=self.globals.get("install_path"),
+         )
+         self.step_ += 1
+-        (score, effective_clk_period, num_drc, die_area) = self.evaluate(
+-            read_metrics(metrics_file, args.stop_stage)
++        (score, effective_clk_period, total_power, die_area, num_drc) = self.evaluate(
++            read_metrics(metrics_file, self.globals.get("args").stop_stage)
+         )
+         # Feed the score back to Tune.
+         # return must match 'metric' used in tune.run()
+         return {
+             METRIC: score,
+             "effective_clk_period": effective_clk_period,
+-            "num_drc": num_drc,
++            "total_power": total_power,
+             "die_area": die_area,
++            "num_drc": num_drc,
++            "file" : metrics_file
+         }
+ 
+     def evaluate(self, metrics):
+@@ -171,17 +167,23 @@ class AutoTunerBase(tune.Trainable):
+         User-defined evaluation function.
+         It can change in any form to minimize the score (return value).
+         Default evaluation function optimizes effective clock period.
++        Timing driven metric (effective_clk_period) is used. 
+         """
+         error = "ERR" in metrics.values()
+         not_found = "N/A" in metrics.values()
+-        if error or not_found:
+-            return (ERROR_METRIC, "-", "-", "-")
+-        effective_clk_period = metrics["clk_period"] - metrics["worst_slack"]
+         num_drc = metrics["num_drc"]
+-        gamma = effective_clk_period / 10
++        
++        if num_drc != 0 or error or not_found:
++            return (ERROR_METRIC, "-", "-", "-", "-")
++        effective_clk_period = metrics["clk_period"];
++        if metrics["worst_slack"] < 0:
++            effective_clk_period -= metrics["worst_slack"]
++            
++        clk_period=metrics["clk_period"]
++        worst_slack=metrics["worst_slack"]
+         score = effective_clk_period
+-        score = score * (100 / self.step_) + gamma * num_drc
+-        return (score, effective_clk_period, num_drc, metrics["die_area"])
++        
++        return (score, effective_clk_period, metrics["total_power"], metrics["die_area"], num_drc)
+ 
+     def _is_valid_config(self, config):
+         """
+@@ -216,45 +218,51 @@ class PPAImprov(AutoTunerBase):
+     """
+ 
+     @classmethod
+-    def get_ppa(cls, metrics):
++    def get_ppa(cls, reference, metrics, args):
+         """
+         Compute PPA term for evaluate.
+         """
+-        coeff_perform, coeff_power, coeff_area = 10000, 100, 100
++        coeff_perform, coeff_power, coeff_area = args.coeff_perform, args.coeff_power, args.coeff_area
++        #normalize as one
++        fac = 1.0 / (coeff_perform + coeff_power + coeff_area)
++
++        coeff_perform *= fac
++        coeff_power *= fac
++        coeff_area *= fac
++        print(f"rescaled coeff_perform={coeff_perform}, coeff_power={coeff_power}, coeff_area={coeff_area}")
+ 
+         eff_clk_period = metrics["clk_period"]
+         if metrics["worst_slack"] < 0:
+             eff_clk_period -= metrics["worst_slack"]
+-
++            
+         eff_clk_period_ref = reference["clk_period"]
+         if reference["worst_slack"] < 0:
+             eff_clk_period_ref -= reference["worst_slack"]
+ 
+-        def percent(x_1, x_2):
+-            return (x_1 - x_2) / x_1 * 100
+-
+-        performance = percent(eff_clk_period_ref, eff_clk_period)
+-        power = percent(reference["total_power"], metrics["total_power"])
+-        area = percent(100 - reference["final_util"], 100 - metrics["final_util"])
++        performance =  eff_clk_period / eff_clk_period_ref;
++        power = metrics["total_power"] / reference["total_power"];
++        area = (100 - metrics["final_util"]) / (100 - reference["final_util"])
+ 
+         # Lower values of PPA are better.
+-        ppa_upper_bound = (coeff_perform + coeff_power + coeff_area) * 100
+         ppa = performance * coeff_perform
+         ppa += power * coeff_power
+         ppa += area * coeff_area
+-        return ppa_upper_bound - ppa
++        return ppa
+ 
+     def evaluate(self, metrics):
++        reference = self.globals.get("reference")                
++        args = self.globals.get("args")
+         error = "ERR" in metrics.values() or "ERR" in reference.values()
+         not_found = "N/A" in metrics.values() or "N/A" in reference.values()
+         if error or not_found:
+-            return (ERROR_METRIC, "-", "-", "-")
+-        ppa = self.get_ppa(metrics)
+-        gamma = ppa / 10
+-        score = ppa * (self.step_ / 100) ** (-1) + (gamma * metrics["num_drc"])
+-        effective_clk_period = metrics["clk_period"] - metrics["worst_slack"]
++            return (ERROR_METRIC, "-", "-", "-", "-")
++        score = self.get_ppa(reference, metrics, args)
++        effective_clk_period = metrics["clk_period"]
++        if metrics["worst_slack"] < 0:
++            effective_clk_period -= metrics["worst_slack"]
++            
+         num_drc = metrics["num_drc"]
+-        return (score, effective_clk_period, num_drc, metrics["die_area"])
++        return (score, effective_clk_period, metrics["total_power"], metrics["die_area"], num_drc)
+ 
+ 
+ def parse_arguments():
+@@ -359,6 +367,28 @@ def parse_arguments():
+         default=1,
+         help="Number of CPUs to request for each tuning job.",
+     )
++    tune_parser.add_argument(
++        "--coeff_perform",
++        type=float,
++        metavar="<float>",
++        default=1,
++        help="Coefficient for performance in PPA calculation.",
++    )
++    tune_parser.add_argument(
++        "--coeff_area",
++        type=float,
++        metavar="<float>",
++        default=1,
++        help="Coefficient for area in PPA calculation.",
++    )
++    tune_parser.add_argument(
++        "--coeff_power",
++        type=float,
++        metavar="<float>",
++        default=1,
++        help="coefficient for power in PPA calculation.",
++    )
++
+     tune_parser.add_argument(
+         "--reference",
+         type=str,
+@@ -427,6 +457,7 @@ def parse_arguments():
+         " training stderr\n\t2: also print training stdout.",
+     )
+ 
++    
+     args = parser.parse_args()
+     if args.mode == "tune":
+         args.algorithm = args.algorithm.lower()
+@@ -546,26 +577,34 @@ def save_best(results):
+     """
+     Save best configuration of parameters found.
+     """
+-    best_config = results.best_config
++    best_config = results.best_config.copy()
++    best_result = results.best_result.copy();
++    
+     best_config["best_result"] = results.best_result[METRIC]
++    best_metric_path = best_result["file"]
++    args=best_config.get("__globals__").get("args")
++    local_dir=best_config.get("__globals__").get("local_dir")
++    best_config.pop("__globals__")
++    best_result["config"].pop("__globals__")
+     trial_id = results.best_trial.trial_id
+-    new_best_path = f"{LOCAL_DIR}/{args.experiment}/"
++    new_best_path = f"{local_dir}/{args.experiment}/"
+     new_best_path += f"autotuner-best-{trial_id}.json"
+     with open(new_best_path, "w") as new_best_file:
+-        json.dump(best_config, new_best_file, indent=4)
+-    print(f"[INFO TUN-0003] Best parameters written to {new_best_path}")
++        json.dump(results.best_result, new_best_file, indent=4)
++    
++    print(f"[INFO TUN-0003] Best results written to {new_best_path}")
+ 
+ 
+-def sweep():
++def sweep(args, config_dict, globals, local_dir, orfs_flow_dir, sdc_original, fr_original, install_path):
+     """Run sweep of parameters"""
+     if args.server is not None:
+         # For remote sweep we create the following directory structure:
+         #      1/     2/         3/       4/
+         # <repo>/<logs>/<platform>/<design>/
+-        repo_dir = os.path.abspath(LOCAL_DIR + "/../" * 4)
++        repo_dir = os.path.abspath(local_dir + "/../" * 4)
+     else:
+-        repo_dir = os.path.abspath(os.path.join(ORFS_FLOW_DIR, ".."))
+-    print(f"[INFO TUN-0012] Log folder {LOCAL_DIR}.")
++        repo_dir = os.path.abspath(os.path.join(orfs_flow_dir, ".."))
++    print(f"[INFO TUN-0012] Log folder {local_dir}.")
+     queue = Queue()
+     parameter_list = list()
+     for name, content in config_dict.items():
+@@ -581,7 +620,8 @@ def sweep():
+         temp = dict()
+         for value in parameter:
+             temp.update(value)
+-        queue.put([args, repo_dir, temp, SDC_ORIGINAL, FR_ORIGINAL, INSTALL_PATH])
++        temp.update({"__globals__":globals})
++        queue.put([args, repo_dir, temp, sdc_original, fr_original, install_path])
+     workers = [consumer.remote(queue) for _ in range(args.jobs)]
+     print("[INFO TUN-0009] Waiting for results.")
+     ray.get(workers)
+@@ -589,9 +629,9 @@ def sweep():
+ 
+ 
+ def main():
+-    global args, SDC_ORIGINAL, FR_ORIGINAL, LOCAL_DIR, INSTALL_PATH, ORFS_FLOW_DIR, config_dict, reference, best_params
++    global config_dict
+     args = parse_arguments()
+-
++  
+     # Read config and original files before handling where to run in case we
+     # need to upload the files.
+     config_dict, SDC_ORIGINAL, FR_ORIGINAL = read_config(
+@@ -599,9 +639,31 @@ def main():
+     )
+ 
+     LOCAL_DIR, ORFS_FLOW_DIR, INSTALL_PATH = prepare_ray_server(args)
+-
++    
++        # The global variables declared in main() do not exist in the execution instances. I embed the global variables into config_dict which is the only parameter passed to setup method of AutoTunerBase. The code is a quick fix the global variables are still used in other parts of the code.
++    reference = None
++    best_params = None
++    if hasattr(args, "reference"):
++        reference, best_params = read_reference(args.reference, args.stop_stage)
++    print(f"reference={reference} best_params={best_params}")
++    
++    globals = {
++        "local_dir": LOCAL_DIR,
++        "sdc_original": SDC_ORIGINAL,
++        "fr_original": FR_ORIGINAL,
++        "install_path": INSTALL_PATH,
++        "orfs_flow_dir": ORFS_FLOW_DIR,
++        "reference":reference,
++        "args": args,
++    }
++    
+     if args.mode == "tune":
+-        best_params = set_best_params(args.platform, args.design)
++        if best_params is not None:
++            best_params.update({"__globals__" : globals})
++            best_params = [best_params]
++        else:
++            best_params = []
++
+         search_algo = set_algorithm(
+             args.algorithm,
+             args.experiment,
+@@ -612,10 +674,6 @@ def main():
+             config_dict,
+         )
+         TrainClass = set_training_class(args.eval)
+-        # PPAImprov requires a reference file to compute training scores.
+-        if args.eval == "ppa-improv":
+-            reference = read_metrics(args.reference, args.stop_stage)
+-
+         tune_args = dict(
+             name=args.experiment,
+             metric=METRIC,
+@@ -636,8 +694,14 @@ def main():
+         else:
+             tune_args["search_alg"] = search_algo
+             tune_args["scheduler"] = AsyncHyperBandScheduler()
++        
++        config_dict.update({
++            "__globals__": globals 
++        })
++
+         if args.algorithm != "ax":
+             tune_args["config"] = config_dict
++    
+         analysis = tune.run(TrainClass, **tune_args)
+ 
+         task_id = save_best.remote(analysis)
+@@ -648,8 +712,10 @@ def main():
+         if analysis.best_result[METRIC] == ERROR_METRIC:
+             print("[ERROR TUN-0016] No successful runs found.")
+             sys.exit(16)
++
++            
+     elif args.mode == "sweep":
+-        sweep()
++        sweep(args, config_dict, globals, LOCAL_DIR, ORFS_FLOW_DIR, SDC_ORIGINAL, FR_ORIGINAL, INSTALL_PATH)
+ 
+ 
+ if __name__ == "__main__":
+diff --git a/tools/AutoTuner/src/autotuner/utils.py b/tools/AutoTuner/src/autotuner/utils.py
+index fadab4032..fa07145f0 100644
+--- a/tools/AutoTuner/src/autotuner/utils.py
++++ b/tools/AutoTuner/src/autotuner/utils.py
+@@ -70,7 +70,118 @@ CONSTRAINTS_SDC = "constraint.sdc"
+ FASTROUTE_TCL = "fastroute.tcl"
+ DATE = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+ 
++def write_sdc(variables, path, sdc_original, constraints_sdc):
++    """
++    Create an SDC file with parameters for current tuning iteration.
++
++    - Replaces numeric -period tokens in create_clock/create_generated_clock.
++    - If -period uses a variable ($var / ${var} / $::env(NAME)), try to find and
++      update the corresponding 'set <var> <value>' line (preserving unit).
++    - If no 'set' exists for that var, inline the numeric value into -period.
++    """
++    if not sdc_original:
++        print("[ERROR TUN-0020] No SDC reference file provided.")
++        sys.exit(1)
++
++    new_file = sdc_original
++
++    # Regexes
++    num = re.compile(r'^([0-9]*\.?[0-9]+(?:[eE][+-]?\d+)?)$')
++    period_arg = re.compile(r'(-period\s+)(\S+)')
++    # token forms: $var, ${var}, $::env(NAME)
++    var_token = re.compile(r'^\$(?:\{([^}]+)\}|([A-Za-z_:\.][A-Za-z0-9_:\.\(\)]*))$')
++
++    def replace_set_value_for_var(text, var_name, value_str):
++        """
++        Replace 'set <var_name> <old>' -> 'set <var_name> <value_str>'
++        Returns (new_text, did_replace)
++        """
++        var_pat = re.compile(
++            r'(^\s*set\s+' + re.escape(var_name) + r'\s+)([^\s\n;#]+)',
++            flags=re.MULTILINE
++        )
++
++        def _sub(m):
++            prefix = m.group(1)
++            old = m.group(2)
++            mu = num.match(old)
++            return f"{prefix}{value_str}"
++
++        new_text, n = var_pat.subn(_sub, text)
++        return new_text, (n > 0)
++
++    for key, value in variables.items():
++        if key == "CLK_PERIOD":
++            value_str = str(value)
++            vars_to_update = set()
++
++            def _period_rewriter(m):
++                prefix, token = m.group(1), m.group(2)
++
++                # If token is numeric
++                mu = num.match(token)
++                if mu:
++                    return f"{prefix}{value_str}"
++
++                # If token is a variable form, capture the var name to update its 'set'
++                mv = var_token.match(token)
++                if mv:
++                    var_name = mv.group(1) or mv.group(2)  # ${...} vs $name
++                    vars_to_update.add(var_name)
++                    return m.group(0)  # leave unchanged for now
++
++                # Unknown token: fallback to inlining the numeric value 
++                return f"{prefix}{value_str}"
++
++            # First pass: handle numeric -periods and collect variable tokens
++            new_file = period_arg.sub(_period_rewriter, new_file)
++
++            # Second pass: update corresponding 'set' lines for variables used
++            for var_name in vars_to_update:
++                updated_text, did_replace = replace_set_value_for_var(new_file, var_name, value_str)
++                if did_replace:
++                    new_file = updated_text
++                else:
++                    # No set found — inline the numeric value into -period occurrences using this var
++                    inline_pat = re.compile(
++                        r'(-period\s+)\$(?:\{' + re.escape(var_name) + r'\}|' + re.escape(var_name) + r')'
++                    )
++                    new_file, _ = inline_pat.subn(rf'\1{value_str}', new_file)
++
++        elif key == "UNCERTAINTY":
++            if re.search(r'(^|\n)\s*set\s+uncertainty\s+', new_file):
++                new_file = re.sub(
++                    r'(^|\n)(\s*set\s+uncertainty\s+)[0-9]*\.?[0-9]+(?:[eE][+-]?\d+)?[a-zA-Z]*',
++                    rf'\1\2{value}',
++                    new_file,
++                    flags=re.MULTILINE
++                )
++            else:
++                new_file += f"\nset uncertainty {value}\n"
+ 
++        elif key == "IO_DELAY":
++            if re.search(r'(^|\n)\s*set\s+io_delay\s+', new_file):
++                new_file = re.sub(
++                    r'(^|\n)(\s*set\s+io_delay\s+)[0-9]*\.?[0-9]+(?:[eE][+-]?\d+)?[a-zA-Z]*',
++                    rf'\1\2{value}',
++                    new_file,
++                    flags=re.MULTILINE
++                )
++            else:
++                new_file += f"\nset io_delay {value}\n"
++
++        else:
++            print(f"[WARN TUN-0025] {key} variable not supported in context of SDC files")
++            continue
++#    print(f"new_constraint_sdc={new_file}")
++    os.makedirs(path, exist_ok=True)
++    file_name = os.path.join(path, constraints_sdc)
++    with open(file_name, "w") as f:
++        f.write(new_file)
++
++    return file_name
++
++'''
+ def write_sdc(variables, path, sdc_original, constraints_sdc):
+     """
+     Create a SDC file with parameters for current tuning iteration.
+@@ -82,11 +193,14 @@ def write_sdc(variables, path, sdc_original, constraints_sdc):
+     new_file = sdc_original
+     for key, value in variables.items():
+         if key == "CLK_PERIOD":
++            print(f"CLK_PERIOD:{value}")
+             if new_file.find("set clk_period") != -1:
++                print("set clk_period exist.")
+                 new_file = re.sub(
+                     r"set clk_period .*\n(.*)", f"set clk_period {value}\n\\1", new_file
+                 )
+             else:
++                print("set clk_period absent.")
+                 new_file = re.sub(
+                     r"-period [0-9\.]+ (.*)", f"-period {value} \\1", new_file
+                 )
+@@ -112,11 +226,12 @@ def write_sdc(variables, path, sdc_original, constraints_sdc):
+                 f"[WARN TUN-0025] {key} variable not supported in context of SDC files"
+             )
+             continue
++    print(f"new_constraint_sdc={new_file}")
+     file_name = path + f"/{constraints_sdc}"
+     with open(file_name, "w") as file:
+         file.write(new_file)
+     return file_name
+-
++'''
+ 
+ def write_fast_route(variables, path, platform, fr_original, fastroute_tcl):
+     """
+@@ -214,11 +329,7 @@ def parse_tunable_variables():
+ 
+ def parse_config(
+     config,
+-    base_dir,
+-    platform,
+-    sdc_original,
+     constraints_sdc,
+-    fr_original,
+     fastroute_tcl,
+     path=os.getcwd(),
+ ):
+@@ -226,8 +337,10 @@ def parse_config(
+     Parse configuration received from tune into make variables.
+     """
+     options = ""
++    globals = {}
++    
+     sdc = {}
+-    fast_route = {}
++    fast_route={}
+     flow_variables = parse_tunable_variables()
+     for key, value in config.items():
+         # Keys that begin with underscore need special handling.
+@@ -246,20 +359,26 @@ def parse_config(
+                     "[WARNING TUN-0013] Non-flatten the designs are not "
+                     "fully supported, ignoring _SYNTH_FLATTEN parameter."
+                 )
++            elif key== "__globals__":
++                #I added the entry to pass the global variables to the tuner instances.
++                globals.update(value)
++                platform = globals.get("args").platform
++                sdc_original = globals.get("sdc_original")
++                fr_original = globals.get("fr_original")
+         # Default case is VAR=VALUE
+         else:
+             # Sanity check: ignore all flow variables that are not tunable
+             if key not in flow_variables:
+                 print(f"[ERROR TUN-0017] Variable {key} is not tunable.")
+                 sys.exit(1)
+-            options += f" {key}={value}"
++            options += f" {key}={value}"    
+     if sdc:
+         write_sdc(sdc, path, sdc_original, constraints_sdc)
+         options += f" SDC_FILE={path}/{constraints_sdc}"
+     if fast_route:
+         write_fast_route(fast_route, path, platform, fr_original, fastroute_tcl)
+         options += f" FASTROUTE_TCL={path}/{fastroute_tcl}"
+-    return options
++    return options, globals
+ 
+ 
+ def run_command(
+@@ -297,6 +416,7 @@ def openroad(
+     """
+     Run OpenROAD-flow-scripts with a given set of parameters.
+     """
++   
+     # Make sure path ends in a slash, i.e., is a folder
+     flow_variant = f"{args.experiment}/{flow_variant}"
+     log_path = os.path.abspath(
+@@ -362,7 +482,15 @@ def openroad(
+ 
+     return metrics_file
+ 
+-
++def read_reference(file_name, stop_stage):
++    try:
++        with open(file_name) as file:
++            reference = json.load(file)
++    except:
++        return None, None
++     
++    return read_metrics(reference["file"], stop_stage), reference["config"]
++    
+ def read_metrics(file_name, stop_stage):
+     """
+     Collects metrics to evaluate the user-defined objective function.
+@@ -372,8 +500,12 @@ def read_metrics(file_name, stop_stage):
+     before "finish", then no need to extract the metrics from the route stage,
+     so set them to 0
+     """
+-    with open(file_name) as file:
+-        data = json.load(file)
++    try:
++        with open(file_name) as file:
++            data = json.load(file)
++    except:
++        return None
++    
+     clk_period = 9999999
+     worst_slack = "ERR"
+     total_power = "ERR"
+@@ -419,6 +551,7 @@ def read_metrics(file_name, stop_stage):
+         "wirelength": wirelength,
+         "num_drc": num_drc,
+     }
++    #print(f"metrics@read_metrics={ret}")
+     return ret
+ 
+ 
+@@ -566,15 +699,18 @@ def read_config(file_name, mode, algorithm):
+             data = json.load(file)
+     except json.JSONDecodeError:
+         raise ValueError(f"Invalid JSON file: {file_name}")
++    
+     sdc_file = ""
+     fr_file = ""
+     if mode == "tune" and algorithm == "ax":
+         config = list()
+     else:
+         config = dict()
++        
+     for key, value in data.items():
+         if key == "best_result":
+             continue
++            
+         if key == "_SDC_FILE_PATH" and value != "":
+             if sdc_file != "":
+                 print("[WARNING TUN-0004] Overwriting SDC base file.")
+@@ -585,22 +721,13 @@ def read_config(file_name, mode, algorithm):
+                 print("[WARNING TUN-0005] Overwriting FastRoute base file.")
+             fr_file = read(f"{os.path.dirname(file_name)}/{value}")
+             continue
+-        if not isinstance(value, dict):
+-            # To take care of empty values like _FR_FILE_PATH
+-            if mode == "tune" and algorithm == "ax":
+-                param_dict = read_tune_ax(key, value)
+-                if param_dict:
+-                    config.append(param_dict)
+-            elif mode == "tune" and algorithm == "pbt":
+-                param_dict = read_tune_pbt(key, value)
+-                if param_dict:
+-                    config[key] = param_dict
+-            else:
+-                config[key] = value
+-        elif mode == "sweep":
++        
++        if mode == "sweep":
+             config[key] = read_sweep(value)
+         elif mode == "tune" and algorithm == "ax":
+-            config.append(read_tune_ax(key, value))
++            param_dict = read_tune_ax(key, value)
++            if param_dict:
++                config.append(param_dict)
+         elif mode == "tune" and algorithm == "pbt":
+             config[key] = read_tune_pbt(key, value)
+         elif mode == "tune":
+@@ -613,7 +740,7 @@ def read_config(file_name, mode, algorithm):
+ def prepare_ray_server(args):
+     """
+     Prepares Ray server and returns basic directories.
+-    """
++    """   
+     # Connect to remote Ray server if any, otherwise will run locally
+     if args.server is not None:
+         # Connect to ray server before first remote execution.
+@@ -628,7 +755,7 @@ def prepare_ray_server(args):
+     )
+     local_dir = f"logs/{args.platform}/{args.design}"
+     local_dir = os.path.join(orfs_flow_dir, local_dir)
+-    install_path = os.path.abspath(os.path.join(orfs_flow_dir, "../tools/install"))
++    install_path = os.path.abspath(os.path.join(orfs_flow_dir, "../tools/install"))  
+     return local_dir, orfs_flow_dir, install_path
+ 
+ 
+@@ -643,15 +770,12 @@ def openroad_distributed(
+     variant=None,
+ ):
+     """Simple wrapper to run openroad distributed with Ray."""
+-    config = parse_config(
++    config, globals = parse_config(
+         config=config,
+-        base_dir=repo_dir,
+-        platform=args.platform,
+-        sdc_original=sdc_original,
+         constraints_sdc=CONSTRAINTS_SDC,
+-        fr_original=fr_original,
+         fastroute_tcl=FASTROUTE_TCL,
+     )
++   
+     if variant is None:
+         variant = config.replace(" ", "_").replace("=", "_")
+     t = time.time()
