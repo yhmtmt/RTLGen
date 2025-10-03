@@ -147,6 +147,8 @@ int main(int argc, char** argv) {
             cptype = CPA_KoggeStone;
         } else if (config.multiplier->cpa_structure == "BrentKung") {
             cptype = CPA_BrentKung;
+        }else if(config.multiplier->cpa_structure == "Sklansky"){
+            cptype = CPA_Sklansky;
         } else {
             std::cerr << "Error: Unknown CPA structure: " << config.multiplier->cpa_structure << "\n";
             return 1;
