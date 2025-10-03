@@ -37,7 +37,7 @@ python3 scripts/generate_design.py <config.json> <platform> [--optimization_targ
 - `<platform>`: Target platform (e.g., `sky130hd`, `nangate45`, `asap7`).
 - Optional arguments allow you to specify optimization targets and flow parameters.
 
-This script prepares all necessary files for OpenROAD, enabling you to run the flow manually or as part of a larger automated process. You can execute the OpenROAD flow by specifying `/orfs/flow/designs/<platform>/<module name>_wrapper/config.mk`. If you have set up AutoTuner (see below), you can use `scripts/run_autotuner.py` to automatically search for the optimal result in terms of weighted PPA metrics.
+This script prepares all necessary files for OpenROAD, enabling you to run the flow manually or as part of a larger automated process. You can execute the OpenROAD flow by specifying `/orfs/flow/designs/<platform>/<module name>_wrapper/config.mk`. You can use `scripts/run_autotuner.py` to automatically search for the optimal result in terms of weighted PPA metrics.
 
 **Usage:**
 ```sh
@@ -49,22 +49,7 @@ python3 scripts/run_autotuner.py --design <design_name> --platform <platform> [-
 - `--output_csv <path>`: Path to save the evaluation results in CSV format (default: `<design_name>.csv`).
 - `--no_output_csv`: Disable saving results to a CSV file.
 
-This script wraps the openroad_autotuner, automatically generates and updates the config path, and runs an evaluation sweep to find the best trade-off between performance, power, and area.
-
-## AutoTuner
-
-The AutoTuner is automatically installed in the devcontainer as part of the environment setup. However, please note that the current `distribute.py` and `utils.py` in `orfs/tools/AutoTuner/src/autotuner` have some bugs affecting the tuning operation. Bug fixes for these issues are available in my branch:
-
-[https://github.com/yhmtmt/orfs.git](https://github.com/yhmtmt/orfs.git)
-
-A brief description of the bugfixes is provided in the commit messages of that repository. If you wish to use the fixed version, pull my repository above into `/orfs` in the devcontainer:
-
-```
-cd /orfs
-git pull https://github.com/yhmtmt/orfs.git
-```
-
-The usage of the AutoTuner remains the same as described in the ORFS manual. Please be aware that further revisions may be necessary for full functionality. (One notable issue is that it cannot properly evaluate weighted PPA (Performance, Power, Area) metrics.)
+This script wraps `openroad_autotuner`, automatically generates and updates the config path, and runs an evaluation sweep to find the best trade-off between performance, power, and area. AutoTuner is installed during the Docker container build process. The original AutoTuner bundled with OpenROAD flow scripts had some undesirable behaviors, so I modified it to better suit my objectives. The patch is included as `bugfix-autotuner.patch` in the repository and is automatically applied when building the container environment. I have pinned the commit hashes of the OpenROAD flow scripts and OpenROAD repositories to versions I have tested, so the setup should remain consistent even if the main branch is updated.
 
 ## Generated GDS2 Sample
 
