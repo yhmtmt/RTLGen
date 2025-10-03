@@ -22,6 +22,9 @@ def main():
     
     args = parser.parse_args()
 
+    # Read JSON config file
+    with open(args.config, "r") as f:
+        config = json.load(f)
 
     if "multiplier" in config:
         module_name = config["multiplier"]["module_name"]
