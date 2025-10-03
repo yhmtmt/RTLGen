@@ -42,7 +42,7 @@ def main():
 
     try:
         result1 = subprocess.run(cmd1, check=True, capture_output=True)
-        
+
         best_results_path_1 = None
         for line in result1.stdout.decode('utf-8', errors='ignore').splitlines():
             if "Best results written to" in line:

@@ -44,6 +44,7 @@ RUN apt-get update && \
     iverilog \
     gtkwave \
     jq \
+    libyaml-cpp-dev \
     tzdata && \
     ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime && \
     dpkg-reconfigure --frontend noninteractive tzdata
@@ -87,15 +88,27 @@ RUN wget https://github.com/google/or-tools/releases/download/v9.10/or-tools_amd
     rm or-tools_amd64_ubuntu-22.04_cpp_v9.10.4067.tar.gz && \
     rm -rf ${EXTRACTED_DIR}
 
-RUN git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD.git &&    cd OpenROAD &&    mkdir build &&    cd build && \
-    cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DBUILD_GUI=on && \    
+#RUN git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD.git &&    cd OpenROAD &&    mkdir build &&    cd build && \
+#    cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DBUILD_GUI=on && \    
+#    make -j$(nproc) && \
+#    make install
+
+RUN git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD.git && \
+    cd OpenROAD && \
+    git checkout 320b89c852344bf1a6e7e7889c3a6c96e3cc067b && \
+    mkdir build && cd build && \
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DBUILD_GUI=on && \
     make -j$(nproc) && \
     make install
-    
+
 RUN apt-get update && apt-get install -y gdb
 
-# Clone the repository
-RUN git clone https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts.git /orfs
+# Clone the repository checkout 1f4e76eb5a7758c813ccca3b555bed6258870cad and apply RTLGen/bugfix-autotuner.patch
+#RUN git clone https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts.git /orfs && cd orfs && git checkout 1f4e76eb5a7758c813ccca3b555bed6258870cad && git submodule update --init --recursive && git apply /workspaces/RTLGen/RTLGen/bugfix-autotuner.patch
+RUN git clone https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts.git /orfs && \
+    cd orfs && git checkout 1f4e76eb5a7758c813ccca3b555bed6258870cad 
+COPY bugfix-autotuner.patch /orfs/bugfix-autotuner.patch
+RUN cd orfs && git submodule update --init --recursive && git apply /orfs/bugfix-autotuner.patch
 
 RUN python3 -m pip install --upgrade pip setuptools wheel 
 
