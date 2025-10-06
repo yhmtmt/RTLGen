@@ -37,7 +37,7 @@ python3 scripts/generate_design.py <config.json> <platform> [--optimization_targ
 - `<platform>`: Target platform (e.g., `sky130hd`, `nangate45`, `asap7`).
 - Optional arguments allow you to specify optimization targets and flow parameters.
 
-This script prepares all necessary files for OpenROAD, enabling you to run the flow manually or as part of a larger automated process. You can execute the OpenROAD flow by specifying `/orfs/flow/designs/<platform>/<module name>_wrapper/config.mk`. You can use `scripts/run_autotuner.py` to automatically search for the optimal result in terms of weighted PPA metrics.
+This script prepares all necessary files for OpenROAD, enabling you to run the flow manually or as part of a larger automated process. You can use `scripts/run_autotuner.py` to automatically search for the optimal result in terms of weighted PPA metrics.
 
 **Usage:**
 ```sh
