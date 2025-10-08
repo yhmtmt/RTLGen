@@ -120,5 +120,26 @@ ENV OPENROAD_EXE="/usr/bin/openroad"
 ENV YOSYS_EXE="/oss-cad-suite/bin/yosys"
 ENV LD_LIBRARY_PATH="/usr/bin/:${PATH}"
 
+# Install ONNX Runtime
+# Set ONNX_VERSION to the desired version, e.g., 1.19.0
+# Set USE_CUDA to "true" to install the GPU version, or "false" to install the CPU version
+ARG ONNX_VERSION=1.19.0
+ARG USE_CUDA=false
+
+RUN if [ "$USE_CUDA" = "true" ]; then \
+        echo "Installing ONNX Runtime GPU (CUDA) version ${ONNX_VERSION}"; \
+        wget https://github.com/microsoft/onnxruntime/releases/download/v${ONNX_VERSION}/onnxruntime-linux-x64-gpu-${ONNX_VERSION}.tgz && \
+        tar -xzf onnxruntime-linux-x64-gpu-${ONNX_VERSION}.tgz && \
+        mv onnxruntime-linux-x64-gpu-${ONNX_VERSION} /usr/local/onnxruntime; \
+    else \
+        echo "Installing ONNX Runtime CPU version ${ONNX_VERSION}"; \
+        wget https://github.com/microsoft/onnxruntime/releases/download/v${ONNX_VERSION}/onnxruntime-linux-x64-${ONNX_VERSION}.tgz && \
+        tar -xzf onnxruntime-linux-x64-${ONNX_VERSION}.tgz && \
+        mv onnxruntime-linux-x64-${ONNX_VERSION} /usr/local/onnxruntime; \
+    fi
+
+ENV ONNXRUNTIME_DIR=/usr/local/onnxruntime
+ENV LD_LIBRARY_PATH=${ONNXRUNTIME_DIR}/lib:$LD_LIBRARY_PATH
+
 # Set the working directory
 #WORKDIR /orfs

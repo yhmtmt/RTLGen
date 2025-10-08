@@ -7,6 +7,8 @@
 #include "adder.hpp"
 #include <nlohmann/json.hpp>
 
+#include <onnxruntime_cxx_api.h>
+
 using json = nlohmann::json;
 
 struct OperandConfig {

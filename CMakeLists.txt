@@ -12,12 +12,13 @@ include_directories(${GTEST_INCLUDE_DIRS})
 
 # Add OR-Tools
 set(ORTOOLS_DIR /home/yhmtmt/work/or-tools_x86_64_Ubuntu-22.04_cpp_v9.10.4067)
+set(ONNXRUNTIME_DIR $ENV{ONNXRUNTIME_DIR})
 
 # Add the main executable
 add_executable(rtlgen main.cpp multiplier.cpp adder.cpp)
-target_include_directories(rtlgen PUBLIC ${ORTOOLS_DIR}/include ${PROJECT_SOURCE_DIR}/json/include)
-target_link_directories(rtlgen PUBLIC ${ORTOOLS_DIR}/lib)
-target_link_libraries(rtlgen ortools)
+target_include_directories(rtlgen PUBLIC ${ORTOOLS_DIR}/include ${PROJECT_SOURCE_DIR}/json/include ${ONNXRUNTIME_DIR}/include)
+target_link_directories(rtlgen PUBLIC ${ORTOOLS_DIR}/lib ${ONNXRUNTIME_DIR}/lib)
+target_link_libraries(rtlgen ortools onnxruntime)
 
 set (CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR})
 install(TARGETS rtlgen DESTINATION bin)
