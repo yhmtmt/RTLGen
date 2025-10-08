@@ -1,8 +1,38 @@
 #include <iostream>
 #include <fstream>
 #include "config.hpp"
+#include <onnxruntime_cxx_api.h> // ONNX Runtime C++ API
 
 using json = nlohmann::json;
+
+// Function to print ONNX model summary
+void printOnnxModelSummary(const std::string& model_path) {
+    try {
+        Ort::Env env(ORT_LOGGING_LEVEL_WARNING, "RTLGen");
+        Ort::SessionOptions session_options;
+        Ort::Session session(env, model_path.c_str(), session_options);
+
+        std::cout << "[INFO] ONNX model loaded: " << model_path << std::endl;
+        size_t num_inputs = session.GetInputCount();
+        size_t num_outputs = session.GetOutputCount();
+
+        Ort::AllocatorWithDefaultOptions allocator;
+
+        std::cout << "[INFO] Number of inputs: " << num_inputs << std::endl;
+        for (size_t i = 0; i < num_inputs; ++i) {
+            Ort::AllocatedStringPtr input_name_ptr = session.GetInputNameAllocated(i, allocator);
+            std::cout << "  Input[" << i << "]: " << input_name_ptr.get() << std::endl;
+        }
+
+        std::cout << "[INFO] Number of outputs: " << num_outputs << std::endl;
+        for (size_t i = 0; i < num_outputs; ++i) {
+            Ort::AllocatedStringPtr output_name_ptr = session.GetOutputNameAllocated(i, allocator);
+            std::cout << "  Output[" << i << "]: " << output_name_ptr.get() << std::endl;
+        }
+    } catch (const Ort::Exception& e) {
+        std::cerr << "Error loading ONNX model: " << e.what() << std::endl;
+    }
+}
 
 // Function to read JSON config from file
 bool readConfig(const std::string& filename, CircuitConfig& config) {
@@ -21,7 +51,7 @@ bool readConfig(const std::string& filename, CircuitConfig& config) {
 
         if (j.contains("multiplier")) {
             MultiplierConfig multiplier_config;
-            multiplier_config.module_name = j["multiplier"]["module_name"]; // Read module name
+            multiplier_config.module_name = j["multiplier"]["module_name"];
             multiplier_config.ppg_algorithm = j["multiplier"]["ppg_algorithm"];
             multiplier_config.compressor_structure = j["multiplier"]["compressor_structure"];
             multiplier_config.pipeline_depth = j["multiplier"]["pipeline_depth"];
@@ -44,6 +74,11 @@ bool readConfig(const std::string& filename, CircuitConfig& config) {
             yosys_config.is_signed = j["operand"]["signed"];
             yosys_config.bit_width = j["operand"]["bit_width"];
             config.multiplier_yosys = yosys_config;
+        }
+
+        if (j.contains("onnx_model")) {
+            config.onnx_model = j["onnx_model"].get<std::string>();
+            printOnnxModelSummary(config.onnx_model.value());
         }
     } catch (const std::exception& e) {
         std::cerr << "Error: Invalid JSON format: " << e.what() << std::endl;

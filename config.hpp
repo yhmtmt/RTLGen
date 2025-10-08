@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <optional>
 #include <nlohmann/json.hpp>
 
 enum CPAType{
@@ -101,6 +102,7 @@ struct CircuitConfig {
     std::optional<MultiplierConfig> multiplier;
     std::optional<AdderConfig> adder;
     std::optional<MultiplierYosysConfig> multiplier_yosys;
+    std::optional<std::string> onnx_model; // Added ONNX model path
 };
 
 // get_ppg_algorithm ppg_algorithm to enum
