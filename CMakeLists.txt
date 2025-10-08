@@ -45,3 +45,11 @@ target_link_libraries(test_multiplier ${GTEST_LIBRARIES} GTest::Main pthread ort
 
 add_test(NAME test_adder COMMAND test_adder)
 add_test(NAME test_multiplier COMMAND test_multiplier)
+
+add_executable(test_onnx test_onnx.cpp config.cpp)
+target_include_directories(test_onnx PUBLIC ${ORTOOLS_DIR}/include ${PROJECT_SOURCE_DIR}/json/include ${ONNXRUNTIME_DIR}/include)
+target_link_directories(test_onnx PUBLIC ${ORTOOLS_DIR}/lib  ${ONNXRUNTIME_DIR}/lib)
+
+target_link_libraries(test_onnx ${GTEST_LIBRARIES} GTest::Main pthread onnxruntime)
+
+add_test(NAME test_onnx COMMAND test_onnx)

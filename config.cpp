@@ -6,7 +6,7 @@
 using json = nlohmann::json;
 
 // Function to print ONNX model summary
-void printOnnxModelSummary(const std::string& model_path) {
+bool printOnnxModelSummary(const std::string& model_path) {
     try {
         Ort::Env env(ORT_LOGGING_LEVEL_WARNING, "RTLGen");
         Ort::SessionOptions session_options;
@@ -31,7 +31,9 @@ void printOnnxModelSummary(const std::string& model_path) {
         }
     } catch (const Ort::Exception& e) {
         std::cerr << "Error loading ONNX model: " << e.what() << std::endl;
+        return false;
     }
+    return true;
 }
 
 // Function to read JSON config from file
