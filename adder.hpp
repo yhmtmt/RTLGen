@@ -6,13 +6,7 @@
 #include <algorithm> // For std::all_of, std::any_of
 #include <cfloat>
 #include <list>
-
-enum CPAType{
-    CPA_Ripple, // Ripple Carry Adder
-    CPA_KoggeStone, // Kogge-Stone Adder
-    CPA_BrentKung, // Brent-Kung Adder
-    CPA_Sklansky // Sklansky Adder
-};
+#include "config.hpp"
 
 // Carry Propagating Adder
 // takes generally 2 tuple of (p0,g0) and (p1,g1) as input

@@ -15,7 +15,7 @@ set(ORTOOLS_DIR /home/yhmtmt/work/or-tools_x86_64_Ubuntu-22.04_cpp_v9.10.4067)
 set(ONNXRUNTIME_DIR $ENV{ONNXRUNTIME_DIR})
 
 # Add the main executable
-add_executable(rtlgen main.cpp multiplier.cpp adder.cpp)
+add_executable(rtlgen main.cpp multiplier.cpp adder.cpp config.cpp)
 target_include_directories(rtlgen PUBLIC ${ORTOOLS_DIR}/include ${PROJECT_SOURCE_DIR}/json/include ${ONNXRUNTIME_DIR}/include)
 target_link_directories(rtlgen PUBLIC ${ORTOOLS_DIR}/lib ${ONNXRUNTIME_DIR}/lib)
 target_link_libraries(rtlgen ortools onnxruntime)
