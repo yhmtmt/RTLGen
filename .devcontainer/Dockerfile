@@ -121,9 +121,9 @@ ENV YOSYS_EXE="/oss-cad-suite/bin/yosys"
 ENV LD_LIBRARY_PATH="/usr/bin/:${PATH}"
 
 # Install ONNX Runtime
-# Set ONNX_VERSION to the desired version, e.g., 1.19.0
+# Set ONNX_VERSION to the desired version, e.g., 1.23.1
 # Set USE_CUDA to "true" to install the GPU version, or "false" to install the CPU version
-ARG ONNX_VERSION=1.19.0
+ARG ONNX_VERSION=1.23.1
 ARG USE_CUDA=false
 
 RUN if [ "$USE_CUDA" = "true" ]; then \
