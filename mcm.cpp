@@ -263,36 +263,61 @@ void McmOptimizer::Build(std::vector<int> target_consts, int NA, int wordlength,
         return;
     }
 
+    optimization_result.clear();
+
     // extract adder graph structure. 
     // ca[a], ca_i_k[a][i][k], phi[a][i], sigma[a][s], psi[a][s], used_adder[a]
     for (int a = 1; a <= NA; ++a) {
         if (used_adder[a]->solution_value() > 0.5) {
-            std::cout << "Adder " << a << ": ca = " << ca[a]->solution_value() << ", inputs: ";
+            AdderInfo info;
+            info.index = a;
+            info.ca = static_cast<int>(ca[a]->solution_value());
+            info.input_adders.clear();
+            info.input_signs.clear();
             for (int i = 0; i < 2; ++i) {
                 for (int k = 0; k < a; ++k) {
                     if (ca_i_k[a][i][k]->solution_value() > 0.5) {
-                        std::cout << "from adder " << k << " ";
+                        info.input_adders.push_back(k);
                     }
                 }
-                std::cout << "sign: " << (phi[a][i]->solution_value() > 0.5 ? "-" : "+") << " ";
+                info.input_signs.push_back(phi[a][i]->solution_value() > 0.5 ? '-' : '+');
             }
+            info.left_shift = -1;
             for (int s = 0; s <= Smax; ++s) {
                 if (sigma[a][s]->solution_value() > 0.5) {
-                    std::cout << "left shift: " << s << " ";
+                    info.left_shift = s;
                 }
             }
+            info.negative_shift = 0;
             for (int s = -Smax; s <= 0; ++s) {
                 if (psi[a][-s]->solution_value() > 0.5) {
-                    std::cout << "negative shift: " << s << " ";
+                    info.negative_shift = s;
                 }
             }
-            std::cout << std::endl;
+            optimization_result.push_back(info);
+
+            // Print for debug
+            std::cout << "Adder " << a << ": ca = " << info.ca << ", inputs: ";
+            for (size_t idx = 0; idx < info.input_adders.size(); ++idx) {
+                std::cout << "from adder " << info.input_adders[idx] << " sign: " << info.input_signs[idx] << " ";
+            }
+            std::cout << "left shift: " << info.left_shift << " ";
+            std::cout << "negative shift: " << info.negative_shift << std::endl;
         }
     }
 }
+
 void McmOptimizer::PrintSolution() {
     std::cout << "Solution:" << std::endl;
     std::cout << "Objective value = " << solver_.Objective().Value() << std::endl;
+    for (const auto& info : optimization_result) {
+        std::cout << "Adder " << info.index << ": ca = " << info.ca << ", inputs: ";
+        for (size_t idx = 0; idx < info.input_adders.size(); ++idx) {
+            std::cout << "from adder " << info.input_adders[idx] << " sign: " << info.input_signs[idx] << " ";
+        }
+        std::cout << "left shift: " << info.left_shift << " ";
+        std::cout << "negative shift: " << info.negative_shift << std::endl;
+    }
 }
 
 } // namespace operations_research
