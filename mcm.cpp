@@ -6,71 +6,17 @@
 
 namespace operations_research {
 
-McmArgs parse_args(int argc, char* argv[]) {
-    McmArgs args;
-    for (int i = 1; i < argc; ++i) {
-        std::string arg = argv[i];
-        if (arg.find("=") != std::string::npos) {
-            std::string key = arg.substr(0, arg.find("="));
-            std::string value = arg.substr(arg.find("=") + 1);
-            if (key == "timelimit") {
-                args.timelimit = std::stod(value);
-            } else if (key == "wIn") {
-                args.wIn = std::stoi(value);
-            } else if (key == "wOut") {
-                args.wOut = std::stoi(value);
-            } else if (key == "pipeline") {
-                args.pipeline = (value == "true");
-            } else if (key == "verbose") {
-                args.verbose = (value == "true");
-            } else if (key == "min_ad") {
-                args.min_ad = (value == "true");
-            } else if (key == "nb_adders_start") {
-                args.nb_adders_start = std::stoi(value);
-            } else if (key == "use_rpag") {
-                args.use_rpag = (value == "true");
-            } else if (key == "use_mcm") {
-                args.use_mcm = (value == "true");
-            } else if (key == "threads") {
-                args.threads = std::stoi(value);
-            } else if (key == "ws_timelimit") {
-                args.ws_timelimit = std::stod(value);
-            } else if (key == "file_ag") {
-                args.file_ag = value;
-            } else {
-                std::cerr << "Unrecognized keyword " << key << " ignored" << std::endl;
-            }
-        } else {
-            args.target_consts.push_back(std::stoi(arg));
-        }
-    }
-    return args;
-}
-
-McmOptimizer::McmOptimizer(const McmArgs& args)
-    : args_(args),
-      solver_("McmSolver", MPSolver::SCIP_MIXED_INTEGER_PROGRAMMING) {
-}
-
-void McmOptimizer::Optimize() {
-    BuildIlpModel();
-    SolveIlpModel();
-    PrintSolution();
-}
-
-void McmOptimizer::BuildIlpModel() {
+void McmOptimizer::Build(std::vector<int> target_consts, int NA, int wordlength, int Smax)
+{
     const double infinity = solver_.infinity();
 
     // This is a C++ translation of the ILP model from ilp1.jl
+    // see Toward the Multiple Constant Multiplication at Minimal Hardware Cost
     // It is a simplified version and does not include all the features.
-
+    
     // Parameters
-    const int NA = 10; // Max number of adders
-    const int wordlength = 16; // Wordlength of the constants
-    const int Smin = 0;
-    const int Smax = wordlength;
-    const int NO = args_.target_consts.size();
-    const int max_c = *std::max_element(args_.target_consts.begin(), args_.target_consts.end());
+    const int NO = target_consts.size();
+    const int max_c = *std::max_element(target_consts.begin(), target_consts.end());
 
     // Variables
 
@@ -253,8 +199,9 @@ void McmOptimizer::BuildIlpModel() {
     }
 
     // C10,11: ca_i_sh_sg[a][0] = ca_l_sh[a] if phi[a][0] = 0 and ca_i_sh_sg[a][0] = -ca_l_sh[a] if phi[a][0] = 1 for each adder a
+    //         ca_i_sh_sg[a][1] = ca_i[a][1] if phi[a][1] = 0 and ca_i_sh_sg[a][1] = -ca_i[a][1] if phi[a][1] = 1 for each adder a
     for (int a = 1; a <= NA; ++a) {
-        // -inf <= ca_i_sh_sg[a][0] - ca_l_sh[a] - M * phi[a][0] <=0
+        // -inf <= ca_i_sh_sg[a][0] - ca_l_sh[a] - M * (1 - phi[a][0]) <=0
         MPConstraint* const c1 = solver_.MakeRowConstraint(-infinity, max_c);
         c1->SetCoefficient(ca_i_sh_sg[a][0], 1);
         c1->SetCoefficient(ca_l_sh[a], -1);
@@ -264,16 +211,27 @@ void McmOptimizer::BuildIlpModel() {
         c2->SetCoefficient(ca_i_sh_sg[a][0], 1);
         c2->SetCoefficient(ca_l_sh[a], 1);
         c2->SetCoefficient(phi[a][0], -max_c);
+
+        // -inf <= ca_i_sh_sg[a][1] - ca_i[a][1] - M *(1 - phi[a][1]) <=0
+        MPConstraint* const c3 = solver_.MakeRowConstraint(-infinity, max_c);
+        c3->SetCoefficient(ca_i_sh_sg[a][1], 1);
+        c3->SetCoefficient(ca_i[a][1], -1);
+        c3->SetCoefficient(phi[a][1], max_c);
+        // -inf <= ca_i_sh_sg[a][1] + ca_i[a][1] - M * phi[a][1] <=0
+        MPConstraint* const c4 = solver_.MakeRowConstraint(-infinity, 0);
+        c4->SetCoefficient(ca_i_sh_sg[a][1], 1);
+        c4->SetCoefficient(ca_i[a][1], 1);
+        c4->SetCoefficient(phi[a][1], -max_c);
     }
 
     // C12: ca[a] = Cj if oaj[a][j] = 1 where a in [0, NA] and j in [0, NO-1]
     for (int a = 0; a <= NA; ++a) {
         for (int j = 0; j < NO; ++j) {
-            // -inf <= ca[a] - args_.target_consts[j] - M * (1 - oaj[a][j]) <=0
+            // -inf <= ca[a] - target_consts[j] - M * (1 - oaj[a][j]) <=0
             MPConstraint* const c = solver_.MakeRowConstraint(-infinity, max_c);
             c->SetCoefficient(ca[a], 1);
             c->SetCoefficient(oaj[a][j], max_c);
-            c->SetUB(args_.target_consts[j]);
+            c->SetUB(target_consts[j]);
         }
     }
 
@@ -298,15 +256,40 @@ void McmOptimizer::BuildIlpModel() {
         objective->SetCoefficient(used_adder[a], 1);
     }
     objective->SetMinimization();
-}
 
-void McmOptimizer::SolveIlpModel() {
     const MPSolver::ResultStatus result_status = solver_.Solve();
     if (result_status != MPSolver::OPTIMAL) {
         std::cerr << "The problem does not have an optimal solution!" << std::endl;
+        return;
+    }
+
+    // extract adder graph structure. 
+    // ca[a], ca_i_k[a][i][k], phi[a][i], sigma[a][s], psi[a][s], used_adder[a]
+    for (int a = 1; a <= NA; ++a) {
+        if (used_adder[a]->solution_value() > 0.5) {
+            std::cout << "Adder " << a << ": ca = " << ca[a]->solution_value() << ", inputs: ";
+            for (int i = 0; i < 2; ++i) {
+                for (int k = 0; k < a; ++k) {
+                    if (ca_i_k[a][i][k]->solution_value() > 0.5) {
+                        std::cout << "from adder " << k << " ";
+                    }
+                }
+                std::cout << "sign: " << (phi[a][i]->solution_value() > 0.5 ? "-" : "+") << " ";
+            }
+            for (int s = 0; s <= Smax; ++s) {
+                if (sigma[a][s]->solution_value() > 0.5) {
+                    std::cout << "left shift: " << s << " ";
+                }
+            }
+            for (int s = -Smax; s <= 0; ++s) {
+                if (psi[a][-s]->solution_value() > 0.5) {
+                    std::cout << "negative shift: " << s << " ";
+                }
+            }
+            std::cout << std::endl;
+        }
     }
 }
-
 void McmOptimizer::PrintSolution() {
     std::cout << "Solution:" << std::endl;
     std::cout << "Objective value = " << solver_.Objective().Value() << std::endl;

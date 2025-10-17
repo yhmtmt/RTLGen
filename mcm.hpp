@@ -7,35 +7,13 @@
 
 namespace operations_research {
 
-struct McmArgs {
-    std::vector<int> target_consts;
-    double timelimit = 0.0;
-    int wIn = 0;
-    int wOut = 0;
-    bool pipeline = false;
-    bool verbose = false;
-    bool min_ad = false;
-    int nb_adders_start = 0;
-    bool use_rpag = false;
-    bool use_mcm = false;
-    int threads = 0;
-    double ws_timelimit = 0.0;
-    std::string file_ag = "addergraph.txt";
-};
-
-McmArgs parse_args(int argc, char* argv[]);
-
 class McmOptimizer {
 public:
-    McmOptimizer(const McmArgs& args);
-    void Optimize();
+    McmOptimizer() : solver_("MCM_Solver", MPSolver::CBC_MIXED_INTEGER_PROGRAMMING) {}
 
-private:
-    void BuildIlpModel();
-    void SolveIlpModel();
+    void Build(std::vector<int> target_consts, int NA = 10, int wordlength=16, int Smax=16);
     void PrintSolution();
-
-    const McmArgs& args_;
+private:
     MPSolver solver_;
     // Add more member variables for the ILP model
 };
