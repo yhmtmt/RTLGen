@@ -90,7 +90,7 @@ void McmOptimizer::Build(std::vector<int> _target_consts, int _NA, int _wordleng
     // sigma[a][s]: 1 if left shift before adder a is s
     std::vector<std::vector<MPVariable*>> sigma(NA + 1, std::vector<MPVariable*>(Smax + 1));
     for (int a = 1; a <= NA; ++a) {
-        for (int s = Smax; s <= 0; ++s) {
+        for (int s = -Smax; s <= 0; ++s) {
             sigma[a][-s] = solver_.MakeBoolVar("sigma[" + std::to_string(a) + "][" + std::to_string(s) + "]");
         }
     }   
@@ -233,10 +233,9 @@ void McmOptimizer::Build(std::vector<int> _target_consts, int _NA, int _wordleng
     for (int a = 0; a <= NA; ++a) {
         for (int j = 0; j < NO; ++j) {
             // -inf <= ca[a] - target_consts[j] - M * (1 - oaj[a][j]) <=0
-            MPConstraint* const c = solver_.MakeRowConstraint(-infinity, max_c);
+            MPConstraint* const c = solver_.MakeRowConstraint(-infinity, max_c + target_consts[j]);
             c->SetCoefficient(ca[a], 1);
             c->SetCoefficient(oaj[a][j], max_c);
-            c->SetUB(target_consts[j]);
         }
     }
 
@@ -261,6 +260,15 @@ void McmOptimizer::Build(std::vector<int> _target_consts, int _NA, int _wordleng
         objective->SetCoefficient(used_adder[a], 1);
     }
     objective->SetMinimization();
+
+    std::string model_str; 
+    if(solver_.ExportModelAsLpFormat(false, &model_str)){
+        std::cout << model_str << std::endl;
+        // save to file for inspection. file name should be parameterized with the argument of this function.
+        std::ofstream model_file("mcm_model.lp");
+        model_file << model_str;
+        model_file.close();
+    }
 
     const MPSolver::ResultStatus result_status = solver_.Solve();
     if (result_status != MPSolver::OPTIMAL) {
