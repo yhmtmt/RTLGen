@@ -12,67 +12,27 @@ bool file_exists(const std::string& filename) {
     return f.good();
 }
 
-// Helper to run iverilog and check output
-void run_iverilog_test(const std::string& module_name, int input_val, int expected_output) {
-    // Generate testbench
-    std::ofstream tb_file(module_name + "_tb.v");
-    tb_file << "`timescale 1ns/1ps\n";
-    tb_file << "module " << module_name << "_tb;\n";
-    tb_file << "    reg [31:0] x;\n";
-    tb_file << "    wire [31:0] y;\n";
-    tb_file << "    " << module_name << " uut(.x(x), .y(y));\n";
-    tb_file << "    initial begin\n";
-    tb_file << "        x = " << input_val << ";\n";
-    tb_file << "        #10;\n";
-    tb_file << "        if (y !== " << expected_output << ") begin\n";
-    tb_file << "            $display(\"FAIL: x=%d, y=%d, expected=%d\", x, y, " << expected_output << ");\n";
-    tb_file << "            $finish;\n";
-    tb_file << "        end\n";
-    tb_file << "        $display(\"PASS\");\n";
-    tb_file << "        $finish;\n";
-    tb_file << "    end\n";
-    tb_file << "endmodule\n";
-    tb_file.close();
-
-    std::string iverilog_cmd = "iverilog -o " + module_name + ".vvp " + module_name + ".v " + module_name + "_tb.v";
-    int ret = system(iverilog_cmd.c_str());
-    ASSERT_EQ(ret, 0);
-
-    std::string vvp_cmd = "vvp " + module_name + ".vvp";
-    FILE* pipe = popen(vvp_cmd.c_str(), "r");
-    ASSERT_TRUE(pipe != nullptr);
-
-    char buffer[128];
-    std::string result = "";
-    while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
-        result += buffer;
-    }
-    int pclose_ret = pclose(pipe);
-    ASSERT_NE(result.find("PASS"), std::string::npos);
-    ASSERT_EQ(WEXITSTATUS(pclose_ret), 0);
-}
-
 // Helper to run iverilog and check output for multiple outputs
-void run_iverilog_test_multi(const std::string& module_name, int input_val, const std::vector<int>& expected_outputs) {
+void run_iverilog_test(const std::string& module_name, const std::vector<int> & target_consts,  int input_val) {
     // Generate testbench for multiple outputs
     std::ofstream tb_file(module_name + "_tb.v");
     tb_file << "`timescale 1ns/1ps\n";
     tb_file << "module " << module_name << "_tb;\n";
     tb_file << "    reg [31:0] x;\n";
-    for (size_t i = 0; i < expected_outputs.size(); ++i) {
-        tb_file << "    wire [31:0] y" << i << ";\n";
+    for (size_t i = 0; i < target_consts.size(); ++i) {
+        tb_file << "    wire [31:0] y" << target_consts[i] << ";\n";
     }
     tb_file << "    " << module_name << " uut(.x(x)";
-    for (size_t i = 0; i < expected_outputs.size(); ++i) {
-        tb_file << ", .y" << i << "(y" << i << ")";
+    for (size_t i = 0; i < target_consts.size(); ++i) {
+        tb_file << ", .y" << target_consts[i] << "(y" << target_consts[i] << ")";
     }
     tb_file << ");\n";
     tb_file << "    initial begin\n";
     tb_file << "        x = " << input_val << ";\n";
     tb_file << "        #10;\n";
-    for (size_t i = 0; i < expected_outputs.size(); ++i) {
-        tb_file << "        if (y" << i << " !== " << expected_outputs[i] << ") begin\n";
-        tb_file << "            $display(\"FAIL: x=%d, y" << i << "=%d, expected=%d\", x, y" << i << ", " << expected_outputs[i] << ");\n";
+    for (size_t i = 0; i < target_consts.size(); ++i) {
+        tb_file << "        if (y" << target_consts[i] << " !== " << target_consts[i] * input_val << ") begin\n";
+        tb_file << "            $display(\"FAIL: x=%d, y" << target_consts[i] << "=%d, expected=%d\", x, y" << target_consts[i] << ", " << target_consts[i] * input_val << ");\n";
         tb_file << "            $finish;\n";
         tb_file << "        end\n";
     }
@@ -133,12 +93,14 @@ TEST(McmOptimizerTest, GenerateVerilogAndSimulate) {
     ASSERT_TRUE(file_exists(module_name + ".v"));
 
     // Test a few input/output pairs
-    run_iverilog_test(module_name, 0, 0);
-    run_iverilog_test(module_name, 1, 3);
-    run_iverilog_test(module_name, 2, 6);
-    run_iverilog_test(module_name, 10, 30);
-    run_iverilog_test(module_name, 123, 369);
+    run_iverilog_test(module_name, target_consts, 0);
+    run_iverilog_test(module_name, target_consts, 1);
+    run_iverilog_test(module_name, target_consts, 2);
+    run_iverilog_test(module_name, target_consts, 10);
+    run_iverilog_test(module_name, target_consts, 123);
 }
+ 
+
 
 TEST(McmOptimizerTest, BuildOptimizationResultMultipleConstants) {
     operations_research::McmOptimizer optimizer;
@@ -174,9 +136,9 @@ TEST(McmOptimizerTest, GenerateVerilogAndSimulateMultipleConstants) {
     ASSERT_TRUE(file_exists(module_name + ".v"));
 
     // Test a few input/output pairs for both outputs
-    run_iverilog_test_multi(module_name, 0, {0, 0});
-    run_iverilog_test_multi(module_name, 1, {3, 5});
-    run_iverilog_test_multi(module_name, 2, {6, 10});
-    run_iverilog_test_multi(module_name, 10, {30, 50});
-    run_iverilog_test_multi(module_name, 123, {369, 615});
+    run_iverilog_test(module_name, target_consts, 0);
+    run_iverilog_test(module_name, target_consts, 1);
+    run_iverilog_test(module_name, target_consts, 2);
+    run_iverilog_test(module_name, target_consts, 10);
+    run_iverilog_test(module_name, target_consts, 123);
 }

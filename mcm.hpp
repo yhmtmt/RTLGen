@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <string>
+#include <map>
 #include "ortools/linear_solver/linear_solver.h"
 
 namespace operations_research {
@@ -30,7 +31,6 @@ public:
     }
 
 private:
-
     MPSolver solver_;
     std::vector<int> target_consts;
     int NA;
@@ -38,6 +38,7 @@ private:
     int Smax;
 
     std::vector<AdderInfo> optimization_result;
+    std::map<int, int> output_map; // Map from target_const to adder index
 };
 
 } // namespace operations_research
