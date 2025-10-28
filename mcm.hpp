@@ -39,6 +39,13 @@ private:
 
     std::vector<AdderInfo> optimization_result;
     std::map<int, int> output_map; // Map from target_const to adder index
+
+    bool select_best_adders(int NO, std::vector<operations_research::MPVariable *> &ca,
+                            std::vector<std::vector<std::vector<operations_research::MPVariable *>>> &ca_i_k,
+                            std::vector<std::vector<MPVariable *>> &sigma,
+                            std::vector<std::vector<MPVariable *>> &psi,
+                            std::vector<std::vector<MPVariable *>> &phi,
+                            std::vector<bool> &is_used_adder);
 };
 
 } // namespace operations_research

@@ -313,106 +313,10 @@ void McmOptimizer::Build(std::vector<int> _target_consts, int _NA, int _wordleng
 
     // determine adders used to minimize the number of adders. for all constants, select adders to minimize the number of adders used.
     // select adders that produce target constants
-    std::vector<std::vector<int>> oadders(target_consts.size());
-    for (int j = 0; j < NO; ++j) {
-        for (int a = 0; a <= NA; ++a) {
-            if (ca[a]->solution_value() == target_consts[j] ) {
-                oadders[j].push_back(a);
-            }
-        }
-    }
-
-    // check at least one adder produces each target constant
-    for (int j = 0; j < NO; ++j) {
-        if (oadders[j].empty()) {
-            std::cerr << "[ERROR] No adder produces target constant " << target_consts[j] << std::endl;
-            return;
-        }
-    }
-
-    // traverse all conbinations of adders to find minimal set
-    std::function<void(int, std::set<int>&, std::set<int>&)> backtrack;
-    std::function<void(int, std::set<int> &)> insert_input_adders;
-    insert_input_adders = [&](int a, std::set<int>& adder_set) {
-        if (a == 0) return; // base case: input adder
-        for (int i = 0; i < 2; ++i) {
-            for (int k = 0; k < a; ++k) {
-                if (ca_i_k[a][i][k]->solution_value() > 0.5) {
-                    bool added = adder_set.insert(k).second;
-                    insert_input_adders(k, adder_set);
-                }
-            }
-        }
-    };
-
-    backtrack = [&](int j, std::set<int>& current_set, std::set<int>& best_set) {
-        if (j == NO) {
-            if (best_set.empty() || current_set.size() < best_set.size()) {
-                best_set = current_set;
-            }
-            return;
-        }
-        for (int a : oadders[j]) {
-            current_set.insert(a);
-            std::set<int>  new_set = current_set;
-            insert_input_adders(a, new_set);
-            backtrack(j + 1, new_set, best_set);
-        }
-    };
-
-    std::set<int> current_set, used_adder_set;
-    backtrack(0, current_set, used_adder_set);
-    std::vector<bool> is_used_adder(NA + 1, false);
-    for (int a : used_adder_set) {
-        is_used_adder[a] = true;
-    }
-
-    // extract adder graph structure. 
-    // ca[a], ca_i_k[a][i][k], phi[a][i], sigma[a][s], psi[a][s]
-    for (int a = 1; a <= NA; ++a) {
-        if (is_used_adder[a]) {
-            AdderInfo info;
-            info.index = a;
-            info.ca = static_cast<int>(ca[a]->solution_value());
-            info.input_adders.clear();
-            info.input_signs.clear();
-            for (int i = 0; i < 2; ++i) {
-                for (int k = 0; k < a; ++k) {
-                    if (ca_i_k[a][i][k]->solution_value() > 0.5) {
-                        info.input_adders.push_back(k);
-                    }
-                }
-                info.input_signs.push_back(phi[a][i]->solution_value() > 0.5 ? '-' : '+');
-            }
-            info.left_shift = -1;
-            for (int s = 0; s <= Smax; ++s) {
-                if (sigma[a][s]->solution_value() > 0.5) {
-                    info.left_shift = s;
-                }
-            }
-            info.negative_shift = 0;
-            for (int s = -Smax; s <= 0; ++s) {
-                if (psi[a][-s]->solution_value() > 0.5) {
-                    info.negative_shift = s;
-                }
-            }
-            optimization_result.push_back(info);
-
-            // Print for debug
-            std::cout << "Adder " << a << ": ca = " << info.ca << ", inputs: ";
-            for (size_t idx = 0; idx < info.input_adders.size(); ++idx) {
-                std::cout << "from adder " << info.input_adders[idx] << " sign: " << info.input_signs[idx] << " ";
-            }
-            std::cout << "left shift: " << info.left_shift << " ";
-            std::cout << "negative shift: " << info.negative_shift << std::endl;
-        }
-    }
-    for (int j = 0; j < NO; ++j) {
-        for (int a = 0; a <= NA; ++a) {
-            if (is_used_adder[a] && ca[a]->solution_value() == target_consts[j]) {
-                output_map[target_consts[j]] = a;
-            }
-        }
+    std::vector<bool> is_used_adder;
+    if(!select_best_adders(NO, ca, ca_i_k, sigma, psi, phi, is_used_adder)){
+        std::cerr << "[ERROR] Failed to select best adders." << std::endl;
+        return;
     }
 }
 
@@ -483,6 +387,119 @@ bool McmOptimizer::GenerateVerilog(const std::string& module_name) {
     verilog_file.close();
 
     std::cout << "[INFO] Verilog file generated: " << module_name << ".v" << std::endl;
+    return true;
+}
+
+bool McmOptimizer::select_best_adders(int NO, std::vector<operations_research::MPVariable *> &ca,
+                                      std::vector<std::vector<std::vector<operations_research::MPVariable *>>> &ca_i_k,
+                                      std::vector<std::vector<MPVariable *>> &sigma,
+                                      std::vector<std::vector<MPVariable *>> &psi,
+                                      std::vector<std::vector<MPVariable *>> &phi,
+                                      std::vector<bool> &is_used_adder)
+{
+    std::vector<std::vector<int>> oadders(target_consts.size());
+    for (int j = 0; j < NO; ++j) {
+        for (int a = 0; a <= NA; ++a) {
+            if (ca[a]->solution_value() == target_consts[j] ) {
+                oadders[j].push_back(a);
+            }
+        }
+    }
+
+    // check at least one adder produces each target constant
+    for (int j = 0; j < NO; ++j) {
+        if (oadders[j].empty()) {
+            std::cerr << "[ERROR] No adder produces target constant " << target_consts[j] << std::endl;
+            return false;
+        }
+    }
+
+    is_used_adder = std::vector<bool>(NA + 1, false);
+
+    // traverse all conbinations of adders to find minimal set
+    std::function<void(int, std::set<int>&, std::set<int>&)> backtrack;
+    std::function<void(int, std::set<int> &)> insert_input_adders;
+    insert_input_adders = [&](int a, std::set<int>& adder_set) {
+        if (a == 0) return; // base case: input adder
+        for (int i = 0; i < 2; ++i) {
+            for (int k = 0; k < a; ++k) {
+                if (ca_i_k[a][i][k]->solution_value() > 0.5) {
+                    bool added = adder_set.insert(k).second;
+                    insert_input_adders(k, adder_set);
+                }
+            }
+        }
+    };
+
+    backtrack = [&](int j, std::set<int>& current_set, std::set<int>& best_set) {
+        if (j == NO) {
+            if (best_set.empty() || current_set.size() < best_set.size()) {
+                best_set = current_set;
+            }
+            return;
+        }
+        for (int a : oadders[j]) {
+            current_set.insert(a);
+            std::set<int>  new_set = current_set;
+            insert_input_adders(a, new_set);
+            backtrack(j + 1, new_set, best_set);
+        }
+    };
+
+    std::set<int> current_set, used_adder_set;
+    backtrack(0, current_set, used_adder_set);
+    for (int a : used_adder_set) {
+        is_used_adder[a] = true;
+    }
+
+    // extract adder graph structure. 
+    // ca[a], ca_i_k[a][i][k], phi[a][i], sigma[a][s], psi[a][s]
+    for (int a = 1; a <= NA; ++a) {
+        if (is_used_adder[a]) {
+            AdderInfo info;
+            info.index = a;
+            info.ca = static_cast<int>(ca[a]->solution_value());
+            info.input_adders.clear();
+            info.input_signs.clear();
+            for (int i = 0; i < 2; ++i) {
+                for (int k = 0; k < a; ++k) {
+                    if (ca_i_k[a][i][k]->solution_value() > 0.5) {
+                        info.input_adders.push_back(k);
+                    }
+                }
+                info.input_signs.push_back(phi[a][i]->solution_value() > 0.5 ? '-' : '+');
+            }
+            info.left_shift = -1;
+            for (int s = 0; s <= Smax; ++s) {
+                if (sigma[a][s]->solution_value() > 0.5) {
+                    info.left_shift = s;
+                }
+            }
+            info.negative_shift = 0;
+            for (int s = -Smax; s <= 0; ++s) {
+                if (psi[a][-s]->solution_value() > 0.5) {
+                    info.negative_shift = s;
+                }
+            }
+            optimization_result.push_back(info);
+
+            // Print for debug
+            std::cout << "Adder " << a << ": ca = " << info.ca << ", inputs: ";
+            for (size_t idx = 0; idx < info.input_adders.size(); ++idx) {
+                std::cout << "from adder " << info.input_adders[idx] << " sign: " << info.input_signs[idx] << " ";
+            }
+            std::cout << "left shift: " << info.left_shift << " ";
+            std::cout << "negative shift: " << info.negative_shift << std::endl;
+        }
+    }
+    for (int j = 0; j < NO; ++j) {
+        for (int a = 0; a <= NA; ++a) {
+            if (is_used_adder[a] && ca[a]->solution_value() == target_consts[j]) {
+                output_map[target_consts[j]] = a;
+            }
+        }
+    }
+
     return true;
 }
 
