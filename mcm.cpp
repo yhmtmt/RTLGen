@@ -313,8 +313,7 @@ void McmOptimizer::Build(std::vector<int> _target_consts, int _NA, int _wordleng
 
     // determine adders used to minimize the number of adders. for all constants, select adders to minimize the number of adders used.
     // select adders that produce target constants
-    std::vector<bool> is_used_adder;
-    if(!select_best_adders(NO, ca, ca_i_k, sigma, psi, phi, is_used_adder)){
+    if(!select_best_adders(NO, ca, ca_i_k, sigma, psi, phi)){
         std::cerr << "[ERROR] Failed to select best adders." << std::endl;
         return;
     }
@@ -394,8 +393,7 @@ bool McmOptimizer::select_best_adders(int NO, std::vector<operations_research::M
                                       std::vector<std::vector<std::vector<operations_research::MPVariable *>>> &ca_i_k,
                                       std::vector<std::vector<MPVariable *>> &sigma,
                                       std::vector<std::vector<MPVariable *>> &psi,
-                                      std::vector<std::vector<MPVariable *>> &phi,
-                                      std::vector<bool> &is_used_adder)
+                                      std::vector<std::vector<MPVariable *>> &phi)
 {
     std::vector<std::vector<int>> oadders(target_consts.size());
     for (int j = 0; j < NO; ++j) {
@@ -414,7 +412,7 @@ bool McmOptimizer::select_best_adders(int NO, std::vector<operations_research::M
         }
     }
 
-    is_used_adder = std::vector<bool>(NA + 1, false);
+    std::vector<bool> is_used_adder(NA + 1, false);
 
     // traverse all conbinations of adders to find minimal set
     std::function<void(int, std::set<int>&, std::set<int>&)> backtrack;

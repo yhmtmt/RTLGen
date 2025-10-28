@@ -44,8 +44,7 @@ private:
                             std::vector<std::vector<std::vector<operations_research::MPVariable *>>> &ca_i_k,
                             std::vector<std::vector<MPVariable *>> &sigma,
                             std::vector<std::vector<MPVariable *>> &psi,
-                            std::vector<std::vector<MPVariable *>> &phi,
-                            std::vector<bool> &is_used_adder);
+                            std::vector<std::vector<MPVariable *>> &phi);
 };
 
 } // namespace operations_research
