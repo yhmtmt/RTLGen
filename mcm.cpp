@@ -119,14 +119,6 @@ void McmOptimizer::Build(std::vector<int> _target_consts, int _NA, int _wordleng
         }
     }
 
-    /*
-    // used_adder[a]: 1 if adder a is used
-    std::vector<MPVariable*> used_adder(NA + 1);
-    for (int a = 1; a <= NA; ++a) {
-        used_adder[a] = solver_.MakeBoolVar("used_adder[" + std::to_string(a) + "]");
-    }
-    */
-
     // Constraints
     // C1: ca_nsh[a] = ca_i_sh_sg[a][0] + ca_i_sh_sg[a][1]
     for (int a = 1; a <= NA; ++a) {
@@ -299,28 +291,7 @@ void McmOptimizer::Build(std::vector<int> _target_consts, int _NA, int _wordleng
         }
     }
 
-    /*
-    // Link used_adder to ca
-    for (int a = 1; a <= NA; ++a) {
-        // ca[a] - M u[a] <= 0
-        MPConstraint* const cp = solver_.MakeRowConstraint(-infinity, 0);
-        cp->SetCoefficient(ca[a], 1);
-        cp->SetCoefficient(used_adder[a], -max_c);
-        // -ca[a] - M u[a] <= 0
-        MPConstraint* const cn = solver_.MakeRowConstraint(-infinity, 0);
-        cn->SetCoefficient(ca[a], -1);
-        cn->SetCoefficient(used_adder[a], -max_c);
-    }
-
-    // Objective: Minimize the number of adders used
     MPObjective* const objective = solver_.MutableObjective();
-    for (int a = 1; a <= NA; ++a) {
-        objective->SetCoefficient(used_adder[a], 1);
-    }
-    objective->SetMinimization();
-    */
-    MPObjective* const objective = solver_.MutableObjective();
-
     objective->SetMinimization();
 
     std::string model_str; 
@@ -340,10 +311,66 @@ void McmOptimizer::Build(std::vector<int> _target_consts, int _NA, int _wordleng
     optimization_result.clear();
     output_map.clear();
 
+    // determine adders used to minimize the number of adders. for all constants, select adders to minimize the number of adders used.
+    // select adders that produce target constants
+    std::vector<std::vector<int>> oadders(target_consts.size());
+    for (int j = 0; j < NO; ++j) {
+        for (int a = 0; a <= NA; ++a) {
+            if (ca[a]->solution_value() == target_consts[j] ) {
+                oadders[j].push_back(a);
+            }
+        }
+    }
+
+    // check at least one adder produces each target constant
+    for (int j = 0; j < NO; ++j) {
+        if (oadders[j].empty()) {
+            std::cerr << "[ERROR] No adder produces target constant " << target_consts[j] << std::endl;
+            return;
+        }
+    }
+
+    // traverse all conbinations of adders to find minimal set
+    std::function<void(int, std::set<int>&, std::set<int>&)> backtrack;
+    std::function<void(int, std::set<int> &)> insert_input_adders;
+    insert_input_adders = [&](int a, std::set<int>& adder_set) {
+        if (a == 0) return; // base case: input adder
+        for (int i = 0; i < 2; ++i) {
+            for (int k = 0; k < a; ++k) {
+                if (ca_i_k[a][i][k]->solution_value() > 0.5) {
+                    bool added = adder_set.insert(k).second;
+                    insert_input_adders(k, adder_set);
+                }
+            }
+        }
+    };
+
+    backtrack = [&](int j, std::set<int>& current_set, std::set<int>& best_set) {
+        if (j == NO) {
+            if (best_set.empty() || current_set.size() < best_set.size()) {
+                best_set = current_set;
+            }
+            return;
+        }
+        for (int a : oadders[j]) {
+            current_set.insert(a);
+            std::set<int>  new_set = current_set;
+            insert_input_adders(a, new_set);
+            backtrack(j + 1, new_set, best_set);
+        }
+    };
+
+    std::set<int> current_set, used_adder_set;
+    backtrack(0, current_set, used_adder_set);
+    std::vector<bool> is_used_adder(NA + 1, false);
+    for (int a : used_adder_set) {
+        is_used_adder[a] = true;
+    }
+
     // extract adder graph structure. 
-    // ca[a], ca_i_k[a][i][k], phi[a][i], sigma[a][s], psi[a][s], used_adder[a]
+    // ca[a], ca_i_k[a][i][k], phi[a][i], sigma[a][s], psi[a][s]
     for (int a = 1; a <= NA; ++a) {
-        if (ca[a]->solution_value() > 0.5) {
+        if (is_used_adder[a]) {
             AdderInfo info;
             info.index = a;
             info.ca = static_cast<int>(ca[a]->solution_value());
@@ -382,7 +409,7 @@ void McmOptimizer::Build(std::vector<int> _target_consts, int _NA, int _wordleng
     }
     for (int j = 0; j < NO; ++j) {
         for (int a = 0; a <= NA; ++a) {
-            if (oaj[a][j]->solution_value() > 0.5) {
+            if (is_used_adder[a] && ca[a]->solution_value() == target_consts[j]) {
                 output_map[target_consts[j]] = a;
             }
         }
