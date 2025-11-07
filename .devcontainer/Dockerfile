@@ -96,6 +96,10 @@ RUN wget https://github.com/google/or-tools/releases/download/v9.10/or-tools_amd
 RUN git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD.git && \
     cd OpenROAD && \
     git checkout 320b89c852344bf1a6e7e7889c3a6c96e3cc067b && \
+    git submodule update --init --recursive && \
+    # Ensure the specific submodule commits are checked out before building
+    git -C src/sta fetch --all && git -C src/sta checkout 05b292c379c9f3a74d23c67adb6f937e0206b374 && \
+    git -C third-party/abc fetch --all && git -C third-party/abc checkout 2bf0bb0ce35cda283d69c8b70c8e668e8511adc1 && \
     mkdir build && cd build && \
     cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DBUILD_GUI=on && \
     make -j$(nproc) && \
