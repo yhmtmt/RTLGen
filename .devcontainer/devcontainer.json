@@ -4,6 +4,10 @@
     "dockerfile": "Dockerfile",
     "context": ".."
   },
+  "mounts": [
+    "source=${localEnv:HOME}/.codex,target=/root/.codex,type=bind",
+    "source=${localEnv:HOME}/.grok,target=/root/.grok,type=bind"
+  ],
   "runArgs": [
     "-e", "DISPLAY=${env:DISPLAY}",
     "-v", "/tmp/.X11-unix:/tmp/.X11-unix"

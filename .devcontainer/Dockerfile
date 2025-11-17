@@ -8,6 +8,8 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     software-properties-common \
     eog \
+    lxterminal \
+    emacs \
     time \
     wget \
     build-essential \
@@ -16,6 +18,7 @@ RUN apt-get update && \
     cmake \
     flex \
     git \
+    gdb \
     gnupg \
     liblemon-dev \
     libeigen3-dev \
@@ -46,6 +49,7 @@ RUN apt-get update && \
     jq \
     libyaml-cpp-dev \
     tzdata && \
+
     ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime && \
     dpkg-reconfigure --frontend noninteractive tzdata
 
@@ -104,8 +108,6 @@ RUN git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD.git &
     cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DBUILD_GUI=on && \
     make -j$(nproc) && \
     make install
-
-RUN apt-get update && apt-get install -y gdb
 
 # Clone the repository checkout 1f4e76eb5a7758c813ccca3b555bed6258870cad and apply RTLGen/bugfix-autotuner.patch
 #RUN git clone https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts.git /orfs && cd orfs && git checkout 1f4e76eb5a7758c813ccca3b555bed6258870cad && git submodule update --init --recursive && git apply /workspaces/RTLGen/RTLGen/bugfix-autotuner.patch
