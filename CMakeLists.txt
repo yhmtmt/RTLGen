@@ -14,9 +14,25 @@ include_directories(${GTEST_INCLUDE_DIRS})
 set(ORTOOLS_DIR /home/yhmtmt/work/or-tools_x86_64_Ubuntu-22.04_cpp_v9.10.4067)
 set(ONNXRUNTIME_DIR $ENV{ONNXRUNTIME_DIR})
 
+set(CONSTANT_MULTIPLICATION_SOURCES
+    src/mcm.cpp
+    src/mcm_algorithms.cpp
+    src/mcm_ilp.cpp
+    src/cmvm.cpp
+)
+
+add_library(constant_multiplication STATIC ${CONSTANT_MULTIPLICATION_SOURCES})
+target_include_directories(constant_multiplication
+    PUBLIC
+        ${PROJECT_SOURCE_DIR}/src
+        ${ORTOOLS_DIR}/include
+)
+target_link_directories(constant_multiplication PUBLIC ${ORTOOLS_DIR}/lib)
+target_link_libraries(constant_multiplication PUBLIC ortools)
+
 # Add the main executable
-add_executable(rtlgen main.cpp multiplier.cpp adder.cpp config.cpp)
-target_include_directories(rtlgen PUBLIC ${ORTOOLS_DIR}/include ${PROJECT_SOURCE_DIR}/json/include ${ONNXRUNTIME_DIR}/include)
+add_executable(rtlgen main.cpp src/multiplier.cpp src/adder.cpp src/config.cpp)
+target_include_directories(rtlgen PUBLIC ${ORTOOLS_DIR}/include ${PROJECT_SOURCE_DIR}/json/include ${ONNXRUNTIME_DIR}/include ${PROJECT_SOURCE_DIR}/src)
 target_link_directories(rtlgen PUBLIC ${ORTOOLS_DIR}/lib ${ONNXRUNTIME_DIR}/lib)
 target_link_libraries(rtlgen ortools onnxruntime)
 
@@ -24,8 +40,8 @@ set (CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR})
 install(TARGETS rtlgen DESTINATION bin)
 
 # Add the test executable
-add_executable(test_boolexp test_boolexp.cpp multiplier.cpp adder.cpp)
-target_include_directories(test_boolexp PUBLIC ${ORTOOLS_DIR}/include ${PROJECT_SOURCE_DIR}/json/include)
+add_executable(test_boolexp tests/test_boolexp.cpp src/multiplier.cpp src/adder.cpp)
+target_include_directories(test_boolexp PUBLIC ${ORTOOLS_DIR}/include ${PROJECT_SOURCE_DIR}/json/include ${PROJECT_SOURCE_DIR}/src)
 target_link_directories(test_boolexp PUBLIC ${ORTOOLS_DIR}/lib)
 target_link_libraries(test_boolexp ${GTEST_LIBRARIES} GTest::Main pthread ortools)
 
@@ -33,29 +49,46 @@ target_link_libraries(test_boolexp ${GTEST_LIBRARIES} GTest::Main pthread ortool
 add_test(NAME BoolExpTest COMMAND test_boolexp)
 
 # Add the test executable for adder
-add_executable(test_adder test_adder.cpp adder.cpp)
-target_include_directories(test_adder PUBLIC ${ORTOOLS_DIR}/include ${PROJECT_SOURCE_DIR}/json/include)
+add_executable(test_adder tests/test_adder.cpp src/adder.cpp)
+target_include_directories(test_adder PUBLIC ${ORTOOLS_DIR}/include ${PROJECT_SOURCE_DIR}/json/include ${PROJECT_SOURCE_DIR}/src)
 target_link_directories(test_adder PUBLIC ${ORTOOLS_DIR}/lib)
 target_link_libraries(test_adder ${GTEST_LIBRARIES} GTest::Main pthread ortools)
 
-add_executable(test_multiplier test_multiplier.cpp multiplier.cpp adder.cpp)
-target_include_directories(test_multiplier PUBLIC ${ORTOOLS_DIR}/include ${PROJECT_SOURCE_DIR}/json/include)
+add_executable(test_multiplier tests/test_multiplier.cpp src/multiplier.cpp src/adder.cpp)
+target_include_directories(test_multiplier PUBLIC ${ORTOOLS_DIR}/include ${PROJECT_SOURCE_DIR}/json/include ${PROJECT_SOURCE_DIR}/src)
 target_link_directories(test_multiplier PUBLIC ${ORTOOLS_DIR}/lib)
 target_link_libraries(test_multiplier ${GTEST_LIBRARIES} GTest::Main pthread ortools)
 
 add_test(NAME test_adder COMMAND test_adder)
 add_test(NAME test_multiplier COMMAND test_multiplier)
 
-add_executable(test_mcm test_mcm.cpp mcm.cpp)
-target_include_directories(test_mcm PUBLIC ${ORTOOLS_DIR}/include ${PROJECT_SOURCE_DIR}/json/include)
+add_executable(test_mcm tests/test_mcm.cpp mcm.cpp)
+target_include_directories(test_mcm PUBLIC ${PROJECT_SOURCE_DIR} ${ORTOOLS_DIR}/include ${PROJECT_SOURCE_DIR}/json/include ${PROJECT_SOURCE_DIR}/src)
 target_link_directories(test_mcm PUBLIC ${ORTOOLS_DIR}/lib)
 target_link_libraries(test_mcm ${GTEST_LIBRARIES} GTest::Main pthread ortools)
 add_test(NAME test_mcm COMMAND test_mcm)
 
-add_executable(test_onnx test_onnx.cpp config.cpp)
-target_include_directories(test_onnx PUBLIC ${ORTOOLS_DIR}/include ${PROJECT_SOURCE_DIR}/json/include ${ONNXRUNTIME_DIR}/include)
+add_executable(test_onnx tests/test_onnx.cpp src/config.cpp)
+target_include_directories(test_onnx PUBLIC ${ORTOOLS_DIR}/include ${PROJECT_SOURCE_DIR}/json/include ${ONNXRUNTIME_DIR}/include ${PROJECT_SOURCE_DIR}/src)
 target_link_directories(test_onnx PUBLIC ${ORTOOLS_DIR}/lib  ${ONNXRUNTIME_DIR}/lib)
 
 target_link_libraries(test_onnx ${GTEST_LIBRARIES} GTest::Main pthread onnxruntime)
 
 add_test(NAME test_onnx COMMAND test_onnx)
+
+add_executable(mcm_cli src/mcm_cli.cpp)
+target_link_directories(mcm_cli PUBLIC ${ORTOOLS_DIR}/lib)
+target_link_libraries(mcm_cli PRIVATE constant_multiplication)
+
+add_executable(mcm_ilp_cli src/mcm_ilp_cli.cpp)
+target_link_directories(mcm_ilp_cli PUBLIC ${ORTOOLS_DIR}/lib)
+target_link_libraries(mcm_ilp_cli PRIVATE constant_multiplication)
+
+add_executable(cmvm_cli src/cmvm_cli.cpp)
+target_link_directories(cmvm_cli PUBLIC ${ORTOOLS_DIR}/lib)
+target_link_libraries(cmvm_cli PRIVATE constant_multiplication)
+
+add_executable(mcm_tests tests/mcm_tests.cpp)
+target_link_directories(mcm_tests PUBLIC ${ORTOOLS_DIR}/lib)
+target_link_libraries(mcm_tests PRIVATE constant_multiplication ${GTEST_LIBRARIES} GTest::Main pthread)
+add_test(NAME constant_multiplication_tests COMMAND mcm_tests)
