@@ -1,0 +1,25 @@
+{
+    "version": "1.1",
+    "operands": [
+        { "name": "dct_in", "dimensions": 4, "bit_width": 10, "signed": true }
+    ],
+    "operations": [
+        {
+            "type": "cmvm",
+            "module_name": "dct4_cmvm",
+            "operand": "dct_in",
+            "matrix": [
+                [13, 17, 17, 13],
+                [18, 10, -10, -18],
+                [17, -13, -13, 17],
+                [10, -18, 18, -10]
+            ],
+            "synthesis": {
+                "algorithm": "HCMVM",
+                "difference_rows": true,
+                "max_pair_search": 64,
+                "fallback_algorithm": "ExactILP"
+            }
+        }
+    ]
+}

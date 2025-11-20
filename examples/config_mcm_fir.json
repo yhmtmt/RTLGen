@@ -1,0 +1,20 @@
+{
+    "version": "1.1",
+    "operands": [
+        { "name": "sample", "dimensions": 1, "bit_width": 12, "signed": true }
+    ],
+    "operations": [
+        {
+            "type": "mcm",
+            "module_name": "fir3_mcm",
+            "operand": "sample",
+            "constants": [23, 45, 97],
+            "synthesis": {
+                "engine": "heuristic",
+                "algorithm": "HCub",
+                "max_adders": 6,
+                "emit_schedule": true
+            }
+        }
+    ]
+}

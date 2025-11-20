@@ -77,7 +77,8 @@ struct OperandConfig {
 
 
 struct MultiplierConfig {
-    std::string module_name; // Added module name
+    std::string module_name;
+    std::string operand;
     std::string ppg_algorithm;
     std::string compressor_structure;
     std::string cpa_structure;
@@ -85,7 +86,8 @@ struct MultiplierConfig {
 };
 
 struct MultiplierYosysConfig {
-    std::string module_name; // Added module name
+    std::string module_name;
+    std::string operand;
     std::string booth_type;
     bool is_signed;
     int bit_width;
@@ -93,15 +95,54 @@ struct MultiplierYosysConfig {
 
 struct AdderConfig {
     std::string module_name;
+    std::string operand;
     std::string cpa_structure;
     int pipeline_depth;
 };
 
+struct OperandDefinition {
+    std::string name;
+    int dimensions{1};
+    int bit_width{0};
+    bool is_signed{false};
+};
+
+struct McmSynthesisConfig {
+    std::string engine{"heuristic"};
+    std::string algorithm{"HCub"};
+    int max_adders{0};
+    bool emit_schedule{false};
+};
+
+struct McmOperationConfig {
+    std::string module_name;
+    std::string operand;
+    std::vector<long long> constants;
+    McmSynthesisConfig synthesis;
+};
+
+struct CmvmSynthesisConfig {
+    std::string algorithm{"HCMVM"};
+    bool difference_rows{false};
+    int max_pair_search{0};
+    std::optional<std::string> fallback_algorithm;
+};
+
+struct CmvmOperationConfig {
+    std::string module_name;
+    std::string operand;
+    std::vector<std::vector<long long>> matrix;
+    CmvmSynthesisConfig synthesis;
+};
+
 struct CircuitConfig {
     OperandConfig operand;
-    std::optional<MultiplierConfig> multiplier;
-    std::optional<AdderConfig> adder;
-    std::optional<MultiplierYosysConfig> multiplier_yosys;
+    std::vector<OperandDefinition> operands;
+    std::vector<MultiplierConfig> multipliers;
+    std::vector<AdderConfig> adders;
+    std::vector<MultiplierYosysConfig> yosys_multipliers;
+    std::vector<McmOperationConfig> mcm_operations;
+    std::vector<CmvmOperationConfig> cmvm_operations;
     std::optional<std::string> onnx_model; // Added ONNX model path
 };
 

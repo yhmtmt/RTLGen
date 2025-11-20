@@ -31,10 +31,10 @@ target_link_directories(constant_multiplication PUBLIC ${ORTOOLS_DIR}/lib)
 target_link_libraries(constant_multiplication PUBLIC ortools)
 
 # Add the main executable
-add_executable(rtlgen main.cpp src/multiplier.cpp src/adder.cpp src/config.cpp)
+add_executable(rtlgen main.cpp src/multiplier.cpp src/adder.cpp src/config.cpp src/rtl_operations.cpp)
 target_include_directories(rtlgen PUBLIC ${ORTOOLS_DIR}/include ${PROJECT_SOURCE_DIR}/json/include ${ONNXRUNTIME_DIR}/include ${PROJECT_SOURCE_DIR}/src)
 target_link_directories(rtlgen PUBLIC ${ORTOOLS_DIR}/lib ${ONNXRUNTIME_DIR}/lib)
-target_link_libraries(rtlgen ortools onnxruntime)
+target_link_libraries(rtlgen constant_multiplication ortools onnxruntime)
 
 set (CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR})
 install(TARGETS rtlgen DESTINATION bin)
@@ -62,12 +62,6 @@ target_link_libraries(test_multiplier ${GTEST_LIBRARIES} GTest::Main pthread ort
 add_test(NAME test_adder COMMAND test_adder)
 add_test(NAME test_multiplier COMMAND test_multiplier)
 
-add_executable(test_mcm tests/test_mcm.cpp mcm.cpp)
-target_include_directories(test_mcm PUBLIC ${PROJECT_SOURCE_DIR} ${ORTOOLS_DIR}/include ${PROJECT_SOURCE_DIR}/json/include ${PROJECT_SOURCE_DIR}/src)
-target_link_directories(test_mcm PUBLIC ${ORTOOLS_DIR}/lib)
-target_link_libraries(test_mcm ${GTEST_LIBRARIES} GTest::Main pthread ortools)
-add_test(NAME test_mcm COMMAND test_mcm)
-
 add_executable(test_onnx tests/test_onnx.cpp src/config.cpp)
 target_include_directories(test_onnx PUBLIC ${ORTOOLS_DIR}/include ${PROJECT_SOURCE_DIR}/json/include ${ONNXRUNTIME_DIR}/include ${PROJECT_SOURCE_DIR}/src)
 target_link_directories(test_onnx PUBLIC ${ORTOOLS_DIR}/lib  ${ONNXRUNTIME_DIR}/lib)
@@ -88,7 +82,10 @@ add_executable(cmvm_cli src/cmvm_cli.cpp)
 target_link_directories(cmvm_cli PUBLIC ${ORTOOLS_DIR}/lib)
 target_link_libraries(cmvm_cli PRIVATE constant_multiplication)
 
-add_executable(mcm_tests tests/mcm_tests.cpp)
-target_link_directories(mcm_tests PUBLIC ${ORTOOLS_DIR}/lib)
-target_link_libraries(mcm_tests PRIVATE constant_multiplication ${GTEST_LIBRARIES} GTest::Main pthread)
-add_test(NAME constant_multiplication_tests COMMAND mcm_tests)
+add_executable(test_mcm_and_cmvm tests/test_mcm_and_cmvm.cpp)
+target_link_directories(test_mcm_and_cmvm PUBLIC ${ORTOOLS_DIR}/lib)
+target_link_libraries(test_mcm_and_cmvm PRIVATE constant_multiplication ${GTEST_LIBRARIES} GTest::Main pthread)
+add_test(NAME test_mcm_and_cmvm COMMAND test_mcm_and_cmvm)
+
+add_test(NAME test_verilog_mcm_and_cmvm COMMAND bash ${PROJECT_SOURCE_DIR}/tests/test_verilog_mcm_and_cmvm.sh)
+set_tests_properties(test_verilog_mcm_and_cmvm PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})

@@ -1,11 +1,13 @@
 #include "cmvm.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <iostream>
 #include <limits>
 #include <set>
 #include <sstream>
+#include <stdexcept>
 
 #include "ortools/linear_solver/linear_solver.h"
 
@@ -13,6 +15,13 @@ namespace cse {
 namespace {
 
 constexpr long long kMaxShiftLimit = 60;
+
+std::string uppercase(std::string value) {
+    for (char &ch : value) {
+        ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+    }
+    return value;
+}
 
 struct PairData {
     PairKey key;
@@ -138,15 +147,22 @@ ProblemContext cloneContext(const ProblemContext &ctx) {
     return copy;
 }
 
-AlgorithmResult runH2mcOnContext(ProblemContext ctx, const std::string &label) {
+CmvmSynthesisOutcome runH2mcWithContext(ProblemContext ctx, const std::string &label,
+                                        int maxPairSearch) {
     int subexprCount = 0;
     while (true) {
         auto usageMap = computePairUsage(ctx.expressions);
+        std::vector<std::pair<PairKey, PairUsage>> candidates(usageMap.begin(), usageMap.end());
+        std::sort(candidates.begin(), candidates.end(),
+                  [](const auto &lhs, const auto &rhs) { return lhs.second.usage > rhs.second.usage; });
+        if (maxPairSearch > 0 && static_cast<int>(candidates.size()) > maxPairSearch) {
+            candidates.resize(maxPairSearch);
+        }
         PairKey bestKey;
         PairUsage bestUsage;
         int bestGain = 0;
         bool found = false;
-        for (const auto &entry : usageMap) {
+        for (const auto &entry : candidates) {
             if (entry.second.usage < 2) {
                 continue;
             }
@@ -172,7 +188,169 @@ AlgorithmResult runH2mcOnContext(ProblemContext ctx, const std::string &label) {
     result.name = label;
     result.subexpressionCount = subexprCount;
     result.totalOperations = totalOps;
+    return {result, std::move(ctx), {}};
+}
+
+CmvmSynthesisOutcome runHCmvmWithContext(const ProblemContext &base,
+                                         const CmvmSynthesisOptions &options) {
+    ProblemContext ctx = cloneContext(base);
+    std::vector<DifferenceRelation> relations;
+    if (options.differenceRows) {
+        bool improved = true;
+        while (improved) {
+            improved = false;
+            int bestGain = 0;
+            int bestI = -1;
+            int bestJ = -1;
+            Expression bestExpr;
+            for (size_t i = 0; i < ctx.expressions.size(); ++i) {
+                for (size_t j = 0; j < ctx.expressions.size(); ++j) {
+                    if (i == j) {
+                        continue;
+                    }
+                    Expression diff =
+                        subtractExpression(ctx.expressions[i], ctx.expressions[j], ctx.table);
+                    int gain = ctx.expressions[i].termCount() - (diff.termCount() + 1);
+                    if (gain > bestGain) {
+                        bestGain = gain;
+                        bestI = static_cast<int>(i);
+                        bestJ = static_cast<int>(j);
+                        bestExpr = diff;
+                    }
+                }
+            }
+            if (bestGain > 0 && bestI >= 0 && bestJ >= 0) {
+                ctx.expressions[bestI] = bestExpr;
+                relations.push_back({bestI, bestJ});
+                improved = true;
+            }
+        }
+    }
+    auto result = runH2mcWithContext(std::move(ctx), "H_CMVM", options.maxPairSearch);
+    result.stats.totalOperations += static_cast<int>(relations.size());
+    if (!relations.empty()) {
+        result.stats.notes = "includes " + std::to_string(relations.size()) + " recombinations";
+    }
+    result.relations = relations;
     return result;
+}
+
+CmvmSynthesisOutcome runExactIlpWithContext(const ProblemContext &base) {
+    using operations_research::MPConstraint;
+    using operations_research::MPObjective;
+    using operations_research::MPVariable;
+    using operations_research::MPSolver;
+
+    auto usageMap = computePairUsage(base.expressions);
+    std::map<PairKey, PairUsage> filtered;
+    for (const auto &entry : usageMap) {
+        if (entry.second.usage >= 2) {
+            filtered.emplace(entry.first, entry.second);
+        }
+    }
+    AlgorithmResult fallback;
+    fallback.name = "Exact_ILP";
+    fallback.subexpressionCount = 0;
+    fallback.totalOperations = computeNaiveCost(base.expressions);
+    fallback.optimal = false;
+    if (filtered.empty()) {
+        fallback.notes = "no viable pairs";
+        return {fallback, cloneContext(base), {}};
+    }
+
+    MPSolver solver("cse_ilp", MPSolver::CBC_MIXED_INTEGER_PROGRAMMING);
+
+    std::map<int, std::map<TermType, MPConstraint *>> termConstraints;
+    std::vector<std::map<TermType, int>> histograms(base.expressions.size());
+    for (size_t i = 0; i < base.expressions.size(); ++i) {
+        histograms[i] = base.expressions[i].histogram();
+        for (const auto &entry : histograms[i]) {
+            MPConstraint *constraint = solver.MakeRowConstraint(0.0, entry.second);
+            termConstraints[static_cast<int>(i)][entry.first] = constraint;
+        }
+    }
+
+    std::map<PairKey, MPVariable *> pairVars;
+    std::map<PairKey, std::vector<std::pair<int, MPVariable *>>> usageByPair;
+
+    for (const auto &entry : filtered) {
+        const PairKey &key = entry.first;
+        std::ostringstream xName;
+        xName << "x_" << key.a.signal << "_" << key.b.signal;
+        MPVariable *xVar = solver.MakeBoolVar(xName.str());
+        pairVars[key] = xVar;
+        for (int exprIdx : entry.second.expressions) {
+            const auto &hist = histograms[exprIdx];
+            auto itA = hist.find(key.a);
+            auto itB = hist.find(key.b);
+            if (itA == hist.end() || itB == hist.end()) {
+                continue;
+            }
+            std::ostringstream yName;
+            yName << "y_" << exprIdx << "_" << key.a.signal << "_" << key.b.signal;
+            MPVariable *yVar = solver.MakeBoolVar(yName.str());
+            usageByPair[key].push_back({exprIdx, yVar});
+            termConstraints[exprIdx][key.a]->SetCoefficient(yVar, 1.0);
+            termConstraints[exprIdx][key.b]->SetCoefficient(yVar, 1.0);
+            MPConstraint *link = solver.MakeRowConstraint(-solver.infinity(), 0.0);
+            link->SetCoefficient(yVar, 1.0);
+            link->SetCoefficient(xVar, -1.0);
+        }
+    }
+
+    if (pairVars.empty() || usageByPair.empty()) {
+        fallback.notes = "insufficient structure";
+        return {fallback, cloneContext(base), {}};
+    }
+
+    MPObjective *objective = solver.MutableObjective();
+    for (const auto &entry : usageByPair) {
+        for (const auto &usage : entry.second) {
+            objective->SetCoefficient(usage.second, 1.0);
+        }
+    }
+    for (const auto &entry : pairVars) {
+        objective->SetCoefficient(entry.second, -1.0);
+    }
+    objective->SetMaximization();
+
+    const auto status = solver.Solve();
+    if (status != MPSolver::OPTIMAL && status != MPSolver::FEASIBLE) {
+        fallback.notes = "solver failed";
+        return {fallback, cloneContext(base), {}};
+    }
+
+    ProblemContext ctx = cloneContext(base);
+    int subexprCount = 0;
+    for (const auto &entry : pairVars) {
+        if (entry.second->solution_value() < 0.5) {
+            continue;
+        }
+        std::vector<int> exprList;
+        auto usageIt = usageByPair.find(entry.first);
+        if (usageIt != usageByPair.end()) {
+            for (const auto &use : usageIt->second) {
+                if (use.second->solution_value() >= 0.5) {
+                    exprList.push_back(use.first);
+                }
+            }
+        }
+        if (!exprList.empty()) {
+            if (applyPairToExpressions(entry.first, exprList, ctx)) {
+                ++subexprCount;
+            }
+        }
+    }
+
+    AlgorithmResult result;
+    result.name = "Exact_ILP";
+    result.subexpressionCount = subexprCount;
+    result.totalOperations = subexprCount + computeNaiveCost(ctx.expressions);
+    result.optimal = (status == MPSolver::OPTIMAL);
+    if (!result.optimal) {
+        result.notes = "feasible (not proven optimal)";
+    }
+    return {result, std::move(ctx), {}};
 }
 
 } // namespace
@@ -348,164 +526,49 @@ ProblemContext buildProblem(const ProblemInstance &instance) {
 
 AlgorithmResult runH2mc(const ProblemContext &base) {
     ProblemContext ctx = cloneContext(base);
-    return runH2mcOnContext(std::move(ctx), "H2MC");
+    return runH2mcWithContext(std::move(ctx), "H2MC", 0).stats;
 }
 
 AlgorithmResult runHCmvm(const ProblemContext &base) {
-    ProblemContext ctx = cloneContext(base);
-    std::vector<DifferenceRelation> relations;
-    bool improved = true;
-    while (improved) {
-        improved = false;
-        int bestGain = 0;
-        int bestI = -1;
-        int bestJ = -1;
-        Expression bestExpr;
-        for (size_t i = 0; i < ctx.expressions.size(); ++i) {
-            for (size_t j = 0; j < ctx.expressions.size(); ++j) {
-                if (i == j) {
-                    continue;
-                }
-                Expression diff = subtractExpression(ctx.expressions[i], ctx.expressions[j], ctx.table);
-                int gain = ctx.expressions[i].termCount() - (diff.termCount() + 1);
-                if (gain > bestGain) {
-                    bestGain = gain;
-                    bestI = static_cast<int>(i);
-                    bestJ = static_cast<int>(j);
-                    bestExpr = diff;
-                }
-            }
-        }
-        if (bestGain > 0 && bestI >= 0 && bestJ >= 0) {
-            ctx.expressions[bestI] = bestExpr;
-            relations.push_back({bestI, bestJ});
-            improved = true;
-        }
-    }
-    auto result = runH2mcOnContext(std::move(ctx), "H_CMVM");
-    result.totalOperations += static_cast<int>(relations.size());
-    if (!relations.empty()) {
-        result.notes = "includes " + std::to_string(relations.size()) + " recombinations";
-    }
-    return result;
+    CmvmSynthesisOptions options;
+    options.algorithm = "HCMVM";
+    options.differenceRows = true;
+    return runHCmvmWithContext(base, options).stats;
 }
 
 AlgorithmResult runExactIlp(const ProblemContext &base) {
-    using operations_research::MPConstraint;
-    using operations_research::MPObjective;
-    using operations_research::MPVariable;
-    using operations_research::MPSolver;
+    return runExactIlpWithContext(base).stats;
+}
 
-    auto usageMap = computePairUsage(base.expressions);
-    std::map<PairKey, PairUsage> filtered;
-    for (const auto &entry : usageMap) {
-        if (entry.second.usage >= 2) {
-            filtered.emplace(entry.first, entry.second);
-        }
-    }
-    AlgorithmResult fallback;
-    fallback.name = "Exact_ILP";
-    fallback.subexpressionCount = 0;
-    fallback.totalOperations = computeNaiveCost(base.expressions);
-    fallback.optimal = false;
-    if (filtered.empty()) {
-        fallback.notes = "no viable pairs";
-        return fallback;
-    }
-
-    MPSolver solver("cse_ilp", MPSolver::CBC_MIXED_INTEGER_PROGRAMMING);
-
-    std::map<int, std::map<TermType, MPConstraint *>> termConstraints;
-    std::vector<std::map<TermType, int>> histograms(base.expressions.size());
-    for (size_t i = 0; i < base.expressions.size(); ++i) {
-        histograms[i] = base.expressions[i].histogram();
-        for (const auto &entry : histograms[i]) {
-            MPConstraint *constraint = solver.MakeRowConstraint(0.0, entry.second);
-            termConstraints[static_cast<int>(i)][entry.first] = constraint;
-        }
-    }
-
-    std::map<PairKey, MPVariable *> pairVars;
-    std::map<PairKey, std::vector<std::pair<int, MPVariable *>>> usageByPair;
-
-    for (const auto &entry : filtered) {
-        const PairKey &key = entry.first;
-        std::ostringstream xName;
-        xName << "x_" << key.a.signal << "_" << key.b.signal;
-        MPVariable *xVar = solver.MakeBoolVar(xName.str());
-        pairVars[key] = xVar;
-        for (int exprIdx : entry.second.expressions) {
-            const auto &hist = histograms[exprIdx];
-            auto itA = hist.find(key.a);
-            auto itB = hist.find(key.b);
-            if (itA == hist.end() || itB == hist.end()) {
-                continue;
+CmvmSynthesisOutcome synthesizeCmvm(const ProblemInstance &instance,
+                                    const CmvmSynthesisOptions &options) {
+    ProblemContext base = buildProblem(instance);
+    const std::string algo = uppercase(options.algorithm);
+    CmvmSynthesisOutcome primary =
+        (algo == "EXACTILP")
+            ? runExactIlpWithContext(base)
+            : (algo == "H2MC") ? runH2mcWithContext(base, "H2MC", options.maxPairSearch)
+                               : (algo == "HCMVM") ? runHCmvmWithContext(base, options)
+                                                   : throw std::runtime_error("Unknown CMVM algorithm: " +
+                                                                              options.algorithm);
+    if (options.fallbackAlgorithm) {
+        const std::string fallbackAlgo = uppercase(*options.fallbackAlgorithm);
+        CmvmSynthesisOutcome fallback =
+            (fallbackAlgo == "EXACTILP")
+                ? runExactIlpWithContext(primary.context)
+                : (fallbackAlgo == "H2MC")
+                      ? runH2mcWithContext(primary.context, "H2MC", options.maxPairSearch)
+                      : throw std::runtime_error("Unknown CMVM fallback algorithm: " +
+                                                 *options.fallbackAlgorithm);
+        if (fallback.stats.totalOperations < primary.stats.totalOperations) {
+            if (fallback.relations.empty() && !primary.relations.empty()) {
+                fallback.relations = primary.relations;
             }
-            std::ostringstream yName;
-            yName << "y_" << exprIdx << "_" << key.a.signal << "_" << key.b.signal;
-            MPVariable *yVar = solver.MakeBoolVar(yName.str());
-            usageByPair[key].push_back({exprIdx, yVar});
-            termConstraints[exprIdx][key.a]->SetCoefficient(yVar, 1.0);
-            termConstraints[exprIdx][key.b]->SetCoefficient(yVar, 1.0);
-            MPConstraint *link = solver.MakeRowConstraint(-solver.infinity(), 0.0);
-            link->SetCoefficient(yVar, 1.0);
-            link->SetCoefficient(xVar, -1.0);
+            fallback.stats.name = primary.stats.name + "+" + fallback.stats.name;
+            return fallback;
         }
     }
-
-    if (pairVars.empty() || usageByPair.empty()) {
-        fallback.notes = "insufficient structure";
-        return fallback;
-    }
-
-    MPObjective *objective = solver.MutableObjective();
-    for (const auto &entry : usageByPair) {
-        for (const auto &usage : entry.second) {
-            objective->SetCoefficient(usage.second, 1.0);
-        }
-    }
-    for (const auto &entry : pairVars) {
-        objective->SetCoefficient(entry.second, -1.0);
-    }
-    objective->SetMaximization();
-
-    const auto status = solver.Solve();
-    if (status != MPSolver::OPTIMAL && status != MPSolver::FEASIBLE) {
-        fallback.notes = "solver failed";
-        return fallback;
-    }
-
-    ProblemContext ctx = cloneContext(base);
-    int subexprCount = 0;
-    for (const auto &entry : pairVars) {
-        if (entry.second->solution_value() < 0.5) {
-            continue;
-        }
-        std::vector<int> exprList;
-        auto usageIt = usageByPair.find(entry.first);
-        if (usageIt != usageByPair.end()) {
-            for (const auto &use : usageIt->second) {
-                if (use.second->solution_value() >= 0.5) {
-                    exprList.push_back(use.first);
-                }
-            }
-        }
-        if (!exprList.empty()) {
-            if (applyPairToExpressions(entry.first, exprList, ctx)) {
-                ++subexprCount;
-            }
-        }
-    }
-
-    AlgorithmResult result;
-    result.name = "Exact_ILP";
-    result.subexpressionCount = subexprCount;
-    result.totalOperations = subexprCount + computeNaiveCost(ctx.expressions);
-    result.optimal = (status == MPSolver::OPTIMAL);
-    if (!result.optimal) {
-        result.notes = "feasible (not proven optimal)";
-    }
-    return result;
+    return primary;
 }
 
 } // namespace cse

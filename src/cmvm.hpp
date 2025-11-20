@@ -120,11 +120,26 @@ struct ProblemContext {
     ProblemContext(int numInputs, int bitWidth);
 };
 
+struct CmvmSynthesisOptions {
+    std::string algorithm{"HCMVM"};
+    bool differenceRows{false};
+    int maxPairSearch{0};
+    std::optional<std::string> fallbackAlgorithm;
+};
+
+struct CmvmSynthesisOutcome {
+    AlgorithmResult stats;
+    ProblemContext context;
+    std::vector<DifferenceRelation> relations;
+};
+
 ProblemContext buildProblem(const ProblemInstance &instance);
 int computeNaiveCost(const std::vector<Expression> &expressions);
 
 AlgorithmResult runExactIlp(const ProblemContext &base);
 AlgorithmResult runH2mc(const ProblemContext &base);
 AlgorithmResult runHCmvm(const ProblemContext &base);
+CmvmSynthesisOutcome synthesizeCmvm(const ProblemInstance &instance,
+                                    const CmvmSynthesisOptions &options);
 
 } // namespace cse

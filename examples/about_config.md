@@ -1,33 +1,21 @@
 # Configuration File
 
-You can specify multiplier, adder, and operand parameters in the configuration files.
+RTLGen consumes a JSON description of the operands that enter the design and the arithmetic operations that must be generated. Starting with schema version **1.1**, one configuration file can describe multiple operations (e.g., an adder and an MCM block) while keeping the legacy single-operation layout fully compatible.
 
-## Adder Configuration
+## Layout Overview
 
-```json
-{
-    "operand": {
-        "bit_width": 8,
-        "signed": true
-    },
-    "adder": {
-        "module_name": "adder_koggestone_8s",
-        "cpa_structure": "KoggeStone",
-        "pipeline_depth": 1
-    }
-}
-```
+Top-level fields:
 
-Specify both "operand" and "adder". The "operand" section configures the bit width and signedness of the integer input. In the "adder" section, you can select the `cpa_structure` from the following four types:
+- `version` (optional): `"1.1"` enables the multi-operation layout. Missing or `"1.0"` falls back to the legacy behavior.
+- `operand`: legacy default operand definition. It is still accepted for backward compatibility.
+- `operands` (optional): array of operand descriptions. Each description must provide the uniform fields `name`, `dimensions`, `bit_width`, and `signed`.
+  - `name`: base identifier for the operand (e.g., `"sample"`). Every lane is referenced as `<name>_<index>` and indices are generated automatically based on `dimensions`.
+  - `dimensions`: positive integer. `1` represents a scalar, larger values describe vectors (e.g., `4` generates `sample_0` … `sample_3`).
+  - `bit_width`: width of each lane.
+  - `signed`: signedness of each lane.
+- `operations` (optional): array of operation objects. Each object declares a `type`, `module_name`, the operand(s) it uses, and the type-specific options.
 
-- `Ripple`: Ripple Carry Adder (simple, area-efficient, but slow for large bit-widths)
-- `KoggeStone`: Kogge-Stone Adder (parallel prefix, very fast, higher area)
-- `BrentKung`: Brent-Kung Adder (parallel prefix, balanced delay and area)
-- `Sklansky`: Sklansky Adder (parallel prefix, fast, but can have high fanout)
-
-Pipelining is not yet implemented; only a single stage is supported.
-
-## Multiplier Configuration
+### Legacy Layout (still valid)
 
 ```json
 {
@@ -45,28 +33,101 @@ Pipelining is not yet implemented; only a single stage is supported.
 }
 ```
 
-Currently, `compressor_structure` and `pipeline_depth` are fixed to `AdderTree` and `1`. The `AdderTree` is optimized using ILP as described in [UFO-MAC: A Unified Framework for Optimization of High-Performance Multipliers and Multiply-Accumulators](https://arxiv.org/abs/2408.06935). For more details, see [Compressor Tree Memo](doc/compressor_tree/memo_about_compressor_tree.md).
-
-The generator supports two partial product generation (PPG) algorithms: `Normal` and `Booth4`:
-
-- **Normal**: Conventional approach using an array of AND gates to generate partial products.
-- **Booth4**: Radix-4 modified Booth algorithm, based on ["High Performance Low-Power Left-to-Right Array Multiplier Design"](https://ieeexplore.ieee.org/document/1388192).
-
-Specify your desired algorithm in the `ppg_algorithm` field. For sign extension, a fast computation technique is used, as described in ["Minimizing Energy Dissipation in High-Speed Multipliers"](https://ieeexplore.ieee.org/document/621285). The `bit_width` should be at least 4.
-
-## Multiplier Configuration for Yosys
+### Operations Array Layout
 
 ```json
 {
-    "operand": {
-        "bit_width": 16,
-        "signed": true
-    },
-    "multiplier_yosys": {
-        "module_name": "yosys_multiplier16s",
+    "version": "1.1",
+    "operands": [
+        { "name": "sample", "dimensions": 1, "bit_width": 16, "signed": true }
+    ],
+    "operations": [
+        {
+            "type": "multiplier",
+            "module_name": "booth_multiplier32s",
+            "operand": "sample",
+            "options": {
+                "ppg_algorithm": "Booth4",
+                "compressor_structure": "AdderTree",
+                "cpa_structure": "KoggeStone",
+                "pipeline_depth": 1
+            }
+        }
+    ]
+}
+```
+
+Every new operation described below can be added either as a dedicated entry inside `operations` (recommended) or by using the legacy top-level keys (`adder`, `multiplier`, etc.).
+
+## Adder Configuration
+
+An adder entry may either reuse the legacy object (`"adder": { ... }`) or be written inside the `operations` array with `"type": "adder"`. Reference the operand you want via the `operand` field (e.g., `"operand": "sample"`) so the generator can extract its width and signedness, then select the CPA structure.
+
+Supported `cpa_structure` values:
+
+- `Ripple` – Ripple Carry Adder
+- `KoggeStone` – Kogge-Stone parallel prefix adder
+- `BrentKung` – Brent-Kung parallel prefix adder
+- `Sklansky` – Sklansky parallel prefix adder
+
+Pipelining is not yet implemented; `pipeline_depth` must be `1`.
+
+## Multiplier Configuration
+
+Multiplier entries support all of the fields from the legacy `multiplier` object: `module_name`, `ppg_algorithm`, `compressor_structure`, `cpa_structure`, and `pipeline_depth`. When using the `operations` array, set `"type": "multiplier"`, reference the operand supplying both inputs, and place the implementation options inside an `options` object.
+
+Currently, `compressor_structure` and `pipeline_depth` are fixed to `AdderTree` and `1`. The `AdderTree` is optimized using ILP as described in [UFO-MAC: A Unified Framework for Optimization of High-Performance Multipliers and Multiply-Accumulators](https://arxiv.org/abs/2408.06935). See [Compressor Tree Memo](doc/compressor_tree/memo_about_compressor_tree.md) for details.
+
+Supported partial product generators (`ppg_algorithm`):
+
+- `Normal`
+- `Booth4`
+
+For sign extension a fast computation technique is used, as described in ["Minimizing Energy Dissipation in High-Speed Multipliers"](https://ieeexplore.ieee.org/document/621285). The `bit_width` should be at least 4.
+
+## Multiplier Configuration for Yosys
+
+Yosys-aware multipliers can be emitted either with the legacy `"multiplier_yosys"` object or via an `operations` entry with `"type": "multiplier_yosys"`.
+
+```json
+{
+    "type": "multiplier_yosys",
+    "module_name": "yosys_multiplier16s",
+    "operand": "sample",
+    "options": {
         "booth_type": "Booth"
     }
 }
 ```
 
-If you have Yosys installed, you can use the multiplier generator in Yosys. Yosys can generate Booth multipliers. Specify `"Booth"` or `"LowpowerBooth"` in the `booth_type` field. Note: `"LowpowerBooth"` cannot be used with unsigned integers.
+Set `booth_type` to `"Booth"` or `"LowpowerBooth"`. `"LowpowerBooth"` is only valid for signed operands.
+
+## MCM Configuration
+
+Multiple-constant multiplication (MCM) entries describe the constants that must be realized using shift-add graphs built by the algorithms in `mcm_cli`. Each entry uses `"type": "mcm"` and accepts the following fields:
+
+- `operand`: name of the operand definition to use. Defaults to the legacy `operand` if omitted. The shared input name inside the generated RTL automatically reuses this operand name, and individual lanes become `<operand>_<index>` whenever `dimensions > 1`.
+- `constants`: array of positive integers. You no longer need to name each constant or specify `post_shift`/`output_width`; the generator derives the result width from the operand width and the magnitude of the largest constant.
+- `synthesis`: describes how the shift-add network is produced.
+  - `engine`: `"heuristic"` (default) or `"ilp"`.
+  - `algorithm`: for heuristics choose from `BHA`, `BHM`, `RAGn`, or `HCub`. For ILP use `GarciaVolkova`.
+  - `max_adders`: optional guardrail for ILP runs.
+  - `emit_schedule`: when true, the serialized A-operations are written next to the generated Verilog.
+
+See `examples/config_mcm_fir.json` for a compact FIR example that emits three taps using the `HCub` heuristic.
+Generated ports follow the convention `<operand>_0` for the shared input (scalar operands) and `<module_name>_out<i>` for the `i`-th constant.
+
+## CMVM Configuration
+
+Constant matrix-vector multiplication (CMVM) entries use `"type": "cmvm"` and extend the idea to multiple inputs and outputs (e.g., DCT kernels). Required fields:
+
+- `operand`: name of the operand definition that feeds the matrix. Set `dimensions` on that operand equal to the vector length so the generator can construct the lane names `<operand>_0`, `<operand>_1`, … automatically.
+- `matrix`: 2-D array written row-major. Each row corresponds to one output channel; each column corresponds to one input lane derived from the operand. Negative coefficients are allowed.
+- `synthesis`: selects one of the CMVM algorithms implemented in `cmvm_cli`.
+  - `algorithm`: `"ExactILP"`, `"H2MC"`, or `"HCMVM"`.
+  - `difference_rows`: when true, pre-process rows with the numerical-difference method before running the heuristic.
+  - `max_pair_search`: limit for the number of candidate subexpressions checked per iteration.
+  - `fallback_algorithm`: optional algorithm name (`"ExactILP"` or `"H2MC"`) to try on small residuals when the primary algorithm stalls.
+
+Refer to `examples/config_cmvm_dct.json` for a CMVM configuration that builds a 4x4 DCT-like block using the recommended `HCMVM` stage plus a fallback to the exact ILP model on small sub-problems.
+Input lanes appear as `<operand>_<column>` and each row emits `module_name_out<i>` with a width derived from the per-row coefficient magnitudes.
