@@ -114,7 +114,7 @@ Multiple-constant multiplication (MCM) entries describe the constants that must 
   - `max_adders`: optional guardrail for ILP runs.
   - `emit_schedule`: when true, the serialized A-operations are written next to the generated Verilog.
 
-See `examples/config_mcm_fir.json` for a compact FIR example that emits three taps using the `HCub` heuristic.
+See `examples/config_mcm_fir.json` for a compact FIR example that emits three taps using the `HCub` heuristic. Background on the algorithms (BHA, BHM, RAG-n, H_cub, ILP) is in `doc/constant_multiplication.md`.
 Generated ports follow the convention `<operand>_0` for the shared input (scalar operands) and `<module_name>_out<i>` for the `i`-th constant.
 
 ## CMVM Configuration
