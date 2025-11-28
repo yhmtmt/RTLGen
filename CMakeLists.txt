@@ -89,3 +89,6 @@ add_test(NAME test_mcm_and_cmvm COMMAND test_mcm_and_cmvm)
 
 add_test(NAME test_verilog_mcm_and_cmvm COMMAND bash ${PROJECT_SOURCE_DIR}/tests/test_verilog_mcm_and_cmvm.sh)
 set_tests_properties(test_verilog_mcm_and_cmvm PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+add_test(NAME test_verilog_adder_skew COMMAND bash ${PROJECT_SOURCE_DIR}/tests/test_verilog_adder_skew.sh)
+set_tests_properties(test_verilog_adder_skew PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})

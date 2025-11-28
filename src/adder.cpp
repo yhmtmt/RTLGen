@@ -179,6 +179,9 @@ void CarryPropagatingAdder::init_sklansky(int ninputs)
 
 void CarryPropagatingAdder::init_skewaware(int ninputs)
 {
+    // ensure a legal network exists; start from ripple then improve with skew merges
+    init_ripple(ninputs);
+
     struct Segment {
         int msb;
         int lsb;
