@@ -43,9 +43,27 @@ void CarryPropagatingAdder::clear(){
     fo[CP_G].clear();
 }
 
-void CarryPropagatingAdder::init(int ninputs, CPAType cpatype)
+void CarryPropagatingAdder::init(int ninputs, CPAType cpatype, const std::vector<float>& input_delay_values)
 {
-    input_delays.resize(ninputs, 0.f);
+    clear();
+
+    input_delays.assign(ninputs, 0.f);
+    if (!input_delay_values.empty())
+    {
+        if (input_delay_values.size() == 1)
+        {
+            input_delays.assign(ninputs, input_delay_values.front());
+        }
+        else if (input_delay_values.size() == static_cast<std::size_t>(ninputs))
+        {
+            input_delays = input_delay_values;
+        }
+        else
+        {
+            std::cerr << "[ERROR] input_delays must be length 1 or match bit width\n";
+            exit(1);
+        }
+    }
     output_delays.resize(ninputs, 0.f);
     nodes.resize(ninputs);
     tarr[CP_P].resize(ninputs);
@@ -79,6 +97,9 @@ void CarryPropagatingAdder::init(int ninputs, CPAType cpatype)
             break;
         case CPA_Sklansky:
             init_sklansky(ninputs);
+            break;
+        case CPA_SkewAwarePrefix:
+            init_skewaware(ninputs);
             break;
         default:
             std::cerr << "[ERROR] Unknown CPAType in CarryPropagatingAdder::init" << std::endl;
@@ -153,6 +174,54 @@ void CarryPropagatingAdder::init_sklansky(int ninputs)
                 }
             }
         }
+    }
+}
+
+void CarryPropagatingAdder::init_skewaware(int ninputs)
+{
+    struct Segment {
+        int msb;
+        int lsb;
+        float arrival;
+    };
+
+    std::vector<Segment> segments;
+    segments.reserve(ninputs);
+    for (int i = 0; i < ninputs; i++) {
+        segments.push_back({i, i, input_delays[i] + static_cast<float>(delay_g)});
+    }
+
+    const float merge_delay = static_cast<float>(delays[CP_G1][CP_G]);
+
+    while (segments.size() > 1) {
+        float best_cost = std::numeric_limits<float>::infinity();
+        int best_idx = -1;
+
+        for (std::size_t idx = 0; idx + 1 < segments.size(); ++idx) {
+            // Ensure contiguity
+            if (segments[idx + 1].lsb != segments[idx].msb + 1) {
+                continue;
+            }
+            float cost = std::max(segments[idx].arrival, segments[idx + 1].arrival) + merge_delay;
+            if (cost < best_cost) {
+                best_cost = cost;
+                best_idx = static_cast<int>(idx);
+            }
+        }
+
+        if (best_idx == -1) {
+            std::cerr << "[ERROR] SkewAwarePrefix construction failed due to non-contiguous segments\n";
+            exit(1);
+        }
+
+        const auto &low = segments[best_idx];
+        const auto &high = segments[best_idx + 1];
+        int boundary = high.lsb - 1;
+        nodes[high.msb][low.lsb] = boundary;
+
+        Segment merged{high.msb, low.lsb, best_cost};
+        segments[best_idx] = merged;
+        segments.erase(segments.begin() + best_idx + 1);
     }
 }
 
@@ -386,4 +455,3 @@ void CarryPropagatingAdder::dump_hdl(const std::string& module_name)
 
     verilog_file.close();
 }
-

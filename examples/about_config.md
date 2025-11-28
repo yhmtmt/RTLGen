@@ -69,6 +69,7 @@ Supported `cpa_structure` values:
 - `KoggeStone` – Kogge-Stone parallel prefix adder
 - `BrentKung` – Brent-Kung parallel prefix adder
 - `Sklansky` – Sklansky parallel prefix adder
+- `SkewAwarePrefix` – greedy prefix adder that minimizes arrival-skewed critical delay using provided per-bit `input_delays` (number applies uniformly, array must match width)
 
 Pipelining is not yet implemented; `pipeline_depth` must be `1`.
 

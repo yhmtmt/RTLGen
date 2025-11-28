@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <string>
 #include <cstdio>
+#include <vector>
 
 void generate_adder_testbench(const std::string& module_name, int width) {
     std::ofstream tb_file(module_name + "_tb.v");
@@ -89,6 +90,17 @@ TEST(AdderTest, SklanskyAdder) {
     const std::string module_name = "sklansky_adder";
     CarryPropagatingAdder adder;
     adder.init(width, CPA_Sklansky);
+    adder.dump_hdl(module_name);
+    generate_adder_testbench(module_name, width);
+    run_iverilog_test(module_name);
+}
+
+TEST(AdderTest, SkewAwarePrefixAdder) {
+    const int width = 8;
+    const std::string module_name = "skewaware_adder";
+    CarryPropagatingAdder adder;
+    std::vector<float> delays = {0.0f, 0.1f, 0.2f, 0.3f, 0.0f, 0.0f, 0.0f, 0.0f};
+    adder.init(width, CPA_SkewAwarePrefix, delays);
     adder.dump_hdl(module_name);
     generate_adder_testbench(module_name, width);
     run_iverilog_test(module_name);

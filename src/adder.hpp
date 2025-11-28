@@ -42,6 +42,7 @@ private:
     void init_koggestone(int ninputs);
     void init_brentkung(int ninputs);
     void init_sklansky(int ninputs);
+    void init_skewaware(int ninputs);
 
     bool calc_tarr(int i, int j);
 
@@ -106,7 +107,7 @@ public:
 
     void clear();
 
-    void init(int ninputs, CPAType cpatype);
+    void init(int ninputs, CPAType cpatype, const std::vector<float>& input_delay_values = {});
     float do_sta();
 
     void dump_hdl(const std::string &module_name);

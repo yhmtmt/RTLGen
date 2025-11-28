@@ -93,12 +93,37 @@ bool readConfig(const std::string& filename, CircuitConfig& config) {
             }
         }
 
+        auto parseInputDelays = [&](const json &node) -> std::vector<float> {
+            if (!node.contains("input_delays")) {
+                return {};
+            }
+            const auto &delaysNode = node["input_delays"];
+            std::vector<float> delays;
+            if (delaysNode.is_number()) {
+                delays.push_back(delaysNode.get<float>());
+            } else if (delaysNode.is_array()) {
+                if (delaysNode.empty()) {
+                    throw std::runtime_error("\"input_delays\" array must not be empty");
+                }
+                for (const auto &d : delaysNode) {
+                    if (!d.is_number()) {
+                        throw std::runtime_error("\"input_delays\" entries must be numeric");
+                    }
+                    delays.push_back(d.get<float>());
+                }
+            } else {
+                throw std::runtime_error("\"input_delays\" must be a number or array");
+            }
+            return delays;
+        };
+
         auto parseAdderNode = [&](const json &node, const std::string &operandName, const std::string &moduleOverride) {
             AdderConfig adder;
             adder.module_name = moduleOverride.empty() ? node.at("module_name").get<std::string>() : moduleOverride;
             adder.operand = operandName;
             adder.cpa_structure = node.at("cpa_structure").get<std::string>();
             adder.pipeline_depth = node.value("pipeline_depth", 1);
+            adder.input_delays = parseInputDelays(node);
             config.adders.push_back(adder);
         };
 

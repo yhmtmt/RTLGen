@@ -119,7 +119,17 @@ int main(int argc, char** argv) {
             CarryPropagatingAdder cpa;
             CPAType type = get_cpa_type(adder.cpa_structure);
             std::cout << "[INFO] Generating adder " << adder.module_name << "\n";
-            cpa.init(operandDef.bit_width, type);
+            std::vector<float> input_delays;
+            if (!adder.input_delays.empty()) {
+                if (adder.input_delays.size() == 1) {
+                    input_delays.assign(operandDef.bit_width, adder.input_delays.front());
+                } else if (adder.input_delays.size() == static_cast<std::size_t>(operandDef.bit_width)) {
+                    input_delays = adder.input_delays;
+                } else {
+                    throw std::runtime_error("input_delays length must be 1 or match bit width for adder " + adder.module_name);
+                }
+            }
+            cpa.init(operandDef.bit_width, type, input_delays);
             cpa.dump_hdl(adder.module_name);
         }
 

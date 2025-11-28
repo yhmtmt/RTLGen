@@ -10,7 +10,8 @@ enum CPAType{
     CPA_Ripple, // Ripple Carry Adder
     CPA_KoggeStone, // Kogge-Stone Adder
     CPA_BrentKung, // Brent-Kung Adder
-    CPA_Sklansky // Sklansky Adder
+    CPA_Sklansky, // Sklansky Adder
+    CPA_SkewAwarePrefix // Skew-aware prefix adder (arrival-sensitive)
 };
 
 // Partial Product type
@@ -98,6 +99,7 @@ struct AdderConfig {
     std::string operand;
     std::string cpa_structure;
     int pipeline_depth;
+    std::vector<float> input_delays;
 };
 
 struct OperandDefinition {
@@ -171,6 +173,7 @@ inline CPAType get_cpa_type(const std::string& structure) {
     if (structure == "KoggeStone") return CPA_KoggeStone;
     if (structure == "BrentKung") return CPA_BrentKung;
     if (structure == "Sklansky") return CPA_Sklansky;
+    if (structure == "SkewAwarePrefix") return CPA_SkewAwarePrefix;
     throw std::invalid_argument("Unknown CPA structure: " + structure);
 }
 
