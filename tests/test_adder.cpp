@@ -105,3 +105,20 @@ TEST(AdderTest, SkewAwarePrefixAdder) {
     generate_adder_testbench(module_name, width);
     run_iverilog_test(module_name);
 }
+
+TEST(AdderPerf, SkewBeatsRipple) {
+    const int width = 16;
+    std::vector<float> delays(width);
+    for (int i = 0; i < width; ++i) {
+        delays[i] = static_cast<float>(i) * 0.1f; // increasing arrival skew
+    }
+
+    CarryPropagatingAdder ripple;
+    ripple.init(width, CPA_Ripple, delays);
+
+    CarryPropagatingAdder skew;
+    skew.init(width, CPA_SkewAwarePrefix, delays);
+
+    ASSERT_LT(skew.critical_delay(), ripple.critical_delay())
+        << "Skew-aware prefix should improve critical delay over ripple for skewed inputs";
+}

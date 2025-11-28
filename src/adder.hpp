@@ -113,6 +113,8 @@ public:
     void dump_hdl(const std::string &module_name);
 
     const int get_num_inputs(){return nodes.size();};
+    float critical_delay() const { return tcrit; }
+    const std::vector<float>& output_arrivals() const { return output_delays; }
 };
 
 #endif
