@@ -1,0 +1,25 @@
+{
+  "version": "1.1",
+  "operands": [
+    {
+      "name": "din",
+      "dimensions": 1,
+      "bit_width": 8,
+      "signed": true
+    }
+  ],
+  "operations": [
+    {
+      "type": "activation",
+      "module_name": "relu_int8",
+      "operand": "din",
+      "options": { "function": "relu" }
+    },
+    {
+      "type": "activation",
+      "module_name": "relu6_int8",
+      "operand": "din",
+      "options": { "function": "relu6" }
+    }
+  ]
+}

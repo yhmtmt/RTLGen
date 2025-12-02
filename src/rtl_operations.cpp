@@ -600,3 +600,66 @@ void emitCmvmModule(const CmvmOperationConfig &config, const OperandDefinition &
     }
     os << "endmodule\n";
 }
+
+void emitActivationModule(const ActivationOperationConfig &config, const OperandDefinition &operand) {
+    std::string fn = toUpper(config.function);
+    if (fn != "RELU" && fn != "RELU6") {
+        throw std::runtime_error("Unsupported activation function: " + config.function);
+    }
+
+    std::string filename = config.module_name + ".v";
+    std::ofstream os(filename);
+    if (!os) {
+        throw std::runtime_error("Failed to open " + filename + " for writing");
+    }
+
+    bool is_fp = (operand.kind == "fp");
+    int data_width = operand.bit_width;
+    if (is_fp) {
+        if (!operand.fp_format.has_value()) {
+            throw std::runtime_error("FP activation requires fp_format on operand " + operand.name);
+        }
+        // FloPoCo-style: add 2 exception bits to total width
+        data_width = operand.fp_format->total_width + 2;
+    }
+
+    os << "`timescale 1ns/1ps\n\n";
+    os << "module " << config.module_name << "(\n";
+    os << "  input  [" << (data_width - 1) << ":0] X,\n";
+    os << "  output [" << (data_width - 1) << ":0] Y\n";
+    os << ");\n\n";
+
+    if (is_fp) {
+        int total_w = operand.fp_format->total_width;
+        int frac_w = operand.fp_format->mantissa_width;
+        int exp_w = total_w - frac_w - 1;
+        int sign_bit = frac_w + exp_w + 1; // relative to payload without exception bits
+        os << "  wire [1:0] exn = X[" << (data_width - 1) << ":" << (data_width - 2) << "];\n";
+        os << "  wire sign = X[" << (data_width - 3) << "];\n";
+        os << "  wire [" << (data_width - 4) << ":0] payload = X[" << (data_width - 4)
+           << ":0];\n";
+        // ReLU: zero out negative normals; pass others through
+        os << "  wire [" << (data_width - 1) << ":0] relu_val = (exn == 2'b01 && sign) ? {2'b01, "
+           << (data_width - 2) << "'b0} : X;\n";
+        os << "  assign Y = relu_val;\n";
+    } else {
+        // Integer activation
+        if (fn == "RELU6") {
+            os << "  // ReLU6 is clamped to constant 6 (truncated to width)\n";
+        }
+        os << "  wire signed [" << (data_width - 1) << ":0] x_signed = X;\n";
+        os << "  wire [" << (data_width - 1) << ":0] zero_val = {" << data_width << "{1'b0}};\n";
+        if (fn == "RELU6") {
+            os << "  wire [" << (data_width - 1) << ":0] six_val = " << data_width
+               << "'d6;\n";
+            os << "  wire [" << (data_width - 1) << ":0] relu = x_signed[" << (data_width - 1)
+               << "] ? zero_val : X;\n";
+            os << "  assign Y = (relu > six_val) ? six_val : relu;\n";
+        } else {
+            os << "  assign Y = x_signed[" << (data_width - 1)
+               << "] ? zero_val : X;\n";
+        }
+    }
+
+    os << "endmodule\n";
+}

@@ -56,6 +56,7 @@ bool readConfig(const std::string& filename, CircuitConfig& config) {
         config.mcm_operations.clear();
         config.cmvm_operations.clear();
         config.fp_operations.clear();
+        config.activation_operations.clear();
         config.onnx_model.reset();
 
         if (j.contains("operand")) {
@@ -290,6 +291,13 @@ bool readConfig(const std::string& filename, CircuitConfig& config) {
                     fp.flush_subnormals = options.value("flush_subnormals", false);
                     fp.pipeline_stages = options.value("pipeline_stages", 0);
                     config.fp_operations.push_back(fp);
+                } else if (type == "activation") {
+                    const json &options = entry.contains("options") ? entry["options"] : entry;
+                    ActivationOperationConfig act;
+                    act.module_name = module_name;
+                    act.operand = operand_name;
+                    act.function = options.at("function").get<std::string>();
+                    config.activation_operations.push_back(act);
                 } else {
                     throw std::runtime_error("Unknown operation type: " + type);
                 }

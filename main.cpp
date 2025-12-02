@@ -172,7 +172,8 @@ int main(int argc, char** argv) {
               << config.adders.size() << " adder(s), " << config.yosys_multipliers.size()
               << " yosys multiplier(s), " << config.mcm_operations.size() << " MCM block(s), "
               << config.cmvm_operations.size() << " CMVM block(s), "
-              << config.fp_operations.size() << " FP op(s)\n";
+              << config.fp_operations.size() << " FP op(s), "
+              << config.activation_operations.size() << " activation(s)\n";
 
     try {
         std::filesystem::path flopocoPath;
@@ -232,6 +233,13 @@ int main(int argc, char** argv) {
             OperandDefinition operandDef = resolveOperand(config, cmvm.operand);
             std::cout << "[INFO] Generating CMVM block " << cmvm.module_name << "\n";
             emitCmvmModule(cmvm, operandDef);
+        }
+
+        for (const auto &act : config.activation_operations) {
+            OperandDefinition operandDef = resolveOperand(config, act.operand);
+            std::cout << "[INFO] Generating activation " << act.module_name << " (" << act.function
+                      << ")\n";
+            emitActivationModule(act, operandDef);
         }
 
         for (const auto &fp : config.fp_operations) {

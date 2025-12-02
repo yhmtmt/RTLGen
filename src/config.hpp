@@ -153,6 +153,12 @@ struct FpOperationConfig {
     int pipeline_stages{0};
 };
 
+struct ActivationOperationConfig {
+    std::string module_name;
+    std::string operand;
+    std::string function; // relu, relu6 (initial set)
+};
+
 struct CircuitConfig {
     OperandConfig operand;
     std::vector<OperandDefinition> operands;
@@ -162,6 +168,7 @@ struct CircuitConfig {
     std::vector<McmOperationConfig> mcm_operations;
     std::vector<CmvmOperationConfig> cmvm_operations;
     std::vector<FpOperationConfig> fp_operations;
+    std::vector<ActivationOperationConfig> activation_operations;
     std::optional<std::string> onnx_model; // Added ONNX model path
 };
 
