@@ -25,11 +25,11 @@ module fp_mul_tb;
   endtask
 
   initial begin
-    // encoding: [33:32]=exception (00 normal), [31]=sign, [30:23]=exp, [22:0]=mantissa
-    check(34'h03f000000, 34'h0bf800000, 34'h0bf000000); // 0.5 * -1.0 = -0.5
-    check(34'h040400000, 34'h03f000000, 34'h03fc00000); // 3.0 * 0.5 = 1.5
-    check(34'h0c0000000, 34'h0c0200000, 34'h040a00000); // -2.0 * -2.5 = 5.0
-    check(34'h03f800000, 34'h03e800000, 34'h03e800000); // 1.0 * 0.25 = 0.25
+    // encoding: [33:32]=exception (01 normal), [31]=sign, [30:23]=exp, [22:0]=mantissa
+    check(34'h13f000000, 34'h1bf800000, 34'h1bf000000); // 0.5 * -1.0 = -0.5
+    check(34'h140400000, 34'h13f000000, 34'h13fc00000); // 3.0 * 0.5 = 1.5
+    check(34'h1c0000000, 34'h1c0200000, 34'h140a00000); // -2.0 * -2.5 = 5.0
+    check(34'h13f800000, 34'h13e800000, 34'h13e800000); // 1.0 * 0.25 = 0.25
     $display("All fp32_mul tests passed.");
     $finish;
   end

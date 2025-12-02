@@ -91,9 +91,9 @@ void runCommandOrThrow(const std::string &cmd, const std::string &what) {
     }
 }
 
-void generateFpMultiplier(const FpOperationConfig &fp,
-                          const OperandDefinition &operand,
-                          const std::filesystem::path &flopocoPath) {
+void generateFpOperator(const FpOperationConfig &fp,
+                        const OperandDefinition &operand,
+                        const std::filesystem::path &flopocoPath) {
     if (!operand.fp_format.has_value()) {
         throw std::runtime_error("Operand " + operand.name + " missing fp_format for fp operation " +
                                  fp.module_name);
@@ -110,7 +110,7 @@ void generateFpMultiplier(const FpOperationConfig &fp,
     cmd << "\"" << flopocoPath.string() << "\" "
         << "name=" << fp.module_name << " "
         << "outputFile=" << vhdlPath.string() << " "
-        << "FPMult "
+        << (fp.type == "fp_mul" ? "FPMult " : "FPAdd ")
         << "wE=" << wE << " "
         << "wF=" << wF;
     std::cout << "[INFO] Running FloPoCo: " << cmd.str() << "\n";
@@ -236,7 +236,10 @@ int main(int argc, char** argv) {
             }
             if (fp.type == "fp_mul") {
                 std::cout << "[INFO] Generating FP multiplier " << fp.module_name << "\n";
-                generateFpMultiplier(fp, operandDef, flopocoPath);
+                generateFpOperator(fp, operandDef, flopocoPath);
+            } else if (fp.type == "fp_add") {
+                std::cout << "[INFO] Generating FP adder " << fp.module_name << "\n";
+                generateFpOperator(fp, operandDef, flopocoPath);
             } else {
                 throw std::runtime_error("Unsupported FP operation type: " + fp.type);
             }

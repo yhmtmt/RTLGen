@@ -164,3 +164,17 @@ Supported FP operations (each references an `operand` of kind `fp`):
       "operand": "fp32"
     }
     ```
+- `fp_add`: generates a FloPoCo floating-point adder and converts it to Verilog through Yosys+GHDL. Options mirror `fp_mul`.
+  - `module_name`: top module/entity name to emit.
+  - `rounding_mode` (optional): placeholder for future extension (default `"RNE"`).
+  - `flush_subnormals` (optional): placeholder, default `false`.
+  - `pipeline_stages` (optional): placeholder, default `0`.
+  - Minimal example:
+    ```json
+    {
+      "type": "fp_add",
+      "module_name": "fp32_add",
+      "operand": "fp32"
+    }
+    ```
+Inputs/outputs use FloPoCo’s 2-bit exception prefix: `01` for normal numbers, `00` for zero/subnormals, `10` for inf, `11` for NaN. Tests use `01` for normal operands.
