@@ -107,10 +107,16 @@ void generateFpOperator(const FpOperationConfig &fp,
 
     std::ostringstream cmd;
     std::filesystem::path vhdlPath = std::filesystem::absolute(fp.module_name + ".vhdl");
+    std::string flopocoOp;
+    if (fp.type == "fp_mul") flopocoOp = "FPMult";
+    else if (fp.type == "fp_add") flopocoOp = "FPAdd";
+    else if (fp.type == "fp_mac") flopocoOp = "IEEEFPFMA";
+    else throw std::runtime_error("Unsupported FP operation type: " + fp.type);
+
     cmd << "\"" << flopocoPath.string() << "\" "
         << "name=" << fp.module_name << " "
         << "outputFile=" << vhdlPath.string() << " "
-        << (fp.type == "fp_mul" ? "FPMult " : "FPAdd ")
+        << flopocoOp << " "
         << "wE=" << wE << " "
         << "wF=" << wF;
     std::cout << "[INFO] Running FloPoCo: " << cmd.str() << "\n";
@@ -236,13 +242,12 @@ int main(int argc, char** argv) {
             }
             if (fp.type == "fp_mul") {
                 std::cout << "[INFO] Generating FP multiplier " << fp.module_name << "\n";
-                generateFpOperator(fp, operandDef, flopocoPath);
             } else if (fp.type == "fp_add") {
                 std::cout << "[INFO] Generating FP adder " << fp.module_name << "\n";
-                generateFpOperator(fp, operandDef, flopocoPath);
-            } else {
-                throw std::runtime_error("Unsupported FP operation type: " + fp.type);
+            } else if (fp.type == "fp_mac") {
+                std::cout << "[INFO] Generating FP fused multiply-add " << fp.module_name << "\n";
             }
+            generateFpOperator(fp, operandDef, flopocoPath);
         }
     } catch (const std::exception &ex) {
         std::cerr << "Error: " << ex.what() << std::endl;

@@ -104,6 +104,9 @@ set_tests_properties(test_verilog_fp_mul PROPERTIES WORKING_DIRECTORY ${PROJECT_
 add_test(NAME test_verilog_fp_add COMMAND bash ${PROJECT_SOURCE_DIR}/tests/test_fp_add.sh)
 set_tests_properties(test_verilog_fp_add PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
+add_test(NAME test_verilog_fp_mac COMMAND bash ${PROJECT_SOURCE_DIR}/tests/test_fp_mac.sh)
+set_tests_properties(test_verilog_fp_mac PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
 if(RTLGEN_BUILD_FLOPOCO)
     find_package(GMPXX)
     find_package(MPFR)

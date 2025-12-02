@@ -280,6 +280,16 @@ bool readConfig(const std::string& filename, CircuitConfig& config) {
                     fp.flush_subnormals = options.value("flush_subnormals", false);
                     fp.pipeline_stages = options.value("pipeline_stages", 0);
                     config.fp_operations.push_back(fp);
+                } else if (type == "fp_mac") {
+                    const json &options = entry.contains("options") ? entry["options"] : entry;
+                    FpOperationConfig fp;
+                    fp.type = type;
+                    fp.module_name = module_name;
+                    fp.operand = operand_name;
+                    fp.rounding_mode = options.value("rounding_mode", "RNE");
+                    fp.flush_subnormals = options.value("flush_subnormals", false);
+                    fp.pipeline_stages = options.value("pipeline_stages", 0);
+                    config.fp_operations.push_back(fp);
                 } else {
                     throw std::runtime_error("Unknown operation type: " + type);
                 }

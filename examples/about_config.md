@@ -177,4 +177,5 @@ Supported FP operations (each references an `operand` of kind `fp`):
       "operand": "fp32"
     }
     ```
-Inputs/outputs use FloPoCo’s 2-bit exception prefix: `01` for normal numbers, `00` for zero/subnormals, `10` for inf, `11` for NaN. Tests use `01` for normal operands.
+- `fp_mac`: generates a fused multiply-add (`A*B+C`) using FloPoCo’s `IEEEFPFMA` (IEEE-style 32-bit interface: sign/exponent/fraction, no exception prefix). Ports include `negateAB`, `negateC`, and `RndMode` (2-bit) inputs; defaults are negate off and `RndMode=00` (nearest-even) in tests.
+Inputs/outputs follow FloPoCo’s 2-bit exception prefix (`[33:32]` for 32-bit formats): `01` normal, `00` zero/subnormal, `10` infinity, `11` NaN. The remaining bits carry IEEE-like sign/exponent/fraction.

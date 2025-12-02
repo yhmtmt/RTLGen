@@ -1,0 +1,20 @@
+{
+  "version": "1.1",
+  "operands": [
+    {
+      "name": "fp32",
+      "dimensions": 1,
+      "bit_width": 32,
+      "signed": true,
+      "kind": "fp",
+      "fp_format": { "total_width": 32, "mantissa_width": 23 }
+    }
+  ],
+  "operations": [
+    {
+      "type": "fp_add",
+      "module_name": "fp32_add",
+      "operand": "fp32"
+    }
+  ]
+}
