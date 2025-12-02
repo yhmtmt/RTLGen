@@ -4,6 +4,9 @@
 #include <string>
 #include <limits>
 #include <stdexcept>
+#include <cstdlib>
+#include <filesystem>
+#include <sstream>
 #include "multiplier.hpp"
 #include "adder.hpp"
 #include "rtl_operations.hpp"
@@ -60,6 +63,77 @@ Operand makeOperandValue(const OperandDefinition &def) {
     return operand;
 }
 
+std::filesystem::path locateFlopoco(const std::filesystem::path &exePath) {
+    if (const char *env = std::getenv("FLOPOCO_BIN")) {
+        std::filesystem::path candidate(env);
+        if (std::filesystem::exists(candidate)) {
+            return candidate;
+        }
+    }
+    std::filesystem::path exeDir = exePath.parent_path();
+    std::filesystem::path repoBin = exeDir.parent_path() / "bin" / "flopoco";
+    if (std::filesystem::exists(repoBin)) {
+        return repoBin;
+    }
+    std::filesystem::path cwdBin = std::filesystem::current_path() / "bin" / "flopoco";
+    if (std::filesystem::exists(cwdBin)) {
+        return cwdBin;
+    }
+    throw std::runtime_error("Unable to locate FloPoCo binary. Set FLOPOCO_BIN or ensure bin/flopoco exists.");
+}
+
+void runCommandOrThrow(const std::string &cmd, const std::string &what) {
+    int rc = std::system(cmd.c_str());
+    if (rc != 0) {
+        std::ostringstream oss;
+        oss << what << " failed (rc=" << rc << ")";
+        throw std::runtime_error(oss.str());
+    }
+}
+
+void generateFpMultiplier(const FpOperationConfig &fp,
+                          const OperandDefinition &operand,
+                          const std::filesystem::path &flopocoPath) {
+    if (!operand.fp_format.has_value()) {
+        throw std::runtime_error("Operand " + operand.name + " missing fp_format for fp operation " +
+                                 fp.module_name);
+    }
+    const auto fmt = operand.fp_format.value();
+    int wE = fmt.exponent_width();
+    int wF = fmt.mantissa_width;
+    if (wE <= 0 || wF <= 0) {
+        throw std::runtime_error("Invalid fp_format dimensions for " + operand.name);
+    }
+
+    std::ostringstream cmd;
+    std::filesystem::path vhdlPath = std::filesystem::absolute(fp.module_name + ".vhdl");
+    cmd << "\"" << flopocoPath.string() << "\" "
+        << "name=" << fp.module_name << " "
+        << "outputFile=" << vhdlPath.string() << " "
+        << "FPMult "
+        << "wE=" << wE << " "
+        << "wF=" << wF;
+    std::cout << "[INFO] Running FloPoCo: " << cmd.str() << "\n";
+    runCommandOrThrow(cmd.str(), "FloPoCo generation");
+
+    if (!std::filesystem::exists(vhdlPath)) {
+        throw std::runtime_error("FloPoCo did not produce expected VHDL: " + vhdlPath.string());
+    }
+
+    std::ostringstream yosysCmd;
+    yosysCmd << "yosys -q -m ghdl -p \"ghdl --std=08 --ieee=synopsys -fsynopsys "
+             << vhdlPath.string() << " -e " << fp.module_name
+             << "; write_verilog -noattr " << fp.module_name << ".v\"";
+    std::cout << "[INFO] Converting VHDL to Verilog via Yosys/GHDL\n";
+    runCommandOrThrow(yosysCmd.str(), "Yosys conversion");
+
+    std::ostringstream iverilogCmd;
+    iverilogCmd << "iverilog -g2012 -s " << fp.module_name << " -t null "
+                << fp.module_name << ".v";
+    std::cout << "[INFO] Validating Verilog with iverilog\n";
+    runCommandOrThrow(iverilogCmd.str(), "iverilog compile");
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -80,8 +154,9 @@ int main(int argc, char** argv) {
     if (!config.operands.empty()) {
         for (const auto &operand : config.operands) {
             std::cout << "  Operand " << operand.name << ": "
-                      << (operand.is_signed ? "signed" : "unsigned") << ", width "
-                      << operand.bit_width << ", dimensions " << operand.dimensions << "\n";
+                      << (operand.kind == "fp" ? "fp" : (operand.is_signed ? "signed" : "unsigned"))
+                      << ", width " << operand.bit_width << ", dimensions " << operand.dimensions
+                      << "\n";
         }
     } else {
         std::cout << "  Legacy operand: " << (config.operand.is_signed ? "signed" : "unsigned")
@@ -90,9 +165,17 @@ int main(int argc, char** argv) {
     std::cout << "  Operations: " << config.multipliers.size() << " multiplier(s), "
               << config.adders.size() << " adder(s), " << config.yosys_multipliers.size()
               << " yosys multiplier(s), " << config.mcm_operations.size() << " MCM block(s), "
-              << config.cmvm_operations.size() << " CMVM block(s)\n";
+              << config.cmvm_operations.size() << " CMVM block(s), "
+              << config.fp_operations.size() << " FP op(s)\n";
 
     try {
+        std::filesystem::path flopocoPath;
+        bool needFlopoco = !config.fp_operations.empty();
+        if (needFlopoco) {
+            flopocoPath = locateFlopoco(std::filesystem::absolute(argv[0]));
+            std::cout << "[INFO] Found FloPoCo at " << flopocoPath << "\n";
+        }
+
         for (const auto &mult : config.multipliers) {
             OperandDefinition operandDef = resolveOperand(config, mult.operand);
             Operand lhs = makeOperandValue(operandDef);
@@ -143,6 +226,20 @@ int main(int argc, char** argv) {
             OperandDefinition operandDef = resolveOperand(config, cmvm.operand);
             std::cout << "[INFO] Generating CMVM block " << cmvm.module_name << "\n";
             emitCmvmModule(cmvm, operandDef);
+        }
+
+        for (const auto &fp : config.fp_operations) {
+            OperandDefinition operandDef = resolveOperand(config, fp.operand);
+            if (operandDef.kind != "fp") {
+                throw std::runtime_error("FP operation " + fp.module_name +
+                                         " expects an operand of kind \"fp\"");
+            }
+            if (fp.type == "fp_mul") {
+                std::cout << "[INFO] Generating FP multiplier " << fp.module_name << "\n";
+                generateFpMultiplier(fp, operandDef, flopocoPath);
+            } else {
+                throw std::runtime_error("Unsupported FP operation type: " + fp.type);
+            }
         }
     } catch (const std::exception &ex) {
         std::cerr << "Error: " << ex.what() << std::endl;

@@ -98,6 +98,9 @@ set_tests_properties(test_verilog_mcm_and_cmvm PROPERTIES WORKING_DIRECTORY ${PR
 add_test(NAME test_verilog_adder_skew COMMAND bash ${PROJECT_SOURCE_DIR}/tests/test_verilog_adder_skew.sh)
 set_tests_properties(test_verilog_adder_skew PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
+add_test(NAME test_verilog_fp_mul COMMAND bash ${PROJECT_SOURCE_DIR}/tests/test_fp_mul.sh)
+set_tests_properties(test_verilog_fp_mul PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
 if(RTLGEN_BUILD_FLOPOCO)
     find_package(GMPXX)
     find_package(MPFR)

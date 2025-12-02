@@ -107,6 +107,13 @@ struct OperandDefinition {
     int dimensions{1};
     int bit_width{0};
     bool is_signed{false};
+    std::string kind{"int"}; // "int" (default) or "fp"
+    struct FpFormat {
+        int total_width{0};
+        int mantissa_width{0};
+        int exponent_width() const { return total_width - mantissa_width - 1; }
+    };
+    std::optional<FpFormat> fp_format;
 };
 
 struct McmSynthesisConfig {
@@ -137,6 +144,15 @@ struct CmvmOperationConfig {
     CmvmSynthesisConfig synthesis;
 };
 
+struct FpOperationConfig {
+    std::string type; // fp_mul, fp_add, fp_mac
+    std::string module_name;
+    std::string operand;
+    std::string rounding_mode{"RNE"};
+    bool flush_subnormals{false};
+    int pipeline_stages{0};
+};
+
 struct CircuitConfig {
     OperandConfig operand;
     std::vector<OperandDefinition> operands;
@@ -145,6 +161,7 @@ struct CircuitConfig {
     std::vector<MultiplierYosysConfig> yosys_multipliers;
     std::vector<McmOperationConfig> mcm_operations;
     std::vector<CmvmOperationConfig> cmvm_operations;
+    std::vector<FpOperationConfig> fp_operations;
     std::optional<std::string> onnx_model; // Added ONNX model path
 };
 

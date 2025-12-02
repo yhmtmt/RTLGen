@@ -13,6 +13,7 @@ Top-level fields:
   - `dimensions`: positive integer. `1` represents a scalar, larger values describe vectors (e.g., `4` generates `sample_0` … `sample_3`).
   - `bit_width`: width of each lane.
   - `signed`: signedness of each lane.
+  - `kind` (optional): `"int"` (default) or `"fp"`. For floating point, supply `fp_format` with `total_width` and `mantissa_width` (exponent is derived as `total_width - mantissa_width - 1`). `bit_width` is auto-filled from `total_width`.
 - `operations` (optional): array of operation objects. Each object declares a `type`, `module_name`, the operand(s) it uses, and the type-specific options.
 
 ### Legacy Layout (still valid)
@@ -132,3 +133,34 @@ Constant matrix-vector multiplication (CMVM) entries use `"type": "cmvm"` and ex
 
 Refer to `examples/config_cmvm_dct.json` for a CMVM configuration that builds a 4x4 DCT-like block using the recommended `HCMVM` stage plus a fallback to the exact ILP model on small sub-problems.
 Input lanes appear as `<operand>_<column>` and each row emits `module_name_out<i>` with a width derived from the per-row coefficient magnitudes.
+
+## Floating-Point Operations
+
+Floating-point operands use `kind: "fp"` with an accompanying `fp_format` describing the total width and mantissa width (exponent width is derived). Example operand:
+
+```json
+{
+  "name": "fp32",
+  "dimensions": 1,
+  "bit_width": 32,
+  "signed": true,
+  "kind": "fp",
+  "fp_format": { "total_width": 32, "mantissa_width": 23 }
+}
+```
+
+Supported FP operations (each references an `operand` of kind `fp`):
+
+- `fp_mul`: generates a FloPoCo floating-point multiplier and converts it to Verilog through Yosys+GHDL.
+  - `module_name`: top module/entity name to emit.
+  - `rounding_mode` (optional): placeholder for future extension (default `"RNE"`).
+  - `flush_subnormals` (optional): placeholder, default `false`.
+  - `pipeline_stages` (optional): placeholder, default `0`.
+  - Minimal example:
+    ```json
+    {
+      "type": "fp_mul",
+      "module_name": "fp32_mul",
+      "operand": "fp32"
+    }
+    ```

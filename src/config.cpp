@@ -55,6 +55,7 @@ bool readConfig(const std::string& filename, CircuitConfig& config) {
         config.yosys_multipliers.clear();
         config.mcm_operations.clear();
         config.cmvm_operations.clear();
+        config.fp_operations.clear();
         config.onnx_model.reset();
 
         if (j.contains("operand")) {
@@ -83,6 +84,23 @@ bool readConfig(const std::string& filename, CircuitConfig& config) {
                 def.dimensions = entry.value("dimensions", 1);
                 def.bit_width = entry.at("bit_width").get<int>();
                 def.is_signed = entry.at("signed").get<bool>();
+                def.kind = entry.value("kind", "int");
+                if (def.kind == "fp") {
+                    if (!entry.contains("fp_format") || !entry["fp_format"].is_object()) {
+                        throw std::runtime_error("Floating-point operand requires fp_format {total_width, mantissa_width}");
+                    }
+                    OperandDefinition::FpFormat fmt;
+                    fmt.total_width = entry["fp_format"].at("total_width").get<int>();
+                    fmt.mantissa_width = entry["fp_format"].at("mantissa_width").get<int>();
+                    if (fmt.total_width <= 0 || fmt.mantissa_width <= 0) {
+                        throw std::runtime_error("fp_format widths must be positive for operand " + def.name);
+                    }
+                    if (fmt.mantissa_width >= fmt.total_width - 1) {
+                        throw std::runtime_error("mantissa_width must be at least 1 smaller than total_width for operand " + def.name);
+                    }
+                    def.fp_format = fmt;
+                    def.bit_width = fmt.total_width;
+                }
                 if (def.dimensions <= 0) {
                     throw std::runtime_error("Operand dimensions must be positive");
                 }
@@ -242,6 +260,16 @@ bool readConfig(const std::string& filename, CircuitConfig& config) {
                         }
                     }
                     config.cmvm_operations.push_back(cmvm);
+                } else if (type == "fp_mul") {
+                    const json &options = entry.contains("options") ? entry["options"] : entry;
+                    FpOperationConfig fp;
+                    fp.type = type;
+                    fp.module_name = module_name;
+                    fp.operand = operand_name;
+                    fp.rounding_mode = options.value("rounding_mode", "RNE");
+                    fp.flush_subnormals = options.value("flush_subnormals", false);
+                    fp.pipeline_stages = options.value("pipeline_stages", 0);
+                    config.fp_operations.push_back(fp);
                 } else {
                     throw std::runtime_error("Unknown operation type: " + type);
                 }
