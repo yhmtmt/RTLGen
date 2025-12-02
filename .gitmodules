@@ -4,3 +4,6 @@
 [submodule "flopoco"]
 	path = flopoco
 	url = https://gitlab.com/flopoco/flopoco
+[submodule "pagsuite"]
+	path = pagsuite
+	url = https://gitlab.com/kumm/pagsuite
