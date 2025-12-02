@@ -3,6 +3,11 @@ project(RTLGen)
 
 set(CMAKE_CXX_STANDARD 17)
 
+include(ExternalProject)
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/flopoco/cmake)
+
+option(RTLGEN_BUILD_FLOPOCO "Build the bundled FloPoCo floating-point generator" ON)
+
 # Enable testing
 enable_testing()
 
@@ -92,3 +97,63 @@ set_tests_properties(test_verilog_mcm_and_cmvm PROPERTIES WORKING_DIRECTORY ${PR
 
 add_test(NAME test_verilog_adder_skew COMMAND bash ${PROJECT_SOURCE_DIR}/tests/test_verilog_adder_skew.sh)
 set_tests_properties(test_verilog_adder_skew PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+if(RTLGEN_BUILD_FLOPOCO)
+    find_package(GMPXX)
+    find_package(MPFR)
+    find_package(MPFI)
+    find_package(LAPACK)
+    find_package(Sollya)
+
+    if(NOT GMPXX_FOUND OR NOT MPFR_FOUND OR NOT MPFI_FOUND OR NOT LAPACK_FOUND OR NOT Sollya_FOUND)
+        message(WARNING "FloPoCo build skipped: missing GMP/MPFR/MPFI/LAPACK/Sollya (install libgmp-dev, libmpfr-dev, libmpfi-dev, liblapack-dev, libsollya-dev or equivalents) then re-enable RTLGEN_BUILD_FLOPOCO.")
+        set(RTLGEN_BUILD_FLOPOCO OFF)
+    endif()
+endif()
+
+if(RTLGEN_BUILD_FLOPOCO)
+    set(PAGSUITE_SOURCE_DIR ${PROJECT_SOURCE_DIR}/pagsuite)
+    set(PAGSUITE_BINARY_DIR ${CMAKE_BINARY_DIR}/pagsuite-build)
+    set(PAGSUITE_INSTALL_DIR ${PROJECT_SOURCE_DIR}/third_party/pagsuite-install)
+
+    ExternalProject_Add(pagsuite
+        SOURCE_DIR ${PAGSUITE_SOURCE_DIR}
+        BINARY_DIR ${PAGSUITE_BINARY_DIR}
+        CMAKE_ARGS
+            -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+            -DCMAKE_INSTALL_PREFIX=${PAGSUITE_INSTALL_DIR}
+        BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR>
+        INSTALL_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --target install
+    )
+
+    set(FLOPOCO_SOURCE_DIR ${PROJECT_SOURCE_DIR}/flopoco)
+    set(FLOPOCO_BINARY_DIR ${CMAKE_BINARY_DIR}/flopoco-build)
+    set(FLOPOCO_INSTALL_DIR ${PROJECT_SOURCE_DIR}/third_party/flopoco-install)
+    set(FLOPOCO_GIT_HASH_OVERRIDE "\"unknown\"")
+
+    ExternalProject_Add(flopoco
+        SOURCE_DIR ${FLOPOCO_SOURCE_DIR}
+        BINARY_DIR ${FLOPOCO_BINARY_DIR}
+        CMAKE_ARGS
+            -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+            -DCMAKE_INSTALL_PREFIX=${FLOPOCO_INSTALL_DIR}
+            -DCMAKE_PREFIX_PATH=${PAGSUITE_INSTALL_DIR}
+            -DPAG_LOCAL=${PAGSUITE_INSTALL_DIR}
+            -DPAGSUITE_LOCALLY_BUILT=ON
+            -DFLOPOCO_GIT_HASH=${FLOPOCO_GIT_HASH_OVERRIDE}
+        BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR>
+        INSTALL_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --target install
+        PATCH_COMMAND patch -p1 -d <SOURCE_DIR> -i ${PROJECT_SOURCE_DIR}/patches/flopoco-local.patch -N
+    )
+
+    ExternalProject_Add_Step(flopoco copy_to_bin
+        DEPENDEES install
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_SOURCE_DIR}/bin
+        COMMAND ${CMAKE_COMMAND} -E copy ${FLOPOCO_INSTALL_DIR}/bin/flopoco ${PROJECT_SOURCE_DIR}/bin/flopoco
+    )
+
+    add_custom_target(pagsuite_lib ALL DEPENDS pagsuite)
+    add_custom_target(flopoco_tool ALL DEPENDS flopoco)
+    add_dependencies(flopoco pagsuite)
+    add_dependencies(rtlgen flopoco)
+endif()

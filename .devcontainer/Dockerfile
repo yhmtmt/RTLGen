@@ -143,6 +143,8 @@ RUN if [ "$USE_CUDA" = "true" ]; then \
         tar -xzf onnxruntime-linux-x64-${ONNX_VERSION}.tgz && \
         mv onnxruntime-linux-x64-${ONNX_VERSION} /usr/local/onnxruntime; \
     fi
+# Install additional libraries required for FloPoCo
+RUN apt install -y libgmp-dev libmpfr-dev libmpfi-dev libblas-dev liblapack-dev libsollve-dev
 
 ENV ONNXRUNTIME_DIR=/usr/local/onnxruntime
 ENV LD_LIBRARY_PATH=${ONNXRUNTIME_DIR}/lib:$LD_LIBRARY_PATH
