@@ -179,3 +179,15 @@ Supported FP operations (each references an `operand` of kind `fp`):
     ```
 - `fp_mac`: generates a fused multiply-add (`A*B+C`) using FloPoCo’s `IEEEFPFMA` (IEEE-style 32-bit interface: sign/exponent/fraction, no exception prefix). Ports include `negateAB`, `negateC`, and `RndMode` (2-bit) inputs; defaults are negate off and `RndMode=00` (nearest-even) in tests.
 Inputs/outputs follow FloPoCo’s 2-bit exception prefix (`[33:32]` for 32-bit formats): `01` normal, `00` zero/subnormal, `10` infinity, `11` NaN. The remaining bits carry IEEE-like sign/exponent/fraction.
+
+## Activation Functions
+
+Activation entries use `"type": "activation"` with a `function` selector inside `options`:
+
+- `function`: currently `"relu"` or `"relu6"`.
+- `module_name`: output module name.
+- `operand`: operand name to determine width/kind.
+
+Behavior:
+- Integer operands: two’s-complement inputs; ReLU outputs `0` for negative, input otherwise. ReLU6 clamps to `6` (truncated to width) after ReLU.
+- Floating-point operands (FloPoCo format with 2-bit exception prefix): ReLU zeros negative normal numbers while preserving exn bits (`01` with zero payload); zeros with non-negative sign stay zero; NaN/inf pass through unchanged.
