@@ -157,6 +157,8 @@ struct ActivationOperationConfig {
     std::string module_name;
     std::string operand;
     std::string function; // relu, relu6 (initial set)
+    int alpha_num{1};     // for leaky relu (numerator)
+    int alpha_den{10};    // for leaky relu (denominator)
 };
 
 struct CircuitConfig {

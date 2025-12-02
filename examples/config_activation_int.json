@@ -20,6 +20,24 @@
       "module_name": "relu6_int8",
       "operand": "din",
       "options": { "function": "relu6" }
+    },
+    {
+      "type": "activation",
+      "module_name": "leakyrelu_int8",
+      "operand": "din",
+      "options": { "function": "leaky_relu", "alpha_num": 1, "alpha_den": 4 }
+    },
+    {
+      "type": "activation",
+      "module_name": "tanh_int8",
+      "operand": "din",
+      "options": { "function": "tanh" }
+    },
+    {
+      "type": "activation",
+      "module_name": "gelu_int8",
+      "operand": "din",
+      "options": { "function": "gelu" }
     }
   ]
 }

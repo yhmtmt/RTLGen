@@ -297,6 +297,11 @@ bool readConfig(const std::string& filename, CircuitConfig& config) {
                     act.module_name = module_name;
                     act.operand = operand_name;
                     act.function = options.at("function").get<std::string>();
+                    act.alpha_num = options.value("alpha_num", 1);
+                    act.alpha_den = options.value("alpha_den", 10);
+                    if (act.alpha_den == 0) {
+                        throw std::runtime_error("alpha_den must be non-zero for activation " + act.module_name);
+                    }
                     config.activation_operations.push_back(act);
                 } else {
                     throw std::runtime_error("Unknown operation type: " + type);

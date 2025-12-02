@@ -184,10 +184,11 @@ Inputs/outputs follow FloPoCo’s 2-bit exception prefix (`[33:32]` for 32-bit f
 
 Activation entries use `"type": "activation"` with a `function` selector inside `options`:
 
-- `function`: currently `"relu"` or `"relu6"`.
+- `function`: `"relu"`, `"relu6"`, `"leaky_relu"`, `"tanh"`, `"gelu"`.
 - `module_name`: output module name.
 - `operand`: operand name to determine width/kind.
+- `alpha_num`, `alpha_den` (optional, leaky_relu): scale negative inputs by `alpha_num/alpha_den`. FP leaky_relu currently only supports `alpha_num=1` and `alpha_den` as a power-of-two (implemented as exponent shift).
 
 Behavior:
 - Integer operands: two’s-complement inputs; ReLU outputs `0` for negative, input otherwise. ReLU6 clamps to `6` (truncated to width) after ReLU.
-- Floating-point operands (FloPoCo format with 2-bit exception prefix): ReLU zeros negative normal numbers while preserving exn bits (`01` with zero payload); zeros with non-negative sign stay zero; NaN/inf pass through unchanged.
+- Floating-point operands (FloPoCo format with 2-bit exception prefix): ReLU zeros negative normal numbers while preserving exn bits (`01` with zero payload); zeros with non-negative sign stay zero; NaN/inf pass through unchanged. Leaky ReLU scales negative normals by shifting the exponent (power-of-two alpha); other FP activations are not yet implemented and will error out.

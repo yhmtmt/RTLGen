@@ -603,7 +603,7 @@ void emitCmvmModule(const CmvmOperationConfig &config, const OperandDefinition &
 
 void emitActivationModule(const ActivationOperationConfig &config, const OperandDefinition &operand) {
     std::string fn = toUpper(config.function);
-    if (fn != "RELU" && fn != "RELU6") {
+    if (fn != "RELU" && fn != "RELU6" && fn != "LEAKY_RELU" && fn != "TANH" && fn != "GELU") {
         throw std::runtime_error("Unsupported activation function: " + config.function);
     }
 
@@ -630,18 +630,37 @@ void emitActivationModule(const ActivationOperationConfig &config, const Operand
     os << ");\n\n";
 
     if (is_fp) {
+        if (fn == "TANH" || fn == "GELU") {
+            throw std::runtime_error("FP tanh/gelu not yet supported in built-in generator");
+        }
         int total_w = operand.fp_format->total_width;
         int frac_w = operand.fp_format->mantissa_width;
         int exp_w = total_w - frac_w - 1;
         int sign_bit = frac_w + exp_w + 1; // relative to payload without exception bits
         os << "  wire [1:0] exn = X[" << (data_width - 1) << ":" << (data_width - 2) << "];\n";
         os << "  wire sign = X[" << (data_width - 3) << "];\n";
-        os << "  wire [" << (data_width - 4) << ":0] payload = X[" << (data_width - 4)
-           << ":0];\n";
-        // ReLU: zero out negative normals; pass others through
-        os << "  wire [" << (data_width - 1) << ":0] relu_val = (exn == 2'b01 && sign) ? {2'b01, "
-           << (data_width - 2) << "'b0} : X;\n";
-        os << "  assign Y = relu_val;\n";
+        os << "  wire [" << (data_width - 4) << ":0] payload = X[" << (data_width - 4) << ":0];\n";
+        os << "  wire [" << (exp_w - 1) << ":0] exp_bits = X[" << (frac_w + exp_w - 1) << ":" << frac_w << "];\n";
+        os << "  wire [" << (frac_w - 1) << ":0] frac_bits = X[" << (frac_w - 1) << ":0];\n";
+        os << "  wire is_normal = (exn == 2'b01);\n";
+        if (fn == "LEAKY_RELU") {
+            if (config.alpha_num != 1 || (config.alpha_den & (config.alpha_den - 1)) != 0) {
+                throw std::runtime_error("FP leaky_relu currently supports alpha_num=1 and alpha_den power-of-two");
+            }
+            int shift = 0;
+            int den = config.alpha_den;
+            while ((den >>= 1) > 0) ++shift;
+            os << "  wire underflow = exp_bits <= " << shift << ";\n";
+            os << "  wire [" << (exp_w - 1) << ":0] exp_scaled = exp_bits - " << shift << ";\n";
+            os << "  wire [" << (data_width - 1) << ":0] scaled = underflow ? {2'b01, " << (data_width - 2) << "'b0}\n"
+               << "                                            : {2'b01, sign, exp_scaled, frac_bits};\n";
+            os << "  wire [" << (data_width - 1) << ":0] leaky_val = (is_normal && sign) ? scaled : X;\n";
+            os << "  assign Y = leaky_val;\n";
+        } else { // RELU
+            os << "  wire [" << (data_width - 1) << ":0] relu_val = (is_normal && sign) ? {2'b01, "
+               << (data_width - 2) << "'b0} : X;\n";
+            os << "  assign Y = relu_val;\n";
+        }
     } else {
         // Integer activation
         if (fn == "RELU6") {
@@ -655,6 +674,22 @@ void emitActivationModule(const ActivationOperationConfig &config, const Operand
             os << "  wire [" << (data_width - 1) << ":0] relu = x_signed[" << (data_width - 1)
                << "] ? zero_val : X;\n";
             os << "  assign Y = (relu > six_val) ? six_val : relu;\n";
+        } else if (fn == "LEAKY_RELU") {
+            os << "  wire [" << (data_width - 1) << ":0] neg_scaled = (x_signed * "
+               << config.alpha_num << ") / " << config.alpha_den << ";\n";
+            os << "  assign Y = x_signed[" << (data_width - 1)
+               << "] ? neg_scaled : X;\n";
+        } else if (fn == "TANH") {
+            // Clamp to +/- (2^(w-1)-1)
+            os << "  wire [" << (data_width - 1) << ":0] max_val = {1'b0, {" << (data_width - 1)
+               << "{1'b1}}};\n";
+            os << "  assign Y = x_signed[" << (data_width - 1)
+               << "] ? (~max_val + 1'b1) : max_val;\n";
+        } else if (fn == "GELU") {
+            os << "  // Approximate GELU: 0.5 * ReLU(x)\n";
+            os << "  wire [" << (data_width - 1) << ":0] relu = x_signed[" << (data_width - 1)
+               << "] ? zero_val : X;\n";
+            os << "  assign Y = relu >> 1;\n";
         } else {
             os << "  assign Y = x_signed[" << (data_width - 1)
                << "] ? zero_val : X;\n";
