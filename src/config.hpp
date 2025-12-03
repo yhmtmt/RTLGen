@@ -156,9 +156,16 @@ struct FpOperationConfig {
 struct ActivationOperationConfig {
     std::string module_name;
     std::string operand;
-    std::string function; // relu, relu6 (initial set)
+    std::string function; // relu, relu6, leaky_relu, tanh, gelu
     int alpha_num{1};     // for leaky relu (numerator)
     int alpha_den{10};    // for leaky relu (denominator)
+    std::string impl{"default"}; // activation impl hint (e.g., pwl)
+    int frac_bits{0}; // for fixed-point tanh
+    int segments{0};
+    std::vector<double> breakpoints;
+    std::vector<double> slopes;
+    std::vector<double> intercepts;
+    bool clamp{true};
 };
 
 struct CircuitConfig {

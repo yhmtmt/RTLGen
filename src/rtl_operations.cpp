@@ -630,13 +630,9 @@ void emitActivationModule(const ActivationOperationConfig &config, const Operand
     os << ");\n\n";
 
     if (is_fp) {
-        if (fn == "TANH" || fn == "GELU") {
-            throw std::runtime_error("FP tanh/gelu not yet supported in built-in generator");
-        }
         int total_w = operand.fp_format->total_width;
         int frac_w = operand.fp_format->mantissa_width;
         int exp_w = total_w - frac_w - 1;
-        int sign_bit = frac_w + exp_w + 1; // relative to payload without exception bits
         os << "  wire [1:0] exn = X[" << (data_width - 1) << ":" << (data_width - 2) << "];\n";
         os << "  wire sign = X[" << (data_width - 3) << "];\n";
         os << "  wire [" << (data_width - 4) << ":0] payload = X[" << (data_width - 4) << ":0];\n";
@@ -653,9 +649,21 @@ void emitActivationModule(const ActivationOperationConfig &config, const Operand
             os << "  wire underflow = exp_bits <= " << shift << ";\n";
             os << "  wire [" << (exp_w - 1) << ":0] exp_scaled = exp_bits - " << shift << ";\n";
             os << "  wire [" << (data_width - 1) << ":0] scaled = underflow ? {2'b01, " << (data_width - 2) << "'b0}\n"
-               << "                                            : {2'b01, sign, exp_scaled, frac_bits};\n";
+               << "                                            : {2'b01, 1'b1, exp_scaled, frac_bits};\n";
             os << "  wire [" << (data_width - 1) << ":0] leaky_val = (is_normal && sign) ? scaled : X;\n";
             os << "  assign Y = leaky_val;\n";
+        } else if (fn == "TANH") {
+            // PWL-ish tanh: if |x| >= clamp_exp -> +/-1, if |x| >= bias (>=1.0) scale by 0.5, else pass through
+            int clamp_exp = 0x82; // ~|x| >= 8
+            int bias = (1 << (exp_w - 1)) - 1; // 127 for fp32
+            os << "  wire [" << (data_width - 3) << ":0] abs_payload = sign ? (~payload + 1'b1) : payload;\n";
+            os << "  wire clamp_hi = is_normal && (exp_bits >= " << clamp_exp << ");\n";
+            os << "  wire mid = is_normal && (exp_bits >= " << bias << ") && (exp_bits < " << clamp_exp << ");\n";
+            os << "  wire [" << (exp_w - 1) << ":0] exp_scaled = exp_bits - 1'b1;\n";
+            os << "  wire [" << (data_width - 1) << ":0] one_val = {2'b01, sign, " << exp_w << "'d" << bias << ", " << frac_w << "'b0};\n";
+            os << "  wire [" << (data_width - 1) << ":0] mid_val = {2'b01, sign, exp_scaled, frac_bits};\n";
+            os << "  wire [" << (data_width - 1) << ":0] pass_val = {2'b01, sign, exp_bits, frac_bits};\n";
+            os << "  assign Y = clamp_hi ? one_val : (mid ? mid_val : pass_val);\n";
         } else { // RELU
             os << "  wire [" << (data_width - 1) << ":0] relu_val = (is_normal && sign) ? {2'b01, "
                << (data_width - 2) << "'b0} : X;\n";

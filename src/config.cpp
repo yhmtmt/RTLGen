@@ -299,6 +299,25 @@ bool readConfig(const std::string& filename, CircuitConfig& config) {
                     act.function = options.at("function").get<std::string>();
                     act.alpha_num = options.value("alpha_num", 1);
                     act.alpha_den = options.value("alpha_den", 10);
+                    act.impl = options.value("impl", "default");
+                    act.frac_bits = options.value("frac_bits", 0);
+                    act.segments = options.value("segments", 0);
+                    if (options.contains("breakpoints")) {
+                        for (const auto &bp : options["breakpoints"]) {
+                            act.breakpoints.push_back(bp.get<double>());
+                        }
+                    }
+                    if (options.contains("slopes")) {
+                        for (const auto &s : options["slopes"]) {
+                            act.slopes.push_back(s.get<double>());
+                        }
+                    }
+                    if (options.contains("intercepts")) {
+                        for (const auto &c : options["intercepts"]) {
+                            act.intercepts.push_back(c.get<double>());
+                        }
+                    }
+                    act.clamp = options.value("clamp", true);
                     if (act.alpha_den == 0) {
                         throw std::runtime_error("alpha_den must be non-zero for activation " + act.module_name);
                     }

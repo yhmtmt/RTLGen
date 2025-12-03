@@ -22,6 +22,19 @@
       "module_name": "leakyrelu_fp32",
       "operand": "fp32",
       "options": { "function": "leaky_relu", "alpha_num": 1, "alpha_den": 4 }
+    },
+    {
+      "type": "activation",
+      "module_name": "tanh_fp32",
+      "operand": "fp32",
+      "options": {
+        "function": "tanh",
+        "impl": "pwl",
+        "segments": 3,
+        "breakpoints": [0.5, 1.5, 3.0],
+        "slopes": [1.0, 0.5, 0.1],
+        "clamp": true
+      }
     }
   ]
 }
