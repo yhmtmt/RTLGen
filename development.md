@@ -61,3 +61,39 @@ Below is a sample layout image (`sample_gds2.png`) produced by opening the GDS2 
 
 The GDS2 file is located at `/orfs/flow/results/nangate45/booth4_multiplier_wrapper/`, and the image was created with KLayout.
 
+## Source Layout
+
+Core components live under `src/`:
+
+- `config.{hpp,cpp}` – JSON parsing and validation into structured configs.
+- `multiplier.{hpp,cpp}`, `adder.{hpp,cpp}` – integer multipliers (normal/Booth) and adders (CPA variants) with Verilog emitters.
+- `mcm*`, `cmvm*` – constant-multiplier libraries and CLIs (heuristic and ILP). `rtl_operations.{hpp,cpp}` – higher-level RTL emitters (MCM/CMVM, activations, PWL).
+- `rtl_operations.{hpp,cpp}` – higher-level RTL emitters (MCM/CMVM, activations including PWL, etc.).
+- `main.cpp` – entry point: parses config, dispatches generators, integrates FloPoCo + Yosys/GHDL for FP ops.
+
+Third-party/integration:
+- `flopoco/` (submodule, built via ExternalProject) for FP cores; `pagsuite/` (submodule) for PAG tools used by FloPoCo.
+- `json/` (nlohmann), `third_party/onnxruntime*` for ONNX parsing.
+
+Tests and examples:
+- `examples/` – sample configs (int/FP activations, arithmetic).
+- `tests/` – benches/scripts hooked into CTest (Verilog-level checks for adders/multipliers/activations).
+
+### Module Relationships (mermaid)
+
+```mermaid
+graph TD
+  main[main.cpp] --> cfg[config.cpp/hpp]
+  main --> rtlops[rtl_operations.cpp/hpp]
+  rtlops --> add[adder.cpp/hpp]
+  rtlops --> mult[multiplier.cpp/hpp]
+  rtlops --> mcm[mcm_*.cpp/hpp]
+  rtlops --> cmvm[cmvm_*.cpp/hpp]
+  rtlops --> activations[Activations (PWL/Relu/Leaky)]
+  main --> flopoco[flopoco (ExternalProject)]
+  flopoco --> fpops[FP add/mul/FMA generators]
+  main --> yosys[Yosys+GHDL]
+  cfg --> jsonlib[nlohmann/json]
+  mcm --> ortools[OR-Tools]
+  cmvm --> ortools
+```
