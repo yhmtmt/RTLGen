@@ -83,17 +83,17 @@ Tests and examples:
 
 ```mermaid
 graph TD
-  main[main.cpp] --> cfg[config.cpp/hpp]
-  main --> rtlops[rtl_operations.cpp/hpp]
-  rtlops --> add[adder.cpp/hpp]
-  rtlops --> mult[multiplier.cpp/hpp]
-  rtlops --> mcm[mcm_*.cpp/hpp]
-  rtlops --> cmvm[cmvm_*.cpp/hpp]
-  rtlops --> acts[Activations (ReLU/Leaky/PWL)]
-  main --> flopoco[flopoco]
-  flopoco --> fpops[FP add/mul/FMA]
-  main --> yosys[Yosys+GHDL]
-  cfg --> jsonlib[nlohmann/json]
-  mcm --> ortools[OR-Tools]
+  main["main.cpp"] --> cfg["config.cpp/hpp"]
+  main --> rtlops["rtl_operations.cpp/hpp"]
+  rtlops --> add["adder.cpp/hpp"]
+  rtlops --> mult["multiplier.cpp/hpp"]
+  rtlops --> mcm["mcm_*.cpp/hpp"]
+  rtlops --> cmvm["cmvm_*.cpp/hpp"]
+  rtlops --> acts["Activations (ReLU/Leaky/PWL)"]
+  main --> flopoco["flopoco"]
+  flopoco --> fpops["FP add/mul/FMA"]
+  main --> yosys["Yosys+GHDL"]
+  cfg --> jsonlib["nlohmann/json"]
+  mcm --> ortools["OR-Tools"]
   cmvm --> ortools
 ```
