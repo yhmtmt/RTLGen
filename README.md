@@ -1,6 +1,9 @@
 # RTLGen
 
-RTLGen is a Verilog generator that takes a JSON configuration file as input and produces a Verilog module with user-specified parameters. The current version of this tool primarily supports multiplier generation.
+RTLGen is a Verilog generator driven by a JSON configuration file. It can emit a mix of arithmetic and activation blocks:
+- Integer arithmetic: multipliers (normal/Booth), adders (multiple CPA styles), and constant-multiplier variants (MCM/CMVM).
+- Floating point: adders/multipliers/FMA via FloPoCo integration.
+- Activations: integer ReLU/ReLU6/leaky ReLU and user-defined symmetric PWL functions; FP path supports ReLU and leaky ReLU (FP PWL is coarse/experimental).
 
 ## Building the Project
 
@@ -26,6 +29,6 @@ rtlgen <JSON configuration file>
 
 This command generates a Verilog module for your circuit according to the configuration file. The generated module will be placed in the current working directory.
 
-## Booth vs. Normal Multiplier Comparison
-
-A detailed comparison between the modified Booth algorithm and the normal partial product generator is available in [booth4_vs_normal/booth_vs_normal_multiplier_comparison.md](doc/booth4_vs_normal/booth_vs_normal_multiplier_comparison.md). This document provides an in-depth analysis of the performance and area of both multiplier types, based on evaluations using OpenROAD with the Nangate45 PDK.
+## Notes and References
+- Multiplier comparison (Booth vs. normal PPG) with OpenROAD results: see [doc/booth4_vs_normal/booth_vs_normal_multiplier_comparison.md](doc/booth4_vs_normal/booth_vs_normal_multiplier_comparison.md).
+- Constant-multiplier algorithms (MCM/CMVM) and CLIs: see [doc/constant_multiplication.md](doc/constant_multiplication.md).
