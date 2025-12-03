@@ -4,6 +4,7 @@
 #include <cctype>
 #include <cstdlib>
 #include <fstream>
+#include <cmath>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -23,6 +24,15 @@ std::string toUpper(std::string value) {
         ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
     }
     return value;
+}
+
+uint32_t encodeFp32(double v) {
+    union {
+        float f;
+        uint32_t u;
+    } conv;
+    conv.f = static_cast<float>(v);
+    return conv.u;
 }
 
 std::string zeroLiteral(int width) {
@@ -603,7 +613,7 @@ void emitCmvmModule(const CmvmOperationConfig &config, const OperandDefinition &
 
 void emitActivationModule(const ActivationOperationConfig &config, const OperandDefinition &operand) {
     std::string fn = toUpper(config.function);
-    if (fn != "RELU" && fn != "RELU6" && fn != "LEAKY_RELU" && fn != "TANH" && fn != "GELU") {
+    if (fn != "RELU" && fn != "RELU6" && fn != "LEAKY_RELU" && fn != "TANH" && fn != "GELU" && fn != "PWL") {
         throw std::runtime_error("Unsupported activation function: " + config.function);
     }
 
@@ -653,9 +663,8 @@ void emitActivationModule(const ActivationOperationConfig &config, const Operand
             os << "  wire [" << (data_width - 1) << ":0] leaky_val = (is_normal && sign) ? scaled : X;\n";
             os << "  assign Y = leaky_val;\n";
         } else if (fn == "TANH") {
-            // PWL-ish tanh: if |x| >= clamp_exp -> +/-1, if |x| >= bias (>=1.0) scale by 0.5, else pass through
-            int clamp_exp = 0x82; // ~|x| >= 8
-            int bias = (1 << (exp_w - 1)) - 1; // 127 for fp32
+            int bias = (1 << (exp_w - 1)) - 1; // exponent for 1.0
+            int clamp_exp = bias + 3;          // ~|x| >= 8
             os << "  wire [" << (data_width - 3) << ":0] abs_payload = sign ? (~payload + 1'b1) : payload;\n";
             os << "  wire clamp_hi = is_normal && (exp_bits >= " << clamp_exp << ");\n";
             os << "  wire mid = is_normal && (exp_bits >= " << bias << ") && (exp_bits < " << clamp_exp << ");\n";
@@ -664,6 +673,43 @@ void emitActivationModule(const ActivationOperationConfig &config, const Operand
             os << "  wire [" << (data_width - 1) << ":0] mid_val = {2'b01, sign, exp_scaled, frac_bits};\n";
             os << "  wire [" << (data_width - 1) << ":0] pass_val = {2'b01, sign, exp_bits, frac_bits};\n";
             os << "  assign Y = clamp_hi ? one_val : (mid ? mid_val : pass_val);\n";
+        } else if (fn == "GELU") {
+            // Approximate GELU as 0.5 * ReLU(x)
+            os << "  wire [" << (exp_w - 1) << ":0] exp_half = exp_bits - 1'b1;\n";
+            os << "  wire underflow = exp_bits == { " << exp_w << "{1'b0}};\n";
+            os << "  wire [" << (data_width - 1) << ":0] half_val = {2'b01, sign, exp_half, frac_bits};\n";
+            os << "  wire [" << (data_width - 1) << ":0] relu_half = (is_normal && sign) ? {2'b01, " << (data_width - 2) << "'b0} : half_val;\n";
+            os << "  assign Y = relu_half;\n";
+        } else if (fn == "PWL") {
+            if (operand.fp_format->total_width != 32) {
+                throw std::runtime_error("FP PWL currently supports only 32-bit formats");
+            }
+            if (config.xs.size() < 2 || config.xs.size() != config.ys.size()) {
+                throw std::runtime_error("FP PWL requires at least two points with matching x/y lengths");
+            }
+            int segs = static_cast<int>(config.xs.size()) - 1;
+            os << "  wire [33:0] abs_bits = {exn, 1'b0, payload};\n";
+            os << "  reg [33:0] y_bits;\n";
+            for (int i = 0; i < segs; ++i) {
+                uint32_t thr = encodeFp32(config.xs[i + 1]);
+                uint32_t yenc = encodeFp32(config.ys[i + 1]);
+                os << "  localparam [33:0] PWL_THR_" << i << " = 34'h" << std::hex << std::setw(9) << std::setfill('0') << thr << std::dec << ";\n";
+                os << "  localparam [33:0] PWL_Y_" << i << " = 34'h" << std::hex << std::setw(9) << std::setfill('0') << yenc << std::dec << ";\n";
+            }
+            uint32_t ylast = encodeFp32(config.ys.back());
+            os << "  localparam [33:0] PWL_Y_LAST = 34'h" << std::hex << std::setw(9) << std::setfill('0') << ylast << std::dec << ";\n";
+            os << "  always @* begin\n";
+            os << "    y_bits = {exn, 1'b0, payload};\n";
+            os << "    if (exn == 2'b01) begin\n";
+            for (int i = 0; i < segs; ++i) {
+                os << "      if (abs_bits < PWL_THR_" << i << ") y_bits = PWL_Y_" << i << ";\n";
+                os << "      else ";
+            }
+            os << "      y_bits = PWL_Y_LAST;\n";
+            os << "    end\n";
+            os << "    if (" << (config.symmetric ? "1'b1" : "1'b0") << " && sign) y_bits = {y_bits[33:32], 1'b1, y_bits[30:0]};\n";
+            os << "  end\n";
+            os << "  assign Y = y_bits;\n";
         } else { // RELU
             os << "  wire [" << (data_width - 1) << ":0] relu_val = (is_normal && sign) ? {2'b01, "
                << (data_width - 2) << "'b0} : X;\n";
@@ -698,6 +744,55 @@ void emitActivationModule(const ActivationOperationConfig &config, const Operand
             os << "  wire [" << (data_width - 1) << ":0] relu = x_signed[" << (data_width - 1)
                << "] ? zero_val : X;\n";
             os << "  assign Y = relu >> 1;\n";
+        } else if (fn == "PWL") {
+            int frac_bits = config.frac_bits > 0 ? config.frac_bits : data_width / 2;
+            // Build segments from explicit points if provided, otherwise from breakpoints/slopes.
+            std::vector<double> xs = config.xs;
+            std::vector<double> ys = config.ys;
+            if (!xs.empty() && xs.size() == ys.size()) {
+                // Use provided points
+            } else if (!config.breakpoints.empty() && !config.slopes.empty()) {
+                xs.push_back(0.0);
+                ys.push_back(0.0);
+                double acc = 0.0;
+                double prev_bp = 0.0;
+                for (std::size_t i = 0; i < config.breakpoints.size(); ++i) {
+                    double bp = config.breakpoints[i];
+                    double m = (i < config.slopes.size()) ? config.slopes[i] : config.slopes.back();
+                    acc += m * (bp - prev_bp);
+                    xs.push_back(bp);
+                    ys.push_back(acc);
+                    prev_bp = bp;
+                }
+            } else {
+                throw std::runtime_error("PWL activation requires points or breakpoints/slopes");
+            }
+            int segs = static_cast<int>(xs.size()) - 1;
+            os << "  // PWL from user-specified points (" << segs << " segments), symmetric=" << (config.symmetric ? 1 : 0) << "\n";
+            os << "  wire [" << (data_width - 1) << ":0] abs_x = x_signed[" << (data_width - 1)
+               << "] ? (~X + 1'b1) : X;\n";
+            os << "  reg [" << (data_width - 1) << ":0] y_abs;\n";
+            os << "  always @* begin\n";
+            os << "    y_abs = 0;\n";
+            for (int i = 0; i < segs; ++i) {
+                double x0 = xs[i];
+                double x1 = xs[i + 1];
+                double y0 = ys[i];
+                double y1 = ys[i + 1];
+                double m = (y1 - y0) / (x1 - x0);
+                double c = y0 - m * x0;
+                long long x0f = static_cast<long long>(std::llround(x0 * (1LL << frac_bits)));
+                long long x1f = static_cast<long long>(std::llround(x1 * (1LL << frac_bits)));
+                long long mf = static_cast<long long>(std::llround(m * (1LL << frac_bits)));
+                long long cf = static_cast<long long>(std::llround(c * (1LL << frac_bits)));
+                os << "    if (abs_x >= " << x0f << " && abs_x < " << x1f << ") y_abs = ((" << mf << " * abs_x) >> "
+                   << frac_bits << ") + " << cf << ";\n";
+            }
+            if (config.clamp) {
+                os << "    else y_abs = " << ((1LL << (data_width - 1)) - 1) << ";\n";
+            }
+            os << "  end\n";
+            os << "  assign Y = " << (config.symmetric ? "(x_signed[" + std::to_string(data_width - 1) + "] ? (~y_abs + 1'b1) : y_abs)" : "y_abs") << ";\n";
         } else {
             os << "  assign Y = x_signed[" << (data_width - 1)
                << "] ? zero_val : X;\n";

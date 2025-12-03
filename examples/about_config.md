@@ -184,11 +184,15 @@ Inputs/outputs follow FloPoCo’s 2-bit exception prefix (`[33:32]` for 32-bit f
 
 Activation entries use `"type": "activation"` with a `function` selector inside `options`:
 
-- `function`: `"relu"`, `"relu6"`, `"leaky_relu"`, `"tanh"`, `"gelu"`.
+- `function`: `"relu"`, `"relu6"`, `"leaky_relu"`, or generic `"pwl"` (piecewise-linear) for custom nonlinearities. FP path supports relu and leaky_relu; FP PWL is a coarse staircase (FP32 only) and not recommended for accuracy-sensitive use yet.
 - `module_name`: output module name.
 - `operand`: operand name to determine width/kind.
 - `alpha_num`, `alpha_den` (optional, leaky_relu): scale negative inputs by `alpha_num/alpha_den`. FP leaky_relu currently only supports `alpha_num=1` and `alpha_den` as a power-of-two (implemented as exponent shift).
+- `points` (PWL): array of `[x, y]` pairs defining the positive-side curve; negative side mirrors when `symmetric` is true.
+- `symmetric` (PWL): when true (default), mirror the points for negative inputs with `f(-x) = -f(x)`.
+- `frac_bits` (int PWL): fixed-point scaling for integer operands.
+- `clamp` (bool, default true): clamp beyond the last point to the last `y` (mirrored if symmetric).
 
 Behavior:
-- Integer operands: two’s-complement inputs; ReLU outputs `0` for negative, input otherwise. ReLU6 clamps to `6` (truncated to width) after ReLU.
-- Floating-point operands (FloPoCo format with 2-bit exception prefix): ReLU zeros negative normal numbers while preserving exn bits (`01` with zero payload); zeros with non-negative sign stay zero; NaN/inf pass through unchanged. Leaky ReLU scales negative normals by shifting the exponent (power-of-two alpha); other FP activations are not yet implemented and will error out.
+- Integer operands: two’s-complement inputs; ReLU outputs `0` for negative, input otherwise. ReLU6 clamps to `6` (truncated to width) after ReLU. Leaky_ReLU scales negatives; PWL builds a symmetric piecewise-linear response from the supplied points.
+- Floating-point operands (FloPoCo format with 2-bit exception prefix): ReLU zeros negative normal numbers while preserving exn bits (`01` with zero payload); zeros with non-negative sign stay zero; NaN/inf pass through unchanged. Leaky ReLU scales negative normals by shifting the exponent (power-of-two alpha). FP PWL is a coarse FP32-only staircase using user points; for accurate FP behavior prefer relu/leaky.

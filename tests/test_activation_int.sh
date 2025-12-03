@@ -10,6 +10,6 @@ cp "$ROOT/examples/config_activation_int.json" "$TMP/config.json"
 
 pushd "$TMP" >/dev/null
 "$ROOT/build/rtlgen" config.json
-iverilog -g2012 -s activation_int_tb -o sim relu_int8.v relu6_int8.v leakyrelu_int8.v tanh_int8.v gelu_int8.v "$ROOT/tests/activation_int_tb.v"
+iverilog -g2012 -s activation_int_tb -o sim relu_int8.v relu6_int8.v leakyrelu_int8.v pwl_int8.v "$ROOT/tests/activation_int_tb.v"
 vvp sim
 popd >/dev/null

@@ -302,22 +302,20 @@ bool readConfig(const std::string& filename, CircuitConfig& config) {
                     act.impl = options.value("impl", "default");
                     act.frac_bits = options.value("frac_bits", 0);
                     act.segments = options.value("segments", 0);
-                    if (options.contains("breakpoints")) {
-                        for (const auto &bp : options["breakpoints"]) {
-                            act.breakpoints.push_back(bp.get<double>());
-                        }
-                    }
-                    if (options.contains("slopes")) {
-                        for (const auto &s : options["slopes"]) {
-                            act.slopes.push_back(s.get<double>());
-                        }
-                    }
-                    if (options.contains("intercepts")) {
-                        for (const auto &c : options["intercepts"]) {
-                            act.intercepts.push_back(c.get<double>());
+                    if (options.contains("breakpoints")) for (const auto &bp : options["breakpoints"]) act.breakpoints.push_back(bp.get<double>());
+                    if (options.contains("slopes")) for (const auto &s : options["slopes"]) act.slopes.push_back(s.get<double>());
+                    if (options.contains("intercepts")) for (const auto &c : options["intercepts"]) act.intercepts.push_back(c.get<double>());
+                    if (options.contains("points")) {
+                        const auto &pts = options["points"];
+                        if (!pts.is_array()) throw std::runtime_error("\"points\" must be an array of [x,y]");
+                        for (const auto &pt : pts) {
+                            if (!pt.is_array() || pt.size() != 2) throw std::runtime_error("Each point must be [x,y]");
+                            act.xs.push_back(pt[0].get<double>());
+                            act.ys.push_back(pt[1].get<double>());
                         }
                     }
                     act.clamp = options.value("clamp", true);
+                    act.symmetric = options.value("symmetric", true);
                     if (act.alpha_den == 0) {
                         throw std::runtime_error("alpha_den must be non-zero for activation " + act.module_name);
                     }

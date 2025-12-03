@@ -29,15 +29,21 @@
     },
     {
       "type": "activation",
-      "module_name": "tanh_int8",
+      "module_name": "pwl_int8",
       "operand": "din",
-      "options": { "function": "tanh" }
-    },
-    {
-      "type": "activation",
-      "module_name": "gelu_int8",
-      "operand": "din",
-      "options": { "function": "gelu" }
+      "options": {
+        "function": "pwl",
+        "impl": "pwl",
+        "frac_bits": 4,
+        "symmetric": true,
+        "points": [
+          [0.0, 0.0],
+          [2.0, 2.0],
+          [5.0, 4.0],
+          [7.0, 5.0]
+        ],
+        "clamp": true
+      }
     }
   ]
 }
