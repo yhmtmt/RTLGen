@@ -7,16 +7,20 @@ RTLGen is a Verilog generator driven by a JSON configuration file. It can emit a
 
 ## Building the Project
 
-To build the project, you need CMake and a C++ compiler. You will also need the Google Test and OR-Tools libraries. The development environment is fully defined in the Dockerfile located in `.devcontainer`, making it easy to use Visual Studio Code with a devcontainer for both development and evaluation of generated circuits using OpenROAD. See [development.md](development.md) for details.
+Dependencies:
+- CMake, C++17 compiler
+- Google Test (tests/CTests)
+- OR-Tools (bundled path configured in CMake)
+- FloPoCo (built as an ExternalProject; requires GMP/MPFR/MPFI/LAPACK/Sollya) and PAGSuite submodule
+- Yosys + GHDL plugin (for VHDL→Verilog on FloPoCo outputs)
 
-Once you have the dependencies installed, build the project with:
+The devcontainer (`.devcontainer/Dockerfile`) provisions these. See [development.md](development.md) for environment details. To build:
 
-```
+```sh
 mkdir build
 cd build
 cmake ..
-make
-make install
+cmake --build .
 ```
 
 ## Running the Generator
