@@ -1,0 +1,14 @@
+diff --git a/flow/scripts/final_report.tcl b/flow/scripts/final_report.tcl
+index 7e2fb3a..e3d0a1b 100644
+--- a/flow/scripts/final_report.tcl
++++ b/flow/scripts/final_report.tcl
+@@
+-# Save a final image if openroad is compiled with the gui
+-if { [ord::openroad_gui_compiled] } {
+-  gui::show "source $::env(SCRIPTS_DIR)/save_images.tcl" false
+-}
++# Save a final image if openroad is compiled with the gui and GUI capture is enabled.
++# Disable via DISABLE_GUI_SAVE_IMAGES=1 (useful for headless CI/sandboxes).
++if { [ord::openroad_gui_compiled] && ![info exists ::env(DISABLE_GUI_SAVE_IMAGES)] } {
++  gui::show "source $::env(SCRIPTS_DIR)/save_images.tcl" false
++}

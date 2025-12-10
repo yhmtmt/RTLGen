@@ -114,7 +114,10 @@ RUN git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD.git &
 RUN git clone https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts.git /orfs && \
     cd orfs && git checkout 1f4e76eb5a7758c813ccca3b555bed6258870cad 
 COPY bugfix-autotuner.patch /orfs/bugfix-autotuner.patch
-RUN cd orfs && git submodule update --init --recursive && git apply /orfs/bugfix-autotuner.patch
+COPY patches/disable-gui-final-report.patch /orfs/disable-gui-final-report.patch
+RUN cd orfs && git submodule update --init --recursive && \
+    git apply /orfs/bugfix-autotuner.patch && \
+    git apply /orfs/disable-gui-final-report.patch
 
 RUN python3 -m pip install --upgrade pip setuptools wheel 
 
