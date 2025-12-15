@@ -5,10 +5,10 @@ Purpose
 
 Layout
 ------
-- `runs/<circuit>/config.json` — the config that produced the metrics.
-- `runs/<circuit>/verilog/*.v` — generated RTL for that config (no DEF/GDS/logs).
-- `runs/<circuit>/metrics.csv` — aggregated execution parameters and parsed metrics per run; new sweeps append rows.
-- `runs/<circuit>/work/` — transient per-run scratch (may be cleared without losing the published artifacts).
+- `runs/<circuit_type>/<design>/config.json` — the config that produced the metrics (e.g., `runs/prefix_adders/adder_ripple_4u_wrapper/config.json`).
+- `runs/<circuit_type>/<design>/verilog/*.v` — generated RTL for that config (no DEF/GDS/logs).
+- `runs/<circuit_type>/<design>/metrics.csv` — aggregated execution parameters and parsed metrics per run; new sweeps append rows.
+- `runs/<circuit_type>/<design>/work/` — transient per-run scratch (may be cleared without losing the published artifacts).
 
 Contribute
 ----------
