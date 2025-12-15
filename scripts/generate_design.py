@@ -26,9 +26,12 @@ def main():
     with open(args.config, "r") as f:
         config = json.load(f)
 
-    if "multiplier" in config:
+    has_multiplier = "multiplier" in config
+    has_adder = "adder" in config
+
+    if has_multiplier:
         module_name = config["multiplier"]["module_name"]
-    elif "adder" in config:
+    elif has_adder:
         module_name = config["adder"]["module_name"]
     else:
         raise ValueError("No multiplier or adder configuration found in the JSON file.")
@@ -49,13 +52,17 @@ def main():
 
     # Generate Verilog
     if args.force_gen or not os.path.isdir(dest_src_dir):
+        repo_root = os.path.abspath(os.path.join(current_file_path, ".."))
         ld_library_path = os.path.expanduser("~/work/or-tools_x86_64_Ubuntu-22.04_cpp_v9.10.4067/lib")
+        onnxruntime_lib = os.path.join(repo_root, "third_party", "onnxruntime-linux-x64-1.23.1", "lib")
+
         env = os.environ.copy()
-        env["LD_LIBRARY_PATH"] = f"{ld_library_path}:{env.get('LD_LIBRARY_PATH', '')}"
+        ld_paths = [ld_library_path, onnxruntime_lib, env.get("LD_LIBRARY_PATH", "")]
+        env["LD_LIBRARY_PATH"] = ":".join([p for p in ld_paths if p])
 
         subprocess.run(["rtlgen", args.config], env=env, check=True)
         os.rename(f"{module_name}.v", os.path.join(src_dir, f"{module_name}.v"))
-        if "multiplier" in config:
+        if has_multiplier:
             os.rename("MG_CPA.v", os.path.join(src_dir, "MG_CPA.v"))
 
         # Generate Wrapper
@@ -69,7 +76,7 @@ def main():
         print(f"Moved generated src files to {dest_src_dir}")
 
     # Generate OpenROAD files
-    generate_config_mk(config, platform_dir, args.platform)
+    generate_config_mk(config, platform_dir, args.platform, include_mg_cpa=has_multiplier)
     generate_constraint_sdc(config, platform_dir)
     generate_autotuner_json(platform_dir, args)
 
@@ -174,7 +181,7 @@ endmodule
     with open(os.path.join(src_dir, f"{wrapper_name}.v"), "w") as f:
         f.write(wrapper_content)
 
-def generate_config_mk(config, platform_dir, platform):
+def generate_config_mk(config, platform_dir, platform, include_mg_cpa=False):
     if "multiplier" in config:
         module_name = config["multiplier"]["module_name"]
     elif "adder" in config:
@@ -183,10 +190,17 @@ def generate_config_mk(config, platform_dir, platform):
         raise ValueError("No multiplier or adder configuration found in the JSON file.")
 
     wrapper_name = f"{module_name}_wrapper"
+    verilog_files = [
+        f"$(DESIGN_HOME)/src/{wrapper_name}/{module_name}.v",
+        f"$(DESIGN_HOME)/src/{wrapper_name}/{wrapper_name}.v",
+    ]
+    if include_mg_cpa:
+        verilog_files.append(f"$(DESIGN_HOME)/src/{wrapper_name}/MG_CPA.v")
+
     content = f"""
 export PLATFORM = {platform}
 export DESIGN_NAME = {wrapper_name}
-export VERILOG_FILES = $(DESIGN_HOME)/src/{wrapper_name}/{module_name}.v $(DESIGN_HOME)/src/{wrapper_name}/{wrapper_name}.v $(DESIGN_HOME)/src/{wrapper_name}/MG_CPA.v
+export VERILOG_FILES = {' '.join(verilog_files)}
 export SDC_FILE = $(DESIGN_HOME)/{platform}/{wrapper_name}/constraint.sdc
 export TOP_MODULE = {wrapper_name}
 export CORE_UTILIZATION = 30

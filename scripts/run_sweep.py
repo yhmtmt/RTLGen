@@ -44,6 +44,7 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 import shutil
 import subprocess
+import re
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEST_BASE = Path("/orfs/flow/designs")
@@ -174,19 +175,34 @@ def parse_finish_report(report_path: Path) -> Dict[str, object]:
 
 
 def parse_die_area(def_path: Path) -> float:
+    dbu_per_micron = 1.0
+    die_area = 0.0
+
     try:
         with def_path.open() as f:
             for line in f:
-                if line.strip().startswith("DIEAREA"):
-                    tokens = line.strip().split()
-                    if len(tokens) >= 8:
-                        width = int(tokens[6])
-                        height = int(tokens[7])
-                        return float(width * height)
+                line = line.strip()
+                if line.startswith("UNITS DISTANCE MICRONS"):
+                    parts = line.replace(";", "").split()
+                    if len(parts) >= 4:
+                        try:
+                            dbu_per_micron = float(parts[3])
+                        except ValueError:
+                            dbu_per_micron = 1.0
+                elif line.startswith("DIEAREA"):
+                    # Match DIEAREA ( x1 y1 ) ( x2 y2 )
+                    m = re.search(r"DIEAREA\s+\(\s*(\d+)\s+(\d+)\s*\)\s*\(\s*(\d+)\s+(\d+)\s*\)", line)
+                    if m:
+                        x1, y1, x2, y2 = map(int, m.groups())
+                        width = max(0, x2 - x1)
+                        height = max(0, y2 - y1)
+                        die_area = float(width * height)
+                        break
     except FileNotFoundError:
         return 0.0
-    except ValueError:
-        return 0.0
+
+    if dbu_per_micron > 0 and die_area > 0:
+        return die_area / (dbu_per_micron * dbu_per_micron)
     return 0.0
 
 
