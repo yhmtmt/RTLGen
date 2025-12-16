@@ -1,0 +1,27 @@
+{
+  "design": "adder_brentkung_8u_wrapper",
+  "module": "adder_brentkung_8u",
+  "platform": "sky130hd",
+  "config_path": "/workspaces/RTLGen/runs/prefix_adders/configs/config_adder_brentkung_unsigned_8bit.json",
+  "config_hash": "a04b433482d5",
+  "param_hash": "85a3ec1f",
+  "tag": "prefix_adders_sky130_70e18859",
+  "flow_params": {
+    "CLOCK_PERIOD": 6.0,
+    "CORE_UTILIZATION": 10,
+    "PLACE_DENSITY": 0.55,
+    "TAG": "prefix_adders_sky130_70e18859"
+  },
+  "timestamp": "2025-12-16T01:18:53.452448Z",
+  "reports": {
+    "finish": "/orfs/flow/reports/sky130hd/adder_brentkung_8u_wrapper/base/6_finish.rpt",
+    "def": "/orfs/flow/results/sky130hd/adder_brentkung_8u_wrapper/base/6_final.def"
+  },
+  "metrics": {
+    "critical_path_ns": 1.381,
+    "total_power_mw": 0.000368,
+    "die_area": 7486.575625
+  },
+  "status": "ok",
+  "result_path": "/workspaces/RTLGen/runs/prefix_adders/adder_brentkung_8u_wrapper/work/85a3ec1f/result.json"
+}

@@ -1,0 +1,8 @@
+{
+  "tag_prefix": "prefix_adders_asap7_relaxed",
+  "flow_params": {
+    "CLOCK_PERIOD": [1.0],
+    "CORE_UTILIZATION": [8],
+    "PLACE_DENSITY": [0.50]
+  }
+}

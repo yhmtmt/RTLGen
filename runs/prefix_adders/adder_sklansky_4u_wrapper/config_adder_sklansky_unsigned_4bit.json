@@ -1,0 +1,11 @@
+{
+    "operand": {
+        "bit_width": 4,
+        "signed": false
+    },
+    "adder": {
+        "module_name": "adder_sklansky_4u",
+        "cpa_structure": "Sklansky",
+        "pipeline_depth": 1
+    }
+}

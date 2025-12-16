@@ -1,0 +1,11 @@
+{
+    "operand": {
+        "bit_width": 64,
+        "signed": true
+    },
+    "adder": {
+        "module_name": "adder_ripple_64s",
+        "cpa_structure": "Ripple",
+        "pipeline_depth": 1
+    }
+}

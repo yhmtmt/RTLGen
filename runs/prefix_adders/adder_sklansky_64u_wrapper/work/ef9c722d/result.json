@@ -1,0 +1,27 @@
+{
+  "design": "adder_sklansky_64u_wrapper",
+  "module": "adder_sklansky_64u",
+  "platform": "nangate45",
+  "config_path": "/workspaces/RTLGen/runs/prefix_adders/configs/config_adder_sklansky_unsigned_64bit.json",
+  "config_hash": "ba0fa7e44c16",
+  "param_hash": "ef9c722d",
+  "tag": "prefix_adders_nangate45_40523b9d",
+  "flow_params": {
+    "CLOCK_PERIOD": 2.5,
+    "CORE_UTILIZATION": 10,
+    "PLACE_DENSITY": 0.55,
+    "TAG": "prefix_adders_nangate45_40523b9d"
+  },
+  "timestamp": "2025-12-15T08:01:45.836283Z",
+  "reports": {
+    "finish": "/orfs/flow/reports/nangate45/adder_sklansky_64u_wrapper/base/6_finish.rpt",
+    "def": "/orfs/flow/results/nangate45/adder_sklansky_64u_wrapper/base/6_final.def"
+  },
+  "metrics": {
+    "critical_path_ns": 0.2533,
+    "total_power_mw": 0.00101,
+    "die_area": 15598.761025
+  },
+  "status": "ok",
+  "result_path": "/workspaces/RTLGen/runs/prefix_adders/adder_sklansky_64u_wrapper/work/ef9c722d/result.json"
+}

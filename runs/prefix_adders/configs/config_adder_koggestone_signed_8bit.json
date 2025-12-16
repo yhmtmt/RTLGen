@@ -1,0 +1,11 @@
+{
+    "operand": {
+        "bit_width": 8,
+        "signed": true
+    },
+    "adder": {
+        "module_name": "adder_koggestone_8s",
+        "cpa_structure": "KoggeStone",
+        "pipeline_depth": 1
+    }
+}

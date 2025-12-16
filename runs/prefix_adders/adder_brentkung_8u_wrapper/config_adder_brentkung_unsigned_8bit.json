@@ -1,0 +1,11 @@
+{
+    "operand": {
+        "bit_width": 8,
+        "signed": false
+    },
+    "adder": {
+        "module_name": "adder_brentkung_8u",
+        "cpa_structure": "BrentKung",
+        "pipeline_depth": 1
+    }
+}

@@ -1,0 +1,11 @@
+{
+    "operand": {
+        "bit_width": 64,
+        "signed": false
+    },
+    "adder": {
+        "module_name": "adder_sklansky_64u",
+        "cpa_structure": "Sklansky",
+        "pipeline_depth": 1
+    }
+}

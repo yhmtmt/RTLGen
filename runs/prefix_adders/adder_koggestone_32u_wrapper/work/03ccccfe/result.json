@@ -1,0 +1,27 @@
+{
+  "design": "adder_koggestone_32u_wrapper",
+  "module": "adder_koggestone_32u",
+  "platform": "asap7",
+  "config_path": "/workspaces/RTLGen/runs/prefix_adders/configs/config_adder_koggestone_unsigned_32bit.json",
+  "config_hash": "30e31736f8a0",
+  "param_hash": "03ccccfe",
+  "tag": "prefix_adders_asap7_3b70c61f",
+  "flow_params": {
+    "CLOCK_PERIOD": 1.0,
+    "CORE_UTILIZATION": 10,
+    "PLACE_DENSITY": 0.55,
+    "TAG": "prefix_adders_asap7_3b70c61f"
+  },
+  "timestamp": "2025-12-16T02:08:43.949852Z",
+  "reports": {
+    "finish": "/orfs/flow/reports/asap7/adder_koggestone_32u_wrapper/base/6_finish.rpt",
+    "def": "/orfs/flow/results/asap7/adder_koggestone_32u_wrapper/base/6_final.def"
+  },
+  "metrics": {
+    "critical_path_ns": 0.3262502,
+    "total_power_mw": 0.308,
+    "die_area": 691.479616
+  },
+  "status": "ok",
+  "result_path": "/workspaces/RTLGen/runs/prefix_adders/adder_koggestone_32u_wrapper/work/03ccccfe/result.json"
+}
