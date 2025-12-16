@@ -150,7 +150,7 @@ set_load -pin_load 0.05 [all_outputs]
     path.write_text(content)
 
 
-def parse_finish_report(report_path: Path) -> Dict[str, object]:
+def parse_finish_report(report_path: Path, platform: str = "") -> Dict[str, object]:
     metrics: Dict[str, object] = {}
     try:
         lines = report_path.read_text().splitlines()
@@ -304,7 +304,11 @@ def run_single(
         "finish": str(finish_rpt),
         "def": str(def_path),
     }
-    metrics = parse_finish_report(finish_rpt)
+    metrics = parse_finish_report(finish_rpt, platform=platform)
+    # ASAP7 finish reports emit picoseconds; convert to nanoseconds for consistency.
+    if platform.lower() == "asap7":
+        if "critical_path_ns" in metrics and metrics["critical_path_ns"] is not None:
+            metrics["critical_path_ns"] = metrics["critical_path_ns"] / 1000.0
     die_area = parse_die_area(def_path)
     if die_area:
         metrics["die_area"] = die_area
