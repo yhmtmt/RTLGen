@@ -1,0 +1,13 @@
+{
+    "operand": {
+        "bit_width": 4,
+        "signed": true
+    },
+    "multiplier": {
+        "module_name": "mult4s_booth4_sklansky",
+        "ppg_algorithm": "Booth4",
+        "compressor_structure": "AdderTree",
+        "cpa_structure": "Sklansky",
+        "pipeline_depth": 1
+    }
+}

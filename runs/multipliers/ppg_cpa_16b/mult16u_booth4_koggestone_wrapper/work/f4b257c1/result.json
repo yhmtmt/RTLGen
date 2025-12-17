@@ -1,0 +1,27 @@
+{
+  "design": "mult16u_booth4_koggestone_wrapper",
+  "module": "mult16u_booth4_koggestone",
+  "platform": "nangate45",
+  "config_path": "/workspaces/RTLGen/runs/multipliers/ppg_cpa_16b/configs/config_mult16u_booth4_koggestone.json",
+  "config_hash": "8c71f71afb52",
+  "param_hash": "f4b257c1",
+  "tag": "mult16b_ppg_cpa_nangate45_40523b9d",
+  "flow_params": {
+    "CLOCK_PERIOD": 2.5,
+    "CORE_UTILIZATION": 10,
+    "PLACE_DENSITY": 0.55,
+    "TAG": "mult16b_ppg_cpa_nangate45_40523b9d"
+  },
+  "timestamp": "2025-12-17T03:17:56.662211Z",
+  "reports": {
+    "finish": "/orfs/flow/reports/nangate45/mult16u_booth4_koggestone_wrapper/base/6_finish.rpt",
+    "def": "/orfs/flow/results/nangate45/mult16u_booth4_koggestone_wrapper/base/6_final.def"
+  },
+  "metrics": {
+    "critical_path_ns": 0.2159,
+    "total_power_mw": 0.00371,
+    "die_area": 20095.8976
+  },
+  "status": "ok",
+  "result_path": "/workspaces/RTLGen/runs/multipliers/ppg_cpa_16b/mult16u_booth4_koggestone_wrapper/work/f4b257c1/result.json"
+}

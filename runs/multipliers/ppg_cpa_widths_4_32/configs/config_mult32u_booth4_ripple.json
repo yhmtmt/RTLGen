@@ -1,0 +1,13 @@
+{
+    "operand": {
+        "bit_width": 32,
+        "signed": false
+    },
+    "multiplier": {
+        "module_name": "mult32u_booth4_ripple",
+        "ppg_algorithm": "Booth4",
+        "compressor_structure": "AdderTree",
+        "cpa_structure": "Ripple",
+        "pipeline_depth": 1
+    }
+}

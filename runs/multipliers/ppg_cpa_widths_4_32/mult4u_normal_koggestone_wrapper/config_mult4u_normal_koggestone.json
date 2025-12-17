@@ -1,0 +1,13 @@
+{
+    "operand": {
+        "bit_width": 4,
+        "signed": false
+    },
+    "multiplier": {
+        "module_name": "mult4u_normal_koggestone",
+        "ppg_algorithm": "Normal",
+        "compressor_structure": "AdderTree",
+        "cpa_structure": "KoggeStone",
+        "pipeline_depth": 1
+    }
+}

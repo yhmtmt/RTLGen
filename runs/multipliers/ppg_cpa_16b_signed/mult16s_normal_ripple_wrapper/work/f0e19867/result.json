@@ -1,0 +1,27 @@
+{
+  "design": "mult16s_normal_ripple_wrapper",
+  "module": "mult16s_normal_ripple",
+  "platform": "nangate45",
+  "config_path": "/workspaces/RTLGen/runs/multipliers/ppg_cpa_16b_signed/configs/config_mult16s_normal_ripple.json",
+  "config_hash": "50c88fd32ea3",
+  "param_hash": "f0e19867",
+  "tag": "mult16b_ppg_cpa_signed_nangate45_40523b9d",
+  "flow_params": {
+    "CLOCK_PERIOD": 2.5,
+    "CORE_UTILIZATION": 10,
+    "PLACE_DENSITY": 0.55,
+    "TAG": "mult16b_ppg_cpa_signed_nangate45_40523b9d"
+  },
+  "timestamp": "2025-12-17T03:38:40.091724Z",
+  "reports": {
+    "finish": "/orfs/flow/reports/nangate45/mult16s_normal_ripple_wrapper/base/6_finish.rpt",
+    "def": "/orfs/flow/results/nangate45/mult16s_normal_ripple_wrapper/base/6_final.def"
+  },
+  "metrics": {
+    "critical_path_ns": 2.5324,
+    "total_power_mw": 0.0022,
+    "die_area": 18773.110225
+  },
+  "status": "ok",
+  "result_path": "/workspaces/RTLGen/runs/multipliers/ppg_cpa_16b_signed/mult16s_normal_ripple_wrapper/work/f0e19867/result.json"
+}

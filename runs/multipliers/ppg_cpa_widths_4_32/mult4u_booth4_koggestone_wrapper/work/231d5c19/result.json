@@ -1,0 +1,27 @@
+{
+  "design": "mult4u_booth4_koggestone_wrapper",
+  "module": "mult4u_booth4_koggestone",
+  "platform": "nangate45",
+  "config_path": "/workspaces/RTLGen/runs/multipliers/ppg_cpa_widths_4_32/configs/config_mult4u_booth4_koggestone.json",
+  "config_hash": "7be5d082b180",
+  "param_hash": "231d5c19",
+  "tag": "mult_ppg_cpa_w4_32_nangate45_40523b9d",
+  "flow_params": {
+    "CLOCK_PERIOD": 2.5,
+    "CORE_UTILIZATION": 10,
+    "PLACE_DENSITY": 0.55,
+    "TAG": "mult_ppg_cpa_w4_32_nangate45_40523b9d"
+  },
+  "timestamp": "2025-12-17T06:39:55.156129Z",
+  "reports": {
+    "finish": "/orfs/flow/reports/nangate45/mult4u_booth4_koggestone_wrapper/base/6_finish.rpt",
+    "def": "/orfs/flow/results/nangate45/mult4u_booth4_koggestone_wrapper/base/6_final.def"
+  },
+  "metrics": {
+    "critical_path_ns": 0.1719,
+    "total_power_mw": 0.000146,
+    "die_area": 2219.3521
+  },
+  "status": "ok",
+  "result_path": "/workspaces/RTLGen/runs/multipliers/ppg_cpa_widths_4_32/mult4u_booth4_koggestone_wrapper/work/231d5c19/result.json"
+}

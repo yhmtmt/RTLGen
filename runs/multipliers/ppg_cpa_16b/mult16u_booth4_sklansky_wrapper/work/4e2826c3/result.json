@@ -1,0 +1,27 @@
+{
+  "design": "mult16u_booth4_sklansky_wrapper",
+  "module": "mult16u_booth4_sklansky",
+  "platform": "sky130hd",
+  "config_path": "/workspaces/RTLGen/runs/multipliers/ppg_cpa_16b/configs/config_mult16u_booth4_sklansky.json",
+  "config_hash": "2b3800017414",
+  "param_hash": "4e2826c3",
+  "tag": "mult16b_ppg_cpa_sky130_70e18859",
+  "flow_params": {
+    "CLOCK_PERIOD": 6.0,
+    "CORE_UTILIZATION": 10,
+    "PLACE_DENSITY": 0.55,
+    "TAG": "mult16b_ppg_cpa_sky130_70e18859"
+  },
+  "timestamp": "2025-12-17T03:55:28.103036Z",
+  "reports": {
+    "finish": "/orfs/flow/reports/sky130hd/mult16u_booth4_sklansky_wrapper/base/6_finish.rpt",
+    "def": "/orfs/flow/results/sky130hd/mult16u_booth4_sklansky_wrapper/base/6_final.def"
+  },
+  "metrics": {
+    "critical_path_ns": 5.8916,
+    "total_power_mw": 0.0065,
+    "die_area": 93229.462225
+  },
+  "status": "ok",
+  "result_path": "/workspaces/RTLGen/runs/multipliers/ppg_cpa_16b/mult16u_booth4_sklansky_wrapper/work/4e2826c3/result.json"
+}

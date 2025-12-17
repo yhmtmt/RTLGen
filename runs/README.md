@@ -10,6 +10,37 @@ Layout
 - `runs/<circuit_type>/<design>/metrics.csv` — aggregated execution parameters and parsed metrics per run; new sweeps append rows.
 - `runs/<circuit_type>/<design>/work/` — transient per-run scratch (may be cleared without losing the published artifacts).
 
+Evaluated
+---------
+Prefix adders (unsigned):
+- Families: Ripple, BrentKung, KoggeStone, Sklansky across widths 4/8/16/32/64.
+- PDKs: Nangate45, Sky130HD, ASAP7.
+- Summaries: `runs/prefix_adders/nangate45_unsigned_summary.csv`, `runs/prefix_adders/sky130hd_unsigned_summary.csv`, `runs/prefix_adders/asap7_unsigned_summary.csv`.
+- Sweep settings: small blocks use `CORE_UTILIZATION=10` (and relaxed variants for stubborn cases) to avoid PDN/route failures.
+
+Multipliers:
+- 16-bit PPG/CPA matrix (Normal vs Booth4) with CPAs Ripple/KoggeStone/BrentKung/Sklansky, signed+unsigned.
+  - PDKs: Nangate45, Sky130HD, ASAP7.
+  - Summaries: `runs/multipliers/ppg_cpa_16b/nangate45_summary.csv`,
+    `runs/multipliers/ppg_cpa_16b/sky130hd_summary.csv`,
+    `runs/multipliers/ppg_cpa_16b/asap7_summary.csv`,
+    `runs/multipliers/ppg_cpa_16b_signed/nangate45_summary.csv`,
+    `runs/multipliers/ppg_cpa_16b_signed/sky130hd_summary.csv`,
+    `runs/multipliers/ppg_cpa_16b_signed/asap7_summary.csv`.
+- Width sweep (Nangate45): 4/8/16/32-bit, signed+unsigned, PPG {Normal, Booth4}, CPA {Ripple, KoggeStone, BrentKung, Sklansky}.
+  - Summary: `runs/multipliers/ppg_cpa_widths_4_32/nangate45_summary.csv` (64 rows).
+
+Observed Trends (config choice -> results)
+------------------------------------------
+Prefix adders:
+- CPA choice dominates timing/area: KoggeStone and Sklansky are consistently fastest but largest area/power; Ripple is smallest area/power but slowest; BrentKung is in-between.
+- Scaling with width: Ripple degrades steeply with width; prefix adders stay relatively flat, especially KoggeStone/Sklansky.
+
+Multipliers:
+- CPA choice dominates timing and area: KoggeStone/Sklansky give the best delay, Ripple is slowest, BrentKung is intermediate.
+- PPG choice (Normal vs Booth4) typically yields similar timing/area/power for 16-bit; no consistent Booth4 win in these sweeps.
+- Signed vs unsigned: signed variants generally trend slightly larger area/power at the same CPA/PPG, with similar timing.
+
 Contribute
 ----------
 - Add a new config under `runs/<circuit>/config.json` (or a variant name) and open a PR; keep configs minimal and documented.
