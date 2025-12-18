@@ -1,0 +1,27 @@
+{
+  "design": "mult16u_normal_koggestone_wrapper",
+  "module": "mult16u_normal_koggestone",
+  "platform": "sky130hd",
+  "config_path": "/workspaces/RTLGen/runs/multipliers/ppg_cpa_widths_4_32/configs/config_mult16u_normal_koggestone.json",
+  "config_hash": "0d7bdb0c397d",
+  "param_hash": "b1b86ede",
+  "tag": "mult_ppg_cpa_w4_32_sky130_70e18859",
+  "flow_params": {
+    "CLOCK_PERIOD": 6.0,
+    "CORE_UTILIZATION": 10,
+    "PLACE_DENSITY": 0.55,
+    "TAG": "mult_ppg_cpa_w4_32_sky130_70e18859"
+  },
+  "timestamp": "2025-12-17T13:17:25.400725Z",
+  "reports": {
+    "finish": "/orfs/flow/reports/sky130hd/mult16u_normal_koggestone_wrapper/base/6_finish.rpt",
+    "def": "/orfs/flow/results/sky130hd/mult16u_normal_koggestone_wrapper/base/6_final.def"
+  },
+  "metrics": {
+    "critical_path_ns": 6.0492,
+    "total_power_mw": 0.00762,
+    "die_area": 95709.7969
+  },
+  "status": "ok",
+  "result_path": "/workspaces/RTLGen/runs/multipliers/ppg_cpa_widths_4_32/mult16u_normal_koggestone_wrapper/work/b1b86ede/result.json"
+}

@@ -1,0 +1,14 @@
+{
+  "tag_prefix": "mult_ppg_cpa_w4_32_asap7",
+  "flow_params": {
+    "CLOCK_PERIOD": [
+      1.0
+    ],
+    "CORE_UTILIZATION": [
+      10
+    ],
+    "PLACE_DENSITY": [
+      0.55
+    ]
+  }
+}

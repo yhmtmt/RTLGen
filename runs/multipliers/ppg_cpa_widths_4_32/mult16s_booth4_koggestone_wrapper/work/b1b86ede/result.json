@@ -1,0 +1,27 @@
+{
+  "design": "mult16s_booth4_koggestone_wrapper",
+  "module": "mult16s_booth4_koggestone",
+  "platform": "sky130hd",
+  "config_path": "/workspaces/RTLGen/runs/multipliers/ppg_cpa_widths_4_32/configs/config_mult16s_booth4_koggestone.json",
+  "config_hash": "f5e751767fc8",
+  "param_hash": "b1b86ede",
+  "tag": "mult_ppg_cpa_w4_32_sky130_70e18859",
+  "flow_params": {
+    "CLOCK_PERIOD": 6.0,
+    "CORE_UTILIZATION": 10,
+    "PLACE_DENSITY": 0.55,
+    "TAG": "mult_ppg_cpa_w4_32_sky130_70e18859"
+  },
+  "timestamp": "2025-12-17T12:43:14.251115Z",
+  "reports": {
+    "finish": "/orfs/flow/reports/sky130hd/mult16s_booth4_koggestone_wrapper/base/6_finish.rpt",
+    "def": "/orfs/flow/results/sky130hd/mult16s_booth4_koggestone_wrapper/base/6_final.def"
+  },
+  "metrics": {
+    "critical_path_ns": 5.8559,
+    "total_power_mw": 0.00672,
+    "die_area": 91101.3489
+  },
+  "status": "ok",
+  "result_path": "/workspaces/RTLGen/runs/multipliers/ppg_cpa_widths_4_32/mult16s_booth4_koggestone_wrapper/work/b1b86ede/result.json"
+}

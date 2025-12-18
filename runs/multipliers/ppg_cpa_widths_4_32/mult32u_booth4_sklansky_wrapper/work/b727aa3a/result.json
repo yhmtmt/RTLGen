@@ -1,0 +1,27 @@
+{
+  "design": "mult32u_booth4_sklansky_wrapper",
+  "module": "mult32u_booth4_sklansky",
+  "platform": "asap7",
+  "config_path": "/workspaces/RTLGen/runs/multipliers/ppg_cpa_widths_4_32/configs/config_mult32u_booth4_sklansky.json",
+  "config_hash": "42a5e928344a",
+  "param_hash": "b727aa3a",
+  "tag": "mult_ppg_cpa_w4_32_asap7_3b70c61f",
+  "flow_params": {
+    "CLOCK_PERIOD": 1.0,
+    "CORE_UTILIZATION": 10,
+    "PLACE_DENSITY": 0.55,
+    "TAG": "mult_ppg_cpa_w4_32_asap7_3b70c61f"
+  },
+  "timestamp": "2025-12-17T17:41:38.605255Z",
+  "reports": {
+    "finish": "/orfs/flow/reports/asap7/mult32u_booth4_sklansky_wrapper/base/6_finish.rpt",
+    "def": "/orfs/flow/results/asap7/mult32u_booth4_sklansky_wrapper/base/6_final.def"
+  },
+  "metrics": {
+    "critical_path_ns": 0.8827915000000001,
+    "total_power_mw": 0.896,
+    "die_area": 4765.831225
+  },
+  "status": "ok",
+  "result_path": "/workspaces/RTLGen/runs/multipliers/ppg_cpa_widths_4_32/mult32u_booth4_sklansky_wrapper/work/b727aa3a/result.json"
+}

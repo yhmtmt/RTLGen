@@ -1,0 +1,27 @@
+{
+  "design": "mult4s_booth4_koggestone_wrapper",
+  "module": "mult4s_booth4_koggestone",
+  "platform": "asap7",
+  "config_path": "/workspaces/RTLGen/runs/multipliers/ppg_cpa_widths_4_32/configs/config_mult4s_booth4_koggestone.json",
+  "config_hash": "977fe4543893",
+  "param_hash": "b727aa3a",
+  "tag": "mult_ppg_cpa_w4_32_asap7_3b70c61f",
+  "flow_params": {
+    "CLOCK_PERIOD": 1.0,
+    "CORE_UTILIZATION": 10,
+    "PLACE_DENSITY": 0.55,
+    "TAG": "mult_ppg_cpa_w4_32_asap7_3b70c61f"
+  },
+  "timestamp": "2025-12-17T18:11:35.239053Z",
+  "reports": {
+    "finish": "/orfs/flow/reports/asap7/mult4s_booth4_koggestone_wrapper/base/6_finish.rpt",
+    "def": "/orfs/flow/results/asap7/mult4s_booth4_koggestone_wrapper/base/6_final.def"
+  },
+  "metrics": {
+    "critical_path_ns": 0.33284199999999997,
+    "total_power_mw": 0.0486,
+    "die_area": 198.2464
+  },
+  "status": "ok",
+  "result_path": "/workspaces/RTLGen/runs/multipliers/ppg_cpa_widths_4_32/mult4s_booth4_koggestone_wrapper/work/b727aa3a/result.json"
+}
