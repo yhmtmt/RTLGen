@@ -1,0 +1,27 @@
+{
+  "design": "adder_sklansky_8u_wrapper",
+  "module": "adder_sklansky_8u",
+  "platform": "sky130hd",
+  "config_path": "/tmp/highutil_adders_full/config_adder_sklansky_unsigned_8bit.json",
+  "config_hash": "ef86bf13247d",
+  "param_hash": "4e4ce5c1",
+  "tag": "prefix_adders_sky130hd_highutil_8c56d3b0",
+  "flow_params": {
+    "CLOCK_PERIOD": 6.0,
+    "CORE_UTILIZATION": 50,
+    "PLACE_DENSITY": 0.65,
+    "TAG": "prefix_adders_sky130hd_highutil_8c56d3b0"
+  },
+  "timestamp": "2025-12-18T01:22:36.532142Z",
+  "reports": {
+    "finish": "/orfs/flow/reports/sky130hd/adder_sklansky_8u_wrapper/base/6_finish.rpt",
+    "def": "/orfs/flow/results/sky130hd/adder_sklansky_8u_wrapper/base/6_final.def"
+  },
+  "metrics": {
+    "critical_path_ns": 1.4154,
+    "total_power_mw": 0.000351,
+    "die_area": 1768.2025
+  },
+  "status": "ok",
+  "result_path": "/workspaces/RTLGen/runs/prefix_adders/adder_sklansky_8u_wrapper/work/4e4ce5c1/result.json"
+}

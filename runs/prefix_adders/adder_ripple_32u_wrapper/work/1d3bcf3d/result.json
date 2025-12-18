@@ -1,0 +1,27 @@
+{
+  "design": "adder_ripple_32u_wrapper",
+  "module": "adder_ripple_32u",
+  "platform": "nangate45",
+  "config_path": "/tmp/highutil_adders/ripple32.json",
+  "config_hash": "88f8ad9980bb",
+  "param_hash": "1d3bcf3d",
+  "tag": "prefix_adders_nangate45_highutil_da64be35",
+  "flow_params": {
+    "CLOCK_PERIOD": 2.5,
+    "CORE_UTILIZATION": 60,
+    "PLACE_DENSITY": 0.68,
+    "TAG": "prefix_adders_nangate45_highutil_da64be35"
+  },
+  "timestamp": "2025-12-18T00:27:27.726300Z",
+  "reports": {
+    "finish": "/orfs/flow/reports/nangate45/adder_ripple_32u_wrapper/base/6_finish.rpt",
+    "def": "/orfs/flow/results/nangate45/adder_ripple_32u_wrapper/base/6_final.def"
+  },
+  "metrics": {
+    "critical_path_ns": 2.4826,
+    "total_power_mw": 0.000397,
+    "die_area": 1085.7025
+  },
+  "status": "ok",
+  "result_path": "/workspaces/RTLGen/runs/prefix_adders/adder_ripple_32u_wrapper/work/1d3bcf3d/result.json"
+}

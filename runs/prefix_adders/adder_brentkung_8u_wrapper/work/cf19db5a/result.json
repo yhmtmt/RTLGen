@@ -1,0 +1,27 @@
+{
+  "design": "adder_brentkung_8u_wrapper",
+  "module": "adder_brentkung_8u",
+  "platform": "asap7",
+  "config_path": "/tmp/highutil_adders_full/config_adder_brentkung_unsigned_8bit.json",
+  "config_hash": "a04b433482d5",
+  "param_hash": "cf19db5a",
+  "tag": "prefix_adders_asap7_highutil_c51f6982",
+  "flow_params": {
+    "CLOCK_PERIOD": 1.0,
+    "CORE_UTILIZATION": 60,
+    "PLACE_DENSITY": 0.68,
+    "TAG": "prefix_adders_asap7_highutil_c51f6982"
+  },
+  "timestamp": "2025-12-18T01:32:08.159536Z",
+  "reports": {
+    "finish": "/orfs/flow/reports/asap7/adder_brentkung_8u_wrapper/base/6_finish.rpt",
+    "def": "/orfs/flow/results/asap7/adder_brentkung_8u_wrapper/base/6_final.def"
+  },
+  "metrics": {
+    "critical_path_ns": 0.2885011,
+    "total_power_mw": 0.0632,
+    "die_area": 38.613796
+  },
+  "status": "ok",
+  "result_path": "/workspaces/RTLGen/runs/prefix_adders/adder_brentkung_8u_wrapper/work/cf19db5a/result.json"
+}

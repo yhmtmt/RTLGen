@@ -1,0 +1,27 @@
+{
+  "design": "adder_sklansky_8u_wrapper",
+  "module": "adder_sklansky_8u",
+  "platform": "asap7",
+  "config_path": "/tmp/highutil_adders_full/config_adder_sklansky_unsigned_8bit.json",
+  "config_hash": "ef86bf13247d",
+  "param_hash": "9fd82ac0",
+  "tag": "prefix_adders_asap7_highutil_75828b8c",
+  "flow_params": {
+    "CLOCK_PERIOD": 1.0,
+    "CORE_UTILIZATION": 50,
+    "PLACE_DENSITY": 0.68,
+    "TAG": "prefix_adders_asap7_highutil_75828b8c"
+  },
+  "timestamp": "2025-12-18T01:53:08.167255Z",
+  "reports": {
+    "finish": "/orfs/flow/reports/asap7/adder_sklansky_8u_wrapper/base/6_finish.rpt",
+    "def": "/orfs/flow/results/asap7/adder_sklansky_8u_wrapper/base/6_final.def"
+  },
+  "metrics": {
+    "critical_path_ns": 0.21531460000000002,
+    "total_power_mw": 0.0598,
+    "die_area": 47.251876
+  },
+  "status": "ok",
+  "result_path": "/workspaces/RTLGen/runs/prefix_adders/adder_sklansky_8u_wrapper/work/9fd82ac0/result.json"
+}
