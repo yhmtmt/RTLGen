@@ -1,0 +1,10 @@
+{
+    "operand": {
+        "bit_width": 4,
+        "signed": true
+    },
+    "multiplier_yosys": {
+        "module_name": "yosys_mult4s_lowpowerbooth",
+        "booth_type": "LowpowerBooth"
+    }
+}

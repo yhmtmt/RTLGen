@@ -1,0 +1,27 @@
+{
+  "design": "yosys_mult16s_booth_wrapper",
+  "module": "yosys_mult16s_booth",
+  "platform": "nangate45",
+  "config_path": "/tmp/yosys_booth_cfgs/config_mult16s_booth.json",
+  "config_hash": "6543d2a2b810",
+  "param_hash": "c6c6255b",
+  "tag": "yosys_mult_w4_32_nangate45_highutil_87b48795",
+  "flow_params": {
+    "CLOCK_PERIOD": 2.5,
+    "CORE_UTILIZATION": 50,
+    "PLACE_DENSITY": 0.68,
+    "TAG": "yosys_mult_w4_32_nangate45_highutil_87b48795"
+  },
+  "timestamp": "2025-12-19T09:49:49.105162Z",
+  "reports": {
+    "finish": "/orfs/flow/reports/nangate45/yosys_mult16s_booth_wrapper/base/6_finish.rpt",
+    "def": "/orfs/flow/results/nangate45/yosys_mult16s_booth_wrapper/base/6_final.def"
+  },
+  "metrics": {
+    "critical_path_ns": 0.1975,
+    "total_power_mw": 0.00546,
+    "die_area": 4532.655625
+  },
+  "status": "ok",
+  "result_path": "/workspaces/RTLGen/runs/multipliers/yosys_booth_widths_4_32/yosys_mult16s_booth_wrapper/work/c6c6255b/result.json"
+}

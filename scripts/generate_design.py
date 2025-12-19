@@ -27,10 +27,13 @@ def main():
         config = json.load(f)
 
     has_multiplier = "multiplier" in config
+    has_multiplier_yosys = "multiplier_yosys" in config
     has_adder = "adder" in config
 
     if has_multiplier:
         module_name = config["multiplier"]["module_name"]
+    elif has_multiplier_yosys:
+        module_name = config["multiplier_yosys"]["module_name"]
     elif has_adder:
         module_name = config["adder"]["module_name"]
     else:
@@ -62,6 +65,7 @@ def main():
 
         subprocess.run(["rtlgen", args.config], env=env, check=True)
         os.rename(f"{module_name}.v", os.path.join(src_dir, f"{module_name}.v"))
+        # Only multiplier (non-Yosys) emits MG_CPA.v
         if has_multiplier:
             os.rename("MG_CPA.v", os.path.join(src_dir, "MG_CPA.v"))
 
@@ -103,8 +107,8 @@ def main():
     print(f"Moved generated platform files to {dest_platform_dir}")
 
 def generate_wrapper(config, src_dir):
-    if "multiplier" in config:
-        module_name = config["multiplier"]["module_name"]
+    if "multiplier" in config or "multiplier_yosys" in config:
+        module_name = config["multiplier"].get("module_name") if "multiplier" in config else config["multiplier_yosys"].get("module_name")
         bit_width = config["operand"]["bit_width"]
         wrapper_name = f"{module_name}_wrapper"
         wrapper_content = f"""
@@ -184,6 +188,8 @@ endmodule
 def generate_config_mk(config, platform_dir, platform, include_mg_cpa=False):
     if "multiplier" in config:
         module_name = config["multiplier"]["module_name"]
+    elif "multiplier_yosys" in config:
+        module_name = config["multiplier_yosys"]["module_name"]
     elif "adder" in config:
         module_name = config["adder"]["module_name"]
     else:

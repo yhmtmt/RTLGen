@@ -1,0 +1,27 @@
+{
+  "design": "yosys_mult4u_booth_wrapper",
+  "module": "yosys_mult4u_booth",
+  "platform": "asap7",
+  "config_path": "/tmp/yosys_booth_cfgs/config_mult4u_booth.json",
+  "config_hash": "6ba337436978",
+  "param_hash": "152d8512",
+  "tag": "yosys_mult_w4_32_asap7_highutil_75828b8c",
+  "flow_params": {
+    "CLOCK_PERIOD": 1.0,
+    "CORE_UTILIZATION": 50,
+    "PLACE_DENSITY": 0.68,
+    "TAG": "yosys_mult_w4_32_asap7_highutil_75828b8c"
+  },
+  "timestamp": "2025-12-19T12:08:13.309149Z",
+  "reports": {
+    "finish": "/orfs/flow/reports/asap7/yosys_mult4u_booth_wrapper/base/6_finish.rpt",
+    "def": "/orfs/flow/results/asap7/yosys_mult4u_booth_wrapper/base/6_final.def"
+  },
+  "metrics": {
+    "critical_path_ns": 0.2905972,
+    "total_power_mw": 0.0424,
+    "die_area": 40.5769
+  },
+  "status": "ok",
+  "result_path": "/workspaces/RTLGen/runs/multipliers/yosys_booth_widths_4_32/yosys_mult4u_booth_wrapper/work/152d8512/result.json"
+}

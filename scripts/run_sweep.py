@@ -73,6 +73,8 @@ def read_design_names(config_path: Path) -> Tuple[str, str]:
     cfg = load_json(config_path)
     if "multiplier" in cfg:
         module_name = cfg["multiplier"]["module_name"]
+    elif "multiplier_yosys" in cfg:
+        module_name = cfg["multiplier_yosys"]["module_name"]
     elif "adder" in cfg:
         module_name = cfg["adder"]["module_name"]
     else:

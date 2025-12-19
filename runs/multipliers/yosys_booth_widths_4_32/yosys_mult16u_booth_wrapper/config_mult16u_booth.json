@@ -1,0 +1,10 @@
+{
+    "operand": {
+        "bit_width": 16,
+        "signed": false
+    },
+    "multiplier_yosys": {
+        "module_name": "yosys_mult16u_booth",
+        "booth_type": "Booth"
+    }
+}
