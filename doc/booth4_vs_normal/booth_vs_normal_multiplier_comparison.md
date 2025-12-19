@@ -16,23 +16,57 @@ Subsequently, many papers have been published, but I have not found any that dir
 
 ## Evaluation
 
-In this work, I implemented both a modified Booth and a normal partial product generator [10] and compared them using OpenROAD with the Nangate45 PDK. I implemented the sign computation technique and the Booth recoder circuit from [4]. The compressor tree, which reduces the partial products to two rows, is generated using the ILP-based method described in [9]. The final two rows are summed by a Ripple-Carry Adder (RCA).
+We implemented both a modified Booth and a normal partial product generator [10] and swept them with OpenROAD across three PDKs (Nangate45, Sky130HD, ASAP7). Each design uses an ILP-generated compressor tree [9] and a carry-propagate adder (CPA) chosen from Ripple, Brent-Kung, Kogge-Stone, or Sklansky. Signed/unsigned variants and widths 4/8/16/32 are covered. Synthesis/PnR runs include low-util and high-util floorplans; summaries live under `runs/multipliers/ppg_cpa_widths_4_32/` (best area/delay/power tables).
 
-OpenROAD was executed via an autotuner to optimize a weighted PPA (Power, Performance, and Area) metric. I slightly modified the autotuner code in the OpenROAD flow scripts and prepared some evaluation scripts. The modified version of the OpenROAD flow scripts is available on my GitHub [11]. The multipliers were generated and evaluated using `generate_multiplier_configs.py`, `generate_multipliers.py`, and `execute_evaluation.py`. The multipliers range from 4 to 32 bits, are both signed and unsigned, and use either radix-4 modified Booth or normal partial product generators. (For the radix-4 Booth, we can generate 64-bit multipliers, but this is not feasible for the normal multiplier due to a slow ILP solver.)
-
-I have now obtained the results for the smallest delay and area. (I also have power optimization results, but they do not account for glitch activity, which is why I am not discussing them here.)
+Power numbers come from OpenROAD reports (no glitch modeling), so treat them as relative.
 
 ## Results
 
-### Delay Comparison
-![Delay Comparison](delay_comparison.png)
+### PPA takeaways across CPAs and PDKs
+- CPA choice dominates timing/area. Kogge-Stone and Sklansky are consistently fastest and largest; Ripple is smallest and slowest; Brent-Kung sits in between. This ordering holds for both Booth4 and Normal PPGs.
+- Booth vs Normal is platform-dependent and modest: Booth overhead on tiny widths hurts delay, while wider signed cases sometimes gain a bit.
+  - Nangate45: Booth4 often helps area and can match or slightly beat delay on wider signed designs; narrow/unsigned can swing either way.
+  - Sky130HD: Booth4 is modestly smaller in area but delay is mixed—slower on narrow/unsigned, occasionally better on wider signed.
+  - ASAP7: Booth4 skews larger and slower overall; Normal usually wins delay/area except for isolated signed-wide cases.
+- Dense floorplans (high utilization) shrink area noticeably (especially ASAP7) with minor delay impact; see `best_area_highutil.csv` and `best_delay_highutil.csv`. One relaxed Nangate45 point (mult4u_normal_ripple) is retained where 50–60% util failed.
+- Best delay and power occasionally come from lower-util runs; `best_delay_all.csv` and `best_power_all.csv` capture those outliers.
+  - Caution: the 4-bit Sky130HD delay points show ~3× slower Booth4 (Ripple/Brent-Kung) because the fixed recoder cost dominates at tiny width and the “best delay” selection pulled a low-util run. We should rerun 4-bit Booth at matched util/density if finer precision is needed.
 
-### Area Comparison
-![Area Comparison](area_comparison.png)
+### Normalized PPA across CPAs/PPGs (baseline: normal, same CPA per width)
+For each width and platform, Booth4 metrics are normalized to the matching Normal+CPA version, separated for signed/unsigned. Non‑monotonic wiggles are expected when baseline quality shifts per width or fixed recoder overhead dominates tiny designs.
+- Area: Booth4 is modestly smaller on Nangate45/Sky130HD but often larger on ASAP7; CPA choice still drives most spread.
+- Delay: Booth4 rarely improves delay; Kogge-Stone/Sklansky stay fastest regardless of PPG, Ripple lags.
+- Power: Trends mirror delay/area; Booth4 only occasionally helps power on Nangate45, often worse on ASAP7.
 
-The results show that in terms of both performance and area, the two algorithms show quite similar results. There is no obvious benefit to using the modified Booth algorithm, especially if the glitching problem is taken into account. Since we used an RCA for the final stage, most of the delay could be attributed to the carry chain at the bottom. If so, we would expect to see a wider gap between the two algorithms for smaller bit widths, but the data does not support this.
+Nangate45 — Area/Delay/Power (signed):
+![Nangate45 area s](../../runs/analysis/area_normalized_nangate45_signed.png)
+![Nangate45 delay s](../../runs/analysis/delay_normalized_nangate45_signed.png)
+![Nangate45 power s](../../runs/analysis/power_normalized_nangate45_signed.png)
 
-This evaluation is preliminary, and there are several possibilities that could change the results. For example, the results are from a limited number of explorations, and I am not confident that I have found the true optimal point for the designs. Moreover, we can further optimize the circuit in RTL, for example, by introducing optimized carry-propagation adders as in [12]. Such optimizations could also change the results.
+Nangate45 — Area/Delay/Power (unsigned):
+![Nangate45 area u](../../runs/analysis/area_normalized_nangate45_unsigned.png)
+![Nangate45 delay u](../../runs/analysis/delay_normalized_nangate45_unsigned.png)
+![Nangate45 power u](../../runs/analysis/power_normalized_nangate45_unsigned.png)
+
+Sky130HD — Area/Delay/Power (signed):
+![Sky130HD area s](../../runs/analysis/area_normalized_sky130hd_signed.png)
+![Sky130HD delay s](../../runs/analysis/delay_normalized_sky130hd_signed.png)
+![Sky130HD power s](../../runs/analysis/power_normalized_sky130hd_signed.png)
+
+Sky130HD — Area/Delay/Power (unsigned):
+![Sky130HD area u](../../runs/analysis/area_normalized_sky130hd_unsigned.png)
+![Sky130HD delay u](../../runs/analysis/delay_normalized_sky130hd_unsigned.png)
+![Sky130HD power u](../../runs/analysis/power_normalized_sky130hd_unsigned.png)
+
+ASAP7 — Area/Delay/Power (signed):
+![ASAP7 area s](../../runs/analysis/area_normalized_asap7_signed.png)
+![ASAP7 delay s](../../runs/analysis/delay_normalized_asap7_signed.png)
+![ASAP7 power s](../../runs/analysis/power_normalized_asap7_signed.png)
+
+ASAP7 — Area/Delay/Power (unsigned):
+![ASAP7 area u](../../runs/analysis/area_normalized_asap7_unsigned.png)
+![ASAP7 delay u](../../runs/analysis/delay_normalized_asap7_unsigned.png)
+![ASAP7 power u](../../runs/analysis/power_normalized_asap7_unsigned.png)
 
 ## References
 
