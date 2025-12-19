@@ -40,6 +40,7 @@ Multipliers:
 - CPA choice dominates timing and area: KoggeStone/Sklansky give the best delay, Ripple is slowest, BrentKung is intermediate.
 - PPG choice (Normal vs Booth4) shows weak platform dependence: Booth4 is slightly smaller and a hair faster on Nangate45; slightly smaller but slower on Sky130HD; slightly larger and slower on ASAP7. The ordering is consistent across CPAs, signedness, and widths 4–32.
 - Signed vs unsigned: signed variants generally trend slightly larger area/power at the same CPA/PPG, with similar timing.
+- High-utilization sweeps (dense floorplans) across Nangate45/Sky130HD/ASAP7: see `best_area_highutil.csv` for highest-util area picks per platform; a single relaxed Nangate45 point (mult4u_normal_ripple) is included because the 50–60% targets failed. Dense runs shrink area notably (especially on ASAP7) with small delay impact. For delay/power outliers, see `best_delay_highutil.csv` (dense-only) and `best_delay_all.csv`/`best_power_all.csv` (best across all util points) to spot cases where lower-util runs win timing/power.
 
 Contribute
 ----------
