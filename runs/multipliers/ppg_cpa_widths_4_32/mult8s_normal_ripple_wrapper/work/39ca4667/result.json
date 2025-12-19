@@ -1,0 +1,27 @@
+{
+  "design": "mult8s_normal_ripple_wrapper",
+  "module": "mult8s_normal_ripple",
+  "platform": "nangate45",
+  "config_path": "/tmp/highutil_mults/config_mult8s_normal_ripple.json",
+  "config_hash": "f37725d3fa8a",
+  "param_hash": "39ca4667",
+  "tag": "mult_ppg_cpa_w4_32_nangate45_highutil_87b48795",
+  "flow_params": {
+    "CLOCK_PERIOD": 2.5,
+    "CORE_UTILIZATION": 50,
+    "PLACE_DENSITY": 0.68,
+    "TAG": "mult_ppg_cpa_w4_32_nangate45_highutil_87b48795"
+  },
+  "timestamp": "2025-12-18T06:03:25.579769Z",
+  "reports": {
+    "finish": "/orfs/flow/reports/nangate45/mult8s_normal_ripple_wrapper/base/6_finish.rpt",
+    "def": "/orfs/flow/results/nangate45/mult8s_normal_ripple_wrapper/base/6_final.def"
+  },
+  "metrics": {
+    "critical_path_ns": 0.1766,
+    "total_power_mw": 0.000383,
+    "die_area": 1103.5684
+  },
+  "status": "ok",
+  "result_path": "/workspaces/RTLGen/runs/multipliers/ppg_cpa_widths_4_32/mult8s_normal_ripple_wrapper/work/39ca4667/result.json"
+}

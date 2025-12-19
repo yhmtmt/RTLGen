@@ -1,0 +1,27 @@
+{
+  "design": "mult32s_booth4_brentkung_wrapper",
+  "module": "mult32s_booth4_brentkung",
+  "platform": "asap7",
+  "config_path": "/tmp/highutil_mults/config_mult32s_booth4_brentkung.json",
+  "config_hash": "c781d26383c7",
+  "param_hash": "a3bdd812",
+  "tag": "mult_ppg_cpa_w4_32_asap7_highutil_c51f6982",
+  "flow_params": {
+    "CLOCK_PERIOD": 1.0,
+    "CORE_UTILIZATION": 60,
+    "PLACE_DENSITY": 0.68,
+    "TAG": "mult_ppg_cpa_w4_32_asap7_highutil_c51f6982"
+  },
+  "timestamp": "2025-12-18T18:43:15.629515Z",
+  "reports": {
+    "finish": "/orfs/flow/reports/asap7/mult32s_booth4_brentkung_wrapper/base/6_finish.rpt",
+    "def": "/orfs/flow/results/asap7/mult32s_booth4_brentkung_wrapper/base/6_final.def"
+  },
+  "metrics": {
+    "critical_path_ns": 1.7181619000000001,
+    "total_power_mw": 0.77,
+    "die_area": 814.759936
+  },
+  "status": "ok",
+  "result_path": "/workspaces/RTLGen/runs/multipliers/ppg_cpa_widths_4_32/mult32s_booth4_brentkung_wrapper/work/a3bdd812/result.json"
+}

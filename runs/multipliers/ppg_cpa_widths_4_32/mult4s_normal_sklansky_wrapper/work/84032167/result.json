@@ -1,0 +1,28 @@
+{
+  "design": "mult4s_normal_sklansky_wrapper",
+  "module": "mult4s_normal_sklansky",
+  "platform": "nangate45",
+  "config_path": "/tmp/highutil_mults/config_mult4s_normal_sklansky.json",
+  "config_hash": "1dfe3b9cf6c5",
+  "param_hash": "84032167",
+  "tag": "mult_ppg_cpa_w4_32_nangate45_highutil_da64be35",
+  "flow_params": {
+    "CLOCK_PERIOD": 2.5,
+    "CORE_UTILIZATION": 60,
+    "PLACE_DENSITY": 0.68,
+    "TAG": "mult_ppg_cpa_w4_32_nangate45_highutil_da64be35"
+  },
+  "timestamp": "2025-12-18T05:52:21.865389Z",
+  "reports": {
+    "finish": "/orfs/flow/reports/nangate45/mult4s_normal_sklansky_wrapper/base/6_finish.rpt",
+    "def": "/orfs/flow/results/nangate45/mult4s_normal_sklansky_wrapper/base/6_final.def"
+  },
+  "metrics": {
+    "critical_path_ns": 0.1722,
+    "total_power_mw": 0.000115,
+    "die_area": 1723.495225
+  },
+  "status": "failed",
+  "error": "Command '['make', 'DESIGN_CONFIG=/orfs/flow/designs/nangate45/mult4s_normal_sklansky_wrapper/config.mk', 'TAG=mult_ppg_cpa_w4_32_nangate45_highutil_da64be35', 'SDC_FILE=/workspaces/RTLGen/runs/multipliers/ppg_cpa_widths_4_32/mult4s_normal_sklansky_wrapper/work/84032167/constraint.sdc', 'CLOCK_PERIOD=2.5', 'CORE_UTILIZATION=60', 'PLACE_DENSITY=0.68', 'TAG=mult_ppg_cpa_w4_32_nangate45_highutil_da64be35']' returned non-zero exit status 2.",
+  "result_path": "/workspaces/RTLGen/runs/multipliers/ppg_cpa_widths_4_32/mult4s_normal_sklansky_wrapper/work/84032167/result.json"
+}

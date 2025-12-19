@@ -1,0 +1,27 @@
+{
+  "design": "mult4s_booth4_koggestone_wrapper",
+  "module": "mult4s_booth4_koggestone",
+  "platform": "nangate45",
+  "config_path": "/tmp/highutil_mults/config_mult4s_booth4_koggestone.json",
+  "config_hash": "977fe4543893",
+  "param_hash": "84032167",
+  "tag": "mult_ppg_cpa_w4_32_nangate45_highutil_da64be35",
+  "flow_params": {
+    "CLOCK_PERIOD": 2.5,
+    "CORE_UTILIZATION": 60,
+    "PLACE_DENSITY": 0.68,
+    "TAG": "mult_ppg_cpa_w4_32_nangate45_highutil_da64be35"
+  },
+  "timestamp": "2025-12-18T05:48:48.242552Z",
+  "reports": {
+    "finish": "/orfs/flow/reports/nangate45/mult4s_booth4_koggestone_wrapper/base/6_finish.rpt",
+    "def": "/orfs/flow/results/nangate45/mult4s_booth4_koggestone_wrapper/base/6_final.def"
+  },
+  "metrics": {
+    "critical_path_ns": 0.1694,
+    "total_power_mw": 0.000128,
+    "die_area": 408.04
+  },
+  "status": "ok",
+  "result_path": "/workspaces/RTLGen/runs/multipliers/ppg_cpa_widths_4_32/mult4s_booth4_koggestone_wrapper/work/84032167/result.json"
+}
