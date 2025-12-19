@@ -1,9 +1,0 @@
-design,ppg,cpa,status,critical_path_ns,die_area,total_power_mw,result_path
-mult16u_booth4_brentkung_wrapper,booth4,brentkung,ok,1.0891307,1409.627025,0.268,/workspaces/RTLGen/runs/multipliers/ppg_cpa_16b/mult16u_booth4_brentkung_wrapper/work/0bbee30a/result.json
-mult16u_booth4_koggestone_wrapper,booth4,koggestone,ok,0.6690048000000001,1517.492025,0.287,/workspaces/RTLGen/runs/multipliers/ppg_cpa_16b/mult16u_booth4_koggestone_wrapper/work/0bbee30a/result.json
-mult16u_booth4_ripple_wrapper,booth4,ripple,ok,1.2412518,1280.279961,0.284,/workspaces/RTLGen/runs/multipliers/ppg_cpa_16b/mult16u_booth4_ripple_wrapper/work/0bbee30a/result.json
-mult16u_booth4_sklansky_wrapper,booth4,sklansky,ok,0.6289108999999999,1482.712036,0.313,/workspaces/RTLGen/runs/multipliers/ppg_cpa_16b/mult16u_booth4_sklansky_wrapper/work/0bbee30a/result.json
-mult16u_normal_brentkung_wrapper,normal,brentkung,ok,1.0218644000000001,1222.621156,0.261,/workspaces/RTLGen/runs/multipliers/ppg_cpa_16b/mult16u_normal_brentkung_wrapper/work/0bbee30a/result.json
-mult16u_normal_koggestone_wrapper,normal,koggestone,ok,0.6715575,1340.731456,0.273,/workspaces/RTLGen/runs/multipliers/ppg_cpa_16b/mult16u_normal_koggestone_wrapper/work/0bbee30a/result.json
-mult16u_normal_ripple_wrapper,normal,ripple,ok,1.1532384999999998,1222.9009,0.268,/workspaces/RTLGen/runs/multipliers/ppg_cpa_16b/mult16u_normal_ripple_wrapper/work/0bbee30a/result.json
-mult16u_normal_sklansky_wrapper,normal,sklansky,ok,0.6635946,1280.423089,0.284,/workspaces/RTLGen/runs/multipliers/ppg_cpa_16b/mult16u_normal_sklansky_wrapper/work/0bbee30a/result.json

@@ -19,16 +19,8 @@ Prefix adders (unsigned):
 - Sweep settings: small blocks use `CORE_UTILIZATION=10` (and relaxed variants for stubborn cases) to avoid PDN/route failures.
 
 Multipliers:
-- 16-bit PPG/CPA matrix (Normal vs Booth4) with CPAs Ripple/KoggeStone/BrentKung/Sklansky, signed+unsigned.
-  - PDKs: Nangate45, Sky130HD, ASAP7.
-  - Summaries: `runs/multipliers/ppg_cpa_16b/nangate45_summary.csv`,
-    `runs/multipliers/ppg_cpa_16b/sky130hd_summary.csv`,
-    `runs/multipliers/ppg_cpa_16b/asap7_summary.csv`,
-    `runs/multipliers/ppg_cpa_16b_signed/nangate45_summary.csv`,
-    `runs/multipliers/ppg_cpa_16b_signed/sky130hd_summary.csv`,
-    `runs/multipliers/ppg_cpa_16b_signed/asap7_summary.csv`.
 - Width sweep (Nangate45/Sky130HD/ASAP7): 4/8/16/32-bit, signed+unsigned, PPG {Normal, Booth4}, CPA {Ripple, KoggeStone, BrentKung, Sklansky}.
-  - Summaries: `runs/multipliers/ppg_cpa_widths_4_32/nangate45_summary.csv`, `runs/multipliers/ppg_cpa_widths_4_32/sky130hd_summary.csv`, `runs/multipliers/ppg_cpa_widths_4_32/asap7_summary.csv` (64 rows each).
+  - Summaries: `runs/multipliers/ppg_cpa_widths_4_32/nangate45_summary.csv`, `runs/multipliers/ppg_cpa_widths_4_32/sky130hd_summary.csv`, `runs/multipliers/ppg_cpa_widths_4_32/asap7_summary.csv` (64 rows each); replaces earlier 16-bit-only pilot sweeps.
 
 Observed Trends (config choice -> results)
 ------------------------------------------
