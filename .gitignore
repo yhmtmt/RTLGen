@@ -1,5 +1,4 @@
 build/
-*.csv
 multiplier_configs/
 adder_configs/
 plan/

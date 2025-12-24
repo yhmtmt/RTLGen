@@ -35,5 +35,6 @@ This command generates a Verilog module for your circuit according to the config
 
 ## Notes and References
 - Multiplier comparison (Booth vs. normal PPG) with OpenROAD results: see [doc/booth4_vs_normal/booth_vs_normal_multiplier_comparison.md](doc/booth4_vs_normal/booth_vs_normal_multiplier_comparison.md).
+- Yosys Booth vs ILP Booth comparison with normalized PPA plots: see [doc/yosys_vs_ilp_booth.md](doc/yosys_vs_ilp_booth.md).
 - Constant-multiplier algorithms (MCM/CMVM) and CLIs: see [doc/constant_multiplication.md](doc/constant_multiplication.md).
 - Evaluation artifacts (configs, generated Verilog, sweep metrics) live under [runs/](runs/README.md); add configs there to queue new evaluations.
