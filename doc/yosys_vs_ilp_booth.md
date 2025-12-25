@@ -20,7 +20,7 @@ This note compares the current RTLGen ILP-based Booth4 multiplier against Yosys'
 ## Evaluation setup
 - ILP runs are from `runs/multipliers/ppg_cpa_widths_4_32`.
 - Yosys runs are from `runs/multipliers/yosys_booth_widths_4_32`.
-- Normalization script: `runs/analysis/compare_yosys_vs_ilp_booth.py`.
+- Normalization script: `analysis/compare_yosys_vs_ilp_booth.py`.
 - Area normalization uses `best_area_highutil.csv` (dense floorplans).
 - Delay and power normalization use `best_delay_all.csv` and `best_power_all.csv` (best across utilization points).
 
@@ -31,19 +31,19 @@ In the plots below, values are normalized as (ILP / Yosys). Values below 1.0 fav
 These plots focus on signed Booth (most representative in the sweep). The full plot set (including unsigned and LowpowerBooth) is in the appendix.
 
 ### Nangate45 — Booth (signed)
-![Nangate45 Booth area signed](../runs/analysis/ilp_over_yosys_area_nangate45_signed_booth.png)
-![Nangate45 Booth delay signed](../runs/analysis/ilp_over_yosys_delay_nangate45_signed_booth.png)
-![Nangate45 Booth power signed](../runs/analysis/ilp_over_yosys_power_nangate45_signed_booth.png)
+![Nangate45 Booth area signed](../analysis/ilp_over_yosys_area_nangate45_signed_booth.png)
+![Nangate45 Booth delay signed](../analysis/ilp_over_yosys_delay_nangate45_signed_booth.png)
+![Nangate45 Booth power signed](../analysis/ilp_over_yosys_power_nangate45_signed_booth.png)
 
 ### Sky130HD — Booth (signed)
-![Sky130HD Booth area signed](../runs/analysis/ilp_over_yosys_area_sky130hd_signed_booth.png)
-![Sky130HD Booth delay signed](../runs/analysis/ilp_over_yosys_delay_sky130hd_signed_booth.png)
-![Sky130HD Booth power signed](../runs/analysis/ilp_over_yosys_power_sky130hd_signed_booth.png)
+![Sky130HD Booth area signed](../analysis/ilp_over_yosys_area_sky130hd_signed_booth.png)
+![Sky130HD Booth delay signed](../analysis/ilp_over_yosys_delay_sky130hd_signed_booth.png)
+![Sky130HD Booth power signed](../analysis/ilp_over_yosys_power_sky130hd_signed_booth.png)
 
 ### ASAP7 — Booth (signed)
-![ASAP7 Booth area signed](../runs/analysis/ilp_over_yosys_area_asap7_signed_booth.png)
-![ASAP7 Booth delay signed](../runs/analysis/ilp_over_yosys_delay_asap7_signed_booth.png)
-![ASAP7 Booth power signed](../runs/analysis/ilp_over_yosys_power_asap7_signed_booth.png)
+![ASAP7 Booth area signed](../analysis/ilp_over_yosys_area_asap7_signed_booth.png)
+![ASAP7 Booth delay signed](../analysis/ilp_over_yosys_delay_asap7_signed_booth.png)
+![ASAP7 Booth power signed](../analysis/ilp_over_yosys_power_asap7_signed_booth.png)
 
 ## Timing best/worst per PDK (normalized delay)
 
@@ -60,34 +60,34 @@ The large worst-case ratios come from comparing Yosys Booth against ILP ripple-s
 ## Appendix: full plot set
 
 ### Nangate45 — Booth (unsigned)
-![Nangate45 Booth area unsigned](../runs/analysis/ilp_over_yosys_area_nangate45_unsigned_booth.png)
-![Nangate45 Booth delay unsigned](../runs/analysis/ilp_over_yosys_delay_nangate45_unsigned_booth.png)
-![Nangate45 Booth power unsigned](../runs/analysis/ilp_over_yosys_power_nangate45_unsigned_booth.png)
+![Nangate45 Booth area unsigned](../analysis/ilp_over_yosys_area_nangate45_unsigned_booth.png)
+![Nangate45 Booth delay unsigned](../analysis/ilp_over_yosys_delay_nangate45_unsigned_booth.png)
+![Nangate45 Booth power unsigned](../analysis/ilp_over_yosys_power_nangate45_unsigned_booth.png)
 
 ### Nangate45 — LowpowerBooth (signed)
-![Nangate45 LowpowerBooth area signed](../runs/analysis/ilp_over_yosys_area_nangate45_signed_lowpowerbooth.png)
-![Nangate45 LowpowerBooth delay signed](../runs/analysis/ilp_over_yosys_delay_nangate45_signed_lowpowerbooth.png)
-![Nangate45 LowpowerBooth power signed](../runs/analysis/ilp_over_yosys_power_nangate45_signed_lowpowerbooth.png)
+![Nangate45 LowpowerBooth area signed](../analysis/ilp_over_yosys_area_nangate45_signed_lowpowerbooth.png)
+![Nangate45 LowpowerBooth delay signed](../analysis/ilp_over_yosys_delay_nangate45_signed_lowpowerbooth.png)
+![Nangate45 LowpowerBooth power signed](../analysis/ilp_over_yosys_power_nangate45_signed_lowpowerbooth.png)
 
 ### Sky130HD — Booth (unsigned)
-![Sky130HD Booth area unsigned](../runs/analysis/ilp_over_yosys_area_sky130hd_unsigned_booth.png)
-![Sky130HD Booth delay unsigned](../runs/analysis/ilp_over_yosys_delay_sky130hd_unsigned_booth.png)
-![Sky130HD Booth power unsigned](../runs/analysis/ilp_over_yosys_power_sky130hd_unsigned_booth.png)
+![Sky130HD Booth area unsigned](../analysis/ilp_over_yosys_area_sky130hd_unsigned_booth.png)
+![Sky130HD Booth delay unsigned](../analysis/ilp_over_yosys_delay_sky130hd_unsigned_booth.png)
+![Sky130HD Booth power unsigned](../analysis/ilp_over_yosys_power_sky130hd_unsigned_booth.png)
 
 ### Sky130HD — LowpowerBooth (signed)
-![Sky130HD LowpowerBooth area signed](../runs/analysis/ilp_over_yosys_area_sky130hd_signed_lowpowerbooth.png)
-![Sky130HD LowpowerBooth delay signed](../runs/analysis/ilp_over_yosys_delay_sky130hd_signed_lowpowerbooth.png)
-![Sky130HD LowpowerBooth power signed](../runs/analysis/ilp_over_yosys_power_sky130hd_signed_lowpowerbooth.png)
+![Sky130HD LowpowerBooth area signed](../analysis/ilp_over_yosys_area_sky130hd_signed_lowpowerbooth.png)
+![Sky130HD LowpowerBooth delay signed](../analysis/ilp_over_yosys_delay_sky130hd_signed_lowpowerbooth.png)
+![Sky130HD LowpowerBooth power signed](../analysis/ilp_over_yosys_power_sky130hd_signed_lowpowerbooth.png)
 
 ### ASAP7 — Booth (unsigned)
-![ASAP7 Booth area unsigned](../runs/analysis/ilp_over_yosys_area_asap7_unsigned_booth.png)
-![ASAP7 Booth delay unsigned](../runs/analysis/ilp_over_yosys_delay_asap7_unsigned_booth.png)
-![ASAP7 Booth power unsigned](../runs/analysis/ilp_over_yosys_power_asap7_unsigned_booth.png)
+![ASAP7 Booth area unsigned](../analysis/ilp_over_yosys_area_asap7_unsigned_booth.png)
+![ASAP7 Booth delay unsigned](../analysis/ilp_over_yosys_delay_asap7_unsigned_booth.png)
+![ASAP7 Booth power unsigned](../analysis/ilp_over_yosys_power_asap7_unsigned_booth.png)
 
 ### ASAP7 — LowpowerBooth (signed)
-![ASAP7 LowpowerBooth area signed](../runs/analysis/ilp_over_yosys_area_asap7_signed_lowpowerbooth.png)
-![ASAP7 LowpowerBooth delay signed](../runs/analysis/ilp_over_yosys_delay_asap7_signed_lowpowerbooth.png)
-![ASAP7 LowpowerBooth power signed](../runs/analysis/ilp_over_yosys_power_asap7_signed_lowpowerbooth.png)
+![ASAP7 LowpowerBooth area signed](../analysis/ilp_over_yosys_area_asap7_signed_lowpowerbooth.png)
+![ASAP7 LowpowerBooth delay signed](../analysis/ilp_over_yosys_delay_asap7_signed_lowpowerbooth.png)
+![ASAP7 LowpowerBooth power signed](../analysis/ilp_over_yosys_power_asap7_signed_lowpowerbooth.png)
 
 ## Results and interpretation
 - ILP prefix CPAs (KoggeStone/Sklansky) generally beat Yosys Booth on delay across all three PDKs; area is often close on some wide signed Nangate45 cases.
@@ -103,19 +103,19 @@ To test the hypothesis that lowpower Booth savings trade off against delay/area,
 ### Normalized plots (ILP Normal / Yosys LowpowerBooth)
 
 #### Nangate45
-![Nangate45 ILP Normal vs Yosys LowpowerBooth area](../runs/analysis/ilp_normal_over_yosys_lowpower_area_nangate45_signed.png)
-![Nangate45 ILP Normal vs Yosys LowpowerBooth delay](../runs/analysis/ilp_normal_over_yosys_lowpower_delay_nangate45_signed.png)
-![Nangate45 ILP Normal vs Yosys LowpowerBooth power](../runs/analysis/ilp_normal_over_yosys_lowpower_power_nangate45_signed.png)
+![Nangate45 ILP Normal vs Yosys LowpowerBooth area](../analysis/ilp_normal_over_yosys_lowpower_area_nangate45_signed.png)
+![Nangate45 ILP Normal vs Yosys LowpowerBooth delay](../analysis/ilp_normal_over_yosys_lowpower_delay_nangate45_signed.png)
+![Nangate45 ILP Normal vs Yosys LowpowerBooth power](../analysis/ilp_normal_over_yosys_lowpower_power_nangate45_signed.png)
 
 #### Sky130HD
-![Sky130HD ILP Normal vs Yosys LowpowerBooth area](../runs/analysis/ilp_normal_over_yosys_lowpower_area_sky130hd_signed.png)
-![Sky130HD ILP Normal vs Yosys LowpowerBooth delay](../runs/analysis/ilp_normal_over_yosys_lowpower_delay_sky130hd_signed.png)
-![Sky130HD ILP Normal vs Yosys LowpowerBooth power](../runs/analysis/ilp_normal_over_yosys_lowpower_power_sky130hd_signed.png)
+![Sky130HD ILP Normal vs Yosys LowpowerBooth area](../analysis/ilp_normal_over_yosys_lowpower_area_sky130hd_signed.png)
+![Sky130HD ILP Normal vs Yosys LowpowerBooth delay](../analysis/ilp_normal_over_yosys_lowpower_delay_sky130hd_signed.png)
+![Sky130HD ILP Normal vs Yosys LowpowerBooth power](../analysis/ilp_normal_over_yosys_lowpower_power_sky130hd_signed.png)
 
 #### ASAP7
-![ASAP7 ILP Normal vs Yosys LowpowerBooth area](../runs/analysis/ilp_normal_over_yosys_lowpower_area_asap7_signed.png)
-![ASAP7 ILP Normal vs Yosys LowpowerBooth delay](../runs/analysis/ilp_normal_over_yosys_lowpower_delay_asap7_signed.png)
-![ASAP7 ILP Normal vs Yosys LowpowerBooth power](../runs/analysis/ilp_normal_over_yosys_lowpower_power_asap7_signed.png)
+![ASAP7 ILP Normal vs Yosys LowpowerBooth area](../analysis/ilp_normal_over_yosys_lowpower_area_asap7_signed.png)
+![ASAP7 ILP Normal vs Yosys LowpowerBooth delay](../analysis/ilp_normal_over_yosys_lowpower_delay_asap7_signed.png)
+![ASAP7 ILP Normal vs Yosys LowpowerBooth power](../analysis/ilp_normal_over_yosys_lowpower_power_asap7_signed.png)
 
 | PDK | Delay best/median/worst | Area best/median/worst | Power best/median/worst |
 | --- | --- | --- | --- |
@@ -133,5 +133,5 @@ Given these results, the lowpower Booth option does not outperform ILP Normal in
 ## References
 - Implementation details for compressor trees: `doc/compressor_tree/memo_about_compressor_tree.md`.
 - Sweep results and configs: `runs/multipliers/ppg_cpa_widths_4_32/` and `runs/multipliers/yosys_booth_widths_4_32/`.
-- Plot generator: `runs/analysis/compare_yosys_vs_ilp_booth.py`.
+- Plot generator: `analysis/compare_yosys_vs_ilp_booth.py`.
 - Y. J. Chang, Y. C. Cheng, S. C. Liao and C. H. Hsiao, "A Low Power Radix-4 Booth Multiplier With Pre-Encoded Mechanism," IEEE Access, vol. 8, pp. 114842-114853, 2020. (Local PDF in `papers/`, gitignored.)

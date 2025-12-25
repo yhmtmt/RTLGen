@@ -2,7 +2,7 @@
 """
 Compare ILP Booth multipliers vs Yosys Booth (and lowpower) by normalizing ILP metrics to Yosys baseline per matching config (platform, width, signed, CPA where applicable).
 For Yosys lowpower (signed-only), compare against ILP signed designs.
-Outputs plots under runs/analysis/ comparing area/delay/power.
+Outputs plots under analysis/ comparing area/delay/power.
 """
 import csv
 from collections import defaultdict
@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 ILP_ROOT = Path('runs/multipliers/ppg_cpa_widths_4_32')
 YOSYS_ROOT = Path('runs/multipliers/yosys_booth_widths_4_32')
-OUT_DIR = Path('runs/analysis')
+OUT_DIR = Path('analysis')
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 WIDTHS = [4,8,16,32]

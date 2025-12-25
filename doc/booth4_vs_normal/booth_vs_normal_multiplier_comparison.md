@@ -39,34 +39,34 @@ For each width and platform, Booth4 metrics are normalized to the matching Norma
 - Power: Trends mirror delay/area; Booth4 only occasionally helps power on Nangate45, often worse on ASAP7.
 
 Nangate45 — Area/Delay/Power (signed):
-![Nangate45 area s](../../runs/analysis/area_normalized_nangate45_signed.png)
-![Nangate45 delay s](../../runs/analysis/delay_normalized_nangate45_signed.png)
-![Nangate45 power s](../../runs/analysis/power_normalized_nangate45_signed.png)
+![Nangate45 area s](../../analysis/area_normalized_nangate45_signed.png)
+![Nangate45 delay s](../../analysis/delay_normalized_nangate45_signed.png)
+![Nangate45 power s](../../analysis/power_normalized_nangate45_signed.png)
 
 Nangate45 — Area/Delay/Power (unsigned):
-![Nangate45 area u](../../runs/analysis/area_normalized_nangate45_unsigned.png)
-![Nangate45 delay u](../../runs/analysis/delay_normalized_nangate45_unsigned.png)
-![Nangate45 power u](../../runs/analysis/power_normalized_nangate45_unsigned.png)
+![Nangate45 area u](../../analysis/area_normalized_nangate45_unsigned.png)
+![Nangate45 delay u](../../analysis/delay_normalized_nangate45_unsigned.png)
+![Nangate45 power u](../../analysis/power_normalized_nangate45_unsigned.png)
 
 Sky130HD — Area/Delay/Power (signed):
-![Sky130HD area s](../../runs/analysis/area_normalized_sky130hd_signed.png)
-![Sky130HD delay s](../../runs/analysis/delay_normalized_sky130hd_signed.png)
-![Sky130HD power s](../../runs/analysis/power_normalized_sky130hd_signed.png)
+![Sky130HD area s](../../analysis/area_normalized_sky130hd_signed.png)
+![Sky130HD delay s](../../analysis/delay_normalized_sky130hd_signed.png)
+![Sky130HD power s](../../analysis/power_normalized_sky130hd_signed.png)
 
 Sky130HD — Area/Delay/Power (unsigned):
-![Sky130HD area u](../../runs/analysis/area_normalized_sky130hd_unsigned.png)
-![Sky130HD delay u](../../runs/analysis/delay_normalized_sky130hd_unsigned.png)
-![Sky130HD power u](../../runs/analysis/power_normalized_sky130hd_unsigned.png)
+![Sky130HD area u](../../analysis/area_normalized_sky130hd_unsigned.png)
+![Sky130HD delay u](../../analysis/delay_normalized_sky130hd_unsigned.png)
+![Sky130HD power u](../../analysis/power_normalized_sky130hd_unsigned.png)
 
 ASAP7 — Area/Delay/Power (signed):
-![ASAP7 area s](../../runs/analysis/area_normalized_asap7_signed.png)
-![ASAP7 delay s](../../runs/analysis/delay_normalized_asap7_signed.png)
-![ASAP7 power s](../../runs/analysis/power_normalized_asap7_signed.png)
+![ASAP7 area s](../../analysis/area_normalized_asap7_signed.png)
+![ASAP7 delay s](../../analysis/delay_normalized_asap7_signed.png)
+![ASAP7 power s](../../analysis/power_normalized_asap7_signed.png)
 
 ASAP7 — Area/Delay/Power (unsigned):
-![ASAP7 area u](../../runs/analysis/area_normalized_asap7_unsigned.png)
-![ASAP7 delay u](../../runs/analysis/delay_normalized_asap7_unsigned.png)
-![ASAP7 power u](../../runs/analysis/power_normalized_asap7_unsigned.png)
+![ASAP7 area u](../../analysis/area_normalized_asap7_unsigned.png)
+![ASAP7 delay u](../../analysis/delay_normalized_asap7_unsigned.png)
+![ASAP7 power u](../../analysis/power_normalized_asap7_unsigned.png)
 
 ## References
 
