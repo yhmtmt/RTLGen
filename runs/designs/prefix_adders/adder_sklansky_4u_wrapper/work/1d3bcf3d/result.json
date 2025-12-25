@@ -1,0 +1,28 @@
+{
+  "config_hash": "a466bc85f0e6",
+  "config_path": "/workspaces/RTLGen/runs/campaigns/prefix_adders/configs/config_adder_sklansky_unsigned_4bit.json",
+  "design": "adder_sklansky_4u_wrapper",
+  "error": "Command '['make', 'DESIGN_CONFIG=/orfs/flow/designs/nangate45/adder_sklansky_4u_wrapper/config.mk', 'TAG=prefix_adders_nangate45_highutil_da64be35', 'SDC_FILE=/workspaces/RTLGen/runs/designs/prefix_adders/adder_sklansky_4u_wrapper/work/1d3bcf3d/constraint.sdc', 'CLOCK_PERIOD=2.5', 'CORE_UTILIZATION=60', 'PLACE_DENSITY=0.68', 'TAG=prefix_adders_nangate45_highutil_da64be35']' returned non-zero exit status 2.",
+  "flow_params": {
+    "CLOCK_PERIOD": 2.5,
+    "CORE_UTILIZATION": 60,
+    "PLACE_DENSITY": 0.68,
+    "TAG": "prefix_adders_nangate45_highutil_da64be35"
+  },
+  "metrics": {
+    "critical_path_ns": 0.1659,
+    "die_area": 926.289225,
+    "total_power_mw": 6.09e-05
+  },
+  "module": "adder_sklansky_4u",
+  "param_hash": "1d3bcf3d",
+  "platform": "nangate45",
+  "reports": {
+    "def": "/orfs/flow/results/nangate45/adder_sklansky_4u_wrapper/base/6_final.def",
+    "finish": "/orfs/flow/reports/nangate45/adder_sklansky_4u_wrapper/base/6_finish.rpt"
+  },
+  "result_path": "/workspaces/RTLGen/runs/designs/prefix_adders/adder_sklansky_4u_wrapper/work/1d3bcf3d/result.json",
+  "status": "failed",
+  "tag": "prefix_adders_nangate45_highutil_da64be35",
+  "timestamp": "2025-12-18T00:55:02.083860Z"
+}

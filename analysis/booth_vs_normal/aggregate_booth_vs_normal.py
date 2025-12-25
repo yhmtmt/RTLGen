@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-BASE = Path(__file__).resolve().parents[2] / "multipliers" / "ppg_cpa_widths_4_32"
+BASE = Path(__file__).resolve().parents[2] / "runs" / "campaigns" / "multipliers" / "ppg_cpa_widths_4_32"
 PLATFORMS = ["nangate45", "sky130hd", "asap7"]
 
 

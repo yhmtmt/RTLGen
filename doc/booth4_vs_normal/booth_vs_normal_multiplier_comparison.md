@@ -16,7 +16,7 @@ Subsequently, many papers have been published, but I have not found any that dir
 
 ## Evaluation
 
-We implemented both a modified Booth and a normal partial product generator [10] and swept them with OpenROAD across three PDKs (Nangate45, Sky130HD, ASAP7). Each design uses an ILP-generated compressor tree [9] and a carry-propagate adder (CPA) chosen from Ripple, Brent-Kung, Kogge-Stone, or Sklansky. Signed/unsigned variants and widths 4/8/16/32 are covered. Synthesis/PnR runs include low-util and high-util floorplans; summaries live under `runs/multipliers/ppg_cpa_widths_4_32/` (best area/delay/power tables).
+We implemented both a modified Booth and a normal partial product generator [10] and swept them with OpenROAD across three PDKs (Nangate45, Sky130HD, ASAP7). Each design uses an ILP-generated compressor tree [9] and a carry-propagate adder (CPA) chosen from Ripple, Brent-Kung, Kogge-Stone, or Sklansky. Signed/unsigned variants and widths 4/8/16/32 are covered. Synthesis/PnR runs include low-util and high-util floorplans; summaries live under `runs/campaigns/multipliers/ppg_cpa_widths_4_32/` (best area/delay/power tables).
 
 Power numbers come from OpenROAD reports (no glitch modeling), so treat them as relative.
 

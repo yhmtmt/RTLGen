@@ -1,0 +1,27 @@
+{
+  "config_hash": "d37412aaeb37",
+  "config_path": "/workspaces/RTLGen/runs/campaigns/multipliers/ppg_cpa_widths_4_32/configs/config_mult4u_normal_sklansky.json",
+  "design": "mult4u_normal_sklansky_wrapper",
+  "flow_params": {
+    "CLOCK_PERIOD": 2.5,
+    "CORE_UTILIZATION": 10,
+    "PLACE_DENSITY": 0.55,
+    "TAG": "mult_ppg_cpa_w4_32_nangate45_40523b9d"
+  },
+  "metrics": {
+    "critical_path_ns": 0.1717,
+    "die_area": 1670.3569,
+    "total_power_mw": 9.55e-05
+  },
+  "module": "mult4u_normal_sklansky",
+  "param_hash": "231d5c19",
+  "platform": "nangate45",
+  "reports": {
+    "def": "/orfs/flow/results/nangate45/mult4u_normal_sklansky_wrapper/base/6_final.def",
+    "finish": "/orfs/flow/reports/nangate45/mult4u_normal_sklansky_wrapper/base/6_finish.rpt"
+  },
+  "result_path": "/workspaces/RTLGen/runs/designs/multipliers/mult4u_normal_sklansky_wrapper/work/231d5c19/result.json",
+  "status": "ok",
+  "tag": "mult_ppg_cpa_w4_32_nangate45_40523b9d",
+  "timestamp": "2025-12-17T06:42:06.354583Z"
+}

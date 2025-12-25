@@ -1,0 +1,27 @@
+{
+  "config_hash": "da50afbaa51c",
+  "config_path": "/workspaces/RTLGen/runs/campaigns/multipliers/yosys_booth_widths_4_32/configs/config_mult32s_lowpowerbooth.json",
+  "design": "yosys_mult32s_lowpowerbooth_wrapper",
+  "flow_params": {
+    "CLOCK_PERIOD": 1.0,
+    "CORE_UTILIZATION": 60,
+    "PLACE_DENSITY": 0.68,
+    "TAG": "yosys_mult_w4_32_asap7_highutil_c51f6982"
+  },
+  "metrics": {
+    "critical_path_ns": 2.9815061000000003,
+    "die_area": 863.301924,
+    "total_power_mw": 0.681
+  },
+  "module": "yosys_mult32s_lowpowerbooth",
+  "param_hash": "d1f0e14b",
+  "platform": "asap7",
+  "reports": {
+    "def": "/orfs/flow/results/asap7/yosys_mult32s_lowpowerbooth_wrapper/base/6_final.def",
+    "finish": "/orfs/flow/reports/asap7/yosys_mult32s_lowpowerbooth_wrapper/base/6_finish.rpt"
+  },
+  "result_path": "/workspaces/RTLGen/runs/designs/multipliers/yosys_mult32s_lowpowerbooth_wrapper/work/d1f0e14b/result.json",
+  "status": "ok",
+  "tag": "yosys_mult_w4_32_asap7_highutil_c51f6982",
+  "timestamp": "2025-12-19T11:42:56.609058Z"
+}

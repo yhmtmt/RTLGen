@@ -1,0 +1,27 @@
+{
+  "config_hash": "08303c2ba2d3",
+  "config_path": "/workspaces/RTLGen/runs/campaigns/multipliers/yosys_booth_widths_4_32/configs/config_mult32u_booth.json",
+  "design": "yosys_mult32u_booth_wrapper",
+  "flow_params": {
+    "CLOCK_PERIOD": 2.5,
+    "CORE_UTILIZATION": 10,
+    "PLACE_DENSITY": 0.55,
+    "TAG": "yosys_mult_w4_32_nangate45_40523b9d"
+  },
+  "metrics": {
+    "critical_path_ns": 0.2929,
+    "die_area": 70841.1456,
+    "total_power_mw": 0.0317
+  },
+  "module": "yosys_mult32u_booth",
+  "param_hash": "b67911f5",
+  "platform": "nangate45",
+  "reports": {
+    "def": "/orfs/flow/results/nangate45/yosys_mult32u_booth_wrapper/base/6_final.def",
+    "finish": "/orfs/flow/reports/nangate45/yosys_mult32u_booth_wrapper/base/6_finish.rpt"
+  },
+  "result_path": "/workspaces/RTLGen/runs/designs/multipliers/yosys_mult32u_booth_wrapper/work/b67911f5/result.json",
+  "status": "ok",
+  "tag": "yosys_mult_w4_32_nangate45_40523b9d",
+  "timestamp": "2025-12-19T08:50:50.143198Z"
+}

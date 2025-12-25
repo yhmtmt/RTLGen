@@ -1,0 +1,27 @@
+{
+  "config_hash": "b381d52b331d",
+  "config_path": "/workspaces/RTLGen/runs/campaigns/prefix_adders/configs/config_adder_ripple_unsigned_64bit.json",
+  "design": "adder_ripple_64u_wrapper",
+  "flow_params": {
+    "CLOCK_PERIOD": 6.0,
+    "CORE_UTILIZATION": 50,
+    "PLACE_DENSITY": 0.65,
+    "TAG": "prefix_adders_sky130hd_highutil_8c56d3b0"
+  },
+  "metrics": {
+    "critical_path_ns": 23.114,
+    "die_area": 10722.6025,
+    "total_power_mw": 0.00323
+  },
+  "module": "adder_ripple_64u",
+  "param_hash": "4e4ce5c1",
+  "platform": "sky130hd",
+  "reports": {
+    "def": "/orfs/flow/results/sky130hd/adder_ripple_64u_wrapper/base/6_final.def",
+    "finish": "/orfs/flow/reports/sky130hd/adder_ripple_64u_wrapper/base/6_finish.rpt"
+  },
+  "result_path": "/workspaces/RTLGen/runs/designs/prefix_adders/adder_ripple_64u_wrapper/work/4e4ce5c1/result.json",
+  "status": "ok",
+  "tag": "prefix_adders_sky130hd_highutil_8c56d3b0",
+  "timestamp": "2025-12-18T01:13:27.613058Z"
+}

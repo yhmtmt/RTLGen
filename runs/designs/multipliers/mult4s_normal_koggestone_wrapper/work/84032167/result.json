@@ -1,0 +1,28 @@
+{
+  "config_hash": "9095db8d92a0",
+  "config_path": "/workspaces/RTLGen/runs/campaigns/multipliers/ppg_cpa_widths_4_32/configs/config_mult4s_normal_koggestone.json",
+  "design": "mult4s_normal_koggestone_wrapper",
+  "error": "Command '['make', 'DESIGN_CONFIG=/orfs/flow/designs/nangate45/mult4s_normal_koggestone_wrapper/config.mk', 'TAG=mult_ppg_cpa_w4_32_nangate45_highutil_da64be35', 'SDC_FILE=/workspaces/RTLGen/runs/designs/multipliers/mult4s_normal_koggestone_wrapper/work/84032167/constraint.sdc', 'CLOCK_PERIOD=2.5', 'CORE_UTILIZATION=60', 'PLACE_DENSITY=0.68', 'TAG=mult_ppg_cpa_w4_32_nangate45_highutil_da64be35']' returned non-zero exit status 2.",
+  "flow_params": {
+    "CLOCK_PERIOD": 2.5,
+    "CORE_UTILIZATION": 60,
+    "PLACE_DENSITY": 0.68,
+    "TAG": "mult_ppg_cpa_w4_32_nangate45_highutil_da64be35"
+  },
+  "metrics": {
+    "critical_path_ns": 0.1719,
+    "die_area": 1773.673225,
+    "total_power_mw": 0.000115
+  },
+  "module": "mult4s_normal_koggestone",
+  "param_hash": "84032167",
+  "platform": "nangate45",
+  "reports": {
+    "def": "/orfs/flow/results/nangate45/mult4s_normal_koggestone_wrapper/base/6_final.def",
+    "finish": "/orfs/flow/reports/nangate45/mult4s_normal_koggestone_wrapper/base/6_finish.rpt"
+  },
+  "result_path": "/workspaces/RTLGen/runs/designs/multipliers/mult4s_normal_koggestone_wrapper/work/84032167/result.json",
+  "status": "failed",
+  "tag": "mult_ppg_cpa_w4_32_nangate45_highutil_da64be35",
+  "timestamp": "2025-12-18T05:51:35.016285Z"
+}

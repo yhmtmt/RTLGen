@@ -1,0 +1,27 @@
+{
+  "config_hash": "f37725d3fa8a",
+  "config_path": "/workspaces/RTLGen/runs/campaigns/multipliers/ppg_cpa_widths_4_32/configs/config_mult8s_normal_ripple.json",
+  "design": "mult8s_normal_ripple_wrapper",
+  "flow_params": {
+    "CLOCK_PERIOD": 1.0,
+    "CORE_UTILIZATION": 60,
+    "PLACE_DENSITY": 0.68,
+    "TAG": "mult_ppg_cpa_w4_32_asap7_highutil_c51f6982"
+  },
+  "metrics": {
+    "critical_path_ns": 0.6076206,
+    "die_area": 88.7364,
+    "total_power_mw": 0.118
+  },
+  "module": "mult8s_normal_ripple",
+  "param_hash": "a3bdd812",
+  "platform": "asap7",
+  "reports": {
+    "def": "/orfs/flow/results/asap7/mult8s_normal_ripple_wrapper/base/6_final.def",
+    "finish": "/orfs/flow/reports/asap7/mult8s_normal_ripple_wrapper/base/6_finish.rpt"
+  },
+  "result_path": "/workspaces/RTLGen/runs/designs/multipliers/mult8s_normal_ripple_wrapper/work/a3bdd812/result.json",
+  "status": "ok",
+  "tag": "mult_ppg_cpa_w4_32_asap7_highutil_c51f6982",
+  "timestamp": "2025-12-18T23:48:29.132695Z"
+}

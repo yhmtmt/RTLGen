@@ -1,0 +1,27 @@
+{
+  "config_hash": "30e31736f8a0",
+  "config_path": "/workspaces/RTLGen/runs/campaigns/prefix_adders/configs/kogge32.json",
+  "design": "adder_koggestone_32u_wrapper",
+  "flow_params": {
+    "CLOCK_PERIOD": 1.0,
+    "CORE_UTILIZATION": 60,
+    "PLACE_DENSITY": 0.68,
+    "TAG": "prefix_adders_asap7_highutil_c51f6982"
+  },
+  "metrics": {
+    "critical_path_ns": 0.3326728,
+    "die_area": 142.062561,
+    "total_power_mw": 0.263
+  },
+  "module": "adder_koggestone_32u",
+  "param_hash": "cf19db5a",
+  "platform": "asap7",
+  "reports": {
+    "def": "/orfs/flow/results/asap7/adder_koggestone_32u_wrapper/base/6_final.def",
+    "finish": "/orfs/flow/reports/asap7/adder_koggestone_32u_wrapper/base/6_finish.rpt"
+  },
+  "result_path": "/workspaces/RTLGen/runs/designs/prefix_adders/adder_koggestone_32u_wrapper/work/cf19db5a/result.json",
+  "status": "ok",
+  "tag": "prefix_adders_asap7_highutil_c51f6982",
+  "timestamp": "2025-12-18T00:40:07.610636Z"
+}

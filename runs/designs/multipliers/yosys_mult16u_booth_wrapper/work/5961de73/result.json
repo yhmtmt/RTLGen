@@ -1,0 +1,27 @@
+{
+  "config_hash": "58b50c293990",
+  "config_path": "/workspaces/RTLGen/runs/campaigns/multipliers/yosys_booth_widths_4_32/configs/config_mult16u_booth.json",
+  "design": "yosys_mult16u_booth_wrapper",
+  "flow_params": {
+    "CLOCK_PERIOD": 6.0,
+    "CORE_UTILIZATION": 10,
+    "PLACE_DENSITY": 0.55,
+    "TAG": "yosys_mult_w4_32_sky130hd_70e18859"
+  },
+  "metrics": {
+    "critical_path_ns": 6.0337,
+    "die_area": 91216.0804,
+    "total_power_mw": 0.00713
+  },
+  "module": "yosys_mult16u_booth",
+  "param_hash": "5961de73",
+  "platform": "sky130hd",
+  "reports": {
+    "def": "/orfs/flow/results/sky130hd/yosys_mult16u_booth_wrapper/base/6_final.def",
+    "finish": "/orfs/flow/reports/sky130hd/yosys_mult16u_booth_wrapper/base/6_finish.rpt"
+  },
+  "result_path": "/workspaces/RTLGen/runs/designs/multipliers/yosys_mult16u_booth_wrapper/work/5961de73/result.json",
+  "status": "ok",
+  "tag": "yosys_mult_w4_32_sky130hd_70e18859",
+  "timestamp": "2025-12-19T08:58:05.670887Z"
+}

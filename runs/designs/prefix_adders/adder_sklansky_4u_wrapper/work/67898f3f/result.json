@@ -1,0 +1,27 @@
+{
+  "config_hash": "a466bc85f0e6",
+  "config_path": "/workspaces/RTLGen/runs/campaigns/prefix_adders/configs/config_adder_sklansky_unsigned_4bit.json",
+  "design": "adder_sklansky_4u_wrapper",
+  "flow_params": {
+    "CLOCK_PERIOD": 1.0,
+    "CORE_UTILIZATION": 8,
+    "PLACE_DENSITY": 0.5,
+    "TAG": "prefix_adders_asap7_relaxed_a96d1e8e"
+  },
+  "metrics": {
+    "critical_path_ns": 0.1749153,
+    "die_area": 108.7849,
+    "total_power_mw": 0.0335
+  },
+  "module": "adder_sklansky_4u",
+  "param_hash": "67898f3f",
+  "platform": "asap7",
+  "reports": {
+    "def": "/orfs/flow/results/asap7/adder_sklansky_4u_wrapper/base/6_final.def",
+    "finish": "/orfs/flow/reports/asap7/adder_sklansky_4u_wrapper/base/6_finish.rpt"
+  },
+  "result_path": "/workspaces/RTLGen/runs/designs/prefix_adders/adder_sklansky_4u_wrapper/work/67898f3f/result.json",
+  "status": "ok",
+  "tag": "prefix_adders_asap7_relaxed_a96d1e8e",
+  "timestamp": "2025-12-16T02:33:51.036613Z"
+}

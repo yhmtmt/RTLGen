@@ -1,0 +1,27 @@
+{
+  "config_hash": "c03fe22eea53",
+  "config_path": "/workspaces/RTLGen/runs/campaigns/multipliers/ppg_cpa_widths_4_32/configs/config_mult16u_booth4_ripple.json",
+  "design": "mult16u_booth4_ripple_wrapper",
+  "flow_params": {
+    "CLOCK_PERIOD": 6.0,
+    "CORE_UTILIZATION": 50,
+    "PLACE_DENSITY": 0.65,
+    "TAG": "mult_ppg_cpa_w4_32_sky130hd_highutil_8c56d3b0"
+  },
+  "metrics": {
+    "critical_path_ns": 11.9331,
+    "die_area": 17895.750625,
+    "total_power_mw": 0.00444
+  },
+  "module": "mult16u_booth4_ripple",
+  "param_hash": "ee6c4432",
+  "platform": "sky130hd",
+  "reports": {
+    "def": "/orfs/flow/results/sky130hd/mult16u_booth4_ripple_wrapper/base/6_final.def",
+    "finish": "/orfs/flow/reports/sky130hd/mult16u_booth4_ripple_wrapper/base/6_finish.rpt"
+  },
+  "result_path": "/workspaces/RTLGen/runs/designs/multipliers/mult16u_booth4_ripple_wrapper/work/ee6c4432/result.json",
+  "status": "ok",
+  "tag": "mult_ppg_cpa_w4_32_sky130hd_highutil_8c56d3b0",
+  "timestamp": "2025-12-18T10:29:06.625036Z"
+}

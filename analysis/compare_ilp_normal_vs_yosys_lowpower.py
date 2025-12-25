@@ -9,8 +9,8 @@ from collections import defaultdict
 from pathlib import Path
 import matplotlib.pyplot as plt
 
-ILP_ROOT = Path('runs/multipliers/ppg_cpa_widths_4_32')
-YOSYS_ROOT = Path('runs/multipliers/yosys_booth_widths_4_32')
+ILP_ROOT = Path('runs/campaigns/multipliers/ppg_cpa_widths_4_32')
+YOSYS_ROOT = Path('runs/campaigns/multipliers/yosys_booth_widths_4_32')
 OUT_DIR = Path('analysis')
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 

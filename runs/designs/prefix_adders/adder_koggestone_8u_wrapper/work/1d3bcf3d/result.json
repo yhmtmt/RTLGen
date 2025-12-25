@@ -1,0 +1,27 @@
+{
+  "config_hash": "fc1b6b0fbd5a",
+  "config_path": "/workspaces/RTLGen/runs/campaigns/prefix_adders/configs/config_adder_koggestone_unsigned_8bit.json",
+  "design": "adder_koggestone_8u_wrapper",
+  "flow_params": {
+    "CLOCK_PERIOD": 2.5,
+    "CORE_UTILIZATION": 60,
+    "PLACE_DENSITY": 0.68,
+    "TAG": "prefix_adders_nangate45_highutil_da64be35"
+  },
+  "metrics": {
+    "critical_path_ns": 0.1756,
+    "die_area": 399.6001,
+    "total_power_mw": 0.000119
+  },
+  "module": "adder_koggestone_8u",
+  "param_hash": "1d3bcf3d",
+  "platform": "nangate45",
+  "reports": {
+    "def": "/orfs/flow/results/nangate45/adder_koggestone_8u_wrapper/base/6_final.def",
+    "finish": "/orfs/flow/reports/nangate45/adder_koggestone_8u_wrapper/base/6_finish.rpt"
+  },
+  "result_path": "/workspaces/RTLGen/runs/designs/prefix_adders/adder_koggestone_8u_wrapper/work/1d3bcf3d/result.json",
+  "status": "ok",
+  "tag": "prefix_adders_nangate45_highutil_da64be35",
+  "timestamp": "2025-12-18T00:50:45.823118Z"
+}

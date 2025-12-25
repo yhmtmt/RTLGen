@@ -1,0 +1,27 @@
+{
+  "config_hash": "41f87857569c",
+  "config_path": "/workspaces/RTLGen/runs/campaigns/prefix_adders/configs/config_adder_brentkung_unsigned_32bit.json",
+  "design": "adder_brentkung_32u_wrapper",
+  "flow_params": {
+    "CLOCK_PERIOD": 2.5,
+    "CORE_UTILIZATION": 50,
+    "PLACE_DENSITY": 0.68,
+    "TAG": "prefix_adders_nangate45_highutil_87b48795"
+  },
+  "metrics": {
+    "critical_path_ns": 0.1953,
+    "die_area": 1419.7824,
+    "total_power_mw": 0.000433
+  },
+  "module": "adder_brentkung_32u",
+  "param_hash": "8fb1f207",
+  "platform": "nangate45",
+  "reports": {
+    "def": "/orfs/flow/results/nangate45/adder_brentkung_32u_wrapper/base/6_final.def",
+    "finish": "/orfs/flow/reports/nangate45/adder_brentkung_32u_wrapper/base/6_finish.rpt"
+  },
+  "result_path": "/workspaces/RTLGen/runs/designs/prefix_adders/adder_brentkung_32u_wrapper/work/8fb1f207/result.json",
+  "status": "ok",
+  "tag": "prefix_adders_nangate45_highutil_87b48795",
+  "timestamp": "2025-12-18T00:46:54.581156Z"
+}

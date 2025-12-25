@@ -1,0 +1,24 @@
+{
+  "config_hash": "64076f40e847",
+  "config_path": "/workspaces/RTLGen/runs/campaigns/prefix_adders/configs/config_adder_ripple_unsigned_4bit.json",
+  "design": "adder_ripple_4u_wrapper",
+  "error": "Command '['make', 'DESIGN_CONFIG=/orfs/flow/designs/nangate45/adder_ripple_4u_wrapper/config.mk', 'TAG=prefix_adders_nangate45_698573b1', 'SDC_FILE=/workspaces/RTLGen/runs/designs/prefix_adders/adder_ripple_4u_wrapper/work/d42f7319/constraint.sdc', 'CLOCK_PERIOD=2.5', 'CORE_UTILIZATION=30', 'PLACE_DENSITY=0.55', 'TAG=prefix_adders_nangate45_698573b1']' returned non-zero exit status 2.",
+  "flow_params": {
+    "CLOCK_PERIOD": 2.5,
+    "CORE_UTILIZATION": 30,
+    "PLACE_DENSITY": 0.55,
+    "TAG": "prefix_adders_nangate45_698573b1"
+  },
+  "metrics": {},
+  "module": "adder_ripple_4u",
+  "param_hash": "d42f7319",
+  "platform": "nangate45",
+  "reports": {
+    "def": "/orfs/flow/results/nangate45/adder_ripple_4u_wrapper/base/6_final.def",
+    "finish": "/orfs/flow/reports/nangate45/adder_ripple_4u_wrapper/base/6_finish.rpt"
+  },
+  "result_path": "/workspaces/RTLGen/runs/designs/prefix_adders/adder_ripple_4u_wrapper/work/d42f7319/result.json",
+  "status": "failed",
+  "tag": "prefix_adders_nangate45_698573b1",
+  "timestamp": "2025-12-15T07:36:26.208542Z"
+}

@@ -18,8 +18,8 @@ This note compares the current RTLGen ILP-based Booth4 multiplier against Yosys'
 - The Yosys manual attributes `booth -lowpower` to the pre-encoded low-power radix-4 Booth mechanism from Chang et al. (2020). A local copy of the paper is kept under `papers/` (gitignored).
 
 ## Evaluation setup
-- ILP runs are from `runs/multipliers/ppg_cpa_widths_4_32`.
-- Yosys runs are from `runs/multipliers/yosys_booth_widths_4_32`.
+- ILP runs are from `runs/campaigns/multipliers/ppg_cpa_widths_4_32`.
+- Yosys runs are from `runs/campaigns/multipliers/yosys_booth_widths_4_32`.
 - Normalization script: `analysis/compare_yosys_vs_ilp_booth.py`.
 - Area normalization uses `best_area_highutil.csv` (dense floorplans).
 - Delay and power normalization use `best_delay_all.csv` and `best_power_all.csv` (best across utilization points).
@@ -132,6 +132,6 @@ Given these results, the lowpower Booth option does not outperform ILP Normal in
 
 ## References
 - Implementation details for compressor trees: `doc/compressor_tree/memo_about_compressor_tree.md`.
-- Sweep results and configs: `runs/multipliers/ppg_cpa_widths_4_32/` and `runs/multipliers/yosys_booth_widths_4_32/`.
+- Sweep results and configs: `runs/campaigns/multipliers/ppg_cpa_widths_4_32/` and `runs/campaigns/multipliers/yosys_booth_widths_4_32/`.
 - Plot generator: `analysis/compare_yosys_vs_ilp_booth.py`.
 - Y. J. Chang, Y. C. Cheng, S. C. Liao and C. H. Hsiao, "A Low Power Radix-4 Booth Multiplier With Pre-Encoded Mechanism," IEEE Access, vol. 8, pp. 114842-114853, 2020. (Local PDF in `papers/`, gitignored.)

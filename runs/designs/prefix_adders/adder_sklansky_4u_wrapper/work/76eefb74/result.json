@@ -1,0 +1,28 @@
+{
+  "config_hash": "a466bc85f0e6",
+  "config_path": "/workspaces/RTLGen/runs/campaigns/prefix_adders/configs/config_adder_sklansky_unsigned_4bit.json",
+  "design": "adder_sklansky_4u_wrapper",
+  "error": "Command '['make', 'DESIGN_CONFIG=/orfs/flow/designs/sky130hd/adder_sklansky_4u_wrapper/config.mk', 'TAG=prefix_adders_sky130hd_highutil_8de86181', 'SDC_FILE=/workspaces/RTLGen/runs/designs/prefix_adders/adder_sklansky_4u_wrapper/work/76eefb74/constraint.sdc', 'CLOCK_PERIOD=6.0', 'CORE_UTILIZATION=40', 'PLACE_DENSITY=0.65', 'TAG=prefix_adders_sky130hd_highutil_8de86181']' returned non-zero exit status 2.",
+  "flow_params": {
+    "CLOCK_PERIOD": 6.0,
+    "CORE_UTILIZATION": 40,
+    "PLACE_DENSITY": 0.65,
+    "TAG": "prefix_adders_sky130hd_highutil_8de86181"
+  },
+  "metrics": {
+    "critical_path_ns": 1.3372,
+    "die_area": 4970.25,
+    "total_power_mw": 0.000159
+  },
+  "module": "adder_sklansky_4u",
+  "param_hash": "76eefb74",
+  "platform": "sky130hd",
+  "reports": {
+    "def": "/orfs/flow/results/sky130hd/adder_sklansky_4u_wrapper/base/6_final.def",
+    "finish": "/orfs/flow/reports/sky130hd/adder_sklansky_4u_wrapper/base/6_finish.rpt"
+  },
+  "result_path": "/workspaces/RTLGen/runs/designs/prefix_adders/adder_sklansky_4u_wrapper/work/76eefb74/result.json",
+  "status": "failed",
+  "tag": "prefix_adders_sky130hd_highutil_8de86181",
+  "timestamp": "2025-12-18T01:20:04.192043Z"
+}

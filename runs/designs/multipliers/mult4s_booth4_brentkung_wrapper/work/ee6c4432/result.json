@@ -1,0 +1,27 @@
+{
+  "config_hash": "a447c1bd3594",
+  "config_path": "/workspaces/RTLGen/runs/campaigns/multipliers/ppg_cpa_widths_4_32/configs/config_mult4s_booth4_brentkung.json",
+  "design": "mult4s_booth4_brentkung_wrapper",
+  "flow_params": {
+    "CLOCK_PERIOD": 6.0,
+    "CORE_UTILIZATION": 50,
+    "PLACE_DENSITY": 0.65,
+    "TAG": "mult_ppg_cpa_w4_32_sky130hd_highutil_8c56d3b0"
+  },
+  "metrics": {
+    "critical_path_ns": 3.9163,
+    "die_area": 1910.127025,
+    "total_power_mw": 0.000338
+  },
+  "module": "mult4s_booth4_brentkung",
+  "param_hash": "ee6c4432",
+  "platform": "sky130hd",
+  "reports": {
+    "def": "/orfs/flow/results/sky130hd/mult4s_booth4_brentkung_wrapper/base/6_final.def",
+    "finish": "/orfs/flow/reports/sky130hd/mult4s_booth4_brentkung_wrapper/base/6_finish.rpt"
+  },
+  "result_path": "/workspaces/RTLGen/runs/designs/multipliers/mult4s_booth4_brentkung_wrapper/work/ee6c4432/result.json",
+  "status": "ok",
+  "tag": "mult_ppg_cpa_w4_32_sky130hd_highutil_8c56d3b0",
+  "timestamp": "2025-12-18T16:15:33.386480Z"
+}

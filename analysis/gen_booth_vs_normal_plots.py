@@ -5,9 +5,9 @@ across CPAs and platforms. Metrics are normalized per width/signedness to the
 Normal + Ripple baseline for that platform.
 
 Inputs (already in the repo):
-- runs/multipliers/ppg_cpa_widths_4_32/best_area_highutil.csv
-- runs/multipliers/ppg_cpa_widths_4_32/best_delay_all.csv
-- runs/multipliers/ppg_cpa_widths_4_32/best_power_all.csv
+- runs/campaigns/multipliers/ppg_cpa_widths_4_32/best_area_highutil.csv
+- runs/campaigns/multipliers/ppg_cpa_widths_4_32/best_delay_all.csv
+- runs/campaigns/multipliers/ppg_cpa_widths_4_32/best_power_all.csv
 
 Outputs (written next to this script):
 - area_normalized_<platform>.png
@@ -21,7 +21,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 
-ROOT = Path(__file__).resolve().parents[1] / "multipliers" / "ppg_cpa_widths_4_32"
+ROOT = Path(__file__).resolve().parents[1] / "runs" / "campaigns" / "multipliers" / "ppg_cpa_widths_4_32"
 OUT_DIR = Path(__file__).resolve().parent
 
 AREA_FILE = ROOT / "best_area_highutil.csv"
