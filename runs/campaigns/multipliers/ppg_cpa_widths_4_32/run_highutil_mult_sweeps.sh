@@ -7,6 +7,7 @@ set -euo pipefail
 SWEEP_ROOT="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SWEEP_ROOT/../../.." && pwd)"
 CONFIG_SRC="$SWEEP_ROOT/configs"
+DESIGN_ROOT="$REPO_ROOT/runs/designs/multipliers"
 TMP_CFG_DIR="/tmp/highutil_mults"
 
 mkdir -p "$TMP_CFG_DIR"
@@ -20,7 +21,7 @@ run_platform() {
     --configs "$TMP_CFG_DIR"/*.json \
     --platform "$platform" \
     --sweep "$sweep_json" \
-    --out_root "$SWEEP_ROOT" \
+    --out_root "$DESIGN_ROOT" \
     --skip_existing
 }
 
@@ -32,6 +33,7 @@ run_platform asap7    "$SWEEP_ROOT/sweeps/asap7_highutil.json"
 
 # Summarize best-area runs at the highest successful CORE_UTILIZATION per design.
 export SWEEP_ROOT
+export DESIGN_ROOT
 python3 - <<'PY'
 import csv
 import json
@@ -39,6 +41,7 @@ import os
 from pathlib import Path
 
 root = Path(os.environ["SWEEP_ROOT"])
+design_root = Path(os.environ["DESIGN_ROOT"])
 platform_prefix = {
     "nangate45": "mult_ppg_cpa_w4_32_nangate45_highutil",
     "sky130hd": "mult_ppg_cpa_w4_32_sky130hd_highutil",
@@ -46,7 +49,7 @@ platform_prefix = {
 }
 
 best = {}
-for metrics_path in root.glob("*/metrics.csv"):
+for metrics_path in design_root.glob("*/metrics.csv"):
     design = metrics_path.parent.name
     with metrics_path.open() as f:
         reader = csv.DictReader(f)

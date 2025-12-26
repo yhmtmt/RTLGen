@@ -7,7 +7,7 @@ Usage example:
         --configs examples/config.json \
         --platform nangate45 \
         --sweep scripts/sweep_example.json \
-        --out_root runs \
+        --out_root runs/designs/multipliers \
         --dry_run
 
 The sweep file is JSON and must contain a `flow_params` dictionary whose values
@@ -26,7 +26,7 @@ For each parameter set the script:
 2) Writes a per-run SDC (clock period override) under out_root.
 3) Runs OpenROAD via `make` with TAG isolation and env overrides from flow_params.
 4) Parses timing/area/power from the resulting reports and writes result.json.
-5) Appends a summary row to out_root/index.csv for ML ingestion.
+5) Appends a summary row to <design>/metrics.csv for ML ingestion.
 
 Notes:
 - Designed to run serially; set --dry_run to print the sweep matrix only.
@@ -102,7 +102,7 @@ def ensure_design_assets(config_path: Path, platform: str, force: bool) -> Path:
 
 
 def snapshot_artifacts(config_path: Path, wrapper: str, circuit_root: Path):
-    """Copy config and generated Verilog into runs/<wrapper>/ for traceability."""
+    """Copy config and generated Verilog into runs/designs/<circuit_type>/<wrapper>/."""
     circuit_root.mkdir(parents=True, exist_ok=True)
     verilog_out = circuit_root / "verilog"
     verilog_out.mkdir(parents=True, exist_ok=True)

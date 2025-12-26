@@ -7,6 +7,7 @@ set -euo pipefail
 SWEEP_ROOT="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SWEEP_ROOT/../../.." && pwd)"
 CONFIG_SRC="$SWEEP_ROOT/configs"
+DESIGN_ROOT="$REPO_ROOT/runs/designs/multipliers"
 TMP_CFG_DIR="/tmp/yosys_booth_cfgs"
 
 mkdir -p "$TMP_CFG_DIR"
@@ -20,7 +21,7 @@ run_platform() {
     --configs "$TMP_CFG_DIR"/*.json \
     --platform "$platform" \
     --sweep "$sweep_json" \
-    --out_root runs \
+    --out_root "$DESIGN_ROOT" \
     --skip_existing
 }
 
