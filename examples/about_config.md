@@ -60,6 +60,22 @@ Top-level fields:
 
 Every new operation described below can be added either as a dedicated entry inside `operations` (recommended) or by using the legacy top-level keys (`adder`, `multiplier`, etc.).
 
+## Configuration Space & Search Guidance
+
+RTLGen’s current configuration space (for integer arithmetic) is driven by:
+- Operand width, signedness, and `kind` (int vs fp).
+- PPG choice (`Normal`, `Booth4`) for multipliers.
+- CPA choice (`Ripple`, `BrentKung`, `KoggeStone`, `Sklansky`, `SkewAwarePrefix`) for adders and multipliers.
+- Yosys booth mode (`Booth`, `LowpowerBooth`) for `multiplier_yosys` (signed-only for LowpowerBooth).
+
+Evaluation agents should use this space to propose new targets beyond existing
+campaigns by scanning for missing combinations across widths, PDKs, and CPA/PPG
+options. Use `runs/index.csv` to avoid duplicates.
+
+See `doc/evaluation_agent_guidance.md` for how to triage unexpected PPA results,
+how to decide between OpenROAD retuning vs design warnings, and how to record
+findings for algorithm developers.
+
 ## Adder Configuration
 
 An adder entry may either reuse the legacy object (`"adder": { ... }`) or be written inside the `operations` array with `"type": "adder"`. Reference the operand you want via the `operand` field (e.g., `"operand": "sample"`) so the generator can extract its width and signedness, then select the CPA structure.
