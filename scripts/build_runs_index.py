@@ -5,6 +5,7 @@ Build a global runs/index.csv by aggregating metrics.csv under runs/designs/.
 
 import csv
 import json
+import re
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -27,9 +28,31 @@ def parse_design_info(metrics_path: Path):
 
 
 def load_metrics(metrics_path: Path):
-    with metrics_path.open() as f:
-        reader = csv.DictReader(f)
-        return list(reader)
+    text = metrics_path.read_text()
+    text = re.sub(r"result\\.json(?=[A-Za-z0-9_])", "result.json\\n", text)
+    lines = text.splitlines()
+    if not lines:
+        return []
+    header = lines[0].split(",")
+    rows = []
+    for line in lines[1:]:
+        if not line.strip():
+            continue
+        parts = line.split(",", 9)
+        if len(parts) < 10:
+            continue
+        front = parts[:9]
+        rest = parts[9]
+        if "," in rest:
+            params_json, result_path = rest.rsplit(",", 1)
+        else:
+            params_json, result_path = rest, ""
+        values = front + [params_json, result_path]
+        if len(values) != len(header):
+            continue
+        row = dict(zip(header, values))
+        rows.append(row)
+    return rows
 
 
 def main():
