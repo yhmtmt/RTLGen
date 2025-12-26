@@ -115,3 +115,4 @@ Near-Term Implementation Plan
 - Add `scripts/build_runs_index.py` to aggregate `metrics.csv` into index.
 - Add a simple static web page under `docs/runs/` to filter/search.
 - Add CI job to validate and regenerate the index on PRs that touch `runs/`.
+- Add `scripts/validate_runs.py` (and `make runs-refresh`) to verify metrics and index consistency.
