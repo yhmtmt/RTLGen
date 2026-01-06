@@ -1,0 +1,41 @@
+name: Validate Runs
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'runs/**'
+      - 'scripts/validate_runs.py'
+      - 'scripts/build_runs_index.py'
+  pull_request:
+    paths:
+      - 'runs/**'
+      - 'scripts/validate_runs.py'
+      - 'scripts/build_runs_index.py'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate runs schema
+        run: python scripts/validate_runs.py
+
+      - name: Regenerate index
+        run: python scripts/build_runs_index.py
+
+      - name: Check index is up to date
+        run: |
+          if git diff --exit-code runs/index.csv; then
+            echo "Index is up to date"
+          else
+            echo "::error::runs/index.csv is out of date. Run 'python scripts/build_runs_index.py' and commit the result."
+            exit 1
+          fi

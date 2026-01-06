@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://rtlgen/metadata.schema.json",
+  "title": "RTLGen Design Metadata",
+  "description": "Machine-readable metadata for designs under runs/designs/",
+  "type": "object",
+  "required": ["design_id", "circuit_type", "generator"],
+  "properties": {
+    "design_id": {
+      "type": "string",
+      "description": "Unique identifier for the design (typically matches directory name)",
+      "pattern": "^[a-zA-Z0-9_-]+$"
+    },
+    "circuit_type": {
+      "type": "string",
+      "description": "Category of circuit (e.g., multipliers, prefix_adders, activations)",
+      "enum": ["multipliers", "prefix_adders", "activations", "mcm", "cmvm", "fp_ops", "mac", "other"]
+    },
+    "generator": {
+      "type": "string",
+      "description": "Tool that generated the RTL",
+      "enum": ["rtlgen", "yosys", "flopoco", "manual", "other"]
+    },
+    "ops": {
+      "type": "array",
+      "description": "Operations implemented (e.g., multiplier, adder, relu)",
+      "items": {"type": "string"}
+    },
+    "widths": {
+      "type": "array",
+      "description": "Bit widths of operands",
+      "items": {"type": "integer", "minimum": 1}
+    },
+    "signedness": {
+      "type": "string",
+      "description": "Whether operands are signed or unsigned",
+      "enum": ["signed", "unsigned", "mixed"]
+    },
+    "ppg": {
+      "type": "string",
+      "description": "Partial product generator type (for multipliers)",
+      "enum": ["Normal", "Booth4", "Yosys", "YosysLowpower"]
+    },
+    "cpa": {
+      "type": "string",
+      "description": "Carry-propagate adder type",
+      "enum": ["Ripple", "BrentKung", "KoggeStone", "Sklansky", "SkewAware"]
+    },
+    "rtl_source": {
+      "type": "string",
+      "description": "Git commit hash or script version that generated the RTL"
+    },
+    "owner": {
+      "type": "string",
+      "description": "Person or team responsible for this design"
+    },
+    "tags": {
+      "type": "array",
+      "description": "Free-form tags for searching/filtering",
+      "items": {"type": "string"}
+    },
+    "created_at": {
+      "type": "string",
+      "description": "ISO 8601 date when design was created",
+      "format": "date"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Free-form notes about the design"
+    },
+    "references": {
+      "type": "array",
+      "description": "Paper or documentation references",
+      "items": {"type": "string"}
+    }
+  },
+  "additionalProperties": true
+}

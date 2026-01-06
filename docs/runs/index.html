@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RTLGen Runs Index</title>
+  <style>
+    :root {
+      --bg: #1a1a2e;
+      --card: #16213e;
+      --accent: #0f3460;
+      --text: #e4e4e4;
+      --muted: #8892a0;
+      --success: #4ecca3;
+      --warn: #f39c12;
+      --fail: #e74c3c;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace;
+      background: var(--bg);
+      color: var(--text);
+      padding: 1rem;
+      min-height: 100vh;
+    }
+    h1 { margin-bottom: 1rem; font-size: 1.5rem; }
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      align-items: center;
+    }
+    .filters label { font-size: 0.85rem; color: var(--muted); }
+    .filters select, .filters input {
+      background: var(--card);
+      color: var(--text);
+      border: 1px solid var(--accent);
+      padding: 0.4rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+    .filters select:focus, .filters input:focus { outline: 1px solid var(--success); }
+    .stats {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+    .table-wrap {
+      overflow-x: auto;
+      background: var(--card);
+      border-radius: 6px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+    }
+    th, td {
+      padding: 0.5rem 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid var(--accent);
+      white-space: nowrap;
+    }
+    th {
+      background: var(--accent);
+      cursor: pointer;
+      user-select: none;
+      position: sticky;
+      top: 0;
+    }
+    th:hover { background: #1a4a7a; }
+    th.sorted-asc::after { content: ' \u25b2'; }
+    th.sorted-desc::after { content: ' \u25bc'; }
+    tr:hover { background: rgba(78, 204, 163, 0.1); }
+    .status-ok { color: var(--success); }
+    .status-fail { color: var(--fail); }
+    .num { text-align: right; font-variant-numeric: tabular-nums; }
+    a { color: var(--success); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .loading { text-align: center; padding: 2rem; color: var(--muted); }
+    .error { color: var(--fail); padding: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>RTLGen Runs Index</h1>
+  <div class="filters">
+    <label>Circuit:
+      <select id="filter-circuit"><option value="">All</option></select>
+    </label>
+    <label>Platform:
+      <select id="filter-platform"><option value="">All</option></select>
+    </label>
+    <label>Design:
+      <input type="text" id="filter-design" placeholder="Filter design...">
+    </label>
+    <label>Status:
+      <select id="filter-status">
+        <option value="">All</option>
+        <option value="ok">ok</option>
+        <option value="fail">fail</option>
+      </select>
+    </label>
+  </div>
+  <div class="stats" id="stats"></div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th data-col="circuit_type">Circuit</th>
+          <th data-col="design">Design</th>
+          <th data-col="platform">Platform</th>
+          <th data-col="status">Status</th>
+          <th data-col="critical_path_ns" class="num">Delay (ns)</th>
+          <th data-col="die_area" class="num">Area (um2)</th>
+          <th data-col="total_power_mw" class="num">Power (mW)</th>
+          <th data-col="tag">Tag</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+  <div class="loading" id="loading">Loading index.csv...</div>
+
+  <script>
+    const INDEX_PATH = '../../runs/index.csv';
+    let allRows = [];
+    let sortCol = 'design';
+    let sortAsc = true;
+
+    async function loadCSV() {
+      try {
+        const res = await fetch(INDEX_PATH);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const text = await res.text();
+        return parseCSV(text);
+      } catch (e) {
+        document.getElementById('loading').innerHTML = `<span class="error">Failed to load index.csv: ${e.message}</span>`;
+        throw e;
+      }
+    }
+
+    function parseCSV(text) {
+      const lines = text.trim().split('\n');
+      if (lines.length < 2) return [];
+      const headers = lines[0].split(',');
+      const rows = [];
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i];
+        if (!line.trim()) continue;
+        // Handle JSON field with commas
+        const parts = line.split(',');
+        const row = {};
+        let j = 0;
+        for (let h = 0; h < headers.length && j < parts.length; h++) {
+          if (headers[h] === 'params_json') {
+            // Find JSON object boundaries
+            let jsonStr = parts[j];
+            while (j < parts.length - 1 && !jsonStr.endsWith('}')) {
+              j++;
+              jsonStr += ',' + parts[j];
+            }
+            row[headers[h]] = jsonStr;
+          } else {
+            row[headers[h]] = parts[j];
+          }
+          j++;
+        }
+        rows.push(row);
+      }
+      return rows;
+    }
+
+    function populateFilters(rows) {
+      const circuits = [...new Set(rows.map(r => r.circuit_type))].sort();
+      const platforms = [...new Set(rows.map(r => r.platform))].sort();
+      const circuitSel = document.getElementById('filter-circuit');
+      const platformSel = document.getElementById('filter-platform');
+      circuits.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c; opt.textContent = c;
+        circuitSel.appendChild(opt);
+      });
+      platforms.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p; opt.textContent = p;
+        platformSel.appendChild(opt);
+      });
+    }
+
+    function getFiltered() {
+      const circuit = document.getElementById('filter-circuit').value;
+      const platform = document.getElementById('filter-platform').value;
+      const design = document.getElementById('filter-design').value.toLowerCase();
+      const status = document.getElementById('filter-status').value;
+      return allRows.filter(r => {
+        if (circuit && r.circuit_type !== circuit) return false;
+        if (platform && r.platform !== platform) return false;
+        if (design && !r.design.toLowerCase().includes(design)) return false;
+        if (status && r.status !== status) return false;
+        return true;
+      });
+    }
+
+    function getSorted(rows) {
+      const numCols = ['critical_path_ns', 'die_area', 'total_power_mw'];
+      const isNum = numCols.includes(sortCol);
+      return [...rows].sort((a, b) => {
+        let va = a[sortCol] || '';
+        let vb = b[sortCol] || '';
+        if (isNum) {
+          va = parseFloat(va) || 0;
+          vb = parseFloat(vb) || 0;
+        }
+        if (va < vb) return sortAsc ? -1 : 1;
+        if (va > vb) return sortAsc ? 1 : -1;
+        return 0;
+      });
+    }
+
+    function render() {
+      const filtered = getFiltered();
+      const sorted = getSorted(filtered);
+      document.getElementById('stats').textContent = `Showing ${sorted.length} of ${allRows.length} rows`;
+      const tbody = document.getElementById('tbody');
+      tbody.innerHTML = sorted.map(r => `
+        <tr>
+          <td>${esc(r.circuit_type)}</td>
+          <td><a href="${esc(r.design_path)}" title="${esc(r.design_path)}">${esc(r.design)}</a></td>
+          <td>${esc(r.platform)}</td>
+          <td class="${r.status === 'ok' ? 'status-ok' : 'status-fail'}">${esc(r.status)}</td>
+          <td class="num">${fmtNum(r.critical_path_ns, 4)}</td>
+          <td class="num">${fmtNum(r.die_area, 2)}</td>
+          <td class="num">${fmtNum(r.total_power_mw, 6)}</td>
+          <td>${esc(r.tag)}</td>
+        </tr>
+      `).join('');
+      // Update header sort indicators
+      document.querySelectorAll('th').forEach(th => {
+        th.classList.remove('sorted-asc', 'sorted-desc');
+        if (th.dataset.col === sortCol) {
+          th.classList.add(sortAsc ? 'sorted-asc' : 'sorted-desc');
+        }
+      });
+    }
+
+    function esc(s) {
+      if (!s) return '';
+      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function fmtNum(v, digits) {
+      const n = parseFloat(v);
+      if (isNaN(n)) return v || '';
+      return n.toFixed(digits);
+    }
+
+    document.querySelectorAll('th[data-col]').forEach(th => {
+      th.addEventListener('click', () => {
+        const col = th.dataset.col;
+        if (sortCol === col) {
+          sortAsc = !sortAsc;
+        } else {
+          sortCol = col;
+          sortAsc = true;
+        }
+        render();
+      });
+    });
+
+    ['filter-circuit', 'filter-platform', 'filter-status'].forEach(id => {
+      document.getElementById(id).addEventListener('change', render);
+    });
+    document.getElementById('filter-design').addEventListener('input', render);
+
+    loadCSV().then(rows => {
+      allRows = rows;
+      document.getElementById('loading').style.display = 'none';
+      populateFilters(rows);
+      render();
+    });
+  </script>
+</body>
+</html>
