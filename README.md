@@ -33,8 +33,29 @@ rtlgen <JSON configuration file>
 
 This command generates a Verilog module for your circuit according to the configuration file. The generated module will be placed in the current working directory.
 
+## Viewing Evaluation Results
+
+The evaluation browser is a static site at `docs/runs/index.html` that loads `runs/index.csv`. Serve `docs/` with a local web server from the repo root:
+
+```sh
+python3 -m http.server 8000 --directory docs
+```
+
+Then open:
+
+```
+http://localhost:8000/runs/index.html
+```
+
+If the table is empty or stale, regenerate the index with:
+
+```sh
+python3 scripts/build_runs_index.py
+```
+
 ## Notes and References
 - Multiplier comparison (Booth vs. normal PPG) with OpenROAD results: see [doc/booth4_vs_normal/booth_vs_normal_multiplier_comparison.md](doc/booth4_vs_normal/booth_vs_normal_multiplier_comparison.md).
 - Yosys Booth vs ILP Booth comparison with normalized PPA plots: see [doc/yosys_vs_ilp_booth.md](doc/yosys_vs_ilp_booth.md).
 - Constant-multiplier algorithms (MCM/CMVM) and CLIs: see [doc/constant_multiplication.md](doc/constant_multiplication.md).
+- End-to-end workflow and automation plan for generation, evaluation, and indexing: see [doc/workflow.md](doc/workflow.md).
 - Evaluation artifacts (configs, generated Verilog, sweep metrics) live under [runs/](runs/README.md); add configs there to queue new evaluations.
