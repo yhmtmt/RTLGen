@@ -29,6 +29,8 @@ def generate_configs(max_bit_width):
                             "module_name": f"{algorithm.lower()}_multiplier_{cpa_structure.lower()}_{bit_width}{signed_suffix}",
                             "ppg_algorithm": algorithm,
                             "compressor_structure": "AdderTree",
+                            "compressor_library": "fa_ha",
+                            "compressor_assignment": "legacy_fa_ha",
                             "cpa_structure": cpa_structure,
                             "pipeline_depth": 1
                         }

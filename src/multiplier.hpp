@@ -83,21 +83,23 @@ enum CompressorType{
     CT_NONE, // No compression
     CT_3_2,  // 3:2 compressor
     CT_2_2,  // 2:2 compressor
+    CT_4_2,  // 4:2 compressor (sum + 2 carries)
     CT_1_1   // 1:1 compressor
 };
 
 struct CTNode{
     int istage, icol; // stage and column index
     int ipp0, ipp1;   // input pp indices, ipp0 is the first input, ipp1 is the last input
-    int sum, cout;    // output pp indices sum to (istage+1,icol), cout is to(istage+1,icol+1)
+    int sum;          // output pp index sum to (istage+1,icol)
+    std::vector<int> couts; // output pp indices to (istage+1,icol+1)
     CompressorType type;
 
-    CTNode(): type(CT_NONE), ipp0(-1), icol(-1), ipp1(-1), sum(-1), cout(-1){}
-    CTNode(int _ipp, int _istage, int _icol): type(CT_1_1), ipp0(_ipp), ipp1(_ipp), istage(_istage), icol(_icol), sum(-1), cout(-1){} 
-    CTNode(int _ipp0, int _ipp1, int _istage, int _icol): ipp0(_ipp0), ipp1(_ipp1), istage(_istage), icol(_icol), sum(-1), cout(-1){
+    CTNode(): type(CT_NONE), ipp0(-1), icol(-1), ipp1(-1), sum(-1){}
+    CTNode(int _ipp, int _istage, int _icol): type(CT_1_1), ipp0(_ipp), ipp1(_ipp), istage(_istage), icol(_icol), sum(-1){}
+    CTNode(int _ipp0, int _ipp1, int _istage, int _icol): ipp0(_ipp0), ipp1(_ipp1), istage(_istage), icol(_icol), sum(-1){
         if(ipp1 - ipp0 == 1){
             type = CT_2_2;
-        }else if(ipp1 - ipp0 == 2){ 
+        }else if(ipp1 - ipp0 == 2){
             type = CT_3_2;
         }else if(ipp1 - ipp0 == 0){
             type = CT_1_1;
@@ -302,19 +304,34 @@ private:
     // ct_opin[istage][icol][pin_assign[istage][icol][ipp]] is connected to ct_ipin[istage][icol][ipp]
     std::vector<std::vector<std::vector<int>>> pin_assign;             // pin assignment for each stage, column, pin index
     // builds compression tree. determines assignments of adders and interconnections
-    void build_ct();
+    void build_ct(bool enable_c42, bool use_direct_ilp);
 
-    // count minimum number of FAS and HAS required for each column
+    // count initial number of partial products per column and estimate max stages
+    void count_pps(int & num_max_stages);
+    // count minimum number of FAs and HAs required for each column (legacy)
     void count_fas_and_has(std::vector<int> &num_fas, std::vector<int> &num_has, int & num_max_stages);
 
-    // optimizing fas and has assignment using ILP solver
+    // optimizing compressor assignment using ILP solver
+    void opt_ct_assignment(
+                            std::vector<std::vector<int>> &ct_3_2,
+                            std::vector<std::vector<int>> &ct_2_2,
+                            std::vector<std::vector<int>> &ct_4_2,
+                            int num_max_stages,
+                            bool enable_c42);
+
+    // legacy FA/HA assignment ILP
     void opt_fas_and_has_assignment(
                             std::vector<int> &num_fas, std::vector<int> &num_has,
-                            std::vector<std::vector<int>> &fas, std::vector<std::vector<int>> &has, 
+                            std::vector<std::vector<int>> &fas, std::vector<std::vector<int>> &has,
                             int num_max_stages);
-
     // according to optimization by opt_fas_and_has_assignment, allocate compressors of ct and pin structures. 
-    void alloc_and_load_ct(std::vector<std::vector<int>> &num_fas_stg, std::vector<std::vector<int>> &num_has_stg);
+    void alloc_and_load_ct(
+                            std::vector<std::vector<int>> &ct_3_2,
+                            std::vector<std::vector<int>> &ct_2_2,
+                            std::vector<std::vector<int>> &ct_4_2);
+    void alloc_and_load_ct_legacy(
+                            std::vector<std::vector<int>> &ct_fas,
+                            std::vector<std::vector<int>> &ct_has);
     void opt_ct_wire_assignment(); // optimize compresssors interconnections
     double do_ct_sta();            // returns the maximum delay of the csa tree (used for optimization)
     
@@ -328,6 +345,7 @@ private:
     void dump_hdl_ct(std::ofstream & verilog_file);
     void dump_hdl_fa(std::ofstream & verilog_file, const std::string& module_name);
     void dump_hdl_ha(std::ofstream & verilog_file, const std::string& module_name);
+    void dump_hdl_c42(std::ofstream & verilog_file, const std::string& module_name);
 
 
 public:
@@ -351,7 +369,8 @@ public:
     void dump_hdl_tb(Operand multiplicand, Operand multiplier, const std::string& module_name);
 
     void build(Operand multiplicand, Operand multiplier,
-                          CTType ctype, PPType ppType, CPAType cptype, const std::string& module_name);
+                          CTType ctype, PPType ppType, CPAType cptype, const std::string& module_name,
+                          bool enable_c42 = false, bool use_direct_ilp = false);
     void build_yosys(const MultiplierYosysConfig& config, const std::string& module_name);
 };
 

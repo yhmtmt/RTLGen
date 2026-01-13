@@ -92,9 +92,17 @@ Pipelining is not yet implemented; `pipeline_depth` must be `1`.
 
 ## Multiplier Configuration
 
-Multiplier entries support all of the fields from the legacy `multiplier` object: `module_name`, `ppg_algorithm`, `compressor_structure`, `cpa_structure`, and `pipeline_depth`. When using the `operations` array, set `"type": "multiplier"`, reference the operand supplying both inputs, and place the implementation options inside an `options` object.
+Multiplier entries support all of the fields from the legacy `multiplier` object: `module_name`, `ppg_algorithm`, `compressor_structure`, `compressor_library`, `compressor_assignment`, `cpa_structure`, and `pipeline_depth`. When using the `operations` array, set `"type": "multiplier"`, reference the operand supplying both inputs, and place the implementation options inside an `options` object.
 
-Currently, `compressor_structure` and `pipeline_depth` are fixed to `AdderTree` and `1`. The `AdderTree` is optimized using ILP as described in [UFO-MAC: A Unified Framework for Optimization of High-Performance Multipliers and Multiply-Accumulators](https://arxiv.org/abs/2408.06935). See [Compressor Tree Memo](doc/compressor_tree/memo_about_compressor_tree.md) for details.
+Currently, `compressor_structure` and `pipeline_depth` are fixed to `AdderTree` and `1`. The `AdderTree` is optimized using ILP as described in [UFO-MAC: A Unified Framework for Optimization of High-Performance Multipliers and Multiply-Accumulators](https://arxiv.org/abs/2408.06935). The `compressor_library` option selects which compressor cells can be used during ILP assignment:
+- `fa_ha` (default): 3:2 and 2:2 only
+- `fa_ha_c42`: 3:2, 2:2, and 4:2
+See [Compressor Tree Memo](doc/compressor_tree/memo_about_compressor_tree.md) for details.
+
+The `compressor_assignment` option selects the ILP formulation:
+- `legacy_fa_ha` (default): prior FA/HA-count-based ILP (3:2/2:2 only).
+- `direct_ilp`: direct compressor assignment ILP (supports `fa_ha_c42`).
+Note: the current direct ILP solver fails to find solutions for 16-bit and wider multipliers; use `legacy_fa_ha` for practical widths until the solver is fixed. See [Compressor Tree Memo](doc/compressor_tree/memo_about_compressor_tree.md) for evaluation notes.
 
 Supported partial product generators (`ppg_algorithm`):
 

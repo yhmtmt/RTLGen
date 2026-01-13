@@ -188,11 +188,19 @@ int main(int argc, char** argv) {
             Operand lhs = makeOperandValue(operandDef);
             Operand rhs = lhs;
             CTType ctype = get_compressor_type(mult.compressor_structure);
+            CompressorLibrary library = get_compressor_library(mult.compressor_library);
+            CompressorAssignment assignment = get_compressor_assignment(mult.compressor_assignment);
             CPAType cptype = get_cpa_type(mult.cpa_structure);
             PPType ptype = get_ppg_algorithm(mult.ppg_algorithm);
             MultiplierGenerator generator;
             std::cout << "[INFO] Generating multiplier " << mult.module_name << "\n";
-            generator.build(lhs, rhs, ctype, ptype, cptype, mult.module_name);
+            bool enable_c42 = (library == FA_HA_C42);
+            bool use_direct_ilp = (assignment == DirectILP);
+            if (!use_direct_ilp && enable_c42) {
+                std::cout << "[WARN] legacy_fa_ha ignores compressor_library fa_ha_c42; forcing fa_ha.\n";
+                enable_c42 = false;
+            }
+            generator.build(lhs, rhs, ctype, ptype, cptype, mult.module_name, enable_c42, use_direct_ilp);
         }
 
         for (auto yosys : config.yosys_multipliers) {

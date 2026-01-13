@@ -152,6 +152,8 @@ bool readConfig(const std::string& filename, CircuitConfig& config) {
             multiplier.operand = operandName;
             multiplier.ppg_algorithm = node.at("ppg_algorithm").get<std::string>();
             multiplier.compressor_structure = node.at("compressor_structure").get<std::string>();
+            multiplier.compressor_library = node.value("compressor_library", "fa_ha");
+            multiplier.compressor_assignment = node.value("compressor_assignment", "legacy_fa_ha");
             multiplier.cpa_structure = node.at("cpa_structure").get<std::string>();
             multiplier.pipeline_depth = node.value("pipeline_depth", 1);
             config.multipliers.push_back(multiplier);

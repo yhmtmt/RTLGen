@@ -69,7 +69,15 @@ enum CTType{
     CSATree   // 3:2 FA and 2:2 HA
 };
 
+enum CompressorLibrary{
+    FA_HA,     // 3:2 and 2:2 only
+    FA_HA_C42  // 3:2, 2:2, and 4:2
+};
 
+enum CompressorAssignment{
+    LegacyFAHA, // legacy FA/HA-count-based ILP
+    DirectILP   // direct compressor assignment ILP
+};
 // Operand configuration
 struct OperandConfig {
     int bit_width;
@@ -82,6 +90,8 @@ struct MultiplierConfig {
     std::string operand;
     std::string ppg_algorithm;
     std::string compressor_structure;
+    std::string compressor_library{"fa_ha"};
+    std::string compressor_assignment{"legacy_fa_ha"};
     std::string cpa_structure;
     int pipeline_depth;
 };
@@ -201,6 +211,18 @@ inline CTType get_compressor_type(const std::string& structure) {
     if (structure == "AdderTree") return AdderTree;
     if (structure == "CSATree") return CSATree;
     throw std::invalid_argument("Unknown compressor structure: " + structure);
+}
+
+inline CompressorLibrary get_compressor_library(const std::string& library) {
+    if (library == "fa_ha") return FA_HA;
+    if (library == "fa_ha_c42") return FA_HA_C42;
+    throw std::invalid_argument("Unknown compressor library: " + library);
+}
+
+inline CompressorAssignment get_compressor_assignment(const std::string& assignment) {
+    if (assignment == "legacy_fa_ha") return LegacyFAHA;
+    if (assignment == "direct_ilp") return DirectILP;
+    throw std::invalid_argument("Unknown compressor assignment: " + assignment);
 }
 
 // get_cpa_type cpa_structure to enum
