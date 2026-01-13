@@ -2,6 +2,34 @@
 
 The implementation of the compressor tree optimization is based on UFO-MAC [1]. I attempted to implement the entire algorithm, but the part successfully integrated here is limited to counting and assigning full and half adders. Other parts, such as interconnect assignment and prefix adder optimization, were not implemented due to perceived issues in their formulation. Before explaining these problems, I should describe a subtle mistake in the ILP formulation for adder assignment that I encountered and corrected.
 
+## Recent ILP changes and evaluation provenance
+
+Two implementation differences matter for multiplier results and should be tracked in evaluations:
+
+- **Compressor library selection.** The current ILP can be configured to allow only 3:2/2:2 compressors (`compressor_library = "fa_ha"`) or also allow 4:2 compressors (`compressor_library = "fa_ha_c42"`). This selection changes the feasible solution space and therefore the optimal stage count and structure.
+- **Objective sequencing vs. precomputed counts.** The previous implementation precomputed fixed per-column counts of full/half adders and then solved for stage placement. The current implementation directly assigns compressors and minimizes stage count as the primary objective, with compressor count as a secondary objective. As a result, even the 3:2/2:2-only solutions can differ from the previous implementation.
+
+Because of these changes, multiplier evaluation data produced before the compressor-library option was introduced must be treated as **pre-change results** and should not be mixed with new evaluations. In reports and plots, explicitly note that "previous multiplier evaluations used the prior FA/HA-count-based ILP implementation."
+
+## Evaluation plan (post-change)
+
+1. **Baseline re-run (fa_ha only).** Re-run the full multiplier campaigns with `compressor_library = "fa_ha"` to establish a new baseline with the current ILP formulation while keeping the compressor set identical to the legacy flow.
+2. **Compare to prior results.** Compare the new baseline against the previous campaign outputs (tagged as pre-change). Record deltas in area/timing/power and note any regressions or improvements.
+3. **4:2 mix evaluation.** Run the same campaigns with `compressor_library = "fa_ha_c42"` and compare against the new baseline.
+4. **Documentation refresh.** If the 4:2 mix results are equal or better, update multiplier documentation and plots to the new baseline, and clearly annotate the methodology and compressor-library setting used.
+
+## Baseline check (fa_ha)
+
+The baseline `fa_ha` sweeps (4/8/16/32-bit, signed+unsigned, PPG/CPA grid) reproduce the exact same HDL and PPA as the pre-change multipliers; all deltas vs the prior summaries are zero. High-utilization runs were not re-executed yet. This confirms that the new compressor-library selector preserves the previous design for the `fa_ha` setting when using the legacy FA/HA-count-based assignment.
+
+## 4:2 mix evaluation note
+
+The current 4:2 compressor is implemented as two cascaded 3:2 compressors. Treating it as a single-stage element in the ILP can over-emphasize 4:2 usage because the objective minimizes stage count, even though the internal critical path may traverse two 3:2 levels. This means stage count alone may not correlate with actual delay unless a hardened macro or timing model is introduced. Keep this in mind when interpreting 4:2 mix results.
+
+## Direct ILP limitation (current)
+
+The direct compressor-assignment ILP fails to find solutions for 16-bit and wider multipliers (even without 4:2 enabled). As a result, practical evaluations must continue to use the legacy FA/HA-count-based ILP (`compressor_assignment = "legacy_fa_ha"`) until the direct solver is fixed. Any results produced with `compressor_assignment = "direct_ilp"` should be labeled as 8-bit-only and not compared to the legacy baselines without this caveat.
+
 *   **My modification in adder assignment.**
 
     Equation (8) in paper [1] describes the constraint of the number of partial products (PPs) in the $i$-th stage's $j$-th column as follows:

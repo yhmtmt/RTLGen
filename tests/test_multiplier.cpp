@@ -12,6 +12,25 @@ bool file_exists(const std::string& filename) {
     return f.good();
 }
 
+bool file_contains(const std::string& filename, const std::string& needle) {
+    std::ifstream f(filename.c_str());
+    if (!f.good()) return false;
+    std::string line;
+    while (std::getline(f, line)) {
+        if (line.find(needle) != std::string::npos) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool file_contains_any(const std::string& filename, const std::vector<std::string>& needles) {
+    for (const auto& needle : needles) {
+        if (file_contains(filename, needle)) return true;
+    }
+    return false;
+}
+
 void run_iverilog_test(const std::string& module_name) {
     std::string iverilog_cmd = "iverilog -o " + module_name + ".vvp " + module_name + ".v " + module_name + "_tb.v MG_CPA.v";
     int ret = system(iverilog_cmd.c_str());
@@ -56,7 +75,7 @@ void run_iverilog_test_yosys(const std::string& module_name) {
     ASSERT_EQ(WEXITSTATUS(pclose_ret), 0);
 }
 
-void run_config_test(PPType pp_type, bool is_signed, CPAType cpa_type) {
+void run_config_test(PPType pp_type, bool is_signed, CPAType cpa_type, bool enable_c42 = false, bool use_direct_ilp = false) {
     Operand multiplicand, multiplier;
     multiplicand.width = multiplier.width = 8;
     multiplicand.is_signed = multiplier.is_signed = is_signed;
@@ -69,7 +88,7 @@ void run_config_test(PPType pp_type, bool is_signed, CPAType cpa_type) {
          cpa_type == CPA_KoggeStone ? "koggestone" :
          cpa_type == CPA_BrentKung ? "brentkung" : "sklansky");
 
-    gen.build(multiplicand, multiplier, AdderTree, pp_type, cpa_type, module_name);
+    gen.build(multiplicand, multiplier, AdderTree, pp_type, cpa_type, module_name, enable_c42, use_direct_ilp);
     gen.dump_hdl_tb(multiplicand, multiplier, module_name);
 
     ASSERT_TRUE(file_exists(module_name + ".v"));
@@ -99,6 +118,21 @@ TEST(MultiplierTest, Booth4UnsignedRipple)    { run_config_test(Booth4, false, C
 TEST(MultiplierTest, Booth4UnsignedKoggeStone){ run_config_test(Booth4, false, CPA_KoggeStone); }
 TEST(MultiplierTest, Booth4UnsignedBrentKung) { run_config_test(Booth4, false, CPA_BrentKung); }
 TEST(MultiplierTest, Booth4UnsignedSklansky)  { run_config_test(Booth4, false, CPA_Sklansky); }
+
+TEST(MultiplierTest, DirectIlp8bitBaseline)   { run_config_test(Normal, false, CPA_Ripple, false, true); }
+
+TEST(MultiplierTest, CompressorModulePresence) {
+    Operand multiplicand, multiplier;
+    multiplicand.width = multiplier.width = 4;
+    multiplicand.is_signed = multiplier.is_signed = false;
+
+    MultiplierGenerator gen;
+    std::string module_name = "test_mult_compressor_presence";
+    gen.build(multiplicand, multiplier, AdderTree, Normal, CPA_KoggeStone, module_name, true, true);
+
+    ASSERT_TRUE(file_exists(module_name + ".v"));
+    EXPECT_TRUE(file_contains(module_name + ".v", "module MG_C42"));
+}
 
 
 void run_yosys_config_test(bool is_signed, const std::string& booth_type) {
@@ -136,4 +170,3 @@ TEST(MultiplierTest, YosysUnsignedBooth) {
 TEST(MultiplierTest, YosysSignedLowpowerBooth) {
     run_yosys_config_test(true, "LowpowerBooth");
 }
-

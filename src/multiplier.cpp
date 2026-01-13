@@ -11,15 +11,38 @@
 #include <chrono> // Add this include for timing
 #include <cstdlib> // For system()
 
+static int compressor_input_count(CompressorType type)
+{
+    switch (type) {
+        case CT_4_2: return 4;
+        case CT_3_2: return 3;
+        case CT_2_2: return 2;
+        case CT_1_1: return 1;
+        default: return 0;
+    }
+}
+
+static int compressor_carry_count(CompressorType type)
+{
+    switch (type) {
+        case CT_4_2: return 2;
+        case CT_3_2: return 1;
+        case CT_2_2: return 1;
+        case CT_1_1: return 0;
+        default: return 0;
+    }
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////// MultiplierGenerator methods
 void MultiplierGenerator::build(Operand multiplicand, Operand multiplier,
-                                           CTType ctype, PPType ptype, CPAType cptype, const std::string &module_name)
+                                           CTType ctype, PPType ptype, CPAType cptype, const std::string &module_name,
+                                           bool enable_c42, bool use_direct_ilp)
 {
     std::cout << "[INFO] Generating partial products..." << std::endl;
     gen_pp(multiplicand, multiplier, ptype);
 
     std::cout << "[INFO] Building compressor tree..." << std::endl;
-    build_ct();
+    build_ct(enable_c42, use_direct_ilp);
 
     std::cout << "[INFO] Building carry-propagate adder..." << std::endl;
     build_cpa(cptype);
@@ -131,6 +154,27 @@ void MultiplierGenerator::dump_hdl_ha(std::ofstream &verilog_file, const std::st
     verilog_file << "endmodule\n";
 }
 
+void MultiplierGenerator::dump_hdl_c42(std::ofstream &verilog_file, const std::string &module_name)
+{
+    verilog_file << "module " << module_name << "(\n";
+    verilog_file << "  input a,\n";
+    verilog_file << "  input b,\n";
+    verilog_file << "  input c,\n";
+    verilog_file << "  input d,\n";
+    verilog_file << "  output sum,\n";
+    verilog_file << "  output cout0two,\n";
+    verilog_file << "  output cout1\n";
+    verilog_file << ");\n\n";
+    verilog_file << "  wire s1;\n";
+    verilog_file << "  wire c1;\n";
+    verilog_file << "  wire c2;\n";
+    verilog_file << "  MG_FA fa0(.a(a), .b(b), .cin(c), .sum(s1), .cout(c1));\n";
+    verilog_file << "  MG_FA fa1(.a(s1), .b(d), .cin(1'b0), .sum(sum), .cout(c2));\n";
+    verilog_file << "  assign cout0 = c1;\n";
+    verilog_file << "  assign cout1 = c2;\n";
+    verilog_file << "endmodule\n";
+}
+
 
 void MultiplierGenerator::dump_hdl(Operand multiplicand, Operand multiplier, const std::string &module_name)
 {
@@ -144,6 +188,7 @@ void MultiplierGenerator::dump_hdl(Operand multiplicand, Operand multiplier, con
     // first define fa and ha modules (later used in compressor tree)
     dump_hdl_fa(verilog_file, "MG_FA");
     dump_hdl_ha(verilog_file, "MG_HA");
+    dump_hdl_c42(verilog_file, "MG_C42");
     cpa.dump_hdl("MG_CPA");
 
     std::vector<std::string> operands= {"multiplicand", "multiplier"};
@@ -327,7 +372,7 @@ void MultiplierGenerator::dump_hdl_ct(std::ofstream &verilog_file)
                     int ib = pin_assign[istage][icol][node.ipp0 + 1];   // get_pp_in_index(istage, icol, icmp, 1);
                     int icin = pin_assign[istage][icol][node.ipp0 + 2]; // get_pp_in_index(istage, icol, icmp, 2);
                     int isum = node.sum;   // get_pp_out_index(istage+1, icol, icmp, 0);
-                    int icout = node.cout; // get_pp_out_index(istage+1, icol+1, icmp, 1);
+                    int icout = node.couts.empty() ? -1 : node.couts[0]; // get_pp_out_index(istage+1, icol+1, icmp, 1);
                     verilog_file << "  MG_FA fa_" << istage << "_" << icol << "_" << icmp << "(\n";
                     verilog_file << "    .a(pp_" <<istage << "_" << icol << "_" << ia << "),\n";
                     verilog_file << "    .b(pp_" <<istage << "_" << icol << "_" << ib << "),\n";
@@ -344,7 +389,7 @@ void MultiplierGenerator::dump_hdl_ct(std::ofstream &verilog_file)
                     int ia = pin_assign[istage][icol][node.ipp0];      // get_pp_in_index(istage, icol, icmp, 0);
                     int ib = pin_assign[istage][icol][node.ipp0 + 1];  // get_pp_in_index(istage, icol, icmp, 1);
                     int isum = node.sum;   // get_pp_out_index(istage+1, icol, icmp, 0);
-                    int icout = node.cout; // get_pp_out_index(istage+1, icol+1, icmp, 1);
+                    int icout = node.couts.empty() ? -1 : node.couts[0]; // get_pp_out_index(istage+1, icol+1, icmp, 1);
                     verilog_file << "  MG_HA ha_" << istage << "_" << icol << "_" << icmp << "(\n";
                     verilog_file << "    .a(pp_" << istage << "_" << icol << "_" << ia << "),\n";
                     verilog_file << "    .b(pp_" << istage << "_" << icol << "_" << ib << "),\n";
@@ -353,6 +398,30 @@ void MultiplierGenerator::dump_hdl_ct(std::ofstream &verilog_file)
                         verilog_file << "    .cout()\n";
                     else
                         verilog_file << "    .cout(pp_" << istage + 1 << "_" << icol + 1 << "_" << icout << ")\n";
+                    verilog_file << "  );\n\n";
+                }else if(node.type == CT_4_2)
+                {
+                    int ia = pin_assign[istage][icol][node.ipp0];
+                    int ib = pin_assign[istage][icol][node.ipp0 + 1];
+                    int ic = pin_assign[istage][icol][node.ipp0 + 2];
+                    int id = pin_assign[istage][icol][node.ipp0 + 3];
+                    int isum = node.sum;
+                    int icout0 = node.couts.size() > 0 ? node.couts[0] : -1;
+                    int icout1 = node.couts.size() > 1 ? node.couts[1] : -1;
+                    verilog_file << "  MG_C42 c42_" << istage << "_" << icol << "_" << icmp << "(\n";
+                    verilog_file << "    .a(pp_" << istage << "_" << icol << "_" << ia << "),\n";
+                    verilog_file << "    .b(pp_" << istage << "_" << icol << "_" << ib << "),\n";
+                    verilog_file << "    .c(pp_" << istage << "_" << icol << "_" << ic << "),\n";
+                    verilog_file << "    .d(pp_" << istage << "_" << icol << "_" << id << "),\n";
+                    verilog_file << "    .sum(pp_" << istage + 1 << "_" << icol << "_" << isum << "),\n";
+                    if(icout0 < 0)
+                        verilog_file << "    .cout0(),\n";
+                    else
+                        verilog_file << "    .cout0(pp_" << istage + 1 << "_" << icol + 1 << "_" << icout0 << "),\n";
+                    if(icout1 < 0)
+                        verilog_file << "    .cout1()\n";
+                    else
+                        verilog_file << "    .cout1(pp_" << istage + 1 << "_" << icol + 1 << "_" << icout1 << ")\n";
                     verilog_file << "  );\n\n";
                 }else if(node.type == CT_1_1)
                 {
@@ -850,18 +919,38 @@ void MultiplierGenerator::gen_normal4_pp(Operand multiplicand, Operand multiplie
 }
 
 
+void MultiplierGenerator::count_pps(int & num_max_stages)
+{
+    num_stages = 0;
+    ct_pps.clear();
+    ct_pps.resize(1, std::vector<int>(cols_pps, 0));
+
+    for (int icol = 0; icol < cols_pps; icol++)
+    {
+        for (int irow = 0; irow < rows_pps; irow++)
+        {
+            if (pps[irow][icol].bit_type != BIT_NONE)
+            {
+                ct_pps[0][icol]++;
+            }
+        }
+    }
+
+    int norder = (int)ceil(log(rows_pps) / log(3.0));
+    num_max_stages = (int)ceil((norder * log(3.0) - log(2.0)) / (log(3.0)-log(2.0)));
+    num_max_stages += 1;
+}
+
 void MultiplierGenerator::count_fas_and_has(std::vector<int> &num_fas, std::vector<int> &num_has, int & num_max_stages)
 {
     num_fas.resize(cols_pps, 0);
     num_has.resize(cols_pps, 0);
     num_stages = 0;
+    ct_pps.clear();
     ct_pps.resize(rows_pps, std::vector<int>(cols_pps, 0));
 
-    // counting the number of FAs and HAs for each column
-    // we can determine the numbers scanning from younger column to older column by one pass
     for (int icol = 0; icol < cols_pps; icol++)
     {
-        // counting pps.
         for (int irow = 0; irow < rows_pps; irow++)
         {
             if (pps[irow][icol].bit_type != BIT_NONE)
@@ -886,9 +975,12 @@ void MultiplierGenerator::count_fas_and_has(std::vector<int> &num_fas, std::vect
     }
 }
 
-void MultiplierGenerator::alloc_and_load_ct(std::vector<std::vector<int>> &ct_fas, std::vector<std::vector<int>> &ct_has)
+void MultiplierGenerator::alloc_and_load_ct(
+    std::vector<std::vector<int>> &ct_3_2,
+    std::vector<std::vector<int>> &ct_2_2,
+    std::vector<std::vector<int>> &ct_4_2)
 {
-    // assigninig compressors according to ct_fas and ct_has
+    // assigninig compressors according to ct_* assignments
     ct.resize(num_stages, std::vector<std::vector<CTNode>>(cols_pps, std::vector<CTNode>(0)));
     for (int istage = 0; istage < num_stages; istage++){
         for(int icol = 0; icol < cols_pps; icol++){ 
@@ -896,17 +988,28 @@ void MultiplierGenerator::alloc_and_load_ct(std::vector<std::vector<int>> &ct_fa
             int npps = ct_pps[istage][icol];
             auto & cmps = ct[istage][icol];
             int icmp = 0;
-            int nfas = ct_fas[istage][icol];
-            int nhas = ct_has[istage][icol];
-            int npass = npps - nfas * 3 - nhas * 2;
-            cmps.resize(nfas + nhas + npass);
+            int n_c32 = ct_3_2[istage][icol];
+            int n_c22 = ct_2_2[istage][icol];
+            int n_c42 = ct_4_2[istage][icol];
+            int used = n_c32 * 3 + n_c22 * 2 + n_c42 * 4;
+            int npass = npps - used;
+            cmps.resize(n_c42 + n_c32 + n_c22 + npass);
             int ipp = 0;
-            for(int ifas = 0; ifas < nfas; ifas++){
+            for(int ic = 0; ic < n_c42; ic++){
+                cmps[icmp].type = CT_4_2;
+                cmps[icmp].ipp0 = ipp;
+                cmps[icmp].ipp1 = ipp + 3;
+                cmps[icmp].istage = istage;
+                cmps[icmp].icol = icol;
+                ipp += 4;
+                icmp++;
+            }
+            for(int ic = 0; ic < n_c32; ic++){
                 cmps[icmp] = CTNode(ipp, ipp + 2, istage, icol);
                 ipp += 3;
                 icmp++;
             }
-            for(int ihas = 0; ihas < nhas; ihas++){
+            for(int ic = 0; ic < n_c22; ic++){
                 cmps[icmp] = CTNode(ipp, ipp + 1, istage, icol);
                 ipp += 2;
                 icmp++;
@@ -954,91 +1057,156 @@ void MultiplierGenerator::alloc_and_load_ct(std::vector<std::vector<int>> &ct_fa
             }else{
                 int ipps = 0;
                 opins.resize(npps);
-                int nfas = ct_fas[istage-1][icol];
-                int nhas = ct_has[istage-1][icol];
-                int npass = ct_pps[istage-1][icol] - nfas * 3 - nhas * 2;
                 // carry output pins (0th column does not have carry pps)
                 if(icol != 0){
-                    int nfac = ct_fas[istage-1][icol-1];
-                    int nhac = ct_has[istage-1][icol-1];
                     auto & cmps = ct[istage-1][icol-1];
-                    int icmp = 0;
-                    for(int ifac = 0; ifac < nfac; ifac++){
-                        opins[ipps] = CTNodePin(istage-1, icol-1, icmp, 1);
-                        cmps[icmp].cout = ipps;
-                        ipps++;
-                        icmp++;
-                    }
-
-                    for(int ihac = 0; ihac < nhac; ihac++){
-                        opins[ipps] = CTNodePin(istage-1, icol-1, icmp, 1);
-                        cmps[icmp].cout = ipps;
-                        ipps++;
-                        icmp++;
+                    for(int icmp = 0; icmp < cmps.size(); icmp++){
+                        int ncouts = compressor_carry_count(cmps[icmp].type);
+                        if (ncouts == 0) continue;
+                        cmps[icmp].couts.resize(ncouts, -1);
+                        for(int icout = 0; icout < ncouts; icout++){
+                            opins[ipps] = CTNodePin(istage-1, icol-1, icmp, 1 + icout);
+                            cmps[icmp].couts[icout] = ipps;
+                            ipps++;
+                        }
                     }
                 }
 
                 // sum ouptut pins
-                int icmp = 0;
                 auto & cmps = ct[istage-1][icol];
-                for(int ifas = 0; ifas < nfas; ifas++){
+                for(int icmp = 0; icmp < cmps.size(); icmp++){
+                    int ninputs = compressor_input_count(cmps[icmp].type);
+                    if (ninputs == 0) continue;
                     opins[ipps] = CTNodePin(istage-1, icol, icmp, 0);
                     cmps[icmp].sum = ipps;
                     ipps++;
-                    icmp++;
                 }
 
-                for(int ihas = 0; ihas < nhas; ihas++){
-                    opins[ipps] = CTNodePin(istage-1, icol, icmp, 0);
-                    cmps[icmp].sum = ipps;
-                    ipps++;
-                    icmp++;
-                }
-
-                // pass through pins
-                for(int ipass = 0; ipass < npass; ipass++){
-                    opins[ipps] = CTNodePin(istage-1, icol, icmp, 0);
-                    cmps[icmp].sum = ipps;
-                    ipps++;
-                    icmp++;
-                }
             }
 
             if(istage == num_stages) continue; // no input pins for the last stage
 
             // ipin correspondance to inputs of compressors at (istage, icol)
-            int nfas = ct_fas[istage][icol];
-            int nhas = ct_has[istage][icol];
-            int npass = npps - nfas * 3 - nhas * 2;
+            auto & ipins = ct_ipin[istage][icol];
+            ipins.resize(npps);
+            int ipp = 0;
+            auto & cmps = ct[istage][icol];
+            for (int icmp = 0; icmp < cmps.size(); icmp++)
+            {
+                int ninputs = compressor_input_count(cmps[icmp].type);
+                for (int ipin = 0; ipin < ninputs; ipin++)
+                {
+                    ipins[ipp + ipin] = CTNodePin(istage, icol, icmp, ipin);
+                }
+                ipp += ninputs;
+            }
+        }
+    }
+}
+
+void MultiplierGenerator::alloc_and_load_ct_legacy(
+    std::vector<std::vector<int>> &ct_fas,
+    std::vector<std::vector<int>> &ct_has)
+{
+    ct.resize(num_stages, std::vector<std::vector<CTNode>>(cols_pps, std::vector<CTNode>(0)));
+    for (int istage = 0; istage < num_stages; istage++){
+        for(int icol = 0; icol < cols_pps; icol++){
+            int npps = ct_pps[istage][icol];
+            auto & cmps = ct[istage][icol];
+            int icmp = 0;
+            int n_fa = ct_fas[istage][icol];
+            int n_ha = ct_has[istage][icol];
+            int used = n_fa * 3 + n_ha * 2;
+            int npass = npps - used;
+            cmps.resize(n_fa + n_ha + npass);
+            int ipp = 0;
+            for(int ic = 0; ic < n_fa; ic++){
+                cmps[icmp] = CTNode(ipp, ipp + 2, istage, icol);
+                ipp += 3;
+                icmp++;
+            }
+            for(int ic = 0; ic < n_ha; ic++){
+                cmps[icmp] = CTNode(ipp, ipp + 1, istage, icol);
+                ipp += 2;
+                icmp++;
+            }
+            for(int ipass = 0; ipass < npass; ipass++){
+                cmps[icmp] = CTNode(ipp, istage, icol);
+                ipp++;
+                icmp++;
+            }
+        }
+    }
+
+    ct_ipin.resize(num_stages, std::vector<std::vector<CTNodePin>>(cols_pps, std::vector<CTNodePin>(0)));
+    ct_opin.resize(num_stages+1, std::vector<std::vector<CTNodePin>>(cols_pps, std::vector<CTNodePin>(0)));
+    pin_assign.resize(num_stages, std::vector<std::vector<int>>(cols_pps, std::vector<int>(0)));
+
+    for (int istage = 0; istage < num_stages; istage++)
+    {
+        for (int icol = 0; icol < cols_pps; icol++)
+        {
+            int npps = ct_pps[istage][icol];
+            pin_assign[istage][icol].resize(npps);
+            for (int ipps = 0; ipps < npps; ipps++)
+            {
+                pin_assign[istage][icol][ipps] = ipps;
+            }
+        }
+    }
+
+    for (int istage = 0; istage < num_stages + 1; istage++)
+    {
+        for(int icol = 0; icol < cols_pps; icol++){
+            int npps = ct_pps[istage][icol];
+
+            auto & opins = ct_opin[istage][icol];
+            if(istage == 0){
+                opins.resize(npps);
+                for(int ipp = 0; ipp < npps; ipp++){
+                    opins[ipp] = CTNodePin(-1, icol, ipp, ipp);
+                }
+            }else{
+                int ipps = 0;
+                opins.resize(npps);
+                if(icol != 0){
+                    auto & cmps = ct[istage-1][icol-1];
+                    for(int icmp = 0; icmp < cmps.size(); icmp++){
+                        int ncouts = compressor_carry_count(cmps[icmp].type);
+                        if (ncouts == 0) continue;
+                        cmps[icmp].couts.resize(ncouts, -1);
+                        for(int icout = 0; icout < ncouts; icout++){
+                            opins[ipps] = CTNodePin(istage-1, icol-1, icmp, 1 + icout);
+                            cmps[icmp].couts[icout] = ipps;
+                            ipps++;
+                        }
+                    }
+                }
+
+                auto & cmps = ct[istage-1][icol];
+                for(int icmp = 0; icmp < cmps.size(); icmp++){
+                    int ninputs = compressor_input_count(cmps[icmp].type);
+                    if (ninputs == 0) continue;
+                    opins[ipps] = CTNodePin(istage-1, icol, icmp, 0);
+                    cmps[icmp].sum = ipps;
+                    ipps++;
+                }
+            }
+
+            if(istage == num_stages) continue;
 
             auto & ipins = ct_ipin[istage][icol];
             ipins.resize(npps);
             int ipp = 0;
-            int icmp = 0;
-            // input pins of FAs 
-            for (int ifas = 0; ifas < nfas; ifas++)
+            auto & cmps = ct[istage][icol];
+            for (int icmp = 0; icmp < cmps.size(); icmp++)
             {
-                ipins[ipp] = CTNodePin(istage, icol, icmp, 0);
-                ipins[ipp + 1] = CTNodePin(istage, icol, icmp, 1);
-                ipins[ipp + 2] = CTNodePin(istage, icol, icmp, 2);
-                ipp += 3;
-                icmp++;
-            }
-            // input pins of HAs
-            for (int ihas = 0; ihas < nhas; ihas++)
-            {
-                ipins[ipp] = CTNodePin(istage, icol, icmp, 0);
-                ipins[ipp + 1] = CTNodePin(istage, icol, icmp, 1);
-                ipp += 2;
-                icmp++;
-            }
-
-            // pass through pins
-            for (int ipass = 0; ipass < npass; ipass++)
-            {
-                ipins[ipp] = CTNodePin(istage, icol, icmp, 0);
-                ipp++;
-                icmp++;
+                int ninputs = compressor_input_count(cmps[icmp].type);
+                for (int ipin = 0; ipin < ninputs; ipin++)
+                {
+                    ipins[ipp + ipin] = CTNodePin(istage, icol, icmp, ipin);
+                }
+                ipp += ninputs;
             }
         }
     }
@@ -1046,27 +1214,184 @@ void MultiplierGenerator::alloc_and_load_ct(std::vector<std::vector<int>> &ct_fa
 
 // Builds CSA tree for given partial products.
 // The algorithm is based on the paper "UFO-MAC: A Unified Framework for Optimization of High-Performance Multipliers and Multiply-Accumulators" by Dongsheng Zuo
-void MultiplierGenerator::build_ct()
+void MultiplierGenerator::build_ct(bool enable_c42, bool use_direct_ilp)
 {
     int num_max_stages = 0;
-    std::vector<int> num_fas(cols_pps, 0);
-    std::vector<int> num_has(cols_pps, 0);
+    if (use_direct_ilp) {
+        count_pps(num_max_stages);
 
-    count_fas_and_has(num_fas, num_has, num_max_stages);
-    int norder = (int)ceil(log(rows_pps) / log(3.0));
-    num_max_stages = (int)ceil((norder * log(3.0) - log(2.0)) / (log(3.0)-log(2.0)));
-    num_max_stages += 1;
+        std::vector<std::vector<int>> ct_3_2;
+        std::vector<std::vector<int>> ct_2_2;
+        std::vector<std::vector<int>> ct_4_2;
 
-    std::vector<std::vector<int>> ct_fas;
-    std::vector<std::vector<int>> ct_has;
+        opt_ct_assignment(ct_3_2, ct_2_2, ct_4_2, num_max_stages, enable_c42);
+        alloc_and_load_ct(ct_3_2, ct_2_2, ct_4_2);
+    } else {
+        std::vector<int> num_fas(cols_pps, 0);
+        std::vector<int> num_has(cols_pps, 0);
+        count_fas_and_has(num_fas, num_has, num_max_stages);
 
-    opt_fas_and_has_assignment(num_fas, num_has, ct_fas, ct_has, num_max_stages);
-
-    alloc_and_load_ct(ct_fas, ct_has);
+        std::vector<std::vector<int>> ct_fas;
+        std::vector<std::vector<int>> ct_has;
+        opt_fas_and_has_assignment(num_fas, num_has, ct_fas, ct_has, num_max_stages);
+        alloc_and_load_ct_legacy(ct_fas, ct_has);
+    }
 
     // UFO-MAC paper does not describe the wire assignment clearly, and it seems infeasible to assign wires optimally.
     // Thus we assign wires in a simple way.
     opt_ct_wire_assignment();
+}
+
+void MultiplierGenerator::opt_ct_assignment(
+                                             std::vector<std::vector<int>> &ct_3_2,
+                                             std::vector<std::vector<int>> &ct_2_2,
+                                             std::vector<std::vector<int>> &ct_4_2,
+                                             int num_max_stages,
+                                             bool enable_c42)
+{
+    auto t_start = std::chrono::high_resolution_clock::now();
+
+    std::vector<int> initial_pps = ct_pps[0];
+    ct_3_2.resize(num_max_stages, std::vector<int>(cols_pps, 0));
+    ct_2_2.resize(num_max_stages, std::vector<int>(cols_pps, 0));
+    ct_4_2.resize(num_max_stages, std::vector<int>(cols_pps, 0));
+    ct_pps.resize(num_max_stages, std::vector<int>(cols_pps, 0));
+    for (int j = 0; j < cols_pps; ++j) {
+        ct_pps[0][j] = initial_pps[j];
+    }
+
+    int cols_pps_local = ct_pps[0].size();
+
+    // Import OR-Tools
+    namespace operations_research = operations_research;
+
+    // Create the solver
+    operations_research::MPSolver solver("opt_ct_assignment", operations_research::MPSolver::CBC_MIXED_INTEGER_PROGRAMMING);
+
+    // Variables
+    std::vector<std::vector<operations_research::MPVariable*>> x_c32(num_max_stages, std::vector<operations_research::MPVariable*>(cols_pps_local));
+    std::vector<std::vector<operations_research::MPVariable*>> x_c22(num_max_stages, std::vector<operations_research::MPVariable*>(cols_pps_local));
+    std::vector<std::vector<operations_research::MPVariable*>> x_c42(num_max_stages, std::vector<operations_research::MPVariable*>(cols_pps_local));
+    std::vector<std::vector<operations_research::MPVariable*>> x_pp(num_max_stages, std::vector<operations_research::MPVariable*>(cols_pps_local));
+    std::vector<std::vector<operations_research::MPVariable*>> y(num_max_stages, std::vector<operations_research::MPVariable*>(cols_pps_local));
+
+    for (int i = 0; i < num_max_stages; ++i) {
+        for (int j = 0; j < cols_pps; ++j) {
+            x_c32[i][j] = solver.MakeIntVar(0, solver.infinity(), "x_c32_" + std::to_string(i) + "_" + std::to_string(j));
+            x_c22[i][j] = solver.MakeIntVar(0, solver.infinity(), "x_c22_" + std::to_string(i) + "_" + std::to_string(j));
+            x_c42[i][j] = solver.MakeIntVar(0, enable_c42 ? solver.infinity() : 0.0, "x_c42_" + std::to_string(i) + "_" + std::to_string(j));
+            x_pp[i][j] = solver.MakeIntVar(0, solver.infinity(), "x_pp_" + std::to_string(i) + "_" + std::to_string(j));
+            y[i][j] = solver.MakeBoolVar("y_" + std::to_string(i) + "_" + std::to_string(j));
+        }
+    }
+
+    const int M = cols_pps_local * rows_pps;
+
+    // Constraints
+    for (int j = 0; j < cols_pps_local; ++j) {
+        operations_research::MPConstraint* num_pps_constraint = solver.MakeRowConstraint(ct_pps[0][j], ct_pps[0][j]);
+        num_pps_constraint->SetCoefficient(x_pp[0][j], 1);
+
+        for (int i = 0; i < num_max_stages; ++i) {
+            operations_research::MPConstraint *pp_sufficient_constraint = solver.MakeRowConstraint(0, solver.infinity());
+            pp_sufficient_constraint->SetCoefficient(x_pp[i][j], 1);
+            pp_sufficient_constraint->SetCoefficient(x_c32[i][j], -3);
+            pp_sufficient_constraint->SetCoefficient(x_c22[i][j], -2);
+            pp_sufficient_constraint->SetCoefficient(x_c42[i][j], -4);
+        }
+
+        for (int i = 1; i < num_max_stages; ++i) {
+            operations_research::MPConstraint* pp_update_constraint = solver.MakeRowConstraint(0,0);
+            pp_update_constraint->SetCoefficient(x_pp[i][j], -1);
+            pp_update_constraint->SetCoefficient(x_pp[i-1][j], 1);
+            pp_update_constraint->SetCoefficient(x_c32[i-1][j], -2);
+            pp_update_constraint->SetCoefficient(x_c22[i-1][j], -1);
+            pp_update_constraint->SetCoefficient(x_c42[i-1][j], -3);
+            if (j > 0) {
+                pp_update_constraint->SetCoefficient(x_c32[i-1][j-1], 1);
+                pp_update_constraint->SetCoefficient(x_c22[i-1][j-1], 1);
+                pp_update_constraint->SetCoefficient(x_c42[i-1][j-1], 2);
+            }
+        }
+
+        for (int i = 0; i < num_max_stages; ++i)
+        {
+            operations_research::MPConstraint *y_link_constraint = solver.MakeRowConstraint(0, solver.infinity());
+            y_link_constraint->SetCoefficient(y[i][j], M);
+            y_link_constraint->SetCoefficient(x_c32[i][j], -1);
+            y_link_constraint->SetCoefficient(x_c22[i][j], -1);
+            y_link_constraint->SetCoefficient(x_c42[i][j], -1);
+        }
+
+        operations_research::MPConstraint* final_pp_constraint = solver.MakeRowConstraint(0, 2);
+        final_pp_constraint->SetCoefficient(x_pp[num_max_stages - 1][j], 1);
+    }
+
+    // Minimize the maximum stage where compressors are assigned
+    operations_research::MPVariable *min_stages = solver.MakeIntVar(0, num_max_stages, "min_stages");
+    for (int i = 0; i < num_max_stages; ++i)
+    {
+        for (int j = 0; j < cols_pps_local; ++j)
+        {
+            operations_research::MPConstraint *min_stage_constraint = solver.MakeRowConstraint(0, solver.infinity());
+            min_stage_constraint->SetCoefficient(min_stages, 1);
+            min_stage_constraint->SetCoefficient(y[i][j], -(i+1));
+        }
+    }
+
+    // Set the objective to minimize min_stages, then minimize compressor count
+    operations_research::MPObjective* objective = solver.MutableObjective();
+    const double stage_weight = static_cast<double>(rows_pps * cols_pps_local * 10);
+    objective->SetCoefficient(min_stages, stage_weight);
+    for (int i = 0; i < num_max_stages; ++i) {
+        for (int j = 0; j < cols_pps_local; ++j) {
+            objective->SetCoefficient(x_c32[i][j], 1.0);
+            objective->SetCoefficient(x_c22[i][j], 1.0);
+            objective->SetCoefficient(x_c42[i][j], 0.9);
+        }
+    }
+    objective->SetMinimization();
+
+    // Solve the problem
+    const operations_research::MPSolver::ResultStatus result_status = solver.Solve();
+
+    if (result_status != operations_research::MPSolver::OPTIMAL) {
+        std::cerr << "The problem does not have an optimal solution." << std::endl;
+        return;
+    }
+
+    num_stages = static_cast<int>(min_stages->solution_value());
+
+    for (int i = 0; i < num_max_stages; ++i) {
+        int is_pp_exist = false;
+        for (int j = 0; j < cols_pps_local; ++j) {
+            ct_3_2[i][j] = static_cast<int>(x_c32[i][j]->solution_value());
+            ct_2_2[i][j] = static_cast<int>(x_c22[i][j]->solution_value());
+            ct_4_2[i][j] = static_cast<int>(x_c42[i][j]->solution_value());
+            ct_pps[i][j] = static_cast<int>(x_pp[i][j]->solution_value());
+            if (ct_pps[i][j] > 0) is_pp_exist = true;
+        }
+        if(is_pp_exist && i >= num_stages) {
+            break;
+        }
+    }
+
+    int total_c32 = 0, total_c22 = 0, total_c42 = 0;
+    for (int i = 0; i < num_max_stages; ++i) {
+        for (int j = 0; j < cols_pps_local; ++j) {
+            total_c32 += ct_3_2[i][j];
+            total_c22 += ct_2_2[i][j];
+            total_c42 += ct_4_2[i][j];
+        }
+    }
+    auto t_end = std::chrono::high_resolution_clock::now();
+    double elapsed_sec = std::chrono::duration<double>(t_end - t_start).count();
+    std::cout << "[INFO] opt_ct_assignment: num_stages = " << num_stages
+              << ", num_max_stages = " << num_max_stages
+              << ", total C32 = " << total_c32
+              << ", total C22 = " << total_c22
+              << ", total C42 = " << total_c42
+              << ", elapsed = " << elapsed_sec << " sec" << std::endl;
 }
 
 void MultiplierGenerator::opt_fas_and_has_assignment(
@@ -1079,25 +1404,21 @@ void MultiplierGenerator::opt_fas_and_has_assignment(
     ct_has.resize(num_max_stages, std::vector<int>(cols_pps, 0));
     ct_pps.resize(num_max_stages, std::vector<int>(cols_pps, 0));
 
-    int cols_pps = ct_pps[0].size();
+    int cols_pps_local = ct_pps[0].size();
     int M = 0;
     for (auto n : num_fas) M += n;
     for (auto n : num_has) M += n;
 
-    // Import OR-Tools
     namespace operations_research = operations_research;
-
-    // Create the solver
     operations_research::MPSolver solver("opt_fas_and_has_assignment", operations_research::MPSolver::CBC_MIXED_INTEGER_PROGRAMMING);
 
-    // Variables
-    std::vector<std::vector<operations_research::MPVariable*>> x_fa(num_max_stages, std::vector<operations_research::MPVariable*>(cols_pps));
-    std::vector<std::vector<operations_research::MPVariable*>> x_ha(num_max_stages, std::vector<operations_research::MPVariable*>(cols_pps));
-    std::vector<std::vector<operations_research::MPVariable*>> x_pp(num_max_stages, std::vector<operations_research::MPVariable*>(cols_pps));
-    std::vector<std::vector<operations_research::MPVariable*>> y(num_max_stages, std::vector<operations_research::MPVariable*>(cols_pps));
+    std::vector<std::vector<operations_research::MPVariable*>> x_fa(num_max_stages, std::vector<operations_research::MPVariable*>(cols_pps_local));
+    std::vector<std::vector<operations_research::MPVariable*>> x_ha(num_max_stages, std::vector<operations_research::MPVariable*>(cols_pps_local));
+    std::vector<std::vector<operations_research::MPVariable*>> x_pp(num_max_stages, std::vector<operations_research::MPVariable*>(cols_pps_local));
+    std::vector<std::vector<operations_research::MPVariable*>> y(num_max_stages, std::vector<operations_research::MPVariable*>(cols_pps_local));
 
     for (int i = 0; i < num_max_stages; ++i) {
-        for (int j = 0; j < cols_pps; ++j) {
+        for (int j = 0; j < cols_pps_local; ++j) {
             x_fa[i][j] = solver.MakeIntVar(0, solver.infinity(), "x_fa_" + std::to_string(i) + "_" + std::to_string(j));
             x_ha[i][j] = solver.MakeIntVar(0, solver.infinity(), "x_ha_" + std::to_string(i) + "_" + std::to_string(j));
             x_pp[i][j] = solver.MakeIntVar(0, solver.infinity(), "x_pp_" + std::to_string(i) + "_" + std::to_string(j));
@@ -1105,24 +1426,21 @@ void MultiplierGenerator::opt_fas_and_has_assignment(
         }
     }
 
-    // Constraints
-    for (int j = 0; j < cols_pps; ++j) {
+    for (int j = 0; j < cols_pps_local; ++j) {
         operations_research::MPConstraint* num_pps_constraint = solver.MakeRowConstraint(ct_pps[0][j], ct_pps[0][j]);
         num_pps_constraint->SetCoefficient(x_pp[0][j], 1);
 
-        // Ensure the total number of FAs and HAs matches the required number for each column
         operations_research::MPConstraint* total_fas_constraint = solver.MakeRowConstraint(num_fas[j], num_fas[j]);
         operations_research::MPConstraint* total_has_constraint = solver.MakeRowConstraint(num_has[j], num_has[j]);
         for (int i = 0; i < num_max_stages; ++i) {
             total_fas_constraint->SetCoefficient(x_fa[i][j], 1);
             total_has_constraint->SetCoefficient(x_ha[i][j], 1);
         }
-        
-        // Ensure the number of PPs is updated correctly across stages
+
         for (int i = 1; i < num_max_stages; ++i) {
             operations_research::MPConstraint* pp_update_constraint = solver.MakeRowConstraint(0,0);
             pp_update_constraint->SetCoefficient(x_pp[i][j], -1);
-            pp_update_constraint->SetCoefficient(x_fa[i-1][j], -2); // eq.(8) in the paper is wrong. -2 x_fa[i][j] - x_ha[i][j] should be -2 x_fa[i-1][j] - x_ha[i-1][j]
+            pp_update_constraint->SetCoefficient(x_fa[i-1][j], -2);
             pp_update_constraint->SetCoefficient(x_ha[i-1][j], -1);
             if (j > 0) {
                 pp_update_constraint->SetCoefficient(x_fa[i-1][j-1], 1);
@@ -1131,7 +1449,6 @@ void MultiplierGenerator::opt_fas_and_has_assignment(
             pp_update_constraint->SetCoefficient(x_pp[i-1][j], 1);
         }
 
-        // Ensure the number of PPs in each stage is sufficient for the assigned adders
         for (int i = 0; i < num_max_stages; ++i) {
             operations_research::MPConstraint *pp_sufficient_constraint = solver.MakeRowConstraint(0, solver.infinity());
             pp_sufficient_constraint->SetCoefficient(x_pp[i][j], 1);
@@ -1139,7 +1456,6 @@ void MultiplierGenerator::opt_fas_and_has_assignment(
             pp_sufficient_constraint->SetCoefficient(x_ha[i][j], -2);
         }
 
-        // Link y[i][j] with x_fa[i][j] and x_ha[i][j]
         for (int i = 0; i < num_max_stages; ++i)
         {
             operations_research::MPConstraint *y_link_constraint = solver.MakeRowConstraint(0, solver.infinity());
@@ -1149,54 +1465,45 @@ void MultiplierGenerator::opt_fas_and_has_assignment(
         }
     }
 
-    // Minimize the maximum stage where adders are assigned
     operations_research::MPVariable *min_stages = solver.MakeIntVar(0, num_max_stages, "min_stages");
     for (int i = 0; i < num_max_stages; ++i)
     {
-        for (int j = 0; j < cols_pps; ++j)
+        for (int j = 0; j < cols_pps_local; ++j)
         {
-            // eq (10) in the paper S >= (i+1) y[i][j] . 
             operations_research::MPConstraint *min_stage_constraint = solver.MakeRowConstraint(0, solver.infinity());
             min_stage_constraint->SetCoefficient(min_stages, 1);
             min_stage_constraint->SetCoefficient(y[i][j], -(i+1));
         }
     }
 
-    // Set the objective to minimize min_stages
     operations_research::MPObjective* objective = solver.MutableObjective();
     objective->SetCoefficient(min_stages, 1);
     objective->SetMinimization();
 
-    // Solve the problem
     const operations_research::MPSolver::ResultStatus result_status = solver.Solve();
-
     if (result_status != operations_research::MPSolver::OPTIMAL) {
         std::cerr << "The problem does not have an optimal solution." << std::endl;
         return;
     }
 
-    // Substitute the minimum value for stages (this value iis adder stages that is one less than the actual number of pp stages. )
     num_stages = static_cast<int>(min_stages->solution_value());
 
-    // Extract the results
     for (int i = 0; i < num_max_stages; ++i) {
         int is_pp_exist = false;
-        for (int j = 0; j < cols_pps; ++j) {
+        for (int j = 0; j < cols_pps_local; ++j) {
             ct_fas[i][j] = static_cast<int>(x_fa[i][j]->solution_value());
             ct_has[i][j] = static_cast<int>(x_ha[i][j]->solution_value());
             ct_pps[i][j] = static_cast<int>(x_pp[i][j]->solution_value());
             if( ct_pps[i][j] > 0 ) is_pp_exist = true;
         }
         if(is_pp_exist && i >= num_stages) {
-            // the last stage is num_stages + 1, so we can stop here.
             break;
         }
     }
 
-    // Print statistics and timing
     int total_fas = 0, total_has = 0;
     for (int i = 0; i < num_max_stages; ++i) {
-        for (int j = 0; j < cols_pps; ++j) {
+        for (int j = 0; j < cols_pps_local; ++j) {
             total_fas += ct_fas[i][j];
             total_has += ct_has[i][j];
         }
@@ -1229,6 +1536,40 @@ double MultiplierGenerator::do_ct_sta()
     }
 
     // propagate arrival time
+    auto get_sum_delay = [&](CompressorType type, int ipin) -> float {
+        switch (type) {
+            case CT_1_1:
+                return 0.0f;
+            case CT_2_2:
+                return dhas[ipin][HA_SUM];
+            case CT_3_2:
+                return dfas[ipin][FA_SUM];
+            case CT_4_2: {
+                if (ipin == 3) return dfas[FA_B][FA_SUM];
+                if (ipin == 2) return dfas[FA_CIN][FA_SUM] + dfas[FA_A][FA_SUM];
+                return dfas[FA_A][FA_SUM] + dfas[FA_A][FA_SUM];
+            }
+            default:
+                return 0.0f;
+        }
+    };
+
+    auto get_carry_delay = [&](CompressorType type, int ipin) -> float {
+        switch (type) {
+            case CT_2_2:
+                return dhas[ipin][HA_COUT];
+            case CT_3_2:
+                return dfas[ipin][FA_COUT];
+            case CT_4_2: {
+                float d_c1 = (ipin == 2) ? dfas[FA_CIN][FA_COUT] : dfas[FA_A][FA_COUT];
+                float d_c2 = (ipin == 3) ? dfas[FA_B][FA_COUT] : (dfas[FA_A][FA_SUM] + dfas[FA_A][FA_COUT]);
+                return std::max(d_c1, d_c2);
+            }
+            default:
+                return 0.0f;
+        }
+    };
+
     for(int istage = 0; istage < pin_assign.size(); istage++){
         for(int icol = 0; icol < pin_assign[istage].size(); icol++){
             for(int ipp = 0; ipp < pin_assign[istage][icol].size(); ipp++){
@@ -1241,17 +1582,20 @@ double MultiplierGenerator::do_ct_sta()
                 int icmp = ipin.icmp;
                 int icmp_pin = ipin.ipin;
                 auto & cmp = ct[istage][icol][icmp];
-                int num_pins = cmp.ipp1 - cmp.ipp0 + 1;
+                int num_pins = compressor_input_count(cmp.type);
                 if(num_pins == 1){ // no delay (wire only)
                     ct_opin[istage+1][icol][cmp.sum].set_tarr(tarr);
-                }else if(num_pins == 2){ // HA
-                    ct_opin[istage+1][icol][cmp.sum].set_tarr(tarr + dhas[icmp_pin][HA_SUM]); // sum pin
-                    if(icol+1 < cols_pps)
-                     ct_opin[istage+1][icol+1][cmp.cout].set_tarr(tarr + dhas[icmp_pin][HA_COUT]); // carry pin
-                }else if(num_pins == 3){ // FA 
-                    ct_opin[istage+1][icol][cmp.sum].set_tarr(tarr + dfas[icmp_pin][FA_SUM]); // sum pin
-                    if(icol+1 < cols_pps)
-                        ct_opin[istage+1][icol+1][cmp.cout].set_tarr(tarr + dfas[icmp_pin][FA_COUT]); // carry pin
+                }else{
+                    ct_opin[istage+1][icol][cmp.sum].set_tarr(tarr + get_sum_delay(cmp.type, icmp_pin));
+                    int ncouts = compressor_carry_count(cmp.type);
+                    if(icol+1 < cols_pps && ncouts > 0){
+                        float carry_delay = get_carry_delay(cmp.type, icmp_pin);
+                        for (int icout = 0; icout < ncouts; icout++) {
+                            if (icout < cmp.couts.size() && cmp.couts[icout] >= 0) {
+                                ct_opin[istage+1][icol+1][cmp.couts[icout]].set_tarr(tarr + carry_delay);
+                            }
+                        }
+                    }
                 }
             }
         }  
@@ -1283,7 +1627,10 @@ double MultiplierGenerator::do_ct_sta()
             auto & opins = ct_opin[istage][icol];
             auto & ipins = ct_ipin[istage][icol];
             auto & opins_sum = ct_opin[istage+1][icol];
-            auto & opins_cout = ct_opin[istage+1][icol+1];
+            std::vector<CTNodePin> *opins_cout = nullptr;
+            if (icol + 1 < ct_opin[istage+1].size()) {
+                opins_cout = &ct_opin[istage+1][icol+1];
+            }
             // computing treq
             for (int ipp = 0; ipp < ipins.size(); ipp++){
                 int icmp_stage = ipins[ipp].istage;
@@ -1291,21 +1638,23 @@ double MultiplierGenerator::do_ct_sta()
                 int icmp = ipins[ipp].icmp;
                 int icmp_pin = ipins[ipp].ipin;
                 auto & cmp = ct[icmp_stage][icmp_col][icmp];
-                int num_pins = cmp.ipp1 - cmp.ipp0 + 1;
+                int num_pins = compressor_input_count(cmp.type);
                 if(num_pins == 1){
                     ipins[ipp].treq = opins_sum[cmp.sum].treq;
-                }else if(num_pins == 2){
-                    if(cmp.cout == -1){ // no carry output
-                        ipins[ipp].treq = opins_sum[cmp.sum].treq - dhas[icmp_pin][HA_SUM];
-                    }else{
-                        ipins[ipp].treq = std::min(opins_sum[cmp.sum].treq - dhas[icmp_pin][HA_SUM], opins_cout[cmp.cout].treq - dhas[icmp_pin][HA_COUT]);
+                }else{
+                    float treq_sum = opins_sum[cmp.sum].treq - get_sum_delay(cmp.type, icmp_pin);
+                    float treq_carry = FLT_MAX;
+                    int ncouts = compressor_carry_count(cmp.type);
+                    if(opins_cout && ncouts > 0){
+                        float carry_delay = get_carry_delay(cmp.type, icmp_pin);
+                        for (int icout = 0; icout < ncouts; icout++) {
+                            if (icout < cmp.couts.size() && cmp.couts[icout] >= 0) {
+                                float cand = static_cast<float>((*opins_cout)[cmp.couts[icout]].treq - carry_delay);
+                                treq_carry = std::min(treq_carry, cand);
+                            }
+                        }
                     }
-                }else if(num_pins == 3){
-                    if(cmp.cout == -1){ // no carry output
-                        ipins[ipp].treq = opins_sum[cmp.sum].treq - dfas[icmp_pin][FA_SUM];
-                    }else{
-                        ipins[ipp].treq = std::min(opins_sum[cmp.sum].treq - dfas[icmp_pin][FA_SUM], opins_cout[cmp.cout].treq - dfas[icmp_pin][FA_COUT]);
-                    }
+                    ipins[ipp].treq = std::min(treq_sum, treq_carry);
                 }
             }
 
@@ -1385,7 +1734,7 @@ void MultiplierGenerator::opt_ct_wire_assignment()
 
 void MultiplierGenerator::build_cpa(CPAType cptype)
 {
-    // ct_pps[0][icol] is the number of pps in 0th stage column icol. it could be 0 or 1. otherwise 2 because compression tree aligns the output to 2 
+    // ct_pps[num_stages][icol] is the number of pps in the last stage column icol.
     // cols_pps number of columns in the pps.
 
     // cpa is built for the lowest column with 2 pps to highest column with 1 or 2 pps. (the length is here denoted as n)
@@ -1407,17 +1756,17 @@ void MultiplierGenerator::build_cpa(CPAType cptype)
 
     // allocating cpa nodes
     cpa_col_start = cpa_col_end = 0;
-    for (int i = 0; i < ct_pps[0].size(); i++){
-        if(ct_pps[0][i] > 1){
+    for (int i = 0; i < ct_pps[num_stages].size(); i++){
+        if(ct_pps[num_stages][i] > 1){
             cpa_col_start = i;
             break;
         }
     }
 
     std::vector<int> num_cpa_inputs; 
-    for (int i = cpa_col_start; i < ct_pps[0].size(); i++){
-        if(ct_pps[0][i] > 0){
-            num_cpa_inputs.push_back(ct_pps[0][i]);
+    for (int i = cpa_col_start; i < ct_pps[num_stages].size(); i++){
+        if(ct_pps[num_stages][i] > 0){
+            num_cpa_inputs.push_back(ct_pps[num_stages][i]);
             cpa_col_end = i;
         }
     }
@@ -1425,5 +1774,3 @@ void MultiplierGenerator::build_cpa(CPAType cptype)
     // the lsbs and the msbs of the adder can only be 1 bit adder. 
     cpa.init(num_cpa_inputs.size(), cptype);
 }
-
-
