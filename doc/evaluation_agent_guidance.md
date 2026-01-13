@@ -70,6 +70,17 @@ Each note should include:
 - Evidence: relevant metrics or plots (with path references).
 - Next step: suggested action (retune params / RTL change / new configs).
 
+Evaluation Directory Hygiene
+----------------------------
+When running new evaluations (even if the circuit type matches previously
+evaluated ones), always create a new, distinctive design directory and
+campaign name:
+- `runs/designs/<circuit_type>/<new_design_name>/...`
+- `runs/campaigns/<circuit_type>/<new_campaign_name>/...`
+
+This keeps results traceable to the algorithm or parameter changes under
+evaluation and avoids mixing metrics with historical baselines.
+
 OpenROAD Retuning Guidance
 --------------------------
 When the issue is likely flow-related:
@@ -83,4 +94,3 @@ When the issue is likely architectural:
 - Compare against a baseline with identical width/signedness and a known CPA.
 - Note if the regression is PDK-specific (e.g., ASAP7 area spike).
 - Log a concise hypothesis for algorithm developers.
-
