@@ -311,6 +311,9 @@ def run_single(
     if platform.lower() == "asap7":
         if "critical_path_ns" in metrics and metrics["critical_path_ns"] is not None:
             metrics["critical_path_ns"] = metrics["critical_path_ns"] / 1000.0
+        if "total_power_mw" in metrics and metrics["total_power_mw"] is not None:
+            # ASAP7 report_power totals are reported in uW.
+            metrics["total_power_mw"] = metrics["total_power_mw"] / 1000.0
     die_area = parse_die_area(def_path)
     if die_area:
         metrics["die_area"] = die_area
