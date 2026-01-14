@@ -7,6 +7,19 @@ This document defines a sequential workflow to establish the NPU development and
 - Add a top-level `npu/README.md` describing the directory purpose and ownership.
 - Keep all NPU toolchain scripts and configs under `npu/` to avoid mixing with existing `runs/` workflows.
 
+## Phase 0.5: Devcontainer/toolchain prerequisites
+- Base build tools: `build-essential`, `cmake`, `ninja-build`, `git`, `python3`, `python3-venv`.
+- VP dependencies (from NVDLA VP README): `g++`, `libboost-dev`, `libglib2.0-dev`, `libpixman-1-dev`,
+  `liblua5.2-dev`, `swig`, `libcap-dev`, `libattr1-dev`.
+- SystemC 2.3.0 build/install (for VP):
+  - Download SystemC 2.3.0a source.
+  - Configure with `--prefix=/usr/local/systemc-2.3.0`.
+  - Build and install; export `SYSTEMC_PREFIX=/usr/local/systemc-2.3.0`.
+- TVM (scheduler) setup:
+  - Prefer source build with a pinned commit; record the hash in setup notes.
+  - Capture Python package requirements in `npu/mapper/requirements.txt`.
+  - Keep TVM runtime optional in devcontainer; only required for mapper runs.
+
 ## Phase 1: NVDLA integration baseline
 - Import NVDLA reference repositories as submodules under `npu/nvdla/`:
   - `npu/nvdla/hw` (RTL, cmod, syn scripts, spec)
