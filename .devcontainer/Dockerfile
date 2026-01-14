@@ -16,6 +16,7 @@ RUN apt-get update && \
     bison \
     ca-certificates \
     cmake \
+    ninja-build \
     flex \
     git \
     gdb \
@@ -32,6 +33,12 @@ RUN apt-get update && \
     libtool \
     autoconf \
     automake \
+    libboost-dev \
+    libglib2.0-dev \
+    libpixman-1-dev \
+    liblua5.2-dev \
+    libcap-dev \
+    libattr1-dev \
     python3 \
     python3-pip \
     swig \
@@ -68,8 +75,18 @@ RUN git clone https://github.com/ivmai/cudd.git /tmp/cudd && \
     
 RUN pip3 install PyYAML
 
+# Install SystemC 2.3.0a for NVDLA VP
+RUN wget -O /tmp/systemc-2.3.0a.tar.gz https://www.accellera.org/images/downloads/standards/systemc/systemc-2.3.0a.tar.gz && \
+    tar -xzf /tmp/systemc-2.3.0a.tar.gz -C /tmp && \
+    cd /tmp/systemc-2.3.0a && \
+    mkdir objdir && cd objdir && \
+    mkdir -p /usr/local/systemc-2.3.0 && \
+    ../configure --prefix=/usr/local/systemc-2.3.0 && \
+    make -j$(nproc) && make install && \
+    rm -rf /tmp/systemc-2.3.0a /tmp/systemc-2.3.0a.tar.gz
+
 # OpenROAD requires boost version >=1.78, 1.74 default in Ubuntu 22.04. The latest version is retrieved.
-RUN add-apt-repository ppa:mhier/libboost-latest && \
+RUN add-apt-repository -y ppa:mhier/libboost-latest && \
     apt update && \
     apt-get install -y $(apt-cache search --names-only '^libboost[0-9\.]+-all-dev$' | sort -V | tail -n 1 | awk '{print $1}')
 
