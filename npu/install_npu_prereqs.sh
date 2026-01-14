@@ -37,3 +37,13 @@ cd /
 rm -rf "${SYSCTMP}"
 
 echo "[npu] Done. SystemC installed to /usr/local/systemc-2.3.0"
+echo "[npu] Verifying SystemC install"
+if [[ ! -d /usr/local/systemc-2.3.0/include ]] || [[ ! -d /usr/local/systemc-2.3.0/lib ]]; then
+  echo "[npu] SystemC install missing include/lib directories" >&2
+  exit 1
+fi
+if ! ls /usr/local/systemc-2.3.0/lib | grep -q "libsystemc"; then
+  echo "[npu] SystemC library not found under /usr/local/systemc-2.3.0/lib" >&2
+  exit 1
+fi
+echo "[npu] SystemC verification passed"
