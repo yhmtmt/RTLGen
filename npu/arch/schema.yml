@@ -1,0 +1,30 @@
+schema_version: 0.1
+required:
+  - array
+  - datatypes
+  - sram
+  - dma
+  - shell
+
+array:
+  rows: int
+  cols: int
+  macs_per_cycle: int
+
+datatypes:
+  supported: [fp16, bf16, int8]
+
+sram:
+  activation_kb: int
+  weight_kb: int
+  kv_kb: int
+  banks: int
+
+dma:
+  engines: int
+  peak_bw_gbps: float
+  max_outstanding: int
+
+shell:
+  command_queue_depth: int
+  supports_interrupts: bool

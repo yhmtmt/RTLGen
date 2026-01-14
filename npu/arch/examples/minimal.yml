@@ -1,0 +1,21 @@
+schema_version: 0.1
+array:
+  rows: 8
+  cols: 8
+  macs_per_cycle: 64
+datatypes:
+  supported:
+    - fp16
+    - int8
+sram:
+  activation_kb: 512
+  weight_kb: 512
+  kv_kb: 256
+  banks: 8
+dma:
+  engines: 2
+  peak_bw_gbps: 64.0
+  max_outstanding: 32
+shell:
+  command_queue_depth: 64
+  supports_interrupts: true
