@@ -7,3 +7,15 @@
 [submodule "pagsuite"]
 	path = pagsuite
 	url = https://gitlab.com/kumm/pagsuite
+[submodule "npu/nvdla/hw"]
+	path = npu/nvdla/hw
+	url = https://github.com/nvdla/hw.git
+[submodule "npu/nvdla/sw"]
+	path = npu/nvdla/sw
+	url = https://github.com/nvdla/sw.git
+[submodule "npu/nvdla/vp"]
+	path = npu/nvdla/vp
+	url = https://github.com/nvdla/vp.git
+[submodule "npu/nvdla/doc"]
+	path = npu/nvdla/doc
+	url = https://github.com/nvdla/doc.git

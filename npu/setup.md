@@ -8,14 +8,21 @@ This document defines a sequential workflow to establish the NPU development and
 - Keep all NPU toolchain scripts and configs under `npu/` to avoid mixing with existing `runs/` workflows.
 
 ## Phase 1: NVDLA integration baseline
-- Import an NVDLA reference repository as a subtree or submodule under `npu/nvdla/`.
-- Record the source commit hash and license in `npu/nvdla/README.md`.
+- Import NVDLA reference repositories as submodules under `npu/nvdla/`:
+  - `npu/nvdla/hw` (RTL, cmod, syn scripts, spec)
+  - `npu/nvdla/sw` (KMD/UMD, runtime)
+  - `npu/nvdla/vp` (SystemC virtual platform)
+  - `npu/nvdla/doc` (Sphinx docs)
+- Record source URLs, commit hashes, and licenses in `npu/nvdla/README.md`.
+- Capture external documentation links for hardware, software, and VP.
 - Define a "shell contract" file in `npu/shell/spec.md` that documents the host interface, DMA model, and command queue format.
 
 ## Phase 2: Architecture parameterization
 - Define a canonical architecture schema in `npu/arch/schema.yml`.
 - Add example configurations in `npu/arch/examples/`.
 - Provide a validation script (Python) in `npu/arch/validate.py` to enforce schema requirements.
+- Note: NVDLA `nvdlav1` hardware is fixed at 2048 8-bit MACs; initial parameterization
+  should focus on RTLGen-generated wrappers/tiles while keeping the NVDLA shell stable.
 
 ## Phase 3: RTLGen integration
 - Implement a generator entrypoint under `npu/rtlgen/` that can emit NPU modules based on the schema.
@@ -27,6 +34,7 @@ This document defines a sequential workflow to establish the NPU development and
 
 ## Phase 4: OpenROAD evaluation flow
 - Add OpenROAD wrappers under `npu/synth/` for block-level PPA runs.
+- Use NVDLA `hw/syn` scripts as reference inputs for constraints and targets.
 - Define macro-level floorplanning guidance for NPU tiles in `npu/synth/floorplan.md`.
 - Ensure the flow runs inside the devcontainer environment and records results compatible with `runs/` indexing.
 
@@ -34,11 +42,18 @@ This document defines a sequential workflow to establish the NPU development and
 - Integrate a scheduler backend (TVM or equivalent) under `npu/mapper/`.
 - Define a schedule IR in `npu/mapper/ir.md`.
 - Add a driver script `npu/mapper/run.py` to map a benchmark to an arch config and emit schedule stats.
+- Track NVDLA SW runtime interfaces for loadable submission and queue semantics.
+- Capture build requirements for the NVDLA KMD/UMD and test applications as part of
+  the environment setup notes.
 
 ## Phase 6: Simulation environment
 - Implement a simulator under `npu/sim/` that consumes schedule IR + arch config.
 - Support analytical mode first; trace-driven simulation as a follow-up.
 - Define output metrics formats in `npu/sim/report.md`.
+- NVDLA VP requires SystemC 2.3.0 and additional build dependencies; capture
+  these requirements in setup documentation for the devcontainer.
+- VP runs require a platform config (e.g., `conf/aarch64_nvdla.lua`) and a Linux
+  kernel image; document how to build or obtain these artifacts.
 
 ## Phase 7: End-to-end workflow glue
 - Add a single sequential pipeline script (or Makefile) in `npu/` that runs:
