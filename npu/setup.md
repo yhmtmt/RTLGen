@@ -20,6 +20,15 @@ This document defines a sequential workflow to establish the NPU development and
   - Capture Python package requirements in `npu/mapper/requirements.txt`.
   - Keep TVM runtime optional in devcontainer; only required for mapper runs.
 
+### Devcontainer verification checklist
+- `python3 --version` and `cmake --version` succeed.
+- Boost headers resolved: `ls /usr/include/boost` works (or PPA-installed path).
+- SystemC installed:
+  - `/usr/local/systemc-2.3.0/include` exists
+  - `/usr/local/systemc-2.3.0/lib` contains `libsystemc`
+- OpenROAD binary resolves: `openroad -version`.
+- ORFS autotuner env exists: `ls /orfs/tools/AutoTuner/autotuner_env`.
+
 ## Phase 1: NVDLA integration baseline
 - Import NVDLA reference repositories as submodules under `npu/nvdla/`:
   - `npu/nvdla/hw` (RTL, cmod, syn scripts, spec)
