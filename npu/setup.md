@@ -54,6 +54,9 @@ This document defines a sequential workflow to establish the NPU development and
   these requirements in setup documentation for the devcontainer.
 - VP runs require a platform config (e.g., `conf/aarch64_nvdla.lua`) and a Linux
   kernel image; document how to build or obtain these artifacts.
+- VP/SystemC is intended for logical validation and integration checks only; it is
+  too slow for practical LLM-scale evaluation. Plan a GPU-assisted simulator
+  (standalone or coupled to VP) for performance studies.
 
 ## Phase 7: End-to-end workflow glue
 - Add a single sequential pipeline script (or Makefile) in `npu/` that runs:
