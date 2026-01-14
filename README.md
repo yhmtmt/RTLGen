@@ -56,6 +56,7 @@ python3 scripts/build_runs_index.py
 ## Notes and References
 - **Evaluation guidance**: How to run and interpret evaluations, plus naming rules for new runs: see [doc/evaluation_agent_guidance.md](doc/evaluation_agent_guidance.md).
 - **Development guidance**: Branching, config switches, and validation rules for new algorithms: see [doc/development_agent_guidance.md](doc/development_agent_guidance.md).
+- **NPU workflow**: High-level flow for NPU architecture definition, RTL generation, evaluation, mapping, and simulation: see [doc/npu_workflow.md](doc/npu_workflow.md).
 - Multiplier comparison (Booth vs. normal PPG) with OpenROAD results: see [doc/booth4_vs_normal/booth_vs_normal_multiplier_comparison.md](doc/booth4_vs_normal/booth_vs_normal_multiplier_comparison.md).
 - Yosys Booth vs ILP Booth comparison with normalized PPA plots: see [doc/yosys_vs_ilp_booth.md](doc/yosys_vs_ilp_booth.md).
 - Constant-multiplier algorithms (MCM/CMVM) and CLIs: see [doc/constant_multiplication.md](doc/constant_multiplication.md).
