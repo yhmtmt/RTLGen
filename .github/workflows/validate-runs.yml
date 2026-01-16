@@ -33,7 +33,7 @@ jobs:
 
       - name: Check index is up to date
         run: |
-          if git diff --exit-code runs/index.csv; then
+          if git diff --ignore-cr-at-eol --exit-code runs/index.csv; then
             echo "Index is up to date"
           else
             echo "::error::runs/index.csv is out of date. Run 'python scripts/build_runs_index.py' and commit the result."
