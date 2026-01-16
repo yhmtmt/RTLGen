@@ -6,7 +6,7 @@ Build a global runs/index.csv by aggregating metrics.csv under runs/designs/.
 import csv
 import json
 import re
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DESIGNS_ROOT = REPO_ROOT / "runs" / "designs"
@@ -22,6 +22,15 @@ def iter_metrics_files(root: Path):
 def normalize_repo_path(path_str: str):
     if not path_str:
         return ""
+    if re.match(r"^[A-Za-z]:[\\/]", path_str) or path_str.startswith("\\\\") or "\\" in path_str:
+        win_path = PureWindowsPath(path_str)
+        parts = win_path.parts
+        if "runs" in parts:
+            idx = parts.index("runs")
+            return Path(*parts[idx:]).as_posix()
+        if win_path.is_absolute():
+            return path_str
+        return Path(path_str).as_posix()
     path = Path(path_str)
     if path.is_absolute():
         try:
