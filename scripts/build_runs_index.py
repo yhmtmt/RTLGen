@@ -19,6 +19,18 @@ def iter_metrics_files(root: Path):
             yield path
 
 
+def normalize_repo_path(path_str: str):
+    if not path_str:
+        return ""
+    path = Path(path_str)
+    if path.is_absolute():
+        try:
+            return path.relative_to(REPO_ROOT).as_posix()
+        except ValueError:
+            return path_str
+    return path.as_posix()
+
+
 def parse_design_info(metrics_path: Path):
     rel = metrics_path.relative_to(DESIGNS_ROOT)
     parts = rel.parts
@@ -77,10 +89,10 @@ def main():
                     "config_hash": row.get("config_hash", ""),
                     "param_hash": row.get("param_hash", ""),
                     "tag": row.get("tag", ""),
-                    "result_path": row.get("result_path", ""),
+                    "result_path": normalize_repo_path(row.get("result_path", "")),
                     "params_json": json.dumps(params, sort_keys=True),
-                    "metrics_path": str(metrics_path),
-                    "design_path": str(metrics_path.parent),
+                    "metrics_path": metrics_path.relative_to(REPO_ROOT).as_posix(),
+                    "design_path": metrics_path.parent.relative_to(REPO_ROOT).as_posix(),
                 }
             )
 
