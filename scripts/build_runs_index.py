@@ -27,7 +27,15 @@ def normalize_repo_path(path_str: str):
         try:
             return path.relative_to(REPO_ROOT).as_posix()
         except ValueError:
+            parts = path.parts
+            if "runs" in parts:
+                idx = parts.index("runs")
+                return Path(*parts[idx:]).as_posix()
             return path_str
+    parts = path.parts
+    if "runs" in parts:
+        idx = parts.index("runs")
+        return Path(*parts[idx:]).as_posix()
     return path.as_posix()
 
 
@@ -91,8 +99,8 @@ def main():
                     "tag": row.get("tag", ""),
                     "result_path": normalize_repo_path(row.get("result_path", "")),
                     "params_json": json.dumps(params, sort_keys=True),
-                    "metrics_path": metrics_path.relative_to(REPO_ROOT).as_posix(),
-                    "design_path": metrics_path.parent.relative_to(REPO_ROOT).as_posix(),
+                    "metrics_path": normalize_repo_path(str(metrics_path)),
+                    "design_path": normalize_repo_path(str(metrics_path.parent)),
                 }
             )
 
