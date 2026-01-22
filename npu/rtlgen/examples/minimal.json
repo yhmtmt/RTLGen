@@ -1,0 +1,12 @@
+{
+  "version": "0.1",
+  "top_name": "npu_top",
+  "mmio_addr_width": 12,
+  "data_width": 32,
+  "queue_depth": 16,
+  "enable_irq": true,
+  "enable_dma_ports": true,
+  "enable_cq_mem_ports": true,
+  "enable_axi_ports": true,
+  "enable_axi_lite_wrapper": true
+}

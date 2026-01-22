@@ -1,6 +1,12 @@
 # NPU Environment Setup Plan
 
+## Purpose
 This document defines a sequential workflow to establish the NPU development and evaluation toolchain inside the RTLGen repository.
+
+## Current status (as of 2026-01-22)
+- RTL shell bring-up and AXI memory simulation are implemented.
+- AXI-Lite MMIO wrapper is available for the generated top.
+- Mapper can emit binary descriptors for the RTL sim path.
 
 ## Phase 0: Repository scaffolding
 - Create `npu/` subtree for NPU-specific assets.
@@ -99,3 +105,7 @@ This document defines a sequential workflow to establish the NPU development and
 - `npu/synth/floorplan.md`
 - `npu/mapper/ir.md`
 - `npu/sim/report.md`
+
+## Next steps
+- Add OpenROAD setup notes specific to NPU block synthesis.
+- Add TVM/mapper requirements once the mapper is wired to real models.

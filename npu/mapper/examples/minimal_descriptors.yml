@@ -1,0 +1,38 @@
+version: 0.1
+descriptors:
+- opcode: 1
+  flags: 0
+  size: 1
+  tag: 0
+  fields:
+    src_addr: 206158430208
+    dst_addr: 206159478784
+    size: 4096
+  comment: dma1
+- opcode: 32
+  flags: 0
+  size: 1
+  tag: 1
+  fields: {}
+  comment: dma1_signal_1
+- opcode: 33
+  flags: 0
+  size: 1
+  tag: 1
+  fields: {}
+  comment: gemm1_wait_1
+- opcode: 16
+  flags: 0
+  size: 1
+  tag: 67174464
+  fields:
+    a_addr: 206158430208
+    b_addr: 206159478784
+    c_addr: 206160527360
+  comment: gemm1
+- opcode: 32
+  flags: 0
+  size: 1
+  tag: 3
+  fields: {}
+  comment: event_3

@@ -5,6 +5,11 @@ RTLGen is a Verilog generator driven by a JSON configuration file. It can emit a
 - Floating point: adders/multipliers/FMA via FloPoCo integration.
 - Activations: integer ReLU/ReLU6/leaky ReLU and user-defined symmetric PWL functions; FP path supports ReLU and leaky ReLU (FP PWL is coarse/experimental).
 
+## NPU status (summary)
+- Shell contract v0.1 and RTL bring-up implemented.
+- RTL simulation includes DMA + AXI burst path and AXI-Lite MMIO wrapper tests.
+- Mapping/perf simulation and OpenROAD integration are planned.
+
 ## Building the Project
 
 Dependencies:
@@ -57,6 +62,7 @@ python3 scripts/build_runs_index.py
 - **Evaluation guidance**: How to run and interpret evaluations, plus naming rules for new runs: see [doc/evaluation_agent_guidance.md](doc/evaluation_agent_guidance.md).
 - **Development guidance**: Branching, config switches, and validation rules for new algorithms: see [doc/development_agent_guidance.md](doc/development_agent_guidance.md).
 - **NPU workflow**: High-level flow for NPU architecture definition, RTL generation, evaluation, mapping, and simulation: see [doc/npu_workflow.md](doc/npu_workflow.md).
+- **NPU docs index**: Specs, plans, and logs for NPU development: see [npu/docs/index.md](npu/docs/index.md).
 - Multiplier comparison (Booth vs. normal PPG) with OpenROAD results: see [doc/booth4_vs_normal/booth_vs_normal_multiplier_comparison.md](doc/booth4_vs_normal/booth_vs_normal_multiplier_comparison.md).
 - Yosys Booth vs ILP Booth comparison with normalized PPA plots: see [doc/yosys_vs_ilp_booth.md](doc/yosys_vs_ilp_booth.md).
 - Constant-multiplier algorithms (MCM/CMVM) and CLIs: see [doc/constant_multiplication.md](doc/constant_multiplication.md).

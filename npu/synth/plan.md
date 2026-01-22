@@ -1,5 +1,6 @@
 # NPU OpenROAD Synthesis Plan
 
+## Purpose
 This plan outlines how to integrate NVDLA hardware references into RTLGen's
 OpenROAD evaluation flow for block-level NPU macros.
 
@@ -42,3 +43,9 @@ OpenROAD evaluation flow for block-level NPU macros.
 - Draft a minimal NPU macro wrapper config in `runs/campaigns/npu/`.
 - Validate that `scripts/run_sweep.py` can target NPU macro designs with
   custom SDC and floorplan constraints.
+
+## Status
+- RTL shell and DMA stub are available; OpenROAD integration is pending.
+
+## Next steps
+- Implement a minimal block-level OpenROAD run for the DMA tile.
