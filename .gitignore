@@ -4,3 +4,6 @@ adder_configs/
 plan/
 papers/
 third_party/
+.vvp
+npu/mapper/__pycache__/
+npu/rtlgen/out/
