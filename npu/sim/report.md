@@ -28,14 +28,21 @@ summary `stats`. Example schema:
     "gemm_ops": 1,
     "event_ops": 2,
     "noop_ops": 0,
-    "unknown_ops": 0
+    "unknown_ops": 0,
+    "dma_time_ns": 512.0,
+    "gemm_time_ns": 600.0,
+    "event_time_ns": 100.0,
+    "noop_time_ns": 0.0,
+    "unknown_time_ns": 0.0
   },
+  "warnings": [],
   "trace": [
     {
       "offset": 0,
       "opcode": 1,
       "name": "DMA_COPY",
       "bytes": 8192,
+      "achieved_gbps": 16.0,
       "start_ns": 0.0,
       "end_ns": 512.0
     }

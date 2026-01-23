@@ -97,6 +97,7 @@ def desc_to_event(desc, cfg):
 def build_trace(descs, cfg):
     trace = []
     now_ns = 0.0
+    warnings = []
     stats = {
         "total_bytes": 0,
         "dma_ops": 0,
@@ -104,6 +105,11 @@ def build_trace(descs, cfg):
         "event_ops": 0,
         "noop_ops": 0,
         "unknown_ops": 0,
+        "dma_time_ns": 0.0,
+        "gemm_time_ns": 0.0,
+        "event_time_ns": 0.0,
+        "noop_time_ns": 0.0,
+        "unknown_time_ns": 0.0,
     }
 
     for desc in descs:
@@ -118,16 +124,30 @@ def build_trace(descs, cfg):
         if name == "DMA_COPY":
             stats["dma_ops"] += 1
             stats["total_bytes"] += int(event.get("bytes", 0))
+            stats["dma_time_ns"] += dur
         elif name == "GEMM":
             stats["gemm_ops"] += 1
+            stats["gemm_time_ns"] += dur
         elif name in ("EVENT_SIGNAL", "EVENT_WAIT"):
             stats["event_ops"] += 1
+            stats["event_time_ns"] += dur
         elif name == "NOOP":
             stats["noop_ops"] += 1
+            stats["noop_time_ns"] += dur
         else:
             stats["unknown_ops"] += 1
+            stats["unknown_time_ns"] += dur
+            warnings.append(event.get("warning", "unknown opcode"))
 
-    return trace, now_ns, stats
+        if name == "GEMM" and dur > 0.0:
+            ops = 2.0 * float(event.get("m", 0)) * float(event.get("n", 0)) * float(event.get("k", 0))
+            tops = ops / (dur * 1e-9) / 1e12
+            event["achieved_tops"] = tops
+        if name == "DMA_COPY" and dur > 0.0:
+            gbps = float(event.get("bytes", 0)) / (dur * 1e-9) / 1e9
+            event["achieved_gbps"] = gbps
+
+    return trace, now_ns, stats, warnings
 
 
 def main():
@@ -143,7 +163,7 @@ def main():
 
     data = Path(args.bin).read_bytes()
     descs = parse_desc_stream(data)
-    trace, total_ns, stats = build_trace(descs, cfg)
+    trace, total_ns, stats, warnings = build_trace(descs, cfg)
 
     out = {
         "meta": {
@@ -154,6 +174,7 @@ def main():
             **stats,
             "total_time_ns": total_ns,
         },
+        "warnings": warnings,
         "trace": trace,
     }
     Path(args.out).write_text(json.dumps(out, indent=2), encoding="utf-8")
