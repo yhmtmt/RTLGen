@@ -44,24 +44,24 @@ This plan defines two simulation schemes:
 - Enforce NPU constraints while using software/GPU to compute.
 
 ### Scope (v0.1)
-- Consume schedule IR from `npu/mapper/ir.md`.
-- Use simple cost models (compute + DMA).
-- Produce a timeline and utilization report.
+- Consume binary descriptor stream from `npu/mapper/run.py --out-bin`.
+- Use simple cost models (compute + DMA + fixed overheads).
+- Emit a JSON timing trace + summary metrics.
 
 ### Deliverables
-- `npu/sim/model.py`: cost model stubs
-- `npu/sim/run.py`: run schedule IR + arch config
-- `npu/sim/report.md`: report format (already drafted)
+- `npu/sim/perf/model.py`: cost model stubs
+- `npu/sim/perf/run.py`: parse descriptor bin + emit JSON trace
+- `npu/sim/report.md`: JSON trace schema + summary fields
 
 ### Suggested steps
-1) Define model parameters in `npu/arch/schema.yml`.
+1) Define model parameters (bandwidth/throughput/overheads).
 2) Implement analytical simulator (no GPU required).
 3) Add optional GPU kernels later for accuracy.
 
 ## C) Interfaces Between RTL and Performance Sims
 - Shared descriptors (binary) from `npu/mapper/run.py --out-bin`
-- Shared config schema (arch + shell)
+- Shared config schema (arch + shell + perf model config)
 - Shared error/IRQ semantics (from `npu/shell/spec.md`)
 
 ## Next steps
-- Implement analytical simulator stub under `npu/sim/`.
+- Implement analytical simulator stub under `npu/sim/perf/`.
