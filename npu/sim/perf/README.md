@@ -18,12 +18,13 @@ python3 npu/sim/perf/run.py \
   --bin npu/mapper/examples/minimal_descriptors.bin \
   --out /tmp/npu_perf_trace.json \
   --config npu/sim/perf/example_config.json \
-  --summary
+  --summary \
+  --overlap
 
 make -f npu/sim/perf/Makefile run
 ```
 
 ## Notes
-- The v0.1 model is sequential (no overlap) and supports DMA_COPY, GEMM,
-  EVENT_SIGNAL, EVENT_WAIT, and NOOP.
+- The v0.1 model supports sequential or overlapped scheduling and handles
+  DMA_COPY, GEMM, EVENT_SIGNAL, EVENT_WAIT, and NOOP.
 - Unsupported opcodes are reported as warnings and treated as zero-cost.

@@ -19,7 +19,8 @@ summary `stats`. Example schema:
 {
   "meta": {
     "version": "0.1",
-    "source_bin": "path/to/descriptors.bin"
+    "source_bin": "path/to/descriptors.bin",
+    "mode": "overlap"
   },
   "stats": {
     "total_time_ns": 1234.0,
@@ -33,7 +34,10 @@ summary `stats`. Example schema:
     "gemm_time_ns": 600.0,
     "event_time_ns": 100.0,
     "noop_time_ns": 0.0,
-    "unknown_time_ns": 0.0
+    "unknown_time_ns": 0.0,
+    "queue_time_ns": 900.0,
+    "dma_engine_time_ns": 512.0,
+    "gemm_engine_time_ns": 600.0
   },
   "warnings": [],
   "trace": [

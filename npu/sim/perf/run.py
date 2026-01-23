@@ -73,11 +73,13 @@ def desc_to_event(desc, cfg):
     elif opcode == 0x20:  # EVENT_SIGNAL
         event.update({
             "name": "EVENT_SIGNAL",
+            "event_id": desc["tag"],
             "duration_ns": model.event_overhead_ns(cfg),
         })
     elif opcode == 0x21:  # EVENT_WAIT
         event.update({
             "name": "EVENT_WAIT",
+            "event_id": desc["tag"],
             "duration_ns": model.event_overhead_ns(cfg),
         })
     elif opcode == 0x30:  # NOOP
@@ -94,7 +96,7 @@ def desc_to_event(desc, cfg):
     return event
 
 
-def build_trace(descs, cfg):
+def build_trace(descs, cfg, overlap):
     trace = []
     now_ns = 0.0
     warnings = []
@@ -111,13 +113,50 @@ def build_trace(descs, cfg):
         "noop_time_ns": 0.0,
         "unknown_time_ns": 0.0,
     }
+    queue_time = 0.0
+    dma_engine_time = 0.0
+    gemm_engine_time = 0.0
+    event_times = {}
+    issue_overhead = float(cfg.get("issue_overhead_ns", 0.0))
 
     for desc in descs:
         event = desc_to_event(desc, cfg)
         dur = float(event.get("duration_ns", 0.0))
-        event["start_ns"] = now_ns
-        event["end_ns"] = now_ns + dur
-        now_ns += dur
+        if overlap:
+            name = event.get("name")
+            if name == "DMA_COPY":
+                start = max(queue_time, dma_engine_time)
+                end = start + dur
+                dma_engine_time = end
+                queue_time += issue_overhead
+            elif name == "GEMM":
+                start = max(queue_time, gemm_engine_time)
+                end = start + dur
+                gemm_engine_time = end
+                queue_time += issue_overhead
+            elif name == "EVENT_SIGNAL":
+                start = queue_time
+                end = start + dur
+                queue_time = end
+                event_times[event.get("event_id")] = end
+            elif name == "EVENT_WAIT":
+                wait_time = event_times.get(event.get("event_id"))
+                if wait_time is None:
+                    wait_time = 0.0
+                    warnings.append(f"event_wait missing event_id {event.get('event_id')}")
+                start = max(queue_time, wait_time)
+                end = start + dur
+                queue_time = end
+            else:
+                start = queue_time
+                end = start + dur
+                queue_time = end
+            event["start_ns"] = start
+            event["end_ns"] = end
+        else:
+            event["start_ns"] = now_ns
+            event["end_ns"] = now_ns + dur
+            now_ns += dur
         trace.append(event)
 
         name = event.get("name")
@@ -147,7 +186,13 @@ def build_trace(descs, cfg):
             gbps = float(event.get("bytes", 0)) / (dur * 1e-9) / 1e9
             event["achieved_gbps"] = gbps
 
-    return trace, now_ns, stats, warnings
+    total_ns = now_ns
+    if overlap:
+        total_ns = max(queue_time, dma_engine_time, gemm_engine_time)
+        stats["queue_time_ns"] = queue_time
+        stats["dma_engine_time_ns"] = dma_engine_time
+        stats["gemm_engine_time_ns"] = gemm_engine_time
+    return trace, total_ns, stats, warnings
 
 
 def format_summary(stats, warnings):
@@ -171,6 +216,7 @@ def main():
     ap.add_argument("--out", required=True, help="Path to JSON trace output")
     ap.add_argument("--config", help="Optional model config JSON")
     ap.add_argument("--summary", action="store_true", help="Print summary to stdout")
+    ap.add_argument("--overlap", action="store_true", help="Enable DMA/compute overlap model")
     args = ap.parse_args()
 
     cfg = {}
@@ -179,12 +225,13 @@ def main():
 
     data = Path(args.bin).read_bytes()
     descs = parse_desc_stream(data)
-    trace, total_ns, stats, warnings = build_trace(descs, cfg)
+    trace, total_ns, stats, warnings = build_trace(descs, cfg, args.overlap)
 
     out = {
         "meta": {
             "version": "0.1",
             "source_bin": str(args.bin),
+            "mode": "overlap" if args.overlap else "sequential",
         },
         "stats": {
             **stats,
