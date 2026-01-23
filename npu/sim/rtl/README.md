@@ -15,11 +15,14 @@ Notes:
   queue on doorbell and raises the CQ_EMPTY IRQ.
 - AXI memory model is shared in `npu/sim/rtl/axi_mem_model.sv` and used by both
   testbenches.
+- AXI-Lite tests include a single-descriptor stream and a multi-descriptor
+  stream (DMA + non-DMA ops).
 
 Quick commands:
 - `make -f npu/sim/rtl/Makefile run`
 - `make -f npu/sim/rtl/Makefile run BYTES=8192`
 - `make -f npu/sim/rtl/Makefile run-axi`
+- `make -f npu/sim/rtl/Makefile run-axi-multi`
 
 ## Next steps
 - Add GEMM/event descriptor checks in the RTL TB.
