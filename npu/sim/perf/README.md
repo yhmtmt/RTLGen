@@ -18,6 +18,8 @@ python3 npu/sim/perf/run.py \
   --bin npu/mapper/examples/minimal_descriptors.bin \
   --out /tmp/npu_perf_trace.json \
   --config npu/sim/perf/example_config.json
+
+make -f npu/sim/perf/Makefile run
 ```
 
 ## Notes

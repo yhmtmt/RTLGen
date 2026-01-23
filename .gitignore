@@ -6,4 +6,5 @@ papers/
 third_party/
 .vvp
 npu/mapper/__pycache__/
+npu/sim/perf/__pycache__/
 npu/rtlgen/out/
