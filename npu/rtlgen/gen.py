@@ -208,6 +208,8 @@ module axi_lite_mmio_bridge (
     input  wire [{data_width_minus1}:0] mmio_rdata
 );
 
+  reg read_pending;
+
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       s_axi_awready <= 1'b0;
@@ -221,10 +223,11 @@ module axi_lite_mmio_bridge (
       mmio_addr <= 0;
       mmio_we <= 1'b0;
       mmio_wdata <= 0;
+      read_pending <= 1'b0;
     end else begin
       s_axi_awready <= s_axi_awvalid;
       s_axi_wready <= s_axi_wvalid;
-      s_axi_arready <= s_axi_arvalid;
+      s_axi_arready <= (!read_pending && !s_axi_rvalid);
       mmio_we <= 1'b0;
 
       if (s_axi_awvalid && s_axi_wvalid) begin
@@ -238,15 +241,21 @@ module axi_lite_mmio_bridge (
       if (s_axi_bvalid && s_axi_bready)
         s_axi_bvalid <= 1'b0;
 
-      if (s_axi_arvalid) begin
+      if (s_axi_arvalid && s_axi_arready) begin
         mmio_addr <= s_axi_araddr[{mmio_addr_width_minus1}:0];
+        read_pending <= 1'b1;
+      end
+
+      if (read_pending && !s_axi_rvalid) begin
         s_axi_rdata <= mmio_rdata;
         s_axi_rvalid <= 1'b1;
         s_axi_rresp <= 2'b00;
+        read_pending <= 1'b0;
       end
 
-      if (s_axi_rvalid && s_axi_rready)
+      if (s_axi_rvalid && s_axi_rready) begin
         s_axi_rvalid <= 1'b0;
+      end
     end
   end
 
