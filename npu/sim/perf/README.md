@@ -28,3 +28,4 @@ make -f npu/sim/perf/Makefile run
 - The v0.1 model supports sequential or overlapped scheduling and handles
   DMA_COPY, GEMM, EVENT_SIGNAL, EVENT_WAIT, and NOOP.
 - Unsupported opcodes are reported as warnings and treated as zero-cost.
+- EVENT_SIGNAL with IRQ flag is counted in the summary (`irq_events`).

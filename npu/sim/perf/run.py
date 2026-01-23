@@ -74,6 +74,7 @@ def desc_to_event(desc, cfg):
         event.update({
             "name": "EVENT_SIGNAL",
             "event_id": desc["tag"],
+            "irq": bool(desc["flags"] & 0x1),
             "duration_ns": model.event_overhead_ns(cfg),
         })
     elif opcode == 0x21:  # EVENT_WAIT
@@ -107,6 +108,7 @@ def build_trace(descs, cfg, overlap):
         "event_ops": 0,
         "noop_ops": 0,
         "unknown_ops": 0,
+        "irq_events": 0,
         "dma_time_ns": 0.0,
         "gemm_time_ns": 0.0,
         "event_time_ns": 0.0,
@@ -170,6 +172,8 @@ def build_trace(descs, cfg, overlap):
         elif name in ("EVENT_SIGNAL", "EVENT_WAIT"):
             stats["event_ops"] += 1
             stats["event_time_ns"] += dur
+            if name == "EVENT_SIGNAL" and event.get("irq"):
+                stats["irq_events"] += 1
         elif name == "NOOP":
             stats["noop_ops"] += 1
             stats["noop_time_ns"] += dur

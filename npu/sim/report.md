@@ -30,6 +30,7 @@ summary `stats`. Example schema:
     "event_ops": 2,
     "noop_ops": 0,
     "unknown_ops": 0,
+    "irq_events": 1,
     "dma_time_ns": 512.0,
     "gemm_time_ns": 600.0,
     "event_time_ns": 100.0,
@@ -49,6 +50,15 @@ summary `stats`. Example schema:
       "achieved_gbps": 16.0,
       "start_ns": 0.0,
       "end_ns": 512.0
+    },
+    {
+      "offset": 32,
+      "opcode": 32,
+      "name": "EVENT_SIGNAL",
+      "event_id": 3,
+      "irq": true,
+      "start_ns": 512.0,
+      "end_ns": 562.0
     }
   ]
 }
