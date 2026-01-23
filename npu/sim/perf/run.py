@@ -150,11 +150,27 @@ def build_trace(descs, cfg):
     return trace, now_ns, stats, warnings
 
 
+def format_summary(stats, warnings):
+    lines = []
+    lines.append("NPU perf summary")
+    lines.append(f"  total_time_ns: {stats['total_time_ns']:.3f}")
+    lines.append(f"  total_bytes: {stats['total_bytes']}")
+    lines.append(f"  dma_ops: {stats['dma_ops']} (time_ns={stats['dma_time_ns']:.3f})")
+    lines.append(f"  gemm_ops: {stats['gemm_ops']} (time_ns={stats['gemm_time_ns']:.3f})")
+    lines.append(f"  event_ops: {stats['event_ops']} (time_ns={stats['event_time_ns']:.3f})")
+    lines.append(f"  noop_ops: {stats['noop_ops']} (time_ns={stats['noop_time_ns']:.3f})")
+    lines.append(f"  unknown_ops: {stats['unknown_ops']} (time_ns={stats['unknown_time_ns']:.3f})")
+    if warnings:
+        lines.append(f"  warnings: {len(warnings)}")
+    return "\n".join(lines)
+
+
 def main():
     ap = argparse.ArgumentParser(description="NPU performance simulator (v0.1)")
     ap.add_argument("--bin", required=True, help="Path to descriptor .bin stream")
     ap.add_argument("--out", required=True, help="Path to JSON trace output")
     ap.add_argument("--config", help="Optional model config JSON")
+    ap.add_argument("--summary", action="store_true", help="Print summary to stdout")
     args = ap.parse_args()
 
     cfg = {}
@@ -179,6 +195,8 @@ def main():
     }
     Path(args.out).write_text(json.dumps(out, indent=2), encoding="utf-8")
     print(f"wrote trace to {args.out}")
+    if args.summary:
+        print(format_summary(out["stats"], warnings))
 
 
 if __name__ == "__main__":
