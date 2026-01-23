@@ -22,6 +22,7 @@ python3 npu/sim/perf/run.py \
   --overlap
 
 make -f npu/sim/perf/Makefile run
+make -f npu/sim/perf/Makefile test
 ```
 
 ## Notes
