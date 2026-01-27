@@ -179,6 +179,77 @@ module {top_name} (
 endmodule
 """
 
+SRAM_1R1W_MODEL = """\
+// Simple 1R1W SRAM model (behavioral, for simulation)
+module sram_1r1w #(
+    parameter ADDR_WIDTH = 10,
+    parameter DATA_WIDTH = 32,
+    parameter READ_LATENCY = 1,
+    parameter BYTE_ENABLE = 1
+) (
+    input  wire                  clk,
+    input  wire                  we,
+    input  wire [ADDR_WIDTH-1:0] waddr,
+    input  wire [DATA_WIDTH-1:0] wdata,
+    input  wire [(DATA_WIDTH/8)-1:0] wstrb,
+    input  wire                  re,
+    input  wire [ADDR_WIDTH-1:0] raddr,
+    output reg  [DATA_WIDTH-1:0] rdata
+);
+  reg [DATA_WIDTH-1:0] mem [0:(1<<ADDR_WIDTH)-1];
+  reg [DATA_WIDTH-1:0] rdata_pipe [0:READ_LATENCY-1];
+  integer i;
+
+  always @(posedge clk) begin
+    if (we) begin
+      if (BYTE_ENABLE) begin
+        for (i = 0; i < (DATA_WIDTH/8); i = i + 1) begin
+          if (wstrb[i])
+            mem[waddr][(i*8)+7 -: 8] <= wdata[(i*8)+7 -: 8];
+        end
+      end else begin
+        mem[waddr] <= wdata;
+      end
+    end
+    if (re) begin
+      rdata_pipe[0] <= mem[raddr];
+      for (i = 1; i < READ_LATENCY; i = i + 1)
+        rdata_pipe[i] <= rdata_pipe[i-1];
+      rdata <= rdata_pipe[READ_LATENCY-1];
+    end
+  end
+endmodule
+"""
+
+SRAM_1R1W_WRAPPER = """\
+// Auto-generated SRAM instance wrapper
+module {inst_name} (
+    input  wire                  clk,
+    input  wire                  we,
+    input  wire [{addr_width_minus1}:0] waddr,
+    input  wire [{data_width_minus1}:0] wdata,
+    input  wire [{strb_width_minus1}:0] wstrb,
+    input  wire                  re,
+    input  wire [{addr_width_minus1}:0] raddr,
+    output wire [{data_width_minus1}:0] rdata
+);
+  sram_1r1w #(
+    .ADDR_WIDTH({addr_width}),
+    .DATA_WIDTH({data_width}),
+    .READ_LATENCY({read_latency}),
+    .BYTE_ENABLE({byte_enable})
+  ) u_mem (
+    .clk(clk),
+    .we(we),
+    .waddr(waddr),
+    .wdata(wdata),
+    .wstrb(wstrb),
+    .re(re),
+    .raddr(raddr),
+    .rdata(rdata)
+  );
+endmodule
+"""
 AXI_LITE_BRIDGE = """\
 // Simple AXI-Lite to MMIO bridge (single-beat)
 module axi_lite_mmio_bridge (
@@ -447,6 +518,7 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
     enable_dma_ports = bool(cfg.get("enable_dma_ports", False))
     enable_cq_mem_ports = bool(cfg.get("enable_cq_mem_ports", False))
     enable_axi_ports = bool(cfg.get("enable_axi_ports", False))
+    sram_instances = cfg.get("sram_instances", [])
     if enable_dma_ports:
         dma_ports = f""",
     output reg                   dma_req_valid,
@@ -645,6 +717,37 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
 
     (out_path / "top.v").write_text(verilog, encoding="utf-8")
     (out_path / "config.json").write_text(json.dumps(cfg, indent=2) + "\n", encoding="utf-8")
+
+    if sram_instances:
+        models = [SRAM_1R1W_MODEL]
+        for inst in sram_instances:
+            if inst.get("port", "1r1w") != "1r1w":
+                die(f"unsupported SRAM port type: {inst.get('port')}")
+            read_latency = int(inst.get("read_latency", 1))
+            if read_latency < 1:
+                die("SRAM read_latency must be >= 1")
+            sram_data_width = int(inst["width"])
+            if sram_data_width % 8 != 0:
+                die("SRAM width must be a multiple of 8")
+            depth = int(inst["depth"])
+            if depth < 2:
+                die("SRAM depth must be >= 2")
+            if (depth & (depth - 1)) != 0:
+                die("SRAM depth must be a power of two")
+            strb_width = sram_data_width // 8
+            models.append(
+                SRAM_1R1W_WRAPPER.format(
+                    inst_name=inst["name"],
+                    addr_width=depth.bit_length() - 1,
+                    addr_width_minus1=depth.bit_length() - 2,
+                    data_width=sram_data_width,
+                    data_width_minus1=sram_data_width - 1,
+                    strb_width_minus1=strb_width - 1,
+                    read_latency=read_latency,
+                    byte_enable=1 if bool(inst.get("byte_en", True)) else 0,
+                )
+            )
+        (out_path / "sram_models.sv").write_text("\n\n".join(models) + "\n", encoding="utf-8")
 
     if bool(cfg.get("enable_axi_lite_wrapper", False)):
         bridge = AXI_LITE_BRIDGE.format(

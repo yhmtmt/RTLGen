@@ -19,3 +19,6 @@
 [submodule "npu/nvdla/doc"]
 	path = npu/nvdla/doc
 	url = https://github.com/nvdla/doc.git
+[submodule "cacti"]
+	path = cacti
+	url = https://github.com/HewlettPackard/cacti.git

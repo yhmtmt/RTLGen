@@ -20,6 +20,7 @@ sram:
   weight_kb: int
   kv_kb: int
   banks: int
+  instances: list
 
 dma:
   engines: int

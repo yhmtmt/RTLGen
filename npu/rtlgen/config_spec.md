@@ -24,6 +24,19 @@ can later be extended without breaking v0.1.
   "axi_addr_width": 64,
   "axi_data_width": 256,
   "axi_id_width": 4,
+  "sram_instances": [
+    {
+      "name": "activation_sram",
+      "depth": 16384,
+      "width": 256,
+      "banks": 8,
+      "read_latency": 1,
+      "byte_en": true,
+      "port": "1r1w",
+      "pdk": "sky130",
+      "tech_node_nm": 130
+    }
+  ],
   "queue_depth": 16,
   "enable_irq": true,
   "enable_dma_ports": true,
@@ -43,6 +56,9 @@ can later be extended without breaking v0.1.
 - `axi_addr_width` (int): AXI address width (bits).
 - `axi_data_width` (int): AXI data width (bits).
 - `axi_id_width` (int): AXI ID width (bits).
+- `sram_instances` (list): optional SRAM instances for shell integration and PPA estimation.
+  - Each instance should include `name`, `depth`, `width`, `banks`, `read_latency`,
+    `byte_en`, `port` (1r1w), and `pdk` or `tech_node_nm`.
 - `queue_depth` (int): number of 32B descriptors in the command queue.
 - `enable_irq` (bool): include IRQ output.
 - `enable_dma_ports` (bool): include a stub DMA/memory interface.
@@ -54,6 +70,8 @@ can later be extended without breaking v0.1.
 - The initial RTL is a stub for **simulation harnessing** only.
 - Compute and DMA engines are placeholders; the interface and queues are the
   focus of v0.1.
+- SRAM instances are emitted as standalone 1R1W modules for simulation and
+  blackbox/synth integration (wiring TBD).
 - When `enable_axi_lite_wrapper` is true, the generator emits:
   - `top_axi.v` (AXI-Lite top wrapper)
   - `axi_lite_mmio_bridge.sv` (bridge module)

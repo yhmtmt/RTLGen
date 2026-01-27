@@ -8,6 +8,41 @@
   "axi_addr_width": 64,
   "axi_data_width": 256,
   "axi_id_width": 4,
+  "sram_instances": [
+    {
+      "name": "activation_sram",
+      "depth": 16384,
+      "width": 256,
+      "banks": 8,
+      "read_latency": 1,
+      "byte_en": true,
+      "port": "1r1w",
+      "pdk": "sky130",
+      "tech_node_nm": 130
+    },
+    {
+      "name": "weight_sram",
+      "depth": 16384,
+      "width": 256,
+      "banks": 8,
+      "read_latency": 1,
+      "byte_en": true,
+      "port": "1r1w",
+      "pdk": "sky130",
+      "tech_node_nm": 130
+    },
+    {
+      "name": "kv_sram",
+      "depth": 8192,
+      "width": 256,
+      "banks": 4,
+      "read_latency": 1,
+      "byte_en": true,
+      "port": "1r1w",
+      "pdk": "sky130",
+      "tech_node_nm": 130
+    }
+  ],
   "queue_depth": 16,
   "enable_irq": true,
   "enable_dma_ports": true,

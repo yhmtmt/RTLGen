@@ -12,6 +12,34 @@ sram:
   weight_kb: 512
   kv_kb: 256
   banks: 8
+  instances:
+    - name: activation_sram
+      depth: 16384
+      width: 256
+      banks: 8
+      read_latency: 1
+      byte_en: true
+      port: 1r1w
+      pdk: sky130
+      tech_node_nm: 130
+    - name: weight_sram
+      depth: 16384
+      width: 256
+      banks: 8
+      read_latency: 1
+      byte_en: true
+      port: 1r1w
+      pdk: sky130
+      tech_node_nm: 130
+    - name: kv_sram
+      depth: 8192
+      width: 256
+      banks: 4
+      read_latency: 1
+      byte_en: true
+      port: 1r1w
+      pdk: sky130
+      tech_node_nm: 130
 dma:
   engines: 2
   peak_bw_gbps: 64.0

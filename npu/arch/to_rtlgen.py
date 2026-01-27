@@ -29,6 +29,7 @@ def build_rtlgen_config(arch: dict, args: argparse.Namespace):
     shell = arch["shell"]
     dma = arch["dma"]
     axi = arch["axi"]
+    sram = arch["sram"]
     return {
         "version": "0.1",
         "top_name": args.top_name,
@@ -45,6 +46,7 @@ def build_rtlgen_config(arch: dict, args: argparse.Namespace):
         "axi_addr_width": int(axi["addr_width"]),
         "axi_data_width": int(axi["data_width"]),
         "axi_id_width": int(axi["id_width"]),
+        "sram_instances": sram.get("instances", []),
     }
 
 
