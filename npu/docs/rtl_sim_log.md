@@ -45,5 +45,14 @@ including queue handling, DMA, and AXI memory integration.
 - Queue handling, DMA decode, and AXI burst path verified in the TB.
 - AXI-Lite wrapper path verified by `tb_axi_lite_mmio.sv`.
 
+## 7) Arch-driven shell + SRAM PPA scaffolding (2026-01-27)
+- Added arch→RTLGen adapter so shell config is driven by `npu/arch/*.yml`.
+- Extended AXI/DMA width fields in config and generator; updated RTL sim targets to accept `CONFIG` and `ARCH`.
+- Added SRAM instance list to arch + RTLGen config and emit `sram_models.sv` (1R1W sim model).
+- Added CACTI submodule and PPA script (`npu/synth/sram_ppa.py`) writing to `runs/designs/sram/<id>/sram_metrics.json`.
+- Added CACTI template and pipeline hook; scale CACTI outputs for tech nodes > 90nm.
+- Note: sky130hd SRAM macro generation is planned; current flow uses CACTI estimates and sim-only SRAM models.
+
 ## Next steps
 - Add GEMM/event descriptor checks in RTL TBs.
+- Implement sky130hd SRAM macro generation path and hook it into synthesis.
