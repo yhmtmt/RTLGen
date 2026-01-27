@@ -188,8 +188,13 @@ def main():
         }
 
         if cacti_available and template_available and tech_node_nm is not None:
+            cacti_node_nm = tech_node_nm
+            scale_factor = 1.0
+            if tech_node_nm > 90:
+                cacti_node_nm = 90
+                scale_factor = tech_node_nm / 90.0
             rc, stdout_text, stderr_text, csv_text, metrics = run_cacti(
-                cacti_bin, args.cacti_template, instance_meta, tech_node_nm
+                cacti_bin, args.cacti_template, instance_meta, cacti_node_nm
             )
             record["artifacts"]["cacti_stdout"] = stdout_text
             record["artifacts"]["cacti_stderr"] = stderr_text
@@ -197,13 +202,20 @@ def main():
                 record["artifacts"]["cacti_csv"] = csv_text
             record["metrics"]["raw"] = metrics
             if metrics.get("area_mm2") is not None:
-                record["metrics"]["area_um2"] = metrics["area_mm2"] * 1e6
+                area_um2 = metrics["area_mm2"] * 1e6
+                record["metrics"]["area_um2"] = area_um2 * (scale_factor ** 2)
             if metrics.get("access_time_ns") is not None:
-                record["metrics"]["access_time_ns"] = metrics["access_time_ns"]
+                record["metrics"]["access_time_ns"] = metrics["access_time_ns"] * scale_factor
             if metrics.get("read_energy_nj") is not None:
-                record["metrics"]["read_energy_pj"] = metrics["read_energy_nj"] * 1e3
+                read_energy_pj = metrics["read_energy_nj"] * 1e3
+                record["metrics"]["read_energy_pj"] = read_energy_pj * (scale_factor ** 2)
             if metrics.get("write_energy_nj") is not None:
-                record["metrics"]["write_energy_pj"] = metrics["write_energy_nj"] * 1e3
+                write_energy_pj = metrics["write_energy_nj"] * 1e3
+                record["metrics"]["write_energy_pj"] = write_energy_pj * (scale_factor ** 2)
+            if scale_factor != 1.0:
+                record["metrics"]["scaled_from_nm"] = tech_node_nm
+                record["metrics"]["cacti_node_nm"] = cacti_node_nm
+                record["metrics"]["scale_factor"] = scale_factor
             record["estimated"] = rc == 0 and bool(metrics)
         else:
             reason = []
