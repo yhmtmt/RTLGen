@@ -16,6 +16,12 @@ dma:
   engines: 2
   peak_bw_gbps: 64.0
   max_outstanding: 32
+  addr_width: 64
+  data_width: 256
+axi:
+  addr_width: 64
+  data_width: 256
+  id_width: 4
 shell:
   command_queue_depth: 64
   supports_interrupts: true

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import json
+import math
 import os
 import sys
 from pathlib import Path
@@ -33,20 +34,20 @@ module {top_name} (
   reg [{data_width_minus1}:0] cq_count;
   reg [7:0] last_opcode;
   reg [31:0] last_tag;
-  reg [63:0] last_src;
-  reg [63:0] last_dst;
+  reg [{dma_addr_width_minus1}:0] last_src;
+  reg [{dma_addr_width_minus1}:0] last_dst;
   reg [31:0] last_size;
-  reg [63:0] dma_src;
-  reg [63:0] dma_dst;
+  reg [{dma_addr_width_minus1}:0] dma_src;
+  reg [{dma_addr_width_minus1}:0] dma_dst;
   reg [31:0] dma_size;
   reg        cq_stage_valid;
   reg        dma_pending;
   reg [2:0]  dma_state;
-  reg [255:0] dma_buf;
+  reg [{axi_data_width_minus1}:0] dma_buf;
   reg [8:0]  dma_beats;
   reg [8:0]  dma_beats_left;
   reg [7:0]  dma_arlen;
-  reg [255:0] dma_buf_mem [0:255];
+  reg [{axi_data_width_minus1}:0] dma_buf_mem [0:255];
   reg [7:0]  dma_rd_idx;
   reg [7:0]  dma_wr_idx;
   reg [{data_width_minus1}:0] error_code;
@@ -289,41 +290,41 @@ module {top_name}_axi (
     output wire                  irq,
     // DMA stub ports
     output wire                  dma_req_valid,
-    output wire [63:0]           dma_req_src,
-    output wire [63:0]           dma_req_dst,
+    output wire [{dma_addr_width_minus1}:0] dma_req_src,
+    output wire [{dma_addr_width_minus1}:0] dma_req_dst,
     output wire [31:0]           dma_req_bytes,
     input  wire                  dma_req_ready,
     input  wire                  dma_resp_done,
     // CQ memory port
-    output wire [63:0]           cq_mem_addr,
+    output wire [{dma_addr_width_minus1}:0] cq_mem_addr,
     input  wire [255:0]          cq_mem_rdata,
     // AXI memory master
     output wire                  m_axi_awvalid,
     input  wire                  m_axi_awready,
-    output wire [63:0]           m_axi_awaddr,
+    output wire [{axi_addr_width_minus1}:0] m_axi_awaddr,
     output wire [7:0]            m_axi_awlen,
     output wire [2:0]            m_axi_awsize,
     output wire                  m_axi_wvalid,
     input  wire                  m_axi_wready,
-    output wire [255:0]          m_axi_wdata,
-    output wire [31:0]           m_axi_wstrb,
+    output wire [{axi_data_width_minus1}:0] m_axi_wdata,
+    output wire [{axi_strb_width_minus1}:0] m_axi_wstrb,
     output wire                  m_axi_wlast,
     input  wire                  m_axi_bvalid,
     output wire                  m_axi_bready,
     output wire                  m_axi_arvalid,
     input  wire                  m_axi_arready,
-    output wire [63:0]           m_axi_araddr,
+    output wire [{axi_addr_width_minus1}:0] m_axi_araddr,
     output wire [7:0]            m_axi_arlen,
     output wire [2:0]            m_axi_arsize,
     input  wire                  m_axi_rvalid,
     output wire                  m_axi_rready,
-    input  wire [255:0]          m_axi_rdata,
+    input  wire [{axi_data_width_minus1}:0] m_axi_rdata,
     input  wire                  m_axi_rlast
 );
-  wire [11:0] mmio_addr;
+  wire [{mmio_addr_width_minus1}:0] mmio_addr;
   wire        mmio_we;
-  wire [31:0] mmio_wdata;
-  wire [31:0] mmio_rdata;
+  wire [{data_width_minus1}:0] mmio_wdata;
+  wire [{data_width_minus1}:0] mmio_rdata;
 
   axi_lite_mmio_bridge u_bridge (
     .clk(clk),
@@ -413,15 +414,44 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
     top_name = cfg["top_name"]
     mmio_addr_width = int(cfg["mmio_addr_width"])
     data_width = int(cfg["data_width"])
+    dma_addr_width = int(cfg.get("dma_addr_width", 64))
+    dma_data_width = int(cfg.get("dma_data_width", 256))
+    axi_addr_width = int(cfg.get("axi_addr_width", 64))
+    axi_data_width = int(cfg.get("axi_data_width", 256))
+    axi_id_width = int(cfg.get("axi_id_width", 4))
+
+    if axi_data_width % 8 != 0:
+        die("axi_data_width must be a multiple of 8")
+    axi_strb_width = axi_data_width // 8
+    if (axi_strb_width & (axi_strb_width - 1)) != 0:
+        die("axi_data_width must be a power-of-two number of bytes")
+    axi_size = int(math.log2(axi_strb_width))
+    if (1 << axi_size) != axi_strb_width:
+        die("axi_data_width must be a power-of-two number of bytes")
+
+    if axi_size == 0:
+        dma_beats_expr = "cq_mem_rdata[223:192]"
+        dma_arlen_expr = "cq_mem_rdata[223:192] - 1"
+    else:
+        hi = 223
+        lo = 192 + axi_size
+        rem_hi = lo - 1
+        dma_beats_expr = f"(cq_mem_rdata[{hi}:{lo}] + (|cq_mem_rdata[{rem_hi}:192]))"
+        dma_arlen_expr = f"(cq_mem_rdata[{hi}:{lo}] + (|cq_mem_rdata[{rem_hi}:192])) - 1"
+
+    dma_addr_width_minus1 = dma_addr_width - 1
+    axi_addr_width_minus1 = axi_addr_width - 1
+    axi_data_width_minus1 = axi_data_width - 1
+    axi_strb_width_minus1 = axi_strb_width - 1
 
     enable_dma_ports = bool(cfg.get("enable_dma_ports", False))
     enable_cq_mem_ports = bool(cfg.get("enable_cq_mem_ports", False))
     enable_axi_ports = bool(cfg.get("enable_axi_ports", False))
     if enable_dma_ports:
-        dma_ports = """,
+        dma_ports = f""",
     output reg                   dma_req_valid,
-    output reg  [63:0]           dma_req_src,
-    output reg  [63:0]           dma_req_dst,
+    output reg  [{dma_addr_width_minus1}:0] dma_req_src,
+    output reg  [{dma_addr_width_minus1}:0] dma_req_dst,
     output reg  [31:0]           dma_req_bytes,
     input  wire                  dma_req_ready,
     input  wire                  dma_resp_done
@@ -444,12 +474,12 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         dma_kick = ""
 
     if enable_cq_mem_ports:
-        cq_mem_ports = """,
-    output reg  [63:0]           cq_mem_addr,
+        cq_mem_ports = f""",
+    output reg  [{dma_addr_width_minus1}:0] cq_mem_addr,
     input  wire [255:0]          cq_mem_rdata
 """
         cq_mem_fetch_issue = """        cq_mem_addr <= {cq_base_hi, cq_base_lo} + cq_head;"""
-        cq_mem_fetch_decode = """        last_opcode <= cq_mem_rdata[7:0];
+        cq_mem_fetch_decode = f"""        last_opcode <= cq_mem_rdata[7:0];
         last_tag <= cq_mem_rdata[63:32];
         last_src <= cq_mem_rdata[127:64];
         last_dst <= cq_mem_rdata[191:128];
@@ -462,8 +492,8 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
           dma_src <= cq_mem_rdata[127:64];
           dma_dst <= cq_mem_rdata[191:128];
           dma_size <= cq_mem_rdata[223:192];
-          dma_beats <= (cq_mem_rdata[223:197] + (|cq_mem_rdata[196:192]));
-          dma_arlen <= (cq_mem_rdata[223:197] + (|cq_mem_rdata[196:192])) - 1;
+          dma_beats <= {dma_beats_expr};
+          dma_arlen <= {dma_arlen_expr};
           dma_pending <= 1'b1;
         end"""
     else:
@@ -472,27 +502,27 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         cq_mem_fetch_decode = ""
 
     if enable_axi_ports:
-        axi_ports = """,
+        axi_ports = f""",
     output reg                   m_axi_awvalid,
     input  wire                  m_axi_awready,
-    output reg  [63:0]           m_axi_awaddr,
+    output reg  [{axi_addr_width_minus1}:0] m_axi_awaddr,
     output reg  [7:0]            m_axi_awlen,
     output reg  [2:0]            m_axi_awsize,
     output reg                   m_axi_wvalid,
     input  wire                  m_axi_wready,
-    output reg  [255:0]          m_axi_wdata,
-    output reg  [31:0]           m_axi_wstrb,
+    output reg  [{axi_data_width_minus1}:0] m_axi_wdata,
+    output reg  [{axi_strb_width_minus1}:0] m_axi_wstrb,
     output reg                   m_axi_wlast,
     input  wire                  m_axi_bvalid,
     output reg                   m_axi_bready,
     output reg                   m_axi_arvalid,
     input  wire                  m_axi_arready,
-    output reg  [63:0]           m_axi_araddr,
+    output reg  [{axi_addr_width_minus1}:0] m_axi_araddr,
     output reg  [7:0]            m_axi_arlen,
     output reg  [2:0]            m_axi_arsize,
     input  wire                  m_axi_rvalid,
     output reg                   m_axi_rready,
-    input  wire [255:0]          m_axi_rdata,
+    input  wire [{axi_data_width_minus1}:0] m_axi_rdata,
     input  wire                  m_axi_rlast
 """
         axi_defaults = """      m_axi_awvalid <= 1'b0;
@@ -509,7 +539,7 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
       m_axi_arlen <= 0;
       m_axi_arsize <= 0;
       m_axi_rready <= 1'b0;"""
-        axi_fsm = """      // AXI DMA shim: burst read then burst write.
+        axi_fsm = f"""      // AXI DMA shim: burst read then burst write.
       case (dma_state)
         0: begin
           if (dma_pending) begin
@@ -521,7 +551,7 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
             m_axi_arvalid <= 1'b1;
             m_axi_araddr <= dma_src;
             m_axi_arlen <= dma_arlen;
-            m_axi_arsize <= 3'd5; // 32B beat
+            m_axi_arsize <= 3'd{axi_size}; // beat bytes = 2**{axi_size}
             if (m_axi_arready) begin
               dma_state <= 1;
             end
@@ -541,7 +571,7 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
           m_axi_awvalid <= 1'b1;
           m_axi_awaddr <= dma_dst;
           m_axi_awlen <= dma_arlen;
-          m_axi_awsize <= 3'd5;
+          m_axi_awsize <= 3'd{axi_size};
           if (m_axi_awready) begin
             dma_state <= 3;
           end
@@ -549,7 +579,7 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         3: begin
           m_axi_wvalid <= 1'b1;
           m_axi_wdata <= dma_buf_mem[dma_wr_idx];
-          m_axi_wstrb <= 32'hFFFF_FFFF;
+          m_axi_wstrb <= {{{axi_strb_width}{{1'b1}}}};
           m_axi_wlast <= (dma_beats_left == 1);
           if (m_axi_wready) begin
             if (dma_beats_left == 1) begin
@@ -595,6 +625,11 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         top_name=top_name,
         mmio_addr_width_minus1=mmio_addr_width - 1,
         data_width_minus1=data_width - 1,
+        dma_addr_width_minus1=dma_addr_width_minus1,
+        dma_data_width_minus1=dma_data_width - 1,
+        axi_addr_width_minus1=axi_addr_width_minus1,
+        axi_data_width_minus1=axi_data_width_minus1,
+        axi_strb_width_minus1=axi_strb_width_minus1,
         dma_ports=dma_ports,
         dma_reset=dma_reset,
         dma_handshake=dma_handshake,
@@ -616,7 +651,15 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
             data_width_minus1=data_width - 1,
             mmio_addr_width_minus1=mmio_addr_width - 1,
         )
-        wrapper = AXI_LITE_WRAPPER.format(top_name=top_name)
+        wrapper = AXI_LITE_WRAPPER.format(
+            top_name=top_name,
+            mmio_addr_width_minus1=mmio_addr_width - 1,
+            data_width_minus1=data_width - 1,
+            dma_addr_width_minus1=dma_addr_width_minus1,
+            axi_addr_width_minus1=axi_addr_width_minus1,
+            axi_data_width_minus1=axi_data_width_minus1,
+            axi_strb_width_minus1=axi_strb_width_minus1,
+        )
         (out_path / "axi_lite_mmio_bridge.sv").write_text(bridge, encoding="utf-8")
         (out_path / "top_axi.v").write_text(wrapper, encoding="utf-8")
 

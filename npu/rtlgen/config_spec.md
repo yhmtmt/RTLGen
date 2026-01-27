@@ -19,6 +19,11 @@ can later be extended without breaking v0.1.
   "top_name": "npu_top",
   "mmio_addr_width": 12,
   "data_width": 32,
+  "dma_addr_width": 64,
+  "dma_data_width": 256,
+  "axi_addr_width": 64,
+  "axi_data_width": 256,
+  "axi_id_width": 4,
   "queue_depth": 16,
   "enable_irq": true,
   "enable_dma_ports": true,
@@ -33,6 +38,11 @@ can later be extended without breaking v0.1.
 - `top_name` (string): name of top module to emit.
 - `mmio_addr_width` (int): address width for MMIO (bytes).
 - `data_width` (int): data width for MMIO and control (bits).
+- `dma_addr_width` (int): DMA address width (bits).
+- `dma_data_width` (int): DMA data width (bits).
+- `axi_addr_width` (int): AXI address width (bits).
+- `axi_data_width` (int): AXI data width (bits).
+- `axi_id_width` (int): AXI ID width (bits).
 - `queue_depth` (int): number of 32B descriptors in the command queue.
 - `enable_irq` (bool): include IRQ output.
 - `enable_dma_ports` (bool): include a stub DMA/memory interface.

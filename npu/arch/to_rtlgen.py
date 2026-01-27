@@ -27,6 +27,8 @@ def validate_schema(config: dict, schema: dict):
 
 def build_rtlgen_config(arch: dict, args: argparse.Namespace):
     shell = arch["shell"]
+    dma = arch["dma"]
+    axi = arch["axi"]
     return {
         "version": "0.1",
         "top_name": args.top_name,
@@ -38,6 +40,11 @@ def build_rtlgen_config(arch: dict, args: argparse.Namespace):
         "enable_cq_mem_ports": args.enable_cq_mem_ports,
         "enable_axi_ports": args.enable_axi_ports,
         "enable_axi_lite_wrapper": args.enable_axi_lite_wrapper,
+        "dma_addr_width": int(dma["addr_width"]),
+        "dma_data_width": int(dma["data_width"]),
+        "axi_addr_width": int(axi["addr_width"]),
+        "axi_data_width": int(axi["data_width"]),
+        "axi_id_width": int(axi["id_width"]),
     }
 
 

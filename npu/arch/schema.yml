@@ -5,6 +5,7 @@ required:
   - sram
   - dma
   - shell
+  - axi
 
 array:
   rows: int
@@ -24,6 +25,13 @@ dma:
   engines: int
   peak_bw_gbps: float
   max_outstanding: int
+  addr_width: int
+  data_width: int
+
+axi:
+  addr_width: int
+  data_width: int
+  id_width: int
 
 shell:
   command_queue_depth: int
