@@ -7,6 +7,7 @@ include(ExternalProject)
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/flopoco/cmake)
 
 option(RTLGEN_BUILD_FLOPOCO "Build the bundled FloPoCo floating-point generator" ON)
+option(RTLGEN_BUILD_CACTI "Build the bundled CACTI SRAM estimator" ON)
 
 # Enable testing
 enable_testing()
@@ -43,6 +44,20 @@ target_link_libraries(rtlgen constant_multiplication ortools onnxruntime)
 
 set (CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR})
 install(TARGETS rtlgen DESTINATION bin)
+
+if(RTLGEN_BUILD_CACTI)
+    set(CACTI_SOURCE_DIR ${PROJECT_SOURCE_DIR}/cacti)
+    ExternalProject_Add(cacti
+        SOURCE_DIR ${CACTI_SOURCE_DIR}
+        CONFIGURE_COMMAND ""
+        BUILD_COMMAND ${CMAKE_COMMAND} -E env make -C <SOURCE_DIR>
+        INSTALL_COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_SOURCE_DIR}/bin
+                      COMMAND ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/cacti ${PROJECT_SOURCE_DIR}/bin/cacti
+        BUILD_IN_SOURCE 1
+    )
+
+    add_custom_target(cacti_tool ALL DEPENDS cacti)
+endif()
 
 # Add the test executable
 add_executable(test_boolexp tests/test_boolexp.cpp src/multiplier.cpp src/adder.cpp)

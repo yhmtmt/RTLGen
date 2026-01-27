@@ -56,10 +56,12 @@ def run_cacti(cacti_bin: Path, template: Path, instance: dict, tech_node_nm: int
         cfg = f.read()
     cfg = cfg.replace("@SIZE_BYTES@", str(instance["size_bytes"]))
     cfg = cfg.replace("@WORD_SIZE_BYTES@", str(instance["word_size_bytes"]))
+    cfg = cfg.replace("@WORD_SIZE_BITS@", str(instance["word_size_bytes"] * 8))
     cfg = cfg.replace("@READ_PORTS@", str(instance["read_ports"]))
     cfg = cfg.replace("@WRITE_PORTS@", str(instance["write_ports"]))
     cfg = cfg.replace("@RW_PORTS@", str(instance["rw_ports"]))
     cfg = cfg.replace("@TECH_NODE_NM@", str(tech_node_nm))
+    cfg = cfg.replace("@TECH_NODE_UM@", f"{tech_node_nm / 1000.0:.3f}")
 
     with tempfile.TemporaryDirectory() as td:
         tmp_dir = Path(td)
@@ -108,7 +110,7 @@ def main():
     parser.add_argument(
         "--cacti-template",
         type=Path,
-        default=None,
+        default=Path("npu/synth/cacti_sram.cfg.in"),
         help="CACTI template config with placeholders",
     )
     args = parser.parse_args()
@@ -151,6 +153,13 @@ def main():
                 file=sys.stderr,
             )
             return 1
+        if tech_node_nm is None and pdk is not None:
+            pdk_map = {
+                "sky130": 130,
+                "nangate45": 45,
+                "asap7": 7,
+            }
+            tech_node_nm = pdk_map.get(str(pdk))
         tech_node_nm = int(tech_node_nm) if tech_node_nm is not None else None
 
         size_bytes = depth * (width // 8) * banks

@@ -1,0 +1,44 @@
+# CACTI SRAM template for 1R1W RAMs (placeholders replaced by sram_ppa.py)
+
+-size (bytes) @SIZE_BYTES@
+-block size (bytes) @WORD_SIZE_BYTES@
+-associativity 1
+-read-write port 0
+-exclusive read port @READ_PORTS@
+-exclusive write port @WRITE_PORTS@
+-single ended read ports 0
+-UCA bank count 1
+-technology (u) @TECH_NODE_UM@
+
+-Data array cell type - "itrs-hp"
+-Data array peripheral type - "itrs-hp"
+-Tag array cell type - "itrs-hp"
+-Tag array peripheral type - "itrs-hp"
+
+-output/input bus width @WORD_SIZE_BITS@
+-operating temperature (K) 360
+
+-cache type "ram"
+-tag size (b) 0
+-access mode (normal, sequential, fast) - "fast"
+
+-design objective (weight delay, dynamic power, leakage power, cycle time, area) 100:100:100:100:100
+-deviate (delay, dynamic power, leakage power, cycle time, area) 10:100000:100000:100000:100000
+
+-Cache model (NUCA, UCA)  - "UCA"
+-NUCA bank count 0
+
+-Wire signaling (fullswing, lowswing, default) - "default"
+-Wire inside mat - "semi-global"
+-Wire outside mat - "semi-global"
+
+-Print level (DETAILED, CONCISE) - "CONCISE"
+-Print input parameters - "true"
+
+-Force cache config - "false"
+-Ndwl 1
+-Ndbl 1
+-Nspd 0
+-Ndcm 1
+-Ndsam1 0
+-Ndsam2 0
