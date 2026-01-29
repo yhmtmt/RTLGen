@@ -80,7 +80,7 @@ def run_cacti(cacti_bin: Path, template: Path, instance: dict, tech_node_nm: int
             csv_text = csv_path.read_text()
         else:
             csv_text = None
-        return result.returncode, result.stdout, result.stderr, csv_text, metrics
+        return result.returncode, cfg, result.stdout, result.stderr, csv_text, metrics
 
 
 def main():
@@ -193,9 +193,10 @@ def main():
             if tech_node_nm > 90:
                 cacti_node_nm = 90
                 scale_factor = tech_node_nm / 90.0
-            rc, stdout_text, stderr_text, csv_text, metrics = run_cacti(
+            rc, cfg_text, stdout_text, stderr_text, csv_text, metrics = run_cacti(
                 cacti_bin, args.cacti_template, instance_meta, cacti_node_nm
             )
+            record["artifacts"]["cacti_cfg"] = cfg_text
             record["artifacts"]["cacti_stdout"] = stdout_text
             record["artifacts"]["cacti_stderr"] = stderr_text
             if csv_text is not None:
@@ -231,6 +232,7 @@ def main():
 
     for record in results:
         for key, suffix in (
+            ("cacti_cfg", "cacti.in.cfg"),
             ("cacti_stdout", "cacti.stdout"),
             ("cacti_stderr", "cacti.stderr"),
             ("cacti_csv", "cacti.out.csv"),
