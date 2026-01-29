@@ -133,6 +133,9 @@ module tb_npu_shell;
   reg [DATA_W-1:0] irq_status;
   integer test_bytes;
   reg [DATA_W-1:0] expected_dma_bytes;
+  reg sram_test;
+  localparam [63:0] SRAM_BASE0 = 64'h0000_0000_8000_0000;
+  localparam [63:0] MEM_DST_BASE = 64'h0000_0000_0001_0000;
 
   initial begin
     mmio_addr = 0;
@@ -145,18 +148,53 @@ module tb_npu_shell;
     #(CLK_PERIOD*4);
     rst_n = 1;
 
-    // Read binary descriptor stream
-    max_bytes = 4096;
-    fd = $fopen("npu/mapper/examples/minimal_descriptors.bin", "rb");
-    if (fd == 0) begin
-      $display("ERROR: cannot open descriptor bin file");
-      $finish(1);
-    end
-    bytes_read = $fread(bin_data, fd, 0, max_bytes);
-    $fclose(fd);
-    if (bytes_read <= 0) begin
-      $display("ERROR: no bytes read from descriptor bin file");
-      $finish(1);
+    sram_test = 0;
+    if ($value$plusargs("sram_test=%d", sram_test))
+      sram_test = (sram_test != 0);
+
+    if (sram_test) begin
+      // Build two DMA_COPY descriptors: mem->SRAM, SRAM->mem
+      integer idx;
+      for (idx = 0; idx < 64; idx = idx + 1)
+        bin_data[idx] = 0;
+
+      // Descriptor 0
+      bin_data[0] = 8'h01; // DMA_COPY
+      bin_data[2] = 8'h01; // size in 32B units
+      // SRC = 0x0
+      // DST = SRAM_BASE0
+      {bin_data[23], bin_data[22], bin_data[21], bin_data[20],
+       bin_data[19], bin_data[18], bin_data[17], bin_data[16]} = SRAM_BASE0;
+      // SIZE = 256 bytes
+      {bin_data[27], bin_data[26], bin_data[25], bin_data[24]} = 32'd256;
+
+      // Descriptor 1
+      bin_data[32] = 8'h01; // DMA_COPY
+      bin_data[34] = 8'h01;
+      // SRC = SRAM_BASE0 (bytes 40..47)
+      {bin_data[47], bin_data[46], bin_data[45], bin_data[44],
+       bin_data[43], bin_data[42], bin_data[41], bin_data[40]} = SRAM_BASE0;
+      // DST = MEM_DST_BASE (bytes 48..55)
+      {bin_data[55], bin_data[54], bin_data[53], bin_data[52],
+       bin_data[51], bin_data[50], bin_data[49], bin_data[48]} = MEM_DST_BASE;
+      // SIZE = 256 bytes (bytes 56..59)
+      {bin_data[59], bin_data[58], bin_data[57], bin_data[56]} = 32'd256;
+
+      bytes_read = 64;
+    end else begin
+      // Read binary descriptor stream
+      max_bytes = 4096;
+      fd = $fopen("npu/mapper/examples/minimal_descriptors.bin", "rb");
+      if (fd == 0) begin
+        $display("ERROR: cannot open descriptor bin file");
+        $finish(1);
+      end
+      bytes_read = $fread(bin_data, fd, 0, max_bytes);
+      $fclose(fd);
+      if (bytes_read <= 0) begin
+        $display("ERROR: no bytes read from descriptor bin file");
+        $finish(1);
+      end
     end
 
     // MMIO init
@@ -180,13 +218,15 @@ module tb_npu_shell;
       $display("ERROR: expected dma_req_valid");
       $finish(1);
     end
-    if (dma_req_src !== 64'h0000_0030_0000_0000) begin
-      $display("ERROR: dma_req_src mismatch %h", dma_req_src);
-      $finish(1);
-    end
-    if (dma_req_dst !== 64'h0000_0030_0010_0000) begin
-      $display("ERROR: dma_req_dst mismatch %h", dma_req_dst);
-      $finish(1);
+    if (!sram_test) begin
+      if (dma_req_src !== 64'h0000_0030_0000_0000) begin
+        $display("ERROR: dma_req_src mismatch %h", dma_req_src);
+        $finish(1);
+      end
+      if (dma_req_dst !== 64'h0000_0030_0010_0000) begin
+        $display("ERROR: dma_req_dst mismatch %h", dma_req_dst);
+        $finish(1);
+      end
     end
     if (dma_req_bytes !== expected_dma_bytes) begin
       $display("ERROR: dma_req_bytes mismatch %h", dma_req_bytes);
@@ -231,11 +271,21 @@ module tb_npu_shell;
       $finish(1);
     end
 
-    // Check that 4KB at destination matches source
-    for (j = 0; j < test_bytes; j = j + 1) begin
-      if (axi_mem.mem[21'h100000 + j] !== axi_mem.mem[21'h000000 + j]) begin
-        $display("ERROR: DMA copy mismatch at byte %0d", j);
-        $finish(1);
+    if (sram_test) begin
+      // Check SRAM->mem copy result at MEM_DST_BASE
+      for (j = 0; j < 256; j = j + 1) begin
+        if (axi_mem.mem[MEM_DST_BASE[20:0] + j] !== axi_mem.mem[21'h000000 + j]) begin
+          $display("ERROR: SRAM DMA copy mismatch at byte %0d", j);
+          $finish(1);
+        end
+      end
+    end else begin
+      // Check that 4KB at destination matches source
+      for (j = 0; j < test_bytes; j = j + 1) begin
+        if (axi_mem.mem[21'h100000 + j] !== axi_mem.mem[21'h000000 + j]) begin
+          $display("ERROR: DMA copy mismatch at byte %0d", j);
+          $finish(1);
+        end
       end
     end
 
