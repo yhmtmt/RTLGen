@@ -88,6 +88,20 @@ def main():
     rows = []
     for metrics_path in iter_metrics_files(DESIGNS_ROOT):
         circuit_type, design = parse_design_info(metrics_path)
+        sram_summary_path = (
+            REPO_ROOT
+            / "runs"
+            / "designs"
+            / "sram"
+            / design
+            / "sram_metrics_summary.json"
+        )
+        sram_summary = {}
+        if sram_summary_path.exists():
+            try:
+                sram_summary = json.loads(sram_summary_path.read_text())
+            except json.JSONDecodeError:
+                sram_summary = {}
         for row in load_metrics(metrics_path):
             params_json = row.get("params_json", "")
             try:
@@ -110,6 +124,10 @@ def main():
                     "params_json": json.dumps(params, sort_keys=True),
                     "metrics_path": normalize_repo_path(str(metrics_path)),
                     "design_path": normalize_repo_path(str(metrics_path.parent)),
+                    "sram_area_um2": sram_summary.get("total_area_um2", ""),
+                    "sram_read_energy_pj": sram_summary.get("total_read_energy_pj", ""),
+                    "sram_write_energy_pj": sram_summary.get("total_write_energy_pj", ""),
+                    "sram_max_access_time_ns": sram_summary.get("max_access_time_ns", ""),
                 }
             )
 
@@ -130,6 +148,10 @@ def main():
         "params_json",
         "metrics_path",
         "design_path",
+        "sram_area_um2",
+        "sram_read_energy_pj",
+        "sram_write_energy_pj",
+        "sram_max_access_time_ns",
     ]
 
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)

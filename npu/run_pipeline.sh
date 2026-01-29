@@ -73,6 +73,7 @@ python3 npu/rtlgen/gen.py --config "$CONFIG_OUT" --out npu/rtlgen/out
 
 echo "[3/6] SRAM PPA estimation (CACTI, optional)"
 python3 npu/synth/sram_ppa.py "$ARCH_CONFIG" --id "$SRAM_ID" || true
+python3 npu/synth/aggregate_sram_metrics.py --id "$SRAM_ID" || true
 
 echo "[4/6] OpenROAD synthesis (TODO)"
 echo "TODO: invoke OpenROAD flow under npu/synth/"
