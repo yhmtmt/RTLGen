@@ -22,6 +22,8 @@ sram:
       port: 1r1w
       pdk: sky130
       tech_node_nm: 130
+      base_addr: 0x80000000
+      alignment_bytes: 64
     - name: weight_sram
       depth: 16384
       width: 256
@@ -31,6 +33,8 @@ sram:
       port: 1r1w
       pdk: sky130
       tech_node_nm: 130
+      base_addr: 0x80400000
+      alignment_bytes: 64
     - name: kv_sram
       depth: 8192
       width: 256
@@ -40,6 +44,8 @@ sram:
       port: 1r1w
       pdk: sky130
       tech_node_nm: 130
+      base_addr: 0x80800000
+      alignment_bytes: 64
 dma:
   engines: 2
   peak_bw_gbps: 64.0

@@ -119,7 +119,7 @@ module tb_axi_lite_multi;
     .m_axi_rlast(m_axi_rlast)
   );
 
-  axi_mem_model axi_mem (
+  axi_mem_router axi_mem (
     .clk(clk),
     .rst_n(rst_n),
     .m_axi_awvalid(m_axi_awvalid),

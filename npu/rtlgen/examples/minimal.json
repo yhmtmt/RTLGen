@@ -18,7 +18,9 @@
       "byte_en": true,
       "port": "1r1w",
       "pdk": "sky130",
-      "tech_node_nm": 130
+      "tech_node_nm": 130,
+      "base_addr": "0x80000000",
+      "alignment_bytes": 64
     },
     {
       "name": "weight_sram",
@@ -29,7 +31,9 @@
       "byte_en": true,
       "port": "1r1w",
       "pdk": "sky130",
-      "tech_node_nm": 130
+      "tech_node_nm": 130,
+      "base_addr": "0x80400000",
+      "alignment_bytes": 64
     },
     {
       "name": "kv_sram",
@@ -40,7 +44,9 @@
       "byte_en": true,
       "port": "1r1w",
       "pdk": "sky130",
-      "tech_node_nm": 130
+      "tech_node_nm": 130,
+      "base_addr": "0x80800000",
+      "alignment_bytes": 64
     }
   ],
   "queue_depth": 16,

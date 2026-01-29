@@ -11,6 +11,8 @@ ARCH?=npu/arch/examples/minimal.yml
 CONFIG?=npu/rtlgen/examples/minimal.json
 RTL=npu/rtlgen/out/top.v
 RTL_AXI=npu/rtlgen/out/top_axi.v npu/rtlgen/out/axi_lite_mmio_bridge.sv
+SRAM_MODELS=$(wildcard npu/rtlgen/out/sram_models.sv)
+ROUTER=npu/sim/rtl/axi_mem_router.sv
 MODEL=npu/sim/rtl/axi_mem_model.sv
 TB=npu/sim/rtl/tb_npu_shell.sv
 TB_AXI=npu/sim/rtl/tb_axi_lite_mmio.sv
@@ -26,29 +28,29 @@ gen-arch:
 	python3 npu/rtlgen/gen.py --config $(CONFIG) --out npu/rtlgen/out
 
 build: gen
-	$(IVERILOG) -g2012 -s tb_npu_shell -o $(OUT) $(RTL) $(TB) $(MODEL)
+	$(IVERILOG) -g2012 -s tb_npu_shell -o $(OUT) $(RTL) $(TB) $(ROUTER) $(MODEL) $(SRAM_MODELS)
 
 run: build
 	$(VVP) $(OUT) $(if $(BYTES),+bytes=$(BYTES),)
 
 run-arch: gen-arch
-	$(IVERILOG) -g2012 -s tb_npu_shell -o $(OUT) $(RTL) $(TB) $(MODEL)
+	$(IVERILOG) -g2012 -s tb_npu_shell -o $(OUT) $(RTL) $(TB) $(ROUTER) $(MODEL) $(SRAM_MODELS)
 	$(VVP) $(OUT) $(if $(BYTES),+bytes=$(BYTES),)
 
 run-axi: gen
-	$(IVERILOG) -g2012 -s tb_axi_lite_mmio -o $(OUT_AXI) $(RTL) $(RTL_AXI) $(TB_AXI) $(MODEL)
+	$(IVERILOG) -g2012 -s tb_axi_lite_mmio -o $(OUT_AXI) $(RTL) $(RTL_AXI) $(TB_AXI) $(ROUTER) $(MODEL) $(SRAM_MODELS)
 	$(VVP) $(OUT_AXI)
 
 run-axi-arch: gen-arch
-	$(IVERILOG) -g2012 -s tb_axi_lite_mmio -o $(OUT_AXI) $(RTL) $(RTL_AXI) $(TB_AXI) $(MODEL)
+	$(IVERILOG) -g2012 -s tb_axi_lite_mmio -o $(OUT_AXI) $(RTL) $(RTL_AXI) $(TB_AXI) $(ROUTER) $(MODEL) $(SRAM_MODELS)
 	$(VVP) $(OUT_AXI)
 
 run-axi-multi: gen
-	$(IVERILOG) -g2012 -s tb_axi_lite_multi -o $(OUT_AXI_MULTI) $(RTL) $(RTL_AXI) $(TB_AXI_MULTI) $(MODEL)
+	$(IVERILOG) -g2012 -s tb_axi_lite_multi -o $(OUT_AXI_MULTI) $(RTL) $(RTL_AXI) $(TB_AXI_MULTI) $(ROUTER) $(MODEL) $(SRAM_MODELS)
 	$(VVP) $(OUT_AXI_MULTI)
 
 run-axi-multi-arch: gen-arch
-	$(IVERILOG) -g2012 -s tb_axi_lite_multi -o $(OUT_AXI_MULTI) $(RTL) $(RTL_AXI) $(TB_AXI_MULTI) $(MODEL)
+	$(IVERILOG) -g2012 -s tb_axi_lite_multi -o $(OUT_AXI_MULTI) $(RTL) $(RTL_AXI) $(TB_AXI_MULTI) $(ROUTER) $(MODEL) $(SRAM_MODELS)
 	$(VVP) $(OUT_AXI_MULTI)
 
 status:

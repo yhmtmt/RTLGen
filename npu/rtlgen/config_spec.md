@@ -34,7 +34,9 @@ can later be extended without breaking v0.1.
       "byte_en": true,
       "port": "1r1w",
       "pdk": "sky130",
-      "tech_node_nm": 130
+      "tech_node_nm": 130,
+      "base_addr": "0x80000000",
+      "alignment_bytes": 64
     }
   ],
   "queue_depth": 16,
@@ -59,6 +61,7 @@ can later be extended without breaking v0.1.
 - `sram_instances` (list): optional SRAM instances for shell integration and PPA estimation.
   - Each instance should include `name`, `depth`, `width`, `banks`, `read_latency`,
     `byte_en`, `port` (1r1w), and `pdk` or `tech_node_nm`.
+  - Optional fields: `base_addr` (hex string or int) and `alignment_bytes` (int).
 - `queue_depth` (int): number of 32B descriptors in the command queue.
 - `enable_irq` (bool): include IRQ output.
 - `enable_dma_ports` (bool): include a stub DMA/memory interface.

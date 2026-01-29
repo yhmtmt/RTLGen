@@ -718,8 +718,10 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
     (out_path / "top.v").write_text(verilog, encoding="utf-8")
     (out_path / "config.json").write_text(json.dumps(cfg, indent=2) + "\n", encoding="utf-8")
 
+    sram_map = []
     if sram_instances:
         models = [SRAM_1R1W_MODEL]
+        next_base = 0x80000000
         for inst in sram_instances:
             if inst.get("port", "1r1w") != "1r1w":
                 die(f"unsupported SRAM port type: {inst.get('port')}")
@@ -735,6 +737,24 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
             if (depth & (depth - 1)) != 0:
                 die("SRAM depth must be a power of two")
             strb_width = sram_data_width // 8
+            size_bytes = depth * strb_width * int(inst.get("banks", 1))
+            base_addr = inst.get("base_addr")
+            if base_addr is None:
+                base_addr = next_base
+                next_base += size_bytes
+            if isinstance(base_addr, str):
+                base_addr = int(base_addr, 0)
+            alignment_bytes = int(inst.get("alignment_bytes", 64))
+            word_bytes = sram_data_width // 8
+            sram_map.append(
+                {
+                    "name": inst["name"],
+                    "base_addr": base_addr,
+                    "size_bytes": size_bytes,
+                    "word_bytes": word_bytes,
+                    "alignment_bytes": alignment_bytes,
+                }
+            )
             models.append(
                 SRAM_1R1W_WRAPPER.format(
                     inst_name=inst["name"],
@@ -748,6 +768,30 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
                 )
             )
         (out_path / "sram_models.sv").write_text("\n\n".join(models) + "\n", encoding="utf-8")
+        (out_path / "sram_map.json").write_text(json.dumps(sram_map, indent=2) + "\n", encoding="utf-8")
+
+    if not sram_map:
+        (out_path / "sram_map.json").write_text("[]\n", encoding="utf-8")
+
+    count = len(sram_map)
+    max_srams = 8
+    vh_lines = [
+        "localparam int SRAM_COUNT = %d;" % count,
+        "localparam int SRAM_MAX = %d;" % max_srams,
+    ]
+    for idx in range(max_srams):
+        if idx < count:
+            entry = sram_map[idx]
+            vh_lines.append("localparam logic [63:0] SRAM_BASE%d = 64'h%016x;" % (idx, entry["base_addr"]))
+            vh_lines.append("localparam logic [63:0] SRAM_SIZE%d = %d;" % (idx, entry["size_bytes"]))
+            vh_lines.append("localparam int SRAM_ALIGN%d = %d;" % (idx, entry["alignment_bytes"]))
+            vh_lines.append("localparam int SRAM_WORD_BYTES%d = %d;" % (idx, entry["word_bytes"]))
+        else:
+            vh_lines.append("localparam logic [63:0] SRAM_BASE%d = 64'h0;" % idx)
+            vh_lines.append("localparam logic [63:0] SRAM_SIZE%d = 0;" % idx)
+            vh_lines.append("localparam int SRAM_ALIGN%d = 0;" % idx)
+            vh_lines.append("localparam int SRAM_WORD_BYTES%d = 0;" % idx)
+    (out_path / "sram_map.vh").write_text("\n".join(vh_lines) + "\n", encoding="utf-8")
 
     if bool(cfg.get("enable_axi_lite_wrapper", False)):
         bridge = AXI_LITE_BRIDGE.format(

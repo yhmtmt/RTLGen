@@ -257,7 +257,7 @@ module tb_npu_shell;
     cq_mem_rdata = rdata_next;
   end
 
-  axi_mem_model axi_mem (
+  axi_mem_router axi_mem (
     .clk(clk),
     .rst_n(rst_n),
     .m_axi_awvalid(m_axi_awvalid),
