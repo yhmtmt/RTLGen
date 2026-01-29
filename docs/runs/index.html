@@ -114,6 +114,10 @@
           <th data-col="critical_path_ns" class="num">Delay (ns)</th>
           <th data-col="die_area" class="num">Area (um2)</th>
           <th data-col="total_power_mw" class="num">Power (mW)</th>
+          <th data-col="sram_area_um2" class="num">SRAM Area (um2)</th>
+          <th data-col="sram_read_energy_pj" class="num">SRAM Read (pJ)</th>
+          <th data-col="sram_write_energy_pj" class="num">SRAM Write (pJ)</th>
+          <th data-col="sram_max_access_time_ns" class="num">SRAM Delay (ns)</th>
           <th data-col="tag">Tag</th>
         </tr>
       </thead>
@@ -203,7 +207,15 @@
     }
 
     function getSorted(rows) {
-      const numCols = ['critical_path_ns', 'die_area', 'total_power_mw'];
+      const numCols = [
+        'critical_path_ns',
+        'die_area',
+        'total_power_mw',
+        'sram_area_um2',
+        'sram_read_energy_pj',
+        'sram_write_energy_pj',
+        'sram_max_access_time_ns'
+      ];
       const isNum = numCols.includes(sortCol);
       return [...rows].sort((a, b) => {
         let va = a[sortCol] || '';
@@ -232,6 +244,10 @@
           <td class="num">${fmtNum(r.critical_path_ns, 4)}</td>
           <td class="num">${fmtNum(r.die_area, 2)}</td>
           <td class="num">${fmtNum(r.total_power_mw, 6)}</td>
+          <td class="num">${fmtNum(r.sram_area_um2, 2)}</td>
+          <td class="num">${fmtNum(r.sram_read_energy_pj, 2)}</td>
+          <td class="num">${fmtNum(r.sram_write_energy_pj, 2)}</td>
+          <td class="num">${fmtNum(r.sram_max_access_time_ns, 4)}</td>
           <td>${esc(r.tag)}</td>
         </tr>
       `).join('');
