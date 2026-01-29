@@ -2,6 +2,7 @@
 import argparse
 import csv
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -51,15 +52,43 @@ def parse_cacti_csv(csv_path: Path):
     return metrics
 
 
+def parse_cacti_stdout(stdout_text: str):
+    metrics = {}
+    access = re.search(r"Access time \(ns\):\s*([0-9.]+)", stdout_text)
+    if access:
+        metrics["access_time_ns"] = float(access.group(1))
+    read_energy = re.search(
+        r"Total dynamic read energy per access \(nJ\):\s*([0-9.]+)",
+        stdout_text,
+    )
+    if read_energy:
+        metrics["read_energy_nj"] = float(read_energy.group(1))
+    write_energy = re.search(
+        r"Total dynamic write energy per access \(nJ\):\s*([0-9.]+)",
+        stdout_text,
+    )
+    if write_energy:
+        metrics["write_energy_nj"] = float(write_energy.group(1))
+    area = re.search(r"Cache height x width \(mm\):\s*([0-9.]+) x ([0-9.]+)", stdout_text)
+    if area:
+        height = float(area.group(1))
+        width = float(area.group(2))
+        metrics["area_mm2"] = height * width
+    return metrics
+
+
 def run_cacti(cacti_bin: Path, template: Path, instance: dict, tech_node_nm: int):
     with template.open() as f:
         cfg = f.read()
     cfg = cfg.replace("@SIZE_BYTES@", str(instance["size_bytes"]))
     cfg = cfg.replace("@WORD_SIZE_BYTES@", str(instance["word_size_bytes"]))
     cfg = cfg.replace("@WORD_SIZE_BITS@", str(instance["word_size_bytes"] * 8))
-    cfg = cfg.replace("@READ_PORTS@", str(instance["read_ports"]))
-    cfg = cfg.replace("@WRITE_PORTS@", str(instance["write_ports"]))
-    cfg = cfg.replace("@RW_PORTS@", str(instance["rw_ports"]))
+    cfg = cfg.replace("@BLOCK_SIZE_BYTES@", str(instance["block_size_bytes"]))
+    cfg = cfg.replace("@BUS_WIDTH_BITS@", str(instance["bus_width_bits"]))
+    cfg = cfg.replace("@READ_PORTS@", str(instance["cacti_read_ports"]))
+    cfg = cfg.replace("@WRITE_PORTS@", str(instance["cacti_write_ports"]))
+    cfg = cfg.replace("@RW_PORTS@", str(instance["cacti_rw_ports"]))
+    cfg = cfg.replace("@BANKS@", str(instance["banks"]))
     cfg = cfg.replace("@TECH_NODE_NM@", str(tech_node_nm))
     cfg = cfg.replace("@TECH_NODE_UM@", f"{tech_node_nm / 1000.0:.3f}")
 
@@ -67,13 +96,17 @@ def run_cacti(cacti_bin: Path, template: Path, instance: dict, tech_node_nm: int
         tmp_dir = Path(td)
         cfg_path = tmp_dir / "sram.cfg"
         cfg_path.write_text(cfg)
+        workdir = cacti_bin.parent
+        out_csv = workdir / "out.csv"
+        if out_csv.exists():
+            out_csv.unlink()
         result = subprocess.run(
             [str(cacti_bin), "-infile", str(cfg_path)],
-            cwd=tmp_dir,
+            cwd=workdir,
             capture_output=True,
             text=True,
         )
-        csv_path = tmp_dir / "out.csv"
+        csv_path = out_csv if out_csv.exists() else tmp_dir / "out.csv"
         metrics = {}
         if csv_path.exists():
             metrics = parse_cacti_csv(csv_path)
@@ -132,7 +165,7 @@ def main():
 
     results = []
     for inst in instances:
-        if inst.get("port", "1r1w") != "1r1w":
+        if inst.get("port", "1r1w") not in ("1r1w", "1rw"):
             print(f"Unsupported port type: {inst.get('port')}", file=sys.stderr)
             return 1
         depth = int(inst["depth"])
@@ -163,6 +196,21 @@ def main():
         tech_node_nm = int(tech_node_nm) if tech_node_nm is not None else None
 
         size_bytes = depth * (width // 8) * banks
+        word_size_bytes = width // 8
+        block_size_bytes = max(64, word_size_bytes)
+        bus_width_bits = block_size_bytes * 8
+        cacti_read_ports = 0
+        cacti_write_ports = 0
+        cacti_rw_ports = 1
+        cacti_port_model = "1rw"
+        if inst.get("port", "1r1w") not in ("1r1w", "1rw"):
+            print(f"Unsupported port type: {inst.get('port')}", file=sys.stderr)
+            return 1
+        if inst.get("port", "1r1w") == "1r1w":
+            cacti_port_note = "CACTI modeled as 1RW; 1R1W not supported in this config."
+        else:
+            cacti_port_note = "CACTI modeled as 1RW."
+
         instance_meta = {
             "name": inst["name"],
             "pdk": pdk,
@@ -174,10 +222,17 @@ def main():
             "read_latency": int(inst.get("read_latency", 1)),
             "byte_en": bool(inst.get("byte_en", True)),
             "size_bytes": size_bytes,
-            "word_size_bytes": width // 8,
+            "word_size_bytes": word_size_bytes,
+            "block_size_bytes": block_size_bytes,
+            "bus_width_bits": bus_width_bits,
             "read_ports": 1,
             "write_ports": 1,
             "rw_ports": 0,
+            "cacti_read_ports": cacti_read_ports,
+            "cacti_write_ports": cacti_write_ports,
+            "cacti_rw_ports": cacti_rw_ports,
+            "cacti_port_model": cacti_port_model,
+            "cacti_port_note": cacti_port_note,
         }
 
         record = {
@@ -201,6 +256,8 @@ def main():
             record["artifacts"]["cacti_stderr"] = stderr_text
             if csv_text is not None:
                 record["artifacts"]["cacti_csv"] = csv_text
+            if not metrics:
+                metrics = parse_cacti_stdout(stdout_text)
             record["metrics"]["raw"] = metrics
             if metrics.get("area_mm2") is not None:
                 area_um2 = metrics["area_mm2"] * 1e6
