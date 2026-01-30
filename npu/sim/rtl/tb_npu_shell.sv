@@ -122,6 +122,7 @@ module tb_npu_shell;
   integer test_bytes;
   reg [DATA_W-1:0] expected_dma_bytes;
   reg sram_test;
+  reg event_test;
   `include "npu/rtlgen/out/sram_map.vh"
   localparam [63:0] MEM_DST_BASE = 64'h0000_0000_0001_0000;
 
@@ -139,8 +140,27 @@ module tb_npu_shell;
     sram_test = 0;
     if ($value$plusargs("sram_test=%d", sram_test))
       sram_test = (sram_test != 0);
+    event_test = 0;
+    if ($value$plusargs("event_test=%d", event_test))
+      event_test = (event_test != 0);
 
-    if (sram_test) begin
+    if (event_test) begin
+      integer idx;
+      for (idx = 0; idx < 96; idx = idx + 1)
+        bin_data[idx] = 0;
+
+      // Descriptor 0: GEMM
+      bin_data[0] = 8'h10;
+      bin_data[2] = 8'h01;
+      // Descriptor 1: EVENT_SIGNAL
+      bin_data[32] = 8'h20;
+      bin_data[34] = 8'h01;
+      // Descriptor 2: EVENT_WAIT
+      bin_data[64] = 8'h21;
+      bin_data[66] = 8'h01;
+
+      bytes_read = 96;
+    end else if (sram_test) begin
       // Build two DMA_COPY descriptors: mem->SRAM, SRAM->mem
       integer idx;
       for (idx = 0; idx < 64; idx = idx + 1)
@@ -201,28 +221,30 @@ module tb_npu_shell;
     mmio_write(OFF_DOORBELL, 32'h1);
 
     // DMA request should assert; handshake and complete
-    repeat (5) @(posedge clk);
-    if (dma_req_valid !== 1'b1) begin
-      $display("ERROR: expected dma_req_valid");
-      $finish(1);
-    end
-    if (!sram_test) begin
-      if (dma_req_src !== 64'h0000_0030_0000_0000) begin
-        $display("ERROR: dma_req_src mismatch %h", dma_req_src);
+    if (!event_test) begin
+      repeat (5) @(posedge clk);
+      if (dma_req_valid !== 1'b1) begin
+        $display("ERROR: expected dma_req_valid");
         $finish(1);
       end
-      if (dma_req_dst !== 64'h0000_0030_0010_0000) begin
-        $display("ERROR: dma_req_dst mismatch %h", dma_req_dst);
+      if (!sram_test) begin
+        if (dma_req_src !== 64'h0000_0030_0000_0000) begin
+          $display("ERROR: dma_req_src mismatch %h", dma_req_src);
+          $finish(1);
+        end
+        if (dma_req_dst !== 64'h0000_0030_0010_0000) begin
+          $display("ERROR: dma_req_dst mismatch %h", dma_req_dst);
+          $finish(1);
+        end
+      end
+      if (dma_req_bytes !== expected_dma_bytes) begin
+        $display("ERROR: dma_req_bytes mismatch %h", dma_req_bytes);
         $finish(1);
       end
+      dma_req_ready = 1'b1;
+      @(posedge clk);
+      dma_req_ready = 1'b0;
     end
-    if (dma_req_bytes !== expected_dma_bytes) begin
-      $display("ERROR: dma_req_bytes mismatch %h", dma_req_bytes);
-      $finish(1);
-    end
-    dma_req_ready = 1'b1;
-    @(posedge clk);
-    dma_req_ready = 1'b0;
 
     // Wait for AXI DMA shim to complete the burst
     begin : wait_irq
@@ -255,11 +277,13 @@ module tb_npu_shell;
       $finish(1);
     end
     if (irq_status[1] !== 1'b1) begin
-      $display("ERROR: expected EVENT IRQ status from DMA (saw_bvalid=%0d)", saw_bvalid);
+      $display("ERROR: expected EVENT IRQ status from DMA/event (saw_bvalid=%0d)", saw_bvalid);
       $finish(1);
     end
 
-    if (sram_test) begin
+    if (event_test) begin
+      // No data check for GEMM/event stubs
+    end else if (sram_test) begin
       // Check SRAM->mem copy result at MEM_DST_BASE
       for (j = 0; j < 256; j = j + 1) begin
         if (axi_mem.mem[MEM_DST_BASE[20:0] + j] !== axi_mem.mem[21'h000000 + j]) begin
