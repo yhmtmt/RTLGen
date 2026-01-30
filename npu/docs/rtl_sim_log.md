@@ -53,6 +53,10 @@ including queue handling, DMA, and AXI memory integration.
 - Added CACTI template and pipeline hook; scale CACTI outputs for tech nodes > 90nm.
 - Note: sky130hd SRAM macro generation is planned; current flow uses CACTI estimates and sim-only SRAM models.
 
+## 8) GEMM/EVENT stub coverage (2026-01-30)
+- Added stub decode for GEMM/EVENT opcodes (IRQ_EVENT only, no compute).
+- Added `+event_test=1` to RTL benches (shell + AXI‑Lite) for descriptor coverage.
+
 ## Next steps
-- Add GEMM/event descriptor checks in RTL TBs.
 - Implement sky130hd SRAM macro generation path and hook it into synthesis.
+- Add functional GEMM path once the compute core interface is defined.

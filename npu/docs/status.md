@@ -13,6 +13,7 @@ Git: unknown
 - **RTLGen**: stub generator emits `top.v`, plus optional AXI‑Lite wrapper.
 - **RTL sim**: end-to-end functional validation with DMA + AXI burst + AXI‑Lite tests.
 - **SRAM sim**: AXI router + SRAM models integrated; SRAM DMA tests added.
+- **GEMM/Event**: stub decode paths raise IRQ_EVENT; basic TB coverage added.
 - **SRAM PPA**: CACTI flow integrated with >90nm scaling and aggregation.
 - **Mapper**: v0.1 IR and binary descriptor emission implemented.
 - **Performance sim**: planned.
