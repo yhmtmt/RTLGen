@@ -134,7 +134,7 @@ module tb_npu_shell;
   integer test_bytes;
   reg [DATA_W-1:0] expected_dma_bytes;
   reg sram_test;
-  localparam [63:0] SRAM_BASE0 = 64'h0000_0000_8000_0000;
+  `include "npu/rtlgen/out/sram_map.vh"
   localparam [63:0] MEM_DST_BASE = 64'h0000_0000_0001_0000;
 
   initial begin

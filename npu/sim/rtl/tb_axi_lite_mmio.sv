@@ -166,7 +166,7 @@ module tb_axi_lite_mmio;
   integer dma_reqs;
   reg checked_dma;
   reg sram_test;
-  localparam [63:0] SRAM_BASE0 = 64'h0000_0000_8000_0000;
+  `include "npu/rtlgen/out/sram_map.vh"
   localparam [63:0] MEM_DST_BASE = 64'h0000_0000_0001_0000;
 
   initial begin
