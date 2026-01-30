@@ -18,7 +18,7 @@ TB=npu/sim/rtl/tb_npu_shell.sv
 TB_AXI=npu/sim/rtl/tb_axi_lite_mmio.sv
 TB_AXI_MULTI=npu/sim/rtl/tb_axi_lite_multi.sv
 
-.PHONY: gen gen-arch build run run-axi run-axi-multi run-arch run-axi-arch run-axi-multi-arch run-arch-sram run-axi-arch-sram run-axi-multi-arch-sram status clean
+.PHONY: gen gen-arch build run run-axi run-axi-multi run-arch run-axi-arch run-axi-multi-arch run-arch-sram run-axi-arch-sram run-axi-multi-arch-sram run-arch-event run-axi-arch-event run-axi-multi-arch-event status clean
 
 gen:
 	python3 npu/rtlgen/gen.py --config $(CONFIG) --out npu/rtlgen/out
@@ -41,6 +41,10 @@ run-arch-sram: gen-arch
 	$(IVERILOG) -g2012 -s tb_npu_shell -o $(OUT) $(RTL) $(TB) $(ROUTER) $(MODEL) $(SRAM_MODELS)
 	$(VVP) $(OUT) +sram_test=1
 
+run-arch-event: gen-arch
+	$(IVERILOG) -g2012 -s tb_npu_shell -o $(OUT) $(RTL) $(TB) $(ROUTER) $(MODEL) $(SRAM_MODELS)
+	$(VVP) $(OUT) +event_test=1
+
 run-axi: gen
 	$(IVERILOG) -g2012 -s tb_axi_lite_mmio -o $(OUT_AXI) $(RTL) $(RTL_AXI) $(TB_AXI) $(ROUTER) $(MODEL) $(SRAM_MODELS)
 	$(VVP) $(OUT_AXI)
@@ -53,6 +57,10 @@ run-axi-arch-sram: gen-arch
 	$(IVERILOG) -g2012 -s tb_axi_lite_mmio -o $(OUT_AXI) $(RTL) $(RTL_AXI) $(TB_AXI) $(ROUTER) $(MODEL) $(SRAM_MODELS)
 	$(VVP) $(OUT_AXI) +sram_test=1
 
+run-axi-arch-event: gen-arch
+	$(IVERILOG) -g2012 -s tb_axi_lite_mmio -o $(OUT_AXI) $(RTL) $(RTL_AXI) $(TB_AXI) $(ROUTER) $(MODEL) $(SRAM_MODELS)
+	$(VVP) $(OUT_AXI) +event_test=1
+
 run-axi-multi: gen
 	$(IVERILOG) -g2012 -s tb_axi_lite_multi -o $(OUT_AXI_MULTI) $(RTL) $(RTL_AXI) $(TB_AXI_MULTI) $(ROUTER) $(MODEL) $(SRAM_MODELS)
 	$(VVP) $(OUT_AXI_MULTI)
@@ -64,6 +72,10 @@ run-axi-multi-arch: gen-arch
 run-axi-multi-arch-sram: gen-arch
 	$(IVERILOG) -g2012 -s tb_axi_lite_multi -o $(OUT_AXI_MULTI) $(RTL) $(RTL_AXI) $(TB_AXI_MULTI) $(ROUTER) $(MODEL) $(SRAM_MODELS)
 	$(VVP) $(OUT_AXI_MULTI) +sram_test=1
+
+run-axi-multi-arch-event: gen-arch
+	$(IVERILOG) -g2012 -s tb_axi_lite_multi -o $(OUT_AXI_MULTI) $(RTL) $(RTL_AXI) $(TB_AXI_MULTI) $(ROUTER) $(MODEL) $(SRAM_MODELS)
+	$(VVP) $(OUT_AXI_MULTI) +event_test=1
 
 status:
 	python3 npu/docs/update_status.py

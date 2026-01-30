@@ -155,6 +155,7 @@ module tb_axi_lite_mmio;
   integer dma_reqs;
   reg checked_dma;
   reg sram_test;
+  reg event_test;
   `include "npu/rtlgen/out/sram_map.vh"
   localparam [63:0] MEM_DST_BASE = 64'h0000_0000_0001_0000;
 
@@ -180,8 +181,24 @@ module tb_axi_lite_mmio;
     sram_test = 0;
     if ($value$plusargs("sram_test=%d", sram_test))
       sram_test = (sram_test != 0);
+    event_test = 0;
+    if ($value$plusargs("event_test=%d", event_test))
+      event_test = (event_test != 0);
 
-    if (sram_test) begin
+    if (event_test) begin
+      integer idx;
+      for (idx = 0; idx < 96; idx = idx + 1)
+        bin_data[idx] = 0;
+
+      bin_data[0] = 8'h10; // GEMM
+      bin_data[2] = 8'h01;
+      bin_data[32] = 8'h20; // EVENT_SIGNAL
+      bin_data[34] = 8'h01;
+      bin_data[64] = 8'h21; // EVENT_WAIT
+      bin_data[66] = 8'h01;
+
+      bytes_read = 96;
+    end else if (sram_test) begin
       integer idx;
       for (idx = 0; idx < 64; idx = idx + 1)
         bin_data[idx] = 0;
@@ -246,7 +263,7 @@ module tb_axi_lite_mmio;
     cq_tail = bytes_read[31:0];
     host_submit_cq(cq_tail);
 
-    if (!sram_test) begin
+    if (!sram_test && !event_test) begin
       // Expect DMA request and accept it
       repeat (5) @(posedge clk);
       if (dma_req_valid !== 1'b1) begin
@@ -294,7 +311,9 @@ module tb_axi_lite_mmio;
       $finish(1);
     end
 
-    if (sram_test) begin
+    if (event_test) begin
+      // No data check for GEMM/event stubs
+    end else if (sram_test) begin
       for (j = 0; j < 256; j = j + 1) begin
         if (axi_mem.mem[MEM_DST_BASE[20:0] + j] !== axi_mem.mem[21'h000000 + j]) begin
           $display("ERROR: SRAM DMA copy mismatch at byte %0d", j);
