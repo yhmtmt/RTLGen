@@ -5,19 +5,7 @@ module tb_npu_shell;
   localparam MMIO_ADDR_W = 12;
   localparam DATA_W = 32;
 
-  // MMIO offsets (match npu/rtlgen/gen.py)
-  localparam OFF_VERSION     = 12'h000;
-  localparam OFF_CAPS        = 12'h004;
-  localparam OFF_STATUS      = 12'h008;
-  localparam OFF_CONTROL     = 12'h00C;
-  localparam OFF_IRQ_STATUS  = 12'h010;
-  localparam OFF_IRQ_ENABLE  = 12'h014;
-  localparam OFF_CQ_BASE_LO  = 12'h020;
-  localparam OFF_CQ_BASE_HI  = 12'h024;
-  localparam OFF_CQ_SIZE     = 12'h028;
-  localparam OFF_CQ_HEAD     = 12'h02C;
-  localparam OFF_CQ_TAIL     = 12'h030;
-  localparam OFF_DOORBELL    = 12'h040;
+  `include "npu/rtlgen/out/mmio_map.vh"
 
   reg clk;
   reg rst_n;

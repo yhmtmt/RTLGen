@@ -2,18 +2,7 @@
 
 module tb_axi_lite_multi;
   localparam CLK_PERIOD = 10;
-  localparam OFF_VERSION     = 32'h0000_0000;
-  localparam OFF_CAPS        = 32'h0000_0004;
-  localparam OFF_STATUS      = 32'h0000_0008;
-  localparam OFF_CONTROL     = 32'h0000_000C;
-  localparam OFF_IRQ_STATUS  = 32'h0000_0010;
-  localparam OFF_IRQ_ENABLE  = 32'h0000_0014;
-  localparam OFF_CQ_BASE_LO  = 32'h0000_0020;
-  localparam OFF_CQ_BASE_HI  = 32'h0000_0024;
-  localparam OFF_CQ_SIZE     = 32'h0000_0028;
-  localparam OFF_CQ_HEAD     = 32'h0000_002C;
-  localparam OFF_CQ_TAIL     = 32'h0000_0030;
-  localparam OFF_DOORBELL    = 32'h0000_0040;
+  `include "npu/rtlgen/out/mmio_map.vh"
 
   reg clk;
   reg rst_n;

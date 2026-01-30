@@ -61,19 +61,7 @@ module {top_name} (
   localparam IRQ_ERROR       = 2;
 
   // MMIO offsets (bytes)
-  localparam OFF_VERSION     = 12'h000;
-  localparam OFF_CAPS        = 12'h004;
-  localparam OFF_STATUS      = 12'h008;
-  localparam OFF_CONTROL     = 12'h00C;
-  localparam OFF_IRQ_STATUS  = 12'h010;
-  localparam OFF_IRQ_ENABLE  = 12'h014;
-  localparam OFF_CQ_BASE_LO  = 12'h020;
-  localparam OFF_CQ_BASE_HI  = 12'h024;
-  localparam OFF_CQ_SIZE     = 12'h028;
-  localparam OFF_CQ_HEAD     = 12'h02C;
-  localparam OFF_CQ_TAIL     = 12'h030;
-  localparam OFF_DOORBELL    = 12'h040;
-  localparam OFF_ERROR_CODE  = 12'h044;
+  `include "npu/rtlgen/out/mmio_map.vh"
 
   always @(*) begin
     case (mmio_addr)
@@ -792,6 +780,23 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
             vh_lines.append("localparam int SRAM_ALIGN%d = 0;" % idx)
             vh_lines.append("localparam int SRAM_WORD_BYTES%d = 0;" % idx)
     (out_path / "sram_map.vh").write_text("\n".join(vh_lines) + "\n", encoding="utf-8")
+
+    mmio_lines = [
+        "localparam int OFF_VERSION    = 12'h000;",
+        "localparam int OFF_CAPS       = 12'h004;",
+        "localparam int OFF_STATUS     = 12'h008;",
+        "localparam int OFF_CONTROL    = 12'h00C;",
+        "localparam int OFF_IRQ_STATUS = 12'h010;",
+        "localparam int OFF_IRQ_ENABLE = 12'h014;",
+        "localparam int OFF_CQ_BASE_LO = 12'h020;",
+        "localparam int OFF_CQ_BASE_HI = 12'h024;",
+        "localparam int OFF_CQ_SIZE    = 12'h028;",
+        "localparam int OFF_CQ_HEAD    = 12'h02C;",
+        "localparam int OFF_CQ_TAIL    = 12'h030;",
+        "localparam int OFF_DOORBELL   = 12'h040;",
+        "localparam int OFF_ERROR_CODE = 12'h044;",
+    ]
+    (out_path / "mmio_map.vh").write_text("\n".join(mmio_lines) + "\n", encoding="utf-8")
 
     if bool(cfg.get("enable_axi_lite_wrapper", False)):
         bridge = AXI_LITE_BRIDGE.format(
