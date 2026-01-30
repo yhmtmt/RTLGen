@@ -6,6 +6,7 @@ Documents are grouped by purpose: **specs**, **plans**, and **logs**.
 
 ## Current status
 - Specs and RTL simulation docs are implemented.
+- SRAM simulation + CACTI PPA documentation are available.
 - Performance simulation and OpenROAD flows are planned.
 
 ## Specs

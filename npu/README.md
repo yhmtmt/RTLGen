@@ -8,6 +8,8 @@ reference integration target, not a required architectural match.
 ## Current status
 - RTL shell + DMA/AXI stub and RTL simulation path are implemented.
 - AXI-Lite MMIO wrapper is available for integration testing.
+- SRAM address map + AXI router are integrated in RTL sim.
+- CACTI-based SRAM PPA is integrated with >90nm scaling.
 
 Start with:
 - `npu/docs/index.md`: documentation index (specs, plans, logs).

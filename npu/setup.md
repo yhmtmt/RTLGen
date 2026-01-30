@@ -7,6 +7,8 @@ This document defines a sequential workflow to establish the NPU development and
 - RTL shell bring-up and AXI memory simulation are implemented.
 - AXI-Lite MMIO wrapper is available for the generated top.
 - Mapper can emit binary descriptors for the RTL sim path.
+- SRAM address map + AXI router integrated in RTL sim.
+- CACTI PPA flow integrated for SRAM estimation (>90nm scaling).
 
 ## Phase 0: Repository scaffolding
 - Create `npu/` subtree for NPU-specific assets.
