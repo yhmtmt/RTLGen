@@ -46,7 +46,7 @@ set (CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR})
 install(TARGETS rtlgen DESTINATION bin)
 
 if(RTLGEN_BUILD_CACTI)
-    set(CACTI_SOURCE_DIR ${PROJECT_SOURCE_DIR}/cacti)
+    set(CACTI_SOURCE_DIR ${PROJECT_SOURCE_DIR}/third_party/cacti)
     ExternalProject_Add(cacti
         SOURCE_DIR ${CACTI_SOURCE_DIR}
         CONFIGURE_COMMAND ""

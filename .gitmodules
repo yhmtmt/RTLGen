@@ -20,6 +20,6 @@
 	path = npu/nvdla/doc
 	url = https://github.com/nvdla/doc.git
 [submodule "cacti"]
-	path = cacti
+	path = third_party/cacti
 	url = https://github.com/HewlettPackard/cacti.git
 	ignore = dirty
