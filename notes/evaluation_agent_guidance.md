@@ -61,7 +61,7 @@ When PPA behavior looks inconsistent, classify the cause:
 Logging Requirements
 --------------------
 Evaluator outputs should be summarized in a short note (Markdown) placed under:
-- `doc/evaluation_notes/<topic>.md`
+- `notes/evaluation_notes/<topic>.md`
 
 Each note should include:
 - Scope: what was evaluated (designs, widths, PDKs).

@@ -20,7 +20,7 @@ Documents are grouped by purpose: **specs**, **plans**, and **logs**.
 - `npu/docs/sim_dev_plan.md`: simulator development plan (RTL + performance).
 - `npu/synth/plan.md`: OpenROAD integration plan.
 - `npu/synth/cacti.md`: CACTI SRAM estimation workflow and scaling rules.
-- `doc/npu_workflow.md`: end-to-end workflow guide.
+- `npu/docs/workflow.md`: end-to-end workflow guide.
 
 ## Logs
 - `npu/docs/shell_spec_log.md`: shell spec work log.

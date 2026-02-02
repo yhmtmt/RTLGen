@@ -32,7 +32,7 @@ Before requesting a pull to `master`, developers must:
 
 Evaluation Discipline
 ---------------------
-Follow `doc/evaluation_agent_guidance.md` for evaluation structure, and:
+Follow `notes/evaluation_agent_guidance.md` for evaluation structure, and:
 - Create new, distinctive design and campaign directories under `runs/` for
   each new algorithm or configuration switch.
 - Keep evaluation artifacts traceable to the algorithm version and config.

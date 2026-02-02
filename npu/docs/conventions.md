@@ -4,7 +4,7 @@ This file defines the lightweight conventions for NPU documentation in RTLGen.
 
 ## 1) File placement
 - **Specs**: `npu/shell/`, `npu/rtlgen/`, `npu/mapper/`, `npu/sim/`
-- **Plans**: `npu/docs/`, `npu/synth/`, `doc/`
+- **Plans**: `npu/docs/`, `npu/synth/`, `notes/`
 - **Logs**: `npu/docs/`
 - **Vendor references**: `npu/nvdla/` (do not edit unless necessary)
 

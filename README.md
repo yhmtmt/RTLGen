@@ -59,12 +59,12 @@ python3 scripts/build_runs_index.py
 ```
 
 ## Notes and References
-- **Evaluation guidance**: How to run and interpret evaluations, plus naming rules for new runs: see [doc/evaluation_agent_guidance.md](doc/evaluation_agent_guidance.md).
-- **Development guidance**: Branching, config switches, and validation rules for new algorithms: see [doc/development_agent_guidance.md](doc/development_agent_guidance.md).
-- **NPU workflow**: High-level flow for NPU architecture definition, RTL generation, evaluation, mapping, and simulation: see [doc/npu_workflow.md](doc/npu_workflow.md).
+- **Evaluation guidance**: How to run and interpret evaluations, plus naming rules for new runs: see [notes/evaluation_agent_guidance.md](notes/evaluation_agent_guidance.md).
+- **Development guidance**: Branching, config switches, and validation rules for new algorithms: see [notes/development_agent_guidance.md](notes/development_agent_guidance.md).
+- **NPU workflow**: High-level flow for NPU architecture definition, RTL generation, evaluation, mapping, and simulation: see [npu/docs/workflow.md](npu/docs/workflow.md).
 - **NPU docs index**: Specs, plans, and logs for NPU development: see [npu/docs/index.md](npu/docs/index.md).
-- Multiplier comparison (Booth vs. normal PPG) with OpenROAD results: see [doc/booth4_vs_normal/booth_vs_normal_multiplier_comparison.md](doc/booth4_vs_normal/booth_vs_normal_multiplier_comparison.md).
-- Yosys Booth vs ILP Booth comparison with normalized PPA plots: see [doc/yosys_vs_ilp_booth.md](doc/yosys_vs_ilp_booth.md).
-- Constant-multiplier algorithms (MCM/CMVM) and CLIs: see [doc/constant_multiplication.md](doc/constant_multiplication.md).
-- End-to-end workflow and automation plan for generation, evaluation, and indexing: see [doc/workflow.md](doc/workflow.md).
+- Multiplier comparison (Booth vs. normal PPG) with OpenROAD results: see [notes/booth4_vs_normal/booth_vs_normal_multiplier_comparison.md](notes/booth4_vs_normal/booth_vs_normal_multiplier_comparison.md).
+- Yosys Booth vs ILP Booth comparison with normalized PPA plots: see [notes/yosys_vs_ilp_booth.md](notes/yosys_vs_ilp_booth.md).
+- Constant-multiplier algorithms (MCM/CMVM) and CLIs: see [notes/constant_multiplication.md](notes/constant_multiplication.md).
+- End-to-end workflow and automation plan for generation, evaluation, and indexing: see [notes/workflow.md](notes/workflow.md).
 - Evaluation artifacts (configs, generated Verilog, sweep metrics) live under [runs/](runs/README.md); add configs there to queue new evaluations.

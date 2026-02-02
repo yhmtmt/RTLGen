@@ -72,7 +72,7 @@ Evaluation agents should use this space to propose new targets beyond existing
 campaigns by scanning for missing combinations across widths, PDKs, and CPA/PPG
 options. Use `runs/index.csv` to avoid duplicates.
 
-See `doc/evaluation_agent_guidance.md` for how to triage unexpected PPA results,
+See `notes/evaluation_agent_guidance.md` for how to triage unexpected PPA results,
 how to decide between OpenROAD retuning vs design warnings, and how to record
 findings for algorithm developers.
 
@@ -97,12 +97,12 @@ Multiplier entries support all of the fields from the legacy `multiplier` object
 Currently, `compressor_structure` and `pipeline_depth` are fixed to `AdderTree` and `1`. The `AdderTree` is optimized using ILP as described in [UFO-MAC: A Unified Framework for Optimization of High-Performance Multipliers and Multiply-Accumulators](https://arxiv.org/abs/2408.06935). The `compressor_library` option selects which compressor cells can be used during ILP assignment:
 - `fa_ha` (default): 3:2 and 2:2 only
 - `fa_ha_c42`: 3:2, 2:2, and 4:2
-See [Compressor Tree Memo](doc/compressor_tree/memo_about_compressor_tree.md) for details.
+See [Compressor Tree Memo](../notes/compressor_tree/memo_about_compressor_tree.md) for details.
 
 The `compressor_assignment` option selects the ILP formulation:
 - `legacy_fa_ha` (default): prior FA/HA-count-based ILP (3:2/2:2 only).
 - `direct_ilp`: direct compressor assignment ILP (supports `fa_ha_c42`).
-Note: the current direct ILP solver fails to find solutions for 16-bit and wider multipliers; use `legacy_fa_ha` for practical widths until the solver is fixed. See [Compressor Tree Memo](doc/compressor_tree/memo_about_compressor_tree.md) for evaluation notes.
+Note: the current direct ILP solver fails to find solutions for 16-bit and wider multipliers; use `legacy_fa_ha` for practical widths until the solver is fixed. See [Compressor Tree Memo](../notes/compressor_tree/memo_about_compressor_tree.md) for evaluation notes.
 
 Supported partial product generators (`ppg_algorithm`):
 
@@ -140,7 +140,7 @@ Multiple-constant multiplication (MCM) entries describe the constants that must 
   - `max_adders`: optional guardrail for ILP runs.
   - `emit_schedule`: when true, the serialized A-operations are written next to the generated Verilog.
 
-See `examples/config_mcm_fir.json` for a compact FIR example that emits three taps using the `HCub` heuristic. Background on the algorithms (BHA, BHM, RAG-n, H_cub, ILP) is in `doc/constant_multiplication.md`.
+See `examples/config_mcm_fir.json` for a compact FIR example that emits three taps using the `HCub` heuristic. Background on the algorithms (BHA, BHM, RAG-n, H_cub, ILP) is in `notes/constant_multiplication.md`.
 Generated ports follow the convention `<operand>_0` for the shared input (scalar operands) and `<module_name>_out<i>` for the `i`-th constant.
 
 ## CMVM Configuration

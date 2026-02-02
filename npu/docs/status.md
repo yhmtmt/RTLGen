@@ -27,5 +27,5 @@ Git: unknown
 
 ## Pointers
 - Specs: `npu/docs/index.md`
-- Workflow: `doc/npu_workflow.md`
+- Workflow: `npu/docs/workflow.md`
 - Logs: `npu/docs/rtl_sim_log.md`

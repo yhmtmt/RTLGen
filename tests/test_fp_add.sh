@@ -5,6 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TMP="$(mktemp -d)"
 cleanup() { rm -rf "$TMP"; }
 trap cleanup EXIT
+export FLOPOCO_BIN="${FLOPOCO_BIN:-$ROOT/third_party/flopoco-install/bin/flopoco}"
 
 cp "$ROOT/examples/config_fp_add.json" "$TMP/config.json"
 

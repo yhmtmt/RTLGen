@@ -4,8 +4,8 @@ This document lists requirements to extend **RTLGen** (current generate→synthe
 
 Current repo status to anchor scope:
 - RTLGen generates and evaluates small arithmetic blocks via `scripts/generate_design.py` and `scripts/run_sweep.py`.
-- Results are stored under `runs/designs/**/metrics.csv` and indexed by `runs/index.csv` (see `doc/workflow.md`).
-- Evaluation guidance lives in `doc/evaluation_agent_guidance.md`; development/branching policy in `doc/development_agent_guidance.md`.
+- Results are stored under `runs/designs/**/metrics.csv` and indexed by `runs/index.csv` (see `notes/workflow.md`).
+- Evaluation guidance lives in `notes/evaluation_agent_guidance.md`; development/branching policy in `notes/development_agent_guidance.md`.
 - There is no NPU-specific RTL, mapper, or simulator yet; those are future deliverables.
 
 ---
@@ -102,7 +102,7 @@ Even if the RTL is not fully instruction-driven initially, the evaluation flow m
 ### Current RTLGen baseline
 - Config-driven RTL generation exists for adders/multipliers (JSON configs in `runs/campaigns/**/configs/`).
 - `scripts/generate_design.py` emits `runs/designs/<circuit_type>/<design>/verilog/` and `config.json`.
-- Generated designs are meant to be immutable inputs to evaluation; new experiments should create new design directories (per `doc/evaluation_agent_guidance.md`).
+- Generated designs are meant to be immutable inputs to evaluation; new experiments should create new design directories (per `notes/evaluation_agent_guidance.md`).
 
 ### Versioning
 - Every generated design must have a **content-addressed ID**:
@@ -310,7 +310,7 @@ Even if the RTL is not fully instruction-driven initially, the evaluation flow m
 rtlgen/
   scripts/      # generators, sweeps, index building
   runs/         # designs, campaigns, metrics, index
-  doc/          # workflow + evaluation/development guidance
+  notes/        # workflow + evaluation/development guidance
   npu/          # (future) NPU-specific generators, specs, and flows
     arch/       # schema + example configs
     shell/      # NVDLA-like host/memory shell RTL and specs

@@ -65,11 +65,10 @@ The GDS2 file is located at `/orfs/flow/results/nangate45/booth4_multiplier_wrap
 
 Core components live under `src/`:
 
-- `config.{hpp,cpp}` – JSON parsing and validation into structured configs.
-- `multiplier.{hpp,cpp}`, `adder.{hpp,cpp}` – integer multipliers (normal/Booth) and adders (CPA variants) with Verilog emitters.
-- `mcm*`, `cmvm*` – constant-multiplier libraries and CLIs (heuristic and ILP). `rtl_operations.{hpp,cpp}` – higher-level RTL emitters (MCM/CMVM, activations, PWL).
-- `rtl_operations.{hpp,cpp}` – higher-level RTL emitters (MCM/CMVM, activations including PWL, etc.).
-- `main.cpp` – entry point: parses config, dispatches generators, integrates FloPoCo + Yosys/GHDL for FP ops.
+- `src/rtlgen/` – JSON parsing, validation, and RTL generators (adders, multipliers, activations, RTL ops).
+- `src/algorithms/` – constant-multiplier libraries (MCM/CMVM and ILP helpers).
+- `apps/rtlgen_main.cpp` – entry point: parses config, dispatches generators, integrates FloPoCo + Yosys/GHDL for FP ops.
+- `apps/mcm_cli.cpp`, `apps/mcm_ilp_cli.cpp`, `apps/cmvm_cli.cpp` – CLI frontends for MCM/CMVM flows.
 
 Third-party/integration:
 - `flopoco/` (submodule, built via ExternalProject) for FP cores; `pagsuite/` (submodule) for PAG tools used by FloPoCo.

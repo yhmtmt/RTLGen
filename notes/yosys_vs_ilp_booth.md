@@ -6,7 +6,7 @@ This note compares the current RTLGen ILP-based Booth4 multiplier against Yosys'
 
 ### RTLGen ILP-based multiplier (this repo)
 - Partial product generator: Normal or Booth4 (radix-4).
-- Compressor tree: ILP-optimized adder tree using OR-Tools; 3:2 and 2:2 compressors only. Details in `doc/compressor_tree/memo_about_compressor_tree.md`.
+- Compressor tree: ILP-optimized adder tree using OR-Tools; 3:2 and 2:2 compressors only. Details in `notes/compressor_tree/memo_about_compressor_tree.md`.
 - Carry-propagate adder: Ripple, BrentKung, KoggeStone, or Sklansky.
 - Pipeline depth: fixed to 1.
 - Sign extension: uses the fast method described in Fried (1997), integrated in the generator.
@@ -131,7 +131,7 @@ Interpretation:
 Given these results, the lowpower Booth option does not outperform ILP Normal in delay/area for these sweeps. Even if the Chang et al. mechanism reduces recoder glitches, it likely pays with extra logic depth and wiring, so its benefits show up only under activity-aware power analysis, not in the PPA metrics we are currently extracting.
 
 ## References
-- Implementation details for compressor trees: `doc/compressor_tree/memo_about_compressor_tree.md`.
+- Implementation details for compressor trees: `notes/compressor_tree/memo_about_compressor_tree.md`.
 - Sweep results and configs: `runs/campaigns/multipliers/ppg_cpa_widths_4_32/` and `runs/campaigns/multipliers/yosys_booth_widths_4_32/`.
 - Plot generator: `analysis/compare_yosys_vs_ilp_booth.py`.
 - Y. J. Chang, Y. C. Cheng, S. C. Liao and C. H. Hsiao, "A Low Power Radix-4 Booth Multiplier With Pre-Encoded Mechanism," IEEE Access, vol. 8, pp. 114842-114853, 2020. (Local PDF in `papers/`, gitignored.)

@@ -1,11 +1,11 @@
 [submodule "json"]
-	path = json
+	path = third_party/nlohmann_json
 	url = https://github.com/nlohmann/json
 [submodule "flopoco"]
-	path = flopoco
+	path = third_party/flopoco
 	url = https://gitlab.com/flopoco/flopoco
 [submodule "pagsuite"]
-	path = pagsuite
+	path = third_party/pagsuite
 	url = https://gitlab.com/kumm/pagsuite
 [submodule "npu/nvdla/hw"]
 	path = npu/nvdla/hw
