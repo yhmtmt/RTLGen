@@ -9,3 +9,4 @@ third_party/
 npu/mapper/__pycache__/
 npu/sim/perf/__pycache__/
 npu/rtlgen/out/
+*.o
