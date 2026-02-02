@@ -555,6 +555,15 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
           dma_beats <= {dma_beats_expr};
           dma_arlen <= {dma_arlen_expr};
           dma_pending <= 1'b1;
+        end else if (cq_mem_rdata[7:0] == 8'h10) begin
+          // GEMM stub: no compute, just signal completion
+          irq_status[IRQ_EVENT] <= 1'b1;
+        end else if (cq_mem_rdata[7:0] == 8'h20) begin
+          // EVENT_SIGNAL: immediately signal
+          irq_status[IRQ_EVENT] <= 1'b1;
+        end else if (cq_mem_rdata[7:0] == 8'h21) begin
+          // EVENT_WAIT: stubbed as immediately satisfied
+          irq_status[IRQ_EVENT] <= 1'b1;
         end"""
     else:
         cq_mem_ports = ""
