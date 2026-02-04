@@ -1,0 +1,2 @@
+design,platform,config_hash,param_hash,tag,status,critical_path_ns,die_area,total_power_mw,params_json,result_path
+dma_stub,nangate45,0f71de6594e6,68891a9d,npu_block_68891a9d,ok,0.1238,10000.0,7.24e-07,{"CLOCK_PERIOD": 10.0, "CORE_AREA": "1 1 99 99", "CORE_UTILIZATION": "", "DIE_AREA": "0 0 100 100", "PLACE_DENSITY": 0.3, "tag_prefix": "npu_block"},/orfs/flow/reports/nangate45/dma_stub/base/6_finish.rpt

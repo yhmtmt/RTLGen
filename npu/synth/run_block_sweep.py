@@ -240,13 +240,33 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
     env.update({k: str(v) for k, v in sweep_params.items()})
     env["TAG"] = tag
 
-    print(f"[INFO] Running OpenROAD make TAG={tag}")
-    subprocess.run(["make", "-C", "/orfs/flow", "design"], check=True, env=env)
+    env.setdefault("DISABLE_GUI_SAVE_IMAGES", "1")
+    design_config_path = DEST_BASE / platform / design_name / "config.mk"
+    sdc_path = DEST_BASE / platform / design_name / "constraint.sdc"
+    make_cmd = [
+        "make",
+        f"DESIGN_CONFIG={design_config_path}",
+        f"TAG={tag}",
+        f"SDC_FILE={sdc_path}",
+    ]
+    for k, v in sweep_params.items():
+        make_cmd.append(f"{k.upper()}={v}")
+    print(f"[INFO] Running OpenROAD flow: {' '.join(make_cmd)}")
+    subprocess.run(make_cmd, cwd="/orfs/flow", check=True, env=env)
 
-    report_path = REPORT_BASE / platform / design_name / tag / "6_finish.rpt"
-    def_path = RESULT_BASE / platform / design_name / tag / "6_final.def"
+    report_path = REPORT_BASE / platform / design_name / str(tag) / "6_finish.rpt"
+    def_path = RESULT_BASE / platform / design_name / str(tag) / "6_final.def"
+    if not report_path.exists():
+        report_path = REPORT_BASE / platform / design_name / "base" / "6_finish.rpt"
+    if not def_path.exists():
+        def_path = RESULT_BASE / platform / design_name / "base" / "6_final.def"
 
     metrics = parse_finish_report(report_path)
+    if platform.lower() == "asap7":
+        if metrics.get("critical_path_ns") is not None:
+            metrics["critical_path_ns"] = metrics["critical_path_ns"] / 1000.0
+        if metrics.get("total_power_mw") is not None:
+            metrics["total_power_mw"] = metrics["total_power_mw"] / 1000.0
     metrics["die_area"] = parse_die_area(def_path)
     status = "ok" if metrics.get("critical_path_ns") is not None else "fail"
 
@@ -299,6 +319,8 @@ def main():
     for params in combos:
         if tag_prefix and "tag_prefix" not in params:
             params["tag_prefix"] = tag_prefix
+        if "DIE_AREA" in params and "CORE_AREA" in params and "CORE_UTILIZATION" not in params:
+            params["CORE_UTILIZATION"] = ""
         run_single(
             design_dir=design_dir,
             design_name=design_name,
