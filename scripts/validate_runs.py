@@ -44,7 +44,7 @@ REQUIRED_INDEX_FIELDS = {
 }
 
 REQUIRED_METADATA_FIELDS = {"design_id", "circuit_type", "generator"}
-VALID_CIRCUIT_TYPES = {"multipliers", "prefix_adders", "activations", "mcm", "cmvm", "fp_ops", "mac", "other"}
+VALID_CIRCUIT_TYPES = {"multipliers", "prefix_adders", "activations", "mcm", "cmvm", "fp_ops", "mac", "npu_blocks", "other"}
 VALID_GENERATORS = {"rtlgen", "yosys", "flopoco", "manual", "other"}
 
 

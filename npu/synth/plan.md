@@ -24,7 +24,7 @@ OpenROAD evaluation flow for block-level NPU macros.
    - `config.json` or `arch.yml`
    - `README.md` describing the macro and config hash
 3) Provide a sweep definition in `runs/campaigns/npu/<campaign>/sweeps/`.
-4) Invoke OpenROAD via `scripts/run_sweep.py` (or a new NPU-specific wrapper).
+4) Invoke OpenROAD via `npu/synth/run_block_sweep.py` (block-level wrapper).
 
 ## Constraint alignment
 - Translate NVDLA `syn` SDC parameters into OpenROAD constraints:
@@ -41,11 +41,12 @@ OpenROAD evaluation flow for block-level NPU macros.
 ## Near-term tasks
 - Inventory key NVDLA `syn` scripts and extract common SDC knobs.
 - Draft a minimal NPU macro wrapper config in `runs/campaigns/npu/`.
-- Validate that `scripts/run_sweep.py` can target NPU macro designs with
-  custom SDC and floorplan constraints.
+- Validate that `npu/synth/run_block_sweep.py` can target NPU macro designs
+  with custom SDC and floorplan constraints.
 
 ## Status
 - RTL shell and DMA stub are available; OpenROAD integration is pending.
 
 ## Next steps
 - Implement a minimal block-level OpenROAD run for the DMA tile.
+- Add a `runs/designs/npu_blocks/<design>/` example and sweep in `npu/synth/`.

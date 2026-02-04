@@ -42,7 +42,7 @@ If `tech_node_nm` is not provided, `sram_ppa.py` maps `pdk` values to nodes:
 ## Usage
 Run directly:
 ```sh
-python3 npu/synth/sram_ppa.py npu/arch/examples/minimal.yml --id minimal --cacti-bin /workspaces/RTLGen/cacti/cacti
+python3 npu/synth/sram_ppa.py npu/arch/examples/minimal.yml --id minimal --cacti-bin /workspaces/RTLGen/third_party/cacti/cacti
 ```
 
 Or via pipeline:

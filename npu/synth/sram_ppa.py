@@ -131,7 +131,7 @@ def main():
     parser.add_argument(
         "--cacti-dir",
         type=Path,
-        default=Path("cacti"),
+        default=Path("third_party/cacti"),
         help="CACTI submodule directory",
     )
     parser.add_argument(
