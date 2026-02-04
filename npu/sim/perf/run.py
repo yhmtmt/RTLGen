@@ -6,6 +6,10 @@ from pathlib import Path
 
 import model
 
+try:
+    import yaml
+except ImportError:  # pragma: no cover - optional dependency
+    yaml = None
 
 def parse_desc_stream(data):
     descs = []
@@ -35,6 +39,72 @@ def decode_gemm_tag(tag):
     return m, n, k
 
 
+def _parse_int(value):
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str):
+        return int(value, 0)
+    return int(value)
+
+
+def _derive_sram_instances(arch, metrics):
+    sram = arch.get("sram", {})
+    instances = sram.get("instances", [])
+    metrics_by_name = {}
+    default_access = None
+    if metrics:
+        if "instances" in metrics:
+            for inst in metrics.get("instances", []):
+                name = inst.get("instance", {}).get("name")
+                access_time_ns = inst.get("metrics", {}).get("access_time_ns")
+                if name and access_time_ns is not None:
+                    metrics_by_name[name] = float(access_time_ns)
+        if "max_access_time_ns" in metrics:
+            default_access = float(metrics["max_access_time_ns"])
+    derived = []
+    for inst in instances:
+        name = inst.get("name")
+        depth = int(inst["depth"])
+        width = int(inst["width"])
+        banks = int(inst.get("banks", 1))
+        base_addr = _parse_int(inst.get("base_addr", 0))
+        word_size_bytes = width // 8
+        size_bytes = depth * word_size_bytes * banks
+        access_time_ns = metrics_by_name.get(name, default_access)
+        read_bw_gbps = None
+        write_bw_gbps = None
+        if access_time_ns and access_time_ns > 0:
+            bytes_per_access = word_size_bytes * banks
+            bw_gbps = (bytes_per_access / (access_time_ns * 1e-9)) / 1e9
+            read_bw_gbps = bw_gbps
+            write_bw_gbps = bw_gbps
+        derived.append({
+            "name": name,
+            "base_addr": base_addr,
+            "size_bytes": size_bytes,
+            "word_size_bytes": word_size_bytes,
+            "banks": banks,
+            "access_time_ns": access_time_ns,
+            "read_bw_gbps": read_bw_gbps,
+            "write_bw_gbps": write_bw_gbps,
+        })
+    return derived
+
+
+def _load_sram_model(cfg):
+    metrics_path = cfg.get("sram_metrics_json")
+    arch_path = cfg.get("sram_arch_yaml") or cfg.get("arch_yaml")
+    if not arch_path:
+        return
+    if yaml is None:
+        raise RuntimeError("PyYAML is required for sram_arch_yaml support.")
+    arch = yaml.safe_load(Path(arch_path).read_text(encoding="utf-8"))
+    metrics = None
+    if metrics_path:
+        metrics = json.loads(Path(metrics_path).read_text(encoding="utf-8"))
+    cfg["sram_instances"] = _derive_sram_instances(arch, metrics)
+
+
 def desc_to_event(desc, cfg):
     opcode = desc["opcode"]
     raw = desc["raw"]
@@ -53,7 +123,7 @@ def desc_to_event(desc, cfg):
             "src": f"0x{src:016x}",
             "dst": f"0x{dst:016x}",
             "bytes": size,
-            "duration_ns": model.dma_time_ns(size, cfg),
+            "duration_ns": model.dma_time_ns(size, cfg, src_addr=src, dst_addr=dst),
         })
     elif opcode == 0x10:  # GEMM
         a = struct.unpack_from("<Q", raw, 8)[0]
@@ -226,6 +296,7 @@ def main():
     cfg = {}
     if args.config:
         cfg = json.loads(Path(args.config).read_text(encoding="utf-8"))
+        _load_sram_model(cfg)
 
     data = Path(args.bin).read_bytes()
     descs = parse_desc_stream(data)
