@@ -53,6 +53,8 @@ if(RTLGEN_BUILD_CACTI)
         BUILD_COMMAND ${CMAKE_COMMAND} -E env make -C <SOURCE_DIR>
         INSTALL_COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_SOURCE_DIR}/bin
                       COMMAND ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/cacti ${PROJECT_SOURCE_DIR}/bin/cacti
+                      COMMAND ${CMAKE_COMMAND} -E remove -f <SOURCE_DIR>/cacti <SOURCE_DIR>/cache.cfg.out
+                      COMMAND ${CMAKE_COMMAND} -E remove_directory <SOURCE_DIR>/obj_dbg
         BUILD_IN_SOURCE 1
     )
 
