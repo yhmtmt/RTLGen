@@ -46,5 +46,7 @@ make -f npu/sim/perf/Makefile test
   "sram_metrics_json": "runs/designs/sram/minimal/sram_metrics.json"
 }
 ```
+
+See `npu/sim/perf/example_config_sram.json` for a ready-to-run sample.
 - Unsupported opcodes are reported as warnings and treated as zero-cost.
 - EVENT_SIGNAL with IRQ flag is counted in the summary (`irq_events`).
