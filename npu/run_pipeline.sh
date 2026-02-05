@@ -3,7 +3,7 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: npu/run_pipeline.sh <arch_config.yml> [--config-out <rtlgen.json>] [--sram-id <id>]
+Usage: npu/run_pipeline.sh <arch_config.yml> [--config-out <rtlgen.json>] [--sram-id <id>] [--golden]
 
 Sequential NPU workflow:
   1) validate architecture config
@@ -12,6 +12,7 @@ Sequential NPU workflow:
   4) run OpenROAD synthesis (placeholder)
   5) map/schedule (placeholder)
   6) simulate (RTL shell)
+  7) golden mapper + RTL + perf sim (optional)
 
 This script is a scaffold; wire each step to concrete tools as they are integrated.
 EOF
@@ -26,6 +27,7 @@ ARCH_CONFIG=""
 CONFIG_OUT="npu/rtlgen/examples/from_arch_pipeline.json"
 SRAM_ID=""
 SCHEMA_PATH="npu/arch/schema.yml"
+RUN_GOLDEN=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -36,6 +38,10 @@ while [[ $# -gt 0 ]]; do
     --sram-id)
       SRAM_ID="$2"
       shift 2
+      ;;
+    --golden)
+      RUN_GOLDEN=1
+      shift
       ;;
     -*)
       echo "Unknown option: $1" >&2
@@ -83,5 +89,10 @@ echo "TODO: invoke mapper under npu/mapper/"
 
 echo "[6/6] Simulate (RTL shell)"
 make -f npu/sim/rtl/Makefile run CONFIG="$CONFIG_OUT"
+
+if [[ "$RUN_GOLDEN" -eq 1 ]]; then
+  echo "[7/7] Golden mapper + RTL + perf sim"
+  npu/sim/run_golden.sh
+fi
 
 echo "Pipeline completed (shell + placeholders)."
