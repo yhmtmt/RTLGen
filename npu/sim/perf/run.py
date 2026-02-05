@@ -53,7 +53,7 @@ def _parse_int(value):
     return int(value)
 
 
-def _derive_sram_instances(arch, metrics):
+def _derive_sram_instances(arch, metrics, clk_period_ns=None):
     sram = arch.get("sram", {})
     instances = sram.get("instances", [])
     metrics_by_name = {}
@@ -79,6 +79,8 @@ def _derive_sram_instances(arch, metrics):
         access_time_ns = metrics_by_name.get(name, default_access)
         read_bw_gbps = None
         write_bw_gbps = None
+        if clk_period_ns and clk_period_ns > 0 and access_time_ns:
+            access_time_ns = max(access_time_ns, clk_period_ns)
         if access_time_ns and access_time_ns > 0:
             bytes_per_access = word_size_bytes * banks
             bw_gbps = (bytes_per_access / (access_time_ns * 1e-9)) / 1e9
@@ -108,7 +110,8 @@ def _load_sram_model(cfg):
     metrics = None
     if metrics_path:
         metrics = json.loads(Path(metrics_path).read_text(encoding="utf-8"))
-    cfg["sram_instances"] = _derive_sram_instances(arch, metrics)
+    clk_period_ns = cfg.get("clk_period_ns")
+    cfg["sram_instances"] = _derive_sram_instances(arch, metrics, clk_period_ns)
 
 
 def desc_to_event(desc, cfg):

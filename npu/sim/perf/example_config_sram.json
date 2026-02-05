@@ -1,6 +1,7 @@
 {
   "dma_bw_gbps": 16.0,
   "gemm_tops": 2.0,
+  "clk_period_ns": 10.0,
   "event_overhead_ns": 50.0,
   "noop_overhead_ns": 10.0,
   "issue_overhead_ns": 0.0,

@@ -1,6 +1,7 @@
 {
   "dma_bw_gbps": 16.0,
   "gemm_tops": 2.0,
+  "clk_period_ns": 10.0,
   "gemm_tile_m": 64,
   "gemm_tile_n": 64,
   "gemm_tile_k": 32,
