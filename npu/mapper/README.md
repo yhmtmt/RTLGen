@@ -12,6 +12,7 @@ Start here:
 - `npu/mapper/mapping_contract.md` for the end-to-end mapping contract.
 - `npu/mapper/mapping_contract.schema.json` for the contract JSON schema.
 - `npu/mapper/examples/minimal_schedule.yml` for a tiny end-to-end example.
+- `npu/mapper/examples/golden_schedule.yml` for a tiny golden workload + expected descriptors.
 
 Validation:
 - `npu/mapper/validate.py` provides a minimal sanity checker for v0.1.
@@ -24,6 +25,7 @@ Descriptor emission:
 ## How to run
 ```sh
 python3 npu/mapper/run.py npu/mapper/examples/minimal_schedule.yml --out-bin /tmp/descriptors.bin
+python3 npu/mapper/run.py npu/mapper/examples/golden_schedule.yml --out npu/mapper/examples/golden_descriptors.yml --out-bin npu/mapper/examples/golden_descriptors.bin
 ```
 
 ## Next steps
