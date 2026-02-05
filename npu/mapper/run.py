@@ -34,6 +34,14 @@ LAYOUT_FLAGS = {
     "col_major": 0x1,
 }
 
+EPILOGUE_FLAGS = {
+    "none": 0x0,
+    "relu": 0x1,
+    "gelu": 0x2,
+    "add": 0x3,
+    "mul": 0x4,
+}
+
 
 def pack_mnk(m: int, n: int, k: int) -> int:
     if not (0 <= m <= 0xFFF):
@@ -90,12 +98,49 @@ def emit_desc(op: Dict[str, Any], buf_map: Dict[str, int]) -> Dict[str, Any]:
         dtype = DTYPE_FLAGS[op["dtype"]]
         layout = LAYOUT_FLAGS[op["layout"]]
         desc["flags"] = (layout << 4) | dtype
-        desc["tag"] = pack_mnk(int(op["m"]), int(op["n"]), int(op["k"]))
-        desc["fields"] = {
-            "a_addr": buf_map[op["a"]],
-            "b_addr": buf_map[op["b"]],
-            "c_addr": buf_map[op["c"]],
-        }
+        use_v2 = bool(op.get("gemm_v2")) or any(
+            key in op for key in ("lda", "ldb", "ldc", "alpha", "beta", "bias", "epilogue", "transpose_a", "transpose_b")
+        )
+        if use_v2:
+            epilogue = EPILOGUE_FLAGS.get(str(op.get("epilogue", "none")).lower(), 0)
+            transpose_a = 1 if op.get("transpose_a") else 0
+            transpose_b = 1 if op.get("transpose_b") else 0
+            has_bias = 1 if op.get("bias") else 0
+            has_alpha = 1 if op.get("alpha") is not None else 0
+            has_beta = 1 if op.get("beta") is not None else 0
+            user_tag = int(op.get("user_tag", 0)) & 0xFFFF
+            gemm_ext = (
+                (epilogue & 0xF)
+                | (transpose_a << 4)
+                | (transpose_b << 5)
+                | (has_bias << 6)
+                | (has_alpha << 7)
+                | (has_beta << 8)
+                | (user_tag << 16)
+            )
+            desc["tag"] = gemm_ext
+            desc["size"] = 3 if (has_bias or has_alpha or has_beta) else 2
+            desc["fields"] = {
+                "a_addr": buf_map[op["a"]],
+                "b_addr": buf_map[op["b"]],
+                "c_addr": buf_map[op["c"]],
+                "m": int(op["m"]),
+                "n": int(op["n"]),
+                "k": int(op["k"]),
+                "lda": int(op.get("lda", 0)),
+                "ldb": int(op.get("ldb", 0)),
+                "ldc": int(op.get("ldc", 0)),
+                "bias_addr": buf_map[op["bias"]] if op.get("bias") else 0,
+                "alpha": float(op.get("alpha", 0.0)) if has_alpha else 0.0,
+                "beta": float(op.get("beta", 0.0)) if has_beta else 0.0,
+            }
+        else:
+            desc["tag"] = pack_mnk(int(op["m"]), int(op["n"]), int(op["k"]))
+            desc["fields"] = {
+                "a_addr": buf_map[op["a"]],
+                "b_addr": buf_map[op["b"]],
+                "c_addr": buf_map[op["c"]],
+            }
     elif otype == "vec_op":
         desc["fields"] = {
             "src_addr": buf_map[op["src"]],
@@ -127,10 +172,13 @@ def emit_desc(op: Dict[str, Any], buf_map: Dict[str, int]) -> Dict[str, Any]:
 
 
 def pack_descriptor(desc: Dict[str, Any]) -> bytes:
-    data = bytearray(32)
+    size_units = int(desc["size"])
+    if size_units < 1:
+        raise ValueError("descriptor size must be >= 1")
+    data = bytearray(32 * size_units)
     opcode = int(desc["opcode"]) & 0xFF
     flags = int(desc["flags"]) & 0xFF
-    size = int(desc["size"]) & 0xFF
+    size = size_units & 0xFF
     tag = int(desc["tag"]) & 0xFFFFFFFF
     struct.pack_into("<BBBBI", data, 0, opcode, flags, size, 0, tag)
 
@@ -167,6 +215,22 @@ def pack_descriptor(desc: Dict[str, Any]) -> bytes:
             int(fields["b_addr"]),
             int(fields["c_addr"]),
         )
+        if size_units >= 2:
+            struct.pack_into(
+                "<IIIIII",
+                data,
+                32,
+                int(fields.get("m", 0)),
+                int(fields.get("n", 0)),
+                int(fields.get("k", 0)),
+                int(fields.get("lda", 0)),
+                int(fields.get("ldb", 0)),
+                int(fields.get("ldc", 0)),
+            )
+        if size_units >= 3:
+            struct.pack_into("<Q", data, 64, int(fields.get("bias_addr", 0)))
+            struct.pack_into("<f", data, 72, float(fields.get("alpha", 0.0)))
+            struct.pack_into("<f", data, 76, float(fields.get("beta", 0.0)))
     elif opcode == OPCODES["vec_op"]:
         struct.pack_into(
             "<QQI",

@@ -32,6 +32,9 @@ module {top_name} (
   reg [{data_width_minus1}:0] cq_head;
   reg [{data_width_minus1}:0] cq_tail;
   reg [{data_width_minus1}:0] cq_count;
+  reg [255:0] cq_word0;
+  reg [7:0]  cq_word0_size;
+  reg        cq_pending_ext;
   reg [7:0] last_opcode;
   reg [31:0] last_tag;
   reg [{dma_addr_width_minus1}:0] last_src;
@@ -97,6 +100,9 @@ module {top_name} (
       cq_head <= 0;
       cq_tail <= 0;
       cq_count <= 0;
+      cq_word0 <= 0;
+      cq_word0_size <= 0;
+      cq_pending_ext <= 0;
       error_code <= 0;
       irq <= 0;
       last_opcode <= 0;
@@ -152,21 +158,7 @@ module {top_name} (
         endcase
       end
 
-      // Two-stage descriptor fetch: issue read then decode next cycle.
-      if (cq_count != 0) begin
-        if (!cq_stage_valid) begin
-{cq_mem_fetch_issue}
-          cq_stage_valid <= 1'b1;
-        end else begin
-{cq_mem_fetch_decode}
-          cq_head <= cq_head + 32;
-          if (cq_count == 1) begin
-            irq_status[IRQ_CQ_EMPTY] <= 1'b1;
-          end
-          cq_count <= cq_count - 1;
-          cq_stage_valid <= 1'b0;
-        end
-      end
+{cq_block}
 
       if (error_code != 0) begin
         status <= STATUS_ERR;
@@ -567,44 +559,92 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
     output reg  [{dma_addr_width_minus1}:0] cq_mem_addr,
     input  wire [255:0]          cq_mem_rdata
 """
-        cq_mem_fetch_issue = """        cq_mem_addr <= {cq_base_hi, cq_base_lo} + cq_head;"""
-        cq_mem_fetch_decode = f"""        last_opcode <= cq_mem_rdata[7:0];
-        last_tag <= cq_mem_rdata[63:32];
-        last_src <= cq_mem_rdata[127:64];
-        last_dst <= cq_mem_rdata[191:128];
-        last_size <= cq_mem_rdata[223:192];
-        if (cq_mem_rdata[7:0] == 8'h01) begin
-          dma_req_valid <= 1'b1;
-          dma_req_src <= cq_mem_rdata[127:64];
-          dma_req_dst <= cq_mem_rdata[191:128];
-          dma_req_bytes <= cq_mem_rdata[223:192];
-          dma_src <= cq_mem_rdata[127:64];
-          dma_dst <= cq_mem_rdata[191:128];
-          dma_size <= cq_mem_rdata[223:192];
-          dma_beats <= {dma_beats_expr};
-          dma_arlen <= {dma_arlen_expr};
-          dma_pending <= 1'b1;
-        end else if (cq_mem_rdata[7:0] == 8'h10) begin
-          // GEMM stub: simple cycle model, signal completion on countdown.
-          gemm_pending <= 1'b1;
-          if ((cq_mem_rdata[63:52] == 0) || (cq_mem_rdata[51:42] == 0) || (cq_mem_rdata[41:32] == 0)) begin
-            gemm_cycles <= 1;
+        cq_block = f"""      // Command queue fetch (supports v0.1 32B and v0.2 64B descriptors).
+      if (cq_count != 0) begin
+        if (!cq_stage_valid && !cq_pending_ext) begin
+          cq_mem_addr <= {{cq_base_hi, cq_base_lo}} + cq_head;
+          cq_stage_valid <= 1'b1;
+        end else if (cq_stage_valid && !cq_pending_ext) begin
+          cq_word0 <= cq_mem_rdata;
+          cq_word0_size <= cq_mem_rdata[23:16];
+          if (cq_mem_rdata[23:16] >= 8'h02) begin
+            cq_pending_ext <= 1'b1;
+            cq_stage_valid <= 1'b0;
           end else begin
-            gemm_cycles <= (((cq_mem_rdata[63:52] * cq_mem_rdata[51:42] * cq_mem_rdata[41:32]) >> 10) + 1);
+            last_opcode <= cq_mem_rdata[7:0];
+            last_tag <= cq_mem_rdata[63:32];
+            last_src <= cq_mem_rdata[127:64];
+            last_dst <= cq_mem_rdata[191:128];
+            last_size <= cq_mem_rdata[223:192];
+            if (cq_mem_rdata[7:0] == 8'h01) begin
+              dma_req_valid <= 1'b1;
+              dma_req_src <= cq_mem_rdata[127:64];
+              dma_req_dst <= cq_mem_rdata[191:128];
+              dma_req_bytes <= cq_mem_rdata[223:192];
+              dma_src <= cq_mem_rdata[127:64];
+              dma_dst <= cq_mem_rdata[191:128];
+              dma_size <= cq_mem_rdata[223:192];
+              dma_beats <= {dma_beats_expr};
+              dma_arlen <= {dma_arlen_expr};
+              dma_pending <= 1'b1;
+            end else if (cq_mem_rdata[7:0] == 8'h10) begin
+              // GEMM stub: v0.1 sizes packed in TAG.
+              gemm_pending <= 1'b1;
+              if ((cq_mem_rdata[63:52] == 0) || (cq_mem_rdata[51:42] == 0) || (cq_mem_rdata[41:32] == 0)) begin
+                gemm_cycles <= 1;
+              end else begin
+                gemm_cycles <= (((cq_mem_rdata[63:52] * cq_mem_rdata[51:42] * cq_mem_rdata[41:32]) >> 10) + 1);
+              end
+            end else if (cq_mem_rdata[7:0] == 8'h20) begin
+              // EVENT_SIGNAL: immediately signal
+              irq_status[IRQ_EVENT] <= 1'b1;
+            end else if (cq_mem_rdata[7:0] == 8'h21) begin
+              // EVENT_WAIT: stubbed as immediately satisfied
+              irq_status[IRQ_EVENT] <= 1'b1;
+            end else begin
+              error_code <= 32'h1;
+            end
+            cq_head <= cq_head + 32;
+            if (cq_count == 1) begin
+              irq_status[IRQ_CQ_EMPTY] <= 1'b1;
+            end
+            cq_count <= cq_count - 1;
+            cq_stage_valid <= 1'b0;
           end
-        end else if (cq_mem_rdata[7:0] == 8'h20) begin
-          // EVENT_SIGNAL: immediately signal
-          irq_status[IRQ_EVENT] <= 1'b1;
-        end else if (cq_mem_rdata[7:0] == 8'h21) begin
-          // EVENT_WAIT: stubbed as immediately satisfied
-          irq_status[IRQ_EVENT] <= 1'b1;
-        end else begin
-          error_code <= 32'h1;
-        end"""
+        end else if (cq_pending_ext) begin
+          if (!cq_stage_valid) begin
+            cq_mem_addr <= {{cq_base_hi, cq_base_lo}} + cq_head + 32;
+            cq_stage_valid <= 1'b1;
+          end else begin
+            last_opcode <= cq_word0[7:0];
+            last_tag <= cq_word0[63:32];
+            last_src <= cq_word0[127:64];
+            last_dst <= cq_word0[191:128];
+            last_size <= cq_mem_rdata[31:0];
+            if (cq_word0[7:0] == 8'h10) begin
+              // GEMM stub: v0.2 sizes in extension.
+              gemm_pending <= 1'b1;
+              if ((cq_mem_rdata[31:0] == 0) || (cq_mem_rdata[63:32] == 0) || (cq_mem_rdata[95:64] == 0)) begin
+                gemm_cycles <= 1;
+              end else begin
+                gemm_cycles <= (((cq_mem_rdata[31:0] * cq_mem_rdata[63:32] * cq_mem_rdata[95:64]) >> 10) + 1);
+              end
+            end else begin
+              error_code <= 32'h1;
+            end
+            if (cq_count <= cq_word0_size) begin
+              irq_status[IRQ_CQ_EMPTY] <= 1'b1;
+            end
+            cq_head <= cq_head + (cq_word0_size * 32);
+            cq_count <= cq_count - cq_word0_size;
+            cq_stage_valid <= 1'b0;
+            cq_pending_ext <= 1'b0;
+          end
+        end
+      end"""
     else:
         cq_mem_ports = ""
-        cq_mem_fetch_issue = ""
-        cq_mem_fetch_decode = ""
+        cq_block = ""
 
     if enable_axi_ports:
         axi_ports = f""",
@@ -741,8 +781,7 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         dma_kick=dma_kick,
         gemm_update=gemm_update,
         cq_mem_ports=cq_mem_ports,
-        cq_mem_fetch_issue=cq_mem_fetch_issue,
-        cq_mem_fetch_decode=cq_mem_fetch_decode,
+        cq_block=cq_block,
         axi_ports=axi_ports,
         axi_defaults=axi_defaults,
         axi_fsm=axi_fsm,

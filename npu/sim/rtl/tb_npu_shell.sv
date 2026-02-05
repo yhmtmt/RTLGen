@@ -121,8 +121,11 @@ module tb_npu_shell;
   reg [DATA_W-1:0] irq_status;
   integer test_bytes;
   reg [DATA_W-1:0] expected_dma_bytes;
+  reg [63:0] expected_dma_src;
+  reg [63:0] expected_dma_dst;
   reg sram_test;
   reg event_test;
+  string bin_path;
   `include "npu/rtlgen/out/sram_map.vh"
   localparam [63:0] MEM_DST_BASE = 64'h0000_0000_0001_0000;
 
@@ -144,7 +147,21 @@ module tb_npu_shell;
     if ($value$plusargs("event_test=%d", event_test))
       event_test = (event_test != 0);
 
-    if (event_test) begin
+    if ($value$plusargs("bin=%s", bin_path)) begin
+      // Read binary descriptor stream from override path
+      max_bytes = 4096;
+      fd = $fopen(bin_path, "rb");
+      if (fd == 0) begin
+        $display("ERROR: cannot open descriptor bin file %s", bin_path);
+        $finish(1);
+      end
+      bytes_read = $fread(bin_data, fd, 0, max_bytes);
+      $fclose(fd);
+      if (bytes_read <= 0) begin
+        $display("ERROR: no bytes read from descriptor bin file %s", bin_path);
+        $finish(1);
+      end
+    end else if (event_test) begin
       integer idx;
       for (idx = 0; idx < 96; idx = idx + 1)
         bin_data[idx] = 0;
@@ -214,6 +231,10 @@ module tb_npu_shell;
     if (!$value$plusargs("bytes=%d", test_bytes))
       test_bytes = bytes_read;
     expected_dma_bytes = {bin_data[27], bin_data[26], bin_data[25], bin_data[24]};
+    expected_dma_src = {bin_data[15], bin_data[14], bin_data[13], bin_data[12],
+                        bin_data[11], bin_data[10], bin_data[9], bin_data[8]};
+    expected_dma_dst = {bin_data[23], bin_data[22], bin_data[21], bin_data[20],
+                        bin_data[19], bin_data[18], bin_data[17], bin_data[16]};
 
     // Tail points to end of descriptor stream
     cq_tail = bytes_read[DATA_W-1:0];
@@ -228,11 +249,11 @@ module tb_npu_shell;
         $finish(1);
       end
       if (!sram_test) begin
-        if (dma_req_src !== 64'h0000_0030_0000_0000) begin
+        if (dma_req_src !== expected_dma_src) begin
           $display("ERROR: dma_req_src mismatch %h", dma_req_src);
           $finish(1);
         end
-        if (dma_req_dst !== 64'h0000_0030_0010_0000) begin
+        if (dma_req_dst !== expected_dma_dst) begin
           $display("ERROR: dma_req_dst mismatch %h", dma_req_dst);
           $finish(1);
         end

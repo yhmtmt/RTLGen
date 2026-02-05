@@ -13,6 +13,7 @@ Start here:
 - `npu/mapper/mapping_contract.schema.json` for the contract JSON schema.
 - `npu/mapper/examples/minimal_schedule.yml` for a tiny end-to-end example.
 - `npu/mapper/examples/golden_schedule.yml` for a tiny golden workload + expected descriptors.
+- `npu/mapper/examples/golden_gemm_v2_schedule.yml` for a v0.2 GEMM descriptor example.
 
 Validation:
 - `npu/mapper/validate.py` provides a minimal sanity checker for v0.1.
@@ -33,6 +34,14 @@ Golden sim quick check:
 python3 npu/mapper/run.py npu/mapper/examples/golden_schedule.yml --out-bin npu/sim/rtl/golden_descriptors.bin
 make -f npu/sim/rtl/Makefile run BIN=npu/sim/rtl/golden_descriptors.bin BYTES=4096
 python3 npu/sim/perf/run.py --bin npu/mapper/examples/golden_descriptors.bin --out npu/sim/perf/golden_trace.json
+```
+
+GEMM v0.2 descriptor quick check:
+```sh
+python3 npu/mapper/run.py npu/mapper/examples/golden_gemm_v2_schedule.yml \
+  --out-bin npu/mapper/examples/golden_gemm_v2_descriptors.bin
+make -f npu/sim/rtl/Makefile run \
+  BIN=npu/mapper/examples/golden_gemm_v2_descriptors.bin BYTES=4096
 ```
 
 ## Next steps

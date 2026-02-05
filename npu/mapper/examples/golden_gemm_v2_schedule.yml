@@ -1,0 +1,42 @@
+version: 0.1
+arch: npu/arch/examples/minimal.yml
+buffers:
+  - id: A
+    addr: 0x00000000
+    bytes: 4096
+  - id: B
+    addr: 0x00001000
+    bytes: 4096
+  - id: C
+    addr: 0x00002000
+    bytes: 4096
+  - id: D
+    addr: 0x00003000
+    bytes: 4096
+ops:
+  - id: dma1
+    type: dma_copy
+    src: A
+    dst: B
+    bytes: 4096
+  - id: gemm_v2
+    type: gemm
+    a: B
+    b: C
+    c: D
+    m: 16
+    n: 16
+    k: 16
+    lda: 16
+    ldb: 16
+    ldc: 16
+    dtype: int8
+    layout: row_major
+    gemm_v2: true
+deps:
+  - wait: [dma1]
+    then: gemm_v2
+events:
+  - id: 1
+    signal_on: gemm_v2
+    irq: true
