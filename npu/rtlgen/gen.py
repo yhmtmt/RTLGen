@@ -47,7 +47,9 @@ module {top_name} (
   reg        dma_pending;
   reg [2:0]  dma_state;
   reg        gemm_pending;
+  reg        gemm_dma_kick;
   reg [31:0] gemm_cycles;
+  reg [31:0] gemm_bytes;
   reg [{axi_data_width_minus1}:0] dma_buf;
   reg [8:0]  dma_beats;
   reg [8:0]  dma_beats_left;
@@ -60,6 +62,8 @@ module {top_name} (
   localparam STATUS_IDLE = 32'h1;
   localparam STATUS_BUSY = 32'h2;
   localparam STATUS_ERR  = 32'h4;
+
+  localparam integer AXI_BEAT_BYTES = {axi_beat_bytes};
 
   localparam IRQ_CQ_EMPTY    = 0;
   localparam IRQ_EVENT       = 1;
@@ -117,7 +121,9 @@ module {top_name} (
       dma_pending <= 0;
       dma_state <= 0;
       gemm_pending <= 0;
+      gemm_dma_kick <= 0;
       gemm_cycles <= 0;
+      gemm_bytes <= 0;
       dma_buf <= 0;
       dma_beats <= 0;
       dma_beats_left <= 0;
@@ -547,10 +553,16 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
           gemm_cycles <= gemm_cycles - 1;
           if (gemm_cycles == 1) begin
             gemm_pending <= 1'b0;
-            irq_status[IRQ_EVENT] <= 1'b1;
+            if (gemm_dma_kick) begin
+              dma_pending <= 1'b1;
+              gemm_dma_kick <= 1'b0;
+            end else begin
+              irq_status[IRQ_EVENT] <= 1'b1;
+            end
           end
         end else begin
           gemm_pending <= 1'b0;
+          gemm_dma_kick <= 1'b0;
         end
       end"""
 
@@ -595,6 +607,23 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
               end else begin
                 gemm_cycles <= (((cq_mem_rdata[63:52] * cq_mem_rdata[51:42] * cq_mem_rdata[41:32]) >> 10) + 1);
               end
+              gemm_bytes <= ((cq_mem_rdata[11:8] == 4'h1 || cq_mem_rdata[11:8] == 4'h2)
+                             ? (cq_mem_rdata[63:52] * cq_mem_rdata[51:42] * 2)
+                             : (cq_mem_rdata[63:52] * cq_mem_rdata[51:42]));
+              dma_src <= cq_mem_rdata[127:64];
+              dma_dst <= cq_mem_rdata[255:192];
+              dma_size <= ((cq_mem_rdata[11:8] == 4'h1 || cq_mem_rdata[11:8] == 4'h2)
+                           ? (cq_mem_rdata[63:52] * cq_mem_rdata[51:42] * 2)
+                           : (cq_mem_rdata[63:52] * cq_mem_rdata[51:42]));
+              dma_beats <= (((((cq_mem_rdata[11:8] == 4'h1 || cq_mem_rdata[11:8] == 4'h2)
+                               ? (cq_mem_rdata[63:52] * cq_mem_rdata[51:42] * 2)
+                               : (cq_mem_rdata[63:52] * cq_mem_rdata[51:42]))
+                              + AXI_BEAT_BYTES - 1) >> {axi_size}));
+              dma_arlen <= (((((cq_mem_rdata[11:8] == 4'h1 || cq_mem_rdata[11:8] == 4'h2)
+                               ? (cq_mem_rdata[63:52] * cq_mem_rdata[51:42] * 2)
+                               : (cq_mem_rdata[63:52] * cq_mem_rdata[51:42]))
+                              + AXI_BEAT_BYTES - 1) >> {axi_size}) - 1);
+              gemm_dma_kick <= 1'b1;
             end else if (cq_mem_rdata[7:0] == 8'h20) begin
               // EVENT_SIGNAL: immediately signal
               irq_status[IRQ_EVENT] <= 1'b1;
@@ -629,6 +658,23 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
               end else begin
                 gemm_cycles <= (((cq_mem_rdata[31:0] * cq_mem_rdata[63:32] * cq_mem_rdata[95:64]) >> 10) + 1);
               end
+              gemm_bytes <= ((cq_word0[11:8] == 4'h1 || cq_word0[11:8] == 4'h2)
+                             ? (cq_mem_rdata[31:0] * cq_mem_rdata[63:32] * 2)
+                             : (cq_mem_rdata[31:0] * cq_mem_rdata[63:32]));
+              dma_src <= cq_word0[127:64];
+              dma_dst <= cq_word0[255:192];
+              dma_size <= ((cq_word0[11:8] == 4'h1 || cq_word0[11:8] == 4'h2)
+                           ? (cq_mem_rdata[31:0] * cq_mem_rdata[63:32] * 2)
+                           : (cq_mem_rdata[31:0] * cq_mem_rdata[63:32]));
+              dma_beats <= (((((cq_word0[11:8] == 4'h1 || cq_word0[11:8] == 4'h2)
+                               ? (cq_mem_rdata[31:0] * cq_mem_rdata[63:32] * 2)
+                               : (cq_mem_rdata[31:0] * cq_mem_rdata[63:32]))
+                              + AXI_BEAT_BYTES - 1) >> {axi_size}));
+              dma_arlen <= (((((cq_word0[11:8] == 4'h1 || cq_word0[11:8] == 4'h2)
+                               ? (cq_mem_rdata[31:0] * cq_mem_rdata[63:32] * 2)
+                               : (cq_mem_rdata[31:0] * cq_mem_rdata[63:32]))
+                              + AXI_BEAT_BYTES - 1) >> {axi_size}) - 1);
+              gemm_dma_kick <= 1'b1;
             end else begin
               error_code <= 32'h1;
             end
@@ -775,6 +821,7 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         axi_addr_width_minus1=axi_addr_width_minus1,
         axi_data_width_minus1=axi_data_width_minus1,
         axi_strb_width_minus1=axi_strb_width_minus1,
+        axi_beat_bytes=(1 << axi_size),
         dma_ports=dma_ports,
         dma_reset=dma_reset,
         dma_handshake=dma_handshake,
