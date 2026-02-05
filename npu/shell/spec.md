@@ -168,6 +168,21 @@ Notes:
 - v0.2 expands the descriptor to carry these fields; v0.1 remains packed in TAG.
 - Mapper and perf sim should treat missing optional fields as defaults.
 
+Header extension plan (v0.2):
+- The 32-bit TAG field (bytes 4..7) is repurposed as a **GEMM_EXT** word when
+  SIZE > 1. This leaves the header format unchanged while adding 4 bytes for
+  options.
+- GEMM_EXT bit layout (proposed):
+  - [3:0]  EPILOGUE (0=NONE, 1=RELU, 2=GELU, 3=ADD, 4=MUL)
+  - [4]    TRANSPOSE_A
+  - [5]    TRANSPOSE_B
+  - [6]    HAS_BIAS
+  - [7]    HAS_ALPHA
+  - [8]    HAS_BETA
+  - [15:9] RESERVED (future)
+  - [31:16] USER_TAG (opaque host tag, optional)
+- For v0.1 (SIZE=1), TAG keeps its current packed M/N/K encoding.
+
 ### 5.2 VEC_OP
 Vector unary/binary ops, such as activation and normalization.
 
