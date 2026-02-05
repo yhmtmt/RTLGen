@@ -75,5 +75,5 @@ The mapper must emit:
 
 ## Next steps
 - Define a minimal JSON schema and validate the input contract in
-  `npu/mapper/validate.py`.
+  `npu/mapper/validate.py`. **Done** (see `npu/mapper/mapping_contract.schema.json`).
 - Add a tiny golden workload that exercises the full mapping path.

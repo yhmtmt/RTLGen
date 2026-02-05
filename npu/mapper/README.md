@@ -10,6 +10,7 @@ directly to the shell command descriptors.
 Start here:
 - `npu/mapper/ir.md` for the v0.1 IR spec.
 - `npu/mapper/mapping_contract.md` for the end-to-end mapping contract.
+- `npu/mapper/mapping_contract.schema.json` for the contract JSON schema.
 - `npu/mapper/examples/minimal_schedule.yml` for a tiny end-to-end example.
 
 Validation:

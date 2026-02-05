@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NPU Mapping Contract",
+  "type": "object",
+  "required": ["version", "arch", "model", "targets"],
+  "properties": {
+    "version": { "const": 0.1 },
+    "arch": { "type": "string" },
+    "model": {
+      "type": "object",
+      "required": ["name", "graph", "inputs"],
+      "properties": {
+        "name": { "type": "string" },
+        "graph": { "type": "string" },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "shape", "dtype"],
+            "properties": {
+              "name": { "type": "string" },
+              "shape": {
+                "type": "array",
+                "minItems": 1,
+                "items": { "type": "integer" }
+              },
+              "dtype": { "type": "string" }
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "targets": {
+      "type": "object",
+      "required": ["memory_spaces"],
+      "properties": {
+        "memory_spaces": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["name", "base_addr", "bytes"],
+            "properties": {
+              "name": { "type": "string" },
+              "base_addr": {
+                "oneOf": [
+                  { "type": "integer" },
+                  { "type": "string" }
+                ]
+              },
+              "bytes": {
+                "oneOf": [
+                  { "type": "integer" },
+                  { "type": "string" }
+                ]
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "dma": {
+          "type": "object",
+          "properties": {
+            "max_read_bw_gbps": { "type": "number" },
+            "max_write_bw_gbps": { "type": "number" }
+          },
+          "additionalProperties": true
+        },
+        "compute": {
+          "type": "object",
+          "properties": {
+            "gemm": {
+              "type": "object",
+              "required": ["m_tile", "n_tile", "k_tile"],
+              "properties": {
+                "m_tile": { "type": "integer" },
+                "n_tile": { "type": "integer" },
+                "k_tile": { "type": "integer" }
+              },
+              "additionalProperties": true
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "constraints": {
+      "type": "object",
+      "properties": {
+        "max_cq_depth": { "type": "integer" },
+        "alignment_bytes": { "type": "integer" }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}
