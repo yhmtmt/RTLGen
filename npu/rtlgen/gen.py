@@ -43,6 +43,8 @@ module {top_name} (
   reg        cq_stage_valid;
   reg        dma_pending;
   reg [2:0]  dma_state;
+  reg        gemm_pending;
+  reg [31:0] gemm_cycles;
   reg [{axi_data_width_minus1}:0] dma_buf;
   reg [8:0]  dma_beats;
   reg [8:0]  dma_beats_left;
@@ -108,6 +110,8 @@ module {top_name} (
       cq_stage_valid <= 0;
       dma_pending <= 0;
       dma_state <= 0;
+      gemm_pending <= 0;
+      gemm_cycles <= 0;
       dma_buf <= 0;
       dma_beats <= 0;
       dma_beats_left <= 0;
@@ -120,6 +124,7 @@ module {top_name} (
       // Default: clear level IRQ unless status bit set
       irq <= |(irq_status & irq_enable);
 {dma_handshake}
+{gemm_update}
 {axi_defaults}
 {axi_fsm}
 
@@ -167,7 +172,7 @@ module {top_name} (
         status <= STATUS_ERR;
         irq_status[IRQ_ERROR] <= 1'b1;
       end else if (!(mmio_we && mmio_addr == OFF_DOORBELL)) begin
-        if ((cq_count != 0) || cq_stage_valid || dma_pending) begin
+        if ((cq_count != 0) || cq_stage_valid || dma_pending || gemm_pending) begin
           status <= STATUS_BUSY;
         end else begin
           status <= STATUS_IDLE;
@@ -545,6 +550,18 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         dma_handshake = ""
         dma_kick = ""
 
+    gemm_update = """      if (gemm_pending) begin
+        if (gemm_cycles != 0) begin
+          gemm_cycles <= gemm_cycles - 1;
+          if (gemm_cycles == 1) begin
+            gemm_pending <= 1'b0;
+            irq_status[IRQ_EVENT] <= 1'b1;
+          end
+        end else begin
+          gemm_pending <= 1'b0;
+        end
+      end"""
+
     if enable_cq_mem_ports:
         cq_mem_ports = f""",
     output reg  [{dma_addr_width_minus1}:0] cq_mem_addr,
@@ -568,8 +585,13 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
           dma_arlen <= {dma_arlen_expr};
           dma_pending <= 1'b1;
         end else if (cq_mem_rdata[7:0] == 8'h10) begin
-          // GEMM stub: no compute, just signal completion
-          irq_status[IRQ_EVENT] <= 1'b1;
+          // GEMM stub: simple cycle model, signal completion on countdown.
+          gemm_pending <= 1'b1;
+          if ((cq_mem_rdata[63:52] == 0) || (cq_mem_rdata[51:42] == 0) || (cq_mem_rdata[41:32] == 0)) begin
+            gemm_cycles <= 1;
+          end else begin
+            gemm_cycles <= (((cq_mem_rdata[63:52] * cq_mem_rdata[51:42] * cq_mem_rdata[41:32]) >> 10) + 1);
+          end
         end else if (cq_mem_rdata[7:0] == 8'h20) begin
           // EVENT_SIGNAL: immediately signal
           irq_status[IRQ_EVENT] <= 1'b1;
@@ -717,6 +739,7 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         dma_reset=dma_reset,
         dma_handshake=dma_handshake,
         dma_kick=dma_kick,
+        gemm_update=gemm_update,
         cq_mem_ports=cq_mem_ports,
         cq_mem_fetch_issue=cq_mem_fetch_issue,
         cq_mem_fetch_decode=cq_mem_fetch_decode,
