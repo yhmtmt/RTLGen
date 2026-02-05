@@ -120,6 +120,7 @@ module tb_npu_shell;
   reg [DATA_W-1:0] cq_head;
   reg [DATA_W-1:0] irq_status;
   integer test_bytes;
+  integer gemm_test_bytes;
   reg [DATA_W-1:0] expected_dma_bytes;
   reg [63:0] expected_dma_src;
   reg [63:0] expected_dma_dst;
@@ -318,6 +319,16 @@ module tb_npu_shell;
         if (axi_mem.mem[21'h100000 + j] !== axi_mem.mem[21'h000000 + j]) begin
           $display("ERROR: DMA copy mismatch at byte %0d", j);
           $finish(1);
+        end
+      end
+      gemm_test_bytes = 0;
+      if ($value$plusargs("gemm_mem_test=%d", gemm_test_bytes)) begin
+        // GEMM stub path: C should match A for test_bytes
+        for (j = 0; j < gemm_test_bytes; j = j + 1) begin
+          if (axi_mem.mem[21'h3000 + j] !== axi_mem.mem[21'h1000 + j]) begin
+            $display("ERROR: GEMM mem copy mismatch at byte %0d", j);
+            $finish(1);
+          end
         end
       end
     end
