@@ -183,6 +183,38 @@ Header extension plan (v0.2):
   - [31:16] USER_TAG (opaque host tag, optional)
 - For v0.1 (SIZE=1), TAG keeps its current packed M/N/K encoding.
 
+#### 5.1.2 GEMM Descriptor Layout (v0.2, SIZE=2)
+Base v0.2 GEMM uses a 64B descriptor (SIZE=2). TAG becomes GEMM_EXT (above).
+
+| Byte | Field | Description |
+|---:|---|---|
+| 0 | OPCODE | 0x10 |
+| 1 | FLAGS | dtype/layout (same as v0.1) |
+| 2 | SIZE | 0x02 |
+| 3 | RESERVED | 0 |
+| 4..7 | GEMM_EXT | option bits (see 5.1.1) |
+| 8..15 | A_ADDR | u64 |
+| 16..23 | B_ADDR | u64 |
+| 24..31 | C_ADDR | u64 |
+| 32..35 | M | u32 |
+| 36..39 | N | u32 |
+| 40..43 | K | u32 |
+| 44..47 | LDA | u32 bytes |
+| 48..51 | LDB | u32 bytes |
+| 52..55 | LDC | u32 bytes |
+| 56..63 | RESERVED | for future extension |
+
+#### 5.1.3 GEMM Optional Extension (v0.2, SIZE=3)
+If any of {HAS_BIAS, HAS_ALPHA, HAS_BETA} is set, SIZE=3 (96B) and the final
+32B carry optional fields:
+
+| Byte | Field | Description |
+|---:|---|---|
+| 64..71 | BIAS_ADDR | u64 (optional) |
+| 72..75 | ALPHA | fp32 (optional) |
+| 76..79 | BETA | fp32 (optional) |
+| 80..95 | RESERVED | for future extension |
+
 ### 5.2 VEC_OP
 Vector unary/binary ops, such as activation and normalization.
 
