@@ -148,6 +148,26 @@ Additional parameters are encoded in the FLAGS field for v0.1:
 Sizes are packed in TAG for v0.1 (M in [31:20], N in [19:10], K in [9:0]).
 This is intentionally temporary; a v0.2 descriptor will add explicit fields.
 
+#### 5.1.1 GEMM Contract (Proposed v0.2)
+The nominal GEMM interface adds explicit shape/stride fields and optional
+epilogue parameters. This is the **target contract** for the compute tile.
+
+Required fields (v0.2 descriptor, SIZE=2):
+- A_ADDR, B_ADDR, C_ADDR (u64)
+- M, N, K (u16/u32, explicit fields)
+- LDA/LDB/LDC (u32 bytes, leading dimension/stride per row)
+
+Optional fields:
+- BATCH (u16, for batched GEMM)
+- TRANSPOSE_A / TRANSPOSE_B (flags)
+- ALPHA / BETA (fp16/fp32 encoded, optional)
+- BIAS_ADDR (u64, optional)
+- EPILOGUE (enum: NONE, RELU, GELU, ADD, MUL)
+
+Notes:
+- v0.2 expands the descriptor to carry these fields; v0.1 remains packed in TAG.
+- Mapper and perf sim should treat missing optional fields as defaults.
+
 ### 5.2 VEC_OP
 Vector unary/binary ops, such as activation and normalization.
 

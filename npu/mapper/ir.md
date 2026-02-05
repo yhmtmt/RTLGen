@@ -82,6 +82,11 @@ Each op is mapped to one shell descriptor.
 - `m`, `n`, `k` (u16/u32; must fit in v0.1 packing)
 - `dtype` (enum: int8, fp16, bf16, fp8)
 - `layout` (enum: row_major, col_major)
+- `lda`, `ldb`, `ldc` (u32 bytes; leading dimension/row stride, optional in v0.1)
+- `transpose_a`, `transpose_b` (bool, optional)
+- `alpha`, `beta` (float, optional)
+- `bias` (buffer id, optional)
+- `epilogue` (enum: none, relu, gelu, add, mul; optional)
 
 #### vec_op
 - `src`, `dst` (buffer ids)
