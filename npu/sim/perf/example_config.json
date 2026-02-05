@@ -1,6 +1,13 @@
 {
   "dma_bw_gbps": 16.0,
   "gemm_tops": 2.0,
+  "gemm_tile_m": 64,
+  "gemm_tile_n": 64,
+  "gemm_tile_k": 32,
+  "gemm_in_bw_gbps": 16.0,
+  "gemm_out_bw_gbps": 16.0,
+  "gemm_dtype_bytes": 1.0,
+  "gemm_tile_overhead_ns": 0.0,
   "event_overhead_ns": 50.0,
   "noop_overhead_ns": 10.0,
   "issue_overhead_ns": 0.0
