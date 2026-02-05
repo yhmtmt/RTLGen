@@ -9,6 +9,8 @@ This plan defines two simulation schemes:
 - RTL functional simulation path is implemented.
 - Performance simulation remains planned.
 - Process note: re-run RTL simulation whenever `npu/rtlgen/gen.py` changes.
+- Mapper golden schedule validates cleanly (`npu/mapper/examples/golden_schedule.yml`).
+- Golden mapping sim flow: RTL (Makefile `BIN=`) and perf (`npu/sim/perf/run.py --bin`).
 
 ## A) RTL Functional Validation (First Priority)
 

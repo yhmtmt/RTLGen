@@ -7,6 +7,7 @@ OUT=build_npu_shell.vvp
 OUT_AXI=build_npu_axi.vvp
 OUT_AXI_MULTI=build_npu_axi_multi.vvp
 BYTES?=
+BIN?=
 
 ARCH?=npu/arch/examples/minimal.yml
 CONFIG?=npu/rtlgen/examples/minimal.json
@@ -32,7 +33,7 @@ build: gen
 	$(IVERILOG) $(IVERILOGFLAGS) -s tb_npu_shell -o $(OUT) $(RTL) $(TB) $(ROUTER) $(MODEL) $(SRAM_MODELS)
 
 run: build
-	$(VVP) $(OUT) $(if $(BYTES),+bytes=$(BYTES),)
+	$(VVP) $(OUT) $(if $(BYTES),+bytes=$(BYTES),) $(if $(BIN),+bin=$(BIN),)
 
 run-arch: gen-arch
 	$(IVERILOG) $(IVERILOGFLAGS) -s tb_npu_shell -o $(OUT) $(RTL) $(TB) $(ROUTER) $(MODEL) $(SRAM_MODELS)

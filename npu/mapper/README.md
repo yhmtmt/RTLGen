@@ -28,5 +28,12 @@ python3 npu/mapper/run.py npu/mapper/examples/minimal_schedule.yml --out-bin /tm
 python3 npu/mapper/run.py npu/mapper/examples/golden_schedule.yml --out npu/mapper/examples/golden_descriptors.yml --out-bin npu/mapper/examples/golden_descriptors.bin
 ```
 
+Golden sim quick check:
+```sh
+python3 npu/mapper/run.py npu/mapper/examples/golden_schedule.yml --out-bin npu/sim/rtl/golden_descriptors.bin
+make -f npu/sim/rtl/Makefile run BIN=npu/sim/rtl/golden_descriptors.bin BYTES=4096
+python3 npu/sim/perf/run.py --bin npu/mapper/examples/golden_descriptors.bin --out npu/sim/perf/golden_trace.json
+```
+
 ## Next steps
 - Extend op coverage and add legality checks against arch configs.
