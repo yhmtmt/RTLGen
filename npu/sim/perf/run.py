@@ -13,22 +13,28 @@ except ImportError:  # pragma: no cover - optional dependency
 
 def parse_desc_stream(data):
     descs = []
-    for off in range(0, len(data), 32):
-        chunk = data[off:off + 32]
-        if len(chunk) < 32:
+    offset = 0
+    data_len = len(data)
+    while offset + 32 <= data_len:
+        size_units = data[offset + 2]
+        if size_units == 0:
+            size_units = 1
+        size_bytes = 32 * size_units
+        if offset + size_bytes > data_len:
             break
+        chunk = data[offset:offset + size_bytes]
         opcode = chunk[0]
         flags = chunk[1]
-        size_units = chunk[2]
         tag = struct.unpack_from("<I", chunk, 4)[0]
         descs.append({
-            "offset": off,
+            "offset": offset,
             "opcode": opcode,
             "flags": flags,
             "size_units": size_units,
             "tag": tag,
             "raw": chunk,
         })
+        offset += size_bytes
     return descs
 
 
@@ -108,6 +114,7 @@ def _load_sram_model(cfg):
 def desc_to_event(desc, cfg):
     opcode = desc["opcode"]
     raw = desc["raw"]
+    size_units = desc.get("size_units", 1)
     event = {
         "offset": desc["offset"],
         "opcode": opcode,
@@ -129,7 +136,12 @@ def desc_to_event(desc, cfg):
         a = struct.unpack_from("<Q", raw, 8)[0]
         b = struct.unpack_from("<Q", raw, 16)[0]
         c = struct.unpack_from("<Q", raw, 24)[0]
-        m, n, k = decode_gemm_tag(desc["tag"])
+        if size_units >= 2 and len(raw) >= 64:
+            m = struct.unpack_from("<I", raw, 32)[0]
+            n = struct.unpack_from("<I", raw, 36)[0]
+            k = struct.unpack_from("<I", raw, 40)[0]
+        else:
+            m, n, k = decode_gemm_tag(desc["tag"])
         event.update({
             "name": "GEMM",
             "a": f"0x{a:016x}",
