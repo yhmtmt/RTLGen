@@ -61,7 +61,7 @@ module {top_name} (
   localparam IRQ_ERROR       = 2;
 
   // MMIO offsets (bytes)
-  `include "npu/rtlgen/out/mmio_map.vh"
+  `include "mmio_map.vh"
 
   always @(*) begin
     case (mmio_addr)
@@ -134,10 +134,13 @@ module {top_name} (
           OFF_CQ_TAIL:    cq_tail <= mmio_wdata;
           OFF_DOORBELL: begin
             // Minimal behavior: consume all queued descriptors.
-            status <= STATUS_BUSY;
-            cq_count <= (cq_tail >> 5);
-            status <= STATUS_IDLE;
-            irq_status[IRQ_CQ_EMPTY] <= 1'b1;
+            cq_count <= ((cq_tail - cq_head) >> 5);
+            if (((cq_tail - cq_head) >> 5) == 0) begin
+              status <= STATUS_IDLE;
+              irq_status[IRQ_CQ_EMPTY] <= 1'b1;
+            end else begin
+              status <= STATUS_BUSY;
+            end
 {dma_kick}
           end
           default: begin end
@@ -152,6 +155,9 @@ module {top_name} (
         end else begin
 {cq_mem_fetch_decode}
           cq_head <= cq_head + 32;
+          if (cq_count == 1) begin
+            irq_status[IRQ_CQ_EMPTY] <= 1'b1;
+          end
           cq_count <= cq_count - 1;
           cq_stage_valid <= 1'b0;
         end
@@ -160,6 +166,12 @@ module {top_name} (
       if (error_code != 0) begin
         status <= STATUS_ERR;
         irq_status[IRQ_ERROR] <= 1'b1;
+      end else if (!(mmio_we && mmio_addr == OFF_DOORBELL)) begin
+        if ((cq_count != 0) || cq_stage_valid || dma_pending) begin
+          status <= STATUS_BUSY;
+        end else begin
+          status <= STATUS_IDLE;
+        end
       end
     end
   end
@@ -564,6 +576,8 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         end else if (cq_mem_rdata[7:0] == 8'h21) begin
           // EVENT_WAIT: stubbed as immediately satisfied
           irq_status[IRQ_EVENT] <= 1'b1;
+        end else begin
+          error_code <= 32'h1;
         end"""
     else:
         cq_mem_ports = ""
