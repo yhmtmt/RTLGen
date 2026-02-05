@@ -8,6 +8,7 @@ This plan defines two simulation schemes:
 ## Current status
 - RTL functional simulation path is implemented.
 - Performance simulation remains planned.
+- Process note: re-run RTL simulation whenever `npu/rtlgen/gen.py` changes.
 
 ## A) RTL Functional Validation (First Priority)
 
