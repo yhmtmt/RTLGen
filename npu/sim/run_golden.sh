@@ -14,7 +14,7 @@ python3 "${REPO_ROOT}/npu/mapper/run.py" "${SCHEDULE}" --out "${DESC_YML}" --out
 cp "${DESC_BIN}" "${RTL_BIN}"
 
 pushd "${REPO_ROOT}" >/dev/null
-make -f npu/sim/rtl/Makefile run BIN="${RTL_BIN}" BYTES=4096
+make -f npu/sim/rtl/Makefile run BIN="${RTL_BIN}" BYTES=4096 VVPFLAGS="+gemm_mem_test=256"
 popd >/dev/null
 python3 "${REPO_ROOT}/npu/sim/perf/run.py" --bin "${DESC_BIN}" --out "${PERF_TRACE}"
 
