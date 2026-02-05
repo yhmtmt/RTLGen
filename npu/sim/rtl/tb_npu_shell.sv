@@ -121,6 +121,10 @@ module tb_npu_shell;
   reg [DATA_W-1:0] irq_status;
   integer test_bytes;
   integer gemm_test_bytes;
+  integer gemm_count;
+  reg [63:0] sim_cycle;
+  reg gemm_pending_prev;
+  reg [63:0] gemm_start_cycle;
   reg [DATA_W-1:0] expected_dma_bytes;
   reg [63:0] expected_dma_src;
   reg [63:0] expected_dma_dst;
@@ -138,6 +142,10 @@ module tb_npu_shell;
     dma_req_ready = 0;
     dma_resp_done = 0;
     saw_bvalid = 0;
+    sim_cycle = 0;
+    gemm_pending_prev = 1'b0;
+    gemm_start_cycle = 0;
+    gemm_count = 0;
     #(CLK_PERIOD*4);
     rst_n = 1;
 
@@ -333,6 +341,8 @@ module tb_npu_shell;
       end
     end
 
+    // Allow negedge timing monitor to emit final GEMM_TIMING line before finish.
+    @(negedge clk);
     $display("PASS: RTL shell bring-up complete");
     $finish(0);
   end
@@ -378,8 +388,28 @@ module tb_npu_shell;
   );
 
   always @(posedge clk) begin
+    sim_cycle <= sim_cycle + 1;
     if (m_axi_bvalid)
       saw_bvalid <= 1'b1;
+  end
+
+  // Sample on negedge so DUT's non-blocking assignments from posedge are visible.
+  always @(negedge clk) begin
+    if (!rst_n) begin
+      gemm_pending_prev <= 1'b0;
+      gemm_start_cycle <= 0;
+      gemm_count <= 0;
+    end else begin
+      if (!gemm_pending_prev && dut.gemm_pending) begin
+        gemm_start_cycle <= sim_cycle;
+      end
+      if (gemm_pending_prev && !dut.gemm_pending) begin
+        gemm_count <= gemm_count + 1;
+        $display("GEMM_TIMING index=%0d start_cycle=%0d end_cycle=%0d cycles=%0d",
+                 (gemm_count + 1), gemm_start_cycle, sim_cycle, (sim_cycle - gemm_start_cycle));
+      end
+      gemm_pending_prev <= dut.gemm_pending;
+    end
   end
 
 endmodule
