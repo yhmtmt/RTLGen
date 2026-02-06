@@ -5,17 +5,66 @@ import re
 import sys
 
 
-def _parse_rtl_cycles_from_log(path: str) -> list[int]:
-    pat = re.compile(r"\bGEMM_TIMING\b.*\bcycles=(\d+)\b")
-    cycles = []
+def _parse_rtl_entries_from_log(path: str) -> list[dict]:
+    pat_full = re.compile(
+        r"\bGEMM_TIMING\b.*\bindex=(\d+)\b.*\btag=0x([0-9a-fA-F]+)\b.*\boffset=(-?\d+)\b.*\bcycles=(\d+)\b"
+    )
+    pat_legacy = re.compile(r"\bGEMM_TIMING\b.*\bcycles=(\d+)\b")
+    entries = []
     with open(path, "r", encoding="utf-8") as f:
         for line in f:
-            m = pat.search(line)
+            m = pat_full.search(line)
             if m:
-                cycles.append(int(m.group(1)))
-    if not cycles:
+                entries.append(
+                    {
+                        "index": int(m.group(1)),
+                        "tag": int(m.group(2), 16),
+                        "offset": int(m.group(3)),
+                        "cycles": int(m.group(4)),
+                    }
+                )
+                continue
+            m = pat_legacy.search(line)
+            if m:
+                entries.append(
+                    {
+                        "index": len(entries) + 1,
+                        "tag": None,
+                        "offset": None,
+                        "cycles": int(m.group(1)),
+                    }
+                )
+    if not entries:
         raise ValueError("no GEMM_TIMING cycles entry found in RTL log")
-    return cycles
+    return entries
+
+
+def _choose_matching_mode(rtl_entries: list[dict], perf_entries: list[dict]) -> str:
+    rtl_tags = [e["tag"] for e in rtl_entries]
+    perf_tags = [e["tag"] for e in perf_entries]
+    if all(t is not None for t in rtl_tags + perf_tags):
+        if len(set(rtl_tags)) == len(rtl_tags) and len(set(perf_tags)) == len(perf_tags):
+            if set(rtl_tags) == set(perf_tags):
+                return "tag"
+
+    rtl_offsets = [e["offset"] for e in rtl_entries]
+    perf_offsets = [e["offset"] for e in perf_entries]
+    if all(o is not None for o in rtl_offsets + perf_offsets):
+        if len(set(rtl_offsets)) == len(rtl_offsets) and len(set(perf_offsets)) == len(perf_offsets):
+            if set(rtl_offsets) == set(perf_offsets):
+                return "offset"
+
+    return "index"
+
+
+def _match_entries(rtl_entries: list[dict], perf_entries: list[dict], mode: str) -> list[tuple[dict, dict]]:
+    if mode == "tag":
+        perf_by_tag = {int(e["tag"]): e for e in perf_entries}
+        return [(rtl, perf_by_tag[int(rtl["tag"])]) for rtl in rtl_entries]
+    if mode == "offset":
+        perf_by_offset = {int(e["offset"]): e for e in perf_entries}
+        return [(rtl, perf_by_offset[int(rtl["offset"])]) for rtl in rtl_entries]
+    return list(zip(rtl_entries, perf_entries))
 
 
 def main() -> int:
@@ -29,12 +78,12 @@ def main() -> int:
 
     if args.rtl_log:
         try:
-            rtl_cycles_list = _parse_rtl_cycles_from_log(args.rtl_log)
+            rtl_entries = _parse_rtl_entries_from_log(args.rtl_log)
         except ValueError as e:
             print(f"compare: {e}", file=sys.stderr)
             return 2
     elif args.rtl_cycles is not None:
-        rtl_cycles_list = [args.rtl_cycles]
+        rtl_entries = [{"index": 1, "tag": None, "offset": None, "cycles": args.rtl_cycles}]
     else:
         print("compare: pass either --rtl-log or --rtl-cycles", file=sys.stderr)
         return 2
@@ -42,40 +91,57 @@ def main() -> int:
     with open(args.perf_trace, "r", encoding="utf-8") as f:
         trace = json.load(f)
 
-    perf_ns_list = []
+    perf_entries = []
+    perf_idx = 0
     for ev in trace.get("trace", []):
         if ev.get("name") == "GEMM":
-            perf_ns_list.append(float(ev.get("duration_ns", 0.0)))
-    if not perf_ns_list:
+            perf_idx += 1
+            perf_entries.append(
+                {
+                    "index": perf_idx,
+                    "tag": int(ev["tag"]) if "tag" in ev else None,
+                    "offset": int(ev["offset"]) if "offset" in ev else None,
+                    "perf_ns": float(ev.get("duration_ns", 0.0)),
+                }
+            )
+    if not perf_entries:
         print("compare: no GEMM event in trace", file=sys.stderr)
         return 2
 
-    if len(rtl_cycles_list) != len(perf_ns_list):
+    if len(rtl_entries) != len(perf_entries):
         print(
             "compare: GEMM count mismatch "
-            f"(rtl={len(rtl_cycles_list)} perf={len(perf_ns_list)})",
+            f"(rtl={len(rtl_entries)} perf={len(perf_entries)})",
             file=sys.stderr,
         )
         return 2
 
+    mode = _choose_matching_mode(rtl_entries, perf_entries)
+    if mode == "index":
+        print("compare: warning: falling back to index-based GEMM matching")
+    else:
+        print(f"compare: matching GEMM ops by {mode}")
+    matched = _match_entries(rtl_entries, perf_entries, mode)
+
     max_delta = 0.0
-    idx = 0
-    for rtl_cycles, perf_ns in zip(rtl_cycles_list, perf_ns_list):
-        idx += 1
+    for rtl, perf in matched:
+        rtl_cycles = int(rtl["cycles"])
+        perf_ns = float(perf["perf_ns"])
+        label = f"{mode}={rtl[mode]}" if mode in ("tag", "offset") and rtl.get(mode) is not None else f"index={rtl['index']}"
         if perf_ns <= 0:
-            print(f"compare: perf GEMM[{idx}] duration is zero", file=sys.stderr)
+            print(f"compare: perf GEMM[{label}] duration is zero", file=sys.stderr)
             return 2
         rtl_ns = float(rtl_cycles) * float(args.clk_ns)
         delta = abs(rtl_ns - perf_ns) / perf_ns
         max_delta = max(max_delta, delta)
         print(
-            f"compare: GEMM[{idx}] rtl_cycles={rtl_cycles} rtl_ns={rtl_ns:.3f} "
+            f"compare: GEMM[{label}] rtl_cycles={rtl_cycles} rtl_ns={rtl_ns:.3f} "
             f"perf_ns={perf_ns:.3f} delta={delta:.3f}"
         )
         if delta > args.tolerance:
-            print(f"compare: FAIL at GEMM[{idx}] (outside tolerance)", file=sys.stderr)
+            print(f"compare: FAIL at GEMM[{label}] (outside tolerance)", file=sys.stderr)
             return 1
-    print(f"compare: compared {len(perf_ns_list)} GEMM op(s), max_delta={max_delta:.3f}")
+    print(f"compare: compared {len(perf_entries)} GEMM op(s), max_delta={max_delta:.3f}")
     print("compare: OK")
     return 0
 

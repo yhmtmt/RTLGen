@@ -122,6 +122,16 @@ module tb_npu_shell;
   integer test_bytes;
   integer gemm_test_bytes;
   integer gemm_count;
+  integer gemm_desc_count;
+  integer gemm_desc_offsets [0:127];
+  reg [31:0] gemm_desc_tags [0:127];
+  reg [31:0] gemm_log_tag;
+  integer gemm_log_offset;
+  integer scan_off;
+  integer scan_size;
+  integer scan_iter;
+  reg [7:0] scan_opcode;
+  reg [31:0] scan_tag;
   reg [63:0] sim_cycle;
   reg gemm_pending_prev;
   reg [63:0] gemm_start_cycle;
@@ -146,6 +156,7 @@ module tb_npu_shell;
     gemm_pending_prev = 1'b0;
     gemm_start_cycle = 0;
     gemm_count = 0;
+    gemm_desc_count = 0;
     #(CLK_PERIOD*4);
     rst_n = 1;
 
@@ -244,6 +255,24 @@ module tb_npu_shell;
                         bin_data[11], bin_data[10], bin_data[9], bin_data[8]};
     expected_dma_dst = {bin_data[23], bin_data[22], bin_data[21], bin_data[20],
                         bin_data[19], bin_data[18], bin_data[17], bin_data[16]};
+    // Parse descriptor stream so GEMM timing logs can include stable tag/offset IDs.
+    gemm_desc_count = 0;
+    scan_off = 0;
+    scan_iter = 0;
+    while (((scan_off + 32) <= bytes_read) && (scan_iter < 256)) begin
+      scan_opcode = bin_data[scan_off];
+      scan_size = bin_data[scan_off + 2];
+      if (scan_size <= 0)
+        scan_size = 1;
+      if ((scan_opcode == 8'h10) && (gemm_desc_count < 128)) begin
+        scan_tag = {bin_data[scan_off + 7], bin_data[scan_off + 6], bin_data[scan_off + 5], bin_data[scan_off + 4]};
+        gemm_desc_tags[gemm_desc_count] = scan_tag;
+        gemm_desc_offsets[gemm_desc_count] = scan_off;
+        gemm_desc_count = gemm_desc_count + 1;
+      end
+      scan_off = scan_off + (scan_size * 32);
+      scan_iter = scan_iter + 1;
+    end
 
     // Tail points to end of descriptor stream
     cq_tail = bytes_read[DATA_W-1:0];
@@ -404,9 +433,15 @@ module tb_npu_shell;
         gemm_start_cycle <= sim_cycle;
       end
       if (gemm_pending_prev && !dut.gemm_pending) begin
+        gemm_log_tag = 32'hFFFF_FFFF;
+        gemm_log_offset = -1;
+        if (gemm_count < gemm_desc_count) begin
+          gemm_log_tag = gemm_desc_tags[gemm_count];
+          gemm_log_offset = gemm_desc_offsets[gemm_count];
+        end
         gemm_count <= gemm_count + 1;
-        $display("GEMM_TIMING index=%0d start_cycle=%0d end_cycle=%0d cycles=%0d",
-                 (gemm_count + 1), gemm_start_cycle, sim_cycle, (sim_cycle - gemm_start_cycle));
+        $display("GEMM_TIMING index=%0d tag=0x%08h offset=%0d start_cycle=%0d end_cycle=%0d cycles=%0d",
+                 (gemm_count + 1), gemm_log_tag, gemm_log_offset, gemm_start_cycle, sim_cycle, (sim_cycle - gemm_start_cycle));
       end
       gemm_pending_prev <= dut.gemm_pending;
     end
