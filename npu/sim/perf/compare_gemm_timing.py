@@ -3,6 +3,7 @@ import argparse
 import json
 import re
 import sys
+from typing import Optional
 
 
 def _parse_rtl_entries_from_log(path: str) -> list[dict]:
@@ -94,6 +95,27 @@ def _match_entries(rtl_entries: list[dict], perf_entries: list[dict], mode: str)
     return list(zip(rtl_entries, perf_entries))
 
 
+def _parse_int_value(v):
+    if isinstance(v, int):
+        return v
+    if isinstance(v, str):
+        return int(v, 0)
+    return int(v)
+
+
+def _load_tolerance_map(path: Optional[str]) -> dict[int, float]:
+    if not path:
+        return {}
+    with open(path, "r", encoding="utf-8") as f:
+        raw = json.load(f)
+    if not isinstance(raw, dict):
+        raise ValueError("tolerance map JSON must be an object")
+    out = {}
+    for k, v in raw.items():
+        out[_parse_int_value(k)] = float(v)
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Compare GEMM timing between RTL sim and perf model trace.")
     ap.add_argument("--rtl-cycles", type=int, default=None, help="Measured RTL cycles")
@@ -101,6 +123,12 @@ def main() -> int:
     ap.add_argument("--clk-ns", type=float, default=10.0, help="RTL clock period in ns")
     ap.add_argument("--perf-trace", required=True, help="Perf trace JSON file")
     ap.add_argument("--tolerance", type=float, default=0.2, help="Relative tolerance")
+    ap.add_argument("--tolerance-map", default=None, help="Optional JSON mapping id->relative tolerance")
+    ap.add_argument(
+        "--require-order-change",
+        action="store_true",
+        help="Fail if GEMM completion order in RTL matches perf issue order (mode must not be index)",
+    )
     args = ap.parse_args()
 
     if args.rtl_log:
@@ -150,12 +178,35 @@ def main() -> int:
     else:
         print(f"compare: matching GEMM ops by {mode}")
     matched = _match_entries(rtl_entries, perf_entries, mode)
+    try:
+        tol_map = _load_tolerance_map(args.tolerance_map)
+    except ValueError as e:
+        print(f"compare: {e}", file=sys.stderr)
+        return 2
+
+    if mode != "index":
+        rtl_order = [int(e[mode]) for e in rtl_entries]
+        perf_order = [int(e[mode]) for e in perf_entries]
+        if rtl_order != perf_order:
+            print("compare: info: GEMM order differs between RTL completion and perf issue order")
+            print(f"compare: rtl_order={rtl_order}")
+            print(f"compare: perf_order={perf_order}")
+        else:
+            print("compare: info: GEMM order is identical between RTL and perf")
+        if args.require_order_change and rtl_order == perf_order:
+            print("compare: FAIL expected reordered GEMM completion, but order is unchanged", file=sys.stderr)
+            return 1
+    elif args.require_order_change:
+        print("compare: FAIL --require-order-change needs non-index matching mode", file=sys.stderr)
+        return 2
 
     max_delta = 0.0
     for rtl, perf in matched:
         rtl_cycles = int(rtl["cycles"])
         perf_ns = float(perf["perf_ns"])
         label = f"{mode}={rtl[mode]}" if mode in ("op_uid", "tag", "offset") and rtl.get(mode) is not None else f"index={rtl['index']}"
+        tol_key = int(rtl[mode]) if mode in ("op_uid", "tag", "offset") and rtl.get(mode) is not None else int(rtl["index"])
+        tol = float(tol_map.get(tol_key, args.tolerance))
         if perf_ns <= 0:
             print(f"compare: perf GEMM[{label}] duration is zero", file=sys.stderr)
             return 2
@@ -164,9 +215,9 @@ def main() -> int:
         max_delta = max(max_delta, delta)
         print(
             f"compare: GEMM[{label}] rtl_cycles={rtl_cycles} rtl_ns={rtl_ns:.3f} "
-            f"perf_ns={perf_ns:.3f} delta={delta:.3f}"
+            f"perf_ns={perf_ns:.3f} delta={delta:.3f} tol={tol:.3f}"
         )
-        if delta > args.tolerance:
+        if delta > tol:
             print(f"compare: FAIL at GEMM[{label}] (outside tolerance)", file=sys.stderr)
             return 1
     print(f"compare: compared {len(perf_entries)} GEMM op(s), max_delta={max_delta:.3f}")

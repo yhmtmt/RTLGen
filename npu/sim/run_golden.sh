@@ -23,6 +23,7 @@ GEMM2_TRACE="${REPO_ROOT}/npu/sim/perf/golden_gemm_v2_two_trace.json"
 GEMM2_RTL_LOG="${REPO_ROOT}/npu/sim/rtl/golden_gemm_v2_two_rtl.log"
 GEMM_OOO_TRACE="${REPO_ROOT}/npu/sim/perf/golden_gemm_v2_ooo_trace.json"
 GEMM_OOO_RTL_LOG="${REPO_ROOT}/npu/sim/rtl/golden_gemm_v2_ooo_rtl.log"
+GEMM_OOO_TOL="${REPO_ROOT}/npu/sim/perf/golden_gemm_v2_ooo_tolerance.json"
 PERF_CFG="${REPO_ROOT}/npu/sim/perf/example_config.json"
 CLK_NS=$(REPO_ROOT="${REPO_ROOT}" python3 - <<'PY'
 import json
@@ -68,6 +69,7 @@ python3 "${REPO_ROOT}/npu/sim/perf/compare_gemm_timing.py" --rtl-log "${GEMM2_RT
 python3 "${REPO_ROOT}/npu/sim/perf/run.py" --bin "${GEMM_OOO_BIN}" \
   --out "${GEMM_OOO_TRACE}" --config "${PERF_CFG}"
 python3 "${REPO_ROOT}/npu/sim/perf/compare_gemm_timing.py" --rtl-log "${GEMM_OOO_RTL_LOG}" --clk-ns "${CLK_NS}" \
-  --perf-trace "${GEMM_OOO_TRACE}" --tolerance 2.0
+  --perf-trace "${GEMM_OOO_TRACE}" --tolerance 0.9 \
+  --tolerance-map "${GEMM_OOO_TOL}" --require-order-change
 
 echo "golden flow: ok"
