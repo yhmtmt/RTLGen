@@ -129,14 +129,18 @@ module tb_npu_shell;
   reg [31:0] gemm_log_tag;
   integer gemm_log_offset;
   reg [63:0] gemm_log_uid;
+  integer gemm_lookup_i;
   integer scan_off;
   integer scan_size;
   integer scan_iter;
   reg [7:0] scan_opcode;
   reg [31:0] scan_tag;
   reg [63:0] sim_cycle;
-  reg gemm_pending_prev;
-  reg [63:0] gemm_start_cycle;
+  reg [1:0] gemm_slot_valid_prev;
+  reg [1:0] gemm_slot_done_prev;
+  reg [63:0] gemm_slot_start_cycle0;
+  reg [63:0] gemm_slot_start_cycle1;
+  reg [63:0] gemm_done_uid;
   reg [DATA_W-1:0] expected_dma_bytes;
   reg [63:0] expected_dma_src;
   reg [63:0] expected_dma_dst;
@@ -155,8 +159,10 @@ module tb_npu_shell;
     dma_resp_done = 0;
     saw_bvalid = 0;
     sim_cycle = 0;
-    gemm_pending_prev = 1'b0;
-    gemm_start_cycle = 0;
+    gemm_slot_valid_prev = 2'b00;
+    gemm_slot_done_prev = 2'b00;
+    gemm_slot_start_cycle0 = 0;
+    gemm_slot_start_cycle1 = 0;
     gemm_count = 0;
     gemm_desc_count = 0;
     #(CLK_PERIOD*4);
@@ -380,6 +386,21 @@ module tb_npu_shell;
       end
     end
 
+    // With multi-inflight GEMM, IRQ/CQ may complete before GEMM compute finishes.
+    // Wait for all GEMM descriptors to emit completion timing lines.
+    if (gemm_desc_count > 0) begin : wait_gemm_done
+      integer w;
+      for (w = 0; w < 2000; w = w + 1) begin
+        @(negedge clk);
+        if (gemm_count >= gemm_desc_count)
+          disable wait_gemm_done;
+      end
+      if (gemm_count < gemm_desc_count) begin
+        $display("ERROR: GEMM completion timeout count=%0d expected=%0d", gemm_count, gemm_desc_count);
+        $finish(1);
+      end
+    end
+
     // Allow negedge timing monitor to emit final GEMM_TIMING line before finish.
     @(negedge clk);
     $display("PASS: RTL shell bring-up complete");
@@ -435,27 +456,68 @@ module tb_npu_shell;
   // Sample on negedge so DUT's non-blocking assignments from posedge are visible.
   always @(negedge clk) begin
     if (!rst_n) begin
-      gemm_pending_prev <= 1'b0;
-      gemm_start_cycle <= 0;
+      gemm_slot_valid_prev <= 2'b00;
+      gemm_slot_done_prev <= 2'b00;
+      gemm_slot_start_cycle0 <= 0;
+      gemm_slot_start_cycle1 <= 0;
       gemm_count <= 0;
     end else begin
-      if (!gemm_pending_prev && dut.gemm_pending) begin
-        gemm_start_cycle <= sim_cycle;
+      if (!gemm_slot_valid_prev[0] && dut.gemm_slot_valid[0]) begin
+        gemm_slot_start_cycle0 <= sim_cycle;
       end
-      if (gemm_pending_prev && !dut.gemm_pending) begin
+      if (!gemm_slot_valid_prev[1] && dut.gemm_slot_valid[1]) begin
+        gemm_slot_start_cycle1 <= sim_cycle;
+      end
+      if (!gemm_slot_done_prev[0] && dut.gemm_slot_done[0]) begin
+        gemm_done_uid = dut.gemm_slot_uid0;
         gemm_log_tag = 32'hFFFF_FFFF;
         gemm_log_offset = -1;
         gemm_log_uid = 64'hFFFF_FFFF_FFFF_FFFF;
-        if (gemm_count < gemm_desc_count) begin
+        if (gemm_done_uid != 64'hFFFF_FFFF_FFFF_FFFF) begin
+          for (gemm_lookup_i = 0; gemm_lookup_i < gemm_desc_count; gemm_lookup_i = gemm_lookup_i + 1) begin
+            if (gemm_desc_uids[gemm_lookup_i] == gemm_done_uid) begin
+              gemm_log_uid = gemm_desc_uids[gemm_lookup_i];
+              gemm_log_tag = gemm_desc_tags[gemm_lookup_i];
+              gemm_log_offset = gemm_desc_offsets[gemm_lookup_i];
+            end
+          end
+        end
+        if ((gemm_log_offset < 0) && (gemm_count < gemm_desc_count)) begin
+          gemm_log_uid = gemm_desc_uids[gemm_count];
           gemm_log_tag = gemm_desc_tags[gemm_count];
           gemm_log_offset = gemm_desc_offsets[gemm_count];
-          gemm_log_uid = gemm_desc_uids[gemm_count];
         end
-        gemm_count <= gemm_count + 1;
+        gemm_count = gemm_count + 1;
         $display("GEMM_TIMING index=%0d op_uid=0x%016h tag=0x%08h offset=%0d start_cycle=%0d end_cycle=%0d cycles=%0d",
-                 (gemm_count + 1), gemm_log_uid, gemm_log_tag, gemm_log_offset, gemm_start_cycle, sim_cycle, (sim_cycle - gemm_start_cycle));
+                 gemm_count, gemm_log_uid, gemm_log_tag, gemm_log_offset,
+                 gemm_slot_start_cycle0, sim_cycle, (sim_cycle - gemm_slot_start_cycle0));
       end
-      gemm_pending_prev <= dut.gemm_pending;
+      if (!gemm_slot_done_prev[1] && dut.gemm_slot_done[1]) begin
+        gemm_done_uid = dut.gemm_slot_uid1;
+        gemm_log_tag = 32'hFFFF_FFFF;
+        gemm_log_offset = -1;
+        gemm_log_uid = 64'hFFFF_FFFF_FFFF_FFFF;
+        if (gemm_done_uid != 64'hFFFF_FFFF_FFFF_FFFF) begin
+          for (gemm_lookup_i = 0; gemm_lookup_i < gemm_desc_count; gemm_lookup_i = gemm_lookup_i + 1) begin
+            if (gemm_desc_uids[gemm_lookup_i] == gemm_done_uid) begin
+              gemm_log_uid = gemm_desc_uids[gemm_lookup_i];
+              gemm_log_tag = gemm_desc_tags[gemm_lookup_i];
+              gemm_log_offset = gemm_desc_offsets[gemm_lookup_i];
+            end
+          end
+        end
+        if ((gemm_log_offset < 0) && (gemm_count < gemm_desc_count)) begin
+          gemm_log_uid = gemm_desc_uids[gemm_count];
+          gemm_log_tag = gemm_desc_tags[gemm_count];
+          gemm_log_offset = gemm_desc_offsets[gemm_count];
+        end
+        gemm_count = gemm_count + 1;
+        $display("GEMM_TIMING index=%0d op_uid=0x%016h tag=0x%08h offset=%0d start_cycle=%0d end_cycle=%0d cycles=%0d",
+                 gemm_count, gemm_log_uid, gemm_log_tag, gemm_log_offset,
+                 gemm_slot_start_cycle1, sim_cycle, (sim_cycle - gemm_slot_start_cycle1));
+      end
+      gemm_slot_valid_prev <= dut.gemm_slot_valid;
+      gemm_slot_done_prev <= dut.gemm_slot_done;
     end
   end
 

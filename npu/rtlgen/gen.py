@@ -48,9 +48,25 @@ module {top_name} (
   reg        dma_pending;
   reg [2:0]  dma_state;
   reg        gemm_pending;
-  reg        gemm_dma_kick;
-  reg [31:0] gemm_cycles;
-  reg [31:0] gemm_bytes;
+  reg [1:0]  gemm_slot_valid;
+  reg [1:0]  gemm_slot_done;
+  reg [31:0] gemm_slot_cycles0;
+  reg [31:0] gemm_slot_cycles1;
+  reg [63:0] gemm_slot_uid0;
+  reg [63:0] gemm_slot_uid1;
+  reg [{dma_addr_width_minus1}:0] gemm_slot_src0;
+  reg [{dma_addr_width_minus1}:0] gemm_slot_src1;
+  reg [{dma_addr_width_minus1}:0] gemm_slot_dst0;
+  reg [{dma_addr_width_minus1}:0] gemm_slot_dst1;
+  reg [31:0] gemm_slot_size0;
+  reg [31:0] gemm_slot_size1;
+  reg [8:0]  gemm_slot_beats0;
+  reg [8:0]  gemm_slot_beats1;
+  reg [7:0]  gemm_slot_arlen0;
+  reg [7:0]  gemm_slot_arlen1;
+  reg        gemm_dma_sel;
+  reg        gemm_done_pulse;
+  reg [63:0] gemm_done_uid;
   reg [{axi_data_width_minus1}:0] dma_buf;
   reg [8:0]  dma_beats;
   reg [8:0]  dma_beats_left;
@@ -123,9 +139,25 @@ module {top_name} (
       dma_pending <= 0;
       dma_state <= 0;
       gemm_pending <= 0;
-      gemm_dma_kick <= 0;
-      gemm_cycles <= 0;
-      gemm_bytes <= 0;
+      gemm_slot_valid <= 0;
+      gemm_slot_done <= 0;
+      gemm_slot_cycles0 <= 0;
+      gemm_slot_cycles1 <= 0;
+      gemm_slot_uid0 <= 0;
+      gemm_slot_uid1 <= 0;
+      gemm_slot_src0 <= 0;
+      gemm_slot_src1 <= 0;
+      gemm_slot_dst0 <= 0;
+      gemm_slot_dst1 <= 0;
+      gemm_slot_size0 <= 0;
+      gemm_slot_size1 <= 0;
+      gemm_slot_beats0 <= 0;
+      gemm_slot_beats1 <= 0;
+      gemm_slot_arlen0 <= 0;
+      gemm_slot_arlen1 <= 0;
+      gemm_dma_sel <= 0;
+      gemm_done_pulse <= 0;
+      gemm_done_uid <= 0;
       dma_buf <= 0;
       dma_beats <= 0;
       dma_beats_left <= 0;
@@ -172,7 +204,7 @@ module {top_name} (
         status <= STATUS_ERR;
         irq_status[IRQ_ERROR] <= 1'b1;
       end else if (!(mmio_we && mmio_addr == OFF_DOORBELL)) begin
-        if ((cq_count != 0) || cq_stage_valid || dma_pending || gemm_pending) begin
+        if ((cq_count != 0) || cq_stage_valid || dma_pending || (gemm_slot_valid != 2'b00)) begin
           status <= STATUS_BUSY;
         end else begin
           status <= STATUS_IDLE;
@@ -550,23 +582,61 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         dma_handshake = ""
         dma_kick = ""
 
-    gemm_update = """      if (gemm_pending) begin
-        if (gemm_cycles != 0) begin
-          gemm_cycles <= gemm_cycles - 1;
-          if (gemm_cycles == 1) begin
-            gemm_pending <= 1'b0;
-            if (gemm_dma_kick) begin
-              dma_pending <= 1'b1;
-              gemm_dma_kick <= 1'b0;
-            end else begin
-              irq_status[IRQ_EVENT] <= 1'b1;
-            end
+    gemm_update = """      // Two-slot GEMM stub with OOO-capable completion scheduling.
+      gemm_done_pulse <= 1'b0;
+      if (gemm_slot_valid[0] && !gemm_slot_done[0]) begin
+        if (gemm_slot_cycles0 != 0) begin
+          gemm_slot_cycles0 <= gemm_slot_cycles0 - 1;
+          if (gemm_slot_cycles0 == 1) begin
+            gemm_slot_done[0] <= 1'b1;
+            gemm_done_pulse <= 1'b1;
+            gemm_done_uid <= gemm_slot_uid0;
           end
         end else begin
-          gemm_pending <= 1'b0;
-          gemm_dma_kick <= 1'b0;
+          gemm_slot_done[0] <= 1'b1;
+          gemm_done_pulse <= 1'b1;
+          gemm_done_uid <= gemm_slot_uid0;
         end
-      end"""
+      end
+      if (gemm_slot_valid[1] && !gemm_slot_done[1]) begin
+        if (gemm_slot_cycles1 != 0) begin
+          gemm_slot_cycles1 <= gemm_slot_cycles1 - 1;
+          if (gemm_slot_cycles1 == 1) begin
+            gemm_slot_done[1] <= 1'b1;
+            gemm_done_pulse <= 1'b1;
+            gemm_done_uid <= gemm_slot_uid1;
+          end
+        end else begin
+          gemm_slot_done[1] <= 1'b1;
+          gemm_done_pulse <= 1'b1;
+          gemm_done_uid <= gemm_slot_uid1;
+        end
+      end
+      // Prefer slot1 if both are done, so completion order can differ from issue order.
+      if (!dma_pending) begin
+        if (gemm_slot_done[1]) begin
+          dma_src <= gemm_slot_src1;
+          dma_dst <= gemm_slot_dst1;
+          dma_size <= gemm_slot_size1;
+          dma_beats <= gemm_slot_beats1;
+          dma_arlen <= gemm_slot_arlen1;
+          dma_pending <= 1'b1;
+          gemm_slot_valid[1] <= 1'b0;
+          gemm_slot_done[1] <= 1'b0;
+          gemm_dma_sel <= 1'b1;
+        end else if (gemm_slot_done[0]) begin
+          dma_src <= gemm_slot_src0;
+          dma_dst <= gemm_slot_dst0;
+          dma_size <= gemm_slot_size0;
+          dma_beats <= gemm_slot_beats0;
+          dma_arlen <= gemm_slot_arlen0;
+          dma_pending <= 1'b1;
+          gemm_slot_valid[0] <= 1'b0;
+          gemm_slot_done[0] <= 1'b0;
+          gemm_dma_sel <= 1'b0;
+        end
+      end
+      gemm_pending <= (gemm_slot_valid != 2'b00);"""
 
     if enable_cq_mem_ports:
         cq_mem_ports = f""",
@@ -604,29 +674,53 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
               dma_pending <= 1'b1;
             end else if (cq_mem_rdata[7:0] == 8'h10) begin
               // GEMM stub: v0.1 sizes packed in TAG.
-              gemm_pending <= 1'b1;
-              if ((cq_mem_rdata[63:52] == 0) || (cq_mem_rdata[51:42] == 0) || (cq_mem_rdata[41:32] == 0)) begin
-                gemm_cycles <= 1;
+              if (!gemm_slot_valid[0]) begin
+                gemm_slot_valid[0] <= 1'b1;
+                gemm_slot_done[0] <= 1'b0;
+                gemm_slot_uid0 <= 64'h0;
+                if ((cq_mem_rdata[63:52] == 0) || (cq_mem_rdata[51:42] == 0) || (cq_mem_rdata[41:32] == 0)) begin
+                  gemm_slot_cycles0 <= 1;
+                end else begin
+                  gemm_slot_cycles0 <= (((cq_mem_rdata[63:52] * cq_mem_rdata[51:42] * cq_mem_rdata[41:32]) >> 10) + 1);
+                end
+                gemm_slot_src0 <= cq_mem_rdata[127:64];
+                gemm_slot_dst0 <= cq_mem_rdata[255:192];
+                gemm_slot_size0 <= ((cq_mem_rdata[11:8] == 4'h1 || cq_mem_rdata[11:8] == 4'h2)
+                                    ? (cq_mem_rdata[63:52] * cq_mem_rdata[51:42] * 2)
+                                    : (cq_mem_rdata[63:52] * cq_mem_rdata[51:42]));
+                gemm_slot_beats0 <= (((((cq_mem_rdata[11:8] == 4'h1 || cq_mem_rdata[11:8] == 4'h2)
+                                        ? (cq_mem_rdata[63:52] * cq_mem_rdata[51:42] * 2)
+                                        : (cq_mem_rdata[63:52] * cq_mem_rdata[51:42]))
+                                       + AXI_BEAT_BYTES - 1) >> {axi_size}));
+                gemm_slot_arlen0 <= (((((cq_mem_rdata[11:8] == 4'h1 || cq_mem_rdata[11:8] == 4'h2)
+                                        ? (cq_mem_rdata[63:52] * cq_mem_rdata[51:42] * 2)
+                                        : (cq_mem_rdata[63:52] * cq_mem_rdata[51:42]))
+                                       + AXI_BEAT_BYTES - 1) >> {axi_size}) - 1);
+              end else if (!gemm_slot_valid[1]) begin
+                gemm_slot_valid[1] <= 1'b1;
+                gemm_slot_done[1] <= 1'b0;
+                gemm_slot_uid1 <= 64'h0;
+                if ((cq_mem_rdata[63:52] == 0) || (cq_mem_rdata[51:42] == 0) || (cq_mem_rdata[41:32] == 0)) begin
+                  gemm_slot_cycles1 <= 1;
+                end else begin
+                  gemm_slot_cycles1 <= (((cq_mem_rdata[63:52] * cq_mem_rdata[51:42] * cq_mem_rdata[41:32]) >> 10) + 1);
+                end
+                gemm_slot_src1 <= cq_mem_rdata[127:64];
+                gemm_slot_dst1 <= cq_mem_rdata[255:192];
+                gemm_slot_size1 <= ((cq_mem_rdata[11:8] == 4'h1 || cq_mem_rdata[11:8] == 4'h2)
+                                    ? (cq_mem_rdata[63:52] * cq_mem_rdata[51:42] * 2)
+                                    : (cq_mem_rdata[63:52] * cq_mem_rdata[51:42]));
+                gemm_slot_beats1 <= (((((cq_mem_rdata[11:8] == 4'h1 || cq_mem_rdata[11:8] == 4'h2)
+                                        ? (cq_mem_rdata[63:52] * cq_mem_rdata[51:42] * 2)
+                                        : (cq_mem_rdata[63:52] * cq_mem_rdata[51:42]))
+                                       + AXI_BEAT_BYTES - 1) >> {axi_size}));
+                gemm_slot_arlen1 <= (((((cq_mem_rdata[11:8] == 4'h1 || cq_mem_rdata[11:8] == 4'h2)
+                                        ? (cq_mem_rdata[63:52] * cq_mem_rdata[51:42] * 2)
+                                        : (cq_mem_rdata[63:52] * cq_mem_rdata[51:42]))
+                                       + AXI_BEAT_BYTES - 1) >> {axi_size}) - 1);
               end else begin
-                gemm_cycles <= (((cq_mem_rdata[63:52] * cq_mem_rdata[51:42] * cq_mem_rdata[41:32]) >> 10) + 1);
+                error_code <= 32'h2; // GEMM in-flight queue full
               end
-              gemm_bytes <= ((cq_mem_rdata[11:8] == 4'h1 || cq_mem_rdata[11:8] == 4'h2)
-                             ? (cq_mem_rdata[63:52] * cq_mem_rdata[51:42] * 2)
-                             : (cq_mem_rdata[63:52] * cq_mem_rdata[51:42]));
-              dma_src <= cq_mem_rdata[127:64];
-              dma_dst <= cq_mem_rdata[255:192];
-              dma_size <= ((cq_mem_rdata[11:8] == 4'h1 || cq_mem_rdata[11:8] == 4'h2)
-                           ? (cq_mem_rdata[63:52] * cq_mem_rdata[51:42] * 2)
-                           : (cq_mem_rdata[63:52] * cq_mem_rdata[51:42]));
-              dma_beats <= (((((cq_mem_rdata[11:8] == 4'h1 || cq_mem_rdata[11:8] == 4'h2)
-                               ? (cq_mem_rdata[63:52] * cq_mem_rdata[51:42] * 2)
-                               : (cq_mem_rdata[63:52] * cq_mem_rdata[51:42]))
-                              + AXI_BEAT_BYTES - 1) >> {axi_size}));
-              dma_arlen <= (((((cq_mem_rdata[11:8] == 4'h1 || cq_mem_rdata[11:8] == 4'h2)
-                               ? (cq_mem_rdata[63:52] * cq_mem_rdata[51:42] * 2)
-                               : (cq_mem_rdata[63:52] * cq_mem_rdata[51:42]))
-                              + AXI_BEAT_BYTES - 1) >> {axi_size}) - 1);
-              gemm_dma_kick <= 1'b1;
             end else if (cq_mem_rdata[7:0] == 8'h20) begin
               // EVENT_SIGNAL: immediately signal
               irq_status[IRQ_EVENT] <= 1'b1;
@@ -656,29 +750,56 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
             last_op_uid <= cq_mem_rdata[255:192];
             if (cq_word0[7:0] == 8'h10) begin
               // GEMM stub: v0.2 sizes in extension.
-              gemm_pending <= 1'b1;
-              if ((cq_mem_rdata[31:0] == 0) || (cq_mem_rdata[63:32] == 0) || (cq_mem_rdata[95:64] == 0)) begin
-                gemm_cycles <= 1;
+              if (!gemm_slot_valid[0]) begin
+                gemm_slot_valid[0] <= 1'b1;
+                gemm_slot_done[0] <= 1'b0;
+                gemm_slot_uid0 <= cq_mem_rdata[255:192];
+                if ((cq_mem_rdata[31:0] == 0) || (cq_mem_rdata[63:32] == 0) || (cq_mem_rdata[95:64] == 0)) begin
+                  gemm_slot_cycles0 <= 1;
+                end else begin
+                  // Optional UID-based jitter (bit63) to exercise OOO completion in tests.
+                  gemm_slot_cycles0 <= (((cq_mem_rdata[31:0] * cq_mem_rdata[63:32] * cq_mem_rdata[95:64]) >> 10)
+                                        + 1 + (cq_mem_rdata[255] ? 8 : 0));
+                end
+                gemm_slot_src0 <= cq_word0[127:64];
+                gemm_slot_dst0 <= cq_word0[255:192];
+                gemm_slot_size0 <= ((cq_word0[11:8] == 4'h1 || cq_word0[11:8] == 4'h2)
+                                    ? (cq_mem_rdata[31:0] * cq_mem_rdata[63:32] * 2)
+                                    : (cq_mem_rdata[31:0] * cq_mem_rdata[63:32]));
+                gemm_slot_beats0 <= (((((cq_word0[11:8] == 4'h1 || cq_word0[11:8] == 4'h2)
+                                        ? (cq_mem_rdata[31:0] * cq_mem_rdata[63:32] * 2)
+                                        : (cq_mem_rdata[31:0] * cq_mem_rdata[63:32]))
+                                       + AXI_BEAT_BYTES - 1) >> {axi_size}));
+                gemm_slot_arlen0 <= (((((cq_word0[11:8] == 4'h1 || cq_word0[11:8] == 4'h2)
+                                        ? (cq_mem_rdata[31:0] * cq_mem_rdata[63:32] * 2)
+                                        : (cq_mem_rdata[31:0] * cq_mem_rdata[63:32]))
+                                       + AXI_BEAT_BYTES - 1) >> {axi_size}) - 1);
+              end else if (!gemm_slot_valid[1]) begin
+                gemm_slot_valid[1] <= 1'b1;
+                gemm_slot_done[1] <= 1'b0;
+                gemm_slot_uid1 <= cq_mem_rdata[255:192];
+                if ((cq_mem_rdata[31:0] == 0) || (cq_mem_rdata[63:32] == 0) || (cq_mem_rdata[95:64] == 0)) begin
+                  gemm_slot_cycles1 <= 1;
+                end else begin
+                  gemm_slot_cycles1 <= (((cq_mem_rdata[31:0] * cq_mem_rdata[63:32] * cq_mem_rdata[95:64]) >> 10)
+                                        + 1 + (cq_mem_rdata[255] ? 8 : 0));
+                end
+                gemm_slot_src1 <= cq_word0[127:64];
+                gemm_slot_dst1 <= cq_word0[255:192];
+                gemm_slot_size1 <= ((cq_word0[11:8] == 4'h1 || cq_word0[11:8] == 4'h2)
+                                    ? (cq_mem_rdata[31:0] * cq_mem_rdata[63:32] * 2)
+                                    : (cq_mem_rdata[31:0] * cq_mem_rdata[63:32]));
+                gemm_slot_beats1 <= (((((cq_word0[11:8] == 4'h1 || cq_word0[11:8] == 4'h2)
+                                        ? (cq_mem_rdata[31:0] * cq_mem_rdata[63:32] * 2)
+                                        : (cq_mem_rdata[31:0] * cq_mem_rdata[63:32]))
+                                       + AXI_BEAT_BYTES - 1) >> {axi_size}));
+                gemm_slot_arlen1 <= (((((cq_word0[11:8] == 4'h1 || cq_word0[11:8] == 4'h2)
+                                        ? (cq_mem_rdata[31:0] * cq_mem_rdata[63:32] * 2)
+                                        : (cq_mem_rdata[31:0] * cq_mem_rdata[63:32]))
+                                       + AXI_BEAT_BYTES - 1) >> {axi_size}) - 1);
               end else begin
-                gemm_cycles <= (((cq_mem_rdata[31:0] * cq_mem_rdata[63:32] * cq_mem_rdata[95:64]) >> 10) + 1);
+                error_code <= 32'h2; // GEMM in-flight queue full
               end
-              gemm_bytes <= ((cq_word0[11:8] == 4'h1 || cq_word0[11:8] == 4'h2)
-                             ? (cq_mem_rdata[31:0] * cq_mem_rdata[63:32] * 2)
-                             : (cq_mem_rdata[31:0] * cq_mem_rdata[63:32]));
-              dma_src <= cq_word0[127:64];
-              dma_dst <= cq_word0[255:192];
-              dma_size <= ((cq_word0[11:8] == 4'h1 || cq_word0[11:8] == 4'h2)
-                           ? (cq_mem_rdata[31:0] * cq_mem_rdata[63:32] * 2)
-                           : (cq_mem_rdata[31:0] * cq_mem_rdata[63:32]));
-              dma_beats <= (((((cq_word0[11:8] == 4'h1 || cq_word0[11:8] == 4'h2)
-                               ? (cq_mem_rdata[31:0] * cq_mem_rdata[63:32] * 2)
-                               : (cq_mem_rdata[31:0] * cq_mem_rdata[63:32]))
-                              + AXI_BEAT_BYTES - 1) >> {axi_size}));
-              dma_arlen <= (((((cq_word0[11:8] == 4'h1 || cq_word0[11:8] == 4'h2)
-                               ? (cq_mem_rdata[31:0] * cq_mem_rdata[63:32] * 2)
-                               : (cq_mem_rdata[31:0] * cq_mem_rdata[63:32]))
-                              + AXI_BEAT_BYTES - 1) >> {axi_size}) - 1);
-              gemm_dma_kick <= 1'b1;
             end else begin
               error_code <= 32'h1;
             end
