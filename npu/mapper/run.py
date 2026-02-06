@@ -63,7 +63,7 @@ def build_buffer_map(doc: Dict[str, Any]) -> Dict[str, int]:
     return buf_map
 
 
-def emit_desc(op: Dict[str, Any], buf_map: Dict[str, int]) -> Dict[str, Any]:
+def emit_desc(op: Dict[str, Any], buf_map: Dict[str, int], default_gemm_uid: int = 0) -> Dict[str, Any]:
     otype = op["type"]
     desc: Dict[str, Any] = {
         "opcode": OPCODES[otype],
@@ -130,6 +130,8 @@ def emit_desc(op: Dict[str, Any], buf_map: Dict[str, int]) -> Dict[str, Any]:
                 "lda": int(op.get("lda", 0)),
                 "ldb": int(op.get("ldb", 0)),
                 "ldc": int(op.get("ldc", 0)),
+                # Extension bytes [56..63]: stable per-op UID for OOO-safe matching.
+                "op_uid": int(op.get("op_uid", default_gemm_uid)) & 0xFFFFFFFFFFFFFFFF,
                 "bias_addr": buf_map[op["bias"]] if op.get("bias") else 0,
                 "alpha": float(op.get("alpha", 0.0)) if has_alpha else 0.0,
                 "beta": float(op.get("beta", 0.0)) if has_beta else 0.0,
@@ -227,6 +229,7 @@ def pack_descriptor(desc: Dict[str, Any]) -> bytes:
                 int(fields.get("ldb", 0)),
                 int(fields.get("ldc", 0)),
             )
+            struct.pack_into("<Q", data, 56, int(fields.get("op_uid", 0)))
         if size_units >= 3:
             struct.pack_into("<Q", data, 64, int(fields.get("bias_addr", 0)))
             struct.pack_into("<f", data, 72, float(fields.get("alpha", 0.0)))
@@ -342,7 +345,14 @@ def main() -> int:
     ops = expand_deps(doc, ops)
     ops = insert_signal_events(doc, ops)
 
-    descs = [emit_desc(op, buf_map) for op in ops]
+    descs = []
+    next_gemm_uid = 1
+    for op in ops:
+        op_uid = 0
+        if op.get("type") == "gemm":
+            op_uid = next_gemm_uid
+            next_gemm_uid += 1
+        descs.append(emit_desc(op, buf_map, op_uid))
     out_doc = {"version": 0.1, "descriptors": descs}
 
     if args.out_bin:

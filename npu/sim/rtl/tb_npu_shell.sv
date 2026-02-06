@@ -125,8 +125,10 @@ module tb_npu_shell;
   integer gemm_desc_count;
   integer gemm_desc_offsets [0:127];
   reg [31:0] gemm_desc_tags [0:127];
+  reg [63:0] gemm_desc_uids [0:127];
   reg [31:0] gemm_log_tag;
   integer gemm_log_offset;
+  reg [63:0] gemm_log_uid;
   integer scan_off;
   integer scan_size;
   integer scan_iter;
@@ -268,6 +270,14 @@ module tb_npu_shell;
         scan_tag = {bin_data[scan_off + 7], bin_data[scan_off + 6], bin_data[scan_off + 5], bin_data[scan_off + 4]};
         gemm_desc_tags[gemm_desc_count] = scan_tag;
         gemm_desc_offsets[gemm_desc_count] = scan_off;
+        if (scan_size >= 2) begin
+          gemm_desc_uids[gemm_desc_count] = {
+            bin_data[scan_off + 63], bin_data[scan_off + 62], bin_data[scan_off + 61], bin_data[scan_off + 60],
+            bin_data[scan_off + 59], bin_data[scan_off + 58], bin_data[scan_off + 57], bin_data[scan_off + 56]
+          };
+        end else begin
+          gemm_desc_uids[gemm_desc_count] = 64'hFFFF_FFFF_FFFF_FFFF;
+        end
         gemm_desc_count = gemm_desc_count + 1;
       end
       scan_off = scan_off + (scan_size * 32);
@@ -435,13 +445,15 @@ module tb_npu_shell;
       if (gemm_pending_prev && !dut.gemm_pending) begin
         gemm_log_tag = 32'hFFFF_FFFF;
         gemm_log_offset = -1;
+        gemm_log_uid = 64'hFFFF_FFFF_FFFF_FFFF;
         if (gemm_count < gemm_desc_count) begin
           gemm_log_tag = gemm_desc_tags[gemm_count];
           gemm_log_offset = gemm_desc_offsets[gemm_count];
+          gemm_log_uid = gemm_desc_uids[gemm_count];
         end
         gemm_count <= gemm_count + 1;
-        $display("GEMM_TIMING index=%0d tag=0x%08h offset=%0d start_cycle=%0d end_cycle=%0d cycles=%0d",
-                 (gemm_count + 1), gemm_log_tag, gemm_log_offset, gemm_start_cycle, sim_cycle, (sim_cycle - gemm_start_cycle));
+        $display("GEMM_TIMING index=%0d op_uid=0x%016h tag=0x%08h offset=%0d start_cycle=%0d end_cycle=%0d cycles=%0d",
+                 (gemm_count + 1), gemm_log_uid, gemm_log_tag, gemm_log_offset, gemm_start_cycle, sim_cycle, (sim_cycle - gemm_start_cycle));
       end
       gemm_pending_prev <= dut.gemm_pending;
     end

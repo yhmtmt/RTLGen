@@ -40,6 +40,7 @@ module {top_name} (
   reg [{dma_addr_width_minus1}:0] last_src;
   reg [{dma_addr_width_minus1}:0] last_dst;
   reg [31:0] last_size;
+  reg [63:0] last_op_uid;
   reg [{dma_addr_width_minus1}:0] dma_src;
   reg [{dma_addr_width_minus1}:0] dma_dst;
   reg [31:0] dma_size;
@@ -114,6 +115,7 @@ module {top_name} (
       last_src <= 0;
       last_dst <= 0;
       last_size <= 0;
+      last_op_uid <= 0;
       dma_src <= 0;
       dma_dst <= 0;
       dma_size <= 0;
@@ -588,6 +590,7 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
             last_src <= cq_mem_rdata[127:64];
             last_dst <= cq_mem_rdata[191:128];
             last_size <= cq_mem_rdata[223:192];
+            last_op_uid <= 0;
             if (cq_mem_rdata[7:0] == 8'h01) begin
               dma_req_valid <= 1'b1;
               dma_req_src <= cq_mem_rdata[127:64];
@@ -650,6 +653,7 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
             last_src <= cq_word0[127:64];
             last_dst <= cq_word0[191:128];
             last_size <= cq_mem_rdata[31:0];
+            last_op_uid <= cq_mem_rdata[255:192];
             if (cq_word0[7:0] == 8'h10) begin
               // GEMM stub: v0.2 sizes in extension.
               gemm_pending <= 1'b1;

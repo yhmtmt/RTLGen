@@ -6,6 +6,9 @@ import sys
 
 
 def _parse_rtl_entries_from_log(path: str) -> list[dict]:
+    pat_uid = re.compile(
+        r"\bGEMM_TIMING\b.*\bindex=(\d+)\b.*\bop_uid=0x([0-9a-fA-F]+)\b.*\btag=0x([0-9a-fA-F]+)\b.*\boffset=(-?\d+)\b.*\bcycles=(\d+)\b"
+    )
     pat_full = re.compile(
         r"\bGEMM_TIMING\b.*\bindex=(\d+)\b.*\btag=0x([0-9a-fA-F]+)\b.*\boffset=(-?\d+)\b.*\bcycles=(\d+)\b"
     )
@@ -13,11 +16,24 @@ def _parse_rtl_entries_from_log(path: str) -> list[dict]:
     entries = []
     with open(path, "r", encoding="utf-8") as f:
         for line in f:
+            m = pat_uid.search(line)
+            if m:
+                entries.append(
+                    {
+                        "index": int(m.group(1)),
+                        "op_uid": int(m.group(2), 16),
+                        "tag": int(m.group(3), 16),
+                        "offset": int(m.group(4)),
+                        "cycles": int(m.group(5)),
+                    }
+                )
+                continue
             m = pat_full.search(line)
             if m:
                 entries.append(
                     {
                         "index": int(m.group(1)),
+                        "op_uid": None,
                         "tag": int(m.group(2), 16),
                         "offset": int(m.group(3)),
                         "cycles": int(m.group(4)),
@@ -29,6 +45,7 @@ def _parse_rtl_entries_from_log(path: str) -> list[dict]:
                 entries.append(
                     {
                         "index": len(entries) + 1,
+                        "op_uid": None,
                         "tag": None,
                         "offset": None,
                         "cycles": int(m.group(1)),
@@ -40,6 +57,13 @@ def _parse_rtl_entries_from_log(path: str) -> list[dict]:
 
 
 def _choose_matching_mode(rtl_entries: list[dict], perf_entries: list[dict]) -> str:
+    rtl_uids = [e["op_uid"] for e in rtl_entries]
+    perf_uids = [e["op_uid"] for e in perf_entries]
+    if all(u is not None for u in rtl_uids + perf_uids):
+        if len(set(rtl_uids)) == len(rtl_uids) and len(set(perf_uids)) == len(perf_uids):
+            if set(rtl_uids) == set(perf_uids):
+                return "op_uid"
+
     rtl_tags = [e["tag"] for e in rtl_entries]
     perf_tags = [e["tag"] for e in perf_entries]
     if all(t is not None for t in rtl_tags + perf_tags):
@@ -58,6 +82,9 @@ def _choose_matching_mode(rtl_entries: list[dict], perf_entries: list[dict]) -> 
 
 
 def _match_entries(rtl_entries: list[dict], perf_entries: list[dict], mode: str) -> list[tuple[dict, dict]]:
+    if mode == "op_uid":
+        perf_by_uid = {int(e["op_uid"]): e for e in perf_entries}
+        return [(rtl, perf_by_uid[int(rtl["op_uid"])]) for rtl in rtl_entries]
     if mode == "tag":
         perf_by_tag = {int(e["tag"]): e for e in perf_entries}
         return [(rtl, perf_by_tag[int(rtl["tag"])]) for rtl in rtl_entries]
@@ -83,7 +110,7 @@ def main() -> int:
             print(f"compare: {e}", file=sys.stderr)
             return 2
     elif args.rtl_cycles is not None:
-        rtl_entries = [{"index": 1, "tag": None, "offset": None, "cycles": args.rtl_cycles}]
+        rtl_entries = [{"index": 1, "op_uid": None, "tag": None, "offset": None, "cycles": args.rtl_cycles}]
     else:
         print("compare: pass either --rtl-log or --rtl-cycles", file=sys.stderr)
         return 2
@@ -99,6 +126,7 @@ def main() -> int:
             perf_entries.append(
                 {
                     "index": perf_idx,
+                    "op_uid": int(ev["op_uid"]) if "op_uid" in ev else None,
                     "tag": int(ev["tag"]) if "tag" in ev else None,
                     "offset": int(ev["offset"]) if "offset" in ev else None,
                     "perf_ns": float(ev.get("duration_ns", 0.0)),
@@ -127,7 +155,7 @@ def main() -> int:
     for rtl, perf in matched:
         rtl_cycles = int(rtl["cycles"])
         perf_ns = float(perf["perf_ns"])
-        label = f"{mode}={rtl[mode]}" if mode in ("tag", "offset") and rtl.get(mode) is not None else f"index={rtl['index']}"
+        label = f"{mode}={rtl[mode]}" if mode in ("op_uid", "tag", "offset") and rtl.get(mode) is not None else f"index={rtl['index']}"
         if perf_ns <= 0:
             print(f"compare: perf GEMM[{label}] duration is zero", file=sys.stderr)
             return 2

@@ -139,10 +139,12 @@ def desc_to_event(desc, cfg):
         a = struct.unpack_from("<Q", raw, 8)[0]
         b = struct.unpack_from("<Q", raw, 16)[0]
         c = struct.unpack_from("<Q", raw, 24)[0]
+        op_uid = None
         if size_units >= 2 and len(raw) >= 64:
             m = struct.unpack_from("<I", raw, 32)[0]
             n = struct.unpack_from("<I", raw, 36)[0]
             k = struct.unpack_from("<I", raw, 40)[0]
+            op_uid = struct.unpack_from("<Q", raw, 56)[0]
         else:
             m, n, k = decode_gemm_tag(desc["tag"])
         event.update({
@@ -155,6 +157,8 @@ def desc_to_event(desc, cfg):
             "k": k,
             "duration_ns": model.gemm_time_ns(m, n, k, cfg),
         })
+        if op_uid is not None:
+            event["op_uid"] = op_uid
     elif opcode == 0x20:  # EVENT_SIGNAL
         event.update({
             "name": "EVENT_SIGNAL",
