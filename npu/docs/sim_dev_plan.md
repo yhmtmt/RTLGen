@@ -7,7 +7,7 @@ This plan defines two simulation schemes:
 
 ## Current status
 - RTL functional simulation path is implemented.
-- Performance simulation remains planned.
+- Performance simulation is implemented (analytical v0.1 under `npu/sim/perf/`).
 - Process note: re-run RTL simulation whenever `npu/rtlgen/gen.py` changes.
 - Mapper golden schedule validates cleanly (`npu/mapper/examples/golden_schedule.yml`).
 - Golden mapping sim flow: RTL (Makefile `BIN=`) and perf (`npu/sim/perf/run.py --bin`).
@@ -67,4 +67,6 @@ This plan defines two simulation schemes:
 - Shared error/IRQ semantics (from `npu/shell/spec.md`)
 
 ## Next steps
-- Implement analytical simulator stub under `npu/sim/perf/`.
+- Extend perf sim model coverage (VEC_OP / SOFTMAX) and refine the memory model
+  (latency/burst/outstanding).
+- Keep bandwidth parameterization documented in `npu/sim/perf/README.md`.

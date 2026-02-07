@@ -8,7 +8,8 @@ inside RTLGen. It complements `npu/setup.md`, which focuses on environment setup
 - RTL functional simulation path is implemented (MMIO/CQ/DMA + AXI).
 - SRAM address map + AXI router are integrated in RTL sim.
 - CACTI-based SRAM PPA estimation is integrated with scaling for >90nm.
-- Mapping and performance simulation are planned.
+- Mapper v0.1 schedule IR + descriptor emission is implemented (`npu/mapper/`).
+- Performance simulation (analytical) is implemented (`npu/sim/perf/`).
 
 ## 1) Architecture definition
 - Create or edit an NPU architecture config (YAML) under `npu/arch/examples/`.
@@ -31,12 +32,18 @@ inside RTLGen. It complements `npu/setup.md`, which focuses on environment setup
 - Record results in `runs/designs/` with unique design directories per experiment.
 
 ## 4) Mapping and scheduling
-- Map target benchmarks to the architecture using `npu/mapper/run.py`.
-- Produce a schedule IR and legality report (capacity, bandwidth, and alignment).
+- Current mapper entrypoint: `npu/mapper/run.py` consumes a **schedule IR**
+  (`npu/mapper/ir.md`) and emits:
+  - YAML descriptors (`--out`)
+  - binary 32B descriptor stream (`--out-bin`)
+- A graph-level mapper (e.g., ONNX → schedule IR) is a separate stage and is
+  implemented incrementally.
 
 ## 5) Abstracted simulation
-- Run the simulator (`npu/sim/`) with the schedule IR and architecture config.
-- Emit timeline metrics and resource utilization summaries.
+- Performance simulation:
+  - `npu/sim/perf/run.py` consumes the **binary descriptor stream** and emits a
+    JSON timing trace + summary.
+  - See `npu/sim/perf/README.md` for bandwidth units and DRAM↔HBM sweep presets.
 
 ## 5.1) RTL functional simulation (current)
 - Use `npu/sim/rtl/` to validate MMIO, CQ handling, DMA, and AXI memory behavior.

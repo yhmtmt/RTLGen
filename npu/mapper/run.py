@@ -58,8 +58,12 @@ def build_buffer_map(doc: Dict[str, Any]) -> Dict[str, int]:
     buf_map: Dict[str, int] = {}
     for buf in buffers:
         buf_id = buf["id"]
-        addr = int(buf["addr"])
-        buf_map[buf_id] = addr
+        addr = buf["addr"]
+        if isinstance(addr, str):
+            addr_int = int(addr, 0)
+        else:
+            addr_int = int(addr)
+        buf_map[buf_id] = addr_int
     return buf_map
 
 

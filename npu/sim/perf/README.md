@@ -34,6 +34,42 @@ make -f npu/sim/perf/Makefile test
 - `sram_metrics_json` may point to `runs/designs/sram/<id>/sram_metrics.json`
   (preferred) or a summary file with `max_access_time_ns`.
 
+### Bandwidth units
+All `*_bw_gbps` knobs are interpreted as effective **GB/s** (gigabytes per
+second), not Gbit/s.
+
+Implementation detail:
+- `time_s = bytes / (bw_gbps * 1e9)`
+
+Practical modeling guidance:
+- Use `dma_bw_gbps` for *external* memory traffic (DMA_COPY ops, DRAM-class).
+- Use `gemm_in_bw_gbps` / `gemm_out_bw_gbps` for *internal* feed/drain to the
+  GEMM engine (e.g., SRAM → compute) if you want to separate DRAM vs on-chip BW.
+
+### DRAM (130nm-era) → HBM sweep presets
+If you want a simple bound on "external memory", sweep `dma_bw_gbps`.
+
+Cheatsheet (single 64-bit channel, theoretical peak):
+- SDR SDRAM PC133: ~1.066 GB/s
+- DDR1 DDR-200/266/333/400: 1.6 / 2.1 / 2.7 / 3.2 GB/s
+
+HBM ballpark (per stack/placement, peak order-of-magnitude):
+- HBM3E-class: ~1200 GB/s
+- HBM4 JEDEC peak: ~2000 GB/s
+- Aggressive ceiling (vendor configs): ~2800 GB/s
+
+Suggested scenario set (effective GB/s):
+- Floor (DDR1): 3.2
+- Typical (modern DDR-class, placeholder until interface is fixed): 100
+- HBM3E: 1200
+- HBM4: 2000
+- Ceiling: 2800
+
+Note:
+- This wide sweep is mainly for Transformer-class workloads. For small MLP
+  sanity models, start with a single fixed `dma_bw_gbps` and only add sweeps
+  when needed.
+
 ### Example SRAM config (optional)
 ```json
 {

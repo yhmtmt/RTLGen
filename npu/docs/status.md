@@ -4,7 +4,7 @@
 Single-page snapshot of NPU development status for quick reference.
 
 <!-- STATUS_META_START -->
-Last updated: 2026-01-30
+Last updated: 2026-02-07
 Git: unknown
 <!-- STATUS_META_END -->
 
@@ -16,11 +16,14 @@ Git: unknown
 - **GEMM/Event**: stub decode paths raise IRQ_EVENT; basic TB coverage added.
 - **SRAM PPA**: CACTI flow integrated with >90nm scaling and aggregation.
 - **Mapper**: v0.1 IR and binary descriptor emission implemented.
-- **Performance sim**: planned.
+- **Performance sim**: implemented (`npu/sim/perf/`).
+  - Current op coverage: DMA_COPY, GEMM, EVENT_SIGNAL/WAIT, NOOP.
+  - Next op coverage: VEC_OP and SOFTMAX (perf modeling + descriptor flags).
 - **OpenROAD**: planned (block-level synthesis flow pending).
 
 ## Next steps
-- Implement performance simulator stub.
+- Extend performance sim op coverage (VEC_OP / SOFTMAX).
+- Refine external memory modeling (latency/burst/outstanding) and calibrate to PPA.
 - Add OpenROAD flow for DMA tile and CQ logic.
 - Extend descriptor decode to GEMM and event ops.
 - Add sky130hd SRAM macro generation and replace CACTI estimates for that PDK.
