@@ -2,6 +2,9 @@
 
 This project supports development inside a devcontainer, which provides a consistent Ubuntu-based environment with all necessary dependencies, including OpenROAD, pre-installed. Install Visual Studio Code and Docker on your system, then install the devcontainer plugin in Visual Studio Code. Building the development environment takes a long time because it downloads the OpenROAD source files and related libraries and builds them. For best results, use a broadband network connection.
 
+## Apple Silicon (M1/M2) note
+The current devcontainer setup downloads several **linux-x64** prebuilt tools (e.g. oss-cad-suite, KLayout .deb, OR-Tools, ONNX Runtime). On Apple Silicon Macs the container is therefore run as **`linux/amd64`** under emulation (slower, but consistent with the x86 Ubuntu environment).
+
 ## X11 Forwarding and ORFS
 
 Some design flows (such as those using `/orfs/flow`) require graphical applications. To enable X11 forwarding from the container to your host, run the following command on your host computer before starting the container:

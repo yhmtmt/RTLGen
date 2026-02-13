@@ -1,4 +1,6 @@
-FROM ubuntu:22.04
+# NOTE: This devcontainer currently relies on several prebuilt linux-x64 binaries.
+# On Apple Silicon (M1/M2), Docker Desktop will run this amd64 image under emulation.
+FROM --platform=linux/amd64 ubuntu:22.04
 
 # Prvent tzdata from prompting for geographic area
 ENV DEBIAN_FRONTEND=noninteractive
@@ -47,13 +49,13 @@ RUN apt-get update && \
     tk-dev \
     x11-apps \
     libx11-dev \
-    libxrender1 \
-    libxtst6 \
-    libxi6 \
-    xauth \    
-    iverilog \
-    gtkwave \
-    jq \
+	    libxrender1 \
+	    libxtst6 \
+	    libxi6 \
+	    xauth \
+	    iverilog \
+	    gtkwave \
+	    jq \
     libyaml-cpp-dev \
     tzdata && \
 
@@ -163,7 +165,7 @@ RUN if [ "$USE_CUDA" = "true" ]; then \
         mv onnxruntime-linux-x64-${ONNX_VERSION} /usr/local/onnxruntime; \
     fi
 # Install additional libraries required for FloPoCo
-RUN apt install -y libgmp-dev libmpfr-dev libmpfi-dev libblas-dev liblapack-dev libsolv-dev
+RUN apt-get update && apt-get install -y libgmp-dev libmpfr-dev libmpfi-dev libblas-dev liblapack-dev libsollya-dev
 
 ENV ONNXRUNTIME_DIR=/usr/local/onnxruntime
 ENV LD_LIBRARY_PATH=${ONNXRUNTIME_DIR}/lib:$LD_LIBRARY_PATH

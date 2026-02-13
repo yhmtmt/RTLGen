@@ -5,10 +5,10 @@
     "context": ".."
   },
   "mounts": [
-    "source=${localEnv:HOME}/.codex,target=/root/.codex,type=bind",
-    "source=${localEnv:HOME}/.grok,target=/root/.grok,type=bind"
+    "source=${localEnv:HOME}/.codex,target=/root/.codex,type=bind"
   ],
   "runArgs": [
+    "--platform=linux/amd64",
     "-e", "DISPLAY=${env:DISPLAY}",
     "-v", "/tmp/.X11-unix:/tmp/.X11-unix"
   ],

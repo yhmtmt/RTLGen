@@ -17,7 +17,31 @@ find_package(GTest REQUIRED)
 include_directories(${GTEST_INCLUDE_DIRS})
 
 # Add OR-Tools
-set(ORTOOLS_DIR /home/yhmtmt/work/or-tools_x86_64_Ubuntu-22.04_cpp_v9.10.4067)
+set(ORTOOLS_DIR "" CACHE PATH "OR-Tools install prefix (contains include/ and lib/ or lib64/)")
+if(NOT ORTOOLS_DIR)
+    if(DEFINED ENV{ORTOOLS_DIR} AND NOT "$ENV{ORTOOLS_DIR}" STREQUAL "")
+        set(ORTOOLS_DIR "$ENV{ORTOOLS_DIR}")
+    elseif(EXISTS "/usr/local/include/ortools")
+        set(ORTOOLS_DIR "/usr/local")
+    elseif(EXISTS "/home/yhmtmt/work/or-tools_x86_64_Ubuntu-22.04_cpp_v9.10.4067/include/ortools")
+        set(ORTOOLS_DIR "/home/yhmtmt/work/or-tools_x86_64_Ubuntu-22.04_cpp_v9.10.4067")
+    endif()
+endif()
+
+if(NOT ORTOOLS_DIR)
+    message(FATAL_ERROR "ORTOOLS_DIR not set. Set env ORTOOLS_DIR or pass -DORTOOLS_DIR=/path/to/or-tools.")
+endif()
+if(NOT EXISTS "${ORTOOLS_DIR}/include/ortools")
+    message(FATAL_ERROR "ORTOOLS_DIR='${ORTOOLS_DIR}' is invalid: missing ${ORTOOLS_DIR}/include/ortools")
+endif()
+
+if(EXISTS "${ORTOOLS_DIR}/lib")
+    set(ORTOOLS_LIB_DIR "${ORTOOLS_DIR}/lib")
+elseif(EXISTS "${ORTOOLS_DIR}/lib64")
+    set(ORTOOLS_LIB_DIR "${ORTOOLS_DIR}/lib64")
+else()
+    message(FATAL_ERROR "ORTOOLS_DIR='${ORTOOLS_DIR}' is invalid: missing lib/ or lib64/")
+endif()
 set(ONNXRUNTIME_DIR $ENV{ONNXRUNTIME_DIR})
 
 set(CONSTANT_MULTIPLICATION_SOURCES
@@ -33,13 +57,13 @@ target_include_directories(constant_multiplication
         ${PROJECT_SOURCE_DIR}/src/algorithms
         ${ORTOOLS_DIR}/include
 )
-target_link_directories(constant_multiplication PUBLIC ${ORTOOLS_DIR}/lib)
+target_link_directories(constant_multiplication PUBLIC ${ORTOOLS_LIB_DIR})
 target_link_libraries(constant_multiplication PUBLIC ortools)
 
 # Add the main executable
 add_executable(rtlgen apps/rtlgen_main.cpp src/rtlgen/multiplier.cpp src/rtlgen/adder.cpp src/rtlgen/config.cpp src/rtlgen/rtl_operations.cpp)
 target_include_directories(rtlgen PUBLIC ${ORTOOLS_DIR}/include ${PROJECT_SOURCE_DIR}/third_party/nlohmann_json/include ${ONNXRUNTIME_DIR}/include ${PROJECT_SOURCE_DIR}/src/rtlgen ${PROJECT_SOURCE_DIR}/src/algorithms)
-target_link_directories(rtlgen PUBLIC ${ORTOOLS_DIR}/lib ${ONNXRUNTIME_DIR}/lib)
+target_link_directories(rtlgen PUBLIC ${ORTOOLS_LIB_DIR} ${ONNXRUNTIME_DIR}/lib)
 target_link_libraries(rtlgen constant_multiplication ortools onnxruntime)
 
 set (CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR})
@@ -64,7 +88,7 @@ endif()
 # Add the test executable
 add_executable(test_boolexp tests/test_boolexp.cpp src/rtlgen/multiplier.cpp src/rtlgen/adder.cpp)
 target_include_directories(test_boolexp PUBLIC ${ORTOOLS_DIR}/include ${PROJECT_SOURCE_DIR}/third_party/nlohmann_json/include ${PROJECT_SOURCE_DIR}/src/rtlgen)
-target_link_directories(test_boolexp PUBLIC ${ORTOOLS_DIR}/lib)
+target_link_directories(test_boolexp PUBLIC ${ORTOOLS_LIB_DIR})
 target_link_libraries(test_boolexp ${GTEST_LIBRARIES} GTest::Main pthread ortools)
 
 # Add the test to CTest
@@ -73,12 +97,12 @@ add_test(NAME BoolExpTest COMMAND test_boolexp)
 # Add the test executable for adder
 add_executable(test_adder tests/test_adder.cpp src/rtlgen/adder.cpp)
 target_include_directories(test_adder PUBLIC ${ORTOOLS_DIR}/include ${PROJECT_SOURCE_DIR}/third_party/nlohmann_json/include ${PROJECT_SOURCE_DIR}/src/rtlgen)
-target_link_directories(test_adder PUBLIC ${ORTOOLS_DIR}/lib)
+target_link_directories(test_adder PUBLIC ${ORTOOLS_LIB_DIR})
 target_link_libraries(test_adder ${GTEST_LIBRARIES} GTest::Main pthread ortools)
 
 add_executable(test_multiplier tests/test_multiplier.cpp src/rtlgen/multiplier.cpp src/rtlgen/adder.cpp)
 target_include_directories(test_multiplier PUBLIC ${ORTOOLS_DIR}/include ${PROJECT_SOURCE_DIR}/third_party/nlohmann_json/include ${PROJECT_SOURCE_DIR}/src/rtlgen)
-target_link_directories(test_multiplier PUBLIC ${ORTOOLS_DIR}/lib)
+target_link_directories(test_multiplier PUBLIC ${ORTOOLS_LIB_DIR})
 target_link_libraries(test_multiplier ${GTEST_LIBRARIES} GTest::Main pthread ortools)
 
 add_test(NAME test_adder COMMAND test_adder)
@@ -86,26 +110,26 @@ add_test(NAME test_multiplier COMMAND test_multiplier)
 
 add_executable(test_onnx tests/test_onnx.cpp src/rtlgen/config.cpp)
 target_include_directories(test_onnx PUBLIC ${ORTOOLS_DIR}/include ${PROJECT_SOURCE_DIR}/third_party/nlohmann_json/include ${ONNXRUNTIME_DIR}/include ${PROJECT_SOURCE_DIR}/src/rtlgen)
-target_link_directories(test_onnx PUBLIC ${ORTOOLS_DIR}/lib  ${ONNXRUNTIME_DIR}/lib)
+target_link_directories(test_onnx PUBLIC ${ORTOOLS_LIB_DIR}  ${ONNXRUNTIME_DIR}/lib)
 
 target_link_libraries(test_onnx ${GTEST_LIBRARIES} GTest::Main pthread onnxruntime)
 
 add_test(NAME test_onnx COMMAND test_onnx)
 
 add_executable(mcm_cli apps/mcm_cli.cpp)
-target_link_directories(mcm_cli PUBLIC ${ORTOOLS_DIR}/lib)
+target_link_directories(mcm_cli PUBLIC ${ORTOOLS_LIB_DIR})
 target_link_libraries(mcm_cli PRIVATE constant_multiplication)
 
 add_executable(mcm_ilp_cli apps/mcm_ilp_cli.cpp)
-target_link_directories(mcm_ilp_cli PUBLIC ${ORTOOLS_DIR}/lib)
+target_link_directories(mcm_ilp_cli PUBLIC ${ORTOOLS_LIB_DIR})
 target_link_libraries(mcm_ilp_cli PRIVATE constant_multiplication)
 
 add_executable(cmvm_cli apps/cmvm_cli.cpp)
-target_link_directories(cmvm_cli PUBLIC ${ORTOOLS_DIR}/lib)
+target_link_directories(cmvm_cli PUBLIC ${ORTOOLS_LIB_DIR})
 target_link_libraries(cmvm_cli PRIVATE constant_multiplication)
 
 add_executable(test_mcm_and_cmvm tests/test_mcm_and_cmvm.cpp)
-target_link_directories(test_mcm_and_cmvm PUBLIC ${ORTOOLS_DIR}/lib)
+target_link_directories(test_mcm_and_cmvm PUBLIC ${ORTOOLS_LIB_DIR})
 target_link_libraries(test_mcm_and_cmvm PRIVATE constant_multiplication ${GTEST_LIBRARIES} GTest::Main pthread)
 add_test(NAME test_mcm_and_cmvm COMMAND test_mcm_and_cmvm)
 
