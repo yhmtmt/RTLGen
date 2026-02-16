@@ -42,6 +42,13 @@ EPILOGUE_FLAGS = {
     "mul": 0x4,
 }
 
+VEC_OP_FLAGS = {
+    "relu": 0x0,
+    "add": 0x1,
+    "mul": 0x2,
+    "gelu": 0x3,
+}
+
 
 def pack_mnk(m: int, n: int, k: int) -> int:
     if not (0 <= m <= 0xFFF):
@@ -148,11 +155,16 @@ def emit_desc(op: Dict[str, Any], buf_map: Dict[str, int], default_gemm_uid: int
                 "c_addr": buf_map[op["c"]],
             }
     elif otype == "vec_op":
+        op_name = str(op["op"]).lower()
+        if op_name not in VEC_OP_FLAGS:
+            raise ValueError(f"unsupported vec_op op {op['op']}")
+        dtype = DTYPE_FLAGS[op["dtype"]]
+        desc["flags"] = ((dtype & 0xF) << 4) | (VEC_OP_FLAGS[op_name] & 0x3)
         desc["fields"] = {
             "src_addr": buf_map[op["src"]],
             "dst_addr": buf_map[op["dst"]],
             "size": int(op["bytes"]),
-            "op": op["op"],
+            "op": op_name,
             "dtype": op["dtype"],
         }
     elif otype == "softmax":

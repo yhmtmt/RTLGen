@@ -86,6 +86,14 @@ module {top_name} (
   localparam IRQ_CQ_EMPTY    = 0;
   localparam IRQ_EVENT       = 1;
   localparam IRQ_ERROR       = 2;
+  localparam [1:0] VEC_OP_RELU = 2'b00;
+  localparam [1:0] VEC_OP_ADD  = 2'b01;
+  localparam [1:0] VEC_OP_MUL  = 2'b10;
+  localparam [1:0] VEC_OP_GELU = 2'b11;
+  localparam       VEC_EN_ADD  = {vec_en_add};
+  localparam       VEC_EN_MUL  = {vec_en_mul};
+  localparam       VEC_EN_RELU = {vec_en_relu};
+  localparam       VEC_EN_GELU = {vec_en_gelu};
 
   // MMIO offsets (bytes)
   `include "mmio_map.vh"
@@ -207,7 +215,7 @@ module {top_name} (
         status <= STATUS_ERR;
         irq_status[IRQ_ERROR] <= 1'b1;
       end else if (!(mmio_we && mmio_addr == OFF_DOORBELL)) begin
-        if ((cq_count != 0) || cq_stage_valid || dma_pending || (gemm_slot_valid != 2'b00)) begin
+        if ((cq_count != 0) || cq_stage_valid || dma_pending || vec_pending || (gemm_slot_valid != 2'b00)) begin
           status <= STATUS_BUSY;
         end else begin
           status <= STATUS_IDLE;
@@ -627,7 +635,7 @@ def generate_cpp_mac_module(gemm_cfg: dict, out_path: Path) -> tuple[str, str]:
     return module_name, (module_text + "\n\n" + cpa_text + "\n")
 
 
-def generate_cpp_vec_activation_modules(vec_cfg: dict, out_path: Path) -> str:
+def generate_cpp_vec_activation_modules(vec_cfg: dict, out_path: Path) -> tuple[str, dict[str, str]]:
     cpp_cfg = vec_cfg.get("rtlgen_cpp", {})
     if cpp_cfg is None:
         cpp_cfg = {}
@@ -660,6 +668,7 @@ def generate_cpp_vec_activation_modules(vec_cfg: dict, out_path: Path) -> str:
 
     module_prefix = str(cpp_cfg.get("module_prefix", "vec_act"))
     modules: list[str] = []
+    module_names: dict[str, str] = {}
     gen_dir = out_path / ".rtlgen_cpp_vec"
     gen_dir.mkdir(parents=True, exist_ok=True)
 
@@ -707,6 +716,7 @@ def generate_cpp_vec_activation_modules(vec_cfg: dict, out_path: Path) -> str:
         if not module_file.exists():
             die(f"C++ RTLGen activation output missing: {module_file}")
         modules.append(module_file.read_text(encoding="utf-8"))
+        module_names[op] = module_name
 
     requested_pending = [op for op in vec_ops if op in pending_ops]
     if requested_pending:
@@ -716,8 +726,8 @@ def generate_cpp_vec_activation_modules(vec_cfg: dict, out_path: Path) -> str:
         )
 
     if not modules:
-        return ""
-    return "\n\n".join(modules) + "\n\n"
+        return "", {}
+    return "\n\n".join(modules) + "\n\n", module_names
 
 
 def write_outputs(cfg: dict, out_dir: str) -> None:
@@ -780,6 +790,18 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
     gemm_accum_width = int(gemm_cfg.get("accum_width", 32))
     gemm_pipeline = int(gemm_cfg.get("pipeline", 1))
     vec_activation_source = str(vec_cfg.get("activation_source", "builtin")).lower()
+    vec_ops_raw = vec_cfg.get("ops", [])
+    if vec_ops_raw is None:
+        vec_ops_raw = []
+    if not isinstance(vec_ops_raw, list):
+        die("compute.vec.ops must be a list when provided")
+    vec_ops = [str(op).lower() for op in vec_ops_raw]
+    if not vec_ops:
+        vec_ops = ["add", "mul", "relu"]
+    vec_en_add = 1 if "add" in vec_ops else 0
+    vec_en_mul = 1 if "mul" in vec_ops else 0
+    vec_en_relu = 1 if "relu" in vec_ops else 0
+    vec_en_gelu = 1 if "gelu" in vec_ops else 0
 
     if gemm_pipeline < 1:
         die("compute.gemm.pipeline must be >= 1")
@@ -814,17 +836,30 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         cpp_module_name = ""
         compute_modules = GEMM_MAC_INT8 + "\n\n"
 
+    vec_cpp_modules: dict[str, str] = {}
     if compute_enabled and vec_activation_source == "rtlgen_cpp":
-        compute_modules = compute_modules + generate_cpp_vec_activation_modules(vec_cfg, out_path)
+        vec_module_text, vec_cpp_modules = generate_cpp_vec_activation_modules(vec_cfg, out_path)
+        compute_modules = compute_modules + vec_module_text
+    vec_cpp_relu_module = vec_cpp_modules.get("relu", "")
+    vec_cpp_gelu_module = vec_cpp_modules.get("gelu", "")
+    use_cpp_relu = bool(vec_cpp_relu_module)
+    use_cpp_gelu = bool(vec_cpp_gelu_module)
+
     compute_state_regs = f"""  reg [{gemm_mac_vec_width_minus1}:0] gemm_mac_a_vec0;
   reg [{gemm_mac_vec_width_minus1}:0] gemm_mac_b_vec0;
   reg [{gemm_mac_vec_width_minus1}:0] gemm_mac_a_vec1;
   reg [{gemm_mac_vec_width_minus1}:0] gemm_mac_b_vec1;
   reg signed [{gemm_accum_width_minus1}:0] gemm_slot_accum0;
-  reg signed [{gemm_accum_width_minus1}:0] gemm_slot_accum1;"""
+  reg signed [{gemm_accum_width_minus1}:0] gemm_slot_accum1;
+  reg [{gemm_mac_vec_width_minus1}:0] vec_in0;
+  reg [{gemm_mac_vec_width_minus1}:0] vec_in1;
+  reg [{gemm_mac_vec_width_minus1}:0] vec_last_result;
+  reg [1:0] vec_op_sel;
+  reg vec_pending;
+  reg vec_done_pulse;"""
 
     if use_cpp_mac:
-        compute_instances = f"""
+        gemm_compute_instances = f"""
   wire signed [15:0] gemm_mac_next0;
   wire signed [15:0] gemm_mac_next1;
 
@@ -850,7 +885,7 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
       end
 """
     else:
-        compute_instances = f"""
+        gemm_compute_instances = f"""
   wire signed [{gemm_accum_width_minus1}:0] gemm_mac_dot0;
   wire signed [{gemm_accum_width_minus1}:0] gemm_mac_dot1;
 
@@ -879,12 +914,67 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         gemm_slot_accum1 <= gemm_slot_accum1 + gemm_mac_dot1;
       end
 """
+    if use_cpp_relu:
+        relu_lane_body = f"""      {vec_cpp_relu_module} u_vec_relu (
+        .X(vec_in0[(gi*8) +: 8]),
+        .Y(vec_relu_res[(gi*8) +: 8])
+      );"""
+    else:
+        relu_lane_body = """      assign vec_relu_res[(gi*8) +: 8] = vec_in0[(gi*8)+7] ? 8'h00 : vec_in0[(gi*8) +: 8];"""
+
+    if use_cpp_gelu:
+        gelu_lane_body = f"""      {vec_cpp_gelu_module} u_vec_gelu (
+        .X(vec_in0[(gi*8) +: 8]),
+        .Y(vec_gelu_res[(gi*8) +: 8])
+      );"""
+    else:
+        gelu_lane_body = """      assign vec_gelu_res[(gi*8) +: 8] = vec_in0[(gi*8)+7] ? 8'h00 : ($signed(vec_in0[(gi*8) +: 8]) >>> 1);"""
+
+    vec_compute_instances = f"""
+  wire [{gemm_mac_vec_width_minus1}:0] vec_add_res;
+  wire [{gemm_mac_vec_width_minus1}:0] vec_mul_res;
+  wire [{gemm_mac_vec_width_minus1}:0] vec_relu_res;
+  wire [{gemm_mac_vec_width_minus1}:0] vec_gelu_res;
+  wire [{gemm_mac_vec_width_minus1}:0] vec_result_next;
+
+  genvar gi;
+  generate
+    for (gi = 0; gi < {gemm_mac_lanes}; gi = gi + 1) begin : g_vec_lane
+      assign vec_add_res[(gi*8) +: 8] = $signed(vec_in0[(gi*8) +: 8]) + $signed(vec_in1[(gi*8) +: 8]);
+      assign vec_mul_res[(gi*8) +: 8] = $signed(vec_in0[(gi*8) +: 8]) * $signed(vec_in1[(gi*8) +: 8]);
+{relu_lane_body}
+{gelu_lane_body}
+    end
+  endgenerate
+
+  assign vec_result_next = (vec_op_sel == VEC_OP_ADD) ? vec_add_res :
+                           (vec_op_sel == VEC_OP_MUL) ? vec_mul_res :
+                           (vec_op_sel == VEC_OP_GELU) ? vec_gelu_res :
+                           vec_relu_res;
+"""
+    compute_instances = gemm_compute_instances + vec_compute_instances
+
+    vec_update = """      vec_done_pulse <= 1'b0;
+      if (vec_pending) begin
+        vec_last_result <= vec_result_next;
+        vec_pending <= 1'b0;
+        vec_done_pulse <= 1'b1;
+        irq_status[IRQ_EVENT] <= 1'b1;
+      end
+"""
+
     compute_reset = """      gemm_mac_a_vec0 <= 0;
       gemm_mac_b_vec0 <= 0;
       gemm_mac_a_vec1 <= 0;
       gemm_mac_b_vec1 <= 0;
       gemm_slot_accum0 <= 0;
-      gemm_slot_accum1 <= 0;"""
+      gemm_slot_accum1 <= 0;
+      vec_in0 <= 0;
+      vec_in1 <= 0;
+      vec_last_result <= 0;
+      vec_op_sel <= 0;
+      vec_pending <= 0;
+      vec_done_pulse <= 0;"""
 
     if compute_enabled:
         gemm_slot_init0_v1 = f"""                gemm_mac_a_vec0 <= cq_mem_rdata[{gemm_a_hi}:64];
@@ -901,6 +991,7 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
                 gemm_slot_accum1 <= 0;"""
     else:
         compute_accum_update = ""
+        vec_update = ""
         gemm_slot_init0_v1 = ""
         gemm_slot_init1_v1 = ""
         gemm_slot_init0_v2 = ""
@@ -938,6 +1029,7 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
 
     gemm_update = f"""      // Two-slot GEMM stub with OOO-capable completion scheduling.
       gemm_done_pulse <= 1'b0;
+{vec_update}\
 {compute_accum_update}\
       if (gemm_slot_valid[0] && !gemm_slot_done[0]) begin
         if (gemm_slot_cycles0 != 0) begin
@@ -1078,6 +1170,23 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
               end else begin
                 error_code <= 32'h2; // GEMM in-flight queue full
               end
+            end else if (cq_mem_rdata[7:0] == 8'h11) begin
+              // VEC_OP (v0.1): input vectors are carried in descriptor payload bytes.
+              if (vec_pending) begin
+                error_code <= 32'h3; // VEC in-flight queue full
+              end else begin
+                vec_in0 <= cq_mem_rdata[{gemm_a_hi}:64];
+                vec_in1 <= cq_mem_rdata[{gemm_b_hi}:128];
+                vec_op_sel <= cq_mem_rdata[9:8];
+                if ((cq_mem_rdata[9:8] == VEC_OP_ADD  && !VEC_EN_ADD)  ||
+                    (cq_mem_rdata[9:8] == VEC_OP_MUL  && !VEC_EN_MUL)  ||
+                    (cq_mem_rdata[9:8] == VEC_OP_RELU && !VEC_EN_RELU) ||
+                    (cq_mem_rdata[9:8] == VEC_OP_GELU && !VEC_EN_GELU)) begin
+                  error_code <= 32'h6; // unsupported configured VEC op
+                end else begin
+                  vec_pending <= 1'b1;
+                end
+              end
             end else if (cq_mem_rdata[7:0] == 8'h20) begin
               // EVENT_SIGNAL: immediately signal
               irq_status[IRQ_EVENT] <= 1'b1;
@@ -1158,6 +1267,23 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
                                        + AXI_BEAT_BYTES - 1) >> {axi_size}) - 1);
               end else begin
                 error_code <= 32'h2; // GEMM in-flight queue full
+              end
+            end else if (cq_word0[7:0] == 8'h11) begin
+              // VEC_OP (v0.2 base word): vectors are sourced from header payload.
+              if (vec_pending) begin
+                error_code <= 32'h3; // VEC in-flight queue full
+              end else begin
+                vec_in0 <= cq_word0[{gemm_a_hi}:64];
+                vec_in1 <= cq_word0[{gemm_b_hi}:128];
+                vec_op_sel <= cq_word0[9:8];
+                if ((cq_word0[9:8] == VEC_OP_ADD  && !VEC_EN_ADD)  ||
+                    (cq_word0[9:8] == VEC_OP_MUL  && !VEC_EN_MUL)  ||
+                    (cq_word0[9:8] == VEC_OP_RELU && !VEC_EN_RELU) ||
+                    (cq_word0[9:8] == VEC_OP_GELU && !VEC_EN_GELU)) begin
+                  error_code <= 32'h6;
+                end else begin
+                  vec_pending <= 1'b1;
+                end
               end
             end else begin
               error_code <= 32'h1;
@@ -1307,6 +1433,10 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         axi_data_width_minus1=axi_data_width_minus1,
         axi_strb_width_minus1=axi_strb_width_minus1,
         axi_beat_bytes=(1 << axi_size),
+        vec_en_add=vec_en_add,
+        vec_en_mul=vec_en_mul,
+        vec_en_relu=vec_en_relu,
+        vec_en_gelu=vec_en_gelu,
         dma_ports=dma_ports,
         compute_state_regs=compute_state_regs,
         dma_reset=dma_reset,

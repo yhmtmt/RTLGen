@@ -136,6 +136,11 @@ module tb_npu_shell;
   reg [31:0] gemm_desc_tags [0:127];
   reg [63:0] gemm_desc_uids [0:127];
   integer gemm_desc_expected_accum [0:127];
+  integer vec_count;
+  integer vec_desc_count;
+  integer vec_desc_offsets [0:127];
+  reg [63:0] vec_desc_expected [0:127];
+  reg [1:0] vec_desc_op [0:127];
   reg [31:0] gemm_log_tag;
   integer gemm_log_offset;
   reg [63:0] gemm_log_uid;
@@ -154,10 +159,14 @@ module tb_npu_shell;
   integer gemm_cycles;
   integer gemm_dot;
   integer gemm_lane;
+  integer vec_tmp;
+  integer vec_op_sel;
   integer gemm_mac_lanes;
+  reg [63:0] vec_expected_vec;
   reg [63:0] sim_cycle;
   reg [1:0] gemm_slot_valid_prev;
   reg [1:0] gemm_slot_done_prev;
+  reg vec_done_pulse_prev;
   reg [63:0] gemm_slot_start_cycle0;
   reg [63:0] gemm_slot_start_cycle1;
   reg [63:0] gemm_done_uid;
@@ -166,6 +175,8 @@ module tb_npu_shell;
   reg [63:0] expected_dma_dst;
   reg sram_test;
   reg event_test;
+  reg vec_test;
+  reg vec_gelu_test;
   string bin_path;
   `include "npu/rtlgen/out/sram_map.vh"
   localparam [63:0] MEM_DST_BASE = 64'h0000_0000_0001_0000;
@@ -185,6 +196,9 @@ module tb_npu_shell;
     gemm_slot_start_cycle1 = 0;
     gemm_count = 0;
     gemm_desc_count = 0;
+    vec_count = 0;
+    vec_desc_count = 0;
+    vec_done_pulse_prev = 1'b0;
     gemm_mac_lanes = ($bits(dut.gemm_mac_a_vec0) / 8);
     if (gemm_mac_lanes < 1)
       gemm_mac_lanes = 1;
@@ -197,6 +211,12 @@ module tb_npu_shell;
     event_test = 0;
     if ($value$plusargs("event_test=%d", event_test))
       event_test = (event_test != 0);
+    vec_test = 0;
+    if ($value$plusargs("vec_test=%d", vec_test))
+      vec_test = (vec_test != 0);
+    vec_gelu_test = 0;
+    if ($value$plusargs("vec_gelu_test=%d", vec_gelu_test))
+      vec_gelu_test = (vec_gelu_test != 0);
     gemm_mac_test = 0;
     if ($value$plusargs("gemm_mac_test=%d", gemm_mac_test))
       gemm_mac_test = (gemm_mac_test != 0);
@@ -260,6 +280,79 @@ module tb_npu_shell;
       {bin_data[59], bin_data[58], bin_data[57], bin_data[56]} = 32'd256;
 
       bytes_read = 64;
+    end else if (vec_test) begin
+      integer idx;
+      for (idx = 0; idx < 128; idx = idx + 1)
+        bin_data[idx] = 0;
+
+      // Descriptor 0: VEC_OP relu (flags[1:0]=00)
+      bin_data[0] = 8'h11;
+      bin_data[2] = 8'h01;
+      bin_data[8] = 8'hf8;  // -8 -> 0
+      bin_data[9] = 8'h01;  // 1
+      bin_data[10] = 8'h7f; // 127
+      bin_data[11] = 8'h80; // -128 -> 0
+      bin_data[12] = 8'h04;
+      bin_data[13] = 8'hfb; // -5 -> 0
+      bin_data[14] = 8'h00;
+      bin_data[15] = 8'h20;
+
+      // Descriptor 1: VEC_OP add (flags[1:0]=01)
+      bin_data[32] = 8'h11;
+      bin_data[33] = 8'h01;
+      bin_data[34] = 8'h01;
+      bin_data[40] = 8'h01;
+      bin_data[41] = 8'h02;
+      bin_data[42] = 8'h03;
+      bin_data[43] = 8'h04;
+      bin_data[44] = 8'h7f;
+      bin_data[45] = 8'h80;
+      bin_data[46] = 8'h10;
+      bin_data[47] = 8'hf0;
+      bin_data[48] = 8'h01;
+      bin_data[49] = 8'hfe;
+      bin_data[50] = 8'h05;
+      bin_data[51] = 8'hfc;
+      bin_data[52] = 8'h01;
+      bin_data[53] = 8'h01;
+      bin_data[54] = 8'hf0;
+      bin_data[55] = 8'h10;
+
+      // Descriptor 2: VEC_OP mul (flags[1:0]=10)
+      bin_data[64] = 8'h11;
+      bin_data[65] = 8'h02;
+      bin_data[66] = 8'h01;
+      bin_data[72] = 8'h02;
+      bin_data[73] = 8'h03;
+      bin_data[74] = 8'hfc; // -4
+      bin_data[75] = 8'h05;
+      bin_data[76] = 8'h10;
+      bin_data[77] = 8'hff; // -1
+      bin_data[78] = 8'h08;
+      bin_data[79] = 8'hf8; // -8
+      bin_data[80] = 8'h03;
+      bin_data[81] = 8'h02;
+      bin_data[82] = 8'h02;
+      bin_data[83] = 8'h04;
+      bin_data[84] = 8'h04;
+      bin_data[85] = 8'h02;
+      bin_data[86] = 8'hff; // -1
+      bin_data[87] = 8'h02;
+
+      // Descriptor 3: VEC_OP relu/gelu (flags[1:0]=00/11)
+      bin_data[96] = 8'h11;
+      bin_data[97] = vec_gelu_test ? 8'h03 : 8'h00;
+      bin_data[98] = 8'h01;
+      bin_data[104] = 8'hf0; // -16 -> 0
+      bin_data[105] = 8'h04; // 4 -> 2
+      bin_data[106] = 8'h08; // 8 -> 4
+      bin_data[107] = 8'h01; // 1 -> 0
+      bin_data[108] = 8'h7f; // 127 -> 63
+      bin_data[109] = 8'h80; // -128 -> 0
+      bin_data[110] = 8'h20; // 32 -> 16
+      bin_data[111] = 8'h02; // 2 -> 1
+
+      bytes_read = 128;
     end else begin
       // Read binary descriptor stream
       max_bytes = 4096;
@@ -291,6 +384,7 @@ module tb_npu_shell;
                         bin_data[19], bin_data[18], bin_data[17], bin_data[16]};
     // Parse descriptor stream so GEMM timing logs can include stable tag/offset IDs.
     gemm_desc_count = 0;
+    vec_desc_count = 0;
     scan_off = 0;
     scan_iter = 0;
     while (((scan_off + 32) <= bytes_read) && (scan_iter < 256)) begin
@@ -331,6 +425,31 @@ module tb_npu_shell;
           gemm_cycles = gemm_cycles + 8;
         gemm_desc_expected_accum[gemm_desc_count] = gemm_dot * gemm_cycles;
         gemm_desc_count = gemm_desc_count + 1;
+      end else if ((scan_opcode == 8'h11) && (vec_desc_count < 128)) begin
+        vec_op_sel = bin_data[scan_off + 1] & 8'h3;
+        vec_expected_vec = 64'h0;
+        for (gemm_lane = 0; gemm_lane < gemm_mac_lanes; gemm_lane = gemm_lane + 1) begin
+          if (vec_op_sel == 1) begin
+            vec_tmp = sx8(bin_data[scan_off + 8 + gemm_lane]) + sx8(bin_data[scan_off + 16 + gemm_lane]);
+          end else if (vec_op_sel == 2) begin
+            vec_tmp = sx8(bin_data[scan_off + 8 + gemm_lane]) * sx8(bin_data[scan_off + 16 + gemm_lane]);
+          end else if (vec_op_sel == 3) begin
+            vec_tmp = sx8(bin_data[scan_off + 8 + gemm_lane]);
+            if (vec_tmp < 0)
+              vec_tmp = 0;
+            else
+              vec_tmp = vec_tmp >>> 1;
+          end else begin
+            vec_tmp = sx8(bin_data[scan_off + 8 + gemm_lane]);
+            if (vec_tmp < 0)
+              vec_tmp = 0;
+          end
+          vec_expected_vec[(gemm_lane * 8) +: 8] = vec_tmp & 8'hff;
+        end
+        vec_desc_offsets[vec_desc_count] = scan_off;
+        vec_desc_expected[vec_desc_count] = vec_expected_vec;
+        vec_desc_op[vec_desc_count] = vec_op_sel[1:0];
+        vec_desc_count = vec_desc_count + 1;
       end
       scan_off = scan_off + (scan_size * 32);
       scan_iter = scan_iter + 1;
@@ -342,7 +461,7 @@ module tb_npu_shell;
     mmio_write(OFF_DOORBELL, 32'h1);
 
     // DMA request should assert; handshake and complete
-    if (!event_test) begin
+    if (!event_test && !vec_test) begin
       repeat (5) @(posedge clk);
       if (dma_req_valid !== 1'b1) begin
         $display("ERROR: expected dma_req_valid");
@@ -402,7 +521,7 @@ module tb_npu_shell;
       $finish(1);
     end
 
-    if (event_test) begin
+    if (event_test || vec_test) begin
       // No data check for GEMM/event stubs
     end else if (sram_test) begin
       // Check SRAM->mem copy result at MEM_DST_BASE
@@ -447,7 +566,20 @@ module tb_npu_shell;
       end
     end
 
-    // Allow negedge timing monitor to emit final GEMM_TIMING line before finish.
+    if (vec_desc_count > 0) begin : wait_vec_done
+      integer vw;
+      for (vw = 0; vw < 2000; vw = vw + 1) begin
+        @(negedge clk);
+        if (vec_count >= vec_desc_count)
+          disable wait_vec_done;
+      end
+      if (vec_count < vec_desc_count) begin
+        $display("ERROR: VEC completion timeout count=%0d expected=%0d", vec_count, vec_desc_count);
+        $finish(1);
+      end
+    end
+
+    // Allow negedge monitor to emit final completion line before finish.
     @(negedge clk);
     $display("PASS: RTL shell bring-up complete");
     $finish(0);
@@ -507,6 +639,8 @@ module tb_npu_shell;
       gemm_slot_start_cycle0 <= 0;
       gemm_slot_start_cycle1 <= 0;
       gemm_count <= 0;
+      vec_count <= 0;
+      vec_done_pulse_prev <= 1'b0;
     end else begin
       if (!gemm_slot_valid_prev[0] && dut.gemm_slot_valid[0]) begin
         gemm_slot_start_cycle0 <= sim_cycle;
@@ -592,8 +726,27 @@ module tb_npu_shell;
                  gemm_count, gemm_log_uid, gemm_log_tag, gemm_log_offset,
                  gemm_slot_start_cycle1, sim_cycle, (sim_cycle - gemm_slot_start_cycle1));
       end
+      if (!vec_done_pulse_prev && dut.vec_done_pulse) begin
+        if (vec_count >= vec_desc_count) begin
+          $display("ERROR: unexpected VEC completion vec_count=%0d vec_desc_count=%0d", vec_count, vec_desc_count);
+          $finish(1);
+        end
+        for (gemm_lane = 0; gemm_lane < gemm_mac_lanes; gemm_lane = gemm_lane + 1) begin
+          if (dut.vec_last_result[(gemm_lane*8) +: 8] !== vec_desc_expected[vec_count][(gemm_lane*8) +: 8]) begin
+            $display("ERROR: VEC mismatch index=%0d lane=%0d got=0x%02h exp=0x%02h",
+                     vec_count, gemm_lane,
+                     dut.vec_last_result[(gemm_lane*8) +: 8],
+                     vec_desc_expected[vec_count][(gemm_lane*8) +: 8]);
+            $finish(1);
+          end
+        end
+        vec_count = vec_count + 1;
+        $display("VEC_DONE index=%0d offset=%0d op=%0d",
+                 vec_count, vec_desc_offsets[vec_count-1], vec_desc_op[vec_count-1]);
+      end
       gemm_slot_valid_prev <= dut.gemm_slot_valid;
       gemm_slot_done_prev <= dut.gemm_slot_done;
+      vec_done_pulse_prev <= dut.vec_done_pulse;
     end
   end
 
