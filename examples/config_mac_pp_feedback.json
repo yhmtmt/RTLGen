@@ -1,0 +1,27 @@
+{
+  "version": "1.1",
+  "operands": [
+    {
+      "name": "int8",
+      "dimensions": 1,
+      "bit_width": 8,
+      "signed": true
+    }
+  ],
+  "operations": [
+    {
+      "type": "mac",
+      "module_name": "int8_mac_pp_feedback",
+      "operand": "int8",
+      "options": {
+        "ppg_algorithm": "Booth4",
+        "compressor_structure": "AdderTree",
+        "compressor_library": "fa_ha",
+        "compressor_assignment": "legacy_fa_ha",
+        "cpa_structure": "BrentKung",
+        "accumulation_mode": "pp_row_feedback",
+        "pipeline_depth": 1
+      }
+    }
+  ]
+}

@@ -24,6 +24,8 @@ Git: unknown
 ## Next steps
 - Extend RTLGen with MAC-based compute generation for GEMM/VEC (start with
   `int8` GEMM, then minimal VEC `add/mul/relu`).
+- Integrate C++ `src/rtlgen` MAC generator (`operations[].type="mac"`) into
+  NPU core exploration, starting with accumulator feedback into PP rows.
 - Extend performance sim op coverage (VEC_OP / SOFTMAX).
 - Refine external memory modeling (latency/burst/outstanding) and calibrate to PPA.
 - Add OpenROAD flow for DMA tile and CQ logic.

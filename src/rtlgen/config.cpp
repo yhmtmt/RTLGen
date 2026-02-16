@@ -51,6 +51,7 @@ bool readConfig(const std::string& filename, CircuitConfig& config) {
 
         config.operands.clear();
         config.multipliers.clear();
+        config.mac_operations.clear();
         config.adders.clear();
         config.yosys_multipliers.clear();
         config.mcm_operations.clear();
@@ -159,6 +160,20 @@ bool readConfig(const std::string& filename, CircuitConfig& config) {
             config.multipliers.push_back(multiplier);
         };
 
+        auto parseMacNode = [&](const json &node, const std::string &operandName, const std::string &moduleOverride) {
+            MacConfig mac;
+            mac.module_name = moduleOverride.empty() ? node.at("module_name").get<std::string>() : moduleOverride;
+            mac.operand = operandName;
+            mac.ppg_algorithm = node.at("ppg_algorithm").get<std::string>();
+            mac.compressor_structure = node.at("compressor_structure").get<std::string>();
+            mac.compressor_library = node.value("compressor_library", "fa_ha");
+            mac.compressor_assignment = node.value("compressor_assignment", "legacy_fa_ha");
+            mac.cpa_structure = node.at("cpa_structure").get<std::string>();
+            mac.pipeline_depth = node.value("pipeline_depth", 1);
+            mac.accumulation_mode = node.value("accumulation_mode", "pp_row_feedback");
+            config.mac_operations.push_back(mac);
+        };
+
         auto parseYosysMultiplierNode = [&](const json &node, const std::string &operandName, const std::string &moduleOverride) {
             MultiplierYosysConfig yc;
             yc.module_name = moduleOverride.empty() ? node.at("module_name").get<std::string>() : moduleOverride;
@@ -171,6 +186,10 @@ bool readConfig(const std::string& filename, CircuitConfig& config) {
 
         if (j.contains("multiplier")) {
             parseMultiplierNode(j["multiplier"], "", "");
+        }
+
+        if (j.contains("mac")) {
+            parseMacNode(j["mac"], "", "");
         }
 
         if (j.contains("adder")) {
@@ -196,6 +215,9 @@ bool readConfig(const std::string& filename, CircuitConfig& config) {
                 } else if (type == "multiplier") {
                     const json &options = entry.contains("options") ? entry["options"] : entry;
                     parseMultiplierNode(options, operand_name, module_name);
+                } else if (type == "mac") {
+                    const json &options = entry.contains("options") ? entry["options"] : entry;
+                    parseMacNode(options, operand_name, module_name);
                 } else if (type == "multiplier_yosys") {
                     const json &options = entry.contains("options") ? entry["options"] : entry;
                     parseYosysMultiplierNode(options, operand_name, module_name);

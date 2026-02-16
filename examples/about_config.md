@@ -111,6 +111,41 @@ Supported partial product generators (`ppg_algorithm`):
 
 For sign extension a fast computation technique is used, as described in ["Minimizing Energy Dissipation in High-Speed Multipliers"](https://ieeexplore.ieee.org/document/621285). The `bit_width` should be at least 4.
 
+## MAC Configuration (Integer, PP-Row Feedback)
+
+MAC entries reuse the multiplier configuration knobs and add one accumulation mode:
+
+- `type`: `"mac"`
+- `module_name`: output Verilog module name
+- `operand`: operand name used for `multiplicand` and `multiplier`
+- `options`: same keys as `multiplier` (`ppg_algorithm`, `compressor_structure`, `compressor_library`, `compressor_assignment`, `cpa_structure`, `pipeline_depth`)
+- `accumulation_mode`: currently only `"pp_row_feedback"`
+
+`pp_row_feedback` injects the accumulator input as an additional partial-product row before compressor-tree optimization, so the generated module computes:
+
+`result = multiplicand * multiplier + accumulator`
+
+Current limitation: `accumulator` width is fixed to the full product width (`2 * operand.bit_width`) in this phase.
+
+Example:
+
+```json
+{
+  "type": "mac",
+  "module_name": "int8_mac_pp_feedback",
+  "operand": "int8",
+  "options": {
+    "ppg_algorithm": "Booth4",
+    "compressor_structure": "AdderTree",
+    "compressor_library": "fa_ha",
+    "compressor_assignment": "legacy_fa_ha",
+    "cpa_structure": "BrentKung",
+    "accumulation_mode": "pp_row_feedback",
+    "pipeline_depth": 1
+  }
+}
+```
+
 ## Multiplier Configuration for Yosys
 
 Yosys-aware multipliers can be emitted either with the legacy `"multiplier_yosys"` object or via an `operations` entry with `"type": "multiplier_yosys"`.

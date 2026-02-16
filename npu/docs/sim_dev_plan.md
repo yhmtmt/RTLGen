@@ -87,6 +87,11 @@ This plan defines two simulation schemes:
 2) Phase 2: add VEC minimal ops (`add/mul/relu`) on shared datapath.
 3) Phase 3: add second MAC type (`int16` or `fp16`) behind config switch.
 4) Phase 4: run OpenROAD block sweep and compare against DMA/CQ-only baseline.
+5) Phase 5: integrate C++ `src/rtlgen` MAC generator path into NPU MAC-core
+   exploration:
+   - add `mac` operation config in C++ RTLGen
+   - feed accumulator input back into partial-product rows (`pp_row_feedback`)
+   - evaluate PPA/timing tradeoffs with the same OpenROAD block sweep flow
 
 ## B) Abstracted Performance Simulation (Second Priority)
 
@@ -115,9 +120,10 @@ This plan defines two simulation schemes:
 - Shared error/IRQ semantics (from `npu/shell/spec.md`)
 
 ## Next steps
-- Implement Phase 1 of compute bring-up: `int8` MAC-based GEMM path in RTLGen
-  and RTL sim checks.
-- Add minimal VEC decode/execution path (`add/mul/relu`) after GEMM Phase 1.
+- Start Phase 2 of compute bring-up: minimal VEC decode/execution path
+  (`add/mul/relu`) after GEMM Phase 1.
+- Start Phase 5 scaffold: wire C++ RTLGen `mac` config + `pp_row_feedback`
+  generation path and add a focused Verilog regression.
 - Extend perf sim model coverage (VEC_OP / SOFTMAX) and refine the memory model
   (latency/burst/outstanding).
 - Keep bandwidth parameterization documented in `npu/sim/perf/README.md`.

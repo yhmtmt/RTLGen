@@ -169,6 +169,7 @@ int main(int argc, char** argv) {
                   << ", width " << config.operand.bit_width << "\n";
     }
     std::cout << "  Operations: " << config.multipliers.size() << " multiplier(s), "
+              << config.mac_operations.size() << " MAC block(s), "
               << config.adders.size() << " adder(s), " << config.yosys_multipliers.size()
               << " yosys multiplier(s), " << config.mcm_operations.size() << " MCM block(s), "
               << config.cmvm_operations.size() << " CMVM block(s), "
@@ -201,6 +202,36 @@ int main(int argc, char** argv) {
                 enable_c42 = false;
             }
             generator.build(lhs, rhs, ctype, ptype, cptype, mult.module_name, enable_c42, use_direct_ilp);
+        }
+
+        for (const auto &mac : config.mac_operations) {
+            if (mac.accumulation_mode != "pp_row_feedback") {
+                throw std::runtime_error("Unsupported mac accumulation_mode: " + mac.accumulation_mode +
+                                         " (supported: pp_row_feedback)");
+            }
+            OperandDefinition operandDef = resolveOperand(config, mac.operand);
+            Operand lhs = makeOperandValue(operandDef);
+            Operand rhs = lhs;
+            Operand acc;
+            acc.width = lhs.width + rhs.width;
+            acc.is_signed = operandDef.is_signed;
+            acc.bits.assign(acc.width, false);
+
+            CTType ctype = get_compressor_type(mac.compressor_structure);
+            CompressorLibrary library = get_compressor_library(mac.compressor_library);
+            CompressorAssignment assignment = get_compressor_assignment(mac.compressor_assignment);
+            CPAType cptype = get_cpa_type(mac.cpa_structure);
+            PPType ptype = get_ppg_algorithm(mac.ppg_algorithm);
+            MultiplierGenerator generator;
+            std::cout << "[INFO] Generating MAC " << mac.module_name << " ("
+                      << mac.accumulation_mode << ")\n";
+            bool enable_c42 = (library == FA_HA_C42);
+            bool use_direct_ilp = (assignment == DirectILP);
+            if (!use_direct_ilp && enable_c42) {
+                std::cout << "[WARN] legacy_fa_ha ignores compressor_library fa_ha_c42; forcing fa_ha.\n";
+                enable_c42 = false;
+            }
+            generator.build_mac(lhs, rhs, acc, ctype, ptype, cptype, mac.module_name, enable_c42, use_direct_ilp);
         }
 
         for (auto yosys : config.yosys_multipliers) {

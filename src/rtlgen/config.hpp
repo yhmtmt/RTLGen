@@ -96,6 +96,18 @@ struct MultiplierConfig {
     int pipeline_depth;
 };
 
+struct MacConfig {
+    std::string module_name;
+    std::string operand;
+    std::string ppg_algorithm;
+    std::string compressor_structure;
+    std::string compressor_library{"fa_ha"};
+    std::string compressor_assignment{"legacy_fa_ha"};
+    std::string cpa_structure;
+    int pipeline_depth{1};
+    std::string accumulation_mode{"pp_row_feedback"};
+};
+
 struct MultiplierYosysConfig {
     std::string module_name;
     std::string operand;
@@ -185,6 +197,7 @@ struct CircuitConfig {
     OperandConfig operand;
     std::vector<OperandDefinition> operands;
     std::vector<MultiplierConfig> multipliers;
+    std::vector<MacConfig> mac_operations;
     std::vector<AdderConfig> adders;
     std::vector<MultiplierYosysConfig> yosys_multipliers;
     std::vector<McmOperationConfig> mcm_operations;

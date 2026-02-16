@@ -342,10 +342,12 @@ private:
 
     // dump hdl files of the multiplier. called from build function.
     void dump_hdl(Operand multiplicand, Operand multiplier, const std::string& module_name);
+    void dump_hdl_mac(Operand multiplicand, Operand multiplier, Operand accumulator, const std::string& module_name);
     void dump_hdl_ct(std::ofstream & verilog_file);
     void dump_hdl_fa(std::ofstream & verilog_file, const std::string& module_name);
     void dump_hdl_ha(std::ofstream & verilog_file, const std::string& module_name);
     void dump_hdl_c42(std::ofstream & verilog_file, const std::string& module_name);
+    void inject_accumulator_pp_row(Operand accumulator);
 
 
 public:
@@ -371,6 +373,9 @@ public:
     void build(Operand multiplicand, Operand multiplier,
                           CTType ctype, PPType ppType, CPAType cptype, const std::string& module_name,
                           bool enable_c42 = false, bool use_direct_ilp = false);
+    void build_mac(Operand multiplicand, Operand multiplier, Operand accumulator,
+                   CTType ctype, PPType ppType, CPAType cptype, const std::string& module_name,
+                   bool enable_c42 = false, bool use_direct_ilp = false);
     void build_yosys(const MultiplierYosysConfig& config, const std::string& module_name);
 };
 

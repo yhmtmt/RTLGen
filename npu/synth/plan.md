@@ -43,6 +43,8 @@ OpenROAD evaluation flow for block-level NPU macros.
 - Draft a minimal NPU macro wrapper config in `runs/campaigns/npu/`.
 - Validate that `npu/synth/run_block_sweep.py` can target NPU macro designs
   with custom SDC and floorplan constraints.
+- Add a C++ RTLGen MAC block target (`operations[].type="mac"`,
+  `accumulation_mode="pp_row_feedback"`) for multiplier/MAC PPA exploration.
 
 ## Status
 - RTL shell and DMA stub are available; OpenROAD integration is pending.

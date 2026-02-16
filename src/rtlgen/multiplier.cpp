@@ -6,6 +6,8 @@
 #include <bitset>
 #include <regex>
 #include <numeric> // Include for std::accumulate
+#include <sstream>
+#include <stdexcept>
 #include <ortools/linear_solver/linear_solver.h>
 #include "multiplier.hpp"
 #include <chrono> // Add this include for timing
@@ -54,6 +56,26 @@ void MultiplierGenerator::build(Operand multiplicand, Operand multiplier,
 //    dump_hdl_tb(multiplicand, multiplier, module_name);
 
     std::cout << "[INFO] Multiplier generation completed." << std::endl;
+}
+
+void MultiplierGenerator::build_mac(Operand multiplicand, Operand multiplier, Operand accumulator,
+                                           CTType ctype, PPType ptype, CPAType cptype, const std::string &module_name,
+                                           bool enable_c42, bool use_direct_ilp)
+{
+    std::cout << "[INFO] Generating partial products for MAC..." << std::endl;
+    gen_pp(multiplicand, multiplier, ptype);
+    inject_accumulator_pp_row(accumulator);
+
+    std::cout << "[INFO] Building compressor tree..." << std::endl;
+    build_ct(enable_c42, use_direct_ilp);
+
+    std::cout << "[INFO] Building carry-propagate adder..." << std::endl;
+    build_cpa(cptype);
+
+    std::cout << "[INFO] Dumping Verilog HDL..." << std::endl;
+    dump_hdl_mac(multiplicand, multiplier, accumulator, module_name);
+
+    std::cout << "[INFO] MAC generation completed." << std::endl;
 }
 
 void MultiplierGenerator::build_yosys(const MultiplierYosysConfig& config, const std::string& module_name)
@@ -243,6 +265,71 @@ void MultiplierGenerator::dump_hdl(Operand multiplicand, Operand multiplier, con
     if (cpa_col_end + 1 <  cols_pps)
     {
         verilog_file << "  assign product[" << cols_pps - 1 << "] = ctc;\n";
+    }
+
+    verilog_file << "endmodule\n";
+}
+
+void MultiplierGenerator::dump_hdl_mac(Operand multiplicand, Operand multiplier, Operand accumulator, const std::string &module_name)
+{
+    std::ofstream verilog_file(module_name + ".v");
+    if (!verilog_file.is_open())
+    {
+        std::cerr << "Error: Could not open file " << module_name << ".v" << std::endl;
+        return;
+    }
+
+    dump_hdl_fa(verilog_file, "MG_FA");
+    dump_hdl_ha(verilog_file, "MG_HA");
+    dump_hdl_c42(verilog_file, "MG_C42");
+    cpa.dump_hdl("MG_CPA");
+
+    std::vector<std::string> operands= {"multiplicand", "multiplier", "accumulator"};
+
+    verilog_file << "module " << module_name << "(\n";
+    verilog_file << "  input [" << multiplicand.width - 1 << ":0] multiplicand,\n";
+    verilog_file << "  input [" << multiplier.width - 1 << ":0] multiplier,\n";
+    verilog_file << "  input [" << accumulator.width - 1 << ":0] accumulator,\n";
+    verilog_file << "  output [" << cols_pps - 1 << ":0] result\n";
+    verilog_file << ");\n\n";
+
+    exp_manager.generateVerilogWires(verilog_file, operands);
+    dump_hdl_ct(verilog_file);
+
+    int width_cpa = cpa.get_num_inputs();
+    verilog_file << "  wire [" << width_cpa - 1 << ":0] cta;\n";
+    verilog_file << "  wire [" << width_cpa - 1 << ":0] ctb;\n";
+    verilog_file << "  wire [" << width_cpa - 1 << ":0] cts;\n";
+    verilog_file << "  wire ctc;\n\n";
+
+    verilog_file << "  MG_CPA cpa(\n";
+    verilog_file << " .a(cta), .b(ctb), .sum(cts), .cout(ctc)\n";
+    verilog_file << "  );\n\n";
+
+    int ipin_adder = 0;
+    for (int icol = cpa_col_start; icol < ct_pps[num_stages].size(); icol++)
+    {
+        int npps = ct_pps[num_stages][icol];
+        if(npps == 0)
+            continue;
+
+        verilog_file << "  assign cta[" << ipin_adder << "] = pp_" << num_stages << "_" << icol << "_0;\n";
+        verilog_file << "  assign ctb[" << ipin_adder << "] = ";
+        if (npps == 2)
+            verilog_file << "pp_" << num_stages << "_" << icol << "_1;\n";
+        else if(npps == 1)
+            verilog_file << "1'b0;\n";
+
+        ipin_adder++;
+    }
+
+    for (int icol = 0; icol < cpa_col_start; icol++)
+        verilog_file << "  assign result[" << icol << "] = pp_" << num_stages << "_" << icol << "_" << 0 << ";\n";
+
+    verilog_file << "  assign result[" << cpa_col_end << ":" << cpa_col_start << "] = cts;\n";
+    if (cpa_col_end + 1 <  cols_pps)
+    {
+        verilog_file << "  assign result[" << cols_pps - 1 << "] = ctc;\n";
     }
 
     verilog_file << "endmodule\n";
@@ -462,6 +549,31 @@ void MultiplierGenerator::gen_pp(Operand multiplicand, Operand multiplier, PPTyp
         }
     }
     std::cout << "[INFO] Partial product matrix: " << rows_pps << " rows x " << cols_pps << " cols, total " << total_pp_bits << " bits." << std::endl;
+}
+
+void MultiplierGenerator::inject_accumulator_pp_row(Operand accumulator)
+{
+    if (accumulator.width != cols_pps) {
+        std::ostringstream oss;
+        oss << "MAC accumulator width (" << accumulator.width
+            << ") must match multiplier product width (" << cols_pps
+            << ") for pp_row_feedback mode.";
+        throw std::runtime_error(oss.str());
+    }
+
+    pps.emplace_back(cols_pps, PPBit());
+    auto &acc_row = pps.back();
+    for (int ibit = 0; ibit < accumulator.width; ++ibit) {
+        acc_row[ibit].bit_type = BIT_EXPRESSION;
+        acc_row[ibit].expression = exp_manager.allocate(
+            "pp_acc_" + std::to_string(ibit),
+            NOP,
+            std::vector<OpBit>{(OpBit){2, 0, static_cast<short>(ibit)}}
+        );
+    }
+    rows_pps = static_cast<int>(pps.size());
+    std::cout << "[INFO] Injected accumulator feedback row into partial products (width "
+              << accumulator.width << ")." << std::endl;
 }
 
 // n bit multiplicand m bit multiplier. Normal radix-2 

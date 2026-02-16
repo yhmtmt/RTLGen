@@ -154,6 +154,9 @@ set_tests_properties(test_activation_int PROPERTIES WORKING_DIRECTORY ${PROJECT_
 add_test(NAME test_activation_fp COMMAND bash ${PROJECT_SOURCE_DIR}/tests/test_activation_fp.sh)
 set_tests_properties(test_activation_fp PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
+add_test(NAME test_mac_pp_feedback COMMAND bash ${PROJECT_SOURCE_DIR}/tests/test_mac_pp_feedback.sh)
+set_tests_properties(test_mac_pp_feedback PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
 if(RTLGEN_BUILD_FLOPOCO)
     find_package(GMPXX)
     find_package(MPFR)
