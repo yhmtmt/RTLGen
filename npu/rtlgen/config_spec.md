@@ -81,3 +81,11 @@ can later be extended without breaking v0.1.
 
 ## Next steps
 - Extend config fields to cover compute tiles and DMA parameters.
+- Add a compute schema for GEMM/VEC MAC generation:
+  - `compute.gemm.mac_type` (initial target: `int8`)
+  - `compute.gemm.lanes`, `compute.gemm.accum_width`, `compute.gemm.pipeline`
+  - `compute.vec.ops` (initial target: `add/mul/relu`)
+- Keep compatibility with `compute.enabled=false` so existing stub-only
+  validation flows continue to run during migration.
+- See `npu/docs/sim_dev_plan.md` section "A.1) Compute Bring-up Plan" for
+  phased implementation and validation gates.

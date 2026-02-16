@@ -40,6 +40,54 @@ This plan defines two simulation schemes:
 3) Build testbenches for MMIO and AXI-Lite. **Done**
 4) Run golden command streams through RTL. **Done**
 
+## A.1) Compute Bring-up Plan (GEMM + VEC via RTLGen MAC generators)
+
+### Purpose
+- Add a minimal but real compute path so GEMM/VEC are no longer timing-only
+  stubs in `npu/rtlgen/out/top.v`.
+- Keep compute generation parameterized so future architecture sweeps can
+  switch MAC styles without rewriting top-level RTL.
+
+### Scope (initial implementation)
+- GEMM: integer MAC array with deterministic accumulate/writeback behavior.
+- VEC: minimal elementwise ops (`add`, `mul`, `relu`) using the same MAC
+  datapath where possible.
+- Keep descriptor/IRQ semantics stable with `npu/shell/spec.md`.
+
+### RTLGen extension points
+1) Extend config schema with a compute section:
+   - `compute.enabled`
+   - `compute.gemm.mac_type` (e.g., `int8`, `int16`, `fp16`)
+   - `compute.gemm.lanes`, `compute.gemm.accum_width`, `compute.gemm.pipeline`
+   - `compute.vec.ops` (allowed op list)
+2) Add generator output modules for MAC variants under `npu/rtlgen/`:
+   - reusable MAC primitive(s)
+   - lane array wrapper
+   - GEMM/VEC control wrapper
+3) Update top generation:
+   - wire descriptor decode to compute issue/complete
+   - keep DMA and CQ flow unchanged for compatibility
+   - expose a clear fallback path when `compute.enabled=false`
+
+### Validation gates
+1) RTL functional:
+   - add GEMM correctness checks in `npu/sim/rtl/` (small matrix sanity tests)
+   - add VEC op checks for `add/mul/relu`
+   - keep existing DMA/CQ regressions green
+2) Mapping/perf alignment:
+   - mapper emits descriptors that match new compute fields
+   - perf sim uses matching op semantics and latency knobs
+3) Synthesis readiness:
+   - create a dedicated design directory under `runs/designs/npu_blocks/`
+     for compute-enabled top
+   - run `npu/synth/run_block_sweep.py` on that target (Nangate45 first)
+
+### Delivery phases
+1) Phase 1: single MAC type (`int8`) + GEMM correctness in RTL sim.
+2) Phase 2: add VEC minimal ops (`add/mul/relu`) on shared datapath.
+3) Phase 3: add second MAC type (`int16` or `fp16`) behind config switch.
+4) Phase 4: run OpenROAD block sweep and compare against DMA/CQ-only baseline.
+
 ## B) Abstracted Performance Simulation (Second Priority)
 
 ### Goals
@@ -67,6 +115,9 @@ This plan defines two simulation schemes:
 - Shared error/IRQ semantics (from `npu/shell/spec.md`)
 
 ## Next steps
+- Implement Phase 1 of compute bring-up: `int8` MAC-based GEMM path in RTLGen
+  and RTL sim checks.
+- Add minimal VEC decode/execution path (`add/mul/relu`) after GEMM Phase 1.
 - Extend perf sim model coverage (VEC_OP / SOFTMAX) and refine the memory model
   (latency/burst/outstanding).
 - Keep bandwidth parameterization documented in `npu/sim/perf/README.md`.
