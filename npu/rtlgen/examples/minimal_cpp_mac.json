@@ -48,7 +48,12 @@
       }
     },
     "vec": {
-      "ops": ["add", "mul", "relu"]
+      "ops": ["add", "mul", "relu", "gelu", "softmax", "layernorm"],
+      "activation_source": "rtlgen_cpp",
+      "rtlgen_cpp": {
+        "binary_path": "build/rtlgen",
+        "module_prefix": "vec_act"
+      }
     }
   }
 }

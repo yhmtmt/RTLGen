@@ -26,6 +26,9 @@ Git: unknown
 ## Next steps
 - Extend RTLGen with MAC-based compute generation for GEMM/VEC (start with
   `int8` GEMM, then minimal VEC `add/mul/relu`).
+- In Phase 2, prefer C++ RTLGen activation modules for VEC paths (`relu`
+  now, `gelu` next), then add `softmax`, `layernorm`, and derivative kernels
+  as C++ generator support is implemented.
 - Integrate C++ `src/rtlgen` MAC generator (`operations[].type="mac"`) into
   NPU core exploration, starting with accumulator feedback into PP rows.
 - Extend performance sim op coverage (VEC_OP / SOFTMAX).

@@ -52,6 +52,9 @@ This plan defines two simulation schemes:
 - GEMM: integer MAC array with deterministic accumulate/writeback behavior.
 - VEC: minimal elementwise ops (`add`, `mul`, `relu`) using the same MAC
   datapath where possible.
+- Phase-2 preference: source activation RTL from C++ `src/rtlgen` where
+  available (`relu` now, `gelu` in-progress), then extend to `softmax`,
+  `layernorm`, and derivative kernels as C++ generator support lands.
 - Keep descriptor/IRQ semantics stable with `npu/shell/spec.md`.
 
 ### RTLGen extension points
@@ -85,6 +88,10 @@ This plan defines two simulation schemes:
 ### Delivery phases
 1) Phase 1: single MAC type (`int8`) + GEMM correctness in RTL sim.
 2) Phase 2: add VEC minimal ops (`add/mul/relu`) on shared datapath.
+   - use C++ activation modules as the primary source for `relu`/`gelu` where
+     configured (`compute.vec.activation_source=rtlgen_cpp`)
+   - keep mapper/perf semantics aligned while adding `softmax`/`layernorm`
+     only after C++ generator emits stable modules
 3) Phase 3: add second MAC type (`int16` or `fp16`) behind config switch.
 4) Phase 4: run OpenROAD block sweep and compare against DMA/CQ-only baseline.
 5) Phase 5: integrate C++ `src/rtlgen` MAC generator path into NPU MAC-core

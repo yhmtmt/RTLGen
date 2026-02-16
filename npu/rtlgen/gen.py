@@ -545,6 +545,18 @@ def load_config(path: str) -> dict:
     return cfg
 
 
+def resolve_rtlgen_bin_path(binary_path: str) -> Path:
+    rtlgen_bin_path = Path(binary_path)
+    if not rtlgen_bin_path.is_absolute():
+        rtlgen_bin_path = Path.cwd() / rtlgen_bin_path
+    if not rtlgen_bin_path.exists():
+        die(
+            f"RTLGen binary not found: {rtlgen_bin_path}. "
+            "Build C++ rtlgen first or update binary_path."
+        )
+    return rtlgen_bin_path
+
+
 def generate_cpp_mac_module(gemm_cfg: dict, out_path: Path) -> tuple[str, str]:
     cpp_cfg = gemm_cfg.get("rtlgen_cpp", {})
     if cpp_cfg is None:
@@ -553,14 +565,7 @@ def generate_cpp_mac_module(gemm_cfg: dict, out_path: Path) -> tuple[str, str]:
         die("compute.gemm.rtlgen_cpp must be an object when provided")
 
     rtlgen_bin = str(cpp_cfg.get("binary_path", "build/rtlgen"))
-    rtlgen_bin_path = Path(rtlgen_bin)
-    if not rtlgen_bin_path.is_absolute():
-        rtlgen_bin_path = Path.cwd() / rtlgen_bin_path
-    if not rtlgen_bin_path.exists():
-        die(
-            f"compute.gemm.rtlgen_cpp.binary_path not found: {rtlgen_bin_path}. "
-            "Build C++ rtlgen first or update binary_path."
-        )
+    rtlgen_bin_path = resolve_rtlgen_bin_path(rtlgen_bin)
 
     module_name = str(cpp_cfg.get("module_name", "gemm_mac_int8_pp"))
     mac_cfg = {
@@ -622,6 +627,99 @@ def generate_cpp_mac_module(gemm_cfg: dict, out_path: Path) -> tuple[str, str]:
     return module_name, (module_text + "\n\n" + cpa_text + "\n")
 
 
+def generate_cpp_vec_activation_modules(vec_cfg: dict, out_path: Path) -> str:
+    cpp_cfg = vec_cfg.get("rtlgen_cpp", {})
+    if cpp_cfg is None:
+        cpp_cfg = {}
+    if not isinstance(cpp_cfg, dict):
+        die("compute.vec.rtlgen_cpp must be an object when provided")
+
+    rtlgen_bin = str(cpp_cfg.get("binary_path", "build/rtlgen"))
+    rtlgen_bin_path = resolve_rtlgen_bin_path(rtlgen_bin)
+
+    ops_raw = vec_cfg.get("ops", [])
+    if ops_raw is None:
+        ops_raw = []
+    if not isinstance(ops_raw, list):
+        die("compute.vec.ops must be a list when provided")
+    vec_ops = [str(op).lower() for op in ops_raw]
+
+    # Current C++ activation emitter supports these function names.
+    fn_map = {
+        "relu": "relu",
+        "gelu": "gelu",
+    }
+    pending_ops = {
+        "softmax",
+        "layernorm",
+        "drelu",
+        "dgelu",
+        "dsoftmax",
+        "dlayernorm",
+    }
+
+    module_prefix = str(cpp_cfg.get("module_prefix", "vec_act"))
+    modules: list[str] = []
+    gen_dir = out_path / ".rtlgen_cpp_vec"
+    gen_dir.mkdir(parents=True, exist_ok=True)
+
+    for op in vec_ops:
+        if op not in fn_map:
+            continue
+        fn = fn_map[op]
+        module_name = f"{module_prefix}_{op}_int8"
+        act_cfg = {
+            "version": "1.1",
+            "operands": [
+                {
+                    "name": "vec",
+                    "dimensions": 1,
+                    "bit_width": 8,
+                    "signed": True,
+                }
+            ],
+            "operations": [
+                {
+                    "type": "activation",
+                    "module_name": module_name,
+                    "operand": "vec",
+                    "options": {"function": fn},
+                }
+            ],
+        }
+        cfg_path = (gen_dir / f"{module_name}.json").resolve()
+        cfg_path.write_text(json.dumps(act_cfg, indent=2) + "\n", encoding="utf-8")
+        try:
+            subprocess.run(
+                [str(rtlgen_bin_path), str(cfg_path)],
+                cwd=str(gen_dir),
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+        except subprocess.CalledProcessError as exc:
+            stderr_text = exc.stderr.strip() if exc.stderr else ""
+            stdout_text = exc.stdout.strip() if exc.stdout else ""
+            details = stderr_text or stdout_text or "no stdout/stderr"
+            die(f"C++ RTLGen vec activation generation failed for {op}: {details}")
+
+        module_file = gen_dir / f"{module_name}.v"
+        if not module_file.exists():
+            die(f"C++ RTLGen activation output missing: {module_file}")
+        modules.append(module_file.read_text(encoding="utf-8"))
+
+    requested_pending = [op for op in vec_ops if op in pending_ops]
+    if requested_pending:
+        print(
+            "rtlgen: note: compute.vec requested future ops "
+            f"{requested_pending}; C++ generator integration is pending for these functions."
+        )
+
+    if not modules:
+        return ""
+    return "\n\n".join(modules) + "\n\n"
+
+
 def write_outputs(cfg: dict, out_dir: str) -> None:
     out_path = Path(out_dir)
     out_path.mkdir(parents=True, exist_ok=True)
@@ -669,6 +767,11 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         gemm_cfg = {}
     if not isinstance(gemm_cfg, dict):
         die("compute.gemm must be an object when provided")
+    vec_cfg = compute_cfg.get("vec", {})
+    if vec_cfg is None:
+        vec_cfg = {}
+    if not isinstance(vec_cfg, dict):
+        die("compute.vec must be an object when provided")
 
     compute_enabled = bool(compute_cfg.get("enabled", False))
     gemm_mac_type = str(gemm_cfg.get("mac_type", "int8")).lower()
@@ -676,6 +779,7 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
     gemm_mac_lanes = int(gemm_cfg.get("lanes", 8))
     gemm_accum_width = int(gemm_cfg.get("accum_width", 32))
     gemm_pipeline = int(gemm_cfg.get("pipeline", 1))
+    vec_activation_source = str(vec_cfg.get("activation_source", "builtin")).lower()
 
     if gemm_pipeline < 1:
         die("compute.gemm.pipeline must be >= 1")
@@ -693,6 +797,8 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
             die("compute.gemm.lanes must be 1 when compute.gemm.mac_source=rtlgen_cpp")
         if gemm_accum_width != 16:
             die("compute.gemm.accum_width must be 16 when compute.gemm.mac_source=rtlgen_cpp")
+    if vec_activation_source not in ("builtin", "rtlgen_cpp"):
+        die("compute.vec.activation_source must be one of: builtin, rtlgen_cpp")
 
     gemm_mac_vec_width = gemm_mac_lanes * 8
     gemm_mac_vec_width_minus1 = gemm_mac_vec_width - 1
@@ -707,6 +813,9 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
     else:
         cpp_module_name = ""
         compute_modules = GEMM_MAC_INT8 + "\n\n"
+
+    if compute_enabled and vec_activation_source == "rtlgen_cpp":
+        compute_modules = compute_modules + generate_cpp_vec_activation_modules(vec_cfg, out_path)
     compute_state_regs = f"""  reg [{gemm_mac_vec_width_minus1}:0] gemm_mac_a_vec0;
   reg [{gemm_mac_vec_width_minus1}:0] gemm_mac_b_vec0;
   reg [{gemm_mac_vec_width_minus1}:0] gemm_mac_a_vec1;
