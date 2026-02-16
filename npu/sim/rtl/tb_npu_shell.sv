@@ -111,6 +111,15 @@ module tb_npu_shell;
     end
   endtask
 
+  function integer sx8(input [7:0] v);
+    begin
+      if (v[7])
+        sx8 = v - 256;
+      else
+        sx8 = v;
+    end
+  endfunction
+
   integer fd;
   integer bytes_read;
   integer max_bytes;
@@ -126,15 +135,25 @@ module tb_npu_shell;
   integer gemm_desc_offsets [0:127];
   reg [31:0] gemm_desc_tags [0:127];
   reg [63:0] gemm_desc_uids [0:127];
+  integer gemm_desc_expected_accum [0:127];
   reg [31:0] gemm_log_tag;
   integer gemm_log_offset;
   reg [63:0] gemm_log_uid;
   integer gemm_lookup_i;
+  integer gemm_done_index;
+  integer gemm_accum_slot;
   integer scan_off;
   integer scan_size;
   integer scan_iter;
   reg [7:0] scan_opcode;
   reg [31:0] scan_tag;
+  integer gemm_mac_test;
+  integer gemm_m;
+  integer gemm_n;
+  integer gemm_k;
+  integer gemm_cycles;
+  integer gemm_dot;
+  integer gemm_lane;
   reg [63:0] sim_cycle;
   reg [1:0] gemm_slot_valid_prev;
   reg [1:0] gemm_slot_done_prev;
@@ -174,6 +193,9 @@ module tb_npu_shell;
     event_test = 0;
     if ($value$plusargs("event_test=%d", event_test))
       event_test = (event_test != 0);
+    gemm_mac_test = 0;
+    if ($value$plusargs("gemm_mac_test=%d", gemm_mac_test))
+      gemm_mac_test = (gemm_mac_test != 0);
 
     if ($value$plusargs("bin=%s", bin_path)) begin
       // Read binary descriptor stream from override path
@@ -284,6 +306,26 @@ module tb_npu_shell;
         end else begin
           gemm_desc_uids[gemm_desc_count] = 64'hFFFF_FFFF_FFFF_FFFF;
         end
+        gemm_dot = 0;
+        for (gemm_lane = 0; gemm_lane < 8; gemm_lane = gemm_lane + 1) begin
+          gemm_dot = gemm_dot + (sx8(bin_data[scan_off + 8 + gemm_lane]) * sx8(bin_data[scan_off + 16 + gemm_lane]));
+        end
+        if (scan_size >= 2) begin
+          gemm_m = {bin_data[scan_off + 35], bin_data[scan_off + 34], bin_data[scan_off + 33], bin_data[scan_off + 32]};
+          gemm_n = {bin_data[scan_off + 39], bin_data[scan_off + 38], bin_data[scan_off + 37], bin_data[scan_off + 36]};
+          gemm_k = {bin_data[scan_off + 43], bin_data[scan_off + 42], bin_data[scan_off + 41], bin_data[scan_off + 40]};
+        end else begin
+          gemm_m = scan_tag[31:20];
+          gemm_n = scan_tag[19:10];
+          gemm_k = scan_tag[9:0];
+        end
+        if ((gemm_m == 0) || (gemm_n == 0) || (gemm_k == 0))
+          gemm_cycles = 1;
+        else
+          gemm_cycles = ((gemm_m * gemm_n * gemm_k) >> 10) + 1;
+        if ((scan_size >= 2) && gemm_desc_uids[gemm_desc_count][63])
+          gemm_cycles = gemm_cycles + 8;
+        gemm_desc_expected_accum[gemm_desc_count] = gemm_dot * gemm_cycles;
         gemm_desc_count = gemm_desc_count + 1;
       end
       scan_off = scan_off + (scan_size * 32);
@@ -487,6 +529,21 @@ module tb_npu_shell;
           gemm_log_tag = gemm_desc_tags[gemm_count];
           gemm_log_offset = gemm_desc_offsets[gemm_count];
         end
+        if (gemm_mac_test) begin
+          gemm_done_index = -1;
+          for (gemm_lookup_i = 0; gemm_lookup_i < gemm_desc_count; gemm_lookup_i = gemm_lookup_i + 1) begin
+            if (gemm_desc_offsets[gemm_lookup_i] == gemm_log_offset)
+              gemm_done_index = gemm_lookup_i;
+          end
+          if (gemm_done_index >= 0) begin
+            gemm_accum_slot = dut.gemm_slot_accum0;
+            if (gemm_accum_slot != gemm_desc_expected_accum[gemm_done_index]) begin
+              $display("ERROR: GEMM MAC mismatch slot0 offset=%0d got=%0d exp=%0d",
+                       gemm_log_offset, gemm_accum_slot, gemm_desc_expected_accum[gemm_done_index]);
+              $finish(1);
+            end
+          end
+        end
         gemm_count = gemm_count + 1;
         $display("GEMM_TIMING index=%0d op_uid=0x%016h tag=0x%08h offset=%0d start_cycle=%0d end_cycle=%0d cycles=%0d",
                  gemm_count, gemm_log_uid, gemm_log_tag, gemm_log_offset,
@@ -510,6 +567,21 @@ module tb_npu_shell;
           gemm_log_uid = gemm_desc_uids[gemm_count];
           gemm_log_tag = gemm_desc_tags[gemm_count];
           gemm_log_offset = gemm_desc_offsets[gemm_count];
+        end
+        if (gemm_mac_test) begin
+          gemm_done_index = -1;
+          for (gemm_lookup_i = 0; gemm_lookup_i < gemm_desc_count; gemm_lookup_i = gemm_lookup_i + 1) begin
+            if (gemm_desc_offsets[gemm_lookup_i] == gemm_log_offset)
+              gemm_done_index = gemm_lookup_i;
+          end
+          if (gemm_done_index >= 0) begin
+            gemm_accum_slot = dut.gemm_slot_accum1;
+            if (gemm_accum_slot != gemm_desc_expected_accum[gemm_done_index]) begin
+              $display("ERROR: GEMM MAC mismatch slot1 offset=%0d got=%0d exp=%0d",
+                       gemm_log_offset, gemm_accum_slot, gemm_desc_expected_accum[gemm_done_index]);
+              $finish(1);
+            end
+          end
         end
         gemm_count = gemm_count + 1;
         $display("GEMM_TIMING index=%0d op_uid=0x%016h tag=0x%08h offset=%0d start_cycle=%0d end_cycle=%0d cycles=%0d",

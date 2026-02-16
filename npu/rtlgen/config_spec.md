@@ -44,7 +44,19 @@ can later be extended without breaking v0.1.
   "enable_dma_ports": true,
   "enable_cq_mem_ports": true,
   "enable_axi_ports": true,
-  "enable_axi_lite_wrapper": false
+  "enable_axi_lite_wrapper": false,
+  "compute": {
+    "enabled": true,
+    "gemm": {
+      "mac_type": "int8",
+      "lanes": 8,
+      "accum_width": 32,
+      "pipeline": 1
+    },
+    "vec": {
+      "ops": ["add", "mul", "relu"]
+    }
+  }
 }
 ```
 
@@ -68,6 +80,13 @@ can later be extended without breaking v0.1.
 - `enable_cq_mem_ports` (bool): include a command queue memory read port.
 - `enable_axi_ports` (bool): include AXI4-like memory interface ports (stub).
 - `enable_axi_lite_wrapper` (bool): emit an AXI-Lite wrapper module for MMIO.
+- `compute` (object, optional): Phase 1 compute generation controls.
+  - `compute.enabled` (bool): enable generated GEMM compute datapath hooks.
+  - `compute.gemm.mac_type` (string): currently supports `int8` (Phase 1).
+  - `compute.gemm.lanes` (int): number of int8 MAC lanes (1..8).
+  - `compute.gemm.accum_width` (int): signed accumulator width (16..64).
+  - `compute.gemm.pipeline` (int): reserved pipeline knob (must be >=1).
+  - `compute.vec.ops` (list[string]): declared vector ops for staged bring-up.
 
 ## Notes
 - The initial RTL is a stub for **simulation harnessing** only.
@@ -75,17 +94,16 @@ can later be extended without breaking v0.1.
   focus of v0.1.
 - SRAM instances are emitted as standalone 1R1W modules for simulation and
   blackbox/synth integration (wiring TBD).
+- Phase 1 adds an int8 MAC primitive (`gemm_mac_int8`) and uses it in GEMM
+  slot execution while preserving existing descriptor timing behavior.
 - When `enable_axi_lite_wrapper` is true, the generator emits:
   - `top_axi.v` (AXI-Lite top wrapper)
   - `axi_lite_mmio_bridge.sv` (bridge module)
 
 ## Next steps
 - Extend config fields to cover compute tiles and DMA parameters.
-- Add a compute schema for GEMM/VEC MAC generation:
-  - `compute.gemm.mac_type` (initial target: `int8`)
-  - `compute.gemm.lanes`, `compute.gemm.accum_width`, `compute.gemm.pipeline`
-  - `compute.vec.ops` (initial target: `add/mul/relu`)
-- Keep compatibility with `compute.enabled=false` so existing stub-only
-  validation flows continue to run during migration.
+- Add additional MAC types (`int16`, `fp16`) behind config switches.
+- Keep compatibility with `compute.enabled=false` for stub-only validation
+  flows during migration.
 - See `npu/docs/sim_dev_plan.md` section "A.1) Compute Bring-up Plan" for
   phased implementation and validation gates.

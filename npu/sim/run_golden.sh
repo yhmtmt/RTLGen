@@ -46,16 +46,16 @@ python3 "${REPO_ROOT}/npu/mapper/run.py" "${GEMM_OOO_SCHEDULE}" --out "${GEMM_OO
 cp "${DESC_BIN}" "${RTL_BIN}"
 
 pushd "${REPO_ROOT}" >/dev/null
-make -f npu/sim/rtl/Makefile run BIN="${RTL_BIN}" BYTES=4096 VVPFLAGS="+gemm_mem_test=256"
+make -f npu/sim/rtl/Makefile run BIN="${RTL_BIN}" BYTES=4096 VVPFLAGS="+gemm_mem_test=256 +gemm_mac_test=1"
 make -f npu/sim/rtl/Makefile run \
   BIN="${GEMM_BIN}" \
-  BYTES=256 VVPFLAGS="+gemm_mem_test=256" | tee "${GEMM_RTL_LOG}"
+  BYTES=256 VVPFLAGS="+gemm_mem_test=256 +gemm_mac_test=1" | tee "${GEMM_RTL_LOG}"
 make -f npu/sim/rtl/Makefile run \
   BIN="${GEMM2_BIN}" \
-  BYTES=256 VVPFLAGS="+gemm_mem_test=256" | tee "${GEMM2_RTL_LOG}"
+  BYTES=256 VVPFLAGS="+gemm_mem_test=256 +gemm_mac_test=1" | tee "${GEMM2_RTL_LOG}"
 make -f npu/sim/rtl/Makefile run \
   BIN="${GEMM_OOO_BIN}" \
-  BYTES=256 VVPFLAGS="+gemm_mem_test=256" | tee "${GEMM_OOO_RTL_LOG}"
+  BYTES=256 VVPFLAGS="+gemm_mem_test=256 +gemm_mac_test=1" | tee "${GEMM_OOO_RTL_LOG}"
 popd >/dev/null
 python3 "${REPO_ROOT}/npu/sim/perf/run.py" --bin "${DESC_BIN}" --out "${PERF_TRACE}"
 python3 "${REPO_ROOT}/npu/sim/perf/run.py" --bin "${GEMM_BIN}" \
