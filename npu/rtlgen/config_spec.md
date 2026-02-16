@@ -49,9 +49,19 @@ can later be extended without breaking v0.1.
     "enabled": true,
     "gemm": {
       "mac_type": "int8",
+      "mac_source": "builtin_int8_dot",
       "lanes": 8,
       "accum_width": 32,
-      "pipeline": 1
+      "pipeline": 1,
+      "rtlgen_cpp": {
+        "binary_path": "build/rtlgen",
+        "module_name": "gemm_mac_int8_pp",
+        "ppg_algorithm": "Booth4",
+        "compressor_structure": "AdderTree",
+        "compressor_library": "fa_ha",
+        "compressor_assignment": "legacy_fa_ha",
+        "cpa_structure": "BrentKung"
+      }
     },
     "vec": {
       "ops": ["add", "mul", "relu"]
@@ -82,11 +92,19 @@ can later be extended without breaking v0.1.
 - `enable_axi_lite_wrapper` (bool): emit an AXI-Lite wrapper module for MMIO.
 - `compute` (object, optional): Phase 1 compute generation controls.
   - `compute.enabled` (bool): enable generated GEMM compute datapath hooks.
-  - `compute.gemm.mac_type` (string): currently supports `int8` (Phase 1).
-  - `compute.gemm.lanes` (int): number of int8 MAC lanes (1..8).
-  - `compute.gemm.accum_width` (int): signed accumulator width (16..64).
-  - `compute.gemm.pipeline` (int): reserved pipeline knob (must be >=1).
-  - `compute.vec.ops` (list[string]): declared vector ops for staged bring-up.
+- `compute.gemm.mac_type` (string): currently supports `int8` (Phase 1).
+- `compute.gemm.mac_source` (string): GEMM MAC backend selection.
+  - `builtin_int8_dot` (or `builtin`): existing generated `gemm_mac_int8` lane dot-product module.
+  - `rtlgen_cpp`: uses C++ `build/rtlgen` MAC generator and embeds the generated Verilog in `top.v`.
+- `compute.gemm.lanes` (int): number of int8 MAC lanes (1..8).
+- `compute.gemm.accum_width` (int): signed accumulator width (16..64).
+- `compute.gemm.pipeline` (int): reserved pipeline knob (must be >=1).
+- `compute.gemm.rtlgen_cpp` (object, optional): options for `mac_source=rtlgen_cpp`.
+  - `binary_path` (string): path to C++ RTLGen binary (default `build/rtlgen`).
+  - `module_name` (string): generated MAC module name.
+  - `ppg_algorithm`, `compressor_structure`, `compressor_library`,
+    `compressor_assignment`, `cpa_structure`: forwarded to C++ MAC config.
+- `compute.vec.ops` (list[string]): declared vector ops for staged bring-up.
 
 ## Notes
 - The initial RTL is a stub for **simulation harnessing** only.
@@ -96,6 +114,8 @@ can later be extended without breaking v0.1.
   blackbox/synth integration (wiring TBD).
 - Phase 1 adds an int8 MAC primitive (`gemm_mac_int8`) and uses it in GEMM
   slot execution while preserving existing descriptor timing behavior.
+- `mac_source=rtlgen_cpp` currently requires `lanes=1` and `accum_width=16`
+  to match the generated scalar MAC interface (`a*b + accumulator`).
 - When `enable_axi_lite_wrapper` is true, the generator emits:
   - `top_axi.v` (AXI-Lite top wrapper)
   - `axi_lite_mmio_bridge.sv` (bridge module)

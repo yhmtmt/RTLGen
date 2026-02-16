@@ -122,8 +122,8 @@ This plan defines two simulation schemes:
 ## Next steps
 - Start Phase 2 of compute bring-up: minimal VEC decode/execution path
   (`add/mul/relu`) after GEMM Phase 1.
-- Start Phase 5 scaffold: wire C++ RTLGen `mac` config + `pp_row_feedback`
-  generation path and add a focused Verilog regression.
+- Continue Phase 5 integration: route C++ RTLGen `pp_row_feedback` MAC into
+  NPU `npu/rtlgen/gen.py` as an optional GEMM backend and validate on RTL sim.
 - Extend perf sim model coverage (VEC_OP / SOFTMAX) and refine the memory model
   (latency/burst/outstanding).
 - Keep bandwidth parameterization documented in `npu/sim/perf/README.md`.

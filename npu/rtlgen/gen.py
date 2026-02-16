@@ -2,7 +2,7 @@
 import argparse
 import json
 import math
-import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -545,6 +545,83 @@ def load_config(path: str) -> dict:
     return cfg
 
 
+def generate_cpp_mac_module(gemm_cfg: dict, out_path: Path) -> tuple[str, str]:
+    cpp_cfg = gemm_cfg.get("rtlgen_cpp", {})
+    if cpp_cfg is None:
+        cpp_cfg = {}
+    if not isinstance(cpp_cfg, dict):
+        die("compute.gemm.rtlgen_cpp must be an object when provided")
+
+    rtlgen_bin = str(cpp_cfg.get("binary_path", "build/rtlgen"))
+    rtlgen_bin_path = Path(rtlgen_bin)
+    if not rtlgen_bin_path.is_absolute():
+        rtlgen_bin_path = Path.cwd() / rtlgen_bin_path
+    if not rtlgen_bin_path.exists():
+        die(
+            f"compute.gemm.rtlgen_cpp.binary_path not found: {rtlgen_bin_path}. "
+            "Build C++ rtlgen first or update binary_path."
+        )
+
+    module_name = str(cpp_cfg.get("module_name", "gemm_mac_int8_pp"))
+    mac_cfg = {
+        "version": "1.1",
+        "operands": [
+            {
+                "name": "int8",
+                "dimensions": 1,
+                "bit_width": 8,
+                "signed": True,
+            }
+        ],
+        "operations": [
+            {
+                "type": "mac",
+                "module_name": module_name,
+                "operand": "int8",
+                "options": {
+                    "ppg_algorithm": str(cpp_cfg.get("ppg_algorithm", "Booth4")),
+                    "compressor_structure": str(cpp_cfg.get("compressor_structure", "AdderTree")),
+                    "compressor_library": str(cpp_cfg.get("compressor_library", "fa_ha")),
+                    "compressor_assignment": str(cpp_cfg.get("compressor_assignment", "legacy_fa_ha")),
+                    "cpa_structure": str(cpp_cfg.get("cpa_structure", "BrentKung")),
+                    "accumulation_mode": "pp_row_feedback",
+                    "pipeline_depth": 1,
+                },
+            }
+        ],
+    }
+
+    gen_dir = out_path / ".rtlgen_cpp_mac"
+    gen_dir.mkdir(parents=True, exist_ok=True)
+    cfg_path = (gen_dir / "mac_config.json").resolve()
+    cfg_path.write_text(json.dumps(mac_cfg, indent=2) + "\n", encoding="utf-8")
+
+    try:
+        run = subprocess.run(
+            [str(rtlgen_bin_path), str(cfg_path)],
+            cwd=str(gen_dir),
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        stderr_text = exc.stderr.strip() if exc.stderr else ""
+        stdout_text = exc.stdout.strip() if exc.stdout else ""
+        details = stderr_text or stdout_text or "no stdout/stderr"
+        die(f"C++ RTLGen mac generation failed: {details}")
+
+    module_file = gen_dir / f"{module_name}.v"
+    cpa_file = gen_dir / "MG_CPA.v"
+    if not module_file.exists():
+        die(f"C++ RTLGen mac output missing: {module_file}")
+    if not cpa_file.exists():
+        die(f"C++ RTLGen mac dependency missing: {cpa_file}")
+
+    module_text = module_file.read_text(encoding="utf-8")
+    cpa_text = cpa_file.read_text(encoding="utf-8")
+    return module_name, (module_text + "\n\n" + cpa_text + "\n")
+
+
 def write_outputs(cfg: dict, out_dir: str) -> None:
     out_path = Path(out_dir)
     out_path.mkdir(parents=True, exist_ok=True)
@@ -595,6 +672,7 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
 
     compute_enabled = bool(compute_cfg.get("enabled", False))
     gemm_mac_type = str(gemm_cfg.get("mac_type", "int8")).lower()
+    gemm_mac_source = str(gemm_cfg.get("mac_source", "builtin_int8_dot")).lower()
     gemm_mac_lanes = int(gemm_cfg.get("lanes", 8))
     gemm_accum_width = int(gemm_cfg.get("accum_width", 32))
     gemm_pipeline = int(gemm_cfg.get("pipeline", 1))
@@ -608,6 +686,13 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         die("compute.gemm.accum_width must be in [16, 64]")
     if compute_enabled and gemm_mac_type != "int8":
         die("Phase 1 supports only compute.gemm.mac_type=int8")
+    if gemm_mac_source not in ("builtin", "builtin_int8_dot", "rtlgen_cpp"):
+        die("compute.gemm.mac_source must be one of: builtin_int8_dot, builtin, rtlgen_cpp")
+    if compute_enabled and gemm_mac_source == "rtlgen_cpp":
+        if gemm_mac_lanes != 1:
+            die("compute.gemm.lanes must be 1 when compute.gemm.mac_source=rtlgen_cpp")
+        if gemm_accum_width != 16:
+            die("compute.gemm.accum_width must be 16 when compute.gemm.mac_source=rtlgen_cpp")
 
     gemm_mac_vec_width = gemm_mac_lanes * 8
     gemm_mac_vec_width_minus1 = gemm_mac_vec_width - 1
@@ -615,14 +700,48 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
     gemm_a_hi = 64 + gemm_mac_vec_width - 1
     gemm_b_hi = 128 + gemm_mac_vec_width - 1
 
-    compute_modules = GEMM_MAC_INT8 + "\n\n"
+    use_cpp_mac = compute_enabled and (gemm_mac_source == "rtlgen_cpp")
+    if use_cpp_mac:
+        cpp_module_name, cpp_module_text = generate_cpp_mac_module(gemm_cfg, out_path)
+        compute_modules = cpp_module_text + "\n"
+    else:
+        cpp_module_name = ""
+        compute_modules = GEMM_MAC_INT8 + "\n\n"
     compute_state_regs = f"""  reg [{gemm_mac_vec_width_minus1}:0] gemm_mac_a_vec0;
   reg [{gemm_mac_vec_width_minus1}:0] gemm_mac_b_vec0;
   reg [{gemm_mac_vec_width_minus1}:0] gemm_mac_a_vec1;
   reg [{gemm_mac_vec_width_minus1}:0] gemm_mac_b_vec1;
   reg signed [{gemm_accum_width_minus1}:0] gemm_slot_accum0;
   reg signed [{gemm_accum_width_minus1}:0] gemm_slot_accum1;"""
-    compute_instances = f"""
+
+    if use_cpp_mac:
+        compute_instances = f"""
+  wire signed [15:0] gemm_mac_next0;
+  wire signed [15:0] gemm_mac_next1;
+
+  {cpp_module_name} u_gemm_mac0 (
+    .multiplicand(gemm_mac_a_vec0[7:0]),
+    .multiplier(gemm_mac_b_vec0[7:0]),
+    .accumulator(gemm_slot_accum0[15:0]),
+    .result(gemm_mac_next0)
+  );
+
+  {cpp_module_name} u_gemm_mac1 (
+    .multiplicand(gemm_mac_a_vec1[7:0]),
+    .multiplier(gemm_mac_b_vec1[7:0]),
+    .accumulator(gemm_slot_accum1[15:0]),
+    .result(gemm_mac_next1)
+  );
+"""
+        compute_accum_update = """      if (gemm_slot_valid[0] && !gemm_slot_done[0]) begin
+        gemm_slot_accum0 <= $signed(gemm_mac_next0);
+      end
+      if (gemm_slot_valid[1] && !gemm_slot_done[1]) begin
+        gemm_slot_accum1 <= $signed(gemm_mac_next1);
+      end
+"""
+    else:
+        compute_instances = f"""
   wire signed [{gemm_accum_width_minus1}:0] gemm_mac_dot0;
   wire signed [{gemm_accum_width_minus1}:0] gemm_mac_dot1;
 
@@ -644,6 +763,13 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
     .acc_out(gemm_mac_dot1)
   );
 """
+        compute_accum_update = """      if (gemm_slot_valid[0] && !gemm_slot_done[0]) begin
+        gemm_slot_accum0 <= gemm_slot_accum0 + gemm_mac_dot0;
+      end
+      if (gemm_slot_valid[1] && !gemm_slot_done[1]) begin
+        gemm_slot_accum1 <= gemm_slot_accum1 + gemm_mac_dot1;
+      end
+"""
     compute_reset = """      gemm_mac_a_vec0 <= 0;
       gemm_mac_b_vec0 <= 0;
       gemm_mac_a_vec1 <= 0;
@@ -652,13 +778,6 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
       gemm_slot_accum1 <= 0;"""
 
     if compute_enabled:
-        compute_accum_update = """      if (gemm_slot_valid[0] && !gemm_slot_done[0]) begin
-        gemm_slot_accum0 <= gemm_slot_accum0 + gemm_mac_dot0;
-      end
-      if (gemm_slot_valid[1] && !gemm_slot_done[1]) begin
-        gemm_slot_accum1 <= gemm_slot_accum1 + gemm_mac_dot1;
-      end
-"""
         gemm_slot_init0_v1 = f"""                gemm_mac_a_vec0 <= cq_mem_rdata[{gemm_a_hi}:64];
                 gemm_mac_b_vec0 <= cq_mem_rdata[{gemm_b_hi}:128];
                 gemm_slot_accum0 <= 0;"""

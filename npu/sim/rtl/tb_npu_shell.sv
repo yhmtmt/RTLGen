@@ -154,6 +154,7 @@ module tb_npu_shell;
   integer gemm_cycles;
   integer gemm_dot;
   integer gemm_lane;
+  integer gemm_mac_lanes;
   reg [63:0] sim_cycle;
   reg [1:0] gemm_slot_valid_prev;
   reg [1:0] gemm_slot_done_prev;
@@ -184,6 +185,9 @@ module tb_npu_shell;
     gemm_slot_start_cycle1 = 0;
     gemm_count = 0;
     gemm_desc_count = 0;
+    gemm_mac_lanes = ($bits(dut.gemm_mac_a_vec0) / 8);
+    if (gemm_mac_lanes < 1)
+      gemm_mac_lanes = 1;
     #(CLK_PERIOD*4);
     rst_n = 1;
 
@@ -307,7 +311,7 @@ module tb_npu_shell;
           gemm_desc_uids[gemm_desc_count] = 64'hFFFF_FFFF_FFFF_FFFF;
         end
         gemm_dot = 0;
-        for (gemm_lane = 0; gemm_lane < 8; gemm_lane = gemm_lane + 1) begin
+        for (gemm_lane = 0; gemm_lane < gemm_mac_lanes; gemm_lane = gemm_lane + 1) begin
           gemm_dot = gemm_dot + (sx8(bin_data[scan_off + 8 + gemm_lane]) * sx8(bin_data[scan_off + 16 + gemm_lane]));
         end
         if (scan_size >= 2) begin
