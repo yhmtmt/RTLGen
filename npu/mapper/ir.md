@@ -91,7 +91,7 @@ Each op is mapped to one shell descriptor.
 #### vec_op
 - `src`, `dst` (buffer ids)
 - `bytes` (u32)
-- `op` (enum: relu, gelu, rmsnorm, layernorm, add, mul)
+- `op` (enum: relu, add, mul, gelu, softmax, layernorm, drelu, dgelu, dsoftmax, dlayernorm)
 - `dtype` (enum)
 
 #### softmax

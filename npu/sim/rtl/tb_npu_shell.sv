@@ -140,7 +140,7 @@ module tb_npu_shell;
   integer vec_desc_count;
   integer vec_desc_offsets [0:127];
   reg [63:0] vec_desc_expected [0:127];
-  reg [1:0] vec_desc_op [0:127];
+  reg [3:0] vec_desc_op [0:127];
   reg [31:0] gemm_log_tag;
   integer gemm_log_offset;
   reg [63:0] gemm_log_uid;
@@ -160,6 +160,7 @@ module tb_npu_shell;
   integer gemm_dot;
   integer gemm_lane;
   integer vec_tmp;
+  integer vec_softmax_tmp;
   integer vec_op_sel;
   integer gemm_mac_lanes;
   reg [63:0] vec_expected_vec;
@@ -177,6 +178,7 @@ module tb_npu_shell;
   reg event_test;
   reg vec_test;
   reg vec_gelu_test;
+  reg vec_ext_test;
   string bin_path;
   `include "npu/rtlgen/out/sram_map.vh"
   localparam [63:0] MEM_DST_BASE = 64'h0000_0000_0001_0000;
@@ -217,6 +219,9 @@ module tb_npu_shell;
     vec_gelu_test = 0;
     if ($value$plusargs("vec_gelu_test=%d", vec_gelu_test))
       vec_gelu_test = (vec_gelu_test != 0);
+    vec_ext_test = 0;
+    if ($value$plusargs("vec_ext_test=%d", vec_ext_test))
+      vec_ext_test = (vec_ext_test != 0);
     gemm_mac_test = 0;
     if ($value$plusargs("gemm_mac_test=%d", gemm_mac_test))
       gemm_mac_test = (gemm_mac_test != 0);
@@ -282,10 +287,10 @@ module tb_npu_shell;
       bytes_read = 64;
     end else if (vec_test) begin
       integer idx;
-      for (idx = 0; idx < 128; idx = idx + 1)
+      for (idx = 0; idx < 320; idx = idx + 1)
         bin_data[idx] = 0;
 
-      // Descriptor 0: VEC_OP relu (flags[1:0]=00)
+      // Descriptor 0: VEC_OP relu (op=0x0)
       bin_data[0] = 8'h11;
       bin_data[2] = 8'h01;
       bin_data[8] = 8'hf8;  // -8 -> 0
@@ -297,7 +302,7 @@ module tb_npu_shell;
       bin_data[14] = 8'h00;
       bin_data[15] = 8'h20;
 
-      // Descriptor 1: VEC_OP add (flags[1:0]=01)
+      // Descriptor 1: VEC_OP add (op=0x1)
       bin_data[32] = 8'h11;
       bin_data[33] = 8'h01;
       bin_data[34] = 8'h01;
@@ -318,7 +323,7 @@ module tb_npu_shell;
       bin_data[54] = 8'hf0;
       bin_data[55] = 8'h10;
 
-      // Descriptor 2: VEC_OP mul (flags[1:0]=10)
+      // Descriptor 2: VEC_OP mul (op=0x2)
       bin_data[64] = 8'h11;
       bin_data[65] = 8'h02;
       bin_data[66] = 8'h01;
@@ -339,9 +344,9 @@ module tb_npu_shell;
       bin_data[86] = 8'hff; // -1
       bin_data[87] = 8'h02;
 
-      // Descriptor 3: VEC_OP relu/gelu (flags[1:0]=00/11)
+      // Descriptor 3: VEC_OP relu/gelu (op=0x0/0x3)
       bin_data[96] = 8'h11;
-      bin_data[97] = vec_gelu_test ? 8'h03 : 8'h00;
+      bin_data[97] = (vec_ext_test || vec_gelu_test) ? 8'h03 : 8'h00;
       bin_data[98] = 8'h01;
       bin_data[104] = 8'hf0; // -16 -> 0
       bin_data[105] = 8'h04; // 4 -> 2
@@ -352,7 +357,89 @@ module tb_npu_shell;
       bin_data[110] = 8'h20; // 32 -> 16
       bin_data[111] = 8'h02; // 2 -> 1
 
-      bytes_read = 128;
+      if (vec_ext_test) begin
+        // Descriptor 4: VEC_OP softmax (op=0x4)
+        bin_data[128] = 8'h11;
+        bin_data[129] = 8'h04;
+        bin_data[130] = 8'h01;
+        bin_data[136] = 8'hf0;
+        bin_data[137] = 8'hfc;
+        bin_data[138] = 8'h00;
+        bin_data[139] = 8'h04;
+        bin_data[140] = 8'h08;
+        bin_data[141] = 8'h10;
+        bin_data[142] = 8'h1f;
+        bin_data[143] = 8'h20;
+
+        // Descriptor 5: VEC_OP layernorm (op=0x5)
+        bin_data[160] = 8'h11;
+        bin_data[161] = 8'h05;
+        bin_data[162] = 8'h01;
+        bin_data[168] = 8'hf0;
+        bin_data[169] = 8'hfd;
+        bin_data[170] = 8'h00;
+        bin_data[171] = 8'h01;
+        bin_data[172] = 8'h02;
+        bin_data[173] = 8'h07;
+        bin_data[174] = 8'h40;
+        bin_data[175] = 8'h80;
+
+        // Descriptor 6: VEC_OP drelu (op=0x6)
+        bin_data[192] = 8'h11;
+        bin_data[193] = 8'h06;
+        bin_data[194] = 8'h01;
+        bin_data[200] = 8'hff;
+        bin_data[201] = 8'h00;
+        bin_data[202] = 8'h01;
+        bin_data[203] = 8'h02;
+        bin_data[204] = 8'hfe;
+        bin_data[205] = 8'h07;
+        bin_data[206] = 8'hf8;
+        bin_data[207] = 8'h09;
+
+        // Descriptor 7: VEC_OP dgelu (op=0x7)
+        bin_data[224] = 8'h11;
+        bin_data[225] = 8'h07;
+        bin_data[226] = 8'h01;
+        bin_data[232] = 8'hfd;
+        bin_data[233] = 8'h00;
+        bin_data[234] = 8'h03;
+        bin_data[235] = 8'h04;
+        bin_data[236] = 8'hfc;
+        bin_data[237] = 8'h08;
+        bin_data[238] = 8'hf0;
+        bin_data[239] = 8'h7f;
+
+        // Descriptor 8: VEC_OP dsoftmax (op=0x8)
+        bin_data[256] = 8'h11;
+        bin_data[257] = 8'h08;
+        bin_data[258] = 8'h01;
+        bin_data[264] = 8'he8;
+        bin_data[265] = 8'hf8;
+        bin_data[266] = 8'hfc;
+        bin_data[267] = 8'h00;
+        bin_data[268] = 8'h04;
+        bin_data[269] = 8'h08;
+        bin_data[270] = 8'h10;
+        bin_data[271] = 8'h20;
+
+        // Descriptor 9: VEC_OP dlayernorm (op=0x9)
+        bin_data[288] = 8'h11;
+        bin_data[289] = 8'h09;
+        bin_data[290] = 8'h01;
+        bin_data[296] = 8'h80;
+        bin_data[297] = 8'hff;
+        bin_data[298] = 8'h00;
+        bin_data[299] = 8'h01;
+        bin_data[300] = 8'h02;
+        bin_data[301] = 8'h7f;
+        bin_data[302] = 8'h10;
+        bin_data[303] = 8'h20;
+
+        bytes_read = 320;
+      end else begin
+        bytes_read = 128;
+      end
     end else begin
       // Read binary descriptor stream
       max_bytes = 4096;
@@ -426,7 +513,7 @@ module tb_npu_shell;
         gemm_desc_expected_accum[gemm_desc_count] = gemm_dot * gemm_cycles;
         gemm_desc_count = gemm_desc_count + 1;
       end else if ((scan_opcode == 8'h11) && (vec_desc_count < 128)) begin
-        vec_op_sel = bin_data[scan_off + 1] & 8'h3;
+        vec_op_sel = bin_data[scan_off + 1] & 8'hf;
         vec_expected_vec = 64'h0;
         for (gemm_lane = 0; gemm_lane < gemm_mac_lanes; gemm_lane = gemm_lane + 1) begin
           if (vec_op_sel == 1) begin
@@ -439,6 +526,31 @@ module tb_npu_shell;
               vec_tmp = 0;
             else
               vec_tmp = vec_tmp >>> 1;
+          end else if (vec_op_sel == 4) begin
+            vec_tmp = sx8(bin_data[scan_off + 8 + gemm_lane]);
+            if (vec_tmp < 0)
+              vec_tmp = 0;
+            else if (vec_tmp > 31)
+              vec_tmp = 127;
+            else
+              vec_tmp = vec_tmp << 2;
+          end else if (vec_op_sel == 5) begin
+            vec_tmp = sx8(bin_data[scan_off + 8 + gemm_lane]) >>> 1;
+          end else if (vec_op_sel == 6) begin
+            vec_tmp = (sx8(bin_data[scan_off + 8 + gemm_lane]) > 0) ? 1 : 0;
+          end else if (vec_op_sel == 7) begin
+            vec_tmp = (sx8(bin_data[scan_off + 8 + gemm_lane]) > 0) ? 1 : 0;
+          end else if (vec_op_sel == 8) begin
+            vec_softmax_tmp = sx8(bin_data[scan_off + 8 + gemm_lane]);
+            if (vec_softmax_tmp < 0)
+              vec_softmax_tmp = 0;
+            else if (vec_softmax_tmp > 31)
+              vec_softmax_tmp = 127;
+            else
+              vec_softmax_tmp = vec_softmax_tmp << 2;
+            vec_tmp = (vec_softmax_tmp * (127 - vec_softmax_tmp)) >>> 7;
+          end else if (vec_op_sel == 9) begin
+            vec_tmp = 1;
           end else begin
             vec_tmp = sx8(bin_data[scan_off + 8 + gemm_lane]);
             if (vec_tmp < 0)
@@ -448,7 +560,7 @@ module tb_npu_shell;
         end
         vec_desc_offsets[vec_desc_count] = scan_off;
         vec_desc_expected[vec_desc_count] = vec_expected_vec;
-        vec_desc_op[vec_desc_count] = vec_op_sel[1:0];
+        vec_desc_op[vec_desc_count] = vec_op_sel[3:0];
         vec_desc_count = vec_desc_count + 1;
       end
       scan_off = scan_off + (scan_size * 32);

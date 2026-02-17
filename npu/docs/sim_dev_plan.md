@@ -53,8 +53,8 @@ This plan defines two simulation schemes:
 - VEC: minimal elementwise ops (`add`, `mul`, `relu`) using the same MAC
   datapath where possible.
 - Phase-2 preference: source activation RTL from C++ `src/rtlgen` where
-  available (`relu` now, `gelu` in-progress), then extend to `softmax`,
-  `layernorm`, and derivative kernels as C++ generator support lands.
+  available (`relu`, `gelu`, `softmax`, `layernorm`, `drelu`, `dgelu`,
+  `dsoftmax`, `dlayernorm`).
 - Keep descriptor/IRQ semantics stable with `npu/shell/spec.md`.
 
 ### RTLGen extension points
@@ -75,7 +75,8 @@ This plan defines two simulation schemes:
 ### Validation gates
 1) RTL functional:
    - add GEMM correctness checks in `npu/sim/rtl/` (small matrix sanity tests)
-   - add VEC op checks for `add/mul/relu`
+   - add VEC op checks for `add/mul/relu/gelu/softmax/layernorm` and
+     derivative ops
    - keep existing DMA/CQ regressions green
 2) Mapping/perf alignment:
    - mapper emits descriptors that match new compute fields
@@ -88,10 +89,10 @@ This plan defines two simulation schemes:
 ### Delivery phases
 1) Phase 1: single MAC type (`int8`) + GEMM correctness in RTL sim.
 2) Phase 2: add VEC minimal ops (`add/mul/relu`) on shared datapath.
-   - use C++ activation modules as the primary source for `relu`/`gelu` where
-     configured (`compute.vec.activation_source=rtlgen_cpp`)
-   - keep mapper/perf semantics aligned while adding `softmax`/`layernorm`
-     only after C++ generator emits stable modules
+   - use C++ activation modules as the primary source for supported scalar
+     activations where configured (`compute.vec.activation_source=rtlgen_cpp`)
+   - keep mapper/perf semantics aligned while adding extended ops
+     (`softmax/layernorm` and derivatives)
 3) Phase 3: add second MAC type (`int16` or `fp16`) behind config switch.
 4) Phase 4: run OpenROAD block sweep and compare against DMA/CQ-only baseline.
 5) Phase 5: integrate C++ `src/rtlgen` MAC generator path into NPU MAC-core
@@ -127,8 +128,8 @@ This plan defines two simulation schemes:
 - Shared error/IRQ semantics (from `npu/shell/spec.md`)
 
 ## Next steps
-- Start Phase 2 of compute bring-up: minimal VEC decode/execution path
-  (`add/mul/relu`) after GEMM Phase 1.
+- Continue Phase 2 with extended VEC decode/execution coverage for
+  `softmax/layernorm` and derivative ops after minimal `add/mul/relu`.
 - Continue Phase 5 integration: route C++ RTLGen `pp_row_feedback` MAC into
   NPU `npu/rtlgen/gen.py` as an optional GEMM backend and validate on RTL sim.
 - Extend perf sim model coverage (VEC_OP / SOFTMAX) and refine the memory model

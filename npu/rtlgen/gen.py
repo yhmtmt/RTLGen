@@ -86,14 +86,26 @@ module {top_name} (
   localparam IRQ_CQ_EMPTY    = 0;
   localparam IRQ_EVENT       = 1;
   localparam IRQ_ERROR       = 2;
-  localparam [1:0] VEC_OP_RELU = 2'b00;
-  localparam [1:0] VEC_OP_ADD  = 2'b01;
-  localparam [1:0] VEC_OP_MUL  = 2'b10;
-  localparam [1:0] VEC_OP_GELU = 2'b11;
-  localparam       VEC_EN_ADD  = {vec_en_add};
-  localparam       VEC_EN_MUL  = {vec_en_mul};
-  localparam       VEC_EN_RELU = {vec_en_relu};
-  localparam       VEC_EN_GELU = {vec_en_gelu};
+  localparam [3:0] VEC_OP_RELU      = 4'h0;
+  localparam [3:0] VEC_OP_ADD       = 4'h1;
+  localparam [3:0] VEC_OP_MUL       = 4'h2;
+  localparam [3:0] VEC_OP_GELU      = 4'h3;
+  localparam [3:0] VEC_OP_SOFTMAX   = 4'h4;
+  localparam [3:0] VEC_OP_LAYERNORM = 4'h5;
+  localparam [3:0] VEC_OP_DRELU     = 4'h6;
+  localparam [3:0] VEC_OP_DGELU     = 4'h7;
+  localparam [3:0] VEC_OP_DSOFTMAX  = 4'h8;
+  localparam [3:0] VEC_OP_DLAYERNORM= 4'h9;
+  localparam       VEC_EN_ADD       = {vec_en_add};
+  localparam       VEC_EN_MUL       = {vec_en_mul};
+  localparam       VEC_EN_RELU      = {vec_en_relu};
+  localparam       VEC_EN_GELU      = {vec_en_gelu};
+  localparam       VEC_EN_SOFTMAX   = {vec_en_softmax};
+  localparam       VEC_EN_LAYERNORM = {vec_en_layernorm};
+  localparam       VEC_EN_DRELU     = {vec_en_drelu};
+  localparam       VEC_EN_DGELU     = {vec_en_dgelu};
+  localparam       VEC_EN_DSOFTMAX  = {vec_en_dsoftmax};
+  localparam       VEC_EN_DLAYERNORM= {vec_en_dlayernorm};
 
   // MMIO offsets (bytes)
   `include "mmio_map.vh"
@@ -652,18 +664,20 @@ def generate_cpp_vec_activation_modules(vec_cfg: dict, out_path: Path) -> tuple[
         die("compute.vec.ops must be a list when provided")
     vec_ops = [str(op).lower() for op in ops_raw]
 
-    # Current C++ activation emitter supports these function names.
+    # C++ activation emitter supports these function names.
     fn_map = {
         "relu": "relu",
         "gelu": "gelu",
+        "softmax": "softmax",
+        "layernorm": "layernorm",
+        "drelu": "drelu",
+        "dgelu": "dgelu",
+        "dsoftmax": "dsoftmax",
+        "dlayernorm": "dlayernorm",
     }
     pending_ops = {
-        "softmax",
-        "layernorm",
-        "drelu",
-        "dgelu",
-        "dsoftmax",
-        "dlayernorm",
+        "rmsnorm",
+        "drmsnorm",
     }
 
     module_prefix = str(cpp_cfg.get("module_prefix", "vec_act"))
@@ -798,10 +812,31 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
     vec_ops = [str(op).lower() for op in vec_ops_raw]
     if not vec_ops:
         vec_ops = ["add", "mul", "relu"]
+    supported_vec_ops = {
+        "add",
+        "mul",
+        "relu",
+        "gelu",
+        "softmax",
+        "layernorm",
+        "drelu",
+        "dgelu",
+        "dsoftmax",
+        "dlayernorm",
+    }
+    unknown_vec_ops = sorted({op for op in vec_ops if op not in supported_vec_ops})
+    if unknown_vec_ops:
+        die(f"unsupported compute.vec.ops values: {unknown_vec_ops}")
     vec_en_add = 1 if "add" in vec_ops else 0
     vec_en_mul = 1 if "mul" in vec_ops else 0
     vec_en_relu = 1 if "relu" in vec_ops else 0
     vec_en_gelu = 1 if "gelu" in vec_ops else 0
+    vec_en_softmax = 1 if "softmax" in vec_ops else 0
+    vec_en_layernorm = 1 if "layernorm" in vec_ops else 0
+    vec_en_drelu = 1 if "drelu" in vec_ops else 0
+    vec_en_dgelu = 1 if "dgelu" in vec_ops else 0
+    vec_en_dsoftmax = 1 if "dsoftmax" in vec_ops else 0
+    vec_en_dlayernorm = 1 if "dlayernorm" in vec_ops else 0
 
     if gemm_pipeline < 1:
         die("compute.gemm.pipeline must be >= 1")
@@ -842,8 +877,20 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         compute_modules = compute_modules + vec_module_text
     vec_cpp_relu_module = vec_cpp_modules.get("relu", "")
     vec_cpp_gelu_module = vec_cpp_modules.get("gelu", "")
+    vec_cpp_softmax_module = vec_cpp_modules.get("softmax", "")
+    vec_cpp_layernorm_module = vec_cpp_modules.get("layernorm", "")
+    vec_cpp_drelu_module = vec_cpp_modules.get("drelu", "")
+    vec_cpp_dgelu_module = vec_cpp_modules.get("dgelu", "")
+    vec_cpp_dsoftmax_module = vec_cpp_modules.get("dsoftmax", "")
+    vec_cpp_dlayernorm_module = vec_cpp_modules.get("dlayernorm", "")
     use_cpp_relu = bool(vec_cpp_relu_module)
     use_cpp_gelu = bool(vec_cpp_gelu_module)
+    use_cpp_softmax = bool(vec_cpp_softmax_module)
+    use_cpp_layernorm = bool(vec_cpp_layernorm_module)
+    use_cpp_drelu = bool(vec_cpp_drelu_module)
+    use_cpp_dgelu = bool(vec_cpp_dgelu_module)
+    use_cpp_dsoftmax = bool(vec_cpp_dsoftmax_module)
+    use_cpp_dlayernorm = bool(vec_cpp_dlayernorm_module)
 
     compute_state_regs = f"""  reg [{gemm_mac_vec_width_minus1}:0] gemm_mac_a_vec0;
   reg [{gemm_mac_vec_width_minus1}:0] gemm_mac_b_vec0;
@@ -854,7 +901,7 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
   reg [{gemm_mac_vec_width_minus1}:0] vec_in0;
   reg [{gemm_mac_vec_width_minus1}:0] vec_in1;
   reg [{gemm_mac_vec_width_minus1}:0] vec_last_result;
-  reg [1:0] vec_op_sel;
+  reg [3:0] vec_op_sel;
   reg vec_pending;
   reg vec_done_pulse;"""
 
@@ -914,27 +961,86 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         gemm_slot_accum1 <= gemm_slot_accum1 + gemm_mac_dot1;
       end
 """
-    if use_cpp_relu:
-        relu_lane_body = f"""      {vec_cpp_relu_module} u_vec_relu (
+    def vec_lane_body(
+        use_cpp_op: bool, module_name: str, inst_suffix: str, out_wire: str, builtin_body: str
+    ) -> str:
+        if use_cpp_op:
+            return f"""      {module_name} u_vec_{inst_suffix} (
         .X(vec_in0[(gi*8) +: 8]),
-        .Y(vec_relu_res[(gi*8) +: 8])
+        .Y({out_wire}[(gi*8) +: 8])
       );"""
-    else:
-        relu_lane_body = """      assign vec_relu_res[(gi*8) +: 8] = vec_in0[(gi*8)+7] ? 8'h00 : vec_in0[(gi*8) +: 8];"""
+        return builtin_body
 
-    if use_cpp_gelu:
-        gelu_lane_body = f"""      {vec_cpp_gelu_module} u_vec_gelu (
-        .X(vec_in0[(gi*8) +: 8]),
-        .Y(vec_gelu_res[(gi*8) +: 8])
-      );"""
-    else:
-        gelu_lane_body = """      assign vec_gelu_res[(gi*8) +: 8] = vec_in0[(gi*8)+7] ? 8'h00 : ($signed(vec_in0[(gi*8) +: 8]) >>> 1);"""
+    relu_lane_body = vec_lane_body(
+        use_cpp_relu,
+        vec_cpp_relu_module,
+        "relu",
+        "vec_relu_res",
+        """      assign vec_relu_res[(gi*8) +: 8] = vec_in0[(gi*8)+7] ? 8'h00 : vec_in0[(gi*8) +: 8];""",
+    )
+    gelu_lane_body = vec_lane_body(
+        use_cpp_gelu,
+        vec_cpp_gelu_module,
+        "gelu",
+        "vec_gelu_res",
+        """      assign vec_gelu_res[(gi*8) +: 8] = vec_in0[(gi*8)+7] ? 8'h00 : ($signed(vec_in0[(gi*8) +: 8]) >>> 1);""",
+    )
+    softmax_lane_body = vec_lane_body(
+        use_cpp_softmax,
+        vec_cpp_softmax_module,
+        "softmax",
+        "vec_softmax_res",
+        """      assign vec_softmax_res[(gi*8) +: 8] = vec_in0[(gi*8)+7] ? 8'h00 : (($signed(vec_in0[(gi*8) +: 8]) > 8'sd31) ? 8'd127 : (vec_in0[(gi*8) +: 8] << 2));""",
+    )
+    layernorm_lane_body = vec_lane_body(
+        use_cpp_layernorm,
+        vec_cpp_layernorm_module,
+        "layernorm",
+        "vec_layernorm_res",
+        """      assign vec_layernorm_res[(gi*8) +: 8] = $signed(vec_in0[(gi*8) +: 8]) >>> 1;""",
+    )
+    drelu_lane_body = vec_lane_body(
+        use_cpp_drelu,
+        vec_cpp_drelu_module,
+        "drelu",
+        "vec_drelu_res",
+        """      assign vec_drelu_res[(gi*8) +: 8] = ($signed(vec_in0[(gi*8) +: 8]) > 0) ? 8'h01 : 8'h00;""",
+    )
+    dgelu_lane_body = vec_lane_body(
+        use_cpp_dgelu,
+        vec_cpp_dgelu_module,
+        "dgelu",
+        "vec_dgelu_res",
+        """      assign vec_dgelu_res[(gi*8) +: 8] = ($signed(vec_in0[(gi*8) +: 8]) > 0) ? 8'h01 : 8'h00;""",
+    )
+    dsoftmax_lane_body = vec_lane_body(
+        use_cpp_dsoftmax,
+        vec_cpp_dsoftmax_module,
+        "dsoftmax",
+        "vec_dsoftmax_res",
+        """      wire [7:0] vec_dsoftmax_p = vec_softmax_res[(gi*8) +: 8];
+      wire [15:0] vec_dsoftmax_mul = vec_dsoftmax_p * (8'd127 - vec_dsoftmax_p);
+      assign vec_dsoftmax_res[(gi*8) +: 8] = vec_dsoftmax_mul[14:7];""",
+    )
+    dlayernorm_lane_body = vec_lane_body(
+        use_cpp_dlayernorm,
+        vec_cpp_dlayernorm_module,
+        "dlayernorm",
+        "vec_dlayernorm_res",
+        """      assign vec_dlayernorm_res[(gi*8) +: 8] = 8'h01;""",
+    )
 
     vec_compute_instances = f"""
   wire [{gemm_mac_vec_width_minus1}:0] vec_add_res;
   wire [{gemm_mac_vec_width_minus1}:0] vec_mul_res;
   wire [{gemm_mac_vec_width_minus1}:0] vec_relu_res;
   wire [{gemm_mac_vec_width_minus1}:0] vec_gelu_res;
+  wire [{gemm_mac_vec_width_minus1}:0] vec_softmax_res;
+  wire [{gemm_mac_vec_width_minus1}:0] vec_layernorm_res;
+  wire [{gemm_mac_vec_width_minus1}:0] vec_drelu_res;
+  wire [{gemm_mac_vec_width_minus1}:0] vec_dgelu_res;
+  wire [{gemm_mac_vec_width_minus1}:0] vec_dsoftmax_res;
+  wire [{gemm_mac_vec_width_minus1}:0] vec_dlayernorm_res;
   wire [{gemm_mac_vec_width_minus1}:0] vec_result_next;
 
   genvar gi;
@@ -944,12 +1050,24 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
       assign vec_mul_res[(gi*8) +: 8] = $signed(vec_in0[(gi*8) +: 8]) * $signed(vec_in1[(gi*8) +: 8]);
 {relu_lane_body}
 {gelu_lane_body}
+{softmax_lane_body}
+{layernorm_lane_body}
+{drelu_lane_body}
+{dgelu_lane_body}
+{dsoftmax_lane_body}
+{dlayernorm_lane_body}
     end
   endgenerate
 
   assign vec_result_next = (vec_op_sel == VEC_OP_ADD) ? vec_add_res :
                            (vec_op_sel == VEC_OP_MUL) ? vec_mul_res :
                            (vec_op_sel == VEC_OP_GELU) ? vec_gelu_res :
+                           (vec_op_sel == VEC_OP_SOFTMAX) ? vec_softmax_res :
+                           (vec_op_sel == VEC_OP_LAYERNORM) ? vec_layernorm_res :
+                           (vec_op_sel == VEC_OP_DRELU) ? vec_drelu_res :
+                           (vec_op_sel == VEC_OP_DGELU) ? vec_dgelu_res :
+                           (vec_op_sel == VEC_OP_DSOFTMAX) ? vec_dsoftmax_res :
+                           (vec_op_sel == VEC_OP_DLAYERNORM) ? vec_dlayernorm_res :
                            vec_relu_res;
 """
     compute_instances = gemm_compute_instances + vec_compute_instances
@@ -1177,11 +1295,27 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
               end else begin
                 vec_in0 <= cq_mem_rdata[{gemm_a_hi}:64];
                 vec_in1 <= cq_mem_rdata[{gemm_b_hi}:128];
-                vec_op_sel <= cq_mem_rdata[9:8];
-                if ((cq_mem_rdata[9:8] == VEC_OP_ADD  && !VEC_EN_ADD)  ||
-                    (cq_mem_rdata[9:8] == VEC_OP_MUL  && !VEC_EN_MUL)  ||
-                    (cq_mem_rdata[9:8] == VEC_OP_RELU && !VEC_EN_RELU) ||
-                    (cq_mem_rdata[9:8] == VEC_OP_GELU && !VEC_EN_GELU)) begin
+                vec_op_sel <= cq_mem_rdata[11:8];
+                if ((cq_mem_rdata[11:8] == VEC_OP_ADD       && !VEC_EN_ADD)       ||
+                    (cq_mem_rdata[11:8] == VEC_OP_MUL       && !VEC_EN_MUL)       ||
+                    (cq_mem_rdata[11:8] == VEC_OP_RELU      && !VEC_EN_RELU)      ||
+                    (cq_mem_rdata[11:8] == VEC_OP_GELU      && !VEC_EN_GELU)      ||
+                    (cq_mem_rdata[11:8] == VEC_OP_SOFTMAX   && !VEC_EN_SOFTMAX)   ||
+                    (cq_mem_rdata[11:8] == VEC_OP_LAYERNORM && !VEC_EN_LAYERNORM) ||
+                    (cq_mem_rdata[11:8] == VEC_OP_DRELU     && !VEC_EN_DRELU)     ||
+                    (cq_mem_rdata[11:8] == VEC_OP_DGELU     && !VEC_EN_DGELU)     ||
+                    (cq_mem_rdata[11:8] == VEC_OP_DSOFTMAX  && !VEC_EN_DSOFTMAX)  ||
+                    (cq_mem_rdata[11:8] == VEC_OP_DLAYERNORM&& !VEC_EN_DLAYERNORM)||
+                    ((cq_mem_rdata[11:8] != VEC_OP_RELU)      &&
+                     (cq_mem_rdata[11:8] != VEC_OP_ADD)       &&
+                     (cq_mem_rdata[11:8] != VEC_OP_MUL)       &&
+                     (cq_mem_rdata[11:8] != VEC_OP_GELU)      &&
+                     (cq_mem_rdata[11:8] != VEC_OP_SOFTMAX)   &&
+                     (cq_mem_rdata[11:8] != VEC_OP_LAYERNORM) &&
+                     (cq_mem_rdata[11:8] != VEC_OP_DRELU)     &&
+                     (cq_mem_rdata[11:8] != VEC_OP_DGELU)     &&
+                     (cq_mem_rdata[11:8] != VEC_OP_DSOFTMAX)  &&
+                     (cq_mem_rdata[11:8] != VEC_OP_DLAYERNORM))) begin
                   error_code <= 32'h6; // unsupported configured VEC op
                 end else begin
                   vec_pending <= 1'b1;
@@ -1275,11 +1409,27 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
               end else begin
                 vec_in0 <= cq_word0[{gemm_a_hi}:64];
                 vec_in1 <= cq_word0[{gemm_b_hi}:128];
-                vec_op_sel <= cq_word0[9:8];
-                if ((cq_word0[9:8] == VEC_OP_ADD  && !VEC_EN_ADD)  ||
-                    (cq_word0[9:8] == VEC_OP_MUL  && !VEC_EN_MUL)  ||
-                    (cq_word0[9:8] == VEC_OP_RELU && !VEC_EN_RELU) ||
-                    (cq_word0[9:8] == VEC_OP_GELU && !VEC_EN_GELU)) begin
+                vec_op_sel <= cq_word0[11:8];
+                if ((cq_word0[11:8] == VEC_OP_ADD       && !VEC_EN_ADD)       ||
+                    (cq_word0[11:8] == VEC_OP_MUL       && !VEC_EN_MUL)       ||
+                    (cq_word0[11:8] == VEC_OP_RELU      && !VEC_EN_RELU)      ||
+                    (cq_word0[11:8] == VEC_OP_GELU      && !VEC_EN_GELU)      ||
+                    (cq_word0[11:8] == VEC_OP_SOFTMAX   && !VEC_EN_SOFTMAX)   ||
+                    (cq_word0[11:8] == VEC_OP_LAYERNORM && !VEC_EN_LAYERNORM) ||
+                    (cq_word0[11:8] == VEC_OP_DRELU     && !VEC_EN_DRELU)     ||
+                    (cq_word0[11:8] == VEC_OP_DGELU     && !VEC_EN_DGELU)     ||
+                    (cq_word0[11:8] == VEC_OP_DSOFTMAX  && !VEC_EN_DSOFTMAX)  ||
+                    (cq_word0[11:8] == VEC_OP_DLAYERNORM&& !VEC_EN_DLAYERNORM)||
+                    ((cq_word0[11:8] != VEC_OP_RELU)      &&
+                     (cq_word0[11:8] != VEC_OP_ADD)       &&
+                     (cq_word0[11:8] != VEC_OP_MUL)       &&
+                     (cq_word0[11:8] != VEC_OP_GELU)      &&
+                     (cq_word0[11:8] != VEC_OP_SOFTMAX)   &&
+                     (cq_word0[11:8] != VEC_OP_LAYERNORM) &&
+                     (cq_word0[11:8] != VEC_OP_DRELU)     &&
+                     (cq_word0[11:8] != VEC_OP_DGELU)     &&
+                     (cq_word0[11:8] != VEC_OP_DSOFTMAX)  &&
+                     (cq_word0[11:8] != VEC_OP_DLAYERNORM))) begin
                   error_code <= 32'h6;
                 end else begin
                   vec_pending <= 1'b1;
@@ -1437,6 +1587,12 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         vec_en_mul=vec_en_mul,
         vec_en_relu=vec_en_relu,
         vec_en_gelu=vec_en_gelu,
+        vec_en_softmax=vec_en_softmax,
+        vec_en_layernorm=vec_en_layernorm,
+        vec_en_drelu=vec_en_drelu,
+        vec_en_dgelu=vec_en_dgelu,
+        vec_en_dsoftmax=vec_en_dsoftmax,
+        vec_en_dlayernorm=vec_en_dlayernorm,
         dma_ports=dma_ports,
         compute_state_regs=compute_state_regs,
         dma_reset=dma_reset,

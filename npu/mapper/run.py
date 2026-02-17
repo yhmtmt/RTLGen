@@ -47,6 +47,12 @@ VEC_OP_FLAGS = {
     "add": 0x1,
     "mul": 0x2,
     "gelu": 0x3,
+    "softmax": 0x4,
+    "layernorm": 0x5,
+    "drelu": 0x6,
+    "dgelu": 0x7,
+    "dsoftmax": 0x8,
+    "dlayernorm": 0x9,
 }
 
 
@@ -159,7 +165,7 @@ def emit_desc(op: Dict[str, Any], buf_map: Dict[str, int], default_gemm_uid: int
         if op_name not in VEC_OP_FLAGS:
             raise ValueError(f"unsupported vec_op op {op['op']}")
         dtype = DTYPE_FLAGS[op["dtype"]]
-        desc["flags"] = ((dtype & 0xF) << 4) | (VEC_OP_FLAGS[op_name] & 0x3)
+        desc["flags"] = ((dtype & 0xF) << 4) | (VEC_OP_FLAGS[op_name] & 0xF)
         desc["fields"] = {
             "src_addr": buf_map[op["src"]],
             "dst_addr": buf_map[op["dst"]],

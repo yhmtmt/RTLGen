@@ -18,7 +18,7 @@ Git: unknown
 - **Mapper**: v0.1 IR and binary descriptor emission implemented.
 - **Performance sim**: implemented (`npu/sim/perf/`).
   - Current op coverage: DMA_COPY, GEMM, EVENT_SIGNAL/WAIT, NOOP.
-  - Next op coverage: VEC_OP and SOFTMAX (perf modeling + descriptor flags).
+  - Next op coverage: extended VEC_OP/SOFTMAX performance modeling.
 - **OpenROAD**: planned (block-level synthesis flow pending).
 - **MAC backend**: `npu/rtlgen/gen.py` now supports optional C++ RTLGen MAC
   backend (`compute.gemm.mac_source=rtlgen_cpp`) for GEMM experiments.
@@ -26,9 +26,8 @@ Git: unknown
 ## Next steps
 - Extend RTLGen with MAC-based compute generation for GEMM/VEC (start with
   `int8` GEMM, then minimal VEC `add/mul/relu`).
-- In Phase 2, prefer C++ RTLGen activation modules for VEC paths (`relu`
-  now, `gelu` next), then add `softmax`, `layernorm`, and derivative kernels
-  as C++ generator support is implemented.
+- In Phase 2, use C++ RTLGen activation modules for VEC paths (`relu`, `gelu`,
+  `softmax`, `layernorm`, and derivative kernels) and keep decode/tests aligned.
 - Integrate C++ `src/rtlgen` MAC generator (`operations[].type="mac"`) into
   NPU core exploration, starting with accumulator feedback into PP rows.
 - Extend performance sim op coverage (VEC_OP / SOFTMAX).

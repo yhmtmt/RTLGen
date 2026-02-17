@@ -178,7 +178,7 @@ struct FpOperationConfig {
 struct ActivationOperationConfig {
     std::string module_name;
     std::string operand;
-    std::string function; // relu, relu6, leaky_relu, tanh, gelu, pwl
+    std::string function; // relu, relu6, leaky_relu, tanh, gelu, softmax, layernorm, drelu, dgelu, dsoftmax, dlayernorm, pwl
     int alpha_num{1};     // for leaky relu (numerator)
     int alpha_den{10};    // for leaky relu (denominator)
     std::string impl{"default"}; // activation impl hint (e.g., pwl)

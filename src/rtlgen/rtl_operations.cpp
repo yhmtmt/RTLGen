@@ -613,7 +613,9 @@ void emitCmvmModule(const CmvmOperationConfig &config, const OperandDefinition &
 
 void emitActivationModule(const ActivationOperationConfig &config, const OperandDefinition &operand) {
     std::string fn = toUpper(config.function);
-    if (fn != "RELU" && fn != "RELU6" && fn != "LEAKY_RELU" && fn != "TANH" && fn != "GELU" && fn != "PWL") {
+    if (fn != "RELU" && fn != "RELU6" && fn != "LEAKY_RELU" && fn != "TANH" &&
+        fn != "GELU" && fn != "SOFTMAX" && fn != "LAYERNORM" && fn != "DRELU" &&
+        fn != "DGELU" && fn != "DSOFTMAX" && fn != "DLAYERNORM" && fn != "PWL") {
         throw std::runtime_error("Unsupported activation function: " + config.function);
     }
 
@@ -680,6 +682,33 @@ void emitActivationModule(const ActivationOperationConfig &config, const Operand
             os << "  wire [" << (data_width - 1) << ":0] half_val = {2'b01, sign, exp_half, frac_bits};\n";
             os << "  wire [" << (data_width - 1) << ":0] relu_half = (is_normal && sign) ? {2'b01, " << (data_width - 2) << "'b0} : half_val;\n";
             os << "  assign Y = relu_half;\n";
+        } else if (fn == "SOFTMAX") {
+            int bias = (1 << (exp_w - 1)) - 1; // exponent for 1.0
+            os << "  wire [" << (data_width - 1) << ":0] zero_fp = {2'b01, " << (data_width - 2) << "'b0};\n";
+            os << "  wire [" << (data_width - 1) << ":0] one_fp = {2'b01, 1'b0, " << exp_w << "'d" << bias << ", " << frac_w << "'b0};\n";
+            os << "  wire [" << (data_width - 1) << ":0] pos_passthrough = {2'b01, 1'b0, exp_bits, frac_bits};\n";
+            os << "  assign Y = (is_normal && sign) ? zero_fp : ((is_normal && (exp_bits >= " << bias << ")) ? one_fp : pos_passthrough);\n";
+        } else if (fn == "LAYERNORM") {
+            // Scalar placeholder for lane-wise vector path.
+            os << "  assign Y = X;\n";
+        } else if (fn == "DRELU") {
+            int bias = (1 << (exp_w - 1)) - 1; // exponent for 1.0
+            os << "  wire [" << (data_width - 1) << ":0] zero_fp = {2'b01, " << (data_width - 2) << "'b0};\n";
+            os << "  wire [" << (data_width - 1) << ":0] one_fp = {2'b01, 1'b0, " << exp_w << "'d" << bias << ", " << frac_w << "'b0};\n";
+            os << "  assign Y = (is_normal && !sign && (X[" << (data_width - 4) << ":0] != 0)) ? one_fp : zero_fp;\n";
+        } else if (fn == "DGELU") {
+            int half_exp = (1 << (exp_w - 1)) - 2; // exponent for 0.5
+            os << "  wire [" << (data_width - 1) << ":0] zero_fp = {2'b01, " << (data_width - 2) << "'b0};\n";
+            os << "  wire [" << (data_width - 1) << ":0] half_fp = {2'b01, 1'b0, " << exp_w << "'d" << half_exp << ", " << frac_w << "'b0};\n";
+            os << "  assign Y = (is_normal && !sign && (X[" << (data_width - 4) << ":0] != 0)) ? half_fp : zero_fp;\n";
+        } else if (fn == "DSOFTMAX") {
+            int qtr_exp = (1 << (exp_w - 1)) - 3; // exponent for 0.25
+            os << "  wire [" << (data_width - 1) << ":0] zero_fp = {2'b01, " << (data_width - 2) << "'b0};\n";
+            os << "  wire [" << (data_width - 1) << ":0] qtr_fp = {2'b01, 1'b0, " << exp_w << "'d" << qtr_exp << ", " << frac_w << "'b0};\n";
+            os << "  assign Y = is_normal ? qtr_fp : zero_fp;\n";
+        } else if (fn == "DLAYERNORM") {
+            int bias = (1 << (exp_w - 1)) - 1; // exponent for 1.0
+            os << "  assign Y = {2'b01, 1'b0, " << exp_w << "'d" << bias << ", " << frac_w << "'b0};\n";
         } else if (fn == "PWL") {
             if (operand.fp_format->total_width != 32) {
                 throw std::runtime_error("FP PWL currently supports only 32-bit formats");
@@ -722,6 +751,16 @@ void emitActivationModule(const ActivationOperationConfig &config, const Operand
         }
         os << "  wire signed [" << (data_width - 1) << ":0] x_signed = X;\n";
         os << "  wire [" << (data_width - 1) << ":0] zero_val = {" << data_width << "{1'b0}};\n";
+        os << "  wire [" << (data_width - 1) << ":0] one_val = {{(" << (data_width - 1)
+           << "){1'b0}}, 1'b1};\n";
+        os << "  wire signed [" << (data_width - 1) << ":0] softmax_thr = "
+           << data_width << "'sd31;\n";
+        os << "  wire [" << (data_width - 1) << ":0] softmax_sat = "
+           << data_width << "'d127;\n";
+        os << "  wire [" << (data_width - 1) << ":0] softmax_pos = (x_signed > softmax_thr) ? softmax_sat : (X << 2);\n";
+        os << "  wire [" << (data_width - 1) << ":0] softmax_val = x_signed[" << (data_width - 1)
+           << "] ? zero_val : softmax_pos;\n";
+        os << "  wire [" << ((2 * data_width) - 1) << ":0] dsoftmax_num = softmax_val * (softmax_sat - softmax_val);\n";
         if (fn == "RELU6") {
             os << "  wire [" << (data_width - 1) << ":0] six_val = " << data_width
                << "'d6;\n";
@@ -744,6 +783,21 @@ void emitActivationModule(const ActivationOperationConfig &config, const Operand
             os << "  wire [" << (data_width - 1) << ":0] relu = x_signed[" << (data_width - 1)
                << "] ? zero_val : X;\n";
             os << "  assign Y = relu >> 1;\n";
+        } else if (fn == "SOFTMAX") {
+            os << "  // Approximate SOFTMAX: rectified and scaled into [0, 127]\n";
+            os << "  assign Y = softmax_val;\n";
+        } else if (fn == "LAYERNORM") {
+            os << "  // Scalar placeholder for layernorm: scale down by 2\n";
+            os << "  assign Y = x_signed >>> 1;\n";
+        } else if (fn == "DRELU") {
+            os << "  assign Y = (x_signed > 0) ? one_val : zero_val;\n";
+        } else if (fn == "DGELU") {
+            os << "  assign Y = (x_signed > 0) ? one_val : zero_val;\n";
+        } else if (fn == "DSOFTMAX") {
+            os << "  // Approximate dsoftmax from softmax_val: p*(1-p)\n";
+            os << "  assign Y = dsoftmax_num >> " << (data_width - 1) << ";\n";
+        } else if (fn == "DLAYERNORM") {
+            os << "  assign Y = one_val;\n";
         } else if (fn == "PWL") {
             int frac_bits = config.frac_bits > 0 ? config.frac_bits : data_width / 2;
             // Build segments from explicit points if provided, otherwise from breakpoints/slopes.
