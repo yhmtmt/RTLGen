@@ -6,7 +6,14 @@ plan/
 papers/
 third_party/
 .vvp
+*.vvp
 npu/mapper/__pycache__/
 npu/sim/perf/__pycache__/
+npu/sim/perf/tests/__pycache__/
 npu/rtlgen/out/
+npu/rtlgen/out_cpp_mac/
+npu/rtlgen/__pycache__/
+npu/sim/perf/golden*_trace.json
+npu/sim/rtl/golden_descriptors.bin
+npu/sim/rtl/*_rtl.log
 *.o
