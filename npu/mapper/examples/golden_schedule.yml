@@ -19,6 +19,27 @@ ops:
     src: A
     dst: B
     bytes: 4096
+  - id: vec1
+    type: vec_op
+    src: B
+    dst: C
+    bytes: 256
+    op: add
+    dtype: int8
+  - id: vec2
+    type: vec_op
+    src: C
+    dst: D
+    bytes: 256
+    op: mul
+    dtype: int8
+  - id: vec3
+    type: vec_op
+    src: D
+    dst: B
+    bytes: 256
+    op: relu
+    dtype: int8
   - id: gemm1
     type: gemm
     a: B
@@ -31,6 +52,12 @@ ops:
     layout: row_major
 deps:
   - wait: [dma1]
+    then: vec1
+  - wait: [vec1]
+    then: vec2
+  - wait: [vec2]
+    then: vec3
+  - wait: [vec3]
     then: gemm1
 events:
   - id: 1

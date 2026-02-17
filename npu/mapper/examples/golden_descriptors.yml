@@ -20,7 +20,76 @@ descriptors:
   size: 1
   tag: 1
   fields: {}
-  comment: gemm1_wait_1
+  comment: vec1_wait_1
+- opcode: 17
+  flags: 1
+  size: 1
+  tag: 0
+  fields:
+    src_addr: 4096
+    dst_addr: 8192
+    size: 256
+    op: add
+    dtype: int8
+  comment: vec1
+- opcode: 32
+  flags: 0
+  size: 1
+  tag: 2
+  fields: {}
+  comment: vec1_signal_2
+- opcode: 33
+  flags: 0
+  size: 1
+  tag: 2
+  fields: {}
+  comment: vec2_wait_2
+- opcode: 17
+  flags: 2
+  size: 1
+  tag: 0
+  fields:
+    src_addr: 8192
+    dst_addr: 12288
+    size: 256
+    op: mul
+    dtype: int8
+  comment: vec2
+- opcode: 32
+  flags: 0
+  size: 1
+  tag: 3
+  fields: {}
+  comment: vec2_signal_3
+- opcode: 33
+  flags: 0
+  size: 1
+  tag: 3
+  fields: {}
+  comment: vec3_wait_3
+- opcode: 17
+  flags: 0
+  size: 1
+  tag: 0
+  fields:
+    src_addr: 12288
+    dst_addr: 4096
+    size: 256
+    op: relu
+    dtype: int8
+  comment: vec3
+- opcode: 32
+  flags: 0
+  size: 1
+  tag: 4
+  fields: {}
+  comment: vec3_signal_4
+- opcode: 33
+  flags: 0
+  size: 1
+  tag: 4
+  fields: {}
+  comment: gemm1_wait_4
 - opcode: 16
   flags: 0
   size: 1
