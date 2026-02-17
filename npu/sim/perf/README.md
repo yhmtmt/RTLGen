@@ -28,11 +28,13 @@ make -f npu/sim/perf/Makefile test
 
 ## Notes
 - The v0.1 model supports sequential or overlapped scheduling and handles
-  DMA_COPY, GEMM, EVENT_SIGNAL, EVENT_WAIT, and NOOP.
+  DMA_COPY, GEMM, VEC_OP, SOFTMAX, EVENT_SIGNAL, EVENT_WAIT, and NOOP.
 - If `sram_arch_yaml` is provided, DMA_COPY bandwidth can be limited by SRAM
   access time from CACTI metrics (per-instance or max access time).
 - `sram_metrics_json` may point to `runs/designs/sram/<id>/sram_metrics.json`
   (preferred) or a summary file with `max_access_time_ns`.
+- VEC op decode uses descriptor `flags` low nibble (`[3:0]`) for op code and
+  high nibble (`[7:4]`) for dtype.
 
 ### Bandwidth units
 All `*_bw_gbps` knobs are interpreted as effective **GB/s** (gigabytes per
@@ -86,3 +88,13 @@ Note:
 See `npu/sim/perf/example_config_sram.json` for a ready-to-run sample.
 - Unsupported opcodes are reported as warnings and treated as zero-cost.
 - EVENT_SIGNAL with IRQ flag is counted in the summary (`irq_events`).
+
+### Optional VEC / SOFTMAX knobs
+You can tune vector op performance with these optional config keys:
+
+- `vec_tops`, `vec_in_bw_gbps`, `vec_out_bw_gbps`, `vec_overhead_ns`
+- `vec_op_costs` (mapping `{op_name: cost}`), used in compute-time estimate
+- `vec_dtype_bytes` (fallback when dtype code is unknown)
+- `softmax_tops`, `softmax_in_bw_gbps`, `softmax_out_bw_gbps`
+- `softmax_overhead_ns`, `softmax_row_overhead_ns`, `softmax_op_cost`
+- `softmax_dtype_bytes` (fallback when dtype code is unknown)

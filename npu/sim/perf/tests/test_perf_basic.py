@@ -27,10 +27,13 @@ def test_perf_basic():
     stats = data["stats"]
     assert stats["dma_ops"] == 1
     assert stats["gemm_ops"] == 1
+    assert stats["vec_ops"] == 0
+    assert stats["softmax_ops"] == 0
     assert stats["event_ops"] == 3
     assert stats["unknown_ops"] == 0
     assert stats["total_bytes"] == 8192
-    assert stats["total_time_ns"] <= stats["dma_time_ns"]
+    assert stats["total_time_ns"] >= max(stats["dma_time_ns"], stats["gemm_time_ns"])
+    assert stats["total_time_ns"] <= (stats["dma_time_ns"] + stats["gemm_time_ns"] + stats["event_time_ns"])
     assert data["meta"]["mode"] == "overlap"
 
 

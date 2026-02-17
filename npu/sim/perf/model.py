@@ -84,6 +84,78 @@ def gemm_time_ns(m, n, k, cfg):
     return _ns_from_seconds(seconds)
 
 
+def _vec_op_cost(op_name, cfg):
+    default_costs = {
+        "relu": 1.0,
+        "add": 1.0,
+        "mul": 1.0,
+        "gelu": 2.0,
+        "softmax": 4.0,
+        "layernorm": 2.0,
+        "drelu": 1.0,
+        "dgelu": 1.0,
+        "dsoftmax": 4.0,
+        "dlayernorm": 1.0,
+    }
+    op = str(op_name or "").lower()
+    costs = cfg.get("vec_op_costs", {})
+    if isinstance(costs, dict) and op in costs:
+        return float(costs[op])
+    return float(default_costs.get(op, 1.0))
+
+
+def vec_time_ns(bytes_count, op_name, cfg, dtype_bytes=1.0):
+    tops = float(cfg.get("vec_tops", cfg.get("gemm_tops", 2.0)))
+    if tops <= 0:
+        return 0.0
+
+    in_bw = float(cfg.get("vec_in_bw_gbps", cfg.get("dma_bw_gbps", 16.0)))
+    out_bw = float(cfg.get("vec_out_bw_gbps", cfg.get("dma_bw_gbps", 16.0)))
+    overhead_ns = float(cfg.get("vec_overhead_ns", 0.0))
+    bytes_count = max(0.0, float(bytes_count))
+    dtype_bytes = max(1e-9, float(dtype_bytes))
+    elems = bytes_count / dtype_bytes
+    op_cost = _vec_op_cost(op_name, cfg)
+    compute_seconds = (elems * op_cost) / (tops * 1e12)
+
+    mem_seconds = 0.0
+    if in_bw > 0:
+        mem_seconds += bytes_count / (in_bw * 1e9)
+    if out_bw > 0:
+        mem_seconds += bytes_count / (out_bw * 1e9)
+
+    seconds = max(compute_seconds, mem_seconds) + (overhead_ns / 1e9)
+    return _ns_from_seconds(seconds)
+
+
+def softmax_time_ns(row_bytes, rows, cfg, dtype_bytes=1.0):
+    tops = float(cfg.get("softmax_tops", cfg.get("vec_tops", cfg.get("gemm_tops", 2.0))))
+    if tops <= 0:
+        return 0.0
+
+    in_bw = float(cfg.get("softmax_in_bw_gbps", cfg.get("vec_in_bw_gbps", cfg.get("dma_bw_gbps", 16.0))))
+    out_bw = float(cfg.get("softmax_out_bw_gbps", cfg.get("vec_out_bw_gbps", cfg.get("dma_bw_gbps", 16.0))))
+    op_cost = float(cfg.get("softmax_op_cost", 6.0))
+    overhead_ns = float(cfg.get("softmax_overhead_ns", cfg.get("vec_overhead_ns", 0.0)))
+    row_overhead_ns = float(cfg.get("softmax_row_overhead_ns", 0.0))
+
+    row_bytes = max(0.0, float(row_bytes))
+    rows = max(0.0, float(rows))
+    bytes_count = row_bytes * rows
+    dtype_bytes = max(1e-9, float(dtype_bytes))
+    elems = bytes_count / dtype_bytes
+    compute_seconds = (elems * op_cost) / (tops * 1e12)
+
+    mem_seconds = 0.0
+    if in_bw > 0:
+        mem_seconds += bytes_count / (in_bw * 1e9)
+    if out_bw > 0:
+        mem_seconds += bytes_count / (out_bw * 1e9)
+
+    seconds = max(compute_seconds, mem_seconds) + ((overhead_ns + (row_overhead_ns * rows)) / 1e9)
+    return _ns_from_seconds(seconds)
+
+
 def event_overhead_ns(cfg):
     return float(cfg.get("event_overhead_ns", 50.0))
 

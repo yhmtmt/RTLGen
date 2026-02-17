@@ -17,8 +17,8 @@ Git: unknown
 - **SRAM PPA**: CACTI flow integrated with >90nm scaling and aggregation.
 - **Mapper**: v0.1 IR and binary descriptor emission implemented.
 - **Performance sim**: implemented (`npu/sim/perf/`).
-  - Current op coverage: DMA_COPY, GEMM, EVENT_SIGNAL/WAIT, NOOP.
-  - Next op coverage: extended VEC_OP/SOFTMAX performance modeling.
+  - Current op coverage: DMA_COPY, GEMM, VEC_OP, SOFTMAX, EVENT_SIGNAL/WAIT, NOOP.
+  - VEC_OP models 4-bit op codes with per-op cost knobs in perf config.
 - **OpenROAD**: planned (block-level synthesis flow pending).
 - **MAC backend**: `npu/rtlgen/gen.py` now supports optional C++ RTLGen MAC
   backend (`compute.gemm.mac_source=rtlgen_cpp`) for GEMM experiments.

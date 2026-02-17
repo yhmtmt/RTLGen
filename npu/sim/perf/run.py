@@ -11,6 +11,34 @@ try:
 except ImportError:  # pragma: no cover - optional dependency
     yaml = None
 
+
+DTYPE_NAMES = {
+    0x0: "int8",
+    0x1: "fp16",
+    0x2: "bf16",
+    0x3: "fp8",
+}
+
+DTYPE_BYTES = {
+    0x0: 1.0,
+    0x1: 2.0,
+    0x2: 2.0,
+    0x3: 1.0,
+}
+
+VEC_OP_NAMES = {
+    0x0: "relu",
+    0x1: "add",
+    0x2: "mul",
+    0x3: "gelu",
+    0x4: "softmax",
+    0x5: "layernorm",
+    0x6: "drelu",
+    0x7: "dgelu",
+    0x8: "dsoftmax",
+    0x9: "dlayernorm",
+}
+
 def parse_desc_stream(data):
     descs = []
     offset = 0
@@ -51,6 +79,14 @@ def _parse_int(value):
     if isinstance(value, str):
         return int(value, 0)
     return int(value)
+
+
+def _decode_dtype(flags, cfg, key_prefix):
+    dtype_code = (int(flags) >> 4) & 0xF
+    dtype_name = DTYPE_NAMES.get(dtype_code, "int8")
+    default_bytes = float(cfg.get(f"{key_prefix}_dtype_bytes", cfg.get("gemm_dtype_bytes", 1.0)))
+    dtype_bytes = float(DTYPE_BYTES.get(dtype_code, default_bytes))
+    return dtype_code, dtype_name, dtype_bytes
 
 
 def _derive_sram_instances(arch, metrics, clk_period_ns=None):
@@ -166,6 +202,44 @@ def desc_to_event(desc, cfg):
             "irq": bool(desc["flags"] & 0x1),
             "duration_ns": model.event_overhead_ns(cfg),
         })
+    elif opcode == 0x11:  # VEC_OP
+        src = struct.unpack_from("<Q", raw, 8)[0]
+        dst = struct.unpack_from("<Q", raw, 16)[0]
+        size = struct.unpack_from("<I", raw, 24)[0]
+        op_code = desc["flags"] & 0xF
+        op_name = VEC_OP_NAMES.get(op_code, "unknown")
+        dtype_code, dtype_name, dtype_bytes = _decode_dtype(desc["flags"], cfg, "vec")
+        event.update({
+            "name": "VEC_OP",
+            "op": op_name,
+            "op_code": op_code,
+            "dtype": dtype_name,
+            "dtype_code": dtype_code,
+            "src": f"0x{src:016x}",
+            "dst": f"0x{dst:016x}",
+            "bytes": size,
+            "duration_ns": model.vec_time_ns(size, op_name, cfg, dtype_bytes=dtype_bytes),
+        })
+        if op_name == "unknown":
+            event["warning"] = f"unsupported vec op 0x{op_code:x}"
+    elif opcode == 0x12:  # SOFTMAX
+        src = struct.unpack_from("<Q", raw, 8)[0]
+        dst = struct.unpack_from("<Q", raw, 16)[0]
+        row_bytes = struct.unpack_from("<H", raw, 24)[0]
+        rows = struct.unpack_from("<H", raw, 26)[0]
+        dtype_code, dtype_name, dtype_bytes = _decode_dtype(desc["flags"], cfg, "softmax")
+        total_bytes = int(row_bytes) * int(rows)
+        event.update({
+            "name": "SOFTMAX",
+            "dtype": dtype_name,
+            "dtype_code": dtype_code,
+            "src": f"0x{src:016x}",
+            "dst": f"0x{dst:016x}",
+            "row_bytes": row_bytes,
+            "rows": rows,
+            "bytes": total_bytes,
+            "duration_ns": model.softmax_time_ns(row_bytes, rows, cfg, dtype_bytes=dtype_bytes),
+        })
     elif opcode == 0x21:  # EVENT_WAIT
         event.update({
             "name": "EVENT_WAIT",
@@ -194,12 +268,16 @@ def build_trace(descs, cfg, overlap):
         "total_bytes": 0,
         "dma_ops": 0,
         "gemm_ops": 0,
+        "vec_ops": 0,
+        "softmax_ops": 0,
         "event_ops": 0,
         "noop_ops": 0,
         "unknown_ops": 0,
         "irq_events": 0,
         "dma_time_ns": 0.0,
         "gemm_time_ns": 0.0,
+        "vec_time_ns": 0.0,
+        "softmax_time_ns": 0.0,
         "event_time_ns": 0.0,
         "noop_time_ns": 0.0,
         "unknown_time_ns": 0.0,
@@ -220,7 +298,7 @@ def build_trace(descs, cfg, overlap):
                 end = start + dur
                 dma_engine_time = end
                 queue_time += issue_overhead
-            elif name == "GEMM":
+            elif name in ("GEMM", "VEC_OP", "SOFTMAX"):
                 start = max(queue_time, gemm_engine_time)
                 end = start + dur
                 gemm_engine_time = end
@@ -258,6 +336,14 @@ def build_trace(descs, cfg, overlap):
         elif name == "GEMM":
             stats["gemm_ops"] += 1
             stats["gemm_time_ns"] += dur
+        elif name == "VEC_OP":
+            stats["vec_ops"] += 1
+            stats["total_bytes"] += int(event.get("bytes", 0))
+            stats["vec_time_ns"] += dur
+        elif name == "SOFTMAX":
+            stats["softmax_ops"] += 1
+            stats["total_bytes"] += int(event.get("bytes", 0))
+            stats["softmax_time_ns"] += dur
         elif name in ("EVENT_SIGNAL", "EVENT_WAIT"):
             stats["event_ops"] += 1
             stats["event_time_ns"] += dur
@@ -295,6 +381,8 @@ def format_summary(stats, warnings):
     lines.append(f"  total_bytes: {stats['total_bytes']}")
     lines.append(f"  dma_ops: {stats['dma_ops']} (time_ns={stats['dma_time_ns']:.3f})")
     lines.append(f"  gemm_ops: {stats['gemm_ops']} (time_ns={stats['gemm_time_ns']:.3f})")
+    lines.append(f"  vec_ops: {stats['vec_ops']} (time_ns={stats['vec_time_ns']:.3f})")
+    lines.append(f"  softmax_ops: {stats['softmax_ops']} (time_ns={stats['softmax_time_ns']:.3f})")
     lines.append(f"  event_ops: {stats['event_ops']} (time_ns={stats['event_time_ns']:.3f})")
     lines.append(f"  noop_ops: {stats['noop_ops']} (time_ns={stats['noop_time_ns']:.3f})")
     lines.append(f"  unknown_ops: {stats['unknown_ops']} (time_ns={stats['unknown_time_ns']:.3f})")
