@@ -241,17 +241,116 @@ Inputs/outputs follow FloPoCo’s 2-bit exception prefix (`[33:32]` for 32-bit f
 
 ## Activation Functions
 
-Activation entries use `"type": "activation"` with a `function` selector inside `options`:
+Activation modules can be generated as **standalone units**, not only through
+`npu/rtlgen/gen.py`. This is the recommended path for lower-level optimizer
+agents that sweep function approximations and run unit PPA/timing evaluation.
 
-- `function`: `"relu"`, `"relu6"`, `"leaky_relu"`, or generic `"pwl"` (piecewise-linear) for custom nonlinearities. FP path supports relu and leaky_relu; FP PWL is a coarse staircase (FP32 only) and not recommended for accuracy-sensitive use yet.
-- `module_name`: output module name.
-- `operand`: operand name to determine width/kind.
-- `alpha_num`, `alpha_den` (optional, leaky_relu): scale negative inputs by `alpha_num/alpha_den`. FP leaky_relu currently only supports `alpha_num=1` and `alpha_den` as a power-of-two (implemented as exponent shift).
-- `points` (PWL): array of `[x, y]` pairs defining the positive-side curve; negative side mirrors when `symmetric` is true.
-- `symmetric` (PWL): when true (default), mirror the points for negative inputs with `f(-x) = -f(x)`.
-- `frac_bits` (int PWL): fixed-point scaling for integer operands.
-- `clamp` (bool, default true): clamp beyond the last point to the last `y` (mirrored if symmetric).
+Each activation unit is an `operations[]` entry with:
 
-Behavior:
-- Integer operands: two’s-complement inputs; ReLU outputs `0` for negative, input otherwise. ReLU6 clamps to `6` (truncated to width) after ReLU. Leaky_ReLU scales negatives; PWL builds a symmetric piecewise-linear response from the supplied points.
-- Floating-point operands (FloPoCo format with 2-bit exception prefix): ReLU zeros negative normal numbers while preserving exn bits (`01` with zero payload); zeros with non-negative sign stay zero; NaN/inf pass through unchanged. Leaky ReLU scales negative normals by shifting the exponent (power-of-two alpha). FP PWL is a coarse FP32-only staircase using user points; for accurate FP behavior prefer relu/leaky.
+- `type`: `"activation"`
+- `module_name`: generated Verilog module name
+- `operand`: operand reference
+- `options`: activation options (below)
+
+Generated interface is always scalar and width-matched to the operand:
+
+- `input  [W-1:0] X`
+- `output [W-1:0] Y`
+
+Where:
+
+- integer operand: `W = bit_width`
+- fp operand: `W = total_width + 2` (FloPoCo-style `exn[1:0]` prefix)
+
+Supported `options.function` values:
+
+- `"relu"`
+- `"relu6"` (integer path; FP currently behaves as ReLU)
+- `"leaky_relu"`
+- `"tanh"`
+- `"gelu"`
+- `"softmax"` (approximate scalar form)
+- `"layernorm"` (scalar placeholder form)
+- `"drelu"`
+- `"dgelu"`
+- `"dsoftmax"`
+- `"dlayernorm"`
+- `"pwl"` (piecewise linear)
+
+Activation options for optimization flows:
+
+- `function` (required): choose kernel/approximation family.
+- `impl` (optional, default `"default"`): implementation hint for future backend selection. Currently metadata only.
+- `alpha_num`, `alpha_den` (optional): leaky-ReLU slope ratio (`alpha_num/alpha_den`).
+  - FP restriction: `alpha_num=1` and `alpha_den` must be a power of two.
+- `frac_bits` (optional): fixed-point scaling for integer PWL.
+- `segments` (optional): reserved for future segmentation-based emitters.
+- `points` (optional): array of `[x, y]` samples for PWL (recommended path).
+- `breakpoints`, `slopes` (optional): alternate integer PWL description.
+- `intercepts` (optional): parsed but currently reserved in emitter.
+- `clamp` (optional, default `true`): integer PWL out-of-range clamp behavior.
+- `symmetric` (optional, default `true`): odd-symmetry mirror for PWL.
+
+Current approximation behavior summary:
+
+- Integer path: deterministic two's-complement approximations for `relu/relu6/leaky_relu/tanh/gelu/softmax/layernorm` and derivative variants.
+- FP path: deterministic FloPoCo-encoded approximations for `relu/leaky_relu/tanh/gelu/softmax/layernorm` and derivative variants.
+- `pwl`: customizable; integer path uses fixed-point line segments, FP path currently emits a coarse staircase (FP32-only).
+
+Unit-level optimization sweep knobs (typical):
+
+- operand format (`bit_width`, `signed`, `kind`, `fp_format`)
+- function family (`function`)
+- approximation strength knobs (`alpha_*`, `frac_bits`, number of PWL points)
+- shape specification (`points` or `breakpoints/slopes`)
+- symmetry/clamping policies (`symmetric`, `clamp`)
+
+Example standalone activation unit:
+
+```json
+{
+  "type": "activation",
+  "module_name": "softmax_int8_u0",
+  "operand": "din",
+  "options": {
+    "function": "softmax"
+  }
+}
+```
+
+## Vector-Op Approximation Notes (NPU Phase-2)
+
+This section documents how `vec_op` math is currently approximated.
+
+- NPU `vec_op` execution in `npu/rtlgen/gen.py` is currently **int8 lane-wise**.
+- C++ activation modules in `src/rtlgen/rtl_operations.cpp` support both **int** and **fp** functions; NPU currently imports the int8 variants when `compute.vec.activation_source=rtlgen_cpp`.
+
+### Integer approximation (current NPU vec path)
+
+For each lane value `x` (and optional `y`) in signed int8:
+
+- `add`: `x + y` (8-bit lane result, wraps on overflow)
+- `mul`: `x * y` (8-bit lane result, wraps on overflow)
+- `relu`: `max(x, 0)`
+- `gelu`: `max(x, 0) >> 1`
+- `softmax`: `p = 0` if `x < 0`, `p = 127` if `x > 31`, else `p = x << 2`
+- `layernorm`: `x >>> 1` (arithmetic right shift by 1)
+- `drelu`: `1` if `x > 0`, else `0`
+- `dgelu`: `1` if `x > 0`, else `0`
+- `dsoftmax`: `(p * (127 - p)) >> 7`, where `p` is the approximate softmax above
+- `dlayernorm`: constant `1`
+
+### Floating-point approximation (C++ activation generator)
+
+For FP operands (`kind: "fp"`), RTLGen uses FloPoCo-style encoding (`exn[1:0] + sign + exp + frac`) and emits:
+
+- `relu`: negative normal values map to +0, others pass through
+- `gelu`: approximated as `0.5 * relu(x)` (implemented by exponent shift on positive normals)
+- `softmax`: negative normal -> +0, sufficiently large positive normal -> +1.0, otherwise pass-through
+- `layernorm`: pass-through (`Y = X`) placeholder
+- `drelu`: +1.0 for positive non-zero normals, else +0
+- `dgelu`: +0.5 for positive non-zero normals, else +0
+- `dsoftmax`: constant +0.25 for normal values, else +0
+- `dlayernorm`: constant +1.0
+
+These are intentionally simple, deterministic approximations for bring-up and physical-design exploration, not numerically exact implementations of full ML kernels.
