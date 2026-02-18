@@ -58,6 +58,31 @@ make -f npu/sim/rtl/Makefile run \
   BYTES=256 VVPFLAGS="+gemm_mem_test=256 +gemm_mac_test=1" | tee "${GEMM_OOO_RTL_LOG}"
 popd >/dev/null
 python3 "${REPO_ROOT}/npu/sim/perf/run.py" --bin "${DESC_BIN}" --out "${PERF_TRACE}"
+python3 - "${PERF_TRACE}" <<'PY'
+import json
+import sys
+
+trace_path = sys.argv[1]
+with open(trace_path, "r", encoding="utf-8") as f:
+    data = json.load(f)
+
+stats = data.get("stats", {})
+vec_ops = int(stats.get("vec_ops", 0))
+softmax_ops = int(stats.get("softmax_ops", 0))
+unknown_ops = int(stats.get("unknown_ops", 0))
+if vec_ops != 3:
+    raise SystemExit(f"golden vec regression: expected vec_ops=3, got {vec_ops}")
+if softmax_ops != 0:
+    raise SystemExit(f"golden vec regression: expected softmax_ops=0, got {softmax_ops}")
+if unknown_ops != 0:
+    raise SystemExit(f"golden vec regression: expected unknown_ops=0, got {unknown_ops}")
+
+vec_names = [ev.get("op") for ev in data.get("trace", []) if ev.get("name") == "VEC_OP"]
+expected = ["add", "mul", "relu"]
+if vec_names != expected:
+    raise SystemExit(f"golden vec regression: expected vec op order {expected}, got {vec_names}")
+print("golden vec regression: OK")
+PY
 python3 "${REPO_ROOT}/npu/sim/perf/run.py" --bin "${GEMM_BIN}" \
   --out "${GEMM_TRACE}" --config "${PERF_CFG}"
 python3 "${REPO_ROOT}/npu/sim/perf/compare_gemm_timing.py" --rtl-log "${GEMM_RTL_LOG}" --clk-ns "${CLK_NS}" \
