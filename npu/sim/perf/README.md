@@ -26,6 +26,36 @@ make -f npu/sim/perf/Makefile run
 make -f npu/sim/perf/Makefile test
 ```
 
+## Test coverage
+
+### Perf unit tests (`npu/sim/perf/tests`)
+
+- `test_perf_basic.py`
+  - Runs `run.py` on `minimal_descriptors.bin` in overlap mode.
+  - Checks op counts (`DMA_COPY`, `GEMM`, events), total bytes, and overlap timing bounds.
+  - Verifies GEMM functional expectation fields are emitted: `expected_dot`, `expected_cycles`, `expected_accum`, `lanes`.
+- `test_perf_vec_softmax.py`
+  - Builds a synthetic stream with `VEC_OP(add)`, `VEC_OP(dsoftmax)`, and `SOFTMAX`.
+  - Checks op decode/order, op counts, total bytes, and non-zero durations.
+  - Verifies VEC functional expectation fields are emitted: `expected_result`, `expected_result_bytes`, `lanes`.
+
+### RTL/perf integrated regression (`npu/sim/run_golden.sh`)
+
+- Generates mixed + GEMM schedules and runs both RTL and perf simulation.
+- Runs functional cross-check:
+  - `compare_compute_results.py` compares RTL `GEMM_TIMING accum=` with perf `expected_accum`.
+  - `compare_compute_results.py` compares RTL `VEC_DONE result=` with perf `expected_result`.
+- Runs timing cross-check:
+  - `compare_gemm_timing.py` compares RTL GEMM cycles vs perf GEMM latency model.
+  - `golden_gemm_v2_ooo` additionally checks out-of-order completion behavior (`--require-order-change`).
+- Mixed golden schedule also checks VEC regression constraints (`vec_ops=3`, op order `add,mul,relu`, no unknown ops).
+
+### Current coverage boundaries
+
+- Functional compute checking is implemented for current int8-style GEMM/VEC behavior used by the RTL stub.
+- Floating-point numeric validation (fp16/bf16/fp8 data-path correctness) is not covered yet.
+- No large randomized descriptor fuzzing is included yet.
+
 ## Notes
 - The v0.1 model supports sequential or overlapped scheduling and handles
   DMA_COPY, GEMM, VEC_OP, SOFTMAX, EVENT_SIGNAL, EVENT_WAIT, and NOOP.
