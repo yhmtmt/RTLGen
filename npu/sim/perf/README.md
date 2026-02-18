@@ -123,8 +123,16 @@ See `npu/sim/perf/example_config_sram.json` for a ready-to-run sample.
 You can tune vector op performance with these optional config keys:
 
 - `vec_tops`, `vec_in_bw_gbps`, `vec_out_bw_gbps`, `vec_overhead_ns`
+- `vec_lanes` (functional expectation width for VEC result comparison; default follows `gemm_mac_lanes` or `8`)
 - `vec_op_costs` (mapping `{op_name: cost}`), used in compute-time estimate
 - `vec_dtype_bytes` (fallback when dtype code is unknown)
 - `softmax_tops`, `softmax_in_bw_gbps`, `softmax_out_bw_gbps`
 - `softmax_overhead_ns`, `softmax_row_overhead_ns`, `softmax_op_cost`
 - `softmax_dtype_bytes` (fallback when dtype code is unknown)
+
+### Optional GEMM functional-lane knob
+
+- `gemm_mac_lanes` (functional expectation lane count for GEMM/VEC int8 checks; default `8`)
+
+For C++ MAC backend (`compute.gemm.mac_source=rtlgen_cpp`, current lane-1 integration),
+use `npu/sim/perf/example_config_cpp_mac.json` in golden/perf comparison runs.
