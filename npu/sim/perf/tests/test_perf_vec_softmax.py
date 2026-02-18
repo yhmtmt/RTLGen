@@ -87,6 +87,14 @@ def test_perf_vec_softmax():
     assert trace[0]["duration_ns"] > 0.0
     assert trace[1]["duration_ns"] > 0.0
     assert trace[2]["duration_ns"] > 0.0
+    for idx in (0, 1):
+        vec_ev = trace[idx]
+        assert "expected_result" in vec_ev
+        assert "expected_result_bytes" in vec_ev
+        assert "lanes" in vec_ev
+        assert isinstance(vec_ev["expected_result_bytes"], list)
+        assert len(vec_ev["expected_result_bytes"]) == int(vec_ev["lanes"])
+        assert int(vec_ev["expected_result"], 0) >= 0
 
 
 if __name__ == "__main__":

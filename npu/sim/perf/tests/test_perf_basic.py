@@ -35,6 +35,15 @@ def test_perf_basic():
     assert stats["total_time_ns"] >= max(stats["dma_time_ns"], stats["gemm_time_ns"])
     assert stats["total_time_ns"] <= (stats["dma_time_ns"] + stats["gemm_time_ns"] + stats["event_time_ns"])
     assert data["meta"]["mode"] == "overlap"
+    gemm_events = [ev for ev in data["trace"] if ev.get("name") == "GEMM"]
+    assert len(gemm_events) == 1
+    gemm = gemm_events[0]
+    assert "expected_dot" in gemm
+    assert "expected_cycles" in gemm
+    assert "expected_accum" in gemm
+    assert "lanes" in gemm
+    assert isinstance(gemm["expected_accum"], int)
+    assert 1 <= int(gemm["lanes"]) <= 8
 
 
 if __name__ == "__main__":

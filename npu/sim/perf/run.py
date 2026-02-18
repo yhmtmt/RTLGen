@@ -73,6 +73,101 @@ def decode_gemm_tag(tag):
     return m, n, k
 
 
+def _sx8(v):
+    v = int(v) & 0xFF
+    return v - 256 if (v & 0x80) else v
+
+
+def _u8(v):
+    return int(v) & 0xFF
+
+
+def _vec_lanes(cfg):
+    lanes = int(cfg.get("vec_lanes", cfg.get("gemm_mac_lanes", 8)))
+    if lanes < 1:
+        return 1
+    if lanes > 8:
+        return 8
+    return lanes
+
+
+def _vec_softmax_int8(x):
+    if x < 0:
+        return 0
+    if x > 31:
+        return 127
+    return _u8(x << 2)
+
+
+def _vec_expected_result(raw, flags, cfg):
+    op_code = int(flags) & 0xF
+    lanes = _vec_lanes(cfg)
+    result = []
+    for lane in range(lanes):
+        x = _sx8(raw[8 + lane])
+        y = _sx8(raw[16 + lane])
+        if op_code == 0x1:  # add
+            out = _u8(x + y)
+        elif op_code == 0x2:  # mul
+            out = _u8(x * y)
+        elif op_code == 0x3:  # gelu
+            out = _u8(0 if x < 0 else (x >> 1))
+        elif op_code == 0x4:  # softmax
+            out = _vec_softmax_int8(x)
+        elif op_code == 0x5:  # layernorm
+            out = _u8(x >> 1)
+        elif op_code == 0x6:  # drelu
+            out = 1 if x > 0 else 0
+        elif op_code == 0x7:  # dgelu
+            out = 1 if x > 0 else 0
+        elif op_code == 0x8:  # dsoftmax
+            p = _vec_softmax_int8(x)
+            out = _u8((p * (127 - p)) >> 7)
+        elif op_code == 0x9:  # dlayernorm
+            out = 1
+        else:  # relu / fallback
+            out = 0 if x < 0 else _u8(x)
+        result.append(_u8(out))
+    packed = 0
+    for lane, val in enumerate(result):
+        packed |= (int(val) & 0xFF) << (lane * 8)
+    return {
+        "result_bytes": result,
+        "result_hex": f"0x{packed:0{lanes * 2}x}",
+        "lanes": lanes,
+    }
+
+
+def _gemm_expected_fields(raw, size_units, tag, cfg):
+    lanes = _vec_lanes(cfg)
+    dot = 0
+    for lane in range(lanes):
+        dot += _sx8(raw[8 + lane]) * _sx8(raw[16 + lane])
+
+    if size_units >= 2 and len(raw) >= 64:
+        m = struct.unpack_from("<I", raw, 32)[0]
+        n = struct.unpack_from("<I", raw, 36)[0]
+        k = struct.unpack_from("<I", raw, 40)[0]
+        op_uid = struct.unpack_from("<Q", raw, 56)[0]
+    else:
+        m, n, k = decode_gemm_tag(tag)
+        op_uid = None
+
+    if m == 0 or n == 0 or k == 0:
+        cycles = 1
+    else:
+        cycles = ((int(m) * int(n) * int(k)) >> 10) + 1
+    if op_uid is not None and ((int(op_uid) >> 63) & 0x1):
+        cycles += 8
+    expected_accum = int(dot) * int(cycles)
+    return {
+        "expected_dot": int(dot),
+        "expected_cycles": int(cycles),
+        "expected_accum": int(expected_accum),
+        "lanes": lanes,
+    }
+
+
 def _parse_int(value):
     if isinstance(value, int):
         return value
@@ -193,6 +288,7 @@ def desc_to_event(desc, cfg):
             "k": k,
             "duration_ns": model.gemm_time_ns(m, n, k, cfg),
         })
+        event.update(_gemm_expected_fields(raw, size_units, desc["tag"], cfg))
         if op_uid is not None:
             event["op_uid"] = op_uid
     elif opcode == 0x20:  # EVENT_SIGNAL
@@ -209,6 +305,7 @@ def desc_to_event(desc, cfg):
         op_code = desc["flags"] & 0xF
         op_name = VEC_OP_NAMES.get(op_code, "unknown")
         dtype_code, dtype_name, dtype_bytes = _decode_dtype(desc["flags"], cfg, "vec")
+        vec_expected = _vec_expected_result(raw, desc["flags"], cfg)
         event.update({
             "name": "VEC_OP",
             "op": op_name,
@@ -220,6 +317,13 @@ def desc_to_event(desc, cfg):
             "bytes": size,
             "duration_ns": model.vec_time_ns(size, op_name, cfg, dtype_bytes=dtype_bytes),
         })
+        event.update(
+            {
+                "expected_result": vec_expected["result_hex"],
+                "expected_result_bytes": vec_expected["result_bytes"],
+                "lanes": vec_expected["lanes"],
+            }
+        )
         if op_name == "unknown":
             event["warning"] = f"unsupported vec op 0x{op_code:x}"
     elif opcode == 0x12:  # SOFTMAX

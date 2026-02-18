@@ -795,9 +795,9 @@ module tb_npu_shell;
           end
         end
         gemm_count = gemm_count + 1;
-        $display("GEMM_TIMING index=%0d op_uid=0x%016h tag=0x%08h offset=%0d start_cycle=%0d end_cycle=%0d cycles=%0d",
+        $display("GEMM_TIMING index=%0d op_uid=0x%016h tag=0x%08h offset=%0d start_cycle=%0d end_cycle=%0d cycles=%0d accum=%0d",
                  gemm_count, gemm_log_uid, gemm_log_tag, gemm_log_offset,
-                 gemm_slot_start_cycle0, sim_cycle, (sim_cycle - gemm_slot_start_cycle0));
+                 gemm_slot_start_cycle0, sim_cycle, (sim_cycle - gemm_slot_start_cycle0), dut.gemm_slot_accum0);
       end
       if (!gemm_slot_done_prev[1] && dut.gemm_slot_done[1]) begin
         gemm_done_uid = dut.gemm_slot_uid1;
@@ -834,9 +834,9 @@ module tb_npu_shell;
           end
         end
         gemm_count = gemm_count + 1;
-        $display("GEMM_TIMING index=%0d op_uid=0x%016h tag=0x%08h offset=%0d start_cycle=%0d end_cycle=%0d cycles=%0d",
+        $display("GEMM_TIMING index=%0d op_uid=0x%016h tag=0x%08h offset=%0d start_cycle=%0d end_cycle=%0d cycles=%0d accum=%0d",
                  gemm_count, gemm_log_uid, gemm_log_tag, gemm_log_offset,
-                 gemm_slot_start_cycle1, sim_cycle, (sim_cycle - gemm_slot_start_cycle1));
+                 gemm_slot_start_cycle1, sim_cycle, (sim_cycle - gemm_slot_start_cycle1), dut.gemm_slot_accum1);
       end
       if (!vec_done_pulse_prev && dut.vec_done_pulse) begin
         if (vec_count >= vec_desc_count) begin
@@ -853,8 +853,8 @@ module tb_npu_shell;
           end
         end
         vec_count = vec_count + 1;
-        $display("VEC_DONE index=%0d offset=%0d op=%0d",
-                 vec_count, vec_desc_offsets[vec_count-1], vec_desc_op[vec_count-1]);
+        $display("VEC_DONE index=%0d offset=%0d op=%0d result=0x%016h",
+                 vec_count, vec_desc_offsets[vec_count-1], vec_desc_op[vec_count-1], dut.vec_last_result);
       end
       gemm_slot_valid_prev <= dut.gemm_slot_valid;
       gemm_slot_done_prev <= dut.gemm_slot_done;

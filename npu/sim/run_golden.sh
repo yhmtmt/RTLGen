@@ -17,6 +17,7 @@ GEMM_OOO_BIN="${REPO_ROOT}/npu/mapper/examples/golden_gemm_v2_ooo_descriptors.bi
 GEMM_OOO_YML="${REPO_ROOT}/npu/mapper/examples/golden_gemm_v2_ooo_descriptors.yml"
 RTL_BIN="${REPO_ROOT}/npu/sim/rtl/golden_descriptors.bin"
 PERF_TRACE="${REPO_ROOT}/npu/sim/perf/golden_trace.json"
+MIXED_RTL_LOG="${REPO_ROOT}/npu/sim/rtl/golden_rtl.log"
 GEMM_TRACE="${REPO_ROOT}/npu/sim/perf/golden_gemm_v2_trace.json"
 GEMM_RTL_LOG="${REPO_ROOT}/npu/sim/rtl/golden_gemm_v2_rtl.log"
 GEMM2_TRACE="${REPO_ROOT}/npu/sim/perf/golden_gemm_v2_two_trace.json"
@@ -46,7 +47,9 @@ python3 "${REPO_ROOT}/npu/mapper/run.py" "${GEMM_OOO_SCHEDULE}" --out "${GEMM_OO
 cp "${DESC_BIN}" "${RTL_BIN}"
 
 pushd "${REPO_ROOT}" >/dev/null
-make -f npu/sim/rtl/Makefile run BIN="${RTL_BIN}" BYTES=4096 VVPFLAGS="+gemm_mem_test=256 +gemm_mac_test=1"
+make -f npu/sim/rtl/Makefile run \
+  BIN="${RTL_BIN}" \
+  BYTES=4096 VVPFLAGS="+gemm_mem_test=256 +gemm_mac_test=1" | tee "${MIXED_RTL_LOG}"
 make -f npu/sim/rtl/Makefile run \
   BIN="${GEMM_BIN}" \
   BYTES=256 VVPFLAGS="+gemm_mem_test=256 +gemm_mac_test=1" | tee "${GEMM_RTL_LOG}"
@@ -58,6 +61,8 @@ make -f npu/sim/rtl/Makefile run \
   BYTES=256 VVPFLAGS="+gemm_mem_test=256 +gemm_mac_test=1" | tee "${GEMM_OOO_RTL_LOG}"
 popd >/dev/null
 python3 "${REPO_ROOT}/npu/sim/perf/run.py" --bin "${DESC_BIN}" --out "${PERF_TRACE}"
+python3 "${REPO_ROOT}/npu/sim/perf/compare_compute_results.py" \
+  --rtl-log "${MIXED_RTL_LOG}" --perf-trace "${PERF_TRACE}"
 python3 - "${PERF_TRACE}" <<'PY'
 import json
 import sys
@@ -87,14 +92,20 @@ python3 "${REPO_ROOT}/npu/sim/perf/run.py" --bin "${GEMM_BIN}" \
   --out "${GEMM_TRACE}" --config "${PERF_CFG}"
 python3 "${REPO_ROOT}/npu/sim/perf/compare_gemm_timing.py" --rtl-log "${GEMM_RTL_LOG}" --clk-ns "${CLK_NS}" \
   --perf-trace "${GEMM_TRACE}" --tolerance 0.9
+python3 "${REPO_ROOT}/npu/sim/perf/compare_compute_results.py" \
+  --rtl-log "${GEMM_RTL_LOG}" --perf-trace "${GEMM_TRACE}"
 python3 "${REPO_ROOT}/npu/sim/perf/run.py" --bin "${GEMM2_BIN}" \
   --out "${GEMM2_TRACE}" --config "${PERF_CFG}"
 python3 "${REPO_ROOT}/npu/sim/perf/compare_gemm_timing.py" --rtl-log "${GEMM2_RTL_LOG}" --clk-ns "${CLK_NS}" \
   --perf-trace "${GEMM2_TRACE}" --tolerance 0.9
+python3 "${REPO_ROOT}/npu/sim/perf/compare_compute_results.py" \
+  --rtl-log "${GEMM2_RTL_LOG}" --perf-trace "${GEMM2_TRACE}"
 python3 "${REPO_ROOT}/npu/sim/perf/run.py" --bin "${GEMM_OOO_BIN}" \
   --out "${GEMM_OOO_TRACE}" --config "${PERF_CFG}"
 python3 "${REPO_ROOT}/npu/sim/perf/compare_gemm_timing.py" --rtl-log "${GEMM_OOO_RTL_LOG}" --clk-ns "${CLK_NS}" \
   --perf-trace "${GEMM_OOO_TRACE}" --tolerance 0.9 \
   --tolerance-map "${GEMM_OOO_TOL}" --require-order-change
+python3 "${REPO_ROOT}/npu/sim/perf/compare_compute_results.py" \
+  --rtl-log "${GEMM_OOO_RTL_LOG}" --perf-trace "${GEMM_OOO_TRACE}"
 
 echo "golden flow: ok"
