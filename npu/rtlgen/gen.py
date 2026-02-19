@@ -366,6 +366,34 @@ module gemm_mac_int16 #(
 endmodule
 """
 
+GEMM_MAC_FP16 = """\
+module gemm_mac_fp16 #(
+    parameter integer LANES = 4,
+    parameter integer ACC_WIDTH = 32
+) (
+    input  wire [LANES*16-1:0] a_vec,
+    input  wire [LANES*16-1:0] b_vec,
+    output reg  signed [ACC_WIDTH-1:0] acc_out
+);
+  integer i;
+  reg signed [ACC_WIDTH-1:0] sum;
+  reg signed [15:0] a_i;
+  reg signed [15:0] b_i;
+
+  // Phase-3 placeholder: treat fp16 lanes as raw signed-16 values.
+  // Swap this block with true IEEE-754 half MAC when fp16 datapath is integrated.
+  always @(*) begin
+    sum = 0;
+    for (i = 0; i < LANES; i = i + 1) begin
+      a_i = a_vec[(i*16) +: 16];
+      b_i = b_vec[(i*16) +: 16];
+      sum = sum + (a_i * b_i);
+    end
+    acc_out = sum;
+  end
+endmodule
+"""
+
 AXI_LITE_BRIDGE = """\
 // Simple AXI-Lite to MMIO bridge (single-beat)
 module axi_lite_mmio_bridge (
@@ -828,7 +856,16 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
 
     compute_enabled = bool(compute_cfg.get("enabled", False))
     gemm_mac_type = str(gemm_cfg.get("mac_type", "int8")).lower()
-    gemm_mac_source = str(gemm_cfg.get("mac_source", "builtin_int8_dot")).lower()
+    gemm_mac_source_raw = gemm_cfg.get("mac_source")
+    if gemm_mac_source_raw is None:
+        if gemm_mac_type == "int16":
+            gemm_mac_source = "builtin_int16_dot"
+        elif gemm_mac_type == "fp16":
+            gemm_mac_source = "builtin_fp16_dot"
+        else:
+            gemm_mac_source = "builtin_int8_dot"
+    else:
+        gemm_mac_source = str(gemm_mac_source_raw).lower()
     gemm_mac_lanes = int(gemm_cfg.get("lanes", 8))
     gemm_accum_width = int(gemm_cfg.get("accum_width", 32))
     gemm_pipeline = int(gemm_cfg.get("pipeline", 1))
@@ -871,11 +908,11 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
     if gemm_pipeline < 1:
         die("compute.gemm.pipeline must be >= 1")
 
-    if compute_enabled and gemm_mac_type not in ("int8", "int16"):
-        die("compute.gemm.mac_type must be one of: int8, int16")
-    if gemm_mac_type == "int16":
+    if compute_enabled and gemm_mac_type not in ("int8", "int16", "fp16"):
+        die("compute.gemm.mac_type must be one of: int8, int16, fp16")
+    if gemm_mac_type in ("int16", "fp16"):
         if gemm_mac_lanes < 1 or gemm_mac_lanes > 4:
-            die("compute.gemm.lanes must be in [1, 4] when compute.gemm.mac_type=int16")
+            die("compute.gemm.lanes must be in [1, 4] when compute.gemm.mac_type is int16/fp16")
     else:
         if gemm_mac_lanes < 1 or gemm_mac_lanes > 8:
             die("compute.gemm.lanes must be in [1, 8] when compute.gemm.mac_type=int8")
@@ -884,6 +921,9 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
     if gemm_mac_type == "int16":
         if gemm_mac_source not in ("builtin", "builtin_int16_dot"):
             die("compute.gemm.mac_source must be one of: builtin, builtin_int16_dot for mac_type=int16")
+    elif gemm_mac_type == "fp16":
+        if gemm_mac_source not in ("builtin", "builtin_fp16_dot"):
+            die("compute.gemm.mac_source must be one of: builtin, builtin_fp16_dot for mac_type=fp16")
     else:
         if gemm_mac_source not in ("builtin", "builtin_int8_dot", "rtlgen_cpp"):
             die("compute.gemm.mac_source must be one of: builtin_int8_dot, builtin, rtlgen_cpp")
@@ -899,7 +939,7 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
     if vec_lanes < 1 or vec_lanes > 8:
         die("compute.vec.lanes must be in [1, 8]")
 
-    gemm_elem_bits = 16 if gemm_mac_type == "int16" else 8
+    gemm_elem_bits = 16 if gemm_mac_type in ("int16", "fp16") else 8
     gemm_mac_vec_width = gemm_mac_lanes * gemm_elem_bits
     gemm_mac_vec_width_minus1 = gemm_mac_vec_width - 1
     gemm_accum_width_minus1 = gemm_accum_width - 1
@@ -916,7 +956,7 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         compute_modules = cpp_module_text + "\n"
     else:
         cpp_module_name = ""
-        compute_modules = GEMM_MAC_INT8 + "\n\n" + GEMM_MAC_INT16 + "\n\n"
+        compute_modules = GEMM_MAC_INT8 + "\n\n" + GEMM_MAC_INT16 + "\n\n" + GEMM_MAC_FP16 + "\n\n"
 
     vec_cpp_modules: dict[str, str] = {}
     if compute_enabled and vec_activation_source == "rtlgen_cpp":

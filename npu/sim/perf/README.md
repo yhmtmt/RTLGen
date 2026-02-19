@@ -41,6 +41,9 @@ make -f npu/sim/perf/Makefile test
 - `test_perf_gemm_int16.py`
   - Builds a synthetic int16 GEMM descriptor payload and runs with `gemm_mac_type=int16`.
   - Verifies int16 functional expectations (`expected_dot`, `expected_cycles`, `expected_accum`, `lanes`) are decoded correctly.
+- `test_perf_gemm_fp16.py`
+  - Builds a synthetic fp16 GEMM descriptor payload and runs with `gemm_mac_type=fp16`.
+  - Verifies fp16 bring-up expectations (`expected_dot`, `expected_cycles`, `expected_accum`, `lanes`) are decoded consistently.
 
 ### RTL/perf integrated regression (`npu/sim/run_golden.sh`)
 
@@ -135,9 +138,13 @@ You can tune vector op performance with these optional config keys:
 
 ### Optional GEMM functional knobs
 
-- `gemm_mac_type` (`int8` or `int16`) for functional expected-result decode
-- `gemm_mac_lanes` (functional expectation lane count; defaults by type: `int8->8`, `int16->4`)
+- `gemm_mac_type` (`int8`, `int16`, or `fp16`) for functional expected-result decode
+- `gemm_mac_lanes` (functional expectation lane count; defaults by type: `int8->8`, `int16/fp16->4`)
 
 Preset configs for golden/perf comparison:
 - `npu/sim/perf/example_config_cpp_mac.json` for C++ MAC backend lane-1 path
 - `npu/sim/perf/example_config_int16.json` for builtin int16 GEMM path
+- `npu/sim/perf/example_config_fp16.json` for builtin fp16 GEMM bring-up path
+
+Current fp16 note:
+- `gemm_mac_type=fp16` uses a raw16 placeholder MAC model in RTL/perf bring-up (not IEEE-754 half arithmetic yet).

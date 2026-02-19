@@ -88,7 +88,8 @@ def _sx16(lo, hi):
 
 
 def _gemm_elem_bits(cfg):
-    return 16 if str(cfg.get("gemm_mac_type", "int8")).lower() == "int16" else 8
+    mac_type = str(cfg.get("gemm_mac_type", "int8")).lower()
+    return 16 if mac_type in ("int16", "fp16") else 8
 
 
 def _gemm_lanes(cfg):

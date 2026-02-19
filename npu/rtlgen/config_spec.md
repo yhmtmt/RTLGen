@@ -101,9 +101,11 @@ can later be extended without breaking v0.1.
 - `compute.gemm.mac_type` (string): GEMM MAC operand type.
   - `int8`: 8-bit signed lanes (`lanes` in `[1,8]`)
   - `int16`: 16-bit signed lanes (`lanes` in `[1,4]`)
+  - `fp16`: 16-bit lanes (`lanes` in `[1,4]`, Phase-3 placeholder)
 - `compute.gemm.mac_source` (string): GEMM MAC backend selection.
   - `builtin_int8_dot` (or `builtin`): generated `gemm_mac_int8` lane dot-product module.
   - `builtin_int16_dot` (or `builtin`): generated `gemm_mac_int16` lane dot-product module.
+  - `builtin_fp16_dot` (or `builtin`): generated `gemm_mac_fp16` lane dot-product module.
   - `rtlgen_cpp`: uses C++ `build/rtlgen` MAC generator and embeds the generated Verilog in `top.v`.
 - `compute.gemm.lanes` (int): number of MAC lanes (depends on `mac_type`).
 - `compute.gemm.accum_width` (int): signed accumulator width (16..64).
@@ -133,6 +135,9 @@ can later be extended without breaking v0.1.
   slot execution while preserving existing descriptor timing behavior.
 - Phase 3 adds an int16 MAC primitive (`gemm_mac_int16`) under
   `compute.gemm.mac_type=int16`.
+- Phase 3 also adds an fp16 selector (`compute.gemm.mac_type=fp16`) as a
+  **raw16 placeholder MAC** for integration/regression bring-up. It does not
+  yet implement IEEE-754 half-precision arithmetic.
 - `mac_source=rtlgen_cpp` currently requires `lanes=1` and `accum_width=16`
   and `mac_type=int8` to match the generated scalar MAC interface
   (`a*b + accumulator`).
