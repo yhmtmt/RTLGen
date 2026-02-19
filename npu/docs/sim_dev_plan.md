@@ -13,6 +13,7 @@ This plan defines two simulation schemes:
 - Golden mapping sim flow: RTL (Makefile `BIN=`) and perf (`npu/sim/perf/run.py --bin`).
 - FP16-2 in progress: C++ `fp_mac` GEMM backend wiring is implemented with lane-1 IEEE-half policy and RTL/perf comparison hooks.
 - FP16-3 progressed: fp16 VEC (`add/mul/relu/gelu/softmax/layernorm/drelu/dgelu/dsoftmax/dlayernorm`) path is wired with C++ IEEE `fp_mac` backend and perf/RTL comparison hooks.
+- Phase-2 activation kickoff: C++ activation-unit GELU path is now explicitly exercised in golden RTL/perf parity flow (`activation_source=rtlgen_cpp`).
 
 ## A) RTL Functional Validation (First Priority)
 

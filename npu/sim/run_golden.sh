@@ -32,6 +32,9 @@ CPP_MIXED_TRACE="${REPO_ROOT}/npu/sim/perf/golden_cpp_trace.json"
 CPP_MIXED_RTL_LOG="${REPO_ROOT}/npu/sim/rtl/golden_cpp_rtl.log"
 CPP_GEMM_TRACE="${REPO_ROOT}/npu/sim/perf/golden_cpp_gemm_v2_trace.json"
 CPP_GEMM_RTL_LOG="${REPO_ROOT}/npu/sim/rtl/golden_cpp_gemm_v2_rtl.log"
+CPP_VEC_ACT_BIN="${REPO_ROOT}/npu/sim/rtl/golden_cpp_vec_act_descriptors.bin"
+CPP_VEC_ACT_TRACE="${REPO_ROOT}/npu/sim/perf/golden_cpp_vec_act_trace.json"
+CPP_VEC_ACT_RTL_LOG="${REPO_ROOT}/npu/sim/rtl/golden_cpp_vec_act_rtl.log"
 INT16_RTL_CFG="${REPO_ROOT}/npu/rtlgen/examples/minimal_int16.json"
 INT16_PERF_CFG="${REPO_ROOT}/npu/sim/perf/example_config_int16.json"
 INT16_GEMM_TRACE="${REPO_ROOT}/npu/sim/perf/golden_int16_gemm_v2_trace.json"
@@ -122,6 +125,32 @@ python3 "${REPO_ROOT}/npu/mapper/validate.py" "${GEMM2_SCHEDULE}"
 python3 "${REPO_ROOT}/npu/mapper/run.py" "${GEMM2_SCHEDULE}" --out "${GEMM2_YML}" --out-bin "${GEMM2_BIN}"
 python3 "${REPO_ROOT}/npu/mapper/validate.py" "${GEMM_OOO_SCHEDULE}"
 python3 "${REPO_ROOT}/npu/mapper/run.py" "${GEMM_OOO_SCHEDULE}" --out "${GEMM_OOO_YML}" --out-bin "${GEMM_OOO_BIN}"
+python3 - "${CPP_VEC_ACT_BIN}" <<'PY'
+import struct
+import sys
+from pathlib import Path
+
+out_path = Path(sys.argv[1])
+stream = bytearray()
+
+# GELU descriptor #0: x=+8 -> y=+4 in current int8 approximation.
+d0 = bytearray(32)
+struct.pack_into("<BBBBI", d0, 0, 0x11, 0x03, 0x01, 0x00, 0x0)  # VEC_OP, op=gelu, dtype=int8
+struct.pack_into("<i", d0, 24, 256)
+d0[8] = 0x08
+d0[16] = 0x00
+stream.extend(d0)
+
+# GELU descriptor #1: x=-6 -> y=0 in current int8 approximation.
+d1 = bytearray(32)
+struct.pack_into("<BBBBI", d1, 0, 0x11, 0x03, 0x01, 0x00, 0x0)  # VEC_OP, op=gelu, dtype=int8
+struct.pack_into("<i", d1, 24, 512)
+d1[8] = 0xFA  # -6
+d1[16] = 0x00
+stream.extend(d1)
+
+out_path.write_bytes(stream)
+PY
 python3 - "${VEC_FP16_BIN}" <<'PY'
 import struct
 import sys
@@ -181,6 +210,10 @@ make -f npu/sim/rtl/Makefile run \
   CONFIG="${CPP_RTL_CFG}" \
   BIN="${GEMM_BIN}" \
   BYTES=256 VVPFLAGS="+gemm_mem_test=256 +gemm_mac_test=1" | tee "${CPP_GEMM_RTL_LOG}"
+make -f npu/sim/rtl/Makefile run \
+  CONFIG="${CPP_RTL_CFG}" \
+  BIN="${CPP_VEC_ACT_BIN}" \
+  BYTES=64 VVPFLAGS="+vec_test=1 +gemm_mac_test=0" | tee "${CPP_VEC_ACT_RTL_LOG}"
 make -f npu/sim/rtl/Makefile run \
   CONFIG="${INT16_RTL_CFG}" \
   BIN="${GEMM_BIN}" \
@@ -282,6 +315,33 @@ python3 "${REPO_ROOT}/npu/sim/perf/compare_gemm_timing.py" --rtl-log "${CPP_GEMM
   --perf-trace "${CPP_GEMM_TRACE}" --tolerance 0.9
 python3 "${REPO_ROOT}/npu/sim/perf/compare_compute_results.py" \
   --rtl-log "${CPP_GEMM_RTL_LOG}" --perf-trace "${CPP_GEMM_TRACE}"
+python3 "${REPO_ROOT}/npu/sim/perf/run.py" --bin "${CPP_VEC_ACT_BIN}" \
+  --out "${CPP_VEC_ACT_TRACE}" --config "${CPP_PERF_CFG}"
+python3 "${REPO_ROOT}/npu/sim/perf/compare_compute_results.py" \
+  --rtl-log "${CPP_VEC_ACT_RTL_LOG}" --perf-trace "${CPP_VEC_ACT_TRACE}"
+python3 - "${CPP_VEC_ACT_TRACE}" <<'PY'
+import json
+import sys
+
+trace_path = sys.argv[1]
+with open(trace_path, "r", encoding="utf-8") as f:
+    data = json.load(f)
+
+stats = data.get("stats", {})
+vec_ops = int(stats.get("vec_ops", 0))
+unknown_ops = int(stats.get("unknown_ops", 0))
+if vec_ops != 2:
+    raise SystemExit(f"golden cpp activation regression: expected vec_ops=2, got {vec_ops}")
+if unknown_ops != 0:
+    raise SystemExit(f"golden cpp activation regression: expected unknown_ops=0, got {unknown_ops}")
+
+vec_events = [ev for ev in data.get("trace", []) if ev.get("name") == "VEC_OP"]
+if [ev.get("op") for ev in vec_events] != ["gelu", "gelu"]:
+    raise SystemExit("golden cpp activation regression: expected gelu-only sequence")
+if any(ev.get("dtype") != "int8" for ev in vec_events):
+    raise SystemExit("golden cpp activation regression: expected dtype=int8 for all vec events")
+print("golden cpp activation regression: OK")
+PY
 python3 "${REPO_ROOT}/npu/sim/perf/run.py" --bin "${GEMM_BIN}" \
   --out "${INT16_GEMM_TRACE}" --config "${INT16_PERF_CFG}"
 python3 "${REPO_ROOT}/npu/sim/perf/compare_gemm_timing.py" --rtl-log "${INT16_GEMM_RTL_LOG}" --clk-ns "${INT16_CLK_NS}" \
