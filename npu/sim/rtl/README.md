@@ -67,7 +67,7 @@ The tests validate descriptor execution behavior, MMIO/IRQ flow, and AXI memory 
 ## Current coverage boundaries
 
 - Datapath validation covers int8/int16 GEMM, VEC ops, and fp16 GEMM policy paths used in golden flows.
-- Floating-point coverage includes fp16 GEMM (builtin placeholder and C++ IEEE-half lane-1) and fp16 VEC (`add/mul/relu/gelu/softmax/layernorm/dgelu/dsoftmax/dlayernorm`) via RTL/perf compare.
+- Floating-point coverage includes fp16 GEMM (builtin placeholder and C++ IEEE-half lane-1) and fp16 VEC (`add/mul/relu/gelu/softmax/layernorm/drelu/dgelu/dsoftmax/dlayernorm`) via RTL/perf compare.
 - bf16/fp8 and constrained-random fp16 derivative-vector numeric stress are not covered yet.
 - No constrained-random stress regression is included yet.
 

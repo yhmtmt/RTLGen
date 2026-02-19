@@ -40,7 +40,7 @@
     },
     "vec": {
       "lanes": 8,
-      "ops": ["add", "mul", "relu", "gelu", "softmax", "layernorm", "dgelu", "dsoftmax", "dlayernorm"],
+      "ops": ["add", "mul", "relu", "gelu", "softmax", "layernorm", "drelu", "dgelu", "dsoftmax", "dlayernorm"],
       "activation_source": "builtin",
       "fp16_arith_source": "rtlgen_cpp",
       "rtlgen_cpp": {
