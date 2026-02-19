@@ -839,7 +839,9 @@ def generate_cpp_vec_fp16_mac_module(vec_cfg: dict, out_path: Path) -> tuple[str
     return module_name, module_file.read_text(encoding="utf-8")
 
 
-def generate_cpp_vec_activation_modules(vec_cfg: dict, out_path: Path) -> tuple[str, dict[str, str]]:
+def generate_cpp_vec_activation_modules(
+    vec_cfg: dict, out_path: Path
+) -> tuple[str, dict[str, str], str]:
     cpp_cfg = vec_cfg.get("rtlgen_cpp", {})
     if cpp_cfg is None:
         cpp_cfg = {}
@@ -848,6 +850,17 @@ def generate_cpp_vec_activation_modules(vec_cfg: dict, out_path: Path) -> tuple[
 
     rtlgen_bin = str(cpp_cfg.get("binary_path", "build/rtlgen"))
     rtlgen_bin_path = resolve_rtlgen_bin_path(rtlgen_bin)
+    activation_operand_kind = str(cpp_cfg.get("activation_operand_kind", "int8")).lower()
+    if activation_operand_kind not in ("int8", "fp16"):
+        die("compute.vec.rtlgen_cpp.activation_operand_kind must be one of: int8, fp16")
+    activation_fp_total_width = int(cpp_cfg.get("activation_fp_total_width", 16))
+    activation_fp_mantissa_width = int(cpp_cfg.get("activation_fp_mantissa_width", 10))
+    if activation_operand_kind == "fp16":
+        if activation_fp_total_width != 16 or activation_fp_mantissa_width != 10:
+            die(
+                "compute.vec.rtlgen_cpp fp16 activation currently requires "
+                "activation_fp_total_width=16 and activation_fp_mantissa_width=10"
+            )
 
     ops_raw = vec_cfg.get("ops", [])
     if ops_raw is None:
@@ -882,17 +895,30 @@ def generate_cpp_vec_activation_modules(vec_cfg: dict, out_path: Path) -> tuple[
         if op not in fn_map:
             continue
         fn = fn_map[op]
-        module_name = f"{module_prefix}_{op}_int8"
+        operand_label = "fp16" if activation_operand_kind == "fp16" else "int8"
+        module_name = f"{module_prefix}_{op}_{operand_label}"
+        if activation_operand_kind == "fp16":
+            operand_entry: dict[str, object] = {
+                "name": "vec",
+                "dimensions": 1,
+                "bit_width": activation_fp_total_width,
+                "signed": True,
+                "kind": "fp",
+                "fp_format": {
+                    "total_width": activation_fp_total_width,
+                    "mantissa_width": activation_fp_mantissa_width,
+                },
+            }
+        else:
+            operand_entry = {
+                "name": "vec",
+                "dimensions": 1,
+                "bit_width": 8,
+                "signed": True,
+            }
         act_cfg = {
             "version": "1.1",
-            "operands": [
-                {
-                    "name": "vec",
-                    "dimensions": 1,
-                    "bit_width": 8,
-                    "signed": True,
-                }
-            ],
+            "operands": [operand_entry],
             "operations": [
                 {
                     "type": "activation",
@@ -932,8 +958,8 @@ def generate_cpp_vec_activation_modules(vec_cfg: dict, out_path: Path) -> tuple[
         )
 
     if not modules:
-        return "", {}
-    return "\n\n".join(modules) + "\n\n", module_names
+        return "", {}, activation_operand_kind
+    return "\n\n".join(modules) + "\n\n", module_names, activation_operand_kind
 
 
 def write_outputs(cfg: dict, out_dir: str) -> None:
@@ -1160,9 +1186,17 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
             compute_modules = compute_modules + vec_fp16_mac_text + "\n"
 
     vec_cpp_modules: dict[str, str] = {}
+    vec_cpp_activation_operand_kind = "int8"
     if compute_enabled and vec_activation_source == "rtlgen_cpp":
-        vec_module_text, vec_cpp_modules = generate_cpp_vec_activation_modules(vec_cfg, out_path)
+        vec_module_text, vec_cpp_modules, vec_cpp_activation_operand_kind = generate_cpp_vec_activation_modules(
+            vec_cfg, out_path
+        )
         compute_modules = compute_modules + vec_module_text
+        if vec_cpp_activation_operand_kind != "int8":
+            print(
+                "rtlgen: note: fp activation modules generated from C++ RTLGen are emitted as "
+                "standalone units; vec datapath wiring remains int8-only in this top."
+            )
     vec_cpp_relu_module = vec_cpp_modules.get("relu", "")
     vec_cpp_gelu_module = vec_cpp_modules.get("gelu", "")
     vec_cpp_softmax_module = vec_cpp_modules.get("softmax", "")
@@ -1171,14 +1205,14 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
     vec_cpp_dgelu_module = vec_cpp_modules.get("dgelu", "")
     vec_cpp_dsoftmax_module = vec_cpp_modules.get("dsoftmax", "")
     vec_cpp_dlayernorm_module = vec_cpp_modules.get("dlayernorm", "")
-    use_cpp_relu = bool(vec_cpp_relu_module)
-    use_cpp_gelu = bool(vec_cpp_gelu_module)
-    use_cpp_softmax = bool(vec_cpp_softmax_module)
-    use_cpp_layernorm = bool(vec_cpp_layernorm_module)
-    use_cpp_drelu = bool(vec_cpp_drelu_module)
-    use_cpp_dgelu = bool(vec_cpp_dgelu_module)
-    use_cpp_dsoftmax = bool(vec_cpp_dsoftmax_module)
-    use_cpp_dlayernorm = bool(vec_cpp_dlayernorm_module)
+    use_cpp_relu = bool(vec_cpp_relu_module) and vec_cpp_activation_operand_kind == "int8"
+    use_cpp_gelu = bool(vec_cpp_gelu_module) and vec_cpp_activation_operand_kind == "int8"
+    use_cpp_softmax = bool(vec_cpp_softmax_module) and vec_cpp_activation_operand_kind == "int8"
+    use_cpp_layernorm = bool(vec_cpp_layernorm_module) and vec_cpp_activation_operand_kind == "int8"
+    use_cpp_drelu = bool(vec_cpp_drelu_module) and vec_cpp_activation_operand_kind == "int8"
+    use_cpp_dgelu = bool(vec_cpp_dgelu_module) and vec_cpp_activation_operand_kind == "int8"
+    use_cpp_dsoftmax = bool(vec_cpp_dsoftmax_module) and vec_cpp_activation_operand_kind == "int8"
+    use_cpp_dlayernorm = bool(vec_cpp_dlayernorm_module) and vec_cpp_activation_operand_kind == "int8"
 
     compute_state_regs = f"""  reg [{gemm_mac_vec_width_minus1}:0] gemm_mac_a_vec0;
   reg [{gemm_mac_vec_width_minus1}:0] gemm_mac_b_vec0;

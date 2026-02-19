@@ -131,6 +131,9 @@ can later be extended without breaking v0.1.
 - `compute.vec.rtlgen_cpp` (object, optional): options for `activation_source=rtlgen_cpp`.
   - `binary_path` (string): path to C++ RTLGen binary (default `build/rtlgen`).
   - `module_prefix` (string): prefix used for generated activation module names.
+  - `activation_operand_kind` (string, optional): activation operand mode (`int8` default, or `fp16`).
+  - `activation_fp_total_width` (int, optional): fp operand total width when `activation_operand_kind=fp16` (currently `16`).
+  - `activation_fp_mantissa_width` (int, optional): fp operand mantissa width when `activation_operand_kind=fp16` (currently `10`).
 
 ## Notes
 - The initial RTL is a stub for **simulation harnessing** only.
@@ -158,6 +161,10 @@ can later be extended without breaking v0.1.
 - `activation_source=rtlgen_cpp` emits scalar activation modules for
   `relu`, `gelu`, `softmax`, `layernorm`, `drelu`, `dgelu`, `dsoftmax`,
   and `dlayernorm`.
+- When `activation_operand_kind=fp16`, generated modules use C++ RTLGen fp
+  activation format (FloPoCo-style `total_width+2` bits) and are emitted for
+  standalone evaluation; current NPU top-level VEC wiring remains int8-only for
+  `activation_source=rtlgen_cpp`.
 - VEC op encoding uses the descriptor `flags` byte as:
   - high nibble `[7:4]`: dtype code
   - low nibble `[3:0]`: op code

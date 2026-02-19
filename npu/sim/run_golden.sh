@@ -35,6 +35,8 @@ CPP_GEMM_RTL_LOG="${REPO_ROOT}/npu/sim/rtl/golden_cpp_gemm_v2_rtl.log"
 CPP_VEC_ACT_BIN="${REPO_ROOT}/npu/sim/rtl/golden_cpp_vec_act_descriptors.bin"
 CPP_VEC_ACT_TRACE="${REPO_ROOT}/npu/sim/perf/golden_cpp_vec_act_trace.json"
 CPP_VEC_ACT_RTL_LOG="${REPO_ROOT}/npu/sim/rtl/golden_cpp_vec_act_rtl.log"
+VEC_ACT_FP16_RTL_CFG="${REPO_ROOT}/npu/rtlgen/examples/minimal_vec_act_fp16_cpp.json"
+CPP_VEC_ACT_FP16_RTL_LOG="${REPO_ROOT}/npu/sim/rtl/golden_cpp_vec_act_fp16_rtl.log"
 INT16_RTL_CFG="${REPO_ROOT}/npu/rtlgen/examples/minimal_int16.json"
 INT16_PERF_CFG="${REPO_ROOT}/npu/sim/perf/example_config_int16.json"
 INT16_GEMM_TRACE="${REPO_ROOT}/npu/sim/perf/golden_int16_gemm_v2_trace.json"
@@ -216,6 +218,18 @@ make -f npu/sim/rtl/Makefile run \
   CONFIG="${CPP_RTL_CFG}" \
   BIN="${CPP_VEC_ACT_BIN}" \
   BYTES=256 VVPFLAGS="+vec_test=1 +gemm_mac_test=0" | tee "${CPP_VEC_ACT_RTL_LOG}"
+python3 npu/rtlgen/gen.py --config "${VEC_ACT_FP16_RTL_CFG}" --out npu/rtlgen/out
+iverilog -g2012 -o build_cpp_vec_act_fp16_smoke.vvp \
+  npu/rtlgen/out/.rtlgen_cpp_vec/vec_act_fp16_relu_fp16.v \
+  npu/rtlgen/out/.rtlgen_cpp_vec/vec_act_fp16_gelu_fp16.v \
+  npu/rtlgen/out/.rtlgen_cpp_vec/vec_act_fp16_softmax_fp16.v \
+  npu/rtlgen/out/.rtlgen_cpp_vec/vec_act_fp16_layernorm_fp16.v \
+  npu/rtlgen/out/.rtlgen_cpp_vec/vec_act_fp16_drelu_fp16.v \
+  npu/rtlgen/out/.rtlgen_cpp_vec/vec_act_fp16_dgelu_fp16.v \
+  npu/rtlgen/out/.rtlgen_cpp_vec/vec_act_fp16_dsoftmax_fp16.v \
+  npu/rtlgen/out/.rtlgen_cpp_vec/vec_act_fp16_dlayernorm_fp16.v \
+  npu/sim/rtl/tb_cpp_vec_act_fp16_smoke.sv
+vvp build_cpp_vec_act_fp16_smoke.vvp | tee "${CPP_VEC_ACT_FP16_RTL_LOG}"
 make -f npu/sim/rtl/Makefile run \
   CONFIG="${INT16_RTL_CFG}" \
   BIN="${GEMM_BIN}" \
