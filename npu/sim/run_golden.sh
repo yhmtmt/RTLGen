@@ -54,6 +54,10 @@ VEC_FP16_RTL_CFG="${REPO_ROOT}/npu/rtlgen/examples/minimal_vec_fp16_cpp.json"
 VEC_FP16_PERF_CFG="${REPO_ROOT}/npu/sim/perf/example_config_vec_fp16_cpp.json"
 VEC_FP16_TRACE="${REPO_ROOT}/npu/sim/perf/golden_vec_fp16_trace.json"
 VEC_FP16_RTL_LOG="${REPO_ROOT}/npu/sim/rtl/golden_vec_fp16_rtl.log"
+VEC_FP16_ACT_RTL_CFG="${REPO_ROOT}/npu/rtlgen/examples/minimal_vec_fp16_act_cpp.json"
+VEC_FP16_ACT_PERF_CFG="${REPO_ROOT}/npu/sim/perf/example_config_vec_fp16_act_cpp.json"
+VEC_FP16_ACT_TRACE="${REPO_ROOT}/npu/sim/perf/golden_vec_fp16_act_trace.json"
+VEC_FP16_ACT_RTL_LOG="${REPO_ROOT}/npu/sim/rtl/golden_vec_fp16_act_rtl.log"
 
 FLOPOCO_CANDIDATE="${FLOPOCO_BIN:-}"
 if [[ -n "${FLOPOCO_CANDIDATE}" && ! -x "${FLOPOCO_CANDIDATE}" ]]; then
@@ -247,6 +251,10 @@ if [[ "${FP16_CPP_ENABLED}" == "1" ]]; then
     CONFIG="${VEC_FP16_RTL_CFG}" \
     BIN="${VEC_FP16_BIN}" \
     BYTES=320 VVPFLAGS="+vec_test=1 +gemm_mac_test=0" | tee "${VEC_FP16_RTL_LOG}"
+  make -f npu/sim/rtl/Makefile run \
+    CONFIG="${VEC_FP16_ACT_RTL_CFG}" \
+    BIN="${VEC_FP16_BIN}" \
+    BYTES=320 VVPFLAGS="+vec_test=1 +gemm_mac_test=0" | tee "${VEC_FP16_ACT_RTL_LOG}"
 fi
 popd >/dev/null
 python3 "${REPO_ROOT}/npu/sim/perf/run.py" --bin "${DESC_BIN}" --out "${PERF_TRACE}"
@@ -400,6 +408,30 @@ if [ev.get("op") for ev in vec_events] != ["add", "mul", "relu", "gelu", "softma
 if any(ev.get("dtype") != "fp16" for ev in vec_events):
     raise SystemExit("golden fp16 vec regression: expected dtype=fp16 for all vec events")
 print("golden fp16 vec regression: OK")
+PY
+  python3 "${REPO_ROOT}/npu/sim/perf/run.py" --bin "${VEC_FP16_BIN}" \
+    --out "${VEC_FP16_ACT_TRACE}" --config "${VEC_FP16_ACT_PERF_CFG}"
+  python3 "${REPO_ROOT}/npu/sim/perf/compare_compute_results.py" \
+    --rtl-log "${VEC_FP16_ACT_RTL_LOG}" --perf-trace "${VEC_FP16_ACT_TRACE}"
+  python3 - "${VEC_FP16_ACT_TRACE}" <<'PY'
+import json
+import sys
+
+trace_path = sys.argv[1]
+with open(trace_path, "r", encoding="utf-8") as f:
+    data = json.load(f)
+
+stats = data.get("stats", {})
+vec_ops = int(stats.get("vec_ops", 0))
+if vec_ops != 10:
+    raise SystemExit(f"golden fp16 cpp activation regression: expected vec_ops=10, got {vec_ops}")
+
+vec_events = [ev for ev in data.get("trace", []) if ev.get("name") == "VEC_OP"]
+if [ev.get("op") for ev in vec_events] != ["add", "mul", "relu", "gelu", "softmax", "layernorm", "drelu", "dgelu", "dsoftmax", "dlayernorm"]:
+    raise SystemExit("golden fp16 cpp activation regression: unexpected op order")
+if any(ev.get("dtype") != "fp16" for ev in vec_events):
+    raise SystemExit("golden fp16 cpp activation regression: expected dtype=fp16 for all vec events")
+print("golden fp16 cpp activation regression: OK")
 PY
 fi
 

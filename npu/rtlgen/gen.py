@@ -1192,11 +1192,6 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
             vec_cfg, out_path
         )
         compute_modules = compute_modules + vec_module_text
-        if vec_cpp_activation_operand_kind != "int8":
-            print(
-                "rtlgen: note: fp activation modules generated from C++ RTLGen are emitted as "
-                "standalone units; vec datapath wiring remains int8-only in this top."
-            )
     vec_cpp_relu_module = vec_cpp_modules.get("relu", "")
     vec_cpp_gelu_module = vec_cpp_modules.get("gelu", "")
     vec_cpp_softmax_module = vec_cpp_modules.get("softmax", "")
@@ -1213,6 +1208,19 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
     use_cpp_dgelu = bool(vec_cpp_dgelu_module) and vec_cpp_activation_operand_kind == "int8"
     use_cpp_dsoftmax = bool(vec_cpp_dsoftmax_module) and vec_cpp_activation_operand_kind == "int8"
     use_cpp_dlayernorm = bool(vec_cpp_dlayernorm_module) and vec_cpp_activation_operand_kind == "int8"
+    use_cpp_fp16_relu = bool(vec_cpp_relu_module) and vec_cpp_activation_operand_kind == "fp16"
+    use_cpp_fp16_gelu = bool(vec_cpp_gelu_module) and vec_cpp_activation_operand_kind == "fp16"
+    use_cpp_fp16_softmax = bool(vec_cpp_softmax_module) and vec_cpp_activation_operand_kind == "fp16"
+    use_cpp_fp16_layernorm = bool(vec_cpp_layernorm_module) and vec_cpp_activation_operand_kind == "fp16"
+    use_cpp_fp16_drelu = bool(vec_cpp_drelu_module) and vec_cpp_activation_operand_kind == "fp16"
+    use_cpp_fp16_dgelu = bool(vec_cpp_dgelu_module) and vec_cpp_activation_operand_kind == "fp16"
+    use_cpp_fp16_dsoftmax = bool(vec_cpp_dsoftmax_module) and vec_cpp_activation_operand_kind == "fp16"
+    use_cpp_fp16_dlayernorm = bool(vec_cpp_dlayernorm_module) and vec_cpp_activation_operand_kind == "fp16"
+    if vec_cpp_activation_operand_kind == "fp16" and not use_vec_fp16_cpp:
+        print(
+            "rtlgen: note: fp activation modules generated from C++ RTLGen are emitted as "
+            "standalone units because compute.vec.fp16_arith_source is not rtlgen_cpp."
+        )
 
     compute_state_regs = f"""  reg [{gemm_mac_vec_width_minus1}:0] gemm_mac_a_vec0;
   reg [{gemm_mac_vec_width_minus1}:0] gemm_mac_b_vec0;
@@ -1385,6 +1393,99 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         """      assign vec_dlayernorm_res[(gi*8) +: 8] = 8'h01;""",
     )
 
+    if use_cpp_fp16_relu:
+        relu_lane_body_fp16 = f"""      wire [17:0] vec_fp16_relu_cpp_y;
+      {vec_cpp_relu_module} u_vec_fp16_relu (
+        .X(vec_fp16_cpp_x),
+        .Y(vec_fp16_relu_cpp_y)
+      );
+      assign vec_relu_res_fp16[(gj*16) +: 16] =
+          vec_fp16_relu_nan ? vec_fp16_relu_in : vec_fp16_relu_cpp_y[15:0];"""
+    else:
+        relu_lane_body_fp16 = """      assign vec_relu_res_fp16[(gj*16) +: 16] =
+          vec_fp16_relu_nan ? vec_fp16_relu_in :
+          (vec_fp16_relu_in[15] ? 16'h0000 : vec_fp16_relu_in);"""
+
+    if use_cpp_fp16_gelu:
+        gelu_lane_body_fp16 = f"""      wire [17:0] vec_fp16_gelu_cpp_y;
+      {vec_cpp_gelu_module} u_vec_fp16_gelu (
+        .X(vec_fp16_cpp_x),
+        .Y(vec_fp16_gelu_cpp_y)
+      );
+      assign vec_gelu_res_fp16[(gj*16) +: 16] =
+          vec_fp16_relu_nan ? vec_fp16_relu_in : vec_fp16_gelu_cpp_y[15:0];"""
+    else:
+        gelu_lane_body_fp16 = """      assign vec_gelu_res_fp16[(gj*16) +: 16] =
+          vec_fp16_relu_nan ? vec_fp16_relu_in :
+          (vec_fp16_scale_half[15] ? 16'h0000 : vec_fp16_scale_half);"""
+
+    if use_cpp_fp16_softmax:
+        softmax_lane_body_fp16 = f"""      wire [17:0] vec_fp16_softmax_cpp_y;
+      {vec_cpp_softmax_module} u_vec_fp16_softmax (
+        .X(vec_fp16_cpp_x),
+        .Y(vec_fp16_softmax_cpp_y)
+      );
+      assign vec_fp16_softmax =
+          vec_fp16_relu_nan ? vec_fp16_relu_in : vec_fp16_softmax_cpp_y[15:0];
+      assign vec_softmax_res_fp16[(gj*16) +: 16] = vec_fp16_softmax;"""
+    else:
+        softmax_lane_body_fp16 = """      assign vec_fp16_softmax =
+          vec_fp16_relu_nan ? vec_fp16_relu_in :
+          (vec_fp16_scale_four[15] ? 16'h0000 : vec_fp16_scale_four);
+      assign vec_softmax_res_fp16[(gj*16) +: 16] = vec_fp16_softmax;"""
+
+    if use_cpp_fp16_layernorm:
+        layernorm_lane_body_fp16 = f"""      wire [17:0] vec_fp16_layernorm_cpp_y;
+      {vec_cpp_layernorm_module} u_vec_fp16_layernorm (
+        .X(vec_fp16_cpp_x),
+        .Y(vec_fp16_layernorm_cpp_y)
+      );
+      assign vec_layernorm_res_fp16[(gj*16) +: 16] = vec_fp16_layernorm_cpp_y[15:0];"""
+    else:
+        layernorm_lane_body_fp16 = """      assign vec_layernorm_res_fp16[(gj*16) +: 16] = vec_fp16_scale_half;"""
+
+    if use_cpp_fp16_drelu:
+        drelu_lane_body_fp16 = f"""      wire [17:0] vec_fp16_drelu_cpp_y;
+      {vec_cpp_drelu_module} u_vec_fp16_drelu (
+        .X(vec_fp16_cpp_x),
+        .Y(vec_fp16_drelu_cpp_y)
+      );
+      assign vec_drelu_res_fp16[(gj*16) +: 16] = vec_fp16_drelu_cpp_y[15:0];"""
+    else:
+        drelu_lane_body_fp16 = """      assign vec_drelu_res_fp16[(gj*16) +: 16] =
+          vec_fp16_gt_zero ? 16'h3c00 : 16'h0000;"""
+
+    if use_cpp_fp16_dgelu:
+        dgelu_lane_body_fp16 = f"""      wire [17:0] vec_fp16_dgelu_cpp_y;
+      {vec_cpp_dgelu_module} u_vec_fp16_dgelu (
+        .X(vec_fp16_cpp_x),
+        .Y(vec_fp16_dgelu_cpp_y)
+      );
+      assign vec_dgelu_res_fp16[(gj*16) +: 16] = vec_fp16_dgelu_cpp_y[15:0];"""
+    else:
+        dgelu_lane_body_fp16 = """      assign vec_dgelu_res_fp16[(gj*16) +: 16] =
+          vec_fp16_gt_zero ? 16'h3c00 : 16'h0000;"""
+
+    if use_cpp_fp16_dsoftmax:
+        dsoftmax_lane_body_fp16 = f"""      wire [17:0] vec_fp16_dsoftmax_cpp_y;
+      {vec_cpp_dsoftmax_module} u_vec_fp16_dsoftmax (
+        .X(vec_fp16_cpp_x),
+        .Y(vec_fp16_dsoftmax_cpp_y)
+      );
+      assign vec_dsoftmax_res_fp16[(gj*16) +: 16] = vec_fp16_dsoftmax_cpp_y[15:0];"""
+    else:
+        dsoftmax_lane_body_fp16 = """      assign vec_dsoftmax_res_fp16[(gj*16) +: 16] = vec_fp16_dsoftmax;"""
+
+    if use_cpp_fp16_dlayernorm:
+        dlayernorm_lane_body_fp16 = f"""      wire [17:0] vec_fp16_dlayernorm_cpp_y;
+      {vec_cpp_dlayernorm_module} u_vec_fp16_dlayernorm (
+        .X(vec_fp16_cpp_x),
+        .Y(vec_fp16_dlayernorm_cpp_y)
+      );
+      assign vec_dlayernorm_res_fp16[(gj*16) +: 16] = vec_fp16_dlayernorm_cpp_y[15:0];"""
+    else:
+        dlayernorm_lane_body_fp16 = """      assign vec_dlayernorm_res_fp16[(gj*16) +: 16] = 16'h3c00;"""
+
     if use_vec_fp16_cpp:
         vec_fp16_compute_instances = f"""
   wire [{vec_data_width_minus1}:0] vec_add_res_fp16;
@@ -1411,6 +1512,7 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
       wire [15:0] vec_fp16_one_minus_softmax;
       wire [15:0] vec_fp16_dsoftmax;
       wire vec_fp16_gt_zero;
+      wire [17:0] vec_fp16_cpp_x = {{2'b01, vec_fp16_a}};
 
       {vec_fp16_mac_module_name} u_vec_fp16_add (
         .A(16'h3c00),
@@ -1462,7 +1564,7 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         .R(vec_fp16_one_minus_softmax)
       );
 
-      {vec_fp16_mac_module_name} u_vec_fp16_dsoftmax (
+      {vec_fp16_mac_module_name} u_vec_fp16_dsoftmax_mac (
         .A(vec_fp16_softmax),
         .B(vec_fp16_one_minus_softmax),
         .C(16'h0000),
@@ -1472,25 +1574,16 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         .R(vec_fp16_dsoftmax)
       );
 
-      assign vec_relu_res_fp16[(gj*16) +: 16] =
-          vec_fp16_relu_nan ? vec_fp16_relu_in :
-          (vec_fp16_relu_in[15] ? 16'h0000 : vec_fp16_relu_in);
-      assign vec_gelu_res_fp16[(gj*16) +: 16] =
-          vec_fp16_relu_nan ? vec_fp16_relu_in :
-          (vec_fp16_scale_half[15] ? 16'h0000 : vec_fp16_scale_half);
-      assign vec_fp16_softmax =
-          vec_fp16_relu_nan ? vec_fp16_relu_in :
-          (vec_fp16_scale_four[15] ? 16'h0000 : vec_fp16_scale_four);
       assign vec_fp16_gt_zero =
           !vec_fp16_relu_nan && !vec_fp16_relu_in[15] && (|vec_fp16_relu_in[14:0]);
-      assign vec_softmax_res_fp16[(gj*16) +: 16] = vec_fp16_softmax;
-      assign vec_layernorm_res_fp16[(gj*16) +: 16] = vec_fp16_scale_half;
-      assign vec_drelu_res_fp16[(gj*16) +: 16] =
-          vec_fp16_gt_zero ? 16'h3c00 : 16'h0000;
-      assign vec_dgelu_res_fp16[(gj*16) +: 16] =
-          vec_fp16_gt_zero ? 16'h3c00 : 16'h0000;
-      assign vec_dsoftmax_res_fp16[(gj*16) +: 16] = vec_fp16_dsoftmax;
-      assign vec_dlayernorm_res_fp16[(gj*16) +: 16] = 16'h3c00;
+{relu_lane_body_fp16}
+{gelu_lane_body_fp16}
+{softmax_lane_body_fp16}
+{layernorm_lane_body_fp16}
+{drelu_lane_body_fp16}
+{dgelu_lane_body_fp16}
+{dsoftmax_lane_body_fp16}
+{dlayernorm_lane_body_fp16}
     end
   endgenerate
 """

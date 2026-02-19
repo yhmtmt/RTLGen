@@ -41,7 +41,9 @@ make -f npu/sim/perf/Makefile test
 - `test_perf_vec_fp16.py`
   - Builds a synthetic fp16 `VEC_OP` stream (`add`, `mul`, `relu`, `gelu`, `softmax`, `layernorm`, `drelu`, `dgelu`, `dsoftmax`, `dlayernorm`) using dtype code `fp16`.
   - Verifies fp16 VEC expectation decode for 4x16b lanes packed into 8 result bytes.
-  - Confirms deterministic expected-result words for each op.
+  - Confirms deterministic expected-result words for both activation semantics:
+    - builtin fp16 activation approximation
+    - C++ fp16 activation approximation (`vec_fp16_activation_source=rtlgen_cpp`)
 - `test_perf_gemm_int16.py`
   - Builds a synthetic int16 GEMM descriptor payload and runs with `gemm_mac_type=int16`.
   - Verifies int16 functional expectations (`expected_dot`, `expected_cycles`, `expected_accum`, `lanes`) are decoded correctly.
@@ -67,7 +69,8 @@ make -f npu/sim/perf/Makefile test
   - C++ RTLGen fp16 VEC path (`add/mul/relu/gelu/softmax/layernorm/drelu/dgelu/dsoftmax/dlayernorm`, dtype `fp16`), when FloPoCo is available
 - Includes dedicated C++ activation regression for:
   - int8 activation-unit vector path (`relu/gelu/softmax/layernorm/drelu/dgelu/dsoftmax/dlayernorm`) generated from C++ RTLGen units (`activation_source=rtlgen_cpp`)
-  - fp16 activation-unit standalone smoke path (generated via `activation_operand_kind=fp16`, validated by RTL-only module testbench)
+  - fp16 activation-unit wired vector path (generated via `activation_operand_kind=fp16`, compared by RTL/perf in fp16 vector regression)
+  - fp16 activation-unit standalone smoke path (RTL-only module testbench)
 - Mixed golden schedule also checks VEC regression constraints (`vec_ops=3`, op order `add,mul,relu`, no unknown ops).
 
 ### Current coverage boundaries
@@ -75,7 +78,7 @@ make -f npu/sim/perf/Makefile test
 - Functional compute checking is implemented for int8/int16 GEMM, VEC ops, and fp16 GEMM policy paths.
 - fp16 coverage currently includes GEMM lane-1 IEEE-half + raw16 placeholder modes and fp16 VEC (`add/mul/relu/gelu/softmax/layernorm/drelu/dgelu/dsoftmax/dlayernorm`) expectation decode.
 - C++ activation coverage currently includes an explicit int8 activation-suite regression leg in golden flow.
-- C++ fp16 activation modules are smoke-tested standalone; they are not yet wired into the current IEEE-fp16 VEC datapath.
+- C++ fp16 activation coverage includes both wired fp16 VEC regression and standalone module smoke test.
 - bf16/fp8 and constrained-random fp16 vector numeric stress are not covered yet.
 - No large randomized descriptor fuzzing is included yet.
 
@@ -149,6 +152,7 @@ You can tune vector op performance with these optional config keys:
 - `vec_lanes` (functional expectation width for VEC result comparison; default follows `gemm_mac_lanes` or `8`)
 - `vec_op_costs` (mapping `{op_name: cost}`), used in compute-time estimate
 - `vec_dtype_bytes` (fallback when dtype code is unknown)
+- `vec_fp16_activation_source` (`builtin` default, `rtlgen_cpp` for C++ fp16 activation semantics in expected-result decode)
 - `softmax_tops`, `softmax_in_bw_gbps`, `softmax_out_bw_gbps`
 - `softmax_overhead_ns`, `softmax_row_overhead_ns`, `softmax_op_cost`
 - `softmax_dtype_bytes` (fallback when dtype code is unknown)
@@ -169,6 +173,7 @@ Preset configs for golden/perf comparison:
 - `npu/sim/perf/example_config_fp16.json` for builtin fp16 GEMM bring-up path
 - `npu/sim/perf/example_config_fp16_cpp.json` for C++ fp16 GEMM backend path
 - `npu/sim/perf/example_config_vec_fp16_cpp.json` for C++ fp16 VEC backend path
+- `npu/sim/perf/example_config_vec_fp16_act_cpp.json` for C++ fp16 activation-wired VEC backend path
 
 Current fp16 note:
 - Builtin fp16 path is locked to:

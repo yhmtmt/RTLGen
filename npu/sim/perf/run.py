@@ -187,6 +187,13 @@ def _vec_lanes(cfg):
     return lanes
 
 
+def _vec_fp16_activation_source(cfg):
+    src = str(cfg.get("vec_fp16_activation_source", "builtin")).lower()
+    if src not in ("builtin", "rtlgen_cpp"):
+        raise ValueError("vec_fp16_activation_source must be one of: builtin, rtlgen_cpp")
+    return src
+
+
 def _vec_softmax_int8(x):
     if x < 0:
         return 0
@@ -212,6 +219,38 @@ def _fp16_relu_bits(x_bits):
     return _u16(x_bits)
 
 
+def _vec_fp16_cpp_activation_bits(a_bits, op_code):
+    a_bits = _u16(a_bits)
+    sign = (a_bits >> 15) & 0x1
+    exp_bits = (a_bits >> 10) & 0x1F
+    frac_bits = a_bits & 0x03FF
+    payload_nonzero = (a_bits & 0x7FFF) != 0
+
+    if op_code == 0x3:  # gelu
+        if sign:
+            return 0x0000
+        exp_half = (exp_bits - 1) & 0x1F
+        return _u16((exp_half << 10) | frac_bits)
+    if op_code == 0x4:  # softmax
+        if sign:
+            return 0x0000
+        if exp_bits >= 15:
+            return 0x3C00
+        return a_bits
+    if op_code == 0x5:  # layernorm
+        return a_bits
+    if op_code == 0x6:  # drelu
+        return 0x3C00 if (not sign and payload_nonzero) else 0x0000
+    if op_code == 0x7:  # dgelu
+        return 0x3800 if (not sign and payload_nonzero) else 0x0000
+    if op_code == 0x8:  # dsoftmax
+        return 0x3400
+    if op_code == 0x9:  # dlayernorm
+        return 0x3C00
+    # relu/fallback
+    return 0x0000 if sign else a_bits
+
+
 def _vec_expected_result(raw, flags, cfg, dtype_code=0x0):
     op_code = int(flags) & 0xF
     dtype_code = int(dtype_code) & 0xF
@@ -219,6 +258,7 @@ def _vec_expected_result(raw, flags, cfg, dtype_code=0x0):
     # fp16 vector path packs 4x16b lanes in descriptor bytes [8:15] and [16:23].
     # `lanes` in output remains byte-lane count so compare_compute_results masking stays unchanged.
     if dtype_code == 0x1:
+        fp16_act_source = _vec_fp16_activation_source(cfg)
         byte_lanes = _vec_lanes(cfg)
         if byte_lanes % 2 != 0:
             raise ValueError("vec_lanes must be even when VEC dtype=fp16")
@@ -236,6 +276,8 @@ def _vec_expected_result(raw, flags, cfg, dtype_code=0x0):
                 out_bits = _fp16_add_bits(a_bits, b_bits)
             elif op_code == 0x2:  # mul
                 out_bits = _fp16_mul_bits(a_bits, b_bits)
+            elif fp16_act_source == "rtlgen_cpp":
+                out_bits = _vec_fp16_cpp_activation_bits(a_bits, op_code)
             elif op_code == 0x3:  # gelu
                 out_bits = _fp16_relu_bits(_fp16_mul_bits(a_bits, 0x3800))
             elif op_code == 0x4:  # softmax (coarse scalar approximation)

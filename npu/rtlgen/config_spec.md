@@ -162,9 +162,9 @@ can later be extended without breaking v0.1.
   `relu`, `gelu`, `softmax`, `layernorm`, `drelu`, `dgelu`, `dsoftmax`,
   and `dlayernorm`.
 - When `activation_operand_kind=fp16`, generated modules use C++ RTLGen fp
-  activation format (FloPoCo-style `total_width+2` bits) and are emitted for
-  standalone evaluation; current NPU top-level VEC wiring remains int8-only for
-  `activation_source=rtlgen_cpp`.
+  activation format (FloPoCo-style `total_width+2` bits). They are wired into
+  fp16 VEC activation routing when `compute.vec.fp16_arith_source=rtlgen_cpp`,
+  and can also be evaluated standalone.
 - VEC op encoding uses the descriptor `flags` byte as:
   - high nibble `[7:4]`: dtype code
   - low nibble `[3:0]`: op code

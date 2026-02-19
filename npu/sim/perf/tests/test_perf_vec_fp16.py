@@ -165,5 +165,85 @@ def test_perf_vec_fp16_expected_fields():
     assert dlayernorm_words == [0x3C00, 0x3C00, 0x3C00, 0x3C00]
 
 
+def test_perf_vec_fp16_cpp_activation_expected_fields():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp = Path(tmpdir)
+        bin_path = tmp / "vec_fp16.bin"
+        out_path = tmp / "trace.json"
+        cfg_path = tmp / "cfg.json"
+        _build_vec_fp16_bin(bin_path)
+        cfg_path.write_text(
+            json.dumps(
+                {
+                    "vec_tops": 1.0,
+                    "vec_in_bw_gbps": 16.0,
+                    "vec_out_bw_gbps": 16.0,
+                    "vec_overhead_ns": 0.0,
+                    "vec_lanes": 8,
+                    "vec_fp16_activation_source": "rtlgen_cpp",
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+        subprocess.check_call(
+            [
+                "python3",
+                "npu/sim/perf/run.py",
+                "--bin",
+                str(bin_path),
+                "--out",
+                str(out_path),
+                "--config",
+                str(cfg_path),
+            ]
+        )
+        data = json.loads(out_path.read_text(encoding="utf-8"))
+
+    trace = data["trace"]
+    assert len(trace) == 10
+    assert [ev["name"] for ev in trace] == ["VEC_OP"] * 10
+    assert [ev["op"] for ev in trace] == [
+        "add",
+        "mul",
+        "relu",
+        "gelu",
+        "softmax",
+        "layernorm",
+        "drelu",
+        "dgelu",
+        "dsoftmax",
+        "dlayernorm",
+    ]
+    for ev in trace:
+        assert ev["dtype"] == "fp16"
+        assert int(ev["dtype_code"]) == 1
+        assert int(ev["lanes"]) == 8
+        assert len(ev["expected_result_bytes"]) == 8
+
+    add_words = _words_from_bytes(trace[0]["expected_result_bytes"])
+    mul_words = _words_from_bytes(trace[1]["expected_result_bytes"])
+    relu_words = _words_from_bytes(trace[2]["expected_result_bytes"])
+    gelu_words = _words_from_bytes(trace[3]["expected_result_bytes"])
+    softmax_words = _words_from_bytes(trace[4]["expected_result_bytes"])
+    layernorm_words = _words_from_bytes(trace[5]["expected_result_bytes"])
+    drelu_words = _words_from_bytes(trace[6]["expected_result_bytes"])
+    dgelu_words = _words_from_bytes(trace[7]["expected_result_bytes"])
+    dsoftmax_words = _words_from_bytes(trace[8]["expected_result_bytes"])
+    dlayernorm_words = _words_from_bytes(trace[9]["expected_result_bytes"])
+
+    assert add_words == [0x3E00, 0xBC00, 0x0000, 0x4000]
+    assert mul_words == [0x3800, 0xC000, 0xB400, 0x0000]
+    assert relu_words == [0x3C00, 0x0000, 0x3800, 0x0000]
+    assert gelu_words == [0x3800, 0x0000, 0x3400, 0x7C00]
+    assert softmax_words == [0x3C00, 0x0000, 0x3800, 0x0000]
+    assert layernorm_words == [0x3C00, 0xC000, 0x3800, 0x0000]
+    assert drelu_words == [0x3C00, 0x0000, 0x3C00, 0x0000]
+    assert dgelu_words == [0x3800, 0x0000, 0x3800, 0x0000]
+    assert dsoftmax_words == [0x3400, 0x3400, 0x3400, 0x3400]
+    assert dlayernorm_words == [0x3C00, 0x3C00, 0x3C00, 0x3C00]
+
+
 if __name__ == "__main__":
     test_perf_vec_fp16_expected_fields()
+    test_perf_vec_fp16_cpp_activation_expected_fields()
