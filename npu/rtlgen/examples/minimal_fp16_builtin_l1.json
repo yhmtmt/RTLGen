@@ -33,25 +33,24 @@
     "enabled": true,
     "gemm": {
       "mac_type": "fp16",
+      "mac_source": "builtin_fp16_dot",
       "lanes": 1,
-      "accum_width": 16,
+      "accum_width": 32,
       "pipeline": 1,
       "fp16": {
-        "semantics": "ieee_half",
-        "accumulation": "fp16",
+        "semantics": "raw16_placeholder",
+        "accumulation": "int32",
         "rounding": "rne",
         "subnormals": "preserve"
-      },
-      "rtlgen_cpp": {
-        "binary_path": "build/rtlgen",
-        "module_name": "gemm_mac_fp16_ieee",
-        "total_width": 16,
-        "mantissa_width": 10
       }
     },
     "vec": {
       "lanes": 1,
-      "ops": ["add", "mul", "relu"]
+      "ops": [
+        "add",
+        "mul",
+        "relu"
+      ]
     }
   }
 }

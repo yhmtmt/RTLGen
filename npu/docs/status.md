@@ -20,8 +20,9 @@ Git: unknown
   - Current op coverage: DMA_COPY, GEMM, VEC_OP, SOFTMAX, EVENT_SIGNAL/WAIT, NOOP.
   - VEC_OP models 4-bit op codes with per-op cost knobs in perf config.
 - **OpenROAD**: planned (block-level synthesis flow pending).
-- **MAC backend**: `npu/rtlgen/gen.py` now supports optional C++ RTLGen MAC
-  backend (`compute.gemm.mac_source=rtlgen_cpp`) for GEMM experiments.
+- **MAC backend**: `npu/rtlgen/gen.py` supports C++ RTLGen MAC backend and
+  now defaults fp16 GEMM to C++ IEEE-half (`compute.gemm.mac_type=fp16`
+  -> `compute.gemm.mac_source=rtlgen_cpp` unless overridden).
 
 ## Next steps
 - Extend RTLGen with MAC-based compute generation for GEMM/VEC (start with

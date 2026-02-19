@@ -15,6 +15,13 @@ This plan defines two simulation schemes:
 - FP16-3 progressed: fp16 VEC (`add/mul/relu/gelu/softmax/layernorm/drelu/dgelu/dsoftmax/dlayernorm`) path is wired with C++ IEEE `fp_mac` backend and perf/RTL comparison hooks.
 - Phase-2 activation kickoff: C++ activation-unit int8 suite (`relu/gelu/softmax/layernorm/drelu/dgelu/dsoftmax/dlayernorm`) is explicitly exercised in golden RTL/perf parity flow (`activation_source=rtlgen_cpp`), and fp16 activation path is now exercised both in wired fp16 VEC regression and standalone smoke checks.
 - FP16-4 progressed: directed fp16 edge-case regression coverage now includes zero/signed-zero/subnormal/Inf/NaN in perf unit tests, plus fp16 C++ RTL/perf edge parity legs for GEMM/VEC in golden flow when FloPoCo is available; CI runs perf unit tests before golden simulation.
+- FP16-5 progressed: OpenROAD fp16 backend sweep executed at
+  `make_target=3_5_place_dp` (`builtin_raw16` vs `cpp_ieee`) with report output
+  under `runs/designs/npu_blocks/fp16_backend_decision_nangate45.md`; default
+  recommendation is `cpp_ieee` among default-eligible backends
+  (`builtin_raw16` is kept as a non-IEEE placeholder baseline).
+- FP16-5 lock step completed: fp16 GEMM default backend in RTL generator is
+  now `rtlgen_cpp` (IEEE-half path) unless explicitly overridden.
 
 ## A) RTL Functional Validation (First Priority)
 
@@ -206,6 +213,9 @@ This plan defines two simulation schemes:
 - Shared error/IRQ semantics (from `npu/shell/spec.md`)
 
 ## Next steps
+- Run a confirmation sweep at `make_target=finish` for final backend lock
+  sign-off:
+  `python3 npu/synth/run_fp16_backend_sweep.py --platform nangate45 --sweep npu/synth/fp16_backend_sweep_nangate45.json --make_target finish`
 - Continue Phase 2 with extended VEC decode/execution coverage for
   `softmax/layernorm` and derivative ops after minimal `add/mul/relu`.
 - Continue Phase 5 integration: route C++ RTLGen `pp_row_feedback` MAC into

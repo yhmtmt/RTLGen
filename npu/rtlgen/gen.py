@@ -1022,21 +1022,50 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         if gemm_mac_type == "int16":
             gemm_mac_source = "builtin_int16_dot"
         elif gemm_mac_type == "fp16":
-            gemm_mac_source = "builtin_fp16_dot"
+            # Lock fp16 default backend to C++ IEEE-half generator.
+            gemm_mac_source = "rtlgen_cpp"
         else:
             gemm_mac_source = "builtin_int8_dot"
     else:
         gemm_mac_source = str(gemm_mac_source_raw).lower()
-    gemm_mac_lanes = int(gemm_cfg.get("lanes", 8))
-    gemm_accum_width = int(gemm_cfg.get("accum_width", 32))
+
+    gemm_mac_lanes_raw = gemm_cfg.get("lanes")
+    if gemm_mac_lanes_raw is None:
+        if gemm_mac_type == "fp16" and gemm_mac_source == "rtlgen_cpp":
+            gemm_mac_lanes = 1
+        elif gemm_mac_type in ("int16", "fp16"):
+            gemm_mac_lanes = 4
+        else:
+            gemm_mac_lanes = 8
+    else:
+        gemm_mac_lanes = int(gemm_mac_lanes_raw)
+
+    gemm_accum_width_raw = gemm_cfg.get("accum_width")
+    if gemm_accum_width_raw is None:
+        if gemm_mac_type == "fp16" and gemm_mac_source == "rtlgen_cpp":
+            gemm_accum_width = 16
+        else:
+            gemm_accum_width = 32
+    else:
+        gemm_accum_width = int(gemm_accum_width_raw)
     gemm_pipeline = int(gemm_cfg.get("pipeline", 1))
     gemm_fp16_cfg = gemm_cfg.get("fp16", {})
     if gemm_fp16_cfg is None:
         gemm_fp16_cfg = {}
     if not isinstance(gemm_fp16_cfg, dict):
         die("compute.gemm.fp16 must be an object when provided")
-    gemm_fp16_semantics = str(gemm_fp16_cfg.get("semantics", "raw16_placeholder")).lower()
-    gemm_fp16_accumulation = str(gemm_fp16_cfg.get("accumulation", "int32")).lower()
+    gemm_fp16_semantics_default = (
+        "ieee_half"
+        if (gemm_mac_type == "fp16" and gemm_mac_source == "rtlgen_cpp")
+        else "raw16_placeholder"
+    )
+    gemm_fp16_accum_default = (
+        "fp16"
+        if (gemm_mac_type == "fp16" and gemm_mac_source == "rtlgen_cpp")
+        else "int32"
+    )
+    gemm_fp16_semantics = str(gemm_fp16_cfg.get("semantics", gemm_fp16_semantics_default)).lower()
+    gemm_fp16_accumulation = str(gemm_fp16_cfg.get("accumulation", gemm_fp16_accum_default)).lower()
     gemm_fp16_rounding = str(gemm_fp16_cfg.get("rounding", "rne")).lower()
     gemm_fp16_subnormals = str(gemm_fp16_cfg.get("subnormals", "preserve")).lower()
     vec_activation_source = str(vec_cfg.get("activation_source", "builtin")).lower()

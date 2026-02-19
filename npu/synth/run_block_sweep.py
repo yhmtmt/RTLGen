@@ -11,6 +11,7 @@ Example:
 """
 
 import argparse
+import csv
 import hashlib
 import itertools
 import json
@@ -20,12 +21,13 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEST_BASE = Path("/orfs/flow/designs")
 REPORT_BASE = Path("/orfs/flow/reports")
 RESULT_BASE = Path("/orfs/flow/results")
+LOG_BASE = Path("/orfs/flow/logs")
 SRC_BASE = DEST_BASE / "src"
 
 
@@ -148,6 +150,33 @@ def safe_float(val):
         return None
 
 
+def parse_stage_metrics(metrics_json_path: Path, stage_prefix: str) -> Dict[str, object]:
+    metrics: Dict[str, object] = {}
+    try:
+        data = json.loads(metrics_json_path.read_text())
+    except FileNotFoundError:
+        return metrics
+    except json.JSONDecodeError:
+        return metrics
+
+    fmax_hz = safe_float(data.get(f"{stage_prefix}__timing__fmax"))
+    if fmax_hz is not None and fmax_hz > 0:
+        metrics["critical_path_ns"] = 1.0e9 / fmax_hz
+    metrics["total_power_mw"] = safe_float(data.get(f"{stage_prefix}__power__total"))
+    metrics["die_area"] = safe_float(data.get(f"{stage_prefix}__design__die__area"))
+    return metrics
+
+
+def resolve_stage_metrics_path(platform: str, design_name: str, tag: str, make_target: str) -> Path:
+    tag_path = LOG_BASE / platform / design_name / str(tag) / f"{make_target}.json"
+    if tag_path.exists():
+        return tag_path
+    base_path = LOG_BASE / platform / design_name / "base" / f"{make_target}.json"
+    if base_path.exists():
+        return base_path
+    return tag_path
+
+
 def ensure_design_assets(design_name: str, platform: str, top: str, verilog_dir: Path, sdc_template: Path, force: bool):
     dest_platform_dir = DEST_BASE / platform / design_name
     dest_src_dir = SRC_BASE / design_name
@@ -202,16 +231,17 @@ def append_metrics(metrics_path: Path, row: Dict[str, object]):
         "result_path",
     ]
     needs_header = not metrics_path.exists()
-    with metrics_path.open("a") as f:
+    with metrics_path.open("a", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=header)
         if needs_header:
-            f.write(",".join(header) + "\n")
-        values = [str(row.get(h, "")) for h in header]
-        f.write(",".join(values) + "\n")
+            writer.writeheader()
+        writer.writerow({h: row.get(h, "") for h in header})
 
 
 def run_single(design_dir: Path, design_name: str, platform: str, top: str, verilog_dir: Path,
                sdc_template: Path, sweep_params: Dict[str, object], out_root: Path,
-               skip_existing: bool, dry_run: bool, force_copy: bool):
+               skip_existing: bool, dry_run: bool, force_copy: bool,
+               make_target: Optional[str]):
     config_hash = sha1_verilog_dir(verilog_dir)
     run_id = make_run_id(sweep_params)
     tag_prefix = sweep_params.get("TAG") or sweep_params.get("tag_prefix") or "run"
@@ -251,23 +281,37 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
     ]
     for k, v in sweep_params.items():
         make_cmd.append(f"{k.upper()}={v}")
+    if make_target:
+        make_cmd.append(make_target)
     print(f"[INFO] Running OpenROAD flow: {' '.join(make_cmd)}")
     subprocess.run(make_cmd, cwd="/orfs/flow", check=True, env=env)
 
-    report_path = REPORT_BASE / platform / design_name / str(tag) / "6_finish.rpt"
-    def_path = RESULT_BASE / platform / design_name / str(tag) / "6_final.def"
-    if not report_path.exists():
-        report_path = REPORT_BASE / platform / design_name / "base" / "6_finish.rpt"
-    if not def_path.exists():
-        def_path = RESULT_BASE / platform / design_name / "base" / "6_final.def"
+    stage_prefix_map = {
+        "3_3_place_gp": "globalplace",
+        "3_4_place_resized": "placeopt",
+        "3_5_place_dp": "detailedplace",
+        "4_1_cts": "cts",
+    }
+    use_stage_metrics = bool(make_target and make_target in stage_prefix_map)
+    if use_stage_metrics:
+        metrics_path = resolve_stage_metrics_path(platform, design_name, tag, str(make_target))
+        metrics = parse_stage_metrics(metrics_path, stage_prefix_map[str(make_target)])
+        report_path = metrics_path
+    else:
+        report_path = REPORT_BASE / platform / design_name / str(tag) / "6_finish.rpt"
+        def_path = RESULT_BASE / platform / design_name / str(tag) / "6_final.def"
+        if not report_path.exists():
+            report_path = REPORT_BASE / platform / design_name / "base" / "6_finish.rpt"
+        if not def_path.exists():
+            def_path = RESULT_BASE / platform / design_name / "base" / "6_final.def"
 
-    metrics = parse_finish_report(report_path)
-    if platform.lower() == "asap7":
-        if metrics.get("critical_path_ns") is not None:
-            metrics["critical_path_ns"] = metrics["critical_path_ns"] / 1000.0
-        if metrics.get("total_power_mw") is not None:
-            metrics["total_power_mw"] = metrics["total_power_mw"] / 1000.0
-    metrics["die_area"] = parse_die_area(def_path)
+        metrics = parse_finish_report(report_path)
+        if platform.lower() == "asap7":
+            if metrics.get("critical_path_ns") is not None:
+                metrics["critical_path_ns"] = metrics["critical_path_ns"] / 1000.0
+            if metrics.get("total_power_mw") is not None:
+                metrics["total_power_mw"] = metrics["total_power_mw"] / 1000.0
+        metrics["die_area"] = parse_die_area(def_path)
     status = "ok" if metrics.get("critical_path_ns") is not None else "fail"
 
     payload = {
@@ -301,6 +345,10 @@ def main():
     ap.add_argument("--skip_existing", action="store_true", help="Skip existing runs")
     ap.add_argument("--dry_run", action="store_true", help="Print sweep only")
     ap.add_argument("--force_copy", action="store_true", help="Force copy to /orfs/flow")
+    ap.add_argument(
+        "--make_target",
+        help="Optional make target (e.g., 3_5_place_dp, finish). Default runs full flow.",
+    )
     args = ap.parse_args()
 
     design_dir = Path(args.design_dir)
@@ -333,6 +381,7 @@ def main():
             skip_existing=args.skip_existing,
             dry_run=args.dry_run,
             force_copy=args.force_copy,
+            make_target=args.make_target,
         )
 
 

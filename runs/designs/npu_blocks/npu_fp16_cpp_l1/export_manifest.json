@@ -1,0 +1,13 @@
+{
+  "backend": "cpp_ieee",
+  "rtlgen_config": "npu/rtlgen/examples/minimal_fp16_cpp.json",
+  "rtlgen_config_sha1": "6adfc056c3c5645237f12b8a6b9c7b5b723ebb48",
+  "top_module": "npu_fp16_cpp_l1",
+  "verilog_files": [
+    "runs/designs/npu_blocks/npu_fp16_cpp_l1/verilog/npu_fp16_cpp_l1.v"
+  ],
+  "include_files": [
+    "runs/designs/npu_blocks/npu_fp16_cpp_l1/verilog/mmio_map.vh",
+    "runs/designs/npu_blocks/npu_fp16_cpp_l1/verilog/sram_map.vh"
+  ]
+}

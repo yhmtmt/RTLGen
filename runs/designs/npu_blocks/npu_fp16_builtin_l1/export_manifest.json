@@ -1,0 +1,13 @@
+{
+  "backend": "builtin_raw16",
+  "rtlgen_config": "npu/rtlgen/examples/minimal_fp16_builtin_l1.json",
+  "rtlgen_config_sha1": "119b1795afab0b4db43b5fce5fae0b878eee5179",
+  "top_module": "npu_fp16_builtin_l1",
+  "verilog_files": [
+    "runs/designs/npu_blocks/npu_fp16_builtin_l1/verilog/npu_fp16_builtin_l1.v"
+  ],
+  "include_files": [
+    "runs/designs/npu_blocks/npu_fp16_builtin_l1/verilog/mmio_map.vh",
+    "runs/designs/npu_blocks/npu_fp16_builtin_l1/verilog/sram_map.vh"
+  ]
+}

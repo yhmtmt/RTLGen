@@ -1,0 +1,13 @@
+localparam int OFF_VERSION    = 12'h000;
+localparam int OFF_CAPS       = 12'h004;
+localparam int OFF_STATUS     = 12'h008;
+localparam int OFF_CONTROL    = 12'h00C;
+localparam int OFF_IRQ_STATUS = 12'h010;
+localparam int OFF_IRQ_ENABLE = 12'h014;
+localparam int OFF_CQ_BASE_LO = 12'h020;
+localparam int OFF_CQ_BASE_HI = 12'h024;
+localparam int OFF_CQ_SIZE    = 12'h028;
+localparam int OFF_CQ_HEAD    = 12'h02C;
+localparam int OFF_CQ_TAIL    = 12'h030;
+localparam int OFF_DOORBELL   = 12'h040;
+localparam int OFF_ERROR_CODE = 12'h044;

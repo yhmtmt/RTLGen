@@ -7,3 +7,7 @@ Recommended flow:
 - Populate `runs/designs/npu_blocks/<block>/verilog/*.v`
 - If the block is tiny, add a minimal `pdn.tcl` and pass it via `PDN_TCL` in the sweep JSON.
 - Run `python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/<block> ...`
+
+FP16 backend sweep helper:
+- `python3 npu/synth/run_fp16_backend_sweep.py --platform nangate45 --sweep npu/synth/fp16_backend_sweep_nangate45.json --make_target 3_5_place_dp`
+- latest report: `runs/designs/npu_blocks/fp16_backend_decision_nangate45.md`

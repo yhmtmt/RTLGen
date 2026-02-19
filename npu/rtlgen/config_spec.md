@@ -101,21 +101,26 @@ can later be extended without breaking v0.1.
 - `compute.gemm.mac_type` (string): GEMM MAC operand type.
   - `int8`: 8-bit signed lanes (`lanes` in `[1,8]`)
   - `int16`: 16-bit signed lanes (`lanes` in `[1,4]`)
-  - `fp16`: 16-bit lanes (`lanes` in `[1,4]`, Phase-3 placeholder)
+  - `fp16`: 16-bit lanes (default backend is C++ IEEE-half `fp_mac`)
 - `compute.gemm.mac_source` (string): GEMM MAC backend selection.
   - `builtin_int8_dot` (or `builtin`): generated `gemm_mac_int8` lane dot-product module.
   - `builtin_int16_dot` (or `builtin`): generated `gemm_mac_int16` lane dot-product module.
-  - `builtin_fp16_dot` (or `builtin`): generated `gemm_mac_fp16` lane dot-product module.
+  - `builtin_fp16_dot` (or `builtin`): generated `gemm_mac_fp16` raw16 placeholder lane dot-product module (explicit baseline only).
   - `rtlgen_cpp`: uses C++ `build/rtlgen` MAC generator and embeds the generated Verilog in `top.v`.
+  - Default behavior:
+    - `mac_type=int8` -> `builtin_int8_dot`
+    - `mac_type=int16` -> `builtin_int16_dot`
+    - `mac_type=fp16` -> `rtlgen_cpp` (default fp16 backend lock)
 - `compute.gemm.lanes` (int): number of MAC lanes (depends on `mac_type`).
 - `compute.gemm.accum_width` (int): signed accumulator width (16..64).
 - `compute.gemm.pipeline` (int): reserved pipeline knob (must be >=1).
 - `compute.gemm.fp16` (object, optional): fp16 numeric policy lock (used when `mac_type=fp16`).
   - `semantics` (string): one of:
-    - `raw16_placeholder` (current bring-up path; default)
-    - `ieee_half` (planned, not yet implemented in this NPU path)
-  - `accumulation` (string): accumulation mode (`int32` or `fp32`).
-  - `rounding` (string): rounding mode policy (`rne` only in current bring-up).
+    - `ieee_half` (default when `mac_source=rtlgen_cpp` or `mac_source` is omitted for fp16)
+    - `raw16_placeholder` (explicit fallback for builtin fp16 placeholder backend)
+  - `accumulation` (string): accumulation mode (`int32`, `fp32`, `fp16`).
+    - default: `fp16` for fp16 `rtlgen_cpp`, `int32` for builtin fp16 placeholder.
+  - `rounding` (string): rounding mode policy (`rne`).
   - `subnormals` (string): subnormal policy (`preserve` or `flush`).
 - `compute.gemm.rtlgen_cpp` (object, optional): options for `mac_source=rtlgen_cpp`.
   - `binary_path` (string): path to C++ RTLGen binary (default `build/rtlgen`).
@@ -146,18 +151,16 @@ can later be extended without breaking v0.1.
 - Phase 3 adds an int16 MAC primitive (`gemm_mac_int16`) under
   `compute.gemm.mac_type=int16`.
 - Phase 3 also adds an fp16 selector (`compute.gemm.mac_type=fp16`) as a
-  **raw16 placeholder MAC** for integration/regression bring-up. It does not
-  yet implement IEEE-754 half-precision arithmetic.
-- Current fp16 generator support is intentionally locked to:
+  C++ IEEE-half backend by default (`compute.gemm.mac_source=rtlgen_cpp`).
+- Builtin fp16 remains available as an explicit raw16 placeholder baseline:
+  - `compute.gemm.mac_source=builtin_fp16_dot`
   - `compute.gemm.fp16.semantics=raw16_placeholder`
   - `compute.gemm.fp16.accumulation=int32`
-  - `compute.gemm.fp16.rounding=rne`
-  - `compute.gemm.fp16.subnormals=preserve`
-  This makes the temporary numeric behavior explicit and prevents accidental
-  drift before true IEEE-half datapath integration.
-- `mac_source=rtlgen_cpp` currently requires `lanes=1` and `accum_width=16`
-  and `mac_type=int8` to match the generated scalar MAC interface
-  (`a*b + accumulator`).
+- `mac_source=rtlgen_cpp` scalar MAC constraints:
+  - `mac_type=int8`: `lanes=1`, `accum_width=16`
+  - `mac_type=fp16`: `lanes=1`, `accum_width=16`,
+    `fp16.semantics=ieee_half`, `fp16.accumulation=fp16`,
+    `fp16.rounding=rne`, `fp16.subnormals=preserve`
 - `activation_source=rtlgen_cpp` emits scalar activation modules for
   `relu`, `gelu`, `softmax`, `layernorm`, `drelu`, `dgelu`, `dsoftmax`,
   and `dlayernorm`.

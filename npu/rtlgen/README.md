@@ -8,6 +8,8 @@ simulation bring-up.
 ## Current status
 - MMIO + CQ + DMA/AXI stub RTL generation is implemented.
 - AXI-Lite wrapper generation is implemented.
+- fp16 GEMM default backend is locked to C++ IEEE-half MAC generation
+  (`compute.gemm.mac_type=fp16` defaults to `mac_source=rtlgen_cpp`).
 
 Start here:
 - `npu/rtlgen/config_spec.md` for config fields
