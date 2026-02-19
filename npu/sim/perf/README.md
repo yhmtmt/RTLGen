@@ -59,7 +59,7 @@ make -f npu/sim/perf/Makefile test
   - `golden_gemm_v2_ooo` additionally checks out-of-order completion behavior (`--require-order-change`).
 - Includes dedicated fp16 regressions for:
   - builtin fp16 placeholder path
-  - C++ RTLGen fp16 `fp_mac` path (IEEE-half, lane-1)
+  - C++ RTLGen fp16 `fp_mac` path (IEEE-half, lane-1), when FloPoCo is available
 - Mixed golden schedule also checks VEC regression constraints (`vec_ops=3`, op order `add,mul,relu`, no unknown ops).
 
 ### Current coverage boundaries

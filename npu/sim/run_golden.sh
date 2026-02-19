@@ -44,6 +44,25 @@ FP16_CPP_RTL_CFG="${REPO_ROOT}/npu/rtlgen/examples/minimal_fp16_cpp.json"
 FP16_CPP_PERF_CFG="${REPO_ROOT}/npu/sim/perf/example_config_fp16_cpp.json"
 FP16_CPP_GEMM_TRACE="${REPO_ROOT}/npu/sim/perf/golden_fp16_cpp_gemm_v2_trace.json"
 FP16_CPP_GEMM_RTL_LOG="${REPO_ROOT}/npu/sim/rtl/golden_fp16_cpp_gemm_v2_rtl.log"
+
+FLOPOCO_CANDIDATE="${FLOPOCO_BIN:-}"
+if [[ -n "${FLOPOCO_CANDIDATE}" && ! -x "${FLOPOCO_CANDIDATE}" ]]; then
+  FLOPOCO_CANDIDATE=""
+fi
+if [[ -z "${FLOPOCO_CANDIDATE}" ]]; then
+  if [[ -x "${REPO_ROOT}/bin/flopoco" ]]; then
+    FLOPOCO_CANDIDATE="${REPO_ROOT}/bin/flopoco"
+  elif [[ -x "${REPO_ROOT}/third_party/flopoco-install/bin/flopoco" ]]; then
+    FLOPOCO_CANDIDATE="${REPO_ROOT}/third_party/flopoco-install/bin/flopoco"
+  fi
+fi
+FP16_CPP_ENABLED=0
+if [[ -n "${FLOPOCO_CANDIDATE}" && -x "${FLOPOCO_CANDIDATE}" ]]; then
+  export FLOPOCO_BIN="${FLOPOCO_CANDIDATE}"
+  FP16_CPP_ENABLED=1
+else
+  echo "golden: FloPoCo not found; skipping fp16 cpp backend regression"
+fi
 CLK_NS=$(REPO_ROOT="${REPO_ROOT}" python3 - <<'PY'
 import json
 import os
@@ -129,10 +148,12 @@ make -f npu/sim/rtl/Makefile run \
   CONFIG="${FP16_RTL_CFG}" \
   BIN="${GEMM_BIN}" \
   BYTES=256 VVPFLAGS="+gemm_mem_test=256 +gemm_mac_test=1" | tee "${FP16_GEMM_RTL_LOG}"
-make -f npu/sim/rtl/Makefile run \
-  CONFIG="${FP16_CPP_RTL_CFG}" \
-  BIN="${GEMM_BIN}" \
-  BYTES=256 VVPFLAGS="+gemm_mem_test=256 +gemm_mac_test=0" | tee "${FP16_CPP_GEMM_RTL_LOG}"
+if [[ "${FP16_CPP_ENABLED}" == "1" ]]; then
+  make -f npu/sim/rtl/Makefile run \
+    CONFIG="${FP16_CPP_RTL_CFG}" \
+    BIN="${GEMM_BIN}" \
+    BYTES=256 VVPFLAGS="+gemm_mem_test=256 +gemm_mac_test=0" | tee "${FP16_CPP_GEMM_RTL_LOG}"
+fi
 popd >/dev/null
 python3 "${REPO_ROOT}/npu/sim/perf/run.py" --bin "${DESC_BIN}" --out "${PERF_TRACE}"
 python3 "${REPO_ROOT}/npu/sim/perf/compare_compute_results.py" \
@@ -228,11 +249,13 @@ python3 "${REPO_ROOT}/npu/sim/perf/compare_gemm_timing.py" --rtl-log "${FP16_GEM
   --perf-trace "${FP16_GEMM_TRACE}" --tolerance 0.9
 python3 "${REPO_ROOT}/npu/sim/perf/compare_compute_results.py" \
   --rtl-log "${FP16_GEMM_RTL_LOG}" --perf-trace "${FP16_GEMM_TRACE}"
-python3 "${REPO_ROOT}/npu/sim/perf/run.py" --bin "${GEMM_BIN}" \
-  --out "${FP16_CPP_GEMM_TRACE}" --config "${FP16_CPP_PERF_CFG}"
-python3 "${REPO_ROOT}/npu/sim/perf/compare_gemm_timing.py" --rtl-log "${FP16_CPP_GEMM_RTL_LOG}" --clk-ns "${FP16_CPP_CLK_NS}" \
-  --perf-trace "${FP16_CPP_GEMM_TRACE}" --tolerance 0.9
-python3 "${REPO_ROOT}/npu/sim/perf/compare_compute_results.py" \
-  --rtl-log "${FP16_CPP_GEMM_RTL_LOG}" --perf-trace "${FP16_CPP_GEMM_TRACE}"
+if [[ "${FP16_CPP_ENABLED}" == "1" ]]; then
+  python3 "${REPO_ROOT}/npu/sim/perf/run.py" --bin "${GEMM_BIN}" \
+    --out "${FP16_CPP_GEMM_TRACE}" --config "${FP16_CPP_PERF_CFG}"
+  python3 "${REPO_ROOT}/npu/sim/perf/compare_gemm_timing.py" --rtl-log "${FP16_CPP_GEMM_RTL_LOG}" --clk-ns "${FP16_CPP_CLK_NS}" \
+    --perf-trace "${FP16_CPP_GEMM_TRACE}" --tolerance 0.9
+  python3 "${REPO_ROOT}/npu/sim/perf/compare_compute_results.py" \
+    --rtl-log "${FP16_CPP_GEMM_RTL_LOG}" --perf-trace "${FP16_CPP_GEMM_TRACE}"
+fi
 
 echo "golden flow: ok"

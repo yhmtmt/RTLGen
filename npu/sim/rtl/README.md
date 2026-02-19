@@ -57,7 +57,7 @@ The tests validate descriptor execution behavior, MMIO/IRQ flow, and AXI memory 
   - C++ int8 MAC backend (`minimal_cpp_mac.json`)
   - builtin int16 backend (`minimal_int16.json`)
   - builtin fp16 placeholder backend (`minimal_fp16.json`)
-  - C++ fp16 IEEE-half backend (`minimal_fp16_cpp.json`)
+  - C++ fp16 IEEE-half backend (`minimal_fp16_cpp.json`) when FloPoCo is available
 - These RTL runs are consumed by perf comparison scripts for:
   - GEMM timing consistency (`compare_gemm_timing.py`)
   - GEMM/VEC computation consistency (`compare_compute_results.py`)
