@@ -140,6 +140,11 @@ You can tune vector op performance with these optional config keys:
 
 - `gemm_mac_type` (`int8`, `int16`, or `fp16`) for functional expected-result decode
 - `gemm_mac_lanes` (functional expectation lane count; defaults by type: `int8->8`, `int16/fp16->4`)
+- fp16 policy lock knobs (used when `gemm_mac_type=fp16`):
+  - `gemm_fp16_semantics` (`raw16_placeholder` or `ieee_half`)
+  - `gemm_fp16_accumulation` (`int32` or `fp32`)
+  - `gemm_fp16_rounding` (`rne`)
+  - `gemm_fp16_subnormals` (`preserve` or `flush`)
 
 Preset configs for golden/perf comparison:
 - `npu/sim/perf/example_config_cpp_mac.json` for C++ MAC backend lane-1 path
@@ -147,4 +152,9 @@ Preset configs for golden/perf comparison:
 - `npu/sim/perf/example_config_fp16.json` for builtin fp16 GEMM bring-up path
 
 Current fp16 note:
-- `gemm_mac_type=fp16` uses a raw16 placeholder MAC model in RTL/perf bring-up (not IEEE-754 half arithmetic yet).
+- Current supported fp16 bring-up policy is locked to:
+  - `gemm_fp16_semantics=raw16_placeholder`
+  - `gemm_fp16_accumulation=int32`
+  - `gemm_fp16_rounding=rne`
+  - `gemm_fp16_subnormals=preserve`
+- `gemm_fp16_semantics=ieee_half` is planned but not implemented yet.

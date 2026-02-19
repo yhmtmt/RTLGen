@@ -108,6 +108,8 @@ module {top_name} (
   localparam       VEC_EN_DLAYERNORM= {vec_en_dlayernorm};
   localparam integer GEMM_MAC_LANES = {gemm_mac_lanes};
   localparam integer GEMM_ELEM_BITS = {gemm_elem_bits};
+  localparam integer GEMM_FP16_RAW16_PLACEHOLDER = {gemm_fp16_raw16_placeholder};
+  localparam integer GEMM_FP16_ACCUM_FP32 = {gemm_fp16_accum_fp32};
   localparam integer VEC_LANES      = {vec_lanes};
 
   // MMIO offsets (bytes)
@@ -869,6 +871,15 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
     gemm_mac_lanes = int(gemm_cfg.get("lanes", 8))
     gemm_accum_width = int(gemm_cfg.get("accum_width", 32))
     gemm_pipeline = int(gemm_cfg.get("pipeline", 1))
+    gemm_fp16_cfg = gemm_cfg.get("fp16", {})
+    if gemm_fp16_cfg is None:
+        gemm_fp16_cfg = {}
+    if not isinstance(gemm_fp16_cfg, dict):
+        die("compute.gemm.fp16 must be an object when provided")
+    gemm_fp16_semantics = str(gemm_fp16_cfg.get("semantics", "raw16_placeholder")).lower()
+    gemm_fp16_accumulation = str(gemm_fp16_cfg.get("accumulation", "int32")).lower()
+    gemm_fp16_rounding = str(gemm_fp16_cfg.get("rounding", "rne")).lower()
+    gemm_fp16_subnormals = str(gemm_fp16_cfg.get("subnormals", "preserve")).lower()
     vec_activation_source = str(vec_cfg.get("activation_source", "builtin")).lower()
     vec_lanes = int(vec_cfg.get("lanes", 8))
     vec_ops_raw = vec_cfg.get("ops", [])
@@ -918,12 +929,31 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
             die("compute.gemm.lanes must be in [1, 8] when compute.gemm.mac_type=int8")
     if gemm_accum_width < 16 or gemm_accum_width > 64:
         die("compute.gemm.accum_width must be in [16, 64]")
+    if gemm_fp16_semantics not in ("raw16_placeholder", "ieee_half"):
+        die("compute.gemm.fp16.semantics must be one of: raw16_placeholder, ieee_half")
+    if gemm_fp16_accumulation not in ("int32", "fp32"):
+        die("compute.gemm.fp16.accumulation must be one of: int32, fp32")
+    if gemm_fp16_rounding not in ("rne",):
+        die("compute.gemm.fp16.rounding must be: rne")
+    if gemm_fp16_subnormals not in ("preserve", "flush"):
+        die("compute.gemm.fp16.subnormals must be one of: preserve, flush")
     if gemm_mac_type == "int16":
         if gemm_mac_source not in ("builtin", "builtin_int16_dot"):
             die("compute.gemm.mac_source must be one of: builtin, builtin_int16_dot for mac_type=int16")
     elif gemm_mac_type == "fp16":
         if gemm_mac_source not in ("builtin", "builtin_fp16_dot"):
             die("compute.gemm.mac_source must be one of: builtin, builtin_fp16_dot for mac_type=fp16")
+        if gemm_fp16_semantics == "ieee_half":
+            die(
+                "compute.gemm.fp16.semantics=ieee_half is planned but not implemented yet; "
+                "use raw16_placeholder"
+            )
+        if gemm_fp16_accumulation != "int32":
+            die("compute.gemm.fp16.accumulation must be int32 when semantics=raw16_placeholder")
+        if gemm_fp16_rounding != "rne":
+            die("compute.gemm.fp16.rounding must be rne for current fp16 bring-up path")
+        if gemm_fp16_subnormals != "preserve":
+            die("compute.gemm.fp16.subnormals must be preserve for current fp16 bring-up path")
     else:
         if gemm_mac_source not in ("builtin", "builtin_int8_dot", "rtlgen_cpp"):
             die("compute.gemm.mac_source must be one of: builtin_int8_dot, builtin, rtlgen_cpp")
@@ -940,6 +970,8 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         die("compute.vec.lanes must be in [1, 8]")
 
     gemm_elem_bits = 16 if gemm_mac_type in ("int16", "fp16") else 8
+    gemm_fp16_raw16_placeholder = 1 if (gemm_mac_type == "fp16" and gemm_fp16_semantics == "raw16_placeholder") else 0
+    gemm_fp16_accum_fp32 = 1 if (gemm_mac_type == "fp16" and gemm_fp16_accumulation == "fp32") else 0
     gemm_mac_vec_width = gemm_mac_lanes * gemm_elem_bits
     gemm_mac_vec_width_minus1 = gemm_mac_vec_width - 1
     gemm_accum_width_minus1 = gemm_accum_width - 1
@@ -1682,6 +1714,8 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         vec_en_dlayernorm=vec_en_dlayernorm,
         gemm_mac_lanes=gemm_mac_lanes,
         gemm_elem_bits=gemm_elem_bits,
+        gemm_fp16_raw16_placeholder=gemm_fp16_raw16_placeholder,
+        gemm_fp16_accum_fp32=gemm_fp16_accum_fp32,
         vec_lanes=vec_lanes,
         dma_ports=dma_ports,
         compute_state_regs=compute_state_regs,

@@ -104,6 +104,38 @@ def _gemm_lanes(cfg):
     return lanes
 
 
+def _gemm_fp16_policy(cfg):
+    semantics = str(cfg.get("gemm_fp16_semantics", "raw16_placeholder")).lower()
+    accumulation = str(cfg.get("gemm_fp16_accumulation", "int32")).lower()
+    rounding = str(cfg.get("gemm_fp16_rounding", "rne")).lower()
+    subnormals = str(cfg.get("gemm_fp16_subnormals", "preserve")).lower()
+
+    if semantics not in ("raw16_placeholder", "ieee_half"):
+        raise ValueError("gemm_fp16_semantics must be one of: raw16_placeholder, ieee_half")
+    if accumulation not in ("int32", "fp32"):
+        raise ValueError("gemm_fp16_accumulation must be one of: int32, fp32")
+    if rounding not in ("rne",):
+        raise ValueError("gemm_fp16_rounding must be: rne")
+    if subnormals not in ("preserve", "flush"):
+        raise ValueError("gemm_fp16_subnormals must be one of: preserve, flush")
+
+    if semantics == "ieee_half":
+        raise ValueError("gemm_fp16_semantics=ieee_half is planned but not implemented yet")
+    if accumulation != "int32":
+        raise ValueError("gemm_fp16_accumulation must be int32 when gemm_fp16_semantics=raw16_placeholder")
+    if rounding != "rne":
+        raise ValueError("gemm_fp16_rounding must be rne for current fp16 bring-up path")
+    if subnormals != "preserve":
+        raise ValueError("gemm_fp16_subnormals must be preserve for current fp16 bring-up path")
+
+    return {
+        "semantics": semantics,
+        "accumulation": accumulation,
+        "rounding": rounding,
+        "subnormals": subnormals,
+    }
+
+
 def _vec_lanes(cfg):
     lanes = int(cfg.get("vec_lanes", cfg.get("gemm_mac_lanes", 8)))
     if lanes < 1:
@@ -161,8 +193,10 @@ def _vec_expected_result(raw, flags, cfg):
 
 
 def _gemm_expected_fields(raw, size_units, tag, cfg):
+    mac_type = str(cfg.get("gemm_mac_type", "int8")).lower()
     lanes = _gemm_lanes(cfg)
     elem_bits = _gemm_elem_bits(cfg)
+    fp16_policy = _gemm_fp16_policy(cfg) if mac_type == "fp16" else None
     dot = 0
     if elem_bits == 16:
         for lane in range(lanes):
@@ -191,12 +225,22 @@ def _gemm_expected_fields(raw, size_units, tag, cfg):
     if op_uid is not None and ((int(op_uid) >> 63) & 0x1):
         cycles += 8
     expected_accum = int(dot) * int(cycles)
-    return {
+    out = {
         "expected_dot": int(dot),
         "expected_cycles": int(cycles),
         "expected_accum": int(expected_accum),
         "lanes": lanes,
     }
+    if fp16_policy is not None:
+        out.update(
+            {
+                "fp16_semantics": fp16_policy["semantics"],
+                "fp16_accumulation": fp16_policy["accumulation"],
+                "fp16_rounding": fp16_policy["rounding"],
+                "fp16_subnormals": fp16_policy["subnormals"],
+            }
+        )
+    return out
 
 
 def _parse_int(value):
@@ -274,6 +318,16 @@ def _load_sram_model(cfg):
         metrics = json.loads(Path(metrics_path).read_text(encoding="utf-8"))
     clk_period_ns = cfg.get("clk_period_ns")
     cfg["sram_instances"] = _derive_sram_instances(arch, metrics, clk_period_ns)
+
+
+def _validate_cfg(cfg):
+    mac_type = str(cfg.get("gemm_mac_type", "int8")).lower()
+    if mac_type not in ("int8", "int16", "fp16"):
+        raise ValueError("gemm_mac_type must be one of: int8, int16, fp16")
+    _gemm_lanes(cfg)
+    _vec_lanes(cfg)
+    if mac_type == "fp16":
+        _gemm_fp16_policy(cfg)
 
 
 def desc_to_event(desc, cfg):
@@ -539,6 +593,10 @@ def main():
     if args.config:
         cfg = json.loads(Path(args.config).read_text(encoding="utf-8"))
         _load_sram_model(cfg)
+    try:
+        _validate_cfg(cfg)
+    except ValueError as exc:
+        raise SystemExit(f"invalid perf config: {exc}")
 
     data = Path(args.bin).read_bytes()
     descs = parse_desc_stream(data)

@@ -110,6 +110,13 @@ can later be extended without breaking v0.1.
 - `compute.gemm.lanes` (int): number of MAC lanes (depends on `mac_type`).
 - `compute.gemm.accum_width` (int): signed accumulator width (16..64).
 - `compute.gemm.pipeline` (int): reserved pipeline knob (must be >=1).
+- `compute.gemm.fp16` (object, optional): fp16 numeric policy lock (used when `mac_type=fp16`).
+  - `semantics` (string): one of:
+    - `raw16_placeholder` (current bring-up path; default)
+    - `ieee_half` (planned, not yet implemented in this NPU path)
+  - `accumulation` (string): accumulation mode (`int32` or `fp32`).
+  - `rounding` (string): rounding mode policy (`rne` only in current bring-up).
+  - `subnormals` (string): subnormal policy (`preserve` or `flush`).
 - `compute.gemm.rtlgen_cpp` (object, optional): options for `mac_source=rtlgen_cpp`.
   - `binary_path` (string): path to C++ RTLGen binary (default `build/rtlgen`).
   - `module_name` (string): generated MAC module name.
@@ -138,6 +145,13 @@ can later be extended without breaking v0.1.
 - Phase 3 also adds an fp16 selector (`compute.gemm.mac_type=fp16`) as a
   **raw16 placeholder MAC** for integration/regression bring-up. It does not
   yet implement IEEE-754 half-precision arithmetic.
+- Current fp16 generator support is intentionally locked to:
+  - `compute.gemm.fp16.semantics=raw16_placeholder`
+  - `compute.gemm.fp16.accumulation=int32`
+  - `compute.gemm.fp16.rounding=rne`
+  - `compute.gemm.fp16.subnormals=preserve`
+  This makes the temporary numeric behavior explicit and prevents accidental
+  drift before true IEEE-half datapath integration.
 - `mac_source=rtlgen_cpp` currently requires `lanes=1` and `accum_width=16`
   and `mac_type=int8` to match the generated scalar MAC interface
   (`a*b + accumulator`).
