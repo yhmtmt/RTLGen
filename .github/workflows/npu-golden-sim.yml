@@ -1,0 +1,80 @@
+name: NPU Golden Simulation
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - ".github/workflows/npu-golden-sim.yml"
+      - "npu/sim/**"
+      - "npu/rtlgen/**"
+      - "npu/mapper/**"
+      - "npu/arch/**"
+      - "npu/shell/**"
+  pull_request:
+    paths:
+      - ".github/workflows/npu-golden-sim.yml"
+      - "npu/sim/**"
+      - "npu/rtlgen/**"
+      - "npu/mapper/**"
+      - "npu/arch/**"
+      - "npu/shell/**"
+  workflow_dispatch:
+
+jobs:
+  golden:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    env:
+      ONNX_VERSION: "1.23.1"
+      ORTOOLS_TGZ: "or-tools_amd64_ubuntu-22.04_cpp_v9.10.4067.tar.gz"
+      ORTOOLS_URL: "https://github.com/google/or-tools/releases/download/v9.10/or-tools_amd64_ubuntu-22.04_cpp_v9.10.4067.tar.gz"
+      ONNX_TGZ: "onnxruntime-linux-x64-1.23.1.tgz"
+      ONNX_URL: "https://github.com/microsoft/onnxruntime/releases/download/v1.23.1/onnxruntime-linux-x64-1.23.1.tgz"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            cmake \
+            ninja-build \
+            make \
+            iverilog \
+            libgtest-dev \
+            ca-certificates \
+            wget
+
+      - name: Install OR-Tools C++ runtime
+        run: |
+          wget -q "${ORTOOLS_URL}" -O "${ORTOOLS_TGZ}"
+          tar -xzf "${ORTOOLS_TGZ}"
+          ORTOOLS_DIR="$(tar -tf "${ORTOOLS_TGZ}" | head -1 | cut -f1 -d'/')"
+          sudo cp -r "${ORTOOLS_DIR}/include/"* /usr/local/include/
+          sudo cp -r "${ORTOOLS_DIR}/lib/"* /usr/local/lib/
+          sudo cp -r "${ORTOOLS_DIR}/bin/"* /usr/local/bin/
+          sudo ldconfig
+          rm -rf "${ORTOOLS_DIR}" "${ORTOOLS_TGZ}"
+
+      - name: Install ONNX Runtime C++ runtime
+        run: |
+          wget -q "${ONNX_URL}" -O "${ONNX_TGZ}"
+          tar -xzf "${ONNX_TGZ}"
+          mv "onnxruntime-linux-x64-${ONNX_VERSION}" "${RUNNER_TEMP}/onnxruntime"
+          rm -f "${ONNX_TGZ}"
+          echo "ONNXRUNTIME_DIR=${RUNNER_TEMP}/onnxruntime" >> "${GITHUB_ENV}"
+          echo "LD_LIBRARY_PATH=${RUNNER_TEMP}/onnxruntime/lib:${LD_LIBRARY_PATH:-}" >> "${GITHUB_ENV}"
+
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build \
+            -DRTLGEN_BUILD_FLOPOCO=OFF \
+            -DRTLGEN_BUILD_CACTI=OFF
+
+      - name: Build rtlgen
+        run: cmake --build build --target rtlgen --parallel
+
+      - name: Run NPU golden simulation
+        run: bash npu/sim/run_golden.sh
