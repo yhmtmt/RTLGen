@@ -21,6 +21,32 @@
       "tech_node_nm": 130,
       "base_addr": "0x80000000",
       "alignment_bytes": 64
+    },
+    {
+      "name": "weight_sram",
+      "depth": 16384,
+      "width": 256,
+      "banks": 8,
+      "read_latency": 1,
+      "byte_en": true,
+      "port": "1r1w",
+      "pdk": "sky130",
+      "tech_node_nm": 130,
+      "base_addr": "0x80400000",
+      "alignment_bytes": 64
+    },
+    {
+      "name": "kv_sram",
+      "depth": 8192,
+      "width": 256,
+      "banks": 4,
+      "read_latency": 1,
+      "byte_en": true,
+      "port": "1r1w",
+      "pdk": "sky130",
+      "tech_node_nm": 130,
+      "base_addr": "0x80800000",
+      "alignment_bytes": 64
     }
   ],
   "queue_depth": 16,
@@ -32,29 +58,15 @@
   "compute": {
     "enabled": true,
     "gemm": {
-      "mac_type": "int8",
-      "mac_source": "rtlgen_cpp",
-      "lanes": 1,
-      "accum_width": 16,
-      "pipeline": 1,
-      "rtlgen_cpp": {
-        "binary_path": "build/rtlgen",
-        "module_name": "gemm_mac_int8_pp",
-        "ppg_algorithm": "Booth4",
-        "compressor_structure": "AdderTree",
-        "compressor_library": "fa_ha",
-        "compressor_assignment": "legacy_fa_ha",
-        "cpa_structure": "BrentKung"
-      }
+      "mac_type": "int16",
+      "mac_source": "builtin",
+      "lanes": 4,
+      "accum_width": 32,
+      "pipeline": 1
     },
     "vec": {
-      "lanes": 1,
-      "ops": ["add", "mul", "relu", "gelu", "softmax", "layernorm", "drelu", "dgelu", "dsoftmax", "dlayernorm"],
-      "activation_source": "rtlgen_cpp",
-      "rtlgen_cpp": {
-        "binary_path": "build/rtlgen",
-        "module_prefix": "vec_act"
-      }
+      "lanes": 8,
+      "ops": ["add", "mul", "relu"]
     }
   }
 }

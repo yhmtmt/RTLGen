@@ -38,6 +38,9 @@ make -f npu/sim/perf/Makefile test
   - Builds a synthetic stream with `VEC_OP(add)`, `VEC_OP(dsoftmax)`, and `SOFTMAX`.
   - Checks op decode/order, op counts, total bytes, and non-zero durations.
   - Verifies VEC functional expectation fields are emitted: `expected_result`, `expected_result_bytes`, `lanes`.
+- `test_perf_gemm_int16.py`
+  - Builds a synthetic int16 GEMM descriptor payload and runs with `gemm_mac_type=int16`.
+  - Verifies int16 functional expectations (`expected_dot`, `expected_cycles`, `expected_accum`, `lanes`) are decoded correctly.
 
 ### RTL/perf integrated regression (`npu/sim/run_golden.sh`)
 
@@ -130,9 +133,11 @@ You can tune vector op performance with these optional config keys:
 - `softmax_overhead_ns`, `softmax_row_overhead_ns`, `softmax_op_cost`
 - `softmax_dtype_bytes` (fallback when dtype code is unknown)
 
-### Optional GEMM functional-lane knob
+### Optional GEMM functional knobs
 
-- `gemm_mac_lanes` (functional expectation lane count for GEMM/VEC int8 checks; default `8`)
+- `gemm_mac_type` (`int8` or `int16`) for functional expected-result decode
+- `gemm_mac_lanes` (functional expectation lane count; defaults by type: `int8->8`, `int16->4`)
 
-For C++ MAC backend (`compute.gemm.mac_source=rtlgen_cpp`, current lane-1 integration),
-use `npu/sim/perf/example_config_cpp_mac.json` in golden/perf comparison runs.
+Preset configs for golden/perf comparison:
+- `npu/sim/perf/example_config_cpp_mac.json` for C++ MAC backend lane-1 path
+- `npu/sim/perf/example_config_int16.json` for builtin int16 GEMM path

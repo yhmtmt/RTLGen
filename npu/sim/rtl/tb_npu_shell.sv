@@ -120,6 +120,17 @@ module tb_npu_shell;
     end
   endfunction
 
+  function integer sx16(input [7:0] lo, input [7:0] hi);
+    reg [15:0] v;
+    begin
+      v = {hi, lo};
+      if (v[15])
+        sx16 = v - 65536;
+      else
+        sx16 = v;
+    end
+  endfunction
+
   integer fd;
   integer bytes_read;
   integer max_bytes;
@@ -163,6 +174,8 @@ module tb_npu_shell;
   integer vec_softmax_tmp;
   integer vec_op_sel;
   integer gemm_mac_lanes;
+  integer gemm_elem_bits;
+  integer vec_lanes;
   reg [63:0] vec_expected_vec;
   reg [63:0] sim_cycle;
   reg [1:0] gemm_slot_valid_prev;
@@ -201,9 +214,19 @@ module tb_npu_shell;
     vec_count = 0;
     vec_desc_count = 0;
     vec_done_pulse_prev = 1'b0;
-    gemm_mac_lanes = ($bits(dut.gemm_mac_a_vec0) / 8);
+    gemm_elem_bits = dut.GEMM_ELEM_BITS;
+    if (gemm_elem_bits < 8)
+      gemm_elem_bits = 8;
+    gemm_mac_lanes = dut.GEMM_MAC_LANES;
+    if (gemm_mac_lanes < 1)
+      gemm_mac_lanes = ($bits(dut.gemm_mac_a_vec0) / gemm_elem_bits);
     if (gemm_mac_lanes < 1)
       gemm_mac_lanes = 1;
+    vec_lanes = dut.VEC_LANES;
+    if (vec_lanes < 1)
+      vec_lanes = ($bits(dut.vec_last_result) / 8);
+    if (vec_lanes < 1)
+      vec_lanes = 1;
     #(CLK_PERIOD*4);
     rst_n = 1;
 
@@ -492,8 +515,18 @@ module tb_npu_shell;
           gemm_desc_uids[gemm_desc_count] = 64'hFFFF_FFFF_FFFF_FFFF;
         end
         gemm_dot = 0;
-        for (gemm_lane = 0; gemm_lane < gemm_mac_lanes; gemm_lane = gemm_lane + 1) begin
-          gemm_dot = gemm_dot + (sx8(bin_data[scan_off + 8 + gemm_lane]) * sx8(bin_data[scan_off + 16 + gemm_lane]));
+        if (gemm_elem_bits == 16) begin
+          for (gemm_lane = 0; gemm_lane < gemm_mac_lanes; gemm_lane = gemm_lane + 1) begin
+            gemm_dot = gemm_dot +
+                       (sx16(bin_data[scan_off + 8 + (gemm_lane * 2)],
+                             bin_data[scan_off + 9 + (gemm_lane * 2)]) *
+                        sx16(bin_data[scan_off + 16 + (gemm_lane * 2)],
+                             bin_data[scan_off + 17 + (gemm_lane * 2)]));
+          end
+        end else begin
+          for (gemm_lane = 0; gemm_lane < gemm_mac_lanes; gemm_lane = gemm_lane + 1) begin
+            gemm_dot = gemm_dot + (sx8(bin_data[scan_off + 8 + gemm_lane]) * sx8(bin_data[scan_off + 16 + gemm_lane]));
+          end
         end
         if (scan_size >= 2) begin
           gemm_m = {bin_data[scan_off + 35], bin_data[scan_off + 34], bin_data[scan_off + 33], bin_data[scan_off + 32]};
@@ -515,7 +548,7 @@ module tb_npu_shell;
       end else if ((scan_opcode == 8'h11) && (vec_desc_count < 128)) begin
         vec_op_sel = bin_data[scan_off + 1] & 8'hf;
         vec_expected_vec = 64'h0;
-        for (gemm_lane = 0; gemm_lane < gemm_mac_lanes; gemm_lane = gemm_lane + 1) begin
+        for (gemm_lane = 0; gemm_lane < vec_lanes; gemm_lane = gemm_lane + 1) begin
           if (vec_op_sel == 1) begin
             vec_tmp = sx8(bin_data[scan_off + 8 + gemm_lane]) + sx8(bin_data[scan_off + 16 + gemm_lane]);
           end else if (vec_op_sel == 2) begin
@@ -843,7 +876,7 @@ module tb_npu_shell;
           $display("ERROR: unexpected VEC completion vec_count=%0d vec_desc_count=%0d", vec_count, vec_desc_count);
           $finish(1);
         end
-        for (gemm_lane = 0; gemm_lane < gemm_mac_lanes; gemm_lane = gemm_lane + 1) begin
+        for (gemm_lane = 0; gemm_lane < vec_lanes; gemm_lane = gemm_lane + 1) begin
           if (dut.vec_last_result[(gemm_lane*8) +: 8] !== vec_desc_expected[vec_count][(gemm_lane*8) +: 8]) begin
             $display("ERROR: VEC mismatch index=%0d lane=%0d got=0x%02h exp=0x%02h",
                      vec_count, gemm_lane,

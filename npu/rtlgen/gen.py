@@ -106,6 +106,9 @@ module {top_name} (
   localparam       VEC_EN_DGELU     = {vec_en_dgelu};
   localparam       VEC_EN_DSOFTMAX  = {vec_en_dsoftmax};
   localparam       VEC_EN_DLAYERNORM= {vec_en_dlayernorm};
+  localparam integer GEMM_MAC_LANES = {gemm_mac_lanes};
+  localparam integer GEMM_ELEM_BITS = {gemm_elem_bits};
+  localparam integer VEC_LANES      = {vec_lanes};
 
   // MMIO offsets (bytes)
   `include "mmio_map.vh"
@@ -330,6 +333,32 @@ module gemm_mac_int8 #(
     for (i = 0; i < LANES; i = i + 1) begin
       a_i = a_vec[(i*8) +: 8];
       b_i = b_vec[(i*8) +: 8];
+      sum = sum + (a_i * b_i);
+    end
+    acc_out = sum;
+  end
+endmodule
+"""
+
+GEMM_MAC_INT16 = """\
+module gemm_mac_int16 #(
+    parameter integer LANES = 4,
+    parameter integer ACC_WIDTH = 32
+) (
+    input  wire [LANES*16-1:0] a_vec,
+    input  wire [LANES*16-1:0] b_vec,
+    output reg  signed [ACC_WIDTH-1:0] acc_out
+);
+  integer i;
+  reg signed [ACC_WIDTH-1:0] sum;
+  reg signed [15:0] a_i;
+  reg signed [15:0] b_i;
+
+  always @(*) begin
+    sum = 0;
+    for (i = 0; i < LANES; i = i + 1) begin
+      a_i = a_vec[(i*16) +: 16];
+      b_i = b_vec[(i*16) +: 16];
       sum = sum + (a_i * b_i);
     end
     acc_out = sum;
@@ -804,6 +833,7 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
     gemm_accum_width = int(gemm_cfg.get("accum_width", 32))
     gemm_pipeline = int(gemm_cfg.get("pipeline", 1))
     vec_activation_source = str(vec_cfg.get("activation_source", "builtin")).lower()
+    vec_lanes = int(vec_cfg.get("lanes", 8))
     vec_ops_raw = vec_cfg.get("ops", [])
     if vec_ops_raw is None:
         vec_ops_raw = []
@@ -841,27 +871,44 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
     if gemm_pipeline < 1:
         die("compute.gemm.pipeline must be >= 1")
 
-    if gemm_mac_lanes < 1 or gemm_mac_lanes > 8:
-        die("compute.gemm.lanes must be in [1, 8] for int8 Phase 1")
+    if compute_enabled and gemm_mac_type not in ("int8", "int16"):
+        die("compute.gemm.mac_type must be one of: int8, int16")
+    if gemm_mac_type == "int16":
+        if gemm_mac_lanes < 1 or gemm_mac_lanes > 4:
+            die("compute.gemm.lanes must be in [1, 4] when compute.gemm.mac_type=int16")
+    else:
+        if gemm_mac_lanes < 1 or gemm_mac_lanes > 8:
+            die("compute.gemm.lanes must be in [1, 8] when compute.gemm.mac_type=int8")
     if gemm_accum_width < 16 or gemm_accum_width > 64:
         die("compute.gemm.accum_width must be in [16, 64]")
-    if compute_enabled and gemm_mac_type != "int8":
-        die("Phase 1 supports only compute.gemm.mac_type=int8")
-    if gemm_mac_source not in ("builtin", "builtin_int8_dot", "rtlgen_cpp"):
-        die("compute.gemm.mac_source must be one of: builtin_int8_dot, builtin, rtlgen_cpp")
+    if gemm_mac_type == "int16":
+        if gemm_mac_source not in ("builtin", "builtin_int16_dot"):
+            die("compute.gemm.mac_source must be one of: builtin, builtin_int16_dot for mac_type=int16")
+    else:
+        if gemm_mac_source not in ("builtin", "builtin_int8_dot", "rtlgen_cpp"):
+            die("compute.gemm.mac_source must be one of: builtin_int8_dot, builtin, rtlgen_cpp")
     if compute_enabled and gemm_mac_source == "rtlgen_cpp":
+        if gemm_mac_type != "int8":
+            die("compute.gemm.mac_type must be int8 when compute.gemm.mac_source=rtlgen_cpp")
         if gemm_mac_lanes != 1:
             die("compute.gemm.lanes must be 1 when compute.gemm.mac_source=rtlgen_cpp")
         if gemm_accum_width != 16:
             die("compute.gemm.accum_width must be 16 when compute.gemm.mac_source=rtlgen_cpp")
     if vec_activation_source not in ("builtin", "rtlgen_cpp"):
         die("compute.vec.activation_source must be one of: builtin, rtlgen_cpp")
+    if vec_lanes < 1 or vec_lanes > 8:
+        die("compute.vec.lanes must be in [1, 8]")
 
-    gemm_mac_vec_width = gemm_mac_lanes * 8
+    gemm_elem_bits = 16 if gemm_mac_type == "int16" else 8
+    gemm_mac_vec_width = gemm_mac_lanes * gemm_elem_bits
     gemm_mac_vec_width_minus1 = gemm_mac_vec_width - 1
     gemm_accum_width_minus1 = gemm_accum_width - 1
     gemm_a_hi = 64 + gemm_mac_vec_width - 1
     gemm_b_hi = 128 + gemm_mac_vec_width - 1
+    vec_data_width = vec_lanes * 8
+    vec_data_width_minus1 = vec_data_width - 1
+    vec_a_hi = 64 + vec_data_width - 1
+    vec_b_hi = 128 + vec_data_width - 1
 
     use_cpp_mac = compute_enabled and (gemm_mac_source == "rtlgen_cpp")
     if use_cpp_mac:
@@ -869,7 +916,7 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         compute_modules = cpp_module_text + "\n"
     else:
         cpp_module_name = ""
-        compute_modules = GEMM_MAC_INT8 + "\n\n"
+        compute_modules = GEMM_MAC_INT8 + "\n\n" + GEMM_MAC_INT16 + "\n\n"
 
     vec_cpp_modules: dict[str, str] = {}
     if compute_enabled and vec_activation_source == "rtlgen_cpp":
@@ -898,9 +945,9 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
   reg [{gemm_mac_vec_width_minus1}:0] gemm_mac_b_vec1;
   reg signed [{gemm_accum_width_minus1}:0] gemm_slot_accum0;
   reg signed [{gemm_accum_width_minus1}:0] gemm_slot_accum1;
-  reg [{gemm_mac_vec_width_minus1}:0] vec_in0;
-  reg [{gemm_mac_vec_width_minus1}:0] vec_in1;
-  reg [{gemm_mac_vec_width_minus1}:0] vec_last_result;
+  reg [{vec_data_width_minus1}:0] vec_in0;
+  reg [{vec_data_width_minus1}:0] vec_in1;
+  reg [{vec_data_width_minus1}:0] vec_last_result;
   reg [3:0] vec_op_sel;
   reg vec_pending;
   reg vec_done_pulse;"""
@@ -936,7 +983,7 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
   wire signed [{gemm_accum_width_minus1}:0] gemm_mac_dot0;
   wire signed [{gemm_accum_width_minus1}:0] gemm_mac_dot1;
 
-  gemm_mac_int8 #(
+  gemm_mac_{gemm_mac_type} #(
     .LANES({gemm_mac_lanes}),
     .ACC_WIDTH({gemm_accum_width})
   ) u_gemm_mac0 (
@@ -945,7 +992,7 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
     .acc_out(gemm_mac_dot0)
   );
 
-  gemm_mac_int8 #(
+  gemm_mac_{gemm_mac_type} #(
     .LANES({gemm_mac_lanes}),
     .ACC_WIDTH({gemm_accum_width})
   ) u_gemm_mac1 (
@@ -1031,21 +1078,21 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
     )
 
     vec_compute_instances = f"""
-  wire [{gemm_mac_vec_width_minus1}:0] vec_add_res;
-  wire [{gemm_mac_vec_width_minus1}:0] vec_mul_res;
-  wire [{gemm_mac_vec_width_minus1}:0] vec_relu_res;
-  wire [{gemm_mac_vec_width_minus1}:0] vec_gelu_res;
-  wire [{gemm_mac_vec_width_minus1}:0] vec_softmax_res;
-  wire [{gemm_mac_vec_width_minus1}:0] vec_layernorm_res;
-  wire [{gemm_mac_vec_width_minus1}:0] vec_drelu_res;
-  wire [{gemm_mac_vec_width_minus1}:0] vec_dgelu_res;
-  wire [{gemm_mac_vec_width_minus1}:0] vec_dsoftmax_res;
-  wire [{gemm_mac_vec_width_minus1}:0] vec_dlayernorm_res;
-  wire [{gemm_mac_vec_width_minus1}:0] vec_result_next;
+  wire [{vec_data_width_minus1}:0] vec_add_res;
+  wire [{vec_data_width_minus1}:0] vec_mul_res;
+  wire [{vec_data_width_minus1}:0] vec_relu_res;
+  wire [{vec_data_width_minus1}:0] vec_gelu_res;
+  wire [{vec_data_width_minus1}:0] vec_softmax_res;
+  wire [{vec_data_width_minus1}:0] vec_layernorm_res;
+  wire [{vec_data_width_minus1}:0] vec_drelu_res;
+  wire [{vec_data_width_minus1}:0] vec_dgelu_res;
+  wire [{vec_data_width_minus1}:0] vec_dsoftmax_res;
+  wire [{vec_data_width_minus1}:0] vec_dlayernorm_res;
+  wire [{vec_data_width_minus1}:0] vec_result_next;
 
   genvar gi;
   generate
-    for (gi = 0; gi < {gemm_mac_lanes}; gi = gi + 1) begin : g_vec_lane
+    for (gi = 0; gi < {vec_lanes}; gi = gi + 1) begin : g_vec_lane
       assign vec_add_res[(gi*8) +: 8] = $signed(vec_in0[(gi*8) +: 8]) + $signed(vec_in1[(gi*8) +: 8]);
       assign vec_mul_res[(gi*8) +: 8] = $signed(vec_in0[(gi*8) +: 8]) * $signed(vec_in1[(gi*8) +: 8]);
 {relu_lane_body}
@@ -1293,8 +1340,8 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
               if (vec_pending) begin
                 error_code <= 32'h3; // VEC in-flight queue full
               end else begin
-                vec_in0 <= cq_mem_rdata[{gemm_a_hi}:64];
-                vec_in1 <= cq_mem_rdata[{gemm_b_hi}:128];
+                vec_in0 <= cq_mem_rdata[{vec_a_hi}:64];
+                vec_in1 <= cq_mem_rdata[{vec_b_hi}:128];
                 vec_op_sel <= cq_mem_rdata[11:8];
                 if ((cq_mem_rdata[11:8] == VEC_OP_ADD       && !VEC_EN_ADD)       ||
                     (cq_mem_rdata[11:8] == VEC_OP_MUL       && !VEC_EN_MUL)       ||
@@ -1407,8 +1454,8 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
               if (vec_pending) begin
                 error_code <= 32'h3; // VEC in-flight queue full
               end else begin
-                vec_in0 <= cq_word0[{gemm_a_hi}:64];
-                vec_in1 <= cq_word0[{gemm_b_hi}:128];
+                vec_in0 <= cq_word0[{vec_a_hi}:64];
+                vec_in1 <= cq_word0[{vec_b_hi}:128];
                 vec_op_sel <= cq_word0[11:8];
                 if ((cq_word0[11:8] == VEC_OP_ADD       && !VEC_EN_ADD)       ||
                     (cq_word0[11:8] == VEC_OP_MUL       && !VEC_EN_MUL)       ||
@@ -1593,6 +1640,9 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         vec_en_dgelu=vec_en_dgelu,
         vec_en_dsoftmax=vec_en_dsoftmax,
         vec_en_dlayernorm=vec_en_dlayernorm,
+        gemm_mac_lanes=gemm_mac_lanes,
+        gemm_elem_bits=gemm_elem_bits,
+        vec_lanes=vec_lanes,
         dma_ports=dma_ports,
         compute_state_regs=compute_state_regs,
         dma_reset=dma_reset,

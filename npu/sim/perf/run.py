@@ -82,6 +82,27 @@ def _u8(v):
     return int(v) & 0xFF
 
 
+def _sx16(lo, hi):
+    v = ((int(hi) & 0xFF) << 8) | (int(lo) & 0xFF)
+    return v - 65536 if (v & 0x8000) else v
+
+
+def _gemm_elem_bits(cfg):
+    return 16 if str(cfg.get("gemm_mac_type", "int8")).lower() == "int16" else 8
+
+
+def _gemm_lanes(cfg):
+    elem_bits = _gemm_elem_bits(cfg)
+    default_lanes = 4 if elem_bits == 16 else 8
+    lanes = int(cfg.get("gemm_mac_lanes", default_lanes))
+    max_lanes = 4 if elem_bits == 16 else 8
+    if lanes < 1:
+        return 1
+    if lanes > max_lanes:
+        return max_lanes
+    return lanes
+
+
 def _vec_lanes(cfg):
     lanes = int(cfg.get("vec_lanes", cfg.get("gemm_mac_lanes", 8)))
     if lanes < 1:
@@ -139,10 +160,19 @@ def _vec_expected_result(raw, flags, cfg):
 
 
 def _gemm_expected_fields(raw, size_units, tag, cfg):
-    lanes = _vec_lanes(cfg)
+    lanes = _gemm_lanes(cfg)
+    elem_bits = _gemm_elem_bits(cfg)
     dot = 0
-    for lane in range(lanes):
-        dot += _sx8(raw[8 + lane]) * _sx8(raw[16 + lane])
+    if elem_bits == 16:
+        for lane in range(lanes):
+            a_lo = raw[8 + (lane * 2)]
+            a_hi = raw[9 + (lane * 2)]
+            b_lo = raw[16 + (lane * 2)]
+            b_hi = raw[17 + (lane * 2)]
+            dot += _sx16(a_lo, a_hi) * _sx16(b_lo, b_hi)
+    else:
+        for lane in range(lanes):
+            dot += _sx8(raw[8 + lane]) * _sx8(raw[16 + lane])
 
     if size_units >= 2 and len(raw) >= 64:
         m = struct.unpack_from("<I", raw, 32)[0]

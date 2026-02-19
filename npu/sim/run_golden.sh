@@ -32,10 +32,23 @@ CPP_MIXED_TRACE="${REPO_ROOT}/npu/sim/perf/golden_cpp_trace.json"
 CPP_MIXED_RTL_LOG="${REPO_ROOT}/npu/sim/rtl/golden_cpp_rtl.log"
 CPP_GEMM_TRACE="${REPO_ROOT}/npu/sim/perf/golden_cpp_gemm_v2_trace.json"
 CPP_GEMM_RTL_LOG="${REPO_ROOT}/npu/sim/rtl/golden_cpp_gemm_v2_rtl.log"
+INT16_RTL_CFG="${REPO_ROOT}/npu/rtlgen/examples/minimal_int16.json"
+INT16_PERF_CFG="${REPO_ROOT}/npu/sim/perf/example_config_int16.json"
+INT16_GEMM_TRACE="${REPO_ROOT}/npu/sim/perf/golden_int16_gemm_v2_trace.json"
+INT16_GEMM_RTL_LOG="${REPO_ROOT}/npu/sim/rtl/golden_int16_gemm_v2_rtl.log"
 CLK_NS=$(REPO_ROOT="${REPO_ROOT}" python3 - <<'PY'
 import json
 import os
 path = os.path.join(os.environ["REPO_ROOT"], "npu/sim/perf/example_config.json")
+with open(path, "r", encoding="utf-8") as f:
+    cfg = json.load(f)
+print(cfg.get("clk_period_ns", 10.0))
+PY
+)
+INT16_CLK_NS=$(REPO_ROOT="${REPO_ROOT}" python3 - <<'PY'
+import json
+import os
+path = os.path.join(os.environ["REPO_ROOT"], "npu/sim/perf/example_config_int16.json")
 with open(path, "r", encoding="utf-8") as f:
     cfg = json.load(f)
 print(cfg.get("clk_period_ns", 10.0))
@@ -82,6 +95,10 @@ make -f npu/sim/rtl/Makefile run \
   CONFIG="${CPP_RTL_CFG}" \
   BIN="${GEMM_BIN}" \
   BYTES=256 VVPFLAGS="+gemm_mem_test=256 +gemm_mac_test=1" | tee "${CPP_GEMM_RTL_LOG}"
+make -f npu/sim/rtl/Makefile run \
+  CONFIG="${INT16_RTL_CFG}" \
+  BIN="${GEMM_BIN}" \
+  BYTES=256 VVPFLAGS="+gemm_mem_test=256 +gemm_mac_test=1" | tee "${INT16_GEMM_RTL_LOG}"
 popd >/dev/null
 python3 "${REPO_ROOT}/npu/sim/perf/run.py" --bin "${DESC_BIN}" --out "${PERF_TRACE}"
 python3 "${REPO_ROOT}/npu/sim/perf/compare_compute_results.py" \
@@ -165,5 +182,11 @@ python3 "${REPO_ROOT}/npu/sim/perf/compare_gemm_timing.py" --rtl-log "${CPP_GEMM
   --perf-trace "${CPP_GEMM_TRACE}" --tolerance 0.9
 python3 "${REPO_ROOT}/npu/sim/perf/compare_compute_results.py" \
   --rtl-log "${CPP_GEMM_RTL_LOG}" --perf-trace "${CPP_GEMM_TRACE}"
+python3 "${REPO_ROOT}/npu/sim/perf/run.py" --bin "${GEMM_BIN}" \
+  --out "${INT16_GEMM_TRACE}" --config "${INT16_PERF_CFG}"
+python3 "${REPO_ROOT}/npu/sim/perf/compare_gemm_timing.py" --rtl-log "${INT16_GEMM_RTL_LOG}" --clk-ns "${INT16_CLK_NS}" \
+  --perf-trace "${INT16_GEMM_TRACE}" --tolerance 0.9
+python3 "${REPO_ROOT}/npu/sim/perf/compare_compute_results.py" \
+  --rtl-log "${INT16_GEMM_RTL_LOG}" --perf-trace "${INT16_GEMM_TRACE}"
 
 echo "golden flow: ok"
