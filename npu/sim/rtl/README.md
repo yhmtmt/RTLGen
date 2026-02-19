@@ -60,7 +60,7 @@ The tests validate descriptor execution behavior, MMIO/IRQ flow, and AXI memory 
   - builtin fp16 placeholder backend (`minimal_fp16.json`)
   - C++ fp16 IEEE-half backend (`minimal_fp16_cpp.json`) when FloPoCo is available
   - C++ fp16 VEC backend (`minimal_vec_fp16_cpp.json`) when FloPoCo is available
-  - C++ int8 activation-unit GELU regression (`minimal_cpp_mac.json` + synthetic GELU descriptors)
+  - C++ int8 activation-unit suite regression (`minimal_cpp_mac.json` + synthetic activation descriptors)
 - These RTL runs are consumed by perf comparison scripts for:
   - GEMM timing consistency (`compare_gemm_timing.py`)
   - GEMM/VEC computation consistency (`compare_compute_results.py`)
@@ -69,7 +69,7 @@ The tests validate descriptor execution behavior, MMIO/IRQ flow, and AXI memory 
 
 - Datapath validation covers int8/int16 GEMM, VEC ops, and fp16 GEMM policy paths used in golden flows.
 - Floating-point coverage includes fp16 GEMM (builtin placeholder and C++ IEEE-half lane-1) and fp16 VEC (`add/mul/relu/gelu/softmax/layernorm/drelu/dgelu/dsoftmax/dlayernorm`) via RTL/perf compare.
-- C++ activation-unit coverage includes int8 GELU path under `activation_source=rtlgen_cpp`.
+- C++ activation-unit coverage includes int8 activation suite path under `activation_source=rtlgen_cpp`.
 - bf16/fp8 and constrained-random fp16 derivative-vector numeric stress are not covered yet.
 - No constrained-random stress regression is included yet.
 

@@ -66,14 +66,14 @@ make -f npu/sim/perf/Makefile test
   - C++ RTLGen fp16 `fp_mac` path (IEEE-half, lane-1), when FloPoCo is available
   - C++ RTLGen fp16 VEC path (`add/mul/relu/gelu/softmax/layernorm/drelu/dgelu/dsoftmax/dlayernorm`, dtype `fp16`), when FloPoCo is available
 - Includes dedicated C++ activation regression for:
-  - int8 GELU vector path generated from C++ RTLGen activation units (`activation_source=rtlgen_cpp`)
+  - int8 activation-unit vector path (`relu/gelu/softmax/layernorm/drelu/dgelu/dsoftmax/dlayernorm`) generated from C++ RTLGen units (`activation_source=rtlgen_cpp`)
 - Mixed golden schedule also checks VEC regression constraints (`vec_ops=3`, op order `add,mul,relu`, no unknown ops).
 
 ### Current coverage boundaries
 
 - Functional compute checking is implemented for int8/int16 GEMM, VEC ops, and fp16 GEMM policy paths.
 - fp16 coverage currently includes GEMM lane-1 IEEE-half + raw16 placeholder modes and fp16 VEC (`add/mul/relu/gelu/softmax/layernorm/drelu/dgelu/dsoftmax/dlayernorm`) expectation decode.
-- C++ activation coverage currently includes an explicit int8 GELU regression leg in golden flow.
+- C++ activation coverage currently includes an explicit int8 activation-suite regression leg in golden flow.
 - bf16/fp8 and constrained-random fp16 vector numeric stress are not covered yet.
 - No large randomized descriptor fuzzing is included yet.
 

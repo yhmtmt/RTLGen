@@ -133,21 +133,23 @@ from pathlib import Path
 out_path = Path(sys.argv[1])
 stream = bytearray()
 
-# GELU descriptor #0: x=+8 -> y=+4 in current int8 approximation.
-d0 = bytearray(32)
-struct.pack_into("<BBBBI", d0, 0, 0x11, 0x03, 0x01, 0x00, 0x0)  # VEC_OP, op=gelu, dtype=int8
-struct.pack_into("<i", d0, 24, 256)
-d0[8] = 0x08
-d0[16] = 0x00
-stream.extend(d0)
-
-# GELU descriptor #1: x=-6 -> y=0 in current int8 approximation.
-d1 = bytearray(32)
-struct.pack_into("<BBBBI", d1, 0, 0x11, 0x03, 0x01, 0x00, 0x0)  # VEC_OP, op=gelu, dtype=int8
-struct.pack_into("<i", d1, 24, 512)
-d1[8] = 0xFA  # -6
-d1[16] = 0x00
-stream.extend(d1)
+ops = (
+    (0x00, 0xFB),  # relu, x=-5
+    (0x03, 0x08),  # gelu, x=+8
+    (0x04, 0x28),  # softmax, x=+40 (saturates)
+    (0x05, 0xF8),  # layernorm, x=-8
+    (0x06, 0x05),  # drelu, x=+5
+    (0x07, 0xFD),  # dgelu, x=-3
+    (0x08, 0x08),  # dsoftmax, x=+8
+    (0x09, 0x0B),  # dlayernorm, x=+11
+)
+for idx, (op, x_u8) in enumerate(ops):
+    desc = bytearray(32)
+    struct.pack_into("<BBBBI", desc, 0, 0x11, op, 0x01, 0x00, 0x0)  # VEC_OP, dtype=int8
+    struct.pack_into("<i", desc, 24, (idx + 1) * 256)
+    desc[8] = x_u8 & 0xFF
+    desc[16] = 0x00
+    stream.extend(desc)
 
 out_path.write_bytes(stream)
 PY
@@ -213,7 +215,7 @@ make -f npu/sim/rtl/Makefile run \
 make -f npu/sim/rtl/Makefile run \
   CONFIG="${CPP_RTL_CFG}" \
   BIN="${CPP_VEC_ACT_BIN}" \
-  BYTES=64 VVPFLAGS="+vec_test=1 +gemm_mac_test=0" | tee "${CPP_VEC_ACT_RTL_LOG}"
+  BYTES=256 VVPFLAGS="+vec_test=1 +gemm_mac_test=0" | tee "${CPP_VEC_ACT_RTL_LOG}"
 make -f npu/sim/rtl/Makefile run \
   CONFIG="${INT16_RTL_CFG}" \
   BIN="${GEMM_BIN}" \
@@ -330,14 +332,14 @@ with open(trace_path, "r", encoding="utf-8") as f:
 stats = data.get("stats", {})
 vec_ops = int(stats.get("vec_ops", 0))
 unknown_ops = int(stats.get("unknown_ops", 0))
-if vec_ops != 2:
-    raise SystemExit(f"golden cpp activation regression: expected vec_ops=2, got {vec_ops}")
+if vec_ops != 8:
+    raise SystemExit(f"golden cpp activation regression: expected vec_ops=8, got {vec_ops}")
 if unknown_ops != 0:
     raise SystemExit(f"golden cpp activation regression: expected unknown_ops=0, got {unknown_ops}")
 
 vec_events = [ev for ev in data.get("trace", []) if ev.get("name") == "VEC_OP"]
-if [ev.get("op") for ev in vec_events] != ["gelu", "gelu"]:
-    raise SystemExit("golden cpp activation regression: expected gelu-only sequence")
+if [ev.get("op") for ev in vec_events] != ["relu", "gelu", "softmax", "layernorm", "drelu", "dgelu", "dsoftmax", "dlayernorm"]:
+    raise SystemExit("golden cpp activation regression: unexpected activation op sequence")
 if any(ev.get("dtype") != "int8" for ev in vec_events):
     raise SystemExit("golden cpp activation regression: expected dtype=int8 for all vec events")
 print("golden cpp activation regression: OK")
