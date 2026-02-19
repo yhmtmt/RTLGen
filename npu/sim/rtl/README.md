@@ -49,19 +49,23 @@ The tests validate descriptor execution behavior, MMIO/IRQ flow, and AXI memory 
 
 ### Golden regression coverage
 
-- `npu/sim/run_golden.sh` runs four RTL streams:
+- `npu/sim/run_golden.sh` runs mixed/GEMM schedules across multiple backend configs:
   - mixed (`golden_descriptors.bin`)
   - GEMM v2 single (`golden_gemm_v2_descriptors.bin`)
   - GEMM v2 two-op (`golden_gemm_v2_two_descriptors.bin`)
   - GEMM v2 out-of-order (`golden_gemm_v2_ooo_descriptors.bin`)
+  - C++ int8 MAC backend (`minimal_cpp_mac.json`)
+  - builtin int16 backend (`minimal_int16.json`)
+  - builtin fp16 placeholder backend (`minimal_fp16.json`)
+  - C++ fp16 IEEE-half backend (`minimal_fp16_cpp.json`)
 - These RTL runs are consumed by perf comparison scripts for:
   - GEMM timing consistency (`compare_gemm_timing.py`)
   - GEMM/VEC computation consistency (`compare_compute_results.py`)
 
 ## Current coverage boundaries
 
-- Datapath validation is focused on current int8-style GEMM/VEC stub behavior.
-- Floating-point numerical correctness (fp16/bf16/fp8 compute equivalence) is not covered yet.
+- Datapath validation covers int8/int16 GEMM, VEC ops, and fp16 GEMM policy paths used in golden flows.
+- Floating-point coverage is currently limited to fp16 GEMM (builtin placeholder and C++ IEEE-half lane-1); bf16/fp8 and fp16 VEC numeric equivalence are not covered yet.
 - No constrained-random stress regression is included yet.
 
 ## Notes

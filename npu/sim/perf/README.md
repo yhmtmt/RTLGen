@@ -43,7 +43,10 @@ make -f npu/sim/perf/Makefile test
   - Verifies int16 functional expectations (`expected_dot`, `expected_cycles`, `expected_accum`, `lanes`) are decoded correctly.
 - `test_perf_gemm_fp16.py`
   - Builds a synthetic fp16 GEMM descriptor payload and runs with `gemm_mac_type=fp16`.
-  - Verifies fp16 bring-up expectations (`expected_dot`, `expected_cycles`, `expected_accum`, `lanes`) are decoded consistently.
+  - Verifies both fp16 modes:
+    - builtin raw16 placeholder (`raw16_placeholder`, `int32` accumulation)
+    - IEEE-half lane-1 path (`ieee_half`, `fp16` accumulation)
+  - Checks fp16 expectation fields including `expected_accum_fp16_hex` for IEEE-half mode.
 
 ### RTL/perf integrated regression (`npu/sim/run_golden.sh`)
 
@@ -54,12 +57,15 @@ make -f npu/sim/perf/Makefile test
 - Runs timing cross-check:
   - `compare_gemm_timing.py` compares RTL GEMM cycles vs perf GEMM latency model.
   - `golden_gemm_v2_ooo` additionally checks out-of-order completion behavior (`--require-order-change`).
+- Includes dedicated fp16 regressions for:
+  - builtin fp16 placeholder path
+  - C++ RTLGen fp16 `fp_mac` path (IEEE-half, lane-1)
 - Mixed golden schedule also checks VEC regression constraints (`vec_ops=3`, op order `add,mul,relu`, no unknown ops).
 
 ### Current coverage boundaries
 
-- Functional compute checking is implemented for current int8-style GEMM/VEC behavior used by the RTL stub.
-- Floating-point numeric validation (fp16/bf16/fp8 data-path correctness) is not covered yet.
+- Functional compute checking is implemented for int8/int16 GEMM, VEC ops, and fp16 GEMM policy paths.
+- fp16 coverage currently targets GEMM lane-1 IEEE-half + raw16 placeholder modes; bf16/fp8 and fp16 VEC numeric paths are not covered yet.
 - No large randomized descriptor fuzzing is included yet.
 
 ## Notes
@@ -142,7 +148,7 @@ You can tune vector op performance with these optional config keys:
 - `gemm_mac_lanes` (functional expectation lane count; defaults by type: `int8->8`, `int16/fp16->4`)
 - fp16 policy lock knobs (used when `gemm_mac_type=fp16`):
   - `gemm_fp16_semantics` (`raw16_placeholder` or `ieee_half`)
-  - `gemm_fp16_accumulation` (`int32` or `fp32`)
+  - `gemm_fp16_accumulation` (`int32`, `fp32`, or `fp16`)
   - `gemm_fp16_rounding` (`rne`)
   - `gemm_fp16_subnormals` (`preserve` or `flush`)
 
@@ -150,11 +156,17 @@ Preset configs for golden/perf comparison:
 - `npu/sim/perf/example_config_cpp_mac.json` for C++ MAC backend lane-1 path
 - `npu/sim/perf/example_config_int16.json` for builtin int16 GEMM path
 - `npu/sim/perf/example_config_fp16.json` for builtin fp16 GEMM bring-up path
+- `npu/sim/perf/example_config_fp16_cpp.json` for C++ fp16 GEMM backend path
 
 Current fp16 note:
-- Current supported fp16 bring-up policy is locked to:
+- Builtin fp16 path is locked to:
   - `gemm_fp16_semantics=raw16_placeholder`
   - `gemm_fp16_accumulation=int32`
   - `gemm_fp16_rounding=rne`
   - `gemm_fp16_subnormals=preserve`
-- `gemm_fp16_semantics=ieee_half` is planned but not implemented yet.
+- C++ fp16 GEMM path is locked to:
+  - `gemm_fp16_semantics=ieee_half`
+  - `gemm_fp16_accumulation=fp16`
+  - `gemm_fp16_rounding=rne`
+  - `gemm_fp16_subnormals=preserve`
+  - `gemm_mac_lanes=1`

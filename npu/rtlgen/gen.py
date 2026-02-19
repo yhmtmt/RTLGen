@@ -706,6 +706,71 @@ def generate_cpp_mac_module(gemm_cfg: dict, out_path: Path) -> tuple[str, str]:
     return module_name, (module_text + "\n\n" + cpa_text + "\n")
 
 
+def generate_cpp_fp16_mac_module(gemm_cfg: dict, out_path: Path) -> tuple[str, str]:
+    cpp_cfg = gemm_cfg.get("rtlgen_cpp", {})
+    if cpp_cfg is None:
+        cpp_cfg = {}
+    if not isinstance(cpp_cfg, dict):
+        die("compute.gemm.rtlgen_cpp must be an object when provided")
+
+    rtlgen_bin = str(cpp_cfg.get("binary_path", "build/rtlgen"))
+    rtlgen_bin_path = resolve_rtlgen_bin_path(rtlgen_bin)
+
+    module_name = str(cpp_cfg.get("module_name", "gemm_mac_fp16_ieee"))
+    total_width = int(cpp_cfg.get("total_width", 16))
+    mantissa_width = int(cpp_cfg.get("mantissa_width", 10))
+    if total_width != 16 or mantissa_width != 10:
+        die("compute.gemm.rtlgen_cpp fp16 backend currently requires total_width=16 and mantissa_width=10")
+
+    fp_cfg = {
+        "version": "1.1",
+        "operands": [
+            {
+                "name": "fp16",
+                "dimensions": 1,
+                "bit_width": 16,
+                "signed": True,
+                "kind": "fp",
+                "fp_format": {
+                    "total_width": total_width,
+                    "mantissa_width": mantissa_width,
+                },
+            }
+        ],
+        "operations": [
+            {
+                "type": "fp_mac",
+                "module_name": module_name,
+                "operand": "fp16",
+            }
+        ],
+    }
+
+    gen_dir = out_path / ".rtlgen_cpp_fp16_mac"
+    gen_dir.mkdir(parents=True, exist_ok=True)
+    cfg_path = (gen_dir / "fp16_mac_config.json").resolve()
+    cfg_path.write_text(json.dumps(fp_cfg, indent=2) + "\n", encoding="utf-8")
+
+    try:
+        subprocess.run(
+            [str(rtlgen_bin_path), str(cfg_path)],
+            cwd=str(gen_dir),
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        stderr_text = exc.stderr.strip() if exc.stderr else ""
+        stdout_text = exc.stdout.strip() if exc.stdout else ""
+        details = stderr_text or stdout_text or "no stdout/stderr"
+        die(f"C++ RTLGen fp16 MAC generation failed: {details}")
+
+    module_file = gen_dir / f"{module_name}.v"
+    if not module_file.exists():
+        die(f"C++ RTLGen fp16 MAC output missing: {module_file}")
+    return module_name, module_file.read_text(encoding="utf-8")
+
+
 def generate_cpp_vec_activation_modules(vec_cfg: dict, out_path: Path) -> tuple[str, dict[str, str]]:
     cpp_cfg = vec_cfg.get("rtlgen_cpp", {})
     if cpp_cfg is None:
@@ -931,8 +996,8 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         die("compute.gemm.accum_width must be in [16, 64]")
     if gemm_fp16_semantics not in ("raw16_placeholder", "ieee_half"):
         die("compute.gemm.fp16.semantics must be one of: raw16_placeholder, ieee_half")
-    if gemm_fp16_accumulation not in ("int32", "fp32"):
-        die("compute.gemm.fp16.accumulation must be one of: int32, fp32")
+    if gemm_fp16_accumulation not in ("int32", "fp32", "fp16"):
+        die("compute.gemm.fp16.accumulation must be one of: int32, fp32, fp16")
     if gemm_fp16_rounding not in ("rne",):
         die("compute.gemm.fp16.rounding must be: rne")
     if gemm_fp16_subnormals not in ("preserve", "flush"):
@@ -941,23 +1006,34 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         if gemm_mac_source not in ("builtin", "builtin_int16_dot"):
             die("compute.gemm.mac_source must be one of: builtin, builtin_int16_dot for mac_type=int16")
     elif gemm_mac_type == "fp16":
-        if gemm_mac_source not in ("builtin", "builtin_fp16_dot"):
-            die("compute.gemm.mac_source must be one of: builtin, builtin_fp16_dot for mac_type=fp16")
-        if gemm_fp16_semantics == "ieee_half":
-            die(
-                "compute.gemm.fp16.semantics=ieee_half is planned but not implemented yet; "
-                "use raw16_placeholder"
-            )
-        if gemm_fp16_accumulation != "int32":
-            die("compute.gemm.fp16.accumulation must be int32 when semantics=raw16_placeholder")
-        if gemm_fp16_rounding != "rne":
-            die("compute.gemm.fp16.rounding must be rne for current fp16 bring-up path")
-        if gemm_fp16_subnormals != "preserve":
-            die("compute.gemm.fp16.subnormals must be preserve for current fp16 bring-up path")
+        if gemm_mac_source not in ("builtin", "builtin_fp16_dot", "rtlgen_cpp"):
+            die("compute.gemm.mac_source must be one of: builtin, builtin_fp16_dot, rtlgen_cpp for mac_type=fp16")
+        if gemm_mac_source == "rtlgen_cpp":
+            if gemm_fp16_semantics != "ieee_half":
+                die("compute.gemm.fp16.semantics must be ieee_half when compute.gemm.mac_source=rtlgen_cpp for mac_type=fp16")
+            if gemm_fp16_accumulation != "fp16":
+                die("compute.gemm.fp16.accumulation must be fp16 for current fp16 rtlgen_cpp backend")
+            if gemm_fp16_rounding != "rne":
+                die("compute.gemm.fp16.rounding must be rne for current fp16 rtlgen_cpp backend")
+            if gemm_fp16_subnormals != "preserve":
+                die("compute.gemm.fp16.subnormals must be preserve for current fp16 rtlgen_cpp backend")
+            if gemm_mac_lanes != 1:
+                die("compute.gemm.lanes must be 1 when compute.gemm.mac_source=rtlgen_cpp and mac_type=fp16")
+            if gemm_accum_width != 16:
+                die("compute.gemm.accum_width must be 16 when compute.gemm.mac_source=rtlgen_cpp and mac_type=fp16")
+        else:
+            if gemm_fp16_semantics != "raw16_placeholder":
+                die("compute.gemm.fp16.semantics must be raw16_placeholder for builtin fp16 MAC backend")
+            if gemm_fp16_accumulation != "int32":
+                die("compute.gemm.fp16.accumulation must be int32 when semantics=raw16_placeholder")
+            if gemm_fp16_rounding != "rne":
+                die("compute.gemm.fp16.rounding must be rne for current fp16 bring-up path")
+            if gemm_fp16_subnormals != "preserve":
+                die("compute.gemm.fp16.subnormals must be preserve for current fp16 bring-up path")
     else:
         if gemm_mac_source not in ("builtin", "builtin_int8_dot", "rtlgen_cpp"):
             die("compute.gemm.mac_source must be one of: builtin_int8_dot, builtin, rtlgen_cpp")
-    if compute_enabled and gemm_mac_source == "rtlgen_cpp":
+    if compute_enabled and gemm_mac_source == "rtlgen_cpp" and gemm_mac_type == "int8":
         if gemm_mac_type != "int8":
             die("compute.gemm.mac_type must be int8 when compute.gemm.mac_source=rtlgen_cpp")
         if gemm_mac_lanes != 1:
@@ -983,8 +1059,14 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
     vec_b_hi = 128 + vec_data_width - 1
 
     use_cpp_mac = compute_enabled and (gemm_mac_source == "rtlgen_cpp")
+    cpp_mac_backend = ""
     if use_cpp_mac:
-        cpp_module_name, cpp_module_text = generate_cpp_mac_module(gemm_cfg, out_path)
+        if gemm_mac_type == "fp16":
+            cpp_module_name, cpp_module_text = generate_cpp_fp16_mac_module(gemm_cfg, out_path)
+            cpp_mac_backend = "fp16_ieee"
+        else:
+            cpp_module_name, cpp_module_text = generate_cpp_mac_module(gemm_cfg, out_path)
+            cpp_mac_backend = "int8_pp_feedback"
         compute_modules = cpp_module_text + "\n"
     else:
         cpp_module_name = ""
@@ -1024,7 +1106,7 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
   reg vec_pending;
   reg vec_done_pulse;"""
 
-    if use_cpp_mac:
+    if use_cpp_mac and cpp_mac_backend == "int8_pp_feedback":
         gemm_compute_instances = f"""
   wire signed [15:0] gemm_mac_next0;
   wire signed [15:0] gemm_mac_next1;
@@ -1048,6 +1130,38 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
       end
       if (gemm_slot_valid[1] && !gemm_slot_done[1]) begin
         gemm_slot_accum1 <= $signed(gemm_mac_next1);
+      end
+"""
+    elif use_cpp_mac and cpp_mac_backend == "fp16_ieee":
+        gemm_compute_instances = f"""
+  wire [15:0] gemm_mac_next0;
+  wire [15:0] gemm_mac_next1;
+
+  {cpp_module_name} u_gemm_mac0 (
+    .A(gemm_mac_a_vec0[15:0]),
+    .B(gemm_mac_b_vec0[15:0]),
+    .C(gemm_slot_accum0[15:0]),
+    .negateAB(1'b0),
+    .negateC(1'b0),
+    .RndMode(2'b00),
+    .R(gemm_mac_next0)
+  );
+
+  {cpp_module_name} u_gemm_mac1 (
+    .A(gemm_mac_a_vec1[15:0]),
+    .B(gemm_mac_b_vec1[15:0]),
+    .C(gemm_slot_accum1[15:0]),
+    .negateAB(1'b0),
+    .negateC(1'b0),
+    .RndMode(2'b00),
+    .R(gemm_mac_next1)
+  );
+"""
+        compute_accum_update = """      if (gemm_slot_valid[0] && !gemm_slot_done[0]) begin
+        gemm_slot_accum0 <= gemm_mac_next0;
+      end
+      if (gemm_slot_valid[1] && !gemm_slot_done[1]) begin
+        gemm_slot_accum1 <= gemm_mac_next1;
       end
 """
     else:

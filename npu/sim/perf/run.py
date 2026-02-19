@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import json
+import math
 import struct
 from pathlib import Path
 
@@ -87,6 +88,38 @@ def _sx16(lo, hi):
     return v - 65536 if (v & 0x8000) else v
 
 
+def _u16(v):
+    return int(v) & 0xFFFF
+
+
+def _s16_from_u16(v):
+    x = _u16(v)
+    return x - 65536 if (x & 0x8000) else x
+
+
+def _fp16_bits_to_float(bits):
+    return struct.unpack("<e", struct.pack("<H", _u16(bits)))[0]
+
+
+def _float_to_fp16_bits(value):
+    try:
+        return struct.unpack("<H", struct.pack("<e", float(value)))[0]
+    except OverflowError:
+        sign = math.copysign(1.0, float(value))
+        return 0xFC00 if sign < 0 else 0x7C00
+
+
+def _fp16_fma_bits(a_bits, b_bits, c_bits):
+    a = _fp16_bits_to_float(a_bits)
+    b = _fp16_bits_to_float(b_bits)
+    c = _fp16_bits_to_float(c_bits)
+    if hasattr(math, "fma"):
+        out = math.fma(a, b, c)
+    else:
+        out = (a * b) + c
+    return _float_to_fp16_bits(out)
+
+
 def _gemm_elem_bits(cfg):
     mac_type = str(cfg.get("gemm_mac_type", "int8")).lower()
     return 16 if mac_type in ("int16", "fp16") else 8
@@ -112,21 +145,30 @@ def _gemm_fp16_policy(cfg):
 
     if semantics not in ("raw16_placeholder", "ieee_half"):
         raise ValueError("gemm_fp16_semantics must be one of: raw16_placeholder, ieee_half")
-    if accumulation not in ("int32", "fp32"):
-        raise ValueError("gemm_fp16_accumulation must be one of: int32, fp32")
+    if accumulation not in ("int32", "fp32", "fp16"):
+        raise ValueError("gemm_fp16_accumulation must be one of: int32, fp32, fp16")
     if rounding not in ("rne",):
         raise ValueError("gemm_fp16_rounding must be: rne")
     if subnormals not in ("preserve", "flush"):
         raise ValueError("gemm_fp16_subnormals must be one of: preserve, flush")
 
-    if semantics == "ieee_half":
-        raise ValueError("gemm_fp16_semantics=ieee_half is planned but not implemented yet")
-    if accumulation != "int32":
-        raise ValueError("gemm_fp16_accumulation must be int32 when gemm_fp16_semantics=raw16_placeholder")
-    if rounding != "rne":
-        raise ValueError("gemm_fp16_rounding must be rne for current fp16 bring-up path")
-    if subnormals != "preserve":
-        raise ValueError("gemm_fp16_subnormals must be preserve for current fp16 bring-up path")
+    lanes = _gemm_lanes(cfg)
+    if semantics == "raw16_placeholder":
+        if accumulation != "int32":
+            raise ValueError("gemm_fp16_accumulation must be int32 when gemm_fp16_semantics=raw16_placeholder")
+        if rounding != "rne":
+            raise ValueError("gemm_fp16_rounding must be rne for current fp16 bring-up path")
+        if subnormals != "preserve":
+            raise ValueError("gemm_fp16_subnormals must be preserve for current fp16 bring-up path")
+    else:
+        if accumulation != "fp16":
+            raise ValueError("gemm_fp16_accumulation must be fp16 when gemm_fp16_semantics=ieee_half")
+        if rounding != "rne":
+            raise ValueError("gemm_fp16_rounding must be rne for current fp16 ieee_half backend")
+        if subnormals != "preserve":
+            raise ValueError("gemm_fp16_subnormals must be preserve for current fp16 ieee_half backend")
+        if lanes != 1:
+            raise ValueError("gemm_mac_lanes must be 1 when gemm_fp16_semantics=ieee_half")
 
     return {
         "semantics": semantics,
@@ -224,13 +266,33 @@ def _gemm_expected_fields(raw, size_units, tag, cfg):
         cycles = ((int(m) * int(n) * int(k)) >> 10) + 1
     if op_uid is not None and ((int(op_uid) >> 63) & 0x1):
         cycles += 8
-    expected_accum = int(dot) * int(cycles)
-    out = {
-        "expected_dot": int(dot),
-        "expected_cycles": int(cycles),
-        "expected_accum": int(expected_accum),
-        "lanes": lanes,
-    }
+
+    if fp16_policy is not None and fp16_policy["semantics"] == "ieee_half":
+        if lanes != 1:
+            raise ValueError("gemm_mac_lanes must be 1 for fp16 ieee_half expected-result decode")
+        a_bits = ((int(raw[9]) & 0xFF) << 8) | (int(raw[8]) & 0xFF)
+        b_bits = ((int(raw[17]) & 0xFF) << 8) | (int(raw[16]) & 0xFF)
+        dot_bits = _fp16_fma_bits(a_bits, b_bits, 0)
+        accum_bits = 0
+        for _ in range(int(cycles)):
+            accum_bits = _fp16_fma_bits(a_bits, b_bits, accum_bits)
+        out = {
+            "expected_dot": _s16_from_u16(dot_bits),
+            "expected_dot_fp16_hex": f"0x{_u16(dot_bits):04x}",
+            "expected_cycles": int(cycles),
+            "expected_accum": _s16_from_u16(accum_bits),
+            "expected_accum_fp16_hex": f"0x{_u16(accum_bits):04x}",
+            "lanes": lanes,
+        }
+    else:
+        expected_accum = int(dot) * int(cycles)
+        out = {
+            "expected_dot": int(dot),
+            "expected_cycles": int(cycles),
+            "expected_accum": int(expected_accum),
+            "lanes": lanes,
+        }
+
     if fp16_policy is not None:
         out.update(
             {

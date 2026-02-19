@@ -11,6 +11,7 @@ This plan defines two simulation schemes:
 - Process note: re-run RTL simulation whenever `npu/rtlgen/gen.py` changes.
 - Mapper golden schedule validates cleanly (`npu/mapper/examples/golden_schedule.yml`).
 - Golden mapping sim flow: RTL (Makefile `BIN=`) and perf (`npu/sim/perf/run.py --bin`).
+- FP16-2 in progress: C++ `fp_mac` GEMM backend wiring is implemented with lane-1 IEEE-half policy and RTL/perf comparison hooks.
 
 ## A) RTL Functional Validation (First Priority)
 
@@ -111,8 +112,9 @@ This plan defines two simulation schemes:
 ### Current baseline
 - `compute.gemm.mac_type=fp16` exists, but current RTL treats lanes as raw
   signed-16 values (placeholder arithmetic).
-- C++ RTLGen can already emit FloPoCo-backed FP units (`fp_mul`, `fp_add`,
-  `fp_mac`) but these are not yet integrated as the default NPU fp16 backend.
+- C++ RTLGen can emit FloPoCo-backed FP units (`fp_mul`, `fp_add`, `fp_mac`).
+  GEMM `fp_mac` is now integrated as an optional lane-1 backend (`mac_source=rtlgen_cpp`);
+  VEC FP arithmetic/activation routing remains pending.
 
 ### Numeric policy to lock first
 1) Data format:
