@@ -152,6 +152,7 @@ module tb_npu_shell;
   integer vec_desc_offsets [0:127];
   reg [63:0] vec_desc_expected [0:127];
   reg [3:0] vec_desc_op [0:127];
+  reg [3:0] vec_desc_dtype [0:127];
   reg [31:0] gemm_log_tag;
   integer gemm_log_offset;
   reg [63:0] gemm_log_uid;
@@ -547,49 +548,52 @@ module tb_npu_shell;
         gemm_desc_count = gemm_desc_count + 1;
       end else if ((scan_opcode == 8'h11) && (vec_desc_count < 128)) begin
         vec_op_sel = bin_data[scan_off + 1] & 8'hf;
+        vec_desc_dtype[vec_desc_count] = (bin_data[scan_off + 1] >> 4) & 4'hf;
         vec_expected_vec = 64'h0;
-        for (gemm_lane = 0; gemm_lane < vec_lanes; gemm_lane = gemm_lane + 1) begin
-          if (vec_op_sel == 1) begin
-            vec_tmp = sx8(bin_data[scan_off + 8 + gemm_lane]) + sx8(bin_data[scan_off + 16 + gemm_lane]);
-          end else if (vec_op_sel == 2) begin
-            vec_tmp = sx8(bin_data[scan_off + 8 + gemm_lane]) * sx8(bin_data[scan_off + 16 + gemm_lane]);
-          end else if (vec_op_sel == 3) begin
-            vec_tmp = sx8(bin_data[scan_off + 8 + gemm_lane]);
-            if (vec_tmp < 0)
-              vec_tmp = 0;
-            else
-              vec_tmp = vec_tmp >>> 1;
-          end else if (vec_op_sel == 4) begin
-            vec_tmp = sx8(bin_data[scan_off + 8 + gemm_lane]);
-            if (vec_tmp < 0)
-              vec_tmp = 0;
-            else if (vec_tmp > 31)
-              vec_tmp = 127;
-            else
-              vec_tmp = vec_tmp << 2;
-          end else if (vec_op_sel == 5) begin
-            vec_tmp = sx8(bin_data[scan_off + 8 + gemm_lane]) >>> 1;
-          end else if (vec_op_sel == 6) begin
-            vec_tmp = (sx8(bin_data[scan_off + 8 + gemm_lane]) > 0) ? 1 : 0;
-          end else if (vec_op_sel == 7) begin
-            vec_tmp = (sx8(bin_data[scan_off + 8 + gemm_lane]) > 0) ? 1 : 0;
-          end else if (vec_op_sel == 8) begin
-            vec_softmax_tmp = sx8(bin_data[scan_off + 8 + gemm_lane]);
-            if (vec_softmax_tmp < 0)
-              vec_softmax_tmp = 0;
-            else if (vec_softmax_tmp > 31)
-              vec_softmax_tmp = 127;
-            else
-              vec_softmax_tmp = vec_softmax_tmp << 2;
-            vec_tmp = (vec_softmax_tmp * (127 - vec_softmax_tmp)) >>> 7;
-          end else if (vec_op_sel == 9) begin
-            vec_tmp = 1;
-          end else begin
-            vec_tmp = sx8(bin_data[scan_off + 8 + gemm_lane]);
-            if (vec_tmp < 0)
-              vec_tmp = 0;
+        if (vec_desc_dtype[vec_desc_count] == 4'h0) begin
+          for (gemm_lane = 0; gemm_lane < vec_lanes; gemm_lane = gemm_lane + 1) begin
+            if (vec_op_sel == 1) begin
+              vec_tmp = sx8(bin_data[scan_off + 8 + gemm_lane]) + sx8(bin_data[scan_off + 16 + gemm_lane]);
+            end else if (vec_op_sel == 2) begin
+              vec_tmp = sx8(bin_data[scan_off + 8 + gemm_lane]) * sx8(bin_data[scan_off + 16 + gemm_lane]);
+            end else if (vec_op_sel == 3) begin
+              vec_tmp = sx8(bin_data[scan_off + 8 + gemm_lane]);
+              if (vec_tmp < 0)
+                vec_tmp = 0;
+              else
+                vec_tmp = vec_tmp >>> 1;
+            end else if (vec_op_sel == 4) begin
+              vec_tmp = sx8(bin_data[scan_off + 8 + gemm_lane]);
+              if (vec_tmp < 0)
+                vec_tmp = 0;
+              else if (vec_tmp > 31)
+                vec_tmp = 127;
+              else
+                vec_tmp = vec_tmp << 2;
+            end else if (vec_op_sel == 5) begin
+              vec_tmp = sx8(bin_data[scan_off + 8 + gemm_lane]) >>> 1;
+            end else if (vec_op_sel == 6) begin
+              vec_tmp = (sx8(bin_data[scan_off + 8 + gemm_lane]) > 0) ? 1 : 0;
+            end else if (vec_op_sel == 7) begin
+              vec_tmp = (sx8(bin_data[scan_off + 8 + gemm_lane]) > 0) ? 1 : 0;
+            end else if (vec_op_sel == 8) begin
+              vec_softmax_tmp = sx8(bin_data[scan_off + 8 + gemm_lane]);
+              if (vec_softmax_tmp < 0)
+                vec_softmax_tmp = 0;
+              else if (vec_softmax_tmp > 31)
+                vec_softmax_tmp = 127;
+              else
+                vec_softmax_tmp = vec_softmax_tmp << 2;
+              vec_tmp = (vec_softmax_tmp * (127 - vec_softmax_tmp)) >>> 7;
+            end else if (vec_op_sel == 9) begin
+              vec_tmp = 1;
+            end else begin
+              vec_tmp = sx8(bin_data[scan_off + 8 + gemm_lane]);
+              if (vec_tmp < 0)
+                vec_tmp = 0;
+            end
+            vec_expected_vec[(gemm_lane * 8) +: 8] = vec_tmp & 8'hff;
           end
-          vec_expected_vec[(gemm_lane * 8) +: 8] = vec_tmp & 8'hff;
         end
         vec_desc_offsets[vec_desc_count] = scan_off;
         vec_desc_expected[vec_desc_count] = vec_expected_vec;
@@ -876,13 +880,15 @@ module tb_npu_shell;
           $display("ERROR: unexpected VEC completion vec_count=%0d vec_desc_count=%0d", vec_count, vec_desc_count);
           $finish(1);
         end
-        for (gemm_lane = 0; gemm_lane < vec_lanes; gemm_lane = gemm_lane + 1) begin
-          if (dut.vec_last_result[(gemm_lane*8) +: 8] !== vec_desc_expected[vec_count][(gemm_lane*8) +: 8]) begin
-            $display("ERROR: VEC mismatch index=%0d lane=%0d got=0x%02h exp=0x%02h",
-                     vec_count, gemm_lane,
-                     dut.vec_last_result[(gemm_lane*8) +: 8],
-                     vec_desc_expected[vec_count][(gemm_lane*8) +: 8]);
-            $finish(1);
+        if (vec_desc_dtype[vec_count] == 4'h0) begin
+          for (gemm_lane = 0; gemm_lane < vec_lanes; gemm_lane = gemm_lane + 1) begin
+            if (dut.vec_last_result[(gemm_lane*8) +: 8] !== vec_desc_expected[vec_count][(gemm_lane*8) +: 8]) begin
+              $display("ERROR: VEC mismatch index=%0d lane=%0d got=0x%02h exp=0x%02h",
+                       vec_count, gemm_lane,
+                       dut.vec_last_result[(gemm_lane*8) +: 8],
+                       vec_desc_expected[vec_count][(gemm_lane*8) +: 8]);
+              $finish(1);
+            end
           end
         end
         vec_count = vec_count + 1;

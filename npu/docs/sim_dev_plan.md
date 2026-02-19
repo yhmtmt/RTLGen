@@ -12,6 +12,7 @@ This plan defines two simulation schemes:
 - Mapper golden schedule validates cleanly (`npu/mapper/examples/golden_schedule.yml`).
 - Golden mapping sim flow: RTL (Makefile `BIN=`) and perf (`npu/sim/perf/run.py --bin`).
 - FP16-2 in progress: C++ `fp_mac` GEMM backend wiring is implemented with lane-1 IEEE-half policy and RTL/perf comparison hooks.
+- FP16-3 started: fp16 VEC (`add/mul/relu`) path is wired with C++ IEEE `fp_mac` backend and perf/RTL comparison hooks.
 
 ## A) RTL Functional Validation (First Priority)
 

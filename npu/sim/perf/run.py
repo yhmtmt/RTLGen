@@ -195,8 +195,69 @@ def _vec_softmax_int8(x):
     return _u8(x << 2)
 
 
-def _vec_expected_result(raw, flags, cfg):
+def _fp16_add_bits(a_bits, b_bits):
+    return _float_to_fp16_bits(_fp16_bits_to_float(a_bits) + _fp16_bits_to_float(b_bits))
+
+
+def _fp16_mul_bits(a_bits, b_bits):
+    return _float_to_fp16_bits(_fp16_bits_to_float(a_bits) * _fp16_bits_to_float(b_bits))
+
+
+def _fp16_relu_bits(x_bits):
+    x = _fp16_bits_to_float(x_bits)
+    if math.isnan(x):
+        return _u16(x_bits)
+    if x <= 0.0:
+        return 0
+    return _u16(x_bits)
+
+
+def _vec_expected_result(raw, flags, cfg, dtype_code=0x0):
     op_code = int(flags) & 0xF
+    dtype_code = int(dtype_code) & 0xF
+
+    # fp16 vector path packs 4x16b lanes in descriptor bytes [8:15] and [16:23].
+    # `lanes` in output remains byte-lane count so compare_compute_results masking stays unchanged.
+    if dtype_code == 0x1:
+        byte_lanes = _vec_lanes(cfg)
+        if byte_lanes % 2 != 0:
+            raise ValueError("vec_lanes must be even when VEC dtype=fp16")
+        elem_lanes = byte_lanes // 2
+        if elem_lanes > 4:
+            elem_lanes = 4
+        if elem_lanes < 1:
+            elem_lanes = 1
+        result = []
+        for lane in range(elem_lanes):
+            a_bits = ((int(raw[9 + (lane * 2)]) & 0xFF) << 8) | (int(raw[8 + (lane * 2)]) & 0xFF)
+            b_bits = ((int(raw[17 + (lane * 2)]) & 0xFF) << 8) | (int(raw[16 + (lane * 2)]) & 0xFF)
+            x = _fp16_bits_to_float(a_bits)
+            if op_code == 0x1:  # add
+                out_bits = _fp16_add_bits(a_bits, b_bits)
+            elif op_code == 0x2:  # mul
+                out_bits = _fp16_mul_bits(a_bits, b_bits)
+            elif op_code == 0x3:  # gelu (coarse placeholder)
+                out_bits = _float_to_fp16_bits(0.0 if x < 0.0 else (x * 0.5))
+            elif op_code == 0x6:  # drelu
+                out_bits = _float_to_fp16_bits(1.0 if x > 0.0 else 0.0)
+            elif op_code == 0x7:  # dgelu
+                out_bits = _float_to_fp16_bits(1.0 if x > 0.0 else 0.0)
+            elif op_code == 0x9:  # dlayernorm
+                out_bits = _float_to_fp16_bits(1.0)
+            else:  # relu/fallback for currently unsupported fp16 vec kernels
+                out_bits = _fp16_relu_bits(a_bits)
+            result.append(int(out_bits) & 0xFF)
+            result.append((int(out_bits) >> 8) & 0xFF)
+
+        packed = 0
+        for lane, val in enumerate(result):
+            packed |= (int(val) & 0xFF) << (lane * 8)
+        return {
+            "result_bytes": result,
+            "result_hex": f"0x{packed:0{len(result) * 2}x}",
+            "lanes": len(result),
+        }
+
     lanes = _vec_lanes(cfg)
     result = []
     for lane in range(lanes):
@@ -452,7 +513,7 @@ def desc_to_event(desc, cfg):
         op_code = desc["flags"] & 0xF
         op_name = VEC_OP_NAMES.get(op_code, "unknown")
         dtype_code, dtype_name, dtype_bytes = _decode_dtype(desc["flags"], cfg, "vec")
-        vec_expected = _vec_expected_result(raw, desc["flags"], cfg)
+        vec_expected = _vec_expected_result(raw, desc["flags"], cfg, dtype_code=dtype_code)
         event.update({
             "name": "VEC_OP",
             "op": op_name,

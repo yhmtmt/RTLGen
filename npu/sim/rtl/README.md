@@ -34,6 +34,7 @@ The tests validate descriptor execution behavior, MMIO/IRQ flow, and AXI memory 
   - Completion timing log with stable identifiers (`GEMM_TIMING ... offset=... cycles=... accum=...`)
 - VEC behavior:
   - Per-descriptor completion accounting and per-lane expected value checks
+  - In-testbench per-lane value checks currently apply to `dtype=int8`; non-int8 vectors are validated through RTL/perf cross-check (`compare_compute_results.py`)
   - Default vector tests (`+vec_test=1`) cover `relu`, `add`, `mul` and optional `gelu` mode (`+vec_gelu_test=1`)
   - Extended vector tests (`+vec_test=1 +vec_ext_test=1`) add `softmax`, `layernorm`, `drelu`, `dgelu`, `dsoftmax`, `dlayernorm`
   - Completion log includes final vector output (`VEC_DONE ... result=0x...`)
@@ -58,6 +59,7 @@ The tests validate descriptor execution behavior, MMIO/IRQ flow, and AXI memory 
   - builtin int16 backend (`minimal_int16.json`)
   - builtin fp16 placeholder backend (`minimal_fp16.json`)
   - C++ fp16 IEEE-half backend (`minimal_fp16_cpp.json`) when FloPoCo is available
+  - C++ fp16 VEC backend (`minimal_vec_fp16_cpp.json`) when FloPoCo is available
 - These RTL runs are consumed by perf comparison scripts for:
   - GEMM timing consistency (`compare_gemm_timing.py`)
   - GEMM/VEC computation consistency (`compare_compute_results.py`)

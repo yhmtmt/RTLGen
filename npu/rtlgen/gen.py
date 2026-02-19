@@ -96,6 +96,8 @@ module {top_name} (
   localparam [3:0] VEC_OP_DGELU     = 4'h7;
   localparam [3:0] VEC_OP_DSOFTMAX  = 4'h8;
   localparam [3:0] VEC_OP_DLAYERNORM= 4'h9;
+  localparam [3:0] VEC_DTYPE_INT8   = 4'h0;
+  localparam [3:0] VEC_DTYPE_FP16   = 4'h1;
   localparam       VEC_EN_ADD       = {vec_en_add};
   localparam       VEC_EN_MUL       = {vec_en_mul};
   localparam       VEC_EN_RELU      = {vec_en_relu};
@@ -106,6 +108,7 @@ module {top_name} (
   localparam       VEC_EN_DGELU     = {vec_en_dgelu};
   localparam       VEC_EN_DSOFTMAX  = {vec_en_dsoftmax};
   localparam       VEC_EN_DLAYERNORM= {vec_en_dlayernorm};
+  localparam       VEC_FP16_ENABLED = {vec_fp16_enabled};
   localparam integer GEMM_MAC_LANES = {gemm_mac_lanes};
   localparam integer GEMM_ELEM_BITS = {gemm_elem_bits};
   localparam integer GEMM_FP16_RAW16_PLACEHOLDER = {gemm_fp16_raw16_placeholder};
@@ -771,6 +774,71 @@ def generate_cpp_fp16_mac_module(gemm_cfg: dict, out_path: Path) -> tuple[str, s
     return module_name, module_file.read_text(encoding="utf-8")
 
 
+def generate_cpp_vec_fp16_mac_module(vec_cfg: dict, out_path: Path) -> tuple[str, str]:
+    cpp_cfg = vec_cfg.get("rtlgen_cpp", {})
+    if cpp_cfg is None:
+        cpp_cfg = {}
+    if not isinstance(cpp_cfg, dict):
+        die("compute.vec.rtlgen_cpp must be an object when provided")
+
+    rtlgen_bin = str(cpp_cfg.get("binary_path", "build/rtlgen"))
+    rtlgen_bin_path = resolve_rtlgen_bin_path(rtlgen_bin)
+
+    module_name = str(cpp_cfg.get("fp16_mac_module_name", "vec_fp16_mac_ieee"))
+    total_width = int(cpp_cfg.get("fp16_total_width", 16))
+    mantissa_width = int(cpp_cfg.get("fp16_mantissa_width", 10))
+    if total_width != 16 or mantissa_width != 10:
+        die("compute.vec.rtlgen_cpp fp16 backend currently requires fp16_total_width=16 and fp16_mantissa_width=10")
+
+    fp_cfg = {
+        "version": "1.1",
+        "operands": [
+            {
+                "name": "fp16",
+                "dimensions": 1,
+                "bit_width": 16,
+                "signed": True,
+                "kind": "fp",
+                "fp_format": {
+                    "total_width": total_width,
+                    "mantissa_width": mantissa_width,
+                },
+            }
+        ],
+        "operations": [
+            {
+                "type": "fp_mac",
+                "module_name": module_name,
+                "operand": "fp16",
+            }
+        ],
+    }
+
+    gen_dir = out_path / ".rtlgen_cpp_vec_fp16_mac"
+    gen_dir.mkdir(parents=True, exist_ok=True)
+    cfg_path = (gen_dir / "fp16_vec_mac_config.json").resolve()
+    cfg_path.write_text(json.dumps(fp_cfg, indent=2) + "\n", encoding="utf-8")
+
+    try:
+        subprocess.run(
+            [str(rtlgen_bin_path), str(cfg_path)],
+            cwd=str(gen_dir),
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        stderr_text = exc.stderr.strip() if exc.stderr else ""
+        stdout_text = exc.stdout.strip() if exc.stdout else ""
+        details = stderr_text or stdout_text or "no stdout/stderr"
+        die(f"C++ RTLGen vec fp16 MAC generation failed: {details}")
+
+    module_file = gen_dir / f"{module_name}.v"
+    if not module_file.exists():
+        die(f"C++ RTLGen vec fp16 MAC output missing: {module_file}")
+    return module_name, module_file.read_text(encoding="utf-8")
+
+
 def generate_cpp_vec_activation_modules(vec_cfg: dict, out_path: Path) -> tuple[str, dict[str, str]]:
     cpp_cfg = vec_cfg.get("rtlgen_cpp", {})
     if cpp_cfg is None:
@@ -946,6 +1014,7 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
     gemm_fp16_rounding = str(gemm_fp16_cfg.get("rounding", "rne")).lower()
     gemm_fp16_subnormals = str(gemm_fp16_cfg.get("subnormals", "preserve")).lower()
     vec_activation_source = str(vec_cfg.get("activation_source", "builtin")).lower()
+    vec_fp16_arith_source = str(vec_cfg.get("fp16_arith_source", "builtin")).lower()
     vec_lanes = int(vec_cfg.get("lanes", 8))
     vec_ops_raw = vec_cfg.get("ops", [])
     if vec_ops_raw is None:
@@ -1042,8 +1111,15 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
             die("compute.gemm.accum_width must be 16 when compute.gemm.mac_source=rtlgen_cpp")
     if vec_activation_source not in ("builtin", "rtlgen_cpp"):
         die("compute.vec.activation_source must be one of: builtin, rtlgen_cpp")
+    if vec_fp16_arith_source not in ("builtin", "rtlgen_cpp"):
+        die("compute.vec.fp16_arith_source must be one of: builtin, rtlgen_cpp")
     if vec_lanes < 1 or vec_lanes > 8:
         die("compute.vec.lanes must be in [1, 8]")
+    if vec_fp16_arith_source == "rtlgen_cpp":
+        if (vec_lanes % 2) != 0:
+            die("compute.vec.lanes must be even when compute.vec.fp16_arith_source=rtlgen_cpp")
+        if vec_lanes < 2:
+            die("compute.vec.lanes must be >= 2 when compute.vec.fp16_arith_source=rtlgen_cpp")
 
     gemm_elem_bits = 16 if gemm_mac_type in ("int16", "fp16") else 8
     gemm_fp16_raw16_placeholder = 1 if (gemm_mac_type == "fp16" and gemm_fp16_semantics == "raw16_placeholder") else 0
@@ -1057,6 +1133,7 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
     vec_data_width_minus1 = vec_data_width - 1
     vec_a_hi = 64 + vec_data_width - 1
     vec_b_hi = 128 + vec_data_width - 1
+    vec_fp16_elem_lanes = max(1, vec_lanes // 2)
 
     use_cpp_mac = compute_enabled and (gemm_mac_source == "rtlgen_cpp")
     cpp_mac_backend = ""
@@ -1071,6 +1148,16 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
     else:
         cpp_module_name = ""
         compute_modules = GEMM_MAC_INT8 + "\n\n" + GEMM_MAC_INT16 + "\n\n" + GEMM_MAC_FP16 + "\n\n"
+
+    use_vec_fp16_cpp = compute_enabled and (vec_fp16_arith_source == "rtlgen_cpp")
+    vec_fp16_enabled = 1 if use_vec_fp16_cpp else 0
+    vec_fp16_mac_module_name = ""
+    if use_vec_fp16_cpp:
+        if use_cpp_mac and cpp_mac_backend == "fp16_ieee":
+            vec_fp16_mac_module_name = cpp_module_name
+        else:
+            vec_fp16_mac_module_name, vec_fp16_mac_text = generate_cpp_vec_fp16_mac_module(vec_cfg, out_path)
+            compute_modules = compute_modules + vec_fp16_mac_text + "\n"
 
     vec_cpp_modules: dict[str, str] = {}
     if compute_enabled and vec_activation_source == "rtlgen_cpp":
@@ -1103,6 +1190,7 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
   reg [{vec_data_width_minus1}:0] vec_in1;
   reg [{vec_data_width_minus1}:0] vec_last_result;
   reg [3:0] vec_op_sel;
+  reg [3:0] vec_dtype_sel;
   reg vec_pending;
   reg vec_done_pulse;"""
 
@@ -1263,6 +1351,53 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         """      assign vec_dlayernorm_res[(gi*8) +: 8] = 8'h01;""",
     )
 
+    if use_vec_fp16_cpp:
+        vec_fp16_compute_instances = f"""
+  wire [{vec_data_width_minus1}:0] vec_add_res_fp16;
+  wire [{vec_data_width_minus1}:0] vec_mul_res_fp16;
+  wire [{vec_data_width_minus1}:0] vec_relu_res_fp16;
+
+  genvar gj;
+  generate
+    for (gj = 0; gj < {vec_fp16_elem_lanes}; gj = gj + 1) begin : g_vec_fp16_lane
+      wire [15:0] vec_fp16_a = vec_in0[(gj*16) +: 16];
+      wire [15:0] vec_fp16_b = vec_in1[(gj*16) +: 16];
+      wire [15:0] vec_fp16_relu_in = vec_in0[(gj*16) +: 16];
+      wire vec_fp16_relu_nan = (&vec_fp16_relu_in[14:10]) && (|vec_fp16_relu_in[9:0]);
+
+      {vec_fp16_mac_module_name} u_vec_fp16_add (
+        .A(16'h3c00),
+        .B(vec_fp16_a),
+        .C(vec_fp16_b),
+        .negateAB(1'b0),
+        .negateC(1'b0),
+        .RndMode(2'b00),
+        .R(vec_add_res_fp16[(gj*16) +: 16])
+      );
+
+      {vec_fp16_mac_module_name} u_vec_fp16_mul (
+        .A(vec_fp16_a),
+        .B(vec_fp16_b),
+        .C(16'h0000),
+        .negateAB(1'b0),
+        .negateC(1'b0),
+        .RndMode(2'b00),
+        .R(vec_mul_res_fp16[(gj*16) +: 16])
+      );
+
+      assign vec_relu_res_fp16[(gj*16) +: 16] =
+          vec_fp16_relu_nan ? vec_fp16_relu_in :
+          (vec_fp16_relu_in[15] ? 16'h0000 : vec_fp16_relu_in);
+    end
+  endgenerate
+"""
+    else:
+        vec_fp16_compute_instances = f"""
+  wire [{vec_data_width_minus1}:0] vec_add_res_fp16 = {{{vec_data_width}{{1'b0}}}};
+  wire [{vec_data_width_minus1}:0] vec_mul_res_fp16 = {{{vec_data_width}{{1'b0}}}};
+  wire [{vec_data_width_minus1}:0] vec_relu_res_fp16 = {{{vec_data_width}{{1'b0}}}};
+"""
+
     vec_compute_instances = f"""
   wire [{vec_data_width_minus1}:0] vec_add_res;
   wire [{vec_data_width_minus1}:0] vec_mul_res;
@@ -1274,7 +1409,10 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
   wire [{vec_data_width_minus1}:0] vec_dgelu_res;
   wire [{vec_data_width_minus1}:0] vec_dsoftmax_res;
   wire [{vec_data_width_minus1}:0] vec_dlayernorm_res;
+  wire [{vec_data_width_minus1}:0] vec_result_next_int8;
+  wire [{vec_data_width_minus1}:0] vec_result_next_fp16;
   wire [{vec_data_width_minus1}:0] vec_result_next;
+  wire vec_dtype_is_fp16;
 
   genvar gi;
   generate
@@ -1292,16 +1430,25 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
     end
   endgenerate
 
-  assign vec_result_next = (vec_op_sel == VEC_OP_ADD) ? vec_add_res :
-                           (vec_op_sel == VEC_OP_MUL) ? vec_mul_res :
-                           (vec_op_sel == VEC_OP_GELU) ? vec_gelu_res :
-                           (vec_op_sel == VEC_OP_SOFTMAX) ? vec_softmax_res :
-                           (vec_op_sel == VEC_OP_LAYERNORM) ? vec_layernorm_res :
-                           (vec_op_sel == VEC_OP_DRELU) ? vec_drelu_res :
-                           (vec_op_sel == VEC_OP_DGELU) ? vec_dgelu_res :
-                           (vec_op_sel == VEC_OP_DSOFTMAX) ? vec_dsoftmax_res :
-                           (vec_op_sel == VEC_OP_DLAYERNORM) ? vec_dlayernorm_res :
-                           vec_relu_res;
+{vec_fp16_compute_instances}
+  assign vec_dtype_is_fp16 = (vec_dtype_sel == VEC_DTYPE_FP16);
+
+  assign vec_result_next_int8 = (vec_op_sel == VEC_OP_ADD) ? vec_add_res :
+                                (vec_op_sel == VEC_OP_MUL) ? vec_mul_res :
+                                (vec_op_sel == VEC_OP_GELU) ? vec_gelu_res :
+                                (vec_op_sel == VEC_OP_SOFTMAX) ? vec_softmax_res :
+                                (vec_op_sel == VEC_OP_LAYERNORM) ? vec_layernorm_res :
+                                (vec_op_sel == VEC_OP_DRELU) ? vec_drelu_res :
+                                (vec_op_sel == VEC_OP_DGELU) ? vec_dgelu_res :
+                                (vec_op_sel == VEC_OP_DSOFTMAX) ? vec_dsoftmax_res :
+                                (vec_op_sel == VEC_OP_DLAYERNORM) ? vec_dlayernorm_res :
+                                vec_relu_res;
+
+  assign vec_result_next_fp16 = (vec_op_sel == VEC_OP_ADD) ? vec_add_res_fp16 :
+                                (vec_op_sel == VEC_OP_MUL) ? vec_mul_res_fp16 :
+                                vec_relu_res_fp16;
+
+  assign vec_result_next = vec_dtype_is_fp16 ? vec_result_next_fp16 : vec_result_next_int8;
 """
     compute_instances = gemm_compute_instances + vec_compute_instances
 
@@ -1324,6 +1471,7 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
       vec_in1 <= 0;
       vec_last_result <= 0;
       vec_op_sel <= 0;
+      vec_dtype_sel <= 0;
       vec_pending <= 0;
       vec_done_pulse <= 0;"""
 
@@ -1529,7 +1677,14 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
                 vec_in0 <= cq_mem_rdata[{vec_a_hi}:64];
                 vec_in1 <= cq_mem_rdata[{vec_b_hi}:128];
                 vec_op_sel <= cq_mem_rdata[11:8];
-                if ((cq_mem_rdata[11:8] == VEC_OP_ADD       && !VEC_EN_ADD)       ||
+                vec_dtype_sel <= cq_mem_rdata[15:12];
+                if (((cq_mem_rdata[15:12] == VEC_DTYPE_FP16) && !VEC_FP16_ENABLED) ||
+                    ((cq_mem_rdata[15:12] != VEC_DTYPE_INT8) && (cq_mem_rdata[15:12] != VEC_DTYPE_FP16)) ||
+                    ((cq_mem_rdata[15:12] == VEC_DTYPE_FP16) &&
+                     (cq_mem_rdata[11:8] != VEC_OP_RELU) &&
+                     (cq_mem_rdata[11:8] != VEC_OP_ADD) &&
+                     (cq_mem_rdata[11:8] != VEC_OP_MUL)) ||
+                    (cq_mem_rdata[11:8] == VEC_OP_ADD       && !VEC_EN_ADD)       ||
                     (cq_mem_rdata[11:8] == VEC_OP_MUL       && !VEC_EN_MUL)       ||
                     (cq_mem_rdata[11:8] == VEC_OP_RELU      && !VEC_EN_RELU)      ||
                     (cq_mem_rdata[11:8] == VEC_OP_GELU      && !VEC_EN_GELU)      ||
@@ -1643,7 +1798,14 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
                 vec_in0 <= cq_word0[{vec_a_hi}:64];
                 vec_in1 <= cq_word0[{vec_b_hi}:128];
                 vec_op_sel <= cq_word0[11:8];
-                if ((cq_word0[11:8] == VEC_OP_ADD       && !VEC_EN_ADD)       ||
+                vec_dtype_sel <= cq_word0[15:12];
+                if (((cq_word0[15:12] == VEC_DTYPE_FP16) && !VEC_FP16_ENABLED) ||
+                    ((cq_word0[15:12] != VEC_DTYPE_INT8) && (cq_word0[15:12] != VEC_DTYPE_FP16)) ||
+                    ((cq_word0[15:12] == VEC_DTYPE_FP16) &&
+                     (cq_word0[11:8] != VEC_OP_RELU) &&
+                     (cq_word0[11:8] != VEC_OP_ADD) &&
+                     (cq_word0[11:8] != VEC_OP_MUL)) ||
+                    (cq_word0[11:8] == VEC_OP_ADD       && !VEC_EN_ADD)       ||
                     (cq_word0[11:8] == VEC_OP_MUL       && !VEC_EN_MUL)       ||
                     (cq_word0[11:8] == VEC_OP_RELU      && !VEC_EN_RELU)      ||
                     (cq_word0[11:8] == VEC_OP_GELU      && !VEC_EN_GELU)      ||
@@ -1826,6 +1988,7 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         vec_en_dgelu=vec_en_dgelu,
         vec_en_dsoftmax=vec_en_dsoftmax,
         vec_en_dlayernorm=vec_en_dlayernorm,
+        vec_fp16_enabled=vec_fp16_enabled,
         gemm_mac_lanes=gemm_mac_lanes,
         gemm_elem_bits=gemm_elem_bits,
         gemm_fp16_raw16_placeholder=gemm_fp16_raw16_placeholder,
