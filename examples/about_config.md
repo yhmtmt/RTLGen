@@ -210,11 +210,12 @@ Floating-point operands use `kind: "fp"` with an accompanying `fp_format` descri
 
 Supported FP operations (each references an `operand` of kind `fp`):
 
-- `fp_mul`: generates a FloPoCo floating-point multiplier and converts it to Verilog through Yosys+GHDL.
+- `fp_mul`: generates a FloPoCo `FPMult` operator and converts it to Verilog through Yosys+GHDL.
   - `module_name`: top module/entity name to emit.
-  - `rounding_mode` (optional): placeholder for future extension (default `"RNE"`).
-  - `flush_subnormals` (optional): placeholder, default `false`.
-  - `pipeline_stages` (optional): placeholder, default `0`.
+  - `rounding_mode` (optional): placeholder for future extension (default `"RNE"`; currently not wired to FloPoCo CLI).
+  - `flush_subnormals` (optional): placeholder, default `false` (currently metadata only).
+  - `pipeline_stages` (optional): placeholder, default `0` (currently metadata only).
+  - Interface format: FloPoCo FP encoding (`W = total_width + 2`), with 2-bit exception prefix.
   - Minimal example:
     ```json
     {
@@ -223,11 +224,9 @@ Supported FP operations (each references an `operand` of kind `fp`):
       "operand": "fp32"
     }
     ```
-- `fp_add`: generates a FloPoCo floating-point adder and converts it to Verilog through Yosys+GHDL. Options mirror `fp_mul`.
+- `fp_add`: generates a FloPoCo `FPAdd` operator and converts it to Verilog through Yosys+GHDL. Options mirror `fp_mul`.
   - `module_name`: top module/entity name to emit.
-  - `rounding_mode` (optional): placeholder for future extension (default `"RNE"`).
-  - `flush_subnormals` (optional): placeholder, default `false`.
-  - `pipeline_stages` (optional): placeholder, default `0`.
+  - Interface format: FloPoCo FP encoding (`W = total_width + 2`), with 2-bit exception prefix.
   - Minimal example:
     ```json
     {
@@ -236,8 +235,26 @@ Supported FP operations (each references an `operand` of kind `fp`):
       "operand": "fp32"
     }
     ```
-- `fp_mac`: generates a fused multiply-add (`A*B+C`) using FloPoCo’s `IEEEFPFMA` (IEEE-style 32-bit interface: sign/exponent/fraction, no exception prefix). Ports include `negateAB`, `negateC`, and `RndMode` (2-bit) inputs; defaults are negate off and `RndMode=00` (nearest-even) in tests.
-Inputs/outputs follow FloPoCo’s 2-bit exception prefix (`[33:32]` for 32-bit formats): `01` normal, `00` zero/subnormal, `10` infinity, `11` NaN. The remaining bits carry IEEE-like sign/exponent/fraction.
+- `fp_mac`: generates a fused multiply-add (`A*B+C`) using FloPoCo `IEEEFPFMA`.
+  - `module_name`: top module/entity name to emit.
+  - Interface format: IEEE sign/exponent/fraction only (`W = total_width`, no FloPoCo exception prefix).
+  - Extra control inputs: `negateAB`, `negateC`, and `RndMode` (2-bit; tests currently drive `00`, nearest-even).
+
+Compliance status and caveats:
+
+- `fp_mul` (`FPMult`) and `fp_add` (`FPAdd`) are FloPoCo-format operators (`exn[1:0] + sign + exp + frac`), not raw IEEE bit-layout interfaces.
+- `fp_mul`/`fp_add` are intended to be correctly-rounded floating-point datapaths in FloPoCo format, but this flow does not currently claim strict IEEE-754 bit-for-bit compliance across all corner cases.
+- `fp_mac` uses IEEE-layout ports via `IEEEFPFMA`, but FloPoCo source still contains open TODOs for full IEEE corner-case behavior (for example NaN propagation details and non-RN rounding modes).
+- For RTLGen wrappers, `rounding_mode`, `flush_subnormals`, and `pipeline_stages` in JSON are currently placeholders unless explicitly wired in generator code.
+
+Encoding reference:
+
+- FloPoCo FP encoding (`fp_mul`, `fp_add`): `[W-1:W-2]=exn`, then sign/exponent/fraction.
+  - `01`: normal
+  - `00`: zero/subnormal class
+  - `10`: infinity
+  - `11`: NaN
+- IEEE encoding (`fp_mac`): standard sign/exponent/fraction layout with width `W = total_width`.
 
 ## Activation Functions
 
