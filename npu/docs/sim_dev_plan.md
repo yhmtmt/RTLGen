@@ -101,6 +101,78 @@ This plan defines two simulation schemes:
    - feed accumulator input back into partial-product rows (`pp_row_feedback`)
    - evaluate PPA/timing tradeoffs with the same OpenROAD block sweep flow
 
+## A.2) FP16 Operation Implementation Plan (NPU Compute Path)
+
+### Goal
+- Replace the current fp16 placeholder path with a real floating-point
+  datapath for GEMM and VEC operations, while keeping descriptor and shell
+  behavior stable.
+
+### Current baseline
+- `compute.gemm.mac_type=fp16` exists, but current RTL treats lanes as raw
+  signed-16 values (placeholder arithmetic).
+- C++ RTLGen can already emit FloPoCo-backed FP units (`fp_mul`, `fp_add`,
+  `fp_mac`) but these are not yet integrated as the default NPU fp16 backend.
+
+### Numeric policy to lock first
+1) Data format:
+   - inputs/outputs in IEEE binary16 bit layout (`wE=5`, `wF=10`).
+2) Accumulation:
+   - select one path and keep it explicit in config/docs:
+     - `fp16_accum` (lower area/latency target), or
+     - `fp32_accum` (better numeric stability).
+3) Rounding/subnormal behavior:
+   - default round-to-nearest-even for generated FP operators.
+   - define whether subnormals are preserved or flushed at NPU boundary.
+4) Exceptional values:
+   - define NaN/Inf propagation expectations for GEMM/VEC compare scripts.
+
+### Architecture and integration steps
+1) Backend selection in `npu/rtlgen/gen.py`:
+   - add explicit fp16 backend source options (builtin placeholder vs C++ RTLGen
+     FP backend) and fail fast on unsupported combinations.
+2) Module integration:
+   - generate/import fp16 compute units from C++ RTLGen
+     (`fp_mac` for GEMM, `fp_add`/`fp_mul` and activation units for VEC path).
+   - add wrapper shims if interface encoding differs (FloPoCo FP vs IEEE ports).
+3) Lane wrapper/control:
+   - support lane-parallel issue with deterministic per-op completion timing.
+   - expose latency knobs in config for perf-model alignment.
+4) Activation path:
+   - route VEC activation ops (`relu`, `gelu`, `softmax`, `layernorm`) through
+     standalone generated activation modules when `activation_source=rtlgen_cpp`.
+
+### Verification and sign-off gates
+1) Unit tests (module level):
+   - directed IEEE half vectors: zero/subnormal/normal/Inf/NaN and sign cases.
+   - random differential tests against software reference (`numpy.float16`
+     or equivalent deterministic reference model).
+2) RTL integration tests:
+   - GEMM-only fp16 descriptor regressions.
+   - VEC-only fp16 regressions (`add/mul/relu/gelu/softmax/layernorm`).
+   - mixed GEMM+VEC schedule regressions with event ordering checks.
+3) Perf-model parity:
+   - update `npu/sim/perf/run.py` fp16 execution semantics to match chosen
+     accumulation and exceptional-value policy.
+   - keep `compare_compute_results.py` tolerant to fp roundoff where required.
+4) CI:
+   - include fp16 golden flow target in `npu/sim/run_golden.sh` and CI workflow.
+
+### PPA and optimization loop
+1) Add fp16-enabled design targets under `runs/designs/npu_blocks/`.
+2) Run OpenROAD sweeps on fp16 GEMM backends:
+   - placeholder builtin
+   - C++ RTLGen fp backend(s)
+3) Compare timing/area/power vs int8/int16 baselines and feed results back into
+   lane count, pipeline depth, and backend selection defaults.
+
+### Delivery phases
+1) Phase FP16-1: numeric policy lock + config/schema/doc updates.
+2) Phase FP16-2: C++ fp16 GEMM backend wiring (`fp_mac`) + RTL/perf parity.
+3) Phase FP16-3: fp16 VEC arithmetic + activation module routing.
+4) Phase FP16-4: edge-case compliance regression suite + CI hardening.
+5) Phase FP16-5: OpenROAD sweep and backend-default decision.
+
 ## B) Abstracted Performance Simulation (Second Priority)
 
 ### Goals
