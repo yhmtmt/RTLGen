@@ -61,6 +61,8 @@ The tests validate descriptor execution behavior, MMIO/IRQ flow, and AXI memory 
   - C++ fp16 IEEE-half backend (`minimal_fp16_cpp.json`) when FloPoCo is available
   - C++ fp16 VEC backend (`minimal_vec_fp16_cpp.json`) when FloPoCo is available
   - C++ fp16 activation-wired VEC backend (`minimal_vec_fp16_act_cpp.json`) when FloPoCo is available
+  - C++ fp16 edge GEMM regression (`golden_fp16_edge_gemm_descriptors.bin`) when FloPoCo is available
+  - C++ fp16 edge VEC regression (`golden_vec_fp16_edge_descriptors.bin`, ops `add/mul/relu`) when FloPoCo is available
   - C++ int8 activation-unit suite regression (`minimal_cpp_mac.json` + synthetic activation descriptors)
   - C++ fp16 activation-unit standalone smoke regression (`minimal_vec_act_fp16_cpp.json` + `tb_cpp_vec_act_fp16_smoke.sv`)
 - These RTL runs are consumed by perf comparison scripts for:
@@ -71,6 +73,8 @@ The tests validate descriptor execution behavior, MMIO/IRQ flow, and AXI memory 
 
 - Datapath validation covers int8/int16 GEMM, VEC ops, and fp16 GEMM policy paths used in golden flows.
 - Floating-point coverage includes fp16 GEMM (builtin placeholder and C++ IEEE-half lane-1) and fp16 VEC (`add/mul/relu/gelu/softmax/layernorm/drelu/dgelu/dsoftmax/dlayernorm`) via RTL/perf compare.
+- Directed fp16 edge-case RTL/perf parity is covered for C++ fp16 GEMM/VEC (signed-zero, subnormal, Inf, and ReLU NaN pass-through) in FloPoCo-enabled runs.
+- GEMM NaN edge behavior for the C++ fp16 backend is not yet locked as a strict parity gate; it remains under characterization.
 - C++ activation-unit coverage includes int8 activation suite path under `activation_source=rtlgen_cpp`.
 - C++ fp16 activation coverage includes both activation-wired fp16 VEC regression and standalone module smoke checks.
 - bf16/fp8 and constrained-random fp16 derivative-vector numeric stress are not covered yet.

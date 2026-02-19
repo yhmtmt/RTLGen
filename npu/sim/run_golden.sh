@@ -58,6 +58,12 @@ VEC_FP16_ACT_RTL_CFG="${REPO_ROOT}/npu/rtlgen/examples/minimal_vec_fp16_act_cpp.
 VEC_FP16_ACT_PERF_CFG="${REPO_ROOT}/npu/sim/perf/example_config_vec_fp16_act_cpp.json"
 VEC_FP16_ACT_TRACE="${REPO_ROOT}/npu/sim/perf/golden_vec_fp16_act_trace.json"
 VEC_FP16_ACT_RTL_LOG="${REPO_ROOT}/npu/sim/rtl/golden_vec_fp16_act_rtl.log"
+FP16_EDGE_GEMM_BIN="${REPO_ROOT}/npu/sim/rtl/golden_fp16_edge_gemm_descriptors.bin"
+FP16_EDGE_GEMM_TRACE="${REPO_ROOT}/npu/sim/perf/golden_fp16_edge_gemm_trace.json"
+FP16_EDGE_GEMM_RTL_LOG="${REPO_ROOT}/npu/sim/rtl/golden_fp16_edge_gemm_rtl.log"
+VEC_FP16_EDGE_BIN="${REPO_ROOT}/npu/sim/rtl/golden_vec_fp16_edge_descriptors.bin"
+VEC_FP16_EDGE_TRACE="${REPO_ROOT}/npu/sim/perf/golden_vec_fp16_edge_trace.json"
+VEC_FP16_EDGE_RTL_LOG="${REPO_ROOT}/npu/sim/rtl/golden_vec_fp16_edge_rtl.log"
 
 FLOPOCO_CANDIDATE="${FLOPOCO_BIN:-}"
 if [[ -n "${FLOPOCO_CANDIDATE}" && ! -x "${FLOPOCO_CANDIDATE}" ]]; then
@@ -195,6 +201,52 @@ for flags, size in (
     stream.extend(desc)
 out_path.write_bytes(stream)
 PY
+python3 - "${FP16_EDGE_GEMM_BIN}" "${VEC_FP16_EDGE_BIN}" <<'PY'
+import struct
+import sys
+from pathlib import Path
+
+gemm_path = Path(sys.argv[1])
+vec_path = Path(sys.argv[2])
+
+gemm_stream = bytearray()
+gemm_tag = ((1 & 0xFFF) << 20) | ((1 & 0x3FF) << 10) | (1 & 0x3FF)
+for a_bits, b_bits in (
+    (0x0000, 0x3C00),  # +0 * +1 -> +0
+    (0x0001, 0x3C00),  # +subnormal * +1 -> +subnormal
+    (0x7C00, 0x3C00),  # +inf * +1 -> +inf
+):
+    desc = bytearray(32)
+    struct.pack_into("<BBBBI", desc, 0, 0x10, 0x00, 0x01, 0x00, gemm_tag)
+    struct.pack_into("<H", desc, 8, int(a_bits) & 0xFFFF)
+    struct.pack_into("<H", desc, 16, int(b_bits) & 0xFFFF)
+    gemm_stream.extend(desc)
+gemm_path.write_bytes(gemm_stream)
+
+def pack_words(words):
+    val = 0
+    for i, w in enumerate(words):
+        val |= (int(w) & 0xFFFF) << (16 * i)
+    return val
+
+vec_stream = bytearray()
+vec_descs = (
+    # add: signed-zero/subnormal/inf behavior
+    (0x11, [0x0000, 0x8000, 0x0001, 0x7C00], [0x8000, 0x0000, 0x8001, 0x0000]),
+    # mul: signed-zero canonicalization + subnormal + -inf
+    (0x12, [0x0000, 0x8000, 0x0001, 0xFC00], [0x3C00, 0x3C00, 0x3C00, 0x3C00]),
+    # relu: clamp -0, preserve +subnormal/+inf/+nan
+    (0x10, [0x8000, 0x0001, 0x7C00, 0x7E00], [0x0000, 0x0000, 0x0000, 0x0000]),
+)
+for flags, a_words, b_words in vec_descs:
+    desc = bytearray(32)
+    struct.pack_into("<BBBBI", desc, 0, 0x11, int(flags) & 0xFF, 0x01, 0x00, 0x0)
+    struct.pack_into("<Q", desc, 8, pack_words(a_words))
+    struct.pack_into("<Q", desc, 16, pack_words(b_words))
+    struct.pack_into("<I", desc, 24, 256)
+    vec_stream.extend(desc)
+vec_path.write_bytes(vec_stream)
+PY
 cp "${DESC_BIN}" "${RTL_BIN}"
 
 pushd "${REPO_ROOT}" >/dev/null
@@ -255,6 +307,14 @@ if [[ "${FP16_CPP_ENABLED}" == "1" ]]; then
     CONFIG="${VEC_FP16_ACT_RTL_CFG}" \
     BIN="${VEC_FP16_BIN}" \
     BYTES=320 VVPFLAGS="+vec_test=1 +gemm_mac_test=0" | tee "${VEC_FP16_ACT_RTL_LOG}"
+  make -f npu/sim/rtl/Makefile run \
+    CONFIG="${FP16_CPP_RTL_CFG}" \
+    BIN="${FP16_EDGE_GEMM_BIN}" \
+    BYTES=96 VVPFLAGS="+vec_test=1 +gemm_mac_test=0" | tee "${FP16_EDGE_GEMM_RTL_LOG}"
+  make -f npu/sim/rtl/Makefile run \
+    CONFIG="${VEC_FP16_RTL_CFG}" \
+    BIN="${VEC_FP16_EDGE_BIN}" \
+    BYTES=96 VVPFLAGS="+vec_test=1 +gemm_mac_test=0" | tee "${VEC_FP16_EDGE_RTL_LOG}"
 fi
 popd >/dev/null
 python3 "${REPO_ROOT}/npu/sim/perf/run.py" --bin "${DESC_BIN}" --out "${PERF_TRACE}"
@@ -432,6 +492,62 @@ if [ev.get("op") for ev in vec_events] != ["add", "mul", "relu", "gelu", "softma
 if any(ev.get("dtype") != "fp16" for ev in vec_events):
     raise SystemExit("golden fp16 cpp activation regression: expected dtype=fp16 for all vec events")
 print("golden fp16 cpp activation regression: OK")
+PY
+  python3 "${REPO_ROOT}/npu/sim/perf/run.py" --bin "${FP16_EDGE_GEMM_BIN}" \
+    --out "${FP16_EDGE_GEMM_TRACE}" --config "${FP16_CPP_PERF_CFG}"
+  python3 "${REPO_ROOT}/npu/sim/perf/compare_compute_results.py" \
+    --rtl-log "${FP16_EDGE_GEMM_RTL_LOG}" --perf-trace "${FP16_EDGE_GEMM_TRACE}"
+  python3 - "${FP16_EDGE_GEMM_TRACE}" <<'PY'
+import json
+import sys
+
+trace_path = sys.argv[1]
+with open(trace_path, "r", encoding="utf-8") as f:
+    data = json.load(f)
+
+stats = data.get("stats", {})
+gemm_ops = int(stats.get("gemm_ops", 0))
+if gemm_ops != 3:
+    raise SystemExit(f"golden fp16 edge gemm regression: expected gemm_ops=3, got {gemm_ops}")
+
+gemm_events = [ev for ev in data.get("trace", []) if ev.get("name") == "GEMM"]
+expected_hex = ["0x0000", "0x0001", "0x7c00"]
+got_hex = [str(ev.get("expected_accum_fp16_hex", "")).lower() for ev in gemm_events]
+if got_hex != expected_hex:
+    raise SystemExit(
+        f"golden fp16 edge gemm regression: expected accum hex {expected_hex}, got {got_hex}"
+    )
+print("golden fp16 edge gemm regression: OK")
+PY
+  python3 "${REPO_ROOT}/npu/sim/perf/run.py" --bin "${VEC_FP16_EDGE_BIN}" \
+    --out "${VEC_FP16_EDGE_TRACE}" --config "${VEC_FP16_PERF_CFG}"
+  python3 "${REPO_ROOT}/npu/sim/perf/compare_compute_results.py" \
+    --rtl-log "${VEC_FP16_EDGE_RTL_LOG}" --perf-trace "${VEC_FP16_EDGE_TRACE}"
+  python3 - "${VEC_FP16_EDGE_TRACE}" <<'PY'
+import json
+import sys
+
+trace_path = sys.argv[1]
+with open(trace_path, "r", encoding="utf-8") as f:
+    data = json.load(f)
+
+stats = data.get("stats", {})
+vec_ops = int(stats.get("vec_ops", 0))
+if vec_ops != 3:
+    raise SystemExit(f"golden fp16 edge vec regression: expected vec_ops=3, got {vec_ops}")
+
+vec_events = [ev for ev in data.get("trace", []) if ev.get("name") == "VEC_OP"]
+if [ev.get("op") for ev in vec_events] != ["add", "mul", "relu"]:
+    raise SystemExit("golden fp16 edge vec regression: unexpected op order")
+if any(ev.get("dtype") != "fp16" for ev in vec_events):
+    raise SystemExit("golden fp16 edge vec regression: expected dtype=fp16 for all vec events")
+expected_hex = ["0x7c00000000000000", "0xfc00000100000000", "0x7e007c0000010000"]
+got_hex = [str(ev.get("expected_result", "")).lower() for ev in vec_events]
+if got_hex != expected_hex:
+    raise SystemExit(
+        f"golden fp16 edge vec regression: expected result hex {expected_hex}, got {got_hex}"
+    )
+print("golden fp16 edge vec regression: OK")
 PY
 fi
 

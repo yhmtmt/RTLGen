@@ -109,6 +109,18 @@ def _float_to_fp16_bits(value):
         return 0xFC00 if sign < 0 else 0x7C00
 
 
+def _fp16_is_nan(bits):
+    bits = _u16(bits)
+    return ((bits & 0x7C00) == 0x7C00) and ((bits & 0x03FF) != 0)
+
+
+def _fp16_canonicalize_zero(bits):
+    bits = _u16(bits)
+    if (bits & 0x7FFF) == 0:
+        return 0x0000
+    return bits
+
+
 def _fp16_fma_bits(a_bits, b_bits, c_bits):
     a = _fp16_bits_to_float(a_bits)
     b = _fp16_bits_to_float(b_bits)
@@ -203,11 +215,15 @@ def _vec_softmax_int8(x):
 
 
 def _fp16_add_bits(a_bits, b_bits):
-    return _float_to_fp16_bits(_fp16_bits_to_float(a_bits) + _fp16_bits_to_float(b_bits))
+    return _fp16_canonicalize_zero(
+        _float_to_fp16_bits(_fp16_bits_to_float(a_bits) + _fp16_bits_to_float(b_bits))
+    )
 
 
 def _fp16_mul_bits(a_bits, b_bits):
-    return _float_to_fp16_bits(_fp16_bits_to_float(a_bits) * _fp16_bits_to_float(b_bits))
+    return _fp16_canonicalize_zero(
+        _float_to_fp16_bits(_fp16_bits_to_float(a_bits) * _fp16_bits_to_float(b_bits))
+    )
 
 
 def _fp16_relu_bits(x_bits):
@@ -277,7 +293,11 @@ def _vec_expected_result(raw, flags, cfg, dtype_code=0x0):
             elif op_code == 0x2:  # mul
                 out_bits = _fp16_mul_bits(a_bits, b_bits)
             elif fp16_act_source == "rtlgen_cpp":
-                out_bits = _vec_fp16_cpp_activation_bits(a_bits, op_code)
+                # RTL fp16 activation wiring bypasses C++ units for NaN on relu/gelu/softmax.
+                if _fp16_is_nan(a_bits) and op_code in (0x0, 0x3, 0x4):
+                    out_bits = _u16(a_bits)
+                else:
+                    out_bits = _vec_fp16_cpp_activation_bits(a_bits, op_code)
             elif op_code == 0x3:  # gelu
                 out_bits = _fp16_relu_bits(_fp16_mul_bits(a_bits, 0x3800))
             elif op_code == 0x4:  # softmax (coarse scalar approximation)

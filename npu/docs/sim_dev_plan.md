@@ -14,6 +14,7 @@ This plan defines two simulation schemes:
 - FP16-2 in progress: C++ `fp_mac` GEMM backend wiring is implemented with lane-1 IEEE-half policy and RTL/perf comparison hooks.
 - FP16-3 progressed: fp16 VEC (`add/mul/relu/gelu/softmax/layernorm/drelu/dgelu/dsoftmax/dlayernorm`) path is wired with C++ IEEE `fp_mac` backend and perf/RTL comparison hooks.
 - Phase-2 activation kickoff: C++ activation-unit int8 suite (`relu/gelu/softmax/layernorm/drelu/dgelu/dsoftmax/dlayernorm`) is explicitly exercised in golden RTL/perf parity flow (`activation_source=rtlgen_cpp`), and fp16 activation path is now exercised both in wired fp16 VEC regression and standalone smoke checks.
+- FP16-4 progressed: directed fp16 edge-case regression coverage now includes zero/signed-zero/subnormal/Inf/NaN in perf unit tests, plus fp16 C++ RTL/perf edge parity legs for GEMM/VEC in golden flow when FloPoCo is available; CI runs perf unit tests before golden simulation.
 
 ## A) RTL Functional Validation (First Priority)
 
@@ -115,8 +116,9 @@ This plan defines two simulation schemes:
 - `compute.gemm.mac_type=fp16` exists, but current RTL treats lanes as raw
   signed-16 values (placeholder arithmetic).
 - C++ RTLGen can emit FloPoCo-backed FP units (`fp_mul`, `fp_add`, `fp_mac`).
-  GEMM `fp_mac` is now integrated as an optional lane-1 backend (`mac_source=rtlgen_cpp`);
-  VEC FP arithmetic/activation routing remains pending.
+  GEMM `fp_mac` is integrated as an optional lane-1 backend (`mac_source=rtlgen_cpp`),
+  and fp16 VEC arithmetic/activation routing is integrated behind
+  `compute.vec.fp16_arith_source=rtlgen_cpp`.
 
 ### Numeric policy to lock first
 1) Data format:

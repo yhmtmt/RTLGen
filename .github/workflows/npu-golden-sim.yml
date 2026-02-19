@@ -81,5 +81,14 @@ jobs:
       - name: Build rtlgen
         run: cmake --build build --target rtlgen --parallel
 
+      - name: Run perf unit tests
+        run: |
+          python3 npu/sim/perf/tests/test_perf_basic.py
+          python3 npu/sim/perf/tests/test_perf_gemm_int16.py
+          python3 npu/sim/perf/tests/test_perf_gemm_fp16.py
+          python3 npu/sim/perf/tests/test_perf_vec_softmax.py
+          python3 npu/sim/perf/tests/test_perf_vec_fp16.py
+          python3 npu/sim/perf/tests/test_perf_fp16_edge_cases.py
+
       - name: Run NPU golden simulation
         run: bash npu/sim/run_golden.sh

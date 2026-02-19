@@ -53,6 +53,13 @@ make -f npu/sim/perf/Makefile test
     - builtin raw16 placeholder (`raw16_placeholder`, `int32` accumulation)
     - IEEE-half lane-1 path (`ieee_half`, `fp16` accumulation)
   - Checks fp16 expectation fields including `expected_accum_fp16_hex` for IEEE-half mode.
+- `test_perf_fp16_edge_cases.py`
+  - Adds directed fp16 edge vectors for IEEE-half decode:
+    - zero / signed-zero / subnormal / Inf / NaN
+  - Verifies fp16 VEC edge decode for `add`, `mul`, `relu` under both:
+    - builtin fp16 activation approximation
+    - C++ fp16 activation semantics (`vec_fp16_activation_source=rtlgen_cpp`)
+  - Locks signed-zero canonicalization and NaN pass-through behavior used by RTL/perf parity checks.
 
 ### RTL/perf integrated regression (`npu/sim/run_golden.sh`)
 
@@ -67,16 +74,20 @@ make -f npu/sim/perf/Makefile test
   - builtin fp16 placeholder path
   - C++ RTLGen fp16 `fp_mac` path (IEEE-half, lane-1), when FloPoCo is available
   - C++ RTLGen fp16 VEC path (`add/mul/relu/gelu/softmax/layernorm/drelu/dgelu/dsoftmax/dlayernorm`, dtype `fp16`), when FloPoCo is available
+  - C++ fp16 edge-case RTL/perf parity path for GEMM/VEC directed vectors (`add/mul/relu`) including signed-zero/subnormal/Inf and ReLU NaN pass-through, when FloPoCo is available
 - Includes dedicated C++ activation regression for:
   - int8 activation-unit vector path (`relu/gelu/softmax/layernorm/drelu/dgelu/dsoftmax/dlayernorm`) generated from C++ RTLGen units (`activation_source=rtlgen_cpp`)
   - fp16 activation-unit wired vector path (generated via `activation_operand_kind=fp16`, compared by RTL/perf in fp16 vector regression)
   - fp16 activation-unit standalone smoke path (RTL-only module testbench)
 - Mixed golden schedule also checks VEC regression constraints (`vec_ops=3`, op order `add,mul,relu`, no unknown ops).
+- CI (`.github/workflows/npu-golden-sim.yml`) runs perf unit tests before `run_golden.sh` to fail early on semantic drift.
 
 ### Current coverage boundaries
 
 - Functional compute checking is implemented for int8/int16 GEMM, VEC ops, and fp16 GEMM policy paths.
 - fp16 coverage currently includes GEMM lane-1 IEEE-half + raw16 placeholder modes and fp16 VEC (`add/mul/relu/gelu/softmax/layernorm/drelu/dgelu/dsoftmax/dlayernorm`) expectation decode.
+- fp16 edge coverage includes directed zero/signed-zero/subnormal/Inf/NaN checks in perf unit tests and fp16 C++ RTL/perf edge parity legs for GEMM/VEC in golden flow (FloPoCo-enabled environments).
+- Current fp16 C++ RTL/perf GEMM edge parity intentionally locks zero/subnormal/Inf vectors; NaN GEMM behavior is still treated as a characterization item until backend policy is finalized.
 - C++ activation coverage currently includes an explicit int8 activation-suite regression leg in golden flow.
 - C++ fp16 activation coverage includes both wired fp16 VEC regression and standalone module smoke test.
 - bf16/fp8 and constrained-random fp16 vector numeric stress are not covered yet.
