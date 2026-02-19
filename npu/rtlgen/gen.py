@@ -1359,6 +1359,10 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
   wire [{vec_data_width_minus1}:0] vec_gelu_res_fp16;
   wire [{vec_data_width_minus1}:0] vec_softmax_res_fp16;
   wire [{vec_data_width_minus1}:0] vec_layernorm_res_fp16;
+  wire [{vec_data_width_minus1}:0] vec_drelu_res_fp16;
+  wire [{vec_data_width_minus1}:0] vec_dgelu_res_fp16;
+  wire [{vec_data_width_minus1}:0] vec_dsoftmax_res_fp16;
+  wire [{vec_data_width_minus1}:0] vec_dlayernorm_res_fp16;
 
   genvar gj;
   generate
@@ -1369,6 +1373,10 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
       wire vec_fp16_relu_nan = (&vec_fp16_relu_in[14:10]) && (|vec_fp16_relu_in[9:0]);
       wire [15:0] vec_fp16_scale_half;
       wire [15:0] vec_fp16_scale_four;
+      wire [15:0] vec_fp16_softmax;
+      wire [15:0] vec_fp16_one_minus_softmax;
+      wire [15:0] vec_fp16_dsoftmax;
+      wire vec_fp16_gt_zero;
 
       {vec_fp16_mac_module_name} u_vec_fp16_add (
         .A(16'h3c00),
@@ -1410,16 +1418,45 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         .R(vec_fp16_scale_four)
       );
 
+      {vec_fp16_mac_module_name} u_vec_fp16_one_minus_softmax (
+        .A(16'hbc00),
+        .B(vec_fp16_softmax),
+        .C(16'h3c00),
+        .negateAB(1'b0),
+        .negateC(1'b0),
+        .RndMode(2'b00),
+        .R(vec_fp16_one_minus_softmax)
+      );
+
+      {vec_fp16_mac_module_name} u_vec_fp16_dsoftmax (
+        .A(vec_fp16_softmax),
+        .B(vec_fp16_one_minus_softmax),
+        .C(16'h0000),
+        .negateAB(1'b0),
+        .negateC(1'b0),
+        .RndMode(2'b00),
+        .R(vec_fp16_dsoftmax)
+      );
+
       assign vec_relu_res_fp16[(gj*16) +: 16] =
           vec_fp16_relu_nan ? vec_fp16_relu_in :
           (vec_fp16_relu_in[15] ? 16'h0000 : vec_fp16_relu_in);
       assign vec_gelu_res_fp16[(gj*16) +: 16] =
           vec_fp16_relu_nan ? vec_fp16_relu_in :
           (vec_fp16_scale_half[15] ? 16'h0000 : vec_fp16_scale_half);
-      assign vec_softmax_res_fp16[(gj*16) +: 16] =
+      assign vec_fp16_softmax =
           vec_fp16_relu_nan ? vec_fp16_relu_in :
           (vec_fp16_scale_four[15] ? 16'h0000 : vec_fp16_scale_four);
+      assign vec_fp16_gt_zero =
+          !vec_fp16_relu_nan && !vec_fp16_relu_in[15] && (|vec_fp16_relu_in[14:0]);
+      assign vec_softmax_res_fp16[(gj*16) +: 16] = vec_fp16_softmax;
       assign vec_layernorm_res_fp16[(gj*16) +: 16] = vec_fp16_scale_half;
+      assign vec_drelu_res_fp16[(gj*16) +: 16] =
+          vec_fp16_gt_zero ? 16'h3c00 : 16'h0000;
+      assign vec_dgelu_res_fp16[(gj*16) +: 16] =
+          vec_fp16_gt_zero ? 16'h3c00 : 16'h0000;
+      assign vec_dsoftmax_res_fp16[(gj*16) +: 16] = vec_fp16_dsoftmax;
+      assign vec_dlayernorm_res_fp16[(gj*16) +: 16] = 16'h3c00;
     end
   endgenerate
 """
@@ -1431,6 +1468,10 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
   wire [{vec_data_width_minus1}:0] vec_gelu_res_fp16 = {{{vec_data_width}{{1'b0}}}};
   wire [{vec_data_width_minus1}:0] vec_softmax_res_fp16 = {{{vec_data_width}{{1'b0}}}};
   wire [{vec_data_width_minus1}:0] vec_layernorm_res_fp16 = {{{vec_data_width}{{1'b0}}}};
+  wire [{vec_data_width_minus1}:0] vec_drelu_res_fp16 = {{{vec_data_width}{{1'b0}}}};
+  wire [{vec_data_width_minus1}:0] vec_dgelu_res_fp16 = {{{vec_data_width}{{1'b0}}}};
+  wire [{vec_data_width_minus1}:0] vec_dsoftmax_res_fp16 = {{{vec_data_width}{{1'b0}}}};
+  wire [{vec_data_width_minus1}:0] vec_dlayernorm_res_fp16 = {{{vec_data_width}{{1'b0}}}};
 """
 
     vec_compute_instances = f"""
@@ -1484,6 +1525,10 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
                                 (vec_op_sel == VEC_OP_GELU) ? vec_gelu_res_fp16 :
                                 (vec_op_sel == VEC_OP_SOFTMAX) ? vec_softmax_res_fp16 :
                                 (vec_op_sel == VEC_OP_LAYERNORM) ? vec_layernorm_res_fp16 :
+                                (vec_op_sel == VEC_OP_DRELU) ? vec_drelu_res_fp16 :
+                                (vec_op_sel == VEC_OP_DGELU) ? vec_dgelu_res_fp16 :
+                                (vec_op_sel == VEC_OP_DSOFTMAX) ? vec_dsoftmax_res_fp16 :
+                                (vec_op_sel == VEC_OP_DLAYERNORM) ? vec_dlayernorm_res_fp16 :
                                 vec_relu_res_fp16;
 
   assign vec_result_next = vec_dtype_is_fp16 ? vec_result_next_fp16 : vec_result_next_int8;
@@ -1724,7 +1769,11 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
                      (cq_mem_rdata[11:8] != VEC_OP_MUL) &&
                      (cq_mem_rdata[11:8] != VEC_OP_GELU) &&
                      (cq_mem_rdata[11:8] != VEC_OP_SOFTMAX) &&
-                     (cq_mem_rdata[11:8] != VEC_OP_LAYERNORM)) ||
+                     (cq_mem_rdata[11:8] != VEC_OP_LAYERNORM) &&
+                     (cq_mem_rdata[11:8] != VEC_OP_DRELU) &&
+                     (cq_mem_rdata[11:8] != VEC_OP_DGELU) &&
+                     (cq_mem_rdata[11:8] != VEC_OP_DSOFTMAX) &&
+                     (cq_mem_rdata[11:8] != VEC_OP_DLAYERNORM)) ||
                     (cq_mem_rdata[11:8] == VEC_OP_ADD       && !VEC_EN_ADD)       ||
                     (cq_mem_rdata[11:8] == VEC_OP_MUL       && !VEC_EN_MUL)       ||
                     (cq_mem_rdata[11:8] == VEC_OP_RELU      && !VEC_EN_RELU)      ||
@@ -1848,7 +1897,11 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
                      (cq_word0[11:8] != VEC_OP_MUL) &&
                      (cq_word0[11:8] != VEC_OP_GELU) &&
                      (cq_word0[11:8] != VEC_OP_SOFTMAX) &&
-                     (cq_word0[11:8] != VEC_OP_LAYERNORM)) ||
+                     (cq_word0[11:8] != VEC_OP_LAYERNORM) &&
+                     (cq_word0[11:8] != VEC_OP_DRELU) &&
+                     (cq_word0[11:8] != VEC_OP_DGELU) &&
+                     (cq_word0[11:8] != VEC_OP_DSOFTMAX) &&
+                     (cq_word0[11:8] != VEC_OP_DLAYERNORM)) ||
                     (cq_word0[11:8] == VEC_OP_ADD       && !VEC_EN_ADD)       ||
                     (cq_word0[11:8] == VEC_OP_MUL       && !VEC_EN_MUL)       ||
                     (cq_word0[11:8] == VEC_OP_RELU      && !VEC_EN_RELU)      ||

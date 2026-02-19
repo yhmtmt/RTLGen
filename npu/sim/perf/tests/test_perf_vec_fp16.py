@@ -63,6 +63,21 @@ def _build_vec_fp16_bin(path: Path):
     _pack_vec_fp16_operands(d5, a_words, b_words, size_bytes=1536)
     stream.extend(d5)
 
+    # VEC_OP dgelu, dtype fp16
+    d6 = _pack_desc(0x11, flags=0x17)
+    _pack_vec_fp16_operands(d6, a_words, b_words, size_bytes=1792)
+    stream.extend(d6)
+
+    # VEC_OP dsoftmax, dtype fp16
+    d7 = _pack_desc(0x11, flags=0x18)
+    _pack_vec_fp16_operands(d7, a_words, b_words, size_bytes=2048)
+    stream.extend(d7)
+
+    # VEC_OP dlayernorm, dtype fp16
+    d8 = _pack_desc(0x11, flags=0x19)
+    _pack_vec_fp16_operands(d8, a_words, b_words, size_bytes=2304)
+    stream.extend(d8)
+
     path.write_bytes(bytes(stream))
 
 
@@ -102,9 +117,19 @@ def test_perf_vec_fp16_expected_fields():
         data = json.loads(out_path.read_text(encoding="utf-8"))
 
     trace = data["trace"]
-    assert len(trace) == 6
-    assert [ev["name"] for ev in trace] == ["VEC_OP", "VEC_OP", "VEC_OP", "VEC_OP", "VEC_OP", "VEC_OP"]
-    assert [ev["op"] for ev in trace] == ["add", "mul", "relu", "gelu", "softmax", "layernorm"]
+    assert len(trace) == 9
+    assert [ev["name"] for ev in trace] == ["VEC_OP"] * 9
+    assert [ev["op"] for ev in trace] == [
+        "add",
+        "mul",
+        "relu",
+        "gelu",
+        "softmax",
+        "layernorm",
+        "dgelu",
+        "dsoftmax",
+        "dlayernorm",
+    ]
     for ev in trace:
         assert ev["dtype"] == "fp16"
         assert int(ev["dtype_code"]) == 1
@@ -117,6 +142,9 @@ def test_perf_vec_fp16_expected_fields():
     gelu_words = _words_from_bytes(trace[3]["expected_result_bytes"])
     softmax_words = _words_from_bytes(trace[4]["expected_result_bytes"])
     layernorm_words = _words_from_bytes(trace[5]["expected_result_bytes"])
+    dgelu_words = _words_from_bytes(trace[6]["expected_result_bytes"])
+    dsoftmax_words = _words_from_bytes(trace[7]["expected_result_bytes"])
+    dlayernorm_words = _words_from_bytes(trace[8]["expected_result_bytes"])
 
     assert add_words == [0x3E00, 0xBC00, 0x0000, 0x4000]
     assert mul_words == [0x3800, 0xC000, 0xB400, 0x0000]
@@ -124,6 +152,9 @@ def test_perf_vec_fp16_expected_fields():
     assert gelu_words == [0x3800, 0x0000, 0x3400, 0x0000]
     assert softmax_words == [0x4400, 0x0000, 0x4000, 0x0000]
     assert layernorm_words == [0x3800, 0xBC00, 0x3400, 0x0000]
+    assert dgelu_words == [0x3C00, 0x0000, 0x3C00, 0x0000]
+    assert dsoftmax_words == [0xCA00, 0x0000, 0xC000, 0x0000]
+    assert dlayernorm_words == [0x3C00, 0x3C00, 0x3C00, 0x3C00]
 
 
 if __name__ == "__main__":

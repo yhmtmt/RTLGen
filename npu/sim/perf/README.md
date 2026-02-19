@@ -39,7 +39,7 @@ make -f npu/sim/perf/Makefile test
   - Checks op decode/order, op counts, total bytes, and non-zero durations.
   - Verifies VEC functional expectation fields are emitted: `expected_result`, `expected_result_bytes`, `lanes`.
 - `test_perf_vec_fp16.py`
-  - Builds a synthetic fp16 `VEC_OP` stream (`add`, `mul`, `relu`, `gelu`, `softmax`, `layernorm`) using dtype code `fp16`.
+  - Builds a synthetic fp16 `VEC_OP` stream (`add`, `mul`, `relu`, `gelu`, `softmax`, `layernorm`, `dgelu`, `dsoftmax`, `dlayernorm`) using dtype code `fp16`.
   - Verifies fp16 VEC expectation decode for 4x16b lanes packed into 8 result bytes.
   - Confirms deterministic expected-result words for each op.
 - `test_perf_gemm_int16.py`
@@ -64,14 +64,14 @@ make -f npu/sim/perf/Makefile test
 - Includes dedicated fp16 regressions for:
   - builtin fp16 placeholder path
   - C++ RTLGen fp16 `fp_mac` path (IEEE-half, lane-1), when FloPoCo is available
-  - C++ RTLGen fp16 VEC path (`add/mul/relu/gelu/softmax/layernorm`, dtype `fp16`), when FloPoCo is available
+  - C++ RTLGen fp16 VEC path (`add/mul/relu/gelu/softmax/layernorm/dgelu/dsoftmax/dlayernorm`, dtype `fp16`), when FloPoCo is available
 - Mixed golden schedule also checks VEC regression constraints (`vec_ops=3`, op order `add,mul,relu`, no unknown ops).
 
 ### Current coverage boundaries
 
 - Functional compute checking is implemented for int8/int16 GEMM, VEC ops, and fp16 GEMM policy paths.
-- fp16 coverage currently includes GEMM lane-1 IEEE-half + raw16 placeholder modes and fp16 VEC (`add/mul/relu/gelu/softmax/layernorm`) expectation decode.
-- bf16/fp8 and extended fp16 derivative-vector numeric equivalence are not covered yet.
+- fp16 coverage currently includes GEMM lane-1 IEEE-half + raw16 placeholder modes and fp16 VEC (`add/mul/relu/gelu/softmax/layernorm/dgelu/dsoftmax/dlayernorm`) expectation decode.
+- bf16/fp8 and constrained-random fp16 vector numeric stress are not covered yet.
 - No large randomized descriptor fuzzing is included yet.
 
 ## Notes

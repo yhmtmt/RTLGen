@@ -246,6 +246,10 @@ def _vec_expected_result(raw, flags, cfg, dtype_code=0x0):
                 out_bits = _float_to_fp16_bits(1.0 if x > 0.0 else 0.0)
             elif op_code == 0x7:  # dgelu
                 out_bits = _float_to_fp16_bits(1.0 if x > 0.0 else 0.0)
+            elif op_code == 0x8:  # dsoftmax (coarse scalar approximation)
+                p_bits = _fp16_relu_bits(_fp16_mul_bits(a_bits, 0x4400))
+                one_minus_p_bits = _fp16_add_bits(_fp16_mul_bits(p_bits, 0xBC00), 0x3C00)
+                out_bits = _fp16_mul_bits(p_bits, one_minus_p_bits)
             elif op_code == 0x9:  # dlayernorm
                 out_bits = _float_to_fp16_bits(1.0)
             else:  # relu/fallback for currently unsupported fp16 vec kernels
