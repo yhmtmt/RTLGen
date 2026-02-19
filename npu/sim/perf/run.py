@@ -236,8 +236,12 @@ def _vec_expected_result(raw, flags, cfg, dtype_code=0x0):
                 out_bits = _fp16_add_bits(a_bits, b_bits)
             elif op_code == 0x2:  # mul
                 out_bits = _fp16_mul_bits(a_bits, b_bits)
-            elif op_code == 0x3:  # gelu (coarse placeholder)
-                out_bits = _float_to_fp16_bits(0.0 if x < 0.0 else (x * 0.5))
+            elif op_code == 0x3:  # gelu
+                out_bits = _fp16_relu_bits(_fp16_mul_bits(a_bits, 0x3800))
+            elif op_code == 0x4:  # softmax (coarse scalar approximation)
+                out_bits = _fp16_relu_bits(_fp16_mul_bits(a_bits, 0x4400))
+            elif op_code == 0x5:  # layernorm (coarse scalar approximation)
+                out_bits = _fp16_mul_bits(a_bits, 0x3800)
             elif op_code == 0x6:  # drelu
                 out_bits = _float_to_fp16_bits(1.0 if x > 0.0 else 0.0)
             elif op_code == 0x7:  # dgelu

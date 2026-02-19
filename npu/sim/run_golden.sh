@@ -138,7 +138,14 @@ def pack_words(words):
 a = pack_words([0x3C00, 0xC000, 0x3800, 0x0000])  # [1.0, -2.0, 0.5, 0.0]
 b = pack_words([0x3800, 0x3C00, 0xB800, 0x4000])  # [0.5, 1.0, -0.5, 2.0]
 stream = bytearray()
-for flags, size in ((0x11, 256), (0x12, 512), (0x10, 768)):
+for flags, size in (
+    (0x11, 256),   # add
+    (0x12, 512),   # mul
+    (0x10, 768),   # relu
+    (0x13, 1024),  # gelu
+    (0x14, 1280),  # softmax
+    (0x15, 1536),  # layernorm
+):
     desc = bytearray(32)
     struct.pack_into("<BBBBI", desc, 0, 0x11, flags, 0x01, 0x00, 0x0)
     struct.pack_into("<Q", desc, 8, a)
@@ -186,7 +193,7 @@ if [[ "${FP16_CPP_ENABLED}" == "1" ]]; then
   make -f npu/sim/rtl/Makefile run \
     CONFIG="${VEC_FP16_RTL_CFG}" \
     BIN="${VEC_FP16_BIN}" \
-    BYTES=128 VVPFLAGS="+vec_test=1 +gemm_mac_test=0" | tee "${VEC_FP16_RTL_LOG}"
+    BYTES=256 VVPFLAGS="+vec_test=1 +gemm_mac_test=0" | tee "${VEC_FP16_RTL_LOG}"
 fi
 popd >/dev/null
 python3 "${REPO_ROOT}/npu/sim/perf/run.py" --bin "${DESC_BIN}" --out "${PERF_TRACE}"
@@ -304,11 +311,11 @@ with open(trace_path, "r", encoding="utf-8") as f:
 
 stats = data.get("stats", {})
 vec_ops = int(stats.get("vec_ops", 0))
-if vec_ops != 3:
-    raise SystemExit(f"golden fp16 vec regression: expected vec_ops=3, got {vec_ops}")
+if vec_ops != 6:
+    raise SystemExit(f"golden fp16 vec regression: expected vec_ops=6, got {vec_ops}")
 
 vec_events = [ev for ev in data.get("trace", []) if ev.get("name") == "VEC_OP"]
-if [ev.get("op") for ev in vec_events] != ["add", "mul", "relu"]:
+if [ev.get("op") for ev in vec_events] != ["add", "mul", "relu", "gelu", "softmax", "layernorm"]:
     raise SystemExit("golden fp16 vec regression: unexpected op order")
 if any(ev.get("dtype") != "fp16" for ev in vec_events):
     raise SystemExit("golden fp16 vec regression: expected dtype=fp16 for all vec events")

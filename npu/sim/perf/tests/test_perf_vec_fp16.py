@@ -48,6 +48,21 @@ def _build_vec_fp16_bin(path: Path):
     _pack_vec_fp16_operands(d2, a_words, b_words, size_bytes=768)
     stream.extend(d2)
 
+    # VEC_OP gelu, dtype fp16
+    d3 = _pack_desc(0x11, flags=0x13)
+    _pack_vec_fp16_operands(d3, a_words, b_words, size_bytes=1024)
+    stream.extend(d3)
+
+    # VEC_OP softmax, dtype fp16
+    d4 = _pack_desc(0x11, flags=0x14)
+    _pack_vec_fp16_operands(d4, a_words, b_words, size_bytes=1280)
+    stream.extend(d4)
+
+    # VEC_OP layernorm, dtype fp16
+    d5 = _pack_desc(0x11, flags=0x15)
+    _pack_vec_fp16_operands(d5, a_words, b_words, size_bytes=1536)
+    stream.extend(d5)
+
     path.write_bytes(bytes(stream))
 
 
@@ -87,9 +102,9 @@ def test_perf_vec_fp16_expected_fields():
         data = json.loads(out_path.read_text(encoding="utf-8"))
 
     trace = data["trace"]
-    assert len(trace) == 3
-    assert [ev["name"] for ev in trace] == ["VEC_OP", "VEC_OP", "VEC_OP"]
-    assert [ev["op"] for ev in trace] == ["add", "mul", "relu"]
+    assert len(trace) == 6
+    assert [ev["name"] for ev in trace] == ["VEC_OP", "VEC_OP", "VEC_OP", "VEC_OP", "VEC_OP", "VEC_OP"]
+    assert [ev["op"] for ev in trace] == ["add", "mul", "relu", "gelu", "softmax", "layernorm"]
     for ev in trace:
         assert ev["dtype"] == "fp16"
         assert int(ev["dtype_code"]) == 1
@@ -99,10 +114,16 @@ def test_perf_vec_fp16_expected_fields():
     add_words = _words_from_bytes(trace[0]["expected_result_bytes"])
     mul_words = _words_from_bytes(trace[1]["expected_result_bytes"])
     relu_words = _words_from_bytes(trace[2]["expected_result_bytes"])
+    gelu_words = _words_from_bytes(trace[3]["expected_result_bytes"])
+    softmax_words = _words_from_bytes(trace[4]["expected_result_bytes"])
+    layernorm_words = _words_from_bytes(trace[5]["expected_result_bytes"])
 
     assert add_words == [0x3E00, 0xBC00, 0x0000, 0x4000]
     assert mul_words == [0x3800, 0xC000, 0xB400, 0x0000]
     assert relu_words == [0x3C00, 0x0000, 0x3800, 0x0000]
+    assert gelu_words == [0x3800, 0x0000, 0x3400, 0x0000]
+    assert softmax_words == [0x4400, 0x0000, 0x4000, 0x0000]
+    assert layernorm_words == [0x3800, 0xBC00, 0x3400, 0x0000]
 
 
 if __name__ == "__main__":

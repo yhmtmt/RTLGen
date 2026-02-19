@@ -1356,6 +1356,9 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
   wire [{vec_data_width_minus1}:0] vec_add_res_fp16;
   wire [{vec_data_width_minus1}:0] vec_mul_res_fp16;
   wire [{vec_data_width_minus1}:0] vec_relu_res_fp16;
+  wire [{vec_data_width_minus1}:0] vec_gelu_res_fp16;
+  wire [{vec_data_width_minus1}:0] vec_softmax_res_fp16;
+  wire [{vec_data_width_minus1}:0] vec_layernorm_res_fp16;
 
   genvar gj;
   generate
@@ -1364,6 +1367,8 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
       wire [15:0] vec_fp16_b = vec_in1[(gj*16) +: 16];
       wire [15:0] vec_fp16_relu_in = vec_in0[(gj*16) +: 16];
       wire vec_fp16_relu_nan = (&vec_fp16_relu_in[14:10]) && (|vec_fp16_relu_in[9:0]);
+      wire [15:0] vec_fp16_scale_half;
+      wire [15:0] vec_fp16_scale_four;
 
       {vec_fp16_mac_module_name} u_vec_fp16_add (
         .A(16'h3c00),
@@ -1385,9 +1390,36 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         .R(vec_mul_res_fp16[(gj*16) +: 16])
       );
 
+      {vec_fp16_mac_module_name} u_vec_fp16_scale_half (
+        .A(vec_fp16_a),
+        .B(16'h3800),
+        .C(16'h0000),
+        .negateAB(1'b0),
+        .negateC(1'b0),
+        .RndMode(2'b00),
+        .R(vec_fp16_scale_half)
+      );
+
+      {vec_fp16_mac_module_name} u_vec_fp16_scale_four (
+        .A(vec_fp16_a),
+        .B(16'h4400),
+        .C(16'h0000),
+        .negateAB(1'b0),
+        .negateC(1'b0),
+        .RndMode(2'b00),
+        .R(vec_fp16_scale_four)
+      );
+
       assign vec_relu_res_fp16[(gj*16) +: 16] =
           vec_fp16_relu_nan ? vec_fp16_relu_in :
           (vec_fp16_relu_in[15] ? 16'h0000 : vec_fp16_relu_in);
+      assign vec_gelu_res_fp16[(gj*16) +: 16] =
+          vec_fp16_relu_nan ? vec_fp16_relu_in :
+          (vec_fp16_scale_half[15] ? 16'h0000 : vec_fp16_scale_half);
+      assign vec_softmax_res_fp16[(gj*16) +: 16] =
+          vec_fp16_relu_nan ? vec_fp16_relu_in :
+          (vec_fp16_scale_four[15] ? 16'h0000 : vec_fp16_scale_four);
+      assign vec_layernorm_res_fp16[(gj*16) +: 16] = vec_fp16_scale_half;
     end
   endgenerate
 """
@@ -1396,6 +1428,9 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
   wire [{vec_data_width_minus1}:0] vec_add_res_fp16 = {{{vec_data_width}{{1'b0}}}};
   wire [{vec_data_width_minus1}:0] vec_mul_res_fp16 = {{{vec_data_width}{{1'b0}}}};
   wire [{vec_data_width_minus1}:0] vec_relu_res_fp16 = {{{vec_data_width}{{1'b0}}}};
+  wire [{vec_data_width_minus1}:0] vec_gelu_res_fp16 = {{{vec_data_width}{{1'b0}}}};
+  wire [{vec_data_width_minus1}:0] vec_softmax_res_fp16 = {{{vec_data_width}{{1'b0}}}};
+  wire [{vec_data_width_minus1}:0] vec_layernorm_res_fp16 = {{{vec_data_width}{{1'b0}}}};
 """
 
     vec_compute_instances = f"""
@@ -1446,6 +1481,9 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
 
   assign vec_result_next_fp16 = (vec_op_sel == VEC_OP_ADD) ? vec_add_res_fp16 :
                                 (vec_op_sel == VEC_OP_MUL) ? vec_mul_res_fp16 :
+                                (vec_op_sel == VEC_OP_GELU) ? vec_gelu_res_fp16 :
+                                (vec_op_sel == VEC_OP_SOFTMAX) ? vec_softmax_res_fp16 :
+                                (vec_op_sel == VEC_OP_LAYERNORM) ? vec_layernorm_res_fp16 :
                                 vec_relu_res_fp16;
 
   assign vec_result_next = vec_dtype_is_fp16 ? vec_result_next_fp16 : vec_result_next_int8;
@@ -1683,7 +1721,10 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
                     ((cq_mem_rdata[15:12] == VEC_DTYPE_FP16) &&
                      (cq_mem_rdata[11:8] != VEC_OP_RELU) &&
                      (cq_mem_rdata[11:8] != VEC_OP_ADD) &&
-                     (cq_mem_rdata[11:8] != VEC_OP_MUL)) ||
+                     (cq_mem_rdata[11:8] != VEC_OP_MUL) &&
+                     (cq_mem_rdata[11:8] != VEC_OP_GELU) &&
+                     (cq_mem_rdata[11:8] != VEC_OP_SOFTMAX) &&
+                     (cq_mem_rdata[11:8] != VEC_OP_LAYERNORM)) ||
                     (cq_mem_rdata[11:8] == VEC_OP_ADD       && !VEC_EN_ADD)       ||
                     (cq_mem_rdata[11:8] == VEC_OP_MUL       && !VEC_EN_MUL)       ||
                     (cq_mem_rdata[11:8] == VEC_OP_RELU      && !VEC_EN_RELU)      ||
@@ -1804,7 +1845,10 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
                     ((cq_word0[15:12] == VEC_DTYPE_FP16) &&
                      (cq_word0[11:8] != VEC_OP_RELU) &&
                      (cq_word0[11:8] != VEC_OP_ADD) &&
-                     (cq_word0[11:8] != VEC_OP_MUL)) ||
+                     (cq_word0[11:8] != VEC_OP_MUL) &&
+                     (cq_word0[11:8] != VEC_OP_GELU) &&
+                     (cq_word0[11:8] != VEC_OP_SOFTMAX) &&
+                     (cq_word0[11:8] != VEC_OP_LAYERNORM)) ||
                     (cq_word0[11:8] == VEC_OP_ADD       && !VEC_EN_ADD)       ||
                     (cq_word0[11:8] == VEC_OP_MUL       && !VEC_EN_MUL)       ||
                     (cq_word0[11:8] == VEC_OP_RELU      && !VEC_EN_RELU)      ||
