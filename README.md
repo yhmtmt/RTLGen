@@ -6,9 +6,12 @@ RTLGen is a Verilog generator driven by a JSON configuration file. It can emit a
 - Activations: integer ReLU/ReLU6/leaky ReLU and user-defined symmetric PWL functions; FP path supports ReLU and leaky ReLU (FP PWL is coarse/experimental).
 
 ## NPU status (summary)
-- Shell contract v0.1 and RTL bring-up implemented.
-- RTL simulation includes DMA + AXI burst path and AXI-Lite MMIO wrapper tests.
-- Mapping/perf simulation and OpenROAD integration are planned.
+- Shell contract v0.1, mapper descriptors, and RTL bring-up are implemented.
+- RTL simulation covers DMA + AXI burst path and AXI-Lite MMIO wrapper tests.
+- Descriptor-driven performance simulation and RTL/perf comparison flow are implemented.
+- OpenROAD block-level integration is implemented (`npu/synth/run_block_sweep.py`).
+- fp16 backend comparison sweep completed at `make_target=finish` with report:
+  `runs/designs/npu_blocks/fp16_backend_decision_nangate45.md`.
 
 ## Building the Project
 
