@@ -13,6 +13,8 @@ evaluation inside RTLGen.
   (`builtin_raw16` vs `cpp_ieee`) with recommendation report.
 - **Implemented**: `arch v0.2-draft` schema + `to_rtlgen` derivation path for
   compute (`gemm`/`vec`) candidate generation.
+- **Implemented**: pre-synthesis SRAM stage wrapper
+  (`npu/synth/pre_synth_memory.py`) with memgen-first policy and CACTI fallback.
 
 ## 1) Define architecture config
 - Create/edit architecture YAML under `npu/arch/examples/`.
@@ -36,20 +38,33 @@ evaluation inside RTLGen.
 - For fp16 GEMM, default backend is now `compute.gemm.mac_source=rtlgen_cpp`
   when `compute.gemm.mac_type=fp16` unless explicitly overridden.
 
-## 3) Build descriptors from mapper
+## 3) Run pre-synthesis SRAM stage
+- Run pre-synth memory flow:
+  `python3 npu/synth/pre_synth_memory.py <arch.yml> --id <run_id>`.
+- Mode options:
+  - `--mode auto` (default): use external memgen if configured, else CACTI fallback.
+  - `--mode memgen_only`: fail unless memgen succeeds.
+  - `--mode cacti_only`: force CACTI path.
+- Canonical output:
+  - `runs/designs/sram/<run_id>/sram_metrics.json`
+  - `runs/designs/sram/<run_id>/sram_metrics.pre_synth.json`
+  - `runs/designs/sram/<run_id>/pre_synth_memory.json`
+- Feed `sram_metrics.json` into perf configuration for memory-aware simulation.
+
+## 4) Build descriptors from mapper
 - Use `npu/mapper/run.py` with schedule IR (`npu/mapper/ir.md`) to emit:
   - YAML descriptor dump (`--out`)
   - binary descriptor stream (`--out-bin`)
 - Golden schedules and binaries are in `npu/mapper/examples/`.
 
-## 4) Run RTL functional validation
+## 5) Run RTL functional validation
 - Use `npu/sim/rtl/Makefile` targets for shell, DMA, GEMM, and VEC checks.
 - Use `npu/sim/run_golden.sh` for repeatable mixed/GEMM/VEC regressions.
 - Capture logs for parity checks:
   - `GEMM_TIMING ...`
   - `VEC_DONE ...`
 
-## 5) Run performance simulation and parity checks
+## 6) Run performance simulation and parity checks
 - Run perf simulator on descriptor binaries:
   `python3 npu/sim/perf/run.py --bin <desc.bin> --out <trace.json> --summary`.
 - Compare RTL/perf outputs:
@@ -57,14 +72,14 @@ evaluation inside RTLGen.
   - `npu/sim/compare_compute_results.py`
 - Keep model knobs in sync with backend policy in `npu/sim/perf/README.md`.
 
-## 6) Run block-level synthesis (OpenROAD)
+## 7) Run block-level synthesis (OpenROAD)
 - Use `npu/synth/run_block_sweep.py` for generic block sweeps.
 - Use `npu/synth/run_fp16_backend_sweep.py` for fp16 backend decisions:
   - sweep config: `npu/synth/fp16_backend_sweep_nangate45.json`
   - decision report: `runs/designs/npu_blocks/fp16_backend_decision_nangate45.md`
 - Store append-only results under `runs/designs/`.
 
-## 7) Aggregate results and iterate
+## 8) Aggregate results and iterate
 - Track result rows in per-design `metrics.csv`.
 - Keep run-level artifacts in `work/<hash>/result.json`.
 - Update `npu/docs/status.md` and affected plan docs after milestone runs.

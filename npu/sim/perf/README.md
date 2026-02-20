@@ -100,6 +100,8 @@ make -f npu/sim/perf/Makefile test
   access time from CACTI metrics (per-instance or max access time).
 - `sram_metrics_json` may point to `runs/designs/sram/<id>/sram_metrics.json`
   (preferred) or a summary file with `max_access_time_ns`.
+- Recommended producer for pre-synth memory metrics:
+  `python3 npu/synth/pre_synth_memory.py <arch.yml> --id <id>`.
 - VEC op decode uses descriptor `flags` low nibble (`[3:0]`) for op code and
   high nibble (`[7:4]`) for dtype.
 

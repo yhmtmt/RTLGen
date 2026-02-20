@@ -12,6 +12,8 @@ and block-level OpenROAD evaluation.
 - **Implemented**: OpenROAD block flow wrappers (`npu/synth/run_block_sweep.py`).
 - **Implemented**: fp16 backend comparison sweep at `make_target=finish` with report:
   `runs/designs/npu_blocks/fp16_backend_decision_nangate45.md`.
+- **Implemented**: pre-synthesis SRAM stage wrapper with memgen-first policy
+  and CACTI fallback (`npu/synth/pre_synth_memory.py`).
 - **Locked policy**: fp16 GEMM default backend is `rtlgen_cpp` (IEEE-half path), with
   `builtin_raw16` retained as explicit non-IEEE baseline.
 - **Implemented**: `arch v0.2-draft` hierarchy schema + example and
@@ -22,6 +24,7 @@ and block-level OpenROAD evaluation.
 - Environment/setup phases: `npu/setup.md`
 - Golden RTL+perf regression: `npu/sim/run_golden.sh`
 - Perf unit tests: `make -f npu/sim/perf/Makefile test`
+- Pre-synth SRAM stage: `python3 npu/synth/pre_synth_memory.py npu/arch/examples/minimal.yml --id minimal`
 - fp16 backend sweep: `python3 npu/synth/run_fp16_backend_sweep.py --platform nangate45 --sweep npu/synth/fp16_backend_sweep_nangate45.json --make_target finish`
 
 ## Directory map

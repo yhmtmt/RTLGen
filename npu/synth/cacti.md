@@ -1,16 +1,32 @@
 # CACTI SRAM Estimation
 
 ## Purpose
-This document describes how CACTI is used to estimate SRAM PPA metrics in the
-NPU workflow, especially when the target PDK does not have a macro generator.
+This document describes the SRAM pre-synthesis stage in the NPU workflow.
+CACTI is a fallback estimator when a real PDK-specific SRAM generator is not
+available for the selected run.
 
 ## Workflow summary
-- SRAM instances are defined in `npu/arch/*.yml` under `sram.instances`.
-- `npu/synth/sram_ppa.py` runs CACTI and writes
-  `runs/designs/sram/<id>/sram_metrics.json`.
+- SRAM instances are defined in architecture YAML:
+  - v0.1: `sram.instances`
+  - v0.2-draft: `memory.instances` (+ `platform.target_pdk`, `platform.tech_node_nm`)
+- `npu/synth/pre_synth_memory.py` is the pipeline entrypoint:
+  - tries external SRAM generator first (when configured),
+  - falls back to `npu/synth/sram_ppa.py` (CACTI).
+- Canonical pre-synth output is:
+  - `runs/designs/sram/<id>/sram_metrics.json`
+  - `runs/designs/sram/<id>/sram_metrics.pre_synth.json`
+  - `runs/designs/sram/<id>/pre_synth_memory.json`
 - CACTI input templates live in `npu/synth/cacti_sram.cfg.in`.
-- For sky130hd (and other PDKs with real macros), CACTI estimates are placeholders
-  until macro generation and extraction are wired in.
+- For sky130hd (and other PDKs with real macro compilers), CACTI should be
+  treated as fallback/interim estimation.
+
+## Pre-synth stage modes
+- `auto` (default): use memgen if configured; otherwise CACTI fallback.
+- `memgen_only`: require memgen command success.
+- `cacti_only`: force CACTI path.
+
+`pre_synth_memory.py` memgen command placeholders:
+- `{arch}` `{id}` `{out_root}` `{out_dir}` `{pre_dir}` `{memgen_dir}` `{pdk}`
 
 ## Tech node handling (>90nm)
 CACTI (HP version) only supports feature sizes up to 90nm. For any SRAM instance
@@ -40,7 +56,20 @@ If `tech_node_nm` is not provided, `sram_ppa.py` maps `pdk` values to nodes:
   PPA from layout. CACTI should be treated as an interim estimate only.
 
 ## Usage
-Run directly:
+Run pre-synth stage (recommended):
+```sh
+python3 npu/synth/pre_synth_memory.py npu/arch/examples/minimal.yml --id minimal
+```
+
+Run pre-synth with explicit memgen command:
+```sh
+python3 npu/synth/pre_synth_memory.py npu/arch/examples/minimal.yml --id minimal \
+  --mode auto \
+  --memgen-cmd 'python3 tools/memgen/run.py --arch {arch} --out {memgen_dir} --pdk {pdk}' \
+  --memgen-metrics '{memgen_dir}/sram_metrics.json'
+```
+
+Run CACTI directly:
 ```sh
 python3 npu/synth/sram_ppa.py npu/arch/examples/minimal.yml --id minimal --cacti-bin /workspaces/RTLGen/third_party/cacti/cacti
 ```

@@ -11,6 +11,8 @@ Documents are grouped by purpose: **specs**, **plans**, and **logs**.
   `runs/designs/npu_blocks/fp16_backend_decision_nangate45.md`.
 - **Implemented**: `arch v0.2-draft` schema + example and `to_rtlgen` v0.2
   derivation path (arch intent -> rtlgen candidate).
+- **Implemented**: pre-synthesis SRAM stage wrapper with memgen-first policy
+  and CACTI fallback.
 
 ## Specs
 - `npu/shell/spec.md`: shell contract (MMIO, queue, DMA, events).
@@ -30,6 +32,7 @@ Documents are grouped by purpose: **specs**, **plans**, and **logs**.
 - `npu/sim/run_golden.sh`: golden regression across RTL + performance simulator.
 - `npu/sim/rtl/README.md`: RTL simulation coverage and local commands.
 - `npu/sim/perf/README.md`: perf model assumptions, options, and test coverage.
+- `npu/synth/pre_synth_memory.py`: pre-synthesis SRAM stage (memgen/cacti policy).
 - `npu/synth/run_fp16_backend_sweep.py`: fp16 backend sweep (`builtin_raw16` vs `cpp_ieee`).
 
 ## Logs

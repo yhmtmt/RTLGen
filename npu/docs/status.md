@@ -31,6 +31,8 @@ Git: e6c62e5
 - **Architecture layering v0.2 draft (Implemented)**: draft schema + example and
   `npu/arch/to_rtlgen.py` derivation path are active for `gemm`/`vec` candidate
   emission.
+- **SRAM pre-synthesis flow (Implemented)**: `npu/synth/pre_synth_memory.py`
+  selects memgen when configured and falls back to CACTI estimation.
 
 ## In progress
 - C++ MAC generator extension for explicit MAC operation modes including
@@ -38,6 +40,7 @@ Git: e6c62e5
 - Expanded vector-op constrained-random coverage for activation and derivative ops.
 - Stronger `arch v0.2` validation (types/ranges/enums) and mapper/perf usage of
   interconnect + mapping constraints.
+- Post-physical SRAM metric extraction and feedback loop into perf simulation.
 
 ## Planned
 - Broader compute-enabled OpenROAD sweeps (beyond fp16 backend comparison).

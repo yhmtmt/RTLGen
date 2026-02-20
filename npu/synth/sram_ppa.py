@@ -16,6 +16,39 @@ def load_yaml(path: Path):
         return yaml.safe_load(f)
 
 
+def extract_sram_instances(arch: dict):
+    version = str(arch.get("schema_version", "")).strip()
+    if version == "0.2-draft":
+        platform = arch.get("platform", {})
+        memory = arch.get("memory", {})
+        if not isinstance(platform, dict) or not isinstance(memory, dict):
+            return []
+        target_pdk = platform.get("target_pdk")
+        tech_node_nm = platform.get("tech_node_nm")
+        raw_instances = memory.get("instances", [])
+        if not isinstance(raw_instances, list):
+            return []
+        instances = []
+        for inst in raw_instances:
+            if not isinstance(inst, dict):
+                continue
+            out = dict(inst)
+            if out.get("pdk") is None and target_pdk is not None:
+                out["pdk"] = target_pdk
+            if out.get("tech_node_nm") is None and tech_node_nm is not None:
+                out["tech_node_nm"] = tech_node_nm
+            instances.append(out)
+        return instances
+
+    sram = arch.get("sram", {})
+    if not isinstance(sram, dict):
+        return []
+    raw_instances = sram.get("instances", [])
+    if not isinstance(raw_instances, list):
+        return []
+    return raw_instances
+
+
 def is_power_of_two(value: int) -> bool:
     return value > 0 and (value & (value - 1)) == 0
 
@@ -149,8 +182,10 @@ def main():
     args = parser.parse_args()
 
     arch = load_yaml(args.arch)
-    sram = arch.get("sram", {})
-    instances = sram.get("instances", [])
+    if not isinstance(arch, dict):
+        print("Invalid architecture YAML format.", file=sys.stderr)
+        return 1
+    instances = extract_sram_instances(arch)
     if not instances:
         print("No SRAM instances found in arch config.", file=sys.stderr)
         return 1
@@ -302,6 +337,8 @@ def main():
     payload = {
         "arch": str(args.arch),
         "id": args.id,
+        "schema_version": str(arch.get("schema_version", "")).strip(),
+        "source": "cacti",
         "instances": results,
     }
     metrics_path.write_text(json.dumps(payload, indent=2) + "\n")
