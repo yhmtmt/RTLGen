@@ -22,6 +22,13 @@ This plan defines two simulation schemes:
   (`builtin_raw16` is kept as a non-IEEE placeholder baseline).
 - FP16-5 lock step completed: fp16 GEMM default backend in RTL generator is
   now `rtlgen_cpp` (IEEE-half path) unless explicitly overridden.
+- FP16-5 finish sign-off completed: `make_target=finish` sweep recorded final
+  metrics in the same report:
+  - `builtin_raw16`: `critical_path_ns=5.4287`, `die_area=2250000`,
+    `total_power_mw=0.233`
+  - `cpp_ieee`: `critical_path_ns=5.6462`, `die_area=2250000`,
+    `total_power_mw=0.229`
+  and recommendation remains `cpp_ieee` (default-eligible backend).
 
 ## A) RTL Functional Validation (First Priority)
 
@@ -213,13 +220,12 @@ This plan defines two simulation schemes:
 - Shared error/IRQ semantics (from `npu/shell/spec.md`)
 
 ## Next steps
-- Run a confirmation sweep at `make_target=finish` for final backend lock
-  sign-off:
-  `python3 npu/synth/run_fp16_backend_sweep.py --platform nangate45 --sweep npu/synth/fp16_backend_sweep_nangate45.json --make_target finish`
-- Continue Phase 2 with extended VEC decode/execution coverage for
-  `softmax/layernorm` and derivative ops after minimal `add/mul/relu`.
+- Continue Phase 2 hardening with additional constrained-random VEC parity
+  runs for `softmax/layernorm` and derivative ops.
 - Continue Phase 5 integration: route C++ RTLGen `pp_row_feedback` MAC into
-  NPU `npu/rtlgen/gen.py` as an optional GEMM backend and validate on RTL sim.
-- Extend perf sim model coverage (VEC_OP / SOFTMAX) and refine the memory model
-  (latency/burst/outstanding).
-- Keep bandwidth parameterization documented in `npu/sim/perf/README.md`.
+  `npu/rtlgen/gen.py` as an optional GEMM backend and validate with RTL/perf
+  compare plus block-level synthesis sweeps.
+- Extend perf memory modeling fidelity (latency/burst/outstanding) and keep
+  model assumptions synchronized with `npu/sim/perf/README.md`.
+- Maintain finish-level fp16 backend sweep as a regression gate when changing
+  fp16 datapath or numeric policy defaults.

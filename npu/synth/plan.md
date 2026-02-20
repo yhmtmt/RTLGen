@@ -61,9 +61,13 @@ OpenROAD evaluation flow for block-level NPU macros.
     - `cpp_ieee`: `critical_path_ns=5.6592`, `die_area=2250000`, `total_power_mw=0.1976`
   - default recommendation is `cpp_ieee` (builtin excluded from default lock
     because it is a non-IEEE placeholder backend)
+- FP16 backend finish-level sign-off completed at `make_target=finish`:
+  - `builtin_raw16`: `critical_path_ns=5.4287`, `die_area=2250000`, `total_power_mw=0.233`
+  - `cpp_ieee`: `critical_path_ns=5.6462`, `die_area=2250000`, `total_power_mw=0.229`
+  - recommendation remains `cpp_ieee` among default-eligible backends.
 
 ## Next steps
 - Implement a minimal block-level OpenROAD run for the DMA tile.
 - Add a `runs/designs/npu_blocks/<design>/` example and sweep in `npu/synth/`.
-- Run a follow-up fp16 backend confirmation sweep at `make_target=finish`
-  before signing off backend lock for full-flow PPA.
+- Keep fp16 backend finish-level sweep as a regression gate when generator
+  defaults or fp16 datapath semantics change.

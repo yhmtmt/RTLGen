@@ -3,12 +3,15 @@
 ## Purpose
 This document defines a sequential workflow to establish the NPU development and evaluation toolchain inside the RTLGen repository.
 
-## Current status (as of 2026-01-22)
+## Current status (as of 2026-02-20)
 - RTL shell bring-up and AXI memory simulation are implemented.
 - AXI-Lite MMIO wrapper is available for the generated top.
 - Mapper can emit binary descriptors for the RTL sim path.
 - SRAM address map + AXI router integrated in RTL sim.
 - CACTI PPA flow integrated for SRAM estimation (>90nm scaling).
+- OpenROAD block flow wrappers are implemented under `npu/synth/`.
+- fp16 backend sweep was completed at `make_target=finish`
+  (`runs/designs/npu_blocks/fp16_backend_decision_nangate45.md`).
 
 ## Phase 0: Repository scaffolding
 - Create `npu/` subtree for NPU-specific assets.
@@ -109,5 +112,6 @@ This document defines a sequential workflow to establish the NPU development and
 - `npu/sim/report.md`
 
 ## Next steps
-- Add OpenROAD setup notes specific to NPU block synthesis.
+- Keep setup dependencies synchronized with CI workflow requirements.
 - Add TVM/mapper requirements once the mapper is wired to real models.
+- Add compute-enabled OpenROAD runbooks beyond fp16 backend comparison.

@@ -5,9 +5,10 @@ This folder contains the living documentation for NPU development in RTLGen.
 Documents are grouped by purpose: **specs**, **plans**, and **logs**.
 
 ## Current status
-- Specs and RTL simulation docs are implemented.
-- SRAM simulation + CACTI PPA documentation are available.
-- Performance simulation and OpenROAD flows are planned.
+- **Implemented**: shell/spec, RTL generator config spec, mapper IR, and RTL/perf simulator docs.
+- **Implemented**: OpenROAD block-flow docs and fp16 backend sweep runbooks.
+- **Implemented**: fp16 backend `finish`-level comparison report in
+  `runs/designs/npu_blocks/fp16_backend_decision_nangate45.md`.
 
 ## Specs
 - `npu/shell/spec.md`: shell contract (MMIO, queue, DMA, events).
@@ -21,6 +22,12 @@ Documents are grouped by purpose: **specs**, **plans**, and **logs**.
 - `npu/synth/plan.md`: OpenROAD integration plan.
 - `npu/synth/cacti.md`: CACTI SRAM estimation workflow and scaling rules.
 - `npu/docs/workflow.md`: end-to-end workflow guide.
+
+## Runbooks
+- `npu/sim/run_golden.sh`: golden regression across RTL + performance simulator.
+- `npu/sim/rtl/README.md`: RTL simulation coverage and local commands.
+- `npu/sim/perf/README.md`: perf model assumptions, options, and test coverage.
+- `npu/synth/run_fp16_backend_sweep.py`: fp16 backend sweep (`builtin_raw16` vs `cpp_ieee`).
 
 ## Logs
 - `npu/docs/shell_spec_log.md`: shell spec work log.
@@ -36,5 +43,5 @@ Documents are grouped by purpose: **specs**, **plans**, and **logs**.
 - `npu/docs/status.md`: single-page status snapshot.
 
 ## Next steps
-- Fill in performance simulation report schema.
-- Add OpenROAD flow details as implementation progresses.
+- Keep `status.md`, `workflow.md`, and synthesis plans synced with each sweep milestone.
+- Add explicit runbook for compute-enabled NPU block sweeps beyond fp16 backend comparison.

@@ -4,40 +4,43 @@
 Single-page snapshot of NPU development status for quick reference.
 
 <!-- STATUS_META_START -->
-Last updated: 2026-02-07
-Git: unknown
+Last updated: 2026-02-20
+Git: f1d770e
 <!-- STATUS_META_END -->
 
 ## Current status
-- **Shell/ABI**: v0.1 spec written; MMIO + CQ + DMA semantics implemented in RTL.
-- **RTLGen**: stub generator emits `top.v`, plus optional AXI‑Lite wrapper.
-- **RTL sim**: end-to-end functional validation with DMA + AXI burst + AXI‑Lite tests.
-- **SRAM sim**: AXI router + SRAM models integrated; SRAM DMA tests added.
-- **GEMM/Event**: stub decode paths raise IRQ_EVENT; basic TB coverage added.
-- **SRAM PPA**: CACTI flow integrated with >90nm scaling and aggregation.
-- **Mapper**: v0.1 IR and binary descriptor emission implemented.
-- **Performance sim**: implemented (`npu/sim/perf/`).
-  - Current op coverage: DMA_COPY, GEMM, VEC_OP, SOFTMAX, EVENT_SIGNAL/WAIT, NOOP.
-  - VEC_OP models 4-bit op codes with per-op cost knobs in perf config.
-- **OpenROAD**: planned (block-level synthesis flow pending).
-- **MAC backend**: `npu/rtlgen/gen.py` supports C++ RTLGen MAC backend and
-  now defaults fp16 GEMM to C++ IEEE-half (`compute.gemm.mac_type=fp16`
-  -> `compute.gemm.mac_source=rtlgen_cpp` unless overridden).
+- **Shell/ABI (Implemented)**: v0.1 MMIO/CQ/DMA semantics are documented and
+  exercised in RTL benches.
+- **RTLGen core path (Implemented)**: generator emits `top.v`, `mmio_map.vh`,
+  `sram_map.vh`, and optional AXI-Lite wrapper.
+- **Mapper (Implemented)**: schedule IR + binary descriptor emission are active
+  in `npu/mapper/`.
+- **RTL simulation (Implemented)**: golden regression covers DMA/GEMM/VEC/event
+  paths with RTL logs consumed by compare scripts.
+- **Performance simulation (Implemented)**: descriptor-driven analytical model
+  plus unit tests and RTL/perf comparison hooks.
+- **SRAM PPA (Implemented)**: CACTI-based flow and aggregation pipeline are available.
+- **OpenROAD block flow (Implemented)**: `run_block_sweep.py` wrapper is active.
+- **fp16 backend sweep (Implemented)**: `make_target=finish` comparison completed:
+  - `builtin_raw16`: `critical_path_ns=5.4287`, `die_area=2250000`, `total_power_mw=0.233`
+  - `cpp_ieee`: `critical_path_ns=5.6462`, `die_area=2250000`, `total_power_mw=0.229`
+  - report: `runs/designs/npu_blocks/fp16_backend_decision_nangate45.md`
+- **fp16 backend lock (Implemented)**: generator default for
+  `compute.gemm.mac_type=fp16` is `mac_source=rtlgen_cpp` (IEEE-half path);
+  `builtin_raw16` remains explicit non-IEEE baseline.
 
-## Next steps
-- Extend RTLGen with MAC-based compute generation for GEMM/VEC (start with
-  `int8` GEMM, then minimal VEC `add/mul/relu`).
-- In Phase 2, use C++ RTLGen activation modules for VEC paths (`relu`, `gelu`,
-  `softmax`, `layernorm`, and derivative kernels) and keep decode/tests aligned.
-- Integrate C++ `src/rtlgen` MAC generator (`operations[].type="mac"`) into
-  NPU core exploration, starting with accumulator feedback into PP rows.
-- Extend performance sim op coverage (VEC_OP / SOFTMAX).
-- Refine external memory modeling (latency/burst/outstanding) and calibrate to PPA.
-- Add OpenROAD flow for DMA tile and CQ logic.
-- Extend descriptor decode to GEMM and event ops.
-- Add sky130hd SRAM macro generation and replace CACTI estimates for that PDK.
+## In progress
+- C++ MAC generator extension for explicit MAC operation modes including
+  accumulator feedback (`pp_row_feedback`) for NPU exploration.
+- Expanded vector-op constrained-random coverage for activation and derivative ops.
+
+## Planned
+- Broader compute-enabled OpenROAD sweeps (beyond fp16 backend comparison).
+- Additional numeric-policy hardening and stress tests for fp16 edge behavior.
+- Optional future datatype exploration (bf16/fp8) after fp16 path maturity.
 
 ## Pointers
-- Specs: `npu/docs/index.md`
+- Index: `npu/docs/index.md`
 - Workflow: `npu/docs/workflow.md`
-- Logs: `npu/docs/rtl_sim_log.md`
+- Simulation plan: `npu/docs/sim_dev_plan.md`
+- Synthesis plan: `npu/synth/plan.md`

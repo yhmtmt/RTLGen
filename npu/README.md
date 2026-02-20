@@ -1,29 +1,38 @@
 # NPU Subsystem
 
 ## Purpose
-This directory hosts the NPU development and evaluation toolchain that extends RTLGen
-from small arithmetic blocks to NPU generation, mapping, and simulation. NVDLA is a
-reference integration target, not a required architectural match.
+This directory contains the NPU development flow built on top of RTLGen:
+architecture config, RTL generation, mapper descriptors, RTL/perf simulation,
+and block-level OpenROAD evaluation.
 
 ## Current status
-- RTL shell + DMA/AXI stub and RTL simulation path are implemented.
-- AXI-Lite MMIO wrapper is available for integration testing.
-- SRAM address map + AXI router are integrated in RTL sim.
-- CACTI-based SRAM PPA is integrated with >90nm scaling.
+- **Implemented**: shell/MMIO/CQ/DMA RTL path with AXI and AXI-Lite testbenches.
+- **Implemented**: mapper descriptor flow (`npu/mapper/`) and golden schedule assets.
+- **Implemented**: performance simulator (`npu/sim/perf/`) with RTL/perf comparison scripts.
+- **Implemented**: OpenROAD block flow wrappers (`npu/synth/run_block_sweep.py`).
+- **Implemented**: fp16 backend comparison sweep at `make_target=finish` with report:
+  `runs/designs/npu_blocks/fp16_backend_decision_nangate45.md`.
+- **Locked policy**: fp16 GEMM default backend is `rtlgen_cpp` (IEEE-half path), with
+  `builtin_raw16` retained as explicit non-IEEE baseline.
 
-Start with:
-- `npu/docs/index.md`: documentation index (specs, plans, logs).
-- `npu/setup.md`: sequential plan for establishing the environment.
+## Quick start
+- Documentation hub: `npu/docs/index.md`
+- Environment/setup phases: `npu/setup.md`
+- Golden RTL+perf regression: `npu/sim/run_golden.sh`
+- Perf unit tests: `make -f npu/sim/perf/Makefile test`
+- fp16 backend sweep: `python3 npu/synth/run_fp16_backend_sweep.py --platform nangate45 --sweep npu/synth/fp16_backend_sweep_nangate45.json --make_target finish`
 
-Current structure:
-- `npu/nvdla/`: NVDLA reference sources (submodule/subtree) and licensing notes.
-- `npu/arch/`: architecture schema + example configs.
-- `npu/shell/`: host interface and DMA shell contract.
-- `npu/rtlgen/`: RTLGen-based generators and templates.
-- `npu/synth/`: OpenROAD flows and floorplanning guidance.
-- `npu/mapper/`: mapping/scheduling logic (e.g., TVM integration).
-- `npu/sim/`: abstracted simulation and reporting.
+## Directory map
+- `npu/nvdla/`: NVDLA reference sources and compatibility references.
+- `npu/arch/`: architecture schema, examples, and converters.
+- `npu/shell/`: shell/MMIO contract and interface spec.
+- `npu/rtlgen/`: NPU RTL generator and configuration schema.
+- `npu/mapper/`: schedule/descriptors and mapping helpers.
+- `npu/sim/`: RTL and performance simulation flows.
+- `npu/synth/`: OpenROAD sweep wrappers, floorplan notes, and synthesis plans.
+- `npu/docs/`: status, workflow, and development plans.
 
 ## Next steps
-- Integrate OpenROAD flow for NPU blocks.
-- Expand mapper/simulator beyond RTL functional tests.
+- Expand C++ MAC generator integration (`pp_row_feedback`) into NPU backend options.
+- Strengthen fp16 numerical validation coverage (random stress and policy edge cases).
+- Extend vector-op constrained-random and derivative-op RTL/perf parity tests.
