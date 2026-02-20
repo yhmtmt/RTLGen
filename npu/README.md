@@ -14,6 +14,8 @@ and block-level OpenROAD evaluation.
   `runs/designs/npu_blocks/fp16_backend_decision_nangate45.md`.
 - **Locked policy**: fp16 GEMM default backend is `rtlgen_cpp` (IEEE-half path), with
   `builtin_raw16` retained as explicit non-IEEE baseline.
+- **Implemented**: `arch v0.2-draft` hierarchy schema + example and
+  architecture-to-rtlgen derivation adapter in `npu/arch/to_rtlgen.py`.
 
 ## Quick start
 - Documentation hub: `npu/docs/index.md`
@@ -36,3 +38,5 @@ and block-level OpenROAD evaluation.
 - Expand C++ MAC generator integration (`pp_row_feedback`) into NPU backend options.
 - Strengthen fp16 numerical validation coverage (random stress and policy edge cases).
 - Extend vector-op constrained-random and derivative-op RTL/perf parity tests.
+- Harden `arch v0.2` validation and map interconnect/mapping constraints into
+  mapper/perf policy for hierarchical execution.

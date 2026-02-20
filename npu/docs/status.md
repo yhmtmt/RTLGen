@@ -5,7 +5,7 @@ Single-page snapshot of NPU development status for quick reference.
 
 <!-- STATUS_META_START -->
 Last updated: 2026-02-20
-Git: f1d770e
+Git: e6c62e5
 <!-- STATUS_META_END -->
 
 ## Current status
@@ -28,11 +28,16 @@ Git: f1d770e
 - **fp16 backend lock (Implemented)**: generator default for
   `compute.gemm.mac_type=fp16` is `mac_source=rtlgen_cpp` (IEEE-half path);
   `builtin_raw16` remains explicit non-IEEE baseline.
+- **Architecture layering v0.2 draft (Implemented)**: draft schema + example and
+  `npu/arch/to_rtlgen.py` derivation path are active for `gemm`/`vec` candidate
+  emission.
 
 ## In progress
 - C++ MAC generator extension for explicit MAC operation modes including
   accumulator feedback (`pp_row_feedback`) for NPU exploration.
 - Expanded vector-op constrained-random coverage for activation and derivative ops.
+- Stronger `arch v0.2` validation (types/ranges/enums) and mapper/perf usage of
+  interconnect + mapping constraints.
 
 ## Planned
 - Broader compute-enabled OpenROAD sweeps (beyond fp16 backend comparison).

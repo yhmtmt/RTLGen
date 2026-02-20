@@ -9,12 +9,15 @@ Documents are grouped by purpose: **specs**, **plans**, and **logs**.
 - **Implemented**: OpenROAD block-flow docs and fp16 backend sweep runbooks.
 - **Implemented**: fp16 backend `finish`-level comparison report in
   `runs/designs/npu_blocks/fp16_backend_decision_nangate45.md`.
+- **Implemented**: `arch v0.2-draft` schema + example and `to_rtlgen` v0.2
+  derivation path (arch intent -> rtlgen candidate).
 
 ## Specs
 - `npu/shell/spec.md`: shell contract (MMIO, queue, DMA, events).
 - `npu/rtlgen/config_spec.md`: RTLGen NPU config fields.
 - `npu/mapper/ir.md`: schedule IR aligned with shell descriptors.
 - `npu/sim/report.md`: simulation report schema (draft).
+- `npu/docs/arch_v0_2_draft.md`: architecture-layer hierarchy and `arch v0.2` draft direction.
 
 ## Plans
 - `npu/setup.md`: environment + integration phases.
@@ -45,3 +48,5 @@ Documents are grouped by purpose: **specs**, **plans**, and **logs**.
 ## Next steps
 - Keep `status.md`, `workflow.md`, and synthesis plans synced with each sweep milestone.
 - Add explicit runbook for compute-enabled NPU block sweeps beyond fp16 backend comparison.
+- Harden `arch v0.2` validation and wire interconnect/mapping constraints into
+  mapper/perf policy.

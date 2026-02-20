@@ -1,0 +1,126 @@
+schema_version: 0.2-draft
+
+platform:
+  target_pdk: nangate45
+  tech_node_nm: 45
+  clock_period_ns: 10.0
+
+shell:
+  command_queue_depth: 64
+  supports_interrupts: true
+  mmio_addr_width: 12
+  control_data_width: 32
+
+io:
+  dma:
+    engines: 2
+    peak_bw_gbps: 64.0
+    max_outstanding: 32
+    addr_width: 64
+    data_width: 256
+  axi:
+    addr_width: 64
+    data_width: 256
+    id_width: 4
+
+memory:
+  policy:
+    prefer_local_sram: true
+    allow_dma_bypass: false
+  instances:
+    - name: activation_sram
+      depth: 16384
+      width: 256
+      banks: 8
+      read_latency: 1
+      byte_en: true
+      port: 1r1w
+      base_addr: 0x80000000
+      alignment_bytes: 64
+      attached_macro: tile0
+    - name: weight_sram
+      depth: 16384
+      width: 256
+      banks: 8
+      read_latency: 1
+      byte_en: true
+      port: 1r1w
+      base_addr: 0x80400000
+      alignment_bytes: 64
+      attached_macro: tile0
+
+macros:
+  compute_tiles:
+    - name: tile0
+      count: 4
+      gemm:
+        mac_type_candidates: [int8, int16, fp16]
+        mac_backend_candidates: [builtin_int8_dot, builtin_int16_dot, builtin_fp16_dot, rtlgen_cpp]
+        lanes_candidates: [1, 2, 4, 8]
+        accum_width_candidates: [16, 32]
+        pipeline_candidates: [1, 2]
+        fp16_policy:
+          semantics_candidates: [ieee_half, raw16_placeholder]
+          accumulation_candidates: [fp16, fp32, int32]
+          rounding: [rne]
+          subnormals_candidates: [preserve, flush]
+        rtlgen_cpp:
+          allow_pp_row_feedback: true
+          ppg_algorithm_candidates: [Booth4]
+          compressor_structure_candidates: [AdderTree]
+          cpa_structure_candidates: [BrentKung]
+      vec:
+        lanes_candidates: [4, 8]
+        ops_supported: [add, mul, relu, gelu, softmax, layernorm, drelu, dgelu, dsoftmax, dlayernorm]
+        activation_source_candidates: [builtin, rtlgen_cpp]
+        fp16_arith_source_candidates: [builtin, rtlgen_cpp]
+  reduction_units:
+    - name: tile_reduce
+      count: 1
+      mode: tree_sum
+
+interconnect:
+  topology: noc_2d_mesh
+  multicast_support: true
+  links:
+    - name: dma_to_tiles
+      src: dma
+      dst: tile0
+      width_bits: 256
+      bandwidth_gbps: 64.0
+      latency_cycles: 8
+    - name: tile_to_reduce
+      src: tile0
+      dst: tile_reduce
+      width_bits: 256
+      bandwidth_gbps: 128.0
+      latency_cycles: 4
+    - name: reduce_to_dma
+      src: tile_reduce
+      dst: dma
+      width_bits: 256
+      bandwidth_gbps: 64.0
+      latency_cycles: 8
+
+mapping:
+  hierarchy:
+    macro_level_partition: true
+    tile_level_schedule: true
+    descriptor_level_emit: true
+  constraints:
+    max_tiles_per_op: 4
+    allow_cross_tile_reduction: true
+    deterministic_ordering: true
+
+search:
+  objectives:
+    primary: [throughput, power, area]
+    constraints:
+      max_area_um2: 3000000
+      max_power_mw: 300
+      min_tops: 1.0
+  derive_to_rtlgen:
+    strategy: hierarchical
+    use_history: true
+    history_db: runs/search/npu/history.jsonl
+    candidate_budget_per_iter: 64
