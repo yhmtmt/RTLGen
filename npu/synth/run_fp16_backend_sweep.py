@@ -170,6 +170,11 @@ def run_backend_sweep(
     top_module: str,
     platform: str,
     sweep_path: Path,
+    macro_manifest: Optional[Path],
+    macro_library: Optional[Path],
+    macro_select: List[str],
+    macro_select_json: Optional[Path],
+    macro_required: bool,
     make_target: Optional[str],
     skip_existing: bool,
     force_copy: bool,
@@ -188,6 +193,16 @@ def run_backend_sweep(
         "--sweep",
         str(sweep_path),
     ]
+    if macro_manifest:
+        cmd.extend(["--macro_manifest", str(macro_manifest)])
+    if macro_library:
+        cmd.extend(["--macro_library", str(macro_library)])
+    for selector in macro_select:
+        cmd.extend(["--macro_select", selector])
+    if macro_select_json:
+        cmd.extend(["--macro_select_json", str(macro_select_json)])
+    if macro_required:
+        cmd.append("--macro_required")
     if make_target:
         cmd.extend(["--make_target", make_target])
     if skip_existing:
@@ -354,6 +369,35 @@ def main() -> None:
         "--make_target",
         help="Optional OpenROAD make target to run (e.g., 3_5_place_dp, finish).",
     )
+    ap.add_argument(
+        "--macro_manifest",
+        help="Optional hardened-macro manifest passed through to run_block_sweep.py",
+    )
+    ap.add_argument(
+        "--macro_library",
+        help=(
+            "Optional hardened-macro library JSON passed through to run_block_sweep.py. "
+            "Mutually exclusive with --macro_manifest."
+        ),
+    )
+    ap.add_argument(
+        "--macro_select",
+        action="append",
+        default=[],
+        help="Optional macro-library selector key=value passed through (repeatable).",
+    )
+    ap.add_argument(
+        "--macro_select_json",
+        help=(
+            "Optional macro selector JSON passed to run_block_sweep.py "
+            "(flattened keys contribute to macro-library matching)."
+        ),
+    )
+    ap.add_argument(
+        "--macro_required",
+        action="store_true",
+        help="Require a macro-library match for each sweep point.",
+    )
     ap.add_argument("--skip_existing", action="store_true", help="Pass through to run_block_sweep.py")
     ap.add_argument("--force_copy", action="store_true", help="Pass through to run_block_sweep.py")
     ap.add_argument("--dry_run", action="store_true", help="Dry-run inside run_block_sweep.py")
@@ -368,6 +412,11 @@ def main() -> None:
     design_root.mkdir(parents=True, exist_ok=True)
 
     rows: List[Dict[str, object]] = []
+    macro_manifest = Path(args.macro_manifest).resolve() if args.macro_manifest else None
+    macro_library = Path(args.macro_library).resolve() if args.macro_library else None
+    macro_select_json = Path(args.macro_select_json).resolve() if args.macro_select_json else None
+    if macro_manifest is not None and macro_library is not None:
+        raise ValueError("Use either --macro_manifest or --macro_library, not both.")
     for entry in BACKENDS:
         backend = str(entry["backend"])
         design = str(entry["design"])
@@ -381,11 +430,19 @@ def main() -> None:
             design_dir=design_dir,
             skip_export=args.skip_export,
         )
+        backend_macro_select_json = macro_select_json
+        if backend_macro_select_json is None and macro_library is not None:
+            backend_macro_select_json = config_path
         sweep_error = run_backend_sweep(
             design_dir=design_dir,
             top_module=design,
             platform=args.platform,
             sweep_path=sweep_path,
+            macro_manifest=macro_manifest,
+            macro_library=macro_library,
+            macro_select=args.macro_select,
+            macro_select_json=backend_macro_select_json,
+            macro_required=args.macro_required,
             make_target=args.make_target,
             skip_existing=args.skip_existing,
             force_copy=args.force_copy,

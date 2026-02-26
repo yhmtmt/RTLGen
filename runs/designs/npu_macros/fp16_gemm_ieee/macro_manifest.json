@@ -1,0 +1,19 @@
+{
+  "version": "0.1",
+  "design_id": "fp16_gemm_ieee",
+  "module": "gemm_mac_fp16_ieee",
+  "platform": "nangate45",
+  "flow_variant": "base",
+  "blackboxes": [
+    "gemm_mac_fp16_ieee"
+  ],
+  "additional_lefs": [
+    "runs/designs/npu_macros/fp16_gemm_ieee/abstract/gemm_mac_fp16_ieee.lef"
+  ],
+  "additional_libs": [
+    "runs/designs/npu_macros/fp16_gemm_ieee/abstract/gemm_mac_fp16_ieee_typ.lib"
+  ],
+  "additional_gds": [
+    "runs/designs/npu_macros/fp16_gemm_ieee/abstract/6_final.gds"
+  ]
+}

@@ -57,6 +57,7 @@ macros:
         mac_type_candidates: [int8, int16, fp16]
         mac_backend_candidates: [builtin_int8_dot, builtin_int16_dot, builtin_fp16_dot, rtlgen_cpp]
         lanes_candidates: [1, 2, 4, 8]
+        num_modules_candidates: [2, 4]
         accum_width_candidates: [16, 32]
         pipeline_candidates: [1, 2]
         fp16_policy:
@@ -69,6 +70,16 @@ macros:
           ppg_algorithm_candidates: [Booth4]
           compressor_structure_candidates: [AdderTree]
           cpa_structure_candidates: [BrentKung]
+        physical_hardening:
+          macro_library: npu/synth/macro_library_example.json
+          require_match: false
+          selector_defaults:
+            macro.module: gemm_compute_array
+          selector_sweep_keys:
+            - compute.gemm.mac_type
+            - compute.gemm.mac_source
+            - compute.gemm.num_modules
+            - compute.gemm.lanes
       vec:
         lanes_candidates: [4, 8]
         ops_supported: [add, mul, relu, gelu, softmax, layernorm, drelu, dgelu, dsoftmax, dlayernorm]

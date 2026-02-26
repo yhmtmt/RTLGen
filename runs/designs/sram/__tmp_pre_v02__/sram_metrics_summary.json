@@ -1,0 +1,12 @@
+{
+  "total_area_um2": 0.0,
+  "total_read_energy_pj": 0.0,
+  "total_write_energy_pj": 0.0,
+  "max_access_time_ns": 0.0,
+  "missing_instances": [
+    "activation_sram",
+    "weight_sram"
+  ],
+  "instance_count": 2,
+  "estimated_count": 0
+}

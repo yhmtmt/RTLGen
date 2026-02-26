@@ -13,6 +13,9 @@ draft direction for `arch v0.2`.
 - **Implemented**: `npu/arch/to_rtlgen.py` now supports `schema_version: 0.2-draft`
   and derives `compute.gemm`/`compute.vec` RTLGen candidates (including optional
   history-aware selection).
+- **Implemented**: draft schema/example now include optional
+  `macros.compute_tiles[].gemm.physical_hardening` to describe macro-library
+  selection intent for hierarchical physical synthesis evaluation.
 - **Gap**: validation is still shallow (required-key checks only), and
   interconnect/mapping fields are not yet consumed by mapper/simulator policy.
 
@@ -52,6 +55,7 @@ draft direction for `arch v0.2`.
 - Add explicit macro block declarations.
 - Add explicit interconnect links/topology.
 - Add mapping hierarchy and constraints.
+- Add architecture-level hooks for hardened-macro library selection in eval.
 - Add search intent and history hooks for candidate derivation.
 - Preserve v0.1 compatibility while v0.2 is draft-only.
 

@@ -1,0 +1,12 @@
+{
+  "stage": "pre_synth_memory",
+  "source": "cacti_fallback",
+  "arch": "/workspaces/RTLGen/npu/arch/examples/minimal.yml",
+  "id": "__tmp_pipeline_refactor__",
+  "pdk": "sky130",
+  "mode": "cacti_only",
+  "memgen_cmd_effective": "",
+  "memgen_failure_reason": "",
+  "canonical_metrics": "/workspaces/RTLGen/runs/designs/sram/__tmp_pipeline_refactor__/sram_metrics.json",
+  "stage_metrics": "/workspaces/RTLGen/runs/designs/sram/__tmp_pipeline_refactor__/sram_metrics.pre_synth.json"
+}

@@ -1,0 +1,2 @@
+design,platform,config_hash,param_hash,tag,status,critical_path_ns,die_area,total_power_mw,params_json,result_path
+gemm_compute_array_fp16_2slot_c300,nangate45,9c39d5153f8d,a6202762,npu_macro_a6202762,ok,-1.0,90000.0,0.135,"{""CLOCK_PERIOD"": 10.0, ""CLOCK_PORT"": """", ""CORE_AREA"": ""20 20 280 280"", ""CORE_UTILIZATION"": """", ""DIE_AREA"": ""0 0 300 300"", ""FLOW_VARIANT"": ""base"", ""PLACE_DENSITY"": 0.4, ""tag_prefix"": ""npu_macro""}",/orfs/flow/reports/nangate45/gemm_compute_array_fp16_2slot_c300/base/6_finish.rpt

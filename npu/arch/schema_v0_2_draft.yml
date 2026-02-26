@@ -60,6 +60,7 @@ macros:
   #     mac_type_candidates: list
   #     mac_backend_candidates: list
   #     lanes_candidates: list
+  #     num_modules_candidates: list
   #     accum_width_candidates: list
   #     pipeline_candidates: list
   #     fp16_policy:
@@ -72,6 +73,11 @@ macros:
   #       ppg_algorithm_candidates: list
   #       compressor_structure_candidates: list
   #       cpa_structure_candidates: list
+  #     physical_hardening:
+  #       macro_library: str
+  #       require_match: bool
+  #       selector_defaults: object
+  #       selector_sweep_keys: list
   # - vec:
   #     lanes_candidates: list
   #     ops_supported: list

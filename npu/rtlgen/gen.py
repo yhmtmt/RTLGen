@@ -47,26 +47,7 @@ module {top_name} (
   reg        cq_stage_valid;
   reg        dma_pending;
   reg [2:0]  dma_state;
-  reg        gemm_pending;
-  reg [1:0]  gemm_slot_valid;
-  reg [1:0]  gemm_slot_done;
-  reg [31:0] gemm_slot_cycles0;
-  reg [31:0] gemm_slot_cycles1;
-  reg [63:0] gemm_slot_uid0;
-  reg [63:0] gemm_slot_uid1;
-  reg [{dma_addr_width_minus1}:0] gemm_slot_src0;
-  reg [{dma_addr_width_minus1}:0] gemm_slot_src1;
-  reg [{dma_addr_width_minus1}:0] gemm_slot_dst0;
-  reg [{dma_addr_width_minus1}:0] gemm_slot_dst1;
-  reg [31:0] gemm_slot_size0;
-  reg [31:0] gemm_slot_size1;
-  reg [8:0]  gemm_slot_beats0;
-  reg [8:0]  gemm_slot_beats1;
-  reg [7:0]  gemm_slot_arlen0;
-  reg [7:0]  gemm_slot_arlen1;
-  reg        gemm_dma_sel;
-  reg        gemm_done_pulse;
-  reg [63:0] gemm_done_uid;
+{gemm_state_regs}
 {compute_state_regs}
   reg [{axi_data_width_minus1}:0] dma_buf;
   reg [8:0]  dma_beats;
@@ -109,6 +90,7 @@ module {top_name} (
   localparam       VEC_EN_DSOFTMAX  = {vec_en_dsoftmax};
   localparam       VEC_EN_DLAYERNORM= {vec_en_dlayernorm};
   localparam       VEC_FP16_ENABLED = {vec_fp16_enabled};
+  localparam integer GEMM_NUM_MODULES = {gemm_num_modules};
   localparam integer GEMM_MAC_LANES = {gemm_mac_lanes};
   localparam integer GEMM_ELEM_BITS = {gemm_elem_bits};
   localparam integer GEMM_FP16_RAW16_PLACEHOLDER = {gemm_fp16_raw16_placeholder};
@@ -168,26 +150,7 @@ module {top_name} (
       cq_stage_valid <= 0;
       dma_pending <= 0;
       dma_state <= 0;
-      gemm_pending <= 0;
-      gemm_slot_valid <= 0;
-      gemm_slot_done <= 0;
-      gemm_slot_cycles0 <= 0;
-      gemm_slot_cycles1 <= 0;
-      gemm_slot_uid0 <= 0;
-      gemm_slot_uid1 <= 0;
-      gemm_slot_src0 <= 0;
-      gemm_slot_src1 <= 0;
-      gemm_slot_dst0 <= 0;
-      gemm_slot_dst1 <= 0;
-      gemm_slot_size0 <= 0;
-      gemm_slot_size1 <= 0;
-      gemm_slot_beats0 <= 0;
-      gemm_slot_beats1 <= 0;
-      gemm_slot_arlen0 <= 0;
-      gemm_slot_arlen1 <= 0;
-      gemm_dma_sel <= 0;
-      gemm_done_pulse <= 0;
-      gemm_done_uid <= 0;
+{gemm_reset}
 {compute_reset}
       dma_buf <= 0;
       dma_beats <= 0;
@@ -235,7 +198,7 @@ module {top_name} (
         status <= STATUS_ERR;
         irq_status[IRQ_ERROR] <= 1'b1;
       end else if (!(mmio_we && mmio_addr == OFF_DOORBELL)) begin
-        if ((cq_count != 0) || cq_stage_valid || dma_pending || vec_pending || (gemm_slot_valid != 2'b00)) begin
+        if ((cq_count != 0) || cq_stage_valid || dma_pending || vec_pending || {gemm_slots_busy_expr}) begin
           status <= STATUS_BUSY;
         end else begin
           status <= STATUS_IDLE;
@@ -628,15 +591,24 @@ def load_config(path: str) -> dict:
 
 
 def resolve_rtlgen_bin_path(binary_path: str) -> Path:
-    rtlgen_bin_path = Path(binary_path)
-    if not rtlgen_bin_path.is_absolute():
-        rtlgen_bin_path = Path.cwd() / rtlgen_bin_path
-    if not rtlgen_bin_path.exists():
-        die(
-            f"RTLGen binary not found: {rtlgen_bin_path}. "
-            "Build C++ rtlgen first or update binary_path."
-        )
-    return rtlgen_bin_path
+    requested = Path(binary_path)
+    candidates: list[Path] = []
+    if requested.is_absolute():
+        candidates.append(requested)
+    else:
+        candidates.append(Path.cwd() / requested)
+        repo_root = Path(__file__).resolve().parents[2]
+        candidates.append(repo_root / requested)
+
+    for cand in candidates:
+        if cand.exists():
+            return cand.resolve()
+
+    tried = ", ".join(str(cand) for cand in candidates)
+    die(
+        f"RTLGen binary not found. tried: {tried}. "
+        "Build C++ rtlgen first or update binary_path."
+    )
 
 
 def generate_cpp_mac_module(gemm_cfg: dict, out_path: Path) -> tuple[str, str]:
@@ -650,6 +622,7 @@ def generate_cpp_mac_module(gemm_cfg: dict, out_path: Path) -> tuple[str, str]:
     rtlgen_bin_path = resolve_rtlgen_bin_path(rtlgen_bin)
 
     module_name = str(cpp_cfg.get("module_name", "gemm_mac_int8_pp"))
+    pipeline_depth = int(gemm_cfg.get("pipeline", 1))
     mac_cfg = {
         "version": "1.1",
         "operands": [
@@ -672,7 +645,7 @@ def generate_cpp_mac_module(gemm_cfg: dict, out_path: Path) -> tuple[str, str]:
                     "compressor_assignment": str(cpp_cfg.get("compressor_assignment", "legacy_fa_ha")),
                     "cpa_structure": str(cpp_cfg.get("cpa_structure", "BrentKung")),
                     "accumulation_mode": "pp_row_feedback",
-                    "pipeline_depth": 1,
+                    "pipeline_depth": pipeline_depth,
                 },
             }
         ],
@@ -1029,7 +1002,14 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
     else:
         gemm_mac_source = str(gemm_mac_source_raw).lower()
 
+    gemm_lanes_per_module_raw = gemm_cfg.get("lanes_per_module")
     gemm_mac_lanes_raw = gemm_cfg.get("lanes")
+    if gemm_lanes_per_module_raw is not None and gemm_mac_lanes_raw is not None:
+        if int(gemm_lanes_per_module_raw) != int(gemm_mac_lanes_raw):
+            die("compute.gemm.lanes_per_module must match compute.gemm.lanes when both are provided")
+    if gemm_lanes_per_module_raw is not None:
+        gemm_mac_lanes_raw = gemm_lanes_per_module_raw
+
     if gemm_mac_lanes_raw is None:
         if gemm_mac_type == "fp16" and gemm_mac_source == "rtlgen_cpp":
             gemm_mac_lanes = 1
@@ -1049,6 +1029,7 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
     else:
         gemm_accum_width = int(gemm_accum_width_raw)
     gemm_pipeline = int(gemm_cfg.get("pipeline", 1))
+    gemm_num_modules = int(gemm_cfg.get("num_modules", 2))
     gemm_fp16_cfg = gemm_cfg.get("fp16", {})
     if gemm_fp16_cfg is None:
         gemm_fp16_cfg = {}
@@ -1107,15 +1088,17 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
 
     if gemm_pipeline < 1:
         die("compute.gemm.pipeline must be >= 1")
+    if gemm_num_modules < 1 or gemm_num_modules > 16:
+        die("compute.gemm.num_modules must be in [1, 16]")
 
     if compute_enabled and gemm_mac_type not in ("int8", "int16", "fp16"):
         die("compute.gemm.mac_type must be one of: int8, int16, fp16")
     if gemm_mac_type in ("int16", "fp16"):
         if gemm_mac_lanes < 1 or gemm_mac_lanes > 4:
-            die("compute.gemm.lanes must be in [1, 4] when compute.gemm.mac_type is int16/fp16")
+            die("compute.gemm.lanes_per_module (or lanes) must be in [1, 4] when compute.gemm.mac_type is int16/fp16")
     else:
         if gemm_mac_lanes < 1 or gemm_mac_lanes > 8:
-            die("compute.gemm.lanes must be in [1, 8] when compute.gemm.mac_type=int8")
+            die("compute.gemm.lanes_per_module (or lanes) must be in [1, 8] when compute.gemm.mac_type=int8")
     if gemm_accum_width < 16 or gemm_accum_width > 64:
         die("compute.gemm.accum_width must be in [16, 64]")
     if gemm_fp16_semantics not in ("raw16_placeholder", "ieee_half"):
@@ -1142,7 +1125,7 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
             if gemm_fp16_subnormals != "preserve":
                 die("compute.gemm.fp16.subnormals must be preserve for current fp16 rtlgen_cpp backend")
             if gemm_mac_lanes != 1:
-                die("compute.gemm.lanes must be 1 when compute.gemm.mac_source=rtlgen_cpp and mac_type=fp16")
+                die("compute.gemm.lanes_per_module (or lanes) must be 1 when compute.gemm.mac_source=rtlgen_cpp and mac_type=fp16")
             if gemm_accum_width != 16:
                 die("compute.gemm.accum_width must be 16 when compute.gemm.mac_source=rtlgen_cpp and mac_type=fp16")
         else:
@@ -1161,7 +1144,7 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         if gemm_mac_type != "int8":
             die("compute.gemm.mac_type must be int8 when compute.gemm.mac_source=rtlgen_cpp")
         if gemm_mac_lanes != 1:
-            die("compute.gemm.lanes must be 1 when compute.gemm.mac_source=rtlgen_cpp")
+            die("compute.gemm.lanes_per_module (or lanes) must be 1 when compute.gemm.mac_source=rtlgen_cpp")
         if gemm_accum_width != 16:
             die("compute.gemm.accum_width must be 16 when compute.gemm.mac_source=rtlgen_cpp")
     if vec_activation_source not in ("builtin", "rtlgen_cpp"):
@@ -1184,6 +1167,60 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
     gemm_accum_width_minus1 = gemm_accum_width - 1
     gemm_a_hi = 64 + gemm_mac_vec_width - 1
     gemm_b_hi = 128 + gemm_mac_vec_width - 1
+    gemm_slot_count_minus1 = gemm_num_modules - 1
+    gemm_slot_valid_zero = f"{gemm_num_modules}'b0"
+    gemm_slot_idx_width = max(1, math.ceil(math.log2(gemm_num_modules)))
+    gemm_slot_idx_width_minus1 = gemm_slot_idx_width - 1
+    gemm_state_lines = [
+        "  reg        gemm_pending;",
+        f"  reg [{gemm_slot_count_minus1}:0]  gemm_slot_valid;",
+        f"  reg [{gemm_slot_count_minus1}:0]  gemm_slot_done;",
+    ]
+    gemm_reset_lines = [
+        "      gemm_pending <= 0;",
+        "      gemm_slot_valid <= 0;",
+        "      gemm_slot_done <= 0;",
+    ]
+    for slot_idx in range(gemm_num_modules):
+        gemm_state_lines.extend(
+            [
+                f"  reg [31:0] gemm_slot_cycles{slot_idx};",
+                f"  reg [63:0] gemm_slot_uid{slot_idx};",
+                f"  reg [{dma_addr_width_minus1}:0] gemm_slot_src{slot_idx};",
+                f"  reg [{dma_addr_width_minus1}:0] gemm_slot_dst{slot_idx};",
+                f"  reg [31:0] gemm_slot_size{slot_idx};",
+                f"  reg [8:0]  gemm_slot_beats{slot_idx};",
+                f"  reg [7:0]  gemm_slot_arlen{slot_idx};",
+            ]
+        )
+        gemm_reset_lines.extend(
+            [
+                f"      gemm_slot_cycles{slot_idx} <= 0;",
+                f"      gemm_slot_uid{slot_idx} <= 0;",
+                f"      gemm_slot_src{slot_idx} <= 0;",
+                f"      gemm_slot_dst{slot_idx} <= 0;",
+                f"      gemm_slot_size{slot_idx} <= 0;",
+                f"      gemm_slot_beats{slot_idx} <= 0;",
+                f"      gemm_slot_arlen{slot_idx} <= 0;",
+            ]
+        )
+    gemm_state_lines.extend(
+        [
+            f"  reg [{gemm_slot_idx_width_minus1}:0] gemm_dma_sel;",
+            "  reg        gemm_done_pulse;",
+            "  reg [63:0] gemm_done_uid;",
+        ]
+    )
+    gemm_reset_lines.extend(
+        [
+            "      gemm_dma_sel <= 0;",
+            "      gemm_done_pulse <= 0;",
+            "      gemm_done_uid <= 0;",
+        ]
+    )
+    gemm_state_regs = "\n".join(gemm_state_lines)
+    gemm_reset = "\n".join(gemm_reset_lines)
+    gemm_slots_busy_expr = f"(gemm_slot_valid != {gemm_slot_valid_zero})"
     vec_data_width = vec_lanes * 8
     vec_data_width_minus1 = vec_data_width - 1
     vec_a_hi = 64 + vec_data_width - 1
@@ -1251,108 +1288,124 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
             "standalone units because compute.vec.fp16_arith_source is not rtlgen_cpp."
         )
 
-    compute_state_regs = f"""  reg [{gemm_mac_vec_width_minus1}:0] gemm_mac_a_vec0;
-  reg [{gemm_mac_vec_width_minus1}:0] gemm_mac_b_vec0;
-  reg [{gemm_mac_vec_width_minus1}:0] gemm_mac_a_vec1;
-  reg [{gemm_mac_vec_width_minus1}:0] gemm_mac_b_vec1;
-  reg signed [{gemm_accum_width_minus1}:0] gemm_slot_accum0;
-  reg signed [{gemm_accum_width_minus1}:0] gemm_slot_accum1;
-  reg [{vec_data_width_minus1}:0] vec_in0;
-  reg [{vec_data_width_minus1}:0] vec_in1;
-  reg [{vec_data_width_minus1}:0] vec_last_result;
-  reg [3:0] vec_op_sel;
-  reg [3:0] vec_dtype_sel;
-  reg vec_pending;
-  reg vec_done_pulse;"""
+    gemm_compute_state_lines = []
+    for slot_idx in range(gemm_num_modules):
+        gemm_compute_state_lines.extend(
+            [
+                f"  reg [{gemm_mac_vec_width_minus1}:0] gemm_mac_a_vec{slot_idx};",
+                f"  reg [{gemm_mac_vec_width_minus1}:0] gemm_mac_b_vec{slot_idx};",
+                f"  reg signed [{gemm_accum_width_minus1}:0] gemm_slot_accum{slot_idx};",
+            ]
+        )
+    compute_state_regs = "\n".join(
+        gemm_compute_state_lines
+        + [
+            f"  reg [{vec_data_width_minus1}:0] vec_in0;",
+            f"  reg [{vec_data_width_minus1}:0] vec_in1;",
+            f"  reg [{vec_data_width_minus1}:0] vec_last_result;",
+            "  reg [3:0] vec_op_sel;",
+            "  reg [3:0] vec_dtype_sel;",
+            "  reg vec_pending;",
+            "  reg vec_done_pulse;",
+        ]
+    )
 
     if use_cpp_mac and cpp_mac_backend == "int8_pp_feedback":
-        gemm_compute_instances = f"""
-  wire signed [15:0] gemm_mac_next0;
-  wire signed [15:0] gemm_mac_next1;
+        gemm_slot_compute_body = f"""      wire signed [15:0] slot_mac_next16;
+      wire signed [ACC_WIDTH-1:0] slot_next;
 
-  {cpp_module_name} u_gemm_mac0 (
-    .multiplicand(gemm_mac_a_vec0[7:0]),
-    .multiplier(gemm_mac_b_vec0[7:0]),
-    .accumulator(gemm_slot_accum0[15:0]),
-    .result(gemm_mac_next0)
-  );
+      {cpp_module_name} u_slot_mac (
+        .multiplicand(slot_a[7:0]),
+        .multiplier(slot_b[7:0]),
+        .accumulator(slot_accum_in[15:0]),
+        .result(slot_mac_next16)
+      );
 
-  {cpp_module_name} u_gemm_mac1 (
-    .multiplicand(gemm_mac_a_vec1[7:0]),
-    .multiplier(gemm_mac_b_vec1[7:0]),
-    .accumulator(gemm_slot_accum1[15:0]),
-    .result(gemm_mac_next1)
-  );
-"""
-        compute_accum_update = """      if (gemm_slot_valid[0] && !gemm_slot_done[0]) begin
-        gemm_slot_accum0 <= $signed(gemm_mac_next0);
-      end
-      if (gemm_slot_valid[1] && !gemm_slot_done[1]) begin
-        gemm_slot_accum1 <= $signed(gemm_mac_next1);
-      end
-"""
+      assign slot_next = $signed(slot_mac_next16);"""
     elif use_cpp_mac and cpp_mac_backend == "fp16_ieee":
-        gemm_compute_instances = f"""
-  wire [15:0] gemm_mac_next0;
-  wire [15:0] gemm_mac_next1;
+        gemm_slot_compute_body = f"""      wire [15:0] slot_mac_next16;
+      wire signed [ACC_WIDTH-1:0] slot_next;
 
-  {cpp_module_name} u_gemm_mac0 (
-    .A(gemm_mac_a_vec0[15:0]),
-    .B(gemm_mac_b_vec0[15:0]),
-    .C(gemm_slot_accum0[15:0]),
-    .negateAB(1'b0),
-    .negateC(1'b0),
-    .RndMode(2'b00),
-    .R(gemm_mac_next0)
-  );
+      {cpp_module_name} u_slot_mac (
+        .A(slot_a[15:0]),
+        .B(slot_b[15:0]),
+        .C(slot_accum_in[15:0]),
+        .negateAB(1'b0),
+        .negateC(1'b0),
+        .RndMode(2'b00),
+        .R(slot_mac_next16)
+      );
 
-  {cpp_module_name} u_gemm_mac1 (
-    .A(gemm_mac_a_vec1[15:0]),
-    .B(gemm_mac_b_vec1[15:0]),
-    .C(gemm_slot_accum1[15:0]),
-    .negateAB(1'b0),
-    .negateC(1'b0),
-    .RndMode(2'b00),
-    .R(gemm_mac_next1)
-  );
-"""
-        compute_accum_update = """      if (gemm_slot_valid[0] && !gemm_slot_done[0]) begin
-        gemm_slot_accum0 <= gemm_mac_next0;
-      end
-      if (gemm_slot_valid[1] && !gemm_slot_done[1]) begin
-        gemm_slot_accum1 <= gemm_mac_next1;
-      end
-"""
+      assign slot_next = $signed(slot_mac_next16);"""
     else:
-        gemm_compute_instances = f"""
-  wire signed [{gemm_accum_width_minus1}:0] gemm_mac_dot0;
-  wire signed [{gemm_accum_width_minus1}:0] gemm_mac_dot1;
+        gemm_slot_compute_body = f"""      wire signed [ACC_WIDTH-1:0] slot_mac_dot;
+      wire signed [ACC_WIDTH-1:0] slot_next;
 
-  gemm_mac_{gemm_mac_type} #(
-    .LANES({gemm_mac_lanes}),
-    .ACC_WIDTH({gemm_accum_width})
-  ) u_gemm_mac0 (
-    .a_vec(gemm_mac_a_vec0),
-    .b_vec(gemm_mac_b_vec0),
-    .acc_out(gemm_mac_dot0)
-  );
+      gemm_mac_{gemm_mac_type} #(
+        .LANES(LANES),
+        .ACC_WIDTH(ACC_WIDTH)
+      ) u_slot_mac (
+        .a_vec(slot_a),
+        .b_vec(slot_b),
+        .acc_out(slot_mac_dot)
+      );
 
-  gemm_mac_{gemm_mac_type} #(
-    .LANES({gemm_mac_lanes}),
-    .ACC_WIDTH({gemm_accum_width})
-  ) u_gemm_mac1 (
-    .a_vec(gemm_mac_a_vec1),
-    .b_vec(gemm_mac_b_vec1),
-    .acc_out(gemm_mac_dot1)
+      assign slot_next = slot_accum_in + slot_mac_dot;"""
+
+    gemm_slot_vec_flat_width = gemm_num_modules * gemm_mac_lanes * gemm_elem_bits
+    gemm_slot_vec_flat_width_minus1 = gemm_slot_vec_flat_width - 1
+    gemm_slot_accum_flat_width = gemm_num_modules * gemm_accum_width
+    gemm_slot_accum_flat_width_minus1 = gemm_slot_accum_flat_width - 1
+    gemm_slot_vec_concat = ", ".join([f"gemm_mac_a_vec{i}" for i in reversed(range(gemm_num_modules))])
+    gemm_slot_b_concat = ", ".join([f"gemm_mac_b_vec{i}" for i in reversed(range(gemm_num_modules))])
+    gemm_slot_accum_concat = ", ".join([f"gemm_slot_accum{i}" for i in reversed(range(gemm_num_modules))])
+
+    gemm_compute_array_module = f"""\
+(* keep_hierarchy = 1 *)
+module gemm_compute_array (
+    input  wire [{gemm_slot_vec_flat_width_minus1}:0] slot_a_flat,
+    input  wire [{gemm_slot_vec_flat_width_minus1}:0] slot_b_flat,
+    input  wire signed [{gemm_slot_accum_flat_width_minus1}:0] slot_accum_in_flat,
+    output wire signed [{gemm_slot_accum_flat_width_minus1}:0] slot_accum_next_flat
+);
+  localparam integer NUM_MODULES = {gemm_num_modules};
+  localparam integer LANES = {gemm_mac_lanes};
+  localparam integer ELEM_BITS = {gemm_elem_bits};
+  localparam integer ACC_WIDTH = {gemm_accum_width};
+  genvar mi;
+  generate
+    for (mi = 0; mi < NUM_MODULES; mi = mi + 1) begin : g_slot
+      wire [LANES*ELEM_BITS-1:0] slot_a = slot_a_flat[(mi*LANES*ELEM_BITS) +: (LANES*ELEM_BITS)];
+      wire [LANES*ELEM_BITS-1:0] slot_b = slot_b_flat[(mi*LANES*ELEM_BITS) +: (LANES*ELEM_BITS)];
+      wire signed [ACC_WIDTH-1:0] slot_accum_in = slot_accum_in_flat[(mi*ACC_WIDTH) +: ACC_WIDTH];
+{gemm_slot_compute_body}
+      assign slot_accum_next_flat[(mi*ACC_WIDTH) +: ACC_WIDTH] = slot_next;
+    end
+  endgenerate
+endmodule
+"""
+    compute_modules = compute_modules + gemm_compute_array_module + "\n\n"
+
+    gemm_compute_instances = f"""
+  wire signed [{gemm_slot_accum_flat_width_minus1}:0] gemm_slot_next_flat;
+  (* keep_hierarchy = 1 *) gemm_compute_array u_gemm_compute_array (
+    .slot_a_flat({{{gemm_slot_vec_concat}}}),
+    .slot_b_flat({{{gemm_slot_b_concat}}}),
+    .slot_accum_in_flat({{{gemm_slot_accum_concat}}}),
+    .slot_accum_next_flat(gemm_slot_next_flat)
   );
 """
-        compute_accum_update = """      if (gemm_slot_valid[0] && !gemm_slot_done[0]) begin
-        gemm_slot_accum0 <= gemm_slot_accum0 + gemm_mac_dot0;
-      end
-      if (gemm_slot_valid[1] && !gemm_slot_done[1]) begin
-        gemm_slot_accum1 <= gemm_slot_accum1 + gemm_mac_dot1;
-      end
-"""
+
+    compute_accum_lines = []
+    for slot_idx in range(gemm_num_modules):
+        compute_accum_lines.extend(
+            [
+                f"      if (gemm_slot_valid[{slot_idx}] && !gemm_slot_done[{slot_idx}]) begin",
+                f"        gemm_slot_accum{slot_idx} <= $signed(gemm_slot_next_flat[({slot_idx}*{gemm_accum_width}) +: {gemm_accum_width}]);",
+                "      end",
+            ]
+        )
+    compute_accum_update = "\n".join(compute_accum_lines) + "\n"
     def vec_lane_body(
         use_cpp_op: bool, module_name: str, inst_suffix: str, out_wire: str, builtin_body: str
     ) -> str:
@@ -1700,40 +1753,107 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
       end
 """
 
-    compute_reset = """      gemm_mac_a_vec0 <= 0;
-      gemm_mac_b_vec0 <= 0;
-      gemm_mac_a_vec1 <= 0;
-      gemm_mac_b_vec1 <= 0;
-      gemm_slot_accum0 <= 0;
-      gemm_slot_accum1 <= 0;
-      vec_in0 <= 0;
-      vec_in1 <= 0;
-      vec_last_result <= 0;
-      vec_op_sel <= 0;
-      vec_dtype_sel <= 0;
-      vec_pending <= 0;
-      vec_done_pulse <= 0;"""
+    compute_reset_lines = []
+    for slot_idx in range(gemm_num_modules):
+        compute_reset_lines.extend(
+            [
+                f"      gemm_mac_a_vec{slot_idx} <= 0;",
+                f"      gemm_mac_b_vec{slot_idx} <= 0;",
+                f"      gemm_slot_accum{slot_idx} <= 0;",
+            ]
+        )
+    compute_reset_lines.extend(
+        [
+            "      vec_in0 <= 0;",
+            "      vec_in1 <= 0;",
+            "      vec_last_result <= 0;",
+            "      vec_op_sel <= 0;",
+            "      vec_dtype_sel <= 0;",
+            "      vec_pending <= 0;",
+            "      vec_done_pulse <= 0;",
+        ]
+    )
+    compute_reset = "\n".join(compute_reset_lines)
 
-    if compute_enabled:
-        gemm_slot_init0_v1 = f"""                gemm_mac_a_vec0 <= cq_mem_rdata[{gemm_a_hi}:64];
-                gemm_mac_b_vec0 <= cq_mem_rdata[{gemm_b_hi}:128];
-                gemm_slot_accum0 <= 0;"""
-        gemm_slot_init1_v1 = f"""                gemm_mac_a_vec1 <= cq_mem_rdata[{gemm_a_hi}:64];
-                gemm_mac_b_vec1 <= cq_mem_rdata[{gemm_b_hi}:128];
-                gemm_slot_accum1 <= 0;"""
-        gemm_slot_init0_v2 = f"""                gemm_mac_a_vec0 <= cq_word0[{gemm_a_hi}:64];
-                gemm_mac_b_vec0 <= cq_word0[{gemm_b_hi}:128];
-                gemm_slot_accum0 <= 0;"""
-        gemm_slot_init1_v2 = f"""                gemm_mac_a_vec1 <= cq_word0[{gemm_a_hi}:64];
-                gemm_mac_b_vec1 <= cq_word0[{gemm_b_hi}:128];
-                gemm_slot_accum1 <= 0;"""
-    else:
+    def build_gemm_issue_chain(
+        uid_expr: str,
+        src_expr: str,
+        dst_expr: str,
+        vec_expr: str,
+        cycles_zero_cond: str,
+        cycles_expr: str,
+        size_expr: str,
+        beats_expr_inner: str,
+    ) -> str:
+        lines = []
+        for slot_idx in range(gemm_num_modules):
+            branch_kw = "if" if slot_idx == 0 else "else if"
+            lines.extend(
+                [
+                    f"              {branch_kw} (!gemm_slot_valid[{slot_idx}]) begin",
+                    f"                gemm_slot_valid[{slot_idx}] <= 1'b1;",
+                    f"                gemm_slot_done[{slot_idx}] <= 1'b0;",
+                    f"                gemm_slot_uid{slot_idx} <= {uid_expr};",
+                    f"                gemm_mac_a_vec{slot_idx} <= {vec_expr}[{gemm_a_hi}:64];",
+                    f"                gemm_mac_b_vec{slot_idx} <= {vec_expr}[{gemm_b_hi}:128];",
+                    f"                gemm_slot_accum{slot_idx} <= 0;",
+                    f"                if ({cycles_zero_cond}) begin",
+                    f"                  gemm_slot_cycles{slot_idx} <= 1;",
+                    "                end else begin",
+                    f"                  gemm_slot_cycles{slot_idx} <= {cycles_expr};",
+                    "                end",
+                    f"                gemm_slot_src{slot_idx} <= {src_expr};",
+                    f"                gemm_slot_dst{slot_idx} <= {dst_expr};",
+                    f"                gemm_slot_size{slot_idx} <= {size_expr};",
+                    f"                gemm_slot_beats{slot_idx} <= {beats_expr_inner};",
+                    f"                gemm_slot_arlen{slot_idx} <= ({beats_expr_inner} - 1);",
+                    "              end",
+                ]
+            )
+        lines.extend(
+            [
+                "              else begin",
+                "                error_code <= 32'h2; // GEMM in-flight queue full",
+                "              end",
+            ]
+        )
+        return "\n".join(lines)
+
+    v1_size_expr = (
+        "((cq_mem_rdata[11:8] == 4'h1 || cq_mem_rdata[11:8] == 4'h2)"
+        " ? (cq_mem_rdata[63:52] * cq_mem_rdata[51:42] * 2)"
+        " : (cq_mem_rdata[63:52] * cq_mem_rdata[51:42]))"
+    )
+    v1_beats_expr = f"((({v1_size_expr}) + AXI_BEAT_BYTES - 1) >> {axi_size})"
+    gemm_issue_chain_v1 = build_gemm_issue_chain(
+        uid_expr="64'h0",
+        src_expr="cq_mem_rdata[127:64]",
+        dst_expr="cq_mem_rdata[255:192]",
+        vec_expr="cq_mem_rdata",
+        cycles_zero_cond="(cq_mem_rdata[63:52] == 0) || (cq_mem_rdata[51:42] == 0) || (cq_mem_rdata[41:32] == 0)",
+        cycles_expr="(((cq_mem_rdata[63:52] * cq_mem_rdata[51:42] * cq_mem_rdata[41:32]) >> 10) + 1)",
+        size_expr=v1_size_expr,
+        beats_expr_inner=v1_beats_expr,
+    )
+    v2_size_expr = (
+        "((cq_word0[11:8] == 4'h1 || cq_word0[11:8] == 4'h2)"
+        " ? (cq_mem_rdata[31:0] * cq_mem_rdata[63:32] * 2)"
+        " : (cq_mem_rdata[31:0] * cq_mem_rdata[63:32]))"
+    )
+    v2_beats_expr = f"((({v2_size_expr}) + AXI_BEAT_BYTES - 1) >> {axi_size})"
+    gemm_issue_chain_v2 = build_gemm_issue_chain(
+        uid_expr="cq_mem_rdata[255:192]",
+        src_expr="cq_word0[127:64]",
+        dst_expr="cq_word0[255:192]",
+        vec_expr="cq_word0",
+        cycles_zero_cond="(cq_mem_rdata[31:0] == 0) || (cq_mem_rdata[63:32] == 0) || (cq_mem_rdata[95:64] == 0)",
+        cycles_expr="(((cq_mem_rdata[31:0] * cq_mem_rdata[63:32] * cq_mem_rdata[95:64]) >> 10) + 1 + (cq_mem_rdata[255] ? 8 : 0))",
+        size_expr=v2_size_expr,
+        beats_expr_inner=v2_beats_expr,
+    )
+    if not compute_enabled:
         compute_accum_update = ""
         vec_update = ""
-        gemm_slot_init0_v1 = ""
-        gemm_slot_init1_v1 = ""
-        gemm_slot_init0_v2 = ""
-        gemm_slot_init1_v2 = ""
 
     enable_dma_ports = bool(cfg.get("enable_dma_ports", False))
     enable_cq_mem_ports = bool(cfg.get("enable_cq_mem_ports", False))
@@ -1765,63 +1885,57 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         dma_handshake = ""
         dma_kick = ""
 
-    gemm_update = f"""      // Two-slot GEMM stub with OOO-capable completion scheduling.
+    gemm_progress_lines = []
+    for slot_idx in range(gemm_num_modules):
+        gemm_progress_lines.extend(
+            [
+                f"      if (gemm_slot_valid[{slot_idx}] && !gemm_slot_done[{slot_idx}]) begin",
+                f"        if (gemm_slot_cycles{slot_idx} != 0) begin",
+                f"          gemm_slot_cycles{slot_idx} <= gemm_slot_cycles{slot_idx} - 1;",
+                f"          if (gemm_slot_cycles{slot_idx} == 1) begin",
+                f"            gemm_slot_done[{slot_idx}] <= 1'b1;",
+                "            gemm_done_pulse <= 1'b1;",
+                f"            gemm_done_uid <= gemm_slot_uid{slot_idx};",
+                "          end",
+                "        end else begin",
+                f"          gemm_slot_done[{slot_idx}] <= 1'b1;",
+                "          gemm_done_pulse <= 1'b1;",
+                f"          gemm_done_uid <= gemm_slot_uid{slot_idx};",
+                "        end",
+                "      end",
+            ]
+        )
+    gemm_progress_block = "\n".join(gemm_progress_lines)
+
+    gemm_dispatch_lines = []
+    for dispatch_rank, slot_idx in enumerate(reversed(range(gemm_num_modules))):
+        branch_kw = "if" if dispatch_rank == 0 else "else if"
+        gemm_dispatch_lines.extend(
+            [
+                f"        {branch_kw} (gemm_slot_done[{slot_idx}]) begin",
+                f"          dma_src <= gemm_slot_src{slot_idx};",
+                f"          dma_dst <= gemm_slot_dst{slot_idx};",
+                f"          dma_size <= gemm_slot_size{slot_idx};",
+                f"          dma_beats <= gemm_slot_beats{slot_idx};",
+                f"          dma_arlen <= gemm_slot_arlen{slot_idx};",
+                "          dma_pending <= 1'b1;",
+                f"          gemm_slot_valid[{slot_idx}] <= 1'b0;",
+                f"          gemm_slot_done[{slot_idx}] <= 1'b0;",
+                f"          gemm_dma_sel <= {gemm_slot_idx_width}'d{slot_idx};",
+                "        end",
+            ]
+        )
+    gemm_dispatch_block = "\n".join(gemm_dispatch_lines)
+
+    gemm_update = f"""      // {gemm_num_modules}-slot GEMM stub with OOO-capable completion scheduling.
       gemm_done_pulse <= 1'b0;
 {vec_update}\
 {compute_accum_update}\
-      if (gemm_slot_valid[0] && !gemm_slot_done[0]) begin
-        if (gemm_slot_cycles0 != 0) begin
-          gemm_slot_cycles0 <= gemm_slot_cycles0 - 1;
-          if (gemm_slot_cycles0 == 1) begin
-            gemm_slot_done[0] <= 1'b1;
-            gemm_done_pulse <= 1'b1;
-            gemm_done_uid <= gemm_slot_uid0;
-          end
-        end else begin
-          gemm_slot_done[0] <= 1'b1;
-          gemm_done_pulse <= 1'b1;
-          gemm_done_uid <= gemm_slot_uid0;
-        end
-      end
-      if (gemm_slot_valid[1] && !gemm_slot_done[1]) begin
-        if (gemm_slot_cycles1 != 0) begin
-          gemm_slot_cycles1 <= gemm_slot_cycles1 - 1;
-          if (gemm_slot_cycles1 == 1) begin
-            gemm_slot_done[1] <= 1'b1;
-            gemm_done_pulse <= 1'b1;
-            gemm_done_uid <= gemm_slot_uid1;
-          end
-        end else begin
-          gemm_slot_done[1] <= 1'b1;
-          gemm_done_pulse <= 1'b1;
-          gemm_done_uid <= gemm_slot_uid1;
-        end
-      end
-      // Prefer slot1 if both are done, so completion order can differ from issue order.
+{gemm_progress_block}
       if (!dma_pending) begin
-        if (gemm_slot_done[1]) begin
-          dma_src <= gemm_slot_src1;
-          dma_dst <= gemm_slot_dst1;
-          dma_size <= gemm_slot_size1;
-          dma_beats <= gemm_slot_beats1;
-          dma_arlen <= gemm_slot_arlen1;
-          dma_pending <= 1'b1;
-          gemm_slot_valid[1] <= 1'b0;
-          gemm_slot_done[1] <= 1'b0;
-          gemm_dma_sel <= 1'b1;
-        end else if (gemm_slot_done[0]) begin
-          dma_src <= gemm_slot_src0;
-          dma_dst <= gemm_slot_dst0;
-          dma_size <= gemm_slot_size0;
-          dma_beats <= gemm_slot_beats0;
-          dma_arlen <= gemm_slot_arlen0;
-          dma_pending <= 1'b1;
-          gemm_slot_valid[0] <= 1'b0;
-          gemm_slot_done[0] <= 1'b0;
-          gemm_dma_sel <= 1'b0;
-        end
+{gemm_dispatch_block}
       end
-      gemm_pending <= (gemm_slot_valid != 2'b00);"""
+      gemm_pending <= (gemm_slot_valid != {gemm_slot_valid_zero});"""
 
     if enable_cq_mem_ports:
         cq_mem_ports = f""",
@@ -1859,55 +1973,7 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
               dma_pending <= 1'b1;
             end else if (cq_mem_rdata[7:0] == 8'h10) begin
               // GEMM stub: v0.1 sizes packed in TAG.
-              if (!gemm_slot_valid[0]) begin
-                gemm_slot_valid[0] <= 1'b1;
-                gemm_slot_done[0] <= 1'b0;
-                gemm_slot_uid0 <= 64'h0;
-{gemm_slot_init0_v1}
-                if ((cq_mem_rdata[63:52] == 0) || (cq_mem_rdata[51:42] == 0) || (cq_mem_rdata[41:32] == 0)) begin
-                  gemm_slot_cycles0 <= 1;
-                end else begin
-                  gemm_slot_cycles0 <= (((cq_mem_rdata[63:52] * cq_mem_rdata[51:42] * cq_mem_rdata[41:32]) >> 10) + 1);
-                end
-                gemm_slot_src0 <= cq_mem_rdata[127:64];
-                gemm_slot_dst0 <= cq_mem_rdata[255:192];
-                gemm_slot_size0 <= ((cq_mem_rdata[11:8] == 4'h1 || cq_mem_rdata[11:8] == 4'h2)
-                                    ? (cq_mem_rdata[63:52] * cq_mem_rdata[51:42] * 2)
-                                    : (cq_mem_rdata[63:52] * cq_mem_rdata[51:42]));
-                gemm_slot_beats0 <= (((((cq_mem_rdata[11:8] == 4'h1 || cq_mem_rdata[11:8] == 4'h2)
-                                        ? (cq_mem_rdata[63:52] * cq_mem_rdata[51:42] * 2)
-                                        : (cq_mem_rdata[63:52] * cq_mem_rdata[51:42]))
-                                       + AXI_BEAT_BYTES - 1) >> {axi_size}));
-                gemm_slot_arlen0 <= (((((cq_mem_rdata[11:8] == 4'h1 || cq_mem_rdata[11:8] == 4'h2)
-                                        ? (cq_mem_rdata[63:52] * cq_mem_rdata[51:42] * 2)
-                                        : (cq_mem_rdata[63:52] * cq_mem_rdata[51:42]))
-                                       + AXI_BEAT_BYTES - 1) >> {axi_size}) - 1);
-              end else if (!gemm_slot_valid[1]) begin
-                gemm_slot_valid[1] <= 1'b1;
-                gemm_slot_done[1] <= 1'b0;
-                gemm_slot_uid1 <= 64'h0;
-{gemm_slot_init1_v1}
-                if ((cq_mem_rdata[63:52] == 0) || (cq_mem_rdata[51:42] == 0) || (cq_mem_rdata[41:32] == 0)) begin
-                  gemm_slot_cycles1 <= 1;
-                end else begin
-                  gemm_slot_cycles1 <= (((cq_mem_rdata[63:52] * cq_mem_rdata[51:42] * cq_mem_rdata[41:32]) >> 10) + 1);
-                end
-                gemm_slot_src1 <= cq_mem_rdata[127:64];
-                gemm_slot_dst1 <= cq_mem_rdata[255:192];
-                gemm_slot_size1 <= ((cq_mem_rdata[11:8] == 4'h1 || cq_mem_rdata[11:8] == 4'h2)
-                                    ? (cq_mem_rdata[63:52] * cq_mem_rdata[51:42] * 2)
-                                    : (cq_mem_rdata[63:52] * cq_mem_rdata[51:42]));
-                gemm_slot_beats1 <= (((((cq_mem_rdata[11:8] == 4'h1 || cq_mem_rdata[11:8] == 4'h2)
-                                        ? (cq_mem_rdata[63:52] * cq_mem_rdata[51:42] * 2)
-                                        : (cq_mem_rdata[63:52] * cq_mem_rdata[51:42]))
-                                       + AXI_BEAT_BYTES - 1) >> {axi_size}));
-                gemm_slot_arlen1 <= (((((cq_mem_rdata[11:8] == 4'h1 || cq_mem_rdata[11:8] == 4'h2)
-                                        ? (cq_mem_rdata[63:52] * cq_mem_rdata[51:42] * 2)
-                                        : (cq_mem_rdata[63:52] * cq_mem_rdata[51:42]))
-                                       + AXI_BEAT_BYTES - 1) >> {axi_size}) - 1);
-              end else begin
-                error_code <= 32'h2; // GEMM in-flight queue full
-              end
+{gemm_issue_chain_v1}
             end else if (cq_mem_rdata[7:0] == 8'h11) begin
               // VEC_OP (v0.1): input vectors are carried in descriptor payload bytes.
               if (vec_pending) begin
@@ -1984,58 +2050,7 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
             last_op_uid <= cq_mem_rdata[255:192];
             if (cq_word0[7:0] == 8'h10) begin
               // GEMM stub: v0.2 sizes in extension.
-              if (!gemm_slot_valid[0]) begin
-                gemm_slot_valid[0] <= 1'b1;
-                gemm_slot_done[0] <= 1'b0;
-                gemm_slot_uid0 <= cq_mem_rdata[255:192];
-{gemm_slot_init0_v2}
-                if ((cq_mem_rdata[31:0] == 0) || (cq_mem_rdata[63:32] == 0) || (cq_mem_rdata[95:64] == 0)) begin
-                  gemm_slot_cycles0 <= 1;
-                end else begin
-                  // Optional UID-based jitter (bit63) to exercise OOO completion in tests.
-                  gemm_slot_cycles0 <= (((cq_mem_rdata[31:0] * cq_mem_rdata[63:32] * cq_mem_rdata[95:64]) >> 10)
-                                        + 1 + (cq_mem_rdata[255] ? 8 : 0));
-                end
-                gemm_slot_src0 <= cq_word0[127:64];
-                gemm_slot_dst0 <= cq_word0[255:192];
-                gemm_slot_size0 <= ((cq_word0[11:8] == 4'h1 || cq_word0[11:8] == 4'h2)
-                                    ? (cq_mem_rdata[31:0] * cq_mem_rdata[63:32] * 2)
-                                    : (cq_mem_rdata[31:0] * cq_mem_rdata[63:32]));
-                gemm_slot_beats0 <= (((((cq_word0[11:8] == 4'h1 || cq_word0[11:8] == 4'h2)
-                                        ? (cq_mem_rdata[31:0] * cq_mem_rdata[63:32] * 2)
-                                        : (cq_mem_rdata[31:0] * cq_mem_rdata[63:32]))
-                                       + AXI_BEAT_BYTES - 1) >> {axi_size}));
-                gemm_slot_arlen0 <= (((((cq_word0[11:8] == 4'h1 || cq_word0[11:8] == 4'h2)
-                                        ? (cq_mem_rdata[31:0] * cq_mem_rdata[63:32] * 2)
-                                        : (cq_mem_rdata[31:0] * cq_mem_rdata[63:32]))
-                                       + AXI_BEAT_BYTES - 1) >> {axi_size}) - 1);
-              end else if (!gemm_slot_valid[1]) begin
-                gemm_slot_valid[1] <= 1'b1;
-                gemm_slot_done[1] <= 1'b0;
-                gemm_slot_uid1 <= cq_mem_rdata[255:192];
-{gemm_slot_init1_v2}
-                if ((cq_mem_rdata[31:0] == 0) || (cq_mem_rdata[63:32] == 0) || (cq_mem_rdata[95:64] == 0)) begin
-                  gemm_slot_cycles1 <= 1;
-                end else begin
-                  gemm_slot_cycles1 <= (((cq_mem_rdata[31:0] * cq_mem_rdata[63:32] * cq_mem_rdata[95:64]) >> 10)
-                                        + 1 + (cq_mem_rdata[255] ? 8 : 0));
-                end
-                gemm_slot_src1 <= cq_word0[127:64];
-                gemm_slot_dst1 <= cq_word0[255:192];
-                gemm_slot_size1 <= ((cq_word0[11:8] == 4'h1 || cq_word0[11:8] == 4'h2)
-                                    ? (cq_mem_rdata[31:0] * cq_mem_rdata[63:32] * 2)
-                                    : (cq_mem_rdata[31:0] * cq_mem_rdata[63:32]));
-                gemm_slot_beats1 <= (((((cq_word0[11:8] == 4'h1 || cq_word0[11:8] == 4'h2)
-                                        ? (cq_mem_rdata[31:0] * cq_mem_rdata[63:32] * 2)
-                                        : (cq_mem_rdata[31:0] * cq_mem_rdata[63:32]))
-                                       + AXI_BEAT_BYTES - 1) >> {axi_size}));
-                gemm_slot_arlen1 <= (((((cq_word0[11:8] == 4'h1 || cq_word0[11:8] == 4'h2)
-                                        ? (cq_mem_rdata[31:0] * cq_mem_rdata[63:32] * 2)
-                                        : (cq_mem_rdata[31:0] * cq_mem_rdata[63:32]))
-                                       + AXI_BEAT_BYTES - 1) >> {axi_size}) - 1);
-              end else begin
-                error_code <= 32'h2; // GEMM in-flight queue full
-              end
+{gemm_issue_chain_v2}
             end else if (cq_word0[7:0] == 8'h11) begin
               // VEC_OP (v0.2 base word): vectors are sourced from header payload.
               if (vec_pending) begin
@@ -2242,20 +2257,24 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         vec_en_dsoftmax=vec_en_dsoftmax,
         vec_en_dlayernorm=vec_en_dlayernorm,
         vec_fp16_enabled=vec_fp16_enabled,
+        gemm_num_modules=gemm_num_modules,
         gemm_mac_lanes=gemm_mac_lanes,
         gemm_elem_bits=gemm_elem_bits,
         gemm_fp16_raw16_placeholder=gemm_fp16_raw16_placeholder,
         gemm_fp16_accum_fp32=gemm_fp16_accum_fp32,
         vec_lanes=vec_lanes,
         dma_ports=dma_ports,
+        gemm_state_regs=gemm_state_regs,
         compute_state_regs=compute_state_regs,
         dma_reset=dma_reset,
+        gemm_reset=gemm_reset,
         compute_reset=compute_reset,
         dma_handshake=dma_handshake,
         dma_kick=dma_kick,
         gemm_update=gemm_update,
         cq_mem_ports=cq_mem_ports,
         cq_block=cq_block,
+        gemm_slots_busy_expr=gemm_slots_busy_expr,
         compute_instances=compute_instances,
         axi_ports=axi_ports,
         axi_defaults=axi_defaults,

@@ -1,0 +1,24 @@
+{
+  "version": "0.1",
+  "design_id": "tmp_macro_dryrun",
+  "module": "int8_mac_pp_feedback",
+  "platform": "nangate45",
+  "flow_variant": "base",
+  "blackboxes": [
+    "int8_mac_pp_feedback"
+  ],
+  "additional_lefs": [
+    "runs/designs/npu_macros/tmp_macro_dryrun/abstract/int8_mac_pp_feedback.lef"
+  ],
+  "additional_libs": [
+    "runs/designs/npu_macros/tmp_macro_dryrun/abstract/int8_mac_pp_feedback_typ.lib"
+  ],
+  "additional_gds": [],
+  "source": {
+    "rtlgen_config": "examples/config_mac_pp_feedback.json",
+    "rtlgen_config_sha1": "c16dd983131ff3f35e3317815c1c02b7eb19b97a",
+    "rtlgen_bin": "build/rtlgen"
+  },
+  "sweep": "runs/designs/npu_macros/tmp_macro_dryrun/pre_synth_sweep.json",
+  "make_target": "generate_abstract"
+}

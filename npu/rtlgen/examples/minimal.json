@@ -10,7 +10,7 @@
   "axi_id_width": 4,
   "sram_instances": [
     {
-      "name": "activation_sram",
+      "name": "activation_srayem",
       "depth": 16384,
       "width": 256,
       "banks": 8,

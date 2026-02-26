@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l:*)",
+      "Bash(git -C /home/yhmtmt/work/RTLGen log --oneline -20)"
+    ]
+  }
+}

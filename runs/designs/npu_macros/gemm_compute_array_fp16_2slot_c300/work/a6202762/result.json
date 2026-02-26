@@ -1,0 +1,17 @@
+{
+  "design": "gemm_compute_array_fp16_2slot_c300",
+  "platform": "nangate45",
+  "config_hash": "9c39d5153f8d",
+  "param_hash": "a6202762",
+  "tag": "npu_macro_a6202762",
+  "status": "ok",
+  "critical_path_ns": -1.0,
+  "die_area": 90000.0,
+  "total_power_mw": 0.135,
+  "params_json": "{\"CLOCK_PERIOD\": 10.0, \"CLOCK_PORT\": \"\", \"CORE_AREA\": \"20 20 280 280\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 300 300\", \"FLOW_VARIANT\": \"base\", \"PLACE_DENSITY\": 0.4, \"tag_prefix\": \"npu_macro\"}",
+  "result_path": "/orfs/flow/reports/nangate45/gemm_compute_array_fp16_2slot_c300/base/6_finish.rpt",
+  "blackbox_instance_counts": {},
+  "missing_blackboxes": [],
+  "macro_manifest_path": "",
+  "macro_selection": {}
+}

@@ -1,0 +1,13 @@
+{
+  "design": "tmp_macro_smoke",
+  "platform": "nangate45",
+  "config_hash": "306af016ca53",
+  "param_hash": "3a66fdfe",
+  "tag": "npu_macro_3a66fdfe",
+  "status": "ok",
+  "critical_path_ns": -1.0,
+  "die_area": 62500.0,
+  "total_power_mw": 0.00119,
+  "params_json": "{\"CLOCK_PERIOD\": 10.0, \"CLOCK_PORT\": \"\", \"CORE_AREA\": \"20 20 230 230\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 250 250\", \"FLOW_VARIANT\": \"base\", \"PLACE_DENSITY\": 0.4, \"tag_prefix\": \"npu_macro\"}",
+  "result_path": "/orfs/flow/reports/nangate45/tmp_macro_smoke/base/6_finish.rpt"
+}

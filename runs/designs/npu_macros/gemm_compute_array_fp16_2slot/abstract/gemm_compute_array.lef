@@ -1,0 +1,1255 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+UNITS
+    DATABASE MICRONS 2000 ;
+END UNITS
+
+VIA gemm_compute_array_via1_2_960_340_1_3_300_300
+  VIARULE Via1Array-0 ;
+  CUTSIZE 0.07 0.07 ;
+  LAYERS metal1 via1 metal2 ;
+  CUTSPACING 0.08 0.08 ;
+  ENCLOSURE 0.035 0.05 0.035 0.035 ;
+  ROWCOL 1 3 ;
+END gemm_compute_array_via1_2_960_340_1_3_300_300
+
+VIA gemm_compute_array_via2_3_960_340_1_3_320_320
+  VIARULE Via2Array-0 ;
+  CUTSIZE 0.07 0.07 ;
+  LAYERS metal2 via2 metal3 ;
+  CUTSPACING 0.09 0.09 ;
+  ENCLOSURE 0.035 0.035 0.035 0.035 ;
+  ROWCOL 1 3 ;
+END gemm_compute_array_via2_3_960_340_1_3_320_320
+
+VIA gemm_compute_array_via3_4_960_340_1_3_320_320
+  VIARULE Via3Array-0 ;
+  CUTSIZE 0.07 0.07 ;
+  LAYERS metal3 via3 metal4 ;
+  CUTSPACING 0.09 0.09 ;
+  ENCLOSURE 0.035 0.035 0.045 0.035 ;
+  ROWCOL 1 3 ;
+END gemm_compute_array_via3_4_960_340_1_3_320_320
+
+VIA gemm_compute_array_via4_5_960_2800_5_2_600_600
+  VIARULE Via4Array-0 ;
+  CUTSIZE 0.14 0.14 ;
+  LAYERS metal4 via4 metal5 ;
+  CUTSPACING 0.16 0.16 ;
+  ENCLOSURE 0.02 0 0 0 ;
+  ROWCOL 5 2 ;
+END gemm_compute_array_via4_5_960_2800_5_2_600_600
+
+VIA gemm_compute_array_via5_6_960_2800_5_2_600_600
+  VIARULE Via5Array-0 ;
+  CUTSIZE 0.14 0.14 ;
+  LAYERS metal5 via5 metal6 ;
+  CUTSPACING 0.16 0.16 ;
+  ENCLOSURE 0 0 0 0 ;
+  ROWCOL 5 2 ;
+END gemm_compute_array_via5_6_960_2800_5_2_600_600
+
+VIA gemm_compute_array_via6_7_960_2800_4_1_600_600
+  VIARULE Via6Array-0 ;
+  CUTSIZE 0.14 0.14 ;
+  LAYERS metal6 via6 metal7 ;
+  CUTSPACING 0.16 0.16 ;
+  ENCLOSURE 0 0 0.13 0.18 ;
+  ROWCOL 4 1 ;
+END gemm_compute_array_via6_7_960_2800_4_1_600_600
+
+MACRO gemm_compute_array
+  FOREIGN gemm_compute_array 0 0 ;
+  CLASS BLOCK ;
+  SIZE 2200 BY 2200 ;
+  PIN slot_a_flat[0]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1001.84 2200 1001.98 ;
+    END
+  END slot_a_flat[0]
+  PIN slot_a_flat[10]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1076.32 2200 1076.46 ;
+    END
+  END slot_a_flat[10]
+  PIN slot_a_flat[11]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1081.36 2200 1081.5 ;
+    END
+  END slot_a_flat[11]
+  PIN slot_a_flat[12]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1079.12 2200 1079.26 ;
+    END
+  END slot_a_flat[12]
+  PIN slot_a_flat[13]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1079.68 2200 1079.82 ;
+    END
+  END slot_a_flat[13]
+  PIN slot_a_flat[14]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1076.88 2200 1077.02 ;
+    END
+  END slot_a_flat[14]
+  PIN slot_a_flat[15]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1067.92 2200 1068.06 ;
+    END
+  END slot_a_flat[15]
+  PIN slot_a_flat[16]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1099.84 0.14 1099.98 ;
+    END
+  END slot_a_flat[16]
+  PIN slot_a_flat[17]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1100.96 0.14 1101.1 ;
+    END
+  END slot_a_flat[17]
+  PIN slot_a_flat[18]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1100.4 0.14 1100.54 ;
+    END
+  END slot_a_flat[18]
+  PIN slot_a_flat[19]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1098.72 0.14 1098.86 ;
+    END
+  END slot_a_flat[19]
+  PIN slot_a_flat[1]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1002.4 2200 1002.54 ;
+    END
+  END slot_a_flat[1]
+  PIN slot_a_flat[20]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1093.12 0.14 1093.26 ;
+    END
+  END slot_a_flat[20]
+  PIN slot_a_flat[21]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1091.44 0.14 1091.58 ;
+    END
+  END slot_a_flat[21]
+  PIN slot_a_flat[22]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1092 0.14 1092.14 ;
+    END
+  END slot_a_flat[22]
+  PIN slot_a_flat[23]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1092.56 0.14 1092.7 ;
+    END
+  END slot_a_flat[23]
+  PIN slot_a_flat[24]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1097.6 0.14 1097.74 ;
+    END
+  END slot_a_flat[24]
+  PIN slot_a_flat[25]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1094.24 0.14 1094.38 ;
+    END
+  END slot_a_flat[25]
+  PIN slot_a_flat[26]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1163.12 0.14 1163.26 ;
+    END
+  END slot_a_flat[26]
+  PIN slot_a_flat[27]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1167.6 0.14 1167.74 ;
+    END
+  END slot_a_flat[27]
+  PIN slot_a_flat[28]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1170.96 0.14 1171.1 ;
+    END
+  END slot_a_flat[28]
+  PIN slot_a_flat[29]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1174.32 0.14 1174.46 ;
+    END
+  END slot_a_flat[29]
+  PIN slot_a_flat[2]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1002.96 2200 1003.1 ;
+    END
+  END slot_a_flat[2]
+  PIN slot_a_flat[30]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1164.24 0.14 1164.38 ;
+    END
+  END slot_a_flat[30]
+  PIN slot_a_flat[31]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1158.64 0.14 1158.78 ;
+    END
+  END slot_a_flat[31]
+  PIN slot_a_flat[3]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 998.48 2200 998.62 ;
+    END
+  END slot_a_flat[3]
+  PIN slot_a_flat[4]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  1208.505 0 1208.645 0.14 ;
+    END
+  END slot_a_flat[4]
+  PIN slot_a_flat[5]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  1207.945 0 1208.085 0.14 ;
+    END
+  END slot_a_flat[5]
+  PIN slot_a_flat[6]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  1209.065 0 1209.205 0.14 ;
+    END
+  END slot_a_flat[6]
+  PIN slot_a_flat[7]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  1201.225 0 1201.365 0.14 ;
+    END
+  END slot_a_flat[7]
+  PIN slot_a_flat[8]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  1196.185 0 1196.325 0.14 ;
+    END
+  END slot_a_flat[8]
+  PIN slot_a_flat[9]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  1188.345 0 1188.485 0.14 ;
+    END
+  END slot_a_flat[9]
+  PIN slot_accum_in_flat[0]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1051.68 2200 1051.82 ;
+    END
+  END slot_accum_in_flat[0]
+  PIN slot_accum_in_flat[10]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1091.44 2200 1091.58 ;
+    END
+  END slot_accum_in_flat[10]
+  PIN slot_accum_in_flat[11]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1094.24 2200 1094.38 ;
+    END
+  END slot_accum_in_flat[11]
+  PIN slot_accum_in_flat[12]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1097.6 2200 1097.74 ;
+    END
+  END slot_accum_in_flat[12]
+  PIN slot_accum_in_flat[13]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1094.8 2200 1094.94 ;
+    END
+  END slot_accum_in_flat[13]
+  PIN slot_accum_in_flat[14]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1093.12 2200 1093.26 ;
+    END
+  END slot_accum_in_flat[14]
+  PIN slot_accum_in_flat[15]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1069.04 2200 1069.18 ;
+    END
+  END slot_accum_in_flat[15]
+  PIN slot_accum_in_flat[16]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1125.6 0.14 1125.74 ;
+    END
+  END slot_accum_in_flat[16]
+  PIN slot_accum_in_flat[17]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1131.76 0.14 1131.9 ;
+    END
+  END slot_accum_in_flat[17]
+  PIN slot_accum_in_flat[18]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1129.52 0.14 1129.66 ;
+    END
+  END slot_accum_in_flat[18]
+  PIN slot_accum_in_flat[19]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1130.64 0.14 1130.78 ;
+    END
+  END slot_accum_in_flat[19]
+  PIN slot_accum_in_flat[1]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1052.24 2200 1052.38 ;
+    END
+  END slot_accum_in_flat[1]
+  PIN slot_accum_in_flat[20]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1135.68 0.14 1135.82 ;
+    END
+  END slot_accum_in_flat[20]
+  PIN slot_accum_in_flat[21]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1136.8 0.14 1136.94 ;
+    END
+  END slot_accum_in_flat[21]
+  PIN slot_accum_in_flat[22]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1136.24 0.14 1136.38 ;
+    END
+  END slot_accum_in_flat[22]
+  PIN slot_accum_in_flat[23]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1137.36 0.14 1137.5 ;
+    END
+  END slot_accum_in_flat[23]
+  PIN slot_accum_in_flat[24]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1143.52 0.14 1143.66 ;
+    END
+  END slot_accum_in_flat[24]
+  PIN slot_accum_in_flat[25]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1146.88 0.14 1147.02 ;
+    END
+  END slot_accum_in_flat[25]
+  PIN slot_accum_in_flat[26]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1177.12 0.14 1177.26 ;
+    END
+  END slot_accum_in_flat[26]
+  PIN slot_accum_in_flat[27]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1178.24 0.14 1178.38 ;
+    END
+  END slot_accum_in_flat[27]
+  PIN slot_accum_in_flat[28]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1179.36 0.14 1179.5 ;
+    END
+  END slot_accum_in_flat[28]
+  PIN slot_accum_in_flat[29]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1183.84 0.14 1183.98 ;
+    END
+  END slot_accum_in_flat[29]
+  PIN slot_accum_in_flat[2]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1051.12 2200 1051.26 ;
+    END
+  END slot_accum_in_flat[2]
+  PIN slot_accum_in_flat[30]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1180.48 0.14 1180.62 ;
+    END
+  END slot_accum_in_flat[30]
+  PIN slot_accum_in_flat[31]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1159.76 0.14 1159.9 ;
+    END
+  END slot_accum_in_flat[31]
+  PIN slot_accum_in_flat[3]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1048.88 2200 1049.02 ;
+    END
+  END slot_accum_in_flat[3]
+  PIN slot_accum_in_flat[4]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1055.6 2200 1055.74 ;
+    END
+  END slot_accum_in_flat[4]
+  PIN slot_accum_in_flat[5]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1055.04 2200 1055.18 ;
+    END
+  END slot_accum_in_flat[5]
+  PIN slot_accum_in_flat[6]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1062.88 2200 1063.02 ;
+    END
+  END slot_accum_in_flat[6]
+  PIN slot_accum_in_flat[7]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1061.2 2200 1061.34 ;
+    END
+  END slot_accum_in_flat[7]
+  PIN slot_accum_in_flat[8]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1062.32 2200 1062.46 ;
+    END
+  END slot_accum_in_flat[8]
+  PIN slot_accum_in_flat[9]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1061.76 2200 1061.9 ;
+    END
+  END slot_accum_in_flat[9]
+  PIN slot_accum_next_flat[0]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1113.28 2200 1113.42 ;
+    END
+  END slot_accum_next_flat[0]
+  PIN slot_accum_next_flat[10]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1110.48 2200 1110.62 ;
+    END
+  END slot_accum_next_flat[10]
+  PIN slot_accum_next_flat[11]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1113.84 2200 1113.98 ;
+    END
+  END slot_accum_next_flat[11]
+  PIN slot_accum_next_flat[12]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1114.4 2200 1114.54 ;
+    END
+  END slot_accum_next_flat[12]
+  PIN slot_accum_next_flat[13]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1108.24 2200 1108.38 ;
+    END
+  END slot_accum_next_flat[13]
+  PIN slot_accum_next_flat[14]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1107.68 2200 1107.82 ;
+    END
+  END slot_accum_next_flat[14]
+  PIN slot_accum_next_flat[15]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1072.4 2200 1072.54 ;
+    END
+  END slot_accum_next_flat[15]
+  PIN slot_accum_next_flat[16]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  1007.465 2199.86 1007.605 2200 ;
+    END
+  END slot_accum_next_flat[16]
+  PIN slot_accum_next_flat[17]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  1006.905 2199.86 1007.045 2200 ;
+    END
+  END slot_accum_next_flat[17]
+  PIN slot_accum_next_flat[18]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  1004.665 2199.86 1004.805 2200 ;
+    END
+  END slot_accum_next_flat[18]
+  PIN slot_accum_next_flat[19]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  991.785 2199.86 991.925 2200 ;
+    END
+  END slot_accum_next_flat[19]
+  PIN slot_accum_next_flat[1]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1114.96 2200 1115.1 ;
+    END
+  END slot_accum_next_flat[1]
+  PIN slot_accum_next_flat[20]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  996.825 2199.86 996.965 2200 ;
+    END
+  END slot_accum_next_flat[20]
+  PIN slot_accum_next_flat[21]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  999.625 2199.86 999.765 2200 ;
+    END
+  END slot_accum_next_flat[21]
+  PIN slot_accum_next_flat[22]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  994.585 2199.86 994.725 2200 ;
+    END
+  END slot_accum_next_flat[22]
+  PIN slot_accum_next_flat[23]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  988.985 2199.86 989.125 2200 ;
+    END
+  END slot_accum_next_flat[23]
+  PIN slot_accum_next_flat[24]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  989.545 2199.86 989.685 2200 ;
+    END
+  END slot_accum_next_flat[24]
+  PIN slot_accum_next_flat[25]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  988.425 2199.86 988.565 2200 ;
+    END
+  END slot_accum_next_flat[25]
+  PIN slot_accum_next_flat[26]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1200.08 0.14 1200.22 ;
+    END
+  END slot_accum_next_flat[26]
+  PIN slot_accum_next_flat[27]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1200.64 0.14 1200.78 ;
+    END
+  END slot_accum_next_flat[27]
+  PIN slot_accum_next_flat[28]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1197.28 0.14 1197.42 ;
+    END
+  END slot_accum_next_flat[28]
+  PIN slot_accum_next_flat[29]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1201.2 0.14 1201.34 ;
+    END
+  END slot_accum_next_flat[29]
+  PIN slot_accum_next_flat[2]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1116.08 2200 1116.22 ;
+    END
+  END slot_accum_next_flat[2]
+  PIN slot_accum_next_flat[30]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1198.4 0.14 1198.54 ;
+    END
+  END slot_accum_next_flat[30]
+  PIN slot_accum_next_flat[31]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1162 0.14 1162.14 ;
+    END
+  END slot_accum_next_flat[31]
+  PIN slot_accum_next_flat[3]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1119.44 2200 1119.58 ;
+    END
+  END slot_accum_next_flat[3]
+  PIN slot_accum_next_flat[4]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1118.32 2200 1118.46 ;
+    END
+  END slot_accum_next_flat[4]
+  PIN slot_accum_next_flat[5]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1116.64 2200 1116.78 ;
+    END
+  END slot_accum_next_flat[5]
+  PIN slot_accum_next_flat[6]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1115.52 2200 1115.66 ;
+    END
+  END slot_accum_next_flat[6]
+  PIN slot_accum_next_flat[7]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1118.88 2200 1119.02 ;
+    END
+  END slot_accum_next_flat[7]
+  PIN slot_accum_next_flat[8]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1117.2 2200 1117.34 ;
+    END
+  END slot_accum_next_flat[8]
+  PIN slot_accum_next_flat[9]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1117.76 2200 1117.9 ;
+    END
+  END slot_accum_next_flat[9]
+  PIN slot_b_flat[0]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1001.28 2200 1001.42 ;
+    END
+  END slot_b_flat[0]
+  PIN slot_b_flat[10]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1078.56 2200 1078.7 ;
+    END
+  END slot_b_flat[10]
+  PIN slot_b_flat[11]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1081.92 2200 1082.06 ;
+    END
+  END slot_b_flat[11]
+  PIN slot_b_flat[12]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1085.84 2200 1085.98 ;
+    END
+  END slot_b_flat[12]
+  PIN slot_b_flat[13]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1088.64 2200 1088.78 ;
+    END
+  END slot_b_flat[13]
+  PIN slot_b_flat[14]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1085.28 2200 1085.42 ;
+    END
+  END slot_b_flat[14]
+  PIN slot_b_flat[15]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1068.48 2200 1068.62 ;
+    END
+  END slot_b_flat[15]
+  PIN slot_b_flat[16]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1099.28 0.14 1099.42 ;
+    END
+  END slot_b_flat[16]
+  PIN slot_b_flat[17]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1102.64 0.14 1102.78 ;
+    END
+  END slot_b_flat[17]
+  PIN slot_b_flat[18]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1098.16 0.14 1098.3 ;
+    END
+  END slot_b_flat[18]
+  PIN slot_b_flat[19]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1097.04 0.14 1097.18 ;
+    END
+  END slot_b_flat[19]
+  PIN slot_b_flat[1]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 1000.72 2200 1000.86 ;
+    END
+  END slot_b_flat[1]
+  PIN slot_b_flat[20]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1095.36 0.14 1095.5 ;
+    END
+  END slot_b_flat[20]
+  PIN slot_b_flat[21]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1096.48 0.14 1096.62 ;
+    END
+  END slot_b_flat[21]
+  PIN slot_b_flat[22]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1095.92 0.14 1096.06 ;
+    END
+  END slot_b_flat[22]
+  PIN slot_b_flat[23]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1094.8 0.14 1094.94 ;
+    END
+  END slot_b_flat[23]
+  PIN slot_b_flat[24]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1104.88 0.14 1105.02 ;
+    END
+  END slot_b_flat[24]
+  PIN slot_b_flat[25]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1103.76 0.14 1103.9 ;
+    END
+  END slot_b_flat[25]
+  PIN slot_b_flat[26]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1162.56 0.14 1162.7 ;
+    END
+  END slot_b_flat[26]
+  PIN slot_b_flat[27]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1167.04 0.14 1167.18 ;
+    END
+  END slot_b_flat[27]
+  PIN slot_b_flat[28]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1171.52 0.14 1171.66 ;
+    END
+  END slot_b_flat[28]
+  PIN slot_b_flat[29]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1174.88 0.14 1175.02 ;
+    END
+  END slot_b_flat[29]
+  PIN slot_b_flat[2]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  2199.86 999.04 2200 999.18 ;
+    END
+  END slot_b_flat[2]
+  PIN slot_b_flat[30]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1163.68 0.14 1163.82 ;
+    END
+  END slot_b_flat[30]
+  PIN slot_b_flat[31]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal5 ;
+        RECT  0 1159.2 0.14 1159.34 ;
+    END
+  END slot_b_flat[31]
+  PIN slot_b_flat[3]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  1196.745 0 1196.885 0.14 ;
+    END
+  END slot_b_flat[3]
+  PIN slot_b_flat[4]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  1203.465 0 1203.605 0.14 ;
+    END
+  END slot_b_flat[4]
+  PIN slot_b_flat[5]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  1204.025 0 1204.165 0.14 ;
+    END
+  END slot_b_flat[5]
+  PIN slot_b_flat[6]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  1202.345 0 1202.485 0.14 ;
+    END
+  END slot_b_flat[6]
+  PIN slot_b_flat[7]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  1201.785 0 1201.925 0.14 ;
+    END
+  END slot_b_flat[7]
+  PIN slot_b_flat[8]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  1173.225 0 1173.365 0.14 ;
+    END
+  END slot_b_flat[8]
+  PIN slot_b_flat[9]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal6 ;
+        RECT  1197.305 0 1197.445 0.14 ;
+    END
+  END slot_b_flat[9]
+  PIN VSS
+    DIRECTION INOUT ;
+    USE GROUND ;
+    PORT
+      LAYER metal7 ;
+        RECT  100.13 2082.1 2099.88 2083.5 ;
+        RECT  100.13 2052.1 2099.88 2053.5 ;
+        RECT  100.13 2022.1 2099.88 2023.5 ;
+        RECT  100.13 1992.1 2099.88 1993.5 ;
+        RECT  100.13 1962.1 2099.88 1963.5 ;
+        RECT  100.13 1932.1 2099.88 1933.5 ;
+        RECT  100.13 1902.1 2099.88 1903.5 ;
+        RECT  100.13 1872.1 2099.88 1873.5 ;
+        RECT  100.13 1842.1 2099.88 1843.5 ;
+        RECT  100.13 1812.1 2099.88 1813.5 ;
+        RECT  100.13 1782.1 2099.88 1783.5 ;
+        RECT  100.13 1752.1 2099.88 1753.5 ;
+        RECT  100.13 1722.1 2099.88 1723.5 ;
+        RECT  100.13 1692.1 2099.88 1693.5 ;
+        RECT  100.13 1662.1 2099.88 1663.5 ;
+        RECT  100.13 1632.1 2099.88 1633.5 ;
+        RECT  100.13 1602.1 2099.88 1603.5 ;
+        RECT  100.13 1572.1 2099.88 1573.5 ;
+        RECT  100.13 1542.1 2099.88 1543.5 ;
+        RECT  100.13 1512.1 2099.88 1513.5 ;
+        RECT  100.13 1482.1 2099.88 1483.5 ;
+        RECT  100.13 1452.1 2099.88 1453.5 ;
+        RECT  100.13 1422.1 2099.88 1423.5 ;
+        RECT  100.13 1392.1 2099.88 1393.5 ;
+        RECT  100.13 1362.1 2099.88 1363.5 ;
+        RECT  100.13 1332.1 2099.88 1333.5 ;
+        RECT  100.13 1302.1 2099.88 1303.5 ;
+        RECT  100.13 1272.1 2099.88 1273.5 ;
+        RECT  100.13 1242.1 2099.88 1243.5 ;
+        RECT  100.13 1212.1 2099.88 1213.5 ;
+        RECT  100.13 1182.1 2099.88 1183.5 ;
+        RECT  100.13 1152.1 2099.88 1153.5 ;
+        RECT  100.13 1122.1 2099.88 1123.5 ;
+        RECT  100.13 1092.1 2099.88 1093.5 ;
+        RECT  100.13 1062.1 2099.88 1063.5 ;
+        RECT  100.13 1032.1 2099.88 1033.5 ;
+        RECT  100.13 1002.1 2099.88 1003.5 ;
+        RECT  100.13 972.1 2099.88 973.5 ;
+        RECT  100.13 942.1 2099.88 943.5 ;
+        RECT  100.13 912.1 2099.88 913.5 ;
+        RECT  100.13 882.1 2099.88 883.5 ;
+        RECT  100.13 852.1 2099.88 853.5 ;
+        RECT  100.13 822.1 2099.88 823.5 ;
+        RECT  100.13 792.1 2099.88 793.5 ;
+        RECT  100.13 762.1 2099.88 763.5 ;
+        RECT  100.13 732.1 2099.88 733.5 ;
+        RECT  100.13 702.1 2099.88 703.5 ;
+        RECT  100.13 672.1 2099.88 673.5 ;
+        RECT  100.13 642.1 2099.88 643.5 ;
+        RECT  100.13 612.1 2099.88 613.5 ;
+        RECT  100.13 582.1 2099.88 583.5 ;
+        RECT  100.13 552.1 2099.88 553.5 ;
+        RECT  100.13 522.1 2099.88 523.5 ;
+        RECT  100.13 492.1 2099.88 493.5 ;
+        RECT  100.13 462.1 2099.88 463.5 ;
+        RECT  100.13 432.1 2099.88 433.5 ;
+        RECT  100.13 402.1 2099.88 403.5 ;
+        RECT  100.13 372.1 2099.88 373.5 ;
+        RECT  100.13 342.1 2099.88 343.5 ;
+        RECT  100.13 312.1 2099.88 313.5 ;
+        RECT  100.13 282.1 2099.88 283.5 ;
+        RECT  100.13 252.1 2099.88 253.5 ;
+        RECT  100.13 222.1 2099.88 223.5 ;
+        RECT  100.13 192.1 2099.88 193.5 ;
+        RECT  100.13 162.1 2099.88 163.5 ;
+        RECT  100.13 132.1 2099.88 133.5 ;
+        RECT  100.13 102.1 2099.88 103.5 ;
+    END
+  END VSS
+  PIN VDD
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER metal7 ;
+        RECT  100.13 2097.1 2099.88 2098.5 ;
+        RECT  100.13 2067.1 2099.88 2068.5 ;
+        RECT  100.13 2037.1 2099.88 2038.5 ;
+        RECT  100.13 2007.1 2099.88 2008.5 ;
+        RECT  100.13 1977.1 2099.88 1978.5 ;
+        RECT  100.13 1947.1 2099.88 1948.5 ;
+        RECT  100.13 1917.1 2099.88 1918.5 ;
+        RECT  100.13 1887.1 2099.88 1888.5 ;
+        RECT  100.13 1857.1 2099.88 1858.5 ;
+        RECT  100.13 1827.1 2099.88 1828.5 ;
+        RECT  100.13 1797.1 2099.88 1798.5 ;
+        RECT  100.13 1767.1 2099.88 1768.5 ;
+        RECT  100.13 1737.1 2099.88 1738.5 ;
+        RECT  100.13 1707.1 2099.88 1708.5 ;
+        RECT  100.13 1677.1 2099.88 1678.5 ;
+        RECT  100.13 1647.1 2099.88 1648.5 ;
+        RECT  100.13 1617.1 2099.88 1618.5 ;
+        RECT  100.13 1587.1 2099.88 1588.5 ;
+        RECT  100.13 1557.1 2099.88 1558.5 ;
+        RECT  100.13 1527.1 2099.88 1528.5 ;
+        RECT  100.13 1497.1 2099.88 1498.5 ;
+        RECT  100.13 1467.1 2099.88 1468.5 ;
+        RECT  100.13 1437.1 2099.88 1438.5 ;
+        RECT  100.13 1407.1 2099.88 1408.5 ;
+        RECT  100.13 1377.1 2099.88 1378.5 ;
+        RECT  100.13 1347.1 2099.88 1348.5 ;
+        RECT  100.13 1317.1 2099.88 1318.5 ;
+        RECT  100.13 1287.1 2099.88 1288.5 ;
+        RECT  100.13 1257.1 2099.88 1258.5 ;
+        RECT  100.13 1227.1 2099.88 1228.5 ;
+        RECT  100.13 1197.1 2099.88 1198.5 ;
+        RECT  100.13 1167.1 2099.88 1168.5 ;
+        RECT  100.13 1137.1 2099.88 1138.5 ;
+        RECT  100.13 1107.1 2099.88 1108.5 ;
+        RECT  100.13 1077.1 2099.88 1078.5 ;
+        RECT  100.13 1047.1 2099.88 1048.5 ;
+        RECT  100.13 1017.1 2099.88 1018.5 ;
+        RECT  100.13 987.1 2099.88 988.5 ;
+        RECT  100.13 957.1 2099.88 958.5 ;
+        RECT  100.13 927.1 2099.88 928.5 ;
+        RECT  100.13 897.1 2099.88 898.5 ;
+        RECT  100.13 867.1 2099.88 868.5 ;
+        RECT  100.13 837.1 2099.88 838.5 ;
+        RECT  100.13 807.1 2099.88 808.5 ;
+        RECT  100.13 777.1 2099.88 778.5 ;
+        RECT  100.13 747.1 2099.88 748.5 ;
+        RECT  100.13 717.1 2099.88 718.5 ;
+        RECT  100.13 687.1 2099.88 688.5 ;
+        RECT  100.13 657.1 2099.88 658.5 ;
+        RECT  100.13 627.1 2099.88 628.5 ;
+        RECT  100.13 597.1 2099.88 598.5 ;
+        RECT  100.13 567.1 2099.88 568.5 ;
+        RECT  100.13 537.1 2099.88 538.5 ;
+        RECT  100.13 507.1 2099.88 508.5 ;
+        RECT  100.13 477.1 2099.88 478.5 ;
+        RECT  100.13 447.1 2099.88 448.5 ;
+        RECT  100.13 417.1 2099.88 418.5 ;
+        RECT  100.13 387.1 2099.88 388.5 ;
+        RECT  100.13 357.1 2099.88 358.5 ;
+        RECT  100.13 327.1 2099.88 328.5 ;
+        RECT  100.13 297.1 2099.88 298.5 ;
+        RECT  100.13 267.1 2099.88 268.5 ;
+        RECT  100.13 237.1 2099.88 238.5 ;
+        RECT  100.13 207.1 2099.88 208.5 ;
+        RECT  100.13 177.1 2099.88 178.5 ;
+        RECT  100.13 147.1 2099.88 148.5 ;
+        RECT  100.13 117.1 2099.88 118.5 ;
+    END
+  END VDD
+  OBS
+    LAYER metal1 ;
+     RECT  0 0 2200 2200 ;
+    LAYER metal2 ;
+     RECT  0 0 2200 2200 ;
+    LAYER metal3 ;
+     RECT  0 0 2200 2200 ;
+    LAYER metal4 ;
+     RECT  0 0 2200 2200 ;
+    LAYER metal5 ;
+     RECT  0 0 2200 2200 ;
+    LAYER metal6 ;
+     RECT  0 0 2200 2200 ;
+    LAYER metal7 ;
+     RECT  0 0 2200 2200 ;
+  END
+END gemm_compute_array
+END LIBRARY

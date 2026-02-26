@@ -1,0 +1,28 @@
+{
+  "version": "0.1",
+  "require_match": false,
+  "entries": [
+    {
+      "name": "gemm_compute_array_fp16_2slot_c300",
+      "manifest": "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json",
+      "priority": 100,
+      "when": {
+        "compute.gemm.mac_type": "fp16",
+        "compute.gemm.mac_source": "rtlgen_cpp",
+        "compute.gemm.num_modules": 2,
+        "compute.gemm.lanes": 1
+      },
+      "notes": "Example hardened array macro for fp16 two-slot compute array"
+    },
+    {
+      "name": "gemm_mac_fp16_ieee_leaf",
+      "manifest": "runs/designs/npu_macros/fp16_gemm_ieee/macro_manifest.json",
+      "priority": 10,
+      "when": {
+        "compute.gemm.mac_type": "fp16",
+        "compute.gemm.mac_source": "rtlgen_cpp"
+      },
+      "notes": "Fallback leaf-level macro abstraction"
+    }
+  ]
+}

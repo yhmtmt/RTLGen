@@ -50,7 +50,8 @@ can later be extended without breaking v0.1.
     "gemm": {
       "mac_type": "int8",
       "mac_source": "builtin_int8_dot",
-      "lanes": 8,
+      "num_modules": 4,
+      "lanes_per_module": 8,
       "accum_width": 32,
       "pipeline": 1,
       "rtlgen_cpp": {
@@ -99,9 +100,9 @@ can later be extended without breaking v0.1.
 - `compute` (object, optional): Phase 1 compute generation controls.
   - `compute.enabled` (bool): enable generated GEMM compute datapath hooks.
 - `compute.gemm.mac_type` (string): GEMM MAC operand type.
-  - `int8`: 8-bit signed lanes (`lanes` in `[1,8]`)
-  - `int16`: 16-bit signed lanes (`lanes` in `[1,4]`)
-  - `fp16`: 16-bit lanes (default backend is C++ IEEE-half `fp_mac`)
+  - `int8`: 8-bit signed lanes (`lanes_per_module`/`lanes` in `[1,8]`)
+  - `int16`: 16-bit signed lanes (`lanes_per_module`/`lanes` in `[1,4]`)
+  - `fp16`: 16-bit lanes (`lanes_per_module`/`lanes` in `[1,4]`, default backend is C++ IEEE-half `fp_mac`)
 - `compute.gemm.mac_source` (string): GEMM MAC backend selection.
   - `builtin_int8_dot` (or `builtin`): generated `gemm_mac_int8` lane dot-product module.
   - `builtin_int16_dot` (or `builtin`): generated `gemm_mac_int16` lane dot-product module.
@@ -111,9 +112,16 @@ can later be extended without breaking v0.1.
     - `mac_type=int8` -> `builtin_int8_dot`
     - `mac_type=int16` -> `builtin_int16_dot`
     - `mac_type=fp16` -> `rtlgen_cpp` (default fp16 backend lock)
-- `compute.gemm.lanes` (int): number of MAC lanes (depends on `mac_type`).
+- `compute.gemm.num_modules` (int): number of parallel GEMM module slots to emit (`1..16`, default `2`).
+  - Each slot gets its own MAC instance and per-slot state (`valid/done/cycles/src/dst/size`).
+  - This is the first step toward hierarchical GEMM composition in generated RTL.
+- `compute.gemm.lanes_per_module` (int): number of MAC lanes per module (depends on `mac_type`).
+  - Backward-compatible alias: `compute.gemm.lanes`.
+  - If both are provided, values must match.
 - `compute.gemm.accum_width` (int): signed accumulator width (16..64).
-- `compute.gemm.pipeline` (int): reserved pipeline knob (must be >=1).
+- `compute.gemm.pipeline` (int): pipeline knob (must be >=1).
+  - When `compute.gemm.mac_source=rtlgen_cpp` and `mac_type=int8`, this is
+    forwarded to C++ RTLGen as `options.pipeline_depth`.
 - `compute.gemm.fp16` (object, optional): fp16 numeric policy lock (used when `mac_type=fp16`).
   - `semantics` (string): one of:
     - `ieee_half` (default when `mac_source=rtlgen_cpp` or `mac_source` is omitted for fp16)
@@ -148,6 +156,14 @@ can later be extended without breaking v0.1.
   blackbox/synth integration (wiring TBD).
 - Phase 1 adds an int8 MAC primitive (`gemm_mac_int8`) and uses it in GEMM
   slot execution while preserving existing descriptor timing behavior.
+- GEMM slot/module generation is parameterized by `compute.gemm.num_modules`.
+  The command issue path and completion scheduler scale with this value.
+- Generated top-level RTL emits a dedicated `gemm_compute_array` submodule for
+  GEMM arithmetic and tags it with `(* keep_hierarchy = 1 *)` to support
+  hierarchical synthesis/PNR experiments.
+- `gemm_compute_array` is emitted as a fixed-size concrete module (not a
+  parameterized instance), to avoid Yosys `$paramod` renaming and allow
+  direct `SYNTH_KEEP_MODULES=gemm_compute_array` matching in OpenROAD flows.
 - Phase 3 adds an int16 MAC primitive (`gemm_mac_int16`) under
   `compute.gemm.mac_type=int16`.
 - Phase 3 also adds an fp16 selector (`compute.gemm.mac_type=fp16`) as a
@@ -157,8 +173,8 @@ can later be extended without breaking v0.1.
   - `compute.gemm.fp16.semantics=raw16_placeholder`
   - `compute.gemm.fp16.accumulation=int32`
 - `mac_source=rtlgen_cpp` scalar MAC constraints:
-  - `mac_type=int8`: `lanes=1`, `accum_width=16`
-  - `mac_type=fp16`: `lanes=1`, `accum_width=16`,
+  - `mac_type=int8`: `lanes_per_module=1` (or `lanes=1`), `accum_width=16`
+  - `mac_type=fp16`: `lanes_per_module=1` (or `lanes=1`), `accum_width=16`,
     `fp16.semantics=ieee_half`, `fp16.accumulation=fp16`,
     `fp16.rounding=rne`, `fp16.subnormals=preserve`
 - `activation_source=rtlgen_cpp` emits scalar activation modules for

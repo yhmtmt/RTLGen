@@ -314,10 +314,27 @@ def derive_gemm_cfg(
     hist_pipe = find_history_value(history_cfgs, ["compute", "gemm", "pipeline"])
     pipeline = int(choose_scalar(pipeline_candidates, 1, hist_pipe, predicate=lambda x: int(x) >= 1))
 
+    module_candidates = normalize_int_list(
+        tile_gemm.get("num_modules_candidates", []),
+        "macros.compute_tiles[].gemm.num_modules_candidates",
+    )
+    if not module_candidates:
+        module_candidates = [2]
+    hist_modules = find_history_value(history_cfgs, ["compute", "gemm", "num_modules"])
+    num_modules = int(
+        choose_scalar(
+            module_candidates,
+            2,
+            hist_modules,
+            predicate=lambda x: 1 <= int(x) <= 16,
+        )
+    )
+
     gemm_cfg: dict[str, Any] = {
         "mac_type": mac_type,
         "mac_source": mac_source,
         "lanes": lanes,
+        "num_modules": num_modules,
         "accum_width": accum_width,
         "pipeline": pipeline,
     }
@@ -474,6 +491,56 @@ def derive_vec_cfg(
     return vec_cfg
 
 
+def derive_gemm_physical_hardening_meta(tile_gemm: dict, gemm_cfg: dict) -> dict:
+    raw = tile_gemm.get("physical_hardening", {})
+    if raw is None:
+        return {}
+    if not isinstance(raw, dict):
+        die("macros.compute_tiles[].gemm.physical_hardening must be an object when provided")
+
+    library = str(raw.get("macro_library", "")).strip()
+    require_match = bool(raw.get("require_match", False))
+
+    selector_defaults_raw = raw.get("selector_defaults", {})
+    if selector_defaults_raw is None:
+        selector_defaults_raw = {}
+    if not isinstance(selector_defaults_raw, dict):
+        die("macros.compute_tiles[].gemm.physical_hardening.selector_defaults must be an object")
+    selector_defaults = {str(k): v for k, v in selector_defaults_raw.items()}
+
+    selector_sweep_keys = [
+        x
+        for x in normalize_str_list(raw.get("selector_sweep_keys", []))
+        if x
+    ]
+
+    derived_context = {
+        "compute.gemm.mac_type": gemm_cfg.get("mac_type"),
+        "compute.gemm.mac_source": gemm_cfg.get("mac_source"),
+        "compute.gemm.num_modules": gemm_cfg.get("num_modules"),
+        "compute.gemm.lanes": gemm_cfg.get("lanes"),
+        "compute.gemm.accum_width": gemm_cfg.get("accum_width"),
+        "compute.gemm.pipeline": gemm_cfg.get("pipeline"),
+    }
+    selector_context = dict(selector_defaults)
+    if selector_sweep_keys:
+        for key in selector_sweep_keys:
+            if key in derived_context and derived_context[key] is not None:
+                selector_context[key] = derived_context[key]
+    else:
+        for key, value in derived_context.items():
+            if value is not None:
+                selector_context[key] = value
+
+    return {
+        "macro_library": library,
+        "require_match": require_match,
+        "selector_defaults": selector_defaults,
+        "selector_sweep_keys": selector_sweep_keys,
+        "selector_context": selector_context,
+    }
+
+
 def normalize_sram_instances_v02(memory: dict, platform: dict) -> list[dict]:
     instances = as_list(memory.get("instances", []))
     pdk = platform.get("target_pdk")
@@ -532,6 +599,10 @@ def build_rtlgen_config_v02(
         history_cfgs,
         args.rtlgen_binary_path,
     )
+    gemm_physical_hardening = derive_gemm_physical_hardening_meta(
+        tile.get("gemm", {}) if isinstance(tile, dict) else {},
+        gemm_cfg,
+    )
     vec_cfg = derive_vec_cfg(
         tile.get("vec", {}) if isinstance(tile, dict) else {},
         history_cfgs,
@@ -572,6 +643,7 @@ def build_rtlgen_config_v02(
             "history_db": str(history_path) if history_path is not None else "",
             "history_records_seen": len(history_cfgs),
             "derive_strategy": str(derive.get("strategy", "")) if isinstance(derive, dict) else "",
+            "gemm_physical_hardening": gemm_physical_hardening,
         },
     }
     return rtl_cfg

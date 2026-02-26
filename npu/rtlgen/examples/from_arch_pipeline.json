@@ -1,0 +1,58 @@
+{
+  "axi_addr_width": 64,
+  "axi_data_width": 256,
+  "axi_id_width": 4,
+  "data_width": 32,
+  "dma_addr_width": 64,
+  "dma_data_width": 256,
+  "enable_axi_lite_wrapper": true,
+  "enable_axi_ports": true,
+  "enable_cq_mem_ports": true,
+  "enable_dma_ports": true,
+  "enable_irq": true,
+  "mmio_addr_width": 12,
+  "queue_depth": 64,
+  "sram_instances": [
+    {
+      "alignment_bytes": 64,
+      "banks": 8,
+      "base_addr": 2147483648,
+      "byte_en": true,
+      "depth": 16384,
+      "name": "activation_sram",
+      "pdk": "sky130",
+      "port": "1r1w",
+      "read_latency": 1,
+      "tech_node_nm": 130,
+      "width": 256
+    },
+    {
+      "alignment_bytes": 64,
+      "banks": 8,
+      "base_addr": 2151677952,
+      "byte_en": true,
+      "depth": 16384,
+      "name": "weight_sram",
+      "pdk": "sky130",
+      "port": "1r1w",
+      "read_latency": 1,
+      "tech_node_nm": 130,
+      "width": 256
+    },
+    {
+      "alignment_bytes": 64,
+      "banks": 4,
+      "base_addr": 2155872256,
+      "byte_en": true,
+      "depth": 8192,
+      "name": "kv_sram",
+      "pdk": "sky130",
+      "port": "1r1w",
+      "read_latency": 1,
+      "tech_node_nm": 130,
+      "width": 256
+    }
+  ],
+  "top_name": "npu_top",
+  "version": "0.1"
+}

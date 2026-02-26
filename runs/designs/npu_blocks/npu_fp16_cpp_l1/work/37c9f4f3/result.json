@@ -1,0 +1,15 @@
+{
+  "design": "npu_fp16_cpp_l1",
+  "platform": "nangate45",
+  "config_hash": "8e017cf47c46",
+  "param_hash": "37c9f4f3",
+  "tag": "fp16_cmp_flat_big_gp_37c9f4f3",
+  "status": "ok",
+  "critical_path_ns": 5.767777732917284,
+  "die_area": 4840000.0,
+  "total_power_mw": 0.204222,
+  "params_json": "{\"CLOCK_PERIOD\": 10.0, \"CMP_MODE\": \"flat_big_gp\", \"CORE_AREA\": \"100 100 2100 2100\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 2200 2200\", \"FLOW_VARIANT\": \"cmp_flat_big_gp\", \"PLACE_DENSITY\": 0.4, \"tag_prefix\": \"fp16_cmp_flat_big_gp\"}",
+  "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_l1/cmp_flat_big_gp/3_3_place_gp.json",
+  "blackbox_instance_counts": {},
+  "missing_blackboxes": []
+}

@@ -1,0 +1,12 @@
+{
+  "stage": "pre_synth_memory",
+  "source": "cacti_fallback",
+  "arch": "/workspaces/RTLGen/npu/arch/examples/minimal.yml",
+  "id": "__tmp_memgen_auto__",
+  "pdk": "sky130",
+  "mode": "auto",
+  "memgen_cmd_effective": "false",
+  "memgen_failure_reason": "memgen command failed (exit 1)",
+  "canonical_metrics": "/workspaces/RTLGen/runs/designs/sram/__tmp_memgen_auto__/sram_metrics.json",
+  "stage_metrics": "/workspaces/RTLGen/runs/designs/sram/__tmp_memgen_auto__/sram_metrics.pre_synth.json"
+}

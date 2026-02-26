@@ -1,0 +1,23 @@
+{
+  "flow_params": {
+    "CLOCK_PERIOD": [
+      10.0
+    ],
+    "CLOCK_PORT": [
+      ""
+    ],
+    "PLACE_DENSITY": [
+      0.4
+    ],
+    "FLOW_VARIANT": [
+      "base"
+    ],
+    "DIE_AREA": [
+      "0 0 300 300"
+    ],
+    "CORE_AREA": [
+      "20 20 280 280"
+    ]
+  },
+  "tag_prefix": "npu_macro"
+}

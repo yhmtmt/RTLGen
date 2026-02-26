@@ -1,0 +1,30 @@
+{
+  "version": "0.1",
+  "design_id": "gemm_compute_array_fp16_2slot",
+  "module": "gemm_compute_array",
+  "platform": "nangate45",
+  "flow_variant": "base",
+  "blackboxes": [
+    "gemm_compute_array"
+  ],
+  "additional_lefs": [
+    "runs/designs/npu_macros/gemm_compute_array_fp16_2slot/abstract/gemm_compute_array.lef"
+  ],
+  "additional_libs": [
+    "runs/designs/npu_macros/gemm_compute_array_fp16_2slot/abstract/gemm_compute_array_typ.lib"
+  ],
+  "additional_gds": [
+    "runs/designs/npu_macros/gemm_compute_array_fp16_2slot/abstract/6_final.gds"
+  ],
+  "blackbox_verilog": [
+    "runs/designs/npu_macros/gemm_compute_array_fp16_2slot/abstract/gemm_compute_array_blackbox.v"
+  ],
+  "source": {
+    "mode": "existing_verilog",
+    "verilog_dir": "runs/designs/npu_blocks/npu_fp16_cpp_hiercmp/verilog",
+    "module_file": "runs/designs/npu_blocks/npu_fp16_cpp_hiercmp/verilog/npu_top.v",
+    "verilog_sha1": "64118d909ca646a23a10193efc469363762436b2"
+  },
+  "sweep": "runs/designs/npu_macros/gemm_compute_array_fp16_2slot/pre_synth_sweep.json",
+  "make_target": "generate_abstract"
+}
