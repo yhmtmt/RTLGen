@@ -74,9 +74,39 @@ evaluation inside RTLGen.
 
 ## 7) Run block-level synthesis (OpenROAD)
 - Use `npu/synth/run_block_sweep.py` for generic block sweeps.
+- For hierarchical top-level PnR, pre-harden arithmetic macros first:
+  - `python3 npu/synth/pre_synth_compute.py ...`
+  - use `--config ...` for C++ RTLGen macro configs, or
+    `--src_verilog_dir ... --module ...` for modules already emitted in
+    generator RTL (e.g., `gemm_compute_array` in `npu_top.v`)
+  - optional: stamp architecture keys onto each hardened macro manifest with
+    repeated `--manifest_param key=value` (for selection traceability)
+  - pass emitted `macro_manifest.json` via
+    `npu/synth/run_block_sweep.py --macro_manifest ...`
+  - for parameter sweeps across multiple hardened variants, pass
+    `--macro_library ...` instead of a single manifest and match with:
+    - `--macro_select key=value` (CLI overrides), and/or
+    - `--macro_select_json <rtlgen_or_arch_derived_config.json>`
+  - manifests include macro LEF/LIB/GDS + blackbox stub Verilog; top-level
+    sweep auto-runs a macro-lib-safe two-pass synth before placement
+  - `run_block_sweep.py` now checks macro LEF outline vs requested `CORE_AREA`
+    before running OpenROAD, so oversized macros fail fast with a clear error
+  - sweep JSON now supports optional `mode_compare` to run multi-mode A/B
+    comparisons automatically from one sweep invocation. `mode_compare: true`
+    enables default two-mode compare:
+    - `flat_nomacro`: `SYNTH_HIERARCHICAL=0`, no macro abstraction
+    - `hier_macro`: `SYNTH_HIERARCHICAL=1`, with macro abstraction
+    - writes one markdown comparison table per sweep point under
+      `runs/designs/<type>/<design>/comparisons/`
+    - optional object form supports custom modes with
+      `mode_compare.modes[].param_overrides` and `use_macro`
+  - example library file: `npu/synth/macro_library_example.json`
 - Use `npu/synth/run_fp16_backend_sweep.py` for fp16 backend decisions:
   - sweep config: `npu/synth/fp16_backend_sweep_nangate45.json`
   - decision report: `runs/designs/npu_blocks/fp16_backend_decision_nangate45.md`
+  - supports `--macro_library`/`--macro_required`; when library mode is used
+    and `--macro_select_json` is not provided, it auto-uses each backend's
+    RTLGen config as selector context
 - Store append-only results under `runs/designs/`.
 
 ## 8) Aggregate results and iterate
