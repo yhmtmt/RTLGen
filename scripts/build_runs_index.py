@@ -57,8 +57,12 @@ def parse_design_info(metrics_path: Path):
 
 
 def load_metrics(metrics_path: Path):
-    text = metrics_path.read_text()
-    text = re.sub(r"result\\.json(?=[A-Za-z0-9_])", "result.json\\n", text)
+    # Handle mixed historical formats:
+    # 1) unquoted JSON in params_json
+    # 2) CSV-quoted JSON in params_json (newer rows)
+    # Also repair legacy missing newline after result.json.
+    text = metrics_path.read_text(encoding="utf-8", errors="ignore")
+    text = re.sub(r"result\.json(?=[A-Za-z0-9_])", "result.json\n", text)
     lines = text.splitlines()
     if not lines:
         return []
@@ -76,11 +80,13 @@ def load_metrics(metrics_path: Path):
             params_json, result_path = rest.rsplit(",", 1)
         else:
             params_json, result_path = rest, ""
+        params_json = params_json.strip()
+        if len(params_json) >= 2 and params_json[0] == '"' and params_json[-1] == '"':
+            params_json = params_json[1:-1].replace('""', '"')
         values = front + [params_json, result_path]
         if len(values) != len(header):
             continue
-        row = dict(zip(header, values))
-        rows.append(row)
+        rows.append(dict(zip(header, values)))
     return rows
 
 

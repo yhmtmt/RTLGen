@@ -49,14 +49,18 @@ VALID_GENERATORS = {"rtlgen", "yosys", "flopoco", "manual", "other"}
 
 
 def read_csv(path: Path):
-    with path.open() as f:
+    with path.open(newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         return reader.fieldnames or [], list(reader)
 
 
 def read_metrics_csv(path: Path):
-    text = path.read_text()
-    text = re.sub(r"result\\.json(?=[A-Za-z0-9_])", "result.json\\n", text)
+    # Handle mixed historical formats:
+    # 1) unquoted JSON in params_json
+    # 2) CSV-quoted JSON in params_json (newer rows)
+    # Also repair legacy missing newline after result.json.
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    text = re.sub(r"result\.json(?=[A-Za-z0-9_])", "result.json\n", text)
     lines = text.splitlines()
     if not lines:
         return [], []
@@ -74,6 +78,10 @@ def read_metrics_csv(path: Path):
             params_json, result_path = rest.rsplit(",", 1)
         else:
             params_json, result_path = rest, ""
+        params_json = params_json.strip()
+        if len(params_json) >= 2 and params_json[0] == '"' and params_json[-1] == '"':
+            # CSV-quoted JSON escaping uses doubled quotes.
+            params_json = params_json[1:-1].replace('""', '"')
         values = front + [params_json, result_path]
         if len(values) != len(header):
             continue
@@ -90,14 +98,25 @@ def validate_metrics():
         if missing:
             errors.append(f"{metrics_path}: missing fields {sorted(missing)}")
         for row in rows:
-            key = (row.get("design"), row.get("platform"), row.get("param_hash"))
+            key = (
+                row.get("design"),
+                row.get("platform"),
+                row.get("param_hash"),
+                row.get("result_path"),
+            )
             if key in seen:
                 errors.append(f"duplicate run: {key} in {metrics_path}")
             else:
                 seen.add(key)
             params_json = row.get("params_json", "").strip()
-            if params_json and not (params_json.startswith("{") and params_json.endswith("}")):
-                errors.append(f"{metrics_path}: malformed params_json for {key}")
+            if params_json:
+                try:
+                    parsed = json.loads(params_json)
+                except json.JSONDecodeError:
+                    errors.append(f"{metrics_path}: malformed params_json for {key}")
+                    continue
+                if not isinstance(parsed, dict):
+                    errors.append(f"{metrics_path}: params_json must decode to object for {key}")
     return errors
 
 
