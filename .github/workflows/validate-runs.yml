@@ -7,11 +7,13 @@ on:
       - 'runs/**'
       - 'scripts/validate_runs.py'
       - 'scripts/build_runs_index.py'
+      - 'tests/test_runs_parsers.py'
   pull_request:
     paths:
       - 'runs/**'
       - 'scripts/validate_runs.py'
       - 'scripts/build_runs_index.py'
+      - 'tests/test_runs_parsers.py'
   workflow_dispatch:
 
 jobs:
@@ -24,6 +26,9 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
+      - name: Regression tests (runs parsers)
+        run: python tests/test_runs_parsers.py
 
       - name: Validate runs schema
         run: python scripts/validate_runs.py
