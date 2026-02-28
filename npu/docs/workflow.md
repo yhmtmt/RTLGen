@@ -15,6 +15,16 @@ evaluation inside RTLGen.
   compute (`gemm`/`vec`) candidate generation.
 - **Implemented**: pre-synthesis SRAM stage wrapper
   (`npu/synth/pre_synth_memory.py`) with memgen-first policy and CACTI fallback.
+- **In progress**: system-level evaluation contract and campaign skeleton
+  (`npu/eval/`, `runs/campaigns/npu/e2e_eval_v0/`).
+
+## 0) Lock evaluation contract (before broad tuning)
+- Validate campaign manifest:
+  `python3 npu/eval/validate.py --campaign runs/campaigns/npu/e2e_eval_v0/campaign.json`
+- Validate merged row format:
+  `python3 npu/eval/validate.py --result-row npu/eval/examples/minimal_result_row.json`
+- Keep campaign-level run configuration in one JSON manifest under
+  `runs/campaigns/npu/` before expanding mapper/synth sweeps.
 
 ## 1) Define architecture config
 - Create/edit architecture YAML under `npu/arch/examples/`.

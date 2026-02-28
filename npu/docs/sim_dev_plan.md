@@ -30,6 +30,13 @@ This plan defines two simulation schemes:
     `total_power_mw=0.229`
   and recommendation remains `cpp_ieee` (default-eligible backend).
 
+## System-level evaluation flow (new focus)
+- Prioritize full-loop evaluation before deeper mapper tuning:
+  ONNX mapping -> physical mapping -> perf sim -> merged report row.
+- Contract and validation artifacts are introduced under `npu/eval/`.
+- Initial campaign skeleton is tracked at:
+  `runs/campaigns/npu/e2e_eval_v0/campaign.json`.
+
 ## A) RTL Functional Validation (First Priority)
 
 ### Goals

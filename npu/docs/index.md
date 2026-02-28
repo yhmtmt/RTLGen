@@ -13,6 +13,8 @@ Documents are grouped by purpose: **specs**, **plans**, and **logs**.
   derivation path (arch intent -> rtlgen candidate).
 - **Implemented**: pre-synthesis SRAM stage wrapper with memgen-first policy
   and CACTI fallback.
+- **In progress**: end-to-end evaluation contract + campaign flow
+  (`npu/eval/`, `npu/docs/eval_flow_plan.md`).
 
 ## Specs
 - `npu/shell/spec.md`: shell contract (MMIO, queue, DMA, events).
@@ -25,6 +27,7 @@ Documents are grouped by purpose: **specs**, **plans**, and **logs**.
 - `npu/setup.md`: environment + integration phases.
 - `npu/docs/sim_dev_plan.md`: simulator development plan (RTL + performance).
 - `npu/synth/plan.md`: OpenROAD integration plan.
+- `npu/docs/eval_flow_plan.md`: system-level ONNX + physical + perf flow plan.
 - `npu/synth/cacti.md`: CACTI SRAM estimation workflow and scaling rules.
 - `npu/docs/workflow.md`: end-to-end workflow guide.
 
