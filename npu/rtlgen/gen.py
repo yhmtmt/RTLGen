@@ -1356,9 +1356,14 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
     gemm_slot_vec_flat_width_minus1 = gemm_slot_vec_flat_width - 1
     gemm_slot_accum_flat_width = gemm_num_modules * gemm_accum_width
     gemm_slot_accum_flat_width_minus1 = gemm_slot_accum_flat_width - 1
-    gemm_slot_vec_concat = ", ".join([f"gemm_mac_a_vec{i}" for i in reversed(range(gemm_num_modules))])
-    gemm_slot_b_concat = ", ".join([f"gemm_mac_b_vec{i}" for i in reversed(range(gemm_num_modules))])
-    gemm_slot_accum_concat = ", ".join([f"gemm_slot_accum{i}" for i in reversed(range(gemm_num_modules))])
+    def pack_flat_expr(signals):
+        if len(signals) == 1:
+            return signals[0]
+        return "{" + ", ".join(reversed(signals)) + "}"
+
+    gemm_slot_vec_expr = pack_flat_expr([f"gemm_mac_a_vec{i}" for i in range(gemm_num_modules)])
+    gemm_slot_b_expr = pack_flat_expr([f"gemm_mac_b_vec{i}" for i in range(gemm_num_modules)])
+    gemm_slot_accum_expr = pack_flat_expr([f"gemm_slot_accum{i}" for i in range(gemm_num_modules)])
 
     gemm_compute_array_module = f"""\
 (* keep_hierarchy = 1 *)
@@ -1389,9 +1394,9 @@ endmodule
     gemm_compute_instances = f"""
   wire signed [{gemm_slot_accum_flat_width_minus1}:0] gemm_slot_next_flat;
   (* keep_hierarchy = 1 *) gemm_compute_array u_gemm_compute_array (
-    .slot_a_flat({{{gemm_slot_vec_concat}}}),
-    .slot_b_flat({{{gemm_slot_b_concat}}}),
-    .slot_accum_in_flat({{{gemm_slot_accum_concat}}}),
+    .slot_a_flat({gemm_slot_vec_expr}),
+    .slot_b_flat({gemm_slot_b_expr}),
+    .slot_accum_in_flat({gemm_slot_accum_expr}),
     .slot_accum_next_flat(gemm_slot_next_flat)
   );
 """

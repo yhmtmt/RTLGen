@@ -176,6 +176,7 @@ def run_backend_sweep(
     macro_select_json: Optional[Path],
     macro_required: bool,
     make_target: Optional[str],
+    repeat: Optional[int],
     skip_existing: bool,
     force_copy: bool,
     dry_run: bool,
@@ -205,6 +206,8 @@ def run_backend_sweep(
         cmd.append("--macro_required")
     if make_target:
         cmd.extend(["--make_target", make_target])
+    if repeat is not None:
+        cmd.extend(["--repeat", str(repeat)])
     if skip_existing:
         cmd.append("--skip_existing")
     if force_copy:
@@ -370,6 +373,11 @@ def main() -> None:
         help="Optional OpenROAD make target to run (e.g., 3_5_place_dp, finish).",
     )
     ap.add_argument(
+        "--repeat",
+        type=int,
+        help="Optional repeat count passed through to run_block_sweep.py (--repeat).",
+    )
+    ap.add_argument(
         "--macro_manifest",
         help="Optional hardened-macro manifest passed through to run_block_sweep.py",
     )
@@ -444,6 +452,7 @@ def main() -> None:
             macro_select_json=backend_macro_select_json,
             macro_required=args.macro_required,
             make_target=args.make_target,
+            repeat=args.repeat,
             skip_existing=args.skip_existing,
             force_copy=args.force_copy,
             dry_run=args.dry_run,

@@ -136,8 +136,30 @@ python3 npu/synth/run_block_sweep.py \
 }
 ```
 `mode_compare: true` runs default `flat_nomacro` and `hier_macro` modes and
-emits one markdown comparison table per sweep point under
+emits one markdown comparison report per sweep point under
 `runs/designs/<type>/<design>/comparisons/`.
+The report now includes:
+- per-mode summary statistics (mean/stddev) for timing, area, power, and
+  elapsed time
+- per-run raw rows (including repeat index)
+
+To reduce run-to-run jitter, repeat each sweep point/mode multiple times:
+```json
+{
+  "mode_compare": {
+    "enabled": true,
+    "repeat": 5,
+    "modes": [
+      { "name": "flat_nomacro", "use_macro": false },
+      { "name": "hier_macro", "use_macro": true }
+    ]
+  }
+}
+```
+You can also override repeats from CLI:
+```sh
+python3 npu/synth/run_block_sweep.py ... --repeat 5
+```
 5) For fp16 backend comparisons, pass through with:
 ```sh
 python3 npu/synth/run_fp16_backend_sweep.py \

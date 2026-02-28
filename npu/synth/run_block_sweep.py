@@ -18,6 +18,7 @@ import json
 import os
 import re
 import shutil
+import statistics
 import subprocess
 import sys
 from pathlib import Path
@@ -371,6 +372,8 @@ def parse_mode_compare_config(sweep: Dict[str, object]) -> Optional[Dict[str, ob
     if raw is None:
         return None
 
+    repeat_count = 1
+
     if isinstance(raw, bool):
         if not raw:
             return None
@@ -388,6 +391,13 @@ def parse_mode_compare_config(sweep: Dict[str, object]) -> Optional[Dict[str, ob
         if not isinstance(raw_modes, list):
             raise ValueError("mode_compare.modes must be a list")
         report_dir = str(raw.get("report_dir", "comparisons")).strip() or "comparisons"
+        raw_repeat = raw.get("repeat", 1)
+        try:
+            repeat_count = int(raw_repeat)
+        except Exception as exc:
+            raise ValueError(f"mode_compare.repeat must be an integer: {exc}") from exc
+        if repeat_count < 1:
+            raise ValueError("mode_compare.repeat must be >= 1")
     else:
         raise ValueError(
             "mode_compare must be one of: bool, list, or object with enabled/modes/report_dir"
@@ -430,6 +440,7 @@ def parse_mode_compare_config(sweep: Dict[str, object]) -> Optional[Dict[str, ob
 
     return {
         "report_dir": report_dir,
+        "repeat": repeat_count,
         "modes": parsed_modes,
     }
 
@@ -626,6 +637,55 @@ def parse_stage_metrics(metrics_json_path: Path, stage_prefix: str) -> Dict[str,
     metrics["total_power_mw"] = safe_float(data.get(f"{stage_prefix}__power__total"))
     metrics["die_area"] = safe_float(data.get(f"{stage_prefix}__design__die__area"))
     return metrics
+
+
+def parse_elapsed_seconds_from_text(text: str) -> Optional[float]:
+    m = re.search(r"Elapsed time:\s*(\d+):(\d+(?:\.\d+)?)\[h:\]min:sec\.", text)
+    if not m:
+        return None
+    try:
+        minutes = int(m.group(1))
+        seconds = float(m.group(2))
+    except ValueError:
+        return None
+    return minutes * 60.0 + seconds
+
+
+def parse_elapsed_seconds_from_log(log_path: Path) -> Optional[float]:
+    try:
+        text = log_path.read_text(encoding="utf-8", errors="ignore")
+    except FileNotFoundError:
+        return None
+    return parse_elapsed_seconds_from_text(text)
+
+
+def sum_elapsed_seconds_in_log_dir(log_dir: Path) -> Optional[float]:
+    if not log_dir.is_dir():
+        return None
+    total = 0.0
+    found = False
+    for log_path in sorted(log_dir.glob("*.log")):
+        elapsed = parse_elapsed_seconds_from_log(log_path)
+        if elapsed is None:
+            continue
+        total += elapsed
+        found = True
+    if not found:
+        return None
+    return total
+
+
+def resolve_flow_log_dir(platform: str, design_name: str, tag: str, flow_variant: str) -> Path:
+    tag_dir = LOG_BASE / platform / design_name / str(tag)
+    if tag_dir.is_dir():
+        return tag_dir
+    variant_dir = LOG_BASE / platform / design_name / str(flow_variant)
+    if variant_dir.is_dir():
+        return variant_dir
+    base_dir = LOG_BASE / platform / design_name / "base"
+    if base_dir.is_dir():
+        return base_dir
+    return variant_dir
 
 
 def resolve_stage_metrics_path(
@@ -998,6 +1058,34 @@ def _fmt_delta(value: object, baseline: Optional[float]) -> str:
     return f"{num - baseline:+.4f}"
 
 
+def _fmt_count(value: object) -> str:
+    num = safe_float(value)
+    if num is None:
+        return ""
+    return str(int(num))
+
+
+def _collect_numbers(rows: List[Dict[str, object]], key: str) -> List[float]:
+    vals: List[float] = []
+    for row in rows:
+        num = safe_float(row.get(key))
+        if num is not None:
+            vals.append(num)
+    return vals
+
+
+def _mean_or_none(values: List[float]) -> Optional[float]:
+    if not values:
+        return None
+    return statistics.mean(values)
+
+
+def _stdev_or_none(values: List[float]) -> Optional[float]:
+    if len(values) < 2:
+        return 0.0 if values else None
+    return statistics.stdev(values)
+
+
 def _relative_path_text(path_value: object) -> str:
     txt = str(path_value or "").strip()
     if not txt:
@@ -1027,10 +1115,57 @@ def write_mode_compare_report(
     stem = slugify_token(tag_hint, fallback="run")
     report_path = report_dir / f"{stem}_{compare_group}.md"
 
+    make_target_text = make_target or "full_flow"
+
     baseline_cp = safe_float(mode_rows[0].get("critical_path_ns")) if mode_rows else None
     baseline_area = safe_float(mode_rows[0].get("die_area")) if mode_rows else None
     baseline_power = safe_float(mode_rows[0].get("total_power_mw")) if mode_rows else None
-    make_target_text = make_target or "full_flow"
+    baseline_flow_time = safe_float(mode_rows[0].get("flow_elapsed_seconds")) if mode_rows else None
+    baseline_stage_time = safe_float(mode_rows[0].get("stage_elapsed_seconds")) if mode_rows else None
+
+    mode_groups: Dict[str, List[Dict[str, object]]] = {}
+    mode_order: List[str] = []
+    for row in mode_rows:
+        key = str(row.get("mode_name", "default"))
+        if key not in mode_groups:
+            mode_groups[key] = []
+            mode_order.append(key)
+        mode_groups[key].append(row)
+
+    summary_rows: List[Dict[str, object]] = []
+    for mode_name in mode_order:
+        rows = mode_groups[mode_name]
+        cp_vals = _collect_numbers(rows, "critical_path_ns")
+        area_vals = _collect_numbers(rows, "die_area")
+        power_vals = _collect_numbers(rows, "total_power_mw")
+        flow_vals = _collect_numbers(rows, "flow_elapsed_seconds")
+        stage_vals = _collect_numbers(rows, "stage_elapsed_seconds")
+        ok_count = sum(1 for row in rows if str(row.get("status", "")) == "ok")
+        summary_rows.append(
+            {
+                "mode_name": mode_name,
+                "mode_use_macro": rows[0].get("mode_use_macro", False),
+                "ok_count": ok_count,
+                "total_count": len(rows),
+                "cp_mean": _mean_or_none(cp_vals),
+                "cp_std": _stdev_or_none(cp_vals),
+                "area_mean": _mean_or_none(area_vals),
+                "area_std": _stdev_or_none(area_vals),
+                "power_mean": _mean_or_none(power_vals),
+                "power_std": _stdev_or_none(power_vals),
+                "flow_time_mean": _mean_or_none(flow_vals),
+                "flow_time_std": _stdev_or_none(flow_vals),
+                "stage_time_mean": _mean_or_none(stage_vals),
+                "stage_time_std": _stdev_or_none(stage_vals),
+            }
+        )
+
+    baseline_summary = summary_rows[0] if summary_rows else {}
+    baseline_cp_mean = safe_float(baseline_summary.get("cp_mean"))
+    baseline_area_mean = safe_float(baseline_summary.get("area_mean"))
+    baseline_power_mean = safe_float(baseline_summary.get("power_mean"))
+    baseline_flow_mean = safe_float(baseline_summary.get("flow_time_mean"))
+    baseline_stage_mean = safe_float(baseline_summary.get("stage_time_mean"))
 
     lines = [
         f"# Mode Compare: {design_name} ({platform})",
@@ -1039,9 +1174,47 @@ def write_mode_compare_report(
         f"- make_target: `{make_target_text}`",
         f"- base_params: `{json.dumps(base_params, sort_keys=True)}`",
         "",
-        "| mode | use_macro | status | tag | critical_path_ns | d_cp_ns | die_area_um2 | d_area_um2 | total_power_mw | d_power_mw | macro_manifest | missing_blackboxes | result_json |",
-        "|---|---|---|---|---:|---:|---:|---:|---:|---:|---|---|---|",
+        "## Summary (Mean +/- Stddev)",
+        "",
+        "| mode | use_macro | ok/total | cp_mean_ns | cp_std_ns | d_cp_mean_ns | die_area_mean_um2 | die_area_std_um2 | d_area_mean_um2 | power_mean_mw | power_std_mw | d_power_mean_mw | flow_time_mean_s | flow_time_std_s | d_flow_time_mean_s | stage_time_mean_s | stage_time_std_s | d_stage_time_mean_s |",
+        "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
+
+    for row in summary_rows:
+        lines.append(
+            "| {mode} | {use_macro} | {ok_total} | {cp_mean} | {cp_std} | {d_cp_mean} | {area_mean} | {area_std} | {d_area_mean} | {power_mean} | {power_std} | {d_power_mean} | {flow_mean} | {flow_std} | {d_flow_mean} | {stage_mean} | {stage_std} | {d_stage_mean} |".format(
+                mode=row.get("mode_name", ""),
+                use_macro="yes"
+                if parse_bool_token(row.get("mode_use_macro", False), default=False)
+                else "no",
+                ok_total=f"{row.get('ok_count', 0)}/{row.get('total_count', 0)}",
+                cp_mean=_fmt_metric(row.get("cp_mean")),
+                cp_std=_fmt_metric(row.get("cp_std")),
+                d_cp_mean=_fmt_delta(row.get("cp_mean"), baseline_cp_mean),
+                area_mean=_fmt_metric(row.get("area_mean")),
+                area_std=_fmt_metric(row.get("area_std")),
+                d_area_mean=_fmt_delta(row.get("area_mean"), baseline_area_mean),
+                power_mean=_fmt_metric(row.get("power_mean")),
+                power_std=_fmt_metric(row.get("power_std")),
+                d_power_mean=_fmt_delta(row.get("power_mean"), baseline_power_mean),
+                flow_mean=_fmt_metric(row.get("flow_time_mean")),
+                flow_std=_fmt_metric(row.get("flow_time_std")),
+                d_flow_mean=_fmt_delta(row.get("flow_time_mean"), baseline_flow_mean),
+                stage_mean=_fmt_metric(row.get("stage_time_mean")),
+                stage_std=_fmt_metric(row.get("stage_time_std")),
+                d_stage_mean=_fmt_delta(row.get("stage_time_mean"), baseline_stage_mean),
+            )
+        )
+
+    lines.extend(
+        [
+            "",
+            "## Per-Run Results",
+            "",
+            "| mode | repeat | use_macro | status | tag | critical_path_ns | d_cp_ns | die_area_um2 | d_area_um2 | total_power_mw | d_power_mw | flow_time_s | d_flow_time_s | stage_time_s | d_stage_time_s | macro_manifest | missing_blackboxes | result_json |",
+            "|---|---:|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---|---|",
+        ]
+    )
 
     for row in mode_rows:
         missing = row.get("missing_blackboxes", [])
@@ -1050,8 +1223,9 @@ def write_mode_compare_report(
         else:
             missing_txt = str(missing or "")
         lines.append(
-            "| {mode} | {use_macro} | {status} | {tag} | {cp} | {dcp} | {area} | {darea} | {pwr} | {dpwr} | {manifest} | {missing} | {result_json} |".format(
+            "| {mode} | {repeat} | {use_macro} | {status} | {tag} | {cp} | {dcp} | {area} | {darea} | {pwr} | {dpwr} | {flow_time} | {d_flow_time} | {stage_time} | {d_stage_time} | {manifest} | {missing} | {result_json} |".format(
                 mode=row.get("mode_name", ""),
+                repeat=_fmt_count(row.get("repeat_index")),
                 use_macro="yes" if parse_bool_token(row.get("mode_use_macro", False), default=False) else "no",
                 status=row.get("status", ""),
                 tag=row.get("tag", ""),
@@ -1061,6 +1235,10 @@ def write_mode_compare_report(
                 darea=_fmt_delta(row.get("die_area"), baseline_area),
                 pwr=_fmt_metric(row.get("total_power_mw")),
                 dpwr=_fmt_delta(row.get("total_power_mw"), baseline_power),
+                flow_time=_fmt_metric(row.get("flow_elapsed_seconds")),
+                d_flow_time=_fmt_delta(row.get("flow_elapsed_seconds"), baseline_flow_time),
+                stage_time=_fmt_metric(row.get("stage_elapsed_seconds")),
+                d_stage_time=_fmt_delta(row.get("stage_elapsed_seconds"), baseline_stage_time),
                 manifest=_relative_path_text(row.get("macro_manifest_path", "")),
                 missing=missing_txt,
                 result_json=_relative_path_text(row.get("work_result_json", "")),
@@ -1116,6 +1294,8 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
             "critical_path_ns": None,
             "die_area": None,
             "total_power_mw": None,
+            "flow_elapsed_seconds": None,
+            "stage_elapsed_seconds": None,
             "macro_manifest_path": (
                 str(macro_manifest.get("manifest_path", ""))
                 if macro_manifest is not None
@@ -1256,6 +1436,12 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
             if metrics.get("total_power_mw") is not None:
                 metrics["total_power_mw"] = metrics["total_power_mw"] / 1000.0
         metrics["die_area"] = parse_die_area(def_path)
+
+    log_dir = resolve_flow_log_dir(platform, design_name, str(tag), flow_variant)
+    flow_elapsed_seconds = sum_elapsed_seconds_in_log_dir(log_dir)
+    stage_elapsed_seconds = None
+    if make_target:
+        stage_elapsed_seconds = parse_elapsed_seconds_from_log(log_dir / f"{make_target}.log")
     status = "ok" if metrics.get("critical_path_ns") is not None else "fail"
 
     payload = {
@@ -1268,6 +1454,8 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
         "critical_path_ns": metrics.get("critical_path_ns"),
         "die_area": metrics.get("die_area"),
         "total_power_mw": metrics.get("total_power_mw"),
+        "flow_elapsed_seconds": flow_elapsed_seconds,
+        "stage_elapsed_seconds": stage_elapsed_seconds,
         "params_json": json.dumps(sweep_params, sort_keys=True),
         "result_path": str(report_path),
         "blackbox_instance_counts": blackbox_counts,
@@ -1391,6 +1579,14 @@ def main():
     ap.add_argument("--dry_run", action="store_true", help="Print sweep only")
     ap.add_argument("--force_copy", action="store_true", help="Force copy to /orfs/flow")
     ap.add_argument(
+        "--repeat",
+        type=int,
+        help=(
+            "Repeat count per sweep point/mode for statistical stability. "
+            "Overrides sweep.repeat and mode_compare.repeat."
+        ),
+    )
+    ap.add_argument(
         "--make_target",
         help="Optional make target (e.g., 3_5_place_dp, finish). Default runs full flow.",
     )
@@ -1442,6 +1638,23 @@ def main():
                         "[WARN] mode_compare has use_macro=true but no --macro_manifest/--macro_library was provided."
                     )
                     break
+    repeat_count = 1
+    if "repeat" in sweep:
+        try:
+            repeat_count = int(sweep.get("repeat", 1))
+        except Exception as exc:
+            raise ValueError(f"sweep.repeat must be an integer: {exc}") from exc
+    if mode_compare_cfg is not None:
+        try:
+            repeat_count = int(mode_compare_cfg.get("repeat", repeat_count))
+        except Exception as exc:
+            raise ValueError(f"mode_compare.repeat must be an integer: {exc}") from exc
+    if args.repeat is not None:
+        repeat_count = int(args.repeat)
+    if repeat_count < 1:
+        raise ValueError("repeat count must be >= 1")
+    if repeat_count > 1:
+        print(f"[INFO] Repeating each sweep point/mode {repeat_count} times")
     active_manifest_signature: Optional[str] = None
     for base_params in combos:
         params_seed = dict(base_params)
@@ -1516,37 +1729,53 @@ def main():
                 if selected_manifest is not None
                 else ""
             )
-            force_copy = args.force_copy or (manifest_signature != active_manifest_signature)
-            row = run_single(
-                design_dir=design_dir,
-                design_name=design_name,
-                platform=args.platform,
-                top=args.top,
-                verilog_dir=verilog_dir,
-                sdc_template=Path(args.sdc) if args.sdc else None,
-                sweep_params=params,
-                out_root=out_root,
-                skip_existing=args.skip_existing,
-                dry_run=args.dry_run,
-                force_copy=force_copy,
-                make_target=args.make_target,
-                macro_manifest=selected_manifest,
-                macro_selection=macro_selection,
-                run_id_extra=(
-                    {"compare_group": compare_group, "mode": mode_slug}
-                    if mode_compare_cfg is not None
-                    else None
-                ),
-                mode_name=mode_name,
-                mode_use_macro=mode_use_macro,
-                compare_group=compare_group if mode_compare_cfg is not None else "",
-            )
-            if row is not None:
-                row = dict(row)
-                row.setdefault("mode_name", mode_name)
-                row.setdefault("mode_use_macro", mode_use_macro)
-                mode_rows.append(row)
-            active_manifest_signature = manifest_signature
+            for repeat_index in range(repeat_count):
+                repeat_suffix = f"r{repeat_index + 1}"
+                params_run = dict(params)
+                if repeat_count > 1:
+                    if "TAG" in params_run:
+                        params_run["TAG"] = f"{params_run['TAG']}_{repeat_suffix}"
+                    if "FLOW_VARIANT" in params_run:
+                        params_run["FLOW_VARIANT"] = f"{params_run['FLOW_VARIANT']}_{repeat_suffix}"
+                    if "TAG" not in params_run and "tag_prefix" in params_run:
+                        params_run["tag_prefix"] = f"{params_run['tag_prefix']}_{repeat_suffix}"
+
+                force_copy = args.force_copy or (manifest_signature != active_manifest_signature)
+                run_id_extra = None
+                if mode_compare_cfg is not None:
+                    run_id_extra = {"compare_group": compare_group, "mode": mode_slug}
+                    if repeat_count > 1:
+                        run_id_extra["repeat"] = repeat_index + 1
+                elif repeat_count > 1:
+                    run_id_extra = {"repeat": repeat_index + 1}
+
+                row = run_single(
+                    design_dir=design_dir,
+                    design_name=design_name,
+                    platform=args.platform,
+                    top=args.top,
+                    verilog_dir=verilog_dir,
+                    sdc_template=Path(args.sdc) if args.sdc else None,
+                    sweep_params=params_run,
+                    out_root=out_root,
+                    skip_existing=args.skip_existing,
+                    dry_run=args.dry_run,
+                    force_copy=force_copy,
+                    make_target=args.make_target,
+                    macro_manifest=selected_manifest,
+                    macro_selection=macro_selection,
+                    run_id_extra=run_id_extra,
+                    mode_name=mode_name,
+                    mode_use_macro=mode_use_macro,
+                    compare_group=compare_group if mode_compare_cfg is not None else "",
+                )
+                if row is not None:
+                    row = dict(row)
+                    row.setdefault("mode_name", mode_name)
+                    row.setdefault("mode_use_macro", mode_use_macro)
+                    row.setdefault("repeat_index", repeat_index + 1)
+                    mode_rows.append(row)
+                active_manifest_signature = manifest_signature
 
         if mode_compare_cfg is not None and mode_rows and not args.dry_run:
             report_path = write_mode_compare_report(
