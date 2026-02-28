@@ -17,3 +17,7 @@ npu/sim/perf/golden*_trace.json
 npu/sim/rtl/golden*_descriptors.bin
 npu/sim/rtl/*_rtl.log
 *.o
+
+# Physical design artifacts generated under experiment runs
+runs/**/*.def
+runs/**/*.gds
