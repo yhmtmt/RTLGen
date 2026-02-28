@@ -1,0 +1,32 @@
+{
+  "version": 0.1,
+  "campaign_id": "npu_e2e_eval_minimal_v0",
+  "run_id": "mlp1_fp16_nm1_flat_r1",
+  "timestamp_utc": "2026-02-28T12:00:00Z",
+  "status": "ok",
+  "platform": "nangate45",
+  "model_id": "mlp1",
+  "arch_id": "fp16_nm1",
+  "macro_mode": "flat_nomacro",
+  "repeat_index": 1,
+  "physical": {
+    "critical_path_ns": 5.5570,
+    "die_area_um2": 2250000.0,
+    "total_power_mw": 0.1931,
+    "flow_elapsed_s": 848.418,
+    "place_gp_elapsed_s": 424.738
+  },
+  "performance": {
+    "cycles": 2048,
+    "latency_ms": 0.0114,
+    "throughput_infer_per_s": 87719.2982,
+    "energy_mj": 0.0000022
+  },
+  "artifacts": {
+    "synth_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3e84d92b/result.json",
+    "perf_trace_json": "runs/campaigns/npu/e2e_eval_v0/traces/mlp1_fp16_nm1_flat_r1.json",
+    "schedule_yml": "runs/campaigns/npu/e2e_eval_v0/schedules/mlp1.yml",
+    "descriptors_bin": "runs/campaigns/npu/e2e_eval_v0/descriptors/mlp1.bin"
+  },
+  "notes": "Example row for contract validation."
+}

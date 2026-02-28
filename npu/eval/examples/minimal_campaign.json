@@ -1,0 +1,37 @@
+{
+  "version": 0.1,
+  "campaign_id": "npu_e2e_eval_minimal_v0",
+  "description": "Minimal end-to-end evaluation contract example.",
+  "platform": "nangate45",
+  "make_target": "3_3_place_gp",
+  "repeats": 5,
+  "models": [
+    {
+      "model_id": "mlp1",
+      "onnx_path": "runs/campaigns/npu/e2e_eval_v0/models/mlp1.onnx",
+      "mapper_arch": "npu/arch/examples/minimal.yml",
+      "perf_config": "npu/sim/perf/example_config_fp16_cpp.json"
+    }
+  ],
+  "architecture_points": [
+    {
+      "arch_id": "fp16_nm1",
+      "rtlgen_config": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+      "synth_design_dir": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+      "sweep_file": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+      "macro_manifest": "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json"
+    },
+    {
+      "arch_id": "fp16_nm2",
+      "rtlgen_config": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json",
+      "synth_design_dir": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp",
+      "sweep_file": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json",
+      "macro_manifest": "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+    }
+  ],
+  "outputs": {
+    "campaign_dir": "runs/campaigns/npu/e2e_eval_v0",
+    "results_csv": "runs/campaigns/npu/e2e_eval_v0/results.csv",
+    "report_md": "runs/campaigns/npu/e2e_eval_v0/report.md"
+  }
+}

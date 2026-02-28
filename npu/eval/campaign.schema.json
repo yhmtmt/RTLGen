@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NPU Evaluation Campaign",
+  "type": "object",
+  "required": [
+    "version",
+    "campaign_id",
+    "platform",
+    "make_target",
+    "repeats",
+    "models",
+    "architecture_points",
+    "outputs"
+  ],
+  "properties": {
+    "version": { "const": 0.1 },
+    "campaign_id": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
+    "platform": { "type": "string", "minLength": 1 },
+    "make_target": { "type": "string", "minLength": 1 },
+    "repeats": { "type": "integer", "minimum": 1 },
+    "models": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["model_id", "onnx_path"],
+        "properties": {
+          "model_id": { "type": "string", "minLength": 1 },
+          "onnx_path": { "type": "string", "minLength": 1 },
+          "mapper_arch": { "type": "string" },
+          "mapper_extra_args": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "perf_config": { "type": "string" },
+          "notes": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "architecture_points": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["arch_id", "synth_design_dir", "sweep_file"],
+        "properties": {
+          "arch_id": { "type": "string", "minLength": 1 },
+          "rtlgen_config": { "type": "string" },
+          "synth_design_dir": { "type": "string", "minLength": 1 },
+          "sweep_file": { "type": "string", "minLength": 1 },
+          "macro_manifest": { "type": "string" },
+          "macro_library": { "type": "string" },
+          "macro_select_json": { "type": "string" },
+          "notes": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "outputs": {
+      "type": "object",
+      "required": ["campaign_dir", "results_csv"],
+      "properties": {
+        "campaign_dir": { "type": "string", "minLength": 1 },
+        "results_csv": { "type": "string", "minLength": 1 },
+        "report_md": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

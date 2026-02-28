@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NPU Evaluation Result Row",
+  "type": "object",
+  "required": [
+    "version",
+    "campaign_id",
+    "run_id",
+    "timestamp_utc",
+    "status",
+    "platform",
+    "model_id",
+    "arch_id",
+    "macro_mode",
+    "physical",
+    "performance",
+    "artifacts"
+  ],
+  "properties": {
+    "version": { "const": 0.1 },
+    "campaign_id": { "type": "string", "minLength": 1 },
+    "run_id": { "type": "string", "minLength": 1 },
+    "timestamp_utc": { "type": "string", "minLength": 1 },
+    "status": { "type": "string", "enum": ["ok", "fail", "skipped"] },
+    "platform": { "type": "string", "minLength": 1 },
+    "model_id": { "type": "string", "minLength": 1 },
+    "arch_id": { "type": "string", "minLength": 1 },
+    "macro_mode": {
+      "type": "string",
+      "enum": ["flat_nomacro", "hier_macro"]
+    },
+    "repeat_index": { "type": "integer", "minimum": 1 },
+    "physical": {
+      "type": "object",
+      "required": [
+        "critical_path_ns",
+        "die_area_um2",
+        "total_power_mw",
+        "flow_elapsed_s",
+        "place_gp_elapsed_s"
+      ],
+      "properties": {
+        "critical_path_ns": { "type": ["number", "null"] },
+        "die_area_um2": { "type": ["number", "null"] },
+        "total_power_mw": { "type": ["number", "null"] },
+        "flow_elapsed_s": { "type": ["number", "null"] },
+        "place_gp_elapsed_s": { "type": ["number", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "performance": {
+      "type": "object",
+      "required": [
+        "cycles",
+        "latency_ms",
+        "throughput_infer_per_s",
+        "energy_mj"
+      ],
+      "properties": {
+        "cycles": { "type": ["number", "null"] },
+        "latency_ms": { "type": ["number", "null"] },
+        "throughput_infer_per_s": { "type": ["number", "null"] },
+        "energy_mj": { "type": ["number", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "artifacts": {
+      "type": "object",
+      "required": [
+        "synth_result_json",
+        "perf_trace_json",
+        "schedule_yml",
+        "descriptors_bin"
+      ],
+      "properties": {
+        "synth_result_json": { "type": "string" },
+        "perf_trace_json": { "type": "string" },
+        "schedule_yml": { "type": "string" },
+        "descriptors_bin": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "notes": { "type": "string" }
+  },
+  "additionalProperties": false
+}
