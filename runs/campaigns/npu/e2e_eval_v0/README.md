@@ -1,0 +1,31 @@
+# NPU E2E Evaluation Campaign (v0)
+
+This campaign skeleton is the starting point for system-level evaluation:
+- map ONNX models to descriptors,
+- run physical mapping for architecture points,
+- run perf simulation with physical feedback,
+- aggregate merged result rows.
+
+## Manifest
+- `runs/campaigns/npu/e2e_eval_v0/campaign.json`
+
+Validate manifest:
+```sh
+python3 npu/eval/validate.py \
+  --campaign runs/campaigns/npu/e2e_eval_v0/campaign.json
+```
+
+Validate and check currently existing paths:
+```sh
+python3 npu/eval/validate.py \
+  --campaign runs/campaigns/npu/e2e_eval_v0/campaign.json \
+  --check_paths
+```
+
+## Model placeholders
+The manifest references `models/mlp1.onnx` and `models/mlp2.onnx`.
+Generate them with:
+```sh
+python3 npu/mapper/examples/gen_mlp_onnx_lite.py --preset mlp1 --out runs/campaigns/npu/e2e_eval_v0/models/mlp1.onnx
+python3 npu/mapper/examples/gen_mlp_onnx_lite.py --preset mlp2 --out runs/campaigns/npu/e2e_eval_v0/models/mlp2.onnx
+```
