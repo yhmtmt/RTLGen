@@ -1,0 +1,23 @@
+{
+  "version": "1.1",
+  "operands": [
+    {
+      "name": "fp16",
+      "dimensions": 1,
+      "bit_width": 16,
+      "signed": true,
+      "kind": "fp",
+      "fp_format": {
+        "total_width": 16,
+        "mantissa_width": 10
+      }
+    }
+  ],
+  "operations": [
+    {
+      "type": "fp_mac",
+      "module_name": "gemm_mac_fp16_ieee",
+      "operand": "fp16"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "version": "0.1",
+  "design_id": "gemm_compute_array_fp16_nm1_c250",
+  "module": "gemm_compute_array",
+  "platform": "nangate45",
+  "flow_variant": "base",
+  "blackboxes": [
+    "gemm_compute_array"
+  ],
+  "additional_lefs": [
+    "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/abstract/gemm_compute_array.lef"
+  ],
+  "additional_libs": [
+    "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/abstract/gemm_compute_array_typ.lib"
+  ],
+  "additional_gds": [],
+  "blackbox_verilog": [
+    "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/abstract/gemm_compute_array_blackbox.v"
+  ],
+  "source": {
+    "mode": "existing_verilog",
+    "verilog_dir": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/verilog",
+    "module_file": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/verilog/top.v",
+    "verilog_sha1": "effa8dc25d4fe5f7d2b439db9ea5c6412e7923d1"
+  },
+  "manifest_params": {
+    "compute.gemm.mac_type": "fp16",
+    "compute.gemm.mac_source": "rtlgen_cpp",
+    "compute.gemm.num_modules": "1",
+    "compute.gemm.lanes": "1",
+    "compute.gemm.lanes_per_module": "1"
+  },
+  "sweep": "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/pre_synth_sweep.json",
+  "make_target": "generate_abstract"
+}
