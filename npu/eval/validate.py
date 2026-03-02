@@ -140,6 +140,18 @@ def validate_campaign(doc: Dict[str, Any], check_paths: bool) -> None:
             if k in point:
                 expect_string(point[k], f"{where}.{k}")
                 maybe_check_path(point[k], check_paths, f"{where}.{k}")
+        if "physical_select" in point:
+            sel = point["physical_select"]
+            if not isinstance(sel, dict):
+                die(f"{where}.physical_select: expected object")
+            allowed_sel = {"compare_group", "tag_prefix"}
+            for key in sel.keys():
+                if key not in allowed_sel:
+                    die(f"{where}.physical_select: unknown key '{key}'")
+            if "compare_group" in sel:
+                expect_string(sel["compare_group"], f"{where}.physical_select.compare_group")
+            if "tag_prefix" in sel:
+                expect_string(sel["tag_prefix"], f"{where}.physical_select.tag_prefix")
 
     outputs = doc["outputs"]
     if not isinstance(outputs, dict):

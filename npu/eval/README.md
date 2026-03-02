@@ -32,3 +32,28 @@ Optionally verify path-like fields exist:
 ```sh
 python3 npu/eval/validate.py --campaign <campaign.json> --check_paths
 ```
+
+## Campaign Runner (Phase-2 Scaffold)
+Run mapper + perf and merge with physical metrics into append-only results CSV:
+```sh
+python3 npu/eval/run_campaign.py \
+  --campaign runs/campaigns/npu/e2e_eval_v0/campaign.json
+```
+The runner honors optional per-architecture `physical_select` filters in the
+campaign (`compare_group`, `tag_prefix`) and encodes physical `param_hash` into
+`run_id` to keep rows unique across sweep variants.
+
+If physical rows are missing in `<design_dir>/metrics.csv`, allow runner to
+invoke the sweep:
+```sh
+python3 npu/eval/run_campaign.py \
+  --campaign runs/campaigns/npu/e2e_eval_v0/campaign.json \
+  --run_physical
+```
+
+Dry-run (print commands only):
+```sh
+python3 npu/eval/run_campaign.py \
+  --campaign runs/campaigns/npu/e2e_eval_v0/campaign.json \
+  --dry_run
+```

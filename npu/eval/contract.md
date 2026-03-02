@@ -18,6 +18,10 @@ A campaign JSON declares:
 - model list (`models[]`) with ONNX paths and mapper/perf profiles
 - architecture list (`architecture_points[]`) with design directories, sweeps,
   and macro manifests/libraries
+  - optional `physical_select` per architecture point:
+    - `compare_group`
+    - `tag_prefix`
+    These constrain which `metrics.csv` rows are eligible for merge.
 - output locations for merged reporting
 
 This file is the single source of truth for what should be evaluated.
@@ -25,6 +29,8 @@ This file is the single source of truth for what should be evaluated.
 ## 2) Merged Result Row
 A merged result row represents one evaluated point:
 - keys: `campaign_id`, `run_id`, `model_id`, `arch_id`, `macro_mode`
+  - `run_id` includes physical sample identity (`param_hash`) so row identity
+    is stable across re-runs.
 - physical metrics:
   - `critical_path_ns`
   - `die_area_um2`

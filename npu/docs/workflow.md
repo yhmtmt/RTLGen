@@ -23,6 +23,8 @@ evaluation inside RTLGen.
   `python3 npu/eval/validate.py --campaign runs/campaigns/npu/e2e_eval_v0/campaign.json`
 - Validate merged row format:
   `python3 npu/eval/validate.py --result-row npu/eval/examples/minimal_result_row.json`
+- Run campaign scaffold (mapper + perf + merged row append):
+  `python3 npu/eval/run_campaign.py --campaign runs/campaigns/npu/e2e_eval_v0/campaign.json`
 - Keep campaign-level run configuration in one JSON manifest under
   `runs/campaigns/npu/` before expanding mapper/synth sweeps.
 

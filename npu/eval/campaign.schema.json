@@ -53,6 +53,14 @@
           "macro_manifest": { "type": "string" },
           "macro_library": { "type": "string" },
           "macro_select_json": { "type": "string" },
+          "physical_select": {
+            "type": "object",
+            "properties": {
+              "compare_group": { "type": "string", "minLength": 1 },
+              "tag_prefix": { "type": "string", "minLength": 1 }
+            },
+            "additionalProperties": false
+          },
           "notes": { "type": "string" }
         },
         "additionalProperties": false

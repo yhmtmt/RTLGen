@@ -1,0 +1,32 @@
+{
+  "version": 0.1,
+  "campaign_id": "npu_e2e_eval_v0",
+  "run_id": "npu_e2e_eval_v0__mlp1__fp16_nm1__hier_macro__r2__pf190a078",
+  "timestamp_utc": "2026-03-02T12:53:59+00:00",
+  "status": "ok",
+  "platform": "nangate45",
+  "model_id": "mlp1",
+  "arch_id": "fp16_nm1",
+  "macro_mode": "hier_macro",
+  "repeat_index": 2,
+  "physical": {
+    "critical_path_ns": 5.774905724664045,
+    "die_area_um2": 2250000.0,
+    "total_power_mw": 0.197441,
+    "flow_elapsed_s": 977.0799999999999,
+    "place_gp_elapsed_s": 477.83
+  },
+  "performance": {
+    "cycles": 473.081316,
+    "latency_ms": 0.002732,
+    "throughput_infer_per_s": 366032.2108345534,
+    "energy_mj": 5.394088120000001e-07
+  },
+  "artifacts": {
+    "synth_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/f190a078/result.json",
+    "perf_trace_json": "runs/campaigns/npu/e2e_eval_v0/artifacts/perf/mlp1/trace.json",
+    "schedule_yml": "runs/campaigns/npu/e2e_eval_v0/artifacts/mapper/mlp1/schedule.yml",
+    "descriptors_bin": "runs/campaigns/npu/e2e_eval_v0/artifacts/mapper/mlp1/descriptors.bin"
+  },
+  "notes": "param_hash=f190a078; tag=npu_fp16_nm1_cmp33_hier_macro_r2; compare_group=baed737c"
+}

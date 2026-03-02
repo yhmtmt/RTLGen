@@ -22,6 +22,14 @@ python3 npu/eval/validate.py \
   --check_paths
 ```
 
+Run campaign scaffold (mapper + perf + merged rows):
+```sh
+python3 npu/eval/run_campaign.py \
+  --campaign runs/campaigns/npu/e2e_eval_v0/campaign.json
+```
+This campaign pins physical-row selection per architecture point using
+`physical_select.compare_group` and `physical_select.tag_prefix`.
+
 ## Model placeholders
 The manifest references `models/mlp1.onnx` and `models/mlp2.onnx`.
 Generate them with:
