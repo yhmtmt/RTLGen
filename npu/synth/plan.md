@@ -142,6 +142,9 @@ The report now includes:
 - per-mode summary statistics (mean/stddev) for timing, area, power, and
   elapsed time
 - per-run raw rows (including repeat index)
+- `metrics.csv` rows now record run-local provenance fields including
+  `work_result_json`, `synth_script_path`, and `synth_script_sha1` so
+  hierarchical synth behavior can be reproduced exactly.
 
 To reduce run-to-run jitter, repeat each sweep point/mode multiple times:
 ```json

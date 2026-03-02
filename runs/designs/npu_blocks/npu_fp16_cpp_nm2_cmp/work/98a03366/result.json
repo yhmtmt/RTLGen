@@ -1,0 +1,25 @@
+{
+  "design": "npu_fp16_cpp_nm2_cmp",
+  "platform": "nangate45",
+  "config_hash": "9c39d5153f8d",
+  "param_hash": "98a03366",
+  "tag": "npu_fp16_nm2_cmp33_hier_macro_r4",
+  "status": "ok",
+  "critical_path_ns": 5.740890641774165,
+  "die_area": 2250000.0,
+  "total_power_mw": 0.212815,
+  "flow_elapsed_seconds": 975.6300000000001,
+  "stage_elapsed_seconds": 444.81,
+  "params_json": "{\"CLOCK_PERIOD\": 10.0, \"CORE_AREA\": \"50 50 1450 1450\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 1500 1500\", \"FLOW_VARIANT\": \"nm2_cmp33_hier_macro_r4\", \"PLACE_DENSITY\": 0.4, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_KEEP_MODULES\": \"gemm_compute_array\", \"TAG\": \"npu_fp16_nm2_cmp33_hier_macro_r4\", \"tag_prefix\": \"npu_fp16_nm2_cmp\"}",
+  "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm2_cmp/nm2_cmp33_hier_macro_r4/3_3_place_gp.json",
+  "blackbox_instance_counts": {
+    "gemm_compute_array": 1
+  },
+  "missing_blackboxes": [],
+  "macro_manifest_path": "/workspaces/RTLGen/runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json",
+  "macro_selection": {},
+  "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/98a03366/result.json",
+  "mode_name": "hier_macro",
+  "mode_use_macro": true,
+  "compare_group": "37c65ce6"
+}

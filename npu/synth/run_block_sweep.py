@@ -1023,7 +1023,7 @@ def ensure_design_assets(
 
 
 def append_metrics(metrics_path: Path, row: Dict[str, object]):
-    header = [
+    default_header = [
         "design",
         "platform",
         "config_hash",
@@ -1033,9 +1033,41 @@ def append_metrics(metrics_path: Path, row: Dict[str, object]):
         "critical_path_ns",
         "die_area",
         "total_power_mw",
+        "flow_elapsed_seconds",
+        "stage_elapsed_seconds",
         "params_json",
         "result_path",
+        "work_result_json",
+        "synth_script_path",
+        "synth_script_sha1",
     ]
+
+    existing_rows: List[Dict[str, object]] = []
+    header = list(default_header)
+    needs_rewrite = False
+    if metrics_path.exists():
+        with metrics_path.open("r", encoding="utf-8", newline="") as f:
+            reader = csv.DictReader(f)
+            existing_header = list(reader.fieldnames or [])
+            if existing_header:
+                for key in existing_header:
+                    if key not in header:
+                        header.append(key)
+                if existing_header != header:
+                    needs_rewrite = True
+                existing_rows = list(reader)
+            else:
+                needs_rewrite = True
+
+    if needs_rewrite:
+        with metrics_path.open("w", encoding="utf-8", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=header)
+            writer.writeheader()
+            for old_row in existing_rows:
+                writer.writerow({h: old_row.get(h, "") for h in header})
+            writer.writerow({h: row.get(h, "") for h in header})
+        return
+
     needs_header = not metrics_path.exists()
     with metrics_path.open("a", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=header)
@@ -1344,11 +1376,14 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
         make_cmd.append(f"{k.upper()}={v}")
 
     blackboxes = []
+    synth_script_override: Optional[Path] = None
+    synth_script_sha1 = ""
     if macro_manifest is not None:
         blackboxes = [str(x).strip() for x in macro_manifest.get("blackboxes", []) if str(x).strip()]
     if blackboxes:
         synth_script_override = run_dir / "synth_preserve_blackbox.tcl"
         write_preserve_blackbox_synth_script(synth_script_override)
+        synth_script_sha1 = sha1_file(synth_script_override)
         make_cmd.append(f"SYNTH_SCRIPT={synth_script_override.resolve()}")
 
     # Macro abstract libs can crash Yosys/ABC in synth; run synth once with
@@ -1467,6 +1502,10 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
         ),
         "macro_selection": macro_selection or {},
         "work_result_json": str(result_path),
+        "synth_script_path": (
+            str(synth_script_override.resolve()) if synth_script_override is not None else ""
+        ),
+        "synth_script_sha1": synth_script_sha1,
         "mode_name": mode_name or "",
         "mode_use_macro": bool(mode_use_macro),
         "compare_group": compare_group,
