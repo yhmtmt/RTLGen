@@ -1,80 +1,120 @@
 # RTLGen
 
-RTLGen is a Verilog generator driven by a JSON configuration file. It can emit a mix of arithmetic and activation blocks:
-- Integer arithmetic: multipliers (normal/Booth), adders (multiple CPA styles), and constant-multiplier variants (MCM/CMVM).
-- Floating point: adders/multipliers/FMA via FloPoCo integration.
-- Activations: integer ReLU/ReLU6/leaky ReLU and user-defined symmetric PWL functions; FP path supports ReLU and leaky ReLU (FP PWL is coarse/experimental).
+RTLGen is a hardware-generation and optimization workspace with two coupled
+layers:
 
-## NPU status (summary)
-- Shell contract v0.1, mapper descriptors, and RTL bring-up are implemented.
-- RTL simulation covers DMA + AXI burst path and AXI-Lite MMIO wrapper tests.
-- Descriptor-driven performance simulation and RTL/perf comparison flow are implemented.
-- OpenROAD block-level integration is implemented (`npu/synth/run_block_sweep.py`).
-- fp16 backend comparison sweep completed at `make_target=finish` with report:
-  `runs/designs/npu_blocks/fp16_backend_decision_nangate45.md`.
+1. `Layer 1`: parameterized circuit module generation + physical optimization.
+2. `Layer 2`: parameterized NPU generation + architecture optimization on real
+   ONNX workloads.
 
-## Building the Project
+The repository is organized so each layer can iterate independently while
+sharing reproducible artifacts and evaluation results.
 
-Dependencies:
-- CMake, C++17 compiler
-- Google Test (tests/CTests)
-- OR-Tools (bundled path configured in CMake)
-- FloPoCo (built as an ExternalProject; requires GMP/MPFR/MPFI/LAPACK/Sollya) and PAGSuite submodule
-- Yosys + GHDL plugin (for VHDL→Verilog on FloPoCo outputs)
+## Layer 1: Circuit Module Generator + Physical Optimization
 
-The devcontainer (`.devcontainer/Dockerfile`) provisions these. See [development.md](development.md) for environment details. To build:
+`Layer 1` focuses on circuit blocks generated from C++ RTLGen (adders,
+multipliers, MACs, activations, MCM/CMVM, FP operators).
 
+### Goal
+- Improve module generation algorithms.
+- Find best parameter settings per PDK using physical evaluation.
+
+### Typical loop
+1. Generate module RTL from JSON config.
+2. Run OpenROAD sweeps for timing/area/power/runtime.
+3. Compare candidates and keep append-only metrics in `runs/designs/`.
+
+### Main entry points
+- Generator config reference: `examples/about_config.md`
+- Module generation: `rtlgen <config.json>` (or `build/rtlgen <config.json>`)
+- Physical sweep scripts: `scripts/generate_design.py`, `scripts/run_sweep.py`
+- Result storage: `runs/designs/<circuit_type>/<design>/metrics.csv`
+
+## Layer 2: NPU Generator + Architecture Optimization
+
+`Layer 2` focuses on NPU architecture exploration in `npu/`:
+architecture config, RTL generation, mapping, physical synthesis integration,
+and performance simulation.
+
+### Goal
+- Find best NPU architecture per PDK.
+- Evaluate architecture and module choices on multiple actual ONNX models.
+
+### Typical loop
+1. Define architecture search points (`npu/arch/`).
+2. Generate NPU RTL and optional hardened macro candidates.
+3. Run mapping + physical + perf campaign (`npu/eval/`).
+4. Rank points by objective profiles (latency/energy/PPA/runtime).
+
+### Main entry points
+- NPU docs hub: `npu/docs/index.md`
+- NPU runbook: `npu/docs/workflow.md`
+- Campaign tools: `npu/eval/run_campaign.py`, `npu/eval/report_campaign.py`,
+  `npu/eval/optimize_campaign.py`
+- Campaign artifacts: `runs/campaigns/npu/`
+
+## Layer Interaction (Contract)
+
+Layer coupling is explicit and file-based.
+
+- `Layer 1 -> Layer 2`
+  - Provides physically evaluated module candidates.
+  - Provides hardened macro artifacts (`macro_manifest.json`) and optional
+    macro libraries.
+- `Layer 2 -> Layer 1`
+  - Sends bottleneck-driven requests for new module algorithms/parameter ranges
+    based on model-level campaign outcomes.
+
+Canonical specification for this split:
+- `docs/two_layer_workflow.md`
+
+## Quick Start
+
+### Build
 ```sh
-mkdir build
+mkdir -p build
 cd build
 cmake ..
 cmake --build .
 ```
 
-## Running the Generator
-
-To run the generator, create a JSON configuration file as shown in the `examples/` directory. Supported configuration options are described in [about_config.md](examples/about_config.md). Once your configuration file is ready, run:
-
-```
-rtlgen <JSON configuration file>
+### Layer 1 smoke run
+```sh
+build/rtlgen examples/config.json
 ```
 
-This command generates a Verilog module for your circuit according to the configuration file. The generated module will be placed in the current working directory.
+### Layer 2 starting points
+- `npu/setup.md`
+- `npu/docs/workflow.md`
 
-## Viewing Evaluation Results
+## Viewing Aggregated Evaluation Results
 
-The evaluation browser is a static site at `docs/runs/index.html` that loads `runs/index.csv`. Serve `docs/` with a local web server from the repo root:
+The static browser is at `docs/runs/index.html` and loads `runs/index.csv`.
 
 ```sh
 python3 -m http.server 8000 --directory docs
 ```
 
-Then open:
+Open `http://localhost:8000/runs/index.html`.
 
-```
-http://localhost:8000/runs/index.html
-```
-
-If the table is empty or stale, regenerate the index with:
+If needed, regenerate the index:
 
 ```sh
 python3 scripts/build_runs_index.py
 ```
 
-## Documentation Structure
-- Canonical role map: [docs/structure.md](docs/structure.md)
-- Two-layer optimization workflow: [docs/two_layer_workflow.md](docs/two_layer_workflow.md)
-- Authored studies and guidance: [notes/index.md](notes/index.md)
-- Planning and execution log: [plan/log.md](plan/log.md)
-- NPU docs hub (workflow/status/plans): [npu/docs/index.md](npu/docs/index.md)
+## Documentation Map
 
-## Notes and References
-- **Evaluation guidance**: How to run and interpret evaluations, plus naming rules for new runs: see [notes/evaluation_agent_guidance.md](notes/evaluation_agent_guidance.md).
-- **Development guidance**: Branching, config switches, and validation rules for new algorithms: see [notes/development_agent_guidance.md](notes/development_agent_guidance.md).
-- **NPU workflow**: High-level flow for NPU architecture definition, RTL generation, evaluation, mapping, and simulation: see [npu/docs/workflow.md](npu/docs/workflow.md).
-- **NPU docs index**: Specs, plans, and logs for NPU development: see [npu/docs/index.md](npu/docs/index.md).
-- Multiplier comparison (Booth vs. normal PPG) with OpenROAD results: see [notes/booth4_vs_normal/booth_vs_normal_multiplier_comparison.md](notes/booth4_vs_normal/booth_vs_normal_multiplier_comparison.md).
-- Yosys Booth vs ILP Booth comparison with normalized PPA plots: see [notes/yosys_vs_ilp_booth.md](notes/yosys_vs_ilp_booth.md).
-- Constant-multiplier algorithms (MCM/CMVM) and CLIs: see [notes/constant_multiplication.md](notes/constant_multiplication.md).
-- End-to-end workflow and automation plan for generation, evaluation, and indexing: see [notes/workflow.md](notes/workflow.md).
-- Evaluation artifacts (configs, generated Verilog, sweep metrics) live under [runs/](runs/README.md); add configs there to queue new evaluations.
+- Repository documentation roles: `docs/structure.md`
+- Two-layer workflow and handoff contract: `docs/two_layer_workflow.md`
+- Notes and studies: `notes/index.md`
+- Planning log: `plan/log.md`
+- NPU docs hub: `npu/docs/index.md`
+
+## Environment
+
+Devcontainer and toolchain details:
+- `development.md`
+
+Core dependencies include CMake/C++17, Google Test, OR-Tools, Yosys/GHDL,
+and FloPoCo/PAGSuite integration.
