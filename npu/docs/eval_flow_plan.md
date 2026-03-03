@@ -68,7 +68,16 @@ Deliverables:
 Definition of done:
 - best-point selection is based on model-level objective, not single-stage proxy.
 
-## Current step started
-Phase 1 has been started with:
-- `npu/eval/` contract docs/schemas/validator
-- `runs/campaigns/npu/e2e_eval_v0/campaign.json` skeleton
+## Current progress
+- Phase 1 completed:
+  - `npu/eval/` contract docs/schemas/validator
+  - campaign manifest under `runs/campaigns/npu/e2e_eval_v0/campaign.json`
+- Phase 2 completed:
+  - orchestrator in `npu/eval/run_campaign.py` writes append-only `results.csv`
+- Phase 3 completed (scaffold level):
+  - merged rows derive cycles/latency/throughput/energy from physical timing and power
+- Phase 4 completed:
+  - reporting/ranking in `npu/eval/report_campaign.py`
+  - objective-profile sweep in `npu/eval/optimize_campaign.py`
+- Active focus:
+  - Phase 5 scale-out (model set expansion + mapper/physical parameter search).

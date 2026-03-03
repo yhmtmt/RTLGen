@@ -15,7 +15,8 @@ evaluation inside RTLGen.
   compute (`gemm`/`vec`) candidate generation.
 - **Implemented**: pre-synthesis SRAM stage wrapper
   (`npu/synth/pre_synth_memory.py`) with memgen-first policy and CACTI fallback.
-- **In progress**: system-level evaluation contract and campaign skeleton
+- **Implemented**: system-level evaluation campaign flow with validator,
+  runner, reporting, and objective-profile sweep
   (`npu/eval/`, `runs/campaigns/npu/e2e_eval_v0/`).
 
 ## 0) Lock evaluation contract (before broad tuning)

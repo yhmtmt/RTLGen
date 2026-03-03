@@ -33,6 +33,12 @@ Git: e6c62e5
   emission.
 - **SRAM pre-synthesis flow (Implemented)**: `npu/synth/pre_synth_memory.py`
   selects memgen when configured and falls back to CACTI estimation.
+- **System-level eval flow scaffold (Implemented)**: campaign contract +
+  validator (`npu/eval/validate.py`), orchestrator
+  (`npu/eval/run_campaign.py`), reporting/ranking
+  (`npu/eval/report_campaign.py`), and objective-profile sweep
+  (`npu/eval/optimize_campaign.py`) are active with
+  `runs/campaigns/npu/e2e_eval_v0/`.
 
 ## In progress
 - C++ MAC generator extension for explicit MAC operation modes including

@@ -1,0 +1,33 @@
+name: NPU Eval Tests
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - ".github/workflows/npu-eval-tests.yml"
+      - "npu/eval/**"
+      - "runs/campaigns/npu/e2e_eval_v0/**"
+      - "tests/test_eval_campaign_tools.py"
+  pull_request:
+    paths:
+      - ".github/workflows/npu-eval-tests.yml"
+      - "npu/eval/**"
+      - "runs/campaigns/npu/e2e_eval_v0/**"
+      - "tests/test_eval_campaign_tools.py"
+  workflow_dispatch:
+
+jobs:
+  eval-tools:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run eval-tool regression tests
+        run: python tests/test_eval_campaign_tools.py

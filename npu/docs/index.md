@@ -13,8 +13,9 @@ Documents are grouped by purpose: **specs**, **plans**, and **logs**.
   derivation path (arch intent -> rtlgen candidate).
 - **Implemented**: pre-synthesis SRAM stage wrapper with memgen-first policy
   and CACTI fallback.
-- **In progress**: end-to-end evaluation contract + campaign flow
-  (`npu/eval/`, `npu/docs/eval_flow_plan.md`).
+- **Implemented**: end-to-end evaluation flow contract + campaign tooling
+  (`npu/eval/`, `npu/docs/eval_flow_plan.md`,
+  `runs/campaigns/npu/e2e_eval_v0/`).
 
 ## Specs
 - `npu/shell/spec.md`: shell contract (MMIO, queue, DMA, events).
