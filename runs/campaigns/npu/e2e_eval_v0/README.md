@@ -30,6 +30,12 @@ python3 npu/eval/run_campaign.py \
 This campaign pins physical-row selection per architecture point using
 `physical_select.compare_group` and `physical_select.tag_prefix`.
 
+Generate report and ranking:
+```sh
+python3 npu/eval/report_campaign.py \
+  --campaign runs/campaigns/npu/e2e_eval_v0/campaign.json
+```
+
 ## Model placeholders
 The manifest references `models/mlp1.onnx` and `models/mlp2.onnx`.
 Generate them with:

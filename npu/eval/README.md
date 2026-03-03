@@ -57,3 +57,10 @@ python3 npu/eval/run_campaign.py \
   --campaign runs/campaigns/npu/e2e_eval_v0/campaign.json \
   --dry_run
 ```
+
+## Campaign Reporting
+Generate per-model summaries and aggregate ranking from merged CSV:
+```sh
+python3 npu/eval/report_campaign.py \
+  --campaign runs/campaigns/npu/e2e_eval_v0/campaign.json
+```
