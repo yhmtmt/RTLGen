@@ -27,6 +27,8 @@ evaluation inside RTLGen.
   `python3 npu/eval/run_campaign.py --campaign runs/campaigns/npu/e2e_eval_v0/campaign.json`
 - Generate campaign report/ranking:
   `python3 npu/eval/report_campaign.py --campaign runs/campaigns/npu/e2e_eval_v0/campaign.json`
+- Sweep objective profiles for best-point recommendation set:
+  `python3 npu/eval/optimize_campaign.py --campaign runs/campaigns/npu/e2e_eval_v0/campaign.json --profiles_json runs/campaigns/npu/e2e_eval_v0/objective_profiles.json`
 - Keep campaign-level run configuration in one JSON manifest under
   `runs/campaigns/npu/` before expanding mapper/synth sweeps.
 

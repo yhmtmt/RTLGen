@@ -75,3 +75,15 @@ python3 npu/eval/report_campaign.py \
   --campaign runs/campaigns/npu/e2e_eval_v0/campaign.json \
   --w_latency 1.0 --w_energy 1.0 --w_runtime 0.2
 ```
+
+## Objective Profile Sweep
+Run multiple objective profiles and collect best-point recommendations:
+```sh
+python3 npu/eval/optimize_campaign.py \
+  --campaign runs/campaigns/npu/e2e_eval_v0/campaign.json \
+  --profiles_json runs/campaigns/npu/e2e_eval_v0/objective_profiles.json
+```
+Outputs:
+- `objective_sweep.csv`
+- `objective_sweep.md`
+- per-profile reports under `objective_profiles/<profile>/`

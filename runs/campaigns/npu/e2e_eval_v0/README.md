@@ -41,6 +41,17 @@ Outputs:
 - `runs/campaigns/npu/e2e_eval_v0/pareto.csv`
 - `runs/campaigns/npu/e2e_eval_v0/best_point.json`
 
+Run objective-profile sweep:
+```sh
+python3 npu/eval/optimize_campaign.py \
+  --campaign runs/campaigns/npu/e2e_eval_v0/campaign.json \
+  --profiles_json runs/campaigns/npu/e2e_eval_v0/objective_profiles.json
+```
+Outputs:
+- `runs/campaigns/npu/e2e_eval_v0/objective_sweep.csv`
+- `runs/campaigns/npu/e2e_eval_v0/objective_sweep.md`
+- `runs/campaigns/npu/e2e_eval_v0/objective_profiles/<profile>/...`
+
 ## Model placeholders
 The manifest references `models/mlp1.onnx` and `models/mlp2.onnx`.
 Generate them with:
