@@ -35,6 +35,11 @@ Generate report and ranking:
 python3 npu/eval/report_campaign.py \
   --campaign runs/campaigns/npu/e2e_eval_v0/campaign.json
 ```
+Outputs:
+- `runs/campaigns/npu/e2e_eval_v0/report.md`
+- `runs/campaigns/npu/e2e_eval_v0/summary.csv`
+- `runs/campaigns/npu/e2e_eval_v0/pareto.csv`
+- `runs/campaigns/npu/e2e_eval_v0/best_point.json`
 
 ## Model placeholders
 The manifest references `models/mlp1.onnx` and `models/mlp2.onnx`.

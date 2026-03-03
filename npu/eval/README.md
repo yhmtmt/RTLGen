@@ -64,3 +64,14 @@ Generate per-model summaries and aggregate ranking from merged CSV:
 python3 npu/eval/report_campaign.py \
   --campaign runs/campaigns/npu/e2e_eval_v0/campaign.json
 ```
+The report step also emits:
+- `summary.csv` (all model + aggregate summaries)
+- `pareto.csv` (non-dominated aggregate points by latency/energy/runtime)
+- `best_point.json` (weighted-objective best point)
+
+Optional objective weights:
+```sh
+python3 npu/eval/report_campaign.py \
+  --campaign runs/campaigns/npu/e2e_eval_v0/campaign.json \
+  --w_latency 1.0 --w_energy 1.0 --w_runtime 0.2
+```
