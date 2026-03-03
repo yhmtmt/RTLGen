@@ -13,6 +13,7 @@ npu/sim/perf/tests/__pycache__/
 npu/rtlgen/out/
 npu/rtlgen/out_cpp_mac/
 npu/rtlgen/__pycache__/
+npu/eval/__pycache__/
 npu/sim/perf/golden*_trace.json
 npu/sim/rtl/golden*_descriptors.bin
 npu/sim/rtl/*_rtl.log
