@@ -4,6 +4,17 @@
 This folder contains the living documentation for NPU development in RTLGen.
 Documents are grouped by purpose: **specs**, **plans**, and **logs**.
 
+## Document roles
+- `npu/docs/workflow.md`: canonical NPU execution order/runbook.
+- `npu/docs/status.md`: concise current snapshot for quick checks.
+- `npu/docs/*_plan.md` + `npu/synth/plan.md`: deeper plan detail.
+- `npu/docs/*_log.md`: append-only development logs.
+- `npu/nvdla/**`: external reference docs (not canonical local policy).
+
+Cross-directory boundaries are defined in `docs/structure.md`.
+Two-layer optimization split and interaction contract are defined in
+`docs/two_layer_workflow.md`.
+
 ## Current status
 - **Implemented**: shell/spec, RTL generator config spec, mapper IR, and RTL/perf simulator docs.
 - **Implemented**: OpenROAD block-flow docs and fp16 backend sweep runbooks.

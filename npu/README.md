@@ -27,6 +27,14 @@ and block-level OpenROAD evaluation.
 - Pre-synth SRAM stage: `python3 npu/synth/pre_synth_memory.py npu/arch/examples/minimal.yml --id minimal`
 - fp16 backend sweep: `python3 npu/synth/run_fp16_backend_sweep.py --platform nangate45 --sweep npu/synth/fp16_backend_sweep_nangate45.json --make_target finish`
 
+## Documentation roles
+- Runbook source of truth: `npu/docs/workflow.md`
+- Current snapshot: `npu/docs/status.md`
+- Detailed plans: `npu/docs/*_plan.md`, `npu/synth/plan.md`
+- External/vendor references: `npu/nvdla/`
+- Repository-wide doc role map: `docs/structure.md`
+- Cross-layer workflow split and handoff: `docs/two_layer_workflow.md`
+
 ## Directory map
 - `npu/nvdla/`: NVDLA reference sources and compatibility references.
 - `npu/arch/`: architecture schema, examples, and converters.

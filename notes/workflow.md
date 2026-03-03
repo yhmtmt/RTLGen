@@ -1,6 +1,14 @@
 RTLGen End-to-End Workflow (Design -> PPA -> Model -> Feedback)
 ================================================================
 
+Scope note
+----------
+- This document captures cross-project workflow concepts for RTLGen.
+- For NPU execution/runbook commands, use `npu/docs/workflow.md` as the
+  canonical source.
+- For explicit Layer-1/Layer-2 workflow split and handoff, use
+  `docs/two_layer_workflow.md`.
+
 Goals
 -----
 - Make it fast to find the right RTL design in `runs/` by name, tags, or PPA.

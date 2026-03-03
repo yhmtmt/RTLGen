@@ -1,9 +1,17 @@
 # RTLGen Notes Index
 
-This folder contains authored project notes and guidance documents.
+This folder contains authored project notes, guidance, and design studies.
+It is not the canonical source for NPU execution runbooks.
+
+Canonical runbook/status docs:
+- `npu/docs/index.md`
+- `npu/docs/workflow.md`
+- `npu/docs/status.md`
+- `docs/two_layer_workflow.md` (Layer-1/Layer-2 split and interaction)
 
 ## Core workflow
-- `notes/workflow.md`: end-to-end flow for design → PPA → model feedback.
+- `notes/workflow.md`: cross-project design/evaluation workflow concepts and
+  infrastructure guidance (not NPU runbook source of truth).
 - `notes/development_agent_guidance.md`: developer agent rules for new algorithms.
 - `notes/evaluation_agent_guidance.md`: evaluator guidance for PPA anomalies and logging.
 

@@ -1,7 +1,15 @@
-# docs/ (Published Assets)
+# docs/ (Published Assets + Navigation)
 
-This directory contains static, published assets intended for browser viewing.
-Currently this includes the evaluation results UI under `docs/runs/`.
+This directory contains browser-facing static assets and documentation
+navigation helpers.
 
-Authored project notes and guidance live in `notes/`.
-NPU documentation lives under `npu/docs/`.
+## Contents
+- `docs/runs/`: static evaluation browser and assets.
+- `docs/structure.md`: repository documentation role map and precedence rules.
+- `docs/two_layer_workflow.md`: circuit-layer vs NPU-layer workflow split and
+  handoff contract.
+
+## Boundaries
+- Authored studies and contributor guidance belong in `notes/`.
+- Planning and chronological execution logs belong in `plan/`.
+- Canonical NPU workflow/status/plan docs belong in `npu/docs/`.

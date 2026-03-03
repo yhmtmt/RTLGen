@@ -4,6 +4,19 @@
 This document defines the end-to-end execution order for NPU development and
 evaluation inside RTLGen.
 
+## Layer context
+This runbook is the **Layer 2** workflow (NPU architecture exploration).
+
+- **Layer 1** (circuit module exploration) tunes C++ RTLGen module algorithms
+  and parameters with physical evaluation.
+- **Layer 2** (this document) explores NPU architecture + workload objectives
+  per PDK, consuming Layer 1 candidates (including hardened macro manifests).
+- Layer 2 decisions are made on multi-model ONNX campaign results, not on
+  single-microbenchmark proxies.
+
+Canonical split and handoff contract:
+- `docs/two_layer_workflow.md`
+
 ## Current status
 - **Implemented**: RTL functional simulation path (MMIO/CQ/DMA + AXI memory model).
 - **Implemented**: mapper descriptor generation and binary stream emission.

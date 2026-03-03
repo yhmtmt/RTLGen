@@ -61,6 +61,13 @@ If the table is empty or stale, regenerate the index with:
 python3 scripts/build_runs_index.py
 ```
 
+## Documentation Structure
+- Canonical role map: [docs/structure.md](docs/structure.md)
+- Two-layer optimization workflow: [docs/two_layer_workflow.md](docs/two_layer_workflow.md)
+- Authored studies and guidance: [notes/index.md](notes/index.md)
+- Planning and execution log: [plan/log.md](plan/log.md)
+- NPU docs hub (workflow/status/plans): [npu/docs/index.md](npu/docs/index.md)
+
 ## Notes and References
 - **Evaluation guidance**: How to run and interpret evaluations, plus naming rules for new runs: see [notes/evaluation_agent_guidance.md](notes/evaluation_agent_guidance.md).
 - **Development guidance**: Branching, config switches, and validation rules for new algorithms: see [notes/development_agent_guidance.md](notes/development_agent_guidance.md).
