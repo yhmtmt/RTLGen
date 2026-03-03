@@ -18,14 +18,16 @@ historical notes, and published artifacts do not drift or duplicate.
 
 ## Canonical precedence
 When content overlaps, use this precedence:
-1. NPU execution/runbooks: `npu/docs/workflow.md`
-2. NPU current snapshot: `npu/docs/status.md`
-3. NPU plan detail: `npu/docs/*_plan.md` + `npu/synth/plan.md`
-4. Cross-domain notes and rationale: `notes/*.md`
-5. Historical execution trail: `plan/log.md`
+1. Layer 1 runbook: `docs/layer1_circuit_workflow.md`
+2. Layer 2 runbook: `npu/docs/workflow.md`
+3. NPU current snapshot: `npu/docs/status.md`
+4. NPU plan detail: `npu/docs/*_plan.md` + `npu/synth/plan.md`
+5. Cross-domain notes and rationale: `notes/*.md`
+6. Historical execution trail: `plan/log.md`
 
 ## Optimization layers
 - Layer model and interaction contract: `docs/two_layer_workflow.md`
+- Layer 1 runbook: `docs/layer1_circuit_workflow.md`
 - Layer 1 (circuit module physical loop): module generation + OpenROAD PPA
 - Layer 2 (NPU architecture model loop): ONNX/perf/campaign optimization with
   Layer 1 module candidates

@@ -8,6 +8,8 @@ Scope note
   canonical source.
 - For explicit Layer-1/Layer-2 workflow split and handoff, use
   `docs/two_layer_workflow.md`.
+- For Layer 1 operational steps and command flow, use
+  `docs/layer1_circuit_workflow.md`.
 
 Goals
 -----

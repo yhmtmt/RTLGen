@@ -16,6 +16,8 @@ This runbook is the **Layer 2** workflow (NPU architecture exploration).
 
 Canonical split and handoff contract:
 - `docs/two_layer_workflow.md`
+- Layer 1 operational runbook:
+  `docs/layer1_circuit_workflow.md`
 
 ## Current status
 - **Implemented**: RTL functional simulation path (MMIO/CQ/DMA + AXI memory model).

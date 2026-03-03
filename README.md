@@ -106,6 +106,7 @@ python3 scripts/build_runs_index.py
 ## Documentation Map
 
 - Repository documentation roles: `docs/structure.md`
+- Layer 1 runbook (module physical optimization): `docs/layer1_circuit_workflow.md`
 - Two-layer workflow and handoff contract: `docs/two_layer_workflow.md`
 - Notes and studies: `notes/index.md`
 - Planning log: `plan/log.md`

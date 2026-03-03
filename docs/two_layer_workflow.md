@@ -80,6 +80,7 @@ using multiple real ONNX models.
 
 ## Canonical document map
 - Role map: `docs/structure.md`
+- Layer 1 runbook: `docs/layer1_circuit_workflow.md`
 - Circuit/evaluation guidance: `notes/workflow.md`, `runs/README.md`
-- NPU runbook: `npu/docs/workflow.md`
+- Layer 2 runbook: `npu/docs/workflow.md`
 - NPU campaign flow: `npu/eval/README.md`

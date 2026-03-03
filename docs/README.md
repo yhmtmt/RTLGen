@@ -6,6 +6,7 @@ navigation helpers.
 ## Contents
 - `docs/runs/`: static evaluation browser and assets.
 - `docs/structure.md`: repository documentation role map and precedence rules.
+- `docs/layer1_circuit_workflow.md`: canonical Layer 1 module optimization runbook.
 - `docs/two_layer_workflow.md`: circuit-layer vs NPU-layer workflow split and
   handoff contract.
 
