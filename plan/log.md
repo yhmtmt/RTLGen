@@ -103,3 +103,17 @@ Log
     handoff contract.
 - Rewrote top-level `README.md` to present the repository as a two-layer
   generator/optimization system and point to canonical runbooks.
+
+2026-03-03 — Layer1 wrapper-vs-macro contract encoded
+- Added `evaluation_scope` to Layer 1 candidate manifests
+  (`wrapped_io` / `macro_hardened`) and validation in
+  `scripts/validate_runs.py`.
+- Seed candidate manifests under `runs/candidates/*/module_candidates.json`
+  now explicitly declare current entries as `wrapped_io`.
+- Added campaign-side `layer1_modules` contract in `npu/eval`:
+  - `manifest`, `variant_ids`, `allow_wrapped_io`
+  - validation now rejects wrapped candidates unless override is explicit.
+- Updated NPU campaign examples and active campaign to record Layer 1
+  candidate references with explicit wrapped override.
+- Campaign runner now records Layer 1 candidate provenance in row `notes`
+  and logs when wrapped overrides are used.

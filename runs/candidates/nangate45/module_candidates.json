@@ -2,11 +2,12 @@
   "version": 0.1,
   "pdk": "nangate45",
   "generated_utc": "2026-03-03T00:00:00Z",
-  "notes": "Seed Layer 1 candidates for Layer 2 handoff.",
+  "notes": "Seed Layer 1 candidates for Layer 2 handoff. Current entries are wrapper-level physical evaluations with IO registers.",
   "candidates": [
     {
       "variant_id": "mult16u_normal_koggestone_nangate45_base",
       "module": "mult16u_normal_koggestone_wrapper",
+      "evaluation_scope": "wrapped_io",
       "circuit_type": "multipliers",
       "config_hash": "0d7bdb0c397d",
       "metrics_ref": {
@@ -21,6 +22,7 @@
     {
       "variant_id": "adder_koggestone_64u_nangate45_base",
       "module": "adder_koggestone_64u_wrapper",
+      "evaluation_scope": "wrapped_io",
       "circuit_type": "prefix_adders",
       "config_hash": "7a7b72571aac",
       "metrics_ref": {

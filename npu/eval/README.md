@@ -42,6 +42,9 @@ python3 npu/eval/run_campaign.py \
 The runner honors optional per-architecture `physical_select` filters in the
 campaign (`compare_group`, `tag_prefix`) and encodes physical `param_hash` into
 `run_id` to keep rows unique across sweep variants.
+When `architecture_points[].layer1_modules` is set, campaign validation checks
+selected candidate IDs against `runs/candidates/...` manifests and rejects
+`wrapped_io` candidates unless `allow_wrapped_io=true` is explicitly set.
 It reuses existing per-model mapper/perf artifacts under
 `<campaign_dir>/artifacts/` when input metadata matches; force full rerun with
 `--no_reuse_model_artifacts`.

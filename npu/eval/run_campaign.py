@@ -136,6 +136,47 @@ def load_top_name_from_design(design_dir: Path) -> str:
     return top or "npu_top"
 
 
+def layer1_candidate_note(arch: Dict[str, Any]) -> Tuple[str, bool]:
+    layer1 = arch.get("layer1_modules")
+    if not isinstance(layer1, dict):
+        return "", False
+
+    manifest_txt = str(layer1.get("manifest", "")).strip()
+    variant_ids_raw = layer1.get("variant_ids", [])
+    variant_ids = [
+        str(v).strip()
+        for v in variant_ids_raw
+        if isinstance(v, str) and str(v).strip()
+    ]
+    allow_wrapped = bool(layer1.get("allow_wrapped_io", False))
+
+    scopes_by_id: Dict[str, str] = {}
+    if manifest_txt and variant_ids:
+        manifest_doc = load_json(abs_path(manifest_txt))
+        candidates = manifest_doc.get("candidates", [])
+        if isinstance(candidates, list):
+            for cand in candidates:
+                if not isinstance(cand, dict):
+                    continue
+                vid = str(cand.get("variant_id", "")).strip()
+                if not vid:
+                    continue
+                scope = str(cand.get("evaluation_scope", "")).strip()
+                scopes_by_id[vid] = scope or "unknown"
+
+    parts: List[str] = []
+    if manifest_txt:
+        parts.append(f"layer1_manifest={manifest_txt}")
+    if variant_ids:
+        ids_with_scope = [f"{vid}@{scopes_by_id.get(vid, 'unknown')}" for vid in variant_ids]
+        parts.append(f"layer1_candidates={','.join(ids_with_scope)}")
+    if allow_wrapped:
+        parts.append("layer1_allow_wrapped_io=1")
+
+    has_wrapped = any(scopes_by_id.get(vid, "") == "wrapped_io" for vid in variant_ids)
+    return "; ".join(parts), bool(has_wrapped and allow_wrapped)
+
+
 def parse_physical_row(raw: Dict[str, str]) -> Dict[str, Any]:
     work_result_json = str(raw.get("work_result_json", "")).strip()
     work_result_path = abs_path(work_result_json) if work_result_json else None
@@ -600,6 +641,7 @@ def build_row(
     physical: Dict[str, Any],
     perf_stats: Dict[str, Any],
     artifacts: Dict[str, str],
+    layer1_note: str = "",
 ) -> Dict[str, Any]:
     cp_ns = safe_float(physical.get("critical_path_ns"))
     area = safe_float(physical.get("die_area_um2"))
@@ -642,6 +684,8 @@ def build_row(
         notes_parts.append(f"tag={physical_tag}")
     if compare_group:
         notes_parts.append(f"compare_group={compare_group}")
+    if layer1_note:
+        notes_parts.append(layer1_note)
     row = {
         "version": 0.1,
         "campaign_id": campaign_id,
@@ -794,6 +838,12 @@ def main() -> int:
     # Step 3/5: physical + merge rows
     for arch in points:
         arch_id = str(arch["arch_id"])
+        layer1_note, wrapped_override = layer1_candidate_note(arch)
+        if wrapped_override:
+            log(
+                f"NOTE: arch_id={arch_id} is using Layer1 wrapped_io candidates "
+                "(allow_wrapped_io=true)"
+            )
         metrics_csv = abs_path(str(arch["synth_design_dir"])) / "metrics.csv"
         selector_raw = arch.get("physical_select", {})
         selector: Dict[str, Any] = {}
@@ -859,6 +909,7 @@ def main() -> int:
                         "schedule_yml": str(model_data["schedule_yml"]),
                         "descriptors_bin": str(model_data["descriptors_bin"]),
                     },
+                    layer1_note=layer1_note,
                 )
 
                 if not args.dry_run:

@@ -59,6 +59,8 @@ Layer coupling is explicit and file-based.
 
 - `Layer 1 -> Layer 2`
   - Provides physically evaluated module candidates.
+  - Candidate manifests declare whether results are `wrapped_io` or
+    `macro_hardened` to prevent accidental macro assumptions.
   - Provides hardened macro artifacts (`macro_manifest.json`) and optional
     macro libraries.
 - `Layer 2 -> Layer 1`

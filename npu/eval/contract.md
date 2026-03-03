@@ -18,6 +18,11 @@ A campaign JSON declares:
 - model list (`models[]`) with ONNX paths and mapper/perf profiles
 - architecture list (`architecture_points[]`) with design directories, sweeps,
   and macro manifests/libraries
+  - optional `layer1_modules` per architecture point:
+    - `manifest`: `runs/candidates/<pdk>/module_candidates.json`
+    - `variant_ids`: selected Layer 1 candidate IDs
+    - `allow_wrapped_io` (default false): explicit override to allow
+      wrapper-level (`evaluation_scope=wrapped_io`) candidates
   - optional `physical_select` per architecture point:
     - `compare_group`
     - `tag_prefix`
@@ -55,6 +60,10 @@ recommendation reports.
 - IDs must be non-empty and unique within each list.
 - `repeats >= 1`.
 - `macro_mode` must be one of: `flat_nomacro`, `hier_macro`.
+- If `layer1_modules` is set, selected candidate IDs must exist in the
+  manifest and match campaign platform.
+- `wrapped_io` candidates are rejected unless `allow_wrapped_io=true` is set
+  explicitly on that architecture point.
 - If `status=ok`, merged metrics must be numeric and non-negative.
 - Optional `--check_paths` verifies file paths exist on disk.
 

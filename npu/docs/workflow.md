@@ -50,6 +50,9 @@ Canonical split and handoff contract:
   `python3 npu/eval/optimize_campaign.py --campaign runs/campaigns/npu/e2e_eval_v0/campaign.json --profiles_json runs/campaigns/npu/e2e_eval_v0/objective_profiles.json`
 - Keep campaign-level run configuration in one JSON manifest under
   `runs/campaigns/npu/` before expanding mapper/synth sweeps.
+  - when wiring Layer 1 candidates (`layer1_modules`), wrapped IO-evaluated
+    entries require explicit `allow_wrapped_io=true`; otherwise campaign
+    validation enforces macro-hardened candidates.
 
 ## 1) Define architecture config
 - Create/edit architecture YAML under `npu/arch/examples/`.

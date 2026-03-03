@@ -53,6 +53,20 @@
           "macro_manifest": { "type": "string" },
           "macro_library": { "type": "string" },
           "macro_select_json": { "type": "string" },
+          "layer1_modules": {
+            "type": "object",
+            "required": ["manifest", "variant_ids"],
+            "properties": {
+              "manifest": { "type": "string", "minLength": 1 },
+              "variant_ids": {
+                "type": "array",
+                "minItems": 1,
+                "items": { "type": "string", "minLength": 1 }
+              },
+              "allow_wrapped_io": { "type": "boolean" }
+            },
+            "additionalProperties": false
+          },
           "physical_select": {
             "type": "object",
             "properties": {

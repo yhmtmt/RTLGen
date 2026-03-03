@@ -48,6 +48,7 @@ REQUIRED_INDEX_FIELDS = {
 REQUIRED_METADATA_FIELDS = {"design_id", "circuit_type", "generator"}
 VALID_CIRCUIT_TYPES = {"multipliers", "prefix_adders", "activations", "mcm", "cmvm", "fp_ops", "mac", "npu_blocks", "other"}
 VALID_GENERATORS = {"rtlgen", "yosys", "flopoco", "manual", "other"}
+VALID_EVALUATION_SCOPES = {"wrapped_io", "macro_hardened"}
 
 
 def read_csv(path: Path):
@@ -263,16 +264,22 @@ def validate_module_candidates():
                 errors.append(f"{where}: expected object")
                 continue
 
-            for key in ("variant_id", "module", "config_hash", "metrics_ref"):
+            for key in ("variant_id", "module", "evaluation_scope", "config_hash", "metrics_ref"):
                 if key not in cand:
                     errors.append(f"{where}: missing required key '{key}'")
             variant_id = str(cand.get("variant_id", "")).strip()
             module = str(cand.get("module", "")).strip()
+            evaluation_scope = str(cand.get("evaluation_scope", "")).strip()
             config_hash = str(cand.get("config_hash", "")).strip()
             if not variant_id:
                 errors.append(f"{where}.variant_id: must be non-empty string")
             if not module:
                 errors.append(f"{where}.module: must be non-empty string")
+            if evaluation_scope not in VALID_EVALUATION_SCOPES:
+                errors.append(
+                    f"{where}.evaluation_scope: invalid '{evaluation_scope}', "
+                    f"expected one of {sorted(VALID_EVALUATION_SCOPES)}"
+                )
             if not config_hash:
                 errors.append(f"{where}.config_hash: must be non-empty string")
             if variant_id:
@@ -354,6 +361,8 @@ def validate_module_candidates():
                 macro_path = _resolve_repo_path(macro_manifest)
                 if not macro_path.exists():
                     errors.append(f"{where}.macro_manifest: path does not exist: {macro_manifest}")
+            if evaluation_scope == "macro_hardened" and not macro_manifest:
+                errors.append(f"{where}: macro_hardened candidate requires non-empty macro_manifest")
 
     for warn in warnings:
         print(f"WARN: {warn}")

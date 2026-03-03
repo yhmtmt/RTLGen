@@ -33,6 +33,7 @@
         "required": [
           "variant_id",
           "module",
+          "evaluation_scope",
           "config_hash",
           "metrics_ref"
         ],
@@ -44,6 +45,10 @@
           "module": {
             "type": "string",
             "minLength": 1
+          },
+          "evaluation_scope": {
+            "type": "string",
+            "enum": ["wrapped_io", "macro_hardened"]
           },
           "circuit_type": {
             "type": "string",

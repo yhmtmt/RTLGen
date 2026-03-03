@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Optional
 
 VALID_MACRO_MODES = {"flat_nomacro", "hier_macro"}
 VALID_STATUS = {"ok", "fail", "skipped"}
+VALID_LAYER1_EVAL_SCOPES = {"wrapped_io", "macro_hardened"}
 
 
 def die(msg: str) -> None:
@@ -63,6 +64,93 @@ def maybe_check_path(path_txt: str, check_paths: bool, where: str) -> None:
     p = Path(path_txt)
     if not p.exists():
         die(f"{where}: path does not exist: {path_txt}")
+
+
+def validate_layer1_modules(
+    layer1: Dict[str, Any],
+    *,
+    where: str,
+    campaign_platform: str,
+    check_paths: bool,
+) -> None:
+    allowed = {"manifest", "variant_ids", "allow_wrapped_io"}
+    for key in layer1.keys():
+        if key not in allowed:
+            die(f"{where}: unknown key '{key}'")
+
+    expect_keys(layer1, ["manifest", "variant_ids"], where)
+    manifest_path_txt = layer1["manifest"]
+    expect_string(manifest_path_txt, f"{where}.manifest")
+
+    # Candidate manifest is required for deterministic layer handoff, regardless of check_paths.
+    manifest_path = Path(manifest_path_txt)
+    if not manifest_path.exists():
+        die(f"{where}.manifest: path does not exist: {manifest_path_txt}")
+    maybe_check_path(manifest_path_txt, check_paths, f"{where}.manifest")
+
+    variant_ids = layer1["variant_ids"]
+    if not isinstance(variant_ids, list) or not variant_ids:
+        die(f"{where}.variant_ids must be a non-empty array")
+
+    seen_ids = set()
+    selected_ids: List[str] = []
+    for i, variant_id in enumerate(variant_ids):
+        expect_string(variant_id, f"{where}.variant_ids[{i}]")
+        vid = str(variant_id).strip()
+        if vid in seen_ids:
+            die(f"{where}.variant_ids: duplicate id '{vid}'")
+        seen_ids.add(vid)
+        selected_ids.append(vid)
+
+    allow_wrapped_raw = layer1.get("allow_wrapped_io", False)
+    if not isinstance(allow_wrapped_raw, bool):
+        die(f"{where}.allow_wrapped_io: expected boolean")
+    allow_wrapped = bool(allow_wrapped_raw)
+
+    manifest_doc = load_json(manifest_path)
+    pdk = str(manifest_doc.get("pdk", "")).strip()
+    if pdk and pdk != campaign_platform:
+        die(
+            f"{where}: candidate manifest pdk '{pdk}' does not match "
+            f"campaign platform '{campaign_platform}'"
+        )
+
+    candidates_raw = manifest_doc.get("candidates")
+    if not isinstance(candidates_raw, list) or not candidates_raw:
+        die(f"{where}.manifest: candidates must be a non-empty array")
+
+    by_variant_id: Dict[str, Dict[str, Any]] = {}
+    for i, cand in enumerate(candidates_raw):
+        cwhere = f"{where}.manifest.candidates[{i}]"
+        if not isinstance(cand, dict):
+            die(f"{cwhere}: expected object")
+        variant_id = str(cand.get("variant_id", "")).strip()
+        if not variant_id:
+            die(f"{cwhere}: missing non-empty variant_id")
+        if variant_id in by_variant_id:
+            die(f"{where}.manifest: duplicate variant_id '{variant_id}'")
+        scope = str(cand.get("evaluation_scope", "")).strip()
+        if scope not in VALID_LAYER1_EVAL_SCOPES:
+            die(
+                f"{cwhere}.evaluation_scope: invalid '{scope}', "
+                f"expected one of {sorted(VALID_LAYER1_EVAL_SCOPES)}"
+            )
+        by_variant_id[variant_id] = cand
+
+    wrapped_ids: List[str] = []
+    for variant_id in selected_ids:
+        cand = by_variant_id.get(variant_id)
+        if cand is None:
+            die(f"{where}.variant_ids: unknown variant_id '{variant_id}' in manifest")
+        scope = str(cand.get("evaluation_scope", "")).strip()
+        if scope == "wrapped_io":
+            wrapped_ids.append(variant_id)
+
+    if wrapped_ids and not allow_wrapped:
+        die(
+            f"{where}: selected wrapped_io candidates {wrapped_ids}; "
+            "re-evaluate as macro_hardened or set allow_wrapped_io=true to override"
+        )
 
 
 def validate_campaign(doc: Dict[str, Any], check_paths: bool) -> None:
@@ -140,6 +228,16 @@ def validate_campaign(doc: Dict[str, Any], check_paths: bool) -> None:
             if k in point:
                 expect_string(point[k], f"{where}.{k}")
                 maybe_check_path(point[k], check_paths, f"{where}.{k}")
+        if "layer1_modules" in point:
+            layer1 = point["layer1_modules"]
+            if not isinstance(layer1, dict):
+                die(f"{where}.layer1_modules: expected object")
+            validate_layer1_modules(
+                layer1,
+                where=f"{where}.layer1_modules",
+                campaign_platform=str(doc["platform"]),
+                check_paths=check_paths,
+            )
         if "physical_select" in point:
             sel = point["physical_select"]
             if not isinstance(sel, dict):

@@ -69,11 +69,16 @@ using multiple real ONNX models.
 - Machine-readable candidate manifests:
   - `runs/candidates/<pdk>/module_candidates.json`
   - validated against referenced `runs/designs/.../metrics.csv` rows.
+  - each candidate must declare `evaluation_scope`:
+    - `wrapped_io` (wrapper-level physical eval with IO regs),
+    - `macro_hardened` (hardened macro eval suitable for hierarchical claims).
 
 ### Layer 2 -> Layer 1 (feedback handoff)
 - Bottleneck-driven requests for new module algorithms or parameter regions.
 - Per-PDK target envelopes (timing, area, power, runtime constraints).
 - Prioritized sweep requests based on model-level objective sensitivity.
+- Requests to promote `wrapped_io` candidates to `macro_hardened` when
+  hierarchical macro assumptions are required.
 
 ## Decision hierarchy
 1. Layer 1 decides module implementation quality and feasible parameter ranges.

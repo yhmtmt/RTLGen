@@ -67,7 +67,16 @@ python3 scripts/build_runs_index.py
 - Record preferred per-PDK module variants and parameter ranges.
 - For hierarchical NPU integration, provide:
   - design/config identity (`config_hash`, key parameters),
-  - optional hardened macro views (`macro_manifest.json`) and selection rules.
+  - candidate `evaluation_scope` (`wrapped_io` vs `macro_hardened`),
+  - hardened macro views (`macro_manifest.json`) and selection rules for
+    entries marked `macro_hardened`.
+
+### Wrapper-vs-macro policy
+- If a candidate is evaluated only as a wrapper with IO registers, mark it as
+  `evaluation_scope=wrapped_io`.
+- For hierarchical top-level usage claims, re-evaluate the candidate as a
+  hardened macro and publish `evaluation_scope=macro_hardened` plus
+  `macro_manifest`.
 
 ## Data hygiene
 - Keep committed artifacts lightweight (configs, RTL, `metrics.csv`, summaries).

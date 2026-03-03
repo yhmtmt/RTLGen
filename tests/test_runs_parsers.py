@@ -149,6 +149,7 @@ class RunsParserRegressionTest(unittest.TestCase):
                     {
                         "variant_id": "demo_mul_nangate45_base",
                         "module": "demo_mul",
+                        "evaluation_scope": "wrapped_io",
                         "circuit_type": "multipliers",
                         "config_hash": "cfg123",
                         "metrics_ref": {
@@ -197,6 +198,7 @@ class RunsParserRegressionTest(unittest.TestCase):
                     {
                         "variant_id": "demo_mul_nangate45_bad",
                         "module": "demo_mul",
+                        "evaluation_scope": "wrapped_io",
                         "circuit_type": "multipliers",
                         "config_hash": "cfg123",
                         "metrics_ref": {
@@ -217,6 +219,56 @@ class RunsParserRegressionTest(unittest.TestCase):
                 self._restore_validate_runs_paths(old)
 
             self.assertTrue(any("no matching metrics row found" in e for e in errors))
+
+    def test_validate_runs_module_candidates_macro_hardened_requires_manifest(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            metrics_path = root / "runs/designs/multipliers/demo_mul/metrics.csv"
+            metrics_path.parent.mkdir(parents=True, exist_ok=True)
+            metrics_path.write_text(
+                "\n".join(
+                    [
+                        HEADER,
+                        "demo_mul,nangate45,cfg123,ph123,tag123,ok,1.25,1000.0,0.01,"
+                        '{"CLOCK_PERIOD": 2.5, "CORE_UTILIZATION": 10, "PLACE_DENSITY": 0.55, "TAG": "tag123"},'
+                        "runs/designs/multipliers/demo_mul/work/ph123/result.json",
+                    ]
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            cand_path = root / "runs/candidates/nangate45/module_candidates.json"
+            cand_path.parent.mkdir(parents=True, exist_ok=True)
+            cand_doc = {
+                "version": 0.1,
+                "pdk": "nangate45",
+                "candidates": [
+                    {
+                        "variant_id": "demo_mul_nangate45_macro",
+                        "module": "demo_mul",
+                        "evaluation_scope": "macro_hardened",
+                        "circuit_type": "multipliers",
+                        "config_hash": "cfg123",
+                        "metrics_ref": {
+                            "metrics_csv": "runs/designs/multipliers/demo_mul/metrics.csv",
+                            "platform": "nangate45",
+                            "param_hash": "ph123",
+                            "tag": "tag123",
+                            "status": "ok",
+                        },
+                    }
+                ],
+            }
+            cand_path.write_text(json.dumps(cand_doc, indent=2) + "\n", encoding="utf-8")
+
+            old = self._set_validate_runs_paths(root)
+            try:
+                errors = self.validate_runs.validate_module_candidates()
+            finally:
+                self._restore_validate_runs_paths(old)
+
+            self.assertTrue(any("macro_hardened candidate requires non-empty macro_manifest" in e for e in errors))
 
 
 if __name__ == "__main__":
