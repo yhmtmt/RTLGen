@@ -1,0 +1,36 @@
+{
+  "version": 0.1,
+  "pdk": "sky130hd",
+  "generated_utc": "2026-03-03T00:00:00Z",
+  "notes": "Seed Layer 1 candidates for Layer 2 handoff.",
+  "candidates": [
+    {
+      "variant_id": "mult16u_normal_koggestone_sky130hd_base",
+      "module": "mult16u_normal_koggestone_wrapper",
+      "circuit_type": "multipliers",
+      "config_hash": "0d7bdb0c397d",
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/multipliers/mult16u_normal_koggestone_wrapper/metrics.csv",
+        "platform": "sky130hd",
+        "param_hash": "b1b86ede",
+        "tag": "mult_ppg_cpa_w4_32_sky130_70e18859",
+        "status": "ok"
+      },
+      "notes": "Baseline 16-bit unsigned multiplier candidate."
+    },
+    {
+      "variant_id": "adder_koggestone_64u_sky130hd_base",
+      "module": "adder_koggestone_64u_wrapper",
+      "circuit_type": "prefix_adders",
+      "config_hash": "7a7b72571aac",
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_64u_wrapper/metrics.csv",
+        "platform": "sky130hd",
+        "param_hash": "85a3ec1f",
+        "tag": "prefix_adders_sky130_70e18859",
+        "status": "ok"
+      },
+      "notes": "Baseline 64-bit prefix adder candidate."
+    }
+  ]
+}

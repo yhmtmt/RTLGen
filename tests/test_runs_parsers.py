@@ -49,6 +49,27 @@ class RunsParserRegressionTest(unittest.TestCase):
         self.assertIn("CLOCK_PERIOD", params)
         self.assertTrue(str(row["result_path"]).strip())
 
+    def _set_validate_runs_paths(self, root: Path):
+        old = (
+            self.validate_runs.REPO_ROOT,
+            self.validate_runs.DESIGNS_ROOT,
+            self.validate_runs.INDEX_PATH,
+            self.validate_runs.CANDIDATES_ROOT,
+        )
+        self.validate_runs.REPO_ROOT = root
+        self.validate_runs.DESIGNS_ROOT = root / "runs" / "designs"
+        self.validate_runs.INDEX_PATH = root / "runs" / "index.csv"
+        self.validate_runs.CANDIDATES_ROOT = root / "runs" / "candidates"
+        return old
+
+    def _restore_validate_runs_paths(self, old):
+        (
+            self.validate_runs.REPO_ROOT,
+            self.validate_runs.DESIGNS_ROOT,
+            self.validate_runs.INDEX_PATH,
+            self.validate_runs.CANDIDATES_ROOT,
+        ) = old
+
     def test_validate_runs_parses_unquoted_and_csv_quoted_params_json(self):
         legacy_row = (
             "adder_koggestone_64u_wrapper,nangate45,7a7b72571aac,ef9c722d,"
@@ -100,6 +121,102 @@ class RunsParserRegressionTest(unittest.TestCase):
         self.assertEqual(2, len(rows))
         for row in rows:
             self._assert_parseable_params(row)
+
+    def test_validate_runs_module_candidates_manifest_success(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            metrics_path = root / "runs/designs/multipliers/demo_mul/metrics.csv"
+            metrics_path.parent.mkdir(parents=True, exist_ok=True)
+            metrics_path.write_text(
+                "\n".join(
+                    [
+                        HEADER,
+                        "demo_mul,nangate45,cfg123,ph123,tag123,ok,1.25,1000.0,0.01,"
+                        '{"CLOCK_PERIOD": 2.5, "CORE_UTILIZATION": 10, "PLACE_DENSITY": 0.55, "TAG": "tag123"},'
+                        "runs/designs/multipliers/demo_mul/work/ph123/result.json",
+                    ]
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            cand_path = root / "runs/candidates/nangate45/module_candidates.json"
+            cand_path.parent.mkdir(parents=True, exist_ok=True)
+            cand_doc = {
+                "version": 0.1,
+                "pdk": "nangate45",
+                "candidates": [
+                    {
+                        "variant_id": "demo_mul_nangate45_base",
+                        "module": "demo_mul",
+                        "circuit_type": "multipliers",
+                        "config_hash": "cfg123",
+                        "metrics_ref": {
+                            "metrics_csv": "runs/designs/multipliers/demo_mul/metrics.csv",
+                            "platform": "nangate45",
+                            "param_hash": "ph123",
+                            "tag": "tag123",
+                            "status": "ok",
+                        },
+                    }
+                ],
+            }
+            cand_path.write_text(json.dumps(cand_doc, indent=2) + "\n", encoding="utf-8")
+
+            old = self._set_validate_runs_paths(root)
+            try:
+                errors = self.validate_runs.validate_module_candidates()
+            finally:
+                self._restore_validate_runs_paths(old)
+            self.assertEqual([], errors)
+
+    def test_validate_runs_module_candidates_manifest_bad_reference(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            metrics_path = root / "runs/designs/multipliers/demo_mul/metrics.csv"
+            metrics_path.parent.mkdir(parents=True, exist_ok=True)
+            metrics_path.write_text(
+                "\n".join(
+                    [
+                        HEADER,
+                        "demo_mul,nangate45,cfg123,ph123,tag123,ok,1.25,1000.0,0.01,"
+                        '{"CLOCK_PERIOD": 2.5, "CORE_UTILIZATION": 10, "PLACE_DENSITY": 0.55, "TAG": "tag123"},'
+                        "runs/designs/multipliers/demo_mul/work/ph123/result.json",
+                    ]
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            cand_path = root / "runs/candidates/nangate45/module_candidates.json"
+            cand_path.parent.mkdir(parents=True, exist_ok=True)
+            cand_doc = {
+                "version": 0.1,
+                "pdk": "nangate45",
+                "candidates": [
+                    {
+                        "variant_id": "demo_mul_nangate45_bad",
+                        "module": "demo_mul",
+                        "circuit_type": "multipliers",
+                        "config_hash": "cfg123",
+                        "metrics_ref": {
+                            "metrics_csv": "runs/designs/multipliers/demo_mul/metrics.csv",
+                            "platform": "nangate45",
+                            "param_hash": "ph999",
+                            "status": "ok",
+                        },
+                    }
+                ],
+            }
+            cand_path.write_text(json.dumps(cand_doc, indent=2) + "\n", encoding="utf-8")
+
+            old = self._set_validate_runs_paths(root)
+            try:
+                errors = self.validate_runs.validate_module_candidates()
+            finally:
+                self._restore_validate_runs_paths(old)
+
+            self.assertTrue(any("no matching metrics row found" in e for e in errors))
 
 
 if __name__ == "__main__":

@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RTLGen Layer1 Module Candidates",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "pdk",
+    "candidates"
+  ],
+  "properties": {
+    "version": {
+      "type": "number",
+      "const": 0.1
+    },
+    "pdk": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generated_utc": {
+      "type": "string",
+      "minLength": 1
+    },
+    "notes": {
+      "type": "string"
+    },
+    "candidates": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "variant_id",
+          "module",
+          "config_hash",
+          "metrics_ref"
+        ],
+        "properties": {
+          "variant_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "module": {
+            "type": "string",
+            "minLength": 1
+          },
+          "circuit_type": {
+            "type": "string",
+            "minLength": 1
+          },
+          "config_hash": {
+            "type": "string",
+            "minLength": 1
+          },
+          "metrics_ref": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "metrics_csv",
+              "platform"
+            ],
+            "properties": {
+              "metrics_csv": {
+                "type": "string",
+                "minLength": 1
+              },
+              "platform": {
+                "type": "string",
+                "minLength": 1
+              },
+              "config_hash": {
+                "type": "string",
+                "minLength": 1
+              },
+              "param_hash": {
+                "type": "string",
+                "minLength": 1
+              },
+              "tag": {
+                "type": "string",
+                "minLength": 1
+              },
+              "status": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "anyOf": [
+              { "required": ["param_hash"] },
+              { "required": ["tag"] }
+            ]
+          },
+          "macro_manifest": {
+            "type": "string",
+            "minLength": 1
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

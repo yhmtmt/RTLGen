@@ -20,6 +20,7 @@ architecture-level workflow, use `npu/docs/workflow.md`.
 ## Outputs
 - Per-design RTL + metrics under `runs/designs/<circuit_type>/<design>/`.
 - Campaign summaries under `runs/campaigns/<circuit_type>/<campaign>/`.
+- Per-PDK candidate handoff manifests under `runs/candidates/<pdk>/`.
 - Optional hardened macro artifacts (when needed by Layer 2 hierarchical runs).
 
 ## Standard loop

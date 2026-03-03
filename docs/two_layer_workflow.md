@@ -66,6 +66,9 @@ using multiple real ONNX models.
 - `macro_manifest.json` and/or `macro_library.json` for hierarchical runs.
 - Module PPA/runtime tables with config hashes and parameter traceability.
 - Recommended per-PDK module defaults and fallback options.
+- Machine-readable candidate manifests:
+  - `runs/candidates/<pdk>/module_candidates.json`
+  - validated against referenced `runs/designs/.../metrics.csv` rows.
 
 ### Layer 2 -> Layer 1 (feedback handoff)
 - Bottleneck-driven requests for new module algorithms or parameter regions.
