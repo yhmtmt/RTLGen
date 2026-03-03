@@ -2,7 +2,9 @@ build/
 bin/
 multiplier_configs/
 adder_configs/
-plan/
+plan/*
+!plan/README.md
+!plan/log.md
 papers/
 third_party/
 .vvp

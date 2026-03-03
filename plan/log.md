@@ -78,3 +78,28 @@ Log
 - Added `docs/metadata_schema.json`: JSON Schema for optional `metadata.json` files under `runs/designs/*/`; required fields: design_id, circuit_type, generator; optional: ops, widths, signedness, ppg, cpa, rtl_source, owner, tags, created_at, notes, references.
 - Updated `scripts/validate_runs.py` to validate `metadata.json` files (enum checks, required fields, design_id vs directory name warning).
 - Added `.github/workflows/validate-runs.yml`: CI workflow triggers on PRs touching `runs/`; validates schema, regenerates index, fails if index is stale.
+
+2026-03-03 — Two-layer flow clarification + NPU eval pipeline hardening
+- Added/extended NPU end-to-end campaign tooling under `npu/eval/`:
+  - runner (`run_campaign.py`) with `physical_select` filtering and stable
+    `run_id` encoding including `param_hash`,
+  - reporting (`report_campaign.py`) with weighted objective ranking and
+    Pareto extraction,
+  - profile optimizer (`optimize_campaign.py`) for objective-profile sweeps.
+- Campaign outputs are now standardized in
+  `runs/campaigns/npu/e2e_eval_v0/` (`results.csv`, `summary.csv`,
+  `report.md`, `pareto.csv`, `best_point.json`, `objective_sweep.*`,
+  per-profile artifacts).
+- Improved campaign-run iteration performance:
+  - reuse mapper/perf model artifacts by metadata match (default),
+  - optional parallel model artifact generation via `--jobs`.
+- Added eval regression coverage and CI:
+  - `tests/test_eval_campaign_tools.py`,
+  - `.github/workflows/npu-eval-tests.yml`.
+- Clarified documentation hierarchy and layer split:
+  - `docs/structure.md` defines doc-role boundaries and precedence,
+  - `docs/two_layer_workflow.md` defines Layer 1 (circuit module physical
+    optimization) and Layer 2 (NPU architecture/model optimization) plus
+    handoff contract.
+- Rewrote top-level `README.md` to present the repository as a two-layer
+  generator/optimization system and point to canonical runbooks.
