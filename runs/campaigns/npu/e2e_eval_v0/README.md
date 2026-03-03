@@ -29,6 +29,8 @@ python3 npu/eval/run_campaign.py \
 ```
 This campaign pins physical-row selection per architecture point using
 `physical_select.compare_group` and `physical_select.tag_prefix`.
+Runner defaults to reusing existing per-model mapper/perf artifacts when
+metadata matches; pass `--no_reuse_model_artifacts` to force regeneration.
 
 Generate report and ranking:
 ```sh

@@ -298,17 +298,43 @@ def read_json(path: Path) -> Dict[str, Any]:
     return load_json(path)
 
 
+def write_json(path: Path, doc: Dict[str, Any]) -> None:
+    ensure_parent_dir(path)
+    path.write_text(json.dumps(doc, indent=2) + "\n", encoding="utf-8")
+
+
+def can_reuse_artifact_set(
+    *,
+    outputs: List[Path],
+    meta_path: Path,
+    expected_meta: Dict[str, str],
+) -> bool:
+    if not all(p.exists() for p in outputs):
+        return False
+    if not meta_path.exists():
+        return False
+    meta_doc = read_json(meta_path)
+    if not isinstance(meta_doc, dict):
+        return False
+    for k, v in expected_meta.items():
+        if str(meta_doc.get(k, "")) != str(v):
+            return False
+    return True
+
+
 def mapper_emit(
     *,
     model_id: str,
     model: Dict[str, Any],
     campaign_dir: Path,
+    reuse_existing: bool,
     dry_run: bool,
 ) -> Tuple[str, str]:
     mapper_dir = campaign_dir / "artifacts" / "mapper" / model_id
     mapper_dir.mkdir(parents=True, exist_ok=True)
     schedule = mapper_dir / "schedule.yml"
     desc_bin = mapper_dir / "descriptors.bin"
+    meta_path = mapper_dir / "meta.json"
 
     onnx_path = str(model.get("onnx_path", "")).strip()
     mapper_arch = str(model.get("mapper_arch", "")).strip()
@@ -316,6 +342,24 @@ def mapper_emit(
         die(f"model {model_id}: missing onnx_path")
     if not mapper_arch:
         die(f"model {model_id}: missing mapper_arch")
+
+    expected_meta = {
+        "kind": "mapper",
+        "model_id": model_id,
+        "onnx_path": onnx_path,
+        "mapper_arch": mapper_arch,
+    }
+    if reuse_existing and can_reuse_artifact_set(
+        outputs=[schedule, desc_bin],
+        meta_path=meta_path,
+        expected_meta=expected_meta,
+    ):
+        log(
+            "reuse mapper artifacts: "
+            f"model_id={model_id} schedule={rel_to_repo(schedule)} "
+            f"descriptors={rel_to_repo(desc_bin)}"
+        )
+        return rel_to_repo(schedule), rel_to_repo(desc_bin)
 
     run_cmd(
         [
@@ -340,6 +384,16 @@ def mapper_emit(
         ],
         dry_run=dry_run,
     )
+    if not dry_run:
+        write_json(
+            meta_path,
+            {
+                **expected_meta,
+                "generated_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                "schedule_yml": rel_to_repo(schedule),
+                "descriptors_bin": rel_to_repo(desc_bin),
+            },
+        )
     return rel_to_repo(schedule), rel_to_repo(desc_bin)
 
 
@@ -349,11 +403,32 @@ def perf_emit(
     descriptors_bin: str,
     perf_config: str,
     campaign_dir: Path,
+    reuse_existing: bool,
     dry_run: bool,
 ) -> Tuple[str, Dict[str, Any]]:
     perf_dir = campaign_dir / "artifacts" / "perf" / model_id
     perf_dir.mkdir(parents=True, exist_ok=True)
     trace_json = perf_dir / "trace.json"
+    meta_path = perf_dir / "meta.json"
+
+    expected_meta = {
+        "kind": "perf",
+        "model_id": model_id,
+        "descriptors_bin": descriptors_bin,
+        "perf_config": perf_config,
+    }
+    if reuse_existing and can_reuse_artifact_set(
+        outputs=[trace_json],
+        meta_path=meta_path,
+        expected_meta=expected_meta,
+    ):
+        log(
+            "reuse perf artifacts: "
+            f"model_id={model_id} trace={rel_to_repo(trace_json)}"
+        )
+        trace_doc = read_json(trace_json) if not dry_run else {}
+        stats = dict(trace_doc.get("stats", {}) or {})
+        return rel_to_repo(trace_json), stats
 
     cmd = [
         "python3",
@@ -372,6 +447,14 @@ def perf_emit(
     if not dry_run:
         trace_doc = read_json(trace_json)
         stats = dict(trace_doc.get("stats", {}) or {})
+        write_json(
+            meta_path,
+            {
+                **expected_meta,
+                "generated_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                "trace_json": rel_to_repo(trace_json),
+            },
+        )
 
     return rel_to_repo(trace_json), stats
 
@@ -575,9 +658,23 @@ def main() -> int:
         help="Macro modes to evaluate",
     )
     ap.add_argument("--skip_existing", action="store_true", help="Skip run_ids already in results CSV")
+    reuse_group = ap.add_mutually_exclusive_group()
+    reuse_group.add_argument(
+        "--reuse_model_artifacts",
+        dest="reuse_model_artifacts",
+        action="store_true",
+        help="Reuse existing mapper/perf artifacts when input metadata matches (default)",
+    )
+    reuse_group.add_argument(
+        "--no_reuse_model_artifacts",
+        dest="reuse_model_artifacts",
+        action="store_false",
+        help="Force rerun of mapper/perf model artifacts",
+    )
     ap.add_argument("--max_models", type=int, help="Limit number of models (debug)")
     ap.add_argument("--max_arch", type=int, help="Limit number of architecture points (debug)")
     ap.add_argument("--dry_run", action="store_true", help="Print commands without executing tools")
+    ap.set_defaults(reuse_model_artifacts=True)
     args = ap.parse_args()
 
     os.chdir(REPO_ROOT)
@@ -615,6 +712,7 @@ def main() -> int:
             model_id=model_id,
             model=model,
             campaign_dir=campaign_dir,
+            reuse_existing=bool(args.reuse_model_artifacts),
             dry_run=args.dry_run,
         )
         perf_trace_json, perf_stats = perf_emit(
@@ -622,6 +720,7 @@ def main() -> int:
             descriptors_bin=descriptors_bin,
             perf_config=perf_config,
             campaign_dir=campaign_dir,
+            reuse_existing=bool(args.reuse_model_artifacts),
             dry_run=args.dry_run,
         )
         model_artifacts[model_id] = {

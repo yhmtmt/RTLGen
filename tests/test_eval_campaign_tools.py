@@ -68,6 +68,24 @@ class EvalCampaignToolsRegressionTest(unittest.TestCase):
             self.assertIn("model", scopes)
             self.assertIn("aggregate", scopes)
 
+    def test_run_campaign_dry_run_smoke(self):
+        cmd = [
+            sys.executable,
+            str(REPO_ROOT / "npu/eval/run_campaign.py"),
+            "--campaign",
+            str(CAMPAIGN_JSON),
+            "--max_models",
+            "1",
+            "--max_arch",
+            "1",
+            "--modes",
+            "flat_nomacro",
+            "--skip_existing",
+            "--dry_run",
+        ]
+        proc = subprocess.run(cmd, cwd=str(REPO_ROOT), check=True, capture_output=True, text=True)
+        self.assertIn("done: campaign_id=", proc.stdout)
+
     def test_optimize_campaign_generates_profile_outputs(self):
         with tempfile.TemporaryDirectory() as td:
             tmp = Path(td)

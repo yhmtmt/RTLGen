@@ -26,6 +26,8 @@ evaluation inside RTLGen.
   `python3 npu/eval/validate.py --result-row npu/eval/examples/minimal_result_row.json`
 - Run campaign scaffold (mapper + perf + merged row append):
   `python3 npu/eval/run_campaign.py --campaign runs/campaigns/npu/e2e_eval_v0/campaign.json`
+  - default reuses existing model mapper/perf artifacts under campaign outputs;
+    add `--no_reuse_model_artifacts` to force regeneration.
 - Generate campaign report/ranking:
   `python3 npu/eval/report_campaign.py --campaign runs/campaigns/npu/e2e_eval_v0/campaign.json`
 - Sweep objective profiles for best-point recommendation set:
