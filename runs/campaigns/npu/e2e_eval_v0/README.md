@@ -31,6 +31,7 @@ This campaign pins physical-row selection per architecture point using
 `physical_select.compare_group` and `physical_select.tag_prefix`.
 Runner defaults to reusing existing per-model mapper/perf artifacts when
 metadata matches; pass `--no_reuse_model_artifacts` to force regeneration.
+Use `--jobs <N>` to parallelize model-level mapper/perf generation.
 
 Generate report and ranking:
 ```sh

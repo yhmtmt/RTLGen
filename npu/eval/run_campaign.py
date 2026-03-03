@@ -17,6 +17,7 @@ import os
 import re
 import subprocess
 import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -459,6 +460,38 @@ def perf_emit(
     return rel_to_repo(trace_json), stats
 
 
+def build_model_artifacts(
+    *,
+    model: Dict[str, Any],
+    campaign_dir: Path,
+    reuse_existing: bool,
+    dry_run: bool,
+) -> Tuple[str, Dict[str, Any]]:
+    model_id = str(model["model_id"])
+    perf_config = str(model.get("perf_config", "")).strip()
+    schedule_yml, descriptors_bin = mapper_emit(
+        model_id=model_id,
+        model=model,
+        campaign_dir=campaign_dir,
+        reuse_existing=reuse_existing,
+        dry_run=dry_run,
+    )
+    perf_trace_json, perf_stats = perf_emit(
+        model_id=model_id,
+        descriptors_bin=descriptors_bin,
+        perf_config=perf_config,
+        campaign_dir=campaign_dir,
+        reuse_existing=reuse_existing,
+        dry_run=dry_run,
+    )
+    return model_id, {
+        "schedule_yml": schedule_yml,
+        "descriptors_bin": descriptors_bin,
+        "perf_trace_json": perf_trace_json,
+        "perf_stats": perf_stats,
+    }
+
+
 def flatten_row(row: Dict[str, Any]) -> Dict[str, Any]:
     physical = row.get("physical", {}) or {}
     performance = row.get("performance", {}) or {}
@@ -671,6 +704,12 @@ def main() -> int:
         action="store_false",
         help="Force rerun of mapper/perf model artifacts",
     )
+    ap.add_argument(
+        "--jobs",
+        type=int,
+        default=1,
+        help="Number of parallel jobs for per-model mapper/perf artifact generation (default: 1)",
+    )
     ap.add_argument("--max_models", type=int, help="Limit number of models (debug)")
     ap.add_argument("--max_arch", type=int, help="Limit number of architecture points (debug)")
     ap.add_argument("--dry_run", action="store_true", help="Print commands without executing tools")
@@ -687,6 +726,9 @@ def main() -> int:
     repeats = int(args.repeat) if args.repeat is not None else int(campaign["repeats"])
     if repeats < 1:
         die("repeat must be >= 1")
+    jobs = int(args.jobs)
+    if jobs < 1:
+        die("jobs must be >= 1")
 
     campaign_dir = abs_path(str(campaign["outputs"]["campaign_dir"]))
     results_csv = abs_path(str(campaign["outputs"]["results_csv"]))
@@ -706,29 +748,48 @@ def main() -> int:
     # Step 1/2/4: model-level mapper+perf artifacts (independent from physical rows in phase-2 scaffold)
     model_artifacts: Dict[str, Dict[str, Any]] = {}
     for model in models:
-        model_id = str(model["model_id"])
-        perf_config = str(model.get("perf_config", "")).strip()
-        schedule_yml, descriptors_bin = mapper_emit(
-            model_id=model_id,
-            model=model,
-            campaign_dir=campaign_dir,
-            reuse_existing=bool(args.reuse_model_artifacts),
-            dry_run=args.dry_run,
-        )
-        perf_trace_json, perf_stats = perf_emit(
-            model_id=model_id,
-            descriptors_bin=descriptors_bin,
-            perf_config=perf_config,
-            campaign_dir=campaign_dir,
-            reuse_existing=bool(args.reuse_model_artifacts),
-            dry_run=args.dry_run,
-        )
-        model_artifacts[model_id] = {
-            "schedule_yml": schedule_yml,
-            "descriptors_bin": descriptors_bin,
-            "perf_trace_json": perf_trace_json,
-            "perf_stats": perf_stats,
-        }
+        model_id = str(model.get("model_id", "")).strip()
+        if not model_id:
+            die("model entry missing model_id")
+        if not str(model.get("onnx_path", "")).strip():
+            die(f"model {model_id}: missing onnx_path")
+        if not str(model.get("mapper_arch", "")).strip():
+            die(f"model {model_id}: missing mapper_arch")
+
+    use_parallel_models = (jobs > 1 and len(models) > 1)
+    if use_parallel_models:
+        workers = min(jobs, len(models))
+        log(f"parallel model artifact build: jobs={workers} models={len(models)}")
+        with ThreadPoolExecutor(max_workers=workers) as ex:
+            fut_map = {
+                ex.submit(
+                    build_model_artifacts,
+                    model=model,
+                    campaign_dir=campaign_dir,
+                    reuse_existing=bool(args.reuse_model_artifacts),
+                    dry_run=args.dry_run,
+                ): str(model["model_id"])
+                for model in models
+            }
+            for fut in as_completed(fut_map):
+                model_id = fut_map[fut]
+                try:
+                    out_model_id, artifacts = fut.result()
+                except BaseException as exc:
+                    die(f"model artifact build failed for model_id={model_id}: {exc}")
+                model_artifacts[out_model_id] = artifacts
+                log(f"model artifacts ready: model_id={out_model_id}")
+    else:
+        for model in models:
+            model_id = str(model["model_id"])
+            out_model_id, artifacts = build_model_artifacts(
+                model=model,
+                campaign_dir=campaign_dir,
+                reuse_existing=bool(args.reuse_model_artifacts),
+                dry_run=args.dry_run,
+            )
+            model_artifacts[out_model_id] = artifacts
+            log(f"model artifacts ready: model_id={model_id}")
 
     # Step 3/5: physical + merge rows
     for arch in points:
