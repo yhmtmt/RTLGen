@@ -1,0 +1,32 @@
+{
+  "version": "0.1",
+  "design_id": "adder_koggestone_64u_wrapper_ng45_macro",
+  "module": "adder_koggestone_64u_wrapper",
+  "platform": "nangate45",
+  "flow_variant": "base",
+  "blackboxes": [
+    "adder_koggestone_64u_wrapper"
+  ],
+  "additional_lefs": [
+    "runs/designs/npu_macros/adder_koggestone_64u_wrapper_ng45_macro/abstract/adder_koggestone_64u_wrapper.lef"
+  ],
+  "additional_libs": [
+    "runs/designs/npu_macros/adder_koggestone_64u_wrapper_ng45_macro/abstract/adder_koggestone_64u_wrapper_typ.lib"
+  ],
+  "additional_gds": [],
+  "blackbox_verilog": [
+    "runs/designs/npu_macros/adder_koggestone_64u_wrapper_ng45_macro/abstract/adder_koggestone_64u_wrapper_blackbox.v"
+  ],
+  "source": {
+    "mode": "existing_verilog",
+    "verilog_dir": "runs/designs/prefix_adders/adder_koggestone_64u_wrapper/verilog",
+    "module_file": "runs/designs/prefix_adders/adder_koggestone_64u_wrapper/verilog/adder_koggestone_64u_wrapper.v",
+    "verilog_sha1": "4f66a94876e644a1be280274a24bb6d12987014c"
+  },
+  "manifest_params": {
+    "source_variant": "adder_koggestone_64u_nangate45_base",
+    "evaluation_scope": "macro_hardened"
+  },
+  "sweep": "runs/designs/npu_macros/adder_koggestone_64u_wrapper_ng45_macro/pre_synth_sweep.json",
+  "make_target": "generate_abstract"
+}

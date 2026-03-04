@@ -1,0 +1,23 @@
+{
+  "flow_params": {
+    "CLOCK_PERIOD": [
+      2.5
+    ],
+    "CLOCK_PORT": [
+      "clk"
+    ],
+    "PLACE_DENSITY": [
+      0.4
+    ],
+    "FLOW_VARIANT": [
+      "base"
+    ],
+    "DIE_AREA": [
+      "0 0 400 400"
+    ],
+    "CORE_AREA": [
+      "20 20 380 380"
+    ]
+  },
+  "tag_prefix": "l1_macro_adder64u_koggestone_ng45"
+}

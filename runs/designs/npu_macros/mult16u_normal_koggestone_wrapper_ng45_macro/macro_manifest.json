@@ -1,0 +1,32 @@
+{
+  "version": "0.1",
+  "design_id": "mult16u_normal_koggestone_wrapper_ng45_macro",
+  "module": "mult16u_normal_koggestone_wrapper",
+  "platform": "nangate45",
+  "flow_variant": "base",
+  "blackboxes": [
+    "mult16u_normal_koggestone_wrapper"
+  ],
+  "additional_lefs": [
+    "runs/designs/npu_macros/mult16u_normal_koggestone_wrapper_ng45_macro/abstract/mult16u_normal_koggestone_wrapper.lef"
+  ],
+  "additional_libs": [
+    "runs/designs/npu_macros/mult16u_normal_koggestone_wrapper_ng45_macro/abstract/mult16u_normal_koggestone_wrapper_typ.lib"
+  ],
+  "additional_gds": [],
+  "blackbox_verilog": [
+    "runs/designs/npu_macros/mult16u_normal_koggestone_wrapper_ng45_macro/abstract/mult16u_normal_koggestone_wrapper_blackbox.v"
+  ],
+  "source": {
+    "mode": "existing_verilog",
+    "verilog_dir": "runs/designs/multipliers/mult16u_normal_koggestone_wrapper/verilog",
+    "module_file": "runs/designs/multipliers/mult16u_normal_koggestone_wrapper/verilog/mult16u_normal_koggestone_wrapper.v",
+    "verilog_sha1": "ccd26850e8908fb3832ab4c2a6f1c1071a73c659"
+  },
+  "manifest_params": {
+    "source_variant": "mult16u_normal_koggestone_nangate45_base",
+    "evaluation_scope": "macro_hardened"
+  },
+  "sweep": "runs/designs/npu_macros/mult16u_normal_koggestone_wrapper_ng45_macro/pre_synth_sweep.json",
+  "make_target": "generate_abstract"
+}
