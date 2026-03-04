@@ -41,7 +41,9 @@ python3 npu/eval/run_campaign.py \
 ```
 The runner honors optional per-architecture `physical_select` filters in the
 campaign (`compare_group`, `tag_prefix`) and encodes physical `param_hash` into
-`run_id` to keep rows unique across sweep variants.
+`run_id` as stable design-point identity across sweep variants.
+Each emitted row also includes `sample_id`/`batch_id`/`sample_index` so
+statistical reruns can coexist without overloading `run_id`.
 When `architecture_points[].layer1_modules` is set, campaign validation checks
 selected candidate IDs against `runs/candidates/...` manifests and rejects
 `wrapped_io` candidates unless `allow_wrapped_io=true` is explicitly set.
@@ -50,6 +52,7 @@ It reuses existing per-model mapper/perf artifacts under
 `--no_reuse_model_artifacts`.
 Use `--jobs <N>` to parallelize model-level mapper/perf generation when running
 multiple models in one campaign.
+Use `--batch_id <label>` to tag rerun batches explicitly (optional).
 
 If physical rows are missing in `<design_dir>/metrics.csv`, allow runner to
 invoke the sweep:

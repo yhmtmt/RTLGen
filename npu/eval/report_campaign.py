@@ -85,6 +85,28 @@ def load_results_rows(results_csv: Path) -> List[Dict[str, str]]:
         return list(csv.DictReader(f))
 
 
+def dedupe_rows_by_sample_id(rows: List[Dict[str, str]]) -> Tuple[List[Dict[str, str]], int]:
+    """
+    De-duplicate rows with the same sample_id, keeping the latest occurrence.
+    Legacy rows without sample_id are preserved as-is.
+    """
+    out: List[Dict[str, str]] = []
+    index_by_sample: Dict[str, int] = {}
+    dup_count = 0
+    for row in rows:
+        sample_id = str(row.get("sample_id", "")).strip()
+        if not sample_id:
+            out.append(row)
+            continue
+        if sample_id in index_by_sample:
+            out[index_by_sample[sample_id]] = row
+            dup_count += 1
+            continue
+        index_by_sample[sample_id] = len(out)
+        out.append(row)
+    return out, dup_count
+
+
 def group_ok_rows(rows: List[Dict[str, str]]) -> Dict[Tuple[str, str, str], List[Dict[str, str]]]:
     groups: Dict[Tuple[str, str, str], List[Dict[str, str]]] = defaultdict(list)
     for row in rows:
@@ -241,6 +263,7 @@ def main() -> int:
     rows = load_results_rows(results_csv)
     if not rows:
         raise SystemExit(f"report_campaign: no rows found: {results_csv}")
+    rows, duplicate_sample_rows = dedupe_rows_by_sample_id(rows)
 
     grouped = group_ok_rows(rows)
     total_rows = len(rows)
@@ -256,6 +279,7 @@ def main() -> int:
             "macro_mode": macro_mode,
             "model_id": model_id,
             "n": int(s.get("n") or 0),
+            "sample_count": int(s.get("n") or 0),
             "latency_ms_mean": s.get("latency_ms_mean"),
             "latency_ms_std": s.get("latency_ms_std"),
             "throughput_infer_per_s_mean": s.get("throughput_infer_per_s_mean"),
@@ -281,6 +305,7 @@ def main() -> int:
             "arch_id": arch_id,
             "macro_mode": macro_mode,
             "model_count": len(model_rows),
+            "sample_count": sum(int(x.get("sample_count", 0) or 0) for x in model_rows),
             "latency_ms_mean": mean(
                 [float(x["latency_ms_mean"]) for x in model_rows if x["latency_ms_mean"] is not None]
             ),
@@ -426,6 +451,7 @@ def main() -> int:
     lines.append(f"- total_rows: `{total_rows}`")
     lines.append(f"- ok_rows: `{ok_rows}`")
     lines.append(f"- non_ok_rows: `{fail_rows}`")
+    lines.append(f"- duplicate_sample_rows_dropped: `{duplicate_sample_rows}`")
     lines.append("")
 
     lines.append("## Objective Ranking (weighted normalized minimization)")

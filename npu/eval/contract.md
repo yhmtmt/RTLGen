@@ -34,8 +34,10 @@ This file is the single source of truth for what should be evaluated.
 ## 2) Merged Result Row
 A merged result row represents one evaluated point:
 - keys: `campaign_id`, `run_id`, `model_id`, `arch_id`, `macro_mode`
-  - `run_id` includes physical sample identity (`param_hash`) so row identity
-    is stable across re-runs.
+  - `run_id`: stable design-point identity (includes physical `param_hash`).
+  - `sample_id`: unique sample-row identity for statistical reruns.
+  - `batch_id`: executor-provided rerun batch label.
+  - `sample_index`: per-`run_id` sample sequence index.
 - physical metrics:
   - `critical_path_ns`
   - `die_area_um2`

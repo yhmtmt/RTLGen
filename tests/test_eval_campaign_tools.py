@@ -145,6 +145,132 @@ class EvalCampaignToolsRegressionTest(unittest.TestCase):
             self.assertIn("model", scopes)
             self.assertIn("aggregate", scopes)
 
+    def test_report_campaign_uses_sample_id_for_rerun_statistics(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            results_csv = tmp / "results.csv"
+            out_md = tmp / "report.md"
+            out_csv = tmp / "summary.csv"
+            best_json = tmp / "best_point.json"
+            pareto_csv = tmp / "pareto.csv"
+
+            header = [
+                "version",
+                "campaign_id",
+                "run_id",
+                "sample_id",
+                "batch_id",
+                "sample_index",
+                "timestamp_utc",
+                "status",
+                "platform",
+                "model_id",
+                "arch_id",
+                "macro_mode",
+                "repeat_index",
+                "physical_critical_path_ns",
+                "physical_die_area_um2",
+                "physical_total_power_mw",
+                "physical_flow_elapsed_s",
+                "physical_place_gp_elapsed_s",
+                "performance_cycles",
+                "performance_latency_ms",
+                "performance_throughput_infer_per_s",
+                "performance_energy_mj",
+                "artifact_synth_result_json",
+                "artifact_perf_trace_json",
+                "artifact_schedule_yml",
+                "artifact_descriptors_bin",
+                "notes",
+            ]
+
+            base = {
+                "version": "0.1",
+                "campaign_id": "npu_e2e_eval_v0",
+                "run_id": "rid0",
+                "batch_id": "b0",
+                "timestamp_utc": "2026-03-04T00:00:00Z",
+                "status": "ok",
+                "platform": "nangate45",
+                "model_id": "mlp1",
+                "arch_id": "fp16_nm1",
+                "macro_mode": "flat_nomacro",
+                "repeat_index": "1",
+                "physical_critical_path_ns": "5.0",
+                "physical_die_area_um2": "100.0",
+                "physical_total_power_mw": "1.0",
+                "physical_flow_elapsed_s": "10.0",
+                "physical_place_gp_elapsed_s": "5.0",
+                "performance_cycles": "100.0",
+                "performance_throughput_infer_per_s": "1000.0",
+                "performance_energy_mj": "0.1",
+                "artifact_synth_result_json": "",
+                "artifact_perf_trace_json": "",
+                "artifact_schedule_yml": "",
+                "artifact_descriptors_bin": "",
+                "notes": "",
+            }
+            rows = [
+                {
+                    **base,
+                    "sample_id": "rid0__bb0__s1",
+                    "sample_index": "1",
+                    "performance_latency_ms": "1.0",
+                },
+                {
+                    **base,
+                    "sample_id": "rid0__bb0__s2",
+                    "sample_index": "2",
+                    "performance_latency_ms": "2.0",
+                },
+                {
+                    # Duplicate sample_id: latest row should win (latency 8.0).
+                    **base,
+                    "sample_id": "rid0__bb0__s2",
+                    "sample_index": "2",
+                    "performance_latency_ms": "8.0",
+                },
+            ]
+            with results_csv.open("w", encoding="utf-8", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=header)
+                writer.writeheader()
+                for row in rows:
+                    writer.writerow(row)
+
+            cmd = [
+                sys.executable,
+                str(REPO_ROOT / "npu/eval/report_campaign.py"),
+                "--campaign",
+                str(CAMPAIGN_JSON),
+                "--results_csv",
+                str(results_csv),
+                "--out_md",
+                str(out_md),
+                "--out_csv",
+                str(out_csv),
+                "--best_json",
+                str(best_json),
+                "--pareto_csv",
+                str(pareto_csv),
+            ]
+            subprocess.run(cmd, cwd=str(REPO_ROOT), check=True, capture_output=True, text=True)
+
+            with out_csv.open("r", encoding="utf-8", newline="") as f:
+                rows_out = list(csv.DictReader(f))
+            model_rows = [
+                r
+                for r in rows_out
+                if r.get("scope") == "model"
+                and r.get("arch_id") == "fp16_nm1"
+                and r.get("macro_mode") == "flat_nomacro"
+                and r.get("model_id") == "mlp1"
+            ]
+            self.assertEqual(1, len(model_rows))
+            m = model_rows[0]
+            self.assertEqual("2", str(m.get("n", "")).strip())
+            self.assertEqual("2", str(m.get("sample_count", "")).strip())
+            self.assertAlmostEqual(4.5, float(m["latency_ms_mean"]), places=6)
+
     def test_run_campaign_dry_run_smoke(self):
         cmd = [
             sys.executable,

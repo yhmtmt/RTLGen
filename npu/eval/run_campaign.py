@@ -99,6 +99,29 @@ def make_run_id(
     )
 
 
+def make_default_batch_id() -> str:
+    return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+
+
+def make_sample_id(
+    *,
+    run_id: str,
+    batch_id: str,
+    sample_index: int,
+    used_sample_ids: set[str],
+) -> str:
+    base = (
+        f"{run_id}__b{normalize_run_token(batch_id, default='batch')}"
+        f"__s{max(1, int(sample_index))}"
+    )
+    sample_id = base
+    suffix = 2
+    while sample_id in used_sample_ids:
+        sample_id = f"{base}__x{suffix}"
+        suffix += 1
+    return sample_id
+
+
 def infer_macro_mode(row: Dict[str, Any]) -> str:
     mode_name = str(row.get("mode_name", "")).strip()
     if mode_name in VALID_MACRO_MODES:
@@ -541,6 +564,9 @@ def flatten_row(row: Dict[str, Any]) -> Dict[str, Any]:
         "version": row.get("version"),
         "campaign_id": row.get("campaign_id"),
         "run_id": row.get("run_id"),
+        "sample_id": row.get("sample_id", ""),
+        "batch_id": row.get("batch_id", ""),
+        "sample_index": row.get("sample_index", ""),
         "timestamp_utc": row.get("timestamp_utc"),
         "status": row.get("status"),
         "platform": row.get("platform"),
@@ -612,6 +638,23 @@ def load_existing_run_ids(results_csv: Path) -> set[str]:
         return out
 
 
+def load_existing_sample_index(results_csv: Path) -> Tuple[Dict[str, int], set[str]]:
+    run_id_counts: Dict[str, int] = {}
+    sample_ids: set[str] = set()
+    if not results_csv.exists():
+        return run_id_counts, sample_ids
+    with results_csv.open("r", encoding="utf-8", newline="") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            run_id = str(row.get("run_id", "")).strip()
+            if run_id:
+                run_id_counts[run_id] = int(run_id_counts.get(run_id, 0)) + 1
+            sample_id = str(row.get("sample_id", "")).strip()
+            if sample_id:
+                sample_ids.add(sample_id)
+    return run_id_counts, sample_ids
+
+
 def safe_slug(text: str) -> str:
     s = re.sub(r"[^A-Za-z0-9_.-]+", "_", str(text))
     s = s.strip("_")
@@ -621,8 +664,8 @@ def safe_slug(text: str) -> str:
 def write_row_json(campaign_dir: Path, row: Dict[str, Any]) -> str:
     out_dir = campaign_dir / "artifacts" / "result_rows"
     out_dir.mkdir(parents=True, exist_ok=True)
-    run_id = str(row.get("run_id", "run"))
-    out_path = out_dir / f"{safe_slug(run_id)}.json"
+    file_id = str(row.get("sample_id", "")).strip() or str(row.get("run_id", "run")).strip()
+    out_path = out_dir / f"{safe_slug(file_id)}.json"
     out_path.write_text(json.dumps(row, indent=2), encoding="utf-8")
     return rel_to_repo(out_path)
 
@@ -638,6 +681,9 @@ def build_row(
     param_hash: str,
     physical_tag: str,
     compare_group: str,
+    batch_id: str,
+    sample_index: int,
+    sample_id: str,
     physical: Dict[str, Any],
     perf_stats: Dict[str, Any],
     artifacts: Dict[str, str],
@@ -690,6 +736,9 @@ def build_row(
         "version": 0.1,
         "campaign_id": campaign_id,
         "run_id": run_id,
+        "sample_id": sample_id,
+        "batch_id": batch_id,
+        "sample_index": sample_index,
         "timestamp_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "status": status,
         "platform": platform,
@@ -735,6 +784,13 @@ def main() -> int:
         help="Macro modes to evaluate",
     )
     ap.add_argument("--skip_existing", action="store_true", help="Skip run_ids already in results CSV")
+    ap.add_argument(
+        "--batch_id",
+        help=(
+            "Optional batch identifier recorded in each sample row "
+            "(default: UTC timestamp label)"
+        ),
+    )
     reuse_group = ap.add_mutually_exclusive_group()
     reuse_group.add_argument(
         "--reuse_model_artifacts",
@@ -786,6 +842,12 @@ def main() -> int:
         points = points[: max(0, args.max_arch)]
 
     existing_run_ids = load_existing_run_ids(results_csv) if args.skip_existing else set()
+    existing_run_id_counts, existing_sample_ids = load_existing_sample_index(results_csv)
+    pending_run_id_counts: Dict[str, int] = {}
+    used_sample_ids = set(existing_sample_ids)
+    batch_id = str(args.batch_id).strip() if args.batch_id is not None else ""
+    if not batch_id:
+        batch_id = make_default_batch_id()
     generated = 0
     skipped = 0
 
@@ -890,6 +952,14 @@ def main() -> int:
                 if run_id in existing_run_ids:
                     skipped += 1
                     continue
+                prior_count = int(existing_run_id_counts.get(run_id, 0)) + int(pending_run_id_counts.get(run_id, 0))
+                sample_index = prior_count + 1
+                sample_id = make_sample_id(
+                    run_id=run_id,
+                    batch_id=batch_id,
+                    sample_index=sample_index,
+                    used_sample_ids=used_sample_ids,
+                )
 
                 row = build_row(
                     campaign_id=campaign_id,
@@ -901,6 +971,9 @@ def main() -> int:
                     param_hash=param_hash,
                     physical_tag=physical_tag,
                     compare_group=compare_group,
+                    batch_id=batch_id,
+                    sample_index=sample_index,
+                    sample_id=sample_id,
                     physical=phys,
                     perf_stats=dict(model_data["perf_stats"]),
                     artifacts={
@@ -917,6 +990,8 @@ def main() -> int:
                     append_results_csv(results_csv, row)
                 generated += 1
                 existing_run_ids.add(run_id)
+                pending_run_id_counts[run_id] = int(pending_run_id_counts.get(run_id, 0)) + 1
+                used_sample_ids.add(sample_id)
 
     log(
         f"done: campaign_id={campaign_id} generated_rows={generated} skipped_rows={skipped} "

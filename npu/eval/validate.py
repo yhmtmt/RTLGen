@@ -283,6 +283,20 @@ def validate_result_row(doc: Dict[str, Any], check_paths: bool) -> None:
     for key in ("campaign_id", "run_id", "timestamp_utc", "platform", "model_id", "arch_id"):
         expect_string(doc[key], f"result_row.{key}")
 
+    has_sample_id = "sample_id" in doc
+    has_batch_id = "batch_id" in doc
+    if has_sample_id != has_batch_id:
+        die("result_row.sample_id and result_row.batch_id must appear together")
+    if has_sample_id:
+        expect_string(doc["sample_id"], "result_row.sample_id")
+        expect_string(doc["batch_id"], "result_row.batch_id")
+    if "sample_index" in doc:
+        sidx = doc["sample_index"]
+        if isinstance(sidx, bool) or not isinstance(sidx, int) or sidx < 1:
+            die("result_row.sample_index must be integer >= 1")
+        if not has_sample_id:
+            die("result_row.sample_index requires result_row.sample_id and result_row.batch_id")
+
     status = doc["status"]
     expect_string(status, "result_row.status")
     if status not in VALID_STATUS:
