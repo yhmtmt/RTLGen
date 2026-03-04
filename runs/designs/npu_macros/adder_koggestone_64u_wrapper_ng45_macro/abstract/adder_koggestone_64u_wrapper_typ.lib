@@ -1,0 +1,854 @@
+library (adder_koggestone_64u_wrapper) {
+  comment                        : "";
+  delay_model                    : table_lookup;
+  simulation                     : false;
+  capacitive_load_unit (1,fF);
+  leakage_power_unit             : 1pW;
+  current_unit                   : "1mA";
+  pulling_resistance_unit        : "1kohm";
+  time_unit                      : "1ns";
+  voltage_unit                   : "1v";
+  library_features(report_delay_calculation);
+
+  input_threshold_pct_rise : 50;
+  input_threshold_pct_fall : 50;
+  output_threshold_pct_rise : 50;
+  output_threshold_pct_fall : 50;
+  slew_lower_threshold_pct_rise : 30;
+  slew_lower_threshold_pct_fall : 30;
+  slew_upper_threshold_pct_rise : 70;
+  slew_upper_threshold_pct_fall : 70;
+  slew_derate_from_library : 1.0;
+
+
+  nom_process                    : 1.0;
+  nom_temperature                : 25.0;
+  nom_voltage                    : 1.10;
+
+  type ("a") {
+    base_type : array;
+    data_type : bit;
+    bit_width : 64;
+    bit_from : 63;
+    bit_to : 0;
+  }
+  type ("b") {
+    base_type : array;
+    data_type : bit;
+    bit_width : 64;
+    bit_from : 63;
+    bit_to : 0;
+  }
+  type ("sum") {
+    base_type : array;
+    data_type : bit;
+    bit_width : 64;
+    bit_from : 63;
+    bit_to : 0;
+  }
+
+  cell ("adder_koggestone_64u_wrapper") {
+    area : 128834.648 
+    is_macro_cell : true;
+    pin("clk") {
+      direction : input;
+      capacitance : 3.1578;
+    }
+    pin("cout") {
+      direction : output;
+      capacitance : 2.5407;
+    }
+    pin("VSS") {
+      direction : input;
+      capacitance : 0.0000;
+    }
+    pin("VDD") {
+      direction : input;
+      capacitance : 0.0000;
+    }
+    bus("a") {
+      bus_type : a;
+      direction : input;
+      capacitance : 0.0000;
+    pin("a[63]") {
+      direction : input;
+      capacitance : 2.4779;
+    }
+    pin("a[62]") {
+      direction : input;
+      capacitance : 2.5712;
+    }
+    pin("a[61]") {
+      direction : input;
+      capacitance : 4.1136;
+    }
+    pin("a[60]") {
+      direction : input;
+      capacitance : 3.1773;
+    }
+    pin("a[59]") {
+      direction : input;
+      capacitance : 15.0113;
+    }
+    pin("a[58]") {
+      direction : input;
+      capacitance : 13.1092;
+    }
+    pin("a[57]") {
+      direction : input;
+      capacitance : 25.8295;
+    }
+    pin("a[56]") {
+      direction : input;
+      capacitance : 14.0560;
+    }
+    pin("a[55]") {
+      direction : input;
+      capacitance : 13.4869;
+    }
+    pin("a[54]") {
+      direction : input;
+      capacitance : 13.3307;
+    }
+    pin("a[53]") {
+      direction : input;
+      capacitance : 19.8467;
+    }
+    pin("a[52]") {
+      direction : input;
+      capacitance : 14.6503;
+    }
+    pin("a[51]") {
+      direction : input;
+      capacitance : 4.4644;
+    }
+    pin("a[50]") {
+      direction : input;
+      capacitance : 4.9564;
+    }
+    pin("a[49]") {
+      direction : input;
+      capacitance : 4.1133;
+    }
+    pin("a[48]") {
+      direction : input;
+      capacitance : 3.8588;
+    }
+    pin("a[47]") {
+      direction : input;
+      capacitance : 3.2429;
+    }
+    pin("a[46]") {
+      direction : input;
+      capacitance : 3.3154;
+    }
+    pin("a[45]") {
+      direction : input;
+      capacitance : 2.6858;
+    }
+    pin("a[44]") {
+      direction : input;
+      capacitance : 2.9813;
+    }
+    pin("a[43]") {
+      direction : input;
+      capacitance : 2.6042;
+    }
+    pin("a[42]") {
+      direction : input;
+      capacitance : 2.6351;
+    }
+    pin("a[41]") {
+      direction : input;
+      capacitance : 3.2132;
+    }
+    pin("a[40]") {
+      direction : input;
+      capacitance : 14.5545;
+    }
+    pin("a[39]") {
+      direction : input;
+      capacitance : 9.5948;
+    }
+    pin("a[38]") {
+      direction : input;
+      capacitance : 10.6994;
+    }
+    pin("a[37]") {
+      direction : input;
+      capacitance : 11.0778;
+    }
+    pin("a[36]") {
+      direction : input;
+      capacitance : 10.2379;
+    }
+    pin("a[35]") {
+      direction : input;
+      capacitance : 9.6313;
+    }
+    pin("a[34]") {
+      direction : input;
+      capacitance : 10.0852;
+    }
+    pin("a[33]") {
+      direction : input;
+      capacitance : 8.9819;
+    }
+    pin("a[32]") {
+      direction : input;
+      capacitance : 10.4702;
+    }
+    pin("a[31]") {
+      direction : input;
+      capacitance : 11.0184;
+    }
+    pin("a[30]") {
+      direction : input;
+      capacitance : 10.4129;
+    }
+    pin("a[29]") {
+      direction : input;
+      capacitance : 8.0824;
+    }
+    pin("a[28]") {
+      direction : input;
+      capacitance : 9.7994;
+    }
+    pin("a[27]") {
+      direction : input;
+      capacitance : 8.7318;
+    }
+    pin("a[26]") {
+      direction : input;
+      capacitance : 12.9704;
+    }
+    pin("a[25]") {
+      direction : input;
+      capacitance : 6.7288;
+    }
+    pin("a[24]") {
+      direction : input;
+      capacitance : 5.5368;
+    }
+    pin("a[23]") {
+      direction : input;
+      capacitance : 5.3233;
+    }
+    pin("a[22]") {
+      direction : input;
+      capacitance : 4.8793;
+    }
+    pin("a[21]") {
+      direction : input;
+      capacitance : 3.4502;
+    }
+    pin("a[20]") {
+      direction : input;
+      capacitance : 4.4538;
+    }
+    pin("a[19]") {
+      direction : input;
+      capacitance : 4.0360;
+    }
+    pin("a[18]") {
+      direction : input;
+      capacitance : 3.3002;
+    }
+    pin("a[17]") {
+      direction : input;
+      capacitance : 3.6257;
+    }
+    pin("a[16]") {
+      direction : input;
+      capacitance : 3.0529;
+    }
+    pin("a[15]") {
+      direction : input;
+      capacitance : 2.8176;
+    }
+    pin("a[14]") {
+      direction : input;
+      capacitance : 2.7908;
+    }
+    pin("a[13]") {
+      direction : input;
+      capacitance : 2.9259;
+    }
+    pin("a[12]") {
+      direction : input;
+      capacitance : 3.6144;
+    }
+    pin("a[11]") {
+      direction : input;
+      capacitance : 3.0836;
+    }
+    pin("a[10]") {
+      direction : input;
+      capacitance : 3.1921;
+    }
+    pin("a[9]") {
+      direction : input;
+      capacitance : 2.7092;
+    }
+    pin("a[8]") {
+      direction : input;
+      capacitance : 3.1850;
+    }
+    pin("a[7]") {
+      direction : input;
+      capacitance : 4.0600;
+    }
+    pin("a[6]") {
+      direction : input;
+      capacitance : 2.6687;
+    }
+    pin("a[5]") {
+      direction : input;
+      capacitance : 5.2314;
+    }
+    pin("a[4]") {
+      direction : input;
+      capacitance : 3.5912;
+    }
+    pin("a[3]") {
+      direction : input;
+      capacitance : 3.9847;
+    }
+    pin("a[2]") {
+      direction : input;
+      capacitance : 3.0106;
+    }
+    pin("a[1]") {
+      direction : input;
+      capacitance : 2.7408;
+    }
+    pin("a[0]") {
+      direction : input;
+      capacitance : 3.4576;
+    }
+    }
+    bus("b") {
+      bus_type : b;
+      direction : input;
+      capacitance : 0.0000;
+    pin("b[63]") {
+      direction : input;
+      capacitance : 2.4452;
+    }
+    pin("b[62]") {
+      direction : input;
+      capacitance : 2.6313;
+    }
+    pin("b[61]") {
+      direction : input;
+      capacitance : 3.9591;
+    }
+    pin("b[60]") {
+      direction : input;
+      capacitance : 3.3649;
+    }
+    pin("b[59]") {
+      direction : input;
+      capacitance : 3.9476;
+    }
+    pin("b[58]") {
+      direction : input;
+      capacitance : 19.5844;
+    }
+    pin("b[57]") {
+      direction : input;
+      capacitance : 18.7335;
+    }
+    pin("b[56]") {
+      direction : input;
+      capacitance : 12.5279;
+    }
+    pin("b[55]") {
+      direction : input;
+      capacitance : 19.3046;
+    }
+    pin("b[54]") {
+      direction : input;
+      capacitance : 12.7189;
+    }
+    pin("b[53]") {
+      direction : input;
+      capacitance : 13.1796;
+    }
+    pin("b[52]") {
+      direction : input;
+      capacitance : 12.5472;
+    }
+    pin("b[51]") {
+      direction : input;
+      capacitance : 4.5996;
+    }
+    pin("b[50]") {
+      direction : input;
+      capacitance : 4.9774;
+    }
+    pin("b[49]") {
+      direction : input;
+      capacitance : 4.6099;
+    }
+    pin("b[48]") {
+      direction : input;
+      capacitance : 3.6104;
+    }
+    pin("b[47]") {
+      direction : input;
+      capacitance : 4.1579;
+    }
+    pin("b[46]") {
+      direction : input;
+      capacitance : 3.3353;
+    }
+    pin("b[45]") {
+      direction : input;
+      capacitance : 2.7215;
+    }
+    pin("b[44]") {
+      direction : input;
+      capacitance : 2.7260;
+    }
+    pin("b[43]") {
+      direction : input;
+      capacitance : 2.6739;
+    }
+    pin("b[42]") {
+      direction : input;
+      capacitance : 2.7867;
+    }
+    pin("b[41]") {
+      direction : input;
+      capacitance : 2.8208;
+    }
+    pin("b[40]") {
+      direction : input;
+      capacitance : 14.0459;
+    }
+    pin("b[39]") {
+      direction : input;
+      capacitance : 8.4872;
+    }
+    pin("b[38]") {
+      direction : input;
+      capacitance : 9.8158;
+    }
+    pin("b[37]") {
+      direction : input;
+      capacitance : 9.5894;
+    }
+    pin("b[36]") {
+      direction : input;
+      capacitance : 11.2736;
+    }
+    pin("b[35]") {
+      direction : input;
+      capacitance : 10.6441;
+    }
+    pin("b[34]") {
+      direction : input;
+      capacitance : 9.8572;
+    }
+    pin("b[33]") {
+      direction : input;
+      capacitance : 9.3254;
+    }
+    pin("b[32]") {
+      direction : input;
+      capacitance : 13.6802;
+    }
+    pin("b[31]") {
+      direction : input;
+      capacitance : 7.8498;
+    }
+    pin("b[30]") {
+      direction : input;
+      capacitance : 10.6204;
+    }
+    pin("b[29]") {
+      direction : input;
+      capacitance : 10.0790;
+    }
+    pin("b[28]") {
+      direction : input;
+      capacitance : 9.5681;
+    }
+    pin("b[27]") {
+      direction : input;
+      capacitance : 14.4294;
+    }
+    pin("b[26]") {
+      direction : input;
+      capacitance : 17.9255;
+    }
+    pin("b[25]") {
+      direction : input;
+      capacitance : 5.8709;
+    }
+    pin("b[24]") {
+      direction : input;
+      capacitance : 5.7799;
+    }
+    pin("b[23]") {
+      direction : input;
+      capacitance : 5.2716;
+    }
+    pin("b[22]") {
+      direction : input;
+      capacitance : 4.6326;
+    }
+    pin("b[21]") {
+      direction : input;
+      capacitance : 3.6911;
+    }
+    pin("b[20]") {
+      direction : input;
+      capacitance : 4.5339;
+    }
+    pin("b[19]") {
+      direction : input;
+      capacitance : 4.1273;
+    }
+    pin("b[18]") {
+      direction : input;
+      capacitance : 3.5797;
+    }
+    pin("b[17]") {
+      direction : input;
+      capacitance : 4.1590;
+    }
+    pin("b[16]") {
+      direction : input;
+      capacitance : 3.0798;
+    }
+    pin("b[15]") {
+      direction : input;
+      capacitance : 2.9255;
+    }
+    pin("b[14]") {
+      direction : input;
+      capacitance : 3.1607;
+    }
+    pin("b[13]") {
+      direction : input;
+      capacitance : 2.7524;
+    }
+    pin("b[12]") {
+      direction : input;
+      capacitance : 3.7679;
+    }
+    pin("b[11]") {
+      direction : input;
+      capacitance : 3.1338;
+    }
+    pin("b[10]") {
+      direction : input;
+      capacitance : 3.3475;
+    }
+    pin("b[9]") {
+      direction : input;
+      capacitance : 2.6544;
+    }
+    pin("b[8]") {
+      direction : input;
+      capacitance : 2.6160;
+    }
+    pin("b[7]") {
+      direction : input;
+      capacitance : 3.5679;
+    }
+    pin("b[6]") {
+      direction : input;
+      capacitance : 3.3646;
+    }
+    pin("b[5]") {
+      direction : input;
+      capacitance : 3.6424;
+    }
+    pin("b[4]") {
+      direction : input;
+      capacitance : 3.5315;
+    }
+    pin("b[3]") {
+      direction : input;
+      capacitance : 4.5245;
+    }
+    pin("b[2]") {
+      direction : input;
+      capacitance : 3.2102;
+    }
+    pin("b[1]") {
+      direction : input;
+      capacitance : 3.2773;
+    }
+    pin("b[0]") {
+      direction : input;
+      capacitance : 3.7044;
+    }
+    }
+    bus("sum") {
+      bus_type : sum;
+      direction : output;
+      capacitance : 0.0000;
+    pin("sum[63]") {
+      direction : output;
+      capacitance : 2.0037;
+    }
+    pin("sum[62]") {
+      direction : output;
+      capacitance : 3.1514;
+    }
+    pin("sum[61]") {
+      direction : output;
+      capacitance : 2.9995;
+    }
+    pin("sum[60]") {
+      direction : output;
+      capacitance : 2.6907;
+    }
+    pin("sum[59]") {
+      direction : output;
+      capacitance : 3.2962;
+    }
+    pin("sum[58]") {
+      direction : output;
+      capacitance : 19.8949;
+    }
+    pin("sum[57]") {
+      direction : output;
+      capacitance : 11.4650;
+    }
+    pin("sum[56]") {
+      direction : output;
+      capacitance : 12.1630;
+    }
+    pin("sum[55]") {
+      direction : output;
+      capacitance : 11.6736;
+    }
+    pin("sum[54]") {
+      direction : output;
+      capacitance : 3.5636;
+    }
+    pin("sum[53]") {
+      direction : output;
+      capacitance : 11.6410;
+    }
+    pin("sum[52]") {
+      direction : output;
+      capacitance : 10.8141;
+    }
+    pin("sum[51]") {
+      direction : output;
+      capacitance : 3.3562;
+    }
+    pin("sum[50]") {
+      direction : output;
+      capacitance : 4.1998;
+    }
+    pin("sum[49]") {
+      direction : output;
+      capacitance : 3.1687;
+    }
+    pin("sum[48]") {
+      direction : output;
+      capacitance : 4.0168;
+    }
+    pin("sum[47]") {
+      direction : output;
+      capacitance : 2.4391;
+    }
+    pin("sum[46]") {
+      direction : output;
+      capacitance : 2.7927;
+    }
+    pin("sum[45]") {
+      direction : output;
+      capacitance : 2.2320;
+    }
+    pin("sum[44]") {
+      direction : output;
+      capacitance : 1.6346;
+    }
+    pin("sum[43]") {
+      direction : output;
+      capacitance : 2.0783;
+    }
+    pin("sum[42]") {
+      direction : output;
+      capacitance : 2.5286;
+    }
+    pin("sum[41]") {
+      direction : output;
+      capacitance : 2.6277;
+    }
+    pin("sum[40]") {
+      direction : output;
+      capacitance : 17.1588;
+    }
+    pin("sum[39]") {
+      direction : output;
+      capacitance : 9.8485;
+    }
+    pin("sum[38]") {
+      direction : output;
+      capacitance : 12.9712;
+    }
+    pin("sum[37]") {
+      direction : output;
+      capacitance : 13.3070;
+    }
+    pin("sum[36]") {
+      direction : output;
+      capacitance : 12.9509;
+    }
+    pin("sum[35]") {
+      direction : output;
+      capacitance : 10.6493;
+    }
+    pin("sum[34]") {
+      direction : output;
+      capacitance : 7.4767;
+    }
+    pin("sum[33]") {
+      direction : output;
+      capacitance : 9.9537;
+    }
+    pin("sum[32]") {
+      direction : output;
+      capacitance : 8.3875;
+    }
+    pin("sum[31]") {
+      direction : output;
+      capacitance : 9.5773;
+    }
+    pin("sum[30]") {
+      direction : output;
+      capacitance : 9.9567;
+    }
+    pin("sum[29]") {
+      direction : output;
+      capacitance : 26.7880;
+    }
+    pin("sum[28]") {
+      direction : output;
+      capacitance : 13.1815;
+    }
+    pin("sum[27]") {
+      direction : output;
+      capacitance : 11.1712;
+    }
+    pin("sum[26]") {
+      direction : output;
+      capacitance : 20.6657;
+    }
+    pin("sum[25]") {
+      direction : output;
+      capacitance : 15.2603;
+    }
+    pin("sum[24]") {
+      direction : output;
+      capacitance : 14.5371;
+    }
+    pin("sum[23]") {
+      direction : output;
+      capacitance : 5.3605;
+    }
+    pin("sum[22]") {
+      direction : output;
+      capacitance : 14.0868;
+    }
+    pin("sum[21]") {
+      direction : output;
+      capacitance : 2.3612;
+    }
+    pin("sum[20]") {
+      direction : output;
+      capacitance : 14.2017;
+    }
+    pin("sum[19]") {
+      direction : output;
+      capacitance : 2.4114;
+    }
+    pin("sum[18]") {
+      direction : output;
+      capacitance : 13.3704;
+    }
+    pin("sum[17]") {
+      direction : output;
+      capacitance : 3.1622;
+    }
+    pin("sum[16]") {
+      direction : output;
+      capacitance : 2.1519;
+    }
+    pin("sum[15]") {
+      direction : output;
+      capacitance : 2.7391;
+    }
+    pin("sum[14]") {
+      direction : output;
+      capacitance : 13.1211;
+    }
+    pin("sum[13]") {
+      direction : output;
+      capacitance : 13.0520;
+    }
+    pin("sum[12]") {
+      direction : output;
+      capacitance : 2.1031;
+    }
+    pin("sum[11]") {
+      direction : output;
+      capacitance : 14.0201;
+    }
+    pin("sum[10]") {
+      direction : output;
+      capacitance : 1.8803;
+    }
+    pin("sum[9]") {
+      direction : output;
+      capacitance : 2.7505;
+    }
+    pin("sum[8]") {
+      direction : output;
+      capacitance : 2.7661;
+    }
+    pin("sum[7]") {
+      direction : output;
+      capacitance : 12.2888;
+    }
+    pin("sum[6]") {
+      direction : output;
+      capacitance : 2.0897;
+    }
+    pin("sum[5]") {
+      direction : output;
+      capacitance : 3.0852;
+    }
+    pin("sum[4]") {
+      direction : output;
+      capacitance : 1.7148;
+    }
+    pin("sum[3]") {
+      direction : output;
+      capacitance : 1.8414;
+    }
+    pin("sum[2]") {
+      direction : output;
+      capacitance : 2.3483;
+    }
+    pin("sum[1]") {
+      direction : output;
+      capacitance : 2.7471;
+    }
+    pin("sum[0]") {
+      direction : output;
+      capacitance : 1.6551;
+    }
+    }
+  }
+
+}

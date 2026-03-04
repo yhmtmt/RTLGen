@@ -4,7 +4,7 @@
   "title": "Macro-hardening re-evaluation for Layer1 Nangate45 seed candidates",
   "layer": "layer1",
   "flow": "openroad",
-  "state": "queued",
+  "state": "evaluated",
   "priority": 0,
   "created_utc": "2026-03-04T00:00:00Z",
   "requested_by": "@repo-owner",
@@ -68,5 +68,30 @@
       "Run python3 scripts/validate_runs.py before pushing"
     ]
   },
-  "result": null
+  "result": {
+    "completed_utc": "2026-03-04T03:23:49Z",
+    "executor": "@codex",
+    "branch": "eval/l1_macro_harden_candidates_nangate45_v1",
+    "status": "ok",
+    "summary": "Macro hardening completed for multiplier and adder wrapper candidates; both promoted to macro_hardened with manifest + macro metrics references in runs/candidates/nangate45/module_candidates.json.",
+    "metrics_rows": [
+      {
+        "metrics_csv": "runs/designs/npu_macros/mult16u_normal_koggestone_wrapper_ng45_macro/metrics.csv",
+        "platform": "nangate45",
+        "param_hash": "9e2c0647",
+        "tag": "l1_macro_mult16u_koggestone_ng45_9e2c0647",
+        "status": "ok",
+        "result_path": "/orfs/flow/reports/nangate45/mult16u_normal_koggestone_wrapper_ng45_macro/base/6_finish.rpt"
+      },
+      {
+        "metrics_csv": "runs/designs/npu_macros/adder_koggestone_64u_wrapper_ng45_macro/metrics.csv",
+        "platform": "nangate45",
+        "param_hash": "d7a0c92c",
+        "tag": "l1_macro_adder64u_koggestone_ng45_d7a0c92c",
+        "status": "ok",
+        "result_path": "/orfs/flow/reports/nangate45/adder_koggestone_64u_wrapper_ng45_macro/base/6_finish.rpt"
+      }
+    ],
+    "notes": "Queued commands referenced wrapper module names with --config mode, which cannot emit wrapper modules from those configs. Executed equivalent hardening with --src_verilog_dir using the already generated wrapper RTL in each design's verilog directory, preserving requested ids/tags/manifest params/platform."
+  }
 }

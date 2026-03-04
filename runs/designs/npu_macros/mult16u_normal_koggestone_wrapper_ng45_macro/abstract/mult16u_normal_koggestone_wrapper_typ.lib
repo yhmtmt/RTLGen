@@ -1,0 +1,338 @@
+library (mult16u_normal_koggestone_wrapper) {
+  comment                        : "";
+  delay_model                    : table_lookup;
+  simulation                     : false;
+  capacitive_load_unit (1,fF);
+  leakage_power_unit             : 1pW;
+  current_unit                   : "1mA";
+  pulling_resistance_unit        : "1kohm";
+  time_unit                      : "1ns";
+  voltage_unit                   : "1v";
+  library_features(report_delay_calculation);
+
+  input_threshold_pct_rise : 50;
+  input_threshold_pct_fall : 50;
+  output_threshold_pct_rise : 50;
+  output_threshold_pct_fall : 50;
+  slew_lower_threshold_pct_rise : 30;
+  slew_lower_threshold_pct_fall : 30;
+  slew_upper_threshold_pct_rise : 70;
+  slew_upper_threshold_pct_fall : 70;
+  slew_derate_from_library : 1.0;
+
+
+  nom_process                    : 1.0;
+  nom_temperature                : 25.0;
+  nom_voltage                    : 1.10;
+
+  type ("multiplicand") {
+    base_type : array;
+    data_type : bit;
+    bit_width : 16;
+    bit_from : 15;
+    bit_to : 0;
+  }
+  type ("multiplier") {
+    base_type : array;
+    data_type : bit;
+    bit_width : 16;
+    bit_from : 15;
+    bit_to : 0;
+  }
+  type ("product") {
+    base_type : array;
+    data_type : bit;
+    bit_width : 32;
+    bit_from : 31;
+    bit_to : 0;
+  }
+
+  cell ("mult16u_normal_koggestone_wrapper") {
+    area : 128832.133 
+    is_macro_cell : true;
+    pin("clk") {
+      direction : input;
+      capacitance : 4.2231;
+    }
+    pin("VSS") {
+      direction : input;
+      capacitance : 0.0000;
+    }
+    pin("VDD") {
+      direction : input;
+      capacitance : 0.0000;
+    }
+    bus("multiplicand") {
+      bus_type : multiplicand;
+      direction : input;
+      capacitance : 0.0000;
+    pin("multiplicand[15]") {
+      direction : input;
+      capacitance : 2.7762;
+    }
+    pin("multiplicand[14]") {
+      direction : input;
+      capacitance : 2.7062;
+    }
+    pin("multiplicand[13]") {
+      direction : input;
+      capacitance : 2.6069;
+    }
+    pin("multiplicand[12]") {
+      direction : input;
+      capacitance : 2.7864;
+    }
+    pin("multiplicand[11]") {
+      direction : input;
+      capacitance : 2.7237;
+    }
+    pin("multiplicand[10]") {
+      direction : input;
+      capacitance : 2.9453;
+    }
+    pin("multiplicand[9]") {
+      direction : input;
+      capacitance : 2.5301;
+    }
+    pin("multiplicand[8]") {
+      direction : input;
+      capacitance : 2.8742;
+    }
+    pin("multiplicand[7]") {
+      direction : input;
+      capacitance : 2.8060;
+    }
+    pin("multiplicand[6]") {
+      direction : input;
+      capacitance : 2.8435;
+    }
+    pin("multiplicand[5]") {
+      direction : input;
+      capacitance : 2.6996;
+    }
+    pin("multiplicand[4]") {
+      direction : input;
+      capacitance : 2.6161;
+    }
+    pin("multiplicand[3]") {
+      direction : input;
+      capacitance : 2.5373;
+    }
+    pin("multiplicand[2]") {
+      direction : input;
+      capacitance : 2.6844;
+    }
+    pin("multiplicand[1]") {
+      direction : input;
+      capacitance : 2.6387;
+    }
+    pin("multiplicand[0]") {
+      direction : input;
+      capacitance : 2.8037;
+    }
+    }
+    bus("multiplier") {
+      bus_type : multiplier;
+      direction : input;
+      capacitance : 0.0000;
+    pin("multiplier[15]") {
+      direction : input;
+      capacitance : 2.7337;
+    }
+    pin("multiplier[14]") {
+      direction : input;
+      capacitance : 2.7889;
+    }
+    pin("multiplier[13]") {
+      direction : input;
+      capacitance : 2.7344;
+    }
+    pin("multiplier[12]") {
+      direction : input;
+      capacitance : 2.8092;
+    }
+    pin("multiplier[11]") {
+      direction : input;
+      capacitance : 2.8801;
+    }
+    pin("multiplier[10]") {
+      direction : input;
+      capacitance : 2.9911;
+    }
+    pin("multiplier[9]") {
+      direction : input;
+      capacitance : 2.8612;
+    }
+    pin("multiplier[8]") {
+      direction : input;
+      capacitance : 2.5882;
+    }
+    pin("multiplier[7]") {
+      direction : input;
+      capacitance : 3.0494;
+    }
+    pin("multiplier[6]") {
+      direction : input;
+      capacitance : 2.4670;
+    }
+    pin("multiplier[5]") {
+      direction : input;
+      capacitance : 2.7962;
+    }
+    pin("multiplier[4]") {
+      direction : input;
+      capacitance : 2.6674;
+    }
+    pin("multiplier[3]") {
+      direction : input;
+      capacitance : 3.0395;
+    }
+    pin("multiplier[2]") {
+      direction : input;
+      capacitance : 2.8465;
+    }
+    pin("multiplier[1]") {
+      direction : input;
+      capacitance : 2.6180;
+    }
+    pin("multiplier[0]") {
+      direction : input;
+      capacitance : 3.3069;
+    }
+    }
+    bus("product") {
+      bus_type : product;
+      direction : output;
+      capacitance : 0.0000;
+    pin("product[31]") {
+      direction : output;
+      capacitance : 1.5174;
+    }
+    pin("product[30]") {
+      direction : output;
+      capacitance : 1.4818;
+    }
+    pin("product[29]") {
+      direction : output;
+      capacitance : 1.7844;
+    }
+    pin("product[28]") {
+      direction : output;
+      capacitance : 3.0819;
+    }
+    pin("product[27]") {
+      direction : output;
+      capacitance : 1.5161;
+    }
+    pin("product[26]") {
+      direction : output;
+      capacitance : 1.9459;
+    }
+    pin("product[25]") {
+      direction : output;
+      capacitance : 1.5423;
+    }
+    pin("product[24]") {
+      direction : output;
+      capacitance : 2.9964;
+    }
+    pin("product[23]") {
+      direction : output;
+      capacitance : 1.5206;
+    }
+    pin("product[22]") {
+      direction : output;
+      capacitance : 1.4607;
+    }
+    pin("product[21]") {
+      direction : output;
+      capacitance : 1.5565;
+    }
+    pin("product[20]") {
+      direction : output;
+      capacitance : 1.4494;
+    }
+    pin("product[19]") {
+      direction : output;
+      capacitance : 1.8221;
+    }
+    pin("product[18]") {
+      direction : output;
+      capacitance : 1.5579;
+    }
+    pin("product[17]") {
+      direction : output;
+      capacitance : 2.0176;
+    }
+    pin("product[16]") {
+      direction : output;
+      capacitance : 1.7513;
+    }
+    pin("product[15]") {
+      direction : output;
+      capacitance : 1.6749;
+    }
+    pin("product[14]") {
+      direction : output;
+      capacitance : 1.5760;
+    }
+    pin("product[13]") {
+      direction : output;
+      capacitance : 1.5882;
+    }
+    pin("product[12]") {
+      direction : output;
+      capacitance : 1.5040;
+    }
+    pin("product[11]") {
+      direction : output;
+      capacitance : 1.5349;
+    }
+    pin("product[10]") {
+      direction : output;
+      capacitance : 1.8977;
+    }
+    pin("product[9]") {
+      direction : output;
+      capacitance : 1.8189;
+    }
+    pin("product[8]") {
+      direction : output;
+      capacitance : 1.6802;
+    }
+    pin("product[7]") {
+      direction : output;
+      capacitance : 1.8003;
+    }
+    pin("product[6]") {
+      direction : output;
+      capacitance : 1.7751;
+    }
+    pin("product[5]") {
+      direction : output;
+      capacitance : 1.6534;
+    }
+    pin("product[4]") {
+      direction : output;
+      capacitance : 1.6816;
+    }
+    pin("product[3]") {
+      direction : output;
+      capacitance : 1.7641;
+    }
+    pin("product[2]") {
+      direction : output;
+      capacitance : 9.0823;
+    }
+    pin("product[1]") {
+      direction : output;
+      capacitance : 9.7832;
+    }
+    pin("product[0]") {
+      direction : output;
+      capacitance : 2.1838;
+    }
+    }
+  }
+
+}
