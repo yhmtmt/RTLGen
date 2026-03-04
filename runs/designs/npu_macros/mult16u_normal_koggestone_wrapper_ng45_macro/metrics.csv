@@ -1,0 +1,2 @@
+design,platform,config_hash,param_hash,tag,status,critical_path_ns,die_area,total_power_mw,params_json,result_path
+mult16u_normal_koggestone_wrapper_ng45_macro,nangate45,1f8e9698664e,51957436,l1_macro_mult16u_koggestone_ng45_51957436,ok,0.2784,160000.0,0.00401,{"CLOCK_PERIOD":2.5,"CLOCK_PORT":"clk","CORE_AREA":"20 20 380 380","CORE_UTILIZATION":"","DIE_AREA":"0 0 400 400","FLOW_VARIANT":"base","PLACE_DENSITY":0.4,"tag_prefix":"l1_macro_mult16u_koggestone_ng45"},/orfs/flow/reports/nangate45/mult16u_normal_koggestone_wrapper_ng45_macro/base/6_finish.rpt
