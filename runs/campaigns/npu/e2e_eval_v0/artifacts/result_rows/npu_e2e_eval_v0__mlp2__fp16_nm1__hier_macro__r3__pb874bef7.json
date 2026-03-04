@@ -2,7 +2,7 @@
   "version": 0.1,
   "campaign_id": "npu_e2e_eval_v0",
   "run_id": "npu_e2e_eval_v0__mlp2__fp16_nm1__hier_macro__r3__pb874bef7",
-  "timestamp_utc": "2026-03-02T12:53:59+00:00",
+  "timestamp_utc": "2026-03-04T09:05:24+00:00",
   "status": "ok",
   "platform": "nangate45",
   "model_id": "mlp2",
@@ -28,5 +28,5 @@
     "schedule_yml": "runs/campaigns/npu/e2e_eval_v0/artifacts/mapper/mlp2/schedule.yml",
     "descriptors_bin": "runs/campaigns/npu/e2e_eval_v0/artifacts/mapper/mlp2/descriptors.bin"
   },
-  "notes": "param_hash=b874bef7; tag=npu_fp16_nm1_cmp33_hier_macro_r3; compare_group=baed737c"
+  "notes": "param_hash=b874bef7; tag=npu_fp16_nm1_cmp33_hier_macro_r3; compare_group=baed737c; layer1_manifest=runs/candidates/nangate45/module_candidates.json; layer1_candidates=mult16u_normal_koggestone_nangate45_base@macro_hardened,adder_koggestone_64u_nangate45_base@macro_hardened"
 }

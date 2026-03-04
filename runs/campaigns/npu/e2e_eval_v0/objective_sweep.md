@@ -1,6 +1,6 @@
 # Objective Sweep: npu_e2e_eval_v0
 
-- generated_utc: `2026-03-03T04:54:29+00:00`
+- generated_utc: `2026-03-04T09:05:33+00:00`
 - source_campaign: `runs/campaigns/npu/e2e_eval_v0/campaign.json`
 - output_csv: `runs/campaigns/npu/e2e_eval_v0/objective_sweep.csv`
 - profile_artifacts_dir: `runs/campaigns/npu/e2e_eval_v0/objective_profiles`
