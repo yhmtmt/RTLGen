@@ -10,7 +10,7 @@
   "requested_by": "@repo-owner",
   "platform": "nangate45",
   "task": {
-    "objective": "Run full Layer2 campaign/report/objective sweep after promoting Layer1 seed candidates to macro_hardened and removing wrapped override from campaign contract.",
+    "objective": "Run full Layer2 campaign/report/objective sweep after promoting Layer1 seed candidates to macro_hardened and removing wrapped override from campaign contract. Record rerun samples with explicit batch identity (`sample_id`/`batch_id`/`sample_index`).",
     "source_mode": "src_verilog",
     "inputs": {
       "configs": [
@@ -42,7 +42,7 @@
       },
       {
         "name": "run_campaign",
-        "run": "python3 npu/eval/run_campaign.py --campaign runs/campaigns/npu/e2e_eval_v0/campaign.json --run_physical --modes flat_nomacro hier_macro --repeat 5 --jobs 2"
+        "run": "python3 npu/eval/run_campaign.py --campaign runs/campaigns/npu/e2e_eval_v0/campaign.json --run_physical --modes flat_nomacro hier_macro --repeat 5 --jobs 2 --batch_id l2_e2e_macro_hardened_cmp_v1_rerun1"
       },
       {
         "name": "report_campaign",
@@ -68,7 +68,7 @@
     ],
     "acceptance": [
       "Campaign validates with no allow_wrapped_io override",
-      "Results rows are appended with traceable run_id/param_hash",
+      "Results rows are appended with traceable run_id/param_hash and sample_id/batch_id/sample_index",
       "Report and objective sweep artifacts are regenerated",
       "scripts/validate_runs.py passes"
     ]
@@ -80,6 +80,7 @@
       "Commit lightweight campaign artifacts only",
       "Move this item from queued/ to evaluated/ and fill result",
       "Include metrics row references in result.metrics_rows",
+      "If rerun is repeated, increment batch_id suffix (_rerun2, _rerun3, ...)",
       "Run python3 scripts/validate_runs.py before pushing"
     ]
   },

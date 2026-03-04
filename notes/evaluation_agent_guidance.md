@@ -42,6 +42,12 @@ Execution Model (Queue -> Evaluated)
    - `runs/eval_queue/openroad/evaluated/`
 7. Open PR with the requested `handoff.pr_title`.
 
+Rerun-batch rule for Layer 2 campaign runs:
+- When queue command uses `npu/eval/run_campaign.py`, pass explicit
+  `--batch_id <item_id>_rerunN` (example: `..._rerun1`) so statistical reruns
+  are traceable as distinct samples without redefining `run_id`.
+- If rerunning the same item again, increment `N`.
+
 Queue source-mode contract
 --------------------------
 Every queue item must declare `task.source_mode`:
