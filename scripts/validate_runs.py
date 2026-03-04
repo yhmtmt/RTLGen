@@ -2,6 +2,7 @@
 """Validate runs/designs metrics.csv files, metadata.json, and the global runs/index.csv."""
 
 import csv
+import io
 import json
 import re
 import sys
@@ -70,6 +71,17 @@ def read_metrics_csv(path: Path):
     # Also repair legacy missing newline after result.json.
     text = path.read_text(encoding="utf-8", errors="ignore")
     text = re.sub(r"result\.json(?=[A-Za-z0-9_])", "result.json\n", text)
+    if not text.strip():
+        return [], []
+
+    # Fast path for well-formed CSVs (newer formats with extra columns).
+    reader = csv.DictReader(io.StringIO(text))
+    fieldnames = reader.fieldnames or []
+    parsed_rows = list(reader)
+    if fieldnames and parsed_rows and all(None not in row for row in parsed_rows):
+        return fieldnames, parsed_rows
+
+    # Fallback for legacy rows where params_json is emitted without CSV quoting.
     lines = text.splitlines()
     if not lines:
         return [], []
