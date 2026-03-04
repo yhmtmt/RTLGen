@@ -144,3 +144,22 @@ Log
 - Added new queued evaluator item:
   `runs/eval_queue/openroad/queued/l2_e2e_macro_hardened_cmp_v1.json`
   to rerun Layer2 campaign/report/objective sweep with the hardened candidates.
+
+2026-03-04 — Sample-aware rerun identity for Layer2 statistics
+- Updated `npu/eval/run_campaign.py` so `run_id` remains a stable design-point
+  key while each emitted row gets explicit sample identity fields:
+  `sample_id`, `batch_id`, `sample_index` (plus optional `--batch_id` CLI).
+- Updated result flattening/output behavior:
+  - `results.csv` now includes sample columns for rerun traceability.
+  - per-row JSON artifact filenames now use `sample_id` when present, avoiding
+    overwrite across repeated samples of the same `run_id`.
+- Updated reporting semantics in `npu/eval/report_campaign.py`:
+  - aggregate statistics naturally include multiple samples per `run_id`,
+  - duplicate `sample_id` rows are deduplicated (latest row wins),
+  - report header records `duplicate_sample_rows_dropped`.
+- Updated validation/contracts/docs/tests for the new model:
+  - `npu/eval/validate.py` and `npu/eval/result_row.schema.json`,
+  - `npu/eval/contract.md` and `npu/eval/README.md`,
+  - regression coverage in `tests/test_eval_campaign_tools.py`.
+- Rationale: statistical reruns are valid and should be retained, but they
+  should not be represented as duplicate `run_id` identities.
