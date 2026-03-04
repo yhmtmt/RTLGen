@@ -42,6 +42,23 @@ Execution Model (Queue -> Evaluated)
    - `runs/eval_queue/openroad/evaluated/`
 7. Open PR with the requested `handoff.pr_title`.
 
+Queue source-mode contract
+--------------------------
+Every queue item must declare `task.source_mode`:
+- `config`: use `npu/synth/pre_synth_compute.py --config ...` for raw RTLGen
+  modules emitted directly by config.
+- `src_verilog`: use `npu/synth/pre_synth_compute.py --src_verilog_dir ...`
+  for already-generated RTL directories (including `*_wrapper` modules).
+
+Wrapper rule:
+- If `--module` ends with `_wrapper`, `source_mode` must be `src_verilog`.
+  Do not queue wrapper hardening in `config` mode.
+
+Clocking rule for sequential wrappers:
+- If wrapper module has clocked IO registers, include `--clock_port clk` in
+  hardening command; leaving clock port empty can yield invalid timing
+  (`critical_path_ns=-1.0`).
+
 Mandatory Gates Before PR
 -------------------------
 Run:

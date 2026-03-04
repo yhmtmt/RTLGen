@@ -29,6 +29,8 @@ Layout
   `macro_hardened`) so Layer 2 can enforce macro-readiness explicitly.
 - `runs/eval_queue/openroad/queued/*.json` — OpenROAD-heavy evaluation requests
   to be executed on high-performance evaluators.
+  Queue items must declare `task.source_mode` (`config` or `src_verilog`) so
+  wrapper hardening commands are unambiguous.
 - `runs/eval_queue/openroad/evaluated/*.json` — completed queue items with
   execution result payload and metrics-row references.
 - `runs/campaigns/<circuit_type>/<campaign>/` — configs, sweeps, and summary tables (best area/delay/power).

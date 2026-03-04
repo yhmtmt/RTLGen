@@ -33,9 +33,10 @@
     "platform": { "type": "string", "minLength": 1 },
     "task": {
       "type": "object",
-      "required": ["objective", "commands", "expected_outputs"],
+      "required": ["objective", "source_mode", "commands", "expected_outputs"],
       "properties": {
         "objective": { "type": "string", "minLength": 1 },
+        "source_mode": { "type": "string", "enum": ["config", "src_verilog"] },
         "inputs": {
           "type": "object",
           "properties": {
@@ -154,6 +155,64 @@
               "summary",
               "metrics_rows"
             ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "task": {
+            "properties": {
+              "source_mode": { "const": "config" }
+            },
+            "required": ["source_mode"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "task": {
+            "properties": {
+              "inputs": {
+                "required": ["configs"],
+                "properties": {
+                  "configs": {
+                    "type": "array",
+                    "minItems": 1
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "task": {
+            "properties": {
+              "source_mode": { "const": "src_verilog" }
+            },
+            "required": ["source_mode"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "task": {
+            "properties": {
+              "inputs": {
+                "required": ["design_dirs"],
+                "properties": {
+                  "design_dirs": {
+                    "type": "array",
+                    "minItems": 1
+                  }
+                }
+              }
+            }
           }
         }
       }

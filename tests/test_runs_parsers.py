@@ -296,6 +296,7 @@ class RunsParserRegressionTest(unittest.TestCase):
                 "platform": "nangate45",
                 "task": {
                     "objective": "Run one demo command",
+                    "source_mode": "config",
                     "inputs": {
                         "configs": ["runs/designs/multipliers/demo_mul/config_demo.json"],
                         "design_dirs": [],
@@ -331,6 +332,9 @@ class RunsParserRegressionTest(unittest.TestCase):
     def test_validate_runs_eval_queue_evaluated_item_requires_matching_metrics_row(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
+            cfg = root / "runs/designs/multipliers/demo_mul/config_demo.json"
+            cfg.parent.mkdir(parents=True, exist_ok=True)
+            cfg.write_text("{\"version\": 0.1}\n", encoding="utf-8")
             metrics_path = root / "runs/designs/multipliers/demo_mul/metrics.csv"
             metrics_path.parent.mkdir(parents=True, exist_ok=True)
             metrics_path.write_text(
@@ -362,8 +366,9 @@ class RunsParserRegressionTest(unittest.TestCase):
                 "platform": "nangate45",
                 "task": {
                     "objective": "Verify evaluated payload checks metrics traceability",
+                    "source_mode": "config",
                     "inputs": {
-                        "configs": [],
+                        "configs": ["runs/designs/multipliers/demo_mul/config_demo.json"],
                         "design_dirs": [],
                         "sweeps": [],
                         "macro_manifests": [],
@@ -403,6 +408,68 @@ class RunsParserRegressionTest(unittest.TestCase):
             finally:
                 self._restore_validate_runs_paths(old)
             self.assertTrue(any("no matching metrics row found" in e for e in errors))
+
+    def test_validate_runs_eval_queue_rejects_wrapper_module_in_config_mode(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            cfg = root / "runs/designs/multipliers/demo_mul/config_demo.json"
+            cfg.parent.mkdir(parents=True, exist_ok=True)
+            cfg.write_text("{\"version\": 0.1}\n", encoding="utf-8")
+
+            queue_dir = root / "runs/eval_queue/openroad/queued"
+            queue_dir.mkdir(parents=True, exist_ok=True)
+            (root / "runs/eval_queue/openroad/item.schema.json").write_text("{}", encoding="utf-8")
+            item = {
+                "version": 0.1,
+                "item_id": "demo_queue_bad_wrapper_mode_v1",
+                "title": "Demo bad queue item",
+                "layer": "layer1",
+                "flow": "openroad",
+                "state": "queued",
+                "priority": 1,
+                "created_utc": "2026-03-04T00:00:00Z",
+                "requested_by": "@tester",
+                "platform": "nangate45",
+                "task": {
+                    "objective": "Detect wrapper mismatch with source_mode=config",
+                    "source_mode": "config",
+                    "inputs": {
+                        "configs": ["runs/designs/multipliers/demo_mul/config_demo.json"],
+                        "design_dirs": [],
+                        "sweeps": [],
+                        "macro_manifests": [],
+                        "candidate_manifests": [],
+                    },
+                    "commands": [
+                        {
+                            "name": "bad_harden",
+                            "run": (
+                                "python3 npu/synth/pre_synth_compute.py "
+                                "--platform nangate45 "
+                                "--config runs/designs/multipliers/demo_mul/config_demo.json "
+                                "--module demo_mul_wrapper"
+                            ),
+                        }
+                    ],
+                    "expected_outputs": ["runs/designs/npu_macros/demo_mul_wrapper/macro_manifest.json"],
+                },
+                "handoff": {
+                    "branch": "eval/demo_queue_bad_wrapper_mode_v1",
+                    "pr_title": "eval: demo bad queue item",
+                    "checklist": ["run python3 scripts/validate_runs.py"],
+                },
+                "result": None,
+            }
+            (queue_dir / "demo_queue_bad_wrapper_mode_v1.json").write_text(
+                json.dumps(item, indent=2) + "\n", encoding="utf-8"
+            )
+
+            old = self._set_validate_runs_paths(root)
+            try:
+                errors = self.validate_runs.validate_eval_queue()
+            finally:
+                self._restore_validate_runs_paths(old)
+            self.assertTrue(any("use source_mode=src_verilog with --src_verilog_dir" in e for e in errors))
 
 
 if __name__ == "__main__":

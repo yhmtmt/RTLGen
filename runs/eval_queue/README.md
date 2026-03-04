@@ -38,6 +38,11 @@ Rules
 - Keep one item per file.
 - `item_id` must be globally unique across queued+evaluated.
 - `state` must match parent directory (`queued` or `evaluated`).
+- `task.source_mode` is required:
+  - `config`: harden raw RTLGen modules via `--config`.
+  - `src_verilog`: harden existing generated RTL/wrapper modules via
+    `--src_verilog_dir`.
+- Wrapper modules (`*_wrapper`) must use `source_mode=src_verilog`.
 - Evaluated items with `result.status=ok` must reference at least one real
   `metrics.csv` row.
 - Do not add large binaries (DEF/GDS/log dumps) to the queue directories.

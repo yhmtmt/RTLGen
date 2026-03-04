@@ -11,9 +11,12 @@
   "platform": "nangate45",
   "task": {
     "objective": "What should be evaluated and why",
+    "source_mode": "src_verilog",
     "inputs": {
       "configs": [],
-      "design_dirs": [],
+      "design_dirs": [
+        "runs/designs/<circuit_type>/<design_name>"
+      ],
       "sweeps": [],
       "macro_manifests": [],
       "candidate_manifests": []
@@ -21,7 +24,7 @@
     "commands": [
       {
         "name": "run_eval",
-        "run": "python3 <script.py> <args>"
+        "run": "python3 npu/synth/pre_synth_compute.py --platform <pdk> --src_verilog_dir runs/designs/<circuit_type>/<design_name>/verilog --module <module_wrapper> --clock_port clk <other args>"
       }
     ],
     "expected_outputs": [

@@ -132,3 +132,6 @@ Log
   for evaluated results.
 - Rewrote `notes/evaluation_agent_guidance.md` as evaluator first-read manual
   aligned with queue workflow and validation gates.
+- Added explicit queue source-mode contract (`task.source_mode`) and validator
+  checks to prevent wrapper hardening commands from being queued in
+  `--config` mode.

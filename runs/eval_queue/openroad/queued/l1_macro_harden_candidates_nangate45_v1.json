@@ -11,6 +11,7 @@
   "platform": "nangate45",
   "task": {
     "objective": "Re-evaluate current wrapped_io Layer1 seed candidates as hardened macros and promote candidates to evaluation_scope=macro_hardened when results are valid.",
+    "source_mode": "src_verilog",
     "inputs": {
       "configs": [
         "runs/designs/multipliers/mult16u_normal_koggestone_wrapper/config_mult16u_normal_koggestone.json",
@@ -29,11 +30,11 @@
     "commands": [
       {
         "name": "harden_multiplier_macro",
-        "run": "python3 npu/synth/pre_synth_compute.py --platform nangate45 --config runs/designs/multipliers/mult16u_normal_koggestone_wrapper/config_mult16u_normal_koggestone.json --module mult16u_normal_koggestone_wrapper --id mult16u_normal_koggestone_wrapper_ng45_macro --out_root runs/designs/npu_macros --clock_period 2.5 --core_utilization 30 --make_target generate_abstract --tag_prefix l1_macro_mult16u_koggestone_ng45 --manifest_param source_variant=mult16u_normal_koggestone_nangate45_base --manifest_param evaluation_scope=macro_hardened"
+        "run": "python3 npu/synth/pre_synth_compute.py --platform nangate45 --src_verilog_dir runs/designs/multipliers/mult16u_normal_koggestone_wrapper/verilog --module mult16u_normal_koggestone_wrapper --id mult16u_normal_koggestone_wrapper_ng45_macro --out_root runs/designs/npu_macros --clock_period 2.5 --clock_port clk --core_utilization 30 --make_target generate_abstract --tag_prefix l1_macro_mult16u_koggestone_ng45 --manifest_param source_variant=mult16u_normal_koggestone_nangate45_base --manifest_param evaluation_scope=macro_hardened"
       },
       {
         "name": "harden_adder_macro",
-        "run": "python3 npu/synth/pre_synth_compute.py --platform nangate45 --config runs/designs/prefix_adders/adder_koggestone_64u_wrapper/config_adder_koggestone_unsigned_64bit.json --module adder_koggestone_64u_wrapper --id adder_koggestone_64u_wrapper_ng45_macro --out_root runs/designs/npu_macros --clock_period 2.5 --core_utilization 30 --make_target generate_abstract --tag_prefix l1_macro_adder64u_koggestone_ng45 --manifest_param source_variant=adder_koggestone_64u_nangate45_base --manifest_param evaluation_scope=macro_hardened"
+        "run": "python3 npu/synth/pre_synth_compute.py --platform nangate45 --src_verilog_dir runs/designs/prefix_adders/adder_koggestone_64u_wrapper/verilog --module adder_koggestone_64u_wrapper --id adder_koggestone_64u_wrapper_ng45_macro --out_root runs/designs/npu_macros --clock_period 2.5 --clock_port clk --core_utilization 30 --make_target generate_abstract --tag_prefix l1_macro_adder64u_koggestone_ng45 --manifest_param source_variant=adder_koggestone_64u_nangate45_base --manifest_param evaluation_scope=macro_hardened"
       },
       {
         "name": "update_candidates",

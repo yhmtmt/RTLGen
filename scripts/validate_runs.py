@@ -54,6 +54,7 @@ VALID_EVALUATION_SCOPES = {"wrapped_io", "macro_hardened"}
 VALID_EVAL_QUEUE_STATES = {"queued", "evaluated"}
 VALID_EVAL_QUEUE_LAYERS = {"layer1", "layer2"}
 VALID_EVAL_QUEUE_RESULT_STATUS = {"ok", "fail", "partial"}
+VALID_EVAL_QUEUE_SOURCE_MODES = {"config", "src_verilog"}
 
 
 def read_csv(path: Path):
@@ -520,6 +521,17 @@ def validate_eval_queue():
                     errors.append(f"{where}.task: expected object")
                 else:
                     _require_non_empty_string(task.get("objective", ""), f"{where}.task.objective", errors)
+                    source_mode = _require_non_empty_string(
+                        task.get("source_mode", ""),
+                        f"{where}.task.source_mode",
+                        errors,
+                    )
+                    if source_mode and source_mode not in VALID_EVAL_QUEUE_SOURCE_MODES:
+                        errors.append(
+                            f"{where}.task.source_mode: invalid '{source_mode}', "
+                            f"expected one of {sorted(VALID_EVAL_QUEUE_SOURCE_MODES)}"
+                        )
+                        source_mode = ""
 
                     commands = task.get("commands")
                     if not isinstance(commands, list) or not commands:
@@ -531,7 +543,37 @@ def validate_eval_queue():
                                 errors.append(f"{cwhere}: expected object")
                                 continue
                             _require_non_empty_string(cmd.get("name", ""), f"{cwhere}.name", errors)
-                            _require_non_empty_string(cmd.get("run", ""), f"{cwhere}.run", errors)
+                            run_cmd = _require_non_empty_string(cmd.get("run", ""), f"{cwhere}.run", errors)
+                            if run_cmd and "pre_synth_compute.py" in run_cmd:
+                                has_config_flag = bool(re.search(r"(?:^|\s)--config(?:\s|$)", run_cmd))
+                                has_src_flag = bool(re.search(r"(?:^|\s)--src_verilog_dir(?:\s|$)", run_cmd))
+                                if source_mode == "config":
+                                    if not has_config_flag:
+                                        errors.append(
+                                            f"{cwhere}.run: source_mode=config requires --config for pre_synth_compute.py"
+                                        )
+                                    if has_src_flag:
+                                        errors.append(
+                                            f"{cwhere}.run: source_mode=config must not include --src_verilog_dir"
+                                        )
+                                    module_match = re.search(r"(?:^|\s)--module\s+([^\s]+)", run_cmd)
+                                    if module_match:
+                                        module_name = module_match.group(1).strip()
+                                        if module_name.endswith("_wrapper"):
+                                            errors.append(
+                                                f"{cwhere}.run: --module {module_name} looks like wrapper; "
+                                                "use source_mode=src_verilog with --src_verilog_dir"
+                                            )
+                                elif source_mode == "src_verilog":
+                                    if not has_src_flag:
+                                        errors.append(
+                                            f"{cwhere}.run: source_mode=src_verilog requires --src_verilog_dir "
+                                            "for pre_synth_compute.py"
+                                        )
+                                    if has_config_flag:
+                                        errors.append(
+                                            f"{cwhere}.run: source_mode=src_verilog must not include --config"
+                                        )
 
                     expected_outputs = task.get("expected_outputs")
                     if not isinstance(expected_outputs, list) or not expected_outputs:
@@ -545,11 +587,13 @@ def validate_eval_queue():
                         if not isinstance(inputs, dict):
                             errors.append(f"{where}.task.inputs: expected object")
                         else:
+                            input_lists = {}
                             for key in ("configs", "design_dirs", "sweeps", "macro_manifests", "candidate_manifests"):
                                 values = inputs.get(key, [])
                                 if not isinstance(values, list):
                                     errors.append(f"{where}.task.inputs.{key}: expected array")
                                     continue
+                                input_lists[key] = values
                                 for i, path_text in enumerate(values):
                                     text = _require_non_empty_string(
                                         path_text, f"{where}.task.inputs.{key}[{i}]", errors
@@ -558,6 +602,17 @@ def validate_eval_queue():
                                         p = _resolve_repo_path(text)
                                         if not p.exists():
                                             errors.append(f"{where}.task.inputs.{key}[{i}]: path does not exist: {text}")
+                            if source_mode == "config":
+                                if not input_lists.get("configs"):
+                                    errors.append(
+                                        f"{where}.task.inputs.configs: source_mode=config requires at least one config path"
+                                    )
+                            elif source_mode == "src_verilog":
+                                if not input_lists.get("design_dirs"):
+                                    errors.append(
+                                        f"{where}.task.inputs.design_dirs: source_mode=src_verilog "
+                                        "requires at least one design_dir path"
+                                    )
 
                 handoff = item.get("handoff")
                 if not isinstance(handoff, dict):
