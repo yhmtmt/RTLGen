@@ -117,3 +117,18 @@ Log
   candidate references with explicit wrapped override.
 - Campaign runner now records Layer 1 candidate provenance in row `notes`
   and logs when wrapped overrides are used.
+
+2026-03-04 — Distributed OpenROAD evaluation queue
+- Added a GitHub-exchangeable OpenROAD evaluation queue under
+  `runs/eval_queue/openroad/` with:
+  - `item.schema.json` (contract),
+  - `templates/item_template.json` (authoring template),
+  - `queued/` and `evaluated/` state directories.
+- Added first queued item for macro-hardening re-evaluation of Layer 1
+  Nangate45 seed candidates:
+  `runs/eval_queue/openroad/queued/l1_macro_harden_candidates_nangate45_v1.json`.
+- Extended `scripts/validate_runs.py` to validate queue items, enforce
+  state-directory consistency, unique item IDs, and metrics-row traceability
+  for evaluated results.
+- Rewrote `notes/evaluation_agent_guidance.md` as evaluator first-read manual
+  aligned with queue workflow and validation gates.

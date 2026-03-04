@@ -13,6 +13,8 @@ INDEX_PATH = REPO_ROOT / "runs" / "index.csv"
 SCHEMA_PATH = REPO_ROOT / "docs" / "metadata_schema.json"
 CANDIDATES_ROOT = REPO_ROOT / "runs" / "candidates"
 CANDIDATE_SCHEMA_BASENAME = "module_candidates.schema.json"
+EVAL_QUEUE_ROOT = REPO_ROOT / "runs" / "eval_queue"
+EVAL_QUEUE_SCHEMA_BASENAME = "item.schema.json"
 
 REQUIRED_METRICS_FIELDS = {
     "design",
@@ -49,6 +51,9 @@ REQUIRED_METADATA_FIELDS = {"design_id", "circuit_type", "generator"}
 VALID_CIRCUIT_TYPES = {"multipliers", "prefix_adders", "activations", "mcm", "cmvm", "fp_ops", "mac", "npu_blocks", "other"}
 VALID_GENERATORS = {"rtlgen", "yosys", "flopoco", "manual", "other"}
 VALID_EVALUATION_SCOPES = {"wrapped_io", "macro_hardened"}
+VALID_EVAL_QUEUE_STATES = {"queued", "evaluated"}
+VALID_EVAL_QUEUE_LAYERS = {"layer1", "layer2"}
+VALID_EVAL_QUEUE_RESULT_STATUS = {"ok", "fail", "partial"}
 
 
 def read_csv(path: Path):
@@ -369,11 +374,251 @@ def validate_module_candidates():
     return errors
 
 
+def _require_non_empty_string(value, where, errors):
+    if not isinstance(value, str) or not value.strip():
+        errors.append(f"{where}: must be non-empty string")
+        return ""
+    return value.strip()
+
+
+def _validate_eval_queue_metrics_ref(mref, where, metrics_cache, errors):
+    if not isinstance(mref, dict):
+        errors.append(f"{where}: expected object")
+        return
+
+    metrics_csv = _require_non_empty_string(mref.get("metrics_csv", ""), f"{where}.metrics_csv", errors)
+    platform = _require_non_empty_string(mref.get("platform", ""), f"{where}.platform", errors)
+    status = _require_non_empty_string(mref.get("status", ""), f"{where}.status", errors)
+    param_hash = str(mref.get("param_hash", "")).strip()
+    tag = str(mref.get("tag", "")).strip()
+    result_path = str(mref.get("result_path", "")).strip()
+
+    if not param_hash and not tag:
+        errors.append(f"{where}: require at least one of param_hash or tag")
+    if not metrics_csv or not platform or not status:
+        return
+
+    metrics_path = _resolve_repo_path(metrics_csv)
+    if not metrics_path.exists():
+        errors.append(f"{where}.metrics_csv: path does not exist: {metrics_csv}")
+        return
+
+    _, rows = _read_metrics_cached(metrics_path, metrics_cache)
+    matches = []
+    for row in rows:
+        if str(row.get("platform", "")).strip() != platform:
+            continue
+        if str(row.get("status", "")).strip() != status:
+            continue
+        if param_hash and str(row.get("param_hash", "")).strip() != param_hash:
+            continue
+        if tag and str(row.get("tag", "")).strip() != tag:
+            continue
+        if result_path and str(row.get("result_path", "")).strip() != result_path:
+            continue
+        matches.append(row)
+
+    if not matches:
+        errors.append(
+            f"{where}: no matching metrics row found "
+            f"(platform={platform}, status={status}, param_hash={param_hash or '*'}, tag={tag or '*'})"
+        )
+
+
+def validate_eval_queue():
+    errors = []
+    warnings = []
+    if not EVAL_QUEUE_ROOT.exists():
+        return errors
+
+    metrics_cache = {}
+    seen_ids = set()
+
+    for flow_dir in sorted(EVAL_QUEUE_ROOT.iterdir()):
+        if not flow_dir.is_dir():
+            continue
+
+        flow_name = flow_dir.name
+        schema_path = flow_dir / EVAL_QUEUE_SCHEMA_BASENAME
+        if not schema_path.exists():
+            warnings.append(f"{flow_dir}: missing {EVAL_QUEUE_SCHEMA_BASENAME}")
+
+        for state in sorted(VALID_EVAL_QUEUE_STATES):
+            state_dir = flow_dir / state
+            if not state_dir.exists():
+                continue
+            if not state_dir.is_dir():
+                errors.append(f"{state_dir}: expected directory")
+                continue
+
+            for item_path in sorted(state_dir.glob("*.json")):
+                try:
+                    with item_path.open("r", encoding="utf-8") as f:
+                        item = json.load(f)
+                except json.JSONDecodeError as exc:
+                    errors.append(f"{item_path}: invalid JSON: {exc}")
+                    continue
+
+                where = str(item_path)
+                if not isinstance(item, dict):
+                    errors.append(f"{where}: top-level must be an object")
+                    continue
+
+                for key in (
+                    "version",
+                    "item_id",
+                    "title",
+                    "layer",
+                    "flow",
+                    "state",
+                    "priority",
+                    "created_utc",
+                    "requested_by",
+                    "platform",
+                    "task",
+                    "handoff",
+                ):
+                    if key not in item:
+                        errors.append(f"{where}: missing required key '{key}'")
+
+                if item.get("version") != 0.1:
+                    errors.append(f"{where}: version must be 0.1")
+
+                item_id = _require_non_empty_string(item.get("item_id", ""), f"{where}.item_id", errors)
+                if item_id:
+                    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", item_id):
+                        errors.append(f"{where}.item_id: invalid format '{item_id}'")
+                    if item_id in seen_ids:
+                        errors.append(f"{where}.item_id: duplicate id '{item_id}' across eval queue")
+                    seen_ids.add(item_id)
+
+                _require_non_empty_string(item.get("title", ""), f"{where}.title", errors)
+                layer = _require_non_empty_string(item.get("layer", ""), f"{where}.layer", errors)
+                if layer and layer not in VALID_EVAL_QUEUE_LAYERS:
+                    errors.append(f"{where}.layer: invalid '{layer}', expected one of {sorted(VALID_EVAL_QUEUE_LAYERS)}")
+
+                flow = _require_non_empty_string(item.get("flow", ""), f"{where}.flow", errors)
+                if flow and flow != flow_name:
+                    errors.append(f"{where}.flow: '{flow}' must match directory name '{flow_name}'")
+
+                state_value = _require_non_empty_string(item.get("state", ""), f"{where}.state", errors)
+                if state_value and state_value not in VALID_EVAL_QUEUE_STATES:
+                    errors.append(f"{where}.state: invalid '{state_value}', expected one of {sorted(VALID_EVAL_QUEUE_STATES)}")
+                if state_value and state_value != state:
+                    errors.append(f"{where}.state: '{state_value}' does not match parent directory '{state}'")
+
+                priority = item.get("priority")
+                if isinstance(priority, bool) or not isinstance(priority, int) or priority < 0 or priority > 5:
+                    errors.append(f"{where}.priority: must be integer in range [0, 5]")
+
+                _require_non_empty_string(item.get("created_utc", ""), f"{where}.created_utc", errors)
+                _require_non_empty_string(item.get("requested_by", ""), f"{where}.requested_by", errors)
+                _require_non_empty_string(item.get("platform", ""), f"{where}.platform", errors)
+
+                task = item.get("task")
+                if not isinstance(task, dict):
+                    errors.append(f"{where}.task: expected object")
+                else:
+                    _require_non_empty_string(task.get("objective", ""), f"{where}.task.objective", errors)
+
+                    commands = task.get("commands")
+                    if not isinstance(commands, list) or not commands:
+                        errors.append(f"{where}.task.commands: must be non-empty array")
+                    else:
+                        for i, cmd in enumerate(commands):
+                            cwhere = f"{where}.task.commands[{i}]"
+                            if not isinstance(cmd, dict):
+                                errors.append(f"{cwhere}: expected object")
+                                continue
+                            _require_non_empty_string(cmd.get("name", ""), f"{cwhere}.name", errors)
+                            _require_non_empty_string(cmd.get("run", ""), f"{cwhere}.run", errors)
+
+                    expected_outputs = task.get("expected_outputs")
+                    if not isinstance(expected_outputs, list) or not expected_outputs:
+                        errors.append(f"{where}.task.expected_outputs: must be non-empty array")
+                    else:
+                        for i, out in enumerate(expected_outputs):
+                            _require_non_empty_string(out, f"{where}.task.expected_outputs[{i}]", errors)
+
+                    inputs = task.get("inputs", {})
+                    if inputs is not None:
+                        if not isinstance(inputs, dict):
+                            errors.append(f"{where}.task.inputs: expected object")
+                        else:
+                            for key in ("configs", "design_dirs", "sweeps", "macro_manifests", "candidate_manifests"):
+                                values = inputs.get(key, [])
+                                if not isinstance(values, list):
+                                    errors.append(f"{where}.task.inputs.{key}: expected array")
+                                    continue
+                                for i, path_text in enumerate(values):
+                                    text = _require_non_empty_string(
+                                        path_text, f"{where}.task.inputs.{key}[{i}]", errors
+                                    )
+                                    if text:
+                                        p = _resolve_repo_path(text)
+                                        if not p.exists():
+                                            errors.append(f"{where}.task.inputs.{key}[{i}]: path does not exist: {text}")
+
+                handoff = item.get("handoff")
+                if not isinstance(handoff, dict):
+                    errors.append(f"{where}.handoff: expected object")
+                else:
+                    _require_non_empty_string(handoff.get("branch", ""), f"{where}.handoff.branch", errors)
+                    _require_non_empty_string(handoff.get("pr_title", ""), f"{where}.handoff.pr_title", errors)
+                    checklist = handoff.get("checklist")
+                    if not isinstance(checklist, list) or not checklist:
+                        errors.append(f"{where}.handoff.checklist: must be non-empty array")
+                    else:
+                        for i, text in enumerate(checklist):
+                            _require_non_empty_string(text, f"{where}.handoff.checklist[{i}]", errors)
+
+                if state == "queued":
+                    if item.get("result") not in (None, {}):
+                        errors.append(f"{where}.result: queued item must not contain result payload")
+                else:
+                    result = item.get("result")
+                    if not isinstance(result, dict):
+                        errors.append(f"{where}.result: evaluated item requires object result")
+                        continue
+                    for key in ("completed_utc", "executor", "branch", "status", "summary", "metrics_rows"):
+                        if key not in result:
+                            errors.append(f"{where}.result: missing required key '{key}'")
+                    _require_non_empty_string(result.get("completed_utc", ""), f"{where}.result.completed_utc", errors)
+                    _require_non_empty_string(result.get("executor", ""), f"{where}.result.executor", errors)
+                    _require_non_empty_string(result.get("branch", ""), f"{where}.result.branch", errors)
+                    _require_non_empty_string(result.get("summary", ""), f"{where}.result.summary", errors)
+                    result_status = _require_non_empty_string(result.get("status", ""), f"{where}.result.status", errors)
+                    if result_status and result_status not in VALID_EVAL_QUEUE_RESULT_STATUS:
+                        errors.append(
+                            f"{where}.result.status: invalid '{result_status}', "
+                            f"expected one of {sorted(VALID_EVAL_QUEUE_RESULT_STATUS)}"
+                        )
+
+                    metrics_rows = result.get("metrics_rows")
+                    if not isinstance(metrics_rows, list):
+                        errors.append(f"{where}.result.metrics_rows: expected array")
+                    else:
+                        if result_status == "ok" and not metrics_rows:
+                            errors.append(f"{where}.result.metrics_rows: status=ok requires at least one metrics row")
+                        for i, mref in enumerate(metrics_rows):
+                            _validate_eval_queue_metrics_ref(
+                                mref,
+                                f"{where}.result.metrics_rows[{i}]",
+                                metrics_cache,
+                                errors,
+                            )
+
+    for warn in warnings:
+        print(f"WARN: {warn}")
+    return errors
+
+
 def main():
     errors = []
     errors.extend(validate_metrics())
     errors.extend(validate_metadata())
     errors.extend(validate_module_candidates())
+    errors.extend(validate_eval_queue())
     errors.extend(validate_index())
     if errors:
         for err in errors:

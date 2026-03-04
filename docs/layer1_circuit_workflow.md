@@ -83,6 +83,18 @@ python3 scripts/build_runs_index.py
 - Do not commit large temporary logs or DEF/GDS.
 - Preserve reproducibility with stable design names, tags, and parameter hashes.
 
+## Remote evaluator queue (OpenROAD-heavy tasks)
+- Author heavy evaluation requests as one JSON file per item under:
+  - `runs/eval_queue/openroad/queued/`
+- Use the template:
+  - `runs/eval_queue/openroad/templates/item_template.json`
+- Evaluator workflow:
+1. Create branch `eval/<item_id>` on high-performance machine.
+2. Execute commands listed in the item.
+3. Commit lightweight outputs (`metrics.csv`, manifests, config updates).
+4. Move item to `runs/eval_queue/openroad/evaluated/` and fill `result`.
+5. Open PR and run `python3 scripts/validate_runs.py`.
+
 ## Related docs
 - Two-layer split and interaction: `docs/two_layer_workflow.md`
 - Artifact layout and contribution rules: `runs/README.md`

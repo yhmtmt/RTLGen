@@ -12,6 +12,7 @@ historical notes, and published artifacts do not drift or duplicate.
 | `docs/` | Published/static assets | Browser-facing artifacts (`docs/runs/`) and doc navigation aids. |
 | `notes/` | Authored studies and guidance | Research notes, comparisons, and contributor guidance. |
 | `plan/` | Execution planning log | Rolling plan + append-only activity log (`plan/log.md`). |
+| `runs/eval_queue/` | Distributed evaluation queue | GitHub-exchanged OpenROAD task items (`queued/` -> `evaluated/`). |
 | `npu/README.md` | NPU subsystem entrypoint | NPU scope, status summary, and top-level pointers. |
 | `npu/docs/` | NPU canonical docs hub | NPU workflow, status snapshot, plans, logs, and conventions. |
 | `npu/nvdla/` | Vendor/reference mirror | Upstream NVDLA docs and references (external ownership). |

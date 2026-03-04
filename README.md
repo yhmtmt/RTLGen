@@ -23,6 +23,7 @@ multipliers, MACs, activations, MCM/CMVM, FP operators).
 1. Generate module RTL from JSON config.
 2. Run OpenROAD sweeps for timing/area/power/runtime.
 3. Compare candidates and keep append-only metrics in `runs/designs/`.
+4. For remote heavy execution, queue tasks in `runs/eval_queue/openroad/`.
 
 ### Main entry points
 - Generator config reference: `examples/about_config.md`

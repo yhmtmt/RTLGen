@@ -1,96 +1,124 @@
-Evaluation Agent Guidance
-=========================
+Evaluation Agent First-Read Guide
+=================================
 
 Purpose
 -------
-This document defines how evaluator agents should:
-- Discover new evaluation targets (beyond existing campaigns).
-- Interpret unexpected PPA results.
-- Decide between OpenROAD flow retuning vs design warnings.
-- Record findings for RTLGen algorithm developers and coding agents.
+This is the first document an evaluator agent should read before running
+OpenROAD-heavy tasks.
 
-Target Discovery (Beyond Campaigns)
-----------------------------------
-Agents should not only run queued configs in `runs/campaigns/`. They should
-proactively explore RTLGen configuration space when gaps are found.
+It defines:
+- which documents are authoritative,
+- how to execute queued evaluation tasks on high-performance machines,
+- how to report results back through GitHub PRs,
+- how to keep artifacts reproducible and lightweight.
 
-Priority heuristics:
-- Missing cross-product: widths/PPG/CPA/signedness combinations not yet in
-  `runs/designs/` or `runs/index.csv`.
-- Platform coverage gaps: identical configs not evaluated across all PDKs.
-- Unbalanced exploration: too few data points for a specific CPA family or
-  Yosys booth mode.
-- Edge cases: minimum widths (4/8), signed vs unsigned, and Yosys LowpowerBooth
-  (signed-only) to reveal architectural penalties.
+Scope
+-----
+- Primary: OpenROAD-based evaluation work for Layer 1 modules and Layer 2 NPU
+  blocks.
+- Out of scope: algorithm design decisions (handled by development agents).
 
-Recommended discovery loop:
-1) Parse `runs/index.csv` to enumerate evaluated (circuit_type, design, pdk).
-2) Generate candidate configs from RTLGen’s configuration space (see
-   `examples/about_config.md`).
-3) Skip those already evaluated, then queue or run the missing ones.
-
-Reasoning About Unexpected Results
----------------------------------
-When PPA behavior looks inconsistent, classify the cause:
-
-1) Flow optimality issue (retune OpenROAD)
-- Symptoms:
-  - Timing is much worse at low utilization but improves sharply at higher util.
-  - Area/power swings are unusually large for similar designs.
-  - Route/PDN failures or congested placements for tiny blocks.
-- Action:
-  - Run a parameter sweep (core utilization, place density, clock period).
-  - Keep best results and log the tuned parameters.
-
-2) Design-level issue (flag RTL/arch)
-- Symptoms:
-  - Degradation across all flow settings and PDKs.
-  - Persistent area inflation or delay regression vs comparable designs.
-  - Lowpower Booth or signedness options hurting results beyond expected trend.
-- Action:
-  - Log as a design warning and include evidence.
-  - Reference likely root causes (extra recoder logic, wider PP array, etc.).
-
-3) Data/metric issue (fix evaluation data)
-- Symptoms:
-  - Outliers tied to a single run ID or malformed metrics.
-  - Incomplete metrics (missing power or delay) without failures.
-- Action:
-  - Rerun or clean the row; update `runs/index.csv`.
-
-Logging Requirements
---------------------
-Evaluator outputs should be summarized in a short note (Markdown) placed under:
-- `notes/evaluation_notes/<topic>.md`
-
-Each note should include:
-- Scope: what was evaluated (designs, widths, PDKs).
-- Observation: what looks unexpected or suboptimal.
-- Classification: flow optimality vs design issue vs data issue.
-- Evidence: relevant metrics or plots (with path references).
-- Next step: suggested action (retune params / RTL change / new configs).
-
-Evaluation Directory Hygiene
-----------------------------
-When running new evaluations (even if the circuit type matches previously
-evaluated ones), always create a new, distinctive design directory and
-campaign name:
-- `runs/designs/<circuit_type>/<new_design_name>/...`
-- `runs/campaigns/<circuit_type>/<new_campaign_name>/...`
-
-This keeps results traceable to the algorithm or parameter changes under
-evaluation and avoids mixing metrics with historical baselines.
-
-OpenROAD Retuning Guidance
+Read Order (Do This First)
 --------------------------
-When the issue is likely flow-related:
-- Sweep `CORE_UTILIZATION`, `PLACE_DENSITY`, and `CLOCK_PERIOD`.
-- For tiny designs, low utilization often reduces PDN/route failures.
-- Compare results against the current best in `runs/campaigns/*/best_*.csv`.
+1. `docs/two_layer_workflow.md`
+2. `docs/layer1_circuit_workflow.md` (Layer 1 work) and/or
+   `npu/docs/workflow.md` (Layer 2 work)
+3. `runs/eval_queue/README.md`
+4. Queue item assigned to you under:
+   - `runs/eval_queue/openroad/queued/*.json`
+5. If queue item references candidates:
+   - `runs/candidates/<pdk>/module_candidates.json`
 
-Design Warning Guidance
------------------------
-When the issue is likely architectural:
-- Compare against a baseline with identical width/signedness and a known CPA.
-- Note if the regression is PDK-specific (e.g., ASAP7 area spike).
-- Log a concise hypothesis for algorithm developers.
+Execution Model (Queue -> Evaluated)
+------------------------------------
+1. Pick a queued item JSON.
+2. Create evaluator branch: `eval/<item_id>`.
+3. Run commands listed in `task.commands[]` exactly, unless task explicitly
+   allows parameter retuning.
+4. Commit lightweight outputs only (configs/manifests/RTL/metrics/report rows).
+5. Update the item JSON with `result` payload.
+6. Move item file from:
+   - `runs/eval_queue/openroad/queued/` ->
+   - `runs/eval_queue/openroad/evaluated/`
+7. Open PR with the requested `handoff.pr_title`.
+
+Mandatory Gates Before PR
+-------------------------
+Run:
+```sh
+python3 scripts/validate_runs.py
+```
+
+If Layer 2 campaign files are changed, also run:
+```sh
+python3 npu/eval/validate.py --campaign <campaign.json> --check_paths
+```
+
+Do not open PR if validation fails.
+
+Result Payload Rules (evaluated items)
+--------------------------------------
+For `state=evaluated`, fill `result` with:
+- `completed_utc`
+- `executor`
+- `branch`
+- `status` (`ok` / `fail` / `partial`)
+- `summary`
+- `metrics_rows[]`
+
+`metrics_rows[]` must point to real rows in `metrics.csv` by reference keys:
+- required: `metrics_csv`, `platform`, `status`
+- plus at least one of: `param_hash` or `tag`
+- optional: `result_path`
+
+If `result.status=ok`, include at least one valid metrics row reference.
+
+Artifact Policy
+---------------
+Allowed in PRs:
+- config JSON/YAML, sweep JSON
+- generated RTL (`verilog/*.v`, `*.sv`, `*.vh`) when needed
+- `metrics.csv`, summary CSV/MD/JSON, candidate/campaign manifests
+- queue item move (`queued` -> `evaluated`) and result payload update
+
+Do not commit:
+- DEF/GDS/log dumps
+- large temporary flow artifacts
+- unrelated submodule updates
+
+Evaluation Decision Rules
+-------------------------
+Classify unexpected outcomes as one of:
+
+1. Flow issue (retune OpenROAD)
+- Example symptoms: congestion/PDN failures, unstable timing from density/util.
+- Action: sweep flow params (`CORE_UTILIZATION`, `PLACE_DENSITY`,
+  `CLOCK_PERIOD`) and keep traceable best row.
+
+2. Design issue (report to development)
+- Example symptoms: consistent regression across PDKs/flow settings.
+- Action: keep evidence in summary and flag likely root cause.
+
+3. Data issue (repair evaluation records)
+- Example symptoms: malformed/missing metrics, outlier with broken row fields.
+- Action: rerun or fix metadata paths; keep append-only metrics policy.
+
+Macro-Hardening Specific Rule
+-----------------------------
+If the goal is hierarchical macro usage, ensure outputs support
+`evaluation_scope=macro_hardened` with a valid `macro_manifest`.
+Do not leave candidate scope as `wrapped_io` unless explicitly intended.
+
+PR Checklist (copy into description)
+------------------------------------
+- [ ] Commands from queue item executed (or deviations explained).
+- [ ] Queue item moved to `evaluated/` and `result` filled.
+- [ ] `metrics_rows` references are valid.
+- [ ] `python3 scripts/validate_runs.py` passed.
+- [ ] Only lightweight artifacts committed.
+
+Notes
+-----
+- Keep results append-only and reproducible.
+- Prefer explicit traceability (`param_hash`, `tag`, `config_hash`) over
+  narrative-only summaries.

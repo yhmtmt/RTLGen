@@ -1,0 +1,45 @@
+{
+  "version": 0.1,
+  "item_id": "replace_with_unique_item_id",
+  "title": "Short task title",
+  "layer": "layer1",
+  "flow": "openroad",
+  "state": "queued",
+  "priority": 1,
+  "created_utc": "2026-03-04T00:00:00Z",
+  "requested_by": "@requester",
+  "platform": "nangate45",
+  "task": {
+    "objective": "What should be evaluated and why",
+    "inputs": {
+      "configs": [],
+      "design_dirs": [],
+      "sweeps": [],
+      "macro_manifests": [],
+      "candidate_manifests": []
+    },
+    "commands": [
+      {
+        "name": "run_eval",
+        "run": "python3 <script.py> <args>"
+      }
+    ],
+    "expected_outputs": [
+      "runs/designs/<...>/metrics.csv"
+    ],
+    "acceptance": [
+      "Result rows appended with status=ok",
+      "Relevant candidate/campaign manifests updated"
+    ]
+  },
+  "handoff": {
+    "branch": "eval/replace_with_unique_item_id",
+    "pr_title": "eval: <short title>",
+    "checklist": [
+      "Run scripts/validate_runs.py",
+      "Commit lightweight artifacts only",
+      "Move this item to runs/eval_queue/openroad/evaluated/"
+    ]
+  },
+  "result": null
+}

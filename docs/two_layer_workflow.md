@@ -72,6 +72,9 @@ using multiple real ONNX models.
   - each candidate must declare `evaluation_scope`:
     - `wrapped_io` (wrapper-level physical eval with IO regs),
     - `macro_hardened` (hardened macro eval suitable for hierarchical claims).
+- OpenROAD-heavy execution queue for distributed evaluation:
+  - `runs/eval_queue/openroad/queued/` -> `runs/eval_queue/openroad/evaluated/`
+  - evaluated items must include concrete metrics-row references.
 
 ### Layer 2 -> Layer 1 (feedback handoff)
 - Bottleneck-driven requests for new module algorithms or parameter regions.
