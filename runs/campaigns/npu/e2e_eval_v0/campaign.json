@@ -31,8 +31,7 @@
         "variant_ids": [
           "mult16u_normal_koggestone_nangate45_base",
           "adder_koggestone_64u_nangate45_base"
-        ],
-        "allow_wrapped_io": true
+        ]
       },
       "physical_select": {
         "compare_group": "baed737c",
@@ -50,8 +49,7 @@
         "variant_ids": [
           "mult16u_normal_koggestone_nangate45_base",
           "adder_koggestone_64u_nangate45_base"
-        ],
-        "allow_wrapped_io": true
+        ]
       },
       "physical_select": {
         "compare_group": "37c65ce6",

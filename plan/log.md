@@ -135,3 +135,12 @@ Log
 - Added explicit queue source-mode contract (`task.source_mode`) and validator
   checks to prevent wrapper hardening commands from being queued in
   `--config` mode.
+
+2026-03-04 — Layer2 campaign handoff update after macro promotion
+- Updated `runs/campaigns/npu/e2e_eval_v0/campaign.json` to remove
+  `allow_wrapped_io` overrides now that referenced Layer1 candidates are
+  `macro_hardened`.
+- Updated `npu/eval/examples/minimal_campaign.json` similarly for consistency.
+- Added new queued evaluator item:
+  `runs/eval_queue/openroad/queued/l2_e2e_macro_hardened_cmp_v1.json`
+  to rerun Layer2 campaign/report/objective sweep with the hardened candidates.
