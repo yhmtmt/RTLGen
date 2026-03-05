@@ -64,3 +64,5 @@ python3 npu/sim/perf/run.py --bin /tmp/mlp1_descriptors.bin --out /tmp/mlp1_trac
 
 ## Next steps
 - Extend op coverage and add legality checks against arch configs.
+- Add mapper-side split/tiling for oversize ONNX layers so lowering does not
+  fail on SRAM-fit limits (phase-1 plan: `npu/docs/mapper_split_plan.md`).

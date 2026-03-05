@@ -40,6 +40,8 @@ Two-layer optimization split and interaction contract are defined in
 - `npu/docs/sim_dev_plan.md`: simulator development plan (RTL + performance).
 - `npu/synth/plan.md`: OpenROAD integration plan.
 - `npu/docs/eval_flow_plan.md`: system-level ONNX + physical + perf flow plan.
+- `npu/docs/mapper_split_plan.md`: mapper-side split/tiling plan for
+  large-model fit.
 - `npu/synth/cacti.md`: CACTI SRAM estimation workflow and scaling rules.
 - `npu/docs/workflow.md`: end-to-end workflow guide.
 
@@ -66,5 +68,7 @@ Two-layer optimization split and interaction contract are defined in
 ## Next steps
 - Keep `status.md`, `workflow.md`, and synthesis plans synced with each sweep milestone.
 - Add explicit runbook for compute-enabled NPU block sweeps beyond fp16 backend comparison.
+- Implement mapper-side model split/tiling for large ONNX workloads that
+  exceed SRAM when lowered monolithically.
 - Harden `arch v0.2` validation and wire interconnect/mapping constraints into
   mapper/perf policy.

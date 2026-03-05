@@ -236,3 +236,19 @@ Log
 - Outcome: with scaled models, profile winners remain
   `arch_id=fp16_nm1`, `macro_mode=flat_nomacro`; latency/energy magnitudes
   increased as expected versus the previous small-smoke placeholders.
+
+2026-03-05 — Large-model mapping note and next-step definition
+- Noted explicit blocker: to evaluate larger MLP/ONNX models, mapper must
+  support model split/tiling instead of requiring monolithic SRAM fit.
+- Added mapper split plan document:
+  - `npu/docs/mapper_split_plan.md`
+  - defines phase-1 policy: N-axis chunking for oversize GEMM stage.
+- Synced requirement across canonical docs:
+  - `npu/mapper/mapping_contract.md`
+  - `npu/mapper/README.md`
+  - `npu/docs/workflow.md`
+  - `npu/docs/eval_flow_plan.md`
+  - `npu/docs/index.md`
+- Next implementation step:
+  - add phase-1 chunked lowering in `npu/mapper/onnx_to_schedule.py`
+  - add regression coverage for prior SRAM-overflow case.

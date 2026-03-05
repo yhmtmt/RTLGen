@@ -159,6 +159,8 @@ Canonical split and handoff contract:
 
 ## Next steps
 - Add compute-enabled non-fp16 block sweep runbooks (DMA/CQ + GEMM/VEC variants).
+- Implement mapper-side model split/tiling for large ONNX models to avoid
+  SRAM-fit failures in `onnx_to_schedule.py` (see `npu/docs/mapper_split_plan.md`).
 - Integrate C++ MAC `pp_row_feedback` backend option into generator and sweep it.
 - Expand constrained-random compute parity coverage (especially fp16/vector derivatives).
 - Harden v0.2 validation and extend derivation to include interconnect/mapping

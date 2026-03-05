@@ -52,6 +52,8 @@ Notes:
 - Legalize operations against `arch` and `targets`.
 - Assign buffers to memory spaces with alignment and size constraints.
 - Emit a schedule with explicit ordering (events) and placement info.
+- If an op footprint exceeds available SRAM, apply legal split/tiling and emit
+  an equivalent multi-step schedule instead of failing monolithically.
 
 ## 3) Output Artifacts
 The mapper must emit:
@@ -64,7 +66,7 @@ The mapper must emit:
 ## 4) Mapping Path (High Level)
 1) Load `arch` + `model` + `targets`.
 2) Lower graph to op list with tensor metadata.
-3) Tile + schedule ops against constraints.
+3) Tile/split + schedule ops against constraints.
 4) Allocate buffers and assign addresses.
 5) Emit schedule IR + descriptors + perf inputs.
 
@@ -77,3 +79,5 @@ The mapper must emit:
 - Define a minimal JSON schema and validate the input contract in
   `npu/mapper/validate.py`. **Done** (see `npu/mapper/mapping_contract.schema.json`).
 - Add a tiny golden workload that exercises the full mapping path.
+- Implement phase-1 split policy for large MLP lowering (see
+  `npu/docs/mapper_split_plan.md`).
