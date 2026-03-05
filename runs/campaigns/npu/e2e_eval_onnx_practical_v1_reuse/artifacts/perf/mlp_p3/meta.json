@@ -1,0 +1,8 @@
+{
+  "kind": "perf",
+  "model_id": "mlp_p3",
+  "descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/artifacts/mapper/mlp_p3/descriptors.bin",
+  "perf_config": "npu/sim/perf/example_config_fp16_cpp.json",
+  "generated_utc": "2026-03-05T11:43:13+00:00",
+  "trace_json": "runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/artifacts/perf/mlp_p3/trace.json"
+}

@@ -370,3 +370,29 @@ Log
   - hier aggregate `sample_count` from 20 to 30,
   - mapper split provenance retained in row `notes`,
   - `python3 scripts/validate_runs.py` passes.
+
+2026-03-05 — Bootstrap practical-scale model set + campaign (`onnx_practical_v1`)
+- Added new model-set directory:
+  - `runs/models/onnx_practical_v1/`
+  - generated ONNX models:
+    - `mlp_p1.onnx` (`b=32, in=512, hidden=2048, out=1024`)
+    - `mlp_p2.onnx` (`b=64, in=1024, hidden=2048, out=4096`)
+    - `mlp_p3.onnx` (`b=16, in=1024, hidden=2048, out=2048`)
+  - added `manifest.json` with pinned SHA256 hashes and `README.md`.
+- Added new Layer2 reuse campaign scaffold:
+  - `runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/campaign.json`
+  - `runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/README.md`
+  - `runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/objective_profiles.json`
+- Updated model-set index:
+  - `runs/models/README.md` now lists `onnx_practical_v1`.
+- Executed baseline campaign run (no OpenROAD rerun):
+  - `python3 npu/eval/run_campaign.py --campaign runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/campaign.json`
+  - generated `results.csv` with `60` rows (`3 models x 2 arch x 2 modes x 5 repeats`).
+- Generated reporting/objective artifacts:
+  - `report.md`, `summary.csv`, `pareto.csv`, `best_point.json`
+  - objective profile outputs and `objective_sweep.{csv,md}`.
+- Baseline ranking (balanced profile):
+  - best remains `fp16_nm1 + flat_nomacro`.
+- Validation:
+  - `python3 npu/eval/validate.py --campaign ... --check_paths` passed
+  - `python3 scripts/validate_runs.py` passed.

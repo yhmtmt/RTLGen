@@ -33,3 +33,5 @@ Current sets
   campaign flow (`runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/`).
 - `mlp_smoke_v2`: scaled smoke set (`mlp3`/`mlp4` presets) paired with
   `runs/campaigns/npu/e2e_eval_mlp_smoke_v2_reuse/`.
+- `onnx_practical_v1`: practical-scale benchmark set (larger MLP proxies)
+  paired with `runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/`.
