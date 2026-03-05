@@ -1,0 +1,40 @@
+{
+  "version": 0.1,
+  "campaign_id": "npu_e2e_eval_v0",
+  "run_id": "npu_e2e_eval_v0__mlp1__fp16_nm2__flat_nomacro__r3__p099823db",
+  "sample_id": "npu_e2e_eval_v0__mlp1__fp16_nm2__flat_nomacro__r3__p099823db__bl2e2emacrohardenedcmpv1rerun2__s2",
+  "batch_id": "l2_e2e_macro_hardened_cmp_v1_rerun2",
+  "sample_index": 2,
+  "model_set_id": "mlp_smoke_v0",
+  "model_manifest": "runs/models/mlp_smoke_v0/manifest.json",
+  "onnx_sha256": "ff95cc222916245d687a47b8f60c2e54fb182871c4e10881ee218dc352baca2e",
+  "mapper_arch_hash": "c8917dbca277bcdf88ef6f3052b62757d35c30d874f7ccd3c163797e50c5037d",
+  "perf_config_hash": "c933265906f13ce5f50b0bda20561872075be34979ded50574aed0252b412378",
+  "timestamp_utc": "2026-03-05T02:23:20+00:00",
+  "status": "ok",
+  "platform": "nangate45",
+  "model_id": "mlp1",
+  "arch_id": "fp16_nm2",
+  "macro_mode": "flat_nomacro",
+  "repeat_index": 3,
+  "physical": {
+    "critical_path_ns": 5.701286780426342,
+    "die_area_um2": 2250000.0,
+    "total_power_mw": 0.210414,
+    "flow_elapsed_s": 834.46,
+    "place_gp_elapsed_s": 419.79
+  },
+  "performance": {
+    "cycles": 479.19006800000005,
+    "latency_ms": 0.002732,
+    "throughput_infer_per_s": 366032.2108345534,
+    "energy_mj": 5.74851048e-07
+  },
+  "artifacts": {
+    "synth_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/099823db/result.json",
+    "perf_trace_json": "runs/campaigns/npu/e2e_eval_v0/artifacts/perf/mlp1/trace.json",
+    "schedule_yml": "runs/campaigns/npu/e2e_eval_v0/artifacts/mapper/mlp1/schedule.yml",
+    "descriptors_bin": "runs/campaigns/npu/e2e_eval_v0/artifacts/mapper/mlp1/descriptors.bin"
+  },
+  "notes": "param_hash=099823db; tag=npu_fp16_nm2_cmp33_flat_nomacro_r3; compare_group=37c65ce6; layer1_manifest=runs/candidates/nangate45/module_candidates.json; layer1_candidates=mult16u_normal_koggestone_nangate45_base@macro_hardened,adder_koggestone_64u_nangate45_base@macro_hardened"
+}

@@ -2,6 +2,7 @@
 """Validate runs/designs metrics.csv files, metadata.json, and the global runs/index.csv."""
 
 import csv
+import io
 import hashlib
 import json
 import re
@@ -77,8 +78,16 @@ def read_metrics_csv(path: Path):
     lines = text.splitlines()
     if not lines:
         return [], []
-    header = lines[0].split(",")
-    rows = []
+
+    # Primary path: standards-compliant CSV parsing (handles extended columns).
+    csv_reader = csv.DictReader(io.StringIO(text))
+    csv_header = csv_reader.fieldnames or []
+    csv_rows = list(csv_reader)
+    good_csv_rows = [row for row in csv_rows if None not in row]
+
+    # Secondary path: legacy rescue for unquoted params_json rows.
+    legacy_header = lines[0].split(",")
+    legacy_rows = []
     for line in lines[1:]:
         if not line.strip():
             continue
@@ -96,10 +105,33 @@ def read_metrics_csv(path: Path):
             # CSV-quoted JSON escaping uses doubled quotes.
             params_json = params_json[1:-1].replace('""', '"')
         values = front + [params_json, result_path]
-        if len(values) != len(header):
+        if len(values) != len(legacy_header):
             continue
-        rows.append(dict(zip(header, values)))
-    return header, rows
+        legacy_rows.append(dict(zip(legacy_header, values)))
+
+    # If standard parsing is fully clean, keep it as-is.
+    if csv_header and good_csv_rows and len(good_csv_rows) == len(csv_rows):
+        return csv_header, good_csv_rows
+
+    # Mixed historical files: merge clean CSV rows with rescued legacy rows.
+    if csv_header and good_csv_rows:
+        merged = []
+        seen = set()
+        key_fields = csv_header
+
+        def _key(row):
+            return tuple((k, row.get(k, "")) for k in key_fields)
+
+        for row in good_csv_rows + legacy_rows:
+            k = _key(row)
+            if k in seen:
+                continue
+            seen.add(k)
+            merged.append(row)
+        return csv_header, merged
+
+    # Fallback for fully legacy files.
+    return legacy_header, legacy_rows
 
 
 def validate_metrics():
