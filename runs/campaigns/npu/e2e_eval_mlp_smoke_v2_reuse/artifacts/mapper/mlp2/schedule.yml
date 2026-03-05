@@ -1,5 +1,12 @@
 version: 0.1
 arch: npu/arch/examples/minimal.yml
+mapper_notes:
+  gemm2_out_chunks:
+  - 2047
+  - 2047
+  - 2
+  gemm2_split_enabled: true
+  gemm2_weight_layout: packed_by_output_chunk
 buffers:
 - id: X_DRAM
   addr: '0x3000000000'
@@ -12,34 +19,61 @@ buffers:
   bytes: 2048
 - id: W2_DRAM
   addr: '0x3000210800'
-  bytes: 2088960
+  bytes: 8388608
 - id: b2_DRAM
-  addr: '0x300040e800'
-  bytes: 1020
+  addr: '0x3000a10800'
+  bytes: 4096
 - id: Y_DRAM
-  addr: '0x300040ec00'
-  bytes: 65280
+  addr: '0x3000a11800'
+  bytes: 262144
 - id: X_SRAM
   addr: '0x80000000'
-  bytes: 65536
+  bytes: 131008
 - id: Y1_SRAM
-  addr: '0x80010000'
+  addr: '0x8001ffc0'
   bytes: 131072
-- id: Y_SRAM
-  addr: '0x80030000'
-  bytes: 65280
+- id: Y2_SRAM_TMP
+  addr: '0x80000000'
+  bytes: 131008
 - id: W1_SRAM
   addr: '0x80400000'
   bytes: 2097152
 - id: b1_SRAM
   addr: '0x80600000'
   bytes: 2048
-- id: W2_SRAM
-  addr: '0x80600800'
-  bytes: 2088960
-- id: b2_SRAM
-  addr: '0x807fe800'
-  bytes: 1020
+- id: W2_SRAM_TMP
+  addr: '0x80400000'
+  bytes: 4192256
+- id: b2_SRAM_TMP
+  addr: '0x807ff800'
+  bytes: 2047
+- id: W2_DRAM_c0
+  addr: '0x3000210800'
+  bytes: 4192256
+- id: b2_DRAM_c0
+  addr: '0x3000a10800'
+  bytes: 2047
+- id: Y_DRAM_c0
+  addr: '0x3000a11800'
+  bytes: 131008
+- id: W2_DRAM_c1
+  addr: '0x3000610000'
+  bytes: 4192256
+- id: b2_DRAM_c1
+  addr: '0x3000a10fff'
+  bytes: 2047
+- id: Y_DRAM_c1
+  addr: '0x3000a317c0'
+  bytes: 131008
+- id: W2_DRAM_c2
+  addr: '0x3000a0f800'
+  bytes: 4096
+- id: b2_DRAM_c2
+  addr: '0x3000a117fe'
+  bytes: 2
+- id: Y_DRAM_c2
+  addr: '0x3000a51780'
+  bytes: 128
 ops:
 - id: dma_x
   type: dma_copy
@@ -71,36 +105,96 @@ ops:
   layout: row_major
   bias: b1_SRAM
   epilogue: relu
-- id: dma_w2
+- id: dma_w2_c0
   type: dma_copy
-  src: W2_DRAM
-  dst: W2_SRAM
-  bytes: 2088960
-- id: dma_b2
+  src: W2_DRAM_c0
+  dst: W2_SRAM_TMP
+  bytes: 4192256
+- id: dma_b2_c0
   type: dma_copy
-  src: b2_DRAM
-  dst: b2_SRAM
-  bytes: 1020
-- id: gemm2
+  src: b2_DRAM_c0
+  dst: b2_SRAM_TMP
+  bytes: 2047
+- id: gemm2_c0
   type: gemm
   a: Y1_SRAM
-  b: W2_SRAM
-  c: Y_SRAM
+  b: W2_SRAM_TMP
+  c: Y2_SRAM_TMP
   m: 64
-  n: 1020
+  n: 2047
   k: 2048
   lda: 2048
-  ldb: 1020
-  ldc: 1020
+  ldb: 2047
+  ldc: 2047
   dtype: int8
   layout: row_major
-  bias: b2_SRAM
+  bias: b2_SRAM_TMP
   epilogue: none
-- id: dma_y
+- id: dma_y_c0
   type: dma_copy
-  src: Y_SRAM
-  dst: Y_DRAM
-  bytes: 65280
+  src: Y2_SRAM_TMP
+  dst: Y_DRAM_c0
+  bytes: 131008
+- id: dma_w2_c1
+  type: dma_copy
+  src: W2_DRAM_c1
+  dst: W2_SRAM_TMP
+  bytes: 4192256
+- id: dma_b2_c1
+  type: dma_copy
+  src: b2_DRAM_c1
+  dst: b2_SRAM_TMP
+  bytes: 2047
+- id: gemm2_c1
+  type: gemm
+  a: Y1_SRAM
+  b: W2_SRAM_TMP
+  c: Y2_SRAM_TMP
+  m: 64
+  n: 2047
+  k: 2048
+  lda: 2048
+  ldb: 2047
+  ldc: 2047
+  dtype: int8
+  layout: row_major
+  bias: b2_SRAM_TMP
+  epilogue: none
+- id: dma_y_c1
+  type: dma_copy
+  src: Y2_SRAM_TMP
+  dst: Y_DRAM_c1
+  bytes: 131008
+- id: dma_w2_c2
+  type: dma_copy
+  src: W2_DRAM_c2
+  dst: W2_SRAM_TMP
+  bytes: 4096
+- id: dma_b2_c2
+  type: dma_copy
+  src: b2_DRAM_c2
+  dst: b2_SRAM_TMP
+  bytes: 2
+- id: gemm2_c2
+  type: gemm
+  a: Y1_SRAM
+  b: W2_SRAM_TMP
+  c: Y2_SRAM_TMP
+  m: 64
+  n: 2
+  k: 2048
+  lda: 2048
+  ldb: 2
+  ldc: 2
+  dtype: int8
+  layout: row_major
+  bias: b2_SRAM_TMP
+  epilogue: none
+- id: dma_y_c2
+  type: dma_copy
+  src: Y2_SRAM_TMP
+  dst: Y_DRAM_c2
+  bytes: 128
 deps:
 - wait:
   - dma_x
@@ -109,13 +203,39 @@ deps:
   then: gemm1
 - wait:
   - gemm1
-  - dma_w2
-  - dma_b2
-  then: gemm2
+  - dma_w2_c0
+  - dma_b2_c0
+  then: gemm2_c0
 - wait:
-  - gemm2
-  then: dma_y
+  - gemm2_c0
+  then: dma_y_c0
+- wait:
+  - dma_y_c0
+  then: dma_w2_c1
+- wait:
+  - dma_y_c0
+  then: dma_b2_c1
+- wait:
+  - dma_w2_c1
+  - dma_b2_c1
+  then: gemm2_c1
+- wait:
+  - gemm2_c1
+  then: dma_y_c1
+- wait:
+  - dma_y_c1
+  then: dma_w2_c2
+- wait:
+  - dma_y_c1
+  then: dma_b2_c2
+- wait:
+  - dma_w2_c2
+  - dma_b2_c2
+  then: gemm2_c2
+- wait:
+  - gemm2_c2
+  then: dma_y_c2
 events:
 - id: 1000
-  signal_on: dma_y
+  signal_on: dma_y_c2
   irq: true

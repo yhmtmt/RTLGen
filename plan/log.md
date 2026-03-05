@@ -286,3 +286,22 @@ Log
   - includes workflow path trigger on `tests/test_mapper_split.py`.
 - Local validation:
   - `python3 tests/test_mapper_split.py` passed.
+
+2026-03-05 — Split-path integration in Layer2 campaign (`mlp_smoke_v2`)
+- Updated `mlp4` lite preset in `npu/mapper/onnx_lite.py` to intentionally
+  oversized dimensions for monolithic mapping:
+  - `b=64, in=1024, hidden=2048, out=4096`
+- Regenerated model-set artifacts for `runs/models/mlp_smoke_v2/`:
+  - updated `mlp2.onnx` hash and notes in `manifest.json`
+  - updated `README.md` to document split-path intent.
+- Re-ran `runs/campaigns/npu/e2e_eval_mlp_smoke_v2_reuse/` from clean outputs
+  and regenerated reporting/objective artifacts.
+- Confirmation of split-path activation in campaign artifacts:
+  - `artifacts/mapper/mlp2/descriptors.bin` expanded from 23 to 51 descriptors,
+  - `artifacts/mapper/mlp2/schedule.yml` includes:
+    - `mapper_notes.gemm2_split_enabled=true`
+    - `mapper_notes.gemm2_out_chunks=[2047, 2047, 2]`
+    - completion event on `dma_y_c2`.
+- Campaign outcome remains stable on ranking:
+  - best profile point still `fp16_nm1 + flat_nomacro`,
+  - aggregate latency/energy increased versus smaller model set as expected.

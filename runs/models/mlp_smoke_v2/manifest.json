@@ -12,8 +12,8 @@
     {
       "model_id": "mlp2",
       "onnx_path": "runs/models/mlp_smoke_v2/mlp2.onnx",
-      "onnx_sha256": "e42afa2b5ff98b41fc2202e1eeba680e68047fdae3d7c1ad81f80583209aecd2",
-      "notes": "mlp4 preset (b=64, in=1024, hidden=2048, out=1020)"
+      "onnx_sha256": "feb4c751004eeb7c4dcd94969fa9d6b929d694abcc6f64c3ca4035fc994d9f11",
+      "notes": "mlp4 preset (b=64, in=1024, hidden=2048, out=4096; requires mapper split)"
     }
   ]
 }

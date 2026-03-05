@@ -488,8 +488,9 @@ def write_mlp_model(path: Union[str, Path], *, preset: str) -> None:
         b, in_dim, hidden_dim, out_dim = 32, 512, 1024, 512
         name = "mlp3"
     elif preset == "mlp4":
-        # Keep this near SRAM capacity while fitting the minimal arch example.
-        b, in_dim, hidden_dim, out_dim = 64, 1024, 2048, 1020
+        # Intentionally oversized for monolithic W2 SRAM staging so mapper
+        # split/tiling paths are exercised during lowering.
+        b, in_dim, hidden_dim, out_dim = 64, 1024, 2048, 4096
         name = "mlp4"
     else:
         raise ValueError(f"unknown preset {preset!r} (expected mlp1|mlp2|mlp3|mlp4)")

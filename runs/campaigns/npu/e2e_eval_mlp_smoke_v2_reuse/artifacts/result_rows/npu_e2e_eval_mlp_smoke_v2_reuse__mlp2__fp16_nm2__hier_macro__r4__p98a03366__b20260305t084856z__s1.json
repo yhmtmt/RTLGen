@@ -1,0 +1,41 @@
+{
+  "version": 0.1,
+  "campaign_id": "npu_e2e_eval_mlp_smoke_v2_reuse",
+  "run_id": "npu_e2e_eval_mlp_smoke_v2_reuse__mlp2__fp16_nm2__hier_macro__r4__p98a03366",
+  "sample_id": "npu_e2e_eval_mlp_smoke_v2_reuse__mlp2__fp16_nm2__hier_macro__r4__p98a03366__b20260305t084856z__s1",
+  "batch_id": "20260305T084856Z",
+  "sample_index": 1,
+  "model_set_id": "mlp_smoke_v2",
+  "model_manifest": "runs/models/mlp_smoke_v2/manifest.json",
+  "onnx_sha256": "feb4c751004eeb7c4dcd94969fa9d6b929d694abcc6f64c3ca4035fc994d9f11",
+  "mapper_arch_hash": "c8917dbca277bcdf88ef6f3052b62757d35c30d874f7ccd3c163797e50c5037d",
+  "perf_config_hash": "c933265906f13ce5f50b0bda20561872075be34979ded50574aed0252b412378",
+  "timestamp_utc": "2026-03-05T08:48:57+00:00",
+  "status": "ok",
+  "platform": "nangate45",
+  "model_id": "mlp2",
+  "arch_id": "fp16_nm2",
+  "macro_mode": "hier_macro",
+  "repeat_index": 4,
+  "physical": {
+    "critical_path_ns": 5.740890641774165,
+    "die_area_um2": 2250000.0,
+    "total_power_mw": 0.212815,
+    "flow_elapsed_s": 975.6300000000001,
+    "place_gp_elapsed_s": 444.81
+  },
+  "performance": {
+    "cycles": 246915.694524,
+    "latency_ms": 1.417516,
+    "throughput_infer_per_s": 705.4594092765091,
+    "energy_mj": 0.00030166866754
+  },
+  "artifacts": {
+    "synth_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/98a03366/result.json",
+    "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v2_reuse/artifacts/perf/mlp2/trace.json",
+    "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v2_reuse/artifacts/mapper/mlp2/schedule.yml",
+    "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v2_reuse/artifacts/mapper/mlp2/descriptors.bin"
+  },
+  "notes": "param_hash=98a03366; tag=npu_fp16_nm2_cmp33_hier_macro_r4; compare_group=37c65ce6; layer1_manifest=runs/candidates/nangate45/module_candidates.json; layer1_candidates=mult16u_normal_koggestone_nangate45_base@macro_hardened,adder_koggestone_64u_nangate45_base@macro_hardened",
+  "physical_source_campaign": "runs/campaigns/npu/e2e_eval_v0/campaign.json"
+}

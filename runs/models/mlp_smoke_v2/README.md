@@ -5,7 +5,8 @@ keeping model provenance explicit in result rows.
 
 Current content uses scaled MLP presets to move beyond placeholder smoke size:
 - `mlp1.onnx`: `mlp3` preset (`b=32, in=512, hidden=1024, out=512`)
-- `mlp2.onnx`: `mlp4` preset (`b=64, in=1024, hidden=2048, out=1020`)
+- `mlp2.onnx`: `mlp4` preset (`b=64, in=1024, hidden=2048, out=4096`) to
+  exercise mapper split/tiling path on `minimal.yml`.
 
 Generate or refresh ONNX files:
 
