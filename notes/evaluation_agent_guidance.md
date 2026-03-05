@@ -32,7 +32,7 @@ Read Order (Do This First)
 Execution Model (Queue -> Evaluated)
 ------------------------------------
 1. Pick a queued item JSON.
-2. Create evaluator branch: `eval/<item_id>`.
+2. Create evaluator branch: `eval/<item_id>/<session_id>`.
 3. Run commands listed in `task.commands[]` exactly, unless task explicitly
    allows parameter retuning.
 4. Commit lightweight outputs only (configs/manifests/RTL/metrics/report rows).
@@ -41,6 +41,17 @@ Execution Model (Queue -> Evaluated)
    - `runs/eval_queue/openroad/queued/` ->
    - `runs/eval_queue/openroad/evaluated/`
 7. Open PR with the requested `handoff.pr_title`.
+
+Identity protocol (required when using shared GitHub account):
+- Use one session ID per evaluator run (example: `s20260305t2310z`).
+- Fill PR body fields:
+  - `evaluator_id`
+  - `session_id`
+  - `host`
+  - `queue_item_id`
+- Start each PR conversation comment with identity block:
+  - `[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]`
+- Copy these same values into queue `result` fields for authoritative traceability.
 
 Rerun-batch rule for Layer 2 campaign runs:
 - When queue command uses `npu/eval/run_campaign.py`, pass explicit
@@ -84,7 +95,13 @@ Result Payload Rules (evaluated items)
 For `state=evaluated`, fill `result` with:
 - `completed_utc`
 - `executor`
-- `branch`
+- `branch` (`eval/<item_id>/<session_id>`)
+- `evaluator_id`
+- `session_id`
+- `host`
+- `queue_item_id` (must equal item `item_id`)
+- `identity_block`:
+  `[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]`
 - `status` (`ok` / `fail` / `partial`)
 - `summary`
 - `metrics_rows[]`
@@ -136,6 +153,8 @@ PR Checklist (copy into description)
 ------------------------------------
 - [ ] Commands from queue item executed (or deviations explained).
 - [ ] Queue item moved to `evaluated/` and `result` filled.
+- [ ] PR body contains `evaluator_id/session_id/host/queue_item_id`.
+- [ ] PR conversation comments start with identity block.
 - [ ] `metrics_rows` references are valid.
 - [ ] `python3 scripts/validate_runs.py` passed.
 - [ ] Only lightweight artifacts committed.

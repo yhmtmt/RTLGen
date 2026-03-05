@@ -58,6 +58,7 @@ VALID_EVAL_QUEUE_LAYERS = {"layer1", "layer2"}
 VALID_EVAL_QUEUE_RESULT_STATUS = {"ok", "fail", "partial"}
 VALID_EVAL_QUEUE_SOURCE_MODES = {"config", "src_verilog"}
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+SESSION_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 
 
 def read_csv(path: Path):
@@ -514,6 +515,13 @@ def _validate_eval_queue_metrics_ref(mref, where, metrics_cache, errors):
         )
 
 
+def _expected_identity_block(*, evaluator_id: str, session_id: str, host: str, item_id: str) -> str:
+    return (
+        f"[role:evaluator][account:{evaluator_id}]"
+        f"[session:{session_id}][host:{host}][item:{item_id}]"
+    )
+
+
 def validate_eval_queue():
     errors = []
     warnings = []
@@ -706,8 +714,63 @@ def validate_eval_queue():
                 if not isinstance(handoff, dict):
                     errors.append(f"{where}.handoff: expected object")
                 else:
-                    _require_non_empty_string(handoff.get("branch", ""), f"{where}.handoff.branch", errors)
+                    handoff_branch = _require_non_empty_string(handoff.get("branch", ""), f"{where}.handoff.branch", errors)
+                    if handoff_branch and item_id:
+                        expected_prefix = f"eval/{item_id}/"
+                        if not handoff_branch.startswith(expected_prefix):
+                            errors.append(
+                                f"{where}.handoff.branch: must start with '{expected_prefix}' "
+                                "(append '<session_id>' for concrete run branches)"
+                            )
                     _require_non_empty_string(handoff.get("pr_title", ""), f"{where}.handoff.pr_title", errors)
+                    _require_non_empty_string(
+                        handoff.get("identity_block_format", ""),
+                        f"{where}.handoff.identity_block_format",
+                        errors,
+                    )
+                    pr_body_fields = handoff.get("pr_body_fields")
+                    if not isinstance(pr_body_fields, dict):
+                        errors.append(f"{where}.handoff.pr_body_fields: expected object")
+                    else:
+                        h_eval_id = _require_non_empty_string(
+                            pr_body_fields.get("evaluator_id", ""),
+                            f"{where}.handoff.pr_body_fields.evaluator_id",
+                            errors,
+                        )
+                        h_session_id = _require_non_empty_string(
+                            pr_body_fields.get("session_id", ""),
+                            f"{where}.handoff.pr_body_fields.session_id",
+                            errors,
+                        )
+                        h_host = _require_non_empty_string(
+                            pr_body_fields.get("host", ""),
+                            f"{where}.handoff.pr_body_fields.host",
+                            errors,
+                        )
+                        h_item_id = _require_non_empty_string(
+                            pr_body_fields.get("queue_item_id", ""),
+                            f"{where}.handoff.pr_body_fields.queue_item_id",
+                            errors,
+                        )
+                        if h_item_id and item_id and h_item_id != item_id:
+                            errors.append(
+                                f"{where}.handoff.pr_body_fields.queue_item_id: expected '{item_id}', got '{h_item_id}'"
+                            )
+                        # Allow placeholder strings in queued items, but enforce real format once evaluated.
+                        if state == "evaluated":
+                            if h_session_id and not SESSION_ID_RE.fullmatch(h_session_id):
+                                errors.append(
+                                    f"{where}.handoff.pr_body_fields.session_id: invalid '{h_session_id}'"
+                                )
+                            if h_eval_id and h_eval_id.startswith("<"):
+                                errors.append(
+                                    f"{where}.handoff.pr_body_fields.evaluator_id: placeholder not allowed in evaluated item"
+                                )
+                            if h_host and h_host.startswith("<"):
+                                errors.append(
+                                    f"{where}.handoff.pr_body_fields.host: placeholder not allowed in evaluated item"
+                                )
+
                     checklist = handoff.get("checklist")
                     if not isinstance(checklist, list) or not checklist:
                         errors.append(f"{where}.handoff.checklist: must be non-empty array")
@@ -723,12 +786,37 @@ def validate_eval_queue():
                     if not isinstance(result, dict):
                         errors.append(f"{where}.result: evaluated item requires object result")
                         continue
-                    for key in ("completed_utc", "executor", "branch", "status", "summary", "metrics_rows"):
+                    for key in (
+                        "completed_utc",
+                        "executor",
+                        "branch",
+                        "evaluator_id",
+                        "session_id",
+                        "host",
+                        "queue_item_id",
+                        "identity_block",
+                        "status",
+                        "summary",
+                        "metrics_rows",
+                    ):
                         if key not in result:
                             errors.append(f"{where}.result: missing required key '{key}'")
                     _require_non_empty_string(result.get("completed_utc", ""), f"{where}.result.completed_utc", errors)
                     _require_non_empty_string(result.get("executor", ""), f"{where}.result.executor", errors)
-                    _require_non_empty_string(result.get("branch", ""), f"{where}.result.branch", errors)
+                    result_branch = _require_non_empty_string(result.get("branch", ""), f"{where}.result.branch", errors)
+                    result_evaluator_id = _require_non_empty_string(
+                        result.get("evaluator_id", ""), f"{where}.result.evaluator_id", errors
+                    )
+                    result_session_id = _require_non_empty_string(
+                        result.get("session_id", ""), f"{where}.result.session_id", errors
+                    )
+                    result_host = _require_non_empty_string(result.get("host", ""), f"{where}.result.host", errors)
+                    result_item_id = _require_non_empty_string(
+                        result.get("queue_item_id", ""), f"{where}.result.queue_item_id", errors
+                    )
+                    result_identity = _require_non_empty_string(
+                        result.get("identity_block", ""), f"{where}.result.identity_block", errors
+                    )
                     _require_non_empty_string(result.get("summary", ""), f"{where}.result.summary", errors)
                     result_status = _require_non_empty_string(result.get("status", ""), f"{where}.result.status", errors)
                     if result_status and result_status not in VALID_EVAL_QUEUE_RESULT_STATUS:
@@ -736,6 +824,29 @@ def validate_eval_queue():
                             f"{where}.result.status: invalid '{result_status}', "
                             f"expected one of {sorted(VALID_EVAL_QUEUE_RESULT_STATUS)}"
                         )
+                    if result_session_id and not SESSION_ID_RE.fullmatch(result_session_id):
+                        errors.append(f"{where}.result.session_id: invalid '{result_session_id}'")
+                    if result_item_id and item_id and result_item_id != item_id:
+                        errors.append(
+                            f"{where}.result.queue_item_id: expected '{item_id}', got '{result_item_id}'"
+                        )
+                    if result_branch and result_item_id and result_session_id:
+                        expected_branch = f"eval/{result_item_id}/{result_session_id}"
+                        if result_branch != expected_branch:
+                            errors.append(
+                                f"{where}.result.branch: expected '{expected_branch}', got '{result_branch}'"
+                            )
+                    if result_identity and result_evaluator_id and result_session_id and result_host and result_item_id:
+                        expected_identity = _expected_identity_block(
+                            evaluator_id=result_evaluator_id,
+                            session_id=result_session_id,
+                            host=result_host,
+                            item_id=result_item_id,
+                        )
+                        if result_identity != expected_identity:
+                            errors.append(
+                                f"{where}.result.identity_block: expected '{expected_identity}', got '{result_identity}'"
+                            )
 
                     metrics_rows = result.get("metrics_rows")
                     if not isinstance(metrics_rows, list):

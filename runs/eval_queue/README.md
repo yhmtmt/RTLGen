@@ -28,7 +28,7 @@ Layout
 Workflow
 --------
 1. Requester adds a `queued` item JSON and pushes to GitHub.
-2. Evaluator creates a branch `eval/<item_id>` on high-performance machine.
+2. Evaluator creates a branch `eval/<item_id>/<session_id>` on high-performance machine.
 3. Evaluator runs commands, commits lightweight artifacts/results, and updates
    the item JSON with execution result.
 4. Evaluator moves item file from `queued/` to `evaluated/` in the same PR.
@@ -44,8 +44,14 @@ Rules
   - `src_verilog`: harden existing generated RTL/wrapper modules via
     `--src_verilog_dir`.
 - Wrapper modules (`*_wrapper`) must use `source_mode=src_verilog`.
+- Use branch format `eval/<item_id>/<session_id>` for evaluator runs.
+- PR body must include: `evaluator_id`, `session_id`, `host`, `queue_item_id`.
+- PR conversation comments should start with identity block:
+  `[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]`.
 - Evaluated items with `result.status=ok` must reference at least one real
   `metrics.csv` row.
+- Evaluated item `result` must carry the same identity/provenance fields as PR
+  body and include canonical `identity_block`.
 - Do not add large binaries (DEF/GDS/log dumps) to the queue directories.
 
 Validation

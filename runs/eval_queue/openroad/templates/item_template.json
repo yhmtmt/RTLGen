@@ -36,12 +36,20 @@
     ]
   },
   "handoff": {
-    "branch": "eval/replace_with_unique_item_id",
+    "branch": "eval/replace_with_unique_item_id/<session_id>",
     "pr_title": "eval: <short title>",
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]",
+    "pr_body_fields": {
+      "evaluator_id": "<evaluator_id>",
+      "session_id": "<session_id>",
+      "host": "<host>",
+      "queue_item_id": "replace_with_unique_item_id"
+    },
     "checklist": [
       "Run scripts/validate_runs.py",
       "Commit lightweight artifacts only",
-      "Move this item to runs/eval_queue/openroad/evaluated/"
+      "Move this item to runs/eval_queue/openroad/evaluated/",
+      "Use identity block in PR comments and include pr_body_fields in PR body"
     ]
   },
   "result": null

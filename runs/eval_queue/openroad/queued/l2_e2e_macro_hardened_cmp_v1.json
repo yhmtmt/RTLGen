@@ -74,13 +74,21 @@
     ]
   },
   "handoff": {
-    "branch": "eval/l2_e2e_macro_hardened_cmp_v1",
+    "branch": "eval/l2_e2e_macro_hardened_cmp_v1/<session_id>",
     "pr_title": "eval: rerun Layer2 e2e campaign with macro_hardened Layer1 candidates",
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]",
+    "pr_body_fields": {
+      "evaluator_id": "<evaluator_id>",
+      "session_id": "<session_id>",
+      "host": "<host>",
+      "queue_item_id": "l2_e2e_macro_hardened_cmp_v1"
+    },
     "checklist": [
       "Commit lightweight campaign artifacts only",
       "Move this item from queued/ to evaluated/ and fill result",
       "Include metrics row references in result.metrics_rows",
       "If rerun is repeated, increment batch_id suffix (_rerun2, _rerun3, ...)",
+      "Start every PR conversation comment with the identity block",
       "Run python3 scripts/validate_runs.py before pushing"
     ]
   },

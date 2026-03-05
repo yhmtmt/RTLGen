@@ -38,6 +38,10 @@ Label Policy (current repo labels)
 Review Checklist
 ----------------
 - [ ] Queue item state transition is correct (`queued` -> `evaluated`) when applicable.
+- [ ] Evaluator identity is explicit and consistent:
+  - PR body has `evaluator_id/session_id/host/queue_item_id`.
+  - Queue `result` has matching `evaluator_id/session_id/host/queue_item_id`.
+  - `result.identity_block` matches canonical format.
 - [ ] `metrics_rows` references point to real rows.
 - [ ] `results.csv` and result-row JSON are consistent and append-only.
 - [ ] Provenance fields are present and coherent with campaign/model manifest.

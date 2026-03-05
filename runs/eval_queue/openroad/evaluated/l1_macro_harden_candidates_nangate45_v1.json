@@ -60,8 +60,15 @@
     ]
   },
   "handoff": {
-    "branch": "eval/l1_macro_harden_candidates_nangate45_v1",
+    "branch": "eval/l1_macro_harden_candidates_nangate45_v1/<session_id>",
     "pr_title": "eval: macro-harden Layer1 nangate45 seed candidates",
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]",
+    "pr_body_fields": {
+      "evaluator_id": "yhmtmt",
+      "session_id": "s20260304t043646z",
+      "host": "hpc-evaluator-01",
+      "queue_item_id": "l1_macro_harden_candidates_nangate45_v1"
+    },
     "checklist": [
       "Commit only lightweight artifacts and metadata",
       "Move this item from queued/ to evaluated/ and fill result",
@@ -72,7 +79,12 @@
   "result": {
     "completed_utc": "2026-03-04T04:36:46Z",
     "executor": "@codex",
-    "branch": "eval/l1_macro_harden_candidates_nangate45_v1_rerun",
+    "branch": "eval/l1_macro_harden_candidates_nangate45_v1/s20260304t043646z",
+    "evaluator_id": "yhmtmt",
+    "session_id": "s20260304t043646z",
+    "host": "hpc-evaluator-01",
+    "queue_item_id": "l1_macro_harden_candidates_nangate45_v1",
+    "identity_block": "[role:evaluator][account:yhmtmt][session:s20260304t043646z][host:hpc-evaluator-01][item:l1_macro_harden_candidates_nangate45_v1]",
     "status": "ok",
     "summary": "Macro hardening completed for multiplier and adder wrapper candidates using source_mode=src_verilog and clock_port=clk; both promoted to macro_hardened with manifest + macro metrics references in runs/candidates/nangate45/module_candidates.json.",
     "metrics_rows": [

@@ -89,7 +89,7 @@ python3 scripts/build_runs_index.py
 - Use the template:
   - `runs/eval_queue/openroad/templates/item_template.json`
 - Evaluator workflow:
-1. Create branch `eval/<item_id>` on high-performance machine.
+1. Create branch `eval/<item_id>/<session_id>` on high-performance machine.
 2. Execute commands listed in the item.
 3. Commit lightweight outputs (`metrics.csv`, manifests, config updates).
 4. Move item to `runs/eval_queue/openroad/evaluated/` and fill `result`.
