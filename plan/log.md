@@ -272,3 +272,17 @@ Log
   - manual oversized ONNX (`b=32,in=512,hidden=2048,out=4096`) now lowers
     successfully with split plan `[2047, 2047, 2]`, and descriptor emission
     succeeds.
+
+2026-03-05 — Mapper split regression test + CI wiring
+- Added new regression test:
+  - `tests/test_mapper_split.py`
+  - covers both:
+    - fit case (no split expected),
+    - oversized case (split expected, chunk/dependency/event checks, descriptor
+      emission success).
+- Wired test into CI workflow:
+  - `.github/workflows/npu-golden-sim.yml`
+  - adds explicit step: `python3 tests/test_mapper_split.py`
+  - includes workflow path trigger on `tests/test_mapper_split.py`.
+- Local validation:
+  - `python3 tests/test_mapper_split.py` passed.

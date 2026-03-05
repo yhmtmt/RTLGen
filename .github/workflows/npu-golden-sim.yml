@@ -10,6 +10,7 @@ on:
       - "npu/mapper/**"
       - "npu/arch/**"
       - "npu/shell/**"
+      - "tests/test_mapper_split.py"
   pull_request:
     paths:
       - ".github/workflows/npu-golden-sim.yml"
@@ -18,6 +19,7 @@ on:
       - "npu/mapper/**"
       - "npu/arch/**"
       - "npu/shell/**"
+      - "tests/test_mapper_split.py"
   workflow_dispatch:
 
 jobs:
@@ -89,6 +91,9 @@ jobs:
           python3 npu/sim/perf/tests/test_perf_vec_softmax.py
           python3 npu/sim/perf/tests/test_perf_vec_fp16.py
           python3 npu/sim/perf/tests/test_perf_fp16_edge_cases.py
+
+      - name: Run mapper split regression tests
+        run: python3 tests/test_mapper_split.py
 
       - name: Run NPU golden simulation
         run: bash npu/sim/run_golden.sh
