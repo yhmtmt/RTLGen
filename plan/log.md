@@ -181,3 +181,14 @@ Log
   - `runs/models/README.md` (model-set revision policy + current sets),
   - `npu/eval/README.md` (reuse-campaign validation example and
     `physical_source_campaign` note).
+- Executed the new reuse campaign locally (no `--run_physical`) to get baseline
+  model-level rankings:
+  - generated 40 result rows in
+    `runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/results.csv`.
+  - all objective profiles (`balanced/latency/energy/runtime_bal/ppa`) selected
+    `arch_id=fp16_nm1`, `macro_mode=flat_nomacro` as current best.
+- Added focused evaluator queue item for OpenROAD rerun:
+  - `runs/eval_queue/openroad/queued/l2_e2e_mlp_smoke_v1_focus_flat_v1.json`
+  - requests flat-mode-only (`--modes flat_nomacro`) physical reruns at
+    higher repeat count (`--repeat 10`) with explicit batch identity
+    `l2_e2e_mlp_smoke_v1_focus_flat_v1_rerun1`.
