@@ -31,3 +31,5 @@ Current sets
 - `mlp_smoke_v0`: initial smoke set for Layer2 bring-up.
 - `mlp_smoke_v1`: revisioned smoke set used to bootstrap physical-reuse
   campaign flow (`runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/`).
+- `mlp_smoke_v2`: next revision scaffold for benchmark-set expansion,
+  paired with `runs/campaigns/npu/e2e_eval_mlp_smoke_v2_reuse/`.
