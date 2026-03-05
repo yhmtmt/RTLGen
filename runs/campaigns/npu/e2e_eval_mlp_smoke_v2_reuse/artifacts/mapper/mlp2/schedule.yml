@@ -3,70 +3,70 @@ arch: npu/arch/examples/minimal.yml
 buffers:
 - id: X_DRAM
   addr: '0x3000000000'
-  bytes: 4096
+  bytes: 65536
 - id: W1_DRAM
-  addr: '0x3000001000'
-  bytes: 131072
+  addr: '0x3000010000'
+  bytes: 2097152
 - id: b1_DRAM
-  addr: '0x3000021000'
-  bytes: 512
+  addr: '0x3000210000'
+  bytes: 2048
 - id: W2_DRAM
-  addr: '0x3000021200'
-  bytes: 131072
+  addr: '0x3000210800'
+  bytes: 2088960
 - id: b2_DRAM
-  addr: '0x3000041200'
-  bytes: 256
+  addr: '0x300040e800'
+  bytes: 1020
 - id: Y_DRAM
-  addr: '0x3000041300'
-  bytes: 4096
+  addr: '0x300040ec00'
+  bytes: 65280
 - id: X_SRAM
   addr: '0x80000000'
-  bytes: 4096
+  bytes: 65536
 - id: Y1_SRAM
-  addr: '0x80001000'
-  bytes: 8192
+  addr: '0x80010000'
+  bytes: 131072
 - id: Y_SRAM
-  addr: '0x80003000'
-  bytes: 4096
+  addr: '0x80030000'
+  bytes: 65280
 - id: W1_SRAM
   addr: '0x80400000'
-  bytes: 131072
+  bytes: 2097152
 - id: b1_SRAM
-  addr: '0x80420000'
-  bytes: 512
+  addr: '0x80600000'
+  bytes: 2048
 - id: W2_SRAM
-  addr: '0x80420200'
-  bytes: 131072
+  addr: '0x80600800'
+  bytes: 2088960
 - id: b2_SRAM
-  addr: '0x80440200'
-  bytes: 256
+  addr: '0x807fe800'
+  bytes: 1020
 ops:
 - id: dma_x
   type: dma_copy
   src: X_DRAM
   dst: X_SRAM
-  bytes: 4096
+  bytes: 65536
 - id: dma_w1
   type: dma_copy
   src: W1_DRAM
   dst: W1_SRAM
-  bytes: 131072
+  bytes: 2097152
 - id: dma_b1
   type: dma_copy
   src: b1_DRAM
   dst: b1_SRAM
-  bytes: 512
+  bytes: 2048
 - id: gemm1
   type: gemm
   a: X_SRAM
   b: W1_SRAM
   c: Y1_SRAM
-  m: 16
-  n: 512
-  k: 256
-  lda: 256
-  ldb: 512
-  ldc: 512
+  m: 64
+  n: 2048
+  k: 1024
+  lda: 1024
+  ldb: 2048
+  ldc: 2048
   dtype: int8
   layout: row_major
   bias: b1_SRAM
@@ -75,23 +75,23 @@ ops:
   type: dma_copy
   src: W2_DRAM
   dst: W2_SRAM
-  bytes: 131072
+  bytes: 2088960
 - id: dma_b2
   type: dma_copy
   src: b2_DRAM
   dst: b2_SRAM
-  bytes: 256
+  bytes: 1020
 - id: gemm2
   type: gemm
   a: Y1_SRAM
   b: W2_SRAM
   c: Y_SRAM
-  m: 16
-  n: 256
-  k: 512
-  lda: 512
-  ldb: 256
-  ldc: 256
+  m: 64
+  n: 1020
+  k: 2048
+  lda: 2048
+  ldb: 1020
+  ldc: 1020
   dtype: int8
   layout: row_major
   bias: b2_SRAM
@@ -100,7 +100,7 @@ ops:
   type: dma_copy
   src: Y_SRAM
   dst: Y_DRAM
-  bytes: 4096
+  bytes: 65280
 deps:
 - wait:
   - dma_x

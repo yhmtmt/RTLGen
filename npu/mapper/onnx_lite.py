@@ -484,8 +484,15 @@ def write_mlp_model(path: Union[str, Path], *, preset: str) -> None:
     elif preset == "mlp2":
         b, in_dim, hidden_dim, out_dim = 16, 256, 512, 256
         name = "mlp2"
+    elif preset == "mlp3":
+        b, in_dim, hidden_dim, out_dim = 32, 512, 1024, 512
+        name = "mlp3"
+    elif preset == "mlp4":
+        # Keep this near SRAM capacity while fitting the minimal arch example.
+        b, in_dim, hidden_dim, out_dim = 64, 1024, 2048, 1020
+        name = "mlp4"
     else:
-        raise ValueError(f"unknown preset {preset!r} (expected mlp1|mlp2)")
+        raise ValueError(f"unknown preset {preset!r} (expected mlp1|mlp2|mlp3|mlp4)")
     data = build_mlp_model_bytes(
         name=name,
         b=b,

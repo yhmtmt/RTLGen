@@ -19,8 +19,8 @@ def main() -> int:
     ap.add_argument(
         "--preset",
         required=True,
-        choices=["mlp1", "mlp2"],
-        help="Model preset (MLP-1 or MLP-2)",
+        choices=["mlp1", "mlp2", "mlp3", "mlp4"],
+        help="Model preset (MLP-1..MLP-4)",
     )
     ap.add_argument("--out", required=True, help="Output path (*.onnx)")
     args = ap.parse_args()

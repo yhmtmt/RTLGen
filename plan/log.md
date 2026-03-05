@@ -218,3 +218,21 @@ Log
   - result-row JSON artifacts under `artifacts/result_rows/`
 - Outcome: all objective profiles again selected
   `arch_id=fp16_nm1`, `macro_mode=flat_nomacro` as best for this smoke set.
+
+2026-03-05 — Phase-5 continuation: replace `mlp_smoke_v2` placeholders with scaled models
+- Extended lite ONNX MLP generator presets:
+  - `npu/mapper/onnx_lite.py`: added `mlp3`, `mlp4`
+  - `npu/mapper/examples/gen_mlp_onnx_lite.py`: exposed new presets in CLI
+- Tuned `mlp4` to fit current `minimal.yml` SRAM constraints:
+  - shape set to `b=64, in=1024, hidden=2048, out=1020`
+  - rationale: `out=1024` exceeded `weight_sram` by a small margin and failed
+    schedule generation (`out of space in region weight_sram`).
+- Regenerated `runs/models/mlp_smoke_v2/` ONNX files:
+  - `mlp1.onnx` from `mlp3`
+  - `mlp2.onnx` from adjusted `mlp4`
+  - updated `manifest.json` hashes and model notes; updated model-set docs.
+- Re-ran `runs/campaigns/npu/e2e_eval_mlp_smoke_v2_reuse/` from clean outputs
+  (no `--run_physical`), then regenerated report + objective profiles.
+- Outcome: with scaled models, profile winners remain
+  `arch_id=fp16_nm1`, `macro_mode=flat_nomacro`; latency/energy magnitudes
+  increased as expected versus the previous small-smoke placeholders.

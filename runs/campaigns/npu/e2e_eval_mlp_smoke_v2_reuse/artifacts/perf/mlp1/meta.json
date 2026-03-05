@@ -3,6 +3,6 @@
   "model_id": "mlp1",
   "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v2_reuse/artifacts/mapper/mlp1/descriptors.bin",
   "perf_config": "npu/sim/perf/example_config_fp16_cpp.json",
-  "generated_utc": "2026-03-05T07:30:31+00:00",
+  "generated_utc": "2026-03-05T07:38:55+00:00",
   "trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v2_reuse/artifacts/perf/mlp1/trace.json"
 }

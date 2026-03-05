@@ -1,19 +1,19 @@
 {
   "version": 0.1,
   "model_set_id": "mlp_smoke_v2",
-  "description": "Versioned smoke benchmark set scaffold for expanded campaign evaluation.",
+  "description": "Versioned smoke benchmark set with scaled MLP models for heavier Layer2 evaluation.",
   "models": [
     {
       "model_id": "mlp1",
       "onnx_path": "runs/models/mlp_smoke_v2/mlp1.onnx",
-      "onnx_sha256": "ff95cc222916245d687a47b8f60c2e54fb182871c4e10881ee218dc352baca2e",
-      "notes": "small MLP smoke model"
+      "onnx_sha256": "13c3cf4eb76bd0fcbb9ac4587eb0ea023dd69baf399b744076ecf285167e5037",
+      "notes": "mlp3 preset (b=32, in=512, hidden=1024, out=512)"
     },
     {
       "model_id": "mlp2",
       "onnx_path": "runs/models/mlp_smoke_v2/mlp2.onnx",
-      "onnx_sha256": "0ac3fa2461859e471cc10ee0c6198ae181b501c103bc5bee946f7abf6938e640",
-      "notes": "larger MLP stress model"
+      "onnx_sha256": "e42afa2b5ff98b41fc2202e1eeba680e68047fdae3d7c1ad81f80583209aecd2",
+      "notes": "mlp4 preset (b=64, in=1024, hidden=2048, out=1020)"
     }
   ]
 }
