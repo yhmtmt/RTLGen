@@ -67,6 +67,9 @@ A merged result row represents one evaluated point:
 
 Rows are append-only and become the canonical input for downstream Pareto or
 recommendation reports.
+`notes` may include additional key-value provenance; current runner emits
+mapper split tags (`mapper_split_enabled`, chunk count/list) for direct
+split-vs-non-split filtering in CSV analysis.
 
 ## 3) Validation Rules (v0.1)
 - IDs must be non-empty and unique within each list.

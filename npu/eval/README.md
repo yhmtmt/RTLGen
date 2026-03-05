@@ -54,6 +54,8 @@ campaign (`compare_group`, `tag_prefix`) and encodes physical `param_hash` into
 `run_id` as stable design-point identity across sweep variants.
 Each emitted row also includes `sample_id`/`batch_id`/`sample_index` so
 statistical reruns can coexist without overloading `run_id`.
+Row `notes` include mapper split metadata keys for quick filtering:
+`mapper_split_enabled`, `mapper_split_chunk_count`, `mapper_split_chunks`.
 Each campaign must also declare `model_set_id` and `model_manifest`
 (`runs/models/<set>/manifest.json`), and emitted rows include
 `model_set_id`/`model_manifest`/`onnx_sha256` for traceability.

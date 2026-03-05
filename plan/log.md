@@ -305,3 +305,21 @@ Log
 - Campaign outcome remains stable on ranking:
   - best profile point still `fp16_nm1 + flat_nomacro`,
   - aggregate latency/energy increased versus smaller model set as expected.
+
+2026-03-05 — Campaign row notes: mapper split metadata
+- Updated `npu/eval/run_campaign.py` to attach mapper split provenance in each
+  emitted row `notes` by parsing `artifacts/mapper/*/schedule.yml`:
+  - `mapper_split_enabled=<0|1>`
+  - `mapper_split_chunk_count=<N>`
+  - `mapper_split_chunks=<comma-separated N list>`
+- Notes are emitted for both split and non-split schedules, so CSV filtering
+  can directly separate split vs baseline runs.
+- Added parser regression test:
+  - `tests/test_run_campaign_mapper_notes.py`
+  - covers explicit `mapper_notes` path and fallback-from-ops path.
+- Wired into CI:
+  - `.github/workflows/npu-eval-tests.yml` now runs
+    `tests/test_run_campaign_mapper_notes.py` in addition to existing eval tests.
+- Documentation updated:
+  - `npu/eval/README.md`
+  - `npu/eval/contract.md`

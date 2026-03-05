@@ -8,12 +8,14 @@ on:
       - "npu/eval/**"
       - "runs/campaigns/npu/e2e_eval_v0/**"
       - "tests/test_eval_campaign_tools.py"
+      - "tests/test_run_campaign_mapper_notes.py"
   pull_request:
     paths:
       - ".github/workflows/npu-eval-tests.yml"
       - "npu/eval/**"
       - "runs/campaigns/npu/e2e_eval_v0/**"
       - "tests/test_eval_campaign_tools.py"
+      - "tests/test_run_campaign_mapper_notes.py"
   workflow_dispatch:
 
 jobs:
@@ -30,4 +32,6 @@ jobs:
           python-version: "3.11"
 
       - name: Run eval-tool regression tests
-        run: python tests/test_eval_campaign_tools.py
+        run: |
+          python tests/test_eval_campaign_tools.py
+          python tests/test_run_campaign_mapper_notes.py

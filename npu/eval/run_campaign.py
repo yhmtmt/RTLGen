@@ -23,6 +23,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+import yaml  # type: ignore
+
 from validate import load_json, validate_campaign, validate_result_row
 
 
@@ -240,6 +242,70 @@ def layer1_candidate_note(arch: Dict[str, Any]) -> Tuple[str, bool]:
 
     has_wrapped = any(scopes_by_id.get(vid, "") == "wrapped_io" for vid in variant_ids)
     return "; ".join(parts), bool(has_wrapped and allow_wrapped)
+
+
+def mapper_split_note_from_schedule(schedule_yml: str) -> str:
+    schedule_path = abs_path(schedule_yml)
+    if not schedule_path.exists():
+        return ""
+
+    try:
+        with schedule_path.open("r", encoding="utf-8") as f:
+            doc = yaml.safe_load(f)
+    except Exception:
+        return "mapper_split_enabled=unknown"
+
+    if not isinstance(doc, dict):
+        return "mapper_split_enabled=unknown"
+
+    notes = doc.get("mapper_notes")
+    split_enabled: Optional[bool] = None
+    chunks: List[int] = []
+    if isinstance(notes, dict):
+        split_enabled = bool(notes.get("gemm2_split_enabled", False))
+        raw_chunks = notes.get("gemm2_out_chunks", [])
+        if isinstance(raw_chunks, list):
+            for v in raw_chunks:
+                try:
+                    chunks.append(int(v))
+                except Exception:
+                    continue
+
+    # Backward-compatible fallback for schedules without mapper_notes.
+    if not chunks:
+        gemm2_entries: List[Tuple[int, int]] = []
+        for op in doc.get("ops", []) if isinstance(doc.get("ops"), list) else []:
+            if not isinstance(op, dict):
+                continue
+            op_id = str(op.get("id", "")).strip()
+            if op_id == "gemm2":
+                idx = 0
+            elif op_id.startswith("gemm2_c"):
+                try:
+                    idx = int(op_id[len("gemm2_c") :])
+                except Exception:
+                    continue
+            else:
+                continue
+            try:
+                n_val = int(op.get("n"))
+            except Exception:
+                continue
+            gemm2_entries.append((idx, n_val))
+        if gemm2_entries:
+            gemm2_entries.sort(key=lambda t: t[0])
+            chunks = [n for _, n in gemm2_entries]
+            if split_enabled is None:
+                split_enabled = len(chunks) > 1
+
+    if split_enabled is None:
+        split_enabled = False
+
+    parts = [f"mapper_split_enabled={1 if split_enabled else 0}"]
+    if chunks:
+        parts.append(f"mapper_split_chunk_count={len(chunks)}")
+        parts.append(f"mapper_split_chunks={','.join(str(n) for n in chunks)}")
+    return "; ".join(parts)
 
 
 def parse_physical_row(raw: Dict[str, str]) -> Dict[str, Any]:
@@ -590,11 +656,13 @@ def build_model_artifacts(
         reuse_existing=reuse_existing,
         dry_run=dry_run,
     )
+    mapper_split_note = mapper_split_note_from_schedule(schedule_yml)
     return model_id, {
         "schedule_yml": schedule_yml,
         "descriptors_bin": descriptors_bin,
         "perf_trace_json": perf_trace_json,
         "perf_stats": perf_stats,
+        "mapper_split_note": mapper_split_note,
     }
 
 
@@ -742,6 +810,7 @@ def build_row(
     perf_stats: Dict[str, Any],
     artifacts: Dict[str, str],
     layer1_note: str = "",
+    mapper_note: str = "",
 ) -> Dict[str, Any]:
     cp_ns = safe_float(physical.get("critical_path_ns"))
     area = safe_float(physical.get("die_area_um2"))
@@ -784,6 +853,8 @@ def build_row(
         notes_parts.append(f"tag={physical_tag}")
     if compare_group:
         notes_parts.append(f"compare_group={compare_group}")
+    if mapper_note:
+        notes_parts.append(mapper_note)
     if layer1_note:
         notes_parts.append(layer1_note)
     row = {
@@ -1071,6 +1142,7 @@ def main() -> int:
                         "descriptors_bin": str(model_data["descriptors_bin"]),
                     },
                     layer1_note=layer1_note,
+                    mapper_note=str(model_data.get("mapper_split_note", "")).strip(),
                 )
 
                 if not args.dry_run:
