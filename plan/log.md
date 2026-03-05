@@ -252,3 +252,23 @@ Log
 - Next implementation step:
   - add phase-1 chunked lowering in `npu/mapper/onnx_to_schedule.py`
   - add regression coverage for prior SRAM-overflow case.
+
+2026-03-05 — Mapper phase-1 split implementation (GEMM2 output chunking)
+- Implemented phase-1 large-model lowering in:
+  - `npu/mapper/onnx_to_schedule.py`
+- Key behavior changes:
+  - weight SRAM is now reused between GEMM1 and GEMM2 staging instead of
+    monolithic `W1+W2` co-allocation,
+  - GEMM2 supports automatic output-channel chunking when `W2+b2` exceeds
+    available weight SRAM,
+  - chunked schedule emits per-chunk DMA/GEMM/DMA sequence with deterministic
+    dependencies and final event on last output DMA.
+- Added schedule metadata:
+  - `mapper_notes.gemm2_out_chunks`
+  - `mapper_notes.gemm2_split_enabled`
+  - `mapper_notes.gemm2_weight_layout=packed_by_output_chunk`
+- Validation executed:
+  - `make -f npu/mapper/Makefile validate example-bin onnx-mlp1 onnx-mlp2`
+  - manual oversized ONNX (`b=32,in=512,hidden=2048,out=4096`) now lowers
+    successfully with split plan `[2047, 2047, 2]`, and descriptor emission
+    succeeds.

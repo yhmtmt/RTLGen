@@ -223,7 +223,6 @@ def build_schedule_for_mlp(
 
     dram = _Region.create("dram", dram_base, dram_size, 32)
     act = _Region.create(activation_sram_name, act_base, act_size, act_align)
-    wgt = _Region.create(weight_sram_name, wgt_base, wgt_size, wgt_align)
 
     def bytes_2d(m: int, n: int) -> int:
         return int(m) * int(n) * int(dtype_bytes)
@@ -241,6 +240,55 @@ def build_schedule_for_mlp(
         "y": bytes_2d(b, out_dim),
     }
 
+    # Reuse weight SRAM between stages instead of allocating W1 and W2 at once.
+    # Stage1 footprint:
+    w1_sram = wgt_base
+    b1_sram = _align_up(w1_sram + sizes["w1"], wgt_align)
+    if b1_sram + sizes["b1"] > wgt_base + wgt_size:
+        raise ValueError(
+            f"weight SRAM cannot fit GEMM1 weights+bias: "
+            f"need {sizes['w1'] + sizes['b1']} bytes in {wgt_size} bytes"
+        )
+
+    # Determine stage2 output chunking based on available weight SRAM.
+    # Phase-1 policy: split GEMM2 by output channels (N axis) and stream chunks.
+    max_out_chunk = wgt_size // ((hidden_dim + 1) * int(dtype_bytes))
+    if max_out_chunk <= 0:
+        raise ValueError(
+            f"weight SRAM too small for GEMM2 chunking: hidden_dim={hidden_dim}, "
+            f"wgt_size={wgt_size}"
+        )
+    max_out_chunk = min(max_out_chunk, out_dim)
+    if max_out_chunk <= 0:
+        raise ValueError(f"invalid max_out_chunk computed: {max_out_chunk}")
+
+    # Tighten chunk size if alignment padding pushes b2 scratch past SRAM end.
+    while max_out_chunk > 0:
+        w2_chunk_bytes = bytes_2d(hidden_dim, max_out_chunk)
+        b2_sram = _align_up(wgt_base + w2_chunk_bytes, wgt_align)
+        b2_chunk_bytes = bytes_1d(max_out_chunk)
+        if b2_sram + b2_chunk_bytes <= wgt_base + wgt_size:
+            break
+        max_out_chunk -= 1
+    if max_out_chunk <= 0:
+        raise ValueError("failed to find legal GEMM2 chunk size for weight SRAM")
+
+    # Build chunk plan: one chunk for fit case, multiple chunks for split case.
+    out_chunks: List[Tuple[int, int]] = []
+    out_offset = 0
+    while out_offset < out_dim:
+        n_chunk = min(max_out_chunk, out_dim - out_offset)
+        out_chunks.append((out_offset, n_chunk))
+        out_offset += n_chunk
+
+    y_chunk_max_bytes = bytes_2d(b, max_out_chunk)
+    w2_chunk_max_bytes = bytes_2d(hidden_dim, max_out_chunk)
+    b2_chunk_max_bytes = bytes_1d(max_out_chunk)
+    w2_sram = wgt_base
+    b2_sram = _align_up(w2_sram + w2_chunk_max_bytes, wgt_align)
+    if b2_sram + b2_chunk_max_bytes > wgt_base + wgt_size:
+        raise ValueError("internal error: GEMM2 scratch exceeds weight SRAM")
+
     # Buffers (DRAM side)
     x_dram = dram.alloc(sizes["x"])
     w1_dram = dram.alloc(sizes["w1"])
@@ -250,14 +298,11 @@ def build_schedule_for_mlp(
     y_dram = dram.alloc(sizes["y"])
 
     # Buffers (SRAM side)
-    x_sram = act.alloc(sizes["x"])
+    # Reuse activation SRAM between X (GEMM1 input) and Y chunk scratch (GEMM2 output).
+    io_sram_bytes = max(sizes["x"], y_chunk_max_bytes)
+    x_sram = act.alloc(io_sram_bytes)
     y1_sram = act.alloc(sizes["y1"])
-    y_sram = act.alloc(sizes["y"])
-
-    w1_sram = wgt.alloc(sizes["w1"])
-    b1_sram = wgt.alloc(sizes["b1"])
-    w2_sram = wgt.alloc(sizes["w2"])
-    b2_sram = wgt.alloc(sizes["b2"])
+    y_chunk_sram = x_sram
 
     buffers = [
         {"id": "X_DRAM", "addr": hex(x_dram), "bytes": sizes["x"]},
@@ -266,13 +311,13 @@ def build_schedule_for_mlp(
         {"id": "W2_DRAM", "addr": hex(w2_dram), "bytes": sizes["w2"]},
         {"id": "b2_DRAM", "addr": hex(b2_dram), "bytes": sizes["b2"]},
         {"id": "Y_DRAM", "addr": hex(y_dram), "bytes": sizes["y"]},
-        {"id": "X_SRAM", "addr": hex(x_sram), "bytes": sizes["x"]},
+        {"id": "X_SRAM", "addr": hex(x_sram), "bytes": io_sram_bytes},
         {"id": "Y1_SRAM", "addr": hex(y1_sram), "bytes": sizes["y1"]},
-        {"id": "Y_SRAM", "addr": hex(y_sram), "bytes": sizes["y"]},
+        {"id": "Y2_SRAM_TMP", "addr": hex(y_chunk_sram), "bytes": y_chunk_max_bytes},
         {"id": "W1_SRAM", "addr": hex(w1_sram), "bytes": sizes["w1"]},
         {"id": "b1_SRAM", "addr": hex(b1_sram), "bytes": sizes["b1"]},
-        {"id": "W2_SRAM", "addr": hex(w2_sram), "bytes": sizes["w2"]},
-        {"id": "b2_SRAM", "addr": hex(b2_sram), "bytes": sizes["b2"]},
+        {"id": "W2_SRAM_TMP", "addr": hex(w2_sram), "bytes": w2_chunk_max_bytes},
+        {"id": "b2_SRAM_TMP", "addr": hex(b2_sram), "bytes": b2_chunk_max_bytes},
     ]
 
     ops = [
@@ -296,42 +341,88 @@ def build_schedule_for_mlp(
             "bias": "b1_SRAM",
             "epilogue": "relu",
         },
-        # These loads can overlap GEMM1 in the perf sim (separate DMA/compute engines).
-        {"id": "dma_w2", "type": "dma_copy", "src": "W2_DRAM", "dst": "W2_SRAM", "bytes": sizes["w2"]},
-        {"id": "dma_b2", "type": "dma_copy", "src": "b2_DRAM", "dst": "b2_SRAM", "bytes": sizes["b2"]},
-        {
-            "id": "gemm2",
-            "type": "gemm",
-            "a": "Y1_SRAM",
-            "b": "W2_SRAM",
-            "c": "Y_SRAM",
-            "m": b,
-            "n": out_dim,
-            "k": hidden_dim,
-            "lda": hidden_dim * dtype_bytes,
-            "ldb": out_dim * dtype_bytes,
-            "ldc": out_dim * dtype_bytes,
-            "dtype": "int8",
-            "layout": "row_major",
-            "bias": "b2_SRAM",
-            "epilogue": "none",
-        },
-        {"id": "dma_y", "type": "dma_copy", "src": "Y_SRAM", "dst": "Y_DRAM", "bytes": sizes["y"]},
     ]
 
     deps = [
         {"wait": ["dma_x", "dma_w1", "dma_b1"], "then": "gemm1"},
-        {"wait": ["gemm1", "dma_w2", "dma_b2"], "then": "gemm2"},
-        {"wait": ["gemm2"], "then": "dma_y"},
     ]
 
+    last_dma_y_id = ""
+    for chunk_idx, (n_off, n_chunk) in enumerate(out_chunks):
+        is_single_chunk = len(out_chunks) == 1
+        suffix = "" if is_single_chunk else f"_c{chunk_idx}"
+        dma_w2_id = f"dma_w2{suffix}"
+        dma_b2_id = f"dma_b2{suffix}"
+        gemm2_id = f"gemm2{suffix}"
+        dma_y_id = f"dma_y{suffix}"
+
+        # Note: W2 chunk addresses assume stage-2 packed-by-output-chunk layout.
+        # This is sufficient for deterministic scheduling/perf evaluation flow.
+        w2_chunk_dram_addr = w2_dram + bytes_2d(hidden_dim, n_off)
+        b2_chunk_dram_addr = b2_dram + bytes_1d(n_off)
+        y_chunk_dram_addr = y_dram + bytes_2d(b, n_off)
+
+        w2_chunk_bytes = bytes_2d(hidden_dim, n_chunk)
+        b2_chunk_bytes = bytes_1d(n_chunk)
+        y_chunk_bytes = bytes_2d(b, n_chunk)
+
+        w2_chunk_buf = f"W2_DRAM{suffix}"
+        b2_chunk_buf = f"b2_DRAM{suffix}"
+        y_chunk_buf = f"Y_DRAM{suffix}"
+        buffers.extend(
+            [
+                {"id": w2_chunk_buf, "addr": hex(w2_chunk_dram_addr), "bytes": w2_chunk_bytes},
+                {"id": b2_chunk_buf, "addr": hex(b2_chunk_dram_addr), "bytes": b2_chunk_bytes},
+                {"id": y_chunk_buf, "addr": hex(y_chunk_dram_addr), "bytes": y_chunk_bytes},
+            ]
+        )
+
+        # Loads can overlap GEMM1 for the first chunk.
+        ops.append({"id": dma_w2_id, "type": "dma_copy", "src": w2_chunk_buf, "dst": "W2_SRAM_TMP", "bytes": w2_chunk_bytes})
+        ops.append({"id": dma_b2_id, "type": "dma_copy", "src": b2_chunk_buf, "dst": "b2_SRAM_TMP", "bytes": b2_chunk_bytes})
+        ops.append(
+            {
+                "id": gemm2_id,
+                "type": "gemm",
+                "a": "Y1_SRAM",
+                "b": "W2_SRAM_TMP",
+                "c": "Y2_SRAM_TMP",
+                "m": b,
+                "n": n_chunk,
+                "k": hidden_dim,
+                "lda": hidden_dim * dtype_bytes,
+                "ldb": n_chunk * dtype_bytes,
+                "ldc": n_chunk * dtype_bytes,
+                "dtype": "int8",
+                "layout": "row_major",
+                "bias": "b2_SRAM_TMP",
+                "epilogue": "none",
+            }
+        )
+        ops.append({"id": dma_y_id, "type": "dma_copy", "src": "Y2_SRAM_TMP", "dst": y_chunk_buf, "bytes": y_chunk_bytes})
+
+        if chunk_idx == 0:
+            deps.append({"wait": ["gemm1", dma_w2_id, dma_b2_id], "then": gemm2_id})
+        else:
+            prev_dma_y_id = f"dma_y_c{chunk_idx - 1}"
+            deps.append({"wait": [prev_dma_y_id], "then": dma_w2_id})
+            deps.append({"wait": [prev_dma_y_id], "then": dma_b2_id})
+            deps.append({"wait": [dma_w2_id, dma_b2_id], "then": gemm2_id})
+        deps.append({"wait": [gemm2_id], "then": dma_y_id})
+        last_dma_y_id = dma_y_id
+
     events = [
-        {"id": 1000, "signal_on": "dma_y", "irq": True},
+        {"id": 1000, "signal_on": last_dma_y_id, "irq": True},
     ]
 
     return {
         "version": 0.1,
         "arch": arch_path,
+        "mapper_notes": {
+            "gemm2_out_chunks": [n for _, n in out_chunks],
+            "gemm2_split_enabled": len(out_chunks) > 1,
+            "gemm2_weight_layout": "packed_by_output_chunk",
+        },
         "buffers": buffers,
         "ops": ops,
         "deps": deps,
@@ -369,4 +460,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
