@@ -192,3 +192,6 @@ Log
   - requests flat-mode-only (`--modes flat_nomacro`) physical reruns at
     higher repeat count (`--repeat 10`) with explicit batch identity
     `l2_e2e_mlp_smoke_v1_focus_flat_v1_rerun1`.
+- Queue handoff prepared for evaluator: refreshed metadata on
+  `l2_e2e_mlp_smoke_v1_focus_flat_v1` (created_utc/requested_by) and kept item
+  in `runs/eval_queue/openroad/queued/` for immediate HPC pickup.
