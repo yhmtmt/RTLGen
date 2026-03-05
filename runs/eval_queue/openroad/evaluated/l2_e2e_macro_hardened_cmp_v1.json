@@ -74,7 +74,7 @@
     ]
   },
   "handoff": {
-    "branch": "eval/l2_e2e_macro_hardened_cmp_v1_replacement",
+    "branch": "eval/l2_e2e_macro_hardened_cmp_v1/<session_id>",
     "pr_title": "eval: rerun Layer2 e2e campaign with macro_hardened Layer1 candidates",
     "checklist": [
       "Commit lightweight campaign artifacts only",
@@ -82,12 +82,19 @@
       "Include metrics row references in result.metrics_rows",
       "If rerun is repeated, increment batch_id suffix (_rerun2, _rerun3, ...)",
       "Run python3 scripts/validate_runs.py before pushing"
-    ]
+    ],
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]",
+    "pr_body_fields": {
+      "evaluator_id": "yhmtmt",
+      "session_id": "s20260305t030444z",
+      "host": "hpc-evaluator-01",
+      "queue_item_id": "l2_e2e_macro_hardened_cmp_v1"
+    }
   },
   "result": {
     "completed_utc": "2026-03-05T02:25:49Z",
     "executor": "@codex",
-    "branch": "eval/l2_e2e_macro_hardened_cmp_v1_replacement",
+    "branch": "eval/l2_e2e_macro_hardened_cmp_v1/s20260305t030444z",
     "status": "ok",
     "summary": "Rebased to latest master with provenance-enabled campaign contract, reran Layer2 campaign/report/objective sweep using batch_id=l2_e2e_macro_hardened_cmp_v1_rerun2, and validated outputs.",
     "metrics_rows": [
@@ -331,6 +338,11 @@
         "batch_id": "l2_e2e_macro_hardened_cmp_v1_rerun2",
         "sample_index": 2
       }
-    ]
+    ],
+    "evaluator_id": "yhmtmt",
+    "session_id": "s20260305t030444z",
+    "host": "hpc-evaluator-01",
+    "queue_item_id": "l2_e2e_macro_hardened_cmp_v1",
+    "identity_block": "[role:evaluator][account:yhmtmt][session:s20260305t030444z][host:hpc-evaluator-01][item:l2_e2e_macro_hardened_cmp_v1]"
   }
 }
