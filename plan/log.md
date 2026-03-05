@@ -163,3 +163,21 @@ Log
   - regression coverage in `tests/test_eval_campaign_tools.py`.
 - Rationale: statistical reruns are valid and should be retained, but they
   should not be represented as duplicate `run_id` identities.
+
+2026-03-05 — Phase-5 bootstrap: model-set revision + physical-reuse campaign scaffold
+- Added new versioned model set under `runs/models/mlp_smoke_v1/`:
+  - `manifest.json` with SHA256-pinned ONNX entries,
+  - `README.md` with regeneration/hash update procedure,
+  - copied smoke ONNX binaries (`mlp1.onnx`, `mlp2.onnx`) as immutable set assets.
+- Added new campaign scaffold:
+  - `runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json`
+  - includes `model_set_id=mlp_smoke_v1` and
+    `physical_source_campaign=runs/campaigns/npu/e2e_eval_v0/campaign.json`.
+  - output paths isolated under the new campaign directory.
+- Added campaign runbook files:
+  - `runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/README.md`
+  - `runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/objective_profiles.json`
+- Updated docs for discoverability and policy:
+  - `runs/models/README.md` (model-set revision policy + current sets),
+  - `npu/eval/README.md` (reuse-campaign validation example and
+    `physical_source_campaign` note).

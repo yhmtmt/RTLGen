@@ -36,6 +36,13 @@ Optionally verify path-like fields exist:
 python3 npu/eval/validate.py --campaign <campaign.json> --check_paths
 ```
 
+Reuse-oriented campaign example:
+```sh
+python3 npu/eval/validate.py \
+  --campaign runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json \
+  --check_paths
+```
+
 ## Campaign Runner (Phase-2 Scaffold)
 Run mapper + perf and merge with physical metrics into append-only results CSV:
 ```sh
@@ -61,6 +68,8 @@ It reuses existing per-model mapper/perf artifacts under
 Use `--jobs <N>` to parallelize model-level mapper/perf generation when running
 multiple models in one campaign.
 Use `--batch_id <label>` to tag rerun batches explicitly (optional).
+Use campaign field `physical_source_campaign` to record which prior campaign
+provided baseline physical settings/results context for reuse runs.
 
 If physical rows are missing in `<design_dir>/metrics.csv`, allow runner to
 invoke the sweep:

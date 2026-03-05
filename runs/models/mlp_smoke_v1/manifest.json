@@ -1,0 +1,19 @@
+{
+  "version": 0.1,
+  "model_set_id": "mlp_smoke_v1",
+  "description": "Versioned smoke benchmark set for campaign-level reuse flow validation.",
+  "models": [
+    {
+      "model_id": "mlp1",
+      "onnx_path": "runs/models/mlp_smoke_v1/mlp1.onnx",
+      "onnx_sha256": "ff95cc222916245d687a47b8f60c2e54fb182871c4e10881ee218dc352baca2e",
+      "notes": "small MLP smoke model"
+    },
+    {
+      "model_id": "mlp2",
+      "onnx_path": "runs/models/mlp_smoke_v1/mlp2.onnx",
+      "onnx_sha256": "0ac3fa2461859e471cc10ee0c6198ae181b501c103bc5bee946f7abf6938e640",
+      "notes": "larger MLP stress model"
+    }
+  ]
+}
