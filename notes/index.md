@@ -15,6 +15,8 @@ Canonical runbook/status docs:
 - `notes/development_agent_guidance.md`: developer agent rules for new algorithms.
 - `notes/evaluation_agent_guidance.md`: evaluator first-read runbook for
   queue-driven OpenROAD execution, validation, and PR handoff.
+- `notes/evaluation_pr_triage.md`: maintainer checklist for triaging evaluator
+  PRs (merge/supersede/rerun decisions).
 
 ## Design studies
 - `notes/booth4_vs_normal/booth_vs_normal_multiplier_comparison.md`: Booth vs normal PPG analysis.

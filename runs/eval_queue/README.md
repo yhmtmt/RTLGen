@@ -12,6 +12,7 @@ Evaluator first-read
 --------------------
 - `notes/evaluation_agent_guidance.md` is the evaluator's first-read manual
   before executing queue items.
+- Maintainer PR triage uses `notes/evaluation_pr_triage.md`.
 
 Layout
 ------
