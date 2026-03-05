@@ -42,7 +42,7 @@
       },
       {
         "name": "run_campaign",
-        "run": "python3 npu/eval/run_campaign.py --campaign runs/campaigns/npu/e2e_eval_v0/campaign.json --run_physical --modes flat_nomacro hier_macro --repeat 5 --jobs 2 --batch_id l2_e2e_macro_hardened_cmp_v1_rerun1"
+        "run": "python3 npu/eval/run_campaign.py --campaign runs/campaigns/npu/e2e_eval_v0/campaign.json --run_physical --modes flat_nomacro hier_macro --repeat 5 --jobs 2 --batch_id l2_e2e_macro_hardened_cmp_v1_rerun2"
       },
       {
         "name": "report_campaign",
@@ -74,7 +74,7 @@
     ]
   },
   "handoff": {
-    "branch": "eval/l2_e2e_macro_hardened_cmp_v1",
+    "branch": "eval/l2_e2e_macro_hardened_cmp_v1_replacement",
     "pr_title": "eval: rerun Layer2 e2e campaign with macro_hardened Layer1 candidates",
     "checklist": [
       "Commit lightweight campaign artifacts only",
@@ -98,10 +98,10 @@
         "param_hash": "3e84d92b",
         "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r1",
         "status": "ok",
+        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm1_cmp/nm1_cmp33_flat_nomacro_r1/3_3_place_gp.json",
         "sample_id": "npu_e2e_eval_v0__mlp1__fp16_nm1__flat_nomacro__r1__p3e84d92b__bl2e2emacrohardenedcmpv1rerun2__s2",
         "batch_id": "l2_e2e_macro_hardened_cmp_v1_rerun2",
-        "sample_index": 2,
-        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm1_cmp/nm1_cmp33_flat_nomacro_r1/3_3_place_gp.json"
+        "sample_index": 2
       },
       {
         "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
@@ -110,10 +110,10 @@
         "param_hash": "13a2c990",
         "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r2",
         "status": "ok",
+        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm1_cmp/nm1_cmp33_flat_nomacro_r2/3_3_place_gp.json",
         "sample_id": "npu_e2e_eval_v0__mlp1__fp16_nm1__flat_nomacro__r2__p13a2c990__bl2e2emacrohardenedcmpv1rerun2__s2",
         "batch_id": "l2_e2e_macro_hardened_cmp_v1_rerun2",
-        "sample_index": 2,
-        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm1_cmp/nm1_cmp33_flat_nomacro_r2/3_3_place_gp.json"
+        "sample_index": 2
       },
       {
         "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
@@ -122,10 +122,10 @@
         "param_hash": "34eeb6e5",
         "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r3",
         "status": "ok",
+        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm1_cmp/nm1_cmp33_flat_nomacro_r3/3_3_place_gp.json",
         "sample_id": "npu_e2e_eval_v0__mlp1__fp16_nm1__flat_nomacro__r3__p34eeb6e5__bl2e2emacrohardenedcmpv1rerun2__s2",
         "batch_id": "l2_e2e_macro_hardened_cmp_v1_rerun2",
-        "sample_index": 2,
-        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm1_cmp/nm1_cmp33_flat_nomacro_r3/3_3_place_gp.json"
+        "sample_index": 2
       },
       {
         "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
@@ -134,10 +134,10 @@
         "param_hash": "439adb1e",
         "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r4",
         "status": "ok",
+        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm1_cmp/nm1_cmp33_flat_nomacro_r4/3_3_place_gp.json",
         "sample_id": "npu_e2e_eval_v0__mlp1__fp16_nm1__flat_nomacro__r4__p439adb1e__bl2e2emacrohardenedcmpv1rerun2__s2",
         "batch_id": "l2_e2e_macro_hardened_cmp_v1_rerun2",
-        "sample_index": 2,
-        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm1_cmp/nm1_cmp33_flat_nomacro_r4/3_3_place_gp.json"
+        "sample_index": 2
       },
       {
         "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
@@ -146,10 +146,10 @@
         "param_hash": "936b2a7b",
         "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r5",
         "status": "ok",
+        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm1_cmp/nm1_cmp33_flat_nomacro_r5/3_3_place_gp.json",
         "sample_id": "npu_e2e_eval_v0__mlp1__fp16_nm1__flat_nomacro__r5__p936b2a7b__bl2e2emacrohardenedcmpv1rerun2__s2",
         "batch_id": "l2_e2e_macro_hardened_cmp_v1_rerun2",
-        "sample_index": 2,
-        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm1_cmp/nm1_cmp33_flat_nomacro_r5/3_3_place_gp.json"
+        "sample_index": 2
       },
       {
         "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
@@ -158,10 +158,10 @@
         "param_hash": "54a235ae",
         "tag": "npu_fp16_nm1_cmp33_hier_macro_r1",
         "status": "ok",
+        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm1_cmp/nm1_cmp33_hier_macro_r1/3_3_place_gp.json",
         "sample_id": "npu_e2e_eval_v0__mlp1__fp16_nm1__hier_macro__r1__p54a235ae__bl2e2emacrohardenedcmpv1rerun2__s2",
         "batch_id": "l2_e2e_macro_hardened_cmp_v1_rerun2",
-        "sample_index": 2,
-        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm1_cmp/nm1_cmp33_hier_macro_r1/3_3_place_gp.json"
+        "sample_index": 2
       },
       {
         "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
@@ -170,10 +170,10 @@
         "param_hash": "f190a078",
         "tag": "npu_fp16_nm1_cmp33_hier_macro_r2",
         "status": "ok",
+        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm1_cmp/nm1_cmp33_hier_macro_r2/3_3_place_gp.json",
         "sample_id": "npu_e2e_eval_v0__mlp1__fp16_nm1__hier_macro__r2__pf190a078__bl2e2emacrohardenedcmpv1rerun2__s2",
         "batch_id": "l2_e2e_macro_hardened_cmp_v1_rerun2",
-        "sample_index": 2,
-        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm1_cmp/nm1_cmp33_hier_macro_r2/3_3_place_gp.json"
+        "sample_index": 2
       },
       {
         "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
@@ -182,10 +182,10 @@
         "param_hash": "b874bef7",
         "tag": "npu_fp16_nm1_cmp33_hier_macro_r3",
         "status": "ok",
+        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm1_cmp/nm1_cmp33_hier_macro_r3/3_3_place_gp.json",
         "sample_id": "npu_e2e_eval_v0__mlp1__fp16_nm1__hier_macro__r3__pb874bef7__bl2e2emacrohardenedcmpv1rerun2__s2",
         "batch_id": "l2_e2e_macro_hardened_cmp_v1_rerun2",
-        "sample_index": 2,
-        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm1_cmp/nm1_cmp33_hier_macro_r3/3_3_place_gp.json"
+        "sample_index": 2
       },
       {
         "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
@@ -194,10 +194,10 @@
         "param_hash": "3a650f98",
         "tag": "npu_fp16_nm1_cmp33_hier_macro_r4",
         "status": "ok",
+        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm1_cmp/nm1_cmp33_hier_macro_r4/3_3_place_gp.json",
         "sample_id": "npu_e2e_eval_v0__mlp1__fp16_nm1__hier_macro__r4__p3a650f98__bl2e2emacrohardenedcmpv1rerun2__s2",
         "batch_id": "l2_e2e_macro_hardened_cmp_v1_rerun2",
-        "sample_index": 2,
-        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm1_cmp/nm1_cmp33_hier_macro_r4/3_3_place_gp.json"
+        "sample_index": 2
       },
       {
         "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
@@ -206,10 +206,10 @@
         "param_hash": "3fa4f194",
         "tag": "npu_fp16_nm1_cmp33_hier_macro_r5",
         "status": "ok",
+        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm1_cmp/nm1_cmp33_hier_macro_r5/3_3_place_gp.json",
         "sample_id": "npu_e2e_eval_v0__mlp1__fp16_nm1__hier_macro__r5__p3fa4f194__bl2e2emacrohardenedcmpv1rerun2__s2",
         "batch_id": "l2_e2e_macro_hardened_cmp_v1_rerun2",
-        "sample_index": 2,
-        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm1_cmp/nm1_cmp33_hier_macro_r5/3_3_place_gp.json"
+        "sample_index": 2
       },
       {
         "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
@@ -218,10 +218,10 @@
         "param_hash": "258015dc",
         "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r1",
         "status": "ok",
+        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm2_cmp/nm2_cmp33_flat_nomacro_r1/3_3_place_gp.json",
         "sample_id": "npu_e2e_eval_v0__mlp1__fp16_nm2__flat_nomacro__r1__p258015dc__bl2e2emacrohardenedcmpv1rerun2__s2",
         "batch_id": "l2_e2e_macro_hardened_cmp_v1_rerun2",
-        "sample_index": 2,
-        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm2_cmp/nm2_cmp33_flat_nomacro_r1/3_3_place_gp.json"
+        "sample_index": 2
       },
       {
         "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
@@ -230,10 +230,10 @@
         "param_hash": "95526f98",
         "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r2",
         "status": "ok",
+        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm2_cmp/nm2_cmp33_flat_nomacro_r2/3_3_place_gp.json",
         "sample_id": "npu_e2e_eval_v0__mlp1__fp16_nm2__flat_nomacro__r2__p95526f98__bl2e2emacrohardenedcmpv1rerun2__s2",
         "batch_id": "l2_e2e_macro_hardened_cmp_v1_rerun2",
-        "sample_index": 2,
-        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm2_cmp/nm2_cmp33_flat_nomacro_r2/3_3_place_gp.json"
+        "sample_index": 2
       },
       {
         "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
@@ -242,10 +242,10 @@
         "param_hash": "099823db",
         "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r3",
         "status": "ok",
+        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm2_cmp/nm2_cmp33_flat_nomacro_r3/3_3_place_gp.json",
         "sample_id": "npu_e2e_eval_v0__mlp1__fp16_nm2__flat_nomacro__r3__p099823db__bl2e2emacrohardenedcmpv1rerun2__s2",
         "batch_id": "l2_e2e_macro_hardened_cmp_v1_rerun2",
-        "sample_index": 2,
-        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm2_cmp/nm2_cmp33_flat_nomacro_r3/3_3_place_gp.json"
+        "sample_index": 2
       },
       {
         "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
@@ -254,10 +254,10 @@
         "param_hash": "b276f2e7",
         "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r4",
         "status": "ok",
+        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm2_cmp/nm2_cmp33_flat_nomacro_r4/3_3_place_gp.json",
         "sample_id": "npu_e2e_eval_v0__mlp1__fp16_nm2__flat_nomacro__r4__pb276f2e7__bl2e2emacrohardenedcmpv1rerun2__s2",
         "batch_id": "l2_e2e_macro_hardened_cmp_v1_rerun2",
-        "sample_index": 2,
-        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm2_cmp/nm2_cmp33_flat_nomacro_r4/3_3_place_gp.json"
+        "sample_index": 2
       },
       {
         "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
@@ -266,10 +266,10 @@
         "param_hash": "f0b4f9e6",
         "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r5",
         "status": "ok",
+        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm2_cmp/nm2_cmp33_flat_nomacro_r5/3_3_place_gp.json",
         "sample_id": "npu_e2e_eval_v0__mlp1__fp16_nm2__flat_nomacro__r5__pf0b4f9e6__bl2e2emacrohardenedcmpv1rerun2__s2",
         "batch_id": "l2_e2e_macro_hardened_cmp_v1_rerun2",
-        "sample_index": 2,
-        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm2_cmp/nm2_cmp33_flat_nomacro_r5/3_3_place_gp.json"
+        "sample_index": 2
       },
       {
         "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
@@ -278,10 +278,10 @@
         "param_hash": "5d0ac971",
         "tag": "npu_fp16_nm2_cmp33_hier_macro_r1",
         "status": "ok",
+        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm2_cmp/nm2_cmp33_hier_macro_r1/3_3_place_gp.json",
         "sample_id": "npu_e2e_eval_v0__mlp1__fp16_nm2__hier_macro__r1__p5d0ac971__bl2e2emacrohardenedcmpv1rerun2__s2",
         "batch_id": "l2_e2e_macro_hardened_cmp_v1_rerun2",
-        "sample_index": 2,
-        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm2_cmp/nm2_cmp33_hier_macro_r1/3_3_place_gp.json"
+        "sample_index": 2
       },
       {
         "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
@@ -290,10 +290,10 @@
         "param_hash": "a9ae3c35",
         "tag": "npu_fp16_nm2_cmp33_hier_macro_r2",
         "status": "ok",
+        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm2_cmp/nm2_cmp33_hier_macro_r2/3_3_place_gp.json",
         "sample_id": "npu_e2e_eval_v0__mlp1__fp16_nm2__hier_macro__r2__pa9ae3c35__bl2e2emacrohardenedcmpv1rerun2__s2",
         "batch_id": "l2_e2e_macro_hardened_cmp_v1_rerun2",
-        "sample_index": 2,
-        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm2_cmp/nm2_cmp33_hier_macro_r2/3_3_place_gp.json"
+        "sample_index": 2
       },
       {
         "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
@@ -302,10 +302,10 @@
         "param_hash": "c51fa4a2",
         "tag": "npu_fp16_nm2_cmp33_hier_macro_r3",
         "status": "ok",
+        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm2_cmp/nm2_cmp33_hier_macro_r3/3_3_place_gp.json",
         "sample_id": "npu_e2e_eval_v0__mlp1__fp16_nm2__hier_macro__r3__pc51fa4a2__bl2e2emacrohardenedcmpv1rerun2__s2",
         "batch_id": "l2_e2e_macro_hardened_cmp_v1_rerun2",
-        "sample_index": 2,
-        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm2_cmp/nm2_cmp33_hier_macro_r3/3_3_place_gp.json"
+        "sample_index": 2
       },
       {
         "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
@@ -314,10 +314,10 @@
         "param_hash": "98a03366",
         "tag": "npu_fp16_nm2_cmp33_hier_macro_r4",
         "status": "ok",
+        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm2_cmp/nm2_cmp33_hier_macro_r4/3_3_place_gp.json",
         "sample_id": "npu_e2e_eval_v0__mlp1__fp16_nm2__hier_macro__r4__p98a03366__bl2e2emacrohardenedcmpv1rerun2__s2",
         "batch_id": "l2_e2e_macro_hardened_cmp_v1_rerun2",
-        "sample_index": 2,
-        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm2_cmp/nm2_cmp33_hier_macro_r4/3_3_place_gp.json"
+        "sample_index": 2
       },
       {
         "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
@@ -326,10 +326,10 @@
         "param_hash": "41f8b4a8",
         "tag": "npu_fp16_nm2_cmp33_hier_macro_r5",
         "status": "ok",
+        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm2_cmp/nm2_cmp33_hier_macro_r5/3_3_place_gp.json",
         "sample_id": "npu_e2e_eval_v0__mlp1__fp16_nm2__hier_macro__r5__p41f8b4a8__bl2e2emacrohardenedcmpv1rerun2__s2",
         "batch_id": "l2_e2e_macro_hardened_cmp_v1_rerun2",
-        "sample_index": 2,
-        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm2_cmp/nm2_cmp33_hier_macro_r5/3_3_place_gp.json"
+        "sample_index": 2
       }
     ]
   }
