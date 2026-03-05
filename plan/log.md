@@ -354,3 +354,19 @@ Log
   - regenerated campaign report/objective sweep outputs,
   - retention of mapper split provenance tags in row `notes`,
   - repository validation gate `python3 scripts/validate_runs.py`.
+
+2026-03-05 — Enqueue complementary hier-mode rerun for `mlp_smoke_v2`
+- After merging flat-focused rerun results, queued the complementary
+  hierarchical rerun item:
+  - `runs/eval_queue/openroad/queued/l2_e2e_mlp_smoke_v2_focus_hier_v1.json`
+- Scope:
+  - campaign `runs/campaigns/npu/e2e_eval_mlp_smoke_v2_reuse/campaign.json`
+  - `--run_physical --modes hier_macro --repeat 10 --jobs 2`
+  - batch id `l2_e2e_mlp_smoke_v2_focus_hier_v1_rerun1`
+- Objective:
+  - increase hier-mode sample depth to match flat-mode sample count and improve
+    confidence in runtime/energy comparison under the split-enabled model set.
+- Acceptance targets:
+  - hier aggregate `sample_count` from 20 to 30,
+  - mapper split provenance retained in row `notes`,
+  - `python3 scripts/validate_runs.py` passes.
