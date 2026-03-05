@@ -1,0 +1,41 @@
+{
+  "version": 0.1,
+  "campaign_id": "npu_e2e_eval_mlp_smoke_v2_reuse",
+  "run_id": "npu_e2e_eval_mlp_smoke_v2_reuse__mlp1__fp16_nm1__flat_nomacro__r2__p13a2c990",
+  "sample_id": "npu_e2e_eval_mlp_smoke_v2_reuse__mlp1__fp16_nm1__flat_nomacro__r2__p13a2c990__b20260305t073030z__s1",
+  "batch_id": "20260305T073030Z",
+  "sample_index": 1,
+  "model_set_id": "mlp_smoke_v2",
+  "model_manifest": "runs/models/mlp_smoke_v2/manifest.json",
+  "onnx_sha256": "ff95cc222916245d687a47b8f60c2e54fb182871c4e10881ee218dc352baca2e",
+  "mapper_arch_hash": "c8917dbca277bcdf88ef6f3052b62757d35c30d874f7ccd3c163797e50c5037d",
+  "perf_config_hash": "c933265906f13ce5f50b0bda20561872075be34979ded50574aed0252b412378",
+  "timestamp_utc": "2026-03-05T07:30:31+00:00",
+  "status": "ok",
+  "platform": "nangate45",
+  "model_id": "mlp1",
+  "arch_id": "fp16_nm1",
+  "macro_mode": "flat_nomacro",
+  "repeat_index": 2,
+  "physical": {
+    "critical_path_ns": 5.557037432204143,
+    "die_area_um2": 2250000.0,
+    "total_power_mw": 0.193122,
+    "flow_elapsed_s": 845.7,
+    "place_gp_elapsed_s": 422.1
+  },
+  "performance": {
+    "cycles": 491.628864,
+    "latency_ms": 0.002732,
+    "throughput_infer_per_s": 366032.2108345534,
+    "energy_mj": 5.27609304e-07
+  },
+  "artifacts": {
+    "synth_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/13a2c990/result.json",
+    "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v2_reuse/artifacts/perf/mlp1/trace.json",
+    "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v2_reuse/artifacts/mapper/mlp1/schedule.yml",
+    "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v2_reuse/artifacts/mapper/mlp1/descriptors.bin"
+  },
+  "notes": "param_hash=13a2c990; tag=npu_fp16_nm1_cmp33_flat_nomacro_r2; compare_group=baed737c; layer1_manifest=runs/candidates/nangate45/module_candidates.json; layer1_candidates=mult16u_normal_koggestone_nangate45_base@macro_hardened,adder_koggestone_64u_nangate45_base@macro_hardened",
+  "physical_source_campaign": "runs/campaigns/npu/e2e_eval_v0/campaign.json"
+}

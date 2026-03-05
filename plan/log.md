@@ -195,3 +195,26 @@ Log
 - Queue handoff prepared for evaluator: refreshed metadata on
   `l2_e2e_mlp_smoke_v1_focus_flat_v1` (created_utc/requested_by) and kept item
   in `runs/eval_queue/openroad/queued/` for immediate HPC pickup.
+
+2026-03-05 — Phase-5 continuation: `mlp_smoke_v2` scaffold + baseline run
+- Restored queue scaffold tracking by adding:
+  - `runs/eval_queue/openroad/queued/.gitkeep`
+  so the queued state directory persists in git when empty.
+- Added next model-set revision scaffold under `runs/models/mlp_smoke_v2/`:
+  - `manifest.json` with SHA256-pinned ONNX entries,
+  - `README.md` with regeneration/hash update steps,
+  - copied `mlp1.onnx` / `mlp2.onnx` from `mlp_smoke_v1` as initial placeholders.
+- Added new reuse campaign scaffold:
+  - `runs/campaigns/npu/e2e_eval_mlp_smoke_v2_reuse/campaign.json`
+  - `runs/campaigns/npu/e2e_eval_mlp_smoke_v2_reuse/README.md`
+  - `runs/campaigns/npu/e2e_eval_mlp_smoke_v2_reuse/objective_profiles.json`
+  - uses `model_set_id=mlp_smoke_v2` and
+    `physical_source_campaign=runs/campaigns/npu/e2e_eval_v0/campaign.json`.
+- Executed local Layer2 baseline run (no `--run_physical`) and generated
+  reporting artifacts:
+  - `results.csv`, `summary.csv`, `report.md`, `pareto.csv`, `best_point.json`
+  - `objective_sweep.csv`/`objective_sweep.md`
+  - per-profile outputs under `objective_profiles/*`
+  - result-row JSON artifacts under `artifacts/result_rows/`
+- Outcome: all objective profiles again selected
+  `arch_id=fp16_nm1`, `macro_mode=flat_nomacro` as best for this smoke set.
