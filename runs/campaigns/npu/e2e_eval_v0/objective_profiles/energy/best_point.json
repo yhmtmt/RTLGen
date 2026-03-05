@@ -1,6 +1,6 @@
 {
   "campaign_id": "npu_e2e_eval_v0",
-  "generated_utc": "2026-03-03T04:54:29+00:00",
+  "generated_utc": "2026-03-05T02:23:24+00:00",
   "objective_weights": {
     "latency": 0.0,
     "energy": 1.0,
@@ -16,10 +16,10 @@
     "latency_ms_mean": 0.019436,
     "throughput_infer_per_s_mean": 196851.19119480852,
     "energy_mj_mean": 3.7535191919999995e-06,
-    "critical_path_ns_mean": 5.557037432204143,
+    "critical_path_ns_mean": 5.557037432204142,
     "die_area_um2_mean": 2250000.0,
     "total_power_mw_mean": 0.193122,
-    "flow_elapsed_s_mean": 848.418,
+    "flow_elapsed_s_mean": 848.4179999999999,
     "place_gp_elapsed_s_mean": 424.738
   },
   "pareto_count": 2
