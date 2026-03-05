@@ -338,3 +338,19 @@ Log
   - `mapper_split_chunks`
 - Validation:
   - `python3 scripts/validate_runs.py` passed.
+
+2026-03-05 — Enqueue next OpenROAD item for split-path `mlp_smoke_v2`
+- Added new queued evaluator item:
+  - `runs/eval_queue/openroad/queued/l2_e2e_mlp_smoke_v2_focus_flat_v1.json`
+- Scope:
+  - focused physical rerun on `e2e_eval_mlp_smoke_v2_reuse` with
+    `--modes flat_nomacro`, `--repeat 10`, `--jobs 2`
+  - explicit batch id:
+    `l2_e2e_mlp_smoke_v2_focus_flat_v1_rerun1`
+- Objective:
+  - collect higher-confidence runtime/energy samples for current best flat
+    candidates (`fp16_nm1` / `fp16_nm2`) on the split-enabled model set.
+- Acceptance includes:
+  - regenerated campaign report/objective sweep outputs,
+  - retention of mapper split provenance tags in row `notes`,
+  - repository validation gate `python3 scripts/validate_runs.py`.
