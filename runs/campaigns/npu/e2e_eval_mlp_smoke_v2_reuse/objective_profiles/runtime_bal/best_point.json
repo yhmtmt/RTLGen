@@ -1,6 +1,6 @@
 {
   "campaign_id": "npu_e2e_eval_mlp_smoke_v2_reuse",
-  "generated_utc": "2026-03-05T08:49:06+00:00",
+  "generated_utc": "2026-03-05T09:09:04+00:00",
   "objective_weights": {
     "latency": 0.5,
     "energy": 0.5,
@@ -12,14 +12,14 @@
     "arch_id": "fp16_nm1",
     "macro_mode": "flat_nomacro",
     "objective_rank": 1,
-    "objective_score": 0.12242050958096472,
-    "latency_ms_mean": 0.780588,
+    "objective_score": 0.12242050958096397,
+    "latency_ms_mean": 0.7805879999999998,
     "throughput_infer_per_s_mean": 3833.1696322451044,
-    "energy_mj_mean": 0.000150748715736,
-    "critical_path_ns_mean": 5.557037432204143,
+    "energy_mj_mean": 0.00015074871573600004,
+    "critical_path_ns_mean": 5.557037432204142,
     "die_area_um2_mean": 2250000.0,
     "total_power_mw_mean": 0.193122,
-    "flow_elapsed_s_mean": 848.418,
+    "flow_elapsed_s_mean": 848.4179999999999,
     "place_gp_elapsed_s_mean": 424.738
   },
   "pareto_count": 2

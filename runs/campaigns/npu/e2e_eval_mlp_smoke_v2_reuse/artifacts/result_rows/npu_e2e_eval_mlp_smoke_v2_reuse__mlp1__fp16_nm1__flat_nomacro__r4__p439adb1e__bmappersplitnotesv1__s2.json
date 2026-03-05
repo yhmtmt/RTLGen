@@ -1,0 +1,41 @@
+{
+  "version": 0.1,
+  "campaign_id": "npu_e2e_eval_mlp_smoke_v2_reuse",
+  "run_id": "npu_e2e_eval_mlp_smoke_v2_reuse__mlp1__fp16_nm1__flat_nomacro__r4__p439adb1e",
+  "sample_id": "npu_e2e_eval_mlp_smoke_v2_reuse__mlp1__fp16_nm1__flat_nomacro__r4__p439adb1e__bmappersplitnotesv1__s2",
+  "batch_id": "mapper_split_notes_v1",
+  "sample_index": 2,
+  "model_set_id": "mlp_smoke_v2",
+  "model_manifest": "runs/models/mlp_smoke_v2/manifest.json",
+  "onnx_sha256": "13c3cf4eb76bd0fcbb9ac4587eb0ea023dd69baf399b744076ecf285167e5037",
+  "mapper_arch_hash": "c8917dbca277bcdf88ef6f3052b62757d35c30d874f7ccd3c163797e50c5037d",
+  "perf_config_hash": "c933265906f13ce5f50b0bda20561872075be34979ded50574aed0252b412378",
+  "timestamp_utc": "2026-03-05T09:08:46+00:00",
+  "status": "ok",
+  "platform": "nangate45",
+  "model_id": "mlp1",
+  "arch_id": "fp16_nm1",
+  "macro_mode": "flat_nomacro",
+  "repeat_index": 4,
+  "physical": {
+    "critical_path_ns": 5.557037432204143,
+    "die_area_um2": 2250000.0,
+    "total_power_mw": 0.193122,
+    "flow_elapsed_s": 853.2,
+    "place_gp_elapsed_s": 428.19
+  },
+  "performance": {
+    "cycles": 25851.90432,
+    "latency_ms": 0.14365999999999998,
+    "throughput_infer_per_s": 6960.8798552137,
+    "energy_mj": 2.7743906519999998e-05
+  },
+  "artifacts": {
+    "synth_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/439adb1e/result.json",
+    "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v2_reuse/artifacts/perf/mlp1/trace.json",
+    "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v2_reuse/artifacts/mapper/mlp1/schedule.yml",
+    "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v2_reuse/artifacts/mapper/mlp1/descriptors.bin"
+  },
+  "notes": "param_hash=439adb1e; tag=npu_fp16_nm1_cmp33_flat_nomacro_r4; compare_group=baed737c; mapper_split_enabled=0; mapper_split_chunk_count=1; mapper_split_chunks=512; layer1_manifest=runs/candidates/nangate45/module_candidates.json; layer1_candidates=mult16u_normal_koggestone_nangate45_base@macro_hardened,adder_koggestone_64u_nangate45_base@macro_hardened",
+  "physical_source_campaign": "runs/campaigns/npu/e2e_eval_v0/campaign.json"
+}

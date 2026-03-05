@@ -323,3 +323,18 @@ Log
 - Documentation updated:
   - `npu/eval/README.md`
   - `npu/eval/contract.md`
+
+2026-03-05 — `mlp_smoke_v2_reuse` rerun with explicit split-notes batch id
+- Re-ran campaign with explicit batch id:
+  - `python3 npu/eval/run_campaign.py --campaign runs/campaigns/npu/e2e_eval_mlp_smoke_v2_reuse/campaign.json --batch_id mapper_split_notes_v1`
+- Regenerated campaign outputs:
+  - `report.md`, `summary.csv`, `pareto.csv`, `best_point.json`
+  - objective profile reports/CSVs and `objective_sweep.{csv,md}`
+  - per-row artifacts under `artifacts/result_rows/` for batch
+    `mapper_split_notes_v1`.
+- Verified newly appended rows include split provenance tags in `notes`:
+  - `mapper_split_enabled`
+  - `mapper_split_chunk_count`
+  - `mapper_split_chunks`
+- Validation:
+  - `python3 scripts/validate_runs.py` passed.

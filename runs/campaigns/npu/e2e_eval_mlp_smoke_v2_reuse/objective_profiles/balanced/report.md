@@ -1,6 +1,6 @@
 # Campaign Report: npu_e2e_eval_mlp_smoke_v2_reuse
 
-- generated_utc: `2026-03-05T08:49:05+00:00`
+- generated_utc: `2026-03-05T09:09:04+00:00`
 - model_set_id: `mlp_smoke_v2`
 - model_manifest: `runs/models/mlp_smoke_v2/manifest.json`
 - physical_source_campaign: `runs/campaigns/npu/e2e_eval_v0/campaign.json`
@@ -8,8 +8,8 @@
 - summary_csv: `runs/campaigns/npu/e2e_eval_mlp_smoke_v2_reuse/objective_profiles/balanced/summary.csv`
 - pareto_csv: `runs/campaigns/npu/e2e_eval_mlp_smoke_v2_reuse/objective_profiles/balanced/pareto.csv`
 - best_json: `runs/campaigns/npu/e2e_eval_mlp_smoke_v2_reuse/objective_profiles/balanced/best_point.json`
-- total_rows: `40`
-- ok_rows: `40`
+- total_rows: `80`
+- ok_rows: `80`
 - non_ok_rows: `0`
 - duplicate_sample_rows_dropped: `0`
 
@@ -44,11 +44,11 @@
 
 | arch_id | macro_mode | model_id | n | latency_mean_ms | latency_std_ms | throughput_mean | energy_mean_mj | cp_mean_ns | area_mean_um2 | power_mean_mw | flow_mean_s | place_gp_mean_s |
 |---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| fp16_nm1 | flat_nomacro | mlp1 | 5 | 0.1437 | 0.0000 | 6960.8799 | 0.00002774 | 5.5570 | 2250000.0000 | 0.193122 | 848.4180 | 424.7380 |
-| fp16_nm1 | hier_macro | mlp1 | 5 | 0.1437 | 0.0000 | 6960.8799 | 0.00002836 | 5.7749 | 2250000.0000 | 0.197441 | 978.8940 | 480.1040 |
-| fp16_nm2 | flat_nomacro | mlp1 | 5 | 0.1437 | 0.0000 | 6960.8799 | 0.00003023 | 5.7013 | 2250000.0000 | 0.210414 | 829.8140 | 415.6120 |
-| fp16_nm2 | hier_macro | mlp1 | 5 | 0.1437 | 0.0000 | 6960.8799 | 0.00003057 | 5.7409 | 2250000.0000 | 0.212815 | 981.7820 | 452.3540 |
-| fp16_nm1 | flat_nomacro | mlp2 | 5 | 1.4175 | 0.0000 | 705.4594 | 0.00027375 | 5.5570 | 2250000.0000 | 0.193122 | 848.4180 | 424.7380 |
-| fp16_nm1 | hier_macro | mlp2 | 5 | 1.4175 | 0.0000 | 705.4594 | 0.00027988 | 5.7749 | 2250000.0000 | 0.197441 | 978.8940 | 480.1040 |
-| fp16_nm2 | flat_nomacro | mlp2 | 5 | 1.4175 | 0.0000 | 705.4594 | 0.00029827 | 5.7013 | 2250000.0000 | 0.210414 | 829.8140 | 415.6120 |
-| fp16_nm2 | hier_macro | mlp2 | 5 | 1.4175 | 0.0000 | 705.4594 | 0.00030167 | 5.7409 | 2250000.0000 | 0.212815 | 981.7820 | 452.3540 |
+| fp16_nm1 | flat_nomacro | mlp1 | 10 | 0.1437 | 0.0000 | 6960.8799 | 0.00002774 | 5.5570 | 2250000.0000 | 0.193122 | 848.4180 | 424.7380 |
+| fp16_nm1 | hier_macro | mlp1 | 10 | 0.1437 | 0.0000 | 6960.8799 | 0.00002836 | 5.7749 | 2250000.0000 | 0.197441 | 978.8940 | 480.1040 |
+| fp16_nm2 | flat_nomacro | mlp1 | 10 | 0.1437 | 0.0000 | 6960.8799 | 0.00003023 | 5.7013 | 2250000.0000 | 0.210414 | 829.8140 | 415.6120 |
+| fp16_nm2 | hier_macro | mlp1 | 10 | 0.1437 | 0.0000 | 6960.8799 | 0.00003057 | 5.7409 | 2250000.0000 | 0.212815 | 981.7820 | 452.3540 |
+| fp16_nm1 | flat_nomacro | mlp2 | 10 | 1.4175 | 0.0000 | 705.4594 | 0.00027375 | 5.5570 | 2250000.0000 | 0.193122 | 848.4180 | 424.7380 |
+| fp16_nm1 | hier_macro | mlp2 | 10 | 1.4175 | 0.0000 | 705.4594 | 0.00027988 | 5.7749 | 2250000.0000 | 0.197441 | 978.8940 | 480.1040 |
+| fp16_nm2 | flat_nomacro | mlp2 | 10 | 1.4175 | 0.0000 | 705.4594 | 0.00029827 | 5.7013 | 2250000.0000 | 0.210414 | 829.8140 | 415.6120 |
+| fp16_nm2 | hier_macro | mlp2 | 10 | 1.4175 | 0.0000 | 705.4594 | 0.00030167 | 5.7409 | 2250000.0000 | 0.212815 | 981.7820 | 452.3540 |
