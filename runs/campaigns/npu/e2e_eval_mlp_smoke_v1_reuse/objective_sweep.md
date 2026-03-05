@@ -1,6 +1,6 @@
 # Objective Sweep: npu_e2e_eval_mlp_smoke_v1_reuse
 
-- generated_utc: `2026-03-05T06:15:50+00:00`
+- generated_utc: `2026-03-05T06:45:30+00:00`
 - source_campaign: `runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json`
 - output_csv: `runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/objective_sweep.csv`
 - profile_artifacts_dir: `runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/objective_profiles`
