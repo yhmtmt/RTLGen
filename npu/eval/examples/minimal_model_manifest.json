@@ -1,0 +1,11 @@
+{
+  "version": 0.1,
+  "model_set_id": "mlp_smoke_v0",
+  "models": [
+    {
+      "model_id": "mlp1",
+      "onnx_path": "runs/models/mlp_smoke_v0/mlp1.onnx",
+      "onnx_sha256": "ff95cc222916245d687a47b8f60c2e54fb182871c4e10881ee218dc352baca2e"
+    }
+  ]
+}

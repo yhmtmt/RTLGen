@@ -4,7 +4,9 @@ Lightweight validator for NPU evaluation campaign/result JSON files.
 """
 
 import argparse
+import hashlib
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -13,6 +15,7 @@ from typing import Any, Dict, List, Optional
 VALID_MACRO_MODES = {"flat_nomacro", "hier_macro"}
 VALID_STATUS = {"ok", "fail", "skipped"}
 VALID_LAYER1_EVAL_SCOPES = {"wrapped_io", "macro_hardened"}
+SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 
 
 def die(msg: str) -> None:
@@ -64,6 +67,14 @@ def maybe_check_path(path_txt: str, check_paths: bool, where: str) -> None:
     p = Path(path_txt)
     if not p.exists():
         die(f"{where}: path does not exist: {path_txt}")
+
+
+def sha256_file(path: Path) -> str:
+    h = hashlib.sha256()
+    with path.open("rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            h.update(chunk)
+    return h.hexdigest()
 
 
 def validate_layer1_modules(
@@ -153,12 +164,75 @@ def validate_layer1_modules(
         )
 
 
+def validate_model_manifest(
+    *,
+    manifest_path_txt: str,
+    model_set_id: str,
+    check_paths: bool,
+) -> Dict[str, Dict[str, str]]:
+    manifest_path = Path(manifest_path_txt)
+    if not manifest_path.exists():
+        die(f"campaign.model_manifest: path does not exist: {manifest_path_txt}")
+    maybe_check_path(manifest_path_txt, check_paths, "campaign.model_manifest")
+
+    manifest = load_json(manifest_path)
+    expect_keys(manifest, ["version", "model_set_id", "models"], "campaign.model_manifest")
+    if manifest.get("version") != 0.1:
+        die("campaign.model_manifest.version must be 0.1")
+
+    manifest_model_set_id = str(manifest.get("model_set_id", "")).strip()
+    if manifest_model_set_id != model_set_id:
+        die(
+            f"campaign.model_manifest.model_set_id '{manifest_model_set_id}' "
+            f"does not match campaign.model_set_id '{model_set_id}'"
+        )
+
+    models = manifest.get("models")
+    if not isinstance(models, list) or not models:
+        die("campaign.model_manifest.models must be a non-empty array")
+
+    by_id: Dict[str, Dict[str, str]] = {}
+    for i, model in enumerate(models):
+        where = f"campaign.model_manifest.models[{i}]"
+        if not isinstance(model, dict):
+            die(f"{where}: expected object")
+        expect_keys(model, ["model_id", "onnx_path", "onnx_sha256"], where)
+        model_id = str(model.get("model_id", "")).strip()
+        onnx_path = str(model.get("onnx_path", "")).strip()
+        onnx_sha = str(model.get("onnx_sha256", "")).strip().lower()
+        if not model_id:
+            die(f"{where}.model_id must be non-empty")
+        if model_id in by_id:
+            die(f"campaign.model_manifest.models: duplicate model_id '{model_id}'")
+        if not onnx_path:
+            die(f"{where}.onnx_path must be non-empty")
+        if not SHA256_RE.fullmatch(onnx_sha):
+            die(f"{where}.onnx_sha256 must be 64 lowercase hex chars")
+        maybe_check_path(onnx_path, check_paths, f"{where}.onnx_path")
+        if check_paths:
+            p = Path(onnx_path)
+            actual_sha = sha256_file(p)
+            if actual_sha != onnx_sha:
+                die(
+                    f"{where}.onnx_sha256 mismatch for {onnx_path}: "
+                    f"manifest={onnx_sha} actual={actual_sha}"
+                )
+        by_id[model_id] = {
+            "model_id": model_id,
+            "onnx_path": onnx_path,
+            "onnx_sha256": onnx_sha,
+        }
+    return by_id
+
+
 def validate_campaign(doc: Dict[str, Any], check_paths: bool) -> None:
     expect_keys(
         doc,
         [
             "version",
             "campaign_id",
+            "model_set_id",
+            "model_manifest",
             "platform",
             "make_target",
             "repeats",
@@ -171,8 +245,22 @@ def validate_campaign(doc: Dict[str, Any], check_paths: bool) -> None:
     if doc.get("version") != 0.1:
         die("campaign.version must be 0.1")
     expect_string(doc["campaign_id"], "campaign.campaign_id")
+    expect_string(doc["model_set_id"], "campaign.model_set_id")
+    expect_string(doc["model_manifest"], "campaign.model_manifest")
     expect_string(doc["platform"], "campaign.platform")
     expect_string(doc["make_target"], "campaign.make_target")
+    model_set_id = str(doc["model_set_id"]).strip()
+    model_manifest = str(doc["model_manifest"]).strip()
+    model_manifest_by_id = validate_model_manifest(
+        manifest_path_txt=model_manifest,
+        model_set_id=model_set_id,
+        check_paths=check_paths,
+    )
+
+    if "physical_source_campaign" in doc:
+        expect_string(doc["physical_source_campaign"], "campaign.physical_source_campaign")
+        maybe_check_path(doc["physical_source_campaign"], check_paths, "campaign.physical_source_campaign")
+
     repeats = doc["repeats"]
     if isinstance(repeats, bool) or not isinstance(repeats, int) or repeats < 1:
         die("campaign.repeats must be an integer >= 1")
@@ -193,6 +281,15 @@ def validate_campaign(doc: Dict[str, Any], check_paths: bool) -> None:
         if mid in model_ids:
             die(f"{where}: duplicate model_id '{mid}'")
         model_ids.add(mid)
+        mref = model_manifest_by_id.get(str(mid))
+        if mref is None:
+            die(f"{where}: model_id '{mid}' is not present in campaign.model_manifest")
+        manifest_onnx_path = str(mref.get("onnx_path", "")).strip()
+        if str(model["onnx_path"]).strip() != manifest_onnx_path:
+            die(
+                f"{where}.onnx_path '{model['onnx_path']}' does not match "
+                f"campaign.model_manifest path '{manifest_onnx_path}'"
+            )
         if "mapper_arch" in model:
             expect_string(model["mapper_arch"], f"{where}.mapper_arch")
             maybe_check_path(model["mapper_arch"], check_paths, f"{where}.mapper_arch")
@@ -282,6 +379,34 @@ def validate_result_row(doc: Dict[str, Any], check_paths: bool) -> None:
         die("result_row.version must be 0.1")
     for key in ("campaign_id", "run_id", "timestamp_utc", "platform", "model_id", "arch_id"):
         expect_string(doc[key], f"result_row.{key}")
+
+    has_model_set = "model_set_id" in doc
+    has_model_manifest = "model_manifest" in doc
+    has_onnx_sha = "onnx_sha256" in doc
+    if has_model_set or has_model_manifest or has_onnx_sha:
+        if not (has_model_set and has_model_manifest and has_onnx_sha):
+            die(
+                "result_row.model_set_id, result_row.model_manifest, and "
+                "result_row.onnx_sha256 must appear together"
+            )
+        expect_string(doc["model_set_id"], "result_row.model_set_id")
+        expect_string(doc["model_manifest"], "result_row.model_manifest")
+        maybe_check_path(doc["model_manifest"], check_paths, "result_row.model_manifest")
+        expect_string(doc["onnx_sha256"], "result_row.onnx_sha256")
+        if not SHA256_RE.fullmatch(str(doc["onnx_sha256"]).strip().lower()):
+            die("result_row.onnx_sha256 must be 64 lowercase hex chars")
+    if "mapper_arch_hash" in doc:
+        expect_string(doc["mapper_arch_hash"], "result_row.mapper_arch_hash")
+        mhash = str(doc["mapper_arch_hash"]).strip().lower()
+        if mhash and not SHA256_RE.fullmatch(mhash):
+            die("result_row.mapper_arch_hash must be empty or 64 lowercase hex chars")
+    if "perf_config_hash" in doc:
+        expect_string(doc["perf_config_hash"], "result_row.perf_config_hash")
+        phash = str(doc["perf_config_hash"]).strip().lower()
+        if phash and not SHA256_RE.fullmatch(phash):
+            die("result_row.perf_config_hash must be empty or 64 lowercase hex chars")
+    if "physical_source_campaign" in doc:
+        expect_string(doc["physical_source_campaign"], "result_row.physical_source_campaign")
 
     has_sample_id = "sample_id" in doc
     has_batch_id = "batch_id" in doc

@@ -1,6 +1,8 @@
 {
   "version": 0.1,
   "campaign_id": "npu_e2e_eval_v0",
+  "model_set_id": "mlp_smoke_v0",
+  "model_manifest": "runs/models/mlp_smoke_v0/manifest.json",
   "description": "Initial system-level evaluation campaign for ONNX + physical + perf feedback.",
   "platform": "nangate45",
   "make_target": "3_3_place_gp",
@@ -8,13 +10,13 @@
   "models": [
     {
       "model_id": "mlp1",
-      "onnx_path": "runs/campaigns/npu/e2e_eval_v0/models/mlp1.onnx",
+      "onnx_path": "runs/models/mlp_smoke_v0/mlp1.onnx",
       "mapper_arch": "npu/arch/examples/minimal.yml",
       "perf_config": "npu/sim/perf/example_config_fp16_cpp.json"
     },
     {
       "model_id": "mlp2",
-      "onnx_path": "runs/campaigns/npu/e2e_eval_v0/models/mlp2.onnx",
+      "onnx_path": "runs/models/mlp_smoke_v0/mlp2.onnx",
       "mapper_arch": "npu/arch/examples/minimal.yml",
       "perf_config": "npu/sim/perf/example_config_fp16_cpp.json"
     }

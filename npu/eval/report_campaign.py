@@ -444,6 +444,12 @@ def main() -> int:
     lines.append(f"# Campaign Report: {campaign['campaign_id']}")
     lines.append("")
     lines.append(f"- generated_utc: `{datetime.now(timezone.utc).isoformat(timespec='seconds')}`")
+    if str(campaign.get("model_set_id", "")).strip():
+        lines.append(f"- model_set_id: `{campaign.get('model_set_id')}`")
+    if str(campaign.get("model_manifest", "")).strip():
+        lines.append(f"- model_manifest: `{campaign.get('model_manifest')}`")
+    if str(campaign.get("physical_source_campaign", "")).strip():
+        lines.append(f"- physical_source_campaign: `{campaign.get('physical_source_campaign')}`")
     lines.append(f"- results_csv: `{rel_to_repo(results_csv)}`")
     lines.append(f"- summary_csv: `{rel_to_repo(out_csv)}`")
     lines.append(f"- pareto_csv: `{rel_to_repo(pareto_csv)}`")

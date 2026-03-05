@@ -12,6 +12,7 @@ Flow (phase-2 scaffold):
 
 import argparse
 import csv
+import hashlib
 import json
 import os
 import re
@@ -67,6 +68,24 @@ def safe_float(value: Any) -> Optional[float]:
         return float(value)
     except Exception:
         return None
+
+
+def sha256_file(path: Path) -> str:
+    h = hashlib.sha256()
+    with path.open("rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def hash_path_text(path_text: str) -> str:
+    txt = str(path_text or "").strip()
+    if not txt:
+        return ""
+    p = abs_path(txt)
+    if not p.exists() or not p.is_file():
+        return ""
+    return sha256_file(p)
 
 
 def parse_repeat_index(tag: str) -> int:
@@ -157,6 +176,29 @@ def load_top_name_from_design(design_dir: Path) -> str:
     doc = load_json(cfg)
     top = str(doc.get("top_name", "")).strip()
     return top or "npu_top"
+
+
+def load_model_manifest(campaign: Dict[str, Any]) -> Tuple[str, str, Dict[str, Dict[str, str]]]:
+    model_set_id = str(campaign.get("model_set_id", "")).strip()
+    model_manifest_txt = str(campaign.get("model_manifest", "")).strip()
+    if not model_set_id or not model_manifest_txt:
+        die("campaign must define model_set_id and model_manifest")
+    model_manifest_path = abs_path(model_manifest_txt)
+    manifest = load_json(model_manifest_path)
+
+    by_id: Dict[str, Dict[str, str]] = {}
+    for raw in manifest.get("models", []):
+        if not isinstance(raw, dict):
+            continue
+        model_id = str(raw.get("model_id", "")).strip()
+        if not model_id:
+            continue
+        by_id[model_id] = {
+            "model_id": model_id,
+            "onnx_path": str(raw.get("onnx_path", "")).strip(),
+            "onnx_sha256": str(raw.get("onnx_sha256", "")).strip().lower(),
+        }
+    return model_set_id, rel_to_repo(model_manifest_path), by_id
 
 
 def layer1_candidate_note(arch: Dict[str, Any]) -> Tuple[str, bool]:
@@ -567,6 +609,12 @@ def flatten_row(row: Dict[str, Any]) -> Dict[str, Any]:
         "sample_id": row.get("sample_id", ""),
         "batch_id": row.get("batch_id", ""),
         "sample_index": row.get("sample_index", ""),
+        "model_set_id": row.get("model_set_id", ""),
+        "model_manifest": row.get("model_manifest", ""),
+        "onnx_sha256": row.get("onnx_sha256", ""),
+        "mapper_arch_hash": row.get("mapper_arch_hash", ""),
+        "perf_config_hash": row.get("perf_config_hash", ""),
+        "physical_source_campaign": row.get("physical_source_campaign", ""),
         "timestamp_utc": row.get("timestamp_utc"),
         "status": row.get("status"),
         "platform": row.get("platform"),
@@ -673,6 +721,12 @@ def write_row_json(campaign_dir: Path, row: Dict[str, Any]) -> str:
 def build_row(
     *,
     campaign_id: str,
+    model_set_id: str,
+    model_manifest: str,
+    onnx_sha256: str,
+    mapper_arch_hash: str,
+    perf_config_hash: str,
+    physical_source_campaign: str,
     platform: str,
     model_id: str,
     arch_id: str,
@@ -739,6 +793,11 @@ def build_row(
         "sample_id": sample_id,
         "batch_id": batch_id,
         "sample_index": sample_index,
+        "model_set_id": model_set_id,
+        "model_manifest": model_manifest,
+        "onnx_sha256": onnx_sha256,
+        "mapper_arch_hash": mapper_arch_hash,
+        "perf_config_hash": perf_config_hash,
         "timestamp_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "status": status,
         "platform": platform,
@@ -767,6 +826,8 @@ def build_row(
         },
         "notes": "; ".join(notes_parts),
     }
+    if physical_source_campaign:
+        row["physical_source_campaign"] = physical_source_campaign
     validate_result_row(row, check_paths=False)
     return row
 
@@ -822,6 +883,8 @@ def main() -> int:
     validate_campaign(campaign, check_paths=True)
 
     campaign_id = str(campaign["campaign_id"])
+    model_set_id, model_manifest_rel, model_manifest_by_id = load_model_manifest(campaign)
+    physical_source_campaign = str(campaign.get("physical_source_campaign", "")).strip()
     platform = str(campaign["platform"])
     repeats = int(args.repeat) if args.repeat is not None else int(campaign["repeats"])
     if repeats < 1:
@@ -853,14 +916,32 @@ def main() -> int:
 
     # Step 1/2/4: model-level mapper+perf artifacts (independent from physical rows in phase-2 scaffold)
     model_artifacts: Dict[str, Dict[str, Any]] = {}
+    model_provenance: Dict[str, Dict[str, str]] = {}
     for model in models:
         model_id = str(model.get("model_id", "")).strip()
         if not model_id:
             die("model entry missing model_id")
-        if not str(model.get("onnx_path", "")).strip():
+        onnx_path = str(model.get("onnx_path", "")).strip()
+        if not onnx_path:
             die(f"model {model_id}: missing onnx_path")
         if not str(model.get("mapper_arch", "")).strip():
             die(f"model {model_id}: missing mapper_arch")
+        manifest_model = model_manifest_by_id.get(model_id)
+        if manifest_model is None:
+            die(f"model {model_id}: not found in campaign.model_manifest")
+        manifest_onnx_path = str(manifest_model.get("onnx_path", "")).strip()
+        if onnx_path != manifest_onnx_path:
+            die(
+                f"model {model_id}: campaign onnx_path '{onnx_path}' does not match "
+                f"manifest onnx_path '{manifest_onnx_path}'"
+            )
+        model_provenance[model_id] = {
+            "model_set_id": model_set_id,
+            "model_manifest": model_manifest_rel,
+            "onnx_sha256": str(manifest_model.get("onnx_sha256", "")).strip().lower(),
+            "mapper_arch_hash": hash_path_text(str(model.get("mapper_arch", ""))),
+            "perf_config_hash": hash_path_text(str(model.get("perf_config", ""))),
+        }
 
     use_parallel_models = (jobs > 1 and len(models) > 1)
     if use_parallel_models:
@@ -940,6 +1021,7 @@ def main() -> int:
             for model in models:
                 model_id = str(model["model_id"])
                 model_data = model_artifacts[model_id]
+                model_meta = model_provenance[model_id]
 
                 run_id = make_run_id(
                     campaign_id=campaign_id,
@@ -963,6 +1045,12 @@ def main() -> int:
 
                 row = build_row(
                     campaign_id=campaign_id,
+                    model_set_id=str(model_meta.get("model_set_id", "")),
+                    model_manifest=str(model_meta.get("model_manifest", "")),
+                    onnx_sha256=str(model_meta.get("onnx_sha256", "")),
+                    mapper_arch_hash=str(model_meta.get("mapper_arch_hash", "")),
+                    perf_config_hash=str(model_meta.get("perf_config_hash", "")),
+                    physical_source_campaign=physical_source_campaign,
                     platform=platform,
                     model_id=model_id,
                     arch_id=arch_id,

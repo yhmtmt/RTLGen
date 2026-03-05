@@ -2,6 +2,7 @@
 """Validate runs/designs metrics.csv files, metadata.json, and the global runs/index.csv."""
 
 import csv
+import hashlib
 import json
 import re
 import sys
@@ -15,6 +16,7 @@ CANDIDATES_ROOT = REPO_ROOT / "runs" / "candidates"
 CANDIDATE_SCHEMA_BASENAME = "module_candidates.schema.json"
 EVAL_QUEUE_ROOT = REPO_ROOT / "runs" / "eval_queue"
 EVAL_QUEUE_SCHEMA_BASENAME = "item.schema.json"
+MODELS_ROOT = REPO_ROOT / "runs" / "models"
 
 REQUIRED_METRICS_FIELDS = {
     "design",
@@ -55,6 +57,7 @@ VALID_EVAL_QUEUE_STATES = {"queued", "evaluated"}
 VALID_EVAL_QUEUE_LAYERS = {"layer1", "layer2"}
 VALID_EVAL_QUEUE_RESULT_STATUS = {"ok", "fail", "partial"}
 VALID_EVAL_QUEUE_SOURCE_MODES = {"config", "src_verilog"}
+SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 
 
 def read_csv(path: Path):
@@ -217,6 +220,14 @@ def _resolve_repo_path(path_text: str) -> Path:
     return (REPO_ROOT / p).resolve()
 
 
+def _sha256_file(path: Path) -> str:
+    h = hashlib.sha256()
+    with path.open("rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
 def validate_module_candidates():
     errors = []
     warnings = []
@@ -372,6 +383,83 @@ def validate_module_candidates():
 
     for warn in warnings:
         print(f"WARN: {warn}")
+    return errors
+
+
+def validate_model_sets():
+    errors = []
+    if not MODELS_ROOT.exists():
+        return errors
+
+    for manifest_path in sorted(MODELS_ROOT.rglob("manifest.json")):
+        try:
+            with manifest_path.open("r", encoding="utf-8") as f:
+                doc = json.load(f)
+        except json.JSONDecodeError as exc:
+            errors.append(f"{manifest_path}: invalid JSON: {exc}")
+            continue
+
+        if not isinstance(doc, dict):
+            errors.append(f"{manifest_path}: top-level must be an object")
+            continue
+        for key in ("version", "model_set_id", "models"):
+            if key not in doc:
+                errors.append(f"{manifest_path}: missing required key '{key}'")
+        if doc.get("version") != 0.1:
+            errors.append(f"{manifest_path}: version must be 0.1")
+
+        model_set_id = str(doc.get("model_set_id", "")).strip()
+        if not model_set_id:
+            errors.append(f"{manifest_path}.model_set_id: must be non-empty string")
+        elif model_set_id != manifest_path.parent.name:
+            errors.append(
+                f"{manifest_path}.model_set_id '{model_set_id}' does not match directory name "
+                f"'{manifest_path.parent.name}'"
+            )
+
+        models = doc.get("models")
+        if not isinstance(models, list) or not models:
+            errors.append(f"{manifest_path}.models: must be non-empty array")
+            continue
+
+        seen_model_ids = set()
+        for i, model in enumerate(models):
+            where = f"{manifest_path}.models[{i}]"
+            if not isinstance(model, dict):
+                errors.append(f"{where}: expected object")
+                continue
+            for key in ("model_id", "onnx_path", "onnx_sha256"):
+                if key not in model:
+                    errors.append(f"{where}: missing required key '{key}'")
+
+            model_id = str(model.get("model_id", "")).strip()
+            onnx_path_txt = str(model.get("onnx_path", "")).strip()
+            onnx_sha = str(model.get("onnx_sha256", "")).strip().lower()
+            if not model_id:
+                errors.append(f"{where}.model_id: must be non-empty string")
+            elif model_id in seen_model_ids:
+                errors.append(f"{manifest_path}: duplicate model_id '{model_id}'")
+            else:
+                seen_model_ids.add(model_id)
+
+            if not onnx_path_txt:
+                errors.append(f"{where}.onnx_path: must be non-empty string")
+                continue
+            onnx_path = _resolve_repo_path(onnx_path_txt)
+            if not onnx_path.exists():
+                errors.append(f"{where}.onnx_path: path does not exist: {onnx_path_txt}")
+                continue
+
+            if not SHA256_RE.fullmatch(onnx_sha):
+                errors.append(f"{where}.onnx_sha256: must be 64 lowercase hex chars")
+                continue
+            actual_sha = _sha256_file(onnx_path)
+            if actual_sha != onnx_sha:
+                errors.append(
+                    f"{where}.onnx_sha256 mismatch for {onnx_path_txt}: "
+                    f"manifest={onnx_sha} actual={actual_sha}"
+                )
+
     return errors
 
 
@@ -673,6 +761,7 @@ def main():
     errors.extend(validate_metrics())
     errors.extend(validate_metadata())
     errors.extend(validate_module_candidates())
+    errors.extend(validate_model_sets())
     errors.extend(validate_eval_queue())
     errors.extend(validate_index())
     if errors:

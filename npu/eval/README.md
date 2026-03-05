@@ -6,6 +6,7 @@ This directory defines the contract for end-to-end NPU evaluation campaigns:
 - physical mapping (OpenROAD) outputs
 - performance simulation outputs
 - merged PPA + model-level metrics rows
+- benchmark/model-set provenance (`model_set_id`, ONNX SHA256)
 
 It is the first step toward a reproducible closed-loop flow:
 `ONNX -> mapper -> physical -> perf -> report`.
@@ -16,6 +17,8 @@ It is the first step toward a reproducible closed-loop flow:
 - `npu/eval/result_row.schema.json`: JSON schema for merged result rows.
 - `npu/eval/validate.py`: lightweight validator for campaign/result JSON.
 - `npu/eval/examples/`: minimal examples.
+- `runs/models/<model_set_id>/manifest.json`: shared benchmark model-set
+  manifest with ONNX SHA256 checksums.
 
 ## Validation
 Validate campaign manifest:
@@ -44,6 +47,11 @@ campaign (`compare_group`, `tag_prefix`) and encodes physical `param_hash` into
 `run_id` as stable design-point identity across sweep variants.
 Each emitted row also includes `sample_id`/`batch_id`/`sample_index` so
 statistical reruns can coexist without overloading `run_id`.
+Each campaign must also declare `model_set_id` and `model_manifest`
+(`runs/models/<set>/manifest.json`), and emitted rows include
+`model_set_id`/`model_manifest`/`onnx_sha256` for traceability.
+Use a distinct campaign per benchmark set revision (do not silently mutate
+model membership inside one campaign ID).
 When `architecture_points[].layer1_modules` is set, campaign validation checks
 selected candidate IDs against `runs/candidates/...` manifests and rejects
 `wrapped_io` candidates unless `allow_wrapped_io=true` is explicitly set.

@@ -5,6 +5,8 @@
   "required": [
     "version",
     "campaign_id",
+    "model_set_id",
+    "model_manifest",
     "platform",
     "make_target",
     "repeats",
@@ -15,6 +17,9 @@
   "properties": {
     "version": { "const": 0.1 },
     "campaign_id": { "type": "string", "minLength": 1 },
+    "model_set_id": { "type": "string", "minLength": 1 },
+    "model_manifest": { "type": "string", "minLength": 1 },
+    "physical_source_campaign": { "type": "string", "minLength": 1 },
     "description": { "type": "string" },
     "platform": { "type": "string", "minLength": 1 },
     "make_target": { "type": "string", "minLength": 1 },

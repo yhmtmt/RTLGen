@@ -23,6 +23,21 @@
     "sample_id": { "type": "string", "minLength": 1 },
     "batch_id": { "type": "string", "minLength": 1 },
     "sample_index": { "type": "integer", "minimum": 1 },
+    "model_set_id": { "type": "string", "minLength": 1 },
+    "model_manifest": { "type": "string", "minLength": 1 },
+    "onnx_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "mapper_arch_hash": {
+      "type": "string",
+      "pattern": "^$|^[0-9a-f]{64}$"
+    },
+    "perf_config_hash": {
+      "type": "string",
+      "pattern": "^$|^[0-9a-f]{64}$"
+    },
+    "physical_source_campaign": { "type": "string", "minLength": 1 },
     "timestamp_utc": { "type": "string", "minLength": 1 },
     "status": { "type": "string", "enum": ["ok", "fail", "skipped"] },
     "platform": { "type": "string", "minLength": 1 },

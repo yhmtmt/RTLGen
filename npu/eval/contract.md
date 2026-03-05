@@ -14,8 +14,11 @@ be compared across:
 
 ## 1) Campaign Manifest
 A campaign JSON declares:
-- `campaign_id`, `platform`, `make_target`, `repeats`
+- `campaign_id`, `model_set_id`, `model_manifest`, `platform`, `make_target`,
+  `repeats`
 - model list (`models[]`) with ONNX paths and mapper/perf profiles
+  - model IDs/paths must match entries in `model_manifest`
+  - ONNX file hashes in `model_manifest` are validation targets
 - architecture list (`architecture_points[]`) with design directories, sweeps,
   and macro manifests/libraries
   - optional `layer1_modules` per architecture point:
@@ -27,9 +30,14 @@ A campaign JSON declares:
     - `compare_group`
     - `tag_prefix`
     These constrain which `metrics.csv` rows are eligible for merge.
+- optional `physical_source_campaign`:
+  - campaign path used when reusing existing physical samples for additional
+    model benchmarking (no OpenROAD rerun intent)
 - output locations for merged reporting
 
 This file is the single source of truth for what should be evaluated.
+Different benchmark sets/revisions should be tracked as different campaigns
+(`campaign_id`) even when architecture points are unchanged.
 
 ## 2) Merged Result Row
 A merged result row represents one evaluated point:
@@ -38,6 +46,8 @@ A merged result row represents one evaluated point:
   - `sample_id`: unique sample-row identity for statistical reruns.
   - `batch_id`: executor-provided rerun batch label.
   - `sample_index`: per-`run_id` sample sequence index.
+  - `model_set_id`, `model_manifest`, `onnx_sha256`: benchmark provenance.
+  - optional `mapper_arch_hash`, `perf_config_hash`: tool-input provenance.
 - physical metrics:
   - `critical_path_ns`
   - `die_area_um2`

@@ -2,6 +2,7 @@
 """Regression tests for NPU evaluation campaign tooling."""
 
 import csv
+import hashlib
 import json
 import subprocess
 import sys
@@ -16,8 +17,17 @@ PROFILES_JSON = REPO_ROOT / "runs/campaigns/npu/e2e_eval_v0/objective_profiles.j
 
 
 class EvalCampaignToolsRegressionTest(unittest.TestCase):
+    @staticmethod
+    def _sha256_file(path: Path) -> str:
+        h = hashlib.sha256()
+        with path.open("rb") as f:
+            for chunk in iter(lambda: f.read(1024 * 1024), b""):
+                h.update(chunk)
+        return h.hexdigest()
+
     def _write_layer1_guard_case(self, root: Path, *, allow_wrapped_io: bool):
         model_path = root / "models" / "m.onnx"
+        model_manifest = root / "models" / "manifest.json"
         arch_path = root / "arch" / "minimal.yml"
         perf_path = root / "perf" / "cfg.json"
         design_dir = root / "designs" / "npu_demo"
@@ -35,6 +45,25 @@ class EvalCampaignToolsRegressionTest(unittest.TestCase):
         arch_path.write_text("schema_version: 0.2-draft\n", encoding="utf-8")
         perf_path.write_text("{\"latency_scale\":1.0}\n", encoding="utf-8")
         sweep_file.write_text("{\"points\":[]}\n", encoding="utf-8")
+        model_sha = self._sha256_file(model_path)
+        model_manifest.write_text(
+            json.dumps(
+                {
+                    "version": 0.1,
+                    "model_set_id": "guard_models_v0",
+                    "models": [
+                        {
+                            "model_id": "m0",
+                            "onnx_path": str(model_path),
+                            "onnx_sha256": model_sha,
+                        }
+                    ],
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
 
         candidates_doc = {
             "version": 0.1,
@@ -65,6 +94,8 @@ class EvalCampaignToolsRegressionTest(unittest.TestCase):
         campaign_doc = {
             "version": 0.1,
             "campaign_id": "guard_case",
+            "model_set_id": "guard_models_v0",
+            "model_manifest": str(model_manifest),
             "platform": "nangate45",
             "make_target": "3_3_place_gp",
             "repeats": 1,
@@ -337,6 +368,26 @@ class EvalCampaignToolsRegressionTest(unittest.TestCase):
             proc = subprocess.run(cmd, cwd=str(REPO_ROOT), capture_output=True, text=True)
             self.assertEqual(0, proc.returncode, msg=proc.stderr)
             self.assertIn("OK: campaign", proc.stdout)
+
+    def test_validate_campaign_rejects_model_manifest_hash_mismatch(self):
+        with tempfile.TemporaryDirectory() as td:
+            campaign_path = self._write_layer1_guard_case(Path(td), allow_wrapped_io=True)
+            campaign = json.loads(campaign_path.read_text(encoding="utf-8"))
+            manifest_path = Path(campaign["model_manifest"])
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["models"][0]["onnx_sha256"] = "0" * 64
+            manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+            cmd = [
+                sys.executable,
+                str(REPO_ROOT / "npu/eval/validate.py"),
+                "--campaign",
+                str(campaign_path),
+                "--check_paths",
+            ]
+            proc = subprocess.run(cmd, cwd=str(REPO_ROOT), capture_output=True, text=True)
+            self.assertNotEqual(0, proc.returncode)
+            self.assertIn("onnx_sha256 mismatch", proc.stderr)
 
     def test_optimize_campaign_generates_profile_outputs(self):
         with tempfile.TemporaryDirectory() as td:
