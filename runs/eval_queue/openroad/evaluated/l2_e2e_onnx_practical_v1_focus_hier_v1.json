@@ -1,0 +1,228 @@
+{
+  "version": 0.1,
+  "item_id": "l2_e2e_onnx_practical_v1_focus_hier_v1",
+  "title": "Layer2 focused physical rerun for onnx_practical_v1 hier-mode candidates",
+  "layer": "layer2",
+  "flow": "openroad",
+  "state": "evaluated",
+  "priority": 0,
+  "created_utc": "2026-03-06T03:21:49Z",
+  "requested_by": "@yhmtmt",
+  "platform": "nangate45",
+  "task": {
+    "objective": "Run focused physical reruns for the practical onnx_practical_v1 campaign on hierarchical macro mode (fp16_nm1/fp16_nm2) to match flat-mode sample depth and reduce uncertainty before deciding the default macro-mode policy.",
+    "source_mode": "src_verilog",
+    "inputs": {
+      "configs": [
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+      ],
+      "design_dirs": [
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+      ],
+      "sweeps": [
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+      ],
+      "macro_manifests": [
+        "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+        "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json",
+        "runs/designs/npu_macros/mult16u_normal_koggestone_wrapper_ng45_macro/macro_manifest.json",
+        "runs/designs/npu_macros/adder_koggestone_64u_wrapper_ng45_macro/macro_manifest.json"
+      ],
+      "candidate_manifests": [
+        "runs/candidates/nangate45/module_candidates.json"
+      ]
+    },
+    "commands": [
+      {
+        "name": "validate_campaign",
+        "run": "python3 npu/eval/validate.py --campaign runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/campaign.json --check_paths"
+      },
+      {
+        "name": "run_campaign",
+        "run": "python3 npu/eval/run_campaign.py --campaign runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/campaign.json --run_physical --modes hier_macro --repeat 10 --jobs 2 --batch_id l2_e2e_onnx_practical_v1_focus_hier_v1_rerun1"
+      },
+      {
+        "name": "report_campaign",
+        "run": "python3 npu/eval/report_campaign.py --campaign runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/campaign.json"
+      },
+      {
+        "name": "objective_sweep",
+        "run": "python3 npu/eval/optimize_campaign.py --campaign runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/campaign.json --profiles_json runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/objective_profiles.json"
+      },
+      {
+        "name": "validate_runs",
+        "run": "python3 scripts/validate_runs.py"
+      }
+    ],
+    "expected_outputs": [
+      "runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/results.csv",
+      "runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/summary.csv",
+      "runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/report.md",
+      "runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/pareto.csv",
+      "runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/best_point.json",
+      "runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/objective_sweep.csv",
+      "runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/objective_sweep.md"
+    ],
+    "acceptance": [
+      "Hier-mode-only physical rows are appended with batch_id=l2_e2e_onnx_practical_v1_focus_hier_v1_rerun1",
+      "New rows preserve campaign-row provenance including mapper split notes when mapper_split_enabled=1",
+      "Aggregate sample_count for hier modes increases from 15 to 30",
+      "scripts/validate_runs.py passes"
+    ]
+  },
+  "handoff": {
+    "branch": "eval/l2_e2e_onnx_practical_v1_focus_hier_v1/<session_id>",
+    "pr_title": "eval: focused hier-mode rerun for onnx_practical_v1 campaign",
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]",
+    "pr_body_fields": {
+      "evaluator_id": "yhmtmt",
+      "session_id": "s20260306t033831z",
+      "host": "3a18d8e397af",
+      "queue_item_id": "l2_e2e_onnx_practical_v1_focus_hier_v1"
+    },
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Move this item from queued/ to evaluated/ and fill result",
+      "Include metrics row references in result.metrics_rows",
+      "If rerun is repeated, increment batch_id suffix (_rerun2, _rerun3, ...)",
+      "Run python3 scripts/validate_runs.py before pushing"
+    ]
+  },
+  "result": {
+    "completed_utc": "2026-03-06T03:39:29Z",
+    "executor": "@codex",
+    "branch": "eval/l2_e2e_onnx_practical_v1_focus_hier_v1/s20260306t033831z",
+    "evaluator_id": "yhmtmt",
+    "session_id": "s20260306t033831z",
+    "host": "3a18d8e397af",
+    "queue_item_id": "l2_e2e_onnx_practical_v1_focus_hier_v1",
+    "identity_block": "[role:evaluator][account:yhmtmt][session:s20260306t033831z][host:3a18d8e397af][item:l2_e2e_onnx_practical_v1_focus_hier_v1]",
+    "status": "ok",
+    "summary": "Executed focused hier-mode rerun on campaign npu_e2e_eval_onnx_practical_v1_reuse (repeat=10, modes=hier_macro, batch_id=l2_e2e_onnx_practical_v1_focus_hier_v1_rerun1), regenerated reports/objective sweep, and validated repository outputs.",
+    "metrics_rows": [
+      {
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "platform": "nangate45",
+        "run_id": "npu_e2e_eval_onnx_practical_v1_reuse__mlp_p1__fp16_nm1__hier_macro__r1__p54a235ae",
+        "param_hash": "54a235ae",
+        "tag": "npu_fp16_nm1_cmp33_hier_macro_r1",
+        "status": "ok",
+        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm1_cmp/nm1_cmp33_hier_macro_r1/3_3_place_gp.json",
+        "sample_id": "npu_e2e_eval_onnx_practical_v1_reuse__mlp_p1__fp16_nm1__hier_macro__r1__p54a235ae__bl2e2eonnxpracticalv1focushierv1rerun1__s2",
+        "batch_id": "l2_e2e_onnx_practical_v1_focus_hier_v1_rerun1",
+        "sample_index": 2
+      },
+      {
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "platform": "nangate45",
+        "run_id": "npu_e2e_eval_onnx_practical_v1_reuse__mlp_p1__fp16_nm1__hier_macro__r2__pf190a078",
+        "param_hash": "f190a078",
+        "tag": "npu_fp16_nm1_cmp33_hier_macro_r2",
+        "status": "ok",
+        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm1_cmp/nm1_cmp33_hier_macro_r2/3_3_place_gp.json",
+        "sample_id": "npu_e2e_eval_onnx_practical_v1_reuse__mlp_p1__fp16_nm1__hier_macro__r2__pf190a078__bl2e2eonnxpracticalv1focushierv1rerun1__s2",
+        "batch_id": "l2_e2e_onnx_practical_v1_focus_hier_v1_rerun1",
+        "sample_index": 2
+      },
+      {
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "platform": "nangate45",
+        "run_id": "npu_e2e_eval_onnx_practical_v1_reuse__mlp_p1__fp16_nm1__hier_macro__r3__pb874bef7",
+        "param_hash": "b874bef7",
+        "tag": "npu_fp16_nm1_cmp33_hier_macro_r3",
+        "status": "ok",
+        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm1_cmp/nm1_cmp33_hier_macro_r3/3_3_place_gp.json",
+        "sample_id": "npu_e2e_eval_onnx_practical_v1_reuse__mlp_p1__fp16_nm1__hier_macro__r3__pb874bef7__bl2e2eonnxpracticalv1focushierv1rerun1__s2",
+        "batch_id": "l2_e2e_onnx_practical_v1_focus_hier_v1_rerun1",
+        "sample_index": 2
+      },
+      {
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "platform": "nangate45",
+        "run_id": "npu_e2e_eval_onnx_practical_v1_reuse__mlp_p1__fp16_nm1__hier_macro__r4__p3a650f98",
+        "param_hash": "3a650f98",
+        "tag": "npu_fp16_nm1_cmp33_hier_macro_r4",
+        "status": "ok",
+        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm1_cmp/nm1_cmp33_hier_macro_r4/3_3_place_gp.json",
+        "sample_id": "npu_e2e_eval_onnx_practical_v1_reuse__mlp_p1__fp16_nm1__hier_macro__r4__p3a650f98__bl2e2eonnxpracticalv1focushierv1rerun1__s2",
+        "batch_id": "l2_e2e_onnx_practical_v1_focus_hier_v1_rerun1",
+        "sample_index": 2
+      },
+      {
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "platform": "nangate45",
+        "run_id": "npu_e2e_eval_onnx_practical_v1_reuse__mlp_p1__fp16_nm1__hier_macro__r5__p3fa4f194",
+        "param_hash": "3fa4f194",
+        "tag": "npu_fp16_nm1_cmp33_hier_macro_r5",
+        "status": "ok",
+        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm1_cmp/nm1_cmp33_hier_macro_r5/3_3_place_gp.json",
+        "sample_id": "npu_e2e_eval_onnx_practical_v1_reuse__mlp_p1__fp16_nm1__hier_macro__r5__p3fa4f194__bl2e2eonnxpracticalv1focushierv1rerun1__s2",
+        "batch_id": "l2_e2e_onnx_practical_v1_focus_hier_v1_rerun1",
+        "sample_index": 2
+      },
+      {
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+        "platform": "nangate45",
+        "run_id": "npu_e2e_eval_onnx_practical_v1_reuse__mlp_p1__fp16_nm2__hier_macro__r1__p5d0ac971",
+        "param_hash": "5d0ac971",
+        "tag": "npu_fp16_nm2_cmp33_hier_macro_r1",
+        "status": "ok",
+        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm2_cmp/nm2_cmp33_hier_macro_r1/3_3_place_gp.json",
+        "sample_id": "npu_e2e_eval_onnx_practical_v1_reuse__mlp_p1__fp16_nm2__hier_macro__r1__p5d0ac971__bl2e2eonnxpracticalv1focushierv1rerun1__s2",
+        "batch_id": "l2_e2e_onnx_practical_v1_focus_hier_v1_rerun1",
+        "sample_index": 2
+      },
+      {
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+        "platform": "nangate45",
+        "run_id": "npu_e2e_eval_onnx_practical_v1_reuse__mlp_p1__fp16_nm2__hier_macro__r2__pa9ae3c35",
+        "param_hash": "a9ae3c35",
+        "tag": "npu_fp16_nm2_cmp33_hier_macro_r2",
+        "status": "ok",
+        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm2_cmp/nm2_cmp33_hier_macro_r2/3_3_place_gp.json",
+        "sample_id": "npu_e2e_eval_onnx_practical_v1_reuse__mlp_p1__fp16_nm2__hier_macro__r2__pa9ae3c35__bl2e2eonnxpracticalv1focushierv1rerun1__s2",
+        "batch_id": "l2_e2e_onnx_practical_v1_focus_hier_v1_rerun1",
+        "sample_index": 2
+      },
+      {
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+        "platform": "nangate45",
+        "run_id": "npu_e2e_eval_onnx_practical_v1_reuse__mlp_p1__fp16_nm2__hier_macro__r3__pc51fa4a2",
+        "param_hash": "c51fa4a2",
+        "tag": "npu_fp16_nm2_cmp33_hier_macro_r3",
+        "status": "ok",
+        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm2_cmp/nm2_cmp33_hier_macro_r3/3_3_place_gp.json",
+        "sample_id": "npu_e2e_eval_onnx_practical_v1_reuse__mlp_p1__fp16_nm2__hier_macro__r3__pc51fa4a2__bl2e2eonnxpracticalv1focushierv1rerun1__s2",
+        "batch_id": "l2_e2e_onnx_practical_v1_focus_hier_v1_rerun1",
+        "sample_index": 2
+      },
+      {
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+        "platform": "nangate45",
+        "run_id": "npu_e2e_eval_onnx_practical_v1_reuse__mlp_p1__fp16_nm2__hier_macro__r4__p98a03366",
+        "param_hash": "98a03366",
+        "tag": "npu_fp16_nm2_cmp33_hier_macro_r4",
+        "status": "ok",
+        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm2_cmp/nm2_cmp33_hier_macro_r4/3_3_place_gp.json",
+        "sample_id": "npu_e2e_eval_onnx_practical_v1_reuse__mlp_p1__fp16_nm2__hier_macro__r4__p98a03366__bl2e2eonnxpracticalv1focushierv1rerun1__s2",
+        "batch_id": "l2_e2e_onnx_practical_v1_focus_hier_v1_rerun1",
+        "sample_index": 2
+      },
+      {
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+        "platform": "nangate45",
+        "run_id": "npu_e2e_eval_onnx_practical_v1_reuse__mlp_p1__fp16_nm2__hier_macro__r5__p41f8b4a8",
+        "param_hash": "41f8b4a8",
+        "tag": "npu_fp16_nm2_cmp33_hier_macro_r5",
+        "status": "ok",
+        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm2_cmp/nm2_cmp33_hier_macro_r5/3_3_place_gp.json",
+        "sample_id": "npu_e2e_eval_onnx_practical_v1_reuse__mlp_p1__fp16_nm2__hier_macro__r5__p41f8b4a8__bl2e2eonnxpracticalv1focushierv1rerun1__s2",
+        "batch_id": "l2_e2e_onnx_practical_v1_focus_hier_v1_rerun1",
+        "sample_index": 2
+      }
+    ]
+  }
+}
