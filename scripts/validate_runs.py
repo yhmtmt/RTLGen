@@ -60,6 +60,7 @@ VALID_EVAL_QUEUE_RESULT_STATUS = {"ok", "fail", "partial"}
 VALID_EVAL_QUEUE_SOURCE_MODES = {"config", "src_verilog"}
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 SESSION_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
+FETCH_URL_RE = re.compile(r"^(https?|file)://")
 
 
 def read_csv(path: Path):
@@ -259,6 +260,40 @@ def _sha256_file(path: Path) -> str:
         for chunk in iter(lambda: f.read(1024 * 1024), b""):
             h.update(chunk)
     return h.hexdigest()
+
+
+def _validate_model_fetch(fetch, where, errors):
+    if not isinstance(fetch, dict):
+        errors.append(f"{where}: expected object")
+        return False
+
+    url = str(fetch.get("url", "")).strip()
+    if not url:
+        errors.append(f"{where}.url: must be non-empty string")
+        return False
+    if not FETCH_URL_RE.fullmatch(url):
+        errors.append(f"{where}.url: must use http://, https://, or file://")
+        return False
+
+    mirrors = fetch.get("mirrors", [])
+    if "mirrors" in fetch:
+        if not isinstance(mirrors, list):
+            errors.append(f"{where}.mirrors: expected array")
+            return False
+        for i, mirror in enumerate(mirrors):
+            mirror_txt = str(mirror).strip()
+            if not mirror_txt:
+                errors.append(f"{where}.mirrors[{i}]: must be non-empty string")
+                continue
+            if not FETCH_URL_RE.fullmatch(mirror_txt):
+                errors.append(
+                    f"{where}.mirrors[{i}]: must use http://, https://, or file://"
+                )
+
+    for key in ("notes", "license"):
+        if key in fetch and not str(fetch.get(key, "")).strip():
+            errors.append(f"{where}.{key}: must be non-empty string when present")
+    return True
 
 
 def validate_module_candidates():
@@ -478,14 +513,20 @@ def validate_model_sets():
             if not onnx_path_txt:
                 errors.append(f"{where}.onnx_path: must be non-empty string")
                 continue
-            onnx_path = _resolve_repo_path(onnx_path_txt)
-            if not onnx_path.exists():
-                errors.append(f"{where}.onnx_path: path does not exist: {onnx_path_txt}")
-                continue
-
             if not SHA256_RE.fullmatch(onnx_sha):
                 errors.append(f"{where}.onnx_sha256: must be 64 lowercase hex chars")
                 continue
+            fetch_ok = True
+            fetch = model.get("fetch")
+            if "fetch" in model:
+                fetch_ok = _validate_model_fetch(fetch, f"{where}.fetch", errors)
+            onnx_path = _resolve_repo_path(onnx_path_txt)
+            if not onnx_path.exists():
+                if fetch_ok and isinstance(fetch, dict):
+                    continue
+                errors.append(f"{where}.onnx_path: path does not exist: {onnx_path_txt}")
+                continue
+
             actual_sha = _sha256_file(onnx_path)
             if actual_sha != onnx_sha:
                 errors.append(

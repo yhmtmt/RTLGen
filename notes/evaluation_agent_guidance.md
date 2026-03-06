@@ -28,19 +28,26 @@ Read Order (Do This First)
    - `runs/eval_queue/openroad/queued/*.json`
 5. If queue item references candidates:
    - `runs/candidates/<pdk>/module_candidates.json`
+6. If queue item references a Layer 2 campaign with external model fetch
+   metadata:
+   - `python3 npu/eval/fetch_models.py --manifest <model_manifest.json>`
 
 Execution Model (Queue -> Evaluated)
 ------------------------------------
 1. Pick a queued item JSON.
 2. Create evaluator branch: `eval/<item_id>/<session_id>`.
-3. Run commands listed in `task.commands[]` exactly, unless task explicitly
+3. If the task references a Layer 2 model manifest with `models[].fetch`,
+   materialize the ONNX files before `--check_paths` validation or campaign
+   execution:
+   - `python3 npu/eval/fetch_models.py --manifest <model_manifest.json>`
+4. Run commands listed in `task.commands[]` exactly, unless task explicitly
    allows parameter retuning.
-4. Commit lightweight outputs only (configs/manifests/RTL/metrics/report rows).
-5. Update the item JSON with `result` payload.
-6. Move item file from:
+5. Commit lightweight outputs only (configs/manifests/RTL/metrics/report rows).
+6. Update the item JSON with `result` payload.
+7. Move item file from:
    - `runs/eval_queue/openroad/queued/` ->
    - `runs/eval_queue/openroad/evaluated/`
-7. Open PR with the requested `handoff.pr_title`.
+8. Open PR with the requested `handoff.pr_title`.
 
 Identity protocol (required when using shared GitHub account):
 - Use one session ID per evaluator run (example: `s20260305t2310z`).
@@ -85,6 +92,7 @@ python3 scripts/validate_runs.py
 
 If Layer 2 campaign files are changed, also run:
 ```sh
+python3 npu/eval/fetch_models.py --manifest <model_manifest.json>   # when models[].fetch is used
 python3 npu/eval/validate.py --campaign <campaign.json> --check_paths
 ```
 

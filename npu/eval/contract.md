@@ -19,6 +19,9 @@ A campaign JSON declares:
 - model list (`models[]`) with ONNX paths and mapper/perf profiles
   - model IDs/paths must match entries in `model_manifest`
   - ONNX file hashes in `model_manifest` are validation targets
+  - model-manifest entries may optionally add `fetch` metadata so evaluators
+    can materialize large ONNX binaries locally instead of tracking them in
+    the repo
 - architecture list (`architecture_points[]`) with design directories, sweeps,
   and macro manifests/libraries
   - optional `layer1_modules` per architecture point:
@@ -38,6 +41,9 @@ A campaign JSON declares:
 This file is the single source of truth for what should be evaluated.
 Different benchmark sets/revisions should be tracked as different campaigns
 (`campaign_id`) even when architecture points are unchanged.
+When `model_manifest.models[].fetch` is present, evaluators should run
+`python3 npu/eval/fetch_models.py --manifest <manifest.json>` before
+`validate.py --check_paths` or `run_campaign.py`.
 
 ## 2) Merged Result Row
 A merged result row represents one evaluated point:
@@ -75,6 +81,9 @@ split-vs-non-split filtering in CSV analysis.
 - IDs must be non-empty and unique within each list.
 - `repeats >= 1`.
 - `macro_mode` must be one of: `flat_nomacro`, `hier_macro`.
+- If an ONNX file is intentionally absent from the repo, its manifest entry
+  must provide valid `fetch.url` metadata; otherwise validation fails even
+  without `--check_paths`.
 - If `layer1_modules` is set, selected candidate IDs must exist in the
   manifest and match campaign platform.
 - `wrapped_io` candidates are rejected unless `allow_wrapped_io=true` is set

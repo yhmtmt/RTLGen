@@ -40,7 +40,8 @@ Git: a8e4d58
   validator (`npu/eval/validate.py`), orchestrator
   (`npu/eval/run_campaign.py`), reporting/ranking
   (`npu/eval/report_campaign.py`), and objective-profile sweep
-  (`npu/eval/optimize_campaign.py`) are active with the scaffold
+  (`npu/eval/optimize_campaign.py`) are active with evaluator-side external
+  model fetch support (`npu/eval/fetch_models.py`), the scaffold
   `runs/campaigns/npu/e2e_eval_v0/` and active reuse campaigns
   `runs/campaigns/npu/e2e_eval_mlp_smoke_v2_reuse/` and
   `runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse_num_modules_v1/`.
@@ -65,6 +66,8 @@ Git: a8e4d58
 - Broaden validation of the `num_modules`-aware mapper/perf contract beyond the
   current practical MLP proxy set and confirm the objective-weight policy for
   default architecture selection.
+- Author the first non-repo-tracked imported ONNX benchmark set using
+  evaluator-side fetch metadata, then rerun the practical campaign on it.
 - Stronger `arch v0.2` validation (types/ranges/enums) and mapper/perf usage of
   interconnect + mapping constraints.
 - Post-physical SRAM metric extraction and feedback loop into perf simulation.

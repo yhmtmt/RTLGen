@@ -36,6 +36,13 @@ Optionally verify path-like fields exist:
 python3 npu/eval/validate.py --campaign <campaign.json> --check_paths
 ```
 
+If the referenced model manifest uses external fetch metadata, materialize the
+ONNX files first:
+```sh
+python3 npu/eval/fetch_models.py --manifest runs/models/<model_set_id>/manifest.json
+```
+Then rerun `--check_paths`.
+
 Reuse-oriented campaign example:
 ```sh
 python3 npu/eval/validate.py \
@@ -49,6 +56,8 @@ Run mapper + perf and merge with physical metrics into append-only results CSV:
 python3 npu/eval/run_campaign.py \
   --campaign runs/campaigns/npu/e2e_eval_v0/campaign.json
 ```
+If a model file declared in the manifest is missing locally, the runner now
+fails early with a fetch hint instead of falling through to mapper errors.
 The runner honors optional per-architecture `physical_select` filters in the
 campaign (`compare_group`, `tag_prefix`) and encodes physical `param_hash` into
 `run_id` as stable design-point identity across sweep variants.
@@ -61,6 +70,10 @@ Each campaign must also declare `model_set_id` and `model_manifest`
 `model_set_id`/`model_manifest`/`onnx_sha256` for traceability.
 Use a distinct campaign per benchmark set revision (do not silently mutate
 model membership inside one campaign ID).
+Model manifests may keep large ONNX binaries out of the repo by attaching an
+optional `fetch` object to each model entry. The fetch tool materializes the
+file into `onnx_path` while preserving the existing `onnx_sha256` provenance
+contract.
 When `architecture_points[].layer1_modules` is set, campaign validation checks
 selected candidate IDs against `runs/candidates/...` manifests and rejects
 `wrapped_io` candidates unless `allow_wrapped_io=true` is explicitly set.

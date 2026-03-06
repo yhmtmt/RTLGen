@@ -194,7 +194,7 @@ def load_top_name_from_design(design_dir: Path) -> str:
     return top or "npu_top"
 
 
-def load_model_manifest(campaign: Dict[str, Any]) -> Tuple[str, str, Dict[str, Dict[str, str]]]:
+def load_model_manifest(campaign: Dict[str, Any]) -> Tuple[str, str, Dict[str, Dict[str, Any]]]:
     model_set_id = str(campaign.get("model_set_id", "")).strip()
     model_manifest_txt = str(campaign.get("model_manifest", "")).strip()
     if not model_set_id or not model_manifest_txt:
@@ -202,7 +202,7 @@ def load_model_manifest(campaign: Dict[str, Any]) -> Tuple[str, str, Dict[str, D
     model_manifest_path = abs_path(model_manifest_txt)
     manifest = load_json(model_manifest_path)
 
-    by_id: Dict[str, Dict[str, str]] = {}
+    by_id: Dict[str, Dict[str, Any]] = {}
     for raw in manifest.get("models", []):
         if not isinstance(raw, dict):
             continue
@@ -214,6 +214,9 @@ def load_model_manifest(campaign: Dict[str, Any]) -> Tuple[str, str, Dict[str, D
             "onnx_path": str(raw.get("onnx_path", "")).strip(),
             "onnx_sha256": str(raw.get("onnx_sha256", "")).strip().lower(),
         }
+        fetch = raw.get("fetch")
+        if isinstance(fetch, dict):
+            by_id[model_id]["fetch"] = fetch
     return model_set_id, rel_to_repo(model_manifest_path), by_id
 
 
@@ -1024,7 +1027,7 @@ def main() -> int:
     os.chdir(REPO_ROOT)
     campaign_path = abs_path(args.campaign)
     campaign = load_json(campaign_path)
-    validate_campaign(campaign, check_paths=True)
+    validate_campaign(campaign, check_paths=True, allow_fetch_missing_paths=True)
 
     campaign_id = str(campaign["campaign_id"])
     model_set_id, model_manifest_rel, model_manifest_by_id = load_model_manifest(campaign)
@@ -1079,6 +1082,15 @@ def main() -> int:
                 f"model {model_id}: campaign onnx_path '{onnx_path}' does not match "
                 f"manifest onnx_path '{manifest_onnx_path}'"
             )
+        onnx_abs = abs_path(onnx_path)
+        if not onnx_abs.exists():
+            fetch = manifest_model.get("fetch")
+            if isinstance(fetch, dict) and str(fetch.get("url", "")).strip():
+                die(
+                    f"model {model_id}: missing ONNX file {onnx_path}; "
+                    f"run `python3 npu/eval/fetch_models.py --manifest {model_manifest_rel}` first"
+                )
+            die(f"model {model_id}: missing ONNX file {onnx_path}")
         for arch in points:
             arch_id = str(arch["arch_id"])
             hints = arch_model_hints(arch)

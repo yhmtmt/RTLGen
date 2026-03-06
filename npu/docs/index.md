@@ -29,6 +29,8 @@ Two-layer optimization split and interaction contract are defined in
   `runs/campaigns/npu/e2e_eval_v0/` and active reuse campaigns
   `runs/campaigns/npu/e2e_eval_mlp_smoke_v2_reuse/` and
   `runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse_num_modules_v1/`.
+- **Implemented**: evaluator-side external ONNX fetch support via
+  `npu/eval/fetch_models.py`, so model manifests can stay lightweight.
 - **Implemented**: phase-1 mapper split for oversized MLP `GEMM2`
   weight-SRAM cases, including schedule metadata and campaign-row provenance.
 
@@ -53,6 +55,7 @@ Two-layer optimization split and interaction contract are defined in
 - `npu/sim/run_golden.sh`: golden regression across RTL + performance simulator.
 - `npu/sim/rtl/README.md`: RTL simulation coverage and local commands.
 - `npu/sim/perf/README.md`: perf model assumptions, options, and test coverage.
+- `npu/eval/fetch_models.py`: materialize externally hosted ONNX files declared in model manifests.
 - `npu/synth/pre_synth_memory.py`: pre-synthesis SRAM stage (memgen/cacti policy).
 - `npu/synth/run_fp16_backend_sweep.py`: fp16 backend sweep (`builtin_raw16` vs `cpp_ieee`).
 
@@ -77,6 +80,8 @@ Two-layer optimization split and interaction contract are defined in
   Keep `fp16_nm1 + flat_nomacro` as the explicit energy/PPA alternative.
 - Validate the `num_modules`-aware contract on broader imported ONNX models
   before treating the current proxy-model result as universal.
+- Create the first externally fetched imported ONNX benchmark set instead of
+  tracking large model binaries in the repo.
 - Keep `status.md`, `workflow.md`, and synthesis plans synced with each sweep milestone.
 - Add explicit runbook for compute-enabled NPU block sweeps beyond fp16 backend comparison.
 - Generalize the currently implemented phase-1 mapper split/tiling path beyond

@@ -12,12 +12,25 @@ Each model set lives under `runs/models/<model_set_id>/` and must provide a
 - `version` (0.1)
 - `model_set_id`
 - `models[]` entries: `model_id`, `onnx_path`, `onnx_sha256`
+- optional `models[].fetch` metadata when the ONNX binary is intentionally not
+  stored in the repo:
+  - `url` (required): `http://`, `https://`, or `file://`
+  - `mirrors[]` (optional)
+  - `notes`, `license` (optional)
 
 Campaigns reference model sets via:
 - `model_set_id`
 - `model_manifest`
 
 This keeps model provenance traceable in `results.csv` and result-row JSON.
+When `models[].fetch` is present, evaluators should materialize the binary into
+`onnx_path` with:
+
+```sh
+python3 npu/eval/fetch_models.py --manifest runs/models/<model_set_id>/manifest.json
+```
+
+The fetched file must still match `onnx_sha256`.
 
 Versioning policy
 -----------------
@@ -34,4 +47,4 @@ Current sets
 - `mlp_smoke_v2`: scaled smoke set (`mlp3`/`mlp4` presets) paired with
   `runs/campaigns/npu/e2e_eval_mlp_smoke_v2_reuse/`.
 - `onnx_practical_v1`: practical-scale benchmark set (larger MLP proxies)
-  paired with `runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/`.
+  paired with `runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse_num_modules_v1/`.

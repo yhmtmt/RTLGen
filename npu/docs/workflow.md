@@ -44,6 +44,9 @@ For the current practical baseline, use
 `runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse_num_modules_v1/`. Keep
 `runs/campaigns/npu/e2e_eval_v0/` as the minimal historical scaffold.
 
+- If the selected model set uses external fetch metadata, materialize ONNX
+  files before path validation or campaign execution:
+  `python3 npu/eval/fetch_models.py --manifest runs/models/<model_set_id>/manifest.json`
 - Validate campaign manifest:
   `python3 npu/eval/validate.py --campaign runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse_num_modules_v1/campaign.json --check_paths`
 - Validate merged row format:
@@ -178,6 +181,9 @@ For the current practical baseline, use
 - Validate the new `num_modules` contract on broader imported ONNX models and
   on non-MLP lowering patterns before treating the current practical proxy set
   as a universal default.
+- Author the first evaluator-fetched imported ONNX model set (`models[].fetch`
+  rather than tracked binaries), then rerun the `num_modules`-aware campaign
+  on that set.
 - Add compute-enabled non-fp16 block sweep runbooks (DMA/CQ + GEMM/VEC variants).
 - Generalize mapper split/tiling beyond the current phase-1 MLP `GEMM2`
   output-chunking path:

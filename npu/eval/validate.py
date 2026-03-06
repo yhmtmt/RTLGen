@@ -16,6 +16,7 @@ VALID_MACRO_MODES = {"flat_nomacro", "hier_macro"}
 VALID_STATUS = {"ok", "fail", "skipped"}
 VALID_LAYER1_EVAL_SCOPES = {"wrapped_io", "macro_hardened"}
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+FETCH_URL_RE = re.compile(r"^(https?|file)://")
 
 
 def die(msg: str) -> None:
@@ -67,6 +68,45 @@ def maybe_check_path(path_txt: str, check_paths: bool, where: str) -> None:
     p = Path(path_txt)
     if not p.exists():
         die(f"{where}: path does not exist: {path_txt}")
+
+
+def validate_fetch_spec(fetch_raw: Any, where: str) -> Dict[str, Any]:
+    if not isinstance(fetch_raw, dict):
+        die(f"{where}: expected object")
+    allowed = {"url", "mirrors", "notes", "license"}
+    for key in fetch_raw.keys():
+        if key not in allowed:
+            die(f"{where}: unknown key '{key}'")
+
+    expect_keys(fetch_raw, ["url"], where)
+    url = str(fetch_raw.get("url", "")).strip()
+    if not url:
+        die(f"{where}.url must be non-empty")
+    if not FETCH_URL_RE.match(url):
+        die(f"{where}.url must use http://, https://, or file://")
+
+    mirrors_out: List[str] = []
+    if "mirrors" in fetch_raw:
+        mirrors = fetch_raw["mirrors"]
+        if not isinstance(mirrors, list):
+            die(f"{where}.mirrors: expected array")
+        for i, mirror in enumerate(mirrors):
+            expect_string(mirror, f"{where}.mirrors[{i}]")
+            mirror_txt = str(mirror).strip()
+            if not FETCH_URL_RE.match(mirror_txt):
+                die(
+                    f"{where}.mirrors[{i}] must use http://, https://, or file://"
+                )
+            mirrors_out.append(mirror_txt)
+
+    out = {"url": url, "mirrors": mirrors_out}
+    if "notes" in fetch_raw:
+        expect_string(fetch_raw["notes"], f"{where}.notes")
+        out["notes"] = str(fetch_raw["notes"]).strip()
+    if "license" in fetch_raw:
+        expect_string(fetch_raw["license"], f"{where}.license")
+        out["license"] = str(fetch_raw["license"]).strip()
+    return out
 
 
 def sha256_file(path: Path) -> str:
@@ -169,7 +209,8 @@ def validate_model_manifest(
     manifest_path_txt: str,
     model_set_id: str,
     check_paths: bool,
-) -> Dict[str, Dict[str, str]]:
+    allow_fetch_missing_paths: bool = False,
+) -> Dict[str, Dict[str, Any]]:
     manifest_path = Path(manifest_path_txt)
     if not manifest_path.exists():
         die(f"campaign.model_manifest: path does not exist: {manifest_path_txt}")
@@ -191,7 +232,7 @@ def validate_model_manifest(
     if not isinstance(models, list) or not models:
         die("campaign.model_manifest.models must be a non-empty array")
 
-    by_id: Dict[str, Dict[str, str]] = {}
+    by_id: Dict[str, Dict[str, Any]] = {}
     for i, model in enumerate(models):
         where = f"campaign.model_manifest.models[{i}]"
         if not isinstance(model, dict):
@@ -208,24 +249,41 @@ def validate_model_manifest(
             die(f"{where}.onnx_path must be non-empty")
         if not SHA256_RE.fullmatch(onnx_sha):
             die(f"{where}.onnx_sha256 must be 64 lowercase hex chars")
-        maybe_check_path(onnx_path, check_paths, f"{where}.onnx_path")
+        fetch_meta: Optional[Dict[str, Any]] = None
+        if "fetch" in model:
+            fetch_meta = validate_fetch_spec(model["fetch"], f"{where}.fetch")
+
+        p = Path(onnx_path)
         if check_paths:
-            p = Path(onnx_path)
-            actual_sha = sha256_file(p)
-            if actual_sha != onnx_sha:
-                die(
-                    f"{where}.onnx_sha256 mismatch for {onnx_path}: "
-                    f"manifest={onnx_sha} actual={actual_sha}"
-                )
+            if p.exists():
+                actual_sha = sha256_file(p)
+                if actual_sha != onnx_sha:
+                    die(
+                        f"{where}.onnx_sha256 mismatch for {onnx_path}: "
+                        f"manifest={onnx_sha} actual={actual_sha}"
+                    )
+            elif not (allow_fetch_missing_paths and fetch_meta is not None):
+                die(f"{where}.onnx_path: path does not exist: {onnx_path}")
+        elif not p.exists() and fetch_meta is None:
+            die(
+                f"{where}.onnx_path does not exist: {onnx_path}; "
+                "provide fetch metadata or materialize the file"
+            )
         by_id[model_id] = {
             "model_id": model_id,
             "onnx_path": onnx_path,
             "onnx_sha256": onnx_sha,
         }
+        if fetch_meta is not None:
+            by_id[model_id]["fetch"] = fetch_meta
     return by_id
 
 
-def validate_campaign(doc: Dict[str, Any], check_paths: bool) -> None:
+def validate_campaign(
+    doc: Dict[str, Any],
+    check_paths: bool,
+    allow_fetch_missing_paths: bool = False,
+) -> None:
     expect_keys(
         doc,
         [
@@ -255,6 +313,7 @@ def validate_campaign(doc: Dict[str, Any], check_paths: bool) -> None:
         manifest_path_txt=model_manifest,
         model_set_id=model_set_id,
         check_paths=check_paths,
+        allow_fetch_missing_paths=allow_fetch_missing_paths,
     )
 
     if "physical_source_campaign" in doc:
@@ -276,7 +335,6 @@ def validate_campaign(doc: Dict[str, Any], check_paths: bool) -> None:
         expect_keys(model, ["model_id", "onnx_path"], where)
         expect_string(model["model_id"], f"{where}.model_id")
         expect_string(model["onnx_path"], f"{where}.onnx_path")
-        maybe_check_path(model["onnx_path"], check_paths, f"{where}.onnx_path")
         mid = model["model_id"]
         if mid in model_ids:
             die(f"{where}: duplicate model_id '{mid}'")
@@ -290,6 +348,13 @@ def validate_campaign(doc: Dict[str, Any], check_paths: bool) -> None:
                 f"{where}.onnx_path '{model['onnx_path']}' does not match "
                 f"campaign.model_manifest path '{manifest_onnx_path}'"
             )
+        if check_paths:
+            model_onnx_path = str(model["onnx_path"]).strip()
+            p = Path(model_onnx_path)
+            if not p.exists() and not (
+                allow_fetch_missing_paths and isinstance(mref.get("fetch"), dict)
+            ):
+                die(f"{where}.onnx_path: path does not exist: {model_onnx_path}")
         if "mapper_arch" in model:
             expect_string(model["mapper_arch"], f"{where}.mapper_arch")
             maybe_check_path(model["mapper_arch"], check_paths, f"{where}.mapper_arch")
