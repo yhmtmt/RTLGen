@@ -27,6 +27,8 @@ Two-layer optimization split and interaction contract are defined in
 - **Implemented**: end-to-end evaluation flow contract + campaign tooling
   (`npu/eval/`, `npu/docs/eval_flow_plan.md`,
   `runs/campaigns/npu/e2e_eval_v0/`).
+- **Implemented**: phase-1 mapper split for oversized MLP `GEMM2`
+  weight-SRAM cases, including schedule metadata and campaign-row provenance.
 
 ## Specs
 - `npu/shell/spec.md`: shell contract (MMIO, queue, DMA, events).
@@ -68,7 +70,7 @@ Two-layer optimization split and interaction contract are defined in
 ## Next steps
 - Keep `status.md`, `workflow.md`, and synthesis plans synced with each sweep milestone.
 - Add explicit runbook for compute-enabled NPU block sweeps beyond fp16 backend comparison.
-- Implement mapper-side model split/tiling for large ONNX workloads that
-  exceed SRAM when lowered monolithically.
+- Generalize the currently implemented phase-1 mapper split/tiling path beyond
+  MLP `GEMM2` N-axis chunking and keep explicit provenance in reports.
 - Harden `arch v0.2` validation and wire interconnect/mapping constraints into
   mapper/perf policy.

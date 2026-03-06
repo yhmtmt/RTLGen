@@ -396,3 +396,21 @@ Log
 - Validation:
   - `python3 npu/eval/validate.py --campaign ... --check_paths` passed
   - `python3 scripts/validate_runs.py` passed.
+
+2026-03-06 — Roadmap/doc refresh after plan review
+- Refreshed `plan.md` to align roadmap wording with current repo state:
+  - CI hardening now distinguishes minimal vs extended `ctest` coverage,
+  - Layer2 mapper-scale work now treats phase-1 `GEMM2` chunking as the
+    implemented baseline,
+  - SRAM pre-synth wording now reflects memgen-first with CACTI fallback,
+  - future architecture-search harness work is constrained to the canonical
+    `npu/eval` campaign/result-row contract.
+- Synced stale NPU planning/status docs:
+  - `npu/docs/workflow.md`
+  - `npu/docs/index.md`
+  - `npu/docs/mapper_split_plan.md`
+  - `npu/docs/status.md`
+  - `npu/docs/eval_flow_plan.md`
+- Outcome: “current status” and “next steps” wording now matches the code/test
+  baseline more closely and avoids describing already-implemented phase-1 split
+  support as future work.

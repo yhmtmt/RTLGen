@@ -4,8 +4,8 @@
 Single-page snapshot of NPU development status for quick reference.
 
 <!-- STATUS_META_START -->
-Last updated: 2026-02-20
-Git: e6c62e5
+Last updated: 2026-03-06
+Git: 2052123
 <!-- STATUS_META_END -->
 
 ## Current status
@@ -15,6 +15,9 @@ Git: e6c62e5
   `sram_map.vh`, and optional AXI-Lite wrapper.
 - **Mapper (Implemented)**: schedule IR + binary descriptor emission are active
   in `npu/mapper/`.
+- **Mapper split phase-1 (Implemented)**: oversized MLP `GEMM2`
+  weight-SRAM cases now lower via output-channel chunking with
+  `mapper_notes.gemm2_*` provenance propagated into campaign rows.
 - **RTL simulation (Implemented)**: golden regression covers DMA/GEMM/VEC/event
   paths with RTL logs consumed by compare scripts.
 - **Performance simulation (Implemented)**: descriptor-driven analytical model
@@ -44,6 +47,7 @@ Git: e6c62e5
 - C++ MAC generator extension for explicit MAC operation modes including
   accumulator feedback (`pp_row_feedback`) for NPU exploration.
 - Expanded vector-op constrained-random coverage for activation and derivative ops.
+- Mapper scale-out beyond phase-1 MLP `GEMM2` output chunking.
 - Stronger `arch v0.2` validation (types/ranges/enums) and mapper/perf usage of
   interconnect + mapping constraints.
 - Post-physical SRAM metric extraction and feedback loop into perf simulation.

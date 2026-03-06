@@ -81,5 +81,7 @@ Definition of done:
   - objective-profile sweep in `npu/eval/optimize_campaign.py`
 - Active focus:
   - Phase 5 scale-out (model set expansion + mapper/physical parameter search).
-  - Mapper-side model split/tiling so larger ONNX models can map without
-    SRAM overflow during lowering.
+  - Generalize beyond the implemented phase-1 mapper split path so larger
+    practical ONNX workloads can map without unsupported SRAM-fit failures.
+  - Keep future search/tuning work on top of the existing campaign/result-row
+    contract instead of introducing parallel reporting formats.

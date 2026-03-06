@@ -4,14 +4,24 @@
 Enable mapper execution for models that do not fit monolithically in on-chip
 SRAM by introducing deterministic split/tiling in mapping phase.
 
-## Problem statement
-- Current `npu/mapper/onnx_to_schedule.py` allocates full tensors for each MLP
-  stage in SRAM regions.
-- When a layer footprint exceeds SRAM capacity, mapping fails with
-  `out of space in region ...` and campaign execution stops.
-- This blocks scaling from smoke models to practical ONNX workloads.
+## Current status
+- **Implemented baseline**: phase-1 split support is active in
+  `npu/mapper/onnx_to_schedule.py` for the current MLP lowering path when
+  `GEMM2` weights/bias exceed available `weight_sram`.
+- The emitted schedule now carries `mapper_notes.gemm2_*` provenance, and
+  campaign rows can surface that split metadata for filtering/reporting.
+- Regression coverage exists in:
+  - `tests/test_mapper_split.py`
+  - `tests/test_run_campaign_mapper_notes.py`
 
-## Phase-1 split policy (next implementation target)
+## Problem statement
+- Current split support is still narrow: it is tied to the present MLP lowering
+  shape and output-channel chunking only.
+- Other SRAM-fit failures can still stop mapping with a hard failure.
+- Broader practical ONNX coverage requires more general tiling/splitting than
+  the current phase-1 path.
+
+## Phase-1 split policy (implemented baseline)
 - Target path: MLP chain lowered by `onnx_to_schedule.py`.
 - Keep architecture fixed; solve fit at mapper level.
 - If `W2` + `b2` does not fit `weight_sram`, split second GEMM by output
@@ -31,11 +41,12 @@ For int8 MLP lowering:
 - require `out_chunk > 0`, then iterate chunks until `out_dim` is covered.
 
 ## Deliverables
-1. Mapper split analyzer helper with explicit fit report.
-2. Chunked schedule emission in `onnx_to_schedule.py` for oversize cases.
-3. Schedule metadata/report fields that record split decisions.
-4. Regression case proving previous overflow model maps successfully.
+1. Generalize the split analyzer/helper beyond `GEMM2`-only assumptions.
+2. Support additional axes (M/K) and/or multi-layer chain handling where legal.
+3. Keep schedule metadata/report fields recording split decisions and
+   unsupported-case diagnostics.
+4. Add more intentional-overflow regression cases beyond the current baseline.
 
 ## Immediate next step
-Implement phase-1 N-axis chunking in `npu/mapper/onnx_to_schedule.py` and add
-a regression test that previously failed with SRAM overflow.
+Expand beyond the current MLP `GEMM2` N-axis chunking path while preserving
+deterministic dependencies, event ordering, and current passing regressions.

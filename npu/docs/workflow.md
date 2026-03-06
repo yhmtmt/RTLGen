@@ -22,6 +22,9 @@ Canonical split and handoff contract:
 ## Current status
 - **Implemented**: RTL functional simulation path (MMIO/CQ/DMA + AXI memory model).
 - **Implemented**: mapper descriptor generation and binary stream emission.
+- **Implemented**: phase-1 mapper split for oversized MLP `GEMM2`
+  weight-SRAM cases, with split provenance propagated into schedule metadata
+  and campaign row notes.
 - **Implemented**: performance simulation with RTL/perf comparison helpers.
 - **Implemented**: block-level OpenROAD wrapper flow and fp16 backend sweep harness.
 - **Implemented**: fp16 backend finish-level comparison run
@@ -159,8 +162,11 @@ Canonical split and handoff contract:
 
 ## Next steps
 - Add compute-enabled non-fp16 block sweep runbooks (DMA/CQ + GEMM/VEC variants).
-- Implement mapper-side model split/tiling for large ONNX models to avoid
-  SRAM-fit failures in `onnx_to_schedule.py` (see `npu/docs/mapper_split_plan.md`).
+- Generalize mapper split/tiling beyond the current phase-1 MLP `GEMM2`
+  output-chunking path:
+  - additional split axes (M/K),
+  - more lowering patterns than the current MLP path,
+  - intentional-overflow regression models for supported practical workloads.
 - Integrate C++ MAC `pp_row_feedback` backend option into generator and sweep it.
 - Expand constrained-random compute parity coverage (especially fp16/vector derivatives).
 - Harden v0.2 validation and extend derivation to include interconnect/mapping
