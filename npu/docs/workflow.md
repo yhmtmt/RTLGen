@@ -37,26 +37,26 @@ Canonical split and handoff contract:
   runner, reporting, and objective-profile sweep (`npu/eval/`), with the
   scaffold `runs/campaigns/npu/e2e_eval_v0/` plus active reuse campaigns
   `runs/campaigns/npu/e2e_eval_mlp_smoke_v2_reuse/` and
-  `runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/`.
+  `runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse_num_modules_v1/`.
 
 ## 0) Lock evaluation contract (before broad tuning)
 For the current practical baseline, use
-`runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/`. Keep
+`runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse_num_modules_v1/`. Keep
 `runs/campaigns/npu/e2e_eval_v0/` as the minimal historical scaffold.
 
 - Validate campaign manifest:
-  `python3 npu/eval/validate.py --campaign runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/campaign.json --check_paths`
+  `python3 npu/eval/validate.py --campaign runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse_num_modules_v1/campaign.json --check_paths`
 - Validate merged row format:
   `python3 npu/eval/validate.py --result-row npu/eval/examples/minimal_result_row.json`
 - Run campaign scaffold (mapper + perf + merged row append):
-  `python3 npu/eval/run_campaign.py --campaign runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/campaign.json`
-  - default reuses existing model mapper/perf artifacts under campaign outputs;
-    add `--no_reuse_model_artifacts` to force regeneration.
-  - use `--jobs <N>` to parallelize model-level mapper/perf generation.
+  `python3 npu/eval/run_campaign.py --campaign runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse_num_modules_v1/campaign.json`
+  - default reuses existing architecture/model mapper/perf artifacts under
+    campaign outputs; add `--no_reuse_model_artifacts` to force regeneration.
+  - use `--jobs <N>` to parallelize architecture/model mapper/perf generation.
 - Generate campaign report/ranking:
-  `python3 npu/eval/report_campaign.py --campaign runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/campaign.json`
+  `python3 npu/eval/report_campaign.py --campaign runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse_num_modules_v1/campaign.json`
 - Sweep objective profiles for best-point recommendation set:
-  `python3 npu/eval/optimize_campaign.py --campaign runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/campaign.json --profiles_json runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/objective_profiles.json`
+  `python3 npu/eval/optimize_campaign.py --campaign runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse_num_modules_v1/campaign.json --profiles_json runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse_num_modules_v1/objective_profiles.json`
 - Keep campaign-level run configuration in one JSON manifest under
   `runs/campaigns/npu/` before expanding mapper/synth sweeps.
   - when wiring Layer 1 candidates (`layer1_modules`), wrapped IO-evaluated
@@ -168,16 +168,16 @@ For the current practical baseline, use
 
 ## Next steps
 - Keep `flat_nomacro` as the default physical mode for the current
-  `onnx_practical_v1` practical baseline; the balanced 30/30 reruns did not
-  uncover any latency advantage for `hier_macro`, and hierarchy still trails on
-  energy/power.
-- Investigate why `fp16_nm2` loses to `fp16_nm1` under the current practical
-  contract:
-  - `nm2` changes `compute.gemm.num_modules` from `1` to `2`,
-  - current mapper/perf reporting shows no model-level latency gain,
-  - physical results still show higher power (and sometimes worse timing),
-  so the extra slot count currently behaves like overhead rather than useful
-  parallelism.
+  `onnx_practical_v1` practical baseline; hierarchy still trails on
+  energy/power after the corrected `num_modules`-aware rerun.
+- Use `fp16_nm2 + flat_nomacro` as the balanced-default recommendation for
+  `runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse_num_modules_v1/`.
+  The corrected mapper/perf contract now gives `nm2` a real row-parallel
+  latency benefit. Keep `fp16_nm1 + flat_nomacro` documented as the
+  energy-only / PPA-weighted alternative.
+- Validate the new `num_modules` contract on broader imported ONNX models and
+  on non-MLP lowering patterns before treating the current practical proxy set
+  as a universal default.
 - Add compute-enabled non-fp16 block sweep runbooks (DMA/CQ + GEMM/VEC variants).
 - Generalize mapper split/tiling beyond the current phase-1 MLP `GEMM2`
   output-chunking path:

@@ -5,7 +5,7 @@ Single-page snapshot of NPU development status for quick reference.
 
 <!-- STATUS_META_START -->
 Last updated: 2026-03-06
-Git: f17ce4e
+Git: a8e4d58
 <!-- STATUS_META_END -->
 
 ## Current status
@@ -43,29 +43,31 @@ Git: f17ce4e
   (`npu/eval/optimize_campaign.py`) are active with the scaffold
   `runs/campaigns/npu/e2e_eval_v0/` and active reuse campaigns
   `runs/campaigns/npu/e2e_eval_mlp_smoke_v2_reuse/` and
-  `runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/`.
+  `runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse_num_modules_v1/`.
 - **Campaign baselines (Implemented)**: `mlp_smoke_v2_reuse` is balanced at
   30 samples per `(arch_id, macro_mode)` point after focused flat/hier reruns;
-  `onnx_practical_v1_reuse` establishes the first practical-model baseline with
-  balanced 30-sample coverage for all four `(arch_id, macro_mode)` aggregate
-  points across `mlp_p1`, `mlp_p2`, and `mlp_p3`.
-- **Practical mode policy (Locked)**: use `flat_nomacro` as the default
-  physical mode for the current `onnx_practical_v1` baseline. After balancing
-  30/30 samples, `flat_nomacro` remains ahead of `hier_macro` for both `nm1`
-  and `nm2`, with no model-level latency benefit from hierarchy under the
-  current contract.
+  `onnx_practical_v1_reuse_num_modules_v1` is the active practical baseline
+  with balanced coverage across all four `(arch_id, macro_mode)` aggregate
+  points and corrected `num_modules`-aware mapper/perf artifacts across
+  `mlp_p1`, `mlp_p2`, and `mlp_p3`.
+- **Practical default policy (Locked)**: use `flat_nomacro` as the default
+  physical mode for the current `onnx_practical_v1` baseline. Under the
+  balanced objective, `fp16_nm2 + flat_nomacro` is the leading practical
+  point because row-parallel lowering converts `compute.gemm.num_modules=2`
+  into lower model latency. `fp16_nm1 + flat_nomacro` remains the best
+  energy-only / broader-PPA point.
 
 ## In progress
 - C++ MAC generator extension for explicit MAC operation modes including
   accumulator feedback (`pp_row_feedback`) for NPU exploration.
 - Expanded vector-op constrained-random coverage for activation and derivative ops.
 - Mapper scale-out beyond phase-1 MLP `GEMM2` output chunking.
+- Broaden validation of the `num_modules`-aware mapper/perf contract beyond the
+  current practical MLP proxy set and confirm the objective-weight policy for
+  default architecture selection.
 - Stronger `arch v0.2` validation (types/ranges/enums) and mapper/perf usage of
   interconnect + mapping constraints.
 - Post-physical SRAM metric extraction and feedback loop into perf simulation.
-- Explain and, if warranted, fix why `fp16_nm2` loses to `fp16_nm1` even after
-  the practical campaign is balanced. Current evidence points to extra physical
-  cost from `compute.gemm.num_modules=2` without model-level perf gain.
 
 ## Planned
 - Broader compute-enabled OpenROAD sweeps (beyond fp16 backend comparison).

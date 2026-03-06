@@ -28,7 +28,7 @@ Two-layer optimization split and interaction contract are defined in
   (`npu/eval/`, `npu/docs/eval_flow_plan.md`), including the scaffold
   `runs/campaigns/npu/e2e_eval_v0/` and active reuse campaigns
   `runs/campaigns/npu/e2e_eval_mlp_smoke_v2_reuse/` and
-  `runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/`.
+  `runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse_num_modules_v1/`.
 - **Implemented**: phase-1 mapper split for oversized MLP `GEMM2`
   weight-SRAM cases, including schedule metadata and campaign-row provenance.
 
@@ -72,8 +72,11 @@ Two-layer optimization split and interaction contract are defined in
 ## Next steps
 - Keep `flat_nomacro` as the default physical mode for the current practical
   `onnx_practical_v1` baseline.
-- Investigate why `fp16_nm2` trails `fp16_nm1` even after the practical
-  campaign is balanced at 30/30 samples.
+- Use `fp16_nm2 + flat_nomacro` as the balanced-default practical point in
+  `runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse_num_modules_v1/`.
+  Keep `fp16_nm1 + flat_nomacro` as the explicit energy/PPA alternative.
+- Validate the `num_modules`-aware contract on broader imported ONNX models
+  before treating the current proxy-model result as universal.
 - Keep `status.md`, `workflow.md`, and synthesis plans synced with each sweep milestone.
 - Add explicit runbook for compute-enabled NPU block sweeps beyond fp16 backend comparison.
 - Generalize the currently implemented phase-1 mapper split/tiling path beyond

@@ -1,0 +1,26 @@
+{
+  "campaign_id": "npu_e2e_eval_onnx_practical_v1_reuse_num_modules_v1",
+  "generated_utc": "2026-03-06T07:46:51+00:00",
+  "objective_weights": {
+    "latency": 0.5,
+    "energy": 0.5,
+    "area": 0.0,
+    "power": 0.0,
+    "runtime": 1.0
+  },
+  "best": {
+    "arch_id": "fp16_nm2",
+    "macro_mode": "flat_nomacro",
+    "objective_rank": 1,
+    "objective_score": 0.41566456329140905,
+    "latency_ms_mean": 0.8553986666666665,
+    "throughput_infer_per_s_mean": 1485.6093425091178,
+    "energy_mj_mean": 0.000179987855048,
+    "critical_path_ns_mean": 5.701286780426341,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.21041400000000002,
+    "flow_elapsed_s_mean": 829.814,
+    "place_gp_elapsed_s_mean": 415.6119999999999
+  },
+  "pareto_count": 2
+}

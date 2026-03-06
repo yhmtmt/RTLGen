@@ -1,0 +1,11 @@
+{
+  "kind": "mapper",
+  "arch_id": "fp16_nm1",
+  "model_id": "mlp_p2",
+  "onnx_path": "runs/models/onnx_practical_v1/mlp_p2.onnx",
+  "mapper_arch": "npu/arch/examples/minimal.yml",
+  "gemm_num_modules": "1",
+  "generated_utc": "2026-03-06T07:45:25+00:00",
+  "schedule_yml": "runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse_num_modules_v1/artifacts/mapper/fp16_nm1/mlp_p2/schedule.yml",
+  "descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse_num_modules_v1/artifacts/mapper/fp16_nm1/mlp_p2/descriptors.bin"
+}
