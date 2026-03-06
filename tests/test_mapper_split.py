@@ -53,7 +53,13 @@ class MapperSplitRegressionTest(unittest.TestCase):
             )
         )
 
-    def _run_lowering(self, onnx_path: Path, sched_path: Path) -> dict:
+    def _run_lowering(
+        self,
+        onnx_path: Path,
+        sched_path: Path,
+        *,
+        gemm_num_modules: int | None = None,
+    ) -> dict:
         cmd = [
             sys.executable,
             str(REPO_ROOT / "npu/mapper/onnx_to_schedule.py"),
@@ -64,6 +70,8 @@ class MapperSplitRegressionTest(unittest.TestCase):
             "--out",
             str(sched_path),
         ]
+        if gemm_num_modules is not None:
+            cmd.extend(["--gemm-num-modules", str(gemm_num_modules)])
         subprocess.run(cmd, cwd=str(REPO_ROOT), check=True, capture_output=True, text=True)
         with sched_path.open("r", encoding="utf-8") as f:
             return yaml.safe_load(f)
@@ -164,6 +172,48 @@ class MapperSplitRegressionTest(unittest.TestCase):
             if len(chunk_sizes) > 1:
                 self.assertIn("dma_w2_c1", deps)
                 self.assertIn("dma_y_c0", deps["dma_w2_c1"])
+
+    def test_row_parallel_for_multi_module_fit_case(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            onnx_path = tmp / "row_parallel.onnx"
+            sched_path = tmp / "row_parallel.yml"
+            bin_path = tmp / "row_parallel.bin"
+
+            self._write_mlp_onnx(
+                onnx_path,
+                name="row_parallel",
+                b=16,
+                in_dim=256,
+                hidden_dim=512,
+                out_dim=256,
+            )
+            schedule = self._run_lowering(onnx_path, sched_path, gemm_num_modules=2)
+            self._validate_and_emit_bin(sched_path, bin_path)
+
+            notes = schedule.get("mapper_notes", {})
+            self.assertEqual(2, int(notes.get("gemm_num_modules", 0)))
+            self.assertTrue(bool(notes.get("gemm_row_parallel_enabled")))
+            self.assertEqual([8, 8], notes.get("gemm_row_chunks"))
+            self.assertFalse(bool(notes.get("gemm2_split_enabled")))
+
+            gemm1_ops = [op for op in schedule["ops"] if str(op.get("id", "")).startswith("gemm1_r")]
+            gemm2_ops = [op for op in schedule["ops"] if str(op.get("id", "")).startswith("gemm2_r")]
+            dma_y_ops = [op for op in schedule["ops"] if str(op.get("id", "")).startswith("dma_y_r")]
+
+            self.assertEqual(2, len(gemm1_ops))
+            self.assertEqual([8, 8], [int(op["m"]) for op in gemm1_ops])
+            self.assertEqual(2, len(gemm2_ops))
+            self.assertEqual([8, 8], [int(op["m"]) for op in gemm2_ops])
+            self.assertEqual(2, len(dma_y_ops))
+
+            deps = {dep["then"]: dep["wait"] for dep in schedule.get("deps", [])}
+            self.assertIn("gemm2_r0", deps)
+            self.assertIn("gemm1_r0", deps["gemm2_r0"])
+            self.assertIn("dma_w2", deps["gemm2_r0"])
+            self.assertIn("dma_b2", deps["gemm2_r0"])
+            self.assertIn("dma_y_r1", deps)
+            self.assertIn("dma_y_r0", deps["dma_y_r1"])
 
 
 if __name__ == "__main__":

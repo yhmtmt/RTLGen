@@ -517,6 +517,12 @@ def _validate_cfg(cfg):
     mac_type = str(cfg.get("gemm_mac_type", "int8")).lower()
     if mac_type not in ("int8", "int16", "fp16"):
         raise ValueError("gemm_mac_type must be one of: int8, int16, fp16")
+    try:
+        gemm_engine_count = int(cfg.get("gemm_engine_count", 1))
+    except Exception as exc:
+        raise ValueError(f"gemm_engine_count must be an int: {exc}")
+    if gemm_engine_count < 1:
+        raise ValueError("gemm_engine_count must be >= 1")
     _gemm_lanes(cfg)
     _vec_lanes(cfg)
     if mac_type == "fp16":
@@ -666,7 +672,9 @@ def build_trace(descs, cfg, overlap):
     }
     queue_time = 0.0
     dma_engine_time = 0.0
-    gemm_engine_time = 0.0
+    misc_compute_time = 0.0
+    gemm_engine_count = max(1, int(cfg.get("gemm_engine_count", 1)))
+    gemm_engine_times = [0.0 for _ in range(gemm_engine_count)]
     event_times = {}
     issue_overhead = float(cfg.get("issue_overhead_ns", 0.0))
 
@@ -680,10 +688,17 @@ def build_trace(descs, cfg, overlap):
                 end = start + dur
                 dma_engine_time = end
                 queue_time += issue_overhead
-            elif name in ("GEMM", "VEC_OP", "SOFTMAX"):
-                start = max(queue_time, gemm_engine_time)
+            elif name == "GEMM":
+                gemm_engine_idx = min(range(gemm_engine_count), key=lambda idx: gemm_engine_times[idx])
+                start = max(queue_time, misc_compute_time, gemm_engine_times[gemm_engine_idx])
                 end = start + dur
-                gemm_engine_time = end
+                gemm_engine_times[gemm_engine_idx] = end
+                queue_time += issue_overhead
+                event["gemm_engine_idx"] = gemm_engine_idx
+            elif name in ("VEC_OP", "SOFTMAX"):
+                start = max(queue_time, misc_compute_time, max(gemm_engine_times))
+                end = start + dur
+                misc_compute_time = end
                 queue_time += issue_overhead
             elif name == "EVENT_SIGNAL":
                 start = queue_time
@@ -749,10 +764,13 @@ def build_trace(descs, cfg, overlap):
 
     total_ns = now_ns
     if overlap:
-        total_ns = max(queue_time, dma_engine_time, gemm_engine_time)
+        gemm_engine_time = max(gemm_engine_times) if gemm_engine_times else 0.0
+        total_ns = max(queue_time, dma_engine_time, gemm_engine_time, misc_compute_time)
         stats["queue_time_ns"] = queue_time
         stats["dma_engine_time_ns"] = dma_engine_time
         stats["gemm_engine_time_ns"] = gemm_engine_time
+        stats["gemm_engine_count"] = gemm_engine_count
+        stats["misc_compute_time_ns"] = misc_compute_time
     return trace, total_ns, stats, warnings
 
 
@@ -778,6 +796,7 @@ def main():
     ap.add_argument("--bin", required=True, help="Path to descriptor .bin stream")
     ap.add_argument("--out", required=True, help="Path to JSON trace output")
     ap.add_argument("--config", help="Optional model config JSON")
+    ap.add_argument("--gemm-engine-count", type=int, help="Override GEMM engine count for overlap model")
     ap.add_argument("--summary", action="store_true", help="Print summary to stdout")
     ap.add_argument("--overlap", action="store_true", help="Enable DMA/compute overlap model")
     args = ap.parse_args()
@@ -786,6 +805,8 @@ def main():
     if args.config:
         cfg = json.loads(Path(args.config).read_text(encoding="utf-8"))
         _load_sram_model(cfg)
+    if args.gemm_engine_count is not None:
+        cfg["gemm_engine_count"] = max(1, int(args.gemm_engine_count))
     try:
         _validate_cfg(cfg)
     except ValueError as exc:

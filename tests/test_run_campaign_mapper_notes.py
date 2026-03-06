@@ -87,6 +87,34 @@ class RunCampaignMapperNotesTest(unittest.TestCase):
             self.assertIn("mapper_split_chunk_count=1", note)
             self.assertIn("mapper_split_chunks=256", note)
 
+    def test_mapper_notes_row_parallel(self):
+        with tempfile.TemporaryDirectory() as td:
+            sched = Path(td) / "sched.yml"
+            self._write_schedule(
+                sched,
+                {
+                    "version": 0.1,
+                    "ops": [
+                        {"id": "gemm1_r0", "type": "gemm", "m": 8},
+                        {"id": "gemm1_r1", "type": "gemm", "m": 8},
+                        {"id": "gemm2_r0", "type": "gemm", "m": 8, "n": 256},
+                        {"id": "gemm2_r1", "type": "gemm", "m": 8, "n": 256},
+                    ],
+                    "mapper_notes": {
+                        "gemm_num_modules": 2,
+                        "gemm_row_parallel_enabled": True,
+                        "gemm_row_chunks": [8, 8],
+                        "gemm2_split_enabled": False,
+                        "gemm2_out_chunks": [256],
+                    },
+                },
+            )
+            note = self.run_campaign.mapper_split_note_from_schedule(str(sched))
+            self.assertIn("mapper_num_modules=2", note)
+            self.assertIn("mapper_row_parallel_enabled=1", note)
+            self.assertIn("mapper_row_parallel_chunk_count=2", note)
+            self.assertIn("mapper_row_parallel_chunks=8,8", note)
+
 
 if __name__ == "__main__":
     unittest.main()

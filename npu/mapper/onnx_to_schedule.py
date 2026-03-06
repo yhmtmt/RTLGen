@@ -70,6 +70,25 @@ def _find_sram_instance(arch: dict, name: str) -> dict:
     raise ValueError(f"sram instance not found: {name!r}")
 
 
+def _split_even(total: int, parts: int) -> List[Tuple[int, int]]:
+    total = max(0, int(total))
+    parts = max(1, int(parts))
+    if total <= 0:
+        return [(0, 0)]
+    parts = min(parts, total)
+    base = total // parts
+    rem = total % parts
+    out: List[Tuple[int, int]] = []
+    offset = 0
+    for idx in range(parts):
+        size = base + (1 if idx < rem else 0)
+        if size <= 0:
+            continue
+        out.append((offset, size))
+        offset += size
+    return out or [(0, total)]
+
+
 def _infer_mlp_chain(g: OnnxGraph) -> Tuple[str, str, str, str, str, str]:
     """
     Return (x, w1, b1, w2, b2, y) tensor names for:
@@ -182,6 +201,7 @@ def build_schedule_for_mlp(
     dram_base: int = 0x0000003000000000,
     dram_size: int = 1 << 28,  # 256 MiB (arbitrary large sandbox)
     dtype_bytes: int = 1,  # int8
+    gemm_num_modules: int = 1,
 ) -> Dict:
     x, w1, b1, w2, b2, y = _infer_mlp_chain(g)
 
@@ -289,6 +309,9 @@ def build_schedule_for_mlp(
     if b2_sram + b2_chunk_max_bytes > wgt_base + wgt_size:
         raise ValueError("internal error: GEMM2 scratch exceeds weight SRAM")
 
+    row_chunks = _split_even(b, max(1, int(gemm_num_modules)))
+    row_parallel_enabled = len(row_chunks) > 1
+
     # Buffers (DRAM side)
     x_dram = dram.alloc(sizes["x"])
     w1_dram = dram.alloc(sizes["w1"])
@@ -320,32 +343,75 @@ def build_schedule_for_mlp(
         {"id": "b2_SRAM_TMP", "addr": hex(b2_sram), "bytes": b2_chunk_max_bytes},
     ]
 
+    row_views: List[Dict[str, int | str]] = []
+    if row_parallel_enabled:
+        for row_idx, (m_off, m_chunk) in enumerate(row_chunks):
+            x_row_id = f"X_SRAM_r{row_idx}"
+            y1_row_id = f"Y1_SRAM_r{row_idx}"
+            buffers.extend(
+                [
+                    {
+                        "id": x_row_id,
+                        "addr": hex(x_sram + bytes_2d(m_off, in_dim)),
+                        "bytes": bytes_2d(m_chunk, in_dim),
+                    },
+                    {
+                        "id": y1_row_id,
+                        "addr": hex(y1_sram + bytes_2d(m_off, hidden_dim)),
+                        "bytes": bytes_2d(m_chunk, hidden_dim),
+                    },
+                ]
+            )
+            row_views.append(
+                {
+                    "row_idx": row_idx,
+                    "m_off": m_off,
+                    "m_chunk": m_chunk,
+                    "x_buf": x_row_id,
+                    "y1_buf": y1_row_id,
+                    "gemm1_id": f"gemm1_r{row_idx}",
+                }
+            )
+    else:
+        row_views.append(
+            {
+                "row_idx": 0,
+                "m_off": 0,
+                "m_chunk": b,
+                "x_buf": "X_SRAM",
+                "y1_buf": "Y1_SRAM",
+                "gemm1_id": "gemm1",
+            }
+        )
+
     ops = [
         {"id": "dma_x", "type": "dma_copy", "src": "X_DRAM", "dst": "X_SRAM", "bytes": sizes["x"]},
         {"id": "dma_w1", "type": "dma_copy", "src": "W1_DRAM", "dst": "W1_SRAM", "bytes": sizes["w1"]},
         {"id": "dma_b1", "type": "dma_copy", "src": "b1_DRAM", "dst": "b1_SRAM", "bytes": sizes["b1"]},
-        {
-            "id": "gemm1",
-            "type": "gemm",
-            "a": "X_SRAM",
-            "b": "W1_SRAM",
-            "c": "Y1_SRAM",
-            "m": b,
-            "n": hidden_dim,
-            "k": in_dim,
-            "lda": in_dim * dtype_bytes,
-            "ldb": hidden_dim * dtype_bytes,
-            "ldc": hidden_dim * dtype_bytes,
-            "dtype": "int8",
-            "layout": "row_major",
-            "bias": "b1_SRAM",
-            "epilogue": "relu",
-        },
     ]
 
-    deps = [
-        {"wait": ["dma_x", "dma_w1", "dma_b1"], "then": "gemm1"},
-    ]
+    deps: List[Dict[str, Any]] = []
+    for row_view in row_views:
+        ops.append(
+            {
+                "id": str(row_view["gemm1_id"]),
+                "type": "gemm",
+                "a": str(row_view["x_buf"]),
+                "b": "W1_SRAM",
+                "c": str(row_view["y1_buf"]),
+                "m": int(row_view["m_chunk"]),
+                "n": hidden_dim,
+                "k": in_dim,
+                "lda": in_dim * dtype_bytes,
+                "ldb": hidden_dim * dtype_bytes,
+                "ldc": hidden_dim * dtype_bytes,
+                "dtype": "int8",
+                "layout": "row_major",
+                "bias": "b1_SRAM",
+                "epilogue": "relu",
+            }
+        )
+        deps.append({"wait": ["dma_x", "dma_w1", "dma_b1"], "then": str(row_view["gemm1_id"])})
 
     last_dma_y_id = ""
     for chunk_idx, (n_off, n_chunk) in enumerate(out_chunks):
@@ -380,36 +446,80 @@ def build_schedule_for_mlp(
         # Loads can overlap GEMM1 for the first chunk.
         ops.append({"id": dma_w2_id, "type": "dma_copy", "src": w2_chunk_buf, "dst": "W2_SRAM_TMP", "bytes": w2_chunk_bytes})
         ops.append({"id": dma_b2_id, "type": "dma_copy", "src": b2_chunk_buf, "dst": "b2_SRAM_TMP", "bytes": b2_chunk_bytes})
-        ops.append(
-            {
-                "id": gemm2_id,
-                "type": "gemm",
-                "a": "Y1_SRAM",
-                "b": "W2_SRAM_TMP",
-                "c": "Y2_SRAM_TMP",
-                "m": b,
-                "n": n_chunk,
-                "k": hidden_dim,
-                "lda": hidden_dim * dtype_bytes,
-                "ldb": n_chunk * dtype_bytes,
-                "ldc": n_chunk * dtype_bytes,
-                "dtype": "int8",
-                "layout": "row_major",
-                "bias": "b2_SRAM_TMP",
-                "epilogue": "none",
-            }
-        )
-        ops.append({"id": dma_y_id, "type": "dma_copy", "src": "Y2_SRAM_TMP", "dst": y_chunk_buf, "bytes": y_chunk_bytes})
+        if chunk_idx > 0:
+            deps.append({"wait": [last_dma_y_id], "then": dma_w2_id})
+            deps.append({"wait": [last_dma_y_id], "then": dma_b2_id})
 
-        if chunk_idx == 0:
-            deps.append({"wait": ["gemm1", dma_w2_id, dma_b2_id], "then": gemm2_id})
-        else:
-            prev_dma_y_id = f"dma_y_c{chunk_idx - 1}"
-            deps.append({"wait": [prev_dma_y_id], "then": dma_w2_id})
-            deps.append({"wait": [prev_dma_y_id], "then": dma_b2_id})
-            deps.append({"wait": [dma_w2_id, dma_b2_id], "then": gemm2_id})
-        deps.append({"wait": [gemm2_id], "then": dma_y_id})
-        last_dma_y_id = dma_y_id
+        prev_row_dma_y_id = ""
+        for row_view in row_views:
+            row_idx = int(row_view["row_idx"])
+            row_suffix = "" if not row_parallel_enabled else f"_r{row_idx}"
+            row_suffix_full = f"{suffix}{row_suffix}"
+            row_gemm2_id = gemm2_id if not row_parallel_enabled else f"gemm2{row_suffix_full}"
+            row_dma_y_id = dma_y_id if not row_parallel_enabled else f"dma_y{row_suffix_full}"
+            row_m_off = int(row_view["m_off"])
+            row_m_chunk = int(row_view["m_chunk"])
+            row_y_bytes = y_chunk_bytes if not row_parallel_enabled else bytes_2d(row_m_chunk, n_chunk)
+            row_y_src = "Y2_SRAM_TMP"
+            row_y_dst = y_chunk_buf
+            if row_parallel_enabled:
+                row_y_src = f"Y2_SRAM_TMP{row_suffix_full}"
+                row_y_dst = f"Y_DRAM{row_suffix_full}"
+                buffers.extend(
+                    [
+                        {
+                            "id": row_y_src,
+                            "addr": hex(y_chunk_sram + bytes_2d(row_m_off, n_chunk)),
+                            "bytes": row_y_bytes,
+                        },
+                        {
+                            "id": row_y_dst,
+                            "addr": hex(y_chunk_dram_addr + bytes_2d(row_m_off, n_chunk)),
+                            "bytes": row_y_bytes,
+                        },
+                    ]
+                )
+
+            ops.append(
+                {
+                    "id": row_gemm2_id,
+                    "type": "gemm",
+                    "a": str(row_view["y1_buf"]),
+                    "b": "W2_SRAM_TMP",
+                    "c": row_y_src,
+                    "m": row_m_chunk,
+                    "n": n_chunk,
+                    "k": hidden_dim,
+                    "lda": hidden_dim * dtype_bytes,
+                    "ldb": n_chunk * dtype_bytes,
+                    "ldc": n_chunk * dtype_bytes,
+                    "dtype": "int8",
+                    "layout": "row_major",
+                    "bias": "b2_SRAM_TMP",
+                    "epilogue": "none",
+                }
+            )
+            ops.append({"id": row_dma_y_id, "type": "dma_copy", "src": row_y_src, "dst": row_y_dst, "bytes": row_y_bytes})
+
+            if row_parallel_enabled:
+                deps.append(
+                    {
+                        "wait": [str(row_view["gemm1_id"]), dma_w2_id, dma_b2_id],
+                        "then": row_gemm2_id,
+                    }
+                )
+            elif chunk_idx == 0:
+                deps.append({"wait": ["gemm1", dma_w2_id, dma_b2_id], "then": row_gemm2_id})
+            else:
+                deps.append({"wait": [dma_w2_id, dma_b2_id], "then": row_gemm2_id})
+
+            dma_wait = [row_gemm2_id]
+            if prev_row_dma_y_id:
+                dma_wait.append(prev_row_dma_y_id)
+            deps.append({"wait": dma_wait, "then": row_dma_y_id})
+            prev_row_dma_y_id = row_dma_y_id
+
+        last_dma_y_id = prev_row_dma_y_id
 
     events = [
         {"id": 1000, "signal_on": last_dma_y_id, "irq": True},
@@ -419,6 +529,9 @@ def build_schedule_for_mlp(
         "version": 0.1,
         "arch": arch_path,
         "mapper_notes": {
+            "gemm_num_modules": int(max(1, gemm_num_modules)),
+            "gemm_row_parallel_enabled": row_parallel_enabled,
+            "gemm_row_chunks": [m for _, m in row_chunks],
             "gemm2_out_chunks": [n for _, n in out_chunks],
             "gemm2_split_enabled": len(out_chunks) > 1,
             "gemm2_weight_layout": "packed_by_output_chunk",
@@ -439,6 +552,7 @@ def main() -> int:
     ap.add_argument("--weight-sram", default="weight_sram", help="SRAM instance name for weights/bias")
     ap.add_argument("--dram-base", default="0x0000003000000000", help="DRAM base address (int-like)")
     ap.add_argument("--dram-bytes", default=str(1 << 28), help="DRAM region size bytes (int-like)")
+    ap.add_argument("--gemm-num-modules", default="1", help="Number of parallel GEMM module slots to target")
     args = ap.parse_args()
 
     model = load_onnx_model(args.onnx)
@@ -450,6 +564,7 @@ def main() -> int:
         dram_base=int(str(args.dram_base), 0),
         dram_size=int(str(args.dram_bytes), 0),
         dtype_bytes=1,
+        gemm_num_modules=max(1, int(str(args.gemm_num_modules), 0)),
     )
 
     out_path = Path(args.out)

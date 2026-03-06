@@ -90,6 +90,20 @@ def hash_path_text(path_text: str) -> str:
     return sha256_file(p)
 
 
+def hash_path_text_with_overrides(path_text: str, overrides: Dict[str, Any]) -> str:
+    txt = str(path_text or "").strip()
+    payload = {
+        "path": txt,
+        "file_sha256": hash_path_text(txt),
+        "overrides": overrides or {},
+    }
+    if not txt and not overrides:
+        return ""
+    return hashlib.sha256(
+        json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+
+
 def parse_repeat_index(tag: str) -> int:
     m = re.search(r"_r(\d+)$", str(tag or ""))
     if not m:
@@ -261,6 +275,9 @@ def mapper_split_note_from_schedule(schedule_yml: str) -> str:
     notes = doc.get("mapper_notes")
     split_enabled: Optional[bool] = None
     chunks: List[int] = []
+    row_parallel_enabled: Optional[bool] = None
+    row_chunks: List[int] = []
+    gemm_num_modules: Optional[int] = None
     if isinstance(notes, dict):
         split_enabled = bool(notes.get("gemm2_split_enabled", False))
         raw_chunks = notes.get("gemm2_out_chunks", [])
@@ -270,6 +287,20 @@ def mapper_split_note_from_schedule(schedule_yml: str) -> str:
                     chunks.append(int(v))
                 except Exception:
                     continue
+        if "gemm_row_parallel_enabled" in notes:
+            row_parallel_enabled = bool(notes.get("gemm_row_parallel_enabled", False))
+        raw_row_chunks = notes.get("gemm_row_chunks", [])
+        if isinstance(raw_row_chunks, list):
+            for v in raw_row_chunks:
+                try:
+                    row_chunks.append(int(v))
+                except Exception:
+                    continue
+        if "gemm_num_modules" in notes:
+            try:
+                gemm_num_modules = max(1, int(notes.get("gemm_num_modules", 1)))
+            except Exception:
+                gemm_num_modules = None
 
     # Backward-compatible fallback for schedules without mapper_notes.
     if not chunks:
@@ -305,6 +336,13 @@ def mapper_split_note_from_schedule(schedule_yml: str) -> str:
     if chunks:
         parts.append(f"mapper_split_chunk_count={len(chunks)}")
         parts.append(f"mapper_split_chunks={','.join(str(n) for n in chunks)}")
+    if gemm_num_modules is not None:
+        parts.append(f"mapper_num_modules={gemm_num_modules}")
+    if row_parallel_enabled is not None:
+        parts.append(f"mapper_row_parallel_enabled={1 if row_parallel_enabled else 0}")
+    if row_chunks:
+        parts.append(f"mapper_row_parallel_chunk_count={len(row_chunks)}")
+        parts.append(f"mapper_row_parallel_chunks={','.join(str(n) for n in row_chunks)}")
     return "; ".join(parts)
 
 
@@ -476,6 +514,23 @@ def write_json(path: Path, doc: Dict[str, Any]) -> None:
     path.write_text(json.dumps(doc, indent=2) + "\n", encoding="utf-8")
 
 
+def arch_model_hints(arch: Dict[str, Any]) -> Dict[str, int]:
+    rtlgen_config_txt = str(arch.get("rtlgen_config", "")).strip()
+    gemm_num_modules = 1
+    if rtlgen_config_txt:
+        rtlgen_doc = read_json(abs_path(rtlgen_config_txt))
+        compute = rtlgen_doc.get("compute", {}) if isinstance(rtlgen_doc, dict) else {}
+        gemm = compute.get("gemm", {}) if isinstance(compute, dict) else {}
+        try:
+            gemm_num_modules = max(1, int(gemm.get("num_modules", 1)))
+        except Exception:
+            gemm_num_modules = 1
+    return {
+        "gemm_num_modules": gemm_num_modules,
+        "gemm_engine_count": gemm_num_modules,
+    }
+
+
 def can_reuse_artifact_set(
     *,
     outputs: List[Path],
@@ -497,13 +552,15 @@ def can_reuse_artifact_set(
 
 def mapper_emit(
     *,
+    arch_id: str,
     model_id: str,
     model: Dict[str, Any],
     campaign_dir: Path,
     reuse_existing: bool,
     dry_run: bool,
+    gemm_num_modules: int,
 ) -> Tuple[str, str]:
-    mapper_dir = campaign_dir / "artifacts" / "mapper" / model_id
+    mapper_dir = campaign_dir / "artifacts" / "mapper" / safe_slug(arch_id) / safe_slug(model_id)
     mapper_dir.mkdir(parents=True, exist_ok=True)
     schedule = mapper_dir / "schedule.yml"
     desc_bin = mapper_dir / "descriptors.bin"
@@ -518,9 +575,11 @@ def mapper_emit(
 
     expected_meta = {
         "kind": "mapper",
+        "arch_id": arch_id,
         "model_id": model_id,
         "onnx_path": onnx_path,
         "mapper_arch": mapper_arch,
+        "gemm_num_modules": str(max(1, int(gemm_num_modules))),
     }
     if reuse_existing and can_reuse_artifact_set(
         outputs=[schedule, desc_bin],
@@ -544,6 +603,8 @@ def mapper_emit(
             mapper_arch,
             "--out",
             rel_to_repo(schedule),
+            "--gemm-num-modules",
+            str(max(1, int(gemm_num_modules))),
         ],
         dry_run=dry_run,
     )
@@ -572,23 +633,27 @@ def mapper_emit(
 
 def perf_emit(
     *,
+    arch_id: str,
     model_id: str,
     descriptors_bin: str,
     perf_config: str,
     campaign_dir: Path,
     reuse_existing: bool,
     dry_run: bool,
+    gemm_engine_count: int,
 ) -> Tuple[str, Dict[str, Any]]:
-    perf_dir = campaign_dir / "artifacts" / "perf" / model_id
+    perf_dir = campaign_dir / "artifacts" / "perf" / safe_slug(arch_id) / safe_slug(model_id)
     perf_dir.mkdir(parents=True, exist_ok=True)
     trace_json = perf_dir / "trace.json"
     meta_path = perf_dir / "meta.json"
 
     expected_meta = {
         "kind": "perf",
+        "arch_id": arch_id,
         "model_id": model_id,
         "descriptors_bin": descriptors_bin,
         "perf_config": perf_config,
+        "gemm_engine_count": str(max(1, int(gemm_engine_count))),
     }
     if reuse_existing and can_reuse_artifact_set(
         outputs=[trace_json],
@@ -614,6 +679,7 @@ def perf_emit(
     ]
     if perf_config:
         cmd.extend(["--config", perf_config])
+    cmd.extend(["--gemm-engine-count", str(max(1, int(gemm_engine_count)))])
     run_cmd(cmd, dry_run=dry_run)
 
     stats: Dict[str, Any] = {}
@@ -635,29 +701,36 @@ def perf_emit(
 def build_model_artifacts(
     *,
     model: Dict[str, Any],
+    arch: Dict[str, Any],
     campaign_dir: Path,
     reuse_existing: bool,
     dry_run: bool,
-) -> Tuple[str, Dict[str, Any]]:
+) -> Tuple[str, str, Dict[str, Any]]:
+    arch_id = str(arch["arch_id"])
     model_id = str(model["model_id"])
     perf_config = str(model.get("perf_config", "")).strip()
+    hints = arch_model_hints(arch)
     schedule_yml, descriptors_bin = mapper_emit(
+        arch_id=arch_id,
         model_id=model_id,
         model=model,
         campaign_dir=campaign_dir,
         reuse_existing=reuse_existing,
         dry_run=dry_run,
+        gemm_num_modules=int(hints["gemm_num_modules"]),
     )
     perf_trace_json, perf_stats = perf_emit(
+        arch_id=arch_id,
         model_id=model_id,
         descriptors_bin=descriptors_bin,
         perf_config=perf_config,
         campaign_dir=campaign_dir,
         reuse_existing=reuse_existing,
         dry_run=dry_run,
+        gemm_engine_count=int(hints["gemm_engine_count"]),
     )
     mapper_split_note = mapper_split_note_from_schedule(schedule_yml)
-    return model_id, {
+    return arch_id, model_id, {
         "schedule_yml": schedule_yml,
         "descriptors_bin": descriptors_bin,
         "perf_trace_json": perf_trace_json,
@@ -985,9 +1058,9 @@ def main() -> int:
     generated = 0
     skipped = 0
 
-    # Step 1/2/4: model-level mapper+perf artifacts (independent from physical rows in phase-2 scaffold)
-    model_artifacts: Dict[str, Dict[str, Any]] = {}
-    model_provenance: Dict[str, Dict[str, str]] = {}
+    # Step 1/2/4: architecture-aware mapper+perf artifacts.
+    model_artifacts: Dict[Tuple[str, str], Dict[str, Any]] = {}
+    model_provenance: Dict[Tuple[str, str], Dict[str, str]] = {}
     for model in models:
         model_id = str(model.get("model_id", "")).strip()
         if not model_id:
@@ -1006,48 +1079,71 @@ def main() -> int:
                 f"model {model_id}: campaign onnx_path '{onnx_path}' does not match "
                 f"manifest onnx_path '{manifest_onnx_path}'"
             )
-        model_provenance[model_id] = {
-            "model_set_id": model_set_id,
-            "model_manifest": model_manifest_rel,
-            "onnx_sha256": str(manifest_model.get("onnx_sha256", "")).strip().lower(),
-            "mapper_arch_hash": hash_path_text(str(model.get("mapper_arch", ""))),
-            "perf_config_hash": hash_path_text(str(model.get("perf_config", ""))),
-        }
+        for arch in points:
+            arch_id = str(arch["arch_id"])
+            hints = arch_model_hints(arch)
+            model_provenance[(arch_id, model_id)] = {
+                "model_set_id": model_set_id,
+                "model_manifest": model_manifest_rel,
+                "onnx_sha256": str(manifest_model.get("onnx_sha256", "")).strip().lower(),
+                "mapper_arch_hash": hash_path_text_with_overrides(
+                    str(model.get("mapper_arch", "")),
+                    {"gemm_num_modules": int(hints["gemm_num_modules"])},
+                ),
+                "perf_config_hash": hash_path_text_with_overrides(
+                    str(model.get("perf_config", "")),
+                    {"gemm_engine_count": int(hints["gemm_engine_count"])},
+                ),
+            }
 
-    use_parallel_models = (jobs > 1 and len(models) > 1)
+    artifact_jobs: List[Tuple[Dict[str, Any], Dict[str, Any]]] = [
+        (model, arch)
+        for arch in points
+        for model in models
+    ]
+    use_parallel_models = (jobs > 1 and len(artifact_jobs) > 1)
     if use_parallel_models:
-        workers = min(jobs, len(models))
-        log(f"parallel model artifact build: jobs={workers} models={len(models)}")
+        workers = min(jobs, len(artifact_jobs))
+        log(
+            f"parallel model artifact build: jobs={workers} models={len(models)} "
+            f"arch_points={len(points)} tasks={len(artifact_jobs)}"
+        )
         with ThreadPoolExecutor(max_workers=workers) as ex:
             fut_map = {
                 ex.submit(
                     build_model_artifacts,
                     model=model,
+                    arch=arch,
                     campaign_dir=campaign_dir,
                     reuse_existing=bool(args.reuse_model_artifacts),
                     dry_run=args.dry_run,
-                ): str(model["model_id"])
-                for model in models
+                ): (str(arch["arch_id"]), str(model["model_id"]))
+                for model, arch in artifact_jobs
             }
             for fut in as_completed(fut_map):
-                model_id = fut_map[fut]
+                arch_id, model_id = fut_map[fut]
                 try:
-                    out_model_id, artifacts = fut.result()
+                    out_arch_id, out_model_id, artifacts = fut.result()
                 except BaseException as exc:
-                    die(f"model artifact build failed for model_id={model_id}: {exc}")
-                model_artifacts[out_model_id] = artifacts
-                log(f"model artifacts ready: model_id={out_model_id}")
+                    die(
+                        f"model artifact build failed for arch_id={arch_id} "
+                        f"model_id={model_id}: {exc}"
+                    )
+                model_artifacts[(out_arch_id, out_model_id)] = artifacts
+                log(f"model artifacts ready: arch_id={out_arch_id} model_id={out_model_id}")
     else:
-        for model in models:
+        for model, arch in artifact_jobs:
             model_id = str(model["model_id"])
-            out_model_id, artifacts = build_model_artifacts(
+            arch_id = str(arch["arch_id"])
+            out_arch_id, out_model_id, artifacts = build_model_artifacts(
                 model=model,
+                arch=arch,
                 campaign_dir=campaign_dir,
                 reuse_existing=bool(args.reuse_model_artifacts),
                 dry_run=args.dry_run,
             )
-            model_artifacts[out_model_id] = artifacts
-            log(f"model artifacts ready: model_id={model_id}")
+            model_artifacts[(out_arch_id, out_model_id)] = artifacts
+            log(f"model artifacts ready: arch_id={arch_id} model_id={model_id}")
 
     # Step 3/5: physical + merge rows
     for arch in points:
@@ -1091,8 +1187,8 @@ def main() -> int:
             compare_group = str(phys.get("compare_group", "")).strip()
             for model in models:
                 model_id = str(model["model_id"])
-                model_data = model_artifacts[model_id]
-                model_meta = model_provenance[model_id]
+                model_data = model_artifacts[(arch_id, model_id)]
+                model_meta = model_provenance[(arch_id, model_id)]
 
                 run_id = make_run_id(
                     campaign_id=campaign_id,
