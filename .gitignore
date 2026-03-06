@@ -24,3 +24,5 @@ npu/sim/rtl/*_rtl.log
 # Physical design artifacts generated under experiment runs
 runs/**/*.def
 runs/**/*.gds
+runs/model_cache/**
+!runs/model_cache/README.md

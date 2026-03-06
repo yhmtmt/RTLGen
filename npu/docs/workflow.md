@@ -181,9 +181,12 @@ For the current practical baseline, use
 - Validate the new `num_modules` contract on broader imported ONNX models and
   on non-MLP lowering patterns before treating the current practical proxy set
   as a universal default.
-- Author the first evaluator-fetched imported ONNX model set (`models[].fetch`
-  rather than tracked binaries), then rerun the `num_modules`-aware campaign
-  on that set.
+- Keep `runs/campaigns/npu/e2e_eval_onnx_practical_v1_fetch_mirror_num_modules_v1/`
+  as the bootstrap proof that evaluator-fetched cache-backed model sets work
+  end-to-end.
+- Replace that bootstrap mirror with a broader imported ONNX model set
+  (`models[].fetch` rather than tracked binaries), then rerun the
+  `num_modules`-aware campaign on it.
 - Add compute-enabled non-fp16 block sweep runbooks (DMA/CQ + GEMM/VEC variants).
 - Generalize mapper split/tiling beyond the current phase-1 MLP `GEMM2`
   output-chunking path:

@@ -271,7 +271,7 @@ def _validate_model_fetch(fetch, where, errors):
     if not url:
         errors.append(f"{where}.url: must be non-empty string")
         return False
-    if not FETCH_URL_RE.fullmatch(url):
+    if not FETCH_URL_RE.match(url):
         errors.append(f"{where}.url: must use http://, https://, or file://")
         return False
 
@@ -285,7 +285,7 @@ def _validate_model_fetch(fetch, where, errors):
             if not mirror_txt:
                 errors.append(f"{where}.mirrors[{i}]: must be non-empty string")
                 continue
-            if not FETCH_URL_RE.fullmatch(mirror_txt):
+            if not FETCH_URL_RE.match(mirror_txt):
                 errors.append(
                     f"{where}.mirrors[{i}]: must use http://, https://, or file://"
                 )

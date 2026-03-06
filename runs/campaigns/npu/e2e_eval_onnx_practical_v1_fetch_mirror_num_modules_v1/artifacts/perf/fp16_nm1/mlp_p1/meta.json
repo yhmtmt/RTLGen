@@ -1,0 +1,10 @@
+{
+  "kind": "perf",
+  "arch_id": "fp16_nm1",
+  "model_id": "mlp_p1",
+  "descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_practical_v1_fetch_mirror_num_modules_v1/artifacts/mapper/fp16_nm1/mlp_p1/descriptors.bin",
+  "perf_config": "npu/sim/perf/example_config_fp16_cpp.json",
+  "gemm_engine_count": "1",
+  "generated_utc": "2026-03-06T08:19:16+00:00",
+  "trace_json": "runs/campaigns/npu/e2e_eval_onnx_practical_v1_fetch_mirror_num_modules_v1/artifacts/perf/fp16_nm1/mlp_p1/trace.json"
+}

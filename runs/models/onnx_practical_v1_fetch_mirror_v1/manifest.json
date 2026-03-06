@@ -1,0 +1,37 @@
+{
+  "version": 0.1,
+  "model_set_id": "onnx_practical_v1_fetch_mirror_v1",
+  "description": "External-fetch mirror of the practical MLP proxy set, cached under runs/model_cache/.",
+  "models": [
+    {
+      "model_id": "mlp_p1",
+      "onnx_path": "runs/model_cache/onnx_practical_v1_fetch_mirror_v1/mlp_p1.onnx",
+      "onnx_sha256": "195941037da1004ec478bf73019637bfc9fb6bdf47cb11e7605fb06c7b1980ff",
+      "fetch": {
+        "url": "https://raw.githubusercontent.com/yhmtmt/RTLGen/d76a23b0fc078402a2015eb5cdb223eef670fb56/runs/models/onnx_practical_v1/mlp_p1.onnx",
+        "notes": "Commit-pinned GitHub raw mirror of the tracked practical MLP proxy model."
+      },
+      "notes": "MLP proxy mirror (b=32, in=512, hidden=2048, out=1024)"
+    },
+    {
+      "model_id": "mlp_p2",
+      "onnx_path": "runs/model_cache/onnx_practical_v1_fetch_mirror_v1/mlp_p2.onnx",
+      "onnx_sha256": "615e6fe103e2e2c526092b384b18f731a03efb0483cc566aadc80772d49e16fb",
+      "fetch": {
+        "url": "https://raw.githubusercontent.com/yhmtmt/RTLGen/d76a23b0fc078402a2015eb5cdb223eef670fb56/runs/models/onnx_practical_v1/mlp_p2.onnx",
+        "notes": "Commit-pinned GitHub raw mirror of the tracked practical MLP proxy model."
+      },
+      "notes": "MLP proxy mirror (b=64, in=1024, hidden=2048, out=4096; split-required)"
+    },
+    {
+      "model_id": "mlp_p3",
+      "onnx_path": "runs/model_cache/onnx_practical_v1_fetch_mirror_v1/mlp_p3.onnx",
+      "onnx_sha256": "809f41b9e5bbd217bd029599f3e65b31b43f486264afd44809ea4bb4e1a491b2",
+      "fetch": {
+        "url": "https://raw.githubusercontent.com/yhmtmt/RTLGen/d76a23b0fc078402a2015eb5cdb223eef670fb56/runs/models/onnx_practical_v1/mlp_p3.onnx",
+        "notes": "Commit-pinned GitHub raw mirror of the tracked practical MLP proxy model."
+      },
+      "notes": "MLP proxy mirror (b=16, in=1024, hidden=2048, out=2048)"
+    }
+  ]
+}

@@ -48,3 +48,6 @@ Current sets
   `runs/campaigns/npu/e2e_eval_mlp_smoke_v2_reuse/`.
 - `onnx_practical_v1`: practical-scale benchmark set (larger MLP proxies)
   paired with `runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse_num_modules_v1/`.
+- `onnx_practical_v1_fetch_mirror_v1`: cache-backed external-fetch mirror of
+  the practical MLP proxy set, paired with
+  `runs/campaigns/npu/e2e_eval_onnx_practical_v1_fetch_mirror_num_modules_v1/`.
