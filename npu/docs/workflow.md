@@ -167,11 +167,17 @@ For the current practical baseline, use
 - Keep generated design artifacts under `runs/designs/` (not hand-edited).
 
 ## Next steps
-- Complete focused OpenROAD reruns for
-  `runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/`:
-  `flat_nomacro` first, then `hier_macro`, to bring the practical baseline to
-  30 samples per `(arch_id, macro_mode)` point before deciding default mode
-  policy.
+- Keep `flat_nomacro` as the default physical mode for the current
+  `onnx_practical_v1` practical baseline; the balanced 30/30 reruns did not
+  uncover any latency advantage for `hier_macro`, and hierarchy still trails on
+  energy/power.
+- Investigate why `fp16_nm2` loses to `fp16_nm1` under the current practical
+  contract:
+  - `nm2` changes `compute.gemm.num_modules` from `1` to `2`,
+  - current mapper/perf reporting shows no model-level latency gain,
+  - physical results still show higher power (and sometimes worse timing),
+  so the extra slot count currently behaves like overhead rather than useful
+  parallelism.
 - Add compute-enabled non-fp16 block sweep runbooks (DMA/CQ + GEMM/VEC variants).
 - Generalize mapper split/tiling beyond the current phase-1 MLP `GEMM2`
   output-chunking path:

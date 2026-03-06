@@ -70,9 +70,10 @@ Two-layer optimization split and interaction contract are defined in
 - `npu/docs/status.md`: single-page status snapshot.
 
 ## Next steps
-- Complete the focused OpenROAD reruns for
-  `runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/` so the practical
-  baseline reaches balanced 30/30 flat/hier samples.
+- Keep `flat_nomacro` as the default physical mode for the current practical
+  `onnx_practical_v1` baseline.
+- Investigate why `fp16_nm2` trails `fp16_nm1` even after the practical
+  campaign is balanced at 30/30 samples.
 - Keep `status.md`, `workflow.md`, and synthesis plans synced with each sweep milestone.
 - Add explicit runbook for compute-enabled NPU block sweeps beyond fp16 backend comparison.
 - Generalize the currently implemented phase-1 mapper split/tiling path beyond

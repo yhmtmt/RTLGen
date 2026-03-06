@@ -47,7 +47,13 @@ Git: f17ce4e
 - **Campaign baselines (Implemented)**: `mlp_smoke_v2_reuse` is balanced at
   30 samples per `(arch_id, macro_mode)` point after focused flat/hier reruns;
   `onnx_practical_v1_reuse` establishes the first practical-model baseline with
-  15 samples per point across `mlp_p1`, `mlp_p2`, and `mlp_p3`.
+  balanced 30-sample coverage for all four `(arch_id, macro_mode)` aggregate
+  points across `mlp_p1`, `mlp_p2`, and `mlp_p3`.
+- **Practical mode policy (Locked)**: use `flat_nomacro` as the default
+  physical mode for the current `onnx_practical_v1` baseline. After balancing
+  30/30 samples, `flat_nomacro` remains ahead of `hier_macro` for both `nm1`
+  and `nm2`, with no model-level latency benefit from hierarchy under the
+  current contract.
 
 ## In progress
 - C++ MAC generator extension for explicit MAC operation modes including
@@ -57,11 +63,11 @@ Git: f17ce4e
 - Stronger `arch v0.2` validation (types/ranges/enums) and mapper/perf usage of
   interconnect + mapping constraints.
 - Post-physical SRAM metric extraction and feedback loop into perf simulation.
+- Explain and, if warranted, fix why `fp16_nm2` loses to `fp16_nm1` even after
+  the practical campaign is balanced. Current evidence points to extra physical
+  cost from `compute.gemm.num_modules=2` without model-level perf gain.
 
 ## Planned
-- Focused OpenROAD reruns for `onnx_practical_v1_reuse`
-  (`flat_nomacro` first, then `hier_macro`) to balance practical-model
-  samples at 30/30 before locking a default mode policy.
 - Broader compute-enabled OpenROAD sweeps (beyond fp16 backend comparison).
 - Additional numeric-policy hardening and stress tests for fp16 edge behavior.
 - Optional future datatype exploration (bf16/fp8) after fp16 path maturity.
