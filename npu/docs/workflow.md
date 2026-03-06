@@ -110,6 +110,13 @@ For the current practical baseline, use
   - YAML descriptor dump (`--out`)
   - binary descriptor stream (`--out-bin`)
 - Golden schedules and binaries are in `npu/mapper/examples/`.
+- Terminal softmax lowering has two explicit backends in
+  `npu/mapper/onnx_to_schedule.py`:
+  - `--softmax-backend dedicated`:
+    emits descriptor-level row-wise `SOFTMAX` (default)
+  - `--softmax-backend vec_placeholder`:
+    emits legacy `VEC_OP softmax` as an approximate bring-up/timing fallback;
+    this is not numerically equivalent to row-wise `SOFTMAX`
 
 ## 5) Run RTL functional validation
 - Use `npu/sim/rtl/Makefile` targets for shell, DMA, GEMM, and VEC checks.
@@ -117,6 +124,9 @@ For the current practical baseline, use
 - Capture logs for parity checks:
   - `GEMM_TIMING ...`
   - `VEC_DONE ...`
+- Dedicated descriptor-level `SOFTMAX` expected-result checks currently live in
+  the perf/reference model and require a source memory image:
+  `python3 npu/sim/perf/run.py --bin <descriptors.bin> --out <trace.json> --mem-json <memory.json>`
 
 ## 6) Run performance simulation and parity checks
 - Run perf simulator on descriptor binaries:

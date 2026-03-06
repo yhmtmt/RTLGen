@@ -91,6 +91,13 @@ def _split_even(total: int, parts: int) -> List[Tuple[int, int]]:
     return out or [(0, total)]
 
 
+def _normalize_softmax_backend(backend: str) -> str:
+    value = str(backend or "dedicated").strip().lower()
+    if value not in ("dedicated", "vec_placeholder"):
+        raise ValueError("softmax backend must be one of: dedicated, vec_placeholder")
+    return value
+
+
 @dataclass
 class _LinearLayer:
     op_kind: str
@@ -822,7 +829,9 @@ def build_schedule_for_supported_graph(
     dtype_bytes: int = 1,
     gemm_num_modules: int = 1,
     batch_override: Optional[int] = None,
+    softmax_backend: str = "dedicated",
 ) -> Dict:
+    softmax_backend = _normalize_softmax_backend(softmax_backend)
     try:
         supported = _infer_sequential_mlp(
             g,
@@ -1288,17 +1297,30 @@ def build_schedule_for_supported_graph(
                 raise ValueError("failed to generate final linear outputs for terminal softmax")
             softmax_id = f"softmax{layer_idx}"
             dma_y_id = "dma_y" if len(layers) == 1 else f"dma_y{layer_idx}"
-            ops.append(
-                {
-                    "id": softmax_id,
-                    "type": "softmax",
-                    "src": next_output_buf,
-                    "dst": current_input_buf,
-                    "row_bytes": bytes_1d(final_out_dim),
-                    "rows": batch,
-                    "dtype": "int8",
-                }
-            )
+            if softmax_backend == "dedicated":
+                ops.append(
+                    {
+                        "id": softmax_id,
+                        "type": "softmax",
+                        "src": next_output_buf,
+                        "dst": current_input_buf,
+                        "row_bytes": bytes_1d(final_out_dim),
+                        "rows": batch,
+                        "dtype": "int8",
+                    }
+                )
+            else:
+                ops.append(
+                    {
+                        "id": softmax_id,
+                        "type": "vec_op",
+                        "op": "softmax",
+                        "src": next_output_buf,
+                        "dst": current_input_buf,
+                        "bytes": layer_output_bytes[-1],
+                        "dtype": "int8",
+                    }
+                )
             ops.append(
                 {
                     "id": dma_y_id,
@@ -1327,6 +1349,7 @@ def build_schedule_for_supported_graph(
         "final_linear_split_enabled": len(out_chunks) > 1,
         "final_linear_weight_layout": "packed_by_output_chunk",
         "terminal_softmax": terminal_softmax,
+        "softmax_backend": softmax_backend if terminal_softmax else "none",
         "graph_output_name": supported.terminal_output_name,
         "ignored_graph_outputs": list(supported.ignored_graph_outputs),
     }
@@ -1365,6 +1388,11 @@ def main() -> int:
         default="",
         help="Optional batch dimension override for dynamic or externally selected batch sizing",
     )
+    ap.add_argument(
+        "--softmax-backend",
+        default="dedicated",
+        help="Terminal softmax lowering backend: dedicated or vec_placeholder",
+    )
     args = ap.parse_args()
 
     model = load_onnx_model(args.onnx)
@@ -1381,6 +1409,7 @@ def main() -> int:
         dtype_bytes=1,
         gemm_num_modules=max(1, int(str(args.gemm_num_modules), 0)),
         batch_override=batch_override,
+        softmax_backend=args.softmax_backend,
     )
 
     out_path = Path(args.out)

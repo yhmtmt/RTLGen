@@ -452,6 +452,131 @@ def _decode_dtype(flags, cfg, key_prefix):
     return dtype_code, dtype_name, dtype_bytes
 
 
+def _bytes_to_hex_le(data):
+    payload = bytes(int(b) & 0xFF for b in data)
+    if not payload:
+        return "0x"
+    return "0x" + payload[::-1].hex()
+
+
+def _load_memory_image(path):
+    doc = json.loads(Path(path).read_text(encoding="utf-8"))
+    segments = doc.get("segments", [])
+    if not isinstance(segments, list):
+        raise ValueError("memory image must contain a list field 'segments'")
+
+    mem = {}
+    for seg in segments:
+        if not isinstance(seg, dict):
+            raise ValueError("memory image segments must be mappings")
+        if "base_addr" in seg:
+            base_addr = _parse_int(seg["base_addr"])
+        elif "addr" in seg:
+            base_addr = _parse_int(seg["addr"])
+        else:
+            raise ValueError("memory image segment missing base_addr/addr")
+        if "data_bytes" in seg:
+            raw_bytes = [int(v) & 0xFF for v in seg["data_bytes"]]
+        elif "data_hex" in seg:
+            hex_text = str(seg["data_hex"]).strip()
+            if hex_text.startswith(("0x", "0X")):
+                hex_text = hex_text[2:]
+            if len(hex_text) % 2 != 0:
+                raise ValueError("memory image data_hex must contain an even number of nybbles")
+            raw_bytes = list(bytes.fromhex(hex_text))
+        else:
+            raise ValueError("memory image segment missing data_bytes/data_hex")
+        for idx, byte in enumerate(raw_bytes):
+            mem[int(base_addr) + idx] = int(byte) & 0xFF
+    return mem
+
+
+def _mem_read_bytes(mem, addr, size):
+    out = []
+    for offset in range(int(size)):
+        loc = int(addr) + offset
+        if loc not in mem:
+            return None
+        out.append(int(mem[loc]) & 0xFF)
+    return out
+
+
+def _mem_write_bytes(mem, addr, data):
+    for offset, byte in enumerate(data):
+        mem[int(addr) + offset] = int(byte) & 0xFF
+
+
+def _softmax_reference_probs(values):
+    if not values:
+        return []
+    finite = [float(v) if math.isfinite(float(v)) else 0.0 for v in values]
+    max_val = max(finite)
+    weights = [math.exp(v - max_val) for v in finite]
+    denom = sum(weights)
+    if denom <= 0.0 or not math.isfinite(denom):
+        return [0.0 for _ in finite]
+    return [w / denom for w in weights]
+
+
+def _softmax_reference_int8_row(row_bytes):
+    logits = [_sx8(b) for b in row_bytes]
+    probs = _softmax_reference_probs(logits)
+    out = []
+    for prob in probs:
+        q = int(math.floor((float(prob) * 127.0) + 0.5))
+        if q < 0:
+            q = 0
+        if q > 127:
+            q = 127
+        out.append(q)
+    return out
+
+
+def _softmax_reference_fp16_row(row_bytes):
+    if len(row_bytes) % 2 != 0:
+        raise ValueError("fp16 softmax row_bytes must be a multiple of 2")
+    logits = []
+    for idx in range(0, len(row_bytes), 2):
+        bits = ((int(row_bytes[idx + 1]) & 0xFF) << 8) | (int(row_bytes[idx]) & 0xFF)
+        logits.append(_fp16_bits_to_float(bits))
+    probs = _softmax_reference_probs(logits)
+    out = []
+    for prob in probs:
+        bits = _float_to_fp16_bits(prob)
+        out.append(bits & 0xFF)
+        out.append((bits >> 8) & 0xFF)
+    return out
+
+
+def _softmax_expected_result(src_bytes, *, row_bytes, rows, dtype_code):
+    row_bytes = int(row_bytes)
+    rows = int(rows)
+    if row_bytes < 0 or rows < 0:
+        raise ValueError("softmax row_bytes and rows must be non-negative")
+    total_bytes = row_bytes * rows
+    if len(src_bytes) < total_bytes:
+        raise ValueError("softmax source image shorter than descriptor payload")
+    if dtype_code == 0x1:
+        row_fn = _softmax_reference_fp16_row
+        encoding = "fp16_ieee_half_le"
+        semantics = "rowwise_reference_fp16"
+    else:
+        row_fn = _softmax_reference_int8_row
+        encoding = "u8_q0_7"
+        semantics = "rowwise_reference_int8"
+    out = []
+    for row_idx in range(rows):
+        start = row_idx * row_bytes
+        end = start + row_bytes
+        out.extend(row_fn(src_bytes[start:end]))
+    return {
+        "expected_result_bytes": out,
+        "expected_result": _bytes_to_hex_le(out),
+        "expected_result_encoding": encoding,
+        "softmax_semantics": semantics,
+    }
+
+
 def _derive_sram_instances(arch, metrics, clk_period_ns=None):
     sram = arch.get("sram", {})
     instances = sram.get("instances", [])
@@ -529,7 +654,7 @@ def _validate_cfg(cfg):
         _gemm_fp16_policy(cfg)
 
 
-def desc_to_event(desc, cfg):
+def desc_to_event(desc, cfg, memory=None):
     opcode = desc["opcode"]
     raw = desc["raw"]
     size_units = desc.get("size_units", 1)
@@ -628,6 +753,25 @@ def desc_to_event(desc, cfg):
             "bytes": total_bytes,
             "duration_ns": model.softmax_time_ns(row_bytes, rows, cfg, dtype_bytes=dtype_bytes),
         })
+        if memory is not None:
+            src_bytes = _mem_read_bytes(memory, src, total_bytes)
+            if src_bytes is None:
+                event["warning"] = (
+                    f"softmax expected-result unavailable: missing memory image for "
+                    f"src=0x{src:016x} bytes={total_bytes}"
+                )
+            else:
+                try:
+                    event.update(
+                        _softmax_expected_result(
+                            src_bytes,
+                            row_bytes=row_bytes,
+                            rows=rows,
+                            dtype_code=dtype_code,
+                        )
+                    )
+                except ValueError as exc:
+                    event["warning"] = f"softmax expected-result unavailable: {exc}"
     elif opcode == 0x21:  # EVENT_WAIT
         event.update({
             "name": "EVENT_WAIT",
@@ -648,7 +792,7 @@ def desc_to_event(desc, cfg):
     return event
 
 
-def build_trace(descs, cfg, overlap):
+def build_trace(descs, cfg, overlap, memory=None):
     trace = []
     now_ns = 0.0
     warnings = []
@@ -679,7 +823,7 @@ def build_trace(descs, cfg, overlap):
     issue_overhead = float(cfg.get("issue_overhead_ns", 0.0))
 
     for desc in descs:
-        event = desc_to_event(desc, cfg)
+        event = desc_to_event(desc, cfg, memory=memory)
         dur = float(event.get("duration_ns", 0.0))
         if overlap:
             name = event.get("name")
@@ -724,12 +868,24 @@ def build_trace(descs, cfg, overlap):
             event["end_ns"] = now_ns + dur
             now_ns += dur
         trace.append(event)
+        warning = event.get("warning")
+        if warning:
+            warnings.append(str(warning))
 
         name = event.get("name")
         if name == "DMA_COPY":
             stats["dma_ops"] += 1
             stats["total_bytes"] += int(event.get("bytes", 0))
             stats["dma_time_ns"] += dur
+            if memory is not None:
+                src_bytes = _mem_read_bytes(memory, int(event["src"], 0), int(event.get("bytes", 0)))
+                if src_bytes is None:
+                    warnings.append(
+                        f"dma_copy memory update unavailable: missing memory image for "
+                        f"src={event['src']} bytes={event.get('bytes', 0)}"
+                    )
+                else:
+                    _mem_write_bytes(memory, int(event["dst"], 0), src_bytes)
         elif name == "GEMM":
             stats["gemm_ops"] += 1
             stats["gemm_time_ns"] += dur
@@ -741,6 +897,8 @@ def build_trace(descs, cfg, overlap):
             stats["softmax_ops"] += 1
             stats["total_bytes"] += int(event.get("bytes", 0))
             stats["softmax_time_ns"] += dur
+            if memory is not None and "expected_result_bytes" in event:
+                _mem_write_bytes(memory, int(event["dst"], 0), event["expected_result_bytes"])
         elif name in ("EVENT_SIGNAL", "EVENT_WAIT"):
             stats["event_ops"] += 1
             stats["event_time_ns"] += dur
@@ -796,6 +954,7 @@ def main():
     ap.add_argument("--bin", required=True, help="Path to descriptor .bin stream")
     ap.add_argument("--out", required=True, help="Path to JSON trace output")
     ap.add_argument("--config", help="Optional model config JSON")
+    ap.add_argument("--mem-json", help="Optional memory image JSON for descriptor-backed expected results")
     ap.add_argument("--gemm-engine-count", type=int, help="Override GEMM engine count for overlap model")
     ap.add_argument("--summary", action="store_true", help="Print summary to stdout")
     ap.add_argument("--overlap", action="store_true", help="Enable DMA/compute overlap model")
@@ -814,13 +973,20 @@ def main():
 
     data = Path(args.bin).read_bytes()
     descs = parse_desc_stream(data)
-    trace, total_ns, stats, warnings = build_trace(descs, cfg, args.overlap)
+    memory = None
+    if args.mem_json:
+        try:
+            memory = _load_memory_image(args.mem_json)
+        except ValueError as exc:
+            raise SystemExit(f"invalid memory image: {exc}")
+    trace, total_ns, stats, warnings = build_trace(descs, cfg, args.overlap, memory=memory)
 
     out = {
         "meta": {
             "version": "0.1",
             "source_bin": str(args.bin),
             "mode": "overlap" if args.overlap else "sequential",
+            "source_mem_json": str(args.mem_json) if args.mem_json else None,
         },
         "stats": {
             **stats,

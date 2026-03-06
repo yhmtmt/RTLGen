@@ -32,6 +32,32 @@ def _build_vec_softmax_bin(path: Path):
     path.write_bytes(bytes(stream))
 
 
+def _build_mem_image(path: Path, *, base_addr: int, data_bytes: list[int]) -> None:
+    path.write_text(
+        json.dumps(
+            {
+                "segments": [
+                    {
+                        "base_addr": base_addr,
+                        "data_bytes": [int(v) & 0xFF for v in data_bytes],
+                    }
+                ]
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+
+def _pack_fp16_bytes(values: list[float]) -> list[int]:
+    out: list[int] = []
+    for value in values:
+        bits = struct.unpack("<H", struct.pack("<e", float(value)))[0]
+        out.append(bits & 0xFF)
+        out.append((bits >> 8) & 0xFF)
+    return out
+
+
 def test_perf_vec_softmax():
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp = Path(tmpdir)
@@ -97,5 +123,90 @@ def test_perf_vec_softmax():
         assert int(vec_ev["expected_result"], 0) >= 0
 
 
+def test_perf_softmax_expected_result_with_mem_image():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp = Path(tmpdir)
+        bin_path = tmp / "softmax.bin"
+        out_path = tmp / "trace.json"
+        mem_path = tmp / "mem.json"
+
+        raw = _pack_desc(0x12, flags=0x00)
+        struct.pack_into("<QQHH", raw, 8, 0x5000, 0x6000, 4, 2)
+        bin_path.write_bytes(bytes(raw))
+        _build_mem_image(
+            mem_path,
+            base_addr=0x5000,
+            data_bytes=[0x00, 0x01, 0x02, 0x03, 0xFC, 0x00, 0x04, 0x08],
+        )
+
+        subprocess.check_call(
+            [
+                "python3",
+                "npu/sim/perf/run.py",
+                "--bin",
+                str(bin_path),
+                "--out",
+                str(out_path),
+                "--mem-json",
+                str(mem_path),
+            ]
+        )
+        data = json.loads(out_path.read_text(encoding="utf-8"))
+
+    ev = data["trace"][0]
+    assert ev["name"] == "SOFTMAX"
+    assert ev["expected_result_encoding"] == "u8_q0_7"
+    assert ev["softmax_semantics"] == "rowwise_reference_int8"
+    assert len(ev["expected_result_bytes"]) == 8
+    assert all(0 <= int(v) <= 127 for v in ev["expected_result_bytes"])
+    assert sum(ev["expected_result_bytes"][:4]) in (126, 127, 128)
+    assert sum(ev["expected_result_bytes"][4:]) in (126, 127, 128)
+
+
+def test_perf_softmax_expected_result_fp16_with_mem_image():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp = Path(tmpdir)
+        bin_path = tmp / "softmax_fp16.bin"
+        out_path = tmp / "trace.json"
+        mem_path = tmp / "mem.json"
+
+        raw = _pack_desc(0x12, flags=0x10)
+        struct.pack_into("<QQHH", raw, 8, 0x7000, 0x7100, 4, 1)
+        bin_path.write_bytes(bytes(raw))
+        _build_mem_image(
+            mem_path,
+            base_addr=0x7000,
+            data_bytes=_pack_fp16_bytes([0.0, 1.0]),
+        )
+
+        subprocess.check_call(
+            [
+                "python3",
+                "npu/sim/perf/run.py",
+                "--bin",
+                str(bin_path),
+                "--out",
+                str(out_path),
+                "--mem-json",
+                str(mem_path),
+            ]
+        )
+        data = json.loads(out_path.read_text(encoding="utf-8"))
+
+    ev = data["trace"][0]
+    assert ev["name"] == "SOFTMAX"
+    assert ev["expected_result_encoding"] == "fp16_ieee_half_le"
+    assert ev["softmax_semantics"] == "rowwise_reference_fp16"
+    assert len(ev["expected_result_bytes"]) == 4
+    lo0, hi0, lo1, hi1 = [int(v) & 0xFF for v in ev["expected_result_bytes"]]
+    p0 = struct.unpack("<e", struct.pack("<H", (hi0 << 8) | lo0))[0]
+    p1 = struct.unpack("<e", struct.pack("<H", (hi1 << 8) | lo1))[0]
+    assert abs((p0 + p1) - 1.0) < 0.02
+    assert 0.20 < p0 < 0.35
+    assert 0.65 < p1 < 0.80
+
+
 if __name__ == "__main__":
     test_perf_vec_softmax()
+    test_perf_softmax_expected_result_with_mem_image()
+    test_perf_softmax_expected_result_fp16_with_mem_image()

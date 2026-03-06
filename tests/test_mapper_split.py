@@ -104,6 +104,7 @@ class MapperSplitRegressionTest(unittest.TestCase):
         *,
         gemm_num_modules: int | None = None,
         batch_override: int | None = None,
+        softmax_backend: str | None = None,
     ) -> dict:
         cmd = [
             sys.executable,
@@ -119,6 +120,8 @@ class MapperSplitRegressionTest(unittest.TestCase):
             cmd.extend(["--gemm-num-modules", str(gemm_num_modules)])
         if batch_override is not None:
             cmd.extend(["--batch-override", str(batch_override)])
+        if softmax_backend is not None:
+            cmd.extend(["--softmax-backend", softmax_backend])
         subprocess.run(cmd, cwd=str(REPO_ROOT), check=True, capture_output=True, text=True)
         with sched_path.open("r", encoding="utf-8") as f:
             return yaml.safe_load(f)
@@ -337,6 +340,7 @@ class MapperSplitRegressionTest(unittest.TestCase):
             self.assertFalse(bool(notes.get("input_flattened")))
             self.assertEqual(64, int(notes.get("effective_batch", 0)))
             self.assertTrue(bool(notes.get("terminal_softmax")))
+            self.assertEqual("dedicated", notes.get("softmax_backend"))
             self.assertEqual("P", notes.get("graph_output_name"))
             self.assertEqual(["Y"], notes.get("ignored_graph_outputs"))
             self.assertEqual([4], notes.get("final_linear_out_chunks"))
@@ -352,6 +356,44 @@ class MapperSplitRegressionTest(unittest.TestCase):
             self.assertEqual(4, int(softmax_ops[0]["row_bytes"]))
             self.assertEqual(64, int(softmax_ops[0]["rows"]))
             self.assertEqual("dma_y", schedule["events"][0]["signal_on"])
+
+    def test_softmax_classifier_vec_placeholder_backend(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            onnx_path = tmp / "classifier.onnx"
+            sched_path = tmp / "classifier.yml"
+            bin_path = tmp / "classifier.bin"
+
+            self._write_softmax_classifier_onnx(
+                onnx_path,
+                name="classifier_vec_softmax",
+                b=1,
+                input_dim=16,
+                out_dim=4,
+                add_cast=True,
+                add_label_output=True,
+            )
+            schedule = self._run_lowering(
+                onnx_path,
+                sched_path,
+                gemm_num_modules=2,
+                batch_override=64,
+                softmax_backend="vec_placeholder",
+            )
+            self._validate_and_emit_bin(sched_path, bin_path)
+
+            notes = schedule.get("mapper_notes", {})
+            self.assertTrue(bool(notes.get("terminal_softmax")))
+            self.assertEqual("vec_placeholder", notes.get("softmax_backend"))
+
+            softmax_ops = [op for op in schedule["ops"] if op.get("type") == "softmax"]
+            vec_softmax_ops = [
+                op for op in schedule["ops"] if op.get("type") == "vec_op" and str(op.get("op", "")).lower() == "softmax"
+            ]
+
+            self.assertEqual(0, len(softmax_ops))
+            self.assertEqual(1, len(vec_softmax_ops))
+            self.assertEqual(64 * 4, int(vec_softmax_ops[0]["bytes"]))
 
 
 if __name__ == "__main__":

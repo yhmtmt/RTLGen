@@ -228,7 +228,7 @@ Vector unary/binary ops, such as activation and normalization.
 FLAGS encode op type (ReLU, GELU, RMSNorm) and datatype.
 
 ### 5.3 SOFTMAX
-Row-wise softmax with optional scaling.
+Row-wise normalized softmax over contiguous rows.
 
 | Byte | Field | Description |
 |---:|---|---|
@@ -237,6 +237,22 @@ Row-wise softmax with optional scaling.
 | 24..25 | ROW_BYTES |
 | 26..27 | ROWS |
 | 28..31 | RESERVED |
+
+`FLAGS[7:4]` encode datatype.
+
+Reference semantics assumed by the simulator:
+- `dtype=int8`: interpret each source byte as a signed logit, compute a
+  row-wise softmax, and store each output element as unsigned `Q0.7`
+  probability in `[0, 127]` via independent round-to-nearest quantization.
+- `dtype=fp16`: interpret each source element as IEEE-half, compute a row-wise
+  softmax, and store each output element as IEEE-half probability in `[0, 1]`.
+- Behavior is defined for finite inputs. NaN/Inf handling is not locked in
+  v0.1.
+
+Important distinction:
+- `SOFTMAX` is the row-wise descriptor-level contract.
+- `VEC_OP softmax` is a legacy elementwise placeholder activation and is not
+  functionally equivalent to descriptor-level `SOFTMAX`.
 
 ## 6. Event Model
 Events are 16-bit IDs scoped to a queue. The host manages ID reuse.
