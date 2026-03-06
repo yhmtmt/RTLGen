@@ -1,6 +1,6 @@
 # Objective Sweep: npu_e2e_eval_onnx_practical_v1_reuse
 
-- generated_utc: `2026-03-06T03:12:04+00:00`
+- generated_utc: `2026-03-06T03:39:01+00:00`
 - source_campaign: `runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/campaign.json`
 - output_csv: `runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/objective_sweep.csv`
 - profile_artifacts_dir: `runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/objective_profiles`
