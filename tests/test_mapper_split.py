@@ -74,6 +74,29 @@ class MapperSplitRegressionTest(unittest.TestCase):
             )
         )
 
+    def _write_softmax_classifier_onnx(
+        self,
+        out_path: Path,
+        *,
+        name: str,
+        b: int,
+        input_dim: int,
+        out_dim: int,
+        add_cast: bool = True,
+        add_label_output: bool = True,
+    ) -> None:
+        out_path.write_bytes(
+            self.onnx_lite.build_softmax_classifier_model_bytes(
+                name=name,
+                b=b,
+                input_dim=input_dim,
+                out_dim=out_dim,
+                dtype=self.onnx_lite.TENSOR_INT8,
+                add_cast=add_cast,
+                add_label_output=add_label_output,
+            )
+        )
+
     def _run_lowering(
         self,
         onnx_path: Path,
@@ -283,6 +306,52 @@ class MapperSplitRegressionTest(unittest.TestCase):
             self.assertEqual([32, 32], [int(op["m"]) for op in gemm3_ops])
             self.assertEqual(2, len(dma_y_ops))
             self.assertEqual("dma_y3_r1", schedule["events"][0]["signal_on"])
+
+    def test_softmax_classifier_with_aux_output(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            onnx_path = tmp / "classifier.onnx"
+            sched_path = tmp / "classifier.yml"
+            bin_path = tmp / "classifier.bin"
+
+            self._write_softmax_classifier_onnx(
+                onnx_path,
+                name="classifier",
+                b=1,
+                input_dim=16,
+                out_dim=4,
+                add_cast=True,
+                add_label_output=True,
+            )
+            schedule = self._run_lowering(
+                onnx_path,
+                sched_path,
+                gemm_num_modules=2,
+                batch_override=64,
+            )
+            self._validate_and_emit_bin(sched_path, bin_path)
+
+            notes = schedule.get("mapper_notes", {})
+            self.assertEqual(1, int(notes.get("linear_layer_count", 0)))
+            self.assertTrue(bool(notes.get("input_cast_ignored")))
+            self.assertFalse(bool(notes.get("input_flattened")))
+            self.assertEqual(64, int(notes.get("effective_batch", 0)))
+            self.assertTrue(bool(notes.get("terminal_softmax")))
+            self.assertEqual("P", notes.get("graph_output_name"))
+            self.assertEqual(["Y"], notes.get("ignored_graph_outputs"))
+            self.assertEqual([4], notes.get("final_linear_out_chunks"))
+            self.assertEqual([32, 32], notes.get("gemm_row_chunks"))
+
+            gemm_ops = [op for op in schedule["ops"] if str(op.get("id", "")).startswith("gemm1_r")]
+            softmax_ops = [op for op in schedule["ops"] if op.get("type") == "softmax"]
+            dma_y_ops = [op for op in schedule["ops"] if str(op.get("id", "")).startswith("dma_y")]
+
+            self.assertEqual(2, len(gemm_ops))
+            self.assertEqual(1, len(softmax_ops))
+            self.assertEqual(1, len(dma_y_ops))
+            self.assertEqual(4, int(softmax_ops[0]["row_bytes"]))
+            self.assertEqual(64, int(softmax_ops[0]["rows"]))
+            self.assertEqual("dma_y", schedule["events"][0]["signal_on"])
 
 
 if __name__ == "__main__":

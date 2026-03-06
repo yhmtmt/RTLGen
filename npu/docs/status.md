@@ -56,6 +56,13 @@ Git: d76a23b
   first broader imported ONNX benchmark pair. They fetch commit-pinned upstream
   models into `runs/model_cache/` and confirm the same balanced recommendation
   as the practical proxy baseline: `fp16_nm2 + flat_nomacro`.
+- **Non-MLP tail-op fetch set (Implemented)**:
+  `runs/models/onnx_imported_softmax_tail_v1/` and
+  `runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1/`
+  validate the first non-GEMM terminal lowering path (`Softmax`) on a real
+  imported classifier graph. This campaign is intentionally small and exposes a
+  boundary case where `fp16_nm1 + flat_nomacro` beats `nm2` because descriptor
+  and event overhead dominate the tiny split GEMM.
 - **Campaign baselines (Implemented)**: `mlp_smoke_v2_reuse` is balanced at
   30 samples per `(arch_id, macro_mode)` point after focused flat/hier reruns;
   `onnx_practical_v1_reuse_num_modules_v1` is the active practical baseline
@@ -69,7 +76,10 @@ Git: d76a23b
   point because row-parallel lowering converts `compute.gemm.num_modules=2`
   into lower model latency. `fp16_nm1 + flat_nomacro` remains the best
   energy-only / broader-PPA point. The first imported fetched-model campaign
-  (`onnx_imported_mlp_v1`) preserves the same ranking.
+  (`onnx_imported_mlp_v1`) preserves the same ranking. The newer softmax-tail
+  singleton campaign is a boundary case, not a policy change: on that tiny
+  classifier, `nm1` wins because `Softmax` plus queue/event overhead swamp the
+  split-GEMM benefit.
 
 ## In progress
 - C++ MAC generator extension for explicit MAC operation modes including
@@ -77,7 +87,11 @@ Git: d76a23b
 - Expanded vector-op constrained-random coverage for activation and derivative ops.
 - Mapper scale-out beyond phase-1 MLP `GEMM2` output chunking.
 - Broaden validation of the `num_modules`-aware mapper/perf contract beyond the
-  current proxy + imported-MLP sets, especially on non-MLP lowering patterns.
+  current proxy + imported-MLP sets, especially on larger non-MLP lowering
+  patterns where `Softmax` or VEC tails do not dominate the schedule.
+- Revisit perf queue/event overhead calibration for tiny split-GEMM workloads;
+  the current softmax-tail singleton shows `nm2` losing because descriptor
+  overhead dominates before parallel GEMM can pay back.
 - Stronger `arch v0.2` validation (types/ranges/enums) and mapper/perf usage of
   interconnect + mapping constraints.
 - Post-physical SRAM metric extraction and feedback loop into perf simulation.

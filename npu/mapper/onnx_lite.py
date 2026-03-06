@@ -574,6 +574,88 @@ def build_gemm_mlp_model_bytes(
     return bytes(model)
 
 
+def build_softmax_classifier_model_bytes(
+    *,
+    name: str,
+    b: int,
+    input_dim: int,
+    out_dim: int,
+    dtype: int = TENSOR_INT8,
+    add_cast: bool = True,
+    add_label_output: bool = True,
+    opset_version: int = 13,
+    ir_version: int = 8,
+) -> bytes:
+    """
+    Build a tiny classifier-style ONNX graph using:
+      optional Cast -> Gemm -> Softmax
+
+    Optional auxiliary branch:
+      ArgMax(Gemm) -> Gather(classes, idx) -> label output
+
+    Notes:
+    - The mapper only follows the probability path; the label branch exists to
+      exercise imported graphs with side outputs.
+    - Initializers contain zero raw_data; this is sufficient for shape-driven
+      lowering and perf-focused evaluation.
+    """
+
+    if int(b) <= 0:
+        raise ValueError("b must be positive")
+    input_dim = int(input_dim)
+    out_dim = int(out_dim)
+    if input_dim <= 0:
+        raise ValueError("input_dim must be positive")
+    if out_dim <= 0:
+        raise ValueError("out_dim must be positive")
+
+    def zeros(n: int) -> bytes:
+        return bytes([0] * n)
+
+    vi_x = _encode_value_info("X", dtype, [b, input_dim])
+    vi_probs = _encode_value_info("P", dtype, [b, out_dim])
+
+    nodes: List[bytes] = []
+    initializers: List[bytes] = [
+        _encode_tensor("W1", [out_dim, input_dim], dtype, zeros(out_dim * input_dim)),
+        _encode_tensor("b1", [out_dim], dtype, zeros(out_dim)),
+    ]
+    outputs: List[bytes] = []
+
+    current = "X"
+    if add_cast:
+        current = "Xc"
+        nodes.append(_encode_node("Cast", ["X"], [current], name="Cast0"))
+
+    nodes.append(
+        _encode_node("Gemm", [current, "W1", "b1"], ["G1"], name="Gemm1")
+    )
+
+    if add_label_output:
+        initializers.append(_encode_tensor("classes", [out_dim], dtype, zeros(out_dim)))
+        vi_label = _encode_value_info("Y", dtype, [b])
+        nodes.append(_encode_node("ArgMax", ["G1"], ["I1"], name="ArgMax1"))
+        nodes.append(_encode_node("Gather", ["classes", "I1"], ["Y"], name="Gather1"))
+        outputs.append(vi_label)
+
+    nodes.append(_encode_node("Softmax", ["G1"], ["P"], name="Softmax1"))
+    outputs.append(vi_probs)
+
+    graph = _encode_graph(
+        name=name,
+        nodes=nodes,
+        inputs=[vi_x],
+        outputs=outputs,
+        initializers=initializers,
+    )
+
+    model = bytearray()
+    model += _enc_v(1, int(ir_version))
+    model += _enc_ld(8, _encode_opset_import("", opset_version))
+    model += _enc_ld(7, graph)
+    return bytes(model)
+
+
 def write_mlp_model(path: Union[str, Path], *, preset: str) -> None:
     preset = preset.lower().strip()
     if preset == "mlp1":

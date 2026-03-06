@@ -3,7 +3,9 @@
 ONNX (subset) -> NPU schedule IR (v0.1)
 
 This is intentionally small and opinionated for the RTLGen minimal NPU demo:
-- Supported op subset: MatMul (+ bias Add) (+ Relu) in an MLP chain.
+- Supported op subset: small linear chains built from MatMul/Gemm, optional
+  input Flatten/Cast, optional Relu between linear stages, and optional final
+  Softmax.
 - Output: schedule IR as defined by `npu/mapper/ir.md`.
 
 The generated schedule models explicit DMA copies from "DRAM" buffers into
@@ -101,6 +103,17 @@ class _LinearLayer:
     relu: bool
 
 
+@dataclass
+class _SupportedLinearGraph:
+    input_name: str
+    flatten_input: bool
+    input_cast: bool
+    layers: List[_LinearLayer]
+    terminal_softmax: bool
+    terminal_output_name: str
+    ignored_graph_outputs: List[str]
+
+
 def _product_positive(shape: List[int], *, name: str) -> int:
     if not shape:
         raise ValueError(f"{name} must be non-empty")
@@ -166,7 +179,7 @@ def _infer_sequential_mlp(
     g: OnnxGraph,
     *,
     batch_override: Optional[int],
-) -> Tuple[str, int, int, bool, List[_LinearLayer]]:
+) -> _SupportedLinearGraph:
     if not g.inputs:
         raise ValueError("ONNX graph has no inputs")
     x_name = next(iter(g.inputs.keys()))
@@ -175,34 +188,41 @@ def _infer_sequential_mlp(
     init_names = set(g.initializers.keys())
 
     flatten_input = False
+    input_cast = False
     current_name = x_name
     if not input_shape:
         raise ValueError(f"missing input shape for {x_name!r}")
-    current_batch = _resolve_batch_dim(int(input_shape[0]), batch_override)
-    current_dim: Optional[int] = None
+    while True:
+        prelude_consumers = consumers.get(current_name, [])
+        flatten_nodes = [n for n in prelude_consumers if n.op_type == "Flatten"]
+        if not flatten_input and flatten_nodes:
+            if len(flatten_nodes) != 1 or len(prelude_consumers) != 1:
+                raise ValueError("expected a single Flatten consumer on the graph input path")
+            flatten_node = flatten_nodes[0]
+            if not flatten_node.outputs:
+                raise ValueError("Flatten node missing outputs")
+            flatten_input = True
+            current_name = flatten_node.outputs[0]
+            continue
 
-    flatten_nodes = [n for n in consumers.get(current_name, []) if n.op_type == "Flatten"]
-    if flatten_nodes:
-        if len(flatten_nodes) != 1:
-            raise ValueError("expected at most one Flatten consumer on the graph input")
-        flatten_node = flatten_nodes[0]
-        if not flatten_node.outputs:
-            raise ValueError("Flatten node missing outputs")
-        flatten_input = True
-        current_name = flatten_node.outputs[0]
-        current_batch, current_dim = _input_batch_and_in_dim(
-            x_name,
-            input_shape,
-            flatten_input=True,
-            batch_override=batch_override,
-        )
-    else:
-        current_batch, current_dim = _input_batch_and_in_dim(
-            x_name,
-            input_shape,
-            flatten_input=False,
-            batch_override=batch_override,
-        )
+        cast_nodes = [n for n in prelude_consumers if n.op_type == "Cast"]
+        if not input_cast and cast_nodes:
+            if len(cast_nodes) != 1 or len(prelude_consumers) != 1:
+                raise ValueError("expected a single Cast consumer on the graph input path")
+            cast_node = cast_nodes[0]
+            if not cast_node.outputs:
+                raise ValueError("Cast node missing outputs")
+            input_cast = True
+            current_name = cast_node.outputs[0]
+            continue
+        break
+
+    _, current_dim = _input_batch_and_in_dim(
+        x_name,
+        input_shape,
+        flatten_input=flatten_input,
+        batch_override=batch_override,
+    )
 
     layers: List[_LinearLayer] = []
     while True:
@@ -287,12 +307,44 @@ def _infer_sequential_mlp(
         raise ValueError("failed to infer a supported MLP chain")
 
     graph_outputs = set(g.outputs.keys())
-    if current_name not in graph_outputs:
+    tail_consumers = consumers.get(current_name, [])
+    terminal_softmax = False
+    terminal_output_name = current_name
+    if tail_consumers:
+        softmax_nodes = [n for n in tail_consumers if n.op_type == "Softmax"]
+        if softmax_nodes:
+            if len(softmax_nodes) != 1 or not softmax_nodes[0].outputs:
+                raise ValueError("expected one Softmax consumer on the terminal tensor")
+            unsupported_tail = [
+                n.op_type for n in tail_consumers if n.op_type not in {"Softmax", "ArgMax"}
+            ]
+            if unsupported_tail:
+                raise ValueError(
+                    f"unsupported terminal side consumers after linear chain: {unsupported_tail}"
+                )
+            terminal_softmax = True
+            terminal_output_name = softmax_nodes[0].outputs[0]
+        else:
+            raise ValueError(
+                f"supported chain must terminate at a graph output, got extra consumers on "
+                f"{current_name!r}: {[n.op_type for n in tail_consumers]}"
+            )
+
+    if terminal_output_name not in graph_outputs:
         raise ValueError(
-            f"supported chain must terminate at a graph output, got final tensor {current_name!r}"
+            f"supported chain must terminate at a graph output, got final tensor "
+            f"{terminal_output_name!r}"
         )
 
-    return x_name, current_batch, current_dim, flatten_input, layers
+    return _SupportedLinearGraph(
+        input_name=x_name,
+        flatten_input=flatten_input,
+        input_cast=input_cast,
+        layers=layers,
+        terminal_softmax=terminal_softmax,
+        terminal_output_name=terminal_output_name,
+        ignored_graph_outputs=sorted(name for name in graph_outputs if name != terminal_output_name),
+    )
 
 
 def _max_final_out_chunk(wgt_size: int, in_dim: int, dtype_bytes: int, out_dim: int) -> int:
@@ -772,7 +824,7 @@ def build_schedule_for_supported_graph(
     batch_override: Optional[int] = None,
 ) -> Dict:
     try:
-        x_name, _, _, flatten_input, layers = _infer_sequential_mlp(
+        supported = _infer_sequential_mlp(
             g,
             batch_override=batch_override,
         )
@@ -787,6 +839,12 @@ def build_schedule_for_supported_graph(
             dtype_bytes=dtype_bytes,
             gemm_num_modules=gemm_num_modules,
         )
+
+    x_name = supported.input_name
+    flatten_input = supported.flatten_input
+    input_cast = supported.input_cast
+    layers = supported.layers
+    terminal_softmax = supported.terminal_softmax
 
     x_shape = g.inputs.get(x_name, [])
     batch, in_dim = _input_batch_and_in_dim(
@@ -858,7 +916,8 @@ def build_schedule_for_supported_graph(
         out_offset += n_chunk
 
     final_chunk_max_bytes = bytes_2d(batch, max_out_chunk)
-    max_act_bytes = max([input_bytes, final_chunk_max_bytes] + layer_output_bytes[:-1])
+    final_activation_bytes = layer_output_bytes[-1] if terminal_softmax else final_chunk_max_bytes
+    max_act_bytes = max([input_bytes, final_activation_bytes] + layer_output_bytes[:-1])
     act_a_sram = act.alloc(max_act_bytes)
     act_b_sram = act.alloc(max_act_bytes)
 
@@ -1039,6 +1098,7 @@ def build_schedule_for_supported_graph(
             stage_ready_ids = stage_complete_ids
             continue
 
+        prev_chunk_wait_ids: List[str] = []
         for chunk_idx, (n_off, n_chunk) in enumerate(out_chunks):
             suffix = "" if len(out_chunks) == 1 else f"_c{chunk_idx}"
             dma_w_chunk_id = f"{dma_w_id}{suffix}"
@@ -1061,13 +1121,15 @@ def build_schedule_for_supported_graph(
                 w_chunk_id = f"W{layer_idx}_DRAM{suffix}"
                 b_chunk_id = f"b{layer_idx}_DRAM{suffix}"
                 y_chunk_id = f"Y_DRAM{suffix}"
-                buffers.extend(
-                    [
-                        {"id": w_chunk_id, "addr": hex(w_chunk_dram_addr), "bytes": w_chunk_bytes},
-                        {"id": b_chunk_id, "addr": hex(b_chunk_dram_addr), "bytes": b_chunk_bytes},
-                        {"id": y_chunk_id, "addr": hex(y_chunk_dram_addr), "bytes": y_chunk_bytes},
-                    ]
-                )
+                extra_buffers = [
+                    {"id": w_chunk_id, "addr": hex(w_chunk_dram_addr), "bytes": w_chunk_bytes},
+                    {"id": b_chunk_id, "addr": hex(b_chunk_dram_addr), "bytes": b_chunk_bytes},
+                ]
+                if not terminal_softmax:
+                    extra_buffers.append(
+                        {"id": y_chunk_id, "addr": hex(y_chunk_dram_addr), "bytes": y_chunk_bytes}
+                    )
+                buffers.extend(extra_buffers)
             ops.append(
                 {
                     "id": dma_w_chunk_id,
@@ -1086,11 +1148,12 @@ def build_schedule_for_supported_graph(
                     "bytes": b_chunk_bytes,
                 }
             )
-            if chunk_idx > 0 and last_dma_y_id:
-                deps.append({"wait": [last_dma_y_id], "then": dma_w_chunk_id})
-                deps.append({"wait": [last_dma_y_id], "then": dma_b_chunk_id})
+            if prev_chunk_wait_ids:
+                deps.append({"wait": list(prev_chunk_wait_ids), "then": dma_w_chunk_id})
+                deps.append({"wait": list(prev_chunk_wait_ids), "then": dma_b_chunk_id})
 
-            prev_row_dma_y = ""
+            prev_row_tail_id = ""
+            chunk_done_ids: List[str] = []
             if row_parallel_enabled:
                 for row_idx, (m_off, m_chunk) in enumerate(row_chunks):
                     in_buf = _row_view_buf(
@@ -1103,21 +1166,25 @@ def build_schedule_for_supported_graph(
                         n_dim=k_dim,
                     )
                     out_sram_id = f"{next_output_buf}{suffix}_r{row_idx}"
+                    out_addr = next_output_addr + bytes_2d(m_off, final_out_dim if terminal_softmax else n_chunk)
+                    if terminal_softmax:
+                        out_addr = next_output_addr + (bytes_2d(m_off, final_out_dim) + bytes_1d(n_off))
+                    buffers.append(
+                        {
+                            "id": out_sram_id,
+                            "addr": hex(out_addr),
+                            "bytes": bytes_2d(m_chunk, n_chunk),
+                        }
+                    )
                     out_dram_id = f"{y_chunk_id}_r{row_idx}"
-                    buffers.extend(
-                        [
-                            {
-                                "id": out_sram_id,
-                                "addr": hex(next_output_addr + bytes_2d(m_off, n_chunk)),
-                                "bytes": bytes_2d(m_chunk, n_chunk),
-                            },
+                    if not terminal_softmax:
+                        buffers.append(
                             {
                                 "id": out_dram_id,
                                 "addr": hex(y_chunk_dram_addr + bytes_2d(m_off, n_chunk)),
                                 "bytes": bytes_2d(m_chunk, n_chunk),
-                            },
-                        ]
-                    )
+                            }
+                        )
                     gemm_id = f"{gemm_base_id}_r{row_idx}"
                     dma_y_id = f"{dma_y_base_id}_r{row_idx}"
                     ops.append(
@@ -1132,20 +1199,11 @@ def build_schedule_for_supported_graph(
                             "k": k_dim,
                             "lda": k_dim * dtype_bytes,
                             "ldb": n_chunk * dtype_bytes,
-                            "ldc": n_chunk * dtype_bytes,
+                            "ldc": (final_out_dim if terminal_softmax else n_chunk) * dtype_bytes,
                             "dtype": "int8",
                             "layout": "row_major",
                             "bias": "b_SRAM_TMP",
                             "epilogue": "none",
-                        }
-                    )
-                    ops.append(
-                        {
-                            "id": dma_y_id,
-                            "type": "dma_copy",
-                            "src": out_sram_id,
-                            "dst": out_dram_id,
-                            "bytes": bytes_2d(m_chunk, n_chunk),
                         }
                     )
                     deps.append(
@@ -1154,39 +1212,105 @@ def build_schedule_for_supported_graph(
                             "then": gemm_id,
                         }
                     )
-                    dma_waits = [gemm_id]
-                    if prev_row_dma_y:
-                        dma_waits.append(prev_row_dma_y)
-                    deps.append({"wait": dma_waits, "then": dma_y_id})
-                    prev_row_dma_y = dma_y_id
+                    if terminal_softmax:
+                        chunk_done_ids.append(gemm_id)
+                    else:
+                        ops.append(
+                            {
+                                "id": dma_y_id,
+                                "type": "dma_copy",
+                                "src": out_sram_id,
+                                "dst": out_dram_id,
+                                "bytes": bytes_2d(m_chunk, n_chunk),
+                            }
+                        )
+                        dma_waits = [gemm_id]
+                        if prev_row_tail_id:
+                            dma_waits.append(prev_row_tail_id)
+                        deps.append({"wait": dma_waits, "then": dma_y_id})
+                        prev_row_tail_id = dma_y_id
             else:
                 gemm_id = gemm_base_id
-                dma_y_id = dma_y_base_id
+                out_buf = next_output_buf
+                if terminal_softmax and len(out_chunks) > 1:
+                    out_buf = f"{next_output_buf}{suffix}"
+                    buffers.append(
+                        {
+                            "id": out_buf,
+                            "addr": hex(next_output_addr + bytes_1d(n_off)),
+                            "bytes": y_chunk_bytes,
+                        }
+                    )
                 ops.append(
                     {
                         "id": gemm_id,
                         "type": "gemm",
                         "a": current_input_buf,
                         "b": "W_SRAM_TMP",
-                        "c": next_output_buf,
+                        "c": out_buf,
                         "m": batch,
                         "n": n_chunk,
                         "k": k_dim,
                         "lda": k_dim * dtype_bytes,
                         "ldb": n_chunk * dtype_bytes,
-                        "ldc": n_chunk * dtype_bytes,
+                        "ldc": (final_out_dim if terminal_softmax else n_chunk) * dtype_bytes,
                         "dtype": "int8",
                         "layout": "row_major",
                         "bias": "b_SRAM_TMP",
                         "epilogue": "none",
                     }
                 )
-                ops.append({"id": dma_y_id, "type": "dma_copy", "src": next_output_buf, "dst": y_chunk_id, "bytes": y_chunk_bytes})
                 deps.append({"wait": stage_ready_ids + [dma_w_chunk_id, dma_b_chunk_id], "then": gemm_id})
-                deps.append({"wait": [gemm_id], "then": dma_y_id})
-                prev_row_dma_y = dma_y_id
+                if terminal_softmax:
+                    chunk_done_ids.append(gemm_id)
+                else:
+                    dma_y_id = dma_y_base_id
+                    ops.append(
+                        {
+                            "id": dma_y_id,
+                            "type": "dma_copy",
+                            "src": next_output_buf,
+                            "dst": y_chunk_id,
+                            "bytes": y_chunk_bytes,
+                        }
+                    )
+                    deps.append({"wait": [gemm_id], "then": dma_y_id})
+                    prev_row_tail_id = dma_y_id
 
-            last_dma_y_id = prev_row_dma_y
+            if terminal_softmax:
+                prev_chunk_wait_ids = list(chunk_done_ids)
+            else:
+                prev_chunk_wait_ids = [prev_row_tail_id] if prev_row_tail_id else []
+                last_dma_y_id = prev_row_tail_id
+
+        if terminal_softmax:
+            if not prev_chunk_wait_ids:
+                raise ValueError("failed to generate final linear outputs for terminal softmax")
+            softmax_id = f"softmax{layer_idx}"
+            dma_y_id = "dma_y" if len(layers) == 1 else f"dma_y{layer_idx}"
+            ops.append(
+                {
+                    "id": softmax_id,
+                    "type": "softmax",
+                    "src": next_output_buf,
+                    "dst": current_input_buf,
+                    "row_bytes": bytes_1d(final_out_dim),
+                    "rows": batch,
+                    "dtype": "int8",
+                }
+            )
+            ops.append(
+                {
+                    "id": dma_y_id,
+                    "type": "dma_copy",
+                    "src": current_input_buf,
+                    "dst": "Y_DRAM",
+                    "bytes": layer_output_bytes[-1],
+                }
+            )
+            deps.append({"wait": prev_chunk_wait_ids, "then": softmax_id})
+            deps.append({"wait": [softmax_id], "then": dma_y_id})
+            last_dma_y_id = dma_y_id
 
     if not last_dma_y_id:
         raise ValueError("failed to generate final output DMA")
@@ -1194,6 +1318,7 @@ def build_schedule_for_supported_graph(
     mapper_notes = {
         "linear_layer_count": len(layers),
         "input_flattened": flatten_input,
+        "input_cast_ignored": input_cast,
         "effective_batch": int(batch),
         "gemm_num_modules": int(max(1, gemm_num_modules)),
         "gemm_row_parallel_enabled": row_parallel_enabled,
@@ -1201,6 +1326,9 @@ def build_schedule_for_supported_graph(
         "final_linear_out_chunks": [n for _, n in out_chunks],
         "final_linear_split_enabled": len(out_chunks) > 1,
         "final_linear_weight_layout": "packed_by_output_chunk",
+        "terminal_softmax": terminal_softmax,
+        "graph_output_name": supported.terminal_output_name,
+        "ignored_graph_outputs": list(supported.ignored_graph_outputs),
     }
     if len(layers) == 2:
         mapper_notes.update(

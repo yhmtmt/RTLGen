@@ -1,0 +1,18 @@
+{
+  "version": 0.1,
+  "model_set_id": "onnx_imported_softmax_tail_v1",
+  "description": "External imported ONNX classifier-tail set used to validate non-GEMM terminal lowering via Softmax.",
+  "models": [
+    {
+      "model_id": "logistic_regression",
+      "onnx_path": "runs/model_cache/onnx_imported_softmax_tail_v1/logistic_regression.onnx",
+      "onnx_sha256": "c25f370e81936ed136fd1b733b4677e29eeceec75cc035ec3ca1945da42301b7",
+      "fetch": {
+        "url": "https://media.githubusercontent.com/media/chris-chris/mina-zkml/6d3e5bf9865388c343a9b652adc9912ffbbabc0f/models/logistic_regression.onnx",
+        "notes": "Commit-pinned imported classifier ONNX from chris-chris/mina-zkml.",
+        "license": "See upstream repository"
+      },
+      "notes": "Cast -> Gemm -> Softmax probability path with auxiliary ArgMax/Gather label branch. Campaign lowers the Softmax probability output and ignores the label side output. Uses mapper batch override 256."
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "version": 0.1,
+  "campaign_id": "npu_e2e_eval_onnx_imported_softmax_tail_num_modules_v1",
+  "run_id": "npu_e2e_eval_onnx_imported_softmax_tail_num_modules_v1__logistic_regression__fp16_nm2__hier_macro__r1__p5d0ac971",
+  "sample_id": "npu_e2e_eval_onnx_imported_softmax_tail_num_modules_v1__logistic_regression__fp16_nm2__hier_macro__r1__p5d0ac971__b20260306t090329z__s1",
+  "batch_id": "20260306T090329Z",
+  "sample_index": 1,
+  "model_set_id": "onnx_imported_softmax_tail_v1",
+  "model_manifest": "runs/models/onnx_imported_softmax_tail_v1/manifest.json",
+  "onnx_sha256": "c25f370e81936ed136fd1b733b4677e29eeceec75cc035ec3ca1945da42301b7",
+  "mapper_arch_hash": "80919f38a8971f5b134755654941ed4325bf3e7af07bdd5324b1211e52f774ab",
+  "perf_config_hash": "ce2f86eeb29829735e67ef1bb24e8729a3137b86e94dd98bb2061d123e53cb9e",
+  "timestamp_utc": "2026-03-06T09:03:30+00:00",
+  "status": "ok",
+  "platform": "nangate45",
+  "model_id": "logistic_regression",
+  "arch_id": "fp16_nm2",
+  "macro_mode": "hier_macro",
+  "repeat_index": 1,
+  "physical": {
+    "critical_path_ns": 5.740890641774165,
+    "die_area_um2": 2250000.0,
+    "total_power_mw": 0.212815,
+    "flow_elapsed_s": 999.84,
+    "place_gp_elapsed_s": 474.49
+  },
+  "performance": {
+    "cycles": 167.918196,
+    "latency_ms": 0.0009639999999999999,
+    "throughput_infer_per_s": 1037344.3983402491,
+    "energy_mj": 2.0515366000000002e-07
+  },
+  "artifacts": {
+    "synth_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/5d0ac971/result.json",
+    "perf_trace_json": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1/artifacts/perf/fp16_nm2/logistic_regression/trace.json",
+    "schedule_yml": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1/artifacts/mapper/fp16_nm2/logistic_regression/schedule.yml",
+    "descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1/artifacts/mapper/fp16_nm2/logistic_regression/descriptors.bin"
+  },
+  "notes": "param_hash=5d0ac971; tag=npu_fp16_nm2_cmp33_hier_macro_r1; compare_group=37c65ce6; mapper_split_enabled=0; mapper_split_chunk_count=1; mapper_split_chunks=4; mapper_num_modules=2; mapper_row_parallel_enabled=1; mapper_row_parallel_chunk_count=2; mapper_row_parallel_chunks=128,128; layer1_manifest=runs/candidates/nangate45/module_candidates.json; layer1_candidates=mult16u_normal_koggestone_nangate45_base@macro_hardened,adder_koggestone_64u_nangate45_base@macro_hardened",
+  "physical_source_campaign": "runs/campaigns/npu/e2e_eval_v0/campaign.json"
+}

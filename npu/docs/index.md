@@ -34,6 +34,9 @@ Two-layer optimization split and interaction contract are defined in
 - **Implemented**: first broader imported fetched-model campaign in
   `runs/campaigns/npu/e2e_eval_onnx_imported_mlp_num_modules_v1/`, backed by
   `runs/models/onnx_imported_mlp_v1/`.
+- **Implemented**: first non-GEMM terminal-op fetched-model campaign in
+  `runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1/`,
+  backed by `runs/models/onnx_imported_softmax_tail_v1/`.
 - **Implemented**: phase-1 mapper split for oversized MLP `GEMM2`
   weight-SRAM cases, including schedule metadata and campaign-row provenance.
 
@@ -86,6 +89,10 @@ Two-layer optimization split and interaction contract are defined in
   same ranking on real upstream MLP exports.
 - Validate the `num_modules`-aware contract beyond the current imported MLP
   set before treating the current result as universal.
+- Use `runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1/`
+  as the first boundary-case check for non-GEMM terminal ops. Its tiny
+  classifier currently favors `fp16_nm1 + flat_nomacro` because queue/event
+  overhead dominates the split GEMM.
 - Use `runs/campaigns/npu/e2e_eval_onnx_practical_v1_fetch_mirror_num_modules_v1/`
   as the bootstrap reference for evaluator-fetched model sets.
 - Keep `runs/campaigns/npu/e2e_eval_onnx_imported_mlp_num_modules_v1/` as the
