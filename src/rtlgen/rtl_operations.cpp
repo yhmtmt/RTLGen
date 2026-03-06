@@ -855,3 +855,98 @@ void emitActivationModule(const ActivationOperationConfig &config, const Operand
 
     os << "endmodule\n";
 }
+
+void emitSoftmaxRowwiseModule(const SoftmaxRowwiseOperationConfig &config, const OperandDefinition &operand) {
+    if (operand.kind != "int") {
+        throw std::runtime_error("softmax_rowwise currently supports only integer operands");
+    }
+    if (operand.bit_width != 8) {
+        throw std::runtime_error("softmax_rowwise currently supports only 8-bit operands");
+    }
+    if (config.impl != "shift_exp") {
+        throw std::runtime_error("Unsupported softmax_rowwise impl: " + config.impl);
+    }
+    if (config.row_elems <= 0) {
+        throw std::runtime_error("softmax_rowwise row_elems must be positive");
+    }
+    if (config.max_shift < 0 || config.max_shift > 15) {
+        throw std::runtime_error("softmax_rowwise max_shift must be in [0, 15]");
+    }
+    if (config.accum_bits < 4 || config.accum_bits > 64) {
+        throw std::runtime_error("softmax_rowwise accum_bits must be in [4, 64]");
+    }
+    if (config.output_scale <= 0 || config.output_scale > 255) {
+        throw std::runtime_error("softmax_rowwise output_scale must be in [1, 255]");
+    }
+
+    const int data_width = operand.bit_width;
+    const int row_width = config.row_elems * data_width;
+    const int product_bits = config.accum_bits + data_width;
+    const int max_sum_bits = static_cast<int>(
+        std::ceil(std::log2(static_cast<double>(config.row_elems * (1 << config.max_shift)) + 1.0))
+    );
+    if (config.accum_bits < std::max(1, max_sum_bits)) {
+        throw std::runtime_error("softmax_rowwise accum_bits is too small for row_elems/max_shift envelope");
+    }
+
+    std::string filename = config.module_name + ".v";
+    std::ofstream os(filename);
+    if (!os) {
+        throw std::runtime_error("Failed to open " + filename + " for writing");
+    }
+
+    os << "`timescale 1ns/1ps\n\n";
+    os << "module " << config.module_name << "(\n";
+    os << "  input  [" << (row_width - 1) << ":0] X,\n";
+    os << "  output reg [" << (row_width - 1) << ":0] Y\n";
+    os << ");\n\n";
+    os << "  // Row-wise normalized int8 softmax approximation.\n";
+    os << "  // 1) find row max\n";
+    os << "  // 2) assign power-of-two weights from clamped distance to max\n";
+    os << "  // 3) normalize weights into Q0.7-style outputs\n";
+    os << "  localparam integer ROW_ELEMS = " << config.row_elems << ";\n";
+    os << "  localparam integer DATA_W = " << data_width << ";\n";
+    os << "  localparam integer ACCUM_BITS = " << config.accum_bits << ";\n";
+    os << "  localparam integer PRODUCT_BITS = " << product_bits << ";\n";
+    os << "  localparam integer MAX_SHIFT = " << config.max_shift << ";\n";
+    os << "  localparam integer OUTPUT_SCALE = " << config.output_scale << ";\n\n";
+    os << "  integer i;\n";
+    os << "  integer signed lane_val;\n";
+    os << "  integer signed row_max;\n";
+    os << "  integer delta;\n";
+    os << "  reg [ACCUM_BITS-1:0] weights [0:ROW_ELEMS-1];\n";
+    os << "  reg [ACCUM_BITS-1:0] sum_weights;\n";
+    os << "  reg [PRODUCT_BITS-1:0] numer;\n";
+    os << "  reg [DATA_W-1:0] lane_out;\n\n";
+    os << "  always @* begin\n";
+    os << "    row_max = -(1 << (DATA_W - 1));\n";
+    os << "    for (i = 0; i < ROW_ELEMS; i = i + 1) begin\n";
+    os << "      lane_val = $signed(X[(i*DATA_W) +: DATA_W]);\n";
+    os << "      if (lane_val > row_max)\n";
+    os << "        row_max = lane_val;\n";
+    os << "    end\n\n";
+    os << "    sum_weights = {ACCUM_BITS{1'b0}};\n";
+    os << "    for (i = 0; i < ROW_ELEMS; i = i + 1) begin\n";
+    os << "      lane_val = $signed(X[(i*DATA_W) +: DATA_W]);\n";
+    os << "      delta = row_max - lane_val;\n";
+    os << "      if (delta < 0)\n";
+    os << "        delta = 0;\n";
+    os << "      if (delta > MAX_SHIFT)\n";
+    os << "        delta = MAX_SHIFT;\n";
+    os << "      weights[i] = ({{(ACCUM_BITS-1){1'b0}}, 1'b1} << (MAX_SHIFT - delta));\n";
+    os << "      sum_weights = sum_weights + weights[i];\n";
+    os << "    end\n\n";
+    os << "    Y = {ROW_ELEMS*DATA_W{1'b0}};\n";
+    os << "    for (i = 0; i < ROW_ELEMS; i = i + 1) begin\n";
+    os << "      numer = (weights[i] * OUTPUT_SCALE) + (sum_weights >> 1);\n";
+    os << "      if (sum_weights != 0)\n";
+    os << "        lane_out = numer / sum_weights;\n";
+    os << "      else\n";
+    os << "        lane_out = {DATA_W{1'b0}};\n";
+    os << "      if (lane_out > OUTPUT_SCALE)\n";
+    os << "        lane_out = OUTPUT_SCALE;\n";
+    os << "      Y[(i*DATA_W) +: DATA_W] = lane_out;\n";
+    os << "    end\n";
+    os << "  end\n";
+    os << "endmodule\n";
+}

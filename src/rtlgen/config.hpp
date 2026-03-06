@@ -193,6 +193,16 @@ struct ActivationOperationConfig {
     bool symmetric{true};
 };
 
+struct SoftmaxRowwiseOperationConfig {
+    std::string module_name;
+    std::string operand;
+    std::string impl{"shift_exp"};
+    int row_elems{1};
+    int max_shift{7};
+    int accum_bits{16};
+    int output_scale{127};
+};
+
 struct CircuitConfig {
     OperandConfig operand;
     std::vector<OperandDefinition> operands;
@@ -204,6 +214,7 @@ struct CircuitConfig {
     std::vector<CmvmOperationConfig> cmvm_operations;
     std::vector<FpOperationConfig> fp_operations;
     std::vector<ActivationOperationConfig> activation_operations;
+    std::vector<SoftmaxRowwiseOperationConfig> softmax_rowwise_operations;
     std::optional<std::string> onnx_model; // Added ONNX model path
 };
 

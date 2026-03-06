@@ -174,7 +174,8 @@ int main(int argc, char** argv) {
               << " yosys multiplier(s), " << config.mcm_operations.size() << " MCM block(s), "
               << config.cmvm_operations.size() << " CMVM block(s), "
               << config.fp_operations.size() << " FP op(s), "
-              << config.activation_operations.size() << " activation(s)\n";
+              << config.activation_operations.size() << " activation(s), "
+              << config.softmax_rowwise_operations.size() << " row-wise softmax block(s)\n";
 
     try {
         std::filesystem::path flopocoPath;
@@ -279,6 +280,13 @@ int main(int argc, char** argv) {
             std::cout << "[INFO] Generating activation " << act.module_name << " (" << act.function
                       << ")\n";
             emitActivationModule(act, operandDef);
+        }
+
+        for (const auto &softmax : config.softmax_rowwise_operations) {
+            OperandDefinition operandDef = resolveOperand(config, softmax.operand);
+            std::cout << "[INFO] Generating row-wise softmax " << softmax.module_name << " ("
+                      << softmax.impl << ", row_elems=" << softmax.row_elems << ")\n";
+            emitSoftmaxRowwiseModule(softmax, operandDef);
         }
 
         for (const auto &fp : config.fp_operations) {

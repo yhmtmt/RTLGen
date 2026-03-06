@@ -335,6 +335,63 @@ Example standalone activation unit:
 }
 ```
 
+## Row-Wise Softmax Units
+
+Row-wise softmax candidates are modeled as a separate Layer 1 family because
+their interface and optimization space differ from scalar activations.
+
+Each row-wise unit is an `operations[]` entry with:
+
+- `type`: `"softmax_rowwise"`
+- `module_name`: generated Verilog module name
+- `operand`: signed int8 operand reference
+- `options`: row-wise softmax options
+
+Generated interface is packed-row unary:
+
+- `input  [ROW_ELEMS*W-1:0] X`
+- `output [ROW_ELEMS*W-1:0] Y`
+
+Supported options in the first implementation:
+
+- `impl`: currently only `"shift_exp"`
+- `row_elems`: number of logits in one row
+- `max_shift`: clamp distance from row max before weight collapse
+- `accum_bits`: internal normalization accumulator width
+- `output_scale`: output quantization ceiling (typically `127`)
+
+Current `shift_exp` reference behavior:
+
+1. Find the maximum logit in the row.
+2. Convert each `max - x` distance to a power-of-two weight.
+3. Normalize the weights and quantize each output independently into
+   `[0, output_scale]`.
+
+This is a row-wise normalized approximation family intended for Layer 1
+exploration. It is not the legacy scalar `activation.function="softmax"`
+placeholder used in the vector-op bring-up path.
+
+Example row-wise softmax unit:
+
+```json
+{
+  "type": "softmax_rowwise",
+  "module_name": "softmax_rowwise_int8_r4",
+  "operand": "logits",
+  "options": {
+    "impl": "shift_exp",
+    "row_elems": 4,
+    "max_shift": 7,
+    "accum_bits": 16,
+    "output_scale": 127
+  }
+}
+```
+
+Reference helper:
+
+- `python3 scripts/softmax_rowwise_ref.py --config examples/config_softmax_rowwise_int8.json --row 0,0,0,0`
+
 ## Vector-Op Approximation Notes (NPU Phase-2)
 
 This section documents how `vec_op` math is currently approximated.

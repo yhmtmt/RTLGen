@@ -77,8 +77,13 @@ def read_design_names(config_path: Path) -> Tuple[str, str]:
         module_name = cfg["multiplier_yosys"]["module_name"]
     elif "adder" in cfg:
         module_name = cfg["adder"]["module_name"]
+    elif "operations" in cfg and len(cfg["operations"]) == 1:
+        entry = cfg["operations"][0]
+        if entry["type"] not in ("activation", "softmax_rowwise"):
+            raise ValueError(f"Unsupported single-operation design type in {config_path}: {entry['type']}")
+        module_name = entry["module_name"]
     else:
-        raise ValueError(f"No multiplier/adder block in {config_path}")
+        raise ValueError(f"No supported design block in {config_path}")
     wrapper = f"{module_name}_wrapper"
     return module_name, wrapper
 
@@ -249,10 +254,6 @@ def run_single(
     sdc_path = run_dir / "constraint.sdc"
     write_sdc(clock_period, sdc_path)
 
-    dest_platform_dir = ensure_design_assets(config_path, platform, force=False)
-    snapshot_artifacts(config_path, wrapper, circuit_root)
-    design_config_path = dest_platform_dir / "config.mk"
-
     run_record = {
         "design": wrapper,
         "module": module_name,
@@ -273,6 +274,10 @@ def run_single(
         result_path.write_text(json.dumps(run_record, indent=2))
         print(f"[DRY RUN] Would execute make for {wrapper} with params {flow_params}")
         return
+
+    dest_platform_dir = ensure_design_assets(config_path, platform, force=False)
+    snapshot_artifacts(config_path, wrapper, circuit_root)
+    design_config_path = dest_platform_dir / "config.mk"
 
     env = os.environ.copy()
     env.setdefault("DISABLE_GUI_SAVE_IMAGES", "1")

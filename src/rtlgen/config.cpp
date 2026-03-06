@@ -58,6 +58,7 @@ bool readConfig(const std::string& filename, CircuitConfig& config) {
         config.cmvm_operations.clear();
         config.fp_operations.clear();
         config.activation_operations.clear();
+        config.softmax_rowwise_operations.clear();
         config.onnx_model.reset();
 
         if (j.contains("operand")) {
@@ -344,6 +345,29 @@ bool readConfig(const std::string& filename, CircuitConfig& config) {
                         throw std::runtime_error("alpha_den must be non-zero for activation " + act.module_name);
                     }
                     config.activation_operations.push_back(act);
+                } else if (type == "softmax_rowwise") {
+                    const json &options = entry.contains("options") ? entry["options"] : entry;
+                    SoftmaxRowwiseOperationConfig softmax;
+                    softmax.module_name = module_name;
+                    softmax.operand = operand_name;
+                    softmax.impl = options.value("impl", "shift_exp");
+                    softmax.row_elems = options.value("row_elems", 1);
+                    softmax.max_shift = options.value("max_shift", 7);
+                    softmax.accum_bits = options.value("accum_bits", 16);
+                    softmax.output_scale = options.value("output_scale", 127);
+                    if (softmax.row_elems <= 0) {
+                        throw std::runtime_error("softmax_rowwise row_elems must be positive for " + softmax.module_name);
+                    }
+                    if (softmax.max_shift < 0 || softmax.max_shift > 15) {
+                        throw std::runtime_error("softmax_rowwise max_shift must be in [0, 15] for " + softmax.module_name);
+                    }
+                    if (softmax.accum_bits < 4 || softmax.accum_bits > 64) {
+                        throw std::runtime_error("softmax_rowwise accum_bits must be in [4, 64] for " + softmax.module_name);
+                    }
+                    if (softmax.output_scale <= 0 || softmax.output_scale > 255) {
+                        throw std::runtime_error("softmax_rowwise output_scale must be in [1, 255] for " + softmax.module_name);
+                    }
+                    config.softmax_rowwise_operations.push_back(softmax);
                 } else {
                     throw std::runtime_error("Unknown operation type: " + type);
                 }

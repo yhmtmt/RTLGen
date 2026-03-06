@@ -5,7 +5,123 @@ import os
 import subprocess
 import argparse
 import shutil
+from pathlib import Path
 current_file_path = os.path.dirname(os.path.abspath(__file__))
+repo_root = Path(current_file_path).resolve().parent
+
+
+def _default_operand(config):
+    operands = config.get("operands", [])
+    if operands:
+        return operands[0]
+    if "operand" in config:
+        return {
+            "name": "operand",
+            "bit_width": config["operand"]["bit_width"],
+            "signed": config["operand"]["signed"],
+            "kind": "int",
+        }
+    raise ValueError("No operand definition found in config")
+
+
+def _resolve_operand(config, operand_name=""):
+    if operand_name:
+        for operand in config.get("operands", []):
+            if operand.get("name") == operand_name:
+                return operand
+        raise ValueError(f"Unknown operand reference: {operand_name}")
+    return _default_operand(config)
+
+
+def _operand_signal_width(operand):
+    if operand.get("kind", "int") == "fp":
+        fp_format = operand.get("fp_format", {})
+        total_width = int(fp_format.get("total_width", operand.get("bit_width", 0)))
+        return total_width + 2
+    return int(operand["bit_width"])
+
+
+def identify_design(config):
+    if "multiplier" in config:
+        operand = _resolve_operand(config, config["multiplier"].get("operand", ""))
+        module_name = config["multiplier"]["module_name"]
+        bit_width = int(_operand_signal_width(operand))
+        return {
+            "kind": "multiplier",
+            "module_name": module_name,
+            "wrapper_name": f"{module_name}_wrapper",
+            "input_width": bit_width,
+            "output_width": bit_width * 2,
+            "include_mg_cpa": True,
+        }
+    if "multiplier_yosys" in config:
+        operand = _resolve_operand(config, config["multiplier_yosys"].get("operand", ""))
+        module_name = config["multiplier_yosys"]["module_name"]
+        bit_width = int(_operand_signal_width(operand))
+        return {
+            "kind": "multiplier_yosys",
+            "module_name": module_name,
+            "wrapper_name": f"{module_name}_wrapper",
+            "input_width": bit_width,
+            "output_width": bit_width * 2,
+            "include_mg_cpa": False,
+        }
+    if "adder" in config:
+        operand = _resolve_operand(config, config["adder"].get("operand", ""))
+        module_name = config["adder"]["module_name"]
+        bit_width = int(_operand_signal_width(operand))
+        return {
+            "kind": "adder",
+            "module_name": module_name,
+            "wrapper_name": f"{module_name}_wrapper",
+            "input_width": bit_width,
+            "output_width": bit_width,
+            "include_mg_cpa": False,
+        }
+
+    operations = config.get("operations", [])
+    if len(operations) != 1:
+        raise ValueError("generate_design.py currently supports configs with exactly one operation entry")
+    entry = operations[0]
+    module_name = entry["module_name"]
+    operand = _resolve_operand(config, entry.get("operand", ""))
+    bit_width = int(_operand_signal_width(operand))
+    op_type = entry["type"]
+    if op_type == "activation":
+        return {
+            "kind": "scalar_unary",
+            "module_name": module_name,
+            "wrapper_name": f"{module_name}_wrapper",
+            "input_width": bit_width,
+            "output_width": bit_width,
+            "include_mg_cpa": False,
+        }
+    if op_type == "softmax_rowwise":
+        options = entry.get("options", {})
+        row_elems = int(options.get("row_elems", 1))
+        if row_elems <= 0:
+            raise ValueError("softmax_rowwise row_elems must be positive")
+        row_width = bit_width * row_elems
+        return {
+            "kind": "vector_unary",
+            "module_name": module_name,
+            "wrapper_name": f"{module_name}_wrapper",
+            "input_width": row_width,
+            "output_width": row_width,
+            "include_mg_cpa": False,
+        }
+    raise ValueError(f"generate_design.py does not support operation type: {op_type}")
+
+
+def locate_rtlgen_binary():
+    candidates = [
+        repo_root / "build" / "rtlgen",
+        repo_root / "bin" / "rtlgen",
+    ]
+    for candidate in candidates:
+        if candidate.is_file():
+            return str(candidate)
+    return "rtlgen"
 
 def main():
     parser = argparse.ArgumentParser(description="Generate Verilog and OpenROAD files.")
@@ -26,20 +142,9 @@ def main():
     with open(args.config, "r") as f:
         config = json.load(f)
 
-    has_multiplier = "multiplier" in config
-    has_multiplier_yosys = "multiplier_yosys" in config
-    has_adder = "adder" in config
-
-    if has_multiplier:
-        module_name = config["multiplier"]["module_name"]
-    elif has_multiplier_yosys:
-        module_name = config["multiplier_yosys"]["module_name"]
-    elif has_adder:
-        module_name = config["adder"]["module_name"]
-    else:
-        raise ValueError("No multiplier or adder configuration found in the JSON file.")
-
-    wrapper_name = f"{module_name}_wrapper"
+    design = identify_design(config)
+    module_name = design["module_name"]
+    wrapper_name = design["wrapper_name"]
 
     # Create directories
     src_dir = os.path.join("src", wrapper_name)
@@ -55,22 +160,21 @@ def main():
 
     # Generate Verilog
     if args.force_gen or not os.path.isdir(dest_src_dir):
-        repo_root = os.path.abspath(os.path.join(current_file_path, ".."))
         ld_library_path = os.path.expanduser("~/work/or-tools_x86_64_Ubuntu-22.04_cpp_v9.10.4067/lib")
-        onnxruntime_lib = os.path.join(repo_root, "third_party", "onnxruntime-linux-x64-1.23.1", "lib")
+        onnxruntime_lib = str(repo_root / "third_party" / "onnxruntime-linux-x64-1.23.1" / "lib")
 
         env = os.environ.copy()
         ld_paths = [ld_library_path, onnxruntime_lib, env.get("LD_LIBRARY_PATH", "")]
         env["LD_LIBRARY_PATH"] = ":".join([p for p in ld_paths if p])
 
-        subprocess.run(["rtlgen", args.config], env=env, check=True)
+        subprocess.run([locate_rtlgen_binary(), args.config], env=env, check=True)
         os.rename(f"{module_name}.v", os.path.join(src_dir, f"{module_name}.v"))
         # Only multiplier (non-Yosys) emits MG_CPA.v
-        if has_multiplier:
+        if design["include_mg_cpa"]:
             os.rename("MG_CPA.v", os.path.join(src_dir, "MG_CPA.v"))
 
         # Generate Wrapper
-        generate_wrapper(config, src_dir)
+        generate_wrapper(config, src_dir, design)
         print(f"Generated files in {src_dir}")
         # Move to /orfs/flow
         os.makedirs(os.path.dirname(dest_src_dir), exist_ok=True)
@@ -80,8 +184,8 @@ def main():
         print(f"Moved generated src files to {dest_src_dir}")
 
     # Generate OpenROAD files
-    generate_config_mk(config, platform_dir, args.platform, include_mg_cpa=has_multiplier)
-    generate_constraint_sdc(config, platform_dir)
+    generate_config_mk(platform_dir, args.platform, design)
+    generate_constraint_sdc(platform_dir)
     generate_autotuner_json(platform_dir, args)
 
 
@@ -106,23 +210,25 @@ def main():
 
     print(f"Moved generated platform files to {dest_platform_dir}")
 
-def generate_wrapper(config, src_dir):
-    if "multiplier" in config or "multiplier_yosys" in config:
-        module_name = config["multiplier"].get("module_name") if "multiplier" in config else config["multiplier_yosys"].get("module_name")
-        bit_width = config["operand"]["bit_width"]
-        wrapper_name = f"{module_name}_wrapper"
+def generate_wrapper(config, src_dir, design):
+    module_name = design["module_name"]
+    wrapper_name = design["wrapper_name"]
+    input_width = int(design["input_width"])
+    output_width = int(design["output_width"])
+
+    if design["kind"] in ("multiplier", "multiplier_yosys"):
         wrapper_content = f"""
 module {wrapper_name}(
   input clk,
-  input [{bit_width-1}:0] multiplicand,
-  input [{bit_width-1}:0] multiplier,
-  output [{2*bit_width-1}:0] product
+  input [{input_width-1}:0] multiplicand,
+  input [{input_width-1}:0] multiplier,
+  output [{output_width-1}:0] product
 );
 
-  reg [{bit_width-1}:0] multiplicand_reg;
-  reg [{bit_width-1}:0] multiplier_reg;
-  wire [{2*bit_width-1}:0] product_wire;
-  reg [{2*bit_width-1}:0] product_reg;
+  reg [{input_width-1}:0] multiplicand_reg;
+  reg [{input_width-1}:0] multiplier_reg;
+  wire [{output_width-1}:0] product_wire;
+  reg [{output_width-1}:0] product_reg;
 
   {module_name} dut (
     .multiplicand(multiplicand_reg),
@@ -140,24 +246,21 @@ module {wrapper_name}(
 
 endmodule
 """
-    elif "adder" in config:
-        module_name = config["adder"]["module_name"]
-        bit_width = config["operand"]["bit_width"]
-        wrapper_name = f"{module_name}_wrapper"
+    elif design["kind"] == "adder":
         wrapper_content = f"""
 module {wrapper_name}(
   input clk,
-  input [{bit_width-1}:0] a,
-  input [{bit_width-1}:0] b,
-  output [{bit_width-1}:0] sum,
+  input [{input_width-1}:0] a,
+  input [{input_width-1}:0] b,
+  output [{output_width-1}:0] sum,
   output cout
 );
 
-  reg [{bit_width-1}:0] a_reg;
-  reg [{bit_width-1}:0] b_reg;
-  wire [{bit_width-1}:0] sum_wire;
+  reg [{input_width-1}:0] a_reg;
+  reg [{input_width-1}:0] b_reg;
+  wire [{output_width-1}:0] sum_wire;
   wire cout_wire;
-  reg [{bit_width-1}:0] sum_reg;
+  reg [{output_width-1}:0] sum_reg;
   reg cout_reg;
 
   {module_name} dut (
@@ -179,28 +282,46 @@ module {wrapper_name}(
 
 endmodule
 """
+    elif design["kind"] in ("scalar_unary", "vector_unary"):
+        wrapper_content = f"""
+module {wrapper_name}(
+  input clk,
+  input [{input_width-1}:0] X,
+  output [{output_width-1}:0] Y
+);
+
+  reg [{input_width-1}:0] x_reg;
+  wire [{output_width-1}:0] y_wire;
+  reg [{output_width-1}:0] y_reg;
+
+  {module_name} dut (
+    .X(x_reg),
+    .Y(y_wire)
+  );
+
+  always @(posedge clk) begin
+    x_reg <= X;
+    y_reg <= y_wire;
+  end
+
+  assign Y = y_reg;
+
+endmodule
+"""
     else:
-        raise ValueError("No multiplier or adder configuration found in the JSON file.")
+        raise ValueError(f"Unsupported design kind for wrapper generation: {design['kind']}")
 
     with open(os.path.join(src_dir, f"{wrapper_name}.v"), "w") as f:
         f.write(wrapper_content)
 
-def generate_config_mk(config, platform_dir, platform, include_mg_cpa=False):
-    if "multiplier" in config:
-        module_name = config["multiplier"]["module_name"]
-    elif "multiplier_yosys" in config:
-        module_name = config["multiplier_yosys"]["module_name"]
-    elif "adder" in config:
-        module_name = config["adder"]["module_name"]
-    else:
-        raise ValueError("No multiplier or adder configuration found in the JSON file.")
-
-    wrapper_name = f"{module_name}_wrapper"
+def generate_config_mk(platform_dir, platform, design):
+    module_name = design["module_name"]
+    wrapper_name = design["wrapper_name"]
     verilog_files = [
         f"$(DESIGN_HOME)/src/{wrapper_name}/{module_name}.v",
         f"$(DESIGN_HOME)/src/{wrapper_name}/{wrapper_name}.v",
     ]
-    if include_mg_cpa:
+    if design["include_mg_cpa"]:
         verilog_files.append(f"$(DESIGN_HOME)/src/{wrapper_name}/MG_CPA.v")
 
     content = f"""
@@ -216,8 +337,7 @@ export CORE_UTILIZATION = 30
     with open(os.path.join(platform_dir, "config.mk"), "w") as f:
         f.write(content)
 
-def generate_constraint_sdc(config, platform_dir):
-    bit_width = config["operand"]["bit_width"]
+def generate_constraint_sdc(platform_dir):
     content = f"""
 set clock_port "clk"
 set clock_period 10.0

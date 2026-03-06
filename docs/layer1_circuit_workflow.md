@@ -45,6 +45,11 @@ cmake --build .
 build/rtlgen examples/config.json
 ```
 
+Row-wise softmax example:
+```sh
+build/rtlgen examples/config_softmax_rowwise_int8.json
+```
+
 ### 3) Run physical sweep
 Use the flow wrappers that write into `runs/designs/`:
 ```sh
@@ -54,6 +59,15 @@ python3 scripts/run_sweep.py \
   --platform <platform> \
   --sweep <sweep.json> \
   --out_root runs/<circuit_type>
+```
+
+Row-wise softmax starter sweep:
+```sh
+python3 scripts/run_sweep.py \
+  --configs examples/config_softmax_rowwise_int8.json \
+  --platform nangate45 \
+  --sweep scripts/sweep_softmax_rowwise_example.json \
+  --out_root runs/designs/activations
 ```
 
 ### 4) Aggregate and inspect
