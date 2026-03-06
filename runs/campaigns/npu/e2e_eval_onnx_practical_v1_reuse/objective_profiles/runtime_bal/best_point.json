@@ -1,6 +1,6 @@
 {
   "campaign_id": "npu_e2e_eval_onnx_practical_v1_reuse",
-  "generated_utc": "2026-03-05T11:43:25+00:00",
+  "generated_utc": "2026-03-06T03:12:04+00:00",
   "objective_weights": {
     "latency": 0.5,
     "energy": 0.5,
