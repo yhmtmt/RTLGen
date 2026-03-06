@@ -1,0 +1,27 @@
+{
+  "design": "softmax_rowwise_int8_r4_wrapper",
+  "module": "softmax_rowwise_int8_r4",
+  "platform": "nangate45",
+  "config_path": "/tmp/rtlgen-softmax-s20260306t115634z/examples/config_softmax_rowwise_int8.json",
+  "config_hash": "97310659a7a0",
+  "param_hash": "331b4c0f",
+  "tag": "softmax_rowwise_ng45_v1_bd9157ff",
+  "flow_params": {
+    "CLOCK_PERIOD": 4.0,
+    "CORE_UTILIZATION": 30,
+    "PLACE_DENSITY": 0.45,
+    "TAG": "softmax_rowwise_ng45_v1_bd9157ff"
+  },
+  "timestamp": "2026-03-06T11:57:44.587656Z",
+  "reports": {
+    "finish": "/orfs/flow/reports/nangate45/softmax_rowwise_int8_r4_wrapper/base/6_finish.rpt",
+    "def": "/orfs/flow/results/nangate45/softmax_rowwise_int8_r4_wrapper/base/6_final.def"
+  },
+  "metrics": {
+    "critical_path_ns": 12.588,
+    "total_power_mw": 0.28,
+    "die_area": 53210.955625
+  },
+  "status": "ok",
+  "result_path": "/tmp/rtlgen-softmax-s20260306t115634z/runs/designs/activations/softmax_rowwise_int8_r4_wrapper/work/331b4c0f/result.json"
+}

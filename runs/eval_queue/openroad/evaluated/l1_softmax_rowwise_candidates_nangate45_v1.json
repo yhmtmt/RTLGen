@@ -4,7 +4,7 @@
   "title": "Layer1 softmax-rowwise Nangate45 seed sweep",
   "layer": "layer1",
   "flow": "openroad",
-  "state": "queued",
+  "state": "evaluated",
   "priority": 1,
   "created_utc": "2026-03-06T11:04:09Z",
   "requested_by": "@yhmtmt",
@@ -73,5 +73,42 @@
       "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py before pushing"
     ]
   },
-  "result": null
+  "result": {
+    "completed_utc": "2026-03-06T21:19:50Z",
+    "executor": "@codex",
+    "branch": "eval/l1_softmax_rowwise_candidates_nangate45_v1/s20260306t115634z",
+    "evaluator_id": "yhmtmt",
+    "session_id": "s20260306t115634z",
+    "host": "3a18d8e397af",
+    "queue_item_id": "l1_softmax_rowwise_candidates_nangate45_v1",
+    "identity_block": "[role:evaluator][account:yhmtmt][session:s20260306t115634z][host:3a18d8e397af][item:l1_softmax_rowwise_candidates_nangate45_v1]",
+    "status": "ok",
+    "summary": "Executed the full 24-point Nangate45 softmax-rowwise sweep across softmax_rowwise_int8_r4_wrapper, softmax_rowwise_int8_r8_acc20_wrapper, and softmax_rowwise_int8_r8_shift5_wrapper; each wrapper produced 8 status=ok rows, runs/index.csv was regenerated, and scripts/validate_runs.py passed.",
+    "metrics_rows": [
+      {
+        "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "param_hash": "331b4c0f",
+        "tag": "softmax_rowwise_ng45_v1_bd9157ff",
+        "status": "ok",
+        "result_path": "/tmp/rtlgen-softmax-s20260306t115634z/runs/designs/activations/softmax_rowwise_int8_r4_wrapper/work/331b4c0f/result.json"
+      },
+      {
+        "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc20_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "param_hash": "331b4c0f",
+        "tag": "softmax_rowwise_ng45_v1_bd9157ff",
+        "status": "ok",
+        "result_path": "/tmp/rtlgen-softmax-s20260306t115634z/runs/designs/activations/softmax_rowwise_int8_r8_acc20_wrapper/work/331b4c0f/result.json"
+      },
+      {
+        "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_shift5_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "param_hash": "331b4c0f",
+        "tag": "softmax_rowwise_ng45_v1_bd9157ff",
+        "status": "ok",
+        "result_path": "/tmp/rtlgen-softmax-s20260306t115634z/runs/designs/activations/softmax_rowwise_int8_r8_shift5_wrapper/work/331b4c0f/result.json"
+      }
+    ]
+  }
 }
