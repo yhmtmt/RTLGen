@@ -476,6 +476,104 @@ def build_mlp_model_bytes(
     return bytes(model)
 
 
+def build_gemm_mlp_model_bytes(
+    *,
+    name: str,
+    b: int,
+    input_shape: List[int],
+    hidden_dims: List[int],
+    out_dim: int,
+    dtype: int = TENSOR_INT8,
+    add_flatten: bool = True,
+    opset_version: int = 13,
+    ir_version: int = 8,
+) -> bytes:
+    """
+    Build a small imported-style MLP ONNX model using:
+      optional Flatten -> Gemm -> Relu -> ... -> Gemm
+
+    Notes:
+    - Weight tensors use [out_dim, in_dim] layout to mirror many exported Gemm
+      graphs seen in practice.
+    - Initializers contain zero raw_data; this is sufficient for shape-driven
+      lowering and perf-focused evaluation.
+    """
+
+    if int(b) <= 0:
+        raise ValueError("b must be positive")
+    if not input_shape:
+        raise ValueError("input_shape must be non-empty")
+    dims = [int(v) for v in input_shape]
+    if any(v <= 0 for v in dims):
+        raise ValueError(f"input_shape must be positive, got {input_shape}")
+    hidden = [int(v) for v in hidden_dims]
+    if any(v <= 0 for v in hidden):
+        raise ValueError(f"hidden_dims must be positive, got {hidden_dims}")
+    out_dim = int(out_dim)
+    if out_dim <= 0:
+        raise ValueError("out_dim must be positive")
+
+    def zeros(n: int) -> bytes:
+        return bytes([0] * n)
+
+    vi_x = _encode_value_info("X", dtype, [b] + dims)
+    vi_y = _encode_value_info("Y", dtype, [b, out_dim])
+
+    flat_dim = 1
+    for v in dims:
+        flat_dim *= int(v)
+
+    nodes: List[bytes] = []
+    initializers: List[bytes] = []
+
+    current = "X"
+    current_dim = flat_dim
+    if add_flatten:
+        current = "Xf"
+        nodes.append(_encode_node("Flatten", ["X"], [current], name="Flatten0"))
+
+    layer_dims = hidden + [out_dim]
+    for idx, next_dim in enumerate(layer_dims):
+        w_name = f"W{idx + 1}"
+        b_name = f"b{idx + 1}"
+        gemm_out = f"G{idx + 1}"
+        initializers.extend(
+            [
+                _encode_tensor(w_name, [next_dim, current_dim], dtype, zeros(next_dim * current_dim)),
+                _encode_tensor(b_name, [next_dim], dtype, zeros(next_dim)),
+            ]
+        )
+        nodes.append(
+            _encode_node(
+                "Gemm",
+                [current, w_name, b_name],
+                ["Y" if idx == len(layer_dims) - 1 else gemm_out],
+                name=f"Gemm{idx + 1}",
+            )
+        )
+        if idx != len(layer_dims) - 1:
+            relu_out = f"R{idx + 1}"
+            nodes.append(_encode_node("Relu", [gemm_out], [relu_out], name=f"Relu{idx + 1}"))
+            current = relu_out
+        else:
+            current = "Y"
+        current_dim = next_dim
+
+    graph = _encode_graph(
+        name=name,
+        nodes=nodes,
+        inputs=[vi_x],
+        outputs=[vi_y],
+        initializers=initializers,
+    )
+
+    model = bytearray()
+    model += _enc_v(1, int(ir_version))
+    model += _enc_ld(8, _encode_opset_import("", opset_version))
+    model += _enc_ld(7, graph)
+    return bytes(model)
+
+
 def write_mlp_model(path: Union[str, Path], *, preset: str) -> None:
     preset = preset.lower().strip()
     if preset == "mlp1":

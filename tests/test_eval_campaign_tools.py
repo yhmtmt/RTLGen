@@ -204,6 +204,77 @@ class EvalCampaignToolsRegressionTest(unittest.TestCase):
         campaign_path.write_text(json.dumps(campaign_doc, indent=2) + "\n", encoding="utf-8")
         return campaign_path, model_manifest, cached_model_path, model_sha
 
+    def _write_mapper_extra_args_case(self, root: Path):
+        model_path = root / "models" / "m.onnx"
+        model_manifest = root / "models" / "manifest.json"
+        arch_path = root / "arch" / "minimal.yml"
+        perf_path = root / "perf" / "cfg.json"
+        design_dir = root / "designs" / "npu_demo"
+        sweep_file = root / "sweeps" / "demo_sweep.json"
+
+        model_path.parent.mkdir(parents=True, exist_ok=True)
+        arch_path.parent.mkdir(parents=True, exist_ok=True)
+        perf_path.parent.mkdir(parents=True, exist_ok=True)
+        design_dir.mkdir(parents=True, exist_ok=True)
+        sweep_file.parent.mkdir(parents=True, exist_ok=True)
+
+        model_path.write_bytes(b"")
+        model_sha = self._sha256_file(model_path)
+        arch_path.write_text("schema_version: 0.2-draft\n", encoding="utf-8")
+        perf_path.write_text("{\"latency_scale\":1.0}\n", encoding="utf-8")
+        sweep_file.write_text("{\"points\":[]}\n", encoding="utf-8")
+        model_manifest.write_text(
+            json.dumps(
+                {
+                    "version": 0.1,
+                    "model_set_id": "mapper_args_models_v0",
+                    "models": [
+                        {
+                            "model_id": "m0",
+                            "onnx_path": str(model_path),
+                            "onnx_sha256": model_sha,
+                        }
+                    ],
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        campaign_doc = {
+            "version": 0.1,
+            "campaign_id": "mapper_extra_args_case",
+            "model_set_id": "mapper_args_models_v0",
+            "model_manifest": str(model_manifest),
+            "platform": "nangate45",
+            "make_target": "3_3_place_gp",
+            "repeats": 1,
+            "models": [
+                {
+                    "model_id": "m0",
+                    "onnx_path": str(model_path),
+                    "mapper_arch": str(arch_path),
+                    "perf_config": str(perf_path),
+                    "mapper_extra_args": ["--batch-override", "64"],
+                }
+            ],
+            "architecture_points": [
+                {
+                    "arch_id": "a0",
+                    "synth_design_dir": str(design_dir),
+                    "sweep_file": str(sweep_file),
+                }
+            ],
+            "outputs": {
+                "campaign_dir": str(root / "out"),
+                "results_csv": str(root / "out" / "results.csv"),
+            },
+        }
+        campaign_path = root / "campaign.json"
+        campaign_path.write_text(json.dumps(campaign_doc, indent=2) + "\n", encoding="utf-8")
+        return campaign_path
+
     def test_validate_campaign_check_paths(self):
         cmd = [
             sys.executable,
@@ -516,6 +587,21 @@ class EvalCampaignToolsRegressionTest(unittest.TestCase):
             proc = subprocess.run(cmd, cwd=str(REPO_ROOT), capture_output=True, text=True)
             self.assertNotEqual(0, proc.returncode)
             self.assertIn("fetch_models.py", proc.stderr)
+
+    def test_run_campaign_dry_run_passes_mapper_extra_args(self):
+        with tempfile.TemporaryDirectory() as td:
+            campaign_path = self._write_mapper_extra_args_case(Path(td))
+            cmd = [
+                sys.executable,
+                str(REPO_ROOT / "npu/eval/run_campaign.py"),
+                "--campaign",
+                str(campaign_path),
+                "--modes",
+                "flat_nomacro",
+                "--dry_run",
+            ]
+            proc = subprocess.run(cmd, cwd=str(REPO_ROOT), check=True, capture_output=True, text=True)
+            self.assertIn("--batch-override 64", proc.stdout)
 
     def test_optimize_campaign_generates_profile_outputs(self):
         with tempfile.TemporaryDirectory() as td:

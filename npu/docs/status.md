@@ -50,18 +50,26 @@ Git: d76a23b
   `runs/campaigns/npu/e2e_eval_onnx_practical_v1_fetch_mirror_num_modules_v1/`
   prove the evaluator-side fetch/cache flow end-to-end. The mirrored report
   matches the repo-tracked practical baseline exactly.
+- **Imported external-fetch set (Implemented)**:
+  `runs/models/onnx_imported_mlp_v1/` and
+  `runs/campaigns/npu/e2e_eval_onnx_imported_mlp_num_modules_v1/` are the
+  first broader imported ONNX benchmark pair. They fetch commit-pinned upstream
+  models into `runs/model_cache/` and confirm the same balanced recommendation
+  as the practical proxy baseline: `fp16_nm2 + flat_nomacro`.
 - **Campaign baselines (Implemented)**: `mlp_smoke_v2_reuse` is balanced at
   30 samples per `(arch_id, macro_mode)` point after focused flat/hier reruns;
   `onnx_practical_v1_reuse_num_modules_v1` is the active practical baseline
   with balanced coverage across all four `(arch_id, macro_mode)` aggregate
   points and corrected `num_modules`-aware mapper/perf artifacts across
-  `mlp_p1`, `mlp_p2`, and `mlp_p3`.
+  `mlp_p1`, `mlp_p2`, and `mlp_p3`; `onnx_imported_mlp_num_modules_v1`
+  provides the first imported fetched-model confirmation of that policy.
 - **Practical default policy (Locked)**: use `flat_nomacro` as the default
   physical mode for the current `onnx_practical_v1` baseline. Under the
   balanced objective, `fp16_nm2 + flat_nomacro` is the leading practical
   point because row-parallel lowering converts `compute.gemm.num_modules=2`
   into lower model latency. `fp16_nm1 + flat_nomacro` remains the best
-  energy-only / broader-PPA point.
+  energy-only / broader-PPA point. The first imported fetched-model campaign
+  (`onnx_imported_mlp_v1`) preserves the same ranking.
 
 ## In progress
 - C++ MAC generator extension for explicit MAC operation modes including
@@ -69,10 +77,7 @@ Git: d76a23b
 - Expanded vector-op constrained-random coverage for activation and derivative ops.
 - Mapper scale-out beyond phase-1 MLP `GEMM2` output chunking.
 - Broaden validation of the `num_modules`-aware mapper/perf contract beyond the
-  current practical MLP proxy set and confirm the objective-weight policy for
-  default architecture selection.
-- Replace the current external-fetch bootstrap mirror with a broader imported
-  ONNX benchmark set, then rerun the practical campaign on it.
+  current proxy + imported-MLP sets, especially on non-MLP lowering patterns.
 - Stronger `arch v0.2` validation (types/ranges/enums) and mapper/perf usage of
   interconnect + mapping constraints.
 - Post-physical SRAM metric extraction and feedback loop into perf simulation.

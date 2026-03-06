@@ -1,0 +1,29 @@
+{
+  "version": 0.1,
+  "model_set_id": "onnx_imported_mlp_v1",
+  "description": "External imported ONNX MLP set fetched into runs/model_cache/ for num_modules-aware evaluation.",
+  "models": [
+    {
+      "model_id": "mnist_mlp",
+      "onnx_path": "runs/model_cache/onnx_imported_mlp_v1/mnist_mlp.onnx",
+      "onnx_sha256": "b7163e1d3a7dc9124e3c9cd5fe4c10b063f59cff215ba908784bc14b233e3d9d",
+      "fetch": {
+        "url": "https://media.githubusercontent.com/media/chris-chris/mina-zkml/6d3e5bf9865388c343a9b652adc9912ffbbabc0f/models/mnist_mlp.onnx",
+        "notes": "Commit-pinned imported MLP ONNX from chris-chris/mina-zkml.",
+        "license": "See upstream repository"
+      },
+      "notes": "Flatten -> Gemm -> Relu -> Gemm -> Relu -> Gemm; exported with dynamic batch on input. Campaign uses mapper batch override 64."
+    },
+    {
+      "model_id": "armor_mlp",
+      "onnx_path": "runs/model_cache/onnx_imported_mlp_v1/armor_mlp.onnx",
+      "onnx_sha256": "b3250176ea8fdbe6d1585be954363757ff6a8245a81e8797f16cea601976d47a",
+      "fetch": {
+        "url": "https://media.githubusercontent.com/media/Ericsii/rm_vision/5d55864a9c535414967107e711caa82138d3683c/armor_detector/model/mlp.onnx",
+        "notes": "Commit-pinned imported MLP ONNX from Ericsii/rm_vision.",
+        "license": "See upstream repository"
+      },
+      "notes": "Flatten -> Gemm -> Relu -> Gemm -> Relu -> Gemm; exported with fixed batch=1 and evaluated without a batch override."
+    }
+  ]
+}

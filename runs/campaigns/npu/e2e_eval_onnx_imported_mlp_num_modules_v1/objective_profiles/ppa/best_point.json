@@ -1,0 +1,26 @@
+{
+  "campaign_id": "npu_e2e_eval_onnx_imported_mlp_num_modules_v1",
+  "generated_utc": "2026-03-06T08:45:55+00:00",
+  "objective_weights": {
+    "latency": 1.0,
+    "energy": 1.0,
+    "area": 0.25,
+    "power": 0.25,
+    "runtime": 0.0
+  },
+  "best": {
+    "arch_id": "fp16_nm2",
+    "macro_mode": "flat_nomacro",
+    "objective_rank": 1,
+    "objective_score": 0.21951962626313906,
+    "latency_ms_mean": 0.0428425,
+    "throughput_infer_per_s_mean": 63417.14694260297,
+    "energy_mj_mean": 9.014661795e-06,
+    "critical_path_ns_mean": 5.701286780426342,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.21041400000000002,
+    "flow_elapsed_s_mean": 829.814,
+    "place_gp_elapsed_s_mean": 415.61199999999997
+  },
+  "pareto_count": 1
+}

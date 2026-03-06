@@ -1,0 +1,44 @@
+{
+  "profiles": [
+    {
+      "name": "balanced",
+      "w_latency": 1.0,
+      "w_energy": 1.0,
+      "w_area": 0.0,
+      "w_power": 0.0,
+      "w_runtime": 0.0
+    },
+    {
+      "name": "latency",
+      "w_latency": 1.0,
+      "w_energy": 0.0,
+      "w_area": 0.0,
+      "w_power": 0.0,
+      "w_runtime": 0.0
+    },
+    {
+      "name": "energy",
+      "w_latency": 0.0,
+      "w_energy": 1.0,
+      "w_area": 0.0,
+      "w_power": 0.0,
+      "w_runtime": 0.0
+    },
+    {
+      "name": "runtime_bal",
+      "w_latency": 0.5,
+      "w_energy": 0.5,
+      "w_area": 0.0,
+      "w_power": 0.0,
+      "w_runtime": 1.0
+    },
+    {
+      "name": "ppa",
+      "w_latency": 1.0,
+      "w_energy": 1.0,
+      "w_area": 0.25,
+      "w_power": 0.25,
+      "w_runtime": 0.0
+    }
+  ]
+}

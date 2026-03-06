@@ -31,6 +31,9 @@ Two-layer optimization split and interaction contract are defined in
   `runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse_num_modules_v1/`.
 - **Implemented**: evaluator-side external ONNX fetch support via
   `npu/eval/fetch_models.py`, so model manifests can stay lightweight.
+- **Implemented**: first broader imported fetched-model campaign in
+  `runs/campaigns/npu/e2e_eval_onnx_imported_mlp_num_modules_v1/`, backed by
+  `runs/models/onnx_imported_mlp_v1/`.
 - **Implemented**: phase-1 mapper split for oversized MLP `GEMM2`
   weight-SRAM cases, including schedule metadata and campaign-row provenance.
 
@@ -77,14 +80,17 @@ Two-layer optimization split and interaction contract are defined in
   `onnx_practical_v1` baseline.
 - Use `fp16_nm2 + flat_nomacro` as the balanced-default practical point in
   `runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse_num_modules_v1/`.
-  Keep `fp16_nm1 + flat_nomacro` as the explicit energy/PPA alternative.
-- Validate the `num_modules`-aware contract on broader imported ONNX models
-  before treating the current proxy-model result as universal.
+  Keep `fp16_nm1 + flat_nomacro` as the explicit energy/PPA alternative. The
+  imported fetched-model campaign
+  `runs/campaigns/npu/e2e_eval_onnx_imported_mlp_num_modules_v1/` confirms the
+  same ranking on real upstream MLP exports.
+- Validate the `num_modules`-aware contract beyond the current imported MLP
+  set before treating the current result as universal.
 - Use `runs/campaigns/npu/e2e_eval_onnx_practical_v1_fetch_mirror_num_modules_v1/`
   as the bootstrap reference for evaluator-fetched model sets.
-- Replace that bootstrap mirror with the first broader externally fetched
-  imported ONNX benchmark set instead of tracking large model binaries in the
-  repo.
+- Keep `runs/campaigns/npu/e2e_eval_onnx_imported_mlp_num_modules_v1/` as the
+  first broader externally fetched imported ONNX benchmark set instead of
+  tracking large model binaries in the repo.
 - Keep `status.md`, `workflow.md`, and synthesis plans synced with each sweep milestone.
 - Add explicit runbook for compute-enabled NPU block sweeps beyond fp16 backend comparison.
 - Generalize the currently implemented phase-1 mapper split/tiling path beyond

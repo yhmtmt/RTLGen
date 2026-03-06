@@ -282,8 +282,13 @@ def mapper_split_note_from_schedule(schedule_yml: str) -> str:
     row_chunks: List[int] = []
     gemm_num_modules: Optional[int] = None
     if isinstance(notes, dict):
-        split_enabled = bool(notes.get("gemm2_split_enabled", False))
-        raw_chunks = notes.get("gemm2_out_chunks", [])
+        raw_chunks: Any = []
+        if "final_linear_split_enabled" in notes or "final_linear_out_chunks" in notes:
+            split_enabled = bool(notes.get("final_linear_split_enabled", False))
+            raw_chunks = notes.get("final_linear_out_chunks", [])
+        else:
+            split_enabled = bool(notes.get("gemm2_split_enabled", False))
+            raw_chunks = notes.get("gemm2_out_chunks", [])
         if isinstance(raw_chunks, list):
             for v in raw_chunks:
                 try:
@@ -534,6 +539,17 @@ def arch_model_hints(arch: Dict[str, Any]) -> Dict[str, int]:
     }
 
 
+def model_mapper_extra_args(model: Dict[str, Any]) -> List[str]:
+    raw = model.get("mapper_extra_args", [])
+    if not isinstance(raw, list):
+        return []
+    out: List[str] = []
+    for arg in raw:
+        if isinstance(arg, str) and str(arg).strip():
+            out.append(str(arg))
+    return out
+
+
 def can_reuse_artifact_set(
     *,
     outputs: List[Path],
@@ -575,6 +591,7 @@ def mapper_emit(
         die(f"model {model_id}: missing onnx_path")
     if not mapper_arch:
         die(f"model {model_id}: missing mapper_arch")
+    mapper_extra_args = model_mapper_extra_args(model)
 
     expected_meta = {
         "kind": "mapper",
@@ -583,6 +600,7 @@ def mapper_emit(
         "onnx_path": onnx_path,
         "mapper_arch": mapper_arch,
         "gemm_num_modules": str(max(1, int(gemm_num_modules))),
+        "mapper_extra_args_json": json.dumps(mapper_extra_args, separators=(",", ":")),
     }
     if reuse_existing and can_reuse_artifact_set(
         outputs=[schedule, desc_bin],
@@ -596,21 +614,20 @@ def mapper_emit(
         )
         return rel_to_repo(schedule), rel_to_repo(desc_bin)
 
-    run_cmd(
-        [
-            "python3",
-            "npu/mapper/onnx_to_schedule.py",
-            "--onnx",
-            onnx_path,
-            "--arch",
-            mapper_arch,
-            "--out",
-            rel_to_repo(schedule),
-            "--gemm-num-modules",
-            str(max(1, int(gemm_num_modules))),
-        ],
-        dry_run=dry_run,
-    )
+    cmd = [
+        "python3",
+        "npu/mapper/onnx_to_schedule.py",
+        "--onnx",
+        onnx_path,
+        "--arch",
+        mapper_arch,
+        "--out",
+        rel_to_repo(schedule),
+        "--gemm-num-modules",
+        str(max(1, int(gemm_num_modules))),
+    ]
+    cmd.extend(mapper_extra_args)
+    run_cmd(cmd, dry_run=dry_run)
     run_cmd(
         [
             "python3",
@@ -1100,7 +1117,10 @@ def main() -> int:
                 "onnx_sha256": str(manifest_model.get("onnx_sha256", "")).strip().lower(),
                 "mapper_arch_hash": hash_path_text_with_overrides(
                     str(model.get("mapper_arch", "")),
-                    {"gemm_num_modules": int(hints["gemm_num_modules"])},
+                    {
+                        "gemm_num_modules": int(hints["gemm_num_modules"]),
+                        "mapper_extra_args": model_mapper_extra_args(model),
+                    },
                 ),
                 "perf_config_hash": hash_path_text_with_overrides(
                     str(model.get("perf_config", "")),

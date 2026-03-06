@@ -1,0 +1,41 @@
+{
+  "version": 0.1,
+  "campaign_id": "npu_e2e_eval_onnx_imported_mlp_num_modules_v1",
+  "run_id": "npu_e2e_eval_onnx_imported_mlp_num_modules_v1__mnist_mlp__fp16_nm1__hier_macro__r1__p54a235ae",
+  "sample_id": "npu_e2e_eval_onnx_imported_mlp_num_modules_v1__mnist_mlp__fp16_nm1__hier_macro__r1__p54a235ae__b20260306t084426z__s1",
+  "batch_id": "20260306T084426Z",
+  "sample_index": 1,
+  "model_set_id": "onnx_imported_mlp_v1",
+  "model_manifest": "runs/models/onnx_imported_mlp_v1/manifest.json",
+  "onnx_sha256": "b7163e1d3a7dc9124e3c9cd5fe4c10b063f59cff215ba908784bc14b233e3d9d",
+  "mapper_arch_hash": "b61d3f17ff76738767be4a32f0be05175c77bf89a4d3aa80cceb04f064331724",
+  "perf_config_hash": "a3a253291bc5973db886aa3fb7198ef986e746012e4f1bc8d7a75d9551fcafae",
+  "timestamp_utc": "2026-03-06T08:44:26+00:00",
+  "status": "ok",
+  "platform": "nangate45",
+  "model_id": "mnist_mlp",
+  "arch_id": "fp16_nm1",
+  "macro_mode": "hier_macro",
+  "repeat_index": 1,
+  "physical": {
+    "critical_path_ns": 5.774905724664045,
+    "die_area_um2": 2250000.0,
+    "total_power_mw": 0.197441,
+    "flow_elapsed_s": 974.5799999999999,
+    "place_gp_elapsed_s": 477.8
+  },
+  "performance": {
+    "cycles": 14860.84866,
+    "latency_ms": 0.08582,
+    "throughput_infer_per_s": 11652.295502213938,
+    "energy_mj": 1.694438662e-05
+  },
+  "artifacts": {
+    "synth_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/54a235ae/result.json",
+    "perf_trace_json": "runs/campaigns/npu/e2e_eval_onnx_imported_mlp_num_modules_v1/artifacts/perf/fp16_nm1/mnist_mlp/trace.json",
+    "schedule_yml": "runs/campaigns/npu/e2e_eval_onnx_imported_mlp_num_modules_v1/artifacts/mapper/fp16_nm1/mnist_mlp/schedule.yml",
+    "descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_imported_mlp_num_modules_v1/artifacts/mapper/fp16_nm1/mnist_mlp/descriptors.bin"
+  },
+  "notes": "param_hash=54a235ae; tag=npu_fp16_nm1_cmp33_hier_macro_r1; compare_group=baed737c; mapper_split_enabled=0; mapper_split_chunk_count=1; mapper_split_chunks=10; mapper_num_modules=1; mapper_row_parallel_enabled=0; mapper_row_parallel_chunk_count=1; mapper_row_parallel_chunks=64; layer1_manifest=runs/candidates/nangate45/module_candidates.json; layer1_candidates=mult16u_normal_koggestone_nangate45_base@macro_hardened,adder_koggestone_64u_nangate45_base@macro_hardened",
+  "physical_source_campaign": "runs/campaigns/npu/e2e_eval_v0/campaign.json"
+}

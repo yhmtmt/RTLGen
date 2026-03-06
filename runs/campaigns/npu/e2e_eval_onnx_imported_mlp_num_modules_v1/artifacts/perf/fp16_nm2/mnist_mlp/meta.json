@@ -1,0 +1,10 @@
+{
+  "kind": "perf",
+  "arch_id": "fp16_nm2",
+  "model_id": "mnist_mlp",
+  "descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_imported_mlp_num_modules_v1/artifacts/mapper/fp16_nm2/mnist_mlp/descriptors.bin",
+  "perf_config": "npu/sim/perf/example_config_fp16_cpp.json",
+  "gemm_engine_count": "2",
+  "generated_utc": "2026-03-06T08:44:26+00:00",
+  "trace_json": "runs/campaigns/npu/e2e_eval_onnx_imported_mlp_num_modules_v1/artifacts/perf/fp16_nm2/mnist_mlp/trace.json"
+}

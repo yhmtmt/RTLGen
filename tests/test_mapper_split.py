@@ -53,12 +53,34 @@ class MapperSplitRegressionTest(unittest.TestCase):
             )
         )
 
+    def _write_gemm_mlp_onnx(
+        self,
+        out_path: Path,
+        *,
+        name: str,
+        b: int,
+        input_shape: list[int],
+        hidden_dims: list[int],
+        out_dim: int,
+    ) -> None:
+        out_path.write_bytes(
+            self.onnx_lite.build_gemm_mlp_model_bytes(
+                name=name,
+                b=b,
+                input_shape=input_shape,
+                hidden_dims=hidden_dims,
+                out_dim=out_dim,
+                dtype=self.onnx_lite.TENSOR_INT8,
+            )
+        )
+
     def _run_lowering(
         self,
         onnx_path: Path,
         sched_path: Path,
         *,
         gemm_num_modules: int | None = None,
+        batch_override: int | None = None,
     ) -> dict:
         cmd = [
             sys.executable,
@@ -72,6 +94,8 @@ class MapperSplitRegressionTest(unittest.TestCase):
         ]
         if gemm_num_modules is not None:
             cmd.extend(["--gemm-num-modules", str(gemm_num_modules)])
+        if batch_override is not None:
+            cmd.extend(["--batch-override", str(batch_override)])
         subprocess.run(cmd, cwd=str(REPO_ROOT), check=True, capture_output=True, text=True)
         with sched_path.open("r", encoding="utf-8") as f:
             return yaml.safe_load(f)
@@ -214,6 +238,51 @@ class MapperSplitRegressionTest(unittest.TestCase):
             self.assertIn("dma_b2", deps["gemm2_r0"])
             self.assertIn("dma_y_r1", deps)
             self.assertIn("dma_y_r0", deps["dma_y_r1"])
+
+    def test_imported_gemm_mlp_flatten_batch_override(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            onnx_path = tmp / "imported.onnx"
+            sched_path = tmp / "imported.yml"
+            bin_path = tmp / "imported.bin"
+
+            self._write_gemm_mlp_onnx(
+                onnx_path,
+                name="imported_gemm",
+                b=1,
+                input_shape=[20, 28, 1],
+                hidden_dims=[120, 84],
+                out_dim=9,
+            )
+            schedule = self._run_lowering(
+                onnx_path,
+                sched_path,
+                gemm_num_modules=2,
+                batch_override=64,
+            )
+            self._validate_and_emit_bin(sched_path, bin_path)
+
+            notes = schedule.get("mapper_notes", {})
+            self.assertEqual(3, int(notes.get("linear_layer_count", 0)))
+            self.assertTrue(bool(notes.get("input_flattened")))
+            self.assertEqual(64, int(notes.get("effective_batch", 0)))
+            self.assertEqual(2, int(notes.get("gemm_num_modules", 0)))
+            self.assertTrue(bool(notes.get("gemm_row_parallel_enabled")))
+            self.assertEqual([32, 32], notes.get("gemm_row_chunks"))
+            self.assertEqual([9], notes.get("final_linear_out_chunks"))
+            self.assertNotIn("gemm2_out_chunks", notes)
+
+            gemm1_ops = [op for op in schedule["ops"] if str(op.get("id", "")).startswith("gemm1_r")]
+            gemm2_ops = [op for op in schedule["ops"] if str(op.get("id", "")).startswith("gemm2_r")]
+            gemm3_ops = [op for op in schedule["ops"] if str(op.get("id", "")).startswith("gemm3_r")]
+            dma_y_ops = [op for op in schedule["ops"] if str(op.get("id", "")).startswith("dma_y3_r")]
+
+            self.assertEqual(2, len(gemm1_ops))
+            self.assertEqual(2, len(gemm2_ops))
+            self.assertEqual(2, len(gemm3_ops))
+            self.assertEqual([32, 32], [int(op["m"]) for op in gemm3_ops])
+            self.assertEqual(2, len(dma_y_ops))
+            self.assertEqual("dma_y3_r1", schedule["events"][0]["signal_on"])
 
 
 if __name__ == "__main__":

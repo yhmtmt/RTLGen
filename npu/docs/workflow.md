@@ -38,6 +38,8 @@ Canonical split and handoff contract:
   scaffold `runs/campaigns/npu/e2e_eval_v0/` plus active reuse campaigns
   `runs/campaigns/npu/e2e_eval_mlp_smoke_v2_reuse/` and
   `runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse_num_modules_v1/`.
+  The first broader imported fetched-model confirmation lives in
+  `runs/campaigns/npu/e2e_eval_onnx_imported_mlp_num_modules_v1/`.
 
 ## 0) Lock evaluation contract (before broad tuning)
 For the current practical baseline, use
@@ -177,16 +179,18 @@ For the current practical baseline, use
   `runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse_num_modules_v1/`.
   The corrected mapper/perf contract now gives `nm2` a real row-parallel
   latency benefit. Keep `fp16_nm1 + flat_nomacro` documented as the
-  energy-only / PPA-weighted alternative.
-- Validate the new `num_modules` contract on broader imported ONNX models and
-  on non-MLP lowering patterns before treating the current practical proxy set
-  as a universal default.
+  energy-only / PPA-weighted alternative. The imported fetched-model campaign
+  `runs/campaigns/npu/e2e_eval_onnx_imported_mlp_num_modules_v1/` confirms the
+  same ordering on real upstream MLP exports.
+- Broaden the new `num_modules` contract beyond the current imported MLP set
+  and onto non-MLP lowering patterns before treating the current result as a
+  universal default.
 - Keep `runs/campaigns/npu/e2e_eval_onnx_practical_v1_fetch_mirror_num_modules_v1/`
   as the bootstrap proof that evaluator-fetched cache-backed model sets work
   end-to-end.
-- Replace that bootstrap mirror with a broader imported ONNX model set
-  (`models[].fetch` rather than tracked binaries), then rerun the
-  `num_modules`-aware campaign on it.
+- Keep `runs/campaigns/npu/e2e_eval_onnx_imported_mlp_num_modules_v1/` as the
+  first broader imported ONNX benchmark set built from `models[].fetch`
+  entries rather than tracked binaries.
 - Add compute-enabled non-fp16 block sweep runbooks (DMA/CQ + GEMM/VEC variants).
 - Generalize mapper split/tiling beyond the current phase-1 MLP `GEMM2`
   output-chunking path:
