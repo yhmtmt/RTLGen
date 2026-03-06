@@ -34,23 +34,29 @@ Canonical split and handoff contract:
 - **Implemented**: pre-synthesis SRAM stage wrapper
   (`npu/synth/pre_synth_memory.py`) with memgen-first policy and CACTI fallback.
 - **Implemented**: system-level evaluation campaign flow with validator,
-  runner, reporting, and objective-profile sweep
-  (`npu/eval/`, `runs/campaigns/npu/e2e_eval_v0/`).
+  runner, reporting, and objective-profile sweep (`npu/eval/`), with the
+  scaffold `runs/campaigns/npu/e2e_eval_v0/` plus active reuse campaigns
+  `runs/campaigns/npu/e2e_eval_mlp_smoke_v2_reuse/` and
+  `runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/`.
 
 ## 0) Lock evaluation contract (before broad tuning)
+For the current practical baseline, use
+`runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/`. Keep
+`runs/campaigns/npu/e2e_eval_v0/` as the minimal historical scaffold.
+
 - Validate campaign manifest:
-  `python3 npu/eval/validate.py --campaign runs/campaigns/npu/e2e_eval_v0/campaign.json`
+  `python3 npu/eval/validate.py --campaign runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/campaign.json --check_paths`
 - Validate merged row format:
   `python3 npu/eval/validate.py --result-row npu/eval/examples/minimal_result_row.json`
 - Run campaign scaffold (mapper + perf + merged row append):
-  `python3 npu/eval/run_campaign.py --campaign runs/campaigns/npu/e2e_eval_v0/campaign.json`
+  `python3 npu/eval/run_campaign.py --campaign runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/campaign.json`
   - default reuses existing model mapper/perf artifacts under campaign outputs;
     add `--no_reuse_model_artifacts` to force regeneration.
   - use `--jobs <N>` to parallelize model-level mapper/perf generation.
 - Generate campaign report/ranking:
-  `python3 npu/eval/report_campaign.py --campaign runs/campaigns/npu/e2e_eval_v0/campaign.json`
+  `python3 npu/eval/report_campaign.py --campaign runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/campaign.json`
 - Sweep objective profiles for best-point recommendation set:
-  `python3 npu/eval/optimize_campaign.py --campaign runs/campaigns/npu/e2e_eval_v0/campaign.json --profiles_json runs/campaigns/npu/e2e_eval_v0/objective_profiles.json`
+  `python3 npu/eval/optimize_campaign.py --campaign runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/campaign.json --profiles_json runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/objective_profiles.json`
 - Keep campaign-level run configuration in one JSON manifest under
   `runs/campaigns/npu/` before expanding mapper/synth sweeps.
   - when wiring Layer 1 candidates (`layer1_modules`), wrapped IO-evaluated
@@ -161,6 +167,11 @@ Canonical split and handoff contract:
 - Keep generated design artifacts under `runs/designs/` (not hand-edited).
 
 ## Next steps
+- Complete focused OpenROAD reruns for
+  `runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/`:
+  `flat_nomacro` first, then `hier_macro`, to bring the practical baseline to
+  30 samples per `(arch_id, macro_mode)` point before deciding default mode
+  policy.
 - Add compute-enabled non-fp16 block sweep runbooks (DMA/CQ + GEMM/VEC variants).
 - Generalize mapper split/tiling beyond the current phase-1 MLP `GEMM2`
   output-chunking path:

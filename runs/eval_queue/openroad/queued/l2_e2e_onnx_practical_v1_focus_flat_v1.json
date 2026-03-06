@@ -1,0 +1,95 @@
+{
+  "version": 0.1,
+  "item_id": "l2_e2e_onnx_practical_v1_focus_flat_v1",
+  "title": "Layer2 focused physical rerun for onnx_practical_v1 flat-mode candidates",
+  "layer": "layer2",
+  "flow": "openroad",
+  "state": "queued",
+  "priority": 0,
+  "created_utc": "2026-03-06T02:32:30Z",
+  "requested_by": "@yhmtmt",
+  "platform": "nangate45",
+  "task": {
+    "objective": "Run focused physical reruns for the practical onnx_practical_v1 campaign on flat candidates (fp16_nm1/fp16_nm2) to balance flat-vs-hier evidence before deciding the default macro-mode policy. Keep explicit batch identity for statistical tracking.",
+    "source_mode": "src_verilog",
+    "inputs": {
+      "configs": [
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+      ],
+      "design_dirs": [
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+      ],
+      "sweeps": [
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+      ],
+      "macro_manifests": [
+        "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+        "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json",
+        "runs/designs/npu_macros/mult16u_normal_koggestone_wrapper_ng45_macro/macro_manifest.json",
+        "runs/designs/npu_macros/adder_koggestone_64u_wrapper_ng45_macro/macro_manifest.json"
+      ],
+      "candidate_manifests": [
+        "runs/candidates/nangate45/module_candidates.json"
+      ]
+    },
+    "commands": [
+      {
+        "name": "validate_campaign",
+        "run": "python3 npu/eval/validate.py --campaign runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/campaign.json --check_paths"
+      },
+      {
+        "name": "run_campaign",
+        "run": "python3 npu/eval/run_campaign.py --campaign runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/campaign.json --run_physical --modes flat_nomacro --repeat 10 --jobs 2 --batch_id l2_e2e_onnx_practical_v1_focus_flat_v1_rerun1"
+      },
+      {
+        "name": "report_campaign",
+        "run": "python3 npu/eval/report_campaign.py --campaign runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/campaign.json"
+      },
+      {
+        "name": "objective_sweep",
+        "run": "python3 npu/eval/optimize_campaign.py --campaign runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/campaign.json --profiles_json runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/objective_profiles.json"
+      },
+      {
+        "name": "validate_runs",
+        "run": "python3 scripts/validate_runs.py"
+      }
+    ],
+    "expected_outputs": [
+      "runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/results.csv",
+      "runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/summary.csv",
+      "runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/report.md",
+      "runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/pareto.csv",
+      "runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/best_point.json",
+      "runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/objective_sweep.csv",
+      "runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/objective_sweep.md"
+    ],
+    "acceptance": [
+      "Flat-mode-only physical rows are appended with batch_id=l2_e2e_onnx_practical_v1_focus_flat_v1_rerun1",
+      "New rows preserve campaign-row provenance including mapper split notes when mapper_split_enabled=1",
+      "Aggregate sample_count for flat modes increases from 15 to 30",
+      "scripts/validate_runs.py passes"
+    ]
+  },
+  "handoff": {
+    "branch": "eval/l2_e2e_onnx_practical_v1_focus_flat_v1/<session_id>",
+    "pr_title": "eval: focused flat-mode rerun for onnx_practical_v1 campaign",
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]",
+    "pr_body_fields": {
+      "evaluator_id": "<evaluator_id>",
+      "session_id": "<session_id>",
+      "host": "<host>",
+      "queue_item_id": "l2_e2e_onnx_practical_v1_focus_flat_v1"
+    },
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Move this item from queued/ to evaluated/ and fill result",
+      "Include metrics row references in result.metrics_rows",
+      "If rerun is repeated, increment batch_id suffix (_rerun2, _rerun3, ...)",
+      "Run python3 scripts/validate_runs.py before pushing"
+    ]
+  },
+  "result": null
+}

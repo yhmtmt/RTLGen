@@ -25,8 +25,10 @@ Two-layer optimization split and interaction contract are defined in
 - **Implemented**: pre-synthesis SRAM stage wrapper with memgen-first policy
   and CACTI fallback.
 - **Implemented**: end-to-end evaluation flow contract + campaign tooling
-  (`npu/eval/`, `npu/docs/eval_flow_plan.md`,
-  `runs/campaigns/npu/e2e_eval_v0/`).
+  (`npu/eval/`, `npu/docs/eval_flow_plan.md`), including the scaffold
+  `runs/campaigns/npu/e2e_eval_v0/` and active reuse campaigns
+  `runs/campaigns/npu/e2e_eval_mlp_smoke_v2_reuse/` and
+  `runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/`.
 - **Implemented**: phase-1 mapper split for oversized MLP `GEMM2`
   weight-SRAM cases, including schedule metadata and campaign-row provenance.
 
@@ -68,6 +70,9 @@ Two-layer optimization split and interaction contract are defined in
 - `npu/docs/status.md`: single-page status snapshot.
 
 ## Next steps
+- Complete the focused OpenROAD reruns for
+  `runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/` so the practical
+  baseline reaches balanced 30/30 flat/hier samples.
 - Keep `status.md`, `workflow.md`, and synthesis plans synced with each sweep milestone.
 - Add explicit runbook for compute-enabled NPU block sweeps beyond fp16 backend comparison.
 - Generalize the currently implemented phase-1 mapper split/tiling path beyond

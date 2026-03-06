@@ -5,7 +5,7 @@ Single-page snapshot of NPU development status for quick reference.
 
 <!-- STATUS_META_START -->
 Last updated: 2026-03-06
-Git: 2052123
+Git: f17ce4e
 <!-- STATUS_META_END -->
 
 ## Current status
@@ -40,8 +40,14 @@ Git: 2052123
   validator (`npu/eval/validate.py`), orchestrator
   (`npu/eval/run_campaign.py`), reporting/ranking
   (`npu/eval/report_campaign.py`), and objective-profile sweep
-  (`npu/eval/optimize_campaign.py`) are active with
-  `runs/campaigns/npu/e2e_eval_v0/`.
+  (`npu/eval/optimize_campaign.py`) are active with the scaffold
+  `runs/campaigns/npu/e2e_eval_v0/` and active reuse campaigns
+  `runs/campaigns/npu/e2e_eval_mlp_smoke_v2_reuse/` and
+  `runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse/`.
+- **Campaign baselines (Implemented)**: `mlp_smoke_v2_reuse` is balanced at
+  30 samples per `(arch_id, macro_mode)` point after focused flat/hier reruns;
+  `onnx_practical_v1_reuse` establishes the first practical-model baseline with
+  15 samples per point across `mlp_p1`, `mlp_p2`, and `mlp_p3`.
 
 ## In progress
 - C++ MAC generator extension for explicit MAC operation modes including
@@ -53,6 +59,9 @@ Git: 2052123
 - Post-physical SRAM metric extraction and feedback loop into perf simulation.
 
 ## Planned
+- Focused OpenROAD reruns for `onnx_practical_v1_reuse`
+  (`flat_nomacro` first, then `hier_macro`) to balance practical-model
+  samples at 30/30 before locking a default mode policy.
 - Broader compute-enabled OpenROAD sweeps (beyond fp16 backend comparison).
 - Additional numeric-policy hardening and stress tests for fp16 edge behavior.
 - Optional future datatype exploration (bf16/fp8) after fp16 path maturity.
