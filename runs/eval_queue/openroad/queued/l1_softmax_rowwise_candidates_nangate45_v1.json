@@ -1,0 +1,77 @@
+{
+  "version": 0.1,
+  "item_id": "l1_softmax_rowwise_candidates_nangate45_v1",
+  "title": "Layer1 softmax-rowwise Nangate45 seed sweep",
+  "layer": "layer1",
+  "flow": "openroad",
+  "state": "queued",
+  "priority": 1,
+  "created_utc": "2026-03-06T11:04:09Z",
+  "requested_by": "@yhmtmt",
+  "platform": "nangate45",
+  "task": {
+    "objective": "Run the first real Layer1 Nangate45 OpenROAD comparison for int8 row-wise softmax candidates, spanning row width plus normalization parameter variants before choosing a dedicated SOFTMAX macro candidate for NPU integration.",
+    "source_mode": "config",
+    "inputs": {
+      "configs": [
+        "examples/config_softmax_rowwise_int8.json",
+        "examples/config_softmax_rowwise_int8_r8_acc20.json",
+        "examples/config_softmax_rowwise_int8_r8_shift5.json"
+      ],
+      "design_dirs": [],
+      "sweeps": [
+        "runs/designs/activations/sweeps/nangate45_softmax_rowwise_v1.json"
+      ],
+      "macro_manifests": [],
+      "candidate_manifests": []
+    },
+    "commands": [
+      {
+        "name": "build_generator",
+        "run": "cmake --build build --target rtlgen"
+      },
+      {
+        "name": "run_sweep",
+        "run": "python3 scripts/run_sweep.py --configs examples/config_softmax_rowwise_int8.json examples/config_softmax_rowwise_int8_r8_acc20.json examples/config_softmax_rowwise_int8_r8_shift5.json --platform nangate45 --sweep runs/designs/activations/sweeps/nangate45_softmax_rowwise_v1.json --out_root runs/designs/activations"
+      },
+      {
+        "name": "build_runs_index",
+        "run": "python3 scripts/build_runs_index.py"
+      },
+      {
+        "name": "validate",
+        "run": "python3 scripts/validate_runs.py"
+      }
+    ],
+    "expected_outputs": [
+      "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv",
+      "runs/designs/activations/softmax_rowwise_int8_r8_acc20_wrapper/metrics.csv",
+      "runs/designs/activations/softmax_rowwise_int8_r8_shift5_wrapper/metrics.csv",
+      "runs/index.csv"
+    ],
+    "acceptance": [
+      "Each softmax-rowwise wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+      "Committed runs keep lightweight artifacts only under runs/designs/activations/<design>/ and runs/index.csv",
+      "The evaluated item records metrics_rows for all successfully completed candidates",
+      "python3 scripts/validate_runs.py passes"
+    ]
+  },
+  "handoff": {
+    "branch": "eval/l1_softmax_rowwise_candidates_nangate45_v1/<session_id>",
+    "pr_title": "eval: run Layer1 softmax-rowwise Nangate45 seed sweep",
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]",
+    "pr_body_fields": {
+      "evaluator_id": "yhmtmt",
+      "session_id": "<session_id>",
+      "host": "<host>",
+      "queue_item_id": "l1_softmax_rowwise_candidates_nangate45_v1"
+    },
+    "checklist": [
+      "Commit only lightweight artifacts and regenerated runs/index.csv",
+      "Move this item from queued/ to evaluated/ and fill result",
+      "Include metrics row references for each completed softmax-rowwise candidate",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py before pushing"
+    ]
+  },
+  "result": null
+}

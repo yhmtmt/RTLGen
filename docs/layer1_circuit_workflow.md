@@ -61,12 +61,15 @@ python3 scripts/run_sweep.py \
   --out_root runs/<circuit_type>
 ```
 
-Row-wise softmax starter sweep:
+Row-wise softmax seed sweep:
 ```sh
 python3 scripts/run_sweep.py \
-  --configs examples/config_softmax_rowwise_int8.json \
+  --configs \
+    examples/config_softmax_rowwise_int8.json \
+    examples/config_softmax_rowwise_int8_r8_acc20.json \
+    examples/config_softmax_rowwise_int8_r8_shift5.json \
   --platform nangate45 \
-  --sweep scripts/sweep_softmax_rowwise_example.json \
+  --sweep runs/designs/activations/sweeps/nangate45_softmax_rowwise_v1.json \
   --out_root runs/designs/activations
 ```
 
@@ -102,6 +105,8 @@ python3 scripts/build_runs_index.py
   - `runs/eval_queue/openroad/queued/`
 - Use the template:
   - `runs/eval_queue/openroad/templates/item_template.json`
+- Current softmax-rowwise seed item:
+  - `runs/eval_queue/openroad/queued/l1_softmax_rowwise_candidates_nangate45_v1.json`
 - Evaluator workflow:
 1. Create branch `eval/<item_id>/<session_id>` on high-performance machine.
 2. Execute commands listed in the item.
