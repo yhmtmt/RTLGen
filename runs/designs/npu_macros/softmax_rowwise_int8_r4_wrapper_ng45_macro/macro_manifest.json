@@ -1,0 +1,32 @@
+{
+  "version": "0.1",
+  "design_id": "softmax_rowwise_int8_r4_wrapper_ng45_macro",
+  "module": "softmax_rowwise_int8_r4_wrapper",
+  "platform": "nangate45",
+  "flow_variant": "base",
+  "blackboxes": [
+    "softmax_rowwise_int8_r4_wrapper"
+  ],
+  "additional_lefs": [
+    "runs/designs/npu_macros/softmax_rowwise_int8_r4_wrapper_ng45_macro/abstract/softmax_rowwise_int8_r4_wrapper.lef"
+  ],
+  "additional_libs": [
+    "runs/designs/npu_macros/softmax_rowwise_int8_r4_wrapper_ng45_macro/abstract/softmax_rowwise_int8_r4_wrapper_typ.lib"
+  ],
+  "additional_gds": [],
+  "blackbox_verilog": [
+    "runs/designs/npu_macros/softmax_rowwise_int8_r4_wrapper_ng45_macro/abstract/softmax_rowwise_int8_r4_wrapper_blackbox.v"
+  ],
+  "source": {
+    "mode": "existing_verilog",
+    "verilog_dir": "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/verilog",
+    "module_file": "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/verilog/softmax_rowwise_int8_r4_wrapper.v",
+    "verilog_sha1": "2a6ecf67be89dff9bf0a5a08cdc8385b3e11e48a"
+  },
+  "manifest_params": {
+    "source_variant": "softmax_rowwise_int8_r4_nangate45_base",
+    "evaluation_scope": "macro_hardened"
+  },
+  "sweep": "runs/designs/npu_macros/softmax_rowwise_int8_r4_wrapper_ng45_macro/pre_synth_sweep.json",
+  "make_target": "generate_abstract"
+}
