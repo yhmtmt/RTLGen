@@ -1,0 +1,73 @@
+{
+  "version": 0.1,
+  "item_id": "l1_macro_harden_softmax_rowwise_r4_nangate45_v1",
+  "title": "Macro-hardening for Layer1 softmax-rowwise r4 Nangate45 seed",
+  "layer": "layer1",
+  "flow": "openroad",
+  "state": "queued",
+  "priority": 0,
+  "created_utc": "2026-03-07T09:36:20Z",
+  "requested_by": "@yhmtmt",
+  "platform": "nangate45",
+  "task": {
+    "objective": "Harden the selected row-wise SOFTMAX seed (`softmax_rowwise_int8_r4_wrapper`) into a reusable Nangate45 macro view so Layer2 can consume dedicated descriptor-level SOFTMAX without allow_wrapped_io exceptions.",
+    "source_mode": "src_verilog",
+    "inputs": {
+      "configs": [
+        "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/config_softmax_rowwise_int8.json"
+      ],
+      "design_dirs": [
+        "runs/designs/activations/softmax_rowwise_int8_r4_wrapper"
+      ],
+      "sweeps": [],
+      "macro_manifests": [],
+      "candidate_manifests": [
+        "runs/candidates/nangate45/module_candidates.json"
+      ]
+    },
+    "commands": [
+      {
+        "name": "harden_softmax_macro",
+        "run": "python3 npu/synth/pre_synth_compute.py --platform nangate45 --src_verilog_dir runs/designs/activations/softmax_rowwise_int8_r4_wrapper/verilog --module softmax_rowwise_int8_r4_wrapper --id softmax_rowwise_int8_r4_wrapper_ng45_macro --out_root runs/designs/npu_macros --clock_period 6.0 --clock_port clk --place_density 0.45 --make_target generate_abstract --tag_prefix l1_macro_softmax_rowwise_r4_ng45 --manifest_param source_variant=softmax_rowwise_int8_r4_nangate45_base --manifest_param evaluation_scope=macro_hardened"
+      },
+      {
+        "name": "update_candidates",
+        "run": "edit runs/candidates/nangate45/module_candidates.json: set variant_id=softmax_rowwise_int8_r4_nangate45_base to evaluation_scope=macro_hardened, module=softmax_rowwise_int8_r4_wrapper_ng45_macro, metrics_ref=runs/designs/npu_macros/softmax_rowwise_int8_r4_wrapper_ng45_macro/metrics.csv, and macro_manifest=runs/designs/npu_macros/softmax_rowwise_int8_r4_wrapper_ng45_macro/macro_manifest.json"
+      },
+      {
+        "name": "validate",
+        "run": "python3 scripts/validate_runs.py"
+      }
+    ],
+    "expected_outputs": [
+      "runs/designs/npu_macros/softmax_rowwise_int8_r4_wrapper_ng45_macro/macro_manifest.json",
+      "runs/designs/npu_macros/softmax_rowwise_int8_r4_wrapper_ng45_macro/metrics.csv",
+      "runs/candidates/nangate45/module_candidates.json"
+    ],
+    "acceptance": [
+      "Macro hardening appends at least one status=ok row in runs/designs/npu_macros/softmax_rowwise_int8_r4_wrapper_ng45_macro/metrics.csv",
+      "Candidate softmax_rowwise_int8_r4_nangate45_base is promoted from wrapped_io to macro_hardened with a valid macro_manifest path",
+      "Committed artifacts stay lightweight (macro manifest, macro metrics, candidate manifest only)",
+      "python3 scripts/validate_runs.py passes"
+    ]
+  },
+  "handoff": {
+    "branch": "eval/l1_macro_harden_softmax_rowwise_r4_nangate45_v1/<session_id>",
+    "pr_title": "eval: macro-harden Layer1 softmax-rowwise r4 Nangate45 seed",
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]",
+    "pr_body_fields": {
+      "evaluator_id": "yhmtmt",
+      "session_id": "<session_id>",
+      "host": "<host>",
+      "queue_item_id": "l1_macro_harden_softmax_rowwise_r4_nangate45_v1"
+    },
+    "checklist": [
+      "Commit only lightweight artifacts and metadata",
+      "Move this item from queued/ to evaluated/ and fill result",
+      "Include macro metrics row references (param_hash/tag/result_path) in result.metrics_rows",
+      "Replace handoff.pr_body_fields placeholders before moving the item to evaluated/",
+      "Run python3 scripts/validate_runs.py before pushing"
+    ]
+  },
+  "result": null
+}

@@ -105,8 +105,10 @@ python3 scripts/build_runs_index.py
   - `runs/eval_queue/openroad/queued/`
 - Use the template:
   - `runs/eval_queue/openroad/templates/item_template.json`
-- Current softmax-rowwise seed item:
-  - `runs/eval_queue/openroad/queued/l1_softmax_rowwise_candidates_nangate45_v1.json`
+- Current softmax-rowwise seed sweep result:
+  - `runs/eval_queue/openroad/evaluated/l1_softmax_rowwise_candidates_nangate45_v1.json`
+- Current softmax-rowwise macro-hardening item:
+  - `runs/eval_queue/openroad/queued/l1_macro_harden_softmax_rowwise_r4_nangate45_v1.json`
 - Evaluator workflow:
 1. Create branch `eval/<item_id>/<session_id>` on high-performance machine.
 2. Execute commands listed in the item.
