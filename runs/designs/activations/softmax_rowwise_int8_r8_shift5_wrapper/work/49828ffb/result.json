@@ -1,0 +1,27 @@
+{
+  "design": "softmax_rowwise_int8_r8_shift5_wrapper",
+  "module": "softmax_rowwise_int8_r8_shift5",
+  "platform": "nangate45",
+  "config_path": "examples/config_softmax_rowwise_int8_r8_shift5.json",
+  "config_hash": "5f6b7019e5f4",
+  "param_hash": "49828ffb",
+  "tag": "softmax_rowwise_ng45_v1_9dd950f2",
+  "flow_params": {
+    "CLOCK_PERIOD": 6.0,
+    "CORE_UTILIZATION": 50,
+    "PLACE_DENSITY": 0.6,
+    "TAG": "softmax_rowwise_ng45_v1_9dd950f2"
+  },
+  "timestamp": "2026-03-06T15:58:28.960283Z",
+  "reports": {
+    "finish": "/orfs/flow/reports/nangate45/softmax_rowwise_int8_r8_shift5_wrapper/base/6_finish.rpt",
+    "def": "/orfs/flow/results/nangate45/softmax_rowwise_int8_r8_shift5_wrapper/base/6_final.def"
+  },
+  "metrics": {
+    "critical_path_ns": 13.9243,
+    "total_power_mw": 2.63,
+    "die_area": 61891.4884
+  },
+  "status": "ok",
+  "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_shift5_wrapper/work/49828ffb/result.json"
+}
