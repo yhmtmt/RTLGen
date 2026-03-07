@@ -2,7 +2,7 @@
   "design": "softmax_rowwise_int8_r8_shift5_wrapper",
   "module": "softmax_rowwise_int8_r8_shift5",
   "platform": "nangate45",
-  "config_path": "/tmp/rtlgen-softmax-s20260306t115634z/examples/config_softmax_rowwise_int8_r8_shift5.json",
+  "config_path": "examples/config_softmax_rowwise_int8_r8_shift5.json",
   "config_hash": "5f6b7019e5f4",
   "param_hash": "91c9afdc",
   "tag": "softmax_rowwise_ng45_v1_de52b603",
@@ -23,5 +23,5 @@
     "die_area": 61891.4884
   },
   "status": "ok",
-  "result_path": "/tmp/rtlgen-softmax-s20260306t115634z/runs/designs/activations/softmax_rowwise_int8_r8_shift5_wrapper/work/91c9afdc/result.json"
+  "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_shift5_wrapper/work/91c9afdc/result.json"
 }
