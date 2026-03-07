@@ -4,7 +4,7 @@
   "title": "Macro-hardening for Layer1 softmax-rowwise r4 Nangate45 seed",
   "layer": "layer1",
   "flow": "openroad",
-  "state": "queued",
+  "state": "evaluated",
   "priority": 0,
   "created_utc": "2026-03-07T09:36:20Z",
   "requested_by": "@yhmtmt",
@@ -57,8 +57,8 @@
     "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]",
     "pr_body_fields": {
       "evaluator_id": "yhmtmt",
-      "session_id": "<session_id>",
-      "host": "<host>",
+      "session_id": "s20260307t104508z",
+      "host": "3a18d8e397af",
       "queue_item_id": "l1_macro_harden_softmax_rowwise_r4_nangate45_v1"
     },
     "checklist": [
@@ -69,5 +69,26 @@
       "Run python3 scripts/validate_runs.py before pushing"
     ]
   },
-  "result": null
+  "result": {
+    "completed_utc": "2026-03-07T10:54:45Z",
+    "executor": "@codex",
+    "branch": "eval/l1_macro_harden_softmax_rowwise_r4_nangate45_v1/s20260307t104508z",
+    "evaluator_id": "yhmtmt",
+    "session_id": "s20260307t104508z",
+    "host": "3a18d8e397af",
+    "queue_item_id": "l1_macro_harden_softmax_rowwise_r4_nangate45_v1",
+    "identity_block": "[role:evaluator][account:yhmtmt][session:s20260307t104508z][host:3a18d8e397af][item:l1_macro_harden_softmax_rowwise_r4_nangate45_v1]",
+    "status": "ok",
+    "summary": "Macro hardening completed for softmax_rowwise_int8_r4_wrapper using source_mode=src_verilog and make_target=generate_abstract; the Nangate45 SOFTMAX seed was promoted from wrapped_io to macro_hardened with committed macro manifest, macro metrics, and candidate-manifest updates, and scripts/validate_runs.py passed.",
+    "metrics_rows": [
+      {
+        "metrics_csv": "runs/designs/npu_macros/softmax_rowwise_int8_r4_wrapper_ng45_macro/metrics.csv",
+        "platform": "nangate45",
+        "param_hash": "6d94811b",
+        "tag": "l1_macro_softmax_rowwise_r4_ng45_6d94811b",
+        "status": "ok",
+        "result_path": "/orfs/flow/reports/nangate45/softmax_rowwise_int8_r4_wrapper_ng45_macro/base/6_finish.rpt"
+      }
+    ]
+  }
 }
