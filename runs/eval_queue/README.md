@@ -52,6 +52,12 @@ Rules
   `metrics.csv` row.
 - Evaluated item `result` must carry the same identity/provenance fields as PR
   body and include canonical `identity_block`.
+- Before moving an item to `evaluated/`, replace placeholder values in
+  `handoff.pr_body_fields` with the concrete evaluator/session/host values.
+- New committed `result_path` values in `metrics.csv`, `runs/index.csv`, and
+  evaluated queue `metrics_rows` must reference the repo-tracked artifact path
+  under `runs/designs/.../work/<hash>/result.json`, not evaluator-local
+  checkout paths such as `/tmp/...`.
 - Do not add large binaries (DEF/GDS/log dumps) to the queue directories.
 
 Validation

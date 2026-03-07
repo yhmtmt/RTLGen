@@ -10,6 +10,15 @@ layers:
 The repository is organized so each layer can iterate independently while
 sharing reproducible artifacts and evaluation results.
 
+## Evaluator First Read
+
+If you are executing a queued evaluation task on a high-performance machine,
+read these first:
+
+1. `notes/evaluation_agent_guidance.md`
+2. `runs/eval_queue/README.md`
+3. The assigned item under `runs/eval_queue/openroad/queued/`
+
 ## Layer 1: Circuit Module Generator + Physical Optimization
 
 `Layer 1` focuses on circuit blocks generated from C++ RTLGen (adders,
@@ -108,6 +117,8 @@ python3 scripts/build_runs_index.py
 
 ## Documentation Map
 
+- Evaluator first-read manual: `notes/evaluation_agent_guidance.md`
+- Evaluation queue workflow/rules: `runs/eval_queue/README.md`
 - Repository documentation roles: `docs/structure.md`
 - Layer 1 runbook (module physical optimization): `docs/layer1_circuit_workflow.md`
 - Two-layer workflow and handoff contract: `docs/two_layer_workflow.md`

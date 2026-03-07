@@ -20,6 +20,7 @@ Scope
 
 Read Order (Do This First)
 --------------------------
+0. `README.md` (repository orientation)
 1. `docs/two_layer_workflow.md`
 2. `docs/layer1_circuit_workflow.md` (Layer 1 work) and/or
    `npu/docs/workflow.md` (Layer 2 work)
@@ -47,7 +48,9 @@ Execution Model (Queue -> Evaluated)
 7. Move item file from:
    - `runs/eval_queue/openroad/queued/` ->
    - `runs/eval_queue/openroad/evaluated/`
-8. Open PR with the requested `handoff.pr_title`.
+8. Replace queued-item placeholders in `handoff.pr_body_fields` with the
+   concrete run values (`evaluator_id`, `session_id`, `host`).
+9. Open PR with the requested `handoff.pr_title`.
 
 Identity protocol (required when using shared GitHub account):
 - Use one session ID per evaluator run (example: `s20260305t2310z`).
@@ -121,6 +124,41 @@ For `state=evaluated`, fill `result` with:
 
 If `result.status=ok`, include at least one valid metrics row reference.
 
+Canonical path rule
+-------------------
+Committed evaluation records must not point at evaluator-machine-local
+checkout paths such as `/tmp/...` or `/home/...`.
+
+Before opening a PR:
+- rewrite new `metrics.csv` `result_path` fields to the committed repo path
+  under:
+  - `runs/designs/<circuit_type>/<design>/work/<param_hash>/result.json`
+- make `runs/index.csv` agree with those committed paths
+- if `result.metrics_rows[].result_path` is present in the evaluated queue
+  item, use the same committed path there too
+
+Portable examples:
+- good:
+  - `runs/designs/activations/softmax_rowwise_int8_r4_wrapper/work/331b4c0f/result.json`
+- bad:
+  - `/tmp/rtlgen-softmax-s20260306t115634z/runs/designs/activations/softmax_rowwise_int8_r4_wrapper/work/331b4c0f/result.json`
+
+Evaluated-item placeholder rule
+-------------------------------
+Placeholders are allowed only while an item is still in `queued/`.
+
+Before moving an item to `evaluated/`, replace placeholders in:
+- `handoff.pr_body_fields.evaluator_id`
+- `handoff.pr_body_fields.session_id`
+- `handoff.pr_body_fields.host`
+
+These must match the concrete run identity already used in:
+- PR body fields
+- `result.evaluator_id`
+- `result.session_id`
+- `result.host`
+- `result.identity_block`
+
 Artifact Policy
 ---------------
 Allowed in PRs:
@@ -133,6 +171,8 @@ Do not commit:
 - DEF/GDS/log dumps
 - large temporary flow artifacts
 - unrelated submodule updates
+- machine-local absolute paths in committed metadata when a repo-tracked path
+  exists
 
 Evaluation Decision Rules
 -------------------------
@@ -163,7 +203,9 @@ PR Checklist (copy into description)
 - [ ] Queue item moved to `evaluated/` and `result` filled.
 - [ ] PR body contains `evaluator_id/session_id/host/queue_item_id`.
 - [ ] PR conversation comments start with identity block.
+- [ ] `handoff.pr_body_fields` placeholders were replaced with concrete values.
 - [ ] `metrics_rows` references are valid.
+- [ ] New `result_path` values do not point at `/tmp/...` or other machine-local checkout paths.
 - [ ] `python3 scripts/validate_runs.py` passed.
 - [ ] Only lightweight artifacts committed.
 
