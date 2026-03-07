@@ -147,6 +147,18 @@ can later be extended without breaking v0.1.
   - `activation_operand_kind` (string, optional): activation operand mode (`int8` default, or `fp16`).
   - `activation_fp_total_width` (int, optional): fp operand total width when `activation_operand_kind=fp16` (currently `16`).
   - `activation_fp_mantissa_width` (int, optional): fp operand mantissa width when `activation_operand_kind=fp16` (currently `10`).
+- `compute.softmax` (object, optional): dedicated descriptor-level SOFTMAX engine configuration.
+  - `enabled` (bool): emit dedicated `0x12 SOFTMAX` stub path and hardware wrapper.
+  - `dtype` (string): currently `int8` only.
+  - `row_bytes` (int): configured row width in bytes (`1..32`); descriptor `row_bytes`
+    must match this value at runtime.
+  - `module_name` (string, optional): emitted wrapper module name.
+    Default: `softmax_rowwise_<dtype>_r<row_bytes>_wrapper`.
+  - `core_module_name` (string, optional): emitted combinational core module name.
+  - `accum_bits` (int, optional): internal normalization accumulator width (`8..32`,
+    default `16`).
+  - `max_shift` (int, optional): clamp applied to distance-from-max before
+    power-of-two weighting (`0..15`, default `7`).
 
 ## Notes
 - The initial RTL is a stub for **simulation harnessing** only.
@@ -180,6 +192,12 @@ can later be extended without breaking v0.1.
 - `activation_source=rtlgen_cpp` emits scalar activation modules for
   `relu`, `gelu`, `softmax`, `layernorm`, `drelu`, `dgelu`, `dsoftmax`,
   and `dlayernorm`.
+- `compute.softmax.enabled=true` emits a dedicated row-wise SOFTMAX wrapper
+  tagged with `(* keep_hierarchy = 1 *)` so hierarchical OpenROAD flows can
+  preserve and blackbox it independently from the rest of `npu_top`.
+- The current dedicated SOFTMAX generator is structural/PPA-oriented:
+  it models the descriptor path and instantiates the selected row-wise module,
+  but it does not yet implement full SRAM-backed source/destination dataflow.
 - When `activation_operand_kind=fp16`, generated modules use C++ RTLGen fp
   activation format (FloPoCo-style `total_width+2` bits). They are wired into
   fp16 VEC activation routing when `compute.vec.fp16_arith_source=rtlgen_cpp`,

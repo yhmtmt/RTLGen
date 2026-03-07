@@ -1,0 +1,36 @@
+{
+  "version": "0.1",
+  "design_id": "npu_fp16_nm1_softmax_bundle_ng45",
+  "module": "npu_top_macro_bundle",
+  "platform": "nangate45",
+  "flow_variant": "base",
+  "blackboxes": [
+    "gemm_compute_array",
+    "softmax_rowwise_int8_r4_wrapper"
+  ],
+  "additional_lefs": [
+    "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/abstract/gemm_compute_array.lef",
+    "runs/designs/npu_macros/softmax_rowwise_int8_r4_wrapper_ng45_macro/abstract/softmax_rowwise_int8_r4_wrapper.lef"
+  ],
+  "additional_libs": [
+    "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/abstract/gemm_compute_array_typ.lib",
+    "runs/designs/npu_macros/softmax_rowwise_int8_r4_wrapper_ng45_macro/abstract/softmax_rowwise_int8_r4_wrapper_typ.lib"
+  ],
+  "additional_gds": [],
+  "blackbox_verilog": [
+    "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/abstract/gemm_compute_array_blackbox.v",
+    "runs/designs/npu_macros/softmax_rowwise_int8_r4_wrapper_ng45_macro/abstract/softmax_rowwise_int8_r4_wrapper_blackbox.v"
+  ],
+  "source": {
+    "mode": "composite_macro_bundle",
+    "component_manifests": [
+      "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+      "runs/designs/npu_macros/softmax_rowwise_int8_r4_wrapper_ng45_macro/macro_manifest.json"
+    ]
+  },
+  "manifest_params": {
+    "compute.gemm.num_modules": "1",
+    "compute.softmax.variant_id": "softmax_rowwise_int8_r4_nangate45_base"
+  },
+  "make_target": "generate_abstract"
+}

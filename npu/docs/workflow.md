@@ -204,8 +204,15 @@ For the current practical baseline, use
 - Use `softmax_rowwise_int8_r4_wrapper` as the current Layer 1 wrapped seed
   for dedicated `SOFTMAX` integration on Nangate45. It matches the current
   imported softmax-tail contract (`row_bytes=4`) and dominates the `r8` seed
-  variants on timing/area/power across the committed sweep. Macro harden it
-  before claiming hierarchical top-level use.
+  variants on timing/area/power across the committed sweep. The hardened macro
+  is now wired into the softmax-enabled NPU block configs under
+  `runs/designs/npu_blocks/npu_fp16_cpp_nm{1,2}_softmaxcmp/`, with merged
+  top-level macro manifests under
+  `runs/designs/npu_macros/npu_fp16_nm{1,2}_softmax_bundle_ng45/`.
+- Use `runs/eval_queue/openroad/queued/l2_e2e_softmax_macro_tail_v1.json` as
+  the next Layer 2 benchmark item. It runs the imported softmax-tail campaign
+  against the new softmax-integrated NPU design points and regenerates the
+  campaign report/objective sweep.
 - Keep `runs/campaigns/npu/e2e_eval_onnx_practical_v1_fetch_mirror_num_modules_v1/`
   as the bootstrap proof that evaluator-fetched cache-backed model sets work
   end-to-end.

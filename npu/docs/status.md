@@ -70,6 +70,14 @@ Git: fe7e99c
   dominates the `r8_acc20` and `r8_shift5` sweep variants on timing, area, and
   power across all eight matched flow points. The selected handoff row is
   recorded in `runs/candidates/nangate45/module_candidates.json`.
+- **Dedicated SOFTMAX NPU path (Implemented)**:
+  `npu/rtlgen/gen.py` now accepts `compute.softmax` and emits a dedicated
+  row-wise `SOFTMAX` wrapper path in `npu_top`, preserving
+  `softmax_rowwise_int8_r4_wrapper` as a hierarchical module boundary for
+  Layer 2 physical synthesis. Softmax-integrated NPU block configs and merged
+  macro manifests are staged in
+  `runs/designs/npu_blocks/npu_fp16_cpp_nm{1,2}_softmaxcmp/` and
+  `runs/designs/npu_macros/npu_fp16_nm{1,2}_softmax_bundle_ng45/`.
 - **Campaign baselines (Implemented)**: `mlp_smoke_v2_reuse` is balanced at
   30 samples per `(arch_id, macro_mode)` point after focused flat/hier reruns;
   `onnx_practical_v1_reuse_num_modules_v1` is the active practical baseline
@@ -99,8 +107,9 @@ Git: fe7e99c
 - Revisit perf queue/event overhead calibration for tiny split-GEMM workloads;
   the current softmax-tail singleton shows `nm2` losing because descriptor
   overhead dominates before parallel GEMM can pay back.
-- Macro-harden the selected `softmax_rowwise_int8_r4_wrapper` candidate and
-  wire it into the dedicated NPU `SOFTMAX` path.
+- Execute the queued Layer 2 benchmark
+  `runs/eval_queue/openroad/queued/l2_e2e_softmax_macro_tail_v1.json` to
+  measure the integrated SOFTMAX macro on the imported softmax-tail model set.
 - Stronger `arch v0.2` validation (types/ranges/enums) and mapper/perf usage of
   interconnect + mapping constraints.
 - Post-physical SRAM metric extraction and feedback loop into perf simulation.

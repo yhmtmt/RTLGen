@@ -1,0 +1,95 @@
+{
+  "version": 0.1,
+  "item_id": "l2_e2e_softmax_macro_tail_v1",
+  "title": "Layer2 imported softmax-tail benchmark with dedicated SOFTMAX macro",
+  "layer": "layer2",
+  "flow": "openroad",
+  "state": "queued",
+  "priority": 0,
+  "created_utc": "2026-03-07T12:20:00Z",
+  "requested_by": "@yhmtmt",
+  "platform": "nangate45",
+  "task": {
+    "objective": "Benchmark the dedicated softmax_rowwise_int8_r4 macro after NPU-path integration on the imported softmax-tail model set and compare nm1 vs nm2 under flat and hierarchical physical modes.",
+    "source_mode": "src_verilog",
+    "inputs": {
+      "configs": [
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/config_nm1_softmax.json",
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/config_nm2_softmax.json"
+      ],
+      "design_dirs": [
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp",
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp"
+      ],
+      "sweeps": [
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/sweep_compare_softmax_33.json",
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/sweep_compare_softmax_33.json"
+      ],
+      "macro_manifests": [
+        "runs/designs/npu_macros/npu_fp16_nm1_softmax_bundle_ng45/macro_manifest.json",
+        "runs/designs/npu_macros/npu_fp16_nm2_softmax_bundle_ng45/macro_manifest.json"
+      ],
+      "candidate_manifests": [
+        "runs/candidates/nangate45/module_candidates.json"
+      ]
+    },
+    "commands": [
+      {
+        "name": "validate_campaign",
+        "run": "python3 npu/eval/validate.py --campaign runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_v1/campaign.json --check_paths"
+      },
+      {
+        "name": "run_campaign",
+        "run": "python3 npu/eval/run_campaign.py --campaign runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_v1/campaign.json --run_physical --jobs 2 --batch_id l2_e2e_softmax_macro_tail_v1_r1"
+      },
+      {
+        "name": "report_campaign",
+        "run": "python3 npu/eval/report_campaign.py --campaign runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_v1/campaign.json"
+      },
+      {
+        "name": "objective_sweep",
+        "run": "python3 npu/eval/optimize_campaign.py --campaign runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_v1/campaign.json --profiles_json runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1/objective_profiles.json"
+      },
+      {
+        "name": "validate_runs",
+        "run": "python3 scripts/validate_runs.py"
+      }
+    ],
+    "expected_outputs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/metrics.csv",
+      "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_v1/results.csv",
+      "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_v1/summary.csv",
+      "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_v1/report.md",
+      "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_v1/pareto.csv",
+      "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_v1/best_point.json",
+      "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_v1/objective_sweep.csv",
+      "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_v1/objective_sweep.md"
+    ],
+    "acceptance": [
+      "Populate metrics.csv for both softmax-integrated NPU block design dirs with flat_nomacro and hier_macro rows",
+      "Write campaign results.csv, report.md, summary.csv, pareto.csv, best_point.json, objective_sweep.csv, and objective_sweep.md under runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_v1/",
+      "Keep result_path/work_result_json fields repo-portable",
+      "Run python3 scripts/validate_runs.py before pushing"
+    ]
+  },
+  "handoff": {
+    "branch": "eval/l2_e2e_softmax_macro_tail_v1/<session_id>",
+    "pr_title": "eval: benchmark dedicated SOFTMAX macro on softmax-tail campaign",
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]",
+    "pr_body_fields": {
+      "evaluator_id": "yhmtmt",
+      "session_id": "<session_id>",
+      "host": "<host>",
+      "queue_item_id": "l2_e2e_softmax_macro_tail_v1"
+    },
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Move this item from queued/ to evaluated/ and fill result",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py before pushing"
+    ]
+  },
+  "result": null
+}

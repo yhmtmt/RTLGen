@@ -1,0 +1,9 @@
+[
+  {
+    "name": "activation_sram",
+    "base_addr": 2147483648,
+    "size_bytes": 4194304,
+    "word_bytes": 32,
+    "alignment_bytes": 64
+  }
+]

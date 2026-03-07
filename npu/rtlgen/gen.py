@@ -90,6 +90,9 @@ module {top_name} (
   localparam       VEC_EN_DSOFTMAX  = {vec_en_dsoftmax};
   localparam       VEC_EN_DLAYERNORM= {vec_en_dlayernorm};
   localparam       VEC_FP16_ENABLED = {vec_fp16_enabled};
+  localparam       SOFTMAX_DESC_ENABLED = {softmax_desc_enabled};
+  localparam integer SOFTMAX_ROW_BYTES = {softmax_row_bytes};
+  localparam integer SOFTMAX_DATA_WIDTH = {softmax_data_width};
   localparam integer GEMM_NUM_MODULES = {gemm_num_modules};
   localparam integer GEMM_MAC_LANES = {gemm_mac_lanes};
   localparam integer GEMM_ELEM_BITS = {gemm_elem_bits};
@@ -198,7 +201,7 @@ module {top_name} (
         status <= STATUS_ERR;
         irq_status[IRQ_ERROR] <= 1'b1;
       end else if (!(mmio_we && mmio_addr == OFF_DOORBELL)) begin
-        if ((cq_count != 0) || cq_stage_valid || dma_pending || vec_pending || {gemm_slots_busy_expr}) begin
+        if ((cq_count != 0) || cq_stage_valid || dma_pending || vec_pending || softmax_pending || {gemm_slots_busy_expr}) begin
           status <= STATUS_BUSY;
         end else begin
           status <= STATUS_IDLE;
@@ -935,6 +938,116 @@ def generate_cpp_vec_activation_modules(
     return "\n\n".join(modules) + "\n\n", module_names, activation_operand_kind
 
 
+def generate_rowwise_softmax_modules(softmax_cfg: dict) -> tuple[str, str, int]:
+    module_name = str(softmax_cfg.get("module_name", "")).strip()
+    row_bytes = int(softmax_cfg.get("row_bytes", 4))
+    dtype = str(softmax_cfg.get("dtype", "int8")).lower()
+    accum_bits = int(softmax_cfg.get("accum_bits", 16))
+    max_shift = int(softmax_cfg.get("max_shift", 7))
+
+    if dtype != "int8":
+        die("compute.softmax.dtype currently supports only int8")
+    if row_bytes < 1 or row_bytes > 32:
+        die("compute.softmax.row_bytes must be in [1, 32]")
+    if accum_bits < 8 or accum_bits > 32:
+        die("compute.softmax.accum_bits must be in [8, 32]")
+    if max_shift < 0 or max_shift > 15:
+        die("compute.softmax.max_shift must be in [0, 15]")
+
+    if not module_name:
+        module_name = f"softmax_rowwise_{dtype}_r{row_bytes}_wrapper"
+
+    core_module_name = str(softmax_cfg.get("core_module_name", "")).strip()
+    if not core_module_name:
+        if module_name.endswith("_wrapper"):
+            core_module_name = module_name[: -len("_wrapper")]
+        else:
+            core_module_name = module_name + "_core"
+
+    data_width = row_bytes * 8
+    product_bits = accum_bits + 8
+
+    module_text = f"""\
+module {core_module_name}(
+  input  [{data_width - 1}:0] X,
+  output reg [{data_width - 1}:0] Y
+);
+  localparam integer ROW_ELEMS = {row_bytes};
+  localparam integer DATA_W = 8;
+  localparam integer ACCUM_BITS = {accum_bits};
+  localparam integer PRODUCT_BITS = {product_bits};
+  localparam integer MAX_SHIFT = {max_shift};
+  localparam integer OUTPUT_SCALE = 127;
+
+  integer i;
+  integer signed lane_val;
+  integer signed row_max;
+  integer delta;
+  reg [ACCUM_BITS-1:0] weights [0:ROW_ELEMS-1];
+  reg [ACCUM_BITS-1:0] sum_weights;
+  reg [PRODUCT_BITS-1:0] numer;
+  reg [DATA_W-1:0] lane_out;
+
+  always @(*) begin
+    row_max = -(1 << (DATA_W - 1));
+    for (i = 0; i < ROW_ELEMS; i = i + 1) begin
+      lane_val = $signed(X[(i*DATA_W) +: DATA_W]);
+      if (lane_val > row_max)
+        row_max = lane_val;
+    end
+
+    sum_weights = {{ACCUM_BITS{{1'b0}}}};
+    for (i = 0; i < ROW_ELEMS; i = i + 1) begin
+      lane_val = $signed(X[(i*DATA_W) +: DATA_W]);
+      delta = row_max - lane_val;
+      if (delta < 0)
+        delta = 0;
+      if (delta > MAX_SHIFT)
+        delta = MAX_SHIFT;
+      weights[i] = ({{{{(ACCUM_BITS-1){{1'b0}}}}, 1'b1}} << (MAX_SHIFT - delta));
+      sum_weights = sum_weights + weights[i];
+    end
+
+    Y = {{ROW_ELEMS*DATA_W{{1'b0}}}};
+    for (i = 0; i < ROW_ELEMS; i = i + 1) begin
+      numer = (weights[i] * OUTPUT_SCALE) + (sum_weights >> 1);
+      if (sum_weights != 0)
+        lane_out = numer / sum_weights;
+      else
+        lane_out = {{DATA_W{{1'b0}}}};
+      if (lane_out > OUTPUT_SCALE)
+        lane_out = OUTPUT_SCALE;
+      Y[(i*DATA_W) +: DATA_W] = lane_out;
+    end
+  end
+endmodule
+
+(* keep_hierarchy = 1 *)
+module {module_name}(
+  input clk,
+  input [{data_width - 1}:0] X,
+  output [{data_width - 1}:0] Y
+);
+  reg [{data_width - 1}:0] x_reg;
+  wire [{data_width - 1}:0] y_wire;
+  reg [{data_width - 1}:0] y_reg;
+
+  {core_module_name} u_core (
+    .X(x_reg),
+    .Y(y_wire)
+  );
+
+  always @(posedge clk) begin
+    x_reg <= X;
+    y_reg <= y_wire;
+  end
+
+  assign Y = y_reg;
+endmodule
+"""
+    return module_name, module_text, data_width
+
+
 def write_outputs(cfg: dict, out_dir: str) -> None:
     out_path = Path(out_dir)
     out_path.mkdir(parents=True, exist_ok=True)
@@ -987,6 +1100,11 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         vec_cfg = {}
     if not isinstance(vec_cfg, dict):
         die("compute.vec must be an object when provided")
+    softmax_cfg = compute_cfg.get("softmax", {})
+    if softmax_cfg is None:
+        softmax_cfg = {}
+    if not isinstance(softmax_cfg, dict):
+        die("compute.softmax must be an object when provided")
 
     compute_enabled = bool(compute_cfg.get("enabled", False))
     gemm_mac_type = str(gemm_cfg.get("mac_type", "int8")).lower()
@@ -1052,6 +1170,11 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
     vec_activation_source = str(vec_cfg.get("activation_source", "builtin")).lower()
     vec_fp16_arith_source = str(vec_cfg.get("fp16_arith_source", "builtin")).lower()
     vec_lanes = int(vec_cfg.get("lanes", 8))
+    softmax_enabled = bool(softmax_cfg.get("enabled", False))
+    softmax_dtype = str(softmax_cfg.get("dtype", "int8")).lower()
+    softmax_row_bytes = int(softmax_cfg.get("row_bytes", 4))
+    softmax_accum_bits = int(softmax_cfg.get("accum_bits", 16))
+    softmax_max_shift = int(softmax_cfg.get("max_shift", 7))
     vec_ops_raw = vec_cfg.get("ops", [])
     if vec_ops_raw is None:
         vec_ops_raw = []
@@ -1158,6 +1281,16 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
             die("compute.vec.lanes must be even when compute.vec.fp16_arith_source=rtlgen_cpp")
         if vec_lanes < 2:
             die("compute.vec.lanes must be >= 2 when compute.vec.fp16_arith_source=rtlgen_cpp")
+    if softmax_enabled and not compute_enabled:
+        die("compute.softmax.enabled requires compute.enabled=true")
+    if softmax_dtype not in ("int8",):
+        die("compute.softmax.dtype currently supports only int8")
+    if softmax_row_bytes < 1 or softmax_row_bytes > 32:
+        die("compute.softmax.row_bytes must be in [1, 32]")
+    if softmax_accum_bits < 8 or softmax_accum_bits > 32:
+        die("compute.softmax.accum_bits must be in [8, 32]")
+    if softmax_max_shift < 0 or softmax_max_shift > 15:
+        die("compute.softmax.max_shift must be in [0, 15]")
 
     gemm_elem_bits = 16 if gemm_mac_type in ("int16", "fp16") else 8
     gemm_fp16_raw16_placeholder = 1 if (gemm_mac_type == "fp16" and gemm_fp16_semantics == "raw16_placeholder") else 0
@@ -1258,6 +1391,15 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
             vec_cfg, out_path
         )
         compute_modules = compute_modules + vec_module_text
+    softmax_module_name = ""
+    softmax_data_width = softmax_row_bytes * 8
+    if softmax_enabled:
+        softmax_module_name, softmax_module_text, softmax_data_width = generate_rowwise_softmax_modules(
+            softmax_cfg
+        )
+        compute_modules = compute_modules + softmax_module_text + "\n\n"
+    softmax_data_width_minus1 = softmax_data_width - 1
+    softmax_seed_hi = 64 + softmax_data_width - 1
     vec_cpp_relu_module = vec_cpp_modules.get("relu", "")
     vec_cpp_gelu_module = vec_cpp_modules.get("gelu", "")
     vec_cpp_softmax_module = vec_cpp_modules.get("softmax", "")
@@ -1307,6 +1449,13 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
             "  reg [3:0] vec_dtype_sel;",
             "  reg vec_pending;",
             "  reg vec_done_pulse;",
+            f"  reg [{softmax_data_width - 1}:0] softmax_in_row;",
+            f"  reg [{softmax_data_width - 1}:0] softmax_last_result;",
+            "  reg [15:0] softmax_row_bytes_reg;",
+            "  reg [15:0] softmax_rows_remaining;",
+            "  reg [31:0] softmax_cycles_remaining;",
+            "  reg softmax_pending;",
+            "  reg softmax_done_pulse;",
         ]
     )
 
@@ -1747,7 +1896,20 @@ endmodule
 
   assign vec_result_next = vec_dtype_is_fp16 ? vec_result_next_fp16 : vec_result_next_int8;
 """
-    compute_instances = gemm_compute_instances + vec_compute_instances
+    if softmax_enabled:
+        softmax_compute_instances = f"""
+  wire [{softmax_data_width - 1}:0] softmax_result_next;
+  (* keep_hierarchy = 1 *) {softmax_module_name} u_softmax_engine (
+    .clk(clk),
+    .X(softmax_in_row),
+    .Y(softmax_result_next)
+  );
+"""
+    else:
+        softmax_compute_instances = f"""
+  wire [{softmax_data_width - 1}:0] softmax_result_next = {{{softmax_data_width}{{1'b0}}}};
+"""
+    compute_instances = gemm_compute_instances + vec_compute_instances + softmax_compute_instances
 
     vec_update = """      vec_done_pulse <= 1'b0;
       if (vec_pending) begin
@@ -1755,6 +1917,24 @@ endmodule
         vec_pending <= 1'b0;
         vec_done_pulse <= 1'b1;
         irq_status[IRQ_EVENT] <= 1'b1;
+      end
+"""
+    softmax_update = """      softmax_done_pulse <= 1'b0;
+      if (softmax_pending) begin
+        softmax_last_result <= softmax_result_next;
+        if (softmax_cycles_remaining <= 1) begin
+          softmax_pending <= 1'b0;
+          softmax_rows_remaining <= 0;
+          softmax_cycles_remaining <= 0;
+          softmax_done_pulse <= 1'b1;
+          irq_status[IRQ_EVENT] <= 1'b1;
+        end else begin
+          softmax_cycles_remaining <= softmax_cycles_remaining - 1;
+          if (softmax_rows_remaining != 0) begin
+            softmax_rows_remaining <= softmax_rows_remaining - 1;
+            softmax_in_row <= softmax_in_row + 1'b1;
+          end
+        end
       end
 """
 
@@ -1776,6 +1956,13 @@ endmodule
             "      vec_dtype_sel <= 0;",
             "      vec_pending <= 0;",
             "      vec_done_pulse <= 0;",
+            "      softmax_in_row <= 0;",
+            "      softmax_last_result <= 0;",
+            "      softmax_row_bytes_reg <= 0;",
+            "      softmax_rows_remaining <= 0;",
+            "      softmax_cycles_remaining <= 0;",
+            "      softmax_pending <= 0;",
+            "      softmax_done_pulse <= 0;",
         ]
     )
     compute_reset = "\n".join(compute_reset_lines)
@@ -1859,6 +2046,7 @@ endmodule
     if not compute_enabled:
         compute_accum_update = ""
         vec_update = ""
+        softmax_update = ""
 
     enable_dma_ports = bool(cfg.get("enable_dma_ports", False))
     enable_cq_mem_ports = bool(cfg.get("enable_cq_mem_ports", False))
@@ -1935,6 +2123,7 @@ endmodule
     gemm_update = f"""      // {gemm_num_modules}-slot GEMM stub with OOO-capable completion scheduling.
       gemm_done_pulse <= 1'b0;
 {vec_update}\
+{softmax_update}\
 {compute_accum_update}\
 {gemm_progress_block}
       if (!dma_pending) begin
@@ -2025,6 +2214,25 @@ endmodule
                 end else begin
                   vec_pending <= 1'b1;
                 end
+              end
+            end else if (cq_mem_rdata[7:0] == 8'h12) begin
+              // Dedicated SOFTMAX descriptor: one configured-width row engine.
+              last_size <= (cq_mem_rdata[207:192] * cq_mem_rdata[223:208]);
+              if (!SOFTMAX_DESC_ENABLED) begin
+                error_code <= 32'h7; // dedicated SOFTMAX disabled in config
+              end else if (softmax_pending) begin
+                error_code <= 32'h8; // SOFTMAX engine busy
+              end else if (cq_mem_rdata[15:12] != 4'h0) begin
+                error_code <= 32'h9; // unsupported SOFTMAX dtype
+              end else if (cq_mem_rdata[207:192] != SOFTMAX_ROW_BYTES) begin
+                error_code <= 32'ha; // descriptor row width does not match configured engine
+              end else begin
+                softmax_in_row <= cq_mem_rdata[{softmax_seed_hi}:64];
+                softmax_last_result <= 0;
+                softmax_row_bytes_reg <= cq_mem_rdata[207:192];
+                softmax_rows_remaining <= cq_mem_rdata[223:208];
+                softmax_cycles_remaining <= (cq_mem_rdata[223:208] == 0) ? 1 : (cq_mem_rdata[223:208] + 1);
+                softmax_pending <= 1'b1;
               end
             end else if (cq_mem_rdata[7:0] == 8'h20) begin
               // EVENT_SIGNAL: immediately signal
@@ -2262,6 +2470,9 @@ endmodule
         vec_en_dsoftmax=vec_en_dsoftmax,
         vec_en_dlayernorm=vec_en_dlayernorm,
         vec_fp16_enabled=vec_fp16_enabled,
+        softmax_desc_enabled=1 if softmax_enabled else 0,
+        softmax_row_bytes=softmax_row_bytes,
+        softmax_data_width=softmax_data_width,
         gemm_num_modules=gemm_num_modules,
         gemm_mac_lanes=gemm_mac_lanes,
         gemm_elem_bits=gemm_elem_bits,
