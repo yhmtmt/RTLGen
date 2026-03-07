@@ -1,8 +1,8 @@
 {
   "version": 0.1,
   "pdk": "nangate45",
-  "generated_utc": "2026-03-04T04:36:46Z",
-  "notes": "Seed Layer 1 candidates for Layer 2 handoff. Selected entries are promoted to macro_hardened with traceable macro manifests.",
+  "generated_utc": "2026-03-07T09:36:20Z",
+  "notes": "Seed Layer 1 candidates for Layer 2 handoff. Arithmetic entries are promoted to macro_hardened with traceable macro manifests. The current row-wise SOFTMAX seed remains wrapped_io pending dedicated NPU integration and macro hardening.",
   "candidates": [
     {
       "variant_id": "mult16u_normal_koggestone_nangate45_base",
@@ -35,6 +35,21 @@
       },
       "macro_manifest": "runs/designs/npu_macros/adder_koggestone_64u_wrapper_ng45_macro/macro_manifest.json",
       "notes": "Promoted to macro_hardened from wrapper baseline after pre-synth hardening."
+    },
+    {
+      "variant_id": "softmax_rowwise_int8_r4_nangate45_base",
+      "module": "softmax_rowwise_int8_r4_wrapper",
+      "evaluation_scope": "wrapped_io",
+      "circuit_type": "activations",
+      "config_hash": "97310659a7a0",
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "param_hash": "91c9afdc",
+        "tag": "softmax_rowwise_ng45_v1_de52b603",
+        "status": "ok"
+      },
+      "notes": "Current Layer 1 SOFTMAX seed for Nangate45. Matches the current imported softmax-tail contract (`row_bytes=4`) and strictly dominates the `r8_acc20` and `r8_shift5` variants on timing, area, and power at all eight matched sweep points. Wrapper-level only; macro hardening is still required before hierarchical top-level use."
     }
   ]
 }

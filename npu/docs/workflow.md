@@ -201,6 +201,11 @@ For the current practical baseline, use
   as a boundary-case check: its tiny `Cast -> Gemm -> Softmax` classifier flips
   the ranking back to `fp16_nm1 + flat_nomacro` because split-descriptor
   queue/event overhead outweighs the GEMM parallelism benefit.
+- Use `softmax_rowwise_int8_r4_wrapper` as the current Layer 1 wrapped seed
+  for dedicated `SOFTMAX` integration on Nangate45. It matches the current
+  imported softmax-tail contract (`row_bytes=4`) and dominates the `r8` seed
+  variants on timing/area/power across the committed sweep. Macro harden it
+  before claiming hierarchical top-level use.
 - Keep `runs/campaigns/npu/e2e_eval_onnx_practical_v1_fetch_mirror_num_modules_v1/`
   as the bootstrap proof that evaluator-fetched cache-backed model sets work
   end-to-end.

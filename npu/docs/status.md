@@ -4,8 +4,8 @@
 Single-page snapshot of NPU development status for quick reference.
 
 <!-- STATUS_META_START -->
-Last updated: 2026-03-06
-Git: d76a23b
+Last updated: 2026-03-07
+Git: fe7e99c
 <!-- STATUS_META_END -->
 
 ## Current status
@@ -63,6 +63,13 @@ Git: d76a23b
   imported classifier graph. This campaign is intentionally small and exposes a
   boundary case where `fp16_nm1 + flat_nomacro` beats `nm2` because descriptor
   and event overhead dominate the tiny split GEMM.
+- **Layer1 SOFTMAX seed selection (Implemented)**:
+  `runs/designs/activations/softmax_rowwise_int8_r4_wrapper/` is the current
+  Nangate45 wrapped candidate for dedicated `SOFTMAX` integration. It matches
+  the current imported softmax-tail contract (`row_bytes=4`) and strictly
+  dominates the `r8_acc20` and `r8_shift5` sweep variants on timing, area, and
+  power across all eight matched flow points. The selected handoff row is
+  recorded in `runs/candidates/nangate45/module_candidates.json`.
 - **Campaign baselines (Implemented)**: `mlp_smoke_v2_reuse` is balanced at
   30 samples per `(arch_id, macro_mode)` point after focused flat/hier reruns;
   `onnx_practical_v1_reuse_num_modules_v1` is the active practical baseline
@@ -92,6 +99,8 @@ Git: d76a23b
 - Revisit perf queue/event overhead calibration for tiny split-GEMM workloads;
   the current softmax-tail singleton shows `nm2` losing because descriptor
   overhead dominates before parallel GEMM can pay back.
+- Macro-harden the selected `softmax_rowwise_int8_r4_wrapper` candidate and
+  wire it into the dedicated NPU `SOFTMAX` path.
 - Stronger `arch v0.2` validation (types/ranges/enums) and mapper/perf usage of
   interconnect + mapping constraints.
 - Post-physical SRAM metric extraction and feedback loop into perf simulation.
