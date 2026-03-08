@@ -9,8 +9,8 @@ Phase 1 scope:
 - preserve Git and PRs as the evidence boundary.
 
 Current status:
-- `cp-001` through `cp-007` are implemented in the initial shadow-control slice
-- in-process API routing, queue import/export, leases, runs, and GitHub reconciliation exist
+- `cp-001` through `cp-008` are implemented in the initial shadow-control slice
+- in-process API routing, queue import/export, leases, runs, GitHub reconciliation, and the first internal worker loop exist
 - Alembic files and the initial migration exist, but Alembic CLI still needs a clean dedicated env for live migration verification
 
 ## Local bring-up
@@ -33,12 +33,13 @@ In this Codex sandbox, live socket bind is blocked, so the primary verification 
 - Queue import into DB-backed `task_requests`, `work_items`, and `queue_reconciliations`
 - Worker lease acquisition, heartbeat refresh, and stale lease expiry
 - Run lifecycle tracking: start, append events, complete, and artifact recording
+- Internal worker loop execution from queue `command_manifest` with per-command logs and staged outputs
 - Queue export back to validator-compatible `queued` and `evaluated` JSON
 - GitHub branch / PR reconciliation into `github_links` and work-item state
 
 ## End-to-End Shadow Workflow
 
-Set the DB location for the API routes:
+Set the DB location:
 ```sh
 export RTLCP_DATABASE_URL=sqlite+pysqlite:////tmp/rtlgen-control-plane.db
 ```
@@ -52,91 +53,24 @@ python3 -m control_plane.cli.main import-queue \
   --queue-path runs/eval_queue/openroad/queued/l2_e2e_softmax_macro_tail_v1.json
 ```
 
-2. Start the minimal API:
+2. Execute one internal worker pass:
 ```sh
 PYTHONPATH=/workspaces/RTLGen/control_plane \
-python3 -m control_plane.cli.main serve-api --host 127.0.0.1 --port 8080
+python3 -m control_plane.cli.main run-worker \
+  --database-url sqlite+pysqlite:////tmp/rtlgen-control-plane.db \
+  --repo-root /workspaces/RTLGen \
+  --machine-key eval-desktop-01 \
+  --hostname eval-desktop-01.local \
+  --capabilities-json '{"platform":"nangate45","flow":"openroad"}' \
+  --capability-filter-json '{"platform":"nangate45","flow":"openroad"}' \
+  --lease-seconds 1800 \
+  --heartbeat-seconds 30 \
+  --max-items 1
 ```
 
-3. Acquire the next eligible lease for a worker:
-```sh
-curl -sS -X POST http://127.0.0.1:8080/api/v1/leases/acquire-next \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "machine_key": "eval-desktop-01",
-    "hostname": "eval-desktop-01.local",
-    "executor_kind": "docker",
-    "capabilities": {"platform": "nangate45", "flow": "openroad"},
-    "capability_filter": {"platform": "nangate45", "flow": "openroad"},
-    "lease_seconds": 1800
-  }'
-```
+The worker loop acquires a lease, starts a run, heartbeats while commands execute, writes per-command logs, stages expected outputs, and completes the run in one pass.
 
-4. Start a run for that lease:
-```json
-{
-  "run_key": "run-softmax-tail-001",
-  "attempt": 1,
-  "executor_type": "docker",
-  "container_image": "rtlgen-dev:latest",
-  "checkout_commit": "HEAD",
-  "branch_name": "eval/l2_e2e_softmax_macro_tail_v1/s20260308t000000z"
-}
-```
-
-```text
-POST /api/v1/leases/{lease_token}/start-run
-```
-
-5. Append run events during execution:
-```text
-POST /api/v1/runs/{run_key}/events
-```
-
-Example body:
-```json
-{
-  "event_type": "command_finished",
-  "event_payload": {
-    "exit_code": 0,
-    "stdout_log": "runs/logs/run-softmax-tail-001.log"
-  }
-}
-```
-
-6. Complete the run with queue-exportable result payload:
-```text
-POST /api/v1/runs/{run_key}/complete
-```
-
-Example body:
-```json
-{
-  "status": "succeeded",
-  "result_summary": {
-    "rows": 20
-  },
-  "result_payload": {
-    "queue_result": {
-      "status": "ok",
-      "metrics_rows": [
-        "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_v1/metrics.csv:2"
-      ],
-      "notes": [
-        "shadow control-plane export"
-      ]
-    }
-  },
-  "artifacts": [
-    {
-      "artifact_type": "report",
-      "path": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_v1/report.md"
-    }
-  ]
-}
-```
-
-7. Export the DB-backed item back into queue-compatible JSON:
+3. Export the DB-backed item back into queue-compatible JSON:
 ```sh
 PYTHONPATH=/workspaces/RTLGen/control_plane \
 python3 -m control_plane.cli.main export-queue \
@@ -147,7 +81,7 @@ python3 -m control_plane.cli.main export-queue \
   --target-path /tmp/l2_e2e_softmax_macro_tail_v1.evaluated.json
 ```
 
-8. Reconcile a branch / PR produced from that exported result:
+4. Reconcile a branch / PR produced from that exported result:
 ```sh
 PYTHONPATH=/workspaces/RTLGen/control_plane \
 python3 -m control_plane.cli.main reconcile-github \
@@ -159,6 +93,18 @@ python3 -m control_plane.cli.main reconcile-github \
   --pr-url https://github.com/yhmtmt/RTLGen/pull/99 \
   --state pr_open
 ```
+
+## Manual API Flow
+
+The in-process HTTP routes remain available if you want to exercise the lifecycle step-by-step rather than through `run-worker`:
+
+- `POST /api/v1/leases/acquire-next`
+- `POST /api/v1/leases/{lease_token}/start-run`
+- `POST /api/v1/leases/{lease_token}/heartbeat`
+- `POST /api/v1/runs/{run_key}/events`
+- `POST /api/v1/runs/{run_key}/complete`
+- `POST /api/v1/queue/export/{item_id}`
+- `POST /api/v1/github/reconcile`
 
 ## Verification Notes
 

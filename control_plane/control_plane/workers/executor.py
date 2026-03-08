@@ -1,1 +1,312 @@
-"""Deterministic worker executor placeholder for cp-005."""
+"""Deterministic internal worker execution loop."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+from sqlalchemy.orm import Session, sessionmaker
+
+from control_plane.ids import make_id
+from control_plane.models.runs import Run
+from control_plane.models.work_items import WorkItem
+from control_plane.services.lease_service import acquire_next_lease
+from control_plane.services.run_service import append_run_event, complete_run, start_run
+from control_plane.services.scheduler import NoEligibleWorkItem
+from control_plane.workers.artifact_stage import build_queue_result_payload, collect_expected_output_artifacts, collect_log_artifacts
+from control_plane.workers.checkout import CheckoutError, prepare_checkout
+from control_plane.workers.command_runner import run_command_manifest, summarize_command_results
+from control_plane.workers.heartbeat import LeaseHeartbeatPump
+
+
+@dataclass(frozen=True)
+class WorkerConfig:
+    repo_root: str
+    machine_key: str
+    hostname: str | None = None
+    executor_kind: str = "local_process"
+    capabilities: dict[str, Any] | None = None
+    capability_filter: dict[str, Any] | None = None
+    lease_seconds: int = 1800
+    heartbeat_seconds: int = 30
+    command_timeout_seconds: int | None = None
+    enforce_source_commit: bool = False
+    log_root: str | None = None
+
+
+@dataclass(frozen=True)
+class WorkerLoopResult:
+    status: str
+    item_id: str | None = None
+    run_key: str | None = None
+    command_count: int = 0
+    summary: str | None = None
+
+
+def _load_work_item(session: Session, work_item_id: str) -> WorkItem:
+    work_item = session.query(WorkItem).filter(WorkItem.id == work_item_id).one_or_none()
+    if work_item is None:
+        raise RuntimeError(f"work item not found: {work_item_id}")
+    return work_item
+
+
+def _next_attempt(session: Session, work_item_id: str) -> int:
+    latest = (
+        session.query(Run)
+        .filter(Run.work_item_id == work_item_id)
+        .order_by(Run.attempt.desc())
+        .first()
+    )
+    return 1 if latest is None else int(latest.attempt) + 1
+
+
+def _log_dir(config: WorkerConfig, item_id: str, run_key: str) -> str:
+    root = Path(config.log_root or (Path(config.repo_root) / "control_plane" / "logs")).resolve()
+    path = root / item_id / run_key
+    path.mkdir(parents=True, exist_ok=True)
+    return str(path)
+
+
+def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig) -> WorkerLoopResult:
+    with session_factory() as session:
+        try:
+            acquired = acquire_next_lease(
+                session,
+                machine_key=config.machine_key,
+                hostname=config.hostname,
+                executor_kind=config.executor_kind,
+                capabilities=config.capabilities,
+                capability_filter=config.capability_filter,
+                lease_seconds=config.lease_seconds,
+            )
+        except NoEligibleWorkItem:
+            return WorkerLoopResult(status="no_work", summary="no eligible work item")
+
+    with session_factory() as session:
+        work_item = _load_work_item(session, acquired.work_item_id)
+        attempt = _next_attempt(session, work_item.id)
+        run_key = f"{work_item.item_id}_{make_id('run')}"
+
+    checkout_error: str | None = None
+    checkout_info = None
+    try:
+        checkout_info = prepare_checkout(
+            repo_root=config.repo_root,
+            source_commit=work_item.source_commit,
+            enforce_source_commit=config.enforce_source_commit,
+        )
+    except CheckoutError as exc:
+        checkout_error = str(exc)
+
+    with session_factory() as session:
+        started = start_run(
+            session,
+            lease_token=acquired.lease_token,
+            run_key=run_key,
+            attempt=attempt,
+            executor_type="internal_worker",
+            checkout_commit=checkout_info.head_sha if checkout_info is not None else None,
+        )
+
+    if checkout_error is not None:
+        with session_factory() as session:
+            append_run_event(
+                session,
+                run_key=run_key,
+                event_type="checkout_failed",
+                event_payload={"error": checkout_error},
+            )
+            complete_run(
+                session,
+                run_key=run_key,
+                status="failed",
+                result_summary=f"checkout failed: {checkout_error}",
+                result_payload={"checkout_error": checkout_error},
+                artifacts=[],
+            )
+        return WorkerLoopResult(
+            status="failed",
+            item_id=work_item.item_id,
+            run_key=run_key,
+            summary=f"checkout failed: {checkout_error}",
+        )
+
+    with session_factory() as session:
+        append_run_event(
+            session,
+            run_key=run_key,
+            event_type="checkout_prepared",
+            event_payload={
+                "repo_root": checkout_info.repo_root,
+                "head_sha": checkout_info.head_sha,
+                "git_dirty": checkout_info.git_dirty,
+                "source_commit": checkout_info.source_commit,
+                "source_commit_matches": checkout_info.source_commit_matches,
+            },
+        )
+
+    heartbeat = LeaseHeartbeatPump(
+        session_factory=session_factory,
+        lease_token=acquired.lease_token,
+        heartbeat_seconds=config.heartbeat_seconds,
+        extend_seconds=config.lease_seconds,
+    )
+    heartbeat.start()
+    heartbeat.update_progress({"phase": "starting", "item_id": work_item.item_id})
+
+    log_dir = _log_dir(config, work_item.item_id, run_key)
+    command_results = []
+    worker_error: str | None = None
+    try:
+        command_results = run_command_manifest(
+            command_manifest=work_item.command_manifest or [],
+            work_dir=checkout_info.work_dir,
+            log_dir=log_dir,
+            timeout_seconds=config.command_timeout_seconds,
+            on_command_finished=lambda result: _record_command_result(
+                session_factory=session_factory,
+                run_key=run_key,
+                item_id=work_item.item_id,
+                result=result,
+                heartbeat=heartbeat,
+            ),
+        )
+    except Exception as exc:
+        worker_error = str(exc)
+    finally:
+        heartbeat_error = heartbeat.stop()
+
+    success = worker_error is None and bool(command_results) and all(result.returncode == 0 for result in command_results)
+    if not command_results and not work_item.command_manifest:
+        success = True
+
+    artifacts = collect_expected_output_artifacts(
+        repo_root=config.repo_root,
+        expected_outputs=work_item.expected_outputs or [],
+    ) + collect_log_artifacts(
+        repo_root=config.repo_root,
+        command_results=command_results,
+    )
+    queue_result = build_queue_result_payload(
+        repo_root=config.repo_root,
+        expected_outputs=work_item.expected_outputs or [],
+        command_results=command_results,
+        success=success,
+    )
+    result_payload = {
+        "queue_result": {
+            "status": queue_result.status,
+            "metrics_rows": queue_result.metrics_rows,
+            "notes": queue_result.notes,
+        },
+        "checkout": {
+            "repo_root": checkout_info.repo_root,
+            "head_sha": checkout_info.head_sha,
+            "git_dirty": checkout_info.git_dirty,
+            "source_commit": checkout_info.source_commit,
+            "source_commit_matches": checkout_info.source_commit_matches,
+        },
+        "commands": [
+            {
+                "name": result.name,
+                "command": result.command,
+                "returncode": result.returncode,
+                "duration_seconds": result.duration_seconds,
+                "stdout_log": result.stdout_log,
+                "stderr_log": result.stderr_log,
+                "timed_out": result.timed_out,
+            }
+            for result in command_results
+        ],
+    }
+    if heartbeat_error is not None:
+        result_payload["heartbeat_error"] = heartbeat_error
+    if worker_error is not None:
+        result_payload["worker_error"] = worker_error
+        queue_result = build_queue_result_payload(
+            repo_root=config.repo_root,
+            expected_outputs=work_item.expected_outputs or [],
+            command_results=command_results,
+            success=False,
+        )
+        result_payload["queue_result"] = {
+            "status": queue_result.status,
+            "metrics_rows": queue_result.metrics_rows,
+            "notes": queue_result.notes + [f"worker_error={worker_error}"],
+        }
+
+    with session_factory() as session:
+        completed = complete_run(
+            session,
+            run_key=run_key,
+            status="succeeded" if success else "failed",
+            result_summary=worker_error or summarize_command_results(command_results),
+            result_payload=result_payload,
+            artifacts=[
+                {
+                    "kind": artifact.kind,
+                    "storage_mode": artifact.storage_mode,
+                    "path": artifact.path,
+                    "sha256": artifact.sha256,
+                    "metadata": artifact.metadata,
+                }
+                for artifact in artifacts
+            ],
+        )
+
+    return WorkerLoopResult(
+        status=completed.status,
+        item_id=work_item.item_id,
+        run_key=run_key,
+        command_count=len(command_results),
+        summary=summarize_command_results(command_results),
+    )
+
+
+def _record_command_result(
+    *,
+    session_factory: sessionmaker,
+    run_key: str,
+    item_id: str,
+    result,
+    heartbeat: LeaseHeartbeatPump,
+) -> None:
+    heartbeat.update_progress(
+        {
+            "phase": "command_finished",
+            "item_id": item_id,
+            "command_name": result.name,
+            "returncode": result.returncode,
+        }
+    )
+    with session_factory() as session:
+        append_run_event(
+            session,
+            run_key=run_key,
+            event_type="command_finished",
+            event_payload={
+                "command_name": result.name,
+                "command": result.command,
+                "returncode": result.returncode,
+                "duration_seconds": result.duration_seconds,
+                "stdout_log": result.stdout_log,
+                "stderr_log": result.stderr_log,
+                "timed_out": result.timed_out,
+            },
+        )
+
+
+def execute_worker_loop(
+    session_factory: sessionmaker,
+    *,
+    config: WorkerConfig,
+    max_items: int = 1,
+) -> list[WorkerLoopResult]:
+    results: list[WorkerLoopResult] = []
+    for _ in range(max_items):
+        result = execute_one_work_item(session_factory, config=config)
+        results.append(result)
+        if result.status == "no_work":
+            break
+    return results

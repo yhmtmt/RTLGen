@@ -10,6 +10,7 @@ from control_plane.cli.export_queue import main as export_queue_main
 from control_plane.cli.import_queue import main as import_queue_main
 from control_plane.cli.reconcile_github import main as reconcile_github_main
 from control_plane.cli.run_scheduler import main as run_scheduler_main
+from control_plane.cli.run_worker import main as run_worker_main
 from control_plane.config import Settings
 
 
@@ -52,6 +53,21 @@ def main(argv: list[str] | None = None) -> int:
     scheduler_parser = subparsers.add_parser("scheduler", help="Run scheduler maintenance commands")
     scheduler_parser.add_argument("--database-url", required=True)
     scheduler_parser.add_argument("scheduler_command", choices=["expire-stale-leases"])
+
+    worker_parser = subparsers.add_parser("run-worker", help="Run the internal worker loop")
+    worker_parser.add_argument("--database-url", required=True)
+    worker_parser.add_argument("--repo-root", required=True)
+    worker_parser.add_argument("--machine-key", required=True)
+    worker_parser.add_argument("--hostname")
+    worker_parser.add_argument("--executor-kind", default="local_process")
+    worker_parser.add_argument("--capabilities-json")
+    worker_parser.add_argument("--capability-filter-json")
+    worker_parser.add_argument("--lease-seconds", type=int, default=1800)
+    worker_parser.add_argument("--heartbeat-seconds", type=int, default=30)
+    worker_parser.add_argument("--command-timeout-seconds", type=int)
+    worker_parser.add_argument("--enforce-source-commit", action="store_true")
+    worker_parser.add_argument("--log-root")
+    worker_parser.add_argument("--max-items", type=int, default=1)
 
     subparsers.add_parser("show-config", help="Print resolved scaffold configuration")
 
@@ -109,6 +125,35 @@ def main(argv: list[str] | None = None) -> int:
                 args.scheduler_command,
             ]
         )
+    if args.command == "run-worker":
+        argv2 = [
+            "--database-url",
+            args.database_url,
+            "--repo-root",
+            args.repo_root,
+            "--machine-key",
+            args.machine_key,
+            "--executor-kind",
+            args.executor_kind,
+            "--lease-seconds",
+            str(args.lease_seconds),
+            "--heartbeat-seconds",
+            str(args.heartbeat_seconds),
+            "--max-items",
+            str(args.max_items),
+        ]
+        for key, value in [
+            ("--hostname", args.hostname),
+            ("--capabilities-json", args.capabilities_json),
+            ("--capability-filter-json", args.capability_filter_json),
+            ("--command-timeout-seconds", args.command_timeout_seconds),
+            ("--log-root", args.log_root),
+        ]:
+            if value is not None:
+                argv2.extend([key, str(value)])
+        if args.enforce_source_commit:
+            argv2.append("--enforce-source-commit")
+        return run_worker_main(argv2)
     if args.command == "show-config":
         print(json.dumps(Settings.from_env().__dict__, indent=2, sort_keys=True))
         return 0
