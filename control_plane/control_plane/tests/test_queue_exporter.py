@@ -18,7 +18,7 @@ from control_plane.models.work_items import WorkItem
 from control_plane.services.queue_exporter import QueueExportRequest, export_queue_item
 from control_plane.services.queue_importer import QueueImportRequest, import_queue_item
 
-REPO_ROOT = Path("/workspaces/RTLGen")
+REPO_ROOT = Path(__file__).resolve().parents[3]
 REAL_QUEUE_ITEM = REPO_ROOT / "runs/eval_queue/openroad/queued/l2_e2e_softmax_macro_tail_v1.json"
 
 
@@ -72,6 +72,9 @@ def _seed_evaluated_result(session: Session, item_id: str) -> None:
                 "session_id": "s20260308t000000z",
                 "host": "cp-host",
                 "identity_block": "[role:evaluator][account:yhmtmt][session:s20260308t000000z][host:cp-host][item:l2_e2e_softmax_macro_tail_v1]",
+                "notes": [
+                    "validate_campaign: exit_code=0, duration_s=0.023",
+                ],
                 "metrics_rows": [
                     {
                         "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv",
@@ -96,7 +99,10 @@ def test_export_queued_snapshot() -> None:
         with make_session() as session:
             import_queue_item(
                 session,
-                QueueImportRequest(repo_root=str(REPO_ROOT), queue_path=str(REAL_QUEUE_ITEM)),
+                QueueImportRequest(
+                    repo_root=str(REPO_ROOT),
+                    queue_path=str(REAL_QUEUE_ITEM.relative_to(REPO_ROOT)),
+                ),
             )
             result = export_queue_item(
                 session,
@@ -121,7 +127,10 @@ def test_export_evaluated_snapshot() -> None:
         with make_session() as session:
             import_queue_item(
                 session,
-                QueueImportRequest(repo_root=str(REPO_ROOT), queue_path=str(REAL_QUEUE_ITEM)),
+                QueueImportRequest(
+                    repo_root=str(REPO_ROOT),
+                    queue_path=str(REAL_QUEUE_ITEM.relative_to(REPO_ROOT)),
+                ),
             )
             _seed_evaluated_result(session, "l2_e2e_softmax_macro_tail_v1")
             result = export_queue_item(
@@ -139,6 +148,7 @@ def test_export_evaluated_snapshot() -> None:
             assert payload["result"]["status"] == "ok"
             assert payload["result"]["queue_item_id"] == "l2_e2e_softmax_macro_tail_v1"
             assert payload["result"]["metrics_rows"][0]["tag"] == "export_smoke"
+            assert "notes" not in payload["result"]
 
 
 def test_export_route_works_in_process() -> None:
@@ -150,7 +160,10 @@ def test_export_route_works_in_process() -> None:
         with Session(engine) as session:
             import_queue_item(
                 session,
-                QueueImportRequest(repo_root=str(REPO_ROOT), queue_path=str(REAL_QUEUE_ITEM)),
+                QueueImportRequest(
+                    repo_root=str(REPO_ROOT),
+                    queue_path=str(REAL_QUEUE_ITEM.relative_to(REPO_ROOT)),
+                ),
             )
             _seed_evaluated_result(session, "l2_e2e_softmax_macro_tail_v1")
 

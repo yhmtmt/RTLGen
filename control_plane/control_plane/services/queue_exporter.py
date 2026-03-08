@@ -118,7 +118,20 @@ def _merge_result(run: Run, work_item: WorkItem) -> dict[str, Any]:
                 f"evaluated export for {work_item.item_id} requires non-empty queue_result.metrics_rows when status=ok"
             )
 
-    return queue_result
+    export_keys = (
+        "branch",
+        "completed_utc",
+        "evaluator_id",
+        "executor",
+        "host",
+        "identity_block",
+        "metrics_rows",
+        "queue_item_id",
+        "session_id",
+        "status",
+        "summary",
+    )
+    return {key: queue_result[key] for key in export_keys if key in queue_result}
 
 
 def export_queue_item(session: Session, request: QueueExportRequest) -> QueueExportResult:
