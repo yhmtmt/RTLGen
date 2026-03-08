@@ -11,6 +11,7 @@ from control_plane.cli.import_queue import main as import_queue_main
 from control_plane.cli.reconcile_github import main as reconcile_github_main
 from control_plane.cli.run_scheduler import main as run_scheduler_main
 from control_plane.cli.run_worker import main as run_worker_main
+from control_plane.cli.sync_artifacts import main as sync_artifacts_main
 from control_plane.config import Settings
 
 
@@ -68,6 +69,18 @@ def main(argv: list[str] | None = None) -> int:
     worker_parser.add_argument("--enforce-source-commit", action="store_true")
     worker_parser.add_argument("--log-root")
     worker_parser.add_argument("--max-items", type=int, default=1)
+
+    sync_parser = subparsers.add_parser("sync-artifacts", help="Sync a completed run into an evaluated queue snapshot")
+    sync_parser.add_argument("--database-url", required=True)
+    sync_parser.add_argument("--repo-root", required=True)
+    sync_parser.add_argument("--item-id")
+    sync_parser.add_argument("--run-key")
+    sync_parser.add_argument("--evaluator-id", default="control_plane")
+    sync_parser.add_argument("--session-id")
+    sync_parser.add_argument("--host")
+    sync_parser.add_argument("--executor", default="@control_plane")
+    sync_parser.add_argument("--branch-name")
+    sync_parser.add_argument("--target-path")
 
     subparsers.add_parser("show-config", help="Print resolved scaffold configuration")
 
@@ -154,6 +167,28 @@ def main(argv: list[str] | None = None) -> int:
         if args.enforce_source_commit:
             argv2.append("--enforce-source-commit")
         return run_worker_main(argv2)
+    if args.command == "sync-artifacts":
+        argv2 = [
+            "--database-url",
+            args.database_url,
+            "--repo-root",
+            args.repo_root,
+            "--evaluator-id",
+            args.evaluator_id,
+            "--executor",
+            args.executor,
+        ]
+        for key, value in [
+            ("--item-id", args.item_id),
+            ("--run-key", args.run_key),
+            ("--session-id", args.session_id),
+            ("--host", args.host),
+            ("--branch-name", args.branch_name),
+            ("--target-path", args.target_path),
+        ]:
+            if value is not None:
+                argv2.extend([key, str(value)])
+        return sync_artifacts_main(argv2)
     if args.command == "show-config":
         print(json.dumps(Settings.from_env().__dict__, indent=2, sort_keys=True))
         return 0

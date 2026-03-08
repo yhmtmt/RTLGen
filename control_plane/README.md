@@ -9,8 +9,9 @@ Phase 1 scope:
 - preserve Git and PRs as the evidence boundary.
 
 Current status:
-- `cp-001` through `cp-008` are implemented in the initial shadow-control slice
+- `cp-001` through `cp-009` are implemented in the initial shadow-control slice
 - in-process API routing, queue import/export, leases, runs, GitHub reconciliation, and the first internal worker loop exist
+- artifact-sync and queue round-trip into repo-tracked evaluated snapshots exist
 - Alembic files and the initial migration exist, but Alembic CLI still needs a clean dedicated env for live migration verification
 
 ## Local bring-up
@@ -34,6 +35,7 @@ In this Codex sandbox, live socket bind is blocked, so the primary verification 
 - Worker lease acquisition, heartbeat refresh, and stale lease expiry
 - Run lifecycle tracking: start, append events, complete, and artifact recording
 - Internal worker loop execution from queue `command_manifest` with per-command logs and staged outputs
+- Artifact sync from `artifact_sync` work items into repo-tracked evaluated queue snapshots
 - Queue export back to validator-compatible `queued` and `evaluated` JSON
 - GitHub branch / PR reconciliation into `github_links` and work-item state
 
@@ -70,7 +72,25 @@ python3 -m control_plane.cli.main run-worker \
 
 The worker loop acquires a lease, starts a run, heartbeats while commands execute, writes per-command logs, stages expected outputs, and completes the run in one pass.
 
-3. Export the DB-backed item back into queue-compatible JSON:
+3. Sync the completed run into the repo-tracked evaluated queue snapshot:
+```sh
+PYTHONPATH=/workspaces/RTLGen/control_plane \
+python3 -m control_plane.cli.main sync-artifacts \
+  --database-url sqlite+pysqlite:////tmp/rtlgen-control-plane.db \
+  --repo-root /workspaces/RTLGen \
+  --item-id l2_e2e_softmax_macro_tail_v1 \
+  --evaluator-id control_plane \
+  --host eval-desktop-01.local \
+  --executor @control_plane
+```
+
+This step:
+- normalizes `metrics_rows` into validator-compatible reference objects,
+- writes `runs/eval_queue/openroad/evaluated/<item_id>.json`,
+- attaches a `queue_snapshot` artifact to the run,
+- moves the work item to `awaiting_review`.
+
+4. Export the DB-backed item back into queue-compatible JSON manually if needed:
 ```sh
 PYTHONPATH=/workspaces/RTLGen/control_plane \
 python3 -m control_plane.cli.main export-queue \
@@ -81,7 +101,7 @@ python3 -m control_plane.cli.main export-queue \
   --target-path /tmp/l2_e2e_softmax_macro_tail_v1.evaluated.json
 ```
 
-4. Reconcile a branch / PR produced from that exported result:
+5. Reconcile a branch / PR produced from that exported result:
 ```sh
 PYTHONPATH=/workspaces/RTLGen/control_plane \
 python3 -m control_plane.cli.main reconcile-github \
