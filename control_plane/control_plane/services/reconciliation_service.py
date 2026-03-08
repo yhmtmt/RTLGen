@@ -79,6 +79,62 @@ def _relative_repo_path(path_text: str, repo_root: Path) -> str:
         return str(path.resolve())
 
 
+def _portable_repo_path(path_text: str, repo_root: Path) -> str | None:
+    path_text = str(path_text).strip()
+    if not path_text:
+        return None
+    path = Path(path_text)
+    if not path.is_absolute():
+        return str(path)
+    try:
+        return str(path.resolve().relative_to(repo_root.resolve()))
+    except ValueError:
+        return None
+
+
+def _portable_metrics_result_path(row: dict[str, Any], repo_root: Path) -> str | None:
+    result_path = _portable_repo_path(row.get("result_path", ""), repo_root)
+    if result_path:
+        return result_path
+    work_result_json = _portable_repo_path(row.get("work_result_json", ""), repo_root)
+    if work_result_json:
+        return work_result_json
+    return None
+
+
+def _metrics_row_matches_ref(candidate: dict[str, Any], ref: dict[str, Any]) -> bool:
+    if str(candidate.get("platform", "")).strip() != str(ref.get("platform", "")).strip():
+        return False
+    if str(candidate.get("status", "")).strip() != str(ref.get("status", "")).strip():
+        return False
+
+    for key in ("param_hash", "tag", "run_id", "sample_id", "batch_id"):
+        wanted = str(ref.get(key, "")).strip()
+        if wanted and str(candidate.get(key, "")).strip() != wanted:
+            return False
+
+    sample_index = ref.get("sample_index", "")
+    if sample_index not in ("", None) and str(candidate.get("sample_index", "")).strip() != str(sample_index).strip():
+        return False
+
+    return True
+
+
+def _recover_metrics_result_path_from_csv(row: dict[str, Any], repo_root: Path) -> str | None:
+    metrics_csv = str(row.get("metrics_csv", "")).strip()
+    if not metrics_csv:
+        return None
+    path = (repo_root / metrics_csv).resolve()
+    if not path.exists():
+        return None
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle)
+        for candidate in reader:
+            if _metrics_row_matches_ref(candidate, row):
+                return _portable_metrics_result_path(candidate, repo_root)
+    return None
+
+
 def _normalize_metrics_csv_refs(*, repo_root: Path, metrics_csv: str, allow_missing: bool = False) -> list[dict[str, Any]]:
     path = (repo_root / metrics_csv).resolve()
     if not path.exists():
@@ -109,9 +165,9 @@ def _normalize_metrics_csv_refs(*, repo_root: Path, metrics_csv: str, allow_miss
                     ref["sample_index"] = int(str(row.get("sample_index")).strip())
                 except ValueError:
                     ref["sample_index"] = str(row.get("sample_index")).strip()
-            result_path = str(row.get("result_path", "")).strip()
+            result_path = _portable_metrics_result_path(row, repo_root)
             if result_path:
-                ref["result_path"] = _relative_repo_path(result_path, repo_root)
+                ref["result_path"] = result_path
             rows.append(ref)
     return rows
 
@@ -128,8 +184,13 @@ def _normalize_metrics_rows(
         normalized: list[dict[str, Any]] = []
         for row in metrics_rows:
             new_row = dict(row)
-            if "result_path" in new_row and new_row["result_path"]:
-                new_row["result_path"] = _relative_repo_path(str(new_row["result_path"]), repo_root)
+            result_path = _portable_metrics_result_path(new_row, repo_root)
+            if not result_path:
+                result_path = _recover_metrics_result_path_from_csv(new_row, repo_root)
+            if result_path:
+                new_row["result_path"] = result_path
+            else:
+                new_row.pop("result_path", None)
             normalized.append(new_row)
         return normalized
 
