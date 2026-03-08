@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rtlgen-control-plane"
+version = "0.1.0"
+description = "Host-side control plane scaffold for RTLGen"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "sqlalchemy>=1.4,<3",
+  "alembic>=1.13",
+  "pydantic>=2.0",
+]
+
+[project.optional-dependencies]
+api = [
+  "fastapi>=0.115",
+  "uvicorn>=0.30",
+]
+test = [
+  "pytest>=8.0",
+]
+
+[project.scripts]
+rtlgen-control-plane = "control_plane.cli.main:main"
+
+[tool.setuptools]
+package-dir = {"" = "."}
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["control_plane*"]
