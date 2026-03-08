@@ -168,3 +168,58 @@ def test_sync_run_artifacts_roundtrips_internal_worker_run() -> None:
             assert work_item.state == WorkItemState.AWAITING_REVIEW
             assert run.status == RunStatus.SUCCEEDED
             assert queue_snapshot.path == "runs/eval_queue/openroad/evaluated/cp009_item.json"
+
+
+def test_sync_run_artifacts_allows_failed_terminal_run() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        queue_path = _write_queue_item(repo_root)
+        db_path = Path(td) / "cp.db"
+        engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            import_queue_item(
+                session,
+                QueueImportRequest(
+                    repo_root=str(repo_root),
+                    queue_path=str(queue_path.relative_to(repo_root)),
+                ),
+            )
+
+        session_factory = build_session_factory(engine)
+        worker_results = run_worker(
+            session_factory,
+            config=WorkerConfig(
+                repo_root=str(repo_root),
+                machine_key="cp009-worker",
+                capabilities={"platform": "nangate45", "flow": "openroad"},
+                capability_filter={"platform": "nangate45", "flow": "openroad"},
+                lease_seconds=60,
+                heartbeat_seconds=1,
+                command_timeout_seconds=0,
+            ),
+            max_items=1,
+        )
+
+        assert worker_results[0].status == "failed"
+
+        with Session(engine) as session:
+            result = sync_run_artifacts(
+                session,
+                ArtifactSyncRequest(
+                    repo_root=str(repo_root),
+                    item_id="cp009_item",
+                    evaluator_id="cpbot",
+                    session_id="s20260308t120500z",
+                    host="cp-host",
+                    executor="@control_plane",
+                ),
+            )
+            assert result.work_item_state == "awaiting_review"
+
+        payload = json.loads(
+            (repo_root / "runs" / "eval_queue" / "openroad" / "evaluated" / "cp009_item.json").read_text(encoding="utf-8")
+        )
+        assert payload["result"]["status"] == "fail"
+        assert payload["result"]["queue_item_id"] == "cp009_item"

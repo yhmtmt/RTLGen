@@ -9,9 +9,10 @@ Phase 1 scope:
 - preserve Git and PRs as the evidence boundary.
 
 Current status:
-- `cp-001` through `cp-009` are implemented in the initial shadow-control slice
+- `cp-001` through `cp-010` are implemented in the initial shadow-control slice
 - in-process API routing, queue import/export, leases, runs, GitHub reconciliation, and the first internal worker loop exist
 - artifact-sync and queue round-trip into repo-tracked evaluated snapshots exist
+- `cp-010` shadow-run evidence is recorded in `control_plane/shadow_run_cp010.md`
 - Alembic files and the initial migration exist, but Alembic CLI still needs a clean dedicated env for live migration verification
 
 ## Local bring-up

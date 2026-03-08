@@ -79,9 +79,11 @@ def _relative_repo_path(path_text: str, repo_root: Path) -> str:
         return str(path.resolve())
 
 
-def _normalize_metrics_csv_refs(*, repo_root: Path, metrics_csv: str) -> list[dict[str, Any]]:
+def _normalize_metrics_csv_refs(*, repo_root: Path, metrics_csv: str, allow_missing: bool = False) -> list[dict[str, Any]]:
     path = (repo_root / metrics_csv).resolve()
     if not path.exists():
+        if allow_missing:
+            return []
         raise ArtifactSyncError(f"metrics csv not found: {metrics_csv}")
     rows: list[dict[str, Any]] = []
     with path.open("r", encoding="utf-8", newline="") as handle:
@@ -120,6 +122,7 @@ def _normalize_metrics_rows(
     work_item: WorkItem,
     queue_result: dict[str, Any],
 ) -> list[dict[str, Any]]:
+    status = str(queue_result.get("status", "")).strip()
     metrics_rows = queue_result.get("metrics_rows")
     if isinstance(metrics_rows, list) and metrics_rows and all(isinstance(row, dict) for row in metrics_rows):
         normalized: list[dict[str, Any]] = []
@@ -148,7 +151,13 @@ def _normalize_metrics_rows(
         if metrics_csv in seen:
             continue
         seen.add(metrics_csv)
-        normalized_rows.extend(_normalize_metrics_csv_refs(repo_root=repo_root, metrics_csv=metrics_csv))
+        normalized_rows.extend(
+            _normalize_metrics_csv_refs(
+                repo_root=repo_root,
+                metrics_csv=metrics_csv,
+                allow_missing=(status == "fail"),
+            )
+        )
     return normalized_rows
 
 
@@ -185,7 +194,7 @@ def sync_run_artifacts(session: Session, request: ArtifactSyncRequest) -> Artifa
     work_item, run = _resolve_run(session, request)
     if run.status not in {RunStatus.SUCCEEDED, RunStatus.FAILED, RunStatus.CANCELED, RunStatus.TIMED_OUT}:
         raise ArtifactSyncError(f"run is not terminal: {run.run_key}")
-    if work_item.state not in {WorkItemState.ARTIFACT_SYNC, WorkItemState.AWAITING_REVIEW}:
+    if work_item.state not in {WorkItemState.ARTIFACT_SYNC, WorkItemState.AWAITING_REVIEW, WorkItemState.FAILED}:
         raise ArtifactSyncError(
             f"work item {work_item.item_id} is not ready for artifact sync from state={work_item.state.value}"
         )
