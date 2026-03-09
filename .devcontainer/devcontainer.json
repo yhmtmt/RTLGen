@@ -12,6 +12,10 @@
     "-e", "DISPLAY=${env:DISPLAY}",
     "-v", "/tmp/.X11-unix:/tmp/.X11-unix"
   ],
+  "containerEnv": {
+    "RTLCP_DATABASE_URL": "postgresql+psycopg://rtlgen:rtlgen@localhost:5432/rtlgen_control_plane"
+  },
+  "postStartCommand": "/workspaces/RTLGen/.devcontainer/start_postgres.sh",
   "settings": {
     "terminal.integrated.defaultProfile.linux": "bash"
   },

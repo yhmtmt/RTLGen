@@ -76,6 +76,15 @@ Notes:
 - the scripts are designed to work against an already provisioned PostgreSQL service
 - `migrate_smoke.sh` remains the fast local SQLite check; `migrate_postgres.sh` is the real bring-up gate
 
+For this repo's devcontainer specifically:
+- `.devcontainer/Dockerfile` now installs PostgreSQL
+- `.devcontainer/start_postgres.sh` starts the local service and provisions the default `rtlgen` role/database
+- `.devcontainer/devcontainer.json` exports a local default:
+  - `postgresql+psycopg://rtlgen:rtlgen@localhost:5432/rtlgen_control_plane`
+
+That local default is only a convenience for the current phase.
+The control-plane scripts still stay generic and continue to honor explicit `RTLCP_DATABASE_URL` overrides.
+
 ## Current capabilities
 
 - Queue import into DB-backed `task_requests`, `work_items`, and `queue_reconciliations`

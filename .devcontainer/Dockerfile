@@ -43,6 +43,8 @@ RUN apt-get update && \
     libattr1-dev \
     python3 \
     python3-pip \
+    postgresql \
+    postgresql-contrib \
     swig \
     tcl-dev \
     libtk8.6 \
