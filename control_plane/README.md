@@ -142,7 +142,8 @@ python3 -m control_plane.cli.main sync-artifacts \
 
 This step:
 - normalizes `metrics_rows` into validator-compatible reference objects,
-- writes `runs/eval_queue/openroad/evaluated/<item_id>.json`,
+- writes `control_plane/shadow_exports/evaluated/<item_id>.json` by default for shadow-safe validation,
+- can still write `runs/eval_queue/openroad/evaluated/<item_id>.json` when `--target-path` is supplied explicitly,
 - attaches a `queue_snapshot` artifact to the run,
 - moves the work item to `awaiting_review`.
 

@@ -52,6 +52,10 @@ def _default_session_id() -> str:
     return utcnow().strftime("s%Y%m%dt%H%M%Sz").lower()
 
 
+def _default_shadow_target_path(*, item_id: str) -> str:
+    return f"control_plane/shadow_exports/evaluated/{item_id}.json"
+
+
 def _resolve_run(session: Session, request: ArtifactSyncRequest) -> tuple[WorkItem, Run]:
     if request.run_key:
         run = session.query(Run).filter(Run.run_key == request.run_key).one_or_none()
@@ -67,6 +71,44 @@ def _resolve_run(session: Session, request: ArtifactSyncRequest) -> tuple[WorkIt
         raise ArtifactSyncError(f"work item has no runs: {request.item_id}")
     run = sorted(work_item.runs, key=lambda row: (row.attempt, row.created_at or utcnow()))[-1]
     return work_item, run
+
+
+def _fill_handoff_placeholders(
+    *,
+    source_payload: dict[str, Any] | None,
+    evaluator_id: str,
+    session_id: str,
+    host: str,
+    queue_item_id: str,
+    branch_name: str,
+) -> dict[str, Any] | None:
+    if not isinstance(source_payload, dict):
+        return source_payload
+    handoff = source_payload.get("handoff")
+    if not isinstance(handoff, dict):
+        return source_payload
+
+    branch_template = str(handoff.get("branch", "")).strip()
+    if branch_template:
+        handoff["branch"] = (
+            branch_template
+            .replace("<session_id>", session_id)
+            .replace("<evaluator_id>", evaluator_id)
+            .replace("<host>", host)
+            .replace("<queue_item_id>", queue_item_id)
+        )
+    else:
+        handoff["branch"] = branch_name
+
+    pr_body_fields = handoff.get("pr_body_fields")
+    if isinstance(pr_body_fields, dict):
+        pr_body_fields = dict(pr_body_fields)
+        pr_body_fields["evaluator_id"] = evaluator_id
+        pr_body_fields["session_id"] = session_id
+        pr_body_fields["host"] = host
+        pr_body_fields["queue_item_id"] = queue_item_id
+        handoff["pr_body_fields"] = pr_body_fields
+    return source_payload
 
 
 def _relative_repo_path(path_text: str, repo_root: Path) -> str:
@@ -296,6 +338,14 @@ def sync_run_artifacts(session: Session, request: ArtifactSyncRequest) -> Artifa
     payload["queue_result"] = queue_result
     run.result_payload = payload
     run.branch_name = branch_name
+    work_item.task_request.request_payload = _fill_handoff_placeholders(
+        source_payload=dict(work_item.task_request.request_payload or {}),
+        evaluator_id=request.evaluator_id,
+        session_id=session_id,
+        host=host,
+        queue_item_id=work_item.item_id,
+        branch_name=branch_name,
+    )
 
     export_result = export_queue_item(
         session,
@@ -303,7 +353,7 @@ def sync_run_artifacts(session: Session, request: ArtifactSyncRequest) -> Artifa
             repo_root=str(repo_root),
             item_id=work_item.item_id,
             target_state="evaluated",
-            target_path=request.target_path,
+            target_path=request.target_path or _default_shadow_target_path(item_id=work_item.item_id),
         ),
     )
 
