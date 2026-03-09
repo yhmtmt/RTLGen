@@ -7,12 +7,16 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
+from control_plane.config import Settings
 from control_plane.models import Base
 
 config = context.config
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
+
+# Respect the control-plane runtime DB URL instead of the static alembic.ini default.
+config.set_main_option("sqlalchemy.url", Settings.from_env().database_url.replace("%", "%%"))
 
 target_metadata = Base.metadata
 

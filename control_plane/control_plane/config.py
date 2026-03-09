@@ -12,7 +12,7 @@ class Settings:
     app_version: str = "0.1.0"
     host: str = "127.0.0.1"
     port: int = 8080
-    database_url: str = "postgresql://rtlgen:rtlgen@localhost:5432/rtlgen_control_plane"
+    database_url: str = "postgresql+psycopg://rtlgen:rtlgen@localhost:5432/rtlgen_control_plane"
     log_level: str = "INFO"
 
     @staticmethod
@@ -24,7 +24,7 @@ class Settings:
             port=int(os.getenv("RTLCP_PORT", "8080")),
             database_url=os.getenv(
                 "RTLCP_DATABASE_URL",
-                "postgresql://rtlgen:rtlgen@localhost:5432/rtlgen_control_plane",
+                "postgresql+psycopg://rtlgen:rtlgen@localhost:5432/rtlgen_control_plane",
             ),
             log_level=os.getenv("RTLCP_LOG_LEVEL", "INFO"),
         )
