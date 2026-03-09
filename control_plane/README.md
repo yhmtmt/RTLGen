@@ -45,6 +45,37 @@ What this gives you:
 - a clean migration smoke against a fresh local SQLite DB
 - an explicit starting point for later PostgreSQL bring-up
 
+## PostgreSQL Bring-up
+
+For real Phase 1 operation, point the control plane at a PostgreSQL server.
+
+Required environment:
+```sh
+export RTLCP_DATABASE_URL='postgresql+psycopg://rtlgen:rtlgen@<host>:5432/rtlgen_control_plane'
+```
+
+Optional admin URL for auto-creating the target database:
+```sh
+export RTLCP_PG_ADMIN_URL='postgresql+psycopg://postgres:<admin_password>@<host>:5432/postgres'
+```
+
+Bring-up sequence:
+```sh
+control_plane/scripts/bootstrap_venv.sh
+source control_plane/.venv/bin/activate
+control_plane/scripts/migrate_postgres.sh
+```
+
+What this does:
+- optionally creates the target database when `RTLCP_PG_ADMIN_URL` is set
+- runs `alembic upgrade head` against PostgreSQL
+- verifies that the migrated PostgreSQL database contains the expected control-plane tables
+
+Notes:
+- this repo does not assume a local PostgreSQL daemon, Docker, or Podman
+- the scripts are designed to work against an already provisioned PostgreSQL service
+- `migrate_smoke.sh` remains the fast local SQLite check; `migrate_postgres.sh` is the real bring-up gate
+
 ## Current capabilities
 
 - Queue import into DB-backed `task_requests`, `work_items`, and `queue_reconciliations`
