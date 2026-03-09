@@ -30,6 +30,21 @@ PYTHONPATH=/workspaces/RTLGen/control_plane python3 -m control_plane.cli.main se
 The current app is intentionally dependency-light and keeps the handler surface testable in-process.
 In this Codex sandbox, live socket bind is blocked, so the primary verification path is direct handler and service tests.
 
+## Dedicated Env
+
+Use a dedicated virtualenv for real Phase 1 bring-up instead of the shared AutoTuner Python environment:
+
+```sh
+control_plane/scripts/bootstrap_venv.sh
+source control_plane/.venv/bin/activate
+control_plane/scripts/migrate_smoke.sh
+```
+
+What this gives you:
+- isolated `alembic`, `sqlalchemy`, and test dependencies
+- a clean migration smoke against a fresh local SQLite DB
+- an explicit starting point for later PostgreSQL bring-up
+
 ## Current capabilities
 
 - Queue import into DB-backed `task_requests`, `work_items`, and `queue_reconciliations`
