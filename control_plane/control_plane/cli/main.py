@@ -7,6 +7,7 @@ import json
 
 from control_plane.api.app import main as serve_api_main
 from control_plane.cli.export_queue import main as export_queue_main
+from control_plane.cli.generate_l1_sweep import main as generate_l1_sweep_main
 from control_plane.cli.import_queue import main as import_queue_main
 from control_plane.cli.reconcile_github import main as reconcile_github_main
 from control_plane.cli.run_scheduler import main as run_scheduler_main
@@ -37,6 +38,24 @@ def main(argv: list[str] | None = None) -> int:
     export_parser.add_argument("--target-state", required=True, choices=["queued", "evaluated"])
     export_parser.add_argument("--database-url", required=True)
     export_parser.add_argument("--target-path")
+
+    generate_l1_parser = subparsers.add_parser(
+        "generate-l1-sweep",
+        help="Generate a Layer 1 sweep work item directly into the control-plane DB",
+    )
+    generate_l1_parser.add_argument("--database-url", required=True)
+    generate_l1_parser.add_argument("--repo-root", required=True)
+    generate_l1_parser.add_argument("--sweep-path", required=True)
+    generate_l1_parser.add_argument("--configs", nargs="+", required=True)
+    generate_l1_parser.add_argument("--platform", required=True)
+    generate_l1_parser.add_argument("--out-root", required=True)
+    generate_l1_parser.add_argument("--requested-by", default="control_plane")
+    generate_l1_parser.add_argument("--priority", type=int, default=1)
+    generate_l1_parser.add_argument("--item-id")
+    generate_l1_parser.add_argument("--title")
+    generate_l1_parser.add_argument("--objective")
+    generate_l1_parser.add_argument("--source-commit")
+    generate_l1_parser.add_argument("--mode", default="upsert")
 
     github_parser = subparsers.add_parser("reconcile-github", help="Reconcile GitHub branch/PR metadata into the DB")
     github_parser.add_argument("--database-url", required=True)
@@ -115,6 +134,36 @@ def main(argv: list[str] | None = None) -> int:
                 *(["--target-path", args.target_path] if args.target_path else []),
             ]
         )
+    if args.command == "generate-l1-sweep":
+        argv2 = [
+            "--database-url",
+            args.database_url,
+            "--repo-root",
+            args.repo_root,
+            "--sweep-path",
+            args.sweep_path,
+            "--platform",
+            args.platform,
+            "--out-root",
+            args.out_root,
+            "--requested-by",
+            args.requested_by,
+            "--priority",
+            str(args.priority),
+            "--mode",
+            args.mode,
+            "--configs",
+            *args.configs,
+        ]
+        for key, value in [
+            ("--item-id", args.item_id),
+            ("--title", args.title),
+            ("--objective", args.objective),
+            ("--source-commit", args.source_commit),
+        ]:
+            if value is not None:
+                argv2.extend([key, str(value)])
+        return generate_l1_sweep_main(argv2)
     if args.command == "reconcile-github":
         argv2 = ["--database-url", args.database_url, "--repo", args.repo, "--state", args.state]
         for key, value in [

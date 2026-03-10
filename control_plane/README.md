@@ -88,6 +88,7 @@ The control-plane scripts still stay generic and continue to honor explicit `RTL
 ## Current capabilities
 
 - Queue import into DB-backed `task_requests`, `work_items`, and `queue_reconciliations`
+- Direct Layer 1 sweep generation into DB-backed `task_requests` and `work_items`
 - Worker lease acquisition, heartbeat refresh, and stale lease expiry
 - Run lifecycle tracking: start, append events, complete, and artifact recording
 - Internal worker loop execution from queue `command_manifest` with per-command logs and staged outputs
@@ -170,6 +171,28 @@ python3 -m control_plane.cli.main reconcile-github \
   --pr-url https://github.com/yhmtmt/RTLGen/pull/99 \
   --state pr_open
 ```
+
+## Direct Layer 1 Sweep Generation
+
+The first Layer 1 generator can create an OpenROAD sweep work item directly in the DB without first authoring a queue JSON file.
+
+Example:
+```sh
+PYTHONPATH=/workspaces/RTLGen/control_plane \
+python3 -m control_plane.cli.main generate-l1-sweep \
+  --database-url sqlite+pysqlite:////tmp/rtlgen-control-plane.db \
+  --repo-root /workspaces/RTLGen \
+  --sweep-path runs/designs/activations/sweeps/nangate45_softmax_rowwise_v1.json \
+  --configs examples/config_softmax_rowwise_int8.json examples/config_softmax_rowwise_int8_r8_acc20.json \
+  --platform nangate45 \
+  --out-root runs/designs/activations \
+  --requested-by @yhmtmt
+```
+
+This generator currently targets a narrow scope:
+- Layer 1
+- OpenROAD
+- config-driven sweeps invoked through `scripts/run_sweep.py`
 
 ## Manual API Flow
 
