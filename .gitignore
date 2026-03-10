@@ -26,9 +26,13 @@ runs/**/*.def
 runs/**/*.gds
 runs/model_cache/**
 !runs/model_cache/README.md
+runs/**/artifacts/
+runs/**/work/
+runs/**/comparisons/
 
 # Control-plane local development artifacts
 control_plane/.venv/
 control_plane/**/__pycache__/
 control_plane/*.egg-info/
 control_plane/logs/
+control_plane/shadow_exports/
