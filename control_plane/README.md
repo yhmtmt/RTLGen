@@ -316,6 +316,28 @@ The submission manifest includes:
 - PR body file path
 - the exact `gh pr create --draft ...` command to run next
 
+## Submission Execution
+
+The execution bridge can push a prepared submission branch and open the draft PR, then reconcile the returned PR metadata into `github_links`.
+
+Example:
+```sh
+PYTHONPATH=/workspaces/RTLGen/control_plane \
+python3 -m control_plane.cli.main execute-submission \
+  --database-url sqlite+pysqlite:////tmp/rtlgen-control-plane.db \
+  --repo-root /workspaces/RTLGen \
+  --repo yhmtmt/RTLGen \
+  --item-id l2_real_softmax_shadow_single
+```
+
+This step:
+- reuses an existing submission manifest when present
+- otherwise prepares the submission branch first
+- runs `git push -u origin <branch>`
+- runs `gh pr create --draft ...`
+- runs `gh pr view ... --json ...`
+- reconciles the resulting PR metadata back into the control-plane DB
+
 ## Manual API Flow
 
 The in-process HTTP routes remain available if you want to exercise the lifecycle step-by-step rather than through `run-worker`:
