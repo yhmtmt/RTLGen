@@ -338,6 +338,30 @@ This step:
 - runs `gh pr view ... --json ...`
 - reconciles the resulting PR metadata back into the control-plane DB
 
+## One-Shot Operator Command
+
+For normal operator use, the full chain can run in one command:
+
+```sh
+PYTHONPATH=/workspaces/RTLGen/control_plane \
+python3 -m control_plane.cli.main operate-submission \
+  --database-url sqlite+pysqlite:////tmp/rtlgen-control-plane.db \
+  --repo-root /workspaces/RTLGen \
+  --repo yhmtmt/RTLGen \
+  --item-id l2_real_softmax_shadow_single
+```
+
+Stages:
+1. publish review package
+2. prepare submission branch and worktree
+3. push branch, open draft PR, reconcile PR metadata
+
+Recovery behavior:
+- review publishing is idempotent
+- if the submission manifest already exists, the operator command reuses it instead of trying to recreate the branch
+- the final operator checkpoint is written to:
+  - `control_plane/shadow_exports/review/<item_id>/operator_submission.json`
+
 ## Manual API Flow
 
 The in-process HTTP routes remain available if you want to exercise the lifecycle step-by-step rather than through `run-worker`:

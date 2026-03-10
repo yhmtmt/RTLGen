@@ -13,6 +13,7 @@ from control_plane.cli.export_queue import main as export_queue_main
 from control_plane.cli.generate_l1_sweep import main as generate_l1_sweep_main
 from control_plane.cli.generate_l2_campaign import main as generate_l2_campaign_main
 from control_plane.cli.import_queue import main as import_queue_main
+from control_plane.cli.operate_submission import main as operate_submission_main
 from control_plane.cli.prepare_submission import main as prepare_submission_main
 from control_plane.cli.publish_review import main as publish_review_main
 from control_plane.cli.reconcile_github import main as reconcile_github_main
@@ -202,6 +203,26 @@ def main(argv: list[str] | None = None) -> int:
     execute_parser.add_argument("--commit-message")
     execute_parser.add_argument("--pr-base", default="master")
     execute_parser.add_argument("--manifest-path")
+
+    operate_parser = subparsers.add_parser(
+        "operate-submission",
+        help="Publish review outputs, prepare a submission branch, and open the draft PR in one command",
+    )
+    operate_parser.add_argument("--database-url", required=True)
+    operate_parser.add_argument("--repo-root", required=True)
+    operate_parser.add_argument("--repo", required=True)
+    operate_parser.add_argument("--item-id")
+    operate_parser.add_argument("--run-key")
+    operate_parser.add_argument("--evaluator-id", default="control_plane")
+    operate_parser.add_argument("--session-id")
+    operate_parser.add_argument("--host")
+    operate_parser.add_argument("--executor", default="@control_plane")
+    operate_parser.add_argument("--branch-name")
+    operate_parser.add_argument("--snapshot-target-path")
+    operate_parser.add_argument("--package-target-path")
+    operate_parser.add_argument("--worktree-root")
+    operate_parser.add_argument("--commit-message")
+    operate_parser.add_argument("--pr-base", default="master")
 
     subparsers.add_parser("show-config", help="Print resolved scaffold configuration")
 
@@ -481,6 +502,35 @@ def main(argv: list[str] | None = None) -> int:
             if value is not None:
                 argv2.extend([key, str(value)])
         return execute_submission_main(argv2)
+    if args.command == "operate-submission":
+        argv2 = [
+            "--database-url",
+            args.database_url,
+            "--repo-root",
+            args.repo_root,
+            "--repo",
+            args.repo,
+            "--evaluator-id",
+            args.evaluator_id,
+            "--executor",
+            args.executor,
+            "--pr-base",
+            args.pr_base,
+        ]
+        for key, value in [
+            ("--item-id", args.item_id),
+            ("--run-key", args.run_key),
+            ("--session-id", args.session_id),
+            ("--host", args.host),
+            ("--branch-name", args.branch_name),
+            ("--snapshot-target-path", args.snapshot_target_path),
+            ("--package-target-path", args.package_target_path),
+            ("--worktree-root", args.worktree_root),
+            ("--commit-message", args.commit_message),
+        ]:
+            if value is not None:
+                argv2.extend([key, str(value)])
+        return operate_submission_main(argv2)
     if args.command == "show-config":
         print(json.dumps(Settings.from_env().__dict__, indent=2, sort_keys=True))
         return 0
