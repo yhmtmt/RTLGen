@@ -289,6 +289,33 @@ The review package includes:
 - the linked promotion or decision proposal artifact when one exists
 - branch, title, body fields, and checklist material for a review PR
 
+## Submission Bridge
+
+The submission bridge turns a published review package into a bot-owned branch in a temporary git worktree.
+
+Example:
+```sh
+PYTHONPATH=/workspaces/RTLGen/control_plane \
+python3 -m control_plane.cli.main prepare-submission \
+  --database-url sqlite+pysqlite:////tmp/rtlgen-control-plane.db \
+  --repo-root /workspaces/RTLGen \
+  --item-id l2_real_softmax_shadow_single \
+  --evaluator-id control_plane \
+  --executor @control_plane
+```
+
+Outputs:
+- a temporary git worktree with a local branch matching the review package branch
+- forced-added ignored review files committed on that branch
+- `control_plane/shadow_exports/review/<item_id>/submission_manifest.json`
+
+The submission manifest includes:
+- branch name
+- commit SHA
+- PR title
+- PR body file path
+- the exact `gh pr create --draft ...` command to run next
+
 ## Manual API Flow
 
 The in-process HTTP routes remain available if you want to exercise the lifecycle step-by-step rather than through `run-worker`:

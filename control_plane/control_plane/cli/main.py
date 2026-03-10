@@ -12,6 +12,7 @@ from control_plane.cli.export_queue import main as export_queue_main
 from control_plane.cli.generate_l1_sweep import main as generate_l1_sweep_main
 from control_plane.cli.generate_l2_campaign import main as generate_l2_campaign_main
 from control_plane.cli.import_queue import main as import_queue_main
+from control_plane.cli.prepare_submission import main as prepare_submission_main
 from control_plane.cli.publish_review import main as publish_review_main
 from control_plane.cli.reconcile_github import main as reconcile_github_main
 from control_plane.cli.run_scheduler import main as run_scheduler_main
@@ -160,6 +161,25 @@ def main(argv: list[str] | None = None) -> int:
     review_parser.add_argument("--branch-name")
     review_parser.add_argument("--snapshot-target-path")
     review_parser.add_argument("--package-target-path")
+
+    submission_parser = subparsers.add_parser(
+        "prepare-submission",
+        help="Prepare a bot-owned branch/worktree from a published review package",
+    )
+    submission_parser.add_argument("--database-url", required=True)
+    submission_parser.add_argument("--repo-root", required=True)
+    submission_parser.add_argument("--item-id")
+    submission_parser.add_argument("--run-key")
+    submission_parser.add_argument("--evaluator-id", default="control_plane")
+    submission_parser.add_argument("--session-id")
+    submission_parser.add_argument("--host")
+    submission_parser.add_argument("--executor", default="@control_plane")
+    submission_parser.add_argument("--branch-name")
+    submission_parser.add_argument("--snapshot-target-path")
+    submission_parser.add_argument("--package-target-path")
+    submission_parser.add_argument("--worktree-root")
+    submission_parser.add_argument("--commit-message")
+    submission_parser.add_argument("--pr-base", default="master")
 
     subparsers.add_parser("show-config", help="Print resolved scaffold configuration")
 
@@ -382,6 +402,33 @@ def main(argv: list[str] | None = None) -> int:
             if value is not None:
                 argv2.extend([key, str(value)])
         return publish_review_main(argv2)
+    if args.command == "prepare-submission":
+        argv2 = [
+            "--database-url",
+            args.database_url,
+            "--repo-root",
+            args.repo_root,
+            "--evaluator-id",
+            args.evaluator_id,
+            "--executor",
+            args.executor,
+            "--pr-base",
+            args.pr_base,
+        ]
+        for key, value in [
+            ("--item-id", args.item_id),
+            ("--run-key", args.run_key),
+            ("--session-id", args.session_id),
+            ("--host", args.host),
+            ("--branch-name", args.branch_name),
+            ("--snapshot-target-path", args.snapshot_target_path),
+            ("--package-target-path", args.package_target_path),
+            ("--worktree-root", args.worktree_root),
+            ("--commit-message", args.commit_message),
+        ]:
+            if value is not None:
+                argv2.extend([key, str(value)])
+        return prepare_submission_main(argv2)
     if args.command == "show-config":
         print(json.dumps(Settings.from_env().__dict__, indent=2, sort_keys=True))
         return 0
