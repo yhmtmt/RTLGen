@@ -265,6 +265,30 @@ Current behavior:
   - objective-profile winners
 - writes a decision proposal for review; it does not auto-edit docs or queue items
 
+## Review Package Publishing
+
+Completed DB-native runs can publish a review-ready package directly from the control-plane DB.
+
+Example:
+```sh
+PYTHONPATH=/workspaces/RTLGen/control_plane \
+python3 -m control_plane.cli.main publish-review \
+  --database-url sqlite+pysqlite:////tmp/rtlgen-control-plane.db \
+  --repo-root /workspaces/RTLGen \
+  --item-id l2_real_softmax_shadow_single \
+  --evaluator-id control_plane \
+  --executor @control_plane
+```
+
+Default outputs:
+- `control_plane/shadow_exports/review/<item_id>/evaluated.json`
+- `control_plane/shadow_exports/review/<item_id>/review_package.json`
+
+The review package includes:
+- a normalized evaluated queue snapshot
+- the linked promotion or decision proposal artifact when one exists
+- branch, title, body fields, and checklist material for a review PR
+
 ## Manual API Flow
 
 The in-process HTTP routes remain available if you want to exercise the lifecycle step-by-step rather than through `run-worker`:

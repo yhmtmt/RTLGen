@@ -12,6 +12,7 @@ from control_plane.cli.export_queue import main as export_queue_main
 from control_plane.cli.generate_l1_sweep import main as generate_l1_sweep_main
 from control_plane.cli.generate_l2_campaign import main as generate_l2_campaign_main
 from control_plane.cli.import_queue import main as import_queue_main
+from control_plane.cli.publish_review import main as publish_review_main
 from control_plane.cli.reconcile_github import main as reconcile_github_main
 from control_plane.cli.run_scheduler import main as run_scheduler_main
 from control_plane.cli.run_worker import main as run_worker_main
@@ -143,6 +144,22 @@ def main(argv: list[str] | None = None) -> int:
     sync_parser.add_argument("--executor", default="@control_plane")
     sync_parser.add_argument("--branch-name")
     sync_parser.add_argument("--target-path")
+
+    review_parser = subparsers.add_parser(
+        "publish-review",
+        help="Publish a review-ready queue snapshot and PR payload package from a completed run",
+    )
+    review_parser.add_argument("--database-url", required=True)
+    review_parser.add_argument("--repo-root", required=True)
+    review_parser.add_argument("--item-id")
+    review_parser.add_argument("--run-key")
+    review_parser.add_argument("--evaluator-id", default="control_plane")
+    review_parser.add_argument("--session-id")
+    review_parser.add_argument("--host")
+    review_parser.add_argument("--executor", default="@control_plane")
+    review_parser.add_argument("--branch-name")
+    review_parser.add_argument("--snapshot-target-path")
+    review_parser.add_argument("--package-target-path")
 
     subparsers.add_parser("show-config", help="Print resolved scaffold configuration")
 
@@ -342,6 +359,29 @@ def main(argv: list[str] | None = None) -> int:
             if value is not None:
                 argv2.extend([key, str(value)])
         return sync_artifacts_main(argv2)
+    if args.command == "publish-review":
+        argv2 = [
+            "--database-url",
+            args.database_url,
+            "--repo-root",
+            args.repo_root,
+            "--evaluator-id",
+            args.evaluator_id,
+            "--executor",
+            args.executor,
+        ]
+        for key, value in [
+            ("--item-id", args.item_id),
+            ("--run-key", args.run_key),
+            ("--session-id", args.session_id),
+            ("--host", args.host),
+            ("--branch-name", args.branch_name),
+            ("--snapshot-target-path", args.snapshot_target_path),
+            ("--package-target-path", args.package_target_path),
+        ]:
+            if value is not None:
+                argv2.extend([key, str(value)])
+        return publish_review_main(argv2)
     if args.command == "show-config":
         print(json.dumps(Settings.from_env().__dict__, indent=2, sort_keys=True))
         return 0
