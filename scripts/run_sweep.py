@@ -45,12 +45,51 @@ from typing import Dict, List, Tuple
 import shutil
 import subprocess
 import re
+from pathlib import PureWindowsPath
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEST_BASE = Path("/orfs/flow/designs")
 REPORT_BASE = Path("/orfs/flow/reports")
 RESULT_BASE = Path("/orfs/flow/results")
 SRC_BASE = DEST_BASE / "src"
+
+
+def normalize_repo_path(path_str: str) -> str:
+    if not path_str:
+        return ""
+    if re.match(r"^[A-Za-z]:[\\/]", path_str) or path_str.startswith("\\\\") or "\\" in path_str:
+        win_path = PureWindowsPath(path_str)
+        parts = win_path.parts
+        if "runs" in parts:
+            idx = parts.index("runs")
+            return Path(*parts[idx:]).as_posix()
+        if "examples" in parts:
+            idx = parts.index("examples")
+            return Path(*parts[idx:]).as_posix()
+        if win_path.is_absolute():
+            return path_str
+        return Path(path_str).as_posix()
+    path = Path(path_str)
+    if path.is_absolute():
+        try:
+            return path.relative_to(REPO_ROOT).as_posix()
+        except ValueError:
+            parts = path.parts
+            if "runs" in parts:
+                idx = parts.index("runs")
+                return Path(*parts[idx:]).as_posix()
+            if "examples" in parts:
+                idx = parts.index("examples")
+                return Path(*parts[idx:]).as_posix()
+            return path_str
+    parts = path.parts
+    if "runs" in parts:
+        idx = parts.index("runs")
+        return Path(*parts[idx:]).as_posix()
+    if "examples" in parts:
+        idx = parts.index("examples")
+        return Path(*parts[idx:]).as_posix()
+    return path.as_posix()
 
 
 def sha1_file(path: Path) -> str:
@@ -258,7 +297,7 @@ def run_single(
         "design": wrapper,
         "module": module_name,
         "platform": platform,
-        "config_path": str(config_path),
+        "config_path": normalize_repo_path(str(config_path)),
         "config_hash": config_hash,
         "param_hash": run_id,
         "tag": tag,
@@ -324,7 +363,7 @@ def run_single(
         metrics["die_area"] = die_area
     run_record["metrics"] = metrics
 
-    run_record["result_path"] = str(result_path)
+    run_record["result_path"] = normalize_repo_path(str(result_path))
     result_path.write_text(json.dumps(run_record, indent=2))
     append_index(circuit_root, run_record)
     print(f"[INFO] Recorded results to {result_path}")
@@ -360,7 +399,7 @@ def append_index(circuit_root: Path, record: Dict[str, object]):
             str(record.get("metrics", {}).get("die_area", "")),
             str(record.get("metrics", {}).get("total_power_mw", "")),
             json.dumps(record.get("flow_params", {}), sort_keys=True),
-            str(Path(record.get("result_path", record.get("param_hash", "")))),
+            normalize_repo_path(str(record.get("result_path", record.get("param_hash", "")))),
         ]
         f.write(",".join(row) + "\n")
 

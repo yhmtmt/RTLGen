@@ -141,7 +141,8 @@ def _build_payload(
                         f"--configs {' '.join(config_paths)} "
                         f"--platform {platform} "
                         f"--sweep {sweep_path} "
-                        f"--out_root {out_root}"
+                        f"--out_root {out_root} "
+                        "--skip_existing"
                     ),
                 },
                 {

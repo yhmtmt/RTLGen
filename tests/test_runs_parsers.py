@@ -34,6 +34,9 @@ class RunsParserRegressionTest(unittest.TestCase):
         cls.build_runs_index = load_script_module(
             "build_runs_index", "scripts/build_runs_index.py"
         )
+        cls.run_sweep = load_script_module(
+            "run_sweep", "scripts/run_sweep.py"
+        )
 
     def _write_metrics_csv(self, rows):
         tmpdir = tempfile.TemporaryDirectory()
@@ -124,6 +127,46 @@ class RunsParserRegressionTest(unittest.TestCase):
         self.assertEqual(2, len(rows))
         for row in rows:
             self._assert_parseable_params(row)
+
+    def test_run_sweep_normalizes_repo_relative_paths(self):
+        repo_root = self.run_sweep.REPO_ROOT
+        abs_result = str(repo_root / "runs" / "designs" / "activations" / "demo" / "work" / "abcd1234" / "result.json")
+        abs_config = str(repo_root / "examples" / "config_demo.json")
+
+        self.assertEqual(
+            "runs/designs/activations/demo/work/abcd1234/result.json",
+            self.run_sweep.normalize_repo_path(abs_result),
+        )
+        self.assertEqual(
+            "examples/config_demo.json",
+            self.run_sweep.normalize_repo_path(abs_config),
+        )
+
+    def test_run_sweep_append_index_rewrites_absolute_result_path(self):
+        with tempfile.TemporaryDirectory() as td:
+            circuit_root = Path(td) / "runs" / "designs" / "activations" / "demo_wrapper"
+            circuit_root.mkdir(parents=True, exist_ok=True)
+            result_path = self.run_sweep.REPO_ROOT / "runs" / "designs" / "activations" / "demo_wrapper" / "work" / "abcd1234" / "result.json"
+            record = {
+                "design": "demo_wrapper",
+                "platform": "nangate45",
+                "config_hash": "cfg123",
+                "param_hash": "abcd1234",
+                "tag": "demo_tag",
+                "status": "ok",
+                "metrics": {
+                    "critical_path_ns": 1.25,
+                    "die_area": 1000.0,
+                    "total_power_mw": 0.01,
+                },
+                "flow_params": {"CLOCK_PERIOD": 6.0, "TAG": "demo_tag"},
+                "result_path": str(result_path),
+            }
+
+            self.run_sweep.append_index(circuit_root, record)
+            lines = (circuit_root / "metrics.csv").read_text(encoding="utf-8").splitlines()
+            self.assertEqual(2, len(lines))
+            self.assertTrue(lines[1].endswith("runs/designs/activations/demo_wrapper/work/abcd1234/result.json"))
 
     def test_validate_runs_module_candidates_manifest_success(self):
         with tempfile.TemporaryDirectory() as td:

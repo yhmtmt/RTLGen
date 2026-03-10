@@ -98,6 +98,7 @@ def test_generate_l1_sweep_task_creates_ready_work_item() -> None:
                 "build_runs_index",
                 "validate",
             ]
+            assert "--skip_existing" in work_item.command_manifest[1]["run"]
             assert work_item.expected_outputs == [
                 "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv",
                 "runs/index.csv",
