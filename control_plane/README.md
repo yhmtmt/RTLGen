@@ -215,6 +215,32 @@ Current behavior:
   - then `total_power_mw`
 - writes a proposal artifact for review; it does not auto-edit candidate manifests
 
+## Direct Layer 2 Campaign Generation
+
+The first Layer 2 generator can create a campaign-backed work item directly in the DB from a tracked `campaign.json`.
+
+Example:
+```sh
+PYTHONPATH=/workspaces/RTLGen/control_plane \
+python3 -m control_plane.cli.main generate-l2-campaign \
+  --database-url sqlite+pysqlite:////tmp/rtlgen-control-plane.db \
+  --repo-root /workspaces/RTLGen \
+  --campaign-path runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_v1/campaign.json \
+  --objective-profiles-json runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1/objective_profiles.json \
+  --requested-by @yhmtmt
+```
+
+Current scope:
+- Layer 2
+- OpenROAD
+- campaign definitions already tracked in the repo
+- generates a `l2_campaign` work item with:
+  - `validate_campaign`
+  - `run_campaign`
+  - `report_campaign`
+  - optional `objective_sweep`
+  - `validate_runs`
+
 ## Manual API Flow
 
 The in-process HTTP routes remain available if you want to exercise the lifecycle step-by-step rather than through `run-worker`:

@@ -9,6 +9,7 @@ from control_plane.api.app import main as serve_api_main
 from control_plane.cli.consume_l1_result import main as consume_l1_result_main
 from control_plane.cli.export_queue import main as export_queue_main
 from control_plane.cli.generate_l1_sweep import main as generate_l1_sweep_main
+from control_plane.cli.generate_l2_campaign import main as generate_l2_campaign_main
 from control_plane.cli.import_queue import main as import_queue_main
 from control_plane.cli.reconcile_github import main as reconcile_github_main
 from control_plane.cli.run_scheduler import main as run_scheduler_main
@@ -67,6 +68,26 @@ def main(argv: list[str] | None = None) -> int:
     consume_l1_parser.add_argument("--item-id")
     consume_l1_parser.add_argument("--run-key")
     consume_l1_parser.add_argument("--target-path")
+
+    generate_l2_parser = subparsers.add_parser(
+        "generate-l2-campaign",
+        help="Generate a Layer 2 campaign work item directly into the control-plane DB",
+    )
+    generate_l2_parser.add_argument("--database-url", required=True)
+    generate_l2_parser.add_argument("--repo-root", required=True)
+    generate_l2_parser.add_argument("--campaign-path", required=True)
+    generate_l2_parser.add_argument("--platform")
+    generate_l2_parser.add_argument("--requested-by", default="control_plane")
+    generate_l2_parser.add_argument("--priority", type=int, default=1)
+    generate_l2_parser.add_argument("--item-id")
+    generate_l2_parser.add_argument("--title")
+    generate_l2_parser.add_argument("--objective")
+    generate_l2_parser.add_argument("--source-commit")
+    generate_l2_parser.add_argument("--mode", default="upsert")
+    generate_l2_parser.add_argument("--jobs", type=int, default=2)
+    generate_l2_parser.add_argument("--batch-id")
+    generate_l2_parser.add_argument("--objective-profiles-json")
+    generate_l2_parser.add_argument("--no-run-physical", action="store_true")
 
     github_parser = subparsers.add_parser("reconcile-github", help="Reconcile GitHub branch/PR metadata into the DB")
     github_parser.add_argument("--database-url", required=True)
@@ -190,6 +211,37 @@ def main(argv: list[str] | None = None) -> int:
             if value is not None:
                 argv2.extend([key, str(value)])
         return consume_l1_result_main(argv2)
+    if args.command == "generate-l2-campaign":
+        argv2 = [
+            "--database-url",
+            args.database_url,
+            "--repo-root",
+            args.repo_root,
+            "--campaign-path",
+            args.campaign_path,
+            "--requested-by",
+            args.requested_by,
+            "--priority",
+            str(args.priority),
+            "--mode",
+            args.mode,
+            "--jobs",
+            str(args.jobs),
+        ]
+        for key, value in [
+            ("--platform", args.platform),
+            ("--item-id", args.item_id),
+            ("--title", args.title),
+            ("--objective", args.objective),
+            ("--source-commit", args.source_commit),
+            ("--batch-id", args.batch_id),
+            ("--objective-profiles-json", args.objective_profiles_json),
+        ]:
+            if value is not None:
+                argv2.extend([key, str(value)])
+        if args.no_run_physical:
+            argv2.append("--no-run-physical")
+        return generate_l2_campaign_main(argv2)
     if args.command == "reconcile-github":
         argv2 = ["--database-url", args.database_url, "--repo", args.repo, "--state", args.state]
         for key, value in [
