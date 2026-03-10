@@ -194,6 +194,27 @@ This generator currently targets a narrow scope:
 - OpenROAD
 - config-driven sweeps invoked through `scripts/run_sweep.py`
 
+The matching Layer 1 result consumer reads a completed `l1_sweep` run and emits a reviewable promotion proposal JSON:
+
+```sh
+PYTHONPATH=/workspaces/RTLGen/control_plane \
+python3 -m control_plane.cli.main consume-l1-result \
+  --database-url sqlite+pysqlite:////tmp/rtlgen-control-plane.db \
+  --repo-root /workspaces/RTLGen \
+  --item-id l1_sweep_nangate45_softmax_demo
+```
+
+Default output:
+- `control_plane/shadow_exports/l1_promotions/<item_id>.json`
+
+Current behavior:
+- chooses the best `status=ok` row per generated `metrics.csv`
+- ranks by:
+  - `critical_path_ns`
+  - then `die_area`
+  - then `total_power_mw`
+- writes a proposal artifact for review; it does not auto-edit candidate manifests
+
 ## Manual API Flow
 
 The in-process HTTP routes remain available if you want to exercise the lifecycle step-by-step rather than through `run-worker`:
