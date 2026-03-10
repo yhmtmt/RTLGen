@@ -10,6 +10,7 @@ source "$VENV_DIR/bin/activate"
 python -m pip install --upgrade pip
 python -m pip install -e "$ROOT_DIR[test]"
 python -m pip install "psycopg[binary]>=3.2"
+python -m pip install "PyYAML>=6.0"
 
 cat <<EOF
 control_plane virtualenv ready:

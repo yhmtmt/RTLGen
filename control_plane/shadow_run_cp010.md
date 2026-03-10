@@ -258,6 +258,7 @@ Run outcome:
   - `artifact_synced`
 
 Per-command results:
+
 - `validate_campaign`
   - exit `0`
   - stdout:
@@ -351,3 +352,74 @@ What is now proven:
 Remaining caveat:
 - the final success validation used a fresh merged clone plus seeded prior local physical artifacts, not a second full cold recomputation of the entire sweep
 - this was intentional to avoid redundant OpenROAD runtime after the cold rerun had already proven re-entry into the true physical path on merged `master`
+
+### PostgreSQL-backed Main-Checkout Success Rerun
+
+Date:
+- 2026-03-10 UTC
+
+Environment:
+- main checkout:
+  - `/workspaces/RTLGen`
+- control-plane database:
+  - `postgresql+psycopg://rtlgen:rtlgen@localhost:5432/rtlgen_control_plane`
+- local devcontainer PostgreSQL service from:
+  - `.devcontainer/start_postgres.sh`
+
+Method:
+- rebuilt the devcontainer with the local PostgreSQL service enabled
+- verified:
+  - `control_plane/scripts/migrate_postgres.sh`
+- reset the Phase 1 tables in PostgreSQL
+- reran the full control-plane flow in the main checkout:
+  - `fetch_models.py`
+  - `import-queue`
+  - `run-worker`
+  - `sync-artifacts`
+- used the post-fix `sync-artifacts` behavior that:
+  - fills evaluated `handoff.pr_body_fields`
+  - exports by default to:
+    - `control_plane/shadow_exports/evaluated/<item_id>.json`
+
+Run result:
+- exported shadow snapshot:
+  - `control_plane/shadow_exports/evaluated/l2_e2e_softmax_macro_tail_v1.json`
+- `result.status`:
+  - `ok`
+- `result.summary`:
+  - `5/5 commands succeeded`
+- `result.completed_utc`:
+  - `2026-03-10T00:07:13.883435Z`
+- `result.metrics_rows_count`:
+  - `12`
+
+Evaluated result identity:
+- `result.branch`:
+  - `eval/l2_e2e_softmax_macro_tail_v1/s20260309t095438z`
+- `result.identity_block`:
+  - `[role:evaluator][account:control_plane][session:s20260309t095438z][host:353f3fadd15d][item:l2_e2e_softmax_macro_tail_v1]`
+
+Handoff materialization:
+- `handoff.branch`:
+  - `eval/l2_e2e_softmax_macro_tail_v1/s20260309t095438z`
+- `handoff.pr_body_fields`:
+  - `evaluator_id=control_plane`
+  - `session_id=s20260309t095438z`
+  - `host=353f3fadd15d`
+  - `queue_item_id=l2_e2e_softmax_macro_tail_v1`
+
+What this closes:
+- PostgreSQL-backed migration and runtime path are both now verified
+- the real physical campaign completed under the control-plane worker on PostgreSQL
+- shadow export no longer collides with the live queued item in `runs/eval_queue/openroad/queued/`
+- evaluated handoff placeholders are now materialized correctly in the exported snapshot
+
+Remaining note:
+- the reused shell environment still had an older `SESSION_ID` exported, so the successful rerun used `s20260309t095438z`
+- this is cosmetic; the exported snapshot is internally consistent
+
+Conclusion:
+- CP-010 is now closed on both:
+  - SQLite shadow execution evidence
+  - PostgreSQL-backed main-checkout execution evidence
+- Phase 1 control-plane validation is complete enough to move to the next milestone
