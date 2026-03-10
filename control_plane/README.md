@@ -241,6 +241,30 @@ Current scope:
   - optional `objective_sweep`
   - `validate_runs`
 
+The matching Layer 2 result consumer reads a completed `l2_campaign` run and emits a reviewable decision proposal JSON:
+
+```sh
+PYTHONPATH=/workspaces/RTLGen/control_plane \
+python3 -m control_plane.cli.main consume-l2-result \
+  --database-url sqlite+pysqlite:////tmp/rtlgen-control-plane.db \
+  --repo-root /workspaces/RTLGen \
+  --item-id l2_campaign_demo
+```
+
+Default output:
+- `control_plane/shadow_exports/l2_decisions/<item_id>.json`
+
+Current behavior:
+- reads tracked campaign outputs such as:
+  - `best_point.json`
+  - `summary.csv`
+  - `objective_sweep.csv`
+- emits:
+  - recommended `arch_id`
+  - recommended `macro_mode`
+  - objective-profile winners
+- writes a decision proposal for review; it does not auto-edit docs or queue items
+
 ## Manual API Flow
 
 The in-process HTTP routes remain available if you want to exercise the lifecycle step-by-step rather than through `run-worker`:

@@ -7,6 +7,7 @@ import json
 
 from control_plane.api.app import main as serve_api_main
 from control_plane.cli.consume_l1_result import main as consume_l1_result_main
+from control_plane.cli.consume_l2_result import main as consume_l2_result_main
 from control_plane.cli.export_queue import main as export_queue_main
 from control_plane.cli.generate_l1_sweep import main as generate_l1_sweep_main
 from control_plane.cli.generate_l2_campaign import main as generate_l2_campaign_main
@@ -68,6 +69,16 @@ def main(argv: list[str] | None = None) -> int:
     consume_l1_parser.add_argument("--item-id")
     consume_l1_parser.add_argument("--run-key")
     consume_l1_parser.add_argument("--target-path")
+
+    consume_l2_parser = subparsers.add_parser(
+        "consume-l2-result",
+        help="Consume a completed Layer 2 campaign result and emit a decision proposal",
+    )
+    consume_l2_parser.add_argument("--database-url", required=True)
+    consume_l2_parser.add_argument("--repo-root", required=True)
+    consume_l2_parser.add_argument("--item-id")
+    consume_l2_parser.add_argument("--run-key")
+    consume_l2_parser.add_argument("--target-path")
 
     generate_l2_parser = subparsers.add_parser(
         "generate-l2-campaign",
@@ -211,6 +222,21 @@ def main(argv: list[str] | None = None) -> int:
             if value is not None:
                 argv2.extend([key, str(value)])
         return consume_l1_result_main(argv2)
+    if args.command == "consume-l2-result":
+        argv2 = [
+            "--database-url",
+            args.database_url,
+            "--repo-root",
+            args.repo_root,
+        ]
+        for key, value in [
+            ("--item-id", args.item_id),
+            ("--run-key", args.run_key),
+            ("--target-path", args.target_path),
+        ]:
+            if value is not None:
+                argv2.extend([key, str(value)])
+        return consume_l2_result_main(argv2)
     if args.command == "generate-l2-campaign":
         argv2 = [
             "--database-url",
