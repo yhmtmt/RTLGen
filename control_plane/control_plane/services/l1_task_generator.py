@@ -132,7 +132,7 @@ def _build_payload(
             "commands": [
                 {
                     "name": "build_generator",
-                    "run": "cmake --build build --target rtlgen",
+                    "run": "cmake -S . -B build && cmake --build build --target rtlgen",
                 },
                 {
                     "name": "run_sweep",

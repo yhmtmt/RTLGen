@@ -169,6 +169,10 @@ def test_consume_l1_result_writes_promotion_proposal() -> None:
             payload = json.loads(proposal_path.read_text(encoding="utf-8"))
             assert payload["proposal_count"] == 2
             assert payload["proposals"][0]["metrics_ref"]["param_hash"] == "fast0001"
+            assert (
+                payload["proposals"][0]["metrics_ref"]["result_path"]
+                == "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/work/fast0001/result.json"
+            )
             assert payload["proposals"][1]["metrics_ref"]["param_hash"] == "acc20001"
 
             artifact = session.query(Artifact).filter_by(kind="promotion_proposal").one()

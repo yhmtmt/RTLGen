@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import timezone
-import csv
 import hashlib
 import json
 from pathlib import Path
+import re
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -91,17 +91,47 @@ def _row_sort_key(row: dict[str, Any]) -> tuple[float, float, float, str, str]:
     )
 
 
+def _load_metrics_rows(path: Path) -> list[dict[str, str]]:
+    # Match the tolerant parsing used by scripts/build_runs_index.py because
+    # historical metrics.csv rows may carry unquoted JSON in params_json.
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    text = re.sub(r"result\.json(?=[A-Za-z0-9_])", "result.json\n", text)
+    lines = text.splitlines()
+    if not lines:
+        return []
+    header = lines[0].split(",")
+    rows: list[dict[str, str]] = []
+    for line in lines[1:]:
+        if not line.strip():
+            continue
+        parts = line.split(",", 9)
+        if len(parts) < 10:
+            continue
+        front = parts[:9]
+        rest = parts[9]
+        if "," in rest:
+            params_json, result_path = rest.rsplit(",", 1)
+        else:
+            params_json, result_path = rest, ""
+        params_json = params_json.strip()
+        if len(params_json) >= 2 and params_json[0] == '"' and params_json[-1] == '"':
+            params_json = params_json[1:-1].replace('""', '"')
+        values = front + [params_json, result_path]
+        if len(values) != len(header):
+            continue
+        rows.append(dict(zip(header, values)))
+    return rows
+
+
 def _best_metrics_row(*, repo_root: Path, metrics_csv: str) -> dict[str, Any] | None:
     path = _resolve_path(repo_root=repo_root, path_text=metrics_csv)
     if not path.exists():
         return None
     rows: list[dict[str, Any]] = []
-    with path.open("r", encoding="utf-8", newline="") as handle:
-        reader = csv.DictReader(handle)
-        for row in reader:
-            if str(row.get("status", "")).strip() != "ok":
-                continue
-            rows.append(dict(row))
+    for row in _load_metrics_rows(path):
+        if str(row.get("status", "")).strip() != "ok":
+            continue
+        rows.append(dict(row))
     if not rows:
         return None
     return sorted(rows, key=_row_sort_key)[0]
