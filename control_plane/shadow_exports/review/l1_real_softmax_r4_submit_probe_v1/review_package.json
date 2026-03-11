@@ -1,6 +1,6 @@
 {
   "version": 0.1,
-  "generated_utc": "2026-03-11T00:37:21.270671Z",
+  "generated_utc": "2026-03-11T00:41:28.058041Z",
   "item_id": "l1_real_softmax_r4_submit_probe_v1",
   "run_key": "l1_real_softmax_r4_submit_probe_v1_run_e162203bba574799",
   "layer": "layer1",
@@ -15,7 +15,7 @@
       "evaluator_id": "control_plane",
       "executor": "@control_plane",
       "host": "353f3fadd15d",
-      "identity_block": "[role:evaluator][account:control_plane][session:s20260311t003721z][host:353f3fadd15d][item:l1_real_softmax_r4_submit_probe_v1]",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260311t004128z][host:353f3fadd15d][item:l1_real_softmax_r4_submit_probe_v1]",
       "metrics_rows": [
         {
           "tag": "softmax_rowwise_ng45_v1_bd9157ff",
@@ -23,7 +23,7 @@
           "platform": "nangate45",
           "param_hash": "331b4c0f",
           "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv",
-          "result_path": "\"CORE_UTILIZATION\": 30"
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/work/331b4c0f/result.json"
         },
         {
           "tag": "softmax_rowwise_ng45_v1_545b5b4f",
@@ -31,7 +31,7 @@
           "platform": "nangate45",
           "param_hash": "0881e02c",
           "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv",
-          "result_path": "\"CORE_UTILIZATION\": 30"
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/work/0881e02c/result.json"
         },
         {
           "tag": "softmax_rowwise_ng45_v1_84a011f1",
@@ -39,7 +39,7 @@
           "platform": "nangate45",
           "param_hash": "d167bc90",
           "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv",
-          "result_path": "\"CORE_UTILIZATION\": 50"
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/work/d167bc90/result.json"
         },
         {
           "tag": "softmax_rowwise_ng45_v1_317024c0",
@@ -47,7 +47,7 @@
           "platform": "nangate45",
           "param_hash": "7b4a20b8",
           "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv",
-          "result_path": "\"CORE_UTILIZATION\": 50"
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/work/7b4a20b8/result.json"
         },
         {
           "tag": "softmax_rowwise_ng45_v1_e8e3ad7e",
@@ -55,7 +55,7 @@
           "platform": "nangate45",
           "param_hash": "e2c337a8",
           "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv",
-          "result_path": "\"CORE_UTILIZATION\": 30"
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/work/e2c337a8/result.json"
         },
         {
           "tag": "softmax_rowwise_ng45_v1_6c63d092",
@@ -63,7 +63,7 @@
           "platform": "nangate45",
           "param_hash": "57faa721",
           "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv",
-          "result_path": "\"CORE_UTILIZATION\": 30"
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/work/57faa721/result.json"
         },
         {
           "tag": "softmax_rowwise_ng45_v1_de52b603",
@@ -71,7 +71,7 @@
           "platform": "nangate45",
           "param_hash": "91c9afdc",
           "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv",
-          "result_path": "\"CORE_UTILIZATION\": 50"
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/work/91c9afdc/result.json"
         },
         {
           "tag": "softmax_rowwise_ng45_v1_9dd950f2",
@@ -79,11 +79,11 @@
           "platform": "nangate45",
           "param_hash": "49828ffb",
           "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv",
-          "result_path": "\"CORE_UTILIZATION\": 50"
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/work/49828ffb/result.json"
         }
       ],
       "queue_item_id": "l1_real_softmax_r4_submit_probe_v1",
-      "session_id": "s20260311t003721z",
+      "session_id": "s20260311t004128z",
       "status": "ok",
       "summary": "4/4 commands succeeded"
     }
@@ -141,7 +141,7 @@
     "title": "eval: run layer1 sweep from nangate45_softmax_rowwise_v1 on nangate45",
     "body_fields": {
       "host": "353f3fadd15d",
-      "session_id": "s20260311t003721z",
+      "session_id": "s20260311t004128z",
       "evaluator_id": "control_plane",
       "queue_item_id": "l1_real_softmax_r4_submit_probe_v1"
     },
