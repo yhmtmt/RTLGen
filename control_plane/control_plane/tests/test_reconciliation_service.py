@@ -15,7 +15,11 @@ from control_plane.models.enums import RunStatus, WorkItemState
 from control_plane.models.runs import Run
 from control_plane.models.work_items import WorkItem
 from control_plane.services.queue_importer import QueueImportRequest, import_queue_item
-from control_plane.services.reconciliation_service import ArtifactSyncRequest, sync_run_artifacts
+from control_plane.services.reconciliation_service import (
+    ArtifactSyncRequest,
+    _normalize_metrics_csv_refs,
+    sync_run_artifacts,
+)
 from control_plane.services.worker_service import run_worker
 from control_plane.workers.executor import WorkerConfig
 
@@ -380,6 +384,36 @@ def test_sync_run_artifacts_recovers_from_non_path_stale_result_path() -> None:
             (repo_root / "runs" / "eval_queue" / "openroad" / "evaluated" / "cp009_item.json").read_text(encoding="utf-8")
         )
         assert payload["result"]["metrics_rows"][0]["result_path"] == "runs/designs/demo_block/work/deadbeef/result.json"
+
+
+def test_normalize_metrics_csv_refs_supports_modern_npu_metrics_shape() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        metrics_path = repo_root / "runs" / "designs" / "npu_blocks" / "demo_block" / "metrics.csv"
+        metrics_path.parent.mkdir(parents=True, exist_ok=True)
+        metrics_path.write_text(
+            (
+                "design,platform,config_hash,param_hash,tag,status,critical_path_ns,die_area,total_power_mw,"
+                "flow_elapsed_seconds,stage_elapsed_seconds,params_json,result_path,work_result_json,synth_script_path,synth_script_sha1\n"
+                'demo_block,nangate45,abc123,deadbeef,demo_tag,ok,5.0,100.0,0.2,10.0,4.0,'
+                '"{""CLOCK_PERIOD"": 10.0, ""TAG"": ""demo_tag""}",'
+                "/orfs/flow/logs/demo/3_3_place_gp.json,"
+                "runs/designs/npu_blocks/demo_block/work/deadbeef/result.json,,\n"
+            ),
+            encoding="utf-8",
+        )
+
+        rows = _normalize_metrics_csv_refs(
+            repo_root=repo_root,
+            metrics_csv="runs/designs/npu_blocks/demo_block/metrics.csv",
+            allow_missing=False,
+        )
+        assert len(rows) == 1
+        assert rows[0]["platform"] == "nangate45"
+        assert rows[0]["param_hash"] == "deadbeef"
+        assert rows[0]["tag"] == "demo_tag"
+        assert rows[0]["result_path"] == "runs/designs/npu_blocks/demo_block/work/deadbeef/result.json"
 
 
 def test_sync_run_artifacts_defaults_to_shadow_export_path() -> None:

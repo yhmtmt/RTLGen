@@ -192,9 +192,17 @@ def _recover_metrics_result_path_from_csv(row: dict[str, Any], repo_root: Path) 
 
 
 def _load_metrics_rows(path: Path) -> list[dict[str, str]]:
-    # Match the tolerant parsing used by scripts/build_runs_index.py because
-    # historical metrics.csv rows may carry unquoted JSON in params_json.
+    # Prefer standard CSV parsing for modern quoted metrics.csv rows. Fall back
+    # to the historical tolerant parser for legacy rows with unquoted JSON.
     text = path.read_text(encoding="utf-8", errors="ignore")
+    if not text.strip():
+        return []
+
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        parsed = [{str(key): str(value) for key, value in row.items()} for row in csv.DictReader(handle)]
+    if parsed and all(None not in row for row in parsed):
+        return parsed
+
     text = re.sub(r"result\.json(?=[A-Za-z0-9_])", "result.json\n", text)
     lines = text.splitlines()
     if not lines:
