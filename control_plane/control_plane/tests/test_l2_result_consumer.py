@@ -177,3 +177,32 @@ def test_consume_l2_result_allows_explicit_target_path() -> None:
             )
             assert result.target_path.endswith("runs/proposals/l2_test_demo.json")
             assert (repo_root / "runs" / "proposals" / "l2_test_demo.json").exists()
+
+
+def test_consume_l2_result_allows_missing_objective_sweep() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            item_id, _run_key = _seed_succeeded_l2_campaign(session, repo_root)
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            work_item.expected_outputs = [
+                path
+                for path in (work_item.expected_outputs or [])
+                if not str(path).endswith("/objective_sweep.csv")
+            ]
+            session.commit()
+
+            result = consume_l2_result(
+                session,
+                Layer2ConsumeRequest(repo_root=str(repo_root), item_id=item_id),
+            )
+            assert result.profile_count == 0
+
+            proposal_path = repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{item_id}.json"
+            payload = json.loads(proposal_path.read_text(encoding="utf-8"))
+            assert payload["objective_profiles"] == []
+            assert "objective_sweep_csv" not in payload["source_refs"]

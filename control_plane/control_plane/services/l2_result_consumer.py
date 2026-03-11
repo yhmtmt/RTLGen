@@ -87,6 +87,13 @@ def _find_output_path(work_item: WorkItem, suffix: str) -> str:
     raise Layer2ResultConsumerError(f"expected output not found for suffix {suffix}: {work_item.item_id}")
 
 
+def _find_output_path_optional(work_item: WorkItem, suffix: str) -> str | None:
+    for path in work_item.expected_outputs or []:
+        if str(path).endswith(suffix):
+            return str(path)
+    return None
+
+
 def _summary_best_row(rows: list[dict[str, str]]) -> dict[str, str]:
     aggregate_rows = [row for row in rows if str(row.get("scope", "")).strip() == "aggregate"]
     if not aggregate_rows:
@@ -209,13 +216,16 @@ def consume_l2_result(session: Session, request: Layer2ConsumeRequest) -> Layer2
     summary_rel = _find_output_path(work_item, "/summary.csv")
     results_rel = _find_output_path(work_item, "/results.csv")
     report_rel = _find_output_path(work_item, "/report.md")
-    objective_sweep_rel = _find_output_path(work_item, "/objective_sweep.csv")
+    objective_sweep_rel = _find_output_path_optional(work_item, "/objective_sweep.csv")
 
     best_point = _load_json(_resolve_path(repo_root=repo_root, path_text=best_point_rel))
     summary_rows = _load_csv(_resolve_path(repo_root=repo_root, path_text=summary_rel))
-    objective_sweep_rows = _load_csv(_resolve_path(repo_root=repo_root, path_text=objective_sweep_rel))
     summary_best = _summary_best_row(summary_rows)
-    objective_profiles = _profile_recommendations(objective_sweep_rows)
+    objective_profiles: list[dict[str, Any]] = []
+    if objective_sweep_rel:
+        objective_sweep_path = _resolve_path(repo_root=repo_root, path_text=objective_sweep_rel)
+        if objective_sweep_path.exists():
+            objective_profiles = _profile_recommendations(_load_csv(objective_sweep_path))
 
     payload = _build_payload(
         work_item=work_item,
@@ -228,7 +238,7 @@ def consume_l2_result(session: Session, request: Layer2ConsumeRequest) -> Layer2
             "summary_csv": summary_rel,
             "results_csv": results_rel,
             "report_md": report_rel,
-            "objective_sweep_csv": objective_sweep_rel,
+            **({"objective_sweep_csv": objective_sweep_rel} if objective_sweep_rel else {}),
         },
     )
 
