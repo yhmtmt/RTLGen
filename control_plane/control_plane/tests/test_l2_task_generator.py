@@ -151,3 +151,5 @@ def test_generate_l2_campaign_task_upserts_existing_item() -> None:
             assert work_item.task_request.title == "Layer2 demo updated"
             assert work_item.task_request.requested_by == "@tester2"
             assert "--run_physical" not in work_item.command_manifest[1]["run"]
+            assert "runs/campaigns/npu/demo_campaign/objective_sweep.csv" not in work_item.expected_outputs
+            assert "runs/campaigns/npu/demo_campaign/objective_sweep.md" not in work_item.expected_outputs

@@ -110,7 +110,7 @@ def _build_inputs(*, campaign: dict[str, Any]) -> dict[str, list[str]]:
     }
 
 
-def _build_expected_outputs(*, campaign: dict[str, Any]) -> list[str]:
+def _build_expected_outputs(*, campaign: dict[str, Any], include_objective_sweep: bool) -> list[str]:
     outputs = campaign.get("outputs") or {}
     campaign_dir = str(outputs.get("campaign_dir", "")).strip()
     expected: list[str] = []
@@ -124,10 +124,15 @@ def _build_expected_outputs(*, campaign: dict[str, Any]) -> list[str]:
                 f"{campaign_dir}/summary.csv",
                 f"{campaign_dir}/pareto.csv",
                 f"{campaign_dir}/best_point.json",
-                f"{campaign_dir}/objective_sweep.csv",
-                f"{campaign_dir}/objective_sweep.md",
             ]
         )
+        if include_objective_sweep:
+            expected.extend(
+                [
+                    f"{campaign_dir}/objective_sweep.csv",
+                    f"{campaign_dir}/objective_sweep.md",
+                ]
+            )
 
     for point in campaign.get("architecture_points") or []:
         design_dir = str(point.get("synth_design_dir", "")).strip()
@@ -240,9 +245,12 @@ def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateR
     title = request.title or _default_title(campaign_id=campaign_id, platform=platform)
     objective = request.objective or _default_objective(campaign=campaign)
     inputs = _build_inputs(campaign=campaign)
-    expected_outputs = _build_expected_outputs(campaign=campaign)
     objective_profiles_json = (
         _repo_rel(request.objective_profiles_json, repo_root) if request.objective_profiles_json else None
+    )
+    expected_outputs = _build_expected_outputs(
+        campaign=campaign,
+        include_objective_sweep=bool(objective_profiles_json),
     )
     batch_id = request.batch_id or f"{item_id}_r1"
     payload = _build_payload(
