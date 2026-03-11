@@ -81,6 +81,31 @@ def _default_manifest_path(repo_root: Path, item_id: str) -> Path:
     return repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "submission_manifest.json"
 
 
+def _is_canonical_runs_evidence(rel_path: str) -> bool:
+    parts = Path(rel_path).parts
+    if not parts or parts[0] != "runs":
+        return False
+    blocked = {"work", "artifacts", "comparisons"}
+    return not any(part in blocked for part in parts)
+
+
+def _canonical_evidence_files(*, repo_root: Path, work_item: WorkItem) -> list[str]:
+    files: list[str] = []
+    seen: set[str] = set()
+    for output in work_item.expected_outputs or []:
+        rel_path = str(output).strip()
+        if not rel_path or not _is_canonical_runs_evidence(rel_path):
+            continue
+        candidate = repo_root / rel_path
+        if not candidate.exists() or not candidate.is_file():
+            continue
+        if rel_path in seen:
+            continue
+        seen.add(rel_path)
+        files.append(rel_path)
+    return files
+
+
 def _load_manifest(path: Path) -> dict[str, Any]:
     if not path.exists():
         raise SubmissionExecuteError(f"submission manifest not found: {path}")
@@ -212,6 +237,8 @@ def execute_submission(session: Session, request: SubmissionExecuteRequest) -> S
         )
         manifest_path = repo_root / "control_plane" / "shadow_exports" / "review" / work_item.item_id / "submission_manifest.json"
     manifest = _load_manifest(manifest_path)
+    if not isinstance(manifest.get("evidence_paths"), list):
+        manifest["evidence_paths"] = _canonical_evidence_files(repo_root=repo_root, work_item=work_item)
 
     branch_name = str(manifest.get("branch_name", "")).strip()
     if not branch_name:
