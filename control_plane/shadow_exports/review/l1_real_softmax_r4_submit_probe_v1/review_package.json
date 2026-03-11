@@ -1,6 +1,6 @@
 {
   "version": 0.1,
-  "generated_utc": "2026-03-10T22:57:15.584416Z",
+  "generated_utc": "2026-03-11T00:37:21.270671Z",
   "item_id": "l1_real_softmax_r4_submit_probe_v1",
   "run_key": "l1_real_softmax_r4_submit_probe_v1_run_e162203bba574799",
   "layer": "layer1",
@@ -15,7 +15,7 @@
       "evaluator_id": "control_plane",
       "executor": "@control_plane",
       "host": "353f3fadd15d",
-      "identity_block": "[role:evaluator][account:control_plane][session:s20260310t225715z][host:353f3fadd15d][item:l1_real_softmax_r4_submit_probe_v1]",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260311t003721z][host:353f3fadd15d][item:l1_real_softmax_r4_submit_probe_v1]",
       "metrics_rows": [
         {
           "tag": "softmax_rowwise_ng45_v1_bd9157ff",
@@ -83,7 +83,7 @@
         }
       ],
       "queue_item_id": "l1_real_softmax_r4_submit_probe_v1",
-      "session_id": "s20260310t225715z",
+      "session_id": "s20260311t003721z",
       "status": "ok",
       "summary": "4/4 commands succeeded"
     }
@@ -140,9 +140,9 @@
     "branch": "eval/l1_real_softmax_r4_submit_probe_v1/s20260310t225715z",
     "title": "eval: run layer1 sweep from nangate45_softmax_rowwise_v1 on nangate45",
     "body_fields": {
-      "host": "<host>",
-      "session_id": "<session_id>",
-      "evaluator_id": "yhmtmt",
+      "host": "353f3fadd15d",
+      "session_id": "s20260311t003721z",
+      "evaluator_id": "control_plane",
       "queue_item_id": "l1_real_softmax_r4_submit_probe_v1"
     },
     "body_md": "## Summary\n- item_id: `l1_real_softmax_r4_submit_probe_v1`\n- run_key: `l1_real_softmax_r4_submit_probe_v1_run_e162203bba574799`\n- layer: `layer1`\n- task_type: `l1_sweep`\n- status: `ok`\n- summary: `4/4 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l1_real_softmax_r4_submit_probe_v1/evaluated.json`\n- metrics_rows_count: `8`\n- review_artifact: `promotion_proposal` at `control_plane/shadow_exports/l1_promotions/l1_real_softmax_r4_submit_probe_v1.json`\n\n## Checklist\n- [ ] Commit only lightweight metrics and regenerated runs/index.csv\n- [ ] Include metrics row references for each completed design\n- [ ] Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py before pushing\n",
