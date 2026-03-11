@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Validate runs/designs metrics.csv files, metadata.json, and the global runs/index.csv."""
 
+import argparse
 import csv
 import io
 import hashlib
@@ -940,13 +941,22 @@ def validate_eval_queue():
     return errors
 
 
-def main():
+def main(argv=None):
+    parser = argparse.ArgumentParser(description="Validate tracked runs artifacts.")
+    parser.add_argument(
+        "--skip_eval_queue",
+        action="store_true",
+        help="Skip validation of runs/eval_queue items. Useful for DB-native shadow/remote runs.",
+    )
+    args = parser.parse_args(argv)
+
     errors = []
     errors.extend(validate_metrics())
     errors.extend(validate_metadata())
     errors.extend(validate_module_candidates())
     errors.extend(validate_model_sets())
-    errors.extend(validate_eval_queue())
+    if not args.skip_eval_queue:
+        errors.extend(validate_eval_queue())
     errors.extend(validate_index())
     if errors:
         for err in errors:

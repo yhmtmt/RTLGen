@@ -185,7 +185,7 @@ def _build_payload(
     commands.append(
         {
             "name": "validate_runs",
-            "run": "python3 scripts/validate_runs.py",
+            "run": "python3 scripts/validate_runs.py --skip_eval_queue",
         }
     )
 
@@ -210,7 +210,7 @@ def _build_payload(
                 "Populate metrics.csv for all referenced design dirs",
                 "Write campaign summary outputs under the campaign output directory",
                 "Keep result_path/work_result_json fields repo-portable",
-                "Run python3 scripts/validate_runs.py before pushing",
+                "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing",
             ],
         },
         "handoff": {
@@ -227,7 +227,7 @@ def _build_payload(
                 "Commit lightweight campaign artifacts only",
                 "Include metrics row references in result.metrics_rows",
                 "Keep committed result_path fields repo-portable",
-                "Run python3 scripts/validate_runs.py before pushing",
+                "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing",
             ],
         },
         "result": None,

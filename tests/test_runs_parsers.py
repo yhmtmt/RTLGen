@@ -59,12 +59,14 @@ class RunsParserRegressionTest(unittest.TestCase):
             self.validate_runs.INDEX_PATH,
             self.validate_runs.CANDIDATES_ROOT,
             self.validate_runs.EVAL_QUEUE_ROOT,
+            self.validate_runs.MODELS_ROOT,
         )
         self.validate_runs.REPO_ROOT = root
         self.validate_runs.DESIGNS_ROOT = root / "runs" / "designs"
         self.validate_runs.INDEX_PATH = root / "runs" / "index.csv"
         self.validate_runs.CANDIDATES_ROOT = root / "runs" / "candidates"
         self.validate_runs.EVAL_QUEUE_ROOT = root / "runs" / "eval_queue"
+        self.validate_runs.MODELS_ROOT = root / "runs" / "models"
         return old
 
     def _restore_validate_runs_paths(self, old):
@@ -74,6 +76,7 @@ class RunsParserRegressionTest(unittest.TestCase):
             self.validate_runs.INDEX_PATH,
             self.validate_runs.CANDIDATES_ROOT,
             self.validate_runs.EVAL_QUEUE_ROOT,
+            self.validate_runs.MODELS_ROOT,
         ) = old
 
     def test_validate_runs_parses_unquoted_and_csv_quoted_params_json(self):
@@ -539,6 +542,86 @@ class RunsParserRegressionTest(unittest.TestCase):
             finally:
                 self._restore_validate_runs_paths(old)
             self.assertTrue(any("use source_mode=src_verilog with --src_verilog_dir" in e for e in errors))
+
+    def test_validate_runs_main_skip_eval_queue_bypasses_unrelated_queue_errors(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            metrics_path = root / "runs/designs/activations/demo_wrapper/metrics.csv"
+            metrics_path.parent.mkdir(parents=True, exist_ok=True)
+            metrics_path.write_text(
+                "\n".join(
+                    [
+                        HEADER,
+                        "demo_wrapper,nangate45,cfg123,ph123,tag123,ok,1.25,1000.0,0.01,"
+                        '{"CLOCK_PERIOD": 2.5, "CORE_UTILIZATION": 10, "PLACE_DENSITY": 0.55, "TAG": "tag123"},'
+                        "runs/designs/activations/demo_wrapper/work/ph123/result.json",
+                    ]
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            index_path = root / "runs/index.csv"
+            index_path.parent.mkdir(parents=True, exist_ok=True)
+            index_path.write_text(
+                "\n".join(
+                    [
+                        "circuit_type,design,platform,status,critical_path_ns,die_area,total_power_mw,config_hash,param_hash,tag,result_path,params_json,metrics_path,design_path",
+                        "activations,demo_wrapper,nangate45,ok,1.25,1000.0,0.01,cfg123,ph123,tag123,"
+                        "runs/designs/activations/demo_wrapper/work/ph123/result.json,"
+                        '"{""CLOCK_PERIOD"": 2.5, ""CORE_UTILIZATION"": 10, ""PLACE_DENSITY"": 0.55, ""TAG"": ""tag123""}",'
+                        "runs/designs/activations/demo_wrapper/metrics.csv,runs/designs/activations/demo_wrapper",
+                    ]
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            queue_dir = root / "runs/eval_queue/openroad/queued"
+            queue_dir.mkdir(parents=True, exist_ok=True)
+            (root / "runs/eval_queue/openroad/item.schema.json").write_text("{}", encoding="utf-8")
+            (queue_dir / "bad_item.json").write_text(
+                json.dumps(
+                    {
+                        "version": 0.1,
+                        "item_id": "bad_item",
+                        "title": "bad",
+                        "layer": "layer1",
+                        "flow": "openroad",
+                        "state": "queued",
+                        "priority": 1,
+                        "created_utc": "2026-03-11T00:00:00Z",
+                        "requested_by": "@tester",
+                        "platform": "nangate45",
+                        "task": {
+                            "objective": "bad",
+                            "source_mode": "config",
+                            "inputs": {
+                                "configs": [],
+                                "design_dirs": [],
+                                "sweeps": [],
+                                "macro_manifests": [],
+                                "candidate_manifests": [],
+                            },
+                            "commands": [],
+                            "expected_outputs": [],
+                            "acceptance": [],
+                        },
+                        "handoff": {},
+                        "result": None,
+                    },
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            old = self._set_validate_runs_paths(root)
+            try:
+                self.assertEqual(1, self.validate_runs.main([]))
+                self.assertEqual(0, self.validate_runs.main(["--skip_eval_queue"]))
+            finally:
+                self._restore_validate_runs_paths(old)
 
 
 if __name__ == "__main__":

@@ -151,14 +151,14 @@ def _build_payload(
                 },
                 {
                     "name": "validate",
-                    "run": "python3 scripts/validate_runs.py",
+                    "run": "python3 scripts/validate_runs.py --skip_eval_queue",
                 },
             ],
             "expected_outputs": expected_outputs,
             "acceptance": [
                 "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
                 "Committed outputs stay lightweight (metrics.csv and runs/index.csv only)",
-                "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py pass",
+                "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass",
             ],
         },
         "handoff": {
@@ -174,7 +174,7 @@ def _build_payload(
             "checklist": [
                 "Commit only lightweight metrics and regenerated runs/index.csv",
                 "Include metrics row references for each completed design",
-                "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py before pushing",
+                "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing",
             ],
         },
         "result": None,

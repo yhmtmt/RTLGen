@@ -95,6 +95,7 @@ def test_generate_l2_campaign_task_creates_ready_work_item() -> None:
                 "objective_sweep",
                 "validate_runs",
             ]
+            assert work_item.command_manifest[4]["run"] == "python3 scripts/validate_runs.py --skip_eval_queue"
             assert work_item.expected_outputs == [
                 "runs/campaigns/npu/demo_campaign/results.csv",
                 "runs/campaigns/npu/demo_campaign/report.md",
