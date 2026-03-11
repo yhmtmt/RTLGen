@@ -119,6 +119,13 @@ def _handoff_payload(work_item: WorkItem) -> dict[str, Any]:
     return dict(handoff) if isinstance(handoff, dict) else {}
 
 
+def _materialized_handoff(*, snapshot_payload: dict[str, Any], work_item: WorkItem) -> dict[str, Any]:
+    handoff = snapshot_payload.get("handoff")
+    if isinstance(handoff, dict):
+        return dict(handoff)
+    return _handoff_payload(work_item)
+
+
 def _artifact_summary(*, repo_root: Path, artifact: Artifact | None) -> dict[str, Any] | None:
     if artifact is None:
         return None
@@ -226,7 +233,7 @@ def publish_review_package(session: Session, request: ReviewPublishRequest) -> R
 
     snapshot_rel = str(Path(sync_result.target_path).resolve().relative_to(repo_root.resolve()))
     snapshot_payload = _load_json(Path(sync_result.target_path))
-    handoff = _handoff_payload(work_item)
+    handoff = _materialized_handoff(snapshot_payload=snapshot_payload, work_item=work_item)
     review_kind = _review_artifact_kind(work_item.task_type)
     review_artifact = _find_artifact(session, run_id=run.id, kind=review_kind)
     branch_name = str((snapshot_payload.get("result") or {}).get("branch", run.branch_name or "")).strip()

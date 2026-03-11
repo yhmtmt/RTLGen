@@ -31,7 +31,7 @@ def _seed_l1_reviewable(session: Session, repo_root: Path) -> tuple[str, str]:
         repo_root / metrics_rel,
         (
             "platform,status,param_hash,tag,critical_path_ns,die_area,total_power_mw,params_json,result_path\n"
-            'nangate45,ok,fast0001,tag_fast,12.0,30000,0.18,"{""CLOCK_PERIOD"": 6.0}",'
+            'nangate45,ok,fast0001,tag_fast,12.0,30000,0.18,{"CLOCK_PERIOD": 6.0, "CORE_UTILIZATION": 30},'
             "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/work/fast0001/result.json\n"
         ),
     )
@@ -271,9 +271,15 @@ def test_publish_review_package_for_l1() -> None:
 
             payload = json.loads(package_path.read_text(encoding="utf-8"))
             assert payload["pr_payload"]["branch"] == "eval/l1_review_demo/s20260310t070000z"
+            assert payload["pr_payload"]["body_fields"]["session_id"] == "s20260310t070000z"
+            assert payload["pr_payload"]["body_fields"]["host"] == "cp-host"
             assert payload["review_artifact"]["kind"] == "promotion_proposal"
             assert payload["queue_snapshot"]["result"]["status"] == "ok"
             assert len(payload["queue_snapshot"]["result"]["metrics_rows"]) == 1
+            assert (
+                payload["queue_snapshot"]["result"]["metrics_rows"][0]["result_path"]
+                == "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/work/fast0001/result.json"
+            )
 
 
 def test_publish_review_package_for_l2() -> None:

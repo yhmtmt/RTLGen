@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 import csv
 from pathlib import Path
+import re
 import socket
 from typing import Any
 
@@ -169,12 +170,48 @@ def _recover_metrics_result_path_from_csv(row: dict[str, Any], repo_root: Path) 
     path = (repo_root / metrics_csv).resolve()
     if not path.exists():
         return None
-    with path.open("r", encoding="utf-8", newline="") as handle:
-        reader = csv.DictReader(handle)
-        for candidate in reader:
-            if _metrics_row_matches_ref(candidate, row):
-                return _portable_metrics_result_path(candidate, repo_root)
+    for candidate in _load_metrics_rows(path):
+        if _metrics_row_matches_ref(candidate, row):
+            return _portable_metrics_result_path(candidate, repo_root)
     return None
+
+
+def _load_metrics_rows(path: Path) -> list[dict[str, str]]:
+    # Match the tolerant parsing used by scripts/build_runs_index.py because
+    # historical metrics.csv rows may carry unquoted JSON in params_json.
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    text = re.sub(r"result\.json(?=[A-Za-z0-9_])", "result.json\n", text)
+    lines = text.splitlines()
+    if not lines:
+        return []
+    header = lines[0].split(",")
+    rows: list[dict[str, str]] = []
+    for line in lines[1:]:
+        if not line.strip():
+            continue
+        if "params_json" not in header:
+            reader = csv.DictReader([",".join(header), line])
+            candidate = next(reader, None)
+            if candidate is not None:
+                rows.append({str(key): str(value) for key, value in candidate.items()})
+            continue
+        parts = line.split(",", 9)
+        if len(parts) < 10:
+            continue
+        front = parts[:9]
+        rest = parts[9]
+        if "," in rest:
+            params_json, result_path = rest.rsplit(",", 1)
+        else:
+            params_json, result_path = rest, ""
+        params_json = params_json.strip()
+        if len(params_json) >= 2 and params_json[0] == '"' and params_json[-1] == '"':
+            params_json = params_json[1:-1].replace('""', '"')
+        values = front + [params_json, result_path]
+        if len(values) != len(header):
+            continue
+        rows.append(dict(zip(header, values)))
+    return rows
 
 
 def _normalize_metrics_csv_refs(*, repo_root: Path, metrics_csv: str, allow_missing: bool = False) -> list[dict[str, Any]]:
@@ -184,33 +221,31 @@ def _normalize_metrics_csv_refs(*, repo_root: Path, metrics_csv: str, allow_miss
             return []
         raise ArtifactSyncError(f"metrics csv not found: {metrics_csv}")
     rows: list[dict[str, Any]] = []
-    with path.open("r", encoding="utf-8", newline="") as handle:
-        reader = csv.DictReader(handle)
-        for row in reader:
-            status = str(row.get("status", "")).strip()
-            platform = str(row.get("platform", "")).strip()
-            param_hash = str(row.get("param_hash", "")).strip()
-            tag = str(row.get("tag", "")).strip()
-            if not status or not platform or (not param_hash and not tag):
-                continue
-            ref: dict[str, Any] = {
-                "metrics_csv": metrics_csv,
-                "platform": platform,
-                "status": status,
-            }
-            for key in ("run_id", "param_hash", "tag", "sample_id", "batch_id"):
-                value = str(row.get(key, "")).strip()
-                if value:
-                    ref[key] = value
-            if row.get("sample_index", "") not in ("", None):
-                try:
-                    ref["sample_index"] = int(str(row.get("sample_index")).strip())
-                except ValueError:
-                    ref["sample_index"] = str(row.get("sample_index")).strip()
-            result_path = _portable_metrics_result_path(row, repo_root)
-            if result_path:
-                ref["result_path"] = result_path
-            rows.append(ref)
+    for row in _load_metrics_rows(path):
+        status = str(row.get("status", "")).strip()
+        platform = str(row.get("platform", "")).strip()
+        param_hash = str(row.get("param_hash", "")).strip()
+        tag = str(row.get("tag", "")).strip()
+        if not status or not platform or (not param_hash and not tag):
+            continue
+        ref: dict[str, Any] = {
+            "metrics_csv": metrics_csv,
+            "platform": platform,
+            "status": status,
+        }
+        for key in ("run_id", "param_hash", "tag", "sample_id", "batch_id"):
+            value = str(row.get(key, "")).strip()
+            if value:
+                ref[key] = value
+        if row.get("sample_index", "") not in ("", None):
+            try:
+                ref["sample_index"] = int(str(row.get("sample_index")).strip())
+            except ValueError:
+                ref["sample_index"] = str(row.get("sample_index")).strip()
+        result_path = _portable_metrics_result_path(row, repo_root)
+        if result_path:
+            ref["result_path"] = result_path
+        rows.append(ref)
     return rows
 
 
