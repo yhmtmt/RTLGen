@@ -1,0 +1,25 @@
+{
+  "version": "1.1",
+  "operands": [
+    {
+      "name": "logits",
+      "dimensions": 1,
+      "bit_width": 8,
+      "signed": true
+    }
+  ],
+  "operations": [
+    {
+      "type": "softmax_rowwise",
+      "module_name": "softmax_rowwise_int8_r4_acc20",
+      "operand": "logits",
+      "options": {
+        "impl": "shift_exp",
+        "row_elems": 4,
+        "max_shift": 7,
+        "accum_bits": 20,
+        "output_scale": 127
+      }
+    }
+  ]
+}
