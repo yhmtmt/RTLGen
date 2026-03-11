@@ -78,6 +78,8 @@ python3 -m control_plane.cli.main run-worker \
   --max-items 1
 ```
 
+Workers enforce checkout freshness by default. The evaluator checkout must be at the task `source_commit` or ahead of it. Use `--allow-stale-checkout` only for manual recovery cases.
+
 ### 3. Notebook consumes the completed result
 
 Layer 1:

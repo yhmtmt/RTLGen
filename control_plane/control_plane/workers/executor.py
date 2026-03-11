@@ -32,7 +32,7 @@ class WorkerConfig:
     heartbeat_seconds: int = 30
     command_timeout_seconds: int | None = None
     max_retry_attempts: int = 2
-    enforce_source_commit: bool = False
+    enforce_source_commit: bool = True
     log_root: str | None = None
 
 
@@ -220,6 +220,7 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
                 "git_dirty": checkout_info.git_dirty,
                 "source_commit": checkout_info.source_commit,
                 "source_commit_matches": checkout_info.source_commit_matches,
+                "source_commit_relation": checkout_info.source_commit_relation,
             },
         )
 
@@ -283,6 +284,7 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
             "git_dirty": checkout_info.git_dirty,
             "source_commit": checkout_info.source_commit,
             "source_commit_matches": checkout_info.source_commit_matches,
+            "source_commit_relation": checkout_info.source_commit_relation,
         },
         "commands": [
             {

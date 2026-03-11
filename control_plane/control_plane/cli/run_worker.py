@@ -30,7 +30,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--heartbeat-seconds", type=int, default=30)
     parser.add_argument("--command-timeout-seconds", type=int)
     parser.add_argument("--max-retry-attempts", type=int, default=2)
-    parser.add_argument("--enforce-source-commit", action="store_true")
+    parser.add_argument("--allow-stale-checkout", action="store_true")
     parser.add_argument("--log-root")
     parser.add_argument("--max-items", type=int, default=1)
     args = parser.parse_args(argv)
@@ -49,7 +49,7 @@ def main(argv: list[str] | None = None) -> int:
         heartbeat_seconds=args.heartbeat_seconds,
         command_timeout_seconds=args.command_timeout_seconds,
         max_retry_attempts=args.max_retry_attempts,
-        enforce_source_commit=args.enforce_source_commit,
+        enforce_source_commit=not args.allow_stale_checkout,
         log_root=args.log_root,
     )
     results = run_worker(session_factory, config=config, max_items=args.max_items)

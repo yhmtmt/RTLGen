@@ -19,6 +19,7 @@ class CheckoutInfo:
     git_dirty: bool | None
     source_commit: str | None
     source_commit_matches: bool | None
+    source_commit_relation: str | None
 
 
 def _run_git(repo_root: Path, *args: str) -> str:
@@ -53,11 +54,29 @@ def prepare_checkout(
         git_dirty = None
 
     source_commit_matches = None
+    source_commit_relation: str | None = None
     if source_commit:
         source_commit_matches = head_sha == source_commit
-        if enforce_source_commit and not source_commit_matches:
+        source_commit_relation = "mismatch"
+        if source_commit_matches:
+            source_commit_relation = "exact"
+        elif head_sha is not None:
+            try:
+                subprocess.run(
+                    ["git", "-C", str(repo_path), "merge-base", "--is-ancestor", source_commit, "HEAD"],
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+                source_commit_relation = "descendant"
+            except subprocess.CalledProcessError:
+                source_commit_relation = "mismatch"
+            except FileNotFoundError:
+                source_commit_relation = "unknown"
+        if enforce_source_commit and source_commit_relation not in {"exact", "descendant"}:
             raise CheckoutError(
-                f"source commit mismatch: expected {source_commit}, found {head_sha or 'unknown'}"
+                "source commit not satisfied: "
+                f"expected at-or-ahead-of {source_commit}, found {head_sha or 'unknown'}"
             )
 
     return CheckoutInfo(
@@ -67,4 +86,5 @@ def prepare_checkout(
         git_dirty=git_dirty,
         source_commit=source_commit,
         source_commit_matches=source_commit_matches,
+        source_commit_relation=source_commit_relation,
     )

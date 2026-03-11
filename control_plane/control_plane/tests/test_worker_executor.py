@@ -3,6 +3,7 @@
 from __future__ import annotations
 from pathlib import Path
 import tempfile
+import subprocess
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
@@ -123,6 +124,83 @@ def seed_timeout_work_item(session: Session, *, item_id: str) -> WorkItem:
     session.add(work_item)
     session.commit()
     return work_item
+
+
+def seed_source_commit_work_item(
+    session: Session,
+    *,
+    item_id: str,
+    source_commit: str,
+) -> WorkItem:
+    task = TaskRequest(
+        request_key=f"queue:{item_id}",
+        source="test",
+        requested_by="tester",
+        title=f"{item_id} title",
+        description="worker source commit test",
+        layer="layer2",
+        flow="openroad",
+        priority=1,
+        request_payload={"item_id": item_id},
+        source_commit=source_commit,
+    )
+    session.add(task)
+    session.flush()
+
+    work_item = WorkItem(
+        work_item_key=f"queue:{item_id}",
+        task_request_id=task.id,
+        item_id=item_id,
+        layer="layer2",
+        flow="openroad",
+        platform="nangate45",
+        task_type="l2_campaign",
+        state=WorkItemState.READY,
+        priority=1,
+        input_manifest={},
+        command_manifest=[],
+        expected_outputs=[],
+        acceptance_rules=[],
+        source_commit=source_commit,
+    )
+    session.add(work_item)
+    session.commit()
+    return work_item
+
+
+def init_git_repo(repo_root: Path) -> tuple[str, str]:
+    subprocess.run(["git", "-C", str(repo_root), "init"], check=True, capture_output=True, text=True)
+    subprocess.run(
+        ["git", "-C", str(repo_root), "config", "user.email", "test@example.com"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    subprocess.run(
+        ["git", "-C", str(repo_root), "config", "user.name", "Test User"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    marker = repo_root / "marker.txt"
+    marker.write_text("one\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(repo_root), "add", "marker.txt"], check=True, capture_output=True, text=True)
+    subprocess.run(["git", "-C", str(repo_root), "commit", "-m", "one"], check=True, capture_output=True, text=True)
+    commit1 = subprocess.run(
+        ["git", "-C", str(repo_root), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    marker.write_text("two\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(repo_root), "commit", "-am", "two"], check=True, capture_output=True, text=True)
+    commit2 = subprocess.run(
+        ["git", "-C", str(repo_root), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    return commit1, commit2
 
 
 def test_worker_executes_ready_item_and_stages_outputs() -> None:
@@ -286,3 +364,91 @@ def test_worker_stops_retrying_after_max_attempts() -> None:
             assert work_item.state == WorkItemState.FAILED
             assert runs[0].result_payload["retry_decision"]["requeue"] is True
             assert runs[1].result_payload["retry_decision"]["requeue"] is False
+
+
+def test_worker_blocks_stale_checkout_by_default() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        old_commit, new_commit = init_git_repo(repo_root)
+        subprocess.run(
+            ["git", "-C", str(repo_root), "checkout", old_commit],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        db_path = Path(td) / "cp.db"
+        engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            seeded = seed_source_commit_work_item(
+                session,
+                item_id="item_stale_checkout",
+                source_commit=new_commit,
+            )
+
+        session_factory = build_session_factory(engine)
+        results = run_worker(
+            session_factory,
+            config=WorkerConfig(
+                repo_root=str(repo_root),
+                machine_key="worker-1",
+                capabilities={"platform": "nangate45", "flow": "openroad"},
+                capability_filter={"platform": "nangate45", "flow": "openroad"},
+                lease_seconds=60,
+                heartbeat_seconds=1,
+            ),
+            max_items=1,
+        )
+
+        assert len(results) == 1
+        assert results[0].status == "failed"
+
+        with Session(engine) as session:
+            work_item = session.query(WorkItem).filter_by(item_id=seeded.item_id).one()
+            run = session.query(Run).filter_by(run_key=results[0].run_key).one()
+            assert work_item.state == WorkItemState.READY
+            assert run.status == RunStatus.FAILED
+            assert run.result_payload["failure_classification"]["category"] == "checkout_error"
+            assert run.result_payload["retry_decision"]["requeue"] is True
+            assert "at-or-ahead-of" in run.result_summary
+
+
+def test_worker_allows_checkout_ahead_of_source_commit() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        old_commit, _new_commit = init_git_repo(repo_root)
+        db_path = Path(td) / "cp.db"
+        engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            seeded = seed_source_commit_work_item(
+                session,
+                item_id="item_descendant_checkout",
+                source_commit=old_commit,
+            )
+
+        session_factory = build_session_factory(engine)
+        results = run_worker(
+            session_factory,
+            config=WorkerConfig(
+                repo_root=str(repo_root),
+                machine_key="worker-1",
+                capabilities={"platform": "nangate45", "flow": "openroad"},
+                capability_filter={"platform": "nangate45", "flow": "openroad"},
+                lease_seconds=60,
+                heartbeat_seconds=1,
+            ),
+            max_items=1,
+        )
+
+        assert len(results) == 1
+        assert results[0].status == "succeeded"
+
+        with Session(engine) as session:
+            work_item = session.query(WorkItem).filter_by(item_id=seeded.item_id).one()
+            run = session.query(Run).filter_by(run_key=results[0].run_key).one()
+            assert work_item.state == WorkItemState.ARTIFACT_SYNC
+            assert run.status == RunStatus.SUCCEEDED
+            assert run.result_payload["checkout"]["source_commit_relation"] == "descendant"

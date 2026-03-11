@@ -134,6 +134,8 @@ python3 -m control_plane.cli.main run-worker-daemon \
   --capability-filter-json '{"platform":"nangate45","flow":"openroad"}'
 ```
 
+By default, workers reject stale evaluator checkouts. A work item's `source_commit` is treated as the minimum required commit, so `HEAD` may match it exactly or be ahead of it. Use `--allow-stale-checkout` only as a temporary operator override.
+
 Notebook-side completion processing:
 ```sh
 PYTHONPATH=/workspaces/RTLGen/control_plane \

@@ -136,7 +136,7 @@ def main(argv: list[str] | None = None) -> int:
     worker_parser.add_argument("--heartbeat-seconds", type=int, default=30)
     worker_parser.add_argument("--command-timeout-seconds", type=int)
     worker_parser.add_argument("--max-retry-attempts", type=int, default=2)
-    worker_parser.add_argument("--enforce-source-commit", action="store_true")
+    worker_parser.add_argument("--allow-stale-checkout", action="store_true")
     worker_parser.add_argument("--log-root")
     worker_parser.add_argument("--max-items", type=int, default=1)
 
@@ -152,7 +152,7 @@ def main(argv: list[str] | None = None) -> int:
     worker_daemon_parser.add_argument("--heartbeat-seconds", type=int, default=30)
     worker_daemon_parser.add_argument("--command-timeout-seconds", type=int)
     worker_daemon_parser.add_argument("--max-retry-attempts", type=int, default=2)
-    worker_daemon_parser.add_argument("--enforce-source-commit", action="store_true")
+    worker_daemon_parser.add_argument("--allow-stale-checkout", action="store_true")
     worker_daemon_parser.add_argument("--log-root")
     worker_daemon_parser.add_argument("--poll-seconds", type=int, default=15)
     worker_daemon_parser.add_argument("--max-items-per-poll", type=int, default=1)
@@ -455,8 +455,8 @@ def main(argv: list[str] | None = None) -> int:
         ]:
             if value is not None:
                 argv2.extend([key, str(value)])
-        if args.enforce_source_commit:
-            argv2.append("--enforce-source-commit")
+        if args.allow_stale_checkout:
+            argv2.append("--allow-stale-checkout")
         return run_worker_main(argv2)
     if args.command == "run-worker-daemon":
         argv2 = [
@@ -489,8 +489,8 @@ def main(argv: list[str] | None = None) -> int:
         ]:
             if value is not None:
                 argv2.extend([key, str(value)])
-        if args.enforce_source_commit:
-            argv2.append("--enforce-source-commit")
+        if args.allow_stale_checkout:
+            argv2.append("--allow-stale-checkout")
         if args.stop_on_no_work:
             argv2.append("--stop-on-no-work")
         if args.no_scheduler_maintenance:
