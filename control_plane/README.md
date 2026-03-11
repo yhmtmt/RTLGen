@@ -122,6 +122,36 @@ export RTLCP_ROLE=evaluator
 - Queue export back to validator-compatible `queued` and `evaluated` JSON
 - GitHub branch / PR reconciliation into `github_links` and work-item state
 
+## Operational Commands
+
+Long-running evaluator loop:
+```sh
+PYTHONPATH=/workspaces/RTLGen/control_plane \
+python3 -m control_plane.cli.main run-worker-daemon \
+  --database-url "$RTLCP_DATABASE_URL" \
+  --repo-root /workspaces/RTLGen \
+  --machine-key "<machine_key>" \
+  --capability-filter-json '{"platform":"nangate45","flow":"openroad"}'
+```
+
+Notebook-side completion processing:
+```sh
+PYTHONPATH=/workspaces/RTLGen/control_plane \
+python3 -m control_plane.cli.main process-completions \
+  --database-url "$RTLCP_DATABASE_URL" \
+  --repo-root /workspaces/RTLGen
+```
+
+Notebook-side completion processing plus submission:
+```sh
+PYTHONPATH=/workspaces/RTLGen/control_plane \
+python3 -m control_plane.cli.main process-completions \
+  --database-url "$RTLCP_DATABASE_URL" \
+  --repo-root /workspaces/RTLGen \
+  --repo yhmtmt/RTLGen \
+  --submit
+```
+
 ## End-to-End Shadow Workflow
 
 Set the DB location:

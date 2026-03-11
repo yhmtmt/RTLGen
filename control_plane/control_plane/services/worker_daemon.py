@@ -1,0 +1,67 @@
+"""Polling supervisor for the internal worker loop."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+import time
+
+from sqlalchemy.orm import sessionmaker
+
+from control_plane.services.lease_service import expire_stale_leases
+from control_plane.services.worker_service import run_worker
+from control_plane.workers.executor import WorkerConfig, WorkerLoopResult
+
+
+@dataclass(frozen=True)
+class WorkerDaemonConfig:
+    worker: WorkerConfig
+    poll_seconds: int = 15
+    max_items_per_poll: int = 1
+    max_polls: int | None = None
+    stop_on_no_work: bool = False
+    run_scheduler_maintenance: bool = True
+
+
+@dataclass(frozen=True)
+class WorkerDaemonResult:
+    poll_count: int
+    executed_items: int
+    no_work_polls: int
+    results: list[WorkerLoopResult]
+
+
+def run_worker_daemon(session_factory: sessionmaker, *, config: WorkerDaemonConfig) -> WorkerDaemonResult:
+    poll_count = 0
+    executed_items = 0
+    no_work_polls = 0
+    results: list[WorkerLoopResult] = []
+
+    while config.max_polls is None or poll_count < config.max_polls:
+        poll_count += 1
+        if config.run_scheduler_maintenance:
+            with session_factory() as session:
+                expire_stale_leases(session)
+
+        batch = run_worker(session_factory, config=config.worker, max_items=config.max_items_per_poll)
+        results.extend(batch)
+
+        batch_executed = sum(1 for result in batch if result.status != "no_work")
+        executed_items += batch_executed
+        batch_no_work = all(result.status == "no_work" for result in batch)
+        if batch_no_work:
+            no_work_polls += 1
+            if config.stop_on_no_work:
+                break
+            time.sleep(config.poll_seconds)
+            continue
+
+        if config.max_polls is not None and poll_count >= config.max_polls:
+            break
+        time.sleep(config.poll_seconds)
+
+    return WorkerDaemonResult(
+        poll_count=poll_count,
+        executed_items=executed_items,
+        no_work_polls=no_work_polls,
+        results=results,
+    )

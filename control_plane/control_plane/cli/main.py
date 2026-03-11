@@ -14,10 +14,12 @@ from control_plane.cli.generate_l1_sweep import main as generate_l1_sweep_main
 from control_plane.cli.generate_l2_campaign import main as generate_l2_campaign_main
 from control_plane.cli.import_queue import main as import_queue_main
 from control_plane.cli.operate_submission import main as operate_submission_main
+from control_plane.cli.process_completions import main as process_completions_main
 from control_plane.cli.prepare_submission import main as prepare_submission_main
 from control_plane.cli.publish_review import main as publish_review_main
 from control_plane.cli.reconcile_github import main as reconcile_github_main
 from control_plane.cli.run_scheduler import main as run_scheduler_main
+from control_plane.cli.run_worker_daemon import main as run_worker_daemon_main
 from control_plane.cli.run_worker import main as run_worker_main
 from control_plane.cli.submission_status import main as submission_status_main
 from control_plane.cli.sync_artifacts import main as sync_artifacts_main
@@ -138,6 +140,26 @@ def main(argv: list[str] | None = None) -> int:
     worker_parser.add_argument("--log-root")
     worker_parser.add_argument("--max-items", type=int, default=1)
 
+    worker_daemon_parser = subparsers.add_parser("run-worker-daemon", help="Run the internal worker as a polling daemon")
+    worker_daemon_parser.add_argument("--database-url", required=True)
+    worker_daemon_parser.add_argument("--repo-root", required=True)
+    worker_daemon_parser.add_argument("--machine-key", required=True)
+    worker_daemon_parser.add_argument("--hostname")
+    worker_daemon_parser.add_argument("--executor-kind", default="local_process")
+    worker_daemon_parser.add_argument("--capabilities-json")
+    worker_daemon_parser.add_argument("--capability-filter-json")
+    worker_daemon_parser.add_argument("--lease-seconds", type=int, default=1800)
+    worker_daemon_parser.add_argument("--heartbeat-seconds", type=int, default=30)
+    worker_daemon_parser.add_argument("--command-timeout-seconds", type=int)
+    worker_daemon_parser.add_argument("--max-retry-attempts", type=int, default=2)
+    worker_daemon_parser.add_argument("--enforce-source-commit", action="store_true")
+    worker_daemon_parser.add_argument("--log-root")
+    worker_daemon_parser.add_argument("--poll-seconds", type=int, default=15)
+    worker_daemon_parser.add_argument("--max-items-per-poll", type=int, default=1)
+    worker_daemon_parser.add_argument("--max-polls", type=int)
+    worker_daemon_parser.add_argument("--stop-on-no-work", action="store_true")
+    worker_daemon_parser.add_argument("--no-scheduler-maintenance", action="store_true")
+
     sync_parser = subparsers.add_parser("sync-artifacts", help="Sync a completed run into an evaluated queue snapshot")
     sync_parser.add_argument("--database-url", required=True)
     sync_parser.add_argument("--repo-root", required=True)
@@ -149,6 +171,27 @@ def main(argv: list[str] | None = None) -> int:
     sync_parser.add_argument("--executor", default="@control_plane")
     sync_parser.add_argument("--branch-name")
     sync_parser.add_argument("--target-path")
+
+    process_parser = subparsers.add_parser(
+        "process-completions",
+        help="Consume completed items in artifact_sync and optionally submit them",
+    )
+    process_parser.add_argument("--database-url", required=True)
+    process_parser.add_argument("--repo-root", required=True)
+    process_parser.add_argument("--repo")
+    process_parser.add_argument("--item-id")
+    process_parser.add_argument("--submit", action="store_true")
+    process_parser.add_argument("--evaluator-id", default="control_plane")
+    process_parser.add_argument("--session-id")
+    process_parser.add_argument("--host")
+    process_parser.add_argument("--executor", default="@control_plane")
+    process_parser.add_argument("--branch-name")
+    process_parser.add_argument("--snapshot-target-path")
+    process_parser.add_argument("--package-target-path")
+    process_parser.add_argument("--worktree-root")
+    process_parser.add_argument("--commit-message")
+    process_parser.add_argument("--pr-base", default="master")
+    process_parser.add_argument("--force", action="store_true")
 
     review_parser = subparsers.add_parser(
         "publish-review",
@@ -415,6 +458,44 @@ def main(argv: list[str] | None = None) -> int:
         if args.enforce_source_commit:
             argv2.append("--enforce-source-commit")
         return run_worker_main(argv2)
+    if args.command == "run-worker-daemon":
+        argv2 = [
+            "--database-url",
+            args.database_url,
+            "--repo-root",
+            args.repo_root,
+            "--machine-key",
+            args.machine_key,
+            "--executor-kind",
+            args.executor_kind,
+            "--lease-seconds",
+            str(args.lease_seconds),
+            "--heartbeat-seconds",
+            str(args.heartbeat_seconds),
+            "--max-retry-attempts",
+            str(args.max_retry_attempts),
+            "--poll-seconds",
+            str(args.poll_seconds),
+            "--max-items-per-poll",
+            str(args.max_items_per_poll),
+        ]
+        for key, value in [
+            ("--hostname", args.hostname),
+            ("--capabilities-json", args.capabilities_json),
+            ("--capability-filter-json", args.capability_filter_json),
+            ("--command-timeout-seconds", args.command_timeout_seconds),
+            ("--log-root", args.log_root),
+            ("--max-polls", args.max_polls),
+        ]:
+            if value is not None:
+                argv2.extend([key, str(value)])
+        if args.enforce_source_commit:
+            argv2.append("--enforce-source-commit")
+        if args.stop_on_no_work:
+            argv2.append("--stop-on-no-work")
+        if args.no_scheduler_maintenance:
+            argv2.append("--no-scheduler-maintenance")
+        return run_worker_daemon_main(argv2)
     if args.command == "sync-artifacts":
         argv2 = [
             "--database-url",
@@ -437,6 +518,37 @@ def main(argv: list[str] | None = None) -> int:
             if value is not None:
                 argv2.extend([key, str(value)])
         return sync_artifacts_main(argv2)
+    if args.command == "process-completions":
+        argv2 = [
+            "--database-url",
+            args.database_url,
+            "--repo-root",
+            args.repo_root,
+            "--evaluator-id",
+            args.evaluator_id,
+            "--executor",
+            args.executor,
+            "--pr-base",
+            args.pr_base,
+        ]
+        for key, value in [
+            ("--repo", args.repo),
+            ("--item-id", args.item_id),
+            ("--session-id", args.session_id),
+            ("--host", args.host),
+            ("--branch-name", args.branch_name),
+            ("--snapshot-target-path", args.snapshot_target_path),
+            ("--package-target-path", args.package_target_path),
+            ("--worktree-root", args.worktree_root),
+            ("--commit-message", args.commit_message),
+        ]:
+            if value is not None:
+                argv2.extend([key, str(value)])
+        if args.submit:
+            argv2.append("--submit")
+        if args.force:
+            argv2.append("--force")
+        return process_completions_main(argv2)
     if args.command == "publish-review":
         argv2 = [
             "--database-url",
