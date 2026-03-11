@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import json
 from pathlib import Path
+import shutil
 import subprocess
 from typing import Any
 
@@ -86,9 +87,69 @@ def _load_manifest(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def _run_cmd(args: list[str], *, cwd: Path) -> str:
-    result = subprocess.run(args, cwd=str(cwd), check=True, text=True, capture_output=True)
+def _run_cmd(args: list[str], *, cwd: Path, env: dict[str, str] | None = None) -> str:
+    result = subprocess.run(args, cwd=str(cwd), check=True, text=True, capture_output=True, env=env)
     return result.stdout.strip()
+
+
+def _run_cmd_capture(args: list[str], *, cwd: Path) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(args, cwd=str(cwd), check=False, text=True, capture_output=True)
+
+
+def _commit_env() -> dict[str, str]:
+    env = dict(**__import__("os").environ)
+    env.setdefault("GIT_AUTHOR_NAME", "RTLGen Control Plane")
+    env.setdefault("GIT_AUTHOR_EMAIL", "control-plane@rtlgen.local")
+    env.setdefault("GIT_COMMITTER_NAME", env["GIT_AUTHOR_NAME"])
+    env.setdefault("GIT_COMMITTER_EMAIL", env["GIT_AUTHOR_EMAIL"])
+    return env
+
+
+def _copy_into_worktree(*, repo_root: Path, worktree_path: Path, rel_path: str) -> None:
+    src = repo_root / rel_path
+    dst = worktree_path / rel_path
+    if not src.exists():
+        raise SubmissionExecuteError(f"review file missing: {rel_path}")
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(src, dst)
+
+
+def _refresh_submission_worktree(*, repo_root: Path, worktree_path: Path, manifest: dict[str, Any], item_id: str) -> str:
+    package_rel = str(manifest.get("package_path", "")).strip()
+    snapshot_rel = str(manifest.get("snapshot_path", "")).strip()
+    review_rel = str(manifest.get("review_artifact_path") or "").strip()
+    pr_body_rel = str(manifest.get("pr_body_path", "")).strip()
+    if not package_rel or not snapshot_rel or not pr_body_rel:
+        raise SubmissionExecuteError("submission manifest is missing package_path, snapshot_path, or pr_body_path")
+
+    package_path = repo_root / package_rel
+    if not package_path.exists():
+        raise SubmissionExecuteError(f"review package does not exist: {package_path}")
+    package_payload = json.loads(package_path.read_text(encoding="utf-8"))
+    pr_body_md = str(((package_payload.get("pr_payload") or {}).get("body_md")) or "")
+    if not pr_body_md.strip():
+        raise SubmissionExecuteError(f"review package is missing pr_payload.body_md: {package_path}")
+
+    for rel_path in [snapshot_rel, package_rel, *([review_rel] if review_rel else [])]:
+        _copy_into_worktree(repo_root=repo_root, worktree_path=worktree_path, rel_path=rel_path)
+
+    pr_body_path = worktree_path / pr_body_rel
+    pr_body_path.parent.mkdir(parents=True, exist_ok=True)
+    pr_body_path.write_text(pr_body_md, encoding="utf-8")
+
+    add_args = ["git", "add", "-f", snapshot_rel, package_rel, pr_body_rel]
+    if review_rel:
+        add_args.append(review_rel)
+    _run_cmd(add_args, cwd=worktree_path)
+
+    status = _run_cmd(["git", "status", "--porcelain"], cwd=worktree_path)
+    if status.strip():
+        _run_cmd(
+            ["git", "commit", "-m", f"control_plane: refresh review package for {item_id}"],
+            cwd=worktree_path,
+            env=_commit_env(),
+        )
+    return _run_cmd(["git", "rev-parse", "HEAD"], cwd=worktree_path)
 
 
 def _upsert_execution_artifact(
@@ -162,34 +223,18 @@ def execute_submission(session: Session, request: SubmissionExecuteRequest) -> S
     pr_body_path = Path(str(manifest.get("pr_body_path", "")).strip())
     if not pr_body_path.is_absolute():
         pr_body_path = worktree_path / pr_body_path
-    if not pr_body_path.exists():
-        raise SubmissionExecuteError(f"PR body file does not exist: {pr_body_path}")
+    commit_sha = _refresh_submission_worktree(
+        repo_root=repo_root,
+        worktree_path=worktree_path,
+        manifest=manifest,
+        item_id=work_item.item_id,
+    )
+    manifest["commit_sha"] = commit_sha
+    manifest["generated_utc"] = utcnow().isoformat().replace("+00:00", "Z")
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
 
     _run_cmd(["git", "push", "-u", "origin", branch_name], cwd=worktree_path)
-    pr_create_out = _run_cmd(
-        [
-            "gh",
-            "--repo",
-            request.repo,
-            "pr",
-            "create",
-            "--draft",
-            "--base",
-            pr_base,
-            "--head",
-            branch_name,
-            "--title",
-            pr_title,
-            "--body-file",
-            str(pr_body_path),
-        ],
-        cwd=worktree_path,
-    )
-    pr_url = pr_create_out.strip().splitlines()[-1].strip()
-    if not pr_url:
-        raise SubmissionExecuteError("gh pr create did not return a PR URL")
-
-    pr_view_json = _run_cmd(
+    pr_view_proc = _run_cmd_capture(
         [
             "gh",
             "--repo",
@@ -202,7 +247,46 @@ def execute_submission(session: Session, request: SubmissionExecuteRequest) -> S
         ],
         cwd=worktree_path,
     )
-    pr_view = json.loads(pr_view_json)
+    if pr_view_proc.returncode == 0:
+        pr_view = json.loads(pr_view_proc.stdout.strip())
+        pr_url = str(pr_view.get("url", "")).strip()
+    else:
+        pr_create_out = _run_cmd(
+            [
+                "gh",
+                "--repo",
+                request.repo,
+                "pr",
+                "create",
+                "--draft",
+                "--base",
+                pr_base,
+                "--head",
+                branch_name,
+                "--title",
+                pr_title,
+                "--body-file",
+                str(pr_body_path),
+            ],
+            cwd=worktree_path,
+        )
+        pr_url = pr_create_out.strip().splitlines()[-1].strip()
+        if not pr_url:
+            raise SubmissionExecuteError("gh pr create did not return a PR URL")
+        pr_view_json = _run_cmd(
+            [
+                "gh",
+                "--repo",
+                request.repo,
+                "pr",
+                "view",
+                branch_name,
+                "--json",
+                "number,url,headRefName,baseRefName",
+            ],
+            cwd=worktree_path,
+        )
+        pr_view = json.loads(pr_view_json)
     try:
         pr_number = int(pr_view["number"])
     except Exception as exc:

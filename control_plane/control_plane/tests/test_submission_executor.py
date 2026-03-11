@@ -188,6 +188,7 @@ def _seed_l2_reviewable(session: Session, repo_root: Path) -> tuple[str, str]:
 
 def _make_fake_bin(fake_bin: Path, log_path: Path) -> None:
     fake_bin.mkdir(parents=True, exist_ok=True)
+    state_path = fake_bin / "gh_state.json"
     _write(
         fake_bin / "git",
         "#!/usr/bin/env python3\n"
@@ -204,13 +205,21 @@ def _make_fake_bin(fake_bin: Path, log_path: Path) -> None:
         "#!/usr/bin/env python3\n"
         "import json, os, sys\n"
         f"log={json.dumps(str(log_path))}\n"
+        f"state_path={json.dumps(str(state_path))}\n"
         "with open(log, 'a', encoding='utf-8') as h:\n"
         "    h.write(json.dumps({'tool':'gh','argv':sys.argv[1:]})+'\\n')\n"
         "argv=sys.argv[1:]\n"
+        "state = {}\n"
+        "if os.path.exists(state_path):\n"
+        "    state = json.loads(open(state_path, 'r', encoding='utf-8').read())\n"
         "if argv[:4] == ['--repo','yhmtmt/RTLGen','pr','create']:\n"
+        "    state['created'] = True\n"
+        "    open(state_path, 'w', encoding='utf-8').write(json.dumps(state))\n"
         "    print('https://github.com/yhmtmt/RTLGen/pull/123')\n"
         "    sys.exit(0)\n"
         "if argv[:4] == ['--repo','yhmtmt/RTLGen','pr','view']:\n"
+        "    if not state.get('created'):\n"
+        "        sys.exit(1)\n"
         "    print(json.dumps({'number':123,'url':'https://github.com/yhmtmt/RTLGen/pull/123','headRefName':'eval/l2_exec_demo/s20260310t081500z','baseRefName':'master'}))\n"
         "    sys.exit(0)\n"
         "sys.exit(1)\n",
@@ -279,4 +288,65 @@ def test_execute_submission_pushes_and_reconciles() -> None:
             log_entries = [json.loads(line) for line in log_path.read_text(encoding="utf-8").splitlines()]
             assert any(entry["tool"] == "git" and entry["argv"][:3] == ["push", "-u", "origin"] for entry in log_entries)
             assert any(entry["tool"] == "gh" and entry["argv"][:4] == ["--repo", "yhmtmt/RTLGen", "pr", "create"] for entry in log_entries)
+            assert any(entry["tool"] == "gh" and entry["argv"][:4] == ["--repo", "yhmtmt/RTLGen", "pr", "view"] for entry in log_entries)
+
+
+def test_execute_submission_reuses_existing_pr_on_rerun() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, run_key = _seed_l2_reviewable(session, repo_root)
+            prepare_submission_branch(
+                session,
+                SubmissionPrepareRequest(
+                    repo_root=str(repo_root),
+                    item_id=item_id,
+                    evaluator_id="cpbot",
+                    session_id="s20260310t081500z",
+                    host="cp-host",
+                    worktree_root=str(repo_root / "tmp_submit"),
+                ),
+            )
+
+            fake_bin = repo_root / "fake_bin"
+            log_path = repo_root / "fake_cmds.log"
+            _make_fake_bin(fake_bin, log_path)
+            old_path = os.environ.get("PATH", "")
+            os.environ["PATH"] = f"{fake_bin}:{old_path}"
+            try:
+                execute_submission(
+                    session,
+                    SubmissionExecuteRequest(
+                        repo_root=str(repo_root),
+                        repo="yhmtmt/RTLGen",
+                        item_id=item_id,
+                        evaluator_id="cpbot",
+                        session_id="s20260310t081500z",
+                        host="cp-host",
+                    ),
+                )
+                log_path.write_text("", encoding="utf-8")
+                result = execute_submission(
+                    session,
+                    SubmissionExecuteRequest(
+                        repo_root=str(repo_root),
+                        repo="yhmtmt/RTLGen",
+                        item_id=item_id,
+                        evaluator_id="cpbot",
+                        session_id="s20260310t081500z",
+                        host="cp-host",
+                    ),
+                )
+            finally:
+                os.environ["PATH"] = old_path
+
+            assert result.pr_number == 123
+            log_entries = [json.loads(line) for line in log_path.read_text(encoding="utf-8").splitlines() if line.strip()]
+            assert any(entry["tool"] == "git" and entry["argv"][:3] == ["push", "-u", "origin"] for entry in log_entries)
+            assert not any(entry["tool"] == "gh" and entry["argv"][:4] == ["--repo", "yhmtmt/RTLGen", "pr", "create"] for entry in log_entries)
             assert any(entry["tool"] == "gh" and entry["argv"][:4] == ["--repo", "yhmtmt/RTLGen", "pr", "view"] for entry in log_entries)
