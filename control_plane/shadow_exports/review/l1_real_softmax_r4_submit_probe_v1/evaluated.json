@@ -51,7 +51,7 @@
     "evaluator_id": "control_plane",
     "executor": "@control_plane",
     "host": "353f3fadd15d",
-    "identity_block": "[role:evaluator][account:control_plane][session:s20260311t004344z][host:353f3fadd15d][item:l1_real_softmax_r4_submit_probe_v1]",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260311t005240z][host:353f3fadd15d][item:l1_real_softmax_r4_submit_probe_v1]",
     "metrics_rows": [
       {
         "tag": "softmax_rowwise_ng45_v1_bd9157ff",
@@ -119,12 +119,12 @@
       }
     ],
     "queue_item_id": "l1_real_softmax_r4_submit_probe_v1",
-    "session_id": "s20260311t004344z",
+    "session_id": "s20260311t005240z",
     "status": "ok",
     "summary": "4/4 commands succeeded"
   },
   "handoff": {
-    "branch": "eval/l1_real_softmax_r4_submit_probe_v1/s20260311t004344z",
+    "branch": "eval/l1_real_softmax_r4_submit_probe_v1/s20260311t005240z",
     "pr_title": "eval: run layer1 sweep from nangate45_softmax_rowwise_v1 on nangate45",
     "checklist": [
       "Commit only lightweight metrics and regenerated runs/index.csv",
@@ -133,7 +133,7 @@
     ],
     "pr_body_fields": {
       "host": "353f3fadd15d",
-      "session_id": "s20260311t004344z",
+      "session_id": "s20260311t005240z",
       "evaluator_id": "control_plane",
       "queue_item_id": "l1_real_softmax_r4_submit_probe_v1"
     },
