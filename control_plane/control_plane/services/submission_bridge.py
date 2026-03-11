@@ -56,6 +56,31 @@ class SubmissionPrepareResult:
     pr_create_command: str
 
 
+def _is_canonical_runs_evidence(rel_path: str) -> bool:
+    parts = Path(rel_path).parts
+    if not parts or parts[0] != "runs":
+        return False
+    blocked = {"work", "artifacts", "comparisons"}
+    return not any(part in blocked for part in parts)
+
+
+def _canonical_evidence_files(*, repo_root: Path, work_item: WorkItem) -> list[str]:
+    files: list[str] = []
+    seen: set[str] = set()
+    for output in work_item.expected_outputs or []:
+        rel_path = _repo_rel(str(output), repo_root)
+        if not _is_canonical_runs_evidence(rel_path):
+            continue
+        candidate = repo_root / rel_path
+        if not candidate.exists() or not candidate.is_file():
+            continue
+        if rel_path in seen:
+            continue
+        seen.add(rel_path)
+        files.append(rel_path)
+    return files
+
+
 def _resolve_run(session: Session, request: SubmissionPrepareRequest) -> tuple[WorkItem, Run]:
     if request.run_key:
         run = session.query(Run).filter(Run.run_key == request.run_key).one_or_none()
@@ -186,9 +211,11 @@ def prepare_submission_branch(session: Session, request: SubmissionPrepareReques
 
     review_artifact = package_payload.get("review_artifact") or {}
     review_rel = str(review_artifact.get("path", "")).strip() if isinstance(review_artifact, dict) else ""
+    evidence_files = _canonical_evidence_files(repo_root=repo_root, work_item=work_item)
     files_to_copy = [snapshot_rel, package_rel]
     if review_rel:
         files_to_copy.append(review_rel)
+    files_to_copy.extend(evidence_files)
 
     worktree_root = _worktree_root(work_item.item_id, request.worktree_root)
     worktree_path = worktree_root / "repo"
@@ -213,6 +240,7 @@ def prepare_submission_branch(session: Session, request: SubmissionPrepareReques
             package_rel,
             pr_body_rel,
             *( [review_rel] if review_rel else [] ),
+            *evidence_files,
         )
         commit_message = request.commit_message or f"control_plane: publish review package for {work_item.item_id}"
         _run_git(worktree_path, "commit", "-m", commit_message, env=_commit_env())
@@ -243,6 +271,7 @@ def prepare_submission_branch(session: Session, request: SubmissionPrepareReques
         "package_path": package_rel,
         "snapshot_path": snapshot_rel,
         "review_artifact_path": review_rel or None,
+        "evidence_paths": evidence_files,
         "pr_title": pr_title,
         "pr_body_path": pr_body_rel,
         "pr_create_command": (

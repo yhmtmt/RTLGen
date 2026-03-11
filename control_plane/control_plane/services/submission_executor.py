@@ -118,6 +118,7 @@ def _refresh_submission_worktree(*, repo_root: Path, worktree_path: Path, manife
     package_rel = str(manifest.get("package_path", "")).strip()
     snapshot_rel = str(manifest.get("snapshot_path", "")).strip()
     review_rel = str(manifest.get("review_artifact_path") or "").strip()
+    evidence_paths = [str(path).strip() for path in (manifest.get("evidence_paths") or []) if str(path).strip()]
     pr_body_rel = str(manifest.get("pr_body_path", "")).strip()
     if not package_rel or not snapshot_rel or not pr_body_rel:
         raise SubmissionExecuteError("submission manifest is missing package_path, snapshot_path, or pr_body_path")
@@ -130,7 +131,7 @@ def _refresh_submission_worktree(*, repo_root: Path, worktree_path: Path, manife
     if not pr_body_md.strip():
         raise SubmissionExecuteError(f"review package is missing pr_payload.body_md: {package_path}")
 
-    for rel_path in [snapshot_rel, package_rel, *([review_rel] if review_rel else [])]:
+    for rel_path in [snapshot_rel, package_rel, *([review_rel] if review_rel else []), *evidence_paths]:
         _copy_into_worktree(repo_root=repo_root, worktree_path=worktree_path, rel_path=rel_path)
 
     pr_body_path = worktree_path / pr_body_rel
@@ -140,6 +141,7 @@ def _refresh_submission_worktree(*, repo_root: Path, worktree_path: Path, manife
     add_args = ["git", "add", "-f", snapshot_rel, package_rel, pr_body_rel]
     if review_rel:
         add_args.append(review_rel)
+    add_args.extend(evidence_paths)
     _run_cmd(add_args, cwd=worktree_path)
 
     status = _run_cmd(["git", "status", "--porcelain"], cwd=worktree_path)

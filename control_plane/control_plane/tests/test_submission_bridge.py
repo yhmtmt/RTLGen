@@ -17,6 +17,7 @@ from control_plane.models.enums import ExecutorType, FlowName, LayerName, RunSta
 from control_plane.models.runs import Run
 from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
+from control_plane.services.l1_result_consumer import Layer1ConsumeRequest, consume_l1_result
 from control_plane.services.l2_result_consumer import Layer2ConsumeRequest, consume_l2_result
 from control_plane.services.submission_bridge import SubmissionPrepareRequest, SubmissionPrepareError, prepare_submission_branch
 
@@ -183,6 +184,94 @@ def _seed_l2_reviewable(session: Session, repo_root: Path) -> tuple[str, str]:
     return work_item.item_id, run.run_key
 
 
+def _seed_l1_reviewable(session: Session, repo_root: Path) -> tuple[str, str]:
+    metrics_rel = "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv"
+    _write(
+        repo_root / metrics_rel,
+        (
+            "platform,status,param_hash,tag,critical_path_ns,die_area,total_power_mw,params_json,result_path\n"
+            'nangate45,ok,fast0001,tag_fast,12.0,30000,0.18,{"CLOCK_PERIOD": 6.0, "CORE_UTILIZATION": 30},'
+            "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/work/fast0001/result.json\n"
+        ),
+    )
+    _write(
+        repo_root / "runs/index.csv",
+        (
+            "circuit_type,design,platform,status,critical_path_ns,die_area,total_power_mw,config_hash,param_hash,tag,result_path,params_json,metrics_path,design_path,sram_area_um2,sram_read_energy_pj,sram_write_energy_pj,sram_max_access_time_ns\n"
+            "activations,softmax_rowwise_int8_r4_wrapper,nangate45,ok,12.0,30000,0.18,cfg123,fast0001,tag_fast,runs/designs/activations/softmax_rowwise_int8_r4_wrapper/work/fast0001/result.json,\"{\\\"CLOCK_PERIOD\\\": 6.0}\",runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv,runs/designs/activations/softmax_rowwise_int8_r4_wrapper,,,\n"
+        ),
+    )
+
+    payload = {
+        "item_id": "l1_submit_demo",
+        "title": "Layer1 submit demo",
+        "layer": "layer1",
+        "flow": "openroad",
+        "handoff": {
+            "branch": "eval/l1_submit_demo/<session_id>",
+            "pr_title": "eval: run layer1 submit demo",
+            "pr_body_fields": {
+                "evaluator_id": "control_plane",
+                "session_id": "<session_id>",
+                "host": "<host>",
+                "queue_item_id": "l1_submit_demo",
+            },
+            "checklist": ["Commit lightweight metrics outputs only"],
+        },
+    }
+    task_request = TaskRequest(
+        request_key="l1_sweep:l1_submit_demo",
+        source="test",
+        requested_by="@tester",
+        title="Layer1 submit demo",
+        description="test submission bridge with canonical evidence",
+        layer=LayerName.LAYER1,
+        flow=FlowName.OPENROAD,
+        priority=1,
+        request_payload=payload,
+        source_commit="deadbeef",
+    )
+    session.add(task_request)
+    session.flush()
+
+    work_item = WorkItem(
+        work_item_key="l1_sweep:l1_submit_demo",
+        task_request_id=task_request.id,
+        item_id="l1_submit_demo",
+        layer=LayerName.LAYER1,
+        flow=FlowName.OPENROAD,
+        platform="nangate45",
+        task_type="l1_sweep",
+        state=WorkItemState.ARTIFACT_SYNC,
+        priority=1,
+        source_mode="config",
+        input_manifest={"configs": ["examples/config_softmax_rowwise_int8.json"]},
+        command_manifest=[],
+        expected_outputs=[metrics_rel, "runs/index.csv"],
+        acceptance_rules=[],
+        source_commit="deadbeef",
+    )
+    session.add(work_item)
+    session.flush()
+
+    run = Run(
+        run_key="l1_submit_demo_run_1",
+        work_item_id=work_item.id,
+        attempt=1,
+        executor_type=ExecutorType.INTERNAL_WORKER,
+        status=RunStatus.SUCCEEDED,
+        started_at=utcnow(),
+        completed_at=utcnow(),
+        checkout_commit="deadbeef",
+        result_summary="4/4 commands succeeded",
+        result_payload={"queue_result": {"status": "ok", "metrics_rows": [f"{metrics_rel}:2"], "notes": []}},
+    )
+    session.add(run)
+    session.commit()
+    consume_l1_result(session, Layer1ConsumeRequest(repo_root=str(repo_root), item_id=work_item.item_id))
+    return work_item.item_id, run.run_key
+
+
 def test_prepare_submission_branch_creates_commit_and_manifest() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
@@ -212,12 +301,44 @@ def test_prepare_submission_branch_creates_commit_and_manifest() -> None:
             assert (Path(result.pr_body_path)).exists()
             manifest = json.loads((repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "submission_manifest.json").read_text())
             assert manifest["branch_name"] == result.branch_name
+            assert manifest["evidence_paths"] == []
             assert "gh pr create --draft" in manifest["pr_create_command"]
 
             branch_head = _git(repo_root, "rev-parse", result.branch_name)
             assert branch_head == result.commit_sha
             artifact = session.query(Artifact).filter_by(kind="submission_manifest").one()
             assert artifact.path == f"control_plane/shadow_exports/review/{item_id}/submission_manifest.json"
+
+
+def test_prepare_submission_branch_includes_canonical_runs_evidence_for_real_item() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, run_key = _seed_l1_reviewable(session, repo_root)
+            result = prepare_submission_branch(
+                session,
+                SubmissionPrepareRequest(
+                    repo_root=str(repo_root),
+                    item_id=item_id,
+                    evaluator_id="cpbot",
+                    session_id="s20260310t080500z",
+                    host="cp-host",
+                    worktree_root=str(repo_root / "tmp_submit"),
+                ),
+            )
+
+            manifest = json.loads((repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "submission_manifest.json").read_text())
+            assert manifest["evidence_paths"] == [
+                "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv",
+                "runs/index.csv",
+            ]
+            assert (Path(result.worktree_path) / "runs" / "designs" / "activations" / "softmax_rowwise_int8_r4_wrapper" / "metrics.csv").exists()
+            assert (Path(result.worktree_path) / "runs" / "index.csv").exists()
 
 
 def test_prepare_submission_branch_rejects_existing_branch() -> None:
