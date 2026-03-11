@@ -1,6 +1,6 @@
 {
   "version": 0.1,
-  "generated_utc": "2026-03-11T13:53:02.952082Z",
+  "generated_utc": "2026-03-11T14:04:34.122708Z",
   "item_id": "l1_daemon_real_ingest_r4_acc20_20260311134953",
   "run_key": "l1_daemon_real_ingest_r4_acc20_20260311134953_run_93e6f5608d256e55",
   "layer": "layer1",
@@ -14,8 +14,8 @@
       "completed_utc": "2026-03-11T13:51:15.968955Z",
       "evaluator_id": "control_plane",
       "executor": "@control_plane",
-      "host": "5d280cf7455e",
-      "identity_block": "[role:evaluator][account:control_plane][session:s20260311t135302z][host:5d280cf7455e][item:l1_daemon_real_ingest_r4_acc20_20260311134953]",
+      "host": "a73fb7753672",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260311t135302z][host:a73fb7753672][item:l1_daemon_real_ingest_r4_acc20_20260311134953]",
       "metrics_rows": [
         {
           "tag": "softmax_rowwise_ng45_v1_bd9157ff",
@@ -132,7 +132,7 @@
     "branch": "eval/l1_daemon_real_ingest_r4_acc20_20260311134953/s20260311t135302z",
     "title": "eval: run layer1 sweep from nangate45_softmax_rowwise_v1 on nangate45",
     "body_fields": {
-      "host": "5d280cf7455e",
+      "host": "a73fb7753672",
       "session_id": "s20260311t135302z",
       "evaluator_id": "control_plane",
       "queue_item_id": "l1_daemon_real_ingest_r4_acc20_20260311134953"
