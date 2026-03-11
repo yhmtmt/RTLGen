@@ -6,6 +6,7 @@ source "${ROOT}/control_plane/.venv/bin/activate"
 
 DB_URL=${NOTEBOOK_DB_URL:-postgresql+psycopg://rtlgen:rtlgen@localhost:5432/rtlgen_control_plane}
 ITEM_ID=${ITEM_ID:-retry_remote_probe_$(date -u +%Y%m%d%H%M%S)}
+export DB_URL ITEM_ID
 
 echo "Preparing remote retry probe item:"
 echo "  ITEM_ID=${ITEM_ID}"

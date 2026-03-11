@@ -6,6 +6,7 @@ source "${ROOT}/control_plane/.venv/bin/activate"
 
 DB_URL=${NOTEBOOK_DB_URL:-postgresql+psycopg://rtlgen:rtlgen@localhost:5432/rtlgen_control_plane}
 ITEM_ID=${ITEM_ID:?Set ITEM_ID to the retry probe work item}
+export DB_URL ITEM_ID
 
 echo "Verifying remote retry probe item:"
 echo "  ITEM_ID=${ITEM_ID}"
