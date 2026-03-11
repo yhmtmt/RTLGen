@@ -67,7 +67,7 @@
     "evaluator_id": "control_plane",
     "executor": "@control_plane",
     "host": "353f3fadd15d",
-    "identity_block": "[role:evaluator][account:control_plane][session:s20260311t043540z][host:353f3fadd15d][item:l2_real_softmax_submit_v1]",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260311t043231z][host:353f3fadd15d][item:l2_real_softmax_submit_v1]",
     "metrics_rows": [
       {
         "tag": "npu_fp16_nm1_softcmp33_flat_nomacro_r1",
@@ -167,12 +167,12 @@
       }
     ],
     "queue_item_id": "l2_real_softmax_submit_v1",
-    "session_id": "s20260311t043540z",
+    "session_id": "s20260311t043231z",
     "status": "ok",
     "summary": "4/4 commands succeeded"
   },
   "handoff": {
-    "branch": "eval/l2_real_softmax_submit_v1/s20260311t043540z",
+    "branch": "eval/l2_real_softmax_submit_v1/s20260311t043231z",
     "pr_title": "eval: run layer2 campaign npu_e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_v1 on nangate45",
     "checklist": [
       "Commit lightweight campaign artifacts only",
@@ -182,7 +182,7 @@
     ],
     "pr_body_fields": {
       "host": "353f3fadd15d",
-      "session_id": "s20260311t043540z",
+      "session_id": "s20260311t043231z",
       "evaluator_id": "control_plane",
       "queue_item_id": "l2_real_softmax_submit_v1"
     },
