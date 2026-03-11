@@ -222,9 +222,11 @@ def consume_l2_result(session: Session, request: Layer2ConsumeRequest) -> Layer2
     summary_rows = _load_csv(_resolve_path(repo_root=repo_root, path_text=summary_rel))
     summary_best = _summary_best_row(summary_rows)
     objective_profiles: list[dict[str, Any]] = []
+    objective_sweep_exists = False
     if objective_sweep_rel:
         objective_sweep_path = _resolve_path(repo_root=repo_root, path_text=objective_sweep_rel)
         if objective_sweep_path.exists():
+            objective_sweep_exists = True
             objective_profiles = _profile_recommendations(_load_csv(objective_sweep_path))
 
     payload = _build_payload(
@@ -238,7 +240,7 @@ def consume_l2_result(session: Session, request: Layer2ConsumeRequest) -> Layer2
             "summary_csv": summary_rel,
             "results_csv": results_rel,
             "report_md": report_rel,
-            **({"objective_sweep_csv": objective_sweep_rel} if objective_sweep_rel else {}),
+            **({"objective_sweep_csv": objective_sweep_rel} if objective_sweep_exists else {}),
         },
     )
 
