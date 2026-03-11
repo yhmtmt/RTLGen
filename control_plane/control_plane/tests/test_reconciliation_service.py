@@ -534,3 +534,60 @@ def test_sync_run_artifacts_reuses_branch_session_identity_when_session_not_prov
         assert payload["result"]["session_id"] == "s20260311t120000z"
         assert payload["handoff"]["branch"] == "eval/cp009_item/s20260311t120000z"
         assert payload["handoff"]["pr_body_fields"]["session_id"] == "s20260311t120000z"
+
+
+def test_sync_run_artifacts_prefers_worker_hostname_when_host_not_provided() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        queue_path = _write_queue_item(repo_root)
+        db_path = Path(td) / "cp.db"
+        engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            import_queue_item(
+                session,
+                QueueImportRequest(
+                    repo_root=str(repo_root),
+                    queue_path=str(queue_path.relative_to(repo_root)),
+                ),
+            )
+
+        session_factory = build_session_factory(engine)
+        worker_results = run_worker(
+            session_factory,
+            config=WorkerConfig(
+                repo_root=str(repo_root),
+                machine_key="cp009-remote-worker",
+                hostname="remote-evaluator-host",
+                capabilities={"platform": "nangate45", "flow": "openroad"},
+                capability_filter={"platform": "nangate45", "flow": "openroad"},
+                lease_seconds=60,
+                heartbeat_seconds=1,
+            ),
+            max_items=1,
+        )
+        assert worker_results[0].status == "succeeded"
+
+        with Session(engine) as session:
+            sync_run_artifacts(
+                session,
+                ArtifactSyncRequest(
+                    repo_root=str(repo_root),
+                    item_id="cp009_item",
+                    evaluator_id="cpbot",
+                    session_id="s20260311t121500z",
+                    executor="@control_plane",
+                    target_path="control_plane/shadow_exports/evaluated/cp009_item.json",
+                ),
+            )
+
+        payload = json.loads(
+            (repo_root / "control_plane" / "shadow_exports" / "evaluated" / "cp009_item.json").read_text(encoding="utf-8")
+        )
+        assert payload["result"]["host"] == "remote-evaluator-host"
+        assert payload["result"]["identity_block"] == (
+            "[role:evaluator][account:cpbot][session:s20260311t121500z]"
+            "[host:remote-evaluator-host][item:cp009_item]"
+        )
+        assert payload["handoff"]["pr_body_fields"]["host"] == "remote-evaluator-host"

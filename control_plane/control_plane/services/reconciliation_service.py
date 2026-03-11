@@ -378,7 +378,7 @@ def sync_run_artifacts(session: Session, request: ArtifactSyncRequest) -> Artifa
     )
     requested_branch_name = request.branch_name or run.branch_name
     session_id = request.session_id or _session_id_from_branch(requested_branch_name) or _default_session_id()
-    host = request.host or socket.gethostname()
+    host = request.host or (run.machine.hostname if run.machine is not None else None) or socket.gethostname()
     branch_name = requested_branch_name or f"eval/{work_item.item_id}/{session_id}"
     queue_result.update(
         {
