@@ -31,6 +31,7 @@ class WorkerConfig:
     lease_seconds: int = 1800
     heartbeat_seconds: int = 30
     command_timeout_seconds: int | None = None
+    max_retry_attempts: int = 2
     enforce_source_commit: bool = False
     log_root: str | None = None
 
@@ -42,6 +43,60 @@ class WorkerLoopResult:
     run_key: str | None = None
     command_count: int = 0
     summary: str | None = None
+
+
+def _classify_failure(
+    *,
+    command_results,
+    worker_error: str | None,
+    checkout_error: str | None,
+    attempt: int,
+    max_retry_attempts: int,
+) -> dict[str, Any]:
+    if checkout_error is not None:
+        category = "checkout_error"
+        retryable = True
+        failed_command = None
+        detail = checkout_error
+    elif worker_error is not None:
+        category = "worker_error"
+        retryable = True
+        failed_command = None
+        detail = worker_error
+    else:
+        failed = next((result for result in command_results if result.returncode != 0), None)
+        if failed is None:
+            return {
+                "category": "none",
+                "retryable": False,
+                "requeue": False,
+                "attempt": attempt,
+                "max_retry_attempts": max_retry_attempts,
+                "failed_command_name": None,
+                "detail": None,
+            }
+        failed_command = failed.name
+        detail = "timed out" if failed.timed_out else f"exit_code={failed.returncode}"
+        if failed.timed_out:
+            category = "command_timeout"
+            retryable = True
+        elif failed.name in {"validate", "validate_runs", "validate_campaign"}:
+            category = "validation_error"
+            retryable = False
+        else:
+            category = "command_failure"
+            retryable = False
+
+    requeue = retryable and attempt < max_retry_attempts
+    return {
+        "category": category,
+        "retryable": retryable,
+        "requeue": requeue,
+        "attempt": attempt,
+        "max_retry_attempts": max_retry_attempts,
+        "failed_command_name": failed_command,
+        "detail": detail,
+    }
 
 
 def _load_work_item(session: Session, work_item_id: str) -> WorkItem:
@@ -110,6 +165,13 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
         )
 
     if checkout_error is not None:
+        failure = _classify_failure(
+            command_results=[],
+            worker_error=None,
+            checkout_error=checkout_error,
+            attempt=attempt,
+            max_retry_attempts=config.max_retry_attempts,
+        )
         with session_factory() as session:
             append_run_event(
                 session,
@@ -117,12 +179,27 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
                 event_type="checkout_failed",
                 event_payload={"error": checkout_error},
             )
+            if failure["requeue"]:
+                append_run_event(
+                    session,
+                    run_key=run_key,
+                    event_type="run_requeued",
+                    event_payload={"failure_classification": failure},
+                )
             complete_run(
                 session,
                 run_key=run_key,
                 status="failed",
                 result_summary=f"checkout failed: {checkout_error}",
-                result_payload={"checkout_error": checkout_error},
+                result_payload={
+                    "checkout_error": checkout_error,
+                    "failure_classification": failure,
+                    "retry_decision": {
+                        "requeue": failure["requeue"],
+                        "attempt": failure["attempt"],
+                        "max_retry_attempts": failure["max_retry_attempts"],
+                    },
+                },
                 artifacts=[],
             )
         return WorkerLoopResult(
@@ -222,21 +299,54 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
     }
     if heartbeat_error is not None:
         result_payload["heartbeat_error"] = heartbeat_error
+        if worker_error is None:
+            worker_error = f"heartbeat_error={heartbeat_error}"
     if worker_error is not None:
         result_payload["worker_error"] = worker_error
+    failure = _classify_failure(
+        command_results=command_results,
+        worker_error=worker_error,
+        checkout_error=None,
+        attempt=attempt,
+        max_retry_attempts=config.max_retry_attempts,
+    )
+    result_payload["failure_classification"] = failure
+    result_payload["retry_decision"] = {
+        "requeue": failure["requeue"],
+        "attempt": failure["attempt"],
+        "max_retry_attempts": failure["max_retry_attempts"],
+    }
+    if not success:
         queue_result = build_queue_result_payload(
             repo_root=config.repo_root,
             expected_outputs=work_item.expected_outputs or [],
             command_results=command_results,
             success=False,
         )
+        notes = list(queue_result.notes)
+        notes.append(f"failure_category={failure['category']}")
+        if failure["failed_command_name"]:
+            notes.append(f"failed_command={failure['failed_command_name']}")
+        if worker_error is not None:
+            notes.append(f"worker_error={worker_error}")
+        if failure["requeue"]:
+            notes.append(
+                f"retry_scheduled=attempt_{failure['attempt'] + 1}_of_{failure['max_retry_attempts']}"
+            )
         result_payload["queue_result"] = {
             "status": queue_result.status,
             "metrics_rows": queue_result.metrics_rows,
-            "notes": queue_result.notes + [f"worker_error={worker_error}"],
+            "notes": notes,
         }
 
     with session_factory() as session:
+        if failure["requeue"]:
+            append_run_event(
+                session,
+                run_key=run_key,
+                event_type="run_requeued",
+                event_payload={"failure_classification": failure},
+            )
         completed = complete_run(
             session,
             run_key=run_key,

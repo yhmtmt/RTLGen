@@ -29,6 +29,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--lease-seconds", type=int, default=1800)
     parser.add_argument("--heartbeat-seconds", type=int, default=30)
     parser.add_argument("--command-timeout-seconds", type=int)
+    parser.add_argument("--max-retry-attempts", type=int, default=2)
     parser.add_argument("--enforce-source-commit", action="store_true")
     parser.add_argument("--log-root")
     parser.add_argument("--max-items", type=int, default=1)
@@ -47,6 +48,7 @@ def main(argv: list[str] | None = None) -> int:
         lease_seconds=args.lease_seconds,
         heartbeat_seconds=args.heartbeat_seconds,
         command_timeout_seconds=args.command_timeout_seconds,
+        max_retry_attempts=args.max_retry_attempts,
         enforce_source_commit=args.enforce_source_commit,
         log_root=args.log_root,
     )

@@ -117,6 +117,7 @@ export RTLCP_ROLE=evaluator
 - Worker lease acquisition, heartbeat refresh, and stale lease expiry
 - Run lifecycle tracking: start, append events, complete, and artifact recording
 - Internal worker loop execution from queue `command_manifest` with per-command logs and staged outputs
+- Failure classification and bounded retry for internal worker runs
 - Artifact sync from `artifact_sync` work items into repo-tracked evaluated queue snapshots
 - Queue export back to validator-compatible `queued` and `evaluated` JSON
 - GitHub branch / PR reconciliation into `github_links` and work-item state

@@ -194,8 +194,12 @@ def complete_run(
     run.result_payload = result_payload
 
     work_item = run.work_item
+    retry_decision = (result_payload or {}).get("retry_decision", {}) if isinstance(result_payload, dict) else {}
+    requeue_for_retry = bool(retry_decision.get("requeue"))
     if run_status == RunStatus.SUCCEEDED:
         work_item.state = WorkItemState.ARTIFACT_SYNC
+    elif requeue_for_retry:
+        work_item.state = WorkItemState.READY
     else:
         work_item.state = WorkItemState.FAILED
 
@@ -223,6 +227,7 @@ def complete_run(
         event_payload={
             "status": run_status.value,
             "artifact_count": len(created_artifacts),
+            "requeued": requeue_for_retry,
         },
     )
     session.add(event)
