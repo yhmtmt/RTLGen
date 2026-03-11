@@ -6,6 +6,7 @@ from dataclasses import asdict, dataclass
 import json
 from pathlib import Path
 import re
+from typing import Optional
 
 from sqlalchemy.orm import Session
 
@@ -22,6 +23,16 @@ from control_plane.services.submission_executor import SubmissionExecuteRequest,
 
 class OperatorSubmissionError(RuntimeError):
     pass
+
+
+@dataclass(frozen=True)
+class SubmissionEligibility:
+    item_id: str
+    run_key: str | None
+    task_type: str
+    work_item_state: str
+    eligible: bool
+    reason: str | None
 
 
 @dataclass(frozen=True)
@@ -114,17 +125,44 @@ def _has_review_artifact(session: Session, *, run_id: str, kind: str | None) -> 
 
 
 def _check_submission_eligibility(session: Session, *, work_item: WorkItem, run: Run, force: bool) -> None:
-    if force:
+    eligibility = assess_submission_eligibility(session, work_item=work_item, run=run)
+    if force or eligibility.eligible:
         return
+    raise OperatorSubmissionError(
+        f"work item {work_item.item_id} is not eligible for submission: {eligibility.reason}"
+    )
+
+
+def assess_submission_eligibility(
+    session: Session,
+    *,
+    work_item: WorkItem,
+    run: Optional[Run] = None,
+) -> SubmissionEligibility:
+    latest_run = run
+    if latest_run is None and work_item.runs:
+        latest_run = sorted(work_item.runs, key=lambda row: (row.attempt, row.created_at or utcnow()))[-1]
+
+    reason: str | None = None
     if work_item.state.value != "awaiting_review":
-        raise OperatorSubmissionError(
-            f"work item {work_item.item_id} is not eligible for submission: state={work_item.state.value}"
-        )
-    required_kind = _required_review_artifact_kind(work_item.task_type)
-    if not _has_review_artifact(session, run_id=run.id, kind=required_kind):
-        raise OperatorSubmissionError(
-            f"work item {work_item.item_id} is not eligible for submission: missing {required_kind or 'review'} artifact"
-        )
+        reason = f"state={work_item.state.value}"
+    elif latest_run is None:
+        reason = "no_runs"
+    else:
+        required_kind = _required_review_artifact_kind(work_item.task_type)
+        if not required_kind:
+            reason = f"unsupported_task_type={work_item.task_type}"
+        elif not _has_review_artifact(session, run_id=latest_run.id, kind=required_kind):
+            reason = f"missing {required_kind} artifact"
+
+    return SubmissionEligibility(
+        item_id=work_item.item_id,
+        run_key=latest_run.run_key if latest_run is not None else None,
+        task_type=work_item.task_type,
+        work_item_state=work_item.state.value,
+        eligible=reason is None,
+        reason=reason,
+    )
 
 
 def _upsert_operator_artifact(session: Session, *, run: Run, payload: dict[str, object]) -> None:

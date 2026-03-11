@@ -58,6 +58,25 @@ python3 -m control_plane.cli.main operate-submission \
 
 Use `--force` only for operator recovery or exceptional manual submission.
 
+## Review-Ready Status
+
+List submission eligibility:
+
+```sh
+PYTHONPATH=/workspaces/RTLGen/control_plane \
+python3 -m control_plane.cli.main submission-status \
+  --database-url "$RTLCP_DATABASE_URL"
+```
+
+Only list currently eligible items:
+
+```sh
+PYTHONPATH=/workspaces/RTLGen/control_plane \
+python3 -m control_plane.cli.main submission-status \
+  --database-url "$RTLCP_DATABASE_URL" \
+  --eligible-only
+```
+
 ## Not Yet Baseline
 
 These remain outside the Phase 2 baseline:

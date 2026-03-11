@@ -19,6 +19,7 @@ from control_plane.cli.publish_review import main as publish_review_main
 from control_plane.cli.reconcile_github import main as reconcile_github_main
 from control_plane.cli.run_scheduler import main as run_scheduler_main
 from control_plane.cli.run_worker import main as run_worker_main
+from control_plane.cli.submission_status import main as submission_status_main
 from control_plane.cli.sync_artifacts import main as sync_artifacts_main
 from control_plane.config import Settings
 
@@ -223,6 +224,15 @@ def main(argv: list[str] | None = None) -> int:
     operate_parser.add_argument("--worktree-root")
     operate_parser.add_argument("--commit-message")
     operate_parser.add_argument("--pr-base", default="master")
+    operate_parser.add_argument("--force", action="store_true")
+
+    submission_status_parser = subparsers.add_parser(
+        "submission-status",
+        help="List operator submission eligibility for work items",
+    )
+    submission_status_parser.add_argument("--database-url", required=True)
+    submission_status_parser.add_argument("--item-id")
+    submission_status_parser.add_argument("--eligible-only", action="store_true")
 
     subparsers.add_parser("show-config", help="Print resolved scaffold configuration")
 
@@ -530,7 +540,16 @@ def main(argv: list[str] | None = None) -> int:
         ]:
             if value is not None:
                 argv2.extend([key, str(value)])
+        if args.force:
+            argv2.append("--force")
         return operate_submission_main(argv2)
+    if args.command == "submission-status":
+        argv2 = ["--database-url", args.database_url]
+        if args.item_id is not None:
+            argv2.extend(["--item-id", str(args.item_id)])
+        if args.eligible_only:
+            argv2.append("--eligible-only")
+        return submission_status_main(argv2)
     if args.command == "show-config":
         print(json.dumps(Settings.from_env().__dict__, indent=2, sort_keys=True))
         return 0

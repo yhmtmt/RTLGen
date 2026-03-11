@@ -351,6 +351,23 @@ python3 -m control_plane.cli.main operate-submission \
   --item-id l2_real_softmax_shadow_single
 ```
 
+List review-ready and blocked items:
+
+```sh
+PYTHONPATH=/workspaces/RTLGen/control_plane \
+python3 -m control_plane.cli.main submission-status \
+  --database-url sqlite+pysqlite:////tmp/rtlgen-control-plane.db
+```
+
+Only list currently eligible items:
+
+```sh
+PYTHONPATH=/workspaces/RTLGen/control_plane \
+python3 -m control_plane.cli.main submission-status \
+  --database-url sqlite+pysqlite:////tmp/rtlgen-control-plane.db \
+  --eligible-only
+```
+
 Stages:
 1. publish review package
 2. prepare submission branch and worktree
