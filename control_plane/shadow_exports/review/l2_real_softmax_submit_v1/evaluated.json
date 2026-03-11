@@ -54,8 +54,6 @@
       "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_v1/summary.csv",
       "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_v1/pareto.csv",
       "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_v1/best_point.json",
-      "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_v1/objective_sweep.csv",
-      "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_v1/objective_sweep.md",
       "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv",
       "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/metrics.csv"
     ]
@@ -69,7 +67,7 @@
     "evaluator_id": "control_plane",
     "executor": "@control_plane",
     "host": "353f3fadd15d",
-    "identity_block": "[role:evaluator][account:control_plane][session:s20260311t043231z][host:353f3fadd15d][item:l2_real_softmax_submit_v1]",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260311t043540z][host:353f3fadd15d][item:l2_real_softmax_submit_v1]",
     "metrics_rows": [
       {
         "tag": "npu_fp16_nm1_softcmp33_flat_nomacro_r1",
@@ -169,12 +167,12 @@
       }
     ],
     "queue_item_id": "l2_real_softmax_submit_v1",
-    "session_id": "s20260311t043231z",
+    "session_id": "s20260311t043540z",
     "status": "ok",
     "summary": "4/4 commands succeeded"
   },
   "handoff": {
-    "branch": "eval/l2_real_softmax_submit_v1/s20260311t043231z",
+    "branch": "eval/l2_real_softmax_submit_v1/s20260311t043540z",
     "pr_title": "eval: run layer2 campaign npu_e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_v1 on nangate45",
     "checklist": [
       "Commit lightweight campaign artifacts only",
@@ -184,7 +182,7 @@
     ],
     "pr_body_fields": {
       "host": "353f3fadd15d",
-      "session_id": "s20260311t043231z",
+      "session_id": "s20260311t043540z",
       "evaluator_id": "control_plane",
       "queue_item_id": "l2_real_softmax_submit_v1"
     },
@@ -194,6 +192,6 @@
   "version": 0.1,
   "platform": "nangate45",
   "priority": 1,
-  "created_utc": "2026-03-11T04:25:19.769654Z",
+  "created_utc": "2026-03-11T04:35:40.482803Z",
   "requested_by": "@yhmtmt"
 }
