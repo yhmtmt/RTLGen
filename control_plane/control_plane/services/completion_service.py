@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Optional
 
 from sqlalchemy.orm import Session
@@ -60,6 +61,25 @@ def _latest_run_for_item(work_item: WorkItem) -> Run:
     return sorted(work_item.runs, key=lambda row: (row.attempt, row.created_at))[ -1]
 
 
+def _materialize_expected_output_artifacts(*, repo_root: str, run: Run) -> list[str]:
+    repo_path = Path(repo_root).resolve()
+    materialized: list[str] = []
+    for artifact in run.artifacts:
+        if artifact.kind != "expected_output":
+            continue
+        inline_text = (artifact.metadata_ or {}).get("inline_utf8")
+        if not isinstance(inline_text, str):
+            continue
+        rel_path = str(artifact.path).strip()
+        if not rel_path:
+            continue
+        path = repo_path / rel_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(inline_text, encoding="utf-8")
+        materialized.append(rel_path)
+    return materialized
+
+
 def _iter_target_items(session: Session, *, item_id: str | None) -> list[WorkItem]:
     query = session.query(WorkItem)
     if item_id:
@@ -85,6 +105,7 @@ def process_completed_items(session: Session, request: CompletionProcessRequest)
             continue
 
         latest_run = _latest_run_for_item(work_item)
+        _materialize_expected_output_artifacts(repo_root=request.repo_root, run=latest_run)
         if work_item.task_type == "l1_sweep":
             consume_result = consume_l1_result(
                 session,

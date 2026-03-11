@@ -167,6 +167,9 @@ def test_worker_executes_ready_item_and_stages_outputs() -> None:
             artifact_paths = sorted(artifact.path for artifact in run.artifacts)
             assert f"runs/campaigns/{seeded.item_id}/metrics.csv" in artifact_paths
             assert f"runs/campaigns/{seeded.item_id}/report.md" in artifact_paths
+            expected_artifacts = {artifact.path: artifact for artifact in run.artifacts if artifact.kind == "expected_output"}
+            assert "metric,value\nlatency,1\n" in expected_artifacts[f"runs/campaigns/{seeded.item_id}/metrics.csv"].metadata_["inline_utf8"]
+            assert "# report\n" == expected_artifacts[f"runs/campaigns/{seeded.item_id}/report.md"].metadata_["inline_utf8"]
 
 
 def test_worker_marks_failed_run_when_command_fails() -> None:

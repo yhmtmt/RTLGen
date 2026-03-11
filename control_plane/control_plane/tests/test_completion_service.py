@@ -11,6 +11,8 @@ from sqlalchemy.orm import Session
 
 from control_plane.clock import utcnow
 from control_plane.db import create_all
+from control_plane.models.artifacts import Artifact
+from control_plane.models.enums import ArtifactStorageMode
 from control_plane.models.enums import ExecutorType, FlowName, LayerName, RunStatus, WorkItemState
 from control_plane.models.runs import Run
 from control_plane.models.task_requests import TaskRequest
@@ -172,3 +174,119 @@ def test_process_completed_items_submit_blocks_shadow_only_item_without_force() 
                 assert "missing canonical runs evidence outputs" in str(exc)
             else:
                 raise AssertionError("expected CompletionProcessingError")
+
+
+def test_process_completed_items_materializes_expected_output_artifacts_for_canonical_l1() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        metrics_rel = "runs/designs/activations/softmax_rowwise_int8_r4_acc20_wrapper/metrics.csv"
+        index_rel = "runs/index.csv"
+        metrics_text = (
+            "platform,status,param_hash,tag,critical_path_ns,die_area,total_power_mw,params_json,result_path\n"
+            'nangate45,ok,fast0001,tag_fast,12.0,30000,0.18,{"CLOCK_PERIOD": 6.0, "CORE_UTILIZATION": 30},'
+            "runs/designs/activations/softmax_rowwise_int8_r4_acc20_wrapper/work/fast0001/result.json\n"
+        )
+        index_text = (
+            "circuit_type,design,platform,status,critical_path_ns,die_area,total_power_mw,config_hash,param_hash,tag,result_path,params_json,metrics_path,design_path,sram_area_um2,sram_read_energy_pj,sram_write_energy_pj,sram_max_access_time_ns\n"
+            "activations,softmax_rowwise_int8_r4_acc20_wrapper,nangate45,ok,12.0,30000,0.18,cfg123,fast0001,tag_fast,runs/designs/activations/softmax_rowwise_int8_r4_acc20_wrapper/work/fast0001/result.json,\"{\\\"CLOCK_PERIOD\\\": 6.0}\",runs/designs/activations/softmax_rowwise_int8_r4_acc20_wrapper/metrics.csv,runs/designs/activations/softmax_rowwise_int8_r4_acc20_wrapper,,,\n"
+        )
+        with Session(engine) as session:
+            payload = {
+                "item_id": "completion_l1_canonical_demo",
+                "title": "completion canonical demo",
+                "layer": "layer1",
+                "flow": "openroad",
+                "handoff": {
+                    "branch": "eval/completion_l1_canonical_demo/<session_id>",
+                    "pr_title": "eval: completion canonical demo",
+                    "pr_body_fields": {
+                        "evaluator_id": "control_plane",
+                        "session_id": "<session_id>",
+                        "host": "<host>",
+                        "queue_item_id": "completion_l1_canonical_demo",
+                    },
+                    "checklist": ["demo"],
+                },
+            }
+            task = TaskRequest(
+                request_key="completion:l1_canonical",
+                source="test",
+                requested_by="@tester",
+                title="completion canonical demo",
+                description="completion service canonical materialization test",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                priority=1,
+                request_payload=payload,
+            )
+            session.add(task)
+            session.flush()
+            work_item = WorkItem(
+                work_item_key="completion:l1_canonical",
+                task_request_id=task.id,
+                item_id="completion_l1_canonical_demo",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                platform="nangate45",
+                task_type="l1_sweep",
+                state=WorkItemState.ARTIFACT_SYNC,
+                priority=1,
+                source_mode="config",
+                input_manifest={},
+                command_manifest=[],
+                expected_outputs=[metrics_rel, index_rel],
+                acceptance_rules=[],
+            )
+            session.add(work_item)
+            session.flush()
+            run = Run(
+                run_key="completion_l1_canonical_demo_run_1",
+                work_item_id=work_item.id,
+                attempt=1,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.SUCCEEDED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                result_summary="4/4 commands succeeded",
+                result_payload={"queue_result": {"status": "ok", "metrics_rows": [f"{metrics_rel}:2"], "notes": []}},
+            )
+            session.add(run)
+            session.flush()
+            session.add_all(
+                [
+                    Artifact(
+                        run_id=run.id,
+                        kind="expected_output",
+                        storage_mode=ArtifactStorageMode.REPO,
+                        path=metrics_rel,
+                        sha256=None,
+                        metadata_={"inline_utf8": metrics_text},
+                    ),
+                    Artifact(
+                        run_id=run.id,
+                        kind="expected_output",
+                        storage_mode=ArtifactStorageMode.REPO,
+                        path=index_rel,
+                        sha256=None,
+                        metadata_={"inline_utf8": index_text},
+                    ),
+                ]
+            )
+            session.commit()
+
+            results = process_completed_items(
+                session,
+                CompletionProcessRequest(
+                    repo_root=str(repo_root),
+                    item_id=work_item.item_id,
+                ),
+            )
+            assert len(results) == 1
+            assert results[0].consumed is True
+            assert results[0].work_item_state == "awaiting_review"
+
+        assert (repo_root / metrics_rel).read_text(encoding="utf-8") == metrics_text
+        assert (repo_root / index_rel).read_text(encoding="utf-8") == index_text

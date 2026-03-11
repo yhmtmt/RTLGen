@@ -8,6 +8,9 @@ from pathlib import Path
 
 from control_plane.workers.command_runner import CommandResult
 
+_INLINE_TEXT_SUFFIXES = {".csv", ".md", ".json", ".txt", ".yml", ".yaml"}
+_MAX_INLINE_TEXT_BYTES = 1024 * 1024
+
 
 @dataclass(frozen=True)
 class StagedArtifact:
@@ -40,6 +43,20 @@ def _relative_path(path: Path, repo_root: Path) -> str:
         return str(path.resolve())
 
 
+def _inline_text_metadata(path: Path) -> dict[str, object]:
+    metadata: dict[str, object] = {}
+    if path.suffix.lower() not in _INLINE_TEXT_SUFFIXES:
+        return metadata
+    size_bytes = path.stat().st_size
+    if size_bytes > _MAX_INLINE_TEXT_BYTES:
+        return metadata
+    try:
+        metadata["inline_utf8"] = path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        return {}
+    return metadata
+
+
 def collect_expected_output_artifacts(*, repo_root: str, expected_outputs: list[str]) -> list[StagedArtifact]:
     repo_path = Path(repo_root).resolve()
     artifacts: list[StagedArtifact] = []
@@ -47,15 +64,17 @@ def collect_expected_output_artifacts(*, repo_root: str, expected_outputs: list[
         path = (repo_path / output).resolve()
         if not path.exists() or not path.is_file():
             continue
+        metadata = {
+            "size_bytes": path.stat().st_size,
+            **_inline_text_metadata(path),
+        }
         artifacts.append(
             StagedArtifact(
                 kind="expected_output",
                 storage_mode="repo",
                 path=_relative_path(path, repo_path),
                 sha256=_sha256_file(path),
-                metadata={
-                    "size_bytes": path.stat().st_size,
-                },
+                metadata=metadata,
             )
         )
     return artifacts
