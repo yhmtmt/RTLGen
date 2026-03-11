@@ -368,6 +368,15 @@ python3 -m control_plane.cli.main submission-status \
   --eligible-only
 ```
 
+Tabular terminal view:
+
+```sh
+PYTHONPATH=/workspaces/RTLGen/control_plane \
+python3 -m control_plane.cli.main submission-status \
+  --database-url sqlite+pysqlite:////tmp/rtlgen-control-plane.db \
+  --format table
+```
+
 Stages:
 1. publish review package
 2. prepare submission branch and worktree

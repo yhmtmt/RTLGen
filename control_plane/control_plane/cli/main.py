@@ -233,6 +233,8 @@ def main(argv: list[str] | None = None) -> int:
     submission_status_parser.add_argument("--database-url", required=True)
     submission_status_parser.add_argument("--item-id")
     submission_status_parser.add_argument("--eligible-only", action="store_true")
+    submission_status_parser.add_argument("--format", choices=["json", "table"], default="json")
+    submission_status_parser.add_argument("--jsonl", action="store_true")
 
     subparsers.add_parser("show-config", help="Print resolved scaffold configuration")
 
@@ -549,6 +551,10 @@ def main(argv: list[str] | None = None) -> int:
             argv2.extend(["--item-id", str(args.item_id)])
         if args.eligible_only:
             argv2.append("--eligible-only")
+        if args.format is not None:
+            argv2.extend(["--format", str(args.format)])
+        if args.jsonl:
+            argv2.append("--jsonl")
         return submission_status_main(argv2)
     if args.command == "show-config":
         print(json.dumps(Settings.from_env().__dict__, indent=2, sort_keys=True))

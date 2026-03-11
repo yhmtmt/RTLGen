@@ -10,11 +10,28 @@ from control_plane.models.work_items import WorkItem
 from control_plane.services.operator_submission import assess_submission_eligibility
 
 
+def _render_table(rows: list[dict[str, object]]) -> str:
+    headers = ["item_id", "task_type", "work_item_state", "eligible", "reason", "run_key"]
+    widths: dict[str, int] = {header: len(header) for header in headers}
+    for row in rows:
+        for header in headers:
+            widths[header] = max(widths[header], len(str(row.get(header, ""))))
+
+    def fmt_row(values: dict[str, object]) -> str:
+        return "  ".join(str(values.get(header, "")).ljust(widths[header]) for header in headers)
+
+    lines = [fmt_row({header: header for header in headers}), fmt_row({header: "-" * widths[header] for header in headers})]
+    lines.extend(fmt_row(row) for row in rows)
+    return "\n".join(lines)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="List operator submission eligibility for work items")
     parser.add_argument("--database-url", required=True)
     parser.add_argument("--item-id")
     parser.add_argument("--eligible-only", action="store_true")
+    parser.add_argument("--format", choices=["json", "table"], default="json")
+    parser.add_argument("--jsonl", action="store_true")
     args = parser.parse_args(argv)
 
     engine = build_engine(args.database_url)
@@ -30,7 +47,13 @@ def main(argv: list[str] | None = None) -> int:
             if args.eligible_only and not status.eligible:
                 continue
             rows.append(status.__dict__)
-    print(json.dumps(rows, indent=2, sort_keys=True))
+    if args.jsonl:
+        for row in rows:
+            print(json.dumps(row, sort_keys=True))
+    elif args.format == "table":
+        print(_render_table(rows))
+    else:
+        print(json.dumps(rows, indent=2, sort_keys=True))
     return 0
 
 

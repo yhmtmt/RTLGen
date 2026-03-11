@@ -5,12 +5,15 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
+from io import StringIO
 import subprocess
 import tempfile
+from contextlib import redirect_stdout
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
+from control_plane.cli.submission_status import main as submission_status_main
 from control_plane.clock import utcnow
 from control_plane.db import create_all
 from control_plane.models.artifacts import Artifact
@@ -241,3 +244,59 @@ def test_assess_submission_eligibility_reports_missing_review_artifact() -> None
             status = assess_submission_eligibility(session, work_item=work_item, run=run)
             assert status.eligible is False
             assert status.reason == "missing decision_proposal artifact"
+
+
+def test_submission_status_table_output() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        engine = create_engine(f"sqlite+pysqlite:///{Path(td) / 'cp.db'}", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            _seed_l2_reviewable(session, repo_root)
+
+        buf = StringIO()
+        with redirect_stdout(buf):
+            rc = submission_status_main(
+                [
+                    "--database-url",
+                    f"sqlite+pysqlite:///{Path(td) / 'cp.db'}",
+                    "--format",
+                    "table",
+                ]
+            )
+        assert rc == 0
+        output = buf.getvalue()
+        assert "item_id" in output
+        assert "eligible" in output
+        assert "l2_operate_demo" in output
+
+
+def test_submission_status_jsonl_output() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        engine = create_engine(f"sqlite+pysqlite:///{Path(td) / 'cp.db'}", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            _seed_l2_reviewable(session, repo_root)
+
+        buf = StringIO()
+        with redirect_stdout(buf):
+            rc = submission_status_main(
+                [
+                    "--database-url",
+                    f"sqlite+pysqlite:///{Path(td) / 'cp.db'}",
+                    "--jsonl",
+                ]
+            )
+        assert rc == 0
+        lines = [line for line in buf.getvalue().splitlines() if line.strip()]
+        assert len(lines) == 1
+        payload = json.loads(lines[0])
+        assert payload["item_id"] == "l2_operate_demo"
+        assert payload["eligible"] is True

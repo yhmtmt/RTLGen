@@ -77,6 +77,24 @@ python3 -m control_plane.cli.main submission-status \
   --eligible-only
 ```
 
+Tabular terminal view:
+
+```sh
+PYTHONPATH=/workspaces/RTLGen/control_plane \
+python3 -m control_plane.cli.main submission-status \
+  --database-url "$RTLCP_DATABASE_URL" \
+  --format table
+```
+
+JSON Lines for shell pipelines:
+
+```sh
+PYTHONPATH=/workspaces/RTLGen/control_plane \
+python3 -m control_plane.cli.main submission-status \
+  --database-url "$RTLCP_DATABASE_URL" \
+  --jsonl
+```
+
 ## Not Yet Baseline
 
 These remain outside the Phase 2 baseline:
