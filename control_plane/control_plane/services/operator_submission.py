@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 import json
 from pathlib import Path
+import re
 
 from sqlalchemy.orm import Session
 
@@ -76,6 +77,22 @@ def _default_manifest_path(repo_root: Path, item_id: str) -> Path:
     return repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "submission_manifest.json"
 
 
+def _load_existing_submission_identity(manifest_path: Path) -> tuple[str | None, str | None]:
+    if not manifest_path.exists():
+        return None, None
+    try:
+        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except Exception:
+        return None, None
+    branch_name = str(payload.get("branch_name", "")).strip() or None
+    session_id = None
+    if branch_name:
+        match = re.search(r"/(s[0-9]{8}t[0-9]{6}z)$", branch_name)
+        if match:
+            session_id = match.group(1)
+    return branch_name, session_id
+
+
 def _upsert_operator_artifact(session: Session, *, run: Run, payload: dict[str, object]) -> None:
     artifact = (
         session.query(Artifact)
@@ -106,6 +123,10 @@ def _upsert_operator_artifact(session: Session, *, run: Run, payload: dict[str, 
 def operate_submission(session: Session, request: OperatorSubmissionRequest) -> OperatorSubmissionResult:
     repo_root = Path(request.repo_root).resolve()
     work_item, run = _resolve_run(session, request)
+    manifest_path = _default_manifest_path(repo_root, work_item.item_id)
+    existing_branch_name, existing_session_id = _load_existing_submission_identity(manifest_path)
+    effective_branch_name = request.branch_name or existing_branch_name
+    effective_session_id = request.session_id or existing_session_id
 
     review_result = publish_review_package(
         session,
@@ -114,16 +135,15 @@ def operate_submission(session: Session, request: OperatorSubmissionRequest) -> 
             item_id=work_item.item_id,
             run_key=run.run_key,
             evaluator_id=request.evaluator_id,
-            session_id=request.session_id,
+            session_id=effective_session_id,
             host=request.host,
             executor=request.executor,
-            branch_name=request.branch_name,
+            branch_name=effective_branch_name,
             snapshot_target_path=request.snapshot_target_path,
             package_target_path=request.package_target_path,
         ),
     )
 
-    manifest_path = _default_manifest_path(repo_root, work_item.item_id)
     submission_prepared = False
     submission_prepared_reused = False
     if manifest_path.exists():
@@ -136,10 +156,10 @@ def operate_submission(session: Session, request: OperatorSubmissionRequest) -> 
                 item_id=work_item.item_id,
                 run_key=run.run_key,
                 evaluator_id=request.evaluator_id,
-                session_id=request.session_id,
+                session_id=effective_session_id,
                 host=request.host,
                 executor=request.executor,
-                branch_name=request.branch_name,
+                branch_name=effective_branch_name,
                 snapshot_target_path=request.snapshot_target_path,
                 package_target_path=request.package_target_path,
                 worktree_root=request.worktree_root,
@@ -157,10 +177,10 @@ def operate_submission(session: Session, request: OperatorSubmissionRequest) -> 
             item_id=work_item.item_id,
             run_key=run.run_key,
             evaluator_id=request.evaluator_id,
-            session_id=request.session_id,
+            session_id=effective_session_id,
             host=request.host,
             executor=request.executor,
-            branch_name=request.branch_name,
+            branch_name=effective_branch_name,
             snapshot_target_path=request.snapshot_target_path,
             package_target_path=request.package_target_path,
             worktree_root=request.worktree_root,

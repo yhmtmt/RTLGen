@@ -255,7 +255,7 @@ def test_operate_submission_runs_full_chain_and_reuses_manifest() -> None:
                         repo="yhmtmt/RTLGen",
                         item_id=item_id,
                         evaluator_id="cpbot",
-                        session_id="s20260310t090000z",
+                        session_id="s20260310t090123z",
                         host="cp-host",
                         worktree_root=str(repo_root / "tmp_submit"),
                     ),
@@ -274,11 +274,19 @@ def test_operate_submission_runs_full_chain_and_reuses_manifest() -> None:
             assert second.submission_prepared is False
             assert second.submission_prepared_reused is True
             assert second.pr_number == 321
+            assert second.branch_name == first.branch_name
 
             operator_path = repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "operator_submission.json"
             assert operator_path.exists()
             operator_payload = json.loads(operator_path.read_text(encoding="utf-8"))
             assert operator_payload["pr_number"] == 321
+
+            evaluated_path = repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "evaluated.json"
+            evaluated_payload = json.loads(evaluated_path.read_text(encoding="utf-8"))
+            assert evaluated_payload["result"]["branch"] == first.branch_name
+            assert evaluated_payload["result"]["session_id"] == "s20260310t090000z"
+            assert evaluated_payload["handoff"]["branch"] == first.branch_name
+            assert evaluated_payload["handoff"]["pr_body_fields"]["session_id"] == "s20260310t090000z"
 
             link = session.query(GitHubLink).filter_by(pr_number=321).one()
             assert link.state == GitHubLinkState.PR_OPEN
