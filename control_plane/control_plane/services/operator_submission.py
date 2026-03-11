@@ -40,6 +40,7 @@ class OperatorSubmissionRequest:
     worktree_root: str | None = None
     commit_message: str | None = None
     pr_base: str = "master"
+    force: bool = False
 
 
 @dataclass(frozen=True)
@@ -93,6 +94,39 @@ def _load_existing_submission_identity(manifest_path: Path) -> tuple[str | None,
     return branch_name, session_id
 
 
+def _required_review_artifact_kind(task_type: str) -> str | None:
+    if task_type == "l1_sweep":
+        return "promotion_proposal"
+    if task_type == "l2_campaign":
+        return "decision_proposal"
+    return None
+
+
+def _has_review_artifact(session: Session, *, run_id: str, kind: str | None) -> bool:
+    if not kind:
+        return False
+    artifact = (
+        session.query(Artifact)
+        .filter(Artifact.run_id == run_id, Artifact.kind == kind)
+        .one_or_none()
+    )
+    return artifact is not None
+
+
+def _check_submission_eligibility(session: Session, *, work_item: WorkItem, run: Run, force: bool) -> None:
+    if force:
+        return
+    if work_item.state.value != "awaiting_review":
+        raise OperatorSubmissionError(
+            f"work item {work_item.item_id} is not eligible for submission: state={work_item.state.value}"
+        )
+    required_kind = _required_review_artifact_kind(work_item.task_type)
+    if not _has_review_artifact(session, run_id=run.id, kind=required_kind):
+        raise OperatorSubmissionError(
+            f"work item {work_item.item_id} is not eligible for submission: missing {required_kind or 'review'} artifact"
+        )
+
+
 def _upsert_operator_artifact(session: Session, *, run: Run, payload: dict[str, object]) -> None:
     artifact = (
         session.query(Artifact)
@@ -123,6 +157,7 @@ def _upsert_operator_artifact(session: Session, *, run: Run, payload: dict[str, 
 def operate_submission(session: Session, request: OperatorSubmissionRequest) -> OperatorSubmissionResult:
     repo_root = Path(request.repo_root).resolve()
     work_item, run = _resolve_run(session, request)
+    _check_submission_eligibility(session, work_item=work_item, run=run, force=request.force)
     manifest_path = _default_manifest_path(repo_root, work_item.item_id)
     existing_branch_name, existing_session_id = _load_existing_submission_identity(manifest_path)
     effective_branch_name = request.branch_name or existing_branch_name

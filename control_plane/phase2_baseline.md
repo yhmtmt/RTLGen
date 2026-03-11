@@ -40,8 +40,23 @@ python3 -m control_plane.cli.main operate-submission \
 Use this baseline for real operator-driven internal submissions where:
 
 - the work item is already completed,
+- the work item is in `awaiting_review`,
 - the result is review-worthy,
 - and the operator wants a draft PR opened with the standard control-plane payloads.
+
+Override:
+
+```sh
+PYTHONPATH=/workspaces/RTLGen/control_plane \
+python3 -m control_plane.cli.main operate-submission \
+  --database-url "$RTLCP_DATABASE_URL" \
+  --repo-root /workspaces/RTLGen \
+  --repo yhmtmt/RTLGen \
+  --item-id <completed_item_id> \
+  --force
+```
+
+Use `--force` only for operator recovery or exceptional manual submission.
 
 ## Not Yet Baseline
 

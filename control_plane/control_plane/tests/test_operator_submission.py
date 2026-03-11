@@ -20,7 +20,11 @@ from control_plane.models.runs import Run
 from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
 from control_plane.services.l2_result_consumer import Layer2ConsumeRequest, consume_l2_result
-from control_plane.services.operator_submission import OperatorSubmissionRequest, operate_submission
+from control_plane.services.operator_submission import (
+    OperatorSubmissionError,
+    OperatorSubmissionRequest,
+    operate_submission,
+)
 
 
 def _write(path: Path, text: str) -> None:
@@ -292,3 +296,102 @@ def test_operate_submission_runs_full_chain_and_reuses_manifest() -> None:
             assert link.state == GitHubLinkState.PR_OPEN
             artifact = session.query(Artifact).filter_by(kind="operator_submission").one()
             assert artifact.path == f"control_plane/shadow_exports/review/{item_id}/operator_submission.json"
+
+
+def test_operate_submission_blocks_non_reviewable_state_without_force() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, _run_key = _seed_l2_reviewable(session, repo_root)
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            work_item.state = WorkItemState.RUNNING
+            session.commit()
+
+            try:
+                operate_submission(
+                    session,
+                    OperatorSubmissionRequest(
+                        repo_root=str(repo_root),
+                        repo="yhmtmt/RTLGen",
+                        item_id=item_id,
+                    ),
+                )
+                assert False, "expected OperatorSubmissionError"
+            except OperatorSubmissionError as exc:
+                assert "state=running" in str(exc)
+
+
+def test_operate_submission_blocks_missing_review_artifact_without_force() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, run_key = _seed_l2_reviewable(session, repo_root)
+            run = session.query(Run).filter_by(run_key=run_key).one()
+            artifact = session.query(Artifact).filter_by(run_id=run.id, kind="decision_proposal").one()
+            session.delete(artifact)
+            session.commit()
+
+            try:
+                operate_submission(
+                    session,
+                    OperatorSubmissionRequest(
+                        repo_root=str(repo_root),
+                        repo="yhmtmt/RTLGen",
+                        item_id=item_id,
+                    ),
+                )
+                assert False, "expected OperatorSubmissionError"
+            except OperatorSubmissionError as exc:
+                assert "missing decision_proposal artifact" in str(exc)
+
+
+def test_operate_submission_force_bypasses_eligibility_gate() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, run_key = _seed_l2_reviewable(session, repo_root)
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            work_item.state = WorkItemState.RUNNING
+            run = session.query(Run).filter_by(run_key=run_key).one()
+            artifact = session.query(Artifact).filter_by(run_id=run.id, kind="decision_proposal").one()
+            session.delete(artifact)
+            session.commit()
+
+            fake_bin = repo_root / "fake_bin"
+            log_path = repo_root / "fake_cmds.log"
+            _make_fake_bin(fake_bin, log_path)
+            old_path = os.environ.get("PATH", "")
+            os.environ["PATH"] = f"{fake_bin}:{old_path}"
+            try:
+                result = operate_submission(
+                    session,
+                    OperatorSubmissionRequest(
+                        repo_root=str(repo_root),
+                        repo="yhmtmt/RTLGen",
+                        item_id=item_id,
+                        evaluator_id="cpbot",
+                        session_id="s20260310t090000z",
+                        host="cp-host",
+                        worktree_root=str(repo_root / "tmp_submit"),
+                        force=True,
+                    ),
+                )
+            finally:
+                os.environ["PATH"] = old_path
+
+            assert result.pr_number == 321

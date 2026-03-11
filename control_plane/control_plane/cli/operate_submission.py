@@ -26,6 +26,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--worktree-root")
     parser.add_argument("--commit-message")
     parser.add_argument("--pr-base", default="master")
+    parser.add_argument("--force", action="store_true")
     args = parser.parse_args(argv)
 
     engine = build_engine(args.database_url)
@@ -49,6 +50,7 @@ def main(argv: list[str] | None = None) -> int:
                 worktree_root=args.worktree_root,
                 commit_message=args.commit_message,
                 pr_base=args.pr_base,
+                force=args.force,
             ),
         )
     print(json.dumps(result.__dict__, indent=2, sort_keys=True))
