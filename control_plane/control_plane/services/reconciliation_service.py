@@ -135,11 +135,26 @@ def _portable_repo_path(path_text: str, repo_root: Path) -> str | None:
         return None
 
 
+def _looks_like_result_path(path_text: str) -> bool:
+    text = str(path_text).strip()
+    if not text:
+        return False
+    if "\n" in text or "\r" in text:
+        return False
+    if not (text.endswith(".json") or text.endswith(".rpt") or text.endswith(".def")):
+        return False
+    return ("/" in text) or ("\\" in text)
+
+
 def _portable_metrics_result_path(row: dict[str, Any], repo_root: Path) -> str | None:
-    result_path = _portable_repo_path(row.get("result_path", ""), repo_root)
+    raw_result_path = str(row.get("result_path", "")).strip()
+    result_path = _portable_repo_path(raw_result_path, repo_root) if _looks_like_result_path(raw_result_path) else None
     if result_path:
         return result_path
-    work_result_json = _portable_repo_path(row.get("work_result_json", ""), repo_root)
+    raw_work_result_json = str(row.get("work_result_json", "")).strip()
+    work_result_json = (
+        _portable_repo_path(raw_work_result_json, repo_root) if _looks_like_result_path(raw_work_result_json) else None
+    )
     if work_result_json:
         return work_result_json
     return None
