@@ -1,0 +1,98 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-03-11T11:41:53.773846Z",
+  "item_id": "l1_daemon_completion_submit_20260311113218",
+  "run_key": "l1_daemon_completion_submit_20260311113218_run_c5df712b0fc032d4",
+  "layer": "layer1",
+  "flow": "openroad",
+  "task_type": "l1_sweep",
+  "source_commit": "13a4a6468ab4ae8c1df89ff1f524a95202f070c5",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l1_daemon_completion_submit_20260311113218/evaluated.json",
+    "result": {
+      "branch": "eval/l1_daemon_completion_submit_20260311113218/s20260311t114152z",
+      "completed_utc": "2026-03-11T11:41:03.844592Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "a73fb7753672",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260311t114153z][host:a73fb7753672][item:l1_daemon_completion_submit_20260311113218]",
+      "metrics_rows": [
+        {
+          "tag": "daemon_l1_single_point_ng45_bd9157ff",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "2fdb928d",
+          "metrics_csv": "control_plane/shadow_exports/designs/daemon_completion_probe/l1_daemon_completion_submit_20260311113218/softmax_rowwise_int8_r4_shift5_wrapper/metrics.csv"
+        }
+      ],
+      "queue_item_id": "l1_daemon_completion_submit_20260311113218",
+      "session_id": "s20260311t114153z",
+      "status": "ok",
+      "summary": "4/4 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "promotion_proposal",
+    "path": "control_plane/shadow_exports/l1_promotions/l1_daemon_completion_submit_20260311113218.json",
+    "storage_mode": "repo",
+    "sha256": "95cb6ac5caf787166d9bffd278c0b210652f39560f29fcbd1bc8d1339e631e19",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-03-11T11:41:52.524180Z",
+      "item_id": "l1_daemon_completion_submit_20260311113218",
+      "run_key": "l1_daemon_completion_submit_20260311113218_run_c5df712b0fc032d4",
+      "layer": "layer1",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l1_sweep",
+      "source_commit": "13a4a6468ab4ae8c1df89ff1f524a95202f070c5",
+      "objective": "Run a Layer1 nangate45 OpenROAD sweep for 1 configs using daemon_l1_single_point_ng45.json and record lightweight design metrics for comparison.",
+      "input_manifest": {
+        "sweeps": [
+          "control_plane/shadow_exports/sweeps/daemon_l1_single_point_ng45.json"
+        ],
+        "configs": [
+          "examples/config_softmax_rowwise_int8_r4_shift5.json"
+        ],
+        "design_dirs": [],
+        "macro_manifests": [],
+        "candidate_manifests": []
+      },
+      "proposal_count": 1,
+      "proposals": [
+        {
+          "metrics_ref": {
+            "metrics_csv": "control_plane/shadow_exports/designs/daemon_completion_probe/l1_daemon_completion_submit_20260311113218/softmax_rowwise_int8_r4_shift5_wrapper/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "param_hash": "2fdb928d",
+            "tag": "daemon_l1_single_point_ng45_bd9157ff",
+            "result_path": "control_plane/shadow_exports/designs/daemon_completion_probe/l1_daemon_completion_submit_20260311113218/softmax_rowwise_int8_r4_shift5_wrapper/work/2fdb928d/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 12.5063,
+            "die_area": 54093.4564,
+            "total_power_mw": 0.739
+          }
+        }
+      ]
+    }
+  },
+  "pr_payload": {
+    "branch": "eval/l1_daemon_completion_submit_20260311113218/s20260311t114152z",
+    "title": "eval: run layer1 sweep from daemon_l1_single_point_ng45 on nangate45",
+    "body_fields": {
+      "host": "a73fb7753672",
+      "session_id": "s20260311t114153z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_daemon_completion_submit_20260311113218"
+    },
+    "body_md": "## Summary\n- item_id: `l1_daemon_completion_submit_20260311113218`\n- run_key: `l1_daemon_completion_submit_20260311113218_run_c5df712b0fc032d4`\n- layer: `layer1`\n- task_type: `l1_sweep`\n- status: `ok`\n- summary: `4/4 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l1_daemon_completion_submit_20260311113218/evaluated.json`\n- metrics_rows_count: `1`\n- review_artifact: `promotion_proposal` at `control_plane/shadow_exports/l1_promotions/l1_daemon_completion_submit_20260311113218.json`\n\n## Checklist\n- [ ] Commit only lightweight metrics and regenerated runs/index.csv\n- [ ] Include metrics row references for each completed design\n- [ ] Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit only lightweight metrics and regenerated runs/index.csv",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}

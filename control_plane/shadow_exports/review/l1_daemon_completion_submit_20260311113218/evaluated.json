@@ -1,0 +1,91 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "control_plane/shadow_exports/sweeps/daemon_l1_single_point_ng45.json"
+      ],
+      "configs": [
+        "examples/config_softmax_rowwise_int8_r4_shift5.json"
+      ],
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": []
+    },
+    "commands": [
+      {
+        "run": "cmake -S . -B build && cmake --build build --target rtlgen",
+        "name": "build_generator"
+      },
+      {
+        "run": "python3 scripts/run_sweep.py --configs examples/config_softmax_rowwise_int8_r4_shift5.json --platform nangate45 --sweep control_plane/shadow_exports/sweeps/daemon_l1_single_point_ng45.json --out_root control_plane/shadow_exports/designs/daemon_completion_probe/l1_daemon_completion_submit_20260311113218 --skip_existing",
+        "name": "run_sweep"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "objective": "Run a Layer1 nangate45 OpenROAD sweep for 1 configs using daemon_l1_single_point_ng45.json and record lightweight design metrics for comparison.",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+      "Committed outputs stay lightweight (metrics.csv and runs/index.csv only)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "control_plane/shadow_exports/designs/daemon_completion_probe/l1_daemon_completion_submit_20260311113218/softmax_rowwise_int8_r4_shift5_wrapper/metrics.csv",
+      "runs/index.csv"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Layer1 sweep from daemon_l1_single_point_ng45 on nangate45",
+  "result": {
+    "branch": "eval/l1_daemon_completion_submit_20260311113218/s20260311t114152z",
+    "completed_utc": "2026-03-11T11:41:03.844592Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "a73fb7753672",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260311t114153z][host:a73fb7753672][item:l1_daemon_completion_submit_20260311113218]",
+    "metrics_rows": [
+      {
+        "tag": "daemon_l1_single_point_ng45_bd9157ff",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "2fdb928d",
+        "metrics_csv": "control_plane/shadow_exports/designs/daemon_completion_probe/l1_daemon_completion_submit_20260311113218/softmax_rowwise_int8_r4_shift5_wrapper/metrics.csv"
+      }
+    ],
+    "queue_item_id": "l1_daemon_completion_submit_20260311113218",
+    "session_id": "s20260311t114153z",
+    "status": "ok",
+    "summary": "4/4 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_daemon_completion_submit_20260311113218/s20260311t114153z",
+    "pr_title": "eval: run layer1 sweep from daemon_l1_single_point_ng45 on nangate45",
+    "checklist": [
+      "Commit only lightweight metrics and regenerated runs/index.csv",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "a73fb7753672",
+      "session_id": "s20260311t114153z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_daemon_completion_submit_20260311113218"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_daemon_completion_submit_20260311113218",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-03-11T11:32:40.585783Z",
+  "requested_by": "@yhmtmt"
+}
