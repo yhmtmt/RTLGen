@@ -9,6 +9,7 @@
   ],
   "runArgs": [
     "--platform=linux/amd64",
+    "-p", "5432:5432",
     "-e", "DISPLAY=${env:DISPLAY}",
     "-v", "/tmp/.X11-unix:/tmp/.X11-unix"
   ],
