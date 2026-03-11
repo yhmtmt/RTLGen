@@ -1,0 +1,155 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-03-11T04:06:09.720332Z",
+  "item_id": "l1_real_softmax_r4_shift5_submit_v1",
+  "run_key": "l1_real_softmax_r4_shift5_submit_v1_run_9274d59e27a6aca9",
+  "layer": "layer1",
+  "flow": "openroad",
+  "task_type": "l1_sweep",
+  "source_commit": "b3eaa1706f0450a7ae7ff052b88fc4f03cdb64bf",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l1_real_softmax_r4_shift5_submit_v1/evaluated.json",
+    "result": {
+      "branch": "eval/l1_real_softmax_r4_shift5_submit_v1/s20260311t040609z",
+      "completed_utc": "2026-03-11T03:30:52.677025Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "353f3fadd15d",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260311t040609z][host:353f3fadd15d][item:l1_real_softmax_r4_shift5_submit_v1]",
+      "metrics_rows": [
+        {
+          "tag": "softmax_rowwise_ng45_v1_bd9157ff",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "331b4c0f",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r4_shift5_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r4_shift5_wrapper/work/331b4c0f/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_545b5b4f",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "0881e02c",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r4_shift5_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r4_shift5_wrapper/work/0881e02c/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_84a011f1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "d167bc90",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r4_shift5_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r4_shift5_wrapper/work/d167bc90/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_317024c0",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "7b4a20b8",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r4_shift5_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r4_shift5_wrapper/work/7b4a20b8/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_e8e3ad7e",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "e2c337a8",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r4_shift5_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r4_shift5_wrapper/work/e2c337a8/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_6c63d092",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "57faa721",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r4_shift5_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r4_shift5_wrapper/work/57faa721/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_de52b603",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "91c9afdc",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r4_shift5_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r4_shift5_wrapper/work/91c9afdc/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_9dd950f2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "49828ffb",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r4_shift5_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r4_shift5_wrapper/work/49828ffb/result.json"
+        }
+      ],
+      "queue_item_id": "l1_real_softmax_r4_shift5_submit_v1",
+      "session_id": "s20260311t040609z",
+      "status": "ok",
+      "summary": "4/4 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "promotion_proposal",
+    "path": "control_plane/shadow_exports/l1_promotions/l1_real_softmax_r4_shift5_submit_v1.json",
+    "storage_mode": "repo",
+    "sha256": "37ff9f8a6319b9ad80dc6ad920677bf1809bfb1522f85d9568e43a7c93c85165",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-03-11T03:30:53.027724Z",
+      "item_id": "l1_real_softmax_r4_shift5_submit_v1",
+      "run_key": "l1_real_softmax_r4_shift5_submit_v1_run_9274d59e27a6aca9",
+      "layer": "layer1",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l1_sweep",
+      "source_commit": "b3eaa1706f0450a7ae7ff052b88fc4f03cdb64bf",
+      "objective": "Run a Layer1 nangate45 OpenROAD sweep for 1 configs using nangate45_softmax_rowwise_v1.json and record lightweight design metrics for comparison.",
+      "input_manifest": {
+        "sweeps": [
+          "runs/designs/activations/sweeps/nangate45_softmax_rowwise_v1.json"
+        ],
+        "configs": [
+          "examples/config_softmax_rowwise_int8_r4_shift5.json"
+        ],
+        "design_dirs": [],
+        "macro_manifests": [],
+        "candidate_manifests": []
+      },
+      "proposal_count": 1,
+      "proposals": [
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r4_shift5_wrapper/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "param_hash": "57faa721",
+            "tag": "softmax_rowwise_ng45_v1_6c63d092",
+            "result_path": "runs/designs/activations/softmax_rowwise_int8_r4_shift5_wrapper/work/57faa721/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 12.4168,
+            "die_area": 54093.4564,
+            "total_power_mw": 0.573
+          }
+        }
+      ]
+    }
+  },
+  "pr_payload": {
+    "branch": "eval/l1_real_softmax_r4_shift5_submit_v1/s20260311t040609z",
+    "title": "eval: run layer1 sweep from nangate45_softmax_rowwise_v1 on nangate45",
+    "body_fields": {
+      "host": "353f3fadd15d",
+      "session_id": "s20260311t040609z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_real_softmax_r4_shift5_submit_v1"
+    },
+    "body_md": "## Summary\n- item_id: `l1_real_softmax_r4_shift5_submit_v1`\n- run_key: `l1_real_softmax_r4_shift5_submit_v1_run_9274d59e27a6aca9`\n- layer: `layer1`\n- task_type: `l1_sweep`\n- status: `ok`\n- summary: `4/4 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l1_real_softmax_r4_shift5_submit_v1/evaluated.json`\n- metrics_rows_count: `8`\n- review_artifact: `promotion_proposal` at `control_plane/shadow_exports/l1_promotions/l1_real_softmax_r4_shift5_submit_v1.json`\n\n## Checklist\n- [ ] Commit only lightweight metrics and regenerated runs/index.csv\n- [ ] Include metrics row references for each completed design\n- [ ] Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py before pushing\n",
+    "checklist": [
+      "Commit only lightweight metrics and regenerated runs/index.csv",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py before pushing"
+    ]
+  }
+}
