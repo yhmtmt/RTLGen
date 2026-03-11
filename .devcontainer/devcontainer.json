@@ -14,9 +14,10 @@
     "-v", "/tmp/.X11-unix:/tmp/.X11-unix"
   ],
   "containerEnv": {
-    "RTLCP_DATABASE_URL": "postgresql+psycopg://rtlgen:rtlgen@localhost:5432/rtlgen_control_plane"
+    "RTLCP_DATABASE_URL": "postgresql+psycopg://rtlgen:rtlgen@localhost:5432/rtlgen_control_plane",
+    "RTLCP_ROLE": "${localEnv:RTLCP_ROLE}"
   },
-  "postStartCommand": "/workspaces/RTLGen/.devcontainer/start_postgres.sh",
+  "postStartCommand": "/workspaces/RTLGen/.devcontainer/start_control_plane_services.sh",
   "settings": {
     "terminal.integrated.defaultProfile.linux": "bash"
   },

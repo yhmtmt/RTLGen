@@ -78,10 +78,14 @@ Notes:
 
 For this repo's devcontainer specifically:
 - `.devcontainer/Dockerfile` now installs PostgreSQL
-- `.devcontainer/start_postgres.sh` starts the local service and provisions the default `rtlgen` role/database
+- `.devcontainer/start_control_plane_services.sh` gates local services by `RTLCP_ROLE`
+- `.devcontainer/start_postgres.sh` starts the local service and provisions the default `rtlgen` role/database when `RTLCP_ROLE=server`
 - `.devcontainer/devcontainer.json` publishes container port `5432` to the notebook host
 - `.devcontainer/devcontainer.json` exports a local default:
   - `postgresql+psycopg://rtlgen:rtlgen@localhost:5432/rtlgen_control_plane`
+- `.devcontainer/devcontainer.json` forwards optional host-side role selection:
+  - `RTLCP_ROLE=server`
+  - `RTLCP_ROLE=evaluator`
 - `.devcontainer/start_postgres.sh` also configures PostgreSQL for remote password auth:
   - `listen_addresses = '*'`
   - `host ${RTLCP_DB_NAME:-rtlgen_control_plane} ${RTLCP_DB_ROLE:-rtlgen} ${RTLCP_PG_ALLOWED_CIDR:-172.16.0.0/12} scram-sha-256`
@@ -90,10 +94,21 @@ That local default is only a convenience for the current phase.
 The control-plane scripts still stay generic and continue to honor explicit `RTLCP_DATABASE_URL` overrides.
 
 For a distinct evaluator PC on the same network:
-- rebuild/reopen the devcontainer so the `-p 5432:5432` mapping takes effect
+- on the notebook host, use the default role or set `RTLCP_ROLE=server` before rebuild
+- on the evaluator PC, set `RTLCP_ROLE=evaluator` before rebuild so the same image boots without a local PostgreSQL daemon
+- rebuild/reopen the devcontainer so the `-p 5432:5432` mapping takes effect on the notebook host
 - set `RTLCP_PG_ALLOWED_CIDR` before rebuild if you want a narrower evaluator subnet
 - use the notebook host IP, not `localhost`, from the evaluator PC:
   - `postgresql+psycopg://rtlgen:rtlgen@<notebook-host-ip>:5432/rtlgen_control_plane`
+
+Example host-side setup before opening the container:
+```sh
+# notebook / server role
+export RTLCP_ROLE=server
+
+# evaluator PC
+export RTLCP_ROLE=evaluator
+```
 
 ## Current capabilities
 
