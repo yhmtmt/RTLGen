@@ -148,3 +148,27 @@ def test_process_completed_items_rejects_wrong_state() -> None:
                 assert "not ready for completion processing" in str(exc)
             else:
                 raise AssertionError("expected CompletionProcessingError")
+
+
+def test_process_completed_items_submit_blocks_shadow_only_item_without_force() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id = _seed_l1_artifact_sync(session, repo_root)
+            try:
+                process_completed_items(
+                    session,
+                    CompletionProcessRequest(
+                        repo_root=str(repo_root),
+                        item_id=item_id,
+                        submit=True,
+                        repo="yhmtmt/RTLGen",
+                    ),
+                )
+            except CompletionProcessingError as exc:
+                assert "missing canonical runs evidence outputs" in str(exc)
+            else:
+                raise AssertionError("expected CompletionProcessingError")

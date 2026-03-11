@@ -53,6 +53,16 @@ def _default_session_id() -> str:
     return utcnow().strftime("s%Y%m%dt%H%M%Sz").lower()
 
 
+def _session_id_from_branch(branch_name: str | None) -> str | None:
+    text = str(branch_name or "").strip()
+    if not text:
+        return None
+    match = re.search(r"/(s[0-9]{8}t[0-9]{6}z)$", text)
+    if match:
+        return match.group(1)
+    return None
+
+
 def _default_shadow_target_path(*, item_id: str) -> str:
     return f"control_plane/shadow_exports/evaluated/{item_id}.json"
 
@@ -366,9 +376,10 @@ def sync_run_artifacts(session: Session, request: ArtifactSyncRequest) -> Artifa
         work_item=work_item,
         queue_result=queue_result,
     )
-    session_id = request.session_id or _default_session_id()
+    requested_branch_name = request.branch_name or run.branch_name
+    session_id = request.session_id or _session_id_from_branch(requested_branch_name) or _default_session_id()
     host = request.host or socket.gethostname()
-    branch_name = request.branch_name or run.branch_name or f"eval/{work_item.item_id}/{session_id}"
+    branch_name = requested_branch_name or f"eval/{work_item.item_id}/{session_id}"
     queue_result.update(
         {
             "completed_utc": run.completed_at.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")

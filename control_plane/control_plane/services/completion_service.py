@@ -12,7 +12,11 @@ from control_plane.models.runs import Run
 from control_plane.models.work_items import WorkItem
 from control_plane.services.l1_result_consumer import Layer1ConsumeRequest, consume_l1_result
 from control_plane.services.l2_result_consumer import Layer2ConsumeRequest, consume_l2_result
-from control_plane.services.operator_submission import OperatorSubmissionRequest, operate_submission
+from control_plane.services.operator_submission import (
+    OperatorSubmissionError,
+    OperatorSubmissionRequest,
+    operate_submission,
+)
 
 
 class CompletionProcessingError(RuntimeError):
@@ -107,25 +111,28 @@ def process_completed_items(session: Session, request: CompletionProcessRequest)
         if request.submit:
             if not request.repo:
                 raise CompletionProcessingError("repo is required when submit=True")
-            operate_result = operate_submission(
-                session,
-                OperatorSubmissionRequest(
-                    repo_root=request.repo_root,
-                    repo=request.repo,
-                    item_id=work_item.item_id,
-                    evaluator_id=request.evaluator_id,
-                    session_id=request.session_id,
-                    host=request.host,
-                    executor=request.executor,
-                    branch_name=request.branch_name,
-                    snapshot_target_path=request.snapshot_target_path,
-                    package_target_path=request.package_target_path,
-                    worktree_root=request.worktree_root,
-                    commit_message=request.commit_message,
-                    pr_base=request.pr_base,
-                    force=request.force,
-                ),
-            )
+            try:
+                operate_result = operate_submission(
+                    session,
+                    OperatorSubmissionRequest(
+                        repo_root=request.repo_root,
+                        repo=request.repo,
+                        item_id=work_item.item_id,
+                        evaluator_id=request.evaluator_id,
+                        session_id=request.session_id,
+                        host=request.host,
+                        executor=request.executor,
+                        branch_name=request.branch_name,
+                        snapshot_target_path=request.snapshot_target_path,
+                        package_target_path=request.package_target_path,
+                        worktree_root=request.worktree_root,
+                        commit_message=request.commit_message,
+                        pr_base=request.pr_base,
+                        force=request.force,
+                    ),
+                )
+            except OperatorSubmissionError as exc:
+                raise CompletionProcessingError(str(exc)) from exc
             submitted = True
             pr_url = operate_result.pr_url
 

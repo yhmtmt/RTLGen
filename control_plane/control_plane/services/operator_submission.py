@@ -113,6 +113,18 @@ def _required_review_artifact_kind(task_type: str) -> str | None:
     return None
 
 
+def _is_canonical_runs_evidence(rel_path: str) -> bool:
+    parts = Path(rel_path).parts
+    if not parts or parts[0] != "runs":
+        return False
+    blocked = {"work", "artifacts", "comparisons"}
+    return not any(part in blocked for part in parts)
+
+
+def _has_canonical_runs_evidence(work_item: WorkItem) -> bool:
+    return any(_is_canonical_runs_evidence(str(output)) for output in (work_item.expected_outputs or []))
+
+
 def _has_review_artifact(session: Session, *, run_id: str, kind: str | None) -> bool:
     if not kind:
         return False
@@ -154,6 +166,8 @@ def assess_submission_eligibility(
             reason = f"unsupported_task_type={work_item.task_type}"
         elif not _has_review_artifact(session, run_id=latest_run.id, kind=required_kind):
             reason = f"missing {required_kind} artifact"
+        elif not _has_canonical_runs_evidence(work_item):
+            reason = "missing canonical runs evidence outputs"
 
     return SubmissionEligibility(
         item_id=work_item.item_id,
