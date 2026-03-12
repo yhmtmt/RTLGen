@@ -181,6 +181,17 @@ Proven:
 
 Not yet productized:
 - automatic retry policy
-- long-running worker daemon supervision
-- automatic notebook-side consumption/submission after worker completion
+- `systemd` service manager integration
 - reviewer assignment / merge automation
+
+## Service-Managed Mode
+
+The same workflow can now run under `systemd`:
+- evaluator:
+  - `rtlgen-evaluator-worker.service`
+- notebook:
+  - `rtlgen-notebook-completions.service`
+  - `rtlgen-notebook-completions.timer`
+
+See:
+- [systemd_operator_workflow.md](/workspaces/RTLGen/control_plane/systemd_operator_workflow.md)

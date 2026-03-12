@@ -1,0 +1,12 @@
+[Unit]
+Description=Run the RTLGen notebook completion processor periodically
+
+[Timer]
+OnBootSec=2m
+OnUnitActiveSec=5m
+AccuracySec=30s
+Persistent=true
+Unit=rtlgen-notebook-completions.service
+
+[Install]
+WantedBy=timers.target

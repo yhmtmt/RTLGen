@@ -1,0 +1,18 @@
+[Unit]
+Description=RTLGen control-plane evaluator worker daemon
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/workspaces/RTLGen
+EnvironmentFile=/etc/rtlgen/evaluator-worker.env
+ExecStart=/workspaces/RTLGen/control_plane/scripts/run_worker_daemon_service.sh
+Restart=always
+RestartSec=10
+KillMode=process
+TimeoutStopSec=30
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,11 @@
+[Unit]
+Description=RTLGen control-plane notebook completion processor
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/workspaces/RTLGen
+EnvironmentFile=/etc/rtlgen/notebook-completions.env
+ExecStart=/workspaces/RTLGen/control_plane/scripts/process_completions_service.sh
+NoNewPrivileges=true

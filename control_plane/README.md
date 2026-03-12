@@ -162,6 +162,25 @@ python3 -m control_plane.cli.main process-completions \
   --submit
 ```
 
+## Systemd Packaging
+
+The proven cross-host flow is now packaged for `systemd`:
+- evaluator daemon service
+- notebook completion service
+- notebook completion timer
+
+Tracked files:
+- [control_plane/systemd](/workspaces/RTLGen/control_plane/systemd)
+- [systemd_operator_workflow.md](/workspaces/RTLGen/control_plane/systemd_operator_workflow.md)
+
+Wrapper scripts:
+- [run_worker_daemon_service.sh](/workspaces/RTLGen/control_plane/scripts/run_worker_daemon_service.sh)
+- [process_completions_service.sh](/workspaces/RTLGen/control_plane/scripts/process_completions_service.sh)
+
+Use the example env files as the starting point:
+- `control_plane/systemd/evaluator-worker.env.example`
+- `control_plane/systemd/notebook-completions.env.example`
+
 ## End-to-End Shadow Workflow
 
 Set the DB location:
