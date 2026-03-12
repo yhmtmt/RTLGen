@@ -54,8 +54,8 @@
     "completed_utc": "2026-03-12T09:44:14.029040Z",
     "evaluator_id": "control_plane",
     "executor": "@control_plane",
-    "host": "5d280cf7455e",
-    "identity_block": "[role:evaluator][account:control_plane][session:s20260312t102310z][host:5d280cf7455e][item:l1_remote_transport_probe_20260312082536]",
+    "host": "a73fb7753672",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260312t102310z][host:a73fb7753672][item:l1_remote_transport_probe_20260312082536]",
     "metrics_rows": [
       {
         "tag": "softmax_rowwise_ng45_v1_bd9157ff",
@@ -136,7 +136,7 @@
       "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
     ],
     "pr_body_fields": {
-      "host": "5d280cf7455e",
+      "host": "a73fb7753672",
       "session_id": "s20260312t102310z",
       "evaluator_id": "control_plane",
       "queue_item_id": "l1_remote_transport_probe_20260312082536"
