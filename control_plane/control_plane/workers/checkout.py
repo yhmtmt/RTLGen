@@ -49,9 +49,16 @@ def _read_submodule_paths(repo_root: Path) -> list[str]:
     return paths
 
 
-def _materialize_missing_submodules(repo_root: Path) -> tuple[str, ...]:
+def _materialize_missing_submodules(
+    repo_root: Path,
+    *,
+    required_submodules: list[str] | tuple[str, ...] | None = None,
+) -> tuple[str, ...]:
+    allowed = set(required_submodules or [])
     missing: list[str] = []
     for rel in _read_submodule_paths(repo_root):
+        if allowed and rel not in allowed:
+            continue
         path = repo_root / rel
         if (not path.exists()) or (path.is_dir() and not any(path.iterdir())):
             missing.append(rel)
@@ -71,6 +78,7 @@ def prepare_checkout(
     repo_root: str,
     source_commit: str | None = None,
     enforce_source_commit: bool = False,
+    required_submodules: list[str] | tuple[str, ...] | None = None,
 ) -> CheckoutInfo:
     repo_path = Path(repo_root).resolve()
     if not repo_path.exists():
@@ -79,7 +87,10 @@ def prepare_checkout(
         raise CheckoutError(f"repo root is not a directory: {repo_path}")
 
     try:
-        materialized_submodules = _materialize_missing_submodules(repo_path)
+        materialized_submodules = _materialize_missing_submodules(
+            repo_path,
+            required_submodules=required_submodules,
+        )
     except (subprocess.CalledProcessError, FileNotFoundError) as exc:
         raise CheckoutError(f"failed to materialize submodules: {exc}") from exc
 

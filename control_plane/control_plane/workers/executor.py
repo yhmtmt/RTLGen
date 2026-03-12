@@ -150,6 +150,7 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
             repo_root=config.repo_root,
             source_commit=work_item.source_commit,
             enforce_source_commit=config.enforce_source_commit,
+            required_submodules=((work_item.input_manifest or {}).get("required_submodules") or None),
         )
     except CheckoutError as exc:
         checkout_error = str(exc)

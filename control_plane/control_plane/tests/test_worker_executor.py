@@ -485,7 +485,10 @@ def test_prepare_checkout_materializes_missing_submodules_only() -> None:
             raise AssertionError(f"unexpected subprocess args: {args}")
 
         with mock.patch("control_plane.workers.checkout.subprocess.run", side_effect=fake_run):
-            info = prepare_checkout(repo_root=str(repo_root))
+            info = prepare_checkout(
+                repo_root=str(repo_root),
+                required_submodules=["third_party/cacti"],
+            )
 
         assert info.materialized_submodules == ("third_party/cacti",)
         submodule_calls = [args for args in calls if "submodule" in args]
