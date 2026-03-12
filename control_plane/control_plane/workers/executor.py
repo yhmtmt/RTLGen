@@ -221,6 +221,7 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
                 "source_commit": checkout_info.source_commit,
                 "source_commit_matches": checkout_info.source_commit_matches,
                 "source_commit_relation": checkout_info.source_commit_relation,
+                "materialized_submodules": list(checkout_info.materialized_submodules),
             },
         )
 
@@ -285,6 +286,7 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
             "source_commit": checkout_info.source_commit,
             "source_commit_matches": checkout_info.source_commit_matches,
             "source_commit_relation": checkout_info.source_commit_relation,
+            "materialized_submodules": list(checkout_info.materialized_submodules),
         },
         "commands": [
             {

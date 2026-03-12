@@ -4,6 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 import tempfile
 import subprocess
+from unittest import mock
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
@@ -15,6 +16,7 @@ from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
 from control_plane.models.worker_leases import WorkerLease
 from control_plane.services.worker_service import run_worker
+from control_plane.workers.checkout import prepare_checkout
 from control_plane.workers.executor import WorkerConfig
 
 
@@ -452,3 +454,40 @@ def test_worker_allows_checkout_ahead_of_source_commit() -> None:
             assert work_item.state == WorkItemState.ARTIFACT_SYNC
             assert run.status == RunStatus.SUCCEEDED
             assert run.result_payload["checkout"]["source_commit_relation"] == "descendant"
+
+
+def test_prepare_checkout_materializes_missing_submodules_only() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        (repo_root / ".gitmodules").write_text(
+            (
+                '[submodule "cacti"]\n'
+                "\tpath = third_party/cacti\n"
+                '\n[submodule "flopoco"]\n'
+                "\tpath = third_party/flopoco\n"
+            ),
+            encoding="utf-8",
+        )
+        (repo_root / "third_party" / "flopoco").mkdir(parents=True)
+        (repo_root / "third_party" / "flopoco" / "README").write_text("present\n", encoding="utf-8")
+
+        calls: list[list[str]] = []
+
+        def fake_run(args, check, capture_output, text):
+            calls.append(list(args))
+            if args[-2:] == ["rev-parse", "HEAD"]:
+                return subprocess.CompletedProcess(args, 0, stdout="deadbeef\n", stderr="")
+            if args[-3:] == ["status", "--porcelain", "--untracked-files=no"]:
+                return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+            if "submodule" in args:
+                return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+            raise AssertionError(f"unexpected subprocess args: {args}")
+
+        with mock.patch("control_plane.workers.checkout.subprocess.run", side_effect=fake_run):
+            info = prepare_checkout(repo_root=str(repo_root))
+
+        assert info.materialized_submodules == ("third_party/cacti",)
+        submodule_calls = [args for args in calls if "submodule" in args]
+        assert len(submodule_calls) == 1
+        assert submodule_calls[0][-1] == "third_party/cacti"

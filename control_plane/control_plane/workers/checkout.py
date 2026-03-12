@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import configparser
 from pathlib import Path
 import subprocess
 
@@ -20,6 +21,7 @@ class CheckoutInfo:
     source_commit: str | None
     source_commit_matches: bool | None
     source_commit_relation: str | None
+    materialized_submodules: tuple[str, ...]
 
 
 def _run_git(repo_root: Path, *args: str) -> str:
@@ -30,6 +32,38 @@ def _run_git(repo_root: Path, *args: str) -> str:
         text=True,
     )
     return result.stdout.strip()
+
+
+def _read_submodule_paths(repo_root: Path) -> list[str]:
+    gitmodules = repo_root / ".gitmodules"
+    if not gitmodules.exists():
+        return []
+    parser = configparser.ConfigParser()
+    parser.read(gitmodules, encoding="utf-8")
+    paths: list[str] = []
+    for section in parser.sections():
+        if parser.has_option(section, "path"):
+            rel = parser.get(section, "path").strip()
+            if rel:
+                paths.append(rel)
+    return paths
+
+
+def _materialize_missing_submodules(repo_root: Path) -> tuple[str, ...]:
+    missing: list[str] = []
+    for rel in _read_submodule_paths(repo_root):
+        path = repo_root / rel
+        if (not path.exists()) or (path.is_dir() and not any(path.iterdir())):
+            missing.append(rel)
+    if not missing:
+        return ()
+    subprocess.run(
+        ["git", "-C", str(repo_root), "submodule", "update", "--init", "--recursive", *missing],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return tuple(missing)
 
 
 def prepare_checkout(
@@ -43,6 +77,11 @@ def prepare_checkout(
         raise CheckoutError(f"repo root does not exist: {repo_path}")
     if not repo_path.is_dir():
         raise CheckoutError(f"repo root is not a directory: {repo_path}")
+
+    try:
+        materialized_submodules = _materialize_missing_submodules(repo_path)
+    except (subprocess.CalledProcessError, FileNotFoundError) as exc:
+        raise CheckoutError(f"failed to materialize submodules: {exc}") from exc
 
     head_sha: str | None = None
     git_dirty: bool | None = None
@@ -87,4 +126,5 @@ def prepare_checkout(
         source_commit=source_commit,
         source_commit_matches=source_commit_matches,
         source_commit_relation=source_commit_relation,
+        materialized_submodules=materialized_submodules,
     )
