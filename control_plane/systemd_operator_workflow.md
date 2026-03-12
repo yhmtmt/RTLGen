@@ -13,6 +13,11 @@ This is the operational packaging of the already-proven cross-host control-plane
 
 This does not replace the existing CLI commands. It wraps them.
 
+Important constraint:
+- these units require a real `systemd` host or VM
+- a normal devcontainer shell where PID 1 is not `systemd` cannot exercise `systemctl` or `journalctl`
+- in that environment, validate the wrapper scripts directly and install the units on the host OS instead
+
 ## Installed Units
 
 Evaluator PC:
