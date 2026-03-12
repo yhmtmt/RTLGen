@@ -128,7 +128,10 @@ def _build_payload(
                 "sweeps": [sweep_path],
                 "macro_manifests": [],
                 "candidate_manifests": [],
-                "required_submodules": ["third_party/cacti"],
+                "required_submodules": [
+                    "third_party/nlohmann_json",
+                    "third_party/cacti",
+                ],
             },
             "commands": [
                 {

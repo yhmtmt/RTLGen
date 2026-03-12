@@ -107,7 +107,10 @@ def test_generate_l1_sweep_task_creates_ready_work_item() -> None:
             payload = work_item.task_request.request_payload
             assert payload["layer"] == "layer1"
             assert payload["task"]["inputs"]["sweeps"] == [sweep_path]
-            assert payload["task"]["inputs"]["required_submodules"] == ["third_party/cacti"]
+            assert payload["task"]["inputs"]["required_submodules"] == [
+                "third_party/nlohmann_json",
+                "third_party/cacti",
+            ]
             assert payload["handoff"]["pr_body_fields"]["queue_item_id"] == result.item_id
 
 
