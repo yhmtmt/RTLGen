@@ -65,9 +65,15 @@ def load_metrics(metrics_path: Path):
     text = re.sub(r"result\.json(?=[A-Za-z0-9_])", "result.json\n", text)
     lines = text.splitlines()
     if not lines:
-        return []
-    header = lines[0].split(",")
-    rows = []
+        return [], []
+
+    csv_reader = csv.DictReader(lines)
+    csv_header = csv_reader.fieldnames or []
+    csv_rows = list(csv_reader)
+    good_csv_rows = [row for row in csv_rows if None not in row]
+
+    legacy_header = lines[0].split(",")
+    legacy_rows = []
     for line in lines[1:]:
         if not line.strip():
             continue
@@ -84,10 +90,61 @@ def load_metrics(metrics_path: Path):
         if len(params_json) >= 2 and params_json[0] == '"' and params_json[-1] == '"':
             params_json = params_json[1:-1].replace('""', '"')
         values = front + [params_json, result_path]
-        if len(values) != len(header):
+        if len(values) != len(legacy_header):
             continue
-        rows.append(dict(zip(header, values)))
-    return rows
+        legacy_rows.append(dict(zip(legacy_header, values)))
+
+    if csv_header and good_csv_rows and len(good_csv_rows) == len(csv_rows):
+        return csv_header, good_csv_rows
+
+    if csv_header and good_csv_rows:
+        merged = []
+        seen = set()
+        key_fields = csv_header
+
+        def _key(row):
+            return tuple((k, row.get(k, "")) for k in key_fields)
+
+        for row in good_csv_rows + legacy_rows:
+            k = _key(row)
+            if k in seen:
+                continue
+            seen.add(k)
+            merged.append(row)
+        return csv_header, merged
+
+    return legacy_header, legacy_rows
+
+
+def dedupe_metrics_rows(header, rows):
+    deduped = []
+    seen = set()
+    for row in reversed(rows):
+        key = (
+            row.get("design", ""),
+            row.get("platform", ""),
+            row.get("param_hash", ""),
+            normalize_repo_path(row.get("result_path", "")),
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(row)
+    deduped.reverse()
+    return deduped
+
+
+def normalize_metrics_file(metrics_path: Path):
+    header, rows = load_metrics(metrics_path)
+    if not header:
+        return []
+    deduped = dedupe_metrics_rows(header, rows)
+    with metrics_path.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=header)
+        writer.writeheader()
+        for row in deduped:
+            writer.writerow({field: row.get(field, "") for field in header})
+    return deduped
 
 
 def main():
@@ -108,7 +165,7 @@ def main():
                 sram_summary = json.loads(sram_summary_path.read_text())
             except json.JSONDecodeError:
                 sram_summary = {}
-        for row in load_metrics(metrics_path):
+        for row in normalize_metrics_file(metrics_path):
             params_json = row.get("params_json", "")
             try:
                 params = json.loads(params_json) if params_json else {}

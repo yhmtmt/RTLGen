@@ -127,9 +127,24 @@ class RunsParserRegressionTest(unittest.TestCase):
         metrics_path = self._write_metrics_csv([legacy_row, quoted_row])
 
         rows = self.build_runs_index.load_metrics(metrics_path)
+        header, rows = rows
+        self.assertTrue(header)
         self.assertEqual(2, len(rows))
         for row in rows:
             self._assert_parseable_params(row)
+
+    def test_build_runs_index_normalizes_duplicate_metrics_rows(self):
+        row = (
+            "softmax_rowwise_int8_r4_acc20_wrapper,nangate45,cfg123,fast0001,tag_fast,ok,"
+            '12.0,30000,0.18,"{""CLOCK_PERIOD"": 6.0}",'
+            "runs/designs/activations/softmax_rowwise_int8_r4_acc20_wrapper/work/fast0001/result.json"
+        )
+        metrics_path = self._write_metrics_csv([row, row])
+
+        deduped = self.build_runs_index.normalize_metrics_file(metrics_path)
+        self.assertEqual(1, len(deduped))
+        rewritten_lines = metrics_path.read_text(encoding="utf-8").splitlines()
+        self.assertEqual(2, len(rewritten_lines))
 
     def test_run_sweep_normalizes_repo_relative_paths(self):
         repo_root = self.run_sweep.REPO_ROOT
