@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import socket
 
 from control_plane.db import build_engine, build_session_factory, create_all
 from control_plane.services.completion_service import CompletionProcessRequest, process_completed_items
@@ -19,7 +18,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--submit", action="store_true")
     parser.add_argument("--evaluator-id", default="control_plane")
     parser.add_argument("--session-id")
-    parser.add_argument("--host", default=socket.gethostname())
+    parser.add_argument("--host")
     parser.add_argument("--executor", default="@control_plane")
     parser.add_argument("--branch-name")
     parser.add_argument("--snapshot-target-path")

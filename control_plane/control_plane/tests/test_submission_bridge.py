@@ -341,6 +341,54 @@ def test_prepare_submission_branch_includes_canonical_runs_evidence_for_real_ite
             assert (Path(result.worktree_path) / "runs" / "index.csv").exists()
 
 
+def test_prepare_submission_branch_rejects_missing_canonical_evidence_diff() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, _run_key = _seed_l1_reviewable(session, repo_root)
+            _git(
+                repo_root,
+                "add",
+                "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv",
+                "runs/index.csv",
+            )
+            subprocess.run(
+                ["git", "-C", str(repo_root), "commit", "-m", "seed canonical evidence"],
+                check=True,
+                capture_output=True,
+                text=True,
+                env={
+                    **__import__("os").environ,
+                    "GIT_AUTHOR_NAME": "Test",
+                    "GIT_AUTHOR_EMAIL": "test@example.com",
+                    "GIT_COMMITTER_NAME": "Test",
+                    "GIT_COMMITTER_EMAIL": "test@example.com",
+                },
+            )
+
+            try:
+                prepare_submission_branch(
+                    session,
+                    SubmissionPrepareRequest(
+                        repo_root=str(repo_root),
+                        item_id=item_id,
+                        evaluator_id="cpbot",
+                        session_id="s20260312t083000z",
+                        host="cp-host",
+                        worktree_root=str(repo_root / "tmp_submit"),
+                    ),
+                )
+            except SubmissionPrepareError as exc:
+                assert "no canonical runs evidence diff" in str(exc)
+            else:
+                raise AssertionError("expected SubmissionPrepareError")
+
+
 def test_prepare_submission_branch_rejects_existing_branch() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

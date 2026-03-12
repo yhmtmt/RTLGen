@@ -140,6 +140,11 @@ def _copy_into_worktree(*, repo_root: Path, worktree_path: Path, rel_path: str) 
     shutil.copy2(src, dst)
 
 
+def _staged_paths(worktree_path: Path) -> list[str]:
+    output = _run_git(worktree_path, "diff", "--cached", "--name-only")
+    return [line.strip() for line in output.splitlines() if line.strip()]
+
+
 def _commit_env() -> dict[str, str]:
     env = dict(**__import__("os").environ)
     env.setdefault("GIT_AUTHOR_NAME", "RTLGen Control Plane")
@@ -242,6 +247,11 @@ def prepare_submission_branch(session: Session, request: SubmissionPrepareReques
             *( [review_rel] if review_rel else [] ),
             *evidence_files,
         )
+        staged_paths = _staged_paths(worktree_path)
+        if evidence_files and not any(path in staged_paths for path in evidence_files):
+            raise SubmissionPrepareError(
+                f"submission has no canonical runs evidence diff for {work_item.item_id}"
+            )
         commit_message = request.commit_message or f"control_plane: publish review package for {work_item.item_id}"
         _run_git(worktree_path, "commit", "-m", commit_message, env=_commit_env())
         commit_sha = _run_git(worktree_path, "rev-parse", "HEAD")
