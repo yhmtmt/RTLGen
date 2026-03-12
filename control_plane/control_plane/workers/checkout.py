@@ -58,7 +58,7 @@ def _materialize_missing_submodules(repo_root: Path) -> tuple[str, ...]:
     if not missing:
         return ()
     subprocess.run(
-        ["git", "-C", str(repo_root), "submodule", "update", "--init", "--recursive", *missing],
+        ["git", "-C", str(repo_root), "submodule", "update", "--init", *missing],
         check=True,
         capture_output=True,
         text=True,

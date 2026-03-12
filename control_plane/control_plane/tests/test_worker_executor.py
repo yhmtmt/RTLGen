@@ -490,4 +490,5 @@ def test_prepare_checkout_materializes_missing_submodules_only() -> None:
         assert info.materialized_submodules == ("third_party/cacti",)
         submodule_calls = [args for args in calls if "submodule" in args]
         assert len(submodule_calls) == 1
+        assert "--recursive" not in submodule_calls[0]
         assert submodule_calls[0][-1] == "third_party/cacti"
