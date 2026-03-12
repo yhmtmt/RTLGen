@@ -15,7 +15,9 @@
   ],
   "containerEnv": {
     "RTLCP_DATABASE_URL": "postgresql+psycopg://rtlgen:rtlgen@localhost:5432/rtlgen_control_plane",
-    "RTLCP_ROLE": "${localEnv:RTLCP_ROLE}"
+    "RTLCP_ROLE": "${localEnv:RTLCP_ROLE}",
+    "RTLCP_AUTOSTART_WORKER_DAEMON": "${localEnv:RTLCP_AUTOSTART_WORKER_DAEMON}",
+    "RTLCP_AUTOSTART_COMPLETIONS": "${localEnv:RTLCP_AUTOSTART_COMPLETIONS}"
   },
   "postStartCommand": "/workspaces/RTLGen/.devcontainer/start_control_plane_services.sh",
   "settings": {

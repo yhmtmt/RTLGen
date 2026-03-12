@@ -181,6 +181,41 @@ Use the example env files as the starting point:
 - `control_plane/systemd/evaluator-worker.env.example`
 - `control_plane/systemd/notebook-completions.env.example`
 
+## Devcontainer Autostart
+
+The primary operator mode in the current environment is now devcontainer startup, not container-internal `systemd`.
+
+Role-gated behavior:
+- `RTLCP_ROLE=server`
+  - starts local PostgreSQL
+  - does not start notebook completion automatically unless `RTLCP_AUTOSTART_COMPLETIONS=1`
+- `RTLCP_ROLE=evaluator`
+  - skips local PostgreSQL
+  - starts the worker daemon automatically unless `RTLCP_AUTOSTART_WORKER_DAEMON=0`
+
+Helper scripts:
+- [.devcontainer/control_plane_service_ctl.sh](/workspaces/RTLGen/.devcontainer/control_plane_service_ctl.sh)
+- [.devcontainer/run_completion_loop.sh](/workspaces/RTLGen/.devcontainer/run_completion_loop.sh)
+
+Examples:
+```sh
+# notebook
+export RTLCP_ROLE=server
+export RTLCP_AUTOSTART_COMPLETIONS=1
+```
+
+```sh
+# evaluator
+export RTLCP_ROLE=evaluator
+export RTLCP_AUTOSTART_WORKER_DAEMON=1
+```
+
+Runtime state is written under:
+- `/tmp/rtlgen-control-plane/worker.pid`
+- `/tmp/rtlgen-control-plane/worker.log`
+- `/tmp/rtlgen-control-plane/completions.pid`
+- `/tmp/rtlgen-control-plane/completions.log`
+
 ## End-to-End Shadow Workflow
 
 Set the DB location:

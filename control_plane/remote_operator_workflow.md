@@ -195,3 +195,9 @@ The same workflow can now run under `systemd`:
 
 See:
 - [systemd_operator_workflow.md](/workspaces/RTLGen/control_plane/systemd_operator_workflow.md)
+
+In the current devcontainer-based operation, the primary automation path is:
+- role-gated devcontainer startup via `.devcontainer/start_control_plane_services.sh`
+- background wrappers managed by `.devcontainer/control_plane_service_ctl.sh`
+
+This is preferred over container-internal `systemd` because the evaluator and notebook both run inside devcontainers where PID 1 is not necessarily `systemd`.
