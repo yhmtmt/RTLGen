@@ -1,23 +1,35 @@
+diff --git a/code/VHDLOperators/include/flopoco/ConstMult/IntConstMultShiftAddOptTernary.hpp b/code/VHDLOperators/include/flopoco/ConstMult/IntConstMultShiftAddOptTernary.hpp
+index efcd98307..615ea149b 100644
+--- a/code/VHDLOperators/include/flopoco/ConstMult/IntConstMultShiftAddOptTernary.hpp
++++ b/code/VHDLOperators/include/flopoco/ConstMult/IntConstMultShiftAddOptTernary.hpp
+@@ -29,7 +29,7 @@
+ namespace flopoco
+ {
+ 
+-#if defined(HAVE_PAGLIB) && defined(HAVE_OSCM)
++#if defined(HAVE_PAGLIB) && defined(HAVE_OSCM) && defined(HAVE_SCALP)
+ class IntConstMultShiftAddOptTernary : public IntConstMultShiftAdd {
+     public:
+     IntConstMultShiftAddOptTernary(Operator* parentOp, Target* target, int wIn, int coeff, bool isSigned, int errorBudget);
 diff --git a/code/VHDLOperators/src/UserInterface.cpp b/code/VHDLOperators/src/UserInterface.cpp
-index 0b2e3d8a..99999999 100644
+index 09bf83c42..483547dcb 100644
 --- a/code/VHDLOperators/src/UserInterface.cpp
 +++ b/code/VHDLOperators/src/UserInterface.cpp
-@@
--#include <regex>
--#include <string>
--#include <sys/stat.h>
--// TODO check the hard mult threshold
-+#include <regex>
-+#include <string>
-+#include <sys/stat.h>
-+// TODO check the hard mult threshold
-+
+@@ -14,6 +14,12 @@
+ #include <sys/stat.h>
+ // TODO check the hard mult threshold
+ 
 +#ifndef FLOPOCO_GIT_HASH
 +#define FLOPOCO_GIT_HASH unknown
 +#endif
 +#define FLOPOCO_STRINGIFY_DETAIL(x) #x
 +#define FLOPOCO_STRINGIFY(x) FLOPOCO_STRINGIFY_DETAIL(x)
-@@
++
+ namespace flopoco
+ {
+ // Colors from	https://github.com/Uduse/Escape-Sequence-Color-Header/blob/master/src/Escape_Sequences_Colors.h
+@@ -383,7 +389,7 @@ void UserInterface::buildAll(int argc, char* argv[])
+     }
      if(argc == 2 && string(argv[1]) == "--version") {
  #ifdef FLOPOCO_VERSION_MAJOR
 -        printf("%d.%d.%d:%s\n", FLOPOCO_VERSION_MAJOR, FLOPOCO_VERSION_MINOR, FLOPOCO_VERSION_PATCH, FLOPOCO_GIT_HASH);
@@ -25,17 +37,3 @@ index 0b2e3d8a..99999999 100644
          exit(EXIT_SUCCESS);
  #else
          exit(EXIT_FAILURE);
- #endif
-     }
-diff --git a/code/VHDLOperators/include/flopoco/ConstMult/IntConstMultShiftAddOptTernary.hpp b/code/VHDLOperators/include/flopoco/ConstMult/IntConstMultShiftAddOptTernary.hpp
-index 12345678..abcdef01 100644
---- a/code/VHDLOperators/include/flopoco/ConstMult/IntConstMultShiftAddOptTernary.hpp
-+++ b/code/VHDLOperators/include/flopoco/ConstMult/IntConstMultShiftAddOptTernary.hpp
-@@
--#if defined(HAVE_PAGLIB) && defined(HAVE_OSCM)
-+#if defined(HAVE_PAGLIB) && defined(HAVE_OSCM) && defined(HAVE_SCALP)
- class IntConstMultShiftAddOptTernary : public IntConstMultShiftAdd {
-     public:
-     IntConstMultShiftAddOptTernary(Operator* parentOp, Target* target, int wIn, int coeff, bool isSigned, int errorBudget);
-     static OperatorPtr parseArguments(OperatorPtr parentOp, Target* target, vector<string>& args, UserInterface& ui);
-     static TestList unitTest(int testLevel);
