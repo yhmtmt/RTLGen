@@ -121,6 +121,11 @@ def _run_cmd_capture(args: list[str], *, cwd: Path) -> subprocess.CompletedProce
     return subprocess.run(args, cwd=str(cwd), check=False, text=True, capture_output=True)
 
 
+def _repo_diff_paths(*, cwd: Path, base_ref: str) -> list[str]:
+    output = _run_cmd(["git", "diff", "--name-only", f"{base_ref}...HEAD"], cwd=cwd)
+    return [line.strip() for line in output.splitlines() if line.strip()]
+
+
 def _commit_env() -> dict[str, str]:
     env = dict(**__import__("os").environ)
     env.setdefault("GIT_AUTHOR_NAME", "RTLGen Control Plane")
@@ -258,6 +263,12 @@ def execute_submission(session: Session, request: SubmissionExecuteRequest) -> S
         manifest=manifest,
         item_id=work_item.item_id,
     )
+    evidence_paths = [str(path).strip() for path in (manifest.get("evidence_paths") or []) if str(path).strip()]
+    branch_diff_paths = _repo_diff_paths(cwd=worktree_path, base_ref=pr_base)
+    if evidence_paths and not any(path in branch_diff_paths for path in evidence_paths):
+        raise SubmissionExecuteError(
+            f"submission branch has no canonical runs evidence diff for {work_item.item_id}"
+        )
     manifest["commit_sha"] = commit_sha
     manifest["generated_utc"] = utcnow().isoformat().replace("+00:00", "Z")
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")

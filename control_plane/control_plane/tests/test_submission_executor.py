@@ -493,3 +493,73 @@ def test_execute_submission_backfills_missing_evidence_paths_on_rerun() -> None:
                 "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv",
                 "runs/index.csv",
             ]
+
+
+def test_execute_submission_rejects_branch_without_canonical_evidence_diff() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, _run_key = _seed_l1_reviewable(session, repo_root)
+            prepare_submission_branch(
+                session,
+                SubmissionPrepareRequest(
+                    repo_root=str(repo_root),
+                    item_id=item_id,
+                    evaluator_id="cpbot",
+                    session_id="s20260312t103000z",
+                    host="cp-host",
+                    worktree_root=str(repo_root / "tmp_submit"),
+                ),
+            )
+            manifest_path = repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "submission_manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            # Simulate a reused bad branch by making base/master contain the same canonical evidence.
+            _git(
+                repo_root,
+                "add",
+                "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv",
+                "runs/index.csv",
+            )
+            subprocess.run(
+                ["git", "-C", str(repo_root), "commit", "-m", "seed canonical evidence into base"],
+                check=True,
+                capture_output=True,
+                text=True,
+                env={
+                    **os.environ,
+                    "GIT_AUTHOR_NAME": "Test",
+                    "GIT_AUTHOR_EMAIL": "test@example.com",
+                    "GIT_COMMITTER_NAME": "Test",
+                    "GIT_COMMITTER_EMAIL": "test@example.com",
+                },
+            )
+
+            fake_bin = repo_root / "fake_bin"
+            log_path = repo_root / "fake_cmds.log"
+            _make_fake_bin(fake_bin, log_path)
+            old_path = os.environ.get("PATH", "")
+            os.environ["PATH"] = f"{fake_bin}:{old_path}"
+            try:
+                try:
+                    execute_submission(
+                        session,
+                        SubmissionExecuteRequest(
+                            repo_root=str(repo_root),
+                            repo="yhmtmt/RTLGen",
+                            item_id=item_id,
+                            evaluator_id="cpbot",
+                            session_id="s20260312t103000z",
+                            host="cp-host",
+                        ),
+                    )
+                except SubmissionExecuteError as exc:
+                    assert "no canonical runs evidence diff" in str(exc)
+                else:
+                    raise AssertionError("expected SubmissionExecuteError")
+            finally:
+                os.environ["PATH"] = old_path
