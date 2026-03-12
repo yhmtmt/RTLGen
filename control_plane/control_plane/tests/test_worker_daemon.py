@@ -105,3 +105,40 @@ def test_worker_daemon_executes_item_then_stops_on_no_work() -> None:
         assert result.no_work_polls == 1
         assert result.poll_count == 2
         assert [row.status for row in result.results] == ["succeeded", "no_work"]
+
+
+def test_worker_daemon_emits_positive_poll_logs() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        db_path = Path(td) / "cp.db"
+        engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            _seed_ready_work_item(session, item_id="daemon_item_log", repo_root=repo_root)
+
+        messages: list[str] = []
+        session_factory = build_session_factory(engine)
+        result = run_worker_daemon(
+            session_factory,
+            config=WorkerDaemonConfig(
+                worker=WorkerConfig(
+                    repo_root=str(repo_root),
+                    machine_key="daemon-worker-log",
+                    hostname="daemon-host",
+                    capabilities={"platform": "nangate45", "flow": "openroad"},
+                    capability_filter={"platform": "nangate45", "flow": "openroad"},
+                    heartbeat_seconds=1,
+                ),
+                poll_seconds=0,
+                max_polls=2,
+                stop_on_no_work=True,
+            ),
+            log_fn=messages.append,
+        )
+
+        assert result.executed_items == 1
+        assert any("worker-daemon start" in entry for entry in messages)
+        assert any("poll=1" in entry and "succeeded" in entry for entry in messages)
+        assert any("poll=2" in entry and "no_work" in entry for entry in messages)
+        assert any("worker-daemon exit" in entry for entry in messages)

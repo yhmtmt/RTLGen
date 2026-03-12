@@ -23,6 +23,10 @@ esac
 PID_FILE="${RUNTIME_DIR}/${SERVICE}.pid"
 LOG_FILE="${RUNTIME_DIR}/${SERVICE}.log"
 
+_timestamp() {
+  date -u +%Y-%m-%dT%H:%M:%SZ
+}
+
 _is_running() {
   if [[ ! -f "${PID_FILE}" ]]; then
     return 1
@@ -39,6 +43,21 @@ case "${ACTION}" in
       exit 0
     fi
     rm -f "${PID_FILE}"
+    : >"${LOG_FILE}"
+    {
+      printf '[%s] service=%s action=start\n' "$(_timestamp)" "${SERVICE}"
+      printf '[%s] service=%s runtime_dir=%s\n' "$(_timestamp)" "${SERVICE}" "${RUNTIME_DIR}"
+      case "${SERVICE}" in
+        worker)
+          printf '[%s] service=%s machine_key=%s hostname=%s db=%s\n' \
+            "$(_timestamp)" "${SERVICE}" "${RTLCP_MACHINE_KEY:-}" "${RTLCP_HOSTNAME:-$(hostname)}" "${RTLCP_DATABASE_URL:-}"
+          ;;
+        completions)
+          printf '[%s] service=%s repo=%s db=%s submit=%s\n' \
+            "$(_timestamp)" "${SERVICE}" "${RTLCP_REPO_SLUG:-}" "${RTLCP_DATABASE_URL:-}" "${RTLCP_SUBMIT:-0}"
+          ;;
+      esac
+    } >>"${LOG_FILE}"
     nohup "${TARGET_CMD[@]}" >>"${LOG_FILE}" 2>&1 &
     echo "$!" >"${PID_FILE}"
     echo "started ${SERVICE}: pid=$(cat "${PID_FILE}") log=${LOG_FILE}"

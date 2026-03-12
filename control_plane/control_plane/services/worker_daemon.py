@@ -4,9 +4,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import time
+from typing import Callable
 
 from sqlalchemy.orm import sessionmaker
 
+from control_plane.clock import utcnow
 from control_plane.services.lease_service import expire_stale_leases
 from control_plane.services.worker_service import run_worker
 from control_plane.workers.executor import WorkerConfig, WorkerLoopResult
@@ -30,11 +32,29 @@ class WorkerDaemonResult:
     results: list[WorkerLoopResult]
 
 
-def run_worker_daemon(session_factory: sessionmaker, *, config: WorkerDaemonConfig) -> WorkerDaemonResult:
+def _default_log(message: str) -> None:
+    print(f"[{utcnow().isoformat().replace('+00:00', 'Z')}] {message}", flush=True)
+
+
+def run_worker_daemon(
+    session_factory: sessionmaker,
+    *,
+    config: WorkerDaemonConfig,
+    log_fn: Callable[[str], None] | None = None,
+) -> WorkerDaemonResult:
+    logger = log_fn or _default_log
     poll_count = 0
     executed_items = 0
     no_work_polls = 0
     results: list[WorkerLoopResult] = []
+
+    logger(
+        "worker-daemon start "
+        f"machine_key={config.worker.machine_key} "
+        f"hostname={config.worker.hostname} "
+        f"poll_seconds={config.poll_seconds} "
+        f"max_items_per_poll={config.max_items_per_poll}"
+    )
 
     while config.max_polls is None or poll_count < config.max_polls:
         poll_count += 1
@@ -47,18 +67,32 @@ def run_worker_daemon(session_factory: sessionmaker, *, config: WorkerDaemonConf
 
         batch_executed = sum(1 for result in batch if result.status != "no_work")
         executed_items += batch_executed
+        logger(
+            "worker-daemon poll "
+            f"poll={poll_count} "
+            f"executed={batch_executed} "
+            f"results={[{'item_id': row.item_id, 'status': row.status} for row in batch]}"
+        )
         batch_no_work = all(result.status == "no_work" for result in batch)
         if batch_no_work:
             no_work_polls += 1
             if config.stop_on_no_work:
+                logger("worker-daemon stop reason=no_work")
                 break
             time.sleep(config.poll_seconds)
             continue
 
         if config.max_polls is not None and poll_count >= config.max_polls:
+            logger("worker-daemon stop reason=max_polls")
             break
         time.sleep(config.poll_seconds)
 
+    logger(
+        "worker-daemon exit "
+        f"poll_count={poll_count} "
+        f"executed_items={executed_items} "
+        f"no_work_polls={no_work_polls}"
+    )
     return WorkerDaemonResult(
         poll_count=poll_count,
         executed_items=executed_items,
