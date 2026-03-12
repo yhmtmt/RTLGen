@@ -250,6 +250,48 @@ def test_worker_executes_ready_item_and_stages_outputs() -> None:
             expected_artifacts = {artifact.path: artifact for artifact in run.artifacts if artifact.kind == "expected_output"}
             assert "metric,value\nlatency,1\n" in expected_artifacts[f"runs/campaigns/{seeded.item_id}/metrics.csv"].metadata_["inline_utf8"]
             assert "# report\n" == expected_artifacts[f"runs/campaigns/{seeded.item_id}/report.md"].metadata_["inline_utf8"]
+            assert expected_artifacts[f"runs/campaigns/{seeded.item_id}/metrics.csv"].metadata_["transport_policy"] == "inline_text_evidence"
+            assert expected_artifacts[f"runs/campaigns/{seeded.item_id}/report.md"].metadata_["transport_policy"] == "inline_text_evidence"
+
+
+def test_worker_skips_non_transportable_expected_outputs() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        shadow_rel = "control_plane/shadow_exports/tmp/ignored.txt"
+        shadow_path = repo_root / shadow_rel
+        shadow_path.parent.mkdir(parents=True, exist_ok=True)
+        shadow_path.write_text("ignore me\n", encoding="utf-8")
+        db_path = Path(td) / "cp.db"
+        engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            seeded = seed_ready_work_item(session, item_id="item_transport_policy", repo_root=repo_root, failing=False)
+            work_item = session.query(WorkItem).filter_by(item_id=seeded.item_id).one()
+            work_item.expected_outputs.append(shadow_rel)
+            session.commit()
+
+        session_factory = build_session_factory(engine)
+        results = run_worker(
+            session_factory,
+            config=WorkerConfig(
+                repo_root=str(repo_root),
+                machine_key="worker-1",
+                capabilities={"platform": "nangate45", "flow": "openroad"},
+                capability_filter={"platform": "nangate45", "flow": "openroad"},
+                lease_seconds=60,
+                heartbeat_seconds=1,
+            ),
+            max_items=1,
+        )
+
+        assert len(results) == 1
+        assert results[0].status == "succeeded"
+
+        with Session(engine) as session:
+            run = session.query(Run).filter_by(run_key=results[0].run_key).one()
+            artifact_paths = {artifact.path for artifact in run.artifacts if artifact.kind == "expected_output"}
+            assert shadow_rel not in artifact_paths
 
 
 def test_worker_marks_failed_run_when_command_fails() -> None:

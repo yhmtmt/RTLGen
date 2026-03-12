@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from hashlib import sha256
 from pathlib import Path
 
+from control_plane.artifact_policy import is_transportable_expected_output
 from control_plane.workers.command_runner import CommandResult
 
 _INLINE_TEXT_SUFFIXES = {".csv", ".md", ".json", ".txt", ".yml", ".yaml"}
@@ -61,11 +62,14 @@ def collect_expected_output_artifacts(*, repo_root: str, expected_outputs: list[
     repo_path = Path(repo_root).resolve()
     artifacts: list[StagedArtifact] = []
     for output in expected_outputs:
+        if not is_transportable_expected_output(output):
+            continue
         path = (repo_path / output).resolve()
         if not path.exists() or not path.is_file():
             continue
         metadata = {
             "size_bytes": path.stat().st_size,
+            "transport_policy": "inline_text_evidence",
             **_inline_text_metadata(path),
         }
         artifacts.append(

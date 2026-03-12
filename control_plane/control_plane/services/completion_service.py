@@ -8,6 +8,7 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 
+from control_plane.artifact_policy import is_transportable_expected_output
 from control_plane.models.enums import WorkItemState
 from control_plane.models.runs import Run
 from control_plane.models.work_items import WorkItem
@@ -67,10 +68,16 @@ def _materialize_expected_output_artifacts(*, repo_root: str, run: Run) -> list[
     for artifact in run.artifacts:
         if artifact.kind != "expected_output":
             continue
-        inline_text = (artifact.metadata_ or {}).get("inline_utf8")
+        rel_path = str(artifact.path).strip()
+        if not is_transportable_expected_output(rel_path):
+            continue
+        metadata = artifact.metadata_ or {}
+        transport_policy = metadata.get("transport_policy")
+        if transport_policy not in (None, "inline_text_evidence"):
+            continue
+        inline_text = metadata.get("inline_utf8")
         if not isinstance(inline_text, str):
             continue
-        rel_path = str(artifact.path).strip()
         if not rel_path:
             continue
         path = repo_path / rel_path

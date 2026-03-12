@@ -108,6 +108,32 @@ Reason:
 
 Only promote a shadow-run output into the live `runs/eval_queue/` tree when it is intentionally being turned into tracked evidence.
 
+## Remote Transport
+
+Remote evaluator transport is intentionally narrower than local generation.
+
+Workers may inline and ship only lightweight canonical evidence files such as:
+- `runs/index.csv`
+- `runs/designs/**/metrics.csv`
+- `runs/designs/**/macro_manifest.json`
+- `runs/campaigns/**/campaign.json`
+- `runs/campaigns/**/report.md`
+- `runs/campaigns/**/results.csv`
+- `runs/campaigns/**/summary.csv`
+- `runs/campaigns/**/pareto.csv`
+- `runs/campaigns/**/best_point.json`
+- `runs/campaigns/**/objective_sweep.csv`
+- `runs/campaigns/**/objective_sweep.md`
+
+Workers should not transport:
+- `runs/**/work/`
+- `runs/**/artifacts/`
+- `runs/**/comparisons/`
+- `runs/model_cache/**`
+- `control_plane/shadow_exports/**`
+
+Notebook-side completion should materialize only that same allowlisted set.
+
 ## PR Guidance
 
 Normal PRs should include:

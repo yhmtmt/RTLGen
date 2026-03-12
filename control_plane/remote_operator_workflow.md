@@ -128,6 +128,29 @@ Use these defaults:
 - remote proof and temporary DB-native sweep outputs can go under:
   - `control_plane/shadow_exports/`
 
+Remote artifact transport is narrower than local output creation:
+- workers only inline lightweight canonical evidence under `runs/`
+- current transport allowlist is limited to:
+  - `runs/index.csv`
+  - `runs/designs/**/metrics.csv`
+  - `runs/designs/**/macro_manifest.json`
+  - `runs/campaigns/**/campaign.json`
+  - `runs/campaigns/**/report.md`
+  - `runs/campaigns/**/results.csv`
+  - `runs/campaigns/**/summary.csv`
+  - `runs/campaigns/**/pareto.csv`
+  - `runs/campaigns/**/best_point.json`
+  - `runs/campaigns/**/objective_sweep.csv`
+  - `runs/campaigns/**/objective_sweep.md`
+- workers do not transport:
+  - `runs/**/work/`
+  - `runs/**/artifacts/`
+  - `runs/**/comparisons/`
+  - `runs/model_cache/**`
+  - `control_plane/shadow_exports/**`
+
+Notebook-side completion only materializes that same allowlisted set.
+
 For fresh remote reruns:
 - do not reuse an old `out_root` when `--skip_existing` would short-circuit the real physical work
 - choose a unique output root per proof or per intentionally fresh rerun

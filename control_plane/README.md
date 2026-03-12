@@ -144,6 +144,14 @@ python3 -m control_plane.cli.main process-completions \
   --repo-root /workspaces/RTLGen
 ```
 
+Remote completion materializes only the lightweight canonical evidence allowlist under `runs/`.
+It does not rematerialize:
+- `runs/**/work/`
+- `runs/**/artifacts/`
+- `runs/**/comparisons/`
+- `runs/model_cache/**`
+- `control_plane/shadow_exports/**`
+
 Notebook-side completion processing plus submission:
 ```sh
 PYTHONPATH=/workspaces/RTLGen/control_plane \
