@@ -25,6 +25,7 @@ def _write_campaign(repo_root: Path) -> str:
                 "campaign_id": "demo_campaign",
                 "description": "Demo Layer2 campaign for control-plane generation coverage.",
                 "platform": "nangate45",
+                "model_manifest": "runs/models/demo_set/manifest.json",
                 "architecture_points": [
                     {
                         "arch_id": "fp16_nm1_demo",
@@ -89,13 +90,15 @@ def test_generate_l2_campaign_task_creates_ready_work_item() -> None:
             assert work_item.state == WorkItemState.READY
             assert work_item.source_mode == "src_verilog"
             assert [command["name"] for command in work_item.command_manifest] == [
+                "fetch_models",
                 "validate_campaign",
                 "run_campaign",
                 "report_campaign",
                 "objective_sweep",
                 "validate_runs",
             ]
-            assert work_item.command_manifest[4]["run"] == "python3 scripts/validate_runs.py --skip_eval_queue"
+            assert work_item.command_manifest[0]["run"] == "python3 npu/eval/fetch_models.py --manifest runs/models/demo_set/manifest.json"
+            assert work_item.command_manifest[5]["run"] == "python3 scripts/validate_runs.py --skip_eval_queue"
             assert work_item.expected_outputs == [
                 "runs/campaigns/npu/demo_campaign/results.csv",
                 "runs/campaigns/npu/demo_campaign/report.md",
@@ -112,7 +115,8 @@ def test_generate_l2_campaign_task_creates_ready_work_item() -> None:
             assert payload["task"]["inputs"]["candidate_manifests"] == [
                 "runs/candidates/nangate45/module_candidates.json"
             ]
-            assert "--run_physical" in payload["task"]["commands"][1]["run"]
+            assert payload["task"]["commands"][0]["name"] == "fetch_models"
+            assert "--run_physical" in payload["task"]["commands"][2]["run"]
 
 
 def test_generate_l2_campaign_task_upserts_existing_item() -> None:
@@ -151,6 +155,7 @@ def test_generate_l2_campaign_task_upserts_existing_item() -> None:
             work_item = session.query(WorkItem).filter_by(item_id="l2_demo_campaign").one()
             assert work_item.task_request.title == "Layer2 demo updated"
             assert work_item.task_request.requested_by == "@tester2"
-            assert "--run_physical" not in work_item.command_manifest[1]["run"]
+            assert work_item.command_manifest[0]["name"] == "fetch_models"
+            assert "--run_physical" not in work_item.command_manifest[2]["run"]
             assert "runs/campaigns/npu/demo_campaign/objective_sweep.csv" not in work_item.expected_outputs
             assert "runs/campaigns/npu/demo_campaign/objective_sweep.md" not in work_item.expected_outputs

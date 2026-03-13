@@ -150,6 +150,7 @@ def _build_payload(
     priority: int,
     platform: str,
     campaign_path: str,
+    model_manifest: str | None,
     inputs: dict[str, list[str]],
     expected_outputs: list[str],
     run_physical: bool,
@@ -157,24 +158,34 @@ def _build_payload(
     batch_id: str,
     objective_profiles_json: str | None,
 ) -> dict[str, Any]:
-    commands: list[dict[str, str]] = [
-        {
-            "name": "validate_campaign",
-            "run": f"python3 npu/eval/validate.py --campaign {campaign_path} --check_paths",
-        },
-        {
-            "name": "run_campaign",
-            "run": (
-                f"python3 npu/eval/run_campaign.py --campaign {campaign_path} "
-                + ("--run_physical " if run_physical else "")
-                + f"--jobs {jobs} --batch_id {batch_id}"
-            ).strip(),
-        },
-        {
-            "name": "report_campaign",
-            "run": f"python3 npu/eval/report_campaign.py --campaign {campaign_path}",
-        },
-    ]
+    commands: list[dict[str, str]] = []
+    if model_manifest:
+        commands.append(
+            {
+                "name": "fetch_models",
+                "run": f"python3 npu/eval/fetch_models.py --manifest {model_manifest}",
+            }
+        )
+    commands.extend(
+        [
+            {
+                "name": "validate_campaign",
+                "run": f"python3 npu/eval/validate.py --campaign {campaign_path} --check_paths",
+            },
+            {
+                "name": "run_campaign",
+                "run": (
+                    f"python3 npu/eval/run_campaign.py --campaign {campaign_path} "
+                    + ("--run_physical " if run_physical else "")
+                    + f"--jobs {jobs} --batch_id {batch_id}"
+                ).strip(),
+            },
+            {
+                "name": "report_campaign",
+                "run": f"python3 npu/eval/report_campaign.py --campaign {campaign_path}",
+            },
+        ]
+    )
     if objective_profiles_json:
         commands.append(
             {
@@ -245,6 +256,7 @@ def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateR
     title = request.title or _default_title(campaign_id=campaign_id, platform=platform)
     objective = request.objective or _default_objective(campaign=campaign)
     inputs = _build_inputs(campaign=campaign)
+    model_manifest = str(campaign.get("model_manifest", "")).strip() or None
     objective_profiles_json = (
         _repo_rel(request.objective_profiles_json, repo_root) if request.objective_profiles_json else None
     )
@@ -261,6 +273,7 @@ def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateR
         priority=request.priority,
         platform=platform,
         campaign_path=campaign_path,
+        model_manifest=model_manifest,
         inputs=inputs,
         expected_outputs=expected_outputs,
         run_physical=request.run_physical,
