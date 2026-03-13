@@ -37,6 +37,26 @@ Evaluator PC:
 - runs `run-worker`
 - executes each task in a disposable clean git worktree at the task `source_commit`
 
+Recommended host-side exports before opening the devcontainer:
+
+Notebook host:
+```sh
+export RTLCP_ROLE=server
+export RTLCP_AUTOSTART_COMPLETIONS=1
+export RTLCP_SUBMIT=1
+export RTLCP_REPO_SLUG=yhmtmt/RTLGen
+export RTLCP_DATABASE_URL='postgresql+psycopg://rtlgen:rtlgen@localhost:5432/rtlgen_control_plane'
+```
+
+Evaluator host:
+```sh
+export RTLCP_ROLE=evaluator
+export RTLCP_AUTOSTART_WORKER_DAEMON=1
+export RTLCP_DATABASE_URL='postgresql+psycopg://rtlgen:rtlgen@<notebook-host-ip>:5432/rtlgen_control_plane'
+```
+
+After changing these values, recreate or reopen the devcontainer so `containerEnv` is refreshed.
+
 ## Database URLs
 
 Notebook inside its own devcontainer:

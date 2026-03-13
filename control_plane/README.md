@@ -206,13 +206,18 @@ export RTLCP_ROLE=server
 export RTLCP_AUTOSTART_COMPLETIONS=1
 export RTLCP_SUBMIT=1
 export RTLCP_REPO_SLUG=yhmtmt/RTLGen
+export RTLCP_DATABASE_URL='postgresql+psycopg://rtlgen:rtlgen@localhost:5432/rtlgen_control_plane'
 ```
 
 ```sh
 # evaluator
 export RTLCP_ROLE=evaluator
 export RTLCP_AUTOSTART_WORKER_DAEMON=1
+export RTLCP_DATABASE_URL='postgresql+psycopg://rtlgen:rtlgen@<notebook-host-ip>:5432/rtlgen_control_plane'
 ```
+
+These exports are host-side inputs for devcontainer startup.
+After changing them, recreate or reopen the devcontainer so `containerEnv` is refreshed.
 
 Runtime state is written under:
 - `/tmp/rtlgen-control-plane/worker.pid`
