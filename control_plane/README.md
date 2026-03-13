@@ -240,6 +240,17 @@ python3 -m control_plane.cli.main operator-status \
   --format table
 ```
 
+Daily notebook operations:
+```sh
+export RTLCP_DATABASE_URL='postgresql+psycopg://rtlgen:rtlgen@localhost:5432/rtlgen_control_plane'
+/workspaces/RTLGen/control_plane/scripts/daily_ops.sh
+```
+
+The daily-ops wrapper reports:
+- devcontainer worker/completion service status
+- operator dashboard state summary
+- cleanup dry-run candidates
+
 Cleanup dry-run:
 ```sh
 PYTHONPATH=/workspaces/RTLGen/control_plane \
