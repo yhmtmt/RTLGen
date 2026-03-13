@@ -100,13 +100,13 @@ def test_generate_l2_campaign_task_creates_ready_work_item() -> None:
             assert work_item.command_manifest[0]["run"] == "python3 npu/eval/fetch_models.py --manifest runs/models/demo_set/manifest.json"
             assert work_item.command_manifest[5]["run"] == "python3 scripts/validate_runs.py --skip_eval_queue"
             assert work_item.expected_outputs == [
-                "runs/campaigns/npu/demo_campaign/results.csv",
-                "runs/campaigns/npu/demo_campaign/report.md",
-                "runs/campaigns/npu/demo_campaign/summary.csv",
-                "runs/campaigns/npu/demo_campaign/pareto.csv",
-                "runs/campaigns/npu/demo_campaign/best_point.json",
-                "runs/campaigns/npu/demo_campaign/objective_sweep.csv",
-                "runs/campaigns/npu/demo_campaign/objective_sweep.md",
+                f"runs/campaigns/npu/demo_campaign__{result.item_id}/results.csv",
+                f"runs/campaigns/npu/demo_campaign__{result.item_id}/report.md",
+                f"runs/campaigns/npu/demo_campaign__{result.item_id}/summary.csv",
+                f"runs/campaigns/npu/demo_campaign__{result.item_id}/pareto.csv",
+                f"runs/campaigns/npu/demo_campaign__{result.item_id}/best_point.json",
+                f"runs/campaigns/npu/demo_campaign__{result.item_id}/objective_sweep.csv",
+                f"runs/campaigns/npu/demo_campaign__{result.item_id}/objective_sweep.md",
                 "runs/designs/npu_blocks/demo_nm1/metrics.csv",
                 "runs/designs/npu_blocks/demo_nm2/metrics.csv",
             ]
@@ -115,6 +115,10 @@ def test_generate_l2_campaign_task_creates_ready_work_item() -> None:
             assert payload["task"]["inputs"]["candidate_manifests"] == [
                 "runs/candidates/nangate45/module_candidates.json"
             ]
+            assert payload["task"]["inputs"]["generated_campaign"] == {
+                "base_campaign_path": "runs/campaigns/npu/demo_campaign/campaign.json",
+                "path": f"runs/campaigns/npu/demo_campaign/campaign__{result.item_id}.json",
+            }
             assert payload["task"]["commands"][0]["name"] == "fetch_models"
             assert "--run_physical" in payload["task"]["commands"][2]["run"]
 
@@ -157,5 +161,5 @@ def test_generate_l2_campaign_task_upserts_existing_item() -> None:
             assert work_item.task_request.requested_by == "@tester2"
             assert work_item.command_manifest[0]["name"] == "fetch_models"
             assert "--run_physical" not in work_item.command_manifest[2]["run"]
-            assert "runs/campaigns/npu/demo_campaign/objective_sweep.csv" not in work_item.expected_outputs
-            assert "runs/campaigns/npu/demo_campaign/objective_sweep.md" not in work_item.expected_outputs
+            assert "runs/campaigns/npu/demo_campaign__l2_demo_campaign/objective_sweep.csv" not in work_item.expected_outputs
+            assert "runs/campaigns/npu/demo_campaign__l2_demo_campaign/objective_sweep.md" not in work_item.expected_outputs

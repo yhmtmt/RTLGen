@@ -141,6 +141,21 @@ def _build_expected_outputs(*, campaign: dict[str, Any], include_objective_sweep
     return _uniq(expected)
 
 
+def _with_fresh_outputs(*, campaign: dict[str, Any], item_id: str) -> dict[str, Any]:
+    cloned = json.loads(json.dumps(campaign))
+    outputs = dict(cloned.get("outputs") or {})
+    campaign_dir = str(outputs.get("campaign_dir", "")).strip()
+    if not campaign_dir:
+        raise Layer2TaskGenerationError("campaign outputs.campaign_dir is required")
+    base_dir = Path(campaign_dir)
+    fresh_dir = base_dir.parent / f"{base_dir.name}__{item_id}"
+    outputs["campaign_dir"] = str(fresh_dir)
+    outputs["results_csv"] = str(fresh_dir / "results.csv")
+    outputs["report_md"] = str(fresh_dir / "report.md")
+    cloned["outputs"] = outputs
+    return cloned
+
+
 def _build_payload(
     *,
     item_id: str,
@@ -150,6 +165,7 @@ def _build_payload(
     priority: int,
     platform: str,
     campaign_path: str,
+    generated_campaign_path: str,
     model_manifest: str | None,
     inputs: dict[str, list[str]],
     expected_outputs: list[str],
@@ -170,19 +186,19 @@ def _build_payload(
         [
             {
                 "name": "validate_campaign",
-                "run": f"python3 npu/eval/validate.py --campaign {campaign_path} --check_paths",
+                "run": f"python3 npu/eval/validate.py --campaign {generated_campaign_path} --check_paths",
             },
             {
                 "name": "run_campaign",
                 "run": (
-                    f"python3 npu/eval/run_campaign.py --campaign {campaign_path} "
+                    f"python3 npu/eval/run_campaign.py --campaign {generated_campaign_path} "
                     + ("--run_physical " if run_physical else "")
                     + f"--jobs {jobs} --batch_id {batch_id}"
                 ).strip(),
             },
             {
                 "name": "report_campaign",
-                "run": f"python3 npu/eval/report_campaign.py --campaign {campaign_path}",
+                "run": f"python3 npu/eval/report_campaign.py --campaign {generated_campaign_path}",
             },
         ]
     )
@@ -190,7 +206,7 @@ def _build_payload(
         commands.append(
             {
                 "name": "objective_sweep",
-                "run": f"python3 npu/eval/optimize_campaign.py --campaign {campaign_path} --profiles_json {objective_profiles_json}",
+                "run": f"python3 npu/eval/optimize_campaign.py --campaign {generated_campaign_path} --profiles_json {objective_profiles_json}",
             }
         )
     commands.append(
@@ -214,7 +230,13 @@ def _build_payload(
         "task": {
             "objective": objective,
             "source_mode": "src_verilog",
-            "inputs": inputs,
+            "inputs": {
+                **inputs,
+                "generated_campaign": {
+                    "base_campaign_path": campaign_path,
+                    "path": generated_campaign_path,
+                },
+            },
             "commands": commands,
             "expected_outputs": expected_outputs,
             "acceptance": [
@@ -248,11 +270,13 @@ def _build_payload(
 def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateRequest) -> Layer2TaskGenerateResult:
     repo_root = Path(request.repo_root).resolve()
     campaign_path = _repo_rel(request.campaign_path, repo_root)
-    campaign = _load_json((repo_root / campaign_path).resolve())
+    base_campaign = _load_json((repo_root / campaign_path).resolve())
 
-    platform = request.platform or str(campaign.get("platform", "")).strip() or "unknown"
-    campaign_id = str(campaign.get("campaign_id", Path(campaign_path).stem)).strip()
+    platform = request.platform or str(base_campaign.get("platform", "")).strip() or "unknown"
+    campaign_id = str(base_campaign.get("campaign_id", Path(campaign_path).stem)).strip()
     item_id = request.item_id or _default_item_id(campaign_path=campaign_path, platform=platform)
+    campaign = _with_fresh_outputs(campaign=base_campaign, item_id=item_id)
+    generated_campaign_path = (Path(campaign_path).parent / f"{Path(campaign_path).stem}__{item_id}.json").as_posix()
     title = request.title or _default_title(campaign_id=campaign_id, platform=platform)
     objective = request.objective or _default_objective(campaign=campaign)
     inputs = _build_inputs(campaign=campaign)
@@ -273,6 +297,7 @@ def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateR
         priority=request.priority,
         platform=platform,
         campaign_path=campaign_path,
+        generated_campaign_path=generated_campaign_path,
         model_manifest=model_manifest,
         inputs=inputs,
         expected_outputs=expected_outputs,

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
 from pathlib import Path
 from typing import Any
 
@@ -123,6 +124,28 @@ def _log_dir(config: WorkerConfig, item_id: str, run_key: str) -> str:
     return str(path)
 
 
+def _materialize_generated_inputs(*, checkout_root: str, work_item: WorkItem) -> None:
+    generated_campaign = ((work_item.input_manifest or {}).get("generated_campaign") or None)
+    if not generated_campaign:
+        return
+    base_campaign_path = str(generated_campaign.get("base_campaign_path", "")).strip()
+    target_path = str(generated_campaign.get("path", "")).strip()
+    if not base_campaign_path or not target_path:
+        raise RuntimeError("generated_campaign requires base_campaign_path and path")
+    repo_root = Path(checkout_root).resolve()
+    base_file = (repo_root / base_campaign_path).resolve()
+    target_file = (repo_root / target_path).resolve()
+    campaign = json.loads(base_file.read_text(encoding="utf-8"))
+    outputs = dict(campaign.get("outputs") or {})
+    target_dir = Path(str(target_file.parent.relative_to(repo_root)))
+    outputs["campaign_dir"] = target_dir.as_posix()
+    outputs["results_csv"] = (target_dir / "results.csv").as_posix()
+    outputs["report_md"] = (target_dir / "report.md").as_posix()
+    campaign["outputs"] = outputs
+    target_file.parent.mkdir(parents=True, exist_ok=True)
+    target_file.write_text(json.dumps(campaign, indent=2) + "\n", encoding="utf-8")
+
+
 def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig) -> WorkerLoopResult:
     with session_factory() as session:
         try:
@@ -225,6 +248,11 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
                 "materialized_submodules": list(checkout_info.materialized_submodules),
             },
         )
+
+    _materialize_generated_inputs(
+        checkout_root=checkout_info.work_dir,
+        work_item=work_item,
+    )
 
     heartbeat = LeaseHeartbeatPump(
         session_factory=session_factory,
