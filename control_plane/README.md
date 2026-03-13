@@ -232,6 +232,14 @@ Worker execution no longer uses the evaluator's mutable main checkout directly.
 Each item is executed in a disposable detached git worktree at the task `source_commit`,
 so new tracked configs and other repo inputs come from Git rather than local dirt.
 
+Operator live status:
+```sh
+PYTHONPATH=/workspaces/RTLGen/control_plane \
+python3 -m control_plane.cli.main operator-status \
+  --database-url "$RTLCP_DATABASE_URL" \
+  --format table
+```
+
 ## End-to-End Shadow Workflow
 
 Set the DB location:

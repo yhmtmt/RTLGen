@@ -14,6 +14,7 @@ from control_plane.cli.generate_l1_sweep import main as generate_l1_sweep_main
 from control_plane.cli.generate_l2_campaign import main as generate_l2_campaign_main
 from control_plane.cli.import_queue import main as import_queue_main
 from control_plane.cli.operate_submission import main as operate_submission_main
+from control_plane.cli.operator_status import main as operator_status_main
 from control_plane.cli.process_completions import main as process_completions_main
 from control_plane.cli.prepare_submission import main as prepare_submission_main
 from control_plane.cli.publish_review import main as publish_review_main
@@ -279,6 +280,14 @@ def main(argv: list[str] | None = None) -> int:
     submission_status_parser.add_argument("--eligible-only", action="store_true")
     submission_status_parser.add_argument("--format", choices=["json", "table"], default="json")
     submission_status_parser.add_argument("--jsonl", action="store_true")
+
+    operator_status_parser = subparsers.add_parser(
+        "operator-status",
+        help="Show live operator status across queue states, stale leases, failures, and submissions",
+    )
+    operator_status_parser.add_argument("--database-url", required=True)
+    operator_status_parser.add_argument("--recent-limit", type=int, default=10)
+    operator_status_parser.add_argument("--format", choices=["json", "table"], default="table")
 
     subparsers.add_parser("show-config", help="Print resolved scaffold configuration")
 
@@ -671,6 +680,17 @@ def main(argv: list[str] | None = None) -> int:
         if args.jsonl:
             argv2.append("--jsonl")
         return submission_status_main(argv2)
+    if args.command == "operator-status":
+        return operator_status_main(
+            [
+                "--database-url",
+                args.database_url,
+                "--recent-limit",
+                str(args.recent_limit),
+                "--format",
+                args.format,
+            ]
+        )
     if args.command == "show-config":
         print(json.dumps(Settings.from_env().__dict__, indent=2, sort_keys=True))
         return 0
