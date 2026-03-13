@@ -21,6 +21,7 @@ This document is the operational follow-up to:
 Notebook:
 - `RTLCP_ROLE=server`
 - hosts PostgreSQL
+- defaults `RTLCP_DATABASE_URL` locally if unset
 - generates DB-native work items
 - consumes completed results
 - runs `operate-submission`
@@ -31,8 +32,10 @@ Notebook:
 Evaluator PC:
 - `RTLCP_ROLE=evaluator`
 - does not start local PostgreSQL
+- must receive `RTLCP_DATABASE_URL` from host/local environment
 - connects to the notebook PostgreSQL over the network
 - runs `run-worker`
+- executes each task in a disposable clean git worktree at the task `source_commit`
 
 ## Database URLs
 

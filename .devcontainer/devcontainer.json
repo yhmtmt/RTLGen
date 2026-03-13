@@ -14,10 +14,10 @@
     "-v", "/tmp/.X11-unix:/tmp/.X11-unix"
   ],
   "containerEnv": {
-    "RTLCP_DATABASE_URL": "postgresql+psycopg://rtlgen:rtlgen@localhost:5432/rtlgen_control_plane",
     "RTLCP_ROLE": "${localEnv:RTLCP_ROLE}",
-    "RTLCP_AUTOSTART_WORKER_DAEMON": "${localEnv:RTLCP_AUTOSTART_WORKER_DAEMON}",
-    "RTLCP_AUTOSTART_COMPLETIONS": "${localEnv:RTLCP_AUTOSTART_COMPLETIONS}"
+    "RTLCP_AUTOSTART_COMPLETIONS":"${localEnv:RTLCP_AUTOSTART_COMPLETIONS}",
+    "RTLCP_SUBMIT": "${localEnv:RTLCP_SUBMIT}",
+    "RTLCP_AUTOSTART_WORKER_DAEMON": "${localEnv:RTLCP_AUTOSTART_WORKER_DAEMON}"
   },
   "postStartCommand": "/workspaces/RTLGen/.devcontainer/start_control_plane_services.sh",
   "settings": {

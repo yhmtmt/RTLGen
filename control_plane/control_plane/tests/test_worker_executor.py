@@ -16,7 +16,7 @@ from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
 from control_plane.models.worker_leases import WorkerLease
 from control_plane.services.worker_service import run_worker
-from control_plane.workers.checkout import prepare_checkout
+from control_plane.workers.checkout import cleanup_checkout, prepare_checkout
 from control_plane.workers.executor import WorkerConfig
 
 
@@ -410,11 +410,30 @@ def test_worker_stops_retrying_after_max_attempts() -> None:
             assert runs[1].result_payload["retry_decision"]["requeue"] is False
 
 
-def test_worker_blocks_stale_checkout_by_default() -> None:
+def test_worker_fetches_source_commit_into_clean_worktree() -> None:
     with tempfile.TemporaryDirectory() as td:
+        bare_remote = Path(td) / "remote.git"
+        bare_remote.mkdir()
+        subprocess.run(["git", "init", "--bare", str(bare_remote)], check=True, capture_output=True, text=True)
+
+        seed_repo = Path(td) / "seed"
+        seed_repo.mkdir()
+        old_commit, new_commit = init_git_repo(seed_repo)
+        subprocess.run(
+            ["git", "-C", str(seed_repo), "remote", "add", "origin", str(bare_remote)],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        subprocess.run(["git", "-C", str(seed_repo), "push", "origin", "HEAD"], check=True, capture_output=True, text=True)
+
         repo_root = Path(td) / "repo"
-        repo_root.mkdir()
-        old_commit, new_commit = init_git_repo(repo_root)
+        subprocess.run(
+            ["git", "clone", "--quiet", str(bare_remote), str(repo_root)],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
         subprocess.run(
             ["git", "-C", str(repo_root), "checkout", old_commit],
             check=True,
@@ -427,7 +446,7 @@ def test_worker_blocks_stale_checkout_by_default() -> None:
         with Session(engine) as session:
             seeded = seed_source_commit_work_item(
                 session,
-                item_id="item_stale_checkout",
+                item_id="item_fetch_checkout",
                 source_commit=new_commit,
             )
 
@@ -446,16 +465,15 @@ def test_worker_blocks_stale_checkout_by_default() -> None:
         )
 
         assert len(results) == 1
-        assert results[0].status == "failed"
+        assert results[0].status == "succeeded"
 
         with Session(engine) as session:
             work_item = session.query(WorkItem).filter_by(item_id=seeded.item_id).one()
             run = session.query(Run).filter_by(run_key=results[0].run_key).one()
-            assert work_item.state == WorkItemState.READY
-            assert run.status == RunStatus.FAILED
-            assert run.result_payload["failure_classification"]["category"] == "checkout_error"
-            assert run.result_payload["retry_decision"]["requeue"] is True
-            assert "at-or-ahead-of" in run.result_summary
+            assert work_item.state == WorkItemState.ARTIFACT_SYNC
+            assert run.status == RunStatus.SUCCEEDED
+            assert run.result_payload["checkout"]["source_commit_relation"] == "exact"
+            assert run.result_payload["checkout"]["head_sha"] == new_commit
 
 
 def test_worker_allows_checkout_ahead_of_source_commit() -> None:
@@ -495,7 +513,7 @@ def test_worker_allows_checkout_ahead_of_source_commit() -> None:
             run = session.query(Run).filter_by(run_key=results[0].run_key).one()
             assert work_item.state == WorkItemState.ARTIFACT_SYNC
             assert run.status == RunStatus.SUCCEEDED
-            assert run.result_payload["checkout"]["source_commit_relation"] == "descendant"
+            assert run.result_payload["checkout"]["source_commit_relation"] == "exact"
 
 
 def test_prepare_checkout_materializes_missing_submodules_only() -> None:
@@ -516,8 +534,15 @@ def test_prepare_checkout_materializes_missing_submodules_only() -> None:
 
         calls: list[list[str]] = []
 
-        def fake_run(args, check, capture_output, text):
+        def fake_run(args, check=None, capture_output=None, text=None):
             calls.append(list(args))
+            if "worktree" in args and "add" in args:
+                checkout_root = Path(args[-2])
+                checkout_root.mkdir(parents=True, exist_ok=True)
+                (checkout_root / ".gitmodules").write_text((repo_root / ".gitmodules").read_text(encoding="utf-8"), encoding="utf-8")
+                return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+            if args[-3:] == ["cat-file", "-e", "HEAD^{commit}"]:
+                return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
             if args[-2:] == ["rev-parse", "HEAD"]:
                 return subprocess.CompletedProcess(args, 0, stdout="deadbeef\n", stderr="")
             if args[-3:] == ["status", "--porcelain", "--untracked-files=no"]:
@@ -529,11 +554,30 @@ def test_prepare_checkout_materializes_missing_submodules_only() -> None:
         with mock.patch("control_plane.workers.checkout.subprocess.run", side_effect=fake_run):
             info = prepare_checkout(
                 repo_root=str(repo_root),
+                source_commit="HEAD",
                 required_submodules=["third_party/cacti"],
             )
 
         assert info.materialized_submodules == ("third_party/cacti",)
+        assert info.checkout_mode == "worktree"
+        assert info.work_dir != str(repo_root)
         submodule_calls = [args for args in calls if "submodule" in args]
         assert len(submodule_calls) == 1
         assert "--recursive" not in submodule_calls[0]
         assert submodule_calls[0][-1] == "third_party/cacti"
+
+
+def test_prepare_checkout_creates_and_cleans_worktree() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        commit1, _commit2 = init_git_repo(repo_root)
+
+        info = prepare_checkout(repo_root=str(repo_root), source_commit=commit1)
+        checkout_root = Path(info.work_dir)
+        assert checkout_root.exists()
+        assert checkout_root != repo_root
+        assert info.checkout_mode == "worktree"
+
+        cleanup_checkout(info)
+        assert not checkout_root.exists()

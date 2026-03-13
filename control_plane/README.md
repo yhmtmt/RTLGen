@@ -188,9 +188,11 @@ The primary operator mode in the current environment is now devcontainer startup
 Role-gated behavior:
 - `RTLCP_ROLE=server`
   - starts local PostgreSQL
+  - defaults `RTLCP_DATABASE_URL` to local PostgreSQL if unset
   - does not start notebook completion automatically unless `RTLCP_AUTOSTART_COMPLETIONS=1`
 - `RTLCP_ROLE=evaluator`
   - skips local PostgreSQL
+  - requires `RTLCP_DATABASE_URL` from host/local env
   - starts the worker daemon automatically unless `RTLCP_AUTOSTART_WORKER_DAEMON=0`
 
 Helper scripts:
@@ -220,6 +222,10 @@ Runtime state is written under:
 
 When `RTLCP_SUBMIT=1`, the completion wrapper submits automatically if it has a repo slug.
 It prefers `RTLCP_REPO_SLUG`, and otherwise derives the slug from the checkout `origin` URL.
+
+Worker execution no longer uses the evaluator's mutable main checkout directly.
+Each item is executed in a disposable detached git worktree at the task `source_commit`,
+so new tracked configs and other repo inputs come from Git rather than local dirt.
 
 ## End-to-End Shadow Workflow
 

@@ -6,6 +6,8 @@ from dataclasses import dataclass
 import configparser
 from pathlib import Path
 import subprocess
+import tempfile
+import shutil
 
 
 class CheckoutError(RuntimeError):
@@ -22,6 +24,8 @@ class CheckoutInfo:
     source_commit_matches: bool | None
     source_commit_relation: str | None
     materialized_submodules: tuple[str, ...]
+    checkout_mode: str
+    cleanup_path: str | None
 
 
 def _run_git(repo_root: Path, *args: str) -> str:
@@ -32,6 +36,15 @@ def _run_git(repo_root: Path, *args: str) -> str:
         text=True,
     )
     return result.stdout.strip()
+
+
+def _git_success(repo_root: Path, *args: str) -> bool:
+    result = subprocess.run(
+        ["git", "-C", str(repo_root), *args],
+        capture_output=True,
+        text=True,
+    )
+    return result.returncode == 0
 
 
 def _read_submodule_paths(repo_root: Path) -> list[str]:
@@ -50,27 +63,73 @@ def _read_submodule_paths(repo_root: Path) -> list[str]:
 
 
 def _materialize_missing_submodules(
-    repo_root: Path,
+    checkout_root: Path,
     *,
     required_submodules: list[str] | tuple[str, ...] | None = None,
 ) -> tuple[str, ...]:
     allowed = set(required_submodules or [])
     missing: list[str] = []
-    for rel in _read_submodule_paths(repo_root):
+    for rel in _read_submodule_paths(checkout_root):
         if allowed and rel not in allowed:
             continue
-        path = repo_root / rel
+        path = checkout_root / rel
         if (not path.exists()) or (path.is_dir() and not any(path.iterdir())):
             missing.append(rel)
     if not missing:
         return ()
     subprocess.run(
-        ["git", "-C", str(repo_root), "submodule", "update", "--init", *missing],
+        ["git", "-C", str(checkout_root), "submodule", "update", "--init", *missing],
         check=True,
         capture_output=True,
         text=True,
     )
     return tuple(missing)
+
+
+def _ensure_source_commit(anchor_repo: Path, source_commit: str) -> None:
+    if _git_success(anchor_repo, "cat-file", "-e", f"{source_commit}^{{commit}}"):
+        return
+    subprocess.run(
+        ["git", "-C", str(anchor_repo), "fetch", "--quiet", "origin", source_commit],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    if not _git_success(anchor_repo, "cat-file", "-e", f"{source_commit}^{{commit}}"):
+        raise CheckoutError(f"source commit not available after fetch: {source_commit}")
+
+
+def _create_worktree(anchor_repo: Path, target_commit: str | None) -> tuple[Path, str]:
+    temp_root = Path(tempfile.mkdtemp(prefix="rtlcp-worktree-"))
+    checkout_root = temp_root / "repo"
+    commitish = target_commit or "HEAD"
+    subprocess.run(
+        ["git", "-C", str(anchor_repo), "worktree", "add", "--detach", str(checkout_root), commitish],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return checkout_root, str(temp_root)
+
+
+def cleanup_checkout(info: CheckoutInfo) -> None:
+    if info.checkout_mode != "worktree":
+        return
+    if info.cleanup_path is None:
+        return
+    cleanup_root = Path(info.cleanup_path)
+    checkout_root = Path(info.work_dir)
+    anchor_repo = Path(info.repo_root)
+    try:
+        subprocess.run(
+            ["git", "-C", str(anchor_repo), "worktree", "remove", "--force", str(checkout_root)],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except subprocess.CalledProcessError:
+        pass
+    shutil.rmtree(cleanup_root, ignore_errors=True)
 
 
 def prepare_checkout(
@@ -87,18 +146,39 @@ def prepare_checkout(
         raise CheckoutError(f"repo root is not a directory: {repo_path}")
 
     try:
+        if source_commit:
+            _ensure_source_commit(repo_path, source_commit)
+        checkout_path, cleanup_path = _create_worktree(repo_path, source_commit)
+    except (subprocess.CalledProcessError, FileNotFoundError, CheckoutError) as exc:
+        raise CheckoutError(f"failed to prepare worktree: {exc}") from exc
+
+    try:
         materialized_submodules = _materialize_missing_submodules(
-            repo_path,
+            checkout_path,
             required_submodules=required_submodules,
         )
     except (subprocess.CalledProcessError, FileNotFoundError) as exc:
+        cleanup_checkout(
+            CheckoutInfo(
+                repo_root=str(repo_path),
+                work_dir=str(checkout_path),
+                head_sha=None,
+                git_dirty=None,
+                source_commit=source_commit,
+                source_commit_matches=None,
+                source_commit_relation=None,
+                materialized_submodules=(),
+                checkout_mode="worktree",
+                cleanup_path=cleanup_path,
+            )
+        )
         raise CheckoutError(f"failed to materialize submodules: {exc}") from exc
 
     head_sha: str | None = None
     git_dirty: bool | None = None
     try:
-        head_sha = _run_git(repo_path, "rev-parse", "HEAD")
-        git_dirty = bool(_run_git(repo_path, "status", "--porcelain", "--untracked-files=no"))
+        head_sha = _run_git(checkout_path, "rev-parse", "HEAD")
+        git_dirty = bool(_run_git(checkout_path, "status", "--porcelain", "--untracked-files=no"))
     except (subprocess.CalledProcessError, FileNotFoundError):
         head_sha = None
         git_dirty = None
@@ -131,11 +211,13 @@ def prepare_checkout(
 
     return CheckoutInfo(
         repo_root=str(repo_path),
-        work_dir=str(repo_path),
+        work_dir=str(checkout_path),
         head_sha=head_sha,
         git_dirty=git_dirty,
         source_commit=source_commit,
         source_commit_matches=source_commit_matches,
         source_commit_relation=source_commit_relation,
         materialized_submodules=materialized_submodules,
+        checkout_mode="worktree",
+        cleanup_path=cleanup_path,
     )
