@@ -6,6 +6,7 @@ import argparse
 import json
 
 from control_plane.api.app import main as serve_api_main
+from control_plane.cli.cleanup import main as cleanup_main
 from control_plane.cli.consume_l1_result import main as consume_l1_result_main
 from control_plane.cli.consume_l2_result import main as consume_l2_result_main
 from control_plane.cli.execute_submission import main as execute_submission_main
@@ -288,6 +289,21 @@ def main(argv: list[str] | None = None) -> int:
     operator_status_parser.add_argument("--database-url", required=True)
     operator_status_parser.add_argument("--recent-limit", type=int, default=10)
     operator_status_parser.add_argument("--format", choices=["json", "table"], default="table")
+
+    cleanup_parser = subparsers.add_parser(
+        "cleanup",
+        help="Prune control-plane runtime files, worker logs, and stale DB state",
+    )
+    cleanup_parser.add_argument("--database-url", required=True)
+    cleanup_parser.add_argument("--repo-root", required=True)
+    cleanup_parser.add_argument("--runtime-dir")
+    cleanup_parser.add_argument("--log-root")
+    cleanup_parser.add_argument("--max-age-days", type=int, default=7)
+    cleanup_parser.add_argument("--no-runtime-files", action="store_true")
+    cleanup_parser.add_argument("--no-worker-logs", action="store_true")
+    cleanup_parser.add_argument("--no-db-leases", action="store_true")
+    cleanup_parser.add_argument("--no-db-transient-artifacts", action="store_true")
+    cleanup_parser.add_argument("--apply", action="store_true")
 
     subparsers.add_parser("show-config", help="Print resolved scaffold configuration")
 
@@ -691,6 +707,32 @@ def main(argv: list[str] | None = None) -> int:
                 args.format,
             ]
         )
+    if args.command == "cleanup":
+        argv2 = [
+            "--database-url",
+            args.database_url,
+            "--repo-root",
+            args.repo_root,
+            "--max-age-days",
+            str(args.max_age_days),
+        ]
+        for key, value in [
+            ("--runtime-dir", args.runtime_dir),
+            ("--log-root", args.log_root),
+        ]:
+            if value is not None:
+                argv2.extend([key, str(value)])
+        if args.no_runtime_files:
+            argv2.append("--no-runtime-files")
+        if args.no_worker_logs:
+            argv2.append("--no-worker-logs")
+        if args.no_db_leases:
+            argv2.append("--no-db-leases")
+        if args.no_db_transient_artifacts:
+            argv2.append("--no-db-transient-artifacts")
+        if args.apply:
+            argv2.append("--apply")
+        return cleanup_main(argv2)
     if args.command == "show-config":
         print(json.dumps(Settings.from_env().__dict__, indent=2, sort_keys=True))
         return 0

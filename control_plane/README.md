@@ -240,6 +240,23 @@ python3 -m control_plane.cli.main operator-status \
   --format table
 ```
 
+Cleanup dry-run:
+```sh
+PYTHONPATH=/workspaces/RTLGen/control_plane \
+python3 -m control_plane.cli.main cleanup \
+  --database-url "$RTLCP_DATABASE_URL" \
+  --repo-root /workspaces/RTLGen
+```
+
+Apply cleanup:
+```sh
+PYTHONPATH=/workspaces/RTLGen/control_plane \
+python3 -m control_plane.cli.main cleanup \
+  --database-url "$RTLCP_DATABASE_URL" \
+  --repo-root /workspaces/RTLGen \
+  --apply
+```
+
 ## End-to-End Shadow Workflow
 
 Set the DB location:
