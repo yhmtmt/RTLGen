@@ -202,6 +202,8 @@ Examples:
 # notebook
 export RTLCP_ROLE=server
 export RTLCP_AUTOSTART_COMPLETIONS=1
+export RTLCP_SUBMIT=1
+export RTLCP_REPO_SLUG=yhmtmt/RTLGen
 ```
 
 ```sh
@@ -215,6 +217,9 @@ Runtime state is written under:
 - `/tmp/rtlgen-control-plane/worker.log`
 - `/tmp/rtlgen-control-plane/completions.pid`
 - `/tmp/rtlgen-control-plane/completions.log`
+
+When `RTLCP_SUBMIT=1`, the completion wrapper submits automatically if it has a repo slug.
+It prefers `RTLCP_REPO_SLUG`, and otherwise derives the slug from the checkout `origin` URL.
 
 ## End-to-End Shadow Workflow
 

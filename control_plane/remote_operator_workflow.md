@@ -24,6 +24,9 @@ Notebook:
 - generates DB-native work items
 - consumes completed results
 - runs `operate-submission`
+- for automatic submission from the completion loop:
+  - set `RTLCP_SUBMIT=1`
+  - set `RTLCP_REPO_SLUG=yhmtmt/RTLGen`, or let the wrapper derive it from `origin`
 
 Evaluator PC:
 - `RTLCP_ROLE=evaluator`

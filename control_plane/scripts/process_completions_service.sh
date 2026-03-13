@@ -8,6 +8,14 @@ VENV_PATH="${VENV_PATH:-$REPO_ROOT/control_plane/.venv}"
 
 source "${VENV_PATH}/bin/activate"
 
+repo_slug="${RTLCP_REPO_SLUG:-}"
+if [[ -z "${repo_slug}" ]]; then
+  origin_url="$(git -C "${REPO_ROOT}" remote get-url origin 2>/dev/null || true)"
+  if [[ "${origin_url}" =~ github\.com[:/]([^/]+/[^/.]+)(\.git)?$ ]]; then
+    repo_slug="${BASH_REMATCH[1]}"
+  fi
+fi
+
 cmd=(
   python3 -m control_plane.cli.main process-completions
   --database-url "${RTLCP_DATABASE_URL}"
@@ -17,8 +25,8 @@ cmd=(
   --pr-base "${RTLCP_PR_BASE:-master}"
 )
 
-if [[ -n "${RTLCP_REPO_SLUG:-}" ]]; then
-  cmd+=(--repo "${RTLCP_REPO_SLUG}")
+if [[ -n "${repo_slug}" ]]; then
+  cmd+=(--repo "${repo_slug}")
 fi
 
 if [[ -n "${RTLCP_ITEM_ID:-}" ]]; then
