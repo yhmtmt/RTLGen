@@ -1,0 +1,198 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-03-13T11:24:58.792146Z",
+  "item_id": "l2_auto_submit_softmax_20260313111619",
+  "run_key": "l2_auto_submit_softmax_20260313111619_run_e78e9b570e13038a",
+  "layer": "layer2",
+  "flow": "openroad",
+  "task_type": "l2_campaign",
+  "source_commit": "3ee33c46d904c0ff94f8431880284ec621b0b127",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l2_auto_submit_softmax_20260313111619/evaluated.json",
+    "result": {
+      "branch": "eval/l2_auto_submit_softmax_20260313111619/s20260313t112458z",
+      "completed_utc": "2026-03-13T11:20:06.022399Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "d7def79549f9",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260313t112458z][host:d7def79549f9][item:l2_auto_submit_softmax_20260313111619]",
+      "metrics_rows": [
+        {
+          "tag": "npu_fp16_nm1_softcmp33_flat_nomacro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "c20283de",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/work/c20283de/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_softcmp33_flat_nomacro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "a53adbdd",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/work/a53adbdd/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_softcmp33_flat_nomacro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "b9f5f7d7",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/work/b9f5f7d7/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_softcmp33_hier_macro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "bffea8c7",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/work/bffea8c7/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_softcmp33_hier_macro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "e024ec35",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/work/e024ec35/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_softcmp33_hier_macro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "2a79e834",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/work/2a79e834/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_softcmp33_flat_nomacro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "265c7f95",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/work/265c7f95/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_softcmp33_flat_nomacro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "d30ccc92",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/work/d30ccc92/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_softcmp33_flat_nomacro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "0a363651",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/work/0a363651/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_softcmp33_hier_macro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "63124ec8",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/work/63124ec8/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_softcmp33_hier_macro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "9d565569",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/work/9d565569/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_softcmp33_hier_macro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "cebcbcaf",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/work/cebcbcaf/result.json"
+        }
+      ],
+      "queue_item_id": "l2_auto_submit_softmax_20260313111619",
+      "session_id": "s20260313t112458z",
+      "status": "ok",
+      "summary": "5/5 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "decision_proposal",
+    "path": "control_plane/shadow_exports/l2_decisions/l2_auto_submit_softmax_20260313111619.json",
+    "storage_mode": "repo",
+    "sha256": "7cce90b5a3b47ecac893c26fe934eeee1d81263dd207c3a5fe83039b28b60005",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-03-13T11:24:58.757099Z",
+      "item_id": "l2_auto_submit_softmax_20260313111619",
+      "run_key": "l2_auto_submit_softmax_20260313111619_run_e78e9b570e13038a",
+      "layer": "layer2",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l2_campaign",
+      "source_commit": "3ee33c46d904c0ff94f8431880284ec621b0b127",
+      "objective": "Layer2 control-plane submission benchmark for the dedicated SOFTMAX macro on the imported softmax-tail model set.",
+      "input_manifest": {
+        "sweeps": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/sweep_compare_softmax_33.json",
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/sweep_compare_softmax_33.json"
+        ],
+        "configs": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/config_nm1_softmax.json",
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/config_nm2_softmax.json"
+        ],
+        "design_dirs": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp",
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp"
+        ],
+        "macro_manifests": [
+          "runs/designs/npu_macros/npu_fp16_nm1_softmax_bundle_ng45/macro_manifest.json",
+          "runs/designs/npu_macros/npu_fp16_nm2_softmax_bundle_ng45/macro_manifest.json"
+        ],
+        "candidate_manifests": [
+          "runs/candidates/nangate45/module_candidates.json"
+        ]
+      },
+      "recommendation": {
+        "arch_id": "fp16_nm1_softmax_r4",
+        "macro_mode": "flat_nomacro",
+        "objective_rank": 1,
+        "objective_score": "0.0",
+        "latency_ms_mean": 0.000621,
+        "energy_mj_mean": 1.1462914800000001e-07,
+        "critical_path_ns_mean": 5.690256573668907,
+        "die_area_um2_mean": 2250000.0,
+        "total_power_mw_mean": 0.184588,
+        "flow_elapsed_s_mean": 1318.74
+      },
+      "objective_profiles": [],
+      "source_refs": {
+        "best_point_json": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_v1/best_point.json",
+        "summary_csv": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_v1/summary.csv",
+        "results_csv": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_v1/results.csv",
+        "report_md": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_v1/report.md"
+      }
+    }
+  },
+  "pr_payload": {
+    "branch": "eval/l2_auto_submit_softmax_20260313111619/s20260313t112458z",
+    "title": "eval: run layer2 campaign npu_e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_v1 on nangate45",
+    "body_fields": {
+      "host": "d7def79549f9",
+      "session_id": "s20260313t112458z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_auto_submit_softmax_20260313111619"
+    },
+    "body_md": "## Summary\n- item_id: `l2_auto_submit_softmax_20260313111619`\n- run_key: `l2_auto_submit_softmax_20260313111619_run_e78e9b570e13038a`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `5/5 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_auto_submit_softmax_20260313111619/evaluated.json`\n- metrics_rows_count: `12`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_auto_submit_softmax_20260313111619.json`\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}

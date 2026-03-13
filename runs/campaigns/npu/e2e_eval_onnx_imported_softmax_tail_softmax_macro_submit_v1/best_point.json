@@ -1,6 +1,6 @@
 {
   "campaign_id": "npu_e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_v1",
-  "generated_utc": "2026-03-11T04:25:20+00:00",
+  "generated_utc": "2026-03-13T11:20:05+00:00",
   "objective_weights": {
     "latency": 1.0,
     "energy": 1.0,
