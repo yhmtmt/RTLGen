@@ -130,17 +130,15 @@ def _materialize_generated_inputs(*, checkout_root: str, work_item: WorkItem) ->
         return
     base_campaign_path = str(generated_campaign.get("base_campaign_path", "")).strip()
     target_path = str(generated_campaign.get("path", "")).strip()
+    outputs = dict(generated_campaign.get("outputs") or {})
     if not base_campaign_path or not target_path:
         raise RuntimeError("generated_campaign requires base_campaign_path and path")
     repo_root = Path(checkout_root).resolve()
     base_file = (repo_root / base_campaign_path).resolve()
     target_file = (repo_root / target_path).resolve()
     campaign = json.loads(base_file.read_text(encoding="utf-8"))
-    outputs = dict(campaign.get("outputs") or {})
-    target_dir = Path(str(target_file.parent.relative_to(repo_root)))
-    outputs["campaign_dir"] = target_dir.as_posix()
-    outputs["results_csv"] = (target_dir / "results.csv").as_posix()
-    outputs["report_md"] = (target_dir / "report.md").as_posix()
+    if not outputs:
+        raise RuntimeError("generated_campaign.outputs is required")
     campaign["outputs"] = outputs
     target_file.parent.mkdir(parents=True, exist_ok=True)
     target_file.write_text(json.dumps(campaign, indent=2) + "\n", encoding="utf-8")

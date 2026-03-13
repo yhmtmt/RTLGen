@@ -118,6 +118,11 @@ def test_generate_l2_campaign_task_creates_ready_work_item() -> None:
             assert payload["task"]["inputs"]["generated_campaign"] == {
                 "base_campaign_path": "runs/campaigns/npu/demo_campaign/campaign.json",
                 "path": f"runs/campaigns/npu/demo_campaign/campaign__{result.item_id}.json",
+                "outputs": {
+                    "campaign_dir": f"runs/campaigns/npu/demo_campaign__{result.item_id}",
+                    "results_csv": f"runs/campaigns/npu/demo_campaign__{result.item_id}/results.csv",
+                    "report_md": f"runs/campaigns/npu/demo_campaign__{result.item_id}/report.md",
+                },
             }
             assert payload["task"]["commands"][0]["name"] == "fetch_models"
             assert "--run_physical" in payload["task"]["commands"][2]["run"]
