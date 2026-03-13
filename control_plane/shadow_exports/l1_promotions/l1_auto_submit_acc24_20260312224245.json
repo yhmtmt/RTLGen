@@ -1,0 +1,46 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-03-13T01:02:24.674699Z",
+  "item_id": "l1_auto_submit_acc24_20260312224245",
+  "run_key": "l1_auto_submit_acc24_20260312224245_run_41128dbb9b4b212c",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "2f86c4f70984947d7f04917684a45bc03f28b13c",
+  "objective": "Run a Layer1 nangate45 OpenROAD sweep for 1 configs using nangate45_softmax_rowwise_v1.json and record lightweight design metrics for comparison.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/activations/sweeps/nangate45_softmax_rowwise_v1.json"
+    ],
+    "configs": [
+      "examples/config_softmax_rowwise_int8_r4_acc24.json"
+    ],
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": [
+      "third_party/nlohmann_json",
+      "third_party/cacti"
+    ]
+  },
+  "proposal_count": 1,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r4_acc24_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "param_hash": "d167bc90",
+        "tag": "softmax_rowwise_ng45_v1_84a011f1",
+        "result_path": "runs/designs/activations/softmax_rowwise_int8_r4_acc24_wrapper/work/d167bc90/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 18.1133,
+        "die_area": 53497.377025,
+        "total_power_mw": 0.0721
+      }
+    }
+  ]
+}
