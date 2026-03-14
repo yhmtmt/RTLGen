@@ -77,12 +77,12 @@ The following are now established:
 ## Current Baseline
 
 Primary operating documents:
-- [phase2_baseline.md](/workspaces/RTLGen/control_plane/phase2_baseline.md)
+- [phase2_baseline.md](/workspaces/RTLGen/control_plane/archive/phase2_baseline.md)
 - [remote_operator_workflow.md](/workspaces/RTLGen/control_plane/remote_operator_workflow.md)
 
 Proof documents:
-- [remote_worker_l1_proof.md](/workspaces/RTLGen/control_plane/remote_worker_l1_proof.md)
-- [remote_worker_retry_probe.md](/workspaces/RTLGen/control_plane/remote_worker_retry_probe.md)
+- [remote_worker_l1_proof.md](/workspaces/RTLGen/control_plane/archive/remote_worker_l1_proof.md)
+- [remote_worker_retry_probe.md](/workspaces/RTLGen/control_plane/archive/remote_worker_retry_probe.md)
 
 ## Remaining Work
 

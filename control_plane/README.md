@@ -21,12 +21,8 @@ Document classes in this directory:
   - `daily_operations.md`
   - `remote_operator_workflow.md`
   - `systemd_operator_workflow.md`
-- reference/status notes:
-  - `phase2_baseline.md`
-  - `phase2_real_ingestion_status.md`
-  - `remote_execution_status.md`
-- archival proofs and execution logs:
-  - [archive_index.md](/workspaces/RTLGen/control_plane/archive_index.md)
+- archival notes, proofs, and execution logs:
+  - [archive/README.md](/workspaces/RTLGen/control_plane/archive/README.md)
 
 Older proof documents in this directory are archival, not the primary operator path.
 

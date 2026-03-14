@@ -17,9 +17,9 @@ This is the standard cross-host operating mode for the RTLGen control plane:
 4. PostgreSQL is hosted by the notebook devcontainer
 
 This document is the operational follow-up to:
-- [phase2_baseline.md](/workspaces/RTLGen/control_plane/phase2_baseline.md)
-- [phase2_real_ingestion_status.md](/workspaces/RTLGen/control_plane/phase2_real_ingestion_status.md)
-- [remote_worker_l1_proof.md](/workspaces/RTLGen/control_plane/remote_worker_l1_proof.md)
+- [phase2_baseline.md](/workspaces/RTLGen/control_plane/archive/phase2_baseline.md)
+- [phase2_real_ingestion_status.md](/workspaces/RTLGen/control_plane/archive/phase2_real_ingestion_status.md)
+- [remote_worker_l1_proof.md](/workspaces/RTLGen/control_plane/archive/remote_worker_l1_proof.md)
 
 ## Role Split
 

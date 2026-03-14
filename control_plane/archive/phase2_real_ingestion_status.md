@@ -26,7 +26,7 @@ What is now established:
 - submitted queue snapshots keep repo-portable metric references
 
 Current baseline:
-- operator entrypoint: [phase2_baseline.md](/workspaces/RTLGen/control_plane/phase2_baseline.md)
+- operator entrypoint: [phase2_baseline.md](/workspaces/RTLGen/control_plane/archive/phase2_baseline.md)
 - practical workflow: generate work in DB, run worker, consume result, then `operate-submission`
 
 Remaining work is productization, not feasibility:

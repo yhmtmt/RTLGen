@@ -24,7 +24,7 @@ Goal:
 
 Read first:
 1. control_plane/README.md
-2. control_plane/shadow_run_cp010.md
+2. control_plane/archive/shadow_run_cp010.md
 3. notes/evaluation_agent_guidance.md
 4. runs/eval_queue/openroad/queued/l2_e2e_softmax_macro_tail_v1.json
 

@@ -13,7 +13,7 @@ Historical proof documents remain in this directory, but they are archival.
 
 If you are browsing `control_plane/` directly:
 - operator manuals are listed in [README.md](/workspaces/RTLGen/control_plane/README.md)
-- archival proof/log documents are listed in [archive_index.md](/workspaces/RTLGen/control_plane/archive_index.md)
+- archival proof/log documents are listed in [archive/README.md](/workspaces/RTLGen/control_plane/archive/README.md)
 
 ## Roles
 
@@ -141,6 +141,4 @@ Primary supporting references:
 - [systemd_operator_workflow.md](/workspaces/RTLGen/control_plane/systemd_operator_workflow.md)
 
 Archival proof/status notes:
-- `remote_worker_l1_proof.md`
-- `remote_worker_retry_probe.md`
-- `remote_execution_status.md`
+- [archive/README.md](/workspaces/RTLGen/control_plane/archive/README.md)
