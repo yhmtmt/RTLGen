@@ -11,6 +11,10 @@ Use it for:
 
 Historical proof documents remain in this directory, but they are archival.
 
+If you are browsing `control_plane/` directly:
+- operator manuals are listed in [README.md](/workspaces/RTLGen/control_plane/README.md)
+- archival proof/log documents are listed in [archive_index.md](/workspaces/RTLGen/control_plane/archive_index.md)
+
 ## Roles
 
 Notebook:

@@ -2,6 +2,8 @@
 
 Date: 2026-03-12
 
+This is a packaging/reference document, not the primary operator manual.
+
 ## Purpose
 
 This is the operational packaging of the already-proven cross-host control-plane flow:

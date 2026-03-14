@@ -1,5 +1,9 @@
 # Phase 2 Baseline
 
+Archive note:
+- historical status/reference note
+- useful for migration context, not routine operation
+
 Date: 2026-03-10
 
 ## Baseline Decision

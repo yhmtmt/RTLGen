@@ -1,5 +1,9 @@
 # DB-Native Real Layer1 Run
 
+Archive note:
+- historical execution log
+- retained for implementation history, not operator workflow
+
 Date: 2026-03-10
 
 ## Scope

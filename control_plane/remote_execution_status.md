@@ -1,5 +1,9 @@
 # Remote Execution Status
 
+Archive note:
+- historical status note recording when cross-host execution became proven
+- not a routine operator manual
+
 Date: 2026-03-11
 
 Status: proven

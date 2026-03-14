@@ -1,5 +1,9 @@
 # Evaluator PC Codex Instruction for CP-010
 
+Archive note:
+- historical prompt artifact for an earlier control-plane validation stage
+- not part of the current operator workflow
+
 Purpose:
 - give a Codex agent on the evaluator machine a concrete, executable runbook,
 - keep the shadow control-plane validation off the main checkout,

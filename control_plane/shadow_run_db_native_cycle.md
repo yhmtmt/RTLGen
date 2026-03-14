@@ -1,5 +1,9 @@
 # DB-native Generator/Consumer Shadow Run
 
+Archive note:
+- historical execution log
+- retained for implementation history, not operator workflow
+
 Purpose:
 - validate the control-plane workflow without queue import,
 - prove that generator-created work items can be executed by the internal worker,

@@ -1,5 +1,9 @@
 # Remote Worker L1 Proof
 
+Archive note:
+- historical proof procedure
+- retained for audit and regression context, not routine operation
+
 This proves the control plane works across two distinct PCs:
 
 1. the notebook generates a fresh Layer 1 work item in the shared PostgreSQL DB

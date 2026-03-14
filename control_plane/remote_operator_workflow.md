@@ -5,6 +5,8 @@ Date: 2026-03-11
 For the current canonical operator path, start with:
 - [operator_runbook.md](/workspaces/RTLGen/control_plane/operator_runbook.md)
 
+This is a reference workflow document, not the primary operator manual.
+
 ## Purpose
 
 This is the standard cross-host operating mode for the RTLGen control plane:

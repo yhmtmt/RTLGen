@@ -1,5 +1,9 @@
 # CP-010 Shadow Run Note
 
+Archive note:
+- historical execution log
+- retained for implementation history, not operator workflow
+
 Purpose:
 - document one real control-plane shadow execution against a live repo queue item,
 - record exact preconditions, observed behavior, and comparison output,

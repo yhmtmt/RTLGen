@@ -1,5 +1,9 @@
 # Phase 2 Real Ingestion Status
 
+Archive note:
+- historical status note recording when real ingestion became proven
+- not a routine operator manual
+
 Status: proven
 
 Scope proven on real repo-facing items:

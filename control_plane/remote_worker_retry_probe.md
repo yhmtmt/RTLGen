@@ -1,5 +1,9 @@
 # Remote Worker Retry Probe
 
+Archive note:
+- historical retry proof procedure
+- retained for audit and regression context, not routine operation
+
 Date: 2026-03-11
 
 ## Purpose
