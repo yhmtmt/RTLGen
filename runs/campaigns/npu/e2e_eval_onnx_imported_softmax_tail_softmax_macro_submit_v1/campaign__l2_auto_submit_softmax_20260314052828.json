@@ -1,0 +1,60 @@
+{
+  "version": 0.1,
+  "campaign_id": "npu_e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_v1",
+  "model_set_id": "onnx_imported_softmax_tail_v1",
+  "model_manifest": "runs/models/onnx_imported_softmax_tail_v1/manifest.json",
+  "physical_source_campaign": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_v1/campaign__l2_auto_submit_softmax_20260314052828.json",
+  "description": "Layer2 control-plane submission benchmark for the dedicated SOFTMAX macro on the imported softmax-tail model set.",
+  "platform": "nangate45",
+  "make_target": "3_3_place_gp",
+  "repeats": 3,
+  "models": [
+    {
+      "model_id": "logistic_regression",
+      "onnx_path": "runs/model_cache/onnx_imported_softmax_tail_v1/logistic_regression.onnx",
+      "mapper_arch": "npu/arch/examples/minimal.yml",
+      "perf_config": "npu/sim/perf/example_config_fp16_cpp.json",
+      "mapper_extra_args": [
+        "--batch-override",
+        "256"
+      ]
+    }
+  ],
+  "architecture_points": [
+    {
+      "arch_id": "fp16_nm1_softmax_r4",
+      "rtlgen_config": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/config_nm1_softmax.json",
+      "synth_design_dir": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp",
+      "sweep_file": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/sweep_compare_softmax_33.json",
+      "macro_manifest": "runs/designs/npu_macros/npu_fp16_nm1_softmax_bundle_ng45/macro_manifest.json",
+      "layer1_modules": {
+        "manifest": "runs/candidates/nangate45/module_candidates.json",
+        "variant_ids": [
+          "mult16u_normal_koggestone_nangate45_base",
+          "adder_koggestone_64u_nangate45_base",
+          "softmax_rowwise_int8_r4_nangate45_base"
+        ]
+      }
+    },
+    {
+      "arch_id": "fp16_nm2_softmax_r4",
+      "rtlgen_config": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/config_nm2_softmax.json",
+      "synth_design_dir": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp",
+      "sweep_file": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/sweep_compare_softmax_33.json",
+      "macro_manifest": "runs/designs/npu_macros/npu_fp16_nm2_softmax_bundle_ng45/macro_manifest.json",
+      "layer1_modules": {
+        "manifest": "runs/candidates/nangate45/module_candidates.json",
+        "variant_ids": [
+          "mult16u_normal_koggestone_nangate45_base",
+          "adder_koggestone_64u_nangate45_base",
+          "softmax_rowwise_int8_r4_nangate45_base"
+        ]
+      }
+    }
+  ],
+  "outputs": {
+    "report_md": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_v1__l2_auto_submit_softmax_20260314052828/report.md",
+    "results_csv": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_v1__l2_auto_submit_softmax_20260314052828/results.csv",
+    "campaign_dir": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_v1__l2_auto_submit_softmax_20260314052828"
+  }
+}
