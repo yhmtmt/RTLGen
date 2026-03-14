@@ -2,6 +2,9 @@
 
 Date: 2026-03-11
 
+For the current canonical operator path, start with:
+- [operator_runbook.md](/workspaces/RTLGen/control_plane/operator_runbook.md)
+
 ## Purpose
 
 This is the standard cross-host operating mode for the RTLGen control plane:
@@ -201,14 +204,16 @@ The standard remote workflow is healthy when:
 
 ## Current Proven State
 
-Proven:
+Current proven state:
 - local real ingestion for Layer 1 and Layer 2
 - cross-host remote evaluator execution against shared PostgreSQL
+- evaluator autodaemon pickup
+- notebook completion loop consumption
+- notebook auto-submit
+- clean disposable worker worktrees
 
-Not yet productized:
-- automatic retry policy
-- `systemd` service manager integration
-- reviewer assignment / merge automation
+This document remains the cross-host reference flow.
+For routine operation, prefer the runbook and daily-ops documents.
 
 ## Service-Managed Mode
 

@@ -2,6 +2,9 @@
 
 Use this as the default notebook-side operational check.
 
+For the full operating model, read:
+- [operator_runbook.md](/workspaces/RTLGen/control_plane/operator_runbook.md)
+
 ## Prerequisites
 
 Notebook shell:
@@ -101,3 +104,8 @@ Evaluator worker daemon:
 ```sh
 /workspaces/RTLGen/control_plane/scripts/restart_worker_daemon.sh
 ```
+
+## Scope
+
+This document is only the daily check and immediate recovery view.
+It does not replace the full operator workflow or environment setup.

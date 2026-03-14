@@ -1,19 +1,20 @@
 # RTLGen Control Plane
 
-This subtree hosts the host-side control-plane implementation for RTLGen.
+This subtree hosts the control-plane implementation for RTLGen.
 
-Phase 1 scope:
-- import current Git queue items into a DB-backed operational state model,
-- lease internal work to deterministic workers,
-- export queue-compatible snapshots,
-- preserve Git and PRs as the evidence boundary.
+The current operating mode is fully automated cross-host evaluation:
+- notebook devcontainer in `server` role
+- evaluator devcontainer in `evaluator` role
+- shared PostgreSQL hosted by the notebook
+- evaluator autodaemon executes work
+- notebook completion loop consumes and can auto-submit PRs
 
-Current status:
-- `cp-001` through `cp-010` are implemented in the initial shadow-control slice
-- in-process API routing, queue import/export, leases, runs, GitHub reconciliation, and the first internal worker loop exist
-- artifact-sync and queue round-trip into repo-tracked evaluated snapshots exist
-- `cp-010` shadow-run evidence is recorded in `control_plane/shadow_run_cp010.md`
-- Alembic files and the initial migration exist, but Alembic CLI still needs a clean dedicated env for live migration verification
+Use these documents first:
+- [operator_runbook.md](/workspaces/RTLGen/control_plane/operator_runbook.md)
+- [daily_operations.md](/workspaces/RTLGen/control_plane/daily_operations.md)
+- [remote_operator_workflow.md](/workspaces/RTLGen/control_plane/remote_operator_workflow.md)
+
+Older proof documents in this directory are archival, not the primary operator path.
 
 ## Local bring-up
 
@@ -238,6 +239,19 @@ PYTHONPATH=/workspaces/RTLGen/control_plane \
 python3 -m control_plane.cli.main operator-status \
   --database-url "$RTLCP_DATABASE_URL" \
   --format table
+```
+
+Daily operator check:
+```sh
+/workspaces/RTLGen/control_plane/scripts/daily_ops.sh
+```
+
+Cleanup dry-run:
+```sh
+PYTHONPATH=/workspaces/RTLGen/control_plane \
+python3 -m control_plane.cli.main cleanup \
+  --database-url "$RTLCP_DATABASE_URL" \
+  --repo-root /workspaces/RTLGen
 ```
 
 The operator dashboard now includes:
