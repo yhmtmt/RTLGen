@@ -414,3 +414,13 @@ Log
 - Outcome: “current status” and “next steps” wording now matches the code/test
   baseline more closely and avoids describing already-implemented phase-1 split
   support as future work.
+
+2026-03-14 — Planning workspace cleanup
+- Moved the repository roadmap from top-level `plan.md` to:
+  - `plan/roadmap.md`
+- Updated `plan/README.md` so the planning workspace now explicitly distinguishes:
+  - `plan/roadmap.md` for forward-looking plan context
+  - `plan/log.md` for append-only execution history
+- Reason:
+  - keep planning material under one directory
+  - avoid a misleading split between top-level plan content and `plan/`
