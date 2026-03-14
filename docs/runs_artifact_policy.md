@@ -134,6 +134,18 @@ Workers should not transport:
 
 Notebook-side completion should materialize only that same allowlisted set.
 
+## Operational Retention Defaults
+
+Recommended starting windows for control-plane cleanup:
+- runtime pid/log files under `/tmp/rtlgen-control-plane`: 3 days
+- worker logs under `control_plane/logs/`: 14 days
+- released/expired DB leases and transient DB artifacts: 30 days
+
+Reasoning:
+- runtime files are purely local process state
+- worker logs are useful for short-horizon triage
+- DB transient rows are useful for audit and debugging longer than local logs
+
 ## PR Guidance
 
 Normal PRs should include:

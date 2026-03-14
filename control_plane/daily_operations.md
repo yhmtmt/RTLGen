@@ -78,6 +78,18 @@ python3 -m control_plane.cli.main cleanup \
   --apply
 ```
 
+Tune retention windows by class when needed:
+```sh
+source /workspaces/RTLGen/control_plane/.venv/bin/activate
+PYTHONPATH=/workspaces/RTLGen/control_plane \
+python3 -m control_plane.cli.main cleanup \
+  --database-url "$RTLCP_DATABASE_URL" \
+  --repo-root /workspaces/RTLGen \
+  --runtime-max-age-days 3 \
+  --log-max-age-days 14 \
+  --db-max-age-days 30
+```
+
 ## Restart Shortcuts
 
 Notebook completion loop:

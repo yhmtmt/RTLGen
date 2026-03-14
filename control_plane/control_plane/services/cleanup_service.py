@@ -22,6 +22,9 @@ class CleanupRequest:
     runtime_dir: str | None = None
     log_root: str | None = None
     max_age_days: int = 7
+    runtime_max_age_days: int | None = None
+    log_max_age_days: int | None = None
+    db_max_age_days: int | None = None
     prune_runtime_files: bool = True
     prune_worker_logs: bool = True
     prune_db_leases: bool = True
@@ -78,10 +81,19 @@ def run_cleanup(session: Session, request: CleanupRequest) -> CleanupResult:
     repo_root = Path(request.repo_root).resolve()
     runtime_dir = Path(request.runtime_dir or "/tmp/rtlgen-control-plane").resolve()
     log_root = Path(request.log_root or (repo_root / "control_plane" / "logs")).resolve()
-    cutoff = utcnow() - timedelta(days=request.max_age_days)
+    now = utcnow()
+    runtime_cutoff = now - timedelta(days=request.runtime_max_age_days or request.max_age_days)
+    log_cutoff = now - timedelta(days=request.log_max_age_days or request.max_age_days)
+    db_cutoff = now - timedelta(days=request.db_max_age_days or request.max_age_days)
 
-    runtime_paths = _list_runtime_paths(runtime_dir) if request.prune_runtime_files else []
-    log_paths = _list_log_paths(log_root, cutoff=cutoff) if request.prune_worker_logs else []
+    runtime_paths = []
+    if request.prune_runtime_files:
+        runtime_paths = [
+            path
+            for path in _list_runtime_paths(runtime_dir)
+            if datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc) <= runtime_cutoff
+        ]
+    log_paths = _list_log_paths(log_root, cutoff=log_cutoff) if request.prune_worker_logs else []
 
     expired_leases = []
     released_leases = []
@@ -89,13 +101,13 @@ def run_cleanup(session: Session, request: CleanupRequest) -> CleanupResult:
         expired_leases = (
             session.query(WorkerLease)
             .filter(WorkerLease.status == LeaseStatus.EXPIRED)
-            .filter(WorkerLease.expires_at < cutoff)
+            .filter(WorkerLease.expires_at < db_cutoff)
             .all()
         )
         released_leases = (
             session.query(WorkerLease)
             .filter(WorkerLease.status == LeaseStatus.RELEASED)
-            .filter(WorkerLease.expires_at < cutoff)
+            .filter(WorkerLease.expires_at < db_cutoff)
             .all()
         )
 
@@ -104,7 +116,7 @@ def run_cleanup(session: Session, request: CleanupRequest) -> CleanupResult:
         transient_artifacts = (
             session.query(Artifact)
             .filter(Artifact.storage_mode == ArtifactStorageMode.TRANSIENT)
-            .filter(Artifact.created_at < cutoff)
+            .filter(Artifact.created_at < db_cutoff)
             .all()
         )
 

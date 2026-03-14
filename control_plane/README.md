@@ -258,6 +258,17 @@ That daily check reports:
 - shared DB operator summary
 - cleanup dry-run candidates
 
+Cleanup retention can be tuned per class:
+```sh
+PYTHONPATH=/workspaces/RTLGen/control_plane \
+python3 -m control_plane.cli.main cleanup \
+  --database-url "$RTLCP_DATABASE_URL" \
+  --repo-root /workspaces/RTLGen \
+  --runtime-max-age-days 3 \
+  --log-max-age-days 14 \
+  --db-max-age-days 30
+```
+
 Daily notebook operations:
 ```sh
 export RTLCP_DATABASE_URL='postgresql+psycopg://rtlgen:rtlgen@localhost:5432/rtlgen_control_plane'
