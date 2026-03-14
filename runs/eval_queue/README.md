@@ -13,6 +13,9 @@ For the internal trusted-machine lane, use the DB-backed control plane instead:
 - `control_plane/operator_runbook.md`
 - `docs/internal_external_evaluator_policy.md`
 
+Shared artifact policy across both lanes:
+- `docs/runs_artifact_policy.md`
+
 Evaluator first-read
 --------------------
 - `notes/evaluation_agent_guidance.md` is the evaluator's first-read manual

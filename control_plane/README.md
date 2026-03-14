@@ -163,6 +163,9 @@ It does not rematerialize:
 - `runs/model_cache/**`
 - `control_plane/shadow_exports/**`
 
+Shared artifact policy for both internal and manual evaluation lanes:
+- [runs_artifact_policy.md](/workspaces/RTLGen/docs/runs_artifact_policy.md)
+
 Notebook-side completion processing plus submission:
 ```sh
 PYTHONPATH=/workspaces/RTLGen/control_plane \

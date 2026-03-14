@@ -4,6 +4,9 @@ Purpose:
 - define which generated artifacts under `runs/` belong in Git,
 - keep the repository reviewable and reproducible,
 - prevent large or transient execution products from accumulating as untracked noise.
+- describe both evaluation lanes:
+  - internal control-plane execution
+  - external/manual queue-and-PR execution
 
 ## Principle
 
@@ -60,6 +63,23 @@ Design-level lightweight summaries:
 The rule behind this set:
 - if a file is the concise summary humans will review, track it.
 
+## Lane Split
+
+RTLGen now has two evaluation lanes:
+
+1. Internal/trusted lane
+- DB-backed control plane
+- remote workers execute and ship only allowlisted lightweight evidence
+- notebook completion consumes and may auto-submit the review PR
+
+2. External/manual lane
+- queue JSON plus GitHub PR workflow
+- evaluator runs the task manually
+- evaluator commits lightweight evidence directly in the PR branch
+
+The tracked evidence classes below apply to both lanes.
+What differs is how those files move from execution environment to Git.
+
 ## Untracked Artifacts
 
 These are execution products that should normally stay out of Git.
@@ -108,7 +128,16 @@ Reason:
 
 Only promote a shadow-run output into the live `runs/eval_queue/` tree when it is intentionally being turned into tracked evidence.
 
-## Remote Transport
+## Internal Control-Plane Lane
+
+Internal workers may generate large local execution state, but only a narrower
+reviewable subset should be transported and rematerialized on the notebook.
+
+This lane uses:
+- `control_plane/operator_runbook.md`
+- `control_plane/remote_operator_workflow.md`
+
+### Remote Transport
 
 Remote evaluator transport is intentionally narrower than local generation.
 
@@ -134,6 +163,31 @@ Workers should not transport:
 
 Notebook-side completion should materialize only that same allowlisted set.
 
+This rule exists because internal workers execute out of disposable worktrees
+and should not copy bulky or machine-local byproducts back into the notebook
+checkout.
+
+## External Manual Queue/PR Lane
+
+The external/manual lane does not use DB artifact transport.
+The evaluator commits lightweight evidence directly into the PR branch.
+
+This lane uses:
+- `runs/eval_queue/README.md`
+- `notes/evaluation_agent_guidance.md`
+
+For this lane:
+- commit only lightweight, reviewable artifacts
+- keep `result_path` and related provenance fields repo-portable
+- do not commit machine-local paths, scratch directories, or bulky flow outputs
+- ensure evaluated queue items reference real tracked metrics rows
+- include the exact queue/result provenance fields required by the queue rules
+
+In other words:
+- internal lane constrains what can be transported automatically
+- external lane constrains what can be committed manually
+- both lanes converge on the same Git-tracked evidence classes
+
 ## Operational Retention Defaults
 
 Recommended starting windows for control-plane cleanup:
@@ -148,19 +202,27 @@ Reasoning:
 
 ## PR Guidance
 
-Normal PRs should include:
+Normal PRs in either lane should include:
 - queue items,
 - campaign summaries,
 - candidate manifests,
 - lightweight design metrics,
 - docs explaining decisions.
 
-Normal PRs should exclude:
+Normal PRs in either lane should exclude:
 - `work/`
 - `artifacts/`
 - `comparisons/`
 - local caches
 - local control-plane shadow exports
+
+Lane-specific emphasis:
+- internal lane:
+  - PR is the publication boundary after control-plane execution
+  - transported evidence must stay inside the allowlist above
+- external/manual lane:
+  - PR is both submission boundary and review boundary
+  - evaluator must curate the committed files directly
 
 ## Enforcement Direction
 
