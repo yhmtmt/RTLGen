@@ -36,31 +36,54 @@ def _render_rows(title: str, rows: list[dict[str, object]], columns: list[str]) 
     return "\n".join(lines)
 
 
+def _render_health_summary(summary: dict[str, object]) -> str:
+    return "\n".join(["Health", "------", str(summary["message"])])
+
+
 def _render_table(payload: dict[str, object]) -> str:
     sections = [
+        _render_health_summary(dict(payload["health_summary"])),
         _render_state_counts(dict(payload["state_counts"])),
-        _render_rows(
-            "Active Runs",
-            list(payload["active_runs"]),
-            ["item_id", "task_type", "worker_host", "started_at", "last_heartbeat_at", "run_key"],
-        ),
-        _render_rows(
-            "Stale Leases",
-            list(payload["stale_leases"]),
-            ["item_id", "hostname", "expires_at", "last_heartbeat_at", "lease_token"],
-        ),
-        _render_rows(
-            "Recent Failures",
-            list(payload["recent_failures"]),
-            ["item_id", "failure_category", "summary", "retry_requeue", "worker_host", "run_key"],
-        ),
-        _render_rows(
-            "Recent Submissions",
-            list(payload["recent_submissions"]),
-            ["item_id", "pr_number", "state", "branch_name", "updated_at"],
-        ),
     ]
+    sections.extend(_render_section(payload, "all"))
     return "\n\n".join(sections)
+
+
+def _render_section(payload: dict[str, object], only: str) -> list[str]:
+    sections = []
+    if only in ("all", "active-runs"):
+        sections.append(
+            _render_rows(
+                "Active Runs",
+                list(payload["active_runs"]),
+                ["item_id", "task_type", "worker_host", "started_at", "last_heartbeat_at", "run_key"],
+            )
+        )
+    if only in ("all", "stale-leases"):
+        sections.append(
+            _render_rows(
+                "Stale Leases",
+                list(payload["stale_leases"]),
+                ["item_id", "hostname", "expires_at", "last_heartbeat_at", "lease_token"],
+            )
+        )
+    if only in ("all", "failures"):
+        sections.append(
+            _render_rows(
+                "Recent Failures",
+                list(payload["recent_failures"]),
+                ["item_id", "failure_category", "summary", "retry_requeue", "worker_host", "run_key"],
+            )
+        )
+    if only in ("all", "submissions"):
+        sections.append(
+            _render_rows(
+                "Recent Submissions",
+                list(payload["recent_submissions"]),
+                ["item_id", "pr_number", "state", "branch_name", "updated_at"],
+            )
+        )
+    return sections
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -68,6 +91,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--database-url", required=True)
     parser.add_argument("--recent-limit", type=int, default=10)
     parser.add_argument("--format", choices=["json", "table"], default="table")
+    parser.add_argument(
+        "--only",
+        choices=["all", "health", "state-counts", "active-runs", "stale-leases", "failures", "submissions"],
+        default="all",
+    )
     args = parser.parse_args(argv)
 
     engine = build_engine(args.database_url)
@@ -76,6 +104,7 @@ def main(argv: list[str] | None = None) -> int:
     with session_factory() as session:
         status = load_operator_status(session, OperatorStatusRequest(recent_limit=args.recent_limit))
     payload = {
+        "health_summary": status.health_summary,
         "state_counts": status.state_counts,
         "active_runs": status.active_runs,
         "stale_leases": status.stale_leases,
@@ -83,9 +112,30 @@ def main(argv: list[str] | None = None) -> int:
         "recent_submissions": status.recent_submissions,
     }
     if args.format == "json":
-        print(json.dumps(payload, indent=2, sort_keys=True))
+        if args.only == "all":
+            out = payload
+        elif args.only == "health":
+            out = {"health_summary": payload["health_summary"]}
+        elif args.only == "state-counts":
+            out = {"state_counts": payload["state_counts"]}
+        elif args.only == "active-runs":
+            out = {"active_runs": payload["active_runs"]}
+        elif args.only == "stale-leases":
+            out = {"stale_leases": payload["stale_leases"]}
+        elif args.only == "failures":
+            out = {"recent_failures": payload["recent_failures"]}
+        else:
+            out = {"recent_submissions": payload["recent_submissions"]}
+        print(json.dumps(out, indent=2, sort_keys=True))
     else:
-        print(_render_table(payload))
+        if args.only == "all":
+            print(_render_table(payload))
+        elif args.only == "health":
+            print(_render_health_summary(dict(payload["health_summary"])))
+        elif args.only == "state-counts":
+            print(_render_state_counts(dict(payload["state_counts"])))
+        else:
+            print("\n\n".join(_render_section(payload, args.only)))
     return 0
 
 

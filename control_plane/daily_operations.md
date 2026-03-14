@@ -58,6 +58,12 @@ Inspect operator summary directly:
 /workspaces/RTLGen/control_plane/scripts/operator_status.sh --format table
 ```
 
+Inspect only one section when triaging:
+```sh
+/workspaces/RTLGen/control_plane/scripts/operator_status.sh --only failures --format table
+/workspaces/RTLGen/control_plane/scripts/operator_status.sh --only active-runs --format table
+```
+
 Inspect cleanup candidates only:
 ```sh
 /workspaces/RTLGen/control_plane/scripts/cleanup.sh

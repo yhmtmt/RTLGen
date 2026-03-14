@@ -251,6 +251,11 @@ Operator dashboard shortcut:
 /workspaces/RTLGen/control_plane/scripts/operator_status.sh --format table
 ```
 
+Operator dashboard, failures only:
+```sh
+/workspaces/RTLGen/control_plane/scripts/operator_status.sh --only failures --format table
+```
+
 Cleanup dry-run:
 ```sh
 /workspaces/RTLGen/control_plane/scripts/cleanup.sh

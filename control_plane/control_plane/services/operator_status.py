@@ -21,6 +21,7 @@ class OperatorStatusRequest:
 
 @dataclass(frozen=True)
 class OperatorStatusResult:
+    health_summary: dict[str, object]
     state_counts: dict[str, int]
     active_runs: list[dict[str, object]]
     stale_leases: list[dict[str, object]]
@@ -121,7 +122,33 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
             }
         )
 
+    attention_flags = []
+    if stale_leases:
+        attention_flags.append(f"stale_leases={len(stale_leases)}")
+    if recent_failures:
+        attention_flags.append(f"recent_failures={len(recent_failures)}")
+    if active_runs:
+        attention_flags.append(f"active_runs={len(active_runs)}")
+    awaiting_review = state_counts.get(WorkItemState.AWAITING_REVIEW.value, 0)
+    if awaiting_review:
+        attention_flags.append(f"awaiting_review={awaiting_review}")
+    ready_items = state_counts.get(WorkItemState.READY.value, 0)
+    if ready_items:
+        attention_flags.append(f"ready={ready_items}")
+
+    if attention_flags:
+        health_summary = {
+            "status": "attention",
+            "message": "attention: " + ", ".join(attention_flags),
+        }
+    else:
+        health_summary = {
+            "status": "healthy",
+            "message": "healthy: no stale leases, no recent failures, no active runs, no queued review items",
+        }
+
     return OperatorStatusResult(
+        health_summary=health_summary,
         state_counts=state_counts,
         active_runs=active_runs,
         stale_leases=stale_leases,

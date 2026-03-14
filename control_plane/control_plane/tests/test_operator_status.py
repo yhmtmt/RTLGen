@@ -197,6 +197,9 @@ def test_operator_status_summarizes_live_state() -> None:
         with session_factory() as session:
             status = load_operator_status(session, OperatorStatusRequest(recent_limit=5))
 
+        assert status.health_summary["status"] == "attention"
+        assert "stale_leases=1" in str(status.health_summary["message"])
+        assert "recent_failures=1" in str(status.health_summary["message"])
         assert status.state_counts["failed"] == 1
         assert status.state_counts["ready"] == 1
         assert status.state_counts["awaiting_review"] == 1
