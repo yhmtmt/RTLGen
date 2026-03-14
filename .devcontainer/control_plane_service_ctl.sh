@@ -58,8 +58,18 @@ case "${ACTION}" in
           ;;
       esac
     } >>"${LOG_FILE}"
-    nohup "${TARGET_CMD[@]}" >>"${LOG_FILE}" 2>&1 &
+    if command -v setsid >/dev/null 2>&1; then
+      setsid "${TARGET_CMD[@]}" </dev/null >>"${LOG_FILE}" 2>&1 &
+    else
+      nohup "${TARGET_CMD[@]}" </dev/null >>"${LOG_FILE}" 2>&1 &
+    fi
     echo "$!" >"${PID_FILE}"
+    sleep 0.2
+    if ! kill -0 "$(cat "${PID_FILE}")" 2>/dev/null; then
+      rm -f "${PID_FILE}"
+      echo "failed to start ${SERVICE}; see ${LOG_FILE}" >&2
+      exit 1
+    fi
     echo "started ${SERVICE}: pid=$(cat "${PID_FILE}") log=${LOG_FILE}"
     ;;
   stop)
