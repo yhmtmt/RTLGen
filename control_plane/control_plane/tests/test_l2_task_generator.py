@@ -100,6 +100,7 @@ def test_generate_l2_campaign_task_creates_ready_work_item() -> None:
             assert work_item.command_manifest[0]["run"] == "python3 npu/eval/fetch_models.py --manifest runs/models/demo_set/manifest.json"
             assert work_item.command_manifest[5]["run"] == "python3 scripts/validate_runs.py --skip_eval_queue"
             assert work_item.expected_outputs == [
+                f"runs/campaigns/npu/demo_campaign/campaign__{result.item_id}.json",
                 f"runs/campaigns/npu/demo_campaign__{result.item_id}/results.csv",
                 f"runs/campaigns/npu/demo_campaign__{result.item_id}/report.md",
                 f"runs/campaigns/npu/demo_campaign__{result.item_id}/summary.csv",
@@ -166,5 +167,9 @@ def test_generate_l2_campaign_task_upserts_existing_item() -> None:
             assert work_item.task_request.requested_by == "@tester2"
             assert work_item.command_manifest[0]["name"] == "fetch_models"
             assert "--run_physical" not in work_item.command_manifest[2]["run"]
+            assert (
+                f"runs/campaigns/npu/demo_campaign/campaign__l2_demo_campaign.json"
+                in work_item.expected_outputs
+            )
             assert "runs/campaigns/npu/demo_campaign__l2_demo_campaign/objective_sweep.csv" not in work_item.expected_outputs
             assert "runs/campaigns/npu/demo_campaign__l2_demo_campaign/objective_sweep.md" not in work_item.expected_outputs

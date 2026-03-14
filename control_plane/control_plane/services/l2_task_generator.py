@@ -110,10 +110,15 @@ def _build_inputs(*, campaign: dict[str, Any]) -> dict[str, list[str]]:
     }
 
 
-def _build_expected_outputs(*, campaign: dict[str, Any], include_objective_sweep: bool) -> list[str]:
+def _build_expected_outputs(
+    *,
+    campaign: dict[str, Any],
+    generated_campaign_path: str,
+    include_objective_sweep: bool,
+) -> list[str]:
     outputs = campaign.get("outputs") or {}
     campaign_dir = str(outputs.get("campaign_dir", "")).strip()
-    expected: list[str] = []
+    expected: list[str] = [generated_campaign_path]
     for key in ("results_csv", "report_md"):
         value = str(outputs.get(key, "")).strip()
         if value:
@@ -288,6 +293,7 @@ def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateR
     )
     expected_outputs = _build_expected_outputs(
         campaign=campaign,
+        generated_campaign_path=generated_campaign_path,
         include_objective_sweep=bool(objective_profiles_json),
     )
     batch_id = request.batch_id or f"{item_id}_r1"

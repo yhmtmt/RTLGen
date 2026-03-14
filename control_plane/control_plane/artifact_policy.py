@@ -48,4 +48,8 @@ def is_transportable_expected_output(path_text: str) -> bool:
         return False
     if rel_path in _ALLOWED_RUNS_FILES:
         return True
+    if rel_path.startswith("runs/campaigns/"):
+        name = PurePosixPath(rel_path).name
+        if name == "campaign.json" or (name.startswith("campaign__") and name.endswith(".json")):
+            return True
     return any(rel_path.endswith(suffix) for suffix in _ALLOWED_RUNS_SUFFIXES)
