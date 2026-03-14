@@ -19,6 +19,13 @@ read these first:
 2. `runs/eval_queue/README.md`
 3. The assigned item under `runs/eval_queue/openroad/queued/`
 
+If you are operating the internal cross-host evaluation system instead of the
+manual queue/PR lane, start here instead:
+
+1. `control_plane/operator_runbook.md`
+2. `control_plane/daily_operations.md`
+3. `docs/internal_external_evaluator_policy.md`
+
 ## Layer 1: Circuit Module Generator + Physical Optimization
 
 `Layer 1` focuses on circuit blocks generated from C++ RTLGen (adders,
@@ -32,7 +39,9 @@ multipliers, MACs, activations, MCM/CMVM, FP operators).
 1. Generate module RTL from JSON config.
 2. Run OpenROAD sweeps for timing/area/power/runtime.
 3. Compare candidates and keep append-only metrics in `runs/designs/`.
-4. For remote heavy execution, queue tasks in `runs/eval_queue/openroad/`.
+4. For remote heavy execution:
+   - internal/trusted lane: use the DB-backed control plane in `control_plane/`
+   - external/manual lane: queue tasks in `runs/eval_queue/openroad/`
 
 ### Main entry points
 - Generator config reference: `examples/about_config.md`
@@ -79,6 +88,7 @@ Layer coupling is explicit and file-based.
 
 Canonical specification for this split:
 - `docs/two_layer_workflow.md`
+- `docs/internal_external_evaluator_policy.md`
 
 ## Quick Start
 
@@ -119,6 +129,9 @@ python3 scripts/build_runs_index.py
 
 - Evaluator first-read manual: `notes/evaluation_agent_guidance.md`
 - Evaluation queue workflow/rules: `runs/eval_queue/README.md`
+- Control-plane operator runbook: `control_plane/operator_runbook.md`
+- Control-plane daily operations: `control_plane/daily_operations.md`
+- Internal vs external evaluation policy: `docs/internal_external_evaluator_policy.md`
 - Repository documentation roles: `docs/structure.md`
 - Layer 1 runbook (module physical optimization): `docs/layer1_circuit_workflow.md`
 - Two-layer workflow and handoff contract: `docs/two_layer_workflow.md`

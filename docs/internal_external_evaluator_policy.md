@@ -28,6 +28,11 @@ Characteristics:
 - no PR required for every individual run,
 - PRs used only to publish reviewed, decision-relevant result batches.
 
+Current operator documents:
+- `control_plane/operator_runbook.md`
+- `control_plane/daily_operations.md`
+- `control_plane/README.md`
+
 ### External lane
 Use GitHub-mediated contribution.
 
@@ -37,6 +42,10 @@ Characteristics:
 - tasks are claimed from public or maintainer-shared task definitions,
 - results enter the repo only through PR review,
 - provenance must be explicit and validator-clean.
+
+Current operator documents:
+- `notes/evaluation_agent_guidance.md`
+- `runs/eval_queue/README.md`
 
 ## Internal Evaluator Lane
 
@@ -219,6 +228,15 @@ Adopt this immediately as a project rule:
 3. Internal micro-runs should be batched before publication.
 4. External contributions should be bounded task submissions.
 5. Git remains the merge and evidence boundary for both lanes.
+
+## Current Project Baseline
+
+The current repository baseline is:
+- internal production evaluation: control-plane driven
+- external/manual evaluation: queue/PR driven
+
+Internal lane is no longer a speculative plan.
+It is the default trusted-machine operating path for routine evaluation.
 
 ## Decision Summary
 The current PR-based workflow is not wrong.

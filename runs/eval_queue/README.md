@@ -7,6 +7,11 @@ Purpose
   GitHub-exchangeable queue.
 - Let lightweight/dev environments author tasks while high-performance
   evaluators execute them.
+- Serve as the external/manual evaluation lane.
+
+For the internal trusted-machine lane, use the DB-backed control plane instead:
+- `control_plane/operator_runbook.md`
+- `docs/internal_external_evaluator_policy.md`
 
 Evaluator first-read
 --------------------
@@ -33,6 +38,11 @@ Workflow
    the item JSON with execution result.
 4. Evaluator moves item file from `queued/` to `evaluated/` in the same PR.
 5. PR must pass `scripts/validate_runs.py` and include traceable metrics rows.
+
+This queue/PR workflow is still valid, but it is no longer the primary
+internal production execution path.
+Internal routine evaluation now runs through the control plane and publishes
+reviewed result batches back to Git only when warranted.
 
 Rules
 -----

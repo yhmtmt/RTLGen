@@ -12,6 +12,11 @@ It defines:
 - how to report results back through GitHub PRs,
 - how to keep artifacts reproducible and lightweight.
 
+This document is for the manual queue/PR evaluation lane.
+If you are operating the internal trusted-machine scheduler path, use:
+- `control_plane/operator_runbook.md`
+- `docs/internal_external_evaluator_policy.md`
+
 Scope
 -----
 - Primary: OpenROAD-based evaluation work for Layer 1 modules and Layer 2 NPU

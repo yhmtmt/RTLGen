@@ -8,6 +8,13 @@ Clarify the two optimization layers in RTLGen and define how they interact:
 This separation keeps module-level physical tuning and model-level architectural
 search coupled but not conflated.
 
+Evaluation control is separate from the layer split:
+- internal/trusted execution uses the DB-backed control plane in `control_plane/`
+- external/manual execution uses queue items and GitHub PR submission
+
+Policy source:
+- `docs/internal_external_evaluator_policy.md`
+
 ## Layer 1: Circuit Module Exploration (Physical-First)
 
 ### Scope
@@ -75,6 +82,10 @@ using multiple real ONNX models.
 - OpenROAD-heavy execution queue for distributed evaluation:
   - `runs/eval_queue/openroad/queued/` -> `runs/eval_queue/openroad/evaluated/`
   - evaluated items must include concrete metrics-row references.
+- Internal production execution path:
+  - `control_plane/operator_runbook.md`
+  - workers execute the same evaluation commands under DB-backed scheduling
+  - Git remains the reviewed evidence boundary through submission PRs
 
 ### Layer 2 -> Layer 1 (feedback handoff)
 - Bottleneck-driven requests for new module algorithms or parameter regions.
@@ -91,6 +102,8 @@ using multiple real ONNX models.
 
 ## Canonical document map
 - Role map: `docs/structure.md`
+- Evaluation-lane policy: `docs/internal_external_evaluator_policy.md`
+- Internal operator path: `control_plane/operator_runbook.md`
 - Layer 1 runbook: `docs/layer1_circuit_workflow.md`
 - Circuit/evaluation guidance: `notes/workflow.md`, `runs/README.md`
 - Layer 2 runbook: `npu/docs/workflow.md`
