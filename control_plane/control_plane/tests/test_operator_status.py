@@ -105,6 +105,19 @@ def test_operator_status_summarizes_live_state() -> None:
             session.add(stale_lease)
             session.flush()
 
+            running_item = _seed_item(session, item_id="running_item", state=WorkItemState.RUNNING)
+            active_lease = WorkerLease(
+                work_item_id=running_item.id,
+                machine_id=machine.id,
+                lease_token="lease-active",
+                status=LeaseStatus.ACTIVE,
+                leased_at=now - timedelta(minutes=15),
+                expires_at=now + timedelta(minutes=15),
+                last_heartbeat_at=now - timedelta(seconds=10),
+            )
+            session.add(active_lease)
+            session.flush()
+
             failed_run = Run(
                 run_key="failed_run",
                 work_item_id=failed_item.id,
@@ -123,6 +136,21 @@ def test_operator_status_summarizes_live_state() -> None:
                 },
             )
             session.add(failed_run)
+            session.flush()
+
+            active_run = Run(
+                run_key="running_run",
+                work_item_id=running_item.id,
+                lease_id=active_lease.id,
+                attempt=1,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                machine_id=machine.id,
+                checkout_commit="feedface",
+                status=RunStatus.RUNNING,
+                started_at=now - timedelta(minutes=3),
+                result_payload={},
+            )
+            session.add(active_run)
             session.flush()
 
             submission_run = Run(
@@ -172,6 +200,10 @@ def test_operator_status_summarizes_live_state() -> None:
         assert status.state_counts["failed"] == 1
         assert status.state_counts["ready"] == 1
         assert status.state_counts["awaiting_review"] == 1
+        assert status.state_counts["running"] == 1
+        assert len(status.active_runs) == 1
+        assert status.active_runs[0]["item_id"] == "running_item"
+        assert status.active_runs[0]["worker_host"] == "eval-host"
         assert len(status.stale_leases) == 1
         assert status.stale_leases[0]["item_id"] == "ready_item"
         assert len(status.recent_failures) == 1

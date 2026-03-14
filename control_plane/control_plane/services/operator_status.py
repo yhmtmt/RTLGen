@@ -22,6 +22,7 @@ class OperatorStatusRequest:
 @dataclass(frozen=True)
 class OperatorStatusResult:
     state_counts: dict[str, int]
+    active_runs: list[dict[str, object]]
     stale_leases: list[dict[str, object]]
     recent_failures: list[dict[str, object]]
     recent_submissions: list[dict[str, object]]
@@ -33,6 +34,28 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
         state_counts[work_item.state.value] = state_counts.get(work_item.state.value, 0) + 1
 
     now = utcnow()
+    active_runs = []
+    for run in (
+        session.query(Run)
+        .filter(Run.status == RunStatus.RUNNING)
+        .order_by(Run.started_at.desc().nullslast(), Run.created_at.desc())
+        .limit(request.recent_limit)
+        .all()
+    ):
+        lease = run.lease
+        active_runs.append(
+            {
+                "item_id": run.work_item.item_id,
+                "run_key": run.run_key,
+                "task_type": run.work_item.task_type,
+                "worker_host": run.machine.hostname if run.machine is not None else None,
+                "machine_key": run.machine.machine_key if run.machine is not None else None,
+                "lease_token": lease.lease_token if lease is not None else None,
+                "last_heartbeat_at": lease.last_heartbeat_at.isoformat() if lease and lease.last_heartbeat_at else None,
+                "started_at": run.started_at.isoformat() if run.started_at else None,
+            }
+        )
+
     stale_leases = []
     for lease in (
         session.query(WorkerLease)
@@ -100,6 +123,7 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
 
     return OperatorStatusResult(
         state_counts=state_counts,
+        active_runs=active_runs,
         stale_leases=stale_leases,
         recent_failures=recent_failures,
         recent_submissions=recent_submissions,

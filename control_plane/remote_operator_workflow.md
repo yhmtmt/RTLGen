@@ -227,3 +227,9 @@ In the current devcontainer-based operation, the primary automation path is:
 - background wrappers managed by `.devcontainer/control_plane_service_ctl.sh`
 
 This is preferred over container-internal `systemd` because the evaluator and notebook both run inside devcontainers where PID 1 is not necessarily `systemd`.
+
+Operational restart shortcuts:
+- notebook completion loop:
+  - `control_plane/scripts/restart_completion_loop.sh`
+- evaluator worker daemon:
+  - `control_plane/scripts/restart_worker_daemon.sh`

@@ -25,7 +25,9 @@ echo
 
 echo "== Service Status =="
 if [[ -x "$REPO_ROOT/.devcontainer/control_plane_service_ctl.sh" ]]; then
+  echo "local worker service:"
   "$REPO_ROOT/.devcontainer/control_plane_service_ctl.sh" status worker || true
+  echo "local completion service:"
   "$REPO_ROOT/.devcontainer/control_plane_service_ctl.sh" status completions || true
 else
   echo "service status helper not found"

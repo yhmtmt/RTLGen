@@ -17,17 +17,17 @@ Run:
 ```
 
 This reports:
-- devcontainer worker service status
-- devcontainer completion service status
+- local devcontainer worker service status
+- local devcontainer completion service status
 - control-plane operator summary
 - cleanup dry-run candidates
 
 ## Interpretation
 
 Healthy idle state usually looks like:
-- worker service: running on evaluator only
+- local worker service: not running on notebook
 - completions service: running on notebook if enabled
-- operator status: no stale leases, no growing failed-run set
+- operator status: no stale leases, no growing failed-run set, no unexpected active runs
 - cleanup dry-run: only bounded runtime/log noise
 
 Investigate immediately when you see:
@@ -35,6 +35,18 @@ Investigate immediately when you see:
 - repeated `checkout_error` or `validation_error`
 - `artifact_sync` items not draining
 - repeated submission failures
+- active runs with stale heartbeats
+
+## Local vs Remote
+
+On the notebook, `daily_ops.sh` reports local service processes and shared DB state.
+
+That means:
+- `local worker service: not running` is normal on the notebook
+- remote evaluator activity is shown under `operator-status`, especially:
+  - `Active Runs`
+  - `Stale Leases`
+  - `Recent Failures`
 
 ## Follow-up Commands
 
@@ -64,4 +76,16 @@ python3 -m control_plane.cli.main cleanup \
   --database-url "$RTLCP_DATABASE_URL" \
   --repo-root /workspaces/RTLGen \
   --apply
+```
+
+## Restart Shortcuts
+
+Notebook completion loop:
+```sh
+/workspaces/RTLGen/control_plane/scripts/restart_completion_loop.sh
+```
+
+Evaluator worker daemon:
+```sh
+/workspaces/RTLGen/control_plane/scripts/restart_worker_daemon.sh
 ```

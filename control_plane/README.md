@@ -240,6 +240,24 @@ python3 -m control_plane.cli.main operator-status \
   --format table
 ```
 
+The operator dashboard now includes:
+- `State Counts`
+- `Active Runs`
+- `Stale Leases`
+- `Recent Failures`
+- `Recent Submissions`
+
+For notebook-side daily checks:
+```sh
+export RTLCP_DATABASE_URL='postgresql+psycopg://rtlgen:rtlgen@localhost:5432/rtlgen_control_plane'
+/workspaces/RTLGen/control_plane/scripts/daily_ops.sh
+```
+
+That daily check reports:
+- local worker/completion service status
+- shared DB operator summary
+- cleanup dry-run candidates
+
 Daily notebook operations:
 ```sh
 export RTLCP_DATABASE_URL='postgresql+psycopg://rtlgen:rtlgen@localhost:5432/rtlgen_control_plane'

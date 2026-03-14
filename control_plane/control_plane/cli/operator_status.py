@@ -40,6 +40,11 @@ def _render_table(payload: dict[str, object]) -> str:
     sections = [
         _render_state_counts(dict(payload["state_counts"])),
         _render_rows(
+            "Active Runs",
+            list(payload["active_runs"]),
+            ["item_id", "task_type", "worker_host", "started_at", "last_heartbeat_at", "run_key"],
+        ),
+        _render_rows(
             "Stale Leases",
             list(payload["stale_leases"]),
             ["item_id", "hostname", "expires_at", "last_heartbeat_at", "lease_token"],
@@ -72,6 +77,7 @@ def main(argv: list[str] | None = None) -> int:
         status = load_operator_status(session, OperatorStatusRequest(recent_limit=args.recent_limit))
     payload = {
         "state_counts": status.state_counts,
+        "active_runs": status.active_runs,
         "stale_leases": status.stale_leases,
         "recent_failures": status.recent_failures,
         "recent_submissions": status.recent_submissions,

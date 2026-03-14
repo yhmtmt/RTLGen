@@ -36,6 +36,14 @@ _is_running() {
   [[ -n "${pid}" ]] && kill -0 "${pid}" 2>/dev/null
 }
 
+_tail_log() {
+  if [[ -f "${LOG_FILE}" ]]; then
+    tail -n "${1:-40}" "${LOG_FILE}"
+  else
+    echo "log not found: ${LOG_FILE}"
+  fi
+}
+
 case "${ACTION}" in
   start)
     if _is_running; then
@@ -82,16 +90,24 @@ case "${ACTION}" in
     rm -f "${PID_FILE}"
     echo "stopped ${SERVICE}"
     ;;
+  restart)
+    "$0" stop "${SERVICE}" || true
+    "$0" start "${SERVICE}"
+    ;;
   status)
     if _is_running; then
       echo "${SERVICE} running: pid=$(cat "${PID_FILE}") log=${LOG_FILE}"
     else
+      rm -f "${PID_FILE}"
       echo "${SERVICE} not running"
       exit 1
     fi
     ;;
+  logs)
+    _tail_log "${TAIL_LINES:-40}"
+    ;;
   *)
-    echo "Usage: $0 <start|stop|status> <worker|completions>" >&2
+    echo "Usage: $0 <start|stop|restart|status|logs> <worker|completions>" >&2
     exit 1
     ;;
 esac
