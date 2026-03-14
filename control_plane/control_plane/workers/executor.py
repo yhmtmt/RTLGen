@@ -140,6 +140,7 @@ def _materialize_generated_inputs(*, checkout_root: str, work_item: WorkItem) ->
     if not outputs:
         raise RuntimeError("generated_campaign.outputs is required")
     campaign["outputs"] = outputs
+    campaign["physical_source_campaign"] = target_path
     target_file.parent.mkdir(parents=True, exist_ok=True)
     target_file.write_text(json.dumps(campaign, indent=2) + "\n", encoding="utf-8")
 

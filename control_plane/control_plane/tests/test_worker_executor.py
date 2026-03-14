@@ -1,6 +1,7 @@
 """Worker-loop coverage for cp-008."""
 
 from __future__ import annotations
+import json
 from pathlib import Path
 import tempfile
 import subprocess
@@ -17,7 +18,7 @@ from control_plane.models.work_items import WorkItem
 from control_plane.models.worker_leases import WorkerLease
 from control_plane.services.worker_service import run_worker
 from control_plane.workers.checkout import cleanup_checkout, prepare_checkout
-from control_plane.workers.executor import WorkerConfig
+from control_plane.workers.executor import WorkerConfig, _materialize_generated_inputs
 
 
 def seed_ready_work_item(session: Session, *, item_id: str, repo_root: Path, failing: bool) -> WorkItem:
@@ -292,6 +293,55 @@ def test_worker_skips_non_transportable_expected_outputs() -> None:
             run = session.query(Run).filter_by(run_key=results[0].run_key).one()
             artifact_paths = {artifact.path for artifact in run.artifacts if artifact.kind == "expected_output"}
             assert shadow_rel not in artifact_paths
+
+
+def test_materialize_generated_inputs_rewrites_physical_source_campaign() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        base_campaign_path = repo_root / "runs" / "campaigns" / "npu" / "demo" / "campaign.json"
+        target_campaign_path = repo_root / "runs" / "campaigns" / "npu" / "demo" / "campaign__item.json"
+        base_campaign_path.parent.mkdir(parents=True, exist_ok=True)
+        base_campaign_path.write_text(
+            json.dumps(
+                {
+                    "campaign_id": "demo",
+                    "platform": "nangate45",
+                    "models": [],
+                    "architecture_points": [],
+                    "outputs": {
+                        "campaign_dir": "runs/campaigns/npu/demo",
+                        "results_csv": "runs/campaigns/npu/demo/results.csv",
+                        "report_md": "runs/campaigns/npu/demo/report.md",
+                    },
+                    "physical_source_campaign": "runs/campaigns/npu/old/campaign.json",
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        work_item = WorkItem(
+            item_id="item",
+            input_manifest={
+                "generated_campaign": {
+                    "base_campaign_path": "runs/campaigns/npu/demo/campaign.json",
+                    "path": "runs/campaigns/npu/demo/campaign__item.json",
+                    "outputs": {
+                        "campaign_dir": "runs/campaigns/npu/demo__item",
+                        "results_csv": "runs/campaigns/npu/demo__item/results.csv",
+                        "report_md": "runs/campaigns/npu/demo__item/report.md",
+                    },
+                }
+            },
+        )
+
+        _materialize_generated_inputs(checkout_root=str(repo_root), work_item=work_item)
+
+        generated = json.loads(target_campaign_path.read_text(encoding="utf-8"))
+        assert generated["outputs"]["campaign_dir"] == "runs/campaigns/npu/demo__item"
+        assert generated["physical_source_campaign"] == "runs/campaigns/npu/demo/campaign__item.json"
 
 
 def test_worker_marks_failed_run_when_command_fails() -> None:
