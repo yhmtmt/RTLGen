@@ -55,39 +55,22 @@ That means:
 
 Inspect operator summary directly:
 ```sh
-source /workspaces/RTLGen/control_plane/.venv/bin/activate
-PYTHONPATH=/workspaces/RTLGen/control_plane \
-python3 -m control_plane.cli.main operator-status \
-  --database-url "$RTLCP_DATABASE_URL" \
-  --format table
+/workspaces/RTLGen/control_plane/scripts/operator_status.sh --format table
 ```
 
 Inspect cleanup candidates only:
 ```sh
-source /workspaces/RTLGen/control_plane/.venv/bin/activate
-PYTHONPATH=/workspaces/RTLGen/control_plane \
-python3 -m control_plane.cli.main cleanup \
-  --database-url "$RTLCP_DATABASE_URL" \
-  --repo-root /workspaces/RTLGen
+/workspaces/RTLGen/control_plane/scripts/cleanup.sh
 ```
 
 Apply cleanup when the dry run looks safe:
 ```sh
-source /workspaces/RTLGen/control_plane/.venv/bin/activate
-PYTHONPATH=/workspaces/RTLGen/control_plane \
-python3 -m control_plane.cli.main cleanup \
-  --database-url "$RTLCP_DATABASE_URL" \
-  --repo-root /workspaces/RTLGen \
-  --apply
+/workspaces/RTLGen/control_plane/scripts/cleanup.sh --apply
 ```
 
 Tune retention windows by class when needed:
 ```sh
-source /workspaces/RTLGen/control_plane/.venv/bin/activate
-PYTHONPATH=/workspaces/RTLGen/control_plane \
-python3 -m control_plane.cli.main cleanup \
-  --database-url "$RTLCP_DATABASE_URL" \
-  --repo-root /workspaces/RTLGen \
+/workspaces/RTLGen/control_plane/scripts/cleanup.sh \
   --runtime-max-age-days 3 \
   --log-max-age-days 14 \
   --db-max-age-days 30

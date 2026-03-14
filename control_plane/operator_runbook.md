@@ -73,20 +73,12 @@ Evaluator worker restart:
 
 Operator dashboard:
 ```sh
-source /workspaces/RTLGen/control_plane/.venv/bin/activate
-PYTHONPATH=/workspaces/RTLGen/control_plane \
-python3 -m control_plane.cli.main operator-status \
-  --database-url "$RTLCP_DATABASE_URL" \
-  --format table
+/workspaces/RTLGen/control_plane/scripts/operator_status.sh --format table
 ```
 
 Cleanup dry-run:
 ```sh
-source /workspaces/RTLGen/control_plane/.venv/bin/activate
-PYTHONPATH=/workspaces/RTLGen/control_plane \
-python3 -m control_plane.cli.main cleanup \
-  --database-url "$RTLCP_DATABASE_URL" \
-  --repo-root /workspaces/RTLGen
+/workspaces/RTLGen/control_plane/scripts/cleanup.sh
 ```
 
 ## What Healthy Looks Like

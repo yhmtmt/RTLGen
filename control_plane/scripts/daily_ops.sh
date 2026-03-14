@@ -17,10 +17,11 @@ fi
 export PYTHONPATH="$REPO_ROOT/control_plane${PYTHONPATH:+:$PYTHONPATH}"
 
 format="${RTLCP_STATUS_FORMAT:-table}"
+display_db_url="$(printf '%s' "$RTLCP_DATABASE_URL" | sed -E 's#(://[^:]+:)[^@]+@#\\1***@#')"
 
 echo "== Control Plane Daily Ops =="
 echo "repo_root=$REPO_ROOT"
-echo "database_url=$RTLCP_DATABASE_URL"
+echo "database_url=$display_db_url"
 echo
 
 echo "== Service Status =="
@@ -36,13 +37,9 @@ fi
 echo
 
 echo "== Operator Status =="
-python3 -m control_plane.cli.main operator-status \
-  --database-url "$RTLCP_DATABASE_URL" \
-  --format "$format"
+"$REPO_ROOT/control_plane/scripts/operator_status.sh" --format "$format"
 
 echo
 
 echo "== Cleanup Dry Run =="
-python3 -m control_plane.cli.main cleanup \
-  --database-url "$RTLCP_DATABASE_URL" \
-  --repo-root "$REPO_ROOT"
+"$REPO_ROOT/control_plane/scripts/cleanup.sh"
