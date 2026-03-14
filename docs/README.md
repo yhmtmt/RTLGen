@@ -9,6 +9,7 @@ This directory contains canonical shared documentation for the repo:
 
 ## Contents
 - `docs/runs/`: static evaluation browser and assets.
+- `docs/development.md`: canonical development environment and devcontainer guide.
 - `docs/structure.md`: repository documentation role map and precedence rules.
 - `docs/layer1_circuit_workflow.md`: canonical Layer 1 module optimization runbook.
 - `docs/two_layer_workflow.md`: circuit-layer vs NPU-layer workflow split and

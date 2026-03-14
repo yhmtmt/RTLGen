@@ -142,7 +142,7 @@ python3 scripts/build_runs_index.py
 ## Environment
 
 Devcontainer and toolchain details:
-- `development.md`
+- `docs/development.md`
 
 Core dependencies include CMake/C++17, Google Test, OR-Tools, Yosys/GHDL,
 and FloPoCo/PAGSuite integration.

@@ -8,8 +8,8 @@ historical notes, and published artifacts do not drift or duplicate.
 | Path | Role | Canonical content |
 |---|---|---|
 | `README.md` | Repository entrypoint | High-level project overview and quick links. |
-| `development.md` | Environment/bootstrap guide | Toolchain, build environment, and integration notes. |
 | `docs/` | Canonical shared documentation | Stable policy, workflow contracts, runbooks, and documentation navigation. |
+| `docs/development.md` | Environment/bootstrap guide | Toolchain, build environment, and integration notes. |
 | `control_plane/` | Internal evaluation operations | DB-backed scheduling, worker/completion operation, and control-plane runbooks. |
 | `notes/` | Working notes and rationale | Research notes, comparisons, exploratory guidance, and non-canonical rationale. |
 | `plan/` | Execution planning log | Rolling plan + append-only activity log (`plan/log.md`). |
