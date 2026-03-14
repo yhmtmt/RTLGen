@@ -5,7 +5,9 @@ Define how RTLGen should treat two different evaluator populations:
 - internal evaluators operating on trusted machines under project control,
 - external evaluators contributing compute from outside the local network.
 
-This document complements [agent_control_plane_plan.md](./agent_control_plane_plan.md).
+This document complements the current operator and workflow documents:
+- `control_plane/operator_runbook.md`
+- `control_plane/remote_operator_workflow.md`
 
 ## Why Two Lanes Are Necessary
 A single PR-per-evaluation workflow is acceptable for low-volume or untrusted contribution, but it is inefficient for high-volume internal operation.
