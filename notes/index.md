@@ -1,17 +1,29 @@
 # RTLGen Notes Index
 
-This folder contains authored project notes, guidance, and design studies.
-It is not the canonical source for NPU execution runbooks.
+This folder contains working notes, rationale, guidance, and design studies.
+
+It is not the canonical home for:
+- stable project policy
+- shared workflow contracts
+- primary runbooks
+- current operator procedures
+
+When a note becomes stable source-of-truth material, it should move into:
+- `docs/`
+- `control_plane/`
+- `npu/docs/`
 
 Canonical runbook/status docs:
 - `npu/docs/index.md`
 - `npu/docs/workflow.md`
 - `npu/docs/status.md`
 - `docs/two_layer_workflow.md` (Layer-1/Layer-2 split and interaction)
+- `docs/internal_external_evaluator_policy.md`
+- `control_plane/operator_runbook.md`
 
 ## Core workflow
 - `notes/workflow.md`: cross-project design/evaluation workflow concepts and
-  infrastructure guidance (not NPU runbook source of truth).
+  infrastructure guidance and rationale, not the canonical runbook.
 - `notes/development_agent_guidance.md`: developer agent rules for new algorithms.
 - `notes/evaluation_agent_guidance.md`: evaluator first-read runbook for
   queue-driven OpenROAD execution, validation, and PR handoff.

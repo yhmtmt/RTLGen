@@ -9,9 +9,9 @@ historical notes, and published artifacts do not drift or duplicate.
 |---|---|---|
 | `README.md` | Repository entrypoint | High-level project overview and quick links. |
 | `development.md` | Environment/bootstrap guide | Toolchain, build environment, and integration notes. |
-| `docs/` | Published/static assets | Browser-facing artifacts (`docs/runs/`) and doc navigation aids. |
+| `docs/` | Canonical shared documentation | Stable policy, workflow contracts, runbooks, and documentation navigation. |
 | `control_plane/` | Internal evaluation operations | DB-backed scheduling, worker/completion operation, and control-plane runbooks. |
-| `notes/` | Authored studies and guidance | Research notes, comparisons, and contributor guidance. |
+| `notes/` | Working notes and rationale | Research notes, comparisons, exploratory guidance, and non-canonical rationale. |
 | `plan/` | Execution planning log | Rolling plan + append-only activity log (`plan/log.md`). |
 | `runs/eval_queue/` | Distributed evaluation queue | GitHub-exchanged OpenROAD task items (`queued/` -> `evaluated/`). |
 | `npu/README.md` | NPU subsystem entrypoint | NPU scope, status summary, and top-level pointers. |
@@ -39,7 +39,18 @@ When content overlaps, use this precedence:
 
 ## Consistency rules
 - Keep one canonical home per topic; cross-link instead of duplicating text.
-- Use `notes/` for rationale/studies, not operational source-of-truth runbooks.
+- Use `docs/` for stable source-of-truth material:
+  - policy
+  - workflow contracts
+  - runbooks
+  - shared terminology and rules
+- Use `notes/` for non-canonical material:
+  - rationale
+  - design studies
+  - comparisons
+  - exploratory guidance
+  - transitional contributor notes
+- If a note becomes stable operational policy, move it into `docs/` or another canonical home.
 - Keep `plan/log.md` append-only; avoid rewriting prior observations.
 - Treat `npu/nvdla/` documents as external references unless explicitly adopting
   local policy in `npu/docs/`.
