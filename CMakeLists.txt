@@ -111,7 +111,7 @@ add_test(NAME test_multiplier COMMAND test_multiplier)
 add_executable(test_onnx tests/test_onnx.cpp src/rtlgen/config.cpp)
 target_include_directories(test_onnx PUBLIC ${ORTOOLS_DIR}/include ${PROJECT_SOURCE_DIR}/third_party/nlohmann_json/include ${ONNXRUNTIME_DIR}/include ${PROJECT_SOURCE_DIR}/src/rtlgen)
 target_link_directories(test_onnx PUBLIC ${ORTOOLS_LIB_DIR}  ${ONNXRUNTIME_DIR}/lib)
-
+target_compile_definitions(test_onnx PRIVATE TEST_ONNX_MODEL_PATH=\"${PROJECT_SOURCE_DIR}/tests/fixtures/test_model.onnx\")
 target_link_libraries(test_onnx ${GTEST_LIBRARIES} GTest::Main pthread onnxruntime)
 
 add_test(NAME test_onnx COMMAND test_onnx)

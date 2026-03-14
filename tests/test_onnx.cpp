@@ -5,9 +5,8 @@
 bool printOnnxModelSummary(const std::string& model_path);
 
 TEST(ONNXTest, PrintModelSummary) {
-    // Provide a path to a small ONNX model for testing
-    std::string model_path = "../test_model.onnx";
-    // You should place a valid ONNX model file named test_model.onnx in the workspace for this test
+    // Use the repo-tracked fixture path injected by CMake.
+    std::string model_path = TEST_ONNX_MODEL_PATH;
     bool s = printOnnxModelSummary(model_path);
     EXPECT_TRUE(s);
 }
