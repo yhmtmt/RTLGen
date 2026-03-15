@@ -17,6 +17,7 @@ This directory contains canonical shared documentation for the repo:
 - `docs/internal_external_evaluator_policy.md`: evaluation-lane policy.
 - `docs/developer_agent_loop.md`: notebook-side autonomous development loop and approval gates.
 - `docs/developer_agent_artifacts.md`: concrete file schemas for proposal, analysis, and promotion artifacts.
+- `docs/developer_agent_orchestration.md`: practical notebook-side procedure for advancing candidates through approval gates.
 - `docs/runs_artifact_policy.md`: shared artifact rules across evaluation lanes.
 
 ## Boundaries

@@ -23,6 +23,7 @@ This document covers the internal trusted-machine lane only.
 Related documents:
 - `docs/internal_external_evaluator_policy.md`
 - `docs/developer_agent_artifacts.md`
+- `docs/developer_agent_orchestration.md`
 - `control_plane/operator_runbook.md`
 - `control_plane/remote_operator_workflow.md`
 - `docs/two_layer_workflow.md`
@@ -306,3 +307,6 @@ Initial implementation should be:
 
 This keeps the existing evaluator system simple while allowing autonomous
 development to scale on the notebook side.
+
+Practical notebook-side procedure:
+- `docs/developer_agent_orchestration.md`

@@ -24,12 +24,13 @@ When content overlaps, use this precedence:
 2. Evaluation-lane policy: `docs/internal_external_evaluator_policy.md`
 3. Notebook developer-agent loop: `docs/developer_agent_loop.md`
 4. Developer-agent artifact schemas: `docs/developer_agent_artifacts.md`
-5. Layer 1 runbook: `docs/layer1_circuit_workflow.md`
-6. Layer 2 runbook: `npu/docs/workflow.md`
-7. NPU current snapshot: `npu/docs/status.md`
-8. NPU plan detail: `npu/docs/*_plan.md` + `npu/synth/plan.md`
-9. Cross-domain notes and rationale: `notes/*.md`
-10. Historical execution trail: `plan/log.md`
+5. Developer-agent orchestration procedure: `docs/developer_agent_orchestration.md`
+6. Layer 1 runbook: `docs/layer1_circuit_workflow.md`
+7. Layer 2 runbook: `npu/docs/workflow.md`
+8. NPU current snapshot: `npu/docs/status.md`
+9. NPU plan detail: `npu/docs/*_plan.md` + `npu/synth/plan.md`
+10. Cross-domain notes and rationale: `notes/*.md`
+11. Historical execution trail: `plan/log.md`
 
 ## Optimization layers
 - Layer model and interaction contract: `docs/two_layer_workflow.md`
