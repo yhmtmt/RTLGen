@@ -22,16 +22,18 @@ historical notes, and published artifacts do not drift or duplicate.
 When content overlaps, use this precedence:
 1. Internal evaluation operations: `control_plane/operator_runbook.md`
 2. Evaluation-lane policy: `docs/internal_external_evaluator_policy.md`
-3. Layer 1 runbook: `docs/layer1_circuit_workflow.md`
-4. Layer 2 runbook: `npu/docs/workflow.md`
-5. NPU current snapshot: `npu/docs/status.md`
-6. NPU plan detail: `npu/docs/*_plan.md` + `npu/synth/plan.md`
-7. Cross-domain notes and rationale: `notes/*.md`
-8. Historical execution trail: `plan/log.md`
+3. Notebook developer-agent loop: `docs/developer_agent_loop.md`
+4. Layer 1 runbook: `docs/layer1_circuit_workflow.md`
+5. Layer 2 runbook: `npu/docs/workflow.md`
+6. NPU current snapshot: `npu/docs/status.md`
+7. NPU plan detail: `npu/docs/*_plan.md` + `npu/synth/plan.md`
+8. Cross-domain notes and rationale: `notes/*.md`
+9. Historical execution trail: `plan/log.md`
 
 ## Optimization layers
 - Layer model and interaction contract: `docs/two_layer_workflow.md`
 - Internal vs external evaluation policy: `docs/internal_external_evaluator_policy.md`
+- Notebook-side autonomous development loop: `docs/developer_agent_loop.md`
 - Layer 1 runbook: `docs/layer1_circuit_workflow.md`
 - Layer 1 (circuit module physical loop): module generation + OpenROAD PPA
 - Layer 2 (NPU architecture model loop): ONNX/perf/campaign optimization with

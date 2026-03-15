@@ -8,6 +8,7 @@ Define how RTLGen should treat two different evaluator populations:
 This document complements the current operator and workflow documents:
 - `control_plane/operator_runbook.md`
 - `control_plane/remote_operator_workflow.md`
+- `docs/developer_agent_loop.md`
 
 ## Why Two Lanes Are Necessary
 A single PR-per-evaluation workflow is acceptable for low-volume or untrusted contribution, but it is inefficient for high-volume internal operation.
@@ -34,6 +35,7 @@ Current operator documents:
 - `control_plane/operator_runbook.md`
 - `control_plane/daily_operations.md`
 - `control_plane/README.md`
+- `docs/developer_agent_loop.md`
 
 ### External lane
 Use GitHub-mediated contribution.

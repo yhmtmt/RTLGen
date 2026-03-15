@@ -25,6 +25,7 @@ manual queue/PR lane, start here instead:
 1. `control_plane/operator_runbook.md`
 2. `control_plane/daily_operations.md`
 3. `docs/internal_external_evaluator_policy.md`
+4. `docs/developer_agent_loop.md`
 
 ## Layer 1: Circuit Module Generator + Physical Optimization
 
@@ -132,6 +133,7 @@ python3 scripts/build_runs_index.py
 - Control-plane operator runbook: `control_plane/operator_runbook.md`
 - Control-plane daily operations: `control_plane/daily_operations.md`
 - Internal vs external evaluation policy: `docs/internal_external_evaluator_policy.md`
+- Notebook-side developer-agent loop: `docs/developer_agent_loop.md`
 - Repository documentation roles: `docs/structure.md`
 - Layer 1 runbook (module physical optimization): `docs/layer1_circuit_workflow.md`
 - Two-layer workflow and handoff contract: `docs/two_layer_workflow.md`

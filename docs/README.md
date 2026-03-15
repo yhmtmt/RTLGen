@@ -15,6 +15,7 @@ This directory contains canonical shared documentation for the repo:
 - `docs/two_layer_workflow.md`: circuit-layer vs NPU-layer workflow split and
   handoff contract.
 - `docs/internal_external_evaluator_policy.md`: evaluation-lane policy.
+- `docs/developer_agent_loop.md`: notebook-side autonomous development loop and approval gates.
 - `docs/runs_artifact_policy.md`: shared artifact rules across evaluation lanes.
 
 ## Boundaries
