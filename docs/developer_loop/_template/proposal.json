@@ -1,0 +1,30 @@
+{
+  "proposal_id": "prop_example_v1",
+  "created_utc": "2026-03-15T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Example proposal title",
+  "hypothesis": "Replace this with a bounded engineering hypothesis.",
+  "expected_benefit": [
+    "describe expected benefit"
+  ],
+  "risks": [
+    "describe risk"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "objective": "balanced",
+      "cost_class": "medium"
+    }
+  ],
+  "baseline_refs": [
+    "runs/campaigns/..."
+  ],
+  "knowledge_refs": [
+    "paper:example",
+    "discussion:example"
+  ]
+}

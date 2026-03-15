@@ -65,6 +65,11 @@ Recommended artifact location:
 docs/developer_loop/<proposal_id>/
 ```
 
+Bootstrap from:
+```text
+docs/developer_loop/_template/
+```
+
 Initial file set:
 ```text
 docs/developer_loop/<proposal_id>/
