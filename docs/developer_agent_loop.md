@@ -22,6 +22,7 @@ This document covers the internal trusted-machine lane only.
 
 Related documents:
 - `docs/internal_external_evaluator_policy.md`
+- `docs/developer_agent_artifacts.md`
 - `control_plane/operator_runbook.md`
 - `control_plane/remote_operator_workflow.md`
 - `docs/two_layer_workflow.md`
@@ -118,6 +119,9 @@ Outputs:
 - `design_brief.md`
 - `proposal.json`
 
+Concrete artifact schema:
+- `docs/developer_agent_artifacts.md`
+
 `proposal.json` should include:
 - `proposal_id`
 - `layer`
@@ -199,6 +203,9 @@ Notebook analysis agent reads:
 Required outputs:
 - `analysis_report.md`
 - `promotion_decision.json`
+
+Concrete artifact schema:
+- `docs/developer_agent_artifacts.md`
 
 `promotion_decision.json` should include:
 - `candidate_id`

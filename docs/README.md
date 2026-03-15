@@ -16,6 +16,7 @@ This directory contains canonical shared documentation for the repo:
   handoff contract.
 - `docs/internal_external_evaluator_policy.md`: evaluation-lane policy.
 - `docs/developer_agent_loop.md`: notebook-side autonomous development loop and approval gates.
+- `docs/developer_agent_artifacts.md`: concrete file schemas for proposal, analysis, and promotion artifacts.
 - `docs/runs_artifact_policy.md`: shared artifact rules across evaluation lanes.
 
 ## Boundaries
