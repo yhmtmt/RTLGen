@@ -25,6 +25,11 @@ Rules:
 Start from:
 - `_template/`
 
+Or bootstrap a new proposal directory with:
+```sh
+/workspaces/RTLGen/scripts/bootstrap_developer_loop.sh <proposal_id> [layer] [kind]
+```
+
 Canonical design docs:
 - `docs/developer_agent_loop.md`
 - `docs/developer_agent_artifacts.md`

@@ -70,6 +70,11 @@ Bootstrap from:
 docs/developer_loop/_template/
 ```
 
+Or use:
+```sh
+/workspaces/RTLGen/scripts/bootstrap_developer_loop.sh <proposal_id> [layer] [kind]
+```
+
 Initial file set:
 ```text
 docs/developer_loop/<proposal_id>/
