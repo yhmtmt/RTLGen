@@ -119,6 +119,14 @@ def _handoff_payload(work_item: WorkItem) -> dict[str, Any]:
     return dict(handoff) if isinstance(handoff, dict) else {}
 
 
+def _developer_loop_payload(work_item: WorkItem) -> dict[str, Any]:
+    payload = dict(work_item.task_request.request_payload or {})
+    developer_loop = payload.get("developer_loop")
+    if not isinstance(developer_loop, dict):
+        return {}
+    return {str(key): value for key, value in developer_loop.items() if str(value).strip()}
+
+
 def _materialized_handoff(*, snapshot_payload: dict[str, Any], work_item: WorkItem) -> dict[str, Any]:
     handoff = snapshot_payload.get("handoff")
     if isinstance(handoff, dict):
@@ -152,6 +160,7 @@ def _build_body_md(
     review_artifact: Artifact | None,
     snapshot_payload: dict[str, Any],
     handoff: dict[str, Any],
+    developer_loop: dict[str, Any],
 ) -> str:
     result = dict(snapshot_payload.get("result") or {})
     lines = [
@@ -169,6 +178,15 @@ def _build_body_md(
         lines.append(f"- metrics_rows_count: `{len(metrics_rows)}`")
     if review_artifact is not None:
         lines.append(f"- review_artifact: `{review_artifact.kind}` at `{review_artifact.path}`")
+    proposal_id = str(developer_loop.get("proposal_id", "")).strip()
+    proposal_path = str(developer_loop.get("proposal_path", "")).strip()
+    if proposal_id or proposal_path:
+        lines.extend(["", "## Developer Context"])
+        if proposal_id:
+            lines.append(f"- proposal_id: `{proposal_id}`")
+        if proposal_path:
+            lines.append(f"- proposal_path: `{proposal_path}`")
+            lines.append(f"- reviewer_first_read: `{proposal_path}` plus `docs/developer_agent_review.md`")
     checklist = handoff.get("checklist")
     if isinstance(checklist, list) and checklist:
         lines.extend(["", "## Checklist"])
@@ -236,6 +254,7 @@ def publish_review_package(session: Session, request: ReviewPublishRequest) -> R
     handoff = _materialized_handoff(snapshot_payload=snapshot_payload, work_item=work_item)
     review_kind = _review_artifact_kind(work_item.task_type)
     review_artifact = _find_artifact(session, run_id=run.id, kind=review_kind)
+    developer_loop = _developer_loop_payload(work_item)
     branch_name = str((snapshot_payload.get("result") or {}).get("branch", run.branch_name or "")).strip()
     pr_title = _pr_title(work_item)
 
@@ -257,6 +276,7 @@ def publish_review_package(session: Session, request: ReviewPublishRequest) -> R
             "result": snapshot_payload.get("result"),
         },
         "review_artifact": _artifact_summary(repo_root=repo_root, artifact=review_artifact),
+        "developer_loop": developer_loop or None,
         "pr_payload": {
             "branch": branch_name,
             "title": pr_title,
@@ -268,6 +288,7 @@ def publish_review_package(session: Session, request: ReviewPublishRequest) -> R
                 review_artifact=review_artifact,
                 snapshot_payload=snapshot_payload,
                 handoff=handoff,
+                developer_loop=developer_loop,
             ),
             "checklist": handoff.get("checklist"),
         },

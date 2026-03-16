@@ -35,6 +35,8 @@ class Layer1SweepGenerateRequest:
     objective: str | None = None
     source_commit: str | None = None
     mode: str = "upsert"
+    proposal_id: str | None = None
+    proposal_path: str | None = None
 
 
 @dataclass(frozen=True)
@@ -107,8 +109,10 @@ def _build_payload(
     config_paths: list[str],
     out_root: str,
     expected_outputs: list[str],
+    proposal_id: str | None,
+    proposal_path: str | None,
 ) -> dict[str, Any]:
-    return {
+    payload = {
         "version": 0.1,
         "item_id": item_id,
         "title": title,
@@ -183,6 +187,12 @@ def _build_payload(
         },
         "result": None,
     }
+    if proposal_id or proposal_path:
+        payload["developer_loop"] = {
+            "proposal_id": proposal_id or "",
+            "proposal_path": proposal_path or "",
+        }
+    return payload
 
 
 def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest) -> Layer1TaskGenerateResult:
@@ -193,6 +203,7 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
     sweep_path = _repo_rel(request.sweep_path, repo_root)
     config_paths = [_repo_rel(path, repo_root) for path in request.config_paths]
     out_root = _repo_rel(request.out_root, repo_root)
+    proposal_path = _repo_rel(request.proposal_path, repo_root) if request.proposal_path else None
 
     wrappers = [_read_wrapper_name((repo_root / config_path).resolve()) for config_path in config_paths]
     expected_outputs = [f"{out_root}/{wrapper}/metrics.csv" for wrapper in wrappers]
@@ -220,6 +231,8 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
         config_paths=config_paths,
         out_root=out_root,
         expected_outputs=expected_outputs,
+        proposal_id=request.proposal_id,
+        proposal_path=proposal_path,
     )
 
     existing = session.query(WorkItem).filter(WorkItem.item_id == item_id).one_or_none()

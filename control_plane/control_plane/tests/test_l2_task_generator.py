@@ -81,6 +81,8 @@ def test_generate_l2_campaign_task_creates_ready_work_item() -> None:
                     requested_by="@tester",
                     source_commit="abc123",
                     objective_profiles_json="runs/campaigns/npu/base/objective_profiles.json",
+                    proposal_id="prop_l2_demo_v1",
+                    proposal_path="docs/developer_loop/prop_l2_demo_v1",
                 ),
             )
 
@@ -124,6 +126,10 @@ def test_generate_l2_campaign_task_creates_ready_work_item() -> None:
                     "results_csv": f"runs/campaigns/npu/demo_campaign__{result.item_id}/results.csv",
                     "report_md": f"runs/campaigns/npu/demo_campaign__{result.item_id}/report.md",
                 },
+            }
+            assert payload["developer_loop"] == {
+                "proposal_id": "prop_l2_demo_v1",
+                "proposal_path": "docs/developer_loop/prop_l2_demo_v1",
             }
             assert payload["task"]["commands"][0]["name"] == "fetch_models"
             assert "--run_physical" in payload["task"]["commands"][2]["run"]

@@ -24,6 +24,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--objective")
     parser.add_argument("--source-commit")
     parser.add_argument("--mode", default="upsert")
+    parser.add_argument("--proposal-id")
+    parser.add_argument("--proposal-path")
     args = parser.parse_args(argv)
 
     engine = build_engine(args.database_url)
@@ -45,6 +47,8 @@ def main(argv: list[str] | None = None) -> int:
                 objective=args.objective,
                 source_commit=args.source_commit,
                 mode=args.mode,
+                proposal_id=args.proposal_id,
+                proposal_path=args.proposal_path,
             ),
         )
     print(json.dumps(result.__dict__, indent=2, sort_keys=True))

@@ -25,6 +25,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--jobs", type=int, default=2)
     parser.add_argument("--batch-id")
     parser.add_argument("--objective-profiles-json")
+    parser.add_argument("--proposal-id")
+    parser.add_argument("--proposal-path")
     parser.add_argument("--no-run-physical", action="store_true")
     args = parser.parse_args(argv)
 
@@ -49,6 +51,8 @@ def main(argv: list[str] | None = None) -> int:
                 jobs=args.jobs,
                 batch_id=args.batch_id,
                 objective_profiles_json=args.objective_profiles_json,
+                proposal_id=args.proposal_id,
+                proposal_path=args.proposal_path,
             ),
         )
     print(json.dumps(result.__dict__, indent=2, sort_keys=True))

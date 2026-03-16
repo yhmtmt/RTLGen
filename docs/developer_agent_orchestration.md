@@ -211,6 +211,7 @@ Minimum content:
 If approved, notebook developer agent:
 1. creates deterministic DB-native work items through the control plane
 2. records the created item ids in the proposal directory
+3. includes `proposal_id` and `proposal_path` in the queued work item payload
 
 Recommended file:
 ```text

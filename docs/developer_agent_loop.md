@@ -208,6 +208,8 @@ Required metadata per work item:
 - `source_commit`
 - `candidate_id`
 - `hypothesis_id`
+- `proposal_id`
+- `proposal_path`
 - `task_type`
 - `expected_outputs`
 - `required_submodules`

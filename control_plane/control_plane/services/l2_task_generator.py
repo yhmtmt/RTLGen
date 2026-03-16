@@ -37,6 +37,8 @@ class Layer2CampaignGenerateRequest:
     jobs: int = 2
     batch_id: str | None = None
     objective_profiles_json: str | None = None
+    proposal_id: str | None = None
+    proposal_path: str | None = None
 
 
 @dataclass(frozen=True)
@@ -179,6 +181,8 @@ def _build_payload(
     jobs: int,
     batch_id: str,
     objective_profiles_json: str | None,
+    proposal_id: str | None,
+    proposal_path: str | None,
 ) -> dict[str, Any]:
     commands: list[dict[str, str]] = []
     if model_manifest:
@@ -222,7 +226,7 @@ def _build_payload(
         }
     )
 
-    return {
+    payload = {
         "version": 0.1,
         "item_id": item_id,
         "title": title,
@@ -272,6 +276,12 @@ def _build_payload(
         },
         "result": None,
     }
+    if proposal_id or proposal_path:
+        payload["developer_loop"] = {
+            "proposal_id": proposal_id or "",
+            "proposal_path": proposal_path or "",
+        }
+    return payload
 
 
 def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateRequest) -> Layer2TaskGenerateResult:
@@ -291,6 +301,7 @@ def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateR
     objective_profiles_json = (
         _repo_rel(request.objective_profiles_json, repo_root) if request.objective_profiles_json else None
     )
+    proposal_path = _repo_rel(request.proposal_path, repo_root) if request.proposal_path else None
     expected_outputs = _build_expected_outputs(
         campaign=campaign,
         generated_campaign_path=generated_campaign_path,
@@ -314,6 +325,8 @@ def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateR
         jobs=request.jobs,
         batch_id=batch_id,
         objective_profiles_json=objective_profiles_json,
+        proposal_id=request.proposal_id,
+        proposal_path=proposal_path,
     )
 
     existing = session.query(WorkItem).filter(WorkItem.item_id == item_id).one_or_none()

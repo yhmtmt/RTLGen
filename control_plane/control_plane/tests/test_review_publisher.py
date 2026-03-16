@@ -41,6 +41,10 @@ def _seed_l1_reviewable(session: Session, repo_root: Path) -> tuple[str, str]:
         "title": "Layer1 review demo",
         "layer": "layer1",
         "flow": "openroad",
+        "developer_loop": {
+            "proposal_id": "prop_l1_review_demo_v1",
+            "proposal_path": "docs/developer_loop/prop_l1_review_demo_v1",
+        },
         "handoff": {
             "branch": "eval/l1_review_demo/<session_id>",
             "pr_title": "eval: run layer1 review demo",
@@ -166,6 +170,10 @@ def _seed_l2_reviewable(session: Session, repo_root: Path) -> tuple[str, str]:
         "title": "Layer2 review demo",
         "layer": "layer2",
         "flow": "openroad",
+        "developer_loop": {
+            "proposal_id": "prop_l2_review_demo_v1",
+            "proposal_path": "docs/developer_loop/prop_l2_review_demo_v1",
+        },
         "handoff": {
             "branch": "eval/l2_review_demo/<session_id>",
             "pr_title": "eval: run layer2 review demo",
@@ -274,12 +282,15 @@ def test_publish_review_package_for_l1() -> None:
             assert payload["pr_payload"]["body_fields"]["session_id"] == "s20260310t070000z"
             assert payload["pr_payload"]["body_fields"]["host"] == "cp-host"
             assert payload["review_artifact"]["kind"] == "promotion_proposal"
+            assert payload["developer_loop"]["proposal_id"] == "prop_l1_review_demo_v1"
+            assert payload["developer_loop"]["proposal_path"] == "docs/developer_loop/prop_l1_review_demo_v1"
             assert payload["queue_snapshot"]["result"]["status"] == "ok"
             assert len(payload["queue_snapshot"]["result"]["metrics_rows"]) == 1
             assert (
                 payload["queue_snapshot"]["result"]["metrics_rows"][0]["result_path"]
                 == "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/work/fast0001/result.json"
             )
+            assert "proposal_id: `prop_l1_review_demo_v1`" in payload["pr_payload"]["body_md"]
 
 
 def test_publish_review_package_for_l2() -> None:
@@ -309,4 +320,7 @@ def test_publish_review_package_for_l2() -> None:
             assert payload["pr_payload"]["branch"] == "eval/l2_review_demo/s20260310t071500z"
             assert payload["review_artifact"]["kind"] == "decision_proposal"
             assert payload["review_artifact"]["payload"]["recommendation"]["arch_id"] == "fp16_nm1_demo"
+            assert payload["developer_loop"]["proposal_id"] == "prop_l2_review_demo_v1"
+            assert payload["developer_loop"]["proposal_path"] == "docs/developer_loop/prop_l2_review_demo_v1"
             assert payload["queue_snapshot"]["result"]["status"] == "ok"
+            assert "reviewer_first_read: `docs/developer_loop/prop_l2_review_demo_v1` plus `docs/developer_agent_review.md`" in payload["pr_payload"]["body_md"]

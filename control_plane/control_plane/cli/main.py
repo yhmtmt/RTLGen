@@ -68,6 +68,8 @@ def main(argv: list[str] | None = None) -> int:
     generate_l1_parser.add_argument("--objective")
     generate_l1_parser.add_argument("--source-commit")
     generate_l1_parser.add_argument("--mode", default="upsert")
+    generate_l1_parser.add_argument("--proposal-id")
+    generate_l1_parser.add_argument("--proposal-path")
 
     consume_l1_parser = subparsers.add_parser(
         "consume-l1-result",
@@ -107,6 +109,8 @@ def main(argv: list[str] | None = None) -> int:
     generate_l2_parser.add_argument("--jobs", type=int, default=2)
     generate_l2_parser.add_argument("--batch-id")
     generate_l2_parser.add_argument("--objective-profiles-json")
+    generate_l2_parser.add_argument("--proposal-id")
+    generate_l2_parser.add_argument("--proposal-path")
     generate_l2_parser.add_argument("--no-run-physical", action="store_true")
 
     github_parser = subparsers.add_parser("reconcile-github", help="Reconcile GitHub branch/PR metadata into the DB")
@@ -364,6 +368,8 @@ def main(argv: list[str] | None = None) -> int:
             ("--title", args.title),
             ("--objective", args.objective),
             ("--source-commit", args.source_commit),
+            ("--proposal-id", args.proposal_id),
+            ("--proposal-path", args.proposal_path),
         ]:
             if value is not None:
                 argv2.extend([key, str(value)])
@@ -423,6 +429,8 @@ def main(argv: list[str] | None = None) -> int:
             ("--source-commit", args.source_commit),
             ("--batch-id", args.batch_id),
             ("--objective-profiles-json", args.objective_profiles_json),
+            ("--proposal-id", args.proposal_id),
+            ("--proposal-path", args.proposal_path),
         ]:
             if value is not None:
                 argv2.extend([key, str(value)])
