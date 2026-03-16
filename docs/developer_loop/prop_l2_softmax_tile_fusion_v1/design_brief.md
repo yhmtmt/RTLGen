@@ -45,7 +45,7 @@
   - measure balanced and latency objectives before considering broader rollout
 
 ## Direction Gate
-- status: pending
-- approved_by:
-- approved_utc:
-- note: pending human decision on whether this direction is worth implementation and mapper work
+- status: approved
+- approved_by: user
+- approved_utc: 2026-03-16T03:05:12Z
+- note: Approved to proceed with bounded implementation of the softmax-tail fused tile direction, including the required mapper work.
