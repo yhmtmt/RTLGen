@@ -14,10 +14,16 @@
   "risks": [
     "requires mapper legality and lowering changes before the architecture is evaluable",
     "could increase area enough to erase latency gains",
-    "may improve only the softmax-tail model set and not generalize to broader workloads"
+    "may improve only the softmax-tail model set and not generalize to broader workloads",
+    "could degrade terminal output quality even if latency and PPA improve"
   ],
   "needs_mapper_change": true,
   "required_evaluations": [
+    {
+      "task_type": "local_quality_precheck",
+      "objective": "quality_guard",
+      "cost_class": "low"
+    },
     {
       "task_type": "l2_campaign",
       "objective": "balanced",

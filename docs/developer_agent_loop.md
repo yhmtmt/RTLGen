@@ -166,7 +166,30 @@ Required outputs:
 - `implementation_summary.md`
 - local smoke/regression results
 
-### Stage 4. Evaluation Gate
+### Stage 4. Quality Precheck
+
+This stage is required when the proposal can affect:
+- numerical semantics
+- quantization behavior
+- output tensors
+- model-quality outcomes
+
+Examples:
+- activation-function changes
+- softmax/layernorm changes
+- mapper changes that can alter terminal outputs
+
+Goal:
+- prove the candidate is not only structurally valid, but also numerically
+  acceptable before expensive remote PPA spend
+
+Required output:
+- `quality_gate.md`
+
+This is not an extra human approval gate by default.
+It is a mandatory technical gate for numerically sensitive proposals.
+
+### Stage 5. Evaluation Gate
 
 Human approval required.
 
@@ -177,7 +200,7 @@ Approve:
 
 This is the compute-budget gate.
 
-### Stage 5. Queue Generation
+### Stage 6. Queue Generation
 
 Notebook agents generate DB-native work items through the control plane.
 
@@ -190,7 +213,7 @@ Required metadata per work item:
 - `required_submodules`
 - evaluation objective or comparison target
 
-### Stage 6. Remote Evaluation
+### Stage 7. Remote Evaluation
 
 Evaluator daemon:
 - leases the task
@@ -199,7 +222,7 @@ Evaluator daemon:
 
 This stage is already implemented by the control plane.
 
-### Stage 7. Result Analysis
+### Stage 8. Result Analysis
 
 Notebook analysis agent reads:
 - Layer 1 metrics
@@ -225,7 +248,7 @@ Concrete artifact schema:
 - `reason`
 - `next_action`
 
-### Stage 8. Promotion Gate
+### Stage 9. Promotion Gate
 
 Human approval required.
 
@@ -235,7 +258,7 @@ Approve:
 
 This is the final design-authority gate.
 
-### Stage 9. Promotion / Merge
+### Stage 10. Promotion / Merge
 
 If approved:
 - submit or refresh the PR

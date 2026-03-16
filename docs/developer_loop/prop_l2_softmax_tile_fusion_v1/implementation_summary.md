@@ -35,6 +35,7 @@
   - regression test proves the mapper emits `SOFTMAX -> Y_DRAM` directly and
     removes the trailing `dma_y`
 - Still not implemented in this slice:
+  - candidate-specific output-quality comparison command
   - broader architecture or rtlgen generator changes
   - remote evaluation results for the new candidate
   - promotion artifacts for the new candidate
@@ -50,9 +51,11 @@
   - new fused-output lowering regression passed
   - new architecture example passed schema validation
   - new fused-output campaign passed campaign validation
+  - numerical-quality gate not yet passed
 - Pass/fail summary:
   - first implementation slice passed local validation
   - remote campaign validation still pending
+  - remote PPA spend remains blocked by the pending quality gate
 
 ## Evaluation Request
 - Requested remote tasks at the evaluation gate:
@@ -69,6 +72,7 @@
   - best_point.json
   - generated campaign file used for the run
 - Evaluation should not be requested until:
+  - `quality_gate.md` passes
   - evaluation gate is approved
 
 ## Risks

@@ -146,12 +146,46 @@ Implementation summary must include:
 - known remaining risks
 - requested remote evaluation
 
-### Step 4. Evaluation Gate
+### Step 4. Quality Precheck
+
+Required when the proposal may affect:
+- output semantics
+- quantization behavior
+- model quality
+
+Examples:
+- softmax/layernorm path changes
+- quantized arithmetic changes
+- mapper changes that can alter terminal outputs
+
+Recommended file:
+```text
+docs/developer_loop/<proposal_id>/quality_gate.md
+```
+
+Minimum content:
+```md
+## Quality Gate
+- status: pass | fail | pending
+- baseline_ref: <path or run id>
+- reference_ref: <software reference or accepted baseline>
+- checks:
+  - <metric + threshold>
+- commands:
+  - <local command>
+- note: <short reason>
+```
+
+For this class of proposal, remote PPA evaluation should not be approved until
+the quality gate passes.
+
+### Step 5. Evaluation Gate
 
 Human checkpoint.
 
 Approval input:
 - `implementation_summary.md`
+- `quality_gate.md` when the proposal is numerically sensitive
 - local smoke/regression results
 
 Approval result should be recorded explicitly.
@@ -172,7 +206,7 @@ Minimum content:
 - note: <short reason>
 ```
 
-### Step 5. Queue Generation
+### Step 6. Queue Generation
 
 If approved, notebook developer agent:
 1. creates deterministic DB-native work items through the control plane
@@ -199,7 +233,7 @@ Recommended fields:
 }
 ```
 
-### Step 6. Remote Evaluation
+### Step 7. Remote Evaluation
 
 This step is fully handled by the existing control plane.
 
@@ -215,7 +249,7 @@ Notebook side:
   - `AWAITING_REVIEW`
   - or terminal `FAILED`
 
-### Step 7. Result Analysis
+### Step 8. Result Analysis
 
 After enough evidence is available, the notebook analysis agent:
 1. reads the completed evidence
@@ -229,13 +263,14 @@ docs/developer_loop/<proposal_id>/
   design_brief.md
   proposal.json
   implementation_summary.md
+  quality_gate.md
   evaluation_gate.md
   evaluation_requests.json
   analysis_report.md
   promotion_decision.json
 ```
 
-### Step 8. Promotion Gate
+### Step 9. Promotion Gate
 
 Human checkpoint.
 
@@ -259,7 +294,7 @@ Minimum content:
 - note: <short reason>
 ```
 
-### Step 9. Promotion / Merge
+### Step 10. Promotion / Merge
 
 If approved, notebook developer agent:
 1. submits or refreshes the PR

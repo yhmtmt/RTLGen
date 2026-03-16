@@ -15,7 +15,7 @@ This document complements:
 
 ## Artifact Set
 
-Use these four artifacts initially:
+Use these artifacts initially:
 
 1. `proposal.json`
 - created before implementation
@@ -23,13 +23,19 @@ Use these four artifacts initially:
 
 2. `implementation_summary.md`
 - created after implementation
-- used before the evaluation gate
+- used before the quality precheck and evaluation gate
 
-3. `analysis_report.md`
+3. `quality_gate.md`
+- required for proposals that can affect numerical semantics, quantization
+  behavior, output tensors, or model-quality outcomes
+- created after implementation and local quality checks
+- required before the evaluation gate for those proposals
+
+4. `analysis_report.md`
 - created after remote evaluation
 - used before the promotion gate
 
-4. `promotion_decision.json`
+5. `promotion_decision.json`
 - concise machine-readable decision artifact
 - records `reject`, `iterate`, or `promote`
 
@@ -59,7 +65,7 @@ Bound a candidate idea before implementation starts.
   "needs_mapper_change": false,
   "required_evaluations": [
     {
-      "task_type": "l1_sweep | l2_campaign",
+      "task_type": "local_quality_precheck | l1_sweep | l2_campaign",
       "objective": "string",
       "cost_class": "low | medium | high"
     }
@@ -94,6 +100,11 @@ Bound a candidate idea before implementation starts.
   ],
   "needs_mapper_change": true,
   "required_evaluations": [
+    {
+      "task_type": "local_quality_precheck",
+      "objective": "quality_guard",
+      "cost_class": "low"
+    },
     {
       "task_type": "l2_campaign",
       "objective": "balanced",
@@ -145,7 +156,49 @@ Summarize what changed before remote evaluation is approved.
 - remaining technical risks
 ```
 
-## 3. analysis_report.md
+## 3. quality_gate.md
+
+### Purpose
+
+Record the numerical or model-quality precheck required before remote PPA spend
+for proposals that may affect output semantics.
+
+Examples:
+- quantization changes
+- activation-function changes
+- softmax/layernorm lowering changes
+- mapper changes that can alter output tensors
+
+### Required sections
+
+```md
+# Quality Gate
+
+## Proposal
+- `proposal_id`
+- short title
+
+## Why This Gate Is Required
+- what output semantics may change
+- why PPA-only evaluation would be insufficient
+
+## Reference
+- accepted baseline path
+- software reference path or tool
+
+## Checks
+- required comparison checks
+- exact thresholds
+
+## Local Commands
+- commands run
+
+## Result
+- pass | fail | pending
+- short explanation
+```
+
+## 4. analysis_report.md
 
 ### Purpose
 
@@ -183,7 +236,7 @@ Summarize evaluated evidence for a promotion decision.
 - short reason
 ```
 
-## 4. promotion_decision.json
+## 5. promotion_decision.json
 
 ### Purpose
 
