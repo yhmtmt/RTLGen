@@ -90,7 +90,7 @@ def _ensure_source_commit(anchor_repo: Path, source_commit: str) -> None:
     if _git_success(anchor_repo, "cat-file", "-e", f"{source_commit}^{{commit}}"):
         return
     subprocess.run(
-        ["git", "-C", str(anchor_repo), "fetch", "--quiet", "origin", source_commit],
+        ["git", "-C", str(anchor_repo), "fetch", "--quiet", "origin"],
         check=True,
         capture_output=True,
         text=True,

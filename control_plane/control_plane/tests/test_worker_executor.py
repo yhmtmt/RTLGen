@@ -631,3 +631,42 @@ def test_prepare_checkout_creates_and_cleans_worktree() -> None:
 
         cleanup_checkout(info)
         assert not checkout_root.exists()
+
+
+def test_prepare_checkout_refreshes_remote_refs_not_raw_sha() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+
+        calls: list[list[str]] = []
+        cat_file_checks: list[str] = []
+
+        def fake_run(args, check=None, capture_output=None, text=None):
+            calls.append(list(args))
+            if args[-3:] == ["fetch", "--quiet", "origin"]:
+                return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+            if "worktree" in args and "add" in args:
+                checkout_root = Path(args[-2])
+                checkout_root.mkdir(parents=True, exist_ok=True)
+                return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+            if args[-2:] == ["rev-parse", "HEAD"]:
+                return subprocess.CompletedProcess(args, 0, stdout="9adb961\n", stderr="")
+            if args[-3:] == ["status", "--porcelain", "--untracked-files=no"]:
+                return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+            raise AssertionError(f"unexpected subprocess args: {args}")
+
+        def fake_git_success(_repo_root, *args):
+            joined = " ".join(args)
+            cat_file_checks.append(joined)
+            if joined == "cat-file -e 9adb961^{commit}":
+                return len(cat_file_checks) >= 2
+            return False
+
+        with mock.patch("control_plane.workers.checkout.subprocess.run", side_effect=fake_run):
+            with mock.patch("control_plane.workers.checkout._git_success", side_effect=fake_git_success):
+                info = prepare_checkout(repo_root=str(repo_root), source_commit="9adb961")
+
+        assert info.head_sha == "9adb961"
+        fetch_calls = [args for args in calls if args[-3:] == ["fetch", "--quiet", "origin"]]
+        assert len(fetch_calls) == 1
+        assert not any(args[-1] == "9adb961" for args in calls if "fetch" in args)
