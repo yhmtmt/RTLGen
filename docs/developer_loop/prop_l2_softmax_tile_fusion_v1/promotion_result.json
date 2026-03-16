@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_softmax_tile_fusion_v1",
+  "decision": "promoted",
+  "pr_number": 0,
+  "merge_commit": "git-sha",
+  "merged_utc": "2026-03-15T13:07:22Z"
+}
