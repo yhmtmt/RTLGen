@@ -1,0 +1,64 @@
+schema_version: 0.1
+array:
+  rows: 8
+  cols: 8
+  macs_per_cycle: 64
+datatypes:
+  supported:
+    - fp16
+    - int8
+sram:
+  activation_kb: 512
+  weight_kb: 512
+  kv_kb: 256
+  banks: 8
+  instances:
+    - name: activation_sram
+      depth: 16384
+      width: 256
+      banks: 8
+      read_latency: 1
+      byte_en: true
+      port: 1r1w
+      pdk: sky130
+      tech_node_nm: 130
+      base_addr: 0x80000000
+      alignment_bytes: 64
+    - name: weight_sram
+      depth: 16384
+      width: 256
+      banks: 8
+      read_latency: 1
+      byte_en: true
+      port: 1r1w
+      pdk: sky130
+      tech_node_nm: 130
+      base_addr: 0x80400000
+      alignment_bytes: 64
+    - name: kv_sram
+      depth: 8192
+      width: 256
+      banks: 4
+      read_latency: 1
+      byte_en: true
+      port: 1r1w
+      pdk: sky130
+      tech_node_nm: 130
+      base_addr: 0x80800000
+      alignment_bytes: 64
+dma:
+  engines: 2
+  peak_bw_gbps: 64.0
+  max_outstanding: 32
+  addr_width: 64
+  data_width: 256
+axi:
+  addr_width: 64
+  data_width: 256
+  id_width: 4
+shell:
+  command_queue_depth: 64
+  supports_interrupts: true
+mapping:
+  constraints:
+    direct_terminal_softmax_output: true

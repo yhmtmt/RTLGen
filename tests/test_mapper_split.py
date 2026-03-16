@@ -13,6 +13,7 @@ import yaml  # type: ignore
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 ARCH_PATH = REPO_ROOT / "npu/arch/examples/minimal.yml"
+ARCH_SOFTMAX_FUSED_PATH = REPO_ROOT / "npu/arch/examples/minimal_softmax_tail_fused.yml"
 
 
 def load_script_module(name: str, relative_path: str):
@@ -394,6 +395,57 @@ class MapperSplitRegressionTest(unittest.TestCase):
             self.assertEqual(0, len(softmax_ops))
             self.assertEqual(1, len(vec_softmax_ops))
             self.assertEqual(64 * 4, int(vec_softmax_ops[0]["bytes"]))
+
+    def test_softmax_classifier_direct_output_when_arch_requests_it(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            onnx_path = tmp / "classifier_direct.onnx"
+            sched_path = tmp / "classifier_direct.yml"
+            bin_path = tmp / "classifier_direct.bin"
+
+            self._write_softmax_classifier_onnx(
+                onnx_path,
+                name="classifier_direct",
+                b=1,
+                input_dim=16,
+                out_dim=4,
+                add_cast=True,
+                add_label_output=True,
+            )
+            cmd = [
+                sys.executable,
+                str(REPO_ROOT / "npu/mapper/onnx_to_schedule.py"),
+                "--onnx",
+                str(onnx_path),
+                "--arch",
+                str(ARCH_SOFTMAX_FUSED_PATH),
+                "--out",
+                str(sched_path),
+                "--gemm-num-modules",
+                "2",
+                "--batch-override",
+                "64",
+                "--softmax-backend",
+                "dedicated",
+            ]
+            subprocess.run(cmd, cwd=str(REPO_ROOT), check=True, capture_output=True, text=True)
+            self._validate_and_emit_bin(sched_path, bin_path)
+
+            with sched_path.open("r", encoding="utf-8") as f:
+                schedule = yaml.safe_load(f)
+
+            notes = schedule.get("mapper_notes", {})
+            self.assertTrue(bool(notes.get("terminal_softmax")))
+            self.assertEqual("dedicated", notes.get("softmax_backend"))
+            self.assertTrue(bool(notes.get("terminal_softmax_direct_output")))
+
+            softmax_ops = [op for op in schedule["ops"] if op.get("type") == "softmax"]
+            dma_y_ops = [op for op in schedule["ops"] if str(op.get("id", "")).startswith("dma_y")]
+
+            self.assertEqual(1, len(softmax_ops))
+            self.assertEqual("Y_DRAM", softmax_ops[0]["dst"])
+            self.assertEqual(0, len(dma_y_ops))
+            self.assertEqual("softmax1", schedule["events"][0]["signal_on"])
 
 
 if __name__ == "__main__":

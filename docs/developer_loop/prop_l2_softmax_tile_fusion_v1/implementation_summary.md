@@ -3,21 +3,17 @@
 ## Proposal
 - `proposal_id`: `prop_l2_softmax_tile_fusion_v1`
 - `title`: `Softmax-tail fused tile path`
-- `status`: planning-approved, implementation not started
+- `status`: first implementation slice completed
 
 ## Scope
 - Bounded implementation target:
-  - add a Layer 2 architecture variant that treats the imported softmax-tail
-    path as a first-class architecture point rather than only reusing the
-    existing integrated SOFTMAX baseline
-  - add the mapper legality/lowering changes required to express that variant
-    deterministically
+  - reduce terminal softmax-tail overhead without broad scheduler redesign
+  - make the behavior architecture-selected instead of hardwired
   - keep the change scoped to the imported softmax-tail workload family first
 - In scope:
-  - architecture config additions for a fused softmax-tail candidate
-  - mapper legality and lowering support for that candidate
-  - campaign wiring needed to evaluate the candidate against the current
-    softmax-tail baselines
+  - architecture config addition for a softmax-tail fused-output candidate
+  - mapper lowering support for direct terminal softmax output
+  - regression coverage for the fused-output lowering path
 - Out of scope for the first implementation pass:
   - broad redesign of the generic NPU shell
   - non-softmax workload retuning
@@ -25,40 +21,43 @@
   - changes to external/manual evaluation lane procedure
 
 ## Files Changed
-- Expected primary touch points:
-  - `npu/arch/examples/`
-  - `npu/arch/to_rtlgen.py`
-  - `npu/rtlgen/gen.py`
-  - `npu/mapper/`
-  - `npu/eval/`
-  - `runs/campaigns/npu/`
-  - `npu/docs/status.md`
-- Expected supporting touch points:
-  - proposal-local artifacts under
-    `docs/developer_loop/prop_l2_softmax_tile_fusion_v1/`
-- Current code-change state:
-  - no implementation diff yet
-  - this document defines the bounded implementation slice before editing code
+- Implemented primary touch points:
+  - `npu/mapper/onnx_to_schedule.py`
+  - `npu/arch/examples/minimal_softmax_tail_fused.yml`
+  - `npu/arch/schema_v0_2_draft.yml`
+  - `runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_v1/campaign.json`
+  - `runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_v1/objective_profiles.json`
+  - `tests/test_mapper_split.py`
+- Current implementation slice:
+  - mapper now supports architecture-selected direct terminal softmax output
+  - new example arch file enables that behavior for a bounded softmax-tail
+    candidate
+  - regression test proves the mapper emits `SOFTMAX -> Y_DRAM` directly and
+    removes the trailing `dma_y`
+- Still not implemented in this slice:
+  - broader architecture or rtlgen generator changes
+  - remote evaluation results for the new candidate
+  - promotion artifacts for the new candidate
 
 ## Local Validation
-- Planning validation completed:
-  - reviewed current softmax-tail campaign baselines
-  - reviewed current Layer 2 workflow and status docs
-  - confirmed that mapper work is required before this architecture is
-    evaluable
-- Required local validation after implementation:
-  - architecture/schema validation for the new candidate config
-  - mapper legality/lowering smoke checks on the imported softmax-tail model
-  - campaign manifest validation before remote execution
-  - any existing local regressions directly touched by the mapper change
+- Completed local validation:
+  - `python3 /workspaces/RTLGen/tests/test_mapper_split.py`
+  - `python3 -m py_compile /workspaces/RTLGen/npu/mapper/onnx_to_schedule.py`
+  - `python3 /workspaces/RTLGen/npu/arch/validate.py /workspaces/RTLGen/npu/arch/schema.yml /workspaces/RTLGen/npu/arch/examples/minimal_softmax_tail_fused.yml`
+  - `python3 /workspaces/RTLGen/npu/eval/validate.py --campaign /workspaces/RTLGen/runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_v1/campaign.json --check_paths`
+- Validation result:
+  - mapper regression suite passed
+  - new fused-output lowering regression passed
+  - new architecture example passed schema validation
+  - new fused-output campaign passed campaign validation
 - Pass/fail summary:
-  - planning pass complete
-  - implementation validation pending code changes
+  - first implementation slice passed local validation
+  - remote campaign validation still pending
 
 ## Evaluation Request
-- Requested remote tasks after implementation:
-  - `l2_campaign` with `objective=balanced`
-  - `l2_campaign` with `objective=latency`
+- Requested remote tasks at the evaluation gate:
+  - `runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_v1/campaign.json` with `objective=balanced`
+  - `runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_v1/campaign.json` with `objective=latency`
 - Cost class:
   - both are `high`
 - Required comparison baselines:
@@ -70,12 +69,11 @@
   - best_point.json
   - generated campaign file used for the run
 - Evaluation should not be requested until:
-  - the mapper change is locally smoke-validated
-  - the new candidate is expressible through the current Layer 2 campaign flow
+  - evaluation gate is approved
 
 ## Risks
-- Mapper legality may expand beyond a narrow softmax-tail special case and
-  pull the proposal toward a broader scheduler change than intended.
+- Direct terminal output may improve only the descriptor tail overhead and not
+  move the overall model ranking enough to justify a new default.
 - The fused path may improve only the tiny softmax-tail classifier and not
   produce a defensible general architectural recommendation.
 - Added area or descriptor complexity may erase any latency gain.

@@ -109,6 +109,8 @@ mapping:
     max_tiles_per_op: int
     allow_cross_tile_reduction: bool
     deterministic_ordering: bool
+    # optional:
+    # - direct_terminal_softmax_output: bool
 
 search:
   objectives:

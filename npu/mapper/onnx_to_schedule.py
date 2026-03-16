@@ -98,6 +98,18 @@ def _normalize_softmax_backend(backend: str) -> str:
     return value
 
 
+def _direct_terminal_softmax_output_enabled(arch: dict) -> bool:
+    if not isinstance(arch, dict):
+        return False
+    mapping = arch.get("mapping")
+    if not isinstance(mapping, dict):
+        return False
+    constraints = mapping.get("constraints")
+    if not isinstance(constraints, dict):
+        return False
+    return bool(constraints.get("direct_terminal_softmax_output", False))
+
+
 @dataclass
 class _LinearLayer:
     op_kind: str
@@ -506,6 +518,7 @@ def build_schedule_for_mlp(
     _require_shape_1d_or_2d(b2, b2_dims, out_dim)
 
     arch = yaml.safe_load(Path(arch_path).read_text(encoding="utf-8"))
+    direct_terminal_softmax_output = _direct_terminal_softmax_output_enabled(arch)
     act_inst = _find_sram_instance(arch, activation_sram_name)
     wgt_inst = _find_sram_instance(arch, weight_sram_name)
 
@@ -871,6 +884,7 @@ def build_schedule_for_supported_graph(
     out_dim = int(layer_dims[-1][1])
 
     arch = yaml.safe_load(Path(arch_path).read_text(encoding="utf-8"))
+    direct_terminal_softmax_output = _direct_terminal_softmax_output_enabled(arch)
     act_inst = _find_sram_instance(arch, activation_sram_name)
     wgt_inst = _find_sram_instance(arch, weight_sram_name)
 
@@ -1297,13 +1311,16 @@ def build_schedule_for_supported_graph(
                 raise ValueError("failed to generate final linear outputs for terminal softmax")
             softmax_id = f"softmax{layer_idx}"
             dma_y_id = "dma_y" if len(layers) == 1 else f"dma_y{layer_idx}"
+            softmax_direct_output = bool(
+                softmax_backend == "dedicated" and direct_terminal_softmax_output
+            )
             if softmax_backend == "dedicated":
                 ops.append(
                     {
                         "id": softmax_id,
                         "type": "softmax",
                         "src": next_output_buf,
-                        "dst": current_input_buf,
+                        "dst": "Y_DRAM" if softmax_direct_output else current_input_buf,
                         "row_bytes": bytes_1d(final_out_dim),
                         "rows": batch,
                         "dtype": "int8",
@@ -1321,18 +1338,21 @@ def build_schedule_for_supported_graph(
                         "dtype": "int8",
                     }
                 )
-            ops.append(
-                {
-                    "id": dma_y_id,
-                    "type": "dma_copy",
-                    "src": current_input_buf,
-                    "dst": "Y_DRAM",
-                    "bytes": layer_output_bytes[-1],
-                }
-            )
             deps.append({"wait": prev_chunk_wait_ids, "then": softmax_id})
-            deps.append({"wait": [softmax_id], "then": dma_y_id})
-            last_dma_y_id = dma_y_id
+            if softmax_direct_output:
+                last_dma_y_id = softmax_id
+            else:
+                ops.append(
+                    {
+                        "id": dma_y_id,
+                        "type": "dma_copy",
+                        "src": current_input_buf,
+                        "dst": "Y_DRAM",
+                        "bytes": layer_output_bytes[-1],
+                    }
+                )
+                deps.append({"wait": [softmax_id], "then": dma_y_id})
+                last_dma_y_id = dma_y_id
 
     if not last_dma_y_id:
         raise ValueError("failed to generate final output DMA")
@@ -1350,6 +1370,9 @@ def build_schedule_for_supported_graph(
         "final_linear_weight_layout": "packed_by_output_chunk",
         "terminal_softmax": terminal_softmax,
         "softmax_backend": softmax_backend if terminal_softmax else "none",
+        "terminal_softmax_direct_output": bool(
+            terminal_softmax and softmax_backend == "dedicated" and direct_terminal_softmax_output
+        ),
         "graph_output_name": supported.terminal_output_name,
         "ignored_graph_outputs": list(supported.ignored_graph_outputs),
     }
