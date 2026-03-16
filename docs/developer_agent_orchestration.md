@@ -12,6 +12,7 @@ This document answers:
 
 It complements:
 - `docs/developer_agent_loop.md`
+- `docs/developer_agent_first_read.md`
 - `docs/developer_agent_artifacts.md`
 - `control_plane/operator_runbook.md`
 
@@ -55,11 +56,30 @@ That branch should contain:
 ### Step 1. Create Proposal Branch
 
 Notebook developer agent:
-1. creates or updates a working branch `dev/<proposal_id>`
-2. writes:
+1. reads the bounded startup context in `docs/developer_agent_first_read.md`
+2. chooses or reuses `proposal_id`
+3. creates or updates a working branch `dev/<proposal_id>`
+4. writes:
    - `design_brief.md`
    - `proposal.json`
 
+Notebook developer agent should determine `proposal_id` only after:
+- checking current open proposal directories,
+- reading topic-relevant baselines,
+- incorporating the current user direction.
+
+Recommended `proposal_id` form:
+```text
+prop_<layer>_<topic>_<change>_vN
+```
+
+Examples:
+```text
+prop_l1_prefix_variant_v1
+prop_l2_softmax_tile_fusion_v1
+```
+
+This avoids deriving a task identity from stale session residue.
 Recommended artifact location:
 ```text
 docs/developer_loop/<proposal_id>/

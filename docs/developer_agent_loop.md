@@ -22,6 +22,7 @@ This document covers the internal trusted-machine lane only.
 
 Related documents:
 - `docs/internal_external_evaluator_policy.md`
+- `docs/developer_agent_first_read.md`
 - `docs/developer_agent_artifacts.md`
 - `docs/developer_agent_orchestration.md`
 - `control_plane/operator_runbook.md`
@@ -55,6 +56,12 @@ In practice:
 - creative work stays notebook-local
 - evaluation work goes through the control plane
 - Git remains the reviewed evidence boundary
+
+## Session Start
+
+Before a notebook-side developer agent chooses a new proposal direction or
+`proposal_id`, it should ingest the bounded startup context defined in:
+- `docs/developer_agent_first_read.md`
 
 ## Agent Roles
 
