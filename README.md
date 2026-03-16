@@ -135,6 +135,7 @@ python3 scripts/build_runs_index.py
 - Control-plane daily operations: `control_plane/daily_operations.md`
 - Internal vs external evaluation policy: `docs/internal_external_evaluator_policy.md`
 - Developer-agent first read: `docs/developer_agent_first_read.md`
+- Development intake backlog: `docs/development_items/README.md`
 - Notebook-side developer-agent loop: `docs/developer_agent_loop.md`
 - Repository documentation roles: `docs/structure.md`
 - Layer 1 runbook (module physical optimization): `docs/layer1_circuit_workflow.md`

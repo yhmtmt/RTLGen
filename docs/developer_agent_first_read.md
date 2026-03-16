@@ -19,8 +19,9 @@ Related documents:
 Before creating or updating a proposal, the developer agent should:
 1. read the mandatory first-read set in order,
 2. select only the topic-relevant baselines,
-3. inspect existing open proposal directories for overlap,
-4. then choose or update the `proposal_id`.
+3. inspect the preliminary intake backlog in `docs/development_items/`,
+4. inspect existing open proposal directories for overlap,
+5. then choose or update the `proposal_id`.
 
 Do not start from old session residue or broad repo-wide grep alone.
 
@@ -48,16 +49,19 @@ Read these in order for every new developer-agent session:
 5. `docs/developer_agent_artifacts.md`
 - required proposal/analysis/promotion artifacts
 
-6. `docs/developer_agent_orchestration.md`
+6. `docs/development_items/README.md`
+- intake backlog structure and item-id rule
+
+7. `docs/developer_agent_orchestration.md`
 - practical notebook-side working procedure
 
-7. `docs/two_layer_workflow.md`
+8. `docs/two_layer_workflow.md`
 - Layer 1 / Layer 2 contract
 
-8. `npu/docs/status.md`
+9. `npu/docs/status.md`
 - current NPU status and active technical constraints
 
-9. `control_plane/operator_runbook.md`
+10. `control_plane/operator_runbook.md`
 - current remote evaluation operating model
 
 This set is the default startup context.
@@ -93,6 +97,8 @@ Prefer:
 ## Existing Proposal Check
 
 Before choosing a new `proposal_id`, inspect:
+- `docs/development_items/index.md`
+- relevant `docs/development_items/items/<item_id>.md`
 - `docs/developer_loop/README.md`
 - existing directories under `docs/developer_loop/`
 
@@ -156,9 +162,10 @@ Before the first code change, confirm:
 
 1. mandatory first-read set is covered
 2. topic-relevant baselines are selected
-3. overlapping proposal directories are checked
-4. `proposal_id` is chosen or reused
-5. `docs/developer_loop/<proposal_id>/` exists
-6. `proposal.json` and `design_brief.md` are initialized
+3. relevant intake items are checked in `docs/development_items/`
+4. overlapping proposal directories are checked
+5. `proposal_id` is chosen or reused
+6. `docs/developer_loop/<proposal_id>/` exists
+7. `proposal.json` and `design_brief.md` are initialized
 
 Only then move to the direction gate.
