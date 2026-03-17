@@ -295,9 +295,13 @@ def mapper_split_note_from_schedule(schedule_yml: str) -> str:
                     chunks.append(int(v))
                 except Exception:
                     continue
-        if "gemm_row_parallel_enabled" in notes:
+        if "final_linear_row_parallel_enabled" in notes:
+            row_parallel_enabled = bool(notes.get("final_linear_row_parallel_enabled", False))
+        elif "gemm_row_parallel_enabled" in notes:
             row_parallel_enabled = bool(notes.get("gemm_row_parallel_enabled", False))
-        raw_row_chunks = notes.get("gemm_row_chunks", [])
+        raw_row_chunks = notes.get("final_linear_row_chunks", [])
+        if not isinstance(raw_row_chunks, list) or not raw_row_chunks:
+            raw_row_chunks = notes.get("gemm_row_chunks", [])
         if isinstance(raw_row_chunks, list):
             for v in raw_row_chunks:
                 try:

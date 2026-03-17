@@ -142,6 +142,32 @@ class RunCampaignMapperNotesTest(unittest.TestCase):
             self.assertIn("mapper_split_chunks=64,32", note)
             self.assertIn("mapper_num_modules=2", note)
 
+    def test_mapper_notes_prefers_final_linear_row_parallel_metadata(self):
+        with tempfile.TemporaryDirectory() as td:
+            sched = Path(td) / "sched.yml"
+            self._write_schedule(
+                sched,
+                {
+                    "version": 0.1,
+                    "ops": [{"id": "gemm1", "type": "gemm", "m": 64, "n": 4}],
+                    "mapper_notes": {
+                        "linear_layer_count": 1,
+                        "gemm_num_modules": 2,
+                        "gemm_row_parallel_enabled": True,
+                        "gemm_row_chunks": [32, 32],
+                        "final_linear_row_parallel_enabled": False,
+                        "final_linear_row_chunks": [64],
+                        "final_linear_split_enabled": False,
+                        "final_linear_out_chunks": [4],
+                    },
+                },
+            )
+            note = self.run_campaign.mapper_split_note_from_schedule(str(sched))
+            self.assertIn("mapper_num_modules=2", note)
+            self.assertIn("mapper_row_parallel_enabled=0", note)
+            self.assertIn("mapper_row_parallel_chunk_count=1", note)
+            self.assertIn("mapper_row_parallel_chunks=64", note)
+
 
 if __name__ == "__main__":
     unittest.main()

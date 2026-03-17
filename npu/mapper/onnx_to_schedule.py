@@ -110,6 +110,32 @@ def _direct_terminal_softmax_output_enabled(arch: dict) -> bool:
     return bool(constraints.get("direct_terminal_softmax_output", False))
 
 
+def _choose_stage_row_chunks(
+    *,
+    batch: int,
+    gemm_num_modules: int,
+    k_dim: int,
+    n_dim: int,
+    terminal_softmax_stage: bool,
+) -> List[Tuple[int, int]]:
+    chunks = _split_even(batch, max(1, int(gemm_num_modules)))
+    if len(chunks) <= 1:
+        return chunks
+    if not terminal_softmax_stage:
+        return chunks
+
+    # For tiny terminal softmax classifiers, splitting the final GEMM across
+    # modules often adds synchronization overhead without shrinking the serial
+    # softmax tail enough to pay for it. Prefer a monolithic final GEMM until
+    # each module would carry a minimally meaningful amount of work.
+    min_module_macs = 8192
+    min_chunk = min(size for _, size in chunks)
+    per_module_macs = int(min_chunk) * int(k_dim) * int(n_dim)
+    if per_module_macs < min_module_macs:
+        return [(0, int(batch))]
+    return chunks
+
+
 @dataclass
 class _LinearLayer:
     op_kind: str
@@ -944,8 +970,11 @@ def build_schedule_for_supported_graph(
     act_a_sram = act.alloc(max_act_bytes)
     act_b_sram = act.alloc(max_act_bytes)
 
-    row_chunks = _split_even(batch, max(1, int(gemm_num_modules)))
-    row_parallel_enabled = len(row_chunks) > 1
+    base_row_chunks = _split_even(batch, max(1, int(gemm_num_modules)))
+    base_row_parallel_enabled = len(base_row_chunks) > 1
+    any_row_parallel_enabled = False
+    final_row_chunks = list(base_row_chunks)
+    final_row_parallel_enabled = base_row_parallel_enabled
 
     x_dram = dram.alloc(input_bytes)
     y_dram = dram.alloc(layer_output_bytes[-1])
@@ -1050,8 +1079,9 @@ def build_schedule_for_supported_graph(
                 }
             )
             stage_complete_ids: List[str] = []
-            if row_parallel_enabled:
-                for row_idx, (m_off, m_chunk) in enumerate(row_chunks):
+            if base_row_parallel_enabled:
+                any_row_parallel_enabled = True
+                for row_idx, (m_off, m_chunk) in enumerate(base_row_chunks):
                     in_buf = _row_view_buf(
                         stage_idx=layer_idx,
                         row_idx=row_idx,
@@ -1121,6 +1151,19 @@ def build_schedule_for_supported_graph(
             stage_ready_ids = stage_complete_ids
             continue
 
+        stage_row_chunks = _choose_stage_row_chunks(
+            batch=batch,
+            gemm_num_modules=gemm_num_modules,
+            k_dim=k_dim,
+            n_dim=final_out_dim,
+            terminal_softmax_stage=terminal_softmax,
+        )
+        stage_row_parallel_enabled = len(stage_row_chunks) > 1
+        final_row_chunks = list(stage_row_chunks)
+        final_row_parallel_enabled = stage_row_parallel_enabled
+        if stage_row_parallel_enabled:
+            any_row_parallel_enabled = True
+
         prev_chunk_wait_ids: List[str] = []
         for chunk_idx, (n_off, n_chunk) in enumerate(out_chunks):
             suffix = "" if len(out_chunks) == 1 else f"_c{chunk_idx}"
@@ -1177,8 +1220,8 @@ def build_schedule_for_supported_graph(
 
             prev_row_tail_id = ""
             chunk_done_ids: List[str] = []
-            if row_parallel_enabled:
-                for row_idx, (m_off, m_chunk) in enumerate(row_chunks):
+            if stage_row_parallel_enabled:
+                for row_idx, (m_off, m_chunk) in enumerate(stage_row_chunks):
                     in_buf = _row_view_buf(
                         stage_idx=layer_idx,
                         row_idx=row_idx,
@@ -1363,8 +1406,10 @@ def build_schedule_for_supported_graph(
         "input_cast_ignored": input_cast,
         "effective_batch": int(batch),
         "gemm_num_modules": int(max(1, gemm_num_modules)),
-        "gemm_row_parallel_enabled": row_parallel_enabled,
-        "gemm_row_chunks": [m for _, m in row_chunks],
+        "gemm_row_parallel_enabled": any_row_parallel_enabled,
+        "gemm_row_chunks": [m for _, m in base_row_chunks],
+        "final_linear_row_parallel_enabled": final_row_parallel_enabled,
+        "final_linear_row_chunks": [m for _, m in final_row_chunks],
         "final_linear_out_chunks": [n for _, n in out_chunks],
         "final_linear_split_enabled": len(out_chunks) > 1,
         "final_linear_weight_layout": "packed_by_output_chunk",

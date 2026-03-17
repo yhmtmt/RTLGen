@@ -346,12 +346,18 @@ class MapperSplitRegressionTest(unittest.TestCase):
             self.assertEqual(["Y"], notes.get("ignored_graph_outputs"))
             self.assertEqual([4], notes.get("final_linear_out_chunks"))
             self.assertEqual([32, 32], notes.get("gemm_row_chunks"))
+            self.assertFalse(bool(notes.get("gemm_row_parallel_enabled")))
+            self.assertFalse(bool(notes.get("final_linear_row_parallel_enabled")))
+            self.assertEqual([64], notes.get("final_linear_row_chunks"))
 
             gemm_ops = [op for op in schedule["ops"] if str(op.get("id", "")).startswith("gemm1_r")]
+            monolithic_gemm_ops = [op for op in schedule["ops"] if op.get("id") == "gemm1"]
             softmax_ops = [op for op in schedule["ops"] if op.get("type") == "softmax"]
             dma_y_ops = [op for op in schedule["ops"] if str(op.get("id", "")).startswith("dma_y")]
 
-            self.assertEqual(2, len(gemm_ops))
+            self.assertEqual(0, len(gemm_ops))
+            self.assertEqual(1, len(monolithic_gemm_ops))
+            self.assertEqual(64, int(monolithic_gemm_ops[0]["m"]))
             self.assertEqual(1, len(softmax_ops))
             self.assertEqual(1, len(dma_y_ops))
             self.assertEqual(4, int(softmax_ops[0]["row_bytes"]))
@@ -438,13 +444,19 @@ class MapperSplitRegressionTest(unittest.TestCase):
             self.assertTrue(bool(notes.get("terminal_softmax")))
             self.assertEqual("dedicated", notes.get("softmax_backend"))
             self.assertTrue(bool(notes.get("terminal_softmax_direct_output")))
+            self.assertFalse(bool(notes.get("final_linear_row_parallel_enabled")))
+            self.assertEqual([64], notes.get("final_linear_row_chunks"))
 
             softmax_ops = [op for op in schedule["ops"] if op.get("type") == "softmax"]
             dma_y_ops = [op for op in schedule["ops"] if str(op.get("id", "")).startswith("dma_y")]
+            monolithic_gemm_ops = [op for op in schedule["ops"] if op.get("id") == "gemm1"]
+            split_gemm_ops = [op for op in schedule["ops"] if str(op.get("id", "")).startswith("gemm1_r")]
 
             self.assertEqual(1, len(softmax_ops))
             self.assertEqual("Y_DRAM", softmax_ops[0]["dst"])
             self.assertEqual(0, len(dma_y_ops))
+            self.assertEqual(1, len(monolithic_gemm_ops))
+            self.assertEqual(0, len(split_gemm_ops))
             self.assertEqual("softmax1", schedule["events"][0]["signal_on"])
 
 
