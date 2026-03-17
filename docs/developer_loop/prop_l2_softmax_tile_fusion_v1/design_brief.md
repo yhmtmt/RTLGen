@@ -24,6 +24,17 @@
 - This should be tested as a focused Layer 2 architecture proposal, not as a
   broad NPU redesign.
 
+## Evaluation Scope
+- direct comparison set:
+  - current `fp16_nm1_softmax_r4` softmax baseline
+  - fused-output candidate on the same `fp16_nm1_softmax_r4` hardware
+- excluded first-stage comparisons:
+  - `fp16_nm2_softmax_r4`
+  - broad architecture ranking across both module-count points
+- follow-on broad sweep:
+  - reintroduce `nm2` only if the focused nm1 fusion result is positive or
+    still ambiguous after the first-stage proof
+
 ## Knowledge Inputs
 - `npu/docs/status.md`
 - `npu/docs/workflow.md`
@@ -40,9 +51,10 @@
   - architecture agent proposes the fused tile path
   - mapping agent adds the legality/lowering rules needed to evaluate it
 - Keep the evaluation bounded:
-  - compare against the current softmax-tail baselines
-  - use the existing campaign family first
-  - measure balanced and latency objectives before considering broader rollout
+  - first prove the fusion effect on `nm1` only
+  - defer `nm2` and broader architecture ranking until after the focused proof
+  - use balanced and latency views only inside that first-stage direct
+    comparison before considering broader rollout
 
 ## Direction Gate
 - status: approved

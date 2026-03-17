@@ -25,6 +25,18 @@
 - If the bounded mapper alternatives still do not close the gap, the negative
   architecture conclusion becomes higher-confidence.
 
+## Evaluation Scope
+- direct comparison set:
+  - prior `fp16_nm2_softmax_r4` fused-output run under the old row-split
+    heuristic
+  - updated `fp16_nm2_softmax_r4` run under the bounded mapper chooser
+- excluded first-stage comparisons:
+  - `fp16_nm1_softmax_r4`
+  - broad cross-architecture ranking across both module-count points
+- follow-on broad sweep:
+  - re-run `nm1` and `nm2` together only after the local `nm2` mapper effect
+    is established or remains ambiguous
+
 ## Knowledge Inputs
 - `docs/developer_loop/prop_l2_softmax_tile_fusion_v1/analysis_report.md`
 - `docs/developer_loop/prop_l2_softmax_tile_fusion_v1/promotion_decision.json`
@@ -41,6 +53,8 @@
   - introduce a simple chooser based on estimated synchronization and terminal
     softmax tail cost
 - Keep the scope narrow:
+  - first prove the mapper effect on `nm2` only
+  - defer `nm1` and broader architecture ranking until after the focused proof
   - no new RTL or architecture config for the first pass
   - no broad mapper rewrite
   - no new benchmark family until the current ambiguity is resolved

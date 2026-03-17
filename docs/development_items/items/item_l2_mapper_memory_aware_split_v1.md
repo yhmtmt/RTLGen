@@ -7,7 +7,7 @@
 - priority: `high`
 - owner: `developer_agent`
 - created_utc: `2026-03-17T00:00:00Z`
-- updated_utc: `2026-03-17T06:36:09Z`
+- updated_utc: `2026-03-17T13:10:00Z`
 - proposal_id: `prop_l2_mapper_memory_aware_split_v1`
 - proposal_path: `docs/developer_loop/prop_l2_mapper_memory_aware_split_v1`
 - triggered_by_proposal: `prop_l2_softmax_tile_fusion_v1`
@@ -53,10 +53,24 @@
   - perf-trace inspection for queue/event overhead and terminal softmax overlap
   - campaign validation for generated bounded candidate schedules
 - remote:
-  - rerun the existing dedicated-softmax campaign family on the same
-    `softmaxcmp` physical design points
-  - compare nm1/nm2 under multiple mapper strategies before drawing a new
-    architecture conclusion
+  - first-stage: compare `{old mapper, new mapper}` on
+    `fp16_nm2_softmax_r4` only, using the same `softmaxcmp` physical design
+    points
+  - follow-on broad sweep only if the local `nm2` mapper effect is positive or
+    still ambiguous after the focused proof
+
+## Focused Comparison Set
+- direct comparison:
+  - prior `fp16_nm2_softmax_r4` fused-output run under the old row-split
+    heuristic
+  - updated `fp16_nm2_softmax_r4` run under the bounded monolithic-vs-split
+    chooser
+- intentionally excluded from first-stage evaluation:
+  - `fp16_nm1_softmax_r4`
+  - global architecture ranking across both module-count points
+- follow-on only after a positive or ambiguous focused result:
+  - re-run `nm1` and `nm2` together to see whether the local `nm2` mapper gain
+    changes the broader architecture conclusion
 
 ## Inputs / Sources
 - `docs/developer_loop/prop_l2_softmax_tile_fusion_v1/analysis_report.md`
@@ -77,8 +91,8 @@
 ## Promotion Rule
 - promote when the mapper scope is bounded to multi-module softmax-tail
   scheduling on the existing `softmaxcmp` hardware and the proposal names the
-  exact baseline campaign family used to judge whether the heuristic change
-  improved evaluation fidelity
+  exact nm2 baseline campaign family used to judge whether the heuristic change
+  improved evaluation fidelity before any broader nm1/nm2 sweep
 
 ## Promotion Outcome
 - promoted to `docs/developer_loop/prop_l2_mapper_memory_aware_split_v1`

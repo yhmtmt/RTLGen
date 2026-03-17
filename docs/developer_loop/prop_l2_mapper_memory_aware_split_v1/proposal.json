@@ -6,6 +6,20 @@
   "kind": "mapper",
   "title": "Memory-aware split policy for multi-module softmax-tail mapping",
   "hypothesis": "Introduce a bounded mapper policy that compares monolithic and row-split lowering for multi-module softmax-tail execution and chooses the lower-overhead option using simple sync/tail-cost signals.",
+  "direct_comparison": {
+    "primary_question": "Does the bounded mapper change materially improve nm2 on the existing softmaxcmp hardware?",
+    "include": [
+      "fp16_nm2_softmax_r4 old-mapper baseline from the prior fused-output run",
+      "fp16_nm2_softmax_r4 new-mapper candidate on the same hardware"
+    ],
+    "exclude": [
+      "fp16_nm1_softmax_r4 during the first-stage mapper proof",
+      "global architecture ranking across nm1 and nm2 in the first evaluation"
+    ],
+    "follow_on_broad_sweep": [
+      "re-run nm1 and nm2 together only after the local nm2 mapper effect is established or remains ambiguous"
+    ]
+  },
   "expected_benefit": [
     "fairer evaluation of fp16_nm2_softmax_r4 on existing softmaxcmp hardware",
     "lower synchronization overhead on tiny softmax-tail workloads",
@@ -35,9 +49,8 @@
     }
   ],
   "baseline_refs": [
-    "docs/developer_loop/prop_l2_softmax_tile_fusion_v1",
-    "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_v1",
-    "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_v1__l2_prop_l2_softmax_tile_fusion_v1_20260316051355"
+    "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_v1__l2_prop_l2_softmax_tile_fusion_v1_20260316051355",
+    "docs/developer_loop/prop_l2_softmax_tile_fusion_v1"
   ],
   "knowledge_refs": [
     "discussion:2026-03-17 mapper-optimality and benchmark-shape evaluation",

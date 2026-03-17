@@ -57,6 +57,27 @@ The reviewer must answer:
 5. Are the claimed improvements meaningful against the referenced baseline?
 6. Does the PR contain the exact evidence required for reproducibility?
 
+## Focused Comparison Rule
+
+Review the result against the proposal's declared direct comparison set first.
+
+Do not let a broader architecture sweep override the primary proposal question
+when the proposal was intentionally scoped more narrowly.
+
+Examples:
+- if the proposal is about fusion on `nm1`, the first review question is the
+  fused vs non-fused delta on `nm1`, not whether `nm1` still beats `nm2`
+- if the proposal is about a mapper change on `nm2`, the first review question
+  is the old-mapper vs new-mapper delta on `nm2`, not whether `nm2` becomes the
+  global rank-1 point
+
+When a broader sweep is present, distinguish explicitly between:
+- proposal outcome: did the focused hypothesis succeed?
+- campaign ranking: which point wins under the broader objective?
+
+If the direct comparison set is missing or mixed together with a much broader
+comparison set, treat the review as lower-clarity and call that out.
+
 ## Mapper Headroom Rule
 
 The reviewer should not treat every losing or flat result as an architecture

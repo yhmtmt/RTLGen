@@ -45,6 +45,11 @@ Use these artifacts initially:
 
 Bound a candidate idea before implementation starts.
 
+The proposal should force the agent to answer:
+- what is the minimum comparison set that directly proves or falsifies the
+  hypothesis?
+- what broader sweep is intentionally deferred until after that focused test?
+
 ### Required fields
 
 ```json
@@ -56,6 +61,18 @@ Bound a candidate idea before implementation starts.
   "kind": "circuit | architecture | mapper",
   "title": "short title",
   "hypothesis": "one-paragraph statement",
+  "direct_comparison": {
+    "primary_question": "the smallest comparison that directly tests the hypothesis",
+    "include": [
+      "variant or architecture point"
+    ],
+    "exclude": [
+      "broader points intentionally excluded from first-stage evaluation"
+    ],
+    "follow_on_broad_sweep": [
+      "optional wider evaluation to run after the focused comparison"
+    ]
+  },
   "expected_benefit": [
     "string"
   ],
@@ -90,6 +107,19 @@ Bound a candidate idea before implementation starts.
   "kind": "architecture",
   "title": "Softmax-tail fused tile path",
   "hypothesis": "Fusing the softmax-tail path into a specialized tile should reduce memory traffic and improve latency for imported softmax workloads.",
+  "direct_comparison": {
+    "primary_question": "Does fused output improve the softmax-tail path on the chosen baseline architecture?",
+    "include": [
+      "nm1 non-fused baseline",
+      "nm1 fused candidate"
+    ],
+    "exclude": [
+      "nm2 points during the first-stage fusion proof"
+    ],
+    "follow_on_broad_sweep": [
+      "compare the accepted fused point against a wider nm1/nm2 architecture set"
+    ]
+  },
   "expected_benefit": [
     "lower model latency",
     "lower SRAM traffic"
@@ -120,6 +150,14 @@ Bound a candidate idea before implementation starts.
   ]
 }
 ```
+
+`direct_comparison` exists to keep the first remote evaluation aligned with the
+proposal's causal question. For new proposals:
+- use the smallest comparison set that can validate the mechanism
+- exclude architecture points that only add ranking noise to the first-stage
+  decision
+- record broader sweeps as follow-on work instead of mixing them into the
+  primary proof by default
 
 ## 2. implementation_summary.md
 

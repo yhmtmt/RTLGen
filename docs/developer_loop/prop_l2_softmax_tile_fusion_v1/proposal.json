@@ -6,6 +6,20 @@
   "kind": "architecture",
   "title": "Softmax-tail fused tile path",
   "hypothesis": "Introduce a softmax-specialized tile path that reduces descriptor traffic and staging overhead for imported softmax-tail workloads, with mapper support for the new fused legality and scheduling pattern.",
+  "direct_comparison": {
+    "primary_question": "Does fused terminal output improve the softmax-tail path on the fixed nm1 softmax baseline?",
+    "include": [
+      "fp16_nm1_softmax_r4 non-fused baseline",
+      "fp16_nm1_softmax_r4 fused candidate"
+    ],
+    "exclude": [
+      "fp16_nm2_softmax_r4 during the first-stage fusion proof",
+      "broad architecture ranking across nm1 and nm2 in the first evaluation"
+    ],
+    "follow_on_broad_sweep": [
+      "reintroduce nm2 only after the nm1 fusion effect is established or remains ambiguous"
+    ]
+  },
   "expected_benefit": [
     "lower end-to-end latency on imported softmax-tail workloads",
     "reduced descriptor and memory-traffic overhead relative to current flat softmax-integrated points",
@@ -36,15 +50,14 @@
     }
   ],
   "baseline_refs": [
-    "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1",
     "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_v1",
-    "npu/docs/workflow.md",
-    "npu/docs/status.md"
+    "npu/docs/workflow.md"
   ],
   "knowledge_refs": [
     "discussion:2026-03-15 developer-agent-loop design session",
     "npu/docs/workflow.md",
     "npu/docs/status.md",
+    "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1",
     "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv"
   ]
 }

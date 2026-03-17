@@ -6,6 +6,18 @@
   "kind": "architecture",
   "title": "Example proposal title",
   "hypothesis": "Replace this with a bounded engineering hypothesis.",
+  "direct_comparison": {
+    "primary_question": "What focused comparison directly tests this proposal?",
+    "include": [
+      "describe the minimum comparison set"
+    ],
+    "exclude": [
+      "describe points intentionally left out of first-stage evaluation"
+    ],
+    "follow_on_broad_sweep": [
+      "optional wider sweep to run only after the focused comparison"
+    ]
+  },
   "expected_benefit": [
     "describe expected benefit"
   ],

@@ -2,7 +2,7 @@
 
 | item_id | layer | kind | title | status | priority | owner | proposal_id | updated_utc |
 |---|---|---|---|---|---|---|---|---|
-| `item_l2_softmax_tail_fused_output_v1` | `layer2` | `architecture` | `Softmax-tail fused output path` | `promoted_to_proposal` | `high` | `developer_agent` | `prop_l2_softmax_tile_fusion_v1` | `2026-03-16T05:20:00Z` |
+| `item_l2_softmax_tail_fused_output_v1` | `layer2` | `architecture` | `Softmax-tail fused output path` | `promoted_to_proposal` | `high` | `developer_agent` | `prop_l2_softmax_tile_fusion_v1` | `2026-03-17T13:10:00Z` |
 | `item_l2_num_modules_adaptive_v1` | `layer2` | `architecture` | `Adaptive num_modules selection` | `seed` | `high` | `developer_agent` |  | `2026-03-16T06:00:00Z` |
 | `item_l2_softmax_macro_pipeline_balance_v1` | `layer2` | `architecture` | `Integrated softmax pipeline rebalance` | `seed` | `high` | `developer_agent` |  | `2026-03-16T06:00:00Z` |
 | `item_l2_activation_fusion_tail_v1` | `layer2` | `architecture` | `Tail activation fusion path` | `seed` | `medium` | `developer_agent` |  | `2026-03-16T06:00:00Z` |
@@ -18,7 +18,7 @@
 | `item_l2_attention_microblock_v1` | `layer2` | `architecture` | `Attention microblock support` | `seed` | `low` | `developer_agent` |  | `2026-03-16T06:00:00Z` |
 | `item_l2_mapper_softmax_tail_fusion_v1` | `layer2` | `mapper` | `Mapper softmax-tail fusion` | `seed` | `high` | `developer_agent` |  | `2026-03-16T06:00:00Z` |
 | `item_l2_mapper_tile_scheduler_v1` | `layer2` | `mapper` | `Tile scheduler improvement` | `seed` | `high` | `developer_agent` |  | `2026-03-16T06:00:00Z` |
-| `item_l2_mapper_memory_aware_split_v1` | `layer2` | `mapper` | `Memory-aware split policy` | `promoted_to_proposal` | `high` | `developer_agent` | `prop_l2_mapper_memory_aware_split_v1` | `2026-03-17T06:36:09Z` |
+| `item_l2_mapper_memory_aware_split_v1` | `layer2` | `mapper` | `Memory-aware split policy` | `promoted_to_proposal` | `high` | `developer_agent` | `prop_l2_mapper_memory_aware_split_v1` | `2026-03-17T13:10:00Z` |
 | `item_l2_mapper_objective_aware_lowering_v1` | `layer2` | `mapper` | `Objective-aware lowering` | `seed` | `medium` | `developer_agent` |  | `2026-03-16T06:00:00Z` |
 | `item_l2_mapper_terminal_op_generalization_v1` | `layer2` | `mapper` | `Generalized terminal-op direct output` | `seed` | `medium` | `developer_agent` |  | `2026-03-16T06:00:00Z` |
 | `item_l2_mapper_batch_override_autotune_v1` | `layer2` | `mapper` | `Batch override autotune` | `seed` | `medium` | `developer_agent` |  | `2026-03-16T06:00:00Z` |

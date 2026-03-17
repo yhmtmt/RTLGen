@@ -7,7 +7,7 @@
 - priority: `high`
 - owner: `developer_agent`
 - created_utc: `2026-03-16T05:20:00Z`
-- updated_utc: `2026-03-16T05:20:00Z`
+- updated_utc: `2026-03-17T13:10:00Z`
 - proposal_id: `prop_l2_softmax_tile_fusion_v1`
 - proposal_path: `docs/developer_loop/prop_l2_softmax_tile_fusion_v1`
 
@@ -36,7 +36,21 @@
   - mapper regression
   - routing-equivalence quality precheck
 - remote:
-  - bounded Layer 2 campaign on the imported softmax-tail model family
+  - first-stage: compare `{non-fused, fused}` on the fixed
+    `fp16_nm1_softmax_r4` baseline only
+  - follow-on broad sweep only if the nm1 fusion effect is positive or still
+    ambiguous after the focused proof
+
+## Focused Comparison Set
+- direct comparison:
+  - current `fp16_nm1_softmax_r4` softmax baseline
+  - fused-output candidate on the same `fp16_nm1_softmax_r4` hardware
+- intentionally excluded from first-stage evaluation:
+  - `fp16_nm2_softmax_r4`
+  - broad architecture ranking across multiple module-count points
+- follow-on only after a positive or ambiguous focused result:
+  - reintroduce `nm2` to study whether the fusion effect changes the broader
+    architecture frontier
 
 ## Inputs / Sources
 - current integrated softmax-tail campaign baselines
@@ -46,6 +60,8 @@
 ## Open Questions
 - is the latency gain meaningful enough to justify a new architecture point?
 - does the benefit hold beyond the tiny softmax-tail classifier?
+- should a successful nm1 fusion result be followed by a broader nm1/nm2 sweep,
+  or by a separate mapper-specific proposal first?
 
 ## Promotion Rule
 - promote when direction gate approves a bounded softmax-tail fused-output

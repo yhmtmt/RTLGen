@@ -70,6 +70,12 @@ This set is the default startup context.
 
 After the mandatory set, read only the baselines relevant to the current topic.
 
+Prefer the smallest baseline and architecture set that directly tests the
+proposal mechanism first.
+
+Do not default to a broad architecture sweep when a tighter comparison would
+answer the proposal question more cleanly.
+
 ### For Layer 1 proposals
 
 Prefer:
@@ -97,6 +103,36 @@ Prefer:
   current lowering is leaving performance on the table
 - the most recent `analysis_report.md` and `promotion_decision.json` from the
   architecture proposal that exposed the mapper limitation
+
+## Focused Evaluation Set Rule
+
+Every proposal should define:
+
+1. the direct comparison set that is sufficient to test the proposal
+   hypothesis
+2. which architecture points or variants are intentionally excluded from the
+   first evaluation
+3. which broader sweep, if any, should happen only as a follow-on evaluation
+
+Default sequencing:
+- first-stage evaluation should be minimal and mechanism-focused
+- second-stage evaluation may widen to a broader architecture sweep only when
+  the focused result is positive, ambiguous, or likely interaction-sensitive
+
+Examples:
+- fusion proposal:
+  - first-stage: `{non-fused, fused}` on one fixed architecture
+  - follow-on: compare the winning fused point against a wider architecture set
+- mapper proposal targeting `nm2`:
+  - first-stage: `{old mapper, new mapper}` on `nm2`
+  - follow-on: re-run `nm1` and `nm2` together only if the local mapper effect
+    is established
+
+Reason:
+- smaller comparison sets keep the analysis aligned with the stated hypothesis
+- they reduce context size and ranking noise during review
+- they make it less likely that "campaign winner" is mistaken for
+  "proposal outcome"
 
 ## Existing Proposal Check
 
