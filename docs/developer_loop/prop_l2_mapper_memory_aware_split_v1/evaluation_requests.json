@@ -1,22 +1,5 @@
 {
   "proposal_id": "prop_l2_mapper_memory_aware_split_v1",
-  "source_commit": "c6b9a5d0424e70b52cd27e1d779288ec6939a07b",
-  "requested_items": [
-    {
-      "item_id": "l2_prop_l2_mapper_memory_aware_split_v1_balanced",
-      "task_request_id": "998daa76-3190-4b66-8f6b-37f31cd99949",
-      "work_item_id": "1e0f2c7c-620c-4677-ad16-46526798a7d4",
-      "task_type": "l2_campaign",
-      "objective": "balanced",
-      "campaign_path": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_v1/campaign.json"
-    },
-    {
-      "item_id": "l2_prop_l2_mapper_memory_aware_split_v1_latency",
-      "task_request_id": "49d04164-c8a4-4f76-8be4-84ea58619689",
-      "work_item_id": "ed87c1a7-532d-4727-98ff-8105be73e857",
-      "task_type": "l2_campaign",
-      "objective": "latency",
-      "campaign_path": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_v1/campaign.json"
-    }
-  ]
+  "source_commit": "",
+  "requested_items": []
 }

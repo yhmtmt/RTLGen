@@ -53,19 +53,17 @@ Current implementation slice:
 
 ## Evaluation Request
 - Requested remote tasks at the evaluation gate:
-  - `runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_v1/campaign.json` with `objective=balanced`
-  - `runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_v1/campaign.json` with `objective=latency`
+  - `runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm2_v1/campaign.json` as the focused nm2 mapper candidate
 - Cost class:
-  - both are `medium`
+  - `medium`
 - Required comparison baselines:
-  - `runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_v1/`
   - `runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_v1__l2_prop_l2_softmax_tile_fusion_v1_20260316051355/`
 - Required evidence:
   - campaign report
   - `summary.csv`
   - `best_point.json`
   - generated campaign file used for the run
-  - emitted schedules for `fp16_nm1_softmax_r4` and `fp16_nm2_softmax_r4`
+  - emitted schedules for the focused `fp16_nm2_softmax_r4` candidate
 
 ## Risks
 - The current heuristic is intentionally narrow and may be too conservative or

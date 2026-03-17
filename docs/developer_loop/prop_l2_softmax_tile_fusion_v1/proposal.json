@@ -40,13 +40,8 @@
     },
     {
       "task_type": "l2_campaign",
-      "objective": "balanced",
-      "cost_class": "high"
-    },
-    {
-      "task_type": "l2_campaign",
-      "objective": "latency",
-      "cost_class": "high"
+      "objective": "focused_candidate",
+      "cost_class": "medium"
     }
   ],
   "baseline_refs": [

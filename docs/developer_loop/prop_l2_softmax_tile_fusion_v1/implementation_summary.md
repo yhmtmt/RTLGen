@@ -59,20 +59,18 @@
 
 ## Evaluation Request
 - Requested remote tasks at the evaluation gate:
-  - `runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_v1/campaign.json` with `objective=balanced`
-  - `runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_v1/campaign.json` with `objective=latency`
+  - `runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v1/campaign.json` as the focused fused candidate on `fp16_nm1_softmax_r4`
 - Cost class:
-  - both are `high`
+  - `medium`
 - Required comparison baselines:
-  - `runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1/`
   - `runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_v1/`
 - Required evidence:
   - campaign report
   - summary.csv
   - best_point.json
   - generated campaign file used for the run
-- Evaluation should not be requested until:
-  - evaluation gate is approved
+  - explicit comparison against the `fp16_nm1_softmax_r4` baseline row from
+    `softmax_macro_submit_v1`
 
 ## Risks
 - Direct terminal output may improve only the descriptor tail overhead and not

@@ -1,12 +1,5 @@
 {
   "proposal_id": "prop_l2_softmax_tile_fusion_v1",
-  "source_commit": "f029b6f1a712844a663de7892bbb07f98c340f85",
-  "requested_items": [
-    {
-      "item_id": "l2_prop_l2_softmax_tile_fusion_v1_20260316051355",
-      "task_type": "l2_campaign",
-      "objective": "balanced",
-      "candidate_id": "cand_softmax_tail_fused_output_v1_r1"
-    }
-  ]
+  "source_commit": "",
+  "requested_items": []
 }
