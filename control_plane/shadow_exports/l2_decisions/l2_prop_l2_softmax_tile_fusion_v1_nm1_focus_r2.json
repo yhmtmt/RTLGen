@@ -1,0 +1,57 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-03-17T14:43:18.090753Z",
+  "item_id": "l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2",
+  "run_key": "l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2_run_e87c163f8d1017aa",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "3eba0b4b7fd558035907257ca55b6a3e26b2afce",
+  "objective": "focused_candidate",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/sweep_compare_softmax_33.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/config_nm1_softmax.json"
+    ],
+    "design_dirs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp"
+    ],
+    "macro_manifests": [
+      "runs/designs/npu_macros/npu_fp16_nm1_softmax_bundle_ng45/macro_manifest.json"
+    ],
+    "generated_campaign": {
+      "path": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v1/campaign__l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2.json",
+      "outputs": {
+        "report_md": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v1__l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2/report.md",
+        "results_csv": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v1__l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2/results.csv",
+        "campaign_dir": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v1__l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2"
+      },
+      "base_campaign_path": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v1/campaign.json"
+    },
+    "candidate_manifests": [
+      "runs/candidates/nangate45/module_candidates.json"
+    ]
+  },
+  "recommendation": {
+    "arch_id": "fp16_nm1_softmax_r4",
+    "macro_mode": "flat_nomacro",
+    "objective_rank": 1,
+    "objective_score": "0.0",
+    "latency_ms_mean": 0.000621,
+    "energy_mj_mean": 1.1462914800000001e-07,
+    "critical_path_ns_mean": 5.690256573668907,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.184588,
+    "flow_elapsed_s_mean": 1318.74
+  },
+  "objective_profiles": [],
+  "source_refs": {
+    "best_point_json": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v1__l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2/best_point.json",
+    "summary_csv": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v1__l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2/summary.csv",
+    "results_csv": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v1__l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2/results.csv",
+    "report_md": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v1__l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2/report.md"
+  }
+}
