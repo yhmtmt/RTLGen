@@ -1,11 +1,11 @@
 {
   "proposal_id": "prop_l2_mapper_memory_aware_split_v1",
-  "source_commit": "1451e1c04063c100b8ed945d460d6aedd0b405f1",
+  "source_commit": "3eba0b4b7fd558035907257ca55b6a3e26b2afce",
   "requested_items": [
     {
-      "item_id": "l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus",
-      "task_request_id": "3cb6248b-23b8-4241-b645-b3e55efe3e52",
-      "work_item_id": "f0dd386a-baf0-4b1a-8b16-4667ef5950c2",
+      "item_id": "l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2",
+      "task_request_id": "4fb0ffd2-7150-47c6-9b41-ab61acf754ba",
+      "work_item_id": "f8ee6216-fe5f-4f57-82a0-598ee40b25be",
       "task_type": "l2_campaign",
       "objective": "focused_candidate",
       "campaign_path": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm2_v1/campaign.json"

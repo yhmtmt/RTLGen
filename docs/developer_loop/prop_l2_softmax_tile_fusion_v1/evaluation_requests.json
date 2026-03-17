@@ -1,11 +1,11 @@
 {
   "proposal_id": "prop_l2_softmax_tile_fusion_v1",
-  "source_commit": "1451e1c04063c100b8ed945d460d6aedd0b405f1",
+  "source_commit": "3eba0b4b7fd558035907257ca55b6a3e26b2afce",
   "requested_items": [
     {
-      "item_id": "l2_prop_l2_softmax_tile_fusion_v1_nm1_focus",
-      "task_request_id": "ced5c429-a96c-42a2-93e0-f4c960cca03c",
-      "work_item_id": "f4eeec52-738e-405f-bbb5-b27e65a66865",
+      "item_id": "l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2",
+      "task_request_id": "affa4f2a-eef9-419c-806b-2142cbaab137",
+      "work_item_id": "e2f4c43f-2176-4029-b6e2-8d03a3f33fd5",
       "task_type": "l2_campaign",
       "objective": "focused_candidate",
       "campaign_path": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v1/campaign.json"
