@@ -1,0 +1,26 @@
+{
+  "campaign_id": "npu_e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_v1",
+  "generated_utc": "2026-03-17T12:10:34+00:00",
+  "objective_weights": {
+    "latency": 1.0,
+    "energy": 1.0,
+    "area": 0.0,
+    "power": 0.0,
+    "runtime": 0.0
+  },
+  "best": {
+    "arch_id": "fp16_nm1_softmax_r4",
+    "macro_mode": "flat_nomacro",
+    "objective_rank": 1,
+    "objective_score": 0.0,
+    "latency_ms_mean": 0.000621,
+    "throughput_infer_per_s_mean": 1610305.958132045,
+    "energy_mj_mean": 1.1462914800000001e-07,
+    "critical_path_ns_mean": 5.690256573668907,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.184588,
+    "flow_elapsed_s_mean": 1318.74,
+    "place_gp_elapsed_s_mean": 795.3066666666667
+  },
+  "pareto_count": 3
+}
