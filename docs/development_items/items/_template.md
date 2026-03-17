@@ -10,6 +10,8 @@
 - updated_utc:
 - proposal_id:
 - proposal_path:
+- triggered_by_proposal:
+- triggering_evidence:
 
 ## Problem
 - what is currently limiting performance, quality, or feasibility
@@ -36,6 +38,7 @@
 - notes
 - discussions
 - prior runs
+- triggering proposal artifacts when this item is a mapper follow-on
 
 ## Open Questions
 - unresolved issues

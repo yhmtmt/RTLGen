@@ -57,6 +57,38 @@ The reviewer must answer:
 5. Are the claimed improvements meaningful against the referenced baseline?
 6. Does the PR contain the exact evidence required for reproducibility?
 
+## Mapper Headroom Rule
+
+The reviewer should not treat every losing or flat result as an architecture
+loss.
+
+Before concluding `reject` or writing a negative finding, explicitly assess:
+- whether the run used one narrow mapper heuristic or a bounded set of schedule
+  alternatives
+- whether the losing architecture exposed unused parallelism, overlap, tiling,
+  or memory-placement choices that the current mapper did not explore
+- whether the benchmark model family is large enough and shaped appropriately to
+  exercise the architecture's intended advantage
+- whether the observed gap is better explained by mapper overhead, control
+  synchronization, or benchmark mismatch than by the hardware itself
+
+Prefer `iterate` over a stronger negative conclusion when:
+- the architecture result is technically valid but still mapper-confounded
+- the benchmark likely leaves meaningful optimization room unused
+- the proposal question has shifted from "is the hardware legal?" to "did the
+  mapper expose the hardware fairly?"
+
+Prefer `reject` only when:
+- the architecture loses for reasons unlikely to be rescued by reasonable
+  mapper improvements
+- the relevant mapping alternatives were already explored enough to make the
+  conclusion robust
+- the benchmark family is appropriate for the proposed architectural advantage
+
+When mapper headroom is part of the conclusion, the review should say so
+explicitly and point to the follow-on mapper intake item or proposal when one
+exists.
+
 ## Merge Policy
 
 For now:

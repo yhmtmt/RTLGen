@@ -105,6 +105,24 @@ Responsibility:
 
 Trigger this role only when the L2 proposal cannot be evaluated with the
 current mapping pipeline.
+Also trigger it when a completed architecture evaluation is technically valid
+but does not answer the architecture question fairly because the current mapper
+heuristic likely left meaningful performance on the table.
+
+## Architecture vs Mapper Follow-On Rule
+
+Use the existing architecture proposal when:
+- the mapper change is required for legality
+- the mapper change is required to expose the intended architectural mechanism
+- the architecture question is still the primary unknown
+
+Create or update a mapper intake item, then promote a mapper proposal, when:
+- the architecture already ran and the result is best explained by mapper
+  limitations rather than by the hardware itself
+- the next step is to compare multiple bounded lowering or scheduling choices on
+  the same hardware
+- the architecture ranking would otherwise be confounded by one ad hoc
+  heuristic
 
 ### 5. Evaluation Analyst Agent
 
@@ -249,6 +267,9 @@ Concrete artifact schema:
 - `evidence_refs`
 - `reason`
 - `next_action`
+
+If the decision is `iterate` due to mapper limitations, the next action should
+name the mapper intake item or mapper proposal that will resolve the ambiguity.
 
 ### Stage 9. Promotion Gate
 

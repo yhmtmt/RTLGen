@@ -93,6 +93,10 @@ Prefer:
 - `npu/docs/workflow.md`
 - current Layer 2 campaign reports showing mapper bottlenecks
 - failing or constrained evaluation evidence tied to the architecture change
+- emitted schedules, traces, or quality-gate artifacts that show where the
+  current lowering is leaving performance on the table
+- the most recent `analysis_report.md` and `promotion_decision.json` from the
+  architecture proposal that exposed the mapper limitation
 
 ## Existing Proposal Check
 
@@ -106,6 +110,14 @@ Goal:
 - avoid duplicate proposals,
 - continue an existing proposal when appropriate,
 - increment the version suffix only when the direction is materially new.
+
+Mapper-specific rule:
+- if mapper work is required only to make an approved architecture proposal
+  legal or basically runnable, continue the existing proposal
+- if an evaluated architecture proposal reached `iterate` because the mapper
+  heuristic likely prevented a fair architecture comparison, create or update a
+  mapper intake item in `docs/development_items/` first and promote that item
+  into its own mapper proposal
 
 ## Proposal ID Rule
 
@@ -167,5 +179,7 @@ Before the first code change, confirm:
 5. `proposal_id` is chosen or reused
 6. `docs/developer_loop/<proposal_id>/` exists
 7. `proposal.json` and `design_brief.md` are initialized
+8. for mapper follow-on work, the triggering proposal/result evidence is linked
+   from the intake item or proposal artifacts
 
 Only then move to the direction gate.

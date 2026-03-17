@@ -225,6 +225,8 @@ Summarize evaluated evidence for a promotion decision.
 ## Result
 - win / loss / mixed
 - confidence level
+- estimated mapper optimization room
+- whether the architecture conclusion is robust to plausible schedule changes
 
 ## Failures and Caveats
 - flow failures
@@ -234,7 +236,17 @@ Summarize evaluated evidence for a promotion decision.
 ## Recommendation
 - reject / iterate / promote
 - short reason
+- follow-on mapper item or proposal when iteration is caused by mapper limits
 ```
+
+`analysis_report.md` should make it obvious whether a result is:
+- an architecture win or loss that is robust under the current evidence
+- a mapper-confounded outcome that should remain in `iterate`
+
+When mapper limitations are material, include:
+- the likely unused optimization room
+- why the benchmark shape does or does not stress the architecture fairly
+- what bounded follow-on mapper work would reduce the ambiguity
 
 ## 5. promotion_decision.json
 
@@ -257,6 +269,10 @@ Provide a small machine-readable decision record after analysis.
   "requires_human_approval": true
 }
 ```
+
+When `decision` is `iterate`, `next_action` should identify the bounded next
+step. For mapper-confounded results, prefer an intake item id or mapper
+proposal path rather than a vague free-form note.
 
 ### Example
 

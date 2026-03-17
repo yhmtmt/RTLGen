@@ -1,8 +1,8 @@
 # Analysis Report
 
 ## Candidate
-- `proposal_id`: `prop_example_v1`
-- `candidate_id`: `cand_example_v1_r1`
+- `proposal_id`: `prop_l2_mapper_memory_aware_split_v1`
+- `candidate_id`: `cand_l2_mapper_memory_aware_split_v1_r1`
 
 ## Evaluations Consumed
 - work item ids

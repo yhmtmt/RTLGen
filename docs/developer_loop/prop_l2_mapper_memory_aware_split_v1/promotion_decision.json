@@ -1,0 +1,9 @@
+{
+  "proposal_id": "prop_l2_mapper_memory_aware_split_v1",
+  "candidate_id": "cand_l2_mapper_memory_aware_split_v1_r1",
+  "decision": "iterate",
+  "reason": "Pending implementation and evaluation.",
+  "evidence_refs": [],
+  "next_action": "Complete direction gate, implement the bounded mapper policy, and request the dedicated-softmax baseline rerun.",
+  "requires_human_approval": true
+}

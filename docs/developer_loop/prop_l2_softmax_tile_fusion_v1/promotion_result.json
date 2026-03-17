@@ -1,7 +1,8 @@
 {
   "proposal_id": "prop_l2_softmax_tile_fusion_v1",
-  "decision": "promoted",
-  "pr_number": 0,
-  "merge_commit": "git-sha",
-  "merged_utc": "2026-03-15T13:07:22Z"
+  "decision": "iterate",
+  "pr_number": 36,
+  "merge_commit": "",
+  "decided_utc": "2026-03-17T00:00:00Z",
+  "note": "PR #36 established that the fused-output mapping path is valid but did not establish an architecture-level win; follow-on mapper work is required."
 }
