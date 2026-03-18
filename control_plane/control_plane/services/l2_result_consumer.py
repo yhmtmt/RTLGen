@@ -175,8 +175,7 @@ def _focused_artifact_refs(result_row: dict[str, str] | None) -> dict[str, str]:
 
 
 def _load_proposal(repo_root: Path, work_item: WorkItem) -> dict[str, Any] | None:
-    payload = dict(work_item.task_request.request_payload or {})
-    developer_loop = payload.get("developer_loop")
+    developer_loop = _developer_loop_payload(work_item)
     if not isinstance(developer_loop, dict):
         return None
     proposal_path_text = str(developer_loop.get("proposal_path", "")).strip()
@@ -197,9 +196,66 @@ def _load_proposal(repo_root: Path, work_item: WorkItem) -> dict[str, Any] | Non
         return None
 
 
+def _developer_loop_payload(work_item: WorkItem) -> dict[str, Any]:
+    payload = dict(work_item.task_request.request_payload or {})
+    developer_loop = payload.get("developer_loop")
+    return dict(developer_loop) if isinstance(developer_loop, dict) else {}
+
+
+def _developer_loop_comparison(work_item: WorkItem) -> dict[str, Any]:
+    developer_loop = _developer_loop_payload(work_item)
+    comparison = developer_loop.get("comparison")
+    return dict(comparison) if isinstance(comparison, dict) else {}
+
+
+def _resolve_baseline_summary_from_work_item(
+    session: Session,
+    *,
+    repo_root: Path,
+    item_id: str,
+) -> tuple[str, list[dict[str, str]], str | None, dict[str, Any], dict[str, str]] | tuple[None, None, None, None, None]:
+    baseline_item = session.query(WorkItem).filter(WorkItem.item_id == item_id).one_or_none()
+    if baseline_item is None:
+        return None, None, None, None, None
+    summary_rel = _find_output_path_optional(baseline_item, "/summary.csv")
+    if not summary_rel:
+        return None, None, None, None, None
+    summary_path = _resolve_path(repo_root=repo_root, path_text=summary_rel)
+    if not summary_path.exists():
+        return None, None, None, None, None
+    report_rel = _find_output_path_optional(baseline_item, "/report.md")
+    report_path = _resolve_path(repo_root=repo_root, path_text=report_rel) if report_rel else None
+    baseline_ref = str(Path(summary_rel).parent.as_posix())
+    source_refs = {
+        "baseline_summary_csv": summary_rel,
+    }
+    report_rel_value: str | None = None
+    if report_path is not None and report_path.exists():
+        report_rel_value = str(report_path.relative_to(repo_root))
+        source_refs["baseline_report_md"] = report_rel_value
+    assessment_meta = {
+        "baseline_item_id": baseline_item.item_id,
+    }
+    return baseline_ref, _load_csv(summary_path), report_rel_value, assessment_meta, source_refs
+
+
 def _resolve_baseline_summary(
-    repo_root: Path, proposal: dict[str, Any]
-) -> tuple[str, list[dict[str, str]], str | None] | tuple[None, None, None]:
+    session: Session,
+    *,
+    repo_root: Path,
+    proposal: dict[str, Any],
+    comparison: dict[str, Any],
+) -> tuple[str, list[dict[str, str]], str | None, dict[str, Any], dict[str, str]] | tuple[None, None, None, None, None]:
+    paired_baseline_item_id = str(comparison.get("paired_baseline_item_id", "")).strip()
+    if paired_baseline_item_id:
+        resolved = _resolve_baseline_summary_from_work_item(
+            session,
+            repo_root=repo_root,
+            item_id=paired_baseline_item_id,
+        )
+        if resolved[0] is not None:
+            return resolved
+        return None, None, None, None, None
     for ref in proposal.get("baseline_refs") or []:
         ref_text = str(ref).strip()
         if not ref_text:
@@ -209,10 +265,14 @@ def _resolve_baseline_summary(
             summary_path = candidate / "summary.csv"
             if summary_path.exists():
                 report_path = candidate / "report.md"
-                return ref_text, _load_csv(summary_path), (
-                    str(report_path.relative_to(repo_root)) if report_path.exists() else None
-                )
-    return None, None, None
+                report_rel = str(report_path.relative_to(repo_root)) if report_path.exists() else None
+                source_refs = {
+                    "baseline_summary_csv": f"{ref_text}/summary.csv",
+                }
+                if report_rel:
+                    source_refs["baseline_report_md"] = report_rel
+                return ref_text, _load_csv(summary_path), report_rel, {}, source_refs
+    return None, None, None, None, None
 
 
 def _comparable_rows(rows: list[dict[str, str]]) -> list[dict[str, str]]:
@@ -296,22 +356,37 @@ def _comparison_outcome(comparisons: list[dict[str, Any]]) -> tuple[str, str]:
 
 def _build_proposal_assessment(
     *,
+    session: Session,
+    work_item: WorkItem,
     repo_root: Path,
     proposal: dict[str, Any] | None,
     summary_rows: list[dict[str, str]],
 ) -> tuple[dict[str, Any] | None, dict[str, str]]:
     if proposal is None:
         return None, {}
-    baseline_ref, baseline_rows, baseline_report = _resolve_baseline_summary(repo_root, proposal)
+    comparison = _developer_loop_comparison(work_item)
+    comparison_role = str(comparison.get("role", "")).strip() or "standalone"
+    baseline_ref, baseline_rows, baseline_report, assessment_meta, source_refs = _resolve_baseline_summary(
+        session,
+        repo_root=repo_root,
+        proposal=proposal,
+        comparison=comparison,
+    )
     if baseline_ref is None or baseline_rows is None:
+        if comparison_role == "candidate" and str(comparison.get("paired_baseline_item_id", "")).strip():
+            missing_summary = "Paired baseline item could not be resolved for focused candidate comparison."
+        else:
+            missing_summary = "Focused comparison baseline could not be resolved from proposal baseline_refs."
         return (
             {
                 "proposal_id": str(proposal.get("proposal_id", "")).strip(),
                 "title": str(proposal.get("title", "")).strip(),
                 "primary_question": str((proposal.get("direct_comparison") or {}).get("primary_question", "")).strip(),
+                "comparison_role": comparison_role,
                 "outcome": "unavailable",
-                "summary": "Focused comparison baseline could not be resolved from proposal baseline_refs.",
+                "summary": missing_summary,
                 "baseline_ref": None,
+                "baseline_item_id": str(comparison.get("paired_baseline_item_id", "")).strip() or None,
                 "matched_row_count": 0,
                 "matched_rows": [],
             },
@@ -344,20 +419,24 @@ def _build_proposal_assessment(
         )
 
     outcome, summary = _comparison_outcome(comparisons)
-    extra_refs = {
-        "baseline_summary_csv": f"{baseline_ref}/summary.csv",
-    }
-    if baseline_report:
-        extra_refs["baseline_report_md"] = baseline_report
+    if comparison_role == "refreshed_baseline":
+        outcome = "baseline_refreshed"
+        summary = (
+            "This run refreshes the focused comparison baseline under the corrected contract; "
+            "proposal judgment is deferred until the paired candidate run is reviewed."
+        )
+    extra_refs = dict(source_refs or {})
     return (
         {
             "proposal_id": str(proposal.get("proposal_id", "")).strip(),
             "title": str(proposal.get("title", "")).strip(),
             "kind": str(proposal.get("kind", "")).strip(),
             "primary_question": str((proposal.get("direct_comparison") or {}).get("primary_question", "")).strip(),
+            "comparison_role": comparison_role,
             "outcome": outcome,
             "summary": summary,
             "baseline_ref": baseline_ref,
+            **(assessment_meta or {}),
             "matched_row_count": len(comparisons),
             "matched_rows": comparisons,
         },
@@ -450,6 +529,8 @@ def consume_l2_result(session: Session, request: Layer2ConsumeRequest) -> Layer2
     summary_best = _summary_best_row(summary_rows)
     proposal = _load_proposal(repo_root, work_item)
     proposal_assessment, proposal_source_refs = _build_proposal_assessment(
+        session=session,
+        work_item=work_item,
         repo_root=repo_root,
         proposal=proposal,
         summary_rows=summary_rows,

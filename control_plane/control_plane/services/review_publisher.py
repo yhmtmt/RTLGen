@@ -200,6 +200,9 @@ def _build_body_md(
         primary_question = str(proposal_assessment.get("primary_question", "")).strip()
         if primary_question:
             lines.append(f"- primary_question: `{primary_question}`")
+        comparison_role = str(proposal_assessment.get("comparison_role", "")).strip()
+        if comparison_role:
+            lines.append(f"- comparison_role: `{comparison_role}`")
         outcome = str(proposal_assessment.get("outcome", "")).strip()
         if outcome:
             lines.append(f"- proposal_outcome: `{outcome}`")
@@ -209,6 +212,9 @@ def _build_body_md(
         baseline_ref = str(proposal_assessment.get("baseline_ref", "")).strip()
         if baseline_ref:
             lines.append(f"- baseline_ref: `{baseline_ref}`")
+        baseline_item_id = str(proposal_assessment.get("baseline_item_id", "")).strip()
+        if baseline_item_id:
+            lines.append(f"- baseline_item_id: `{baseline_item_id}`")
         matched_rows = proposal_assessment.get("matched_rows")
         if isinstance(matched_rows, list):
             for row in matched_rows[:2]:

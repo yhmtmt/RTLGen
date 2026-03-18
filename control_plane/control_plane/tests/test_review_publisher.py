@@ -354,3 +354,36 @@ def test_publish_review_package_for_l2() -> None:
             assert "reviewer_first_read: `docs/developer_loop/prop_l2_review_demo_v1` plus `docs/developer_agent_review.md`" in payload["pr_payload"]["body_md"]
             assert "proposal_outcome: `no_measurable_change`" in payload["pr_payload"]["body_md"]
             assert "baseline_ref: `runs/campaigns/npu/baseline_campaign`" in payload["pr_payload"]["body_md"]
+
+
+def test_publish_review_package_includes_comparison_role_and_baseline_item() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, _run_key = _seed_l2_reviewable(session, repo_root)
+            artifact_path = repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{item_id}.json"
+            payload = json.loads(artifact_path.read_text(encoding="utf-8"))
+            payload["proposal_assessment"]["comparison_role"] = "candidate"
+            payload["proposal_assessment"]["baseline_item_id"] = "l2_baseline_demo"
+            artifact_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+            result = publish_review_package(
+                session,
+                ReviewPublishRequest(
+                    repo_root=str(repo_root),
+                    item_id=item_id,
+                    evaluator_id="cpbot",
+                    session_id="s20260310t071500z",
+                    host="cp-host",
+                ),
+            )
+
+            package_path = repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "review_package.json"
+            review_payload = json.loads(package_path.read_text(encoding="utf-8"))
+            body_md = review_payload["pr_payload"]["body_md"]
+            assert result.item_id == item_id
+            assert "comparison_role: `candidate`" in body_md
+            assert "baseline_item_id: `l2_baseline_demo`" in body_md

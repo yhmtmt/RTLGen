@@ -27,6 +27,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--objective-profiles-json")
     parser.add_argument("--proposal-id")
     parser.add_argument("--proposal-path")
+    parser.add_argument("--comparison-role")
+    parser.add_argument("--paired-baseline-item-id")
     parser.add_argument("--no-run-physical", action="store_true")
     args = parser.parse_args(argv)
 
@@ -53,6 +55,8 @@ def main(argv: list[str] | None = None) -> int:
                 objective_profiles_json=args.objective_profiles_json,
                 proposal_id=args.proposal_id,
                 proposal_path=args.proposal_path,
+                comparison_role=args.comparison_role,
+                paired_baseline_item_id=args.paired_baseline_item_id,
             ),
         )
     print(json.dumps(result.__dict__, indent=2, sort_keys=True))

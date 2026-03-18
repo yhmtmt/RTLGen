@@ -229,6 +229,122 @@ def _seed_focused_l2_campaign_with_baseline(session: Session, repo_root: Path) -
     return work_item.item_id
 
 
+def _seed_campaign_work_item(
+    session: Session,
+    repo_root: Path,
+    *,
+    item_id: str,
+    campaign_dir_rel: str,
+    summary_rows: str,
+    proposal_path: str,
+    comparison: dict[str, str] | None = None,
+) -> str:
+    campaign_dir = repo_root / campaign_dir_rel
+    schedule_rel = f"{campaign_dir_rel}/artifacts/mapper/fp16_nm1_demo/demo_model/schedule.yml"
+    descriptors_rel = f"{campaign_dir_rel}/artifacts/mapper/fp16_nm1_demo/demo_model/descriptors.bin"
+    _write(repo_root / schedule_rel, "schedule: demo\n")
+    _write(repo_root / descriptors_rel, "bin\n")
+    _write(
+        campaign_dir / "best_point.json",
+        json.dumps(
+            {
+                "campaign_id": item_id,
+                "best": {
+                    "arch_id": "fp16_nm1_demo",
+                    "macro_mode": "flat_nomacro",
+                    "objective_rank": 1,
+                    "objective_score": 0.0,
+                    "latency_ms_mean": 0.4,
+                    "energy_mj_mean": 0.15,
+                    "critical_path_ns_mean": 5.5,
+                    "die_area_um2_mean": 2250000.0,
+                    "total_power_mw_mean": 0.18,
+                    "flow_elapsed_s_mean": 1000.0,
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+    )
+    _write(campaign_dir / "summary.csv", summary_rows)
+    _write(
+        campaign_dir / "results.csv",
+        (
+            "version,campaign_id,arch_id,macro_mode,status,artifact_schedule_yml,artifact_descriptors_bin\n"
+            f"0.1,{item_id},fp16_nm1_demo,flat_nomacro,ok,{schedule_rel},{descriptors_rel}\n"
+        ),
+    )
+    _write(campaign_dir / "report.md", "# demo report\n")
+
+    request_payload: dict[str, object] = {
+        "item_id": item_id,
+        "layer": "layer2",
+        "flow": "openroad",
+        "developer_loop": {
+            "proposal_id": "prop_l2_demo_v1",
+            "proposal_path": proposal_path,
+        },
+    }
+    if comparison:
+        request_payload["developer_loop"]["comparison"] = comparison
+
+    task_request = TaskRequest(
+        request_key=f"l2_campaign:{item_id}",
+        source="test",
+        requested_by="@tester",
+        title=f"Layer2 {item_id}",
+        description="focused comparison",
+        layer=LayerName.LAYER2,
+        flow=FlowName.OPENROAD,
+        priority=1,
+        request_payload=request_payload,
+        source_commit="deadbeef",
+    )
+    session.add(task_request)
+    session.flush()
+
+    work_item = WorkItem(
+        work_item_key=f"l2_campaign:{item_id}",
+        task_request_id=task_request.id,
+        item_id=item_id,
+        layer=LayerName.LAYER2,
+        flow=FlowName.OPENROAD,
+        platform="nangate45",
+        task_type="l2_campaign",
+        state=WorkItemState.ARTIFACT_SYNC,
+        priority=1,
+        source_mode="src_verilog",
+        input_manifest={},
+        command_manifest=[],
+        expected_outputs=[
+            f"{campaign_dir_rel}/results.csv",
+            f"{campaign_dir_rel}/summary.csv",
+            f"{campaign_dir_rel}/report.md",
+            f"{campaign_dir_rel}/best_point.json",
+        ],
+        acceptance_rules=[],
+        source_commit="deadbeef",
+    )
+    session.add(work_item)
+    session.flush()
+
+    run = Run(
+        run_key=f"{item_id}_run_1",
+        work_item_id=work_item.id,
+        attempt=1,
+        executor_type=ExecutorType.INTERNAL_WORKER,
+        status=RunStatus.SUCCEEDED,
+        started_at=utcnow(),
+        completed_at=utcnow(),
+        checkout_commit="deadbeef",
+        result_summary="4/4 commands succeeded",
+        result_payload={"queue_result": {"status": "ok"}},
+    )
+    session.add(run)
+    session.commit()
+    return item_id
+
+
 def test_consume_l2_result_writes_decision_proposal() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
@@ -336,3 +452,138 @@ def test_consume_l2_result_writes_proposal_assessment_for_focused_comparison() -
             assert assessment["matched_rows"][0]["arch_id"] == "fp16_nm1_demo"
             assert payload["source_refs"]["baseline_summary_csv"] == "runs/campaigns/npu/baseline_campaign/summary.csv"
             assert payload["source_refs"]["baseline_report_md"] == "runs/campaigns/npu/baseline_campaign/report.md"
+
+
+def test_consume_l2_result_marks_refreshed_baseline_without_proposal_judgment() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            proposal_dir = repo_root / "docs" / "developer_loop" / "prop_l2_demo_v1"
+            _write(
+                proposal_dir / "proposal.json",
+                json.dumps(
+                    {
+                        "proposal_id": "prop_l2_demo_v1",
+                        "kind": "architecture",
+                        "title": "Demo focused comparison",
+                        "direct_comparison": {
+                            "primary_question": "Does the focused candidate improve the fixed baseline?",
+                        },
+                        "baseline_refs": ["runs/campaigns/npu/historical_baseline"],
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            _write(
+                repo_root / "runs" / "campaigns" / "npu" / "historical_baseline" / "summary.csv",
+                (
+                    "scope,arch_id,macro_mode,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,throughput_infer_per_s_mean\n"
+                    "aggregate,fp16_nm1_demo,flat_nomacro,1,0.3,0.1,5.5,0.18,1000,1.0\n"
+                ),
+            )
+            baseline_item_id = _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id="l2_refreshed_baseline",
+                campaign_dir_rel="runs/campaigns/npu/refreshed_baseline_campaign",
+                summary_rows=(
+                    "scope,arch_id,macro_mode,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,throughput_infer_per_s_mean\n"
+                    "aggregate,fp16_nm1_demo,flat_nomacro,1,0.5,0.2,5.5,0.18,1000,1.0\n"
+                ),
+                proposal_path="docs/developer_loop/prop_l2_demo_v1",
+                comparison={"role": "refreshed_baseline"},
+            )
+
+            consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=baseline_item_id))
+
+            payload = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{baseline_item_id}.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            assessment = payload["proposal_assessment"]
+            assert assessment["comparison_role"] == "refreshed_baseline"
+            assert assessment["outcome"] == "baseline_refreshed"
+            assert "deferred until the paired candidate run is reviewed" in assessment["summary"]
+            assert payload["source_refs"]["baseline_summary_csv"] == "runs/campaigns/npu/historical_baseline/summary.csv"
+
+
+def test_consume_l2_result_compares_candidate_against_paired_baseline_item() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            proposal_dir = repo_root / "docs" / "developer_loop" / "prop_l2_demo_v1"
+            _write(
+                proposal_dir / "proposal.json",
+                json.dumps(
+                    {
+                        "proposal_id": "prop_l2_demo_v1",
+                        "kind": "architecture",
+                        "title": "Demo focused comparison",
+                        "direct_comparison": {
+                            "primary_question": "Does the focused candidate improve the fixed baseline?",
+                        },
+                        "baseline_refs": ["runs/campaigns/npu/historical_baseline"],
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            _write(
+                repo_root / "runs" / "campaigns" / "npu" / "historical_baseline" / "summary.csv",
+                (
+                    "scope,arch_id,macro_mode,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,throughput_infer_per_s_mean\n"
+                    "aggregate,fp16_nm1_demo,flat_nomacro,1,0.3,0.1,5.5,0.18,1000,1.0\n"
+                ),
+            )
+            baseline_item_id = _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id="l2_refreshed_baseline",
+                campaign_dir_rel="runs/campaigns/npu/refreshed_baseline_campaign",
+                summary_rows=(
+                    "scope,arch_id,macro_mode,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,throughput_infer_per_s_mean\n"
+                    "aggregate,fp16_nm1_demo,flat_nomacro,1,0.5,0.2,5.5,0.18,1000,1.0\n"
+                ),
+                proposal_path="docs/developer_loop/prop_l2_demo_v1",
+                comparison={"role": "refreshed_baseline"},
+            )
+            consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=baseline_item_id))
+
+            candidate_item_id = _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id="l2_candidate",
+                campaign_dir_rel="runs/campaigns/npu/candidate_campaign",
+                summary_rows=(
+                    "scope,arch_id,macro_mode,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,throughput_infer_per_s_mean\n"
+                    "aggregate,fp16_nm1_demo,flat_nomacro,1,0.4,0.15,5.5,0.18,1000,1.0\n"
+                ),
+                proposal_path="docs/developer_loop/prop_l2_demo_v1",
+                comparison={"role": "candidate", "paired_baseline_item_id": baseline_item_id},
+            )
+
+            consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=candidate_item_id))
+
+            payload = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{candidate_item_id}.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            assessment = payload["proposal_assessment"]
+            assert assessment["comparison_role"] == "candidate"
+            assert assessment["baseline_item_id"] == baseline_item_id
+            assert assessment["baseline_ref"] == "runs/campaigns/npu/refreshed_baseline_campaign"
+            assert assessment["outcome"] == "improved"
+            assert assessment["matched_rows"][0]["metrics"]["latency_ms_mean"]["baseline"] == 0.5
+            assert assessment["matched_rows"][0]["metrics"]["latency_ms_mean"]["candidate"] == 0.4
+            assert payload["source_refs"]["baseline_summary_csv"] == "runs/campaigns/npu/refreshed_baseline_campaign/summary.csv"

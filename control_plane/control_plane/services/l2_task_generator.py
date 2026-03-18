@@ -39,6 +39,8 @@ class Layer2CampaignGenerateRequest:
     objective_profiles_json: str | None = None
     proposal_id: str | None = None
     proposal_path: str | None = None
+    comparison_role: str | None = None
+    paired_baseline_item_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -183,6 +185,8 @@ def _build_payload(
     objective_profiles_json: str | None,
     proposal_id: str | None,
     proposal_path: str | None,
+    comparison_role: str | None,
+    paired_baseline_item_id: str | None,
 ) -> dict[str, Any]:
     commands: list[dict[str, str]] = []
     if model_manifest:
@@ -281,6 +285,11 @@ def _build_payload(
             "proposal_id": proposal_id or "",
             "proposal_path": proposal_path or "",
         }
+        if comparison_role or paired_baseline_item_id:
+            payload["developer_loop"]["comparison"] = {
+                "role": comparison_role or "",
+                "paired_baseline_item_id": paired_baseline_item_id or "",
+            }
     return payload
 
 
@@ -327,6 +336,8 @@ def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateR
         objective_profiles_json=objective_profiles_json,
         proposal_id=request.proposal_id,
         proposal_path=proposal_path,
+        comparison_role=request.comparison_role,
+        paired_baseline_item_id=request.paired_baseline_item_id,
     )
 
     existing = session.query(WorkItem).filter(WorkItem.item_id == item_id).one_or_none()
