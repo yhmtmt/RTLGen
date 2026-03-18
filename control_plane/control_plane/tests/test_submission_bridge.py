@@ -60,6 +60,7 @@ def _init_repo(repo_root: Path) -> None:
 def _seed_l2_reviewable(session: Session, repo_root: Path) -> tuple[str, str]:
     campaign_dir = repo_root / "control_plane" / "shadow_exports" / "campaigns" / "demo_l2"
     design_metrics_rel = "control_plane/shadow_exports/designs/demo_nm1/metrics.csv"
+    schedule_rel = "runs/campaigns/demo_l2/artifacts/mapper/fp16_nm1_demo/demo_model/schedule.yml"
     _write(
         repo_root / design_metrics_rel,
         (
@@ -97,7 +98,14 @@ def _seed_l2_reviewable(session: Session, repo_root: Path) -> tuple[str, str]:
             "aggregate,fp16_nm1_demo,flat_nomacro,,,1,0.5,,1.0,,0.2,,5.5,2250000,0.18,1000,500,1,1,0,0,0,0,0,0,1\n"
         ),
     )
-    _write(campaign_dir / "results.csv", "version,campaign_id,arch_id,macro_mode,status\n0.1,demo_l2,fp16_nm1_demo,flat_nomacro,ok\n")
+    _write(repo_root / schedule_rel, "schedule: demo\n")
+    _write(
+        campaign_dir / "results.csv",
+        (
+            "version,campaign_id,arch_id,macro_mode,status,artifact_schedule_yml\n"
+            f"0.1,demo_l2,fp16_nm1_demo,flat_nomacro,ok,{schedule_rel}\n"
+        ),
+    )
     _write(campaign_dir / "report.md", "# demo report\n")
     _write(
         campaign_dir / "objective_sweep.csv",
@@ -302,7 +310,9 @@ def test_prepare_submission_branch_creates_commit_and_manifest() -> None:
             manifest = json.loads((repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "submission_manifest.json").read_text())
             assert manifest["branch_name"] == result.branch_name
             assert manifest["evidence_paths"] == []
+            assert manifest["supporting_paths"] == [schedule_rel]
             assert "gh pr create --draft" in manifest["pr_create_command"]
+            assert (Path(result.worktree_path) / schedule_rel).exists()
 
             branch_head = _git(repo_root, "rev-parse", result.branch_name)
             assert branch_head == result.commit_sha

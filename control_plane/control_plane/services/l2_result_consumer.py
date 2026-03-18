@@ -142,6 +142,38 @@ def _profile_recommendations(rows: list[dict[str, str]]) -> list[dict[str, Any]]
     return result
 
 
+def _select_focused_result_row(
+    rows: list[dict[str, str]],
+    *,
+    arch_id: str,
+    macro_mode: str,
+) -> dict[str, str] | None:
+    ok_rows = [row for row in rows if str(row.get("status", "")).strip() == "ok"]
+    for row in ok_rows:
+        if str(row.get("arch_id", "")).strip() == arch_id and str(row.get("macro_mode", "")).strip() == macro_mode:
+            return row
+    for row in ok_rows:
+        if str(row.get("arch_id", "")).strip() == arch_id:
+            return row
+    return ok_rows[0] if ok_rows else None
+
+
+def _focused_artifact_refs(result_row: dict[str, str] | None) -> dict[str, str]:
+    if result_row is None:
+        return {}
+    artifact_fields = {
+        "focused_candidate_schedule_yml": "artifact_schedule_yml",
+        "focused_candidate_descriptors_bin": "artifact_descriptors_bin",
+        "focused_candidate_perf_trace_json": "artifact_perf_trace_json",
+    }
+    refs: dict[str, str] = {}
+    for out_key, row_key in artifact_fields.items():
+        value = str(result_row.get(row_key, "")).strip()
+        if value:
+            refs[out_key] = value
+    return refs
+
+
 def _load_proposal(repo_root: Path, work_item: WorkItem) -> dict[str, Any] | None:
     payload = dict(work_item.task_request.request_payload or {})
     developer_loop = payload.get("developer_loop")
@@ -414,6 +446,7 @@ def consume_l2_result(session: Session, request: Layer2ConsumeRequest) -> Layer2
 
     best_point = _load_json(_resolve_path(repo_root=repo_root, path_text=best_point_rel))
     summary_rows = _load_csv(_resolve_path(repo_root=repo_root, path_text=summary_rel))
+    results_rows = _load_csv(_resolve_path(repo_root=repo_root, path_text=results_rel))
     summary_best = _summary_best_row(summary_rows)
     proposal = _load_proposal(repo_root, work_item)
     proposal_assessment, proposal_source_refs = _build_proposal_assessment(
@@ -441,6 +474,13 @@ def consume_l2_result(session: Session, request: Layer2ConsumeRequest) -> Layer2
             "summary_csv": summary_rel,
             "results_csv": results_rel,
             "report_md": report_rel,
+            **_focused_artifact_refs(
+                _select_focused_result_row(
+                    results_rows,
+                    arch_id=str((best_point.get("best") or {}).get("arch_id") or summary_best.get("arch_id") or "").strip(),
+                    macro_mode=str((best_point.get("best") or {}).get("macro_mode") or summary_best.get("macro_mode") or "").strip(),
+                )
+            ),
             **proposal_source_refs,
             **({"objective_sweep_csv": objective_sweep_rel} if objective_sweep_exists else {}),
         },

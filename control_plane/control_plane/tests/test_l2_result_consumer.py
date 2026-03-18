@@ -26,6 +26,10 @@ def _write(path: Path, text: str) -> None:
 
 def _seed_succeeded_l2_campaign(session: Session, repo_root: Path) -> tuple[str, str]:
     campaign_dir = repo_root / "runs" / "campaigns" / "npu" / "demo_campaign"
+    schedule_rel = "runs/campaigns/npu/demo_campaign/artifacts/mapper/fp16_nm1_demo/demo_model/schedule.yml"
+    descriptors_rel = "runs/campaigns/npu/demo_campaign/artifacts/mapper/fp16_nm1_demo/demo_model/descriptors.bin"
+    _write(repo_root / schedule_rel, "schedule: demo\n")
+    _write(repo_root / descriptors_rel, "bin\n")
     _write(
         campaign_dir / "best_point.json",
         json.dumps(
@@ -58,7 +62,10 @@ def _seed_succeeded_l2_campaign(session: Session, repo_root: Path) -> tuple[str,
     )
     _write(
         campaign_dir / "results.csv",
-        "version,campaign_id,arch_id,macro_mode,status\n0.1,demo_campaign,fp16_nm1_demo,flat_nomacro,ok\n",
+        (
+            "version,campaign_id,arch_id,macro_mode,status,artifact_schedule_yml,artifact_descriptors_bin\n"
+            f"0.1,demo_campaign,fp16_nm1_demo,flat_nomacro,ok,{schedule_rel},{descriptors_rel}\n"
+        ),
     )
     _write(campaign_dir / "report.md", "# demo report\n")
     _write(
@@ -247,6 +254,8 @@ def test_consume_l2_result_writes_decision_proposal() -> None:
             assert payload["recommendation"]["arch_id"] == "fp16_nm1_demo"
             assert payload["recommendation"]["macro_mode"] == "flat_nomacro"
             assert len(payload["objective_profiles"]) == 2
+            assert payload["source_refs"]["focused_candidate_schedule_yml"] == schedule_rel
+            assert payload["source_refs"]["focused_candidate_descriptors_bin"] == descriptors_rel
 
             artifact = session.query(Artifact).filter_by(kind="decision_proposal").one()
             assert artifact.path == f"control_plane/shadow_exports/l2_decisions/{item_id}.json"

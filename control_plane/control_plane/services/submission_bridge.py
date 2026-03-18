@@ -81,6 +81,35 @@ def _canonical_evidence_files(*, repo_root: Path, work_item: WorkItem) -> list[s
     return files
 
 
+def _review_linked_supporting_files(*, repo_root: Path, package_payload: dict[str, Any]) -> list[str]:
+    review_artifact = package_payload.get("review_artifact")
+    if not isinstance(review_artifact, dict):
+        return []
+    payload = review_artifact.get("payload")
+    if not isinstance(payload, dict):
+        return []
+    source_refs = payload.get("source_refs")
+    if not isinstance(source_refs, dict):
+        return []
+    supporting_keys = (
+        "focused_candidate_schedule_yml",
+        "focused_candidate_descriptors_bin",
+        "focused_candidate_perf_trace_json",
+    )
+    files: list[str] = []
+    seen: set[str] = set()
+    for key in supporting_keys:
+        rel_path = str(source_refs.get(key, "")).strip()
+        if not rel_path or rel_path in seen:
+            continue
+        candidate = repo_root / rel_path
+        if not candidate.exists() or not candidate.is_file():
+            continue
+        seen.add(rel_path)
+        files.append(rel_path)
+    return files
+
+
 def _resolve_run(session: Session, request: SubmissionPrepareRequest) -> tuple[WorkItem, Run]:
     if request.run_key:
         run = session.query(Run).filter(Run.run_key == request.run_key).one_or_none()
@@ -217,10 +246,12 @@ def prepare_submission_branch(session: Session, request: SubmissionPrepareReques
     review_artifact = package_payload.get("review_artifact") or {}
     review_rel = str(review_artifact.get("path", "")).strip() if isinstance(review_artifact, dict) else ""
     evidence_files = _canonical_evidence_files(repo_root=repo_root, work_item=work_item)
+    supporting_files = _review_linked_supporting_files(repo_root=repo_root, package_payload=package_payload)
     files_to_copy = [snapshot_rel, package_rel]
     if review_rel:
         files_to_copy.append(review_rel)
     files_to_copy.extend(evidence_files)
+    files_to_copy.extend(supporting_files)
 
     worktree_root = _worktree_root(work_item.item_id, request.worktree_root)
     worktree_path = worktree_root / "repo"
@@ -246,6 +277,7 @@ def prepare_submission_branch(session: Session, request: SubmissionPrepareReques
             pr_body_rel,
             *( [review_rel] if review_rel else [] ),
             *evidence_files,
+            *supporting_files,
         )
         staged_paths = _staged_paths(worktree_path)
         if evidence_files and not any(path in staged_paths for path in evidence_files):
@@ -282,6 +314,7 @@ def prepare_submission_branch(session: Session, request: SubmissionPrepareReques
         "snapshot_path": snapshot_rel,
         "review_artifact_path": review_rel or None,
         "evidence_paths": evidence_files,
+        "supporting_paths": supporting_files,
         "pr_title": pr_title,
         "pr_body_path": pr_body_rel,
         "pr_create_command": (
