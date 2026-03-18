@@ -47,6 +47,14 @@
 - keep the hardware fixed and focus the next proof on mechanism visibility
 - inspect emitted schedules and traces to determine whether terminal `dma_y`
   cost is already overlapped in the current perf path
+- validate the event semantics directly:
+  - `npu/mapper/run.py` inserts `EVENT_SIGNAL` immediately after the producer op
+    in descriptor order
+  - `npu/sim/perf/run.py` treats `EVENT_SIGNAL` as an immediate queue event with
+    its own timestamp
+  - `npu/shell/spec.md` and `npu/rtlgen/gen.py` currently describe or stub
+    `EVENT_SIGNAL`/`EVENT_WAIT` as immediate signaling rather than
+    completion-bound synchronization
 - if needed, define a slightly more stress-relevant benchmark slice that keeps
   the same fused-output question but makes terminal traffic more visible on the
   critical path

@@ -28,6 +28,7 @@
   "risks": [
     "the benchmark redesign could accidentally broaden into a workload-suite effort",
     "perf-trace inference could still be ambiguous if the overlap model is not directly exposed",
+    "the real issue may be event/perf-model semantics rather than workload shape, which would redirect the work into a simulator or shell-contract fix",
     "the follow-on may show that the fused mechanism is not practically important on current workloads"
   ],
   "needs_mapper_change": false,
@@ -50,6 +51,10 @@
   "knowledge_refs": [
     "docs/developer_loop/prop_l2_softmax_tile_fusion_v1/analysis_report.md",
     "docs/developer_loop/prop_l2_softmax_tile_fusion_v1/promotion_decision.json",
+    "npu/mapper/run.py",
+    "npu/sim/perf/run.py",
+    "npu/shell/spec.md",
+    "npu/rtlgen/gen.py",
     "discussion:2026-03-18-user-session"
   ]
 }
