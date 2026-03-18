@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_mapper_memory_aware_split_v1",
-  "decision": "pending",
-  "pr_number": 0,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "promoted",
+  "pr_number": 44,
+  "merge_commit": "d7203f32188160018bb44a74f3ddd606e0bae4f1",
+  "merged_utc": "2026-03-18T04:35:55+00:00"
 }

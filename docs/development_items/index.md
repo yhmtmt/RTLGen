@@ -40,6 +40,7 @@
 | `item_l1_macro_manifest_enrichment_v1` | `layer1` | `circuit` | `Macro manifest enrichment` | `seed` | `high` | `developer_agent` |  | `2026-03-16T06:00:00Z` |
 | `item_eval_model_quality_gate_general_v1` | `cross` | `architecture` | `General model-quality gate framework` | `seed` | `high` | `developer_agent` |  | `2026-03-16T06:00:00Z` |
 | `item_eval_reference_output_pipeline_v1` | `cross` | `architecture` | `Reference output pipeline` | `seed` | `high` | `developer_agent` |  | `2026-03-16T06:00:00Z` |
+| `item_eval_terminal_output_overlap_probe_v1` | `cross` | `architecture` | `Terminal-output overlap probe` | `promoted_to_proposal` | `high` | `developer_agent` | `prop_cross_terminal_output_overlap_probe_v1` | `2026-03-18T07:16:43Z` |
 | `item_eval_small_model_suite_expansion_v1` | `cross` | `architecture` | `Small-model suite expansion` | `seed` | `high` | `developer_agent` |  | `2026-03-16T06:00:00Z` |
 | `item_eval_non_mlp_terminal_suite_v1` | `cross` | `architecture` | `Non-MLP terminal-op suite` | `seed` | `high` | `developer_agent` |  | `2026-03-16T06:00:00Z` |
 | `item_eval_cross_objective_stability_v1` | `cross` | `architecture` | `Cross-objective stability checks` | `seed` | `medium` | `developer_agent` |  | `2026-03-16T06:00:00Z` |
