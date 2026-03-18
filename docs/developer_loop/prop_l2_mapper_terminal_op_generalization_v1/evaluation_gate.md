@@ -4,10 +4,9 @@
 - approved_by: user
 - approved_utc: 2026-03-18T13:25:00Z
 - scope:
-  - first remote stage must remain `measurement_only`
-  - second remote stage may use `paired_comparison` only after local legality
-    and quality checks are in place
+  - first remote stage is complete as merged measurement-only evidence
+  - second remote stage may use `paired_comparison` against the merged
+    measurement item now that local legality and quality checks pass
 - blocked_on:
-  - local generation and validation of the bounded terminal linear plus
-    terminal `Relu` suite
-  - defining the required quality gate before the paired-comparison stage
+  - evaluator checkout fetching the latest implementation commit before the
+    paired-comparison item runs
