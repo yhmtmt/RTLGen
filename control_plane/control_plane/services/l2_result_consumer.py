@@ -148,14 +148,43 @@ def _select_focused_result_row(
     arch_id: str,
     macro_mode: str,
 ) -> dict[str, str] | None:
+    selected_rows = _select_focused_result_rows(rows, arch_id=arch_id, macro_mode=macro_mode)
+    return selected_rows[0] if selected_rows else None
+
+
+def _select_focused_result_rows(
+    rows: list[dict[str, str]],
+    *,
+    arch_id: str,
+    macro_mode: str,
+) -> list[dict[str, str]]:
     ok_rows = [row for row in rows if str(row.get("status", "")).strip() == "ok"]
-    for row in ok_rows:
-        if str(row.get("arch_id", "")).strip() == arch_id and str(row.get("macro_mode", "")).strip() == macro_mode:
-            return row
-    for row in ok_rows:
-        if str(row.get("arch_id", "")).strip() == arch_id:
-            return row
-    return ok_rows[0] if ok_rows else None
+    if not ok_rows:
+        return []
+
+    matching_rows = [
+        row
+        for row in ok_rows
+        if str(row.get("arch_id", "")).strip() == arch_id and str(row.get("macro_mode", "")).strip() == macro_mode
+    ]
+    if not matching_rows:
+        matching_rows = [row for row in ok_rows if str(row.get("arch_id", "")).strip() == arch_id]
+    if not matching_rows:
+        matching_rows = ok_rows
+
+    selected: list[dict[str, str]] = []
+    seen_keys: set[tuple[str, str, str]] = set()
+    for row in matching_rows:
+        key = (
+            str(row.get("arch_id", "")).strip(),
+            str(row.get("macro_mode", "")).strip(),
+            str(row.get("model_id", "")).strip(),
+        )
+        if key in seen_keys:
+            continue
+        seen_keys.add(key)
+        selected.append(row)
+    return selected
 
 
 def _focused_artifact_refs(result_row: dict[str, str] | None) -> dict[str, str]:
@@ -172,6 +201,28 @@ def _focused_artifact_refs(result_row: dict[str, str] | None) -> dict[str, str]:
         if value:
             refs[out_key] = value
     return refs
+
+
+def _focused_model_artifact_refs(result_rows: list[dict[str, str]]) -> dict[str, list[dict[str, str]]]:
+    focused_models: list[dict[str, str]] = []
+    for row in result_rows:
+        model_id = str(row.get("model_id", "")).strip()
+        if not model_id:
+            continue
+        schedule_yml = str(row.get("artifact_schedule_yml", "")).strip()
+        descriptors_bin = str(row.get("artifact_descriptors_bin", "")).strip()
+        perf_trace_json = str(row.get("artifact_perf_trace_json", "")).strip()
+        if not any((schedule_yml, descriptors_bin, perf_trace_json)):
+            continue
+        focused_models.append(
+            {
+                "model_id": model_id,
+                "schedule_yml": schedule_yml,
+                "descriptors_bin": descriptors_bin,
+                "perf_trace_json": perf_trace_json,
+            }
+        )
+    return {"focused_model_artifacts": focused_models} if focused_models else {}
 
 
 def _load_proposal(repo_root: Path, work_item: WorkItem) -> dict[str, Any] | None:
@@ -678,6 +729,11 @@ def consume_l2_result(session: Session, request: Layer2ConsumeRequest) -> Layer2
         proposal=proposal,
         summary_rows=summary_rows,
     )
+    focused_result_rows = _select_focused_result_rows(
+        results_rows,
+        arch_id=str((best_point.get("best") or {}).get("arch_id") or summary_best.get("arch_id") or "").strip(),
+        macro_mode=str((best_point.get("best") or {}).get("macro_mode") or summary_best.get("macro_mode") or "").strip(),
+    )
     objective_profiles: list[dict[str, Any]] = []
     objective_sweep_exists = False
     if objective_sweep_rel:
@@ -699,13 +755,8 @@ def consume_l2_result(session: Session, request: Layer2ConsumeRequest) -> Layer2
             "summary_csv": summary_rel,
             "results_csv": results_rel,
             "report_md": report_rel,
-            **_focused_artifact_refs(
-                _select_focused_result_row(
-                    results_rows,
-                    arch_id=str((best_point.get("best") or {}).get("arch_id") or summary_best.get("arch_id") or "").strip(),
-                    macro_mode=str((best_point.get("best") or {}).get("macro_mode") or summary_best.get("macro_mode") or "").strip(),
-                )
-            ),
+            **_focused_artifact_refs(focused_result_rows[0] if focused_result_rows else None),
+            **_focused_model_artifact_refs(focused_result_rows),
             **proposal_source_refs,
             **({"objective_sweep_csv": objective_sweep_rel} if objective_sweep_exists else {}),
         },

@@ -107,6 +107,20 @@ def _review_linked_supporting_files(*, repo_root: Path, package_payload: dict[st
             continue
         seen.add(rel_path)
         files.append(rel_path)
+    focused_model_artifacts = source_refs.get("focused_model_artifacts")
+    if isinstance(focused_model_artifacts, list):
+        for entry in focused_model_artifacts:
+            if not isinstance(entry, dict):
+                continue
+            for key in ("schedule_yml", "descriptors_bin", "perf_trace_json"):
+                rel_path = str(entry.get(key, "")).strip()
+                if not rel_path or rel_path in seen:
+                    continue
+                candidate = repo_root / rel_path
+                if not candidate.exists() or not candidate.is_file():
+                    continue
+                seen.add(rel_path)
+                files.append(rel_path)
     return files
 
 

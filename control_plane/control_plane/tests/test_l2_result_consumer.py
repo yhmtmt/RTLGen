@@ -135,6 +135,127 @@ def _seed_succeeded_l2_campaign(session: Session, repo_root: Path) -> tuple[str,
     return work_item.item_id, run.run_key
 
 
+def _seed_multimodel_measurement_campaign(session: Session, repo_root: Path) -> tuple[str, str]:
+    campaign_dir = repo_root / "runs" / "campaigns" / "npu" / "demo_multimodel_campaign"
+    schedule_linear_rel = (
+        "runs/campaigns/npu/demo_multimodel_campaign/artifacts/mapper/fp16_nm1_demo/linear_tail/schedule.yml"
+    )
+    schedule_relu_rel = (
+        "runs/campaigns/npu/demo_multimodel_campaign/artifacts/mapper/fp16_nm1_demo/relu_tail/schedule.yml"
+    )
+    trace_linear_rel = "runs/campaigns/npu/demo_multimodel_campaign/artifacts/perf/fp16_nm1_demo/linear_tail/trace.json"
+    trace_relu_rel = "runs/campaigns/npu/demo_multimodel_campaign/artifacts/perf/fp16_nm1_demo/relu_tail/trace.json"
+    _write(repo_root / schedule_linear_rel, "schedule: linear\n")
+    _write(repo_root / schedule_relu_rel, "schedule: relu\n")
+    _write(repo_root / trace_linear_rel, "{\"trace\":\"linear\"}\n")
+    _write(repo_root / trace_relu_rel, "{\"trace\":\"relu\"}\n")
+    _write(
+        campaign_dir / "best_point.json",
+        json.dumps(
+            {
+                "campaign_id": "demo_multimodel_campaign",
+                "best": {
+                    "arch_id": "fp16_nm1_demo",
+                    "macro_mode": "flat_nomacro",
+                    "objective_rank": 1,
+                    "objective_score": 0.0,
+                    "latency_ms_mean": 0.5,
+                    "energy_mj_mean": 0.2,
+                    "critical_path_ns_mean": 5.5,
+                    "die_area_um2_mean": 2250000.0,
+                    "total_power_mw_mean": 0.18,
+                    "flow_elapsed_s_mean": 1000.0,
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+    )
+    _write(
+        campaign_dir / "summary.csv",
+        (
+            "scope,arch_id,macro_mode,model_id,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,die_area_um2_mean,total_power_mw_mean,flow_elapsed_s_mean\n"
+            "aggregate,fp16_nm1_demo,flat_nomacro,,1,0.5,0.2,5.5,2250000,0.18,1000\n"
+            "model,fp16_nm1_demo,flat_nomacro,linear_tail,1,0.5,0.2,5.5,2250000,0.18,1000\n"
+            "model,fp16_nm1_demo,flat_nomacro,relu_tail,2,0.6,0.21,5.5,2250000,0.18,1000\n"
+        ),
+    )
+    _write(
+        campaign_dir / "results.csv",
+        (
+            "version,campaign_id,arch_id,macro_mode,model_id,status,artifact_schedule_yml,artifact_perf_trace_json\n"
+            f"0.1,demo_multimodel_campaign,fp16_nm1_demo,flat_nomacro,linear_tail,ok,{schedule_linear_rel},{trace_linear_rel}\n"
+            f"0.1,demo_multimodel_campaign,fp16_nm1_demo,flat_nomacro,relu_tail,ok,{schedule_relu_rel},{trace_relu_rel}\n"
+        ),
+    )
+    _write(campaign_dir / "report.md", "# demo multimodel report\n")
+
+    task_request = TaskRequest(
+        request_key="l2_campaign:test_multimodel_measurement",
+        source="test",
+        requested_by="@tester",
+        title="Layer2 multimodel measurement campaign",
+        description="test multimodel measurement evidence export",
+        layer=LayerName.LAYER2,
+        flow=FlowName.OPENROAD,
+        priority=1,
+        request_payload={
+            "item_id": "l2_test_multimodel_measurement",
+            "layer": "layer2",
+            "flow": "openroad",
+            "developer_loop": {
+                "evaluation": {
+                    "mode": "measurement_only",
+                }
+            },
+        },
+        source_commit="deadbeef",
+    )
+    session.add(task_request)
+    session.flush()
+
+    work_item = WorkItem(
+        work_item_key="l2_campaign:l2_test_multimodel_measurement",
+        task_request_id=task_request.id,
+        item_id="l2_test_multimodel_measurement",
+        layer=LayerName.LAYER2,
+        flow=FlowName.OPENROAD,
+        platform="nangate45",
+        task_type="l2_campaign",
+        state=WorkItemState.ARTIFACT_SYNC,
+        priority=1,
+        source_mode="src_verilog",
+        input_manifest={},
+        command_manifest=[],
+        expected_outputs=[
+            "runs/campaigns/npu/demo_multimodel_campaign/results.csv",
+            "runs/campaigns/npu/demo_multimodel_campaign/summary.csv",
+            "runs/campaigns/npu/demo_multimodel_campaign/report.md",
+            "runs/campaigns/npu/demo_multimodel_campaign/best_point.json",
+        ],
+        acceptance_rules=[],
+        source_commit="deadbeef",
+    )
+    session.add(work_item)
+    session.flush()
+
+    run = Run(
+        run_key="l2_test_multimodel_measurement_run_1",
+        work_item_id=work_item.id,
+        attempt=1,
+        executor_type=ExecutorType.INTERNAL_WORKER,
+        status=RunStatus.SUCCEEDED,
+        started_at=utcnow(),
+        completed_at=utcnow(),
+        checkout_commit="deadbeef",
+        result_summary="4/4 commands succeeded",
+        result_payload={"queue_result": {"status": "ok"}},
+    )
+    session.add(run)
+    session.commit()
+    return work_item.item_id, run.run_key
+
+
 def _seed_focused_l2_campaign_with_baseline(session: Session, repo_root: Path) -> str:
     baseline_dir = repo_root / "runs" / "campaigns" / "npu" / "baseline_campaign"
     _write(
@@ -513,6 +634,31 @@ def test_consume_l2_result_measurement_only_omits_proposal_assessment() -> None:
             assert decision_payload["proposal_assessment"] is None
             assert decision_payload["evaluation_record"]["evaluation_mode"] == "measurement_only"
             assert decision_payload["evaluation_record"]["expectation_status"] == "not_applicable"
+
+
+def test_consume_l2_result_multimodel_measurement_exports_model_artifacts() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            item_id, _run_key = _seed_multimodel_measurement_campaign(session, repo_root)
+
+            consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=item_id))
+
+            decision_payload = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{item_id}.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            focused_models = decision_payload["source_refs"]["focused_model_artifacts"]
+            assert [entry["model_id"] for entry in focused_models] == ["linear_tail", "relu_tail"]
+            assert focused_models[0]["schedule_yml"].endswith("/linear_tail/schedule.yml")
+            assert focused_models[1]["schedule_yml"].endswith("/relu_tail/schedule.yml")
+            assert focused_models[0]["perf_trace_json"].endswith("/linear_tail/trace.json")
+            assert focused_models[1]["perf_trace_json"].endswith("/relu_tail/trace.json")
 
 
 def test_consume_l2_result_marks_refreshed_baseline_without_proposal_judgment() -> None:
