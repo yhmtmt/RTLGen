@@ -1,0 +1,25 @@
+{
+  "version": 0.1,
+  "model_set_id": "onnx_terminal_softmax_suite_v1",
+  "description": "Locally generated imported-style Softmax-tail models used for terminal-output-sensitive measurement-first evaluation.",
+  "models": [
+    {
+      "model_id": "softmax_cls_b128_i8_o16",
+      "onnx_path": "runs/models/onnx_terminal_softmax_suite_v1/softmax_cls_b128_i8_o16.onnx",
+      "onnx_sha256": "71fd2b1d21481511b5ac04f452bcf573d59943593c8fa7fd2af9ae18e81bd248",
+      "notes": "Imported-style Cast -> Gemm -> Softmax tail with modest class count."
+    },
+    {
+      "model_id": "softmax_cls_b256_i8_o64",
+      "onnx_path": "runs/models/onnx_terminal_softmax_suite_v1/softmax_cls_b256_i8_o64.onnx",
+      "onnx_sha256": "b71097cd83cd086d61b392ac57379fa79d5e93e8665db89550d3177e914bf1fe",
+      "notes": "Higher output-width terminal Softmax tail to amplify output traffic."
+    },
+    {
+      "model_id": "softmax_cls_b128_i4_o128",
+      "onnx_path": "runs/models/onnx_terminal_softmax_suite_v1/softmax_cls_b128_i4_o128.onnx",
+      "onnx_sha256": "59bd58723087fd78b5adf8cf926462f5d97cac38dfc9528b0e90d0c8741fc2de",
+      "notes": "Very class-heavy terminal Softmax tail with small input dimension."
+    }
+  ]
+}

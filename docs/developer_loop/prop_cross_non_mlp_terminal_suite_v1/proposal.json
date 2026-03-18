@@ -4,12 +4,12 @@
   "created_by": "developer_agent",
   "layer": "cross",
   "kind": "architecture",
-  "title": "Non-MLP terminal-op suite",
-  "hypothesis": "The fused terminal-output path should continue to improve latency and energy on a small non-MLP or otherwise terminal-sensitive model slice once the comparison is staged as corrected-contract reference measurement first and paired fused-vs-non-fused comparison second.",
+  "title": "Terminal-sensitive softmax suite",
+  "hypothesis": "The fused terminal-output path should continue to improve latency and energy on a small terminal-sensitive softmax-tail model slice once the comparison is staged as corrected-contract reference measurement first and paired fused-vs-non-fused comparison second.",
   "direct_comparison": {
-    "primary_question": "Does fused terminal output improve a corrected-contract non-fused nm1 reference across a small non-MLP terminal-sensitive model slice?",
+    "primary_question": "Does fused terminal output improve a corrected-contract non-fused nm1 reference across a small terminal-sensitive softmax-tail model slice?",
     "include": [
-      "measurement-only or baseline-refresh non-fused nm1 reference points on a small non-MLP terminal-sensitive suite",
+      "measurement-only non-fused nm1 reference points on a small terminal-sensitive softmax-tail suite",
       "paired fused vs non-fused nm1 comparison on the same suite"
     ],
     "exclude": [
@@ -17,18 +17,19 @@
       "broad architecture sweep before the per-model fused comparison is established"
     ],
     "follow_on_broad_sweep": [
-      "run a broader ranking sweep only if the focused non-MLP per-model fused comparisons are positive or mixed enough to justify reintegration"
+      "run a broader ranking sweep only if the focused per-model fused comparisons are positive or mixed enough to justify reintegration"
     ]
   },
   "expected_benefit": [
     "tests whether the fused win generalizes beyond the original tiny proof",
     "uses the new measurement-only evaluation mode to keep first-stage evidence clean",
-    "reduces the risk of reopening broad ranking questions too early"
+    "reduces the risk of reopening broad ranking questions too early",
+    "stays inside the currently supported ONNX lowering subset instead of opening a larger model-support item first"
   ],
   "risks": [
     "the chosen models may still be too small or too similar to the original proof",
-    "model availability may push the work toward suite-building instead of a bounded evaluation",
-    "some candidate models may require a quality gate or additional lowering support"
+    "using locally generated softmax-tail graphs may prove terminal sensitivity without yet covering truly different operator families",
+    "a later non-MLP expansion may still require a separate lowering-support item"
   ],
   "needs_mapper_change": false,
   "required_evaluations": [
@@ -39,7 +40,7 @@
       "cost_class": "medium",
       "expected_result": {
         "direction": "unknown",
-        "reason": "this first item only records corrected-contract non-fused reference metrics for the selected model slice"
+        "reason": "this first item only records corrected-contract non-fused reference metrics for the selected terminal-sensitive suite"
       }
     },
     {

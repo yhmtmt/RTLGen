@@ -2,19 +2,40 @@
 
 ## Proposal
 - `proposal_id`: `prop_cross_non_mlp_terminal_suite_v1`
-- `title`: `Non-MLP terminal-op suite`
+- `title`: `Terminal-sensitive softmax suite`
 
 ## Scope
-- pending
+- stage the first remote item as `measurement_only` on a small locally
+  generated terminal-sensitive softmax-tail suite
+- avoid pretending the repo already contains a broader non-MLP model set when
+  the current mapper-supported ONNX subset is still `Cast/Gemm/Softmax`-centric
+- defer the actual fused vs non-fused judgment to the second paired item
 
 ## Files Changed
-- pending
+- `docs/development_items/items/item_eval_non_mlp_terminal_suite_v1.md`
+- `docs/developer_loop/prop_cross_non_mlp_terminal_suite_v1/proposal.json`
+- `docs/developer_loop/prop_cross_non_mlp_terminal_suite_v1/design_brief.md`
+- `docs/developer_loop/prop_cross_non_mlp_terminal_suite_v1/evaluation_gate.md`
+- `docs/developer_loop/prop_cross_non_mlp_terminal_suite_v1/implementation_summary.md`
+- `npu/mapper/examples/gen_softmax_classifier_suite_lite.py`
+- `runs/models/onnx_terminal_softmax_suite_v1/README.md`
+- `runs/models/onnx_terminal_softmax_suite_v1/manifest.json`
+- `runs/models/onnx_terminal_softmax_suite_v1/softmax_cls_b128_i8_o16.onnx`
+- `runs/models/onnx_terminal_softmax_suite_v1/softmax_cls_b256_i8_o64.onnx`
+- `runs/models/onnx_terminal_softmax_suite_v1/softmax_cls_b128_i4_o128.onnx`
+- `runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_submit_nm1_v1/campaign.json`
 
 ## Local Validation
-- pending
+- `python3 -m py_compile npu/mapper/examples/gen_softmax_classifier_suite_lite.py`
+- `python3 npu/mapper/examples/gen_softmax_classifier_suite_lite.py --out-dir runs/models/onnx_terminal_softmax_suite_v1`
+- `python3 npu/eval/validate.py --campaign runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_submit_nm1_v1/campaign.json --check_paths`
 
 ## Evaluation Request
-- pending
+- next step: queue one `measurement_only` Layer 2 item for corrected-contract
+  non-fused `nm1` reference points on the selected suite
 
 ## Risks
-- pending
+- locally generated softmax-tail graphs are a bounded generalization step, not
+  the final non-MLP expansion target
+- if the measurement-only stage shows no movement beyond the original proof, a
+  broader suite may not be worth the next evaluation spend
