@@ -15,7 +15,12 @@ from control_plane.models.work_items import WorkItem
 from control_plane.services.lease_service import acquire_next_lease
 from control_plane.services.run_service import append_run_event, complete_run, start_run
 from control_plane.services.scheduler import NoEligibleWorkItem
-from control_plane.workers.artifact_stage import build_queue_result_payload, collect_expected_output_artifacts, collect_log_artifacts
+from control_plane.workers.artifact_stage import (
+    build_queue_result_payload,
+    collect_expected_output_artifacts,
+    collect_linked_results_artifacts,
+    collect_log_artifacts,
+)
 from control_plane.workers.checkout import CheckoutError, cleanup_checkout, prepare_checkout
 from control_plane.workers.command_runner import run_command_manifest, summarize_command_results
 from control_plane.workers.heartbeat import LeaseHeartbeatPump
@@ -288,6 +293,9 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
         success = True
 
     artifacts = collect_expected_output_artifacts(
+        repo_root=checkout_info.work_dir,
+        expected_outputs=work_item.expected_outputs or [],
+    ) + collect_linked_results_artifacts(
         repo_root=checkout_info.work_dir,
         expected_outputs=work_item.expected_outputs or [],
     ) + collect_log_artifacts(

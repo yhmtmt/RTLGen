@@ -171,6 +171,72 @@ def seed_source_commit_work_item(
     return work_item
 
 
+def seed_results_artifact_work_item(session: Session, *, item_id: str, repo_root: Path) -> WorkItem:
+    task = TaskRequest(
+        request_key=f"queue:{item_id}",
+        source="test",
+        requested_by="tester",
+        title=f"{item_id} title",
+        description="worker supporting artifact test",
+        layer="layer2",
+        flow="openroad",
+        priority=1,
+        request_payload={"item_id": item_id},
+    )
+    session.add(task)
+    session.flush()
+
+    campaign_dir = repo_root / "runs" / "campaigns" / item_id
+    results_path = campaign_dir / "results.csv"
+    report_path = campaign_dir / "report.md"
+    schedule_path = campaign_dir / "artifacts" / "mapper" / "fp16_nm2_softmax_r4" / "logistic_regression" / "schedule.yml"
+    trace_path = campaign_dir / "artifacts" / "perf" / "fp16_nm2_softmax_r4" / "logistic_regression" / "trace.json"
+    commands = [
+        {
+            "name": "write_supporting_artifacts",
+            "run": (
+                "python3 -c \"from pathlib import Path; "
+                f"schedule=Path('{schedule_path.relative_to(repo_root)}'); "
+                f"trace=Path('{trace_path.relative_to(repo_root)}'); "
+                f"results=Path('{results_path.relative_to(repo_root)}'); "
+                f"report=Path('{report_path.relative_to(repo_root)}'); "
+                "schedule.parent.mkdir(parents=True, exist_ok=True); "
+                "trace.parent.mkdir(parents=True, exist_ok=True); "
+                "results.parent.mkdir(parents=True, exist_ok=True); "
+                "schedule.write_text('steps:\\n- gemm\\n', encoding='utf-8'); "
+                "trace.write_text('{\\\"latency_ns\\\": 621}\\n', encoding='utf-8'); "
+                "results.write_text("
+                "'version,campaign_id,arch_id,macro_mode,status,artifact_schedule_yml,artifact_perf_trace_json\\n"
+                f"0.1,{item_id},fp16_nm2_softmax_r4,flat_nomacro,ok,{schedule_path.relative_to(repo_root)},{trace_path.relative_to(repo_root)}\\n', "
+                "encoding='utf-8'); "
+                "report.write_text('# report\\n', encoding='utf-8')\""
+            ),
+        }
+    ]
+
+    work_item = WorkItem(
+        work_item_key=f"queue:{item_id}",
+        task_request_id=task.id,
+        item_id=item_id,
+        layer="layer2",
+        flow="openroad",
+        platform="nangate45",
+        task_type="l2_campaign",
+        state=WorkItemState.READY,
+        priority=1,
+        input_manifest={},
+        command_manifest=commands,
+        expected_outputs=[
+            str(results_path.relative_to(repo_root)),
+            str(report_path.relative_to(repo_root)),
+        ],
+        acceptance_rules=[],
+    )
+    session.add(work_item)
+    session.commit()
+    return work_item
+
+
 def init_git_repo(repo_root: Path) -> tuple[str, str]:
     subprocess.run(["git", "-C", str(repo_root), "init"], check=True, capture_output=True, text=True)
     subprocess.run(
@@ -293,6 +359,51 @@ def test_worker_skips_non_transportable_expected_outputs() -> None:
             run = session.query(Run).filter_by(run_key=results[0].run_key).one()
             artifact_paths = {artifact.path for artifact in run.artifacts if artifact.kind == "expected_output"}
             assert shadow_rel not in artifact_paths
+
+
+def test_worker_stages_linked_results_supporting_artifacts() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        db_path = Path(td) / "cp.db"
+        engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            seeded = seed_results_artifact_work_item(session, item_id="item_supporting", repo_root=repo_root)
+
+        session_factory = build_session_factory(engine)
+        results = run_worker(
+            session_factory,
+            config=WorkerConfig(
+                repo_root=str(repo_root),
+                machine_key="worker-1",
+                capabilities={"platform": "nangate45", "flow": "openroad"},
+                capability_filter={"platform": "nangate45", "flow": "openroad"},
+                lease_seconds=60,
+                heartbeat_seconds=1,
+            ),
+            max_items=1,
+        )
+
+        assert len(results) == 1
+        assert results[0].status == "succeeded"
+
+        with Session(engine) as session:
+            run = session.query(Run).filter_by(run_key=results[0].run_key).one()
+            supporting = {artifact.path: artifact for artifact in run.artifacts if artifact.kind == "supporting_output"}
+            schedule_rel = (
+                f"runs/campaigns/{seeded.item_id}/artifacts/mapper/"
+                "fp16_nm2_softmax_r4/logistic_regression/schedule.yml"
+            )
+            trace_rel = (
+                f"runs/campaigns/{seeded.item_id}/artifacts/perf/"
+                "fp16_nm2_softmax_r4/logistic_regression/trace.json"
+            )
+            assert schedule_rel in supporting
+            assert trace_rel in supporting
+            assert supporting[schedule_rel].metadata_["inline_utf8"] == "steps:\n- gemm\n"
+            assert '"latency_ns"' in supporting[trace_rel].metadata_["inline_utf8"]
+            assert supporting[schedule_rel].metadata_["transport_policy"] == "inline_text_supporting"
 
 
 def test_materialize_generated_inputs_preserves_physical_source_campaign() -> None:

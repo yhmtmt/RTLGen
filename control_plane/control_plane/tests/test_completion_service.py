@@ -292,6 +292,121 @@ def test_process_completed_items_materializes_expected_output_artifacts_for_cano
         assert (repo_root / index_rel).read_text(encoding="utf-8") == index_text
 
 
+def test_process_completed_items_materializes_supporting_output_artifacts() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        metrics_rel = "runs/designs/activations/softmax_rowwise_int8_r4_acc20_wrapper/metrics.csv"
+        schedule_rel = (
+            "runs/campaigns/npu/demo_supporting/artifacts/mapper/"
+            "fp16_nm2_softmax_r4/logistic_regression/schedule.yml"
+        )
+        metrics_text = (
+            "platform,status,param_hash,tag,critical_path_ns,die_area,total_power_mw,params_json,result_path\n"
+            'nangate45,ok,fast0001,tag_fast,12.0,30000,0.18,{"CLOCK_PERIOD": 6.0},'
+            "runs/designs/activations/softmax_rowwise_int8_r4_acc20_wrapper/work/fast0001/result.json\n"
+        )
+        schedule_text = "steps:\n- softmax\n"
+        with Session(engine) as session:
+            payload = {
+                "item_id": "completion_supporting_demo",
+                "title": "completion supporting demo",
+                "layer": "layer1",
+                "flow": "openroad",
+                "handoff": {
+                    "branch": "eval/completion_supporting_demo/<session_id>",
+                    "pr_title": "eval: completion supporting demo",
+                    "pr_body_fields": {
+                        "evaluator_id": "control_plane",
+                        "session_id": "<session_id>",
+                        "host": "<host>",
+                        "queue_item_id": "completion_supporting_demo",
+                    },
+                    "checklist": ["demo"],
+                },
+            }
+            task = TaskRequest(
+                request_key="completion:supporting",
+                source="test",
+                requested_by="@tester",
+                title="completion supporting demo",
+                description="completion service supporting artifact materialization test",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                priority=1,
+                request_payload=payload,
+            )
+            session.add(task)
+            session.flush()
+            work_item = WorkItem(
+                work_item_key="completion:supporting",
+                task_request_id=task.id,
+                item_id="completion_supporting_demo",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                platform="nangate45",
+                task_type="l1_sweep",
+                state=WorkItemState.ARTIFACT_SYNC,
+                priority=1,
+                source_mode="config",
+                input_manifest={},
+                command_manifest=[],
+                expected_outputs=[metrics_rel],
+                acceptance_rules=[],
+            )
+            session.add(work_item)
+            session.flush()
+            run = Run(
+                run_key="completion_supporting_demo_run_1",
+                work_item_id=work_item.id,
+                attempt=1,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.SUCCEEDED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                result_summary="1/1 commands succeeded",
+                result_payload={"queue_result": {"status": "ok", "metrics_rows": [f"{metrics_rel}:2"], "notes": []}},
+            )
+            session.add(run)
+            session.flush()
+            session.add_all(
+                [
+                    Artifact(
+                        run_id=run.id,
+                        kind="expected_output",
+                        storage_mode=ArtifactStorageMode.REPO,
+                        path=metrics_rel,
+                        sha256=None,
+                        metadata_={"inline_utf8": metrics_text},
+                    ),
+                    Artifact(
+                        run_id=run.id,
+                        kind="supporting_output",
+                        storage_mode=ArtifactStorageMode.REPO,
+                        path=schedule_rel,
+                        sha256=None,
+                        metadata_={"inline_utf8": schedule_text, "transport_policy": "inline_text_supporting"},
+                    ),
+                ]
+            )
+            session.commit()
+
+            results = process_completed_items(
+                session,
+                CompletionProcessRequest(
+                    repo_root=str(repo_root),
+                    item_id=work_item.item_id,
+                ),
+            )
+            assert len(results) == 1
+            assert results[0].consumed is True
+
+        assert (repo_root / metrics_rel).read_text(encoding="utf-8") == metrics_text
+        assert (repo_root / schedule_rel).read_text(encoding="utf-8") == schedule_text
+
+
 def test_process_completed_items_skips_non_transportable_expected_output_artifacts() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 from dataclasses import dataclass
 from hashlib import sha256
 from pathlib import Path
@@ -75,6 +76,57 @@ def collect_expected_output_artifacts(*, repo_root: str, expected_outputs: list[
         artifacts.append(
             StagedArtifact(
                 kind="expected_output",
+                storage_mode="repo",
+                path=_relative_path(path, repo_path),
+                sha256=_sha256_file(path),
+                metadata=metadata,
+            )
+        )
+    return artifacts
+
+
+def _results_linked_supporting_paths(*, repo_root: Path, expected_outputs: list[str]) -> list[str]:
+    linked_fields = ("artifact_schedule_yml", "artifact_perf_trace_json")
+    paths: list[str] = []
+    seen: set[str] = set()
+    for output in expected_outputs:
+        results_path = (repo_root / output).resolve()
+        if results_path.name != "results.csv" or not results_path.exists() or not results_path.is_file():
+            continue
+        with results_path.open("r", encoding="utf-8", newline="") as handle:
+            for row in csv.DictReader(handle):
+                for field in linked_fields:
+                    rel_path = str(row.get(field, "")).strip()
+                    if not rel_path or rel_path in seen:
+                        continue
+                    candidate = (repo_root / rel_path).resolve()
+                    try:
+                        candidate.relative_to(repo_root)
+                    except ValueError:
+                        continue
+                    if not candidate.exists() or not candidate.is_file():
+                        continue
+                    # Only stage text evidence we can inline back into the notebook checkout.
+                    if "inline_utf8" not in _inline_text_metadata(candidate):
+                        continue
+                    seen.add(rel_path)
+                    paths.append(rel_path)
+    return paths
+
+
+def collect_linked_results_artifacts(*, repo_root: str, expected_outputs: list[str]) -> list[StagedArtifact]:
+    repo_path = Path(repo_root).resolve()
+    artifacts: list[StagedArtifact] = []
+    for rel_path in _results_linked_supporting_paths(repo_root=repo_path, expected_outputs=expected_outputs):
+        path = (repo_path / rel_path).resolve()
+        metadata = {
+            "size_bytes": path.stat().st_size,
+            "transport_policy": "inline_text_supporting",
+            **_inline_text_metadata(path),
+        }
+        artifacts.append(
+            StagedArtifact(
+                kind="supporting_output",
                 storage_mode="repo",
                 path=_relative_path(path, repo_path),
                 sha256=_sha256_file(path),

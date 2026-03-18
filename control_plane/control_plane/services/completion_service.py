@@ -62,19 +62,34 @@ def _latest_run_for_item(work_item: WorkItem) -> Run:
     return sorted(work_item.runs, key=lambda row: (row.attempt, row.created_at))[ -1]
 
 
+def _is_materializable_supporting_output(rel_path: str) -> bool:
+    path = Path(rel_path)
+    if path.is_absolute():
+        return False
+    if ".." in path.parts:
+        return False
+    return str(path).startswith("runs/")
+
+
 def _materialize_expected_output_artifacts(*, repo_root: str, run: Run) -> list[str]:
     repo_path = Path(repo_root).resolve()
     materialized: list[str] = []
     for artifact in run.artifacts:
-        if artifact.kind != "expected_output":
+        if artifact.kind not in {"expected_output", "supporting_output"}:
             continue
         rel_path = str(artifact.path).strip()
-        if not is_transportable_expected_output(rel_path):
-            continue
         metadata = artifact.metadata_ or {}
         transport_policy = metadata.get("transport_policy")
-        if transport_policy not in (None, "inline_text_evidence"):
-            continue
+        if artifact.kind == "expected_output":
+            if not is_transportable_expected_output(rel_path):
+                continue
+            if transport_policy not in (None, "inline_text_evidence"):
+                continue
+        else:
+            if not _is_materializable_supporting_output(rel_path):
+                continue
+            if transport_policy != "inline_text_supporting":
+                continue
         inline_text = metadata.get("inline_utf8")
         if not isinstance(inline_text, str):
             continue
