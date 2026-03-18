@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_mapper_terminal_op_generalization_v1",
-  "source_commit": "fec11e31cc03c66e7e053b823621912977abb8a6",
+  "source_commit": "f111f8cd99a77f455c4d4cc0f87d144033fe2c4b",
   "requested_items": [
     {
       "item_id": "l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_measurement_r1",
@@ -14,10 +14,28 @@
         "direction": "unknown",
         "reason": "Record plain nm1 non-fused reference metrics for the bounded terminal linear plus terminal Relu suite before any direct-output mapper change."
       },
-      "status": "queued",
-      "status_reason": "Inserted into the local control-plane PostgreSQL queue on 2026-03-18.",
+      "status": "merged",
+      "status_reason": "Accepted as measurement-only evidence and merged via PR #54 on 2026-03-18.",
       "task_request_id": "ec5cfac8-df02-4c3b-a7a9-327d0e002db6",
       "work_item_id": "c053c2ee-a998-4e65-b767-e651e2ecf47f"
+    },
+    {
+      "item_id": "l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1",
+      "task_type": "l2_campaign",
+      "evaluation_mode": "paired_comparison",
+      "objective": "terminal_op_direct_output_vs_nonfused",
+      "candidate_id": "cand_l2_mapper_terminal_op_generalization_v1_r1",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_fused_nm1_v1/campaign.json",
+      "comparison_role": "candidate",
+      "paired_baseline_item_id": "l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_measurement_r1",
+      "expected_result": {
+        "direction": "better_than_historical",
+        "reason": "Direct terminal-output lowering should remove the final dma_y tail on at least part of the bounded terminal linear plus terminal Relu suite."
+      },
+      "status": "queued",
+      "status_reason": "Inserted into the local control-plane PostgreSQL queue on 2026-03-18 after the direct-output mapper implementation was pushed.",
+      "task_request_id": "e73bef0d-bee7-443f-8c66-01500056ece9",
+      "work_item_id": "94a1a6e7-781c-4f82-a3f2-0fffd5f1eb63"
     }
   ]
 }
