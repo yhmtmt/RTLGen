@@ -1,0 +1,67 @@
+{
+  "proposal_id": "prop_l2_mapper_terminal_vecop_direct_output_v1",
+  "created_utc": "2026-03-18T14:05:00Z",
+  "created_by": "developer_agent",
+  "layer": "l2",
+  "kind": "mapper",
+  "title": "Terminal vec-op direct output",
+  "hypothesis": "After proving direct terminal-output for final GEMM tails, the next bounded mapper step should test whether a terminal vec-op family can also write directly to Y_DRAM, starting from measurement-only references before any paired judgment.",
+  "direct_comparison": {
+    "primary_question": "Can a bounded terminal vec-op family establish clean nm1 reference points first, then show a direct-output win on those same points without reopening broader ranking?",
+    "include": [
+      "measurement-only non-fused nm1 reference points on a bounded terminal vec-op suite",
+      "paired direct-output vs non-fused nm1 comparison on the same suite after local legality and quality checks"
+    ],
+    "exclude": [
+      "nm1 vs nm2 ranking",
+      "broad architecture sweeps before terminal vec-op legality is established",
+      "broad terminal-op-family claims beyond the chosen first-pass vec-op family"
+    ],
+    "follow_on_broad_sweep": [
+      "run broader ranking or broader terminal-op-family evaluation only if the bounded vec-op comparison is positive or mixed enough to justify reintegration"
+    ]
+  },
+  "expected_benefit": [
+    "extends the accepted direct-output mechanism beyond final GEMM writeback",
+    "keeps the next proof focused on mapper legality and tail-writeback behavior rather than ranking noise",
+    "reuses the measurement-first evaluation model so reference points can be recorded without forcing premature win/loss language"
+  ],
+  "risks": [
+    "the chosen vec-op family may still be too narrow to justify a separate proposal",
+    "the mapper and schedule IR may need more explicit terminal-op handling than the current bounded direct-output path",
+    "a quality gate may be required before spending remote evaluation budget on numerically sensitive terminal ops"
+  ],
+  "needs_mapper_change": true,
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "measurement_only",
+      "objective": "terminal_vecop_reference_metrics",
+      "cost_class": "medium",
+      "expected_result": {
+        "direction": "unknown",
+        "reason": "the first item should only record non-fused nm1 reference metrics for the bounded terminal vec-op suite"
+      }
+    },
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "paired_comparison",
+      "objective": "terminal_vecop_direct_output_vs_nonfused",
+      "cost_class": "medium",
+      "expected_result": {
+        "direction": "better_than_historical",
+        "reason": "if terminal vec-op direct-output lowering is valid, it should improve at least part of the bounded suite against the refreshed non-fused references"
+      }
+    }
+  ],
+  "baseline_refs": [
+    "docs/developer_loop/prop_l2_mapper_terminal_op_generalization_v1/analysis_report.md",
+    "runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_measurement_r1/report.md",
+    "runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1/report.md"
+  ],
+  "knowledge_refs": [
+    "docs/developer_loop/prop_l2_mapper_terminal_op_generalization_v1/analysis_report.md",
+    "docs/developer_loop/prop_l2_mapper_terminal_op_generalization_v1/promotion_decision.json",
+    "discussion:2026-03-18-user-session"
+  ]
+}
