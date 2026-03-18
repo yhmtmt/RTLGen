@@ -42,11 +42,16 @@
   - campaign: `runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_submit_nm1_v1/campaign.json`
   - mode: `measurement_only`
   - objective: `terminal_op_reference_metrics`
+  - item_id: `l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_measurement_r1`
 - first-stage purpose:
   - record plain `fp16_nm1` non-fused reference metrics for terminal linear and
     terminal `Relu` before any mapper direct-output change is implemented
 - paired comparison is intentionally deferred until the direct-output lowering
   rule for the selected family exists locally
+- queue status:
+  - not queued yet
+  - local queue insertion failed because the local control-plane PostgreSQL
+    endpoint at `localhost:5432` was unavailable during this session
 
 ## Risks
 - terminal linear plus terminal `Relu` is a bounded but still close neighbor to

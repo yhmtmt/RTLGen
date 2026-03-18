@@ -1,5 +1,21 @@
 {
   "proposal_id": "prop_l2_mapper_terminal_op_generalization_v1",
-  "source_commit": "bb0fc527ac9701de83af9ac1f76306152ce9a8b2",
-  "requested_items": []
+  "source_commit": "fec11e31cc03c66e7e053b823621912977abb8a6",
+  "requested_items": [
+    {
+      "item_id": "l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_measurement_r1",
+      "task_type": "l2_campaign",
+      "evaluation_mode": "measurement_only",
+      "objective": "terminal_op_reference_metrics",
+      "candidate_id": "cand_l2_mapper_terminal_op_generalization_v1_r1",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_submit_nm1_v1/campaign.json",
+      "comparison_role": "measurement_only",
+      "expected_result": {
+        "direction": "unknown",
+        "reason": "Record plain nm1 non-fused reference metrics for the bounded terminal linear plus terminal Relu suite before any direct-output mapper change."
+      },
+      "status": "not_queued",
+      "status_reason": "Local control-plane database was unavailable during queue insertion on 2026-03-18."
+    }
+  ]
 }
