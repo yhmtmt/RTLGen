@@ -1,5 +1,16 @@
 {
   "proposal_id": "prop_l2_mapper_terminal_vecop_direct_output_v1",
-  "source_commit": "0eee410",
-  "requested_items": []
+  "source_commit": "37d18aae5dba13086d7b15ac57381e6fa719f40f",
+  "requested_items": [
+    {
+      "item_id": "l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_measurement_r2",
+      "task_type": "l2_campaign",
+      "evaluation_mode": "measurement_only",
+      "objective": "terminal_vecop_reference_metrics",
+      "status": "merged_evidence",
+      "pr_number": 58,
+      "campaign_path": "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_submit_nm1_v1/campaign.json",
+      "notes": "Bounded standalone terminal Relu suite on fixed nm1; first-stage reference collection only."
+    }
+  ]
 }
