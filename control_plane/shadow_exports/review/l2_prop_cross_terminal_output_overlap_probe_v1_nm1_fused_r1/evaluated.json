@@ -1,0 +1,166 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/sweep_compare_softmax_33.json"
+      ],
+      "configs": [
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/config_nm1_softmax.json"
+      ],
+      "design_dirs": [
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp"
+      ],
+      "macro_manifests": [
+        "runs/designs/npu_macros/npu_fp16_nm1_softmax_bundle_ng45/macro_manifest.json"
+      ],
+      "generated_campaign": {
+        "path": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2/campaign__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1.json",
+        "outputs": {
+          "report_md": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1/report.md",
+          "results_csv": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1/results.csv",
+          "campaign_dir": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1"
+        },
+        "base_campaign_path": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2/campaign.json"
+      },
+      "candidate_manifests": [
+        "runs/candidates/nangate45/module_candidates.json"
+      ]
+    },
+    "commands": [
+      {
+        "run": "python3 npu/eval/fetch_models.py --manifest runs/models/onnx_imported_softmax_tail_v1/manifest.json",
+        "name": "fetch_models"
+      },
+      {
+        "run": "python3 npu/eval/validate.py --campaign runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2/campaign__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1.json --check_paths",
+        "name": "validate_campaign"
+      },
+      {
+        "run": "python3 npu/eval/run_campaign.py --campaign runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2/campaign__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1.json --run_physical --jobs 2 --batch_id l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1_r1",
+        "name": "run_campaign"
+      },
+      {
+        "run": "python3 npu/eval/report_campaign.py --campaign runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2/campaign__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1.json",
+        "name": "report_campaign"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "Rerun the fused nm1 candidate under the corrected event contract against the refreshed non-fused baseline.",
+    "acceptance": [
+      "Populate metrics.csv for all referenced design dirs",
+      "Write campaign summary outputs under the campaign output directory",
+      "Keep result_path/work_result_json fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2/campaign__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1.json",
+      "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1/results.csv",
+      "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1/report.md",
+      "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1/summary.csv",
+      "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1/pareto.csv",
+      "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1/best_point.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "Focused nm1 fused rerun",
+  "result": {
+    "branch": "eval/l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1/s20260318t101856z",
+    "completed_utc": "2026-03-18T10:18:19.585592Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "d7def79549f9",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260318t101856z][host:d7def79549f9][item:l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1]",
+    "metrics_rows": [
+      {
+        "tag": "npu_fp16_nm1_softcmp33_flat_nomacro_r1",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "c20283de",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/work/c20283de/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_softcmp33_flat_nomacro_r2",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "a53adbdd",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/work/a53adbdd/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_softcmp33_flat_nomacro_r3",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "b9f5f7d7",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/work/b9f5f7d7/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_softcmp33_hier_macro_r1",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "bffea8c7",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/work/bffea8c7/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_softcmp33_hier_macro_r2",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "e024ec35",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/work/e024ec35/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_softcmp33_hier_macro_r3",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "2a79e834",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/work/2a79e834/result.json"
+      }
+    ],
+    "queue_item_id": "l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1",
+    "session_id": "s20260318t101856z",
+    "status": "ok",
+    "summary": "5/5 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1/s20260318t101856z",
+    "pr_title": "eval: run focused nm1 fused rerun",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "d7def79549f9",
+      "session_id": "s20260318t101856z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-03-18T10:18:03.447836Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "comparison": {
+      "role": "candidate",
+      "paired_baseline_item_id": "l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r1"
+    },
+    "proposal_id": "prop_cross_terminal_output_overlap_probe_v1",
+    "proposal_path": "docs/developer_loop/prop_cross_terminal_output_overlap_probe_v1"
+  }
+}
