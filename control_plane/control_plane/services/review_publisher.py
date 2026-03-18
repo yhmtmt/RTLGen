@@ -238,7 +238,7 @@ def _build_body_md(
             lines.append(f"- baseline_item_id: `{baseline_item_id}`")
         matched_rows = proposal_assessment.get("matched_rows")
         if isinstance(matched_rows, list):
-            for row in matched_rows[:2]:
+            for row in _summary_rows_for_body(matched_rows):
                 arch_id = str(row.get("arch_id", "")).strip()
                 macro_mode = str(row.get("macro_mode", "")).strip()
                 model_id = str(row.get("model_id", "")).strip()
@@ -264,6 +264,38 @@ def _build_body_md(
         for item in checklist:
             lines.append(f"- [ ] {item}")
     return "\n".join(lines) + "\n"
+
+
+def _summary_rows_for_body(matched_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    model_rows = [row for row in matched_rows if str(row.get("scope", "")).strip() == "model"]
+    if not model_rows:
+        return matched_rows[:2]
+
+    unique_model_ids = {
+        str(row.get("model_id", "")).strip()
+        for row in model_rows
+        if str(row.get("model_id", "")).strip()
+    }
+    if 0 < len(unique_model_ids) <= 4:
+        selected: list[dict[str, Any]] = []
+        seen_model_ids: set[str] = set()
+        preferred_rows = sorted(
+            model_rows,
+            key=lambda row: (
+                0 if str(row.get("macro_mode", "")).strip() == "flat_nomacro" else 1,
+                str(row.get("model_id", "")).strip(),
+                str(row.get("arch_id", "")).strip(),
+            ),
+        )
+        for row in preferred_rows:
+            model_id = str(row.get("model_id", "")).strip()
+            if not model_id or model_id in seen_model_ids:
+                continue
+            seen_model_ids.add(model_id)
+            selected.append(row)
+        if selected:
+            return selected
+    return model_rows[:2]
 
 
 def _upsert_review_package_artifact(

@@ -441,6 +441,98 @@ def test_publish_review_package_labels_model_specific_comparison_lines() -> None
             assert "energy_delta fp16_nm1_demo/flat_nomacro/model_a: `0.2` -> `0.15` mJ" in body_md
 
 
+def test_publish_review_package_includes_one_row_per_model_for_small_suite() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, _run_key = _seed_l2_reviewable(session, repo_root)
+            artifact_path = repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{item_id}.json"
+            payload = json.loads(artifact_path.read_text(encoding="utf-8"))
+            payload["proposal_assessment"] = {
+                "primary_question": "Does the bounded suite improve per model?",
+                "comparison_role": "candidate",
+                "outcome": "improved",
+                "summary": "Per-model rows improved.",
+                "baseline_ref": "runs/campaigns/npu/baseline",
+                "baseline_item_id": "l2_baseline_demo",
+                "matched_rows": [
+                    {
+                        "scope": "model",
+                        "arch_id": "fp16_nm1_demo",
+                        "macro_mode": "flat_nomacro",
+                        "model_id": "linear_a",
+                        "metrics": {
+                            "latency_ms_mean": {"baseline": 0.5, "candidate": 0.4},
+                            "energy_mj_mean": {"baseline": 0.2, "candidate": 0.15},
+                        },
+                    },
+                    {
+                        "scope": "model",
+                        "arch_id": "fp16_nm1_demo",
+                        "macro_mode": "hier_macro",
+                        "model_id": "linear_a",
+                        "metrics": {
+                            "latency_ms_mean": {"baseline": 0.5, "candidate": 0.41},
+                            "energy_mj_mean": {"baseline": 0.21, "candidate": 0.16},
+                        },
+                    },
+                    {
+                        "scope": "model",
+                        "arch_id": "fp16_nm1_demo",
+                        "macro_mode": "flat_nomacro",
+                        "model_id": "relu_b",
+                        "metrics": {
+                            "latency_ms_mean": {"baseline": 0.7, "candidate": 0.6},
+                            "energy_mj_mean": {"baseline": 0.3, "candidate": 0.24},
+                        },
+                    },
+                    {
+                        "scope": "model",
+                        "arch_id": "fp16_nm1_demo",
+                        "macro_mode": "hier_macro",
+                        "model_id": "relu_b",
+                        "metrics": {
+                            "latency_ms_mean": {"baseline": 0.7, "candidate": 0.61},
+                            "energy_mj_mean": {"baseline": 0.31, "candidate": 0.25},
+                        },
+                    },
+                    {
+                        "scope": "model",
+                        "arch_id": "fp16_nm1_demo",
+                        "macro_mode": "flat_nomacro",
+                        "model_id": "linear_c",
+                        "metrics": {
+                            "latency_ms_mean": {"baseline": 0.9, "candidate": 0.8},
+                            "energy_mj_mean": {"baseline": 0.4, "candidate": 0.33},
+                        },
+                    },
+                ],
+            }
+            artifact_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+            publish_review_package(
+                session,
+                ReviewPublishRequest(
+                    repo_root=str(repo_root),
+                    item_id=item_id,
+                    evaluator_id="cpbot",
+                    session_id="s20260310t071500z",
+                    host="cp-host",
+                ),
+            )
+
+            package_path = repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "review_package.json"
+            review_payload = json.loads(package_path.read_text(encoding="utf-8"))
+            body_md = review_payload["pr_payload"]["body_md"]
+            assert "latency_delta fp16_nm1_demo/flat_nomacro/linear_a: `0.5` -> `0.4` ms" in body_md
+            assert "latency_delta fp16_nm1_demo/flat_nomacro/relu_b: `0.7` -> `0.6` ms" in body_md
+            assert "latency_delta fp16_nm1_demo/flat_nomacro/linear_c: `0.9` -> `0.8` ms" in body_md
+            assert "latency_delta fp16_nm1_demo/hier_macro/linear_a" not in body_md
+
+
 def test_publish_review_package_measurement_only_uses_evaluation_section_without_proposal_assessment() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
