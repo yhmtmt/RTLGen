@@ -1,14 +1,25 @@
 {
   "proposal_id": "prop_cross_non_mlp_terminal_suite_v1",
-  "source_commit": "e6e545229c42e07c9e09fcc2b2a0310a7897e69a",
+  "source_commit": "5db83794f4091d2ccaff6ec6e47f034bf5d2a63c",
   "requested_items": [
     {
       "item_id": "l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1",
       "task_type": "l2_campaign",
+      "source_commit": "69a4a7996f232b8dd9d81e35935da1d21fdb26d1",
       "evaluation_mode": "measurement_only",
       "objective": "corrected_nonfused_reference",
       "candidate_id": "measure_terminal_softmax_suite_nm1_nonfused_r1",
       "campaign_path": "runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_submit_nm1_v1/campaign.json"
+    },
+    {
+      "item_id": "l2_prop_cross_non_mlp_terminal_suite_v1_nm1_fused_r1",
+      "task_type": "l2_campaign",
+      "source_commit": "5db83794f4091d2ccaff6ec6e47f034bf5d2a63c",
+      "evaluation_mode": "paired_comparison",
+      "objective": "fused_vs_nonfused_nm1",
+      "candidate_id": "cand_terminal_softmax_suite_nm1_fused_r1",
+      "paired_baseline_item_id": "l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_fused_output_nm1_v1/campaign.json"
     }
   ]
 }

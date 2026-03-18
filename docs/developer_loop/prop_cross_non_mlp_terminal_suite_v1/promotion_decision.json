@@ -1,9 +1,18 @@
 {
   "proposal_id": "prop_cross_non_mlp_terminal_suite_v1",
   "candidate_id": "cand_cross_non_mlp_terminal_suite_v1_r1",
-  "decision": "iterate",
-  "reason": "Pending implementation and evaluation.",
-  "evidence_refs": [],
-  "next_action": "Implement the selected small non-MLP suite and queue the staged measurement/comparison items.",
+  "decision": "promote",
+  "reason": "Merged PRs #49 and #52 established a refreshed non-fused nm1 suite baseline and then showed fused terminal output improving latency and energy across the bounded terminal-sensitive softmax suite.",
+  "evidence_refs": [
+    "control_plane/shadow_exports/l2_decisions/l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1.json",
+    "control_plane/shadow_exports/l2_decisions/l2_prop_cross_non_mlp_terminal_suite_v1_nm1_fused_r1.json",
+    "control_plane/shadow_exports/review/l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1/review_package.json",
+    "control_plane/shadow_exports/review/l2_prop_cross_non_mlp_terminal_suite_v1_nm1_fused_r1/review_package.json",
+    "runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_submit_nm1_v1__l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1/report.md",
+    "runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_fused_output_nm1_v1__l2_prop_cross_non_mlp_terminal_suite_v1_nm1_fused_r1/report.md",
+    "runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_fused_output_nm1_v1__l2_prop_cross_non_mlp_terminal_suite_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1_softmax_r4/softmax_cls_b128_i8_o16/schedule.yml",
+    "runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_fused_output_nm1_v1__l2_prop_cross_non_mlp_terminal_suite_v1_nm1_fused_r1/artifacts/perf/fp16_nm1_softmax_r4/softmax_cls_b128_i8_o16/trace.json"
+  ],
+  "next_action": "Promote the next item toward mapper or lowering expansion beyond the current Cast/Gemm/Softmax subset before reopening broader architecture ranking.",
   "requires_human_approval": true
 }

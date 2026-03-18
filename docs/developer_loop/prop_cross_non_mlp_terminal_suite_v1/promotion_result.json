@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_cross_non_mlp_terminal_suite_v1",
-  "decision": "pending",
-  "pr_number": 0,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "promoted",
+  "pr_number": 52,
+  "merge_commit": "5138661b0946e4ec3367f6373a222a80eeda700f",
+  "merged_utc": "2026-03-18T12:13:05Z"
 }
