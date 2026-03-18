@@ -1,5 +1,20 @@
 {
   "proposal_id": "prop_cross_terminal_output_overlap_probe_v1",
-  "source_commit": "fdc37dc",
-  "requested_items": []
+  "source_commit": "86610533dc223eb881fe5cd11f6a1b1f0f080fd7",
+  "requested_items": [
+    {
+      "item_id": "l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r1",
+      "task_type": "l2_campaign",
+      "objective": "focused_baseline",
+      "candidate_id": "cand_terminal_output_overlap_probe_nm1_baseline_r1",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_nm1_v2/campaign.json"
+    },
+    {
+      "item_id": "l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1",
+      "task_type": "l2_campaign",
+      "objective": "focused_candidate",
+      "candidate_id": "cand_terminal_output_overlap_probe_nm1_fused_r1",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2/campaign.json"
+    }
+  ]
 }
