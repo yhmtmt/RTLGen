@@ -27,7 +27,8 @@
 
 ## Candidate Idea
 - generalize the direct terminal-output lowering rule from softmax-only to a
-  small eligible family of terminal ops under the existing `nm1` hardware
+  first-pass family of terminal linear plus terminal `Relu` outputs under the
+  existing `nm1` hardware
 - stage the work as measurement-first so the first remote spend only records
   non-fused reference metrics on a minimal generalized terminal-op suite
 
@@ -66,9 +67,10 @@
   non-win/lose outcomes
 
 ## Open Questions
-- which terminal ops are minimal and legal enough for the first pass
-- whether the first family should stay inside imported-style classifier tails
-  or include a small new op family such as activation or normalization tails
+- whether terminal linear plus terminal `Relu` is still too close to the
+  accepted softmax-tail proof
+- whether the direct-output generalization should first target final GEMM
+  writeback, final VEC writeback, or both
 - what quality gate is required before spending remote evaluation budget
 
 ## Promotion Rule

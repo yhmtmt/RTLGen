@@ -8,5 +8,6 @@
   - second remote stage may use `paired_comparison` only after local legality
     and quality checks are in place
 - blocked_on:
-  - naming the bounded first-pass terminal-op family
-  - defining the required quality gate for that family
+  - local generation and validation of the bounded terminal linear plus
+    terminal `Relu` suite
+  - defining the required quality gate before the paired-comparison stage

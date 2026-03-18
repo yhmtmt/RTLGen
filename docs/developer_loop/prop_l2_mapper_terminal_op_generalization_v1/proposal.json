@@ -5,20 +5,20 @@
   "layer": "l2",
   "kind": "mapper",
   "title": "Generalized terminal-op direct output",
-  "hypothesis": "The accepted direct terminal-output mechanism can be generalized beyond terminal Softmax to a small bounded terminal-op family on the existing nm1 hardware, but the first proof should be staged as measurement-only non-fused references followed by paired comparison on those same points.",
+  "hypothesis": "The accepted direct terminal-output mechanism should next be tested on a bounded first-pass family of terminal linear and terminal Relu outputs on the existing nm1 hardware, with measurement-only non-fused references recorded before any paired comparison work.",
   "direct_comparison": {
-    "primary_question": "Can a bounded mapper generalization extend direct terminal output beyond Softmax while preserving a clean measurement-first proof on fixed nm1 architecture points?",
+    "primary_question": "Can a bounded mapper program for terminal linear and terminal Relu outputs establish clean nm1 reference points first, before direct-output generalization is attempted on those same points?",
     "include": [
-      "measurement-only non-fused nm1 reference points on a minimal generalized terminal-op suite",
-      "paired direct-output vs non-fused nm1 comparison on the same terminal-op suite"
+      "measurement-only non-fused nm1 reference points on a bounded terminal linear plus terminal Relu suite",
+      "paired direct-output vs non-fused nm1 comparison on the same suite after local legality and quality checks are in place"
     ],
     "exclude": [
       "nm1 vs nm2 ranking",
       "broad architecture sweeps before terminal-op legality and local gain are established",
-      "broad non-MLP model support claims beyond the chosen first-pass terminal-op family"
+      "broad non-MLP model support claims beyond the chosen first-pass terminal linear plus terminal Relu family"
     ],
     "follow_on_broad_sweep": [
-      "run broader ranking or broader model-support evaluation only if the bounded generalized terminal-op comparison is positive or mixed enough to justify reintegration"
+    "run broader ranking or broader model-support evaluation only if the bounded generalized terminal-op comparison is positive or mixed enough to justify reintegration"
     ]
   },
   "expected_benefit": [
@@ -27,7 +27,7 @@
     "uses measurement-only first-stage evaluation so reference points can be recorded without forcing a premature proposal judgment"
   ],
   "risks": [
-    "the chosen terminal-op family may still be too close to the existing softmax-tail proof",
+    "the chosen terminal linear plus terminal Relu family may still be too close to the existing softmax-tail proof",
     "quality-gate requirements may grow if the generalized path touches numerically sensitive ops",
     "a later broader model-support item may still be needed even if the first generalized mapper proof succeeds"
   ],
@@ -40,7 +40,7 @@
       "cost_class": "medium",
       "expected_result": {
         "direction": "unknown",
-        "reason": "the first item should only record fixed-point non-fused nm1 reference metrics for the chosen bounded terminal-op suite"
+        "reason": "the first item should only record non-fused nm1 reference metrics for the bounded terminal linear plus terminal Relu suite"
       }
     },
     {
@@ -50,7 +50,7 @@
       "cost_class": "medium",
       "expected_result": {
         "direction": "better_than_historical",
-        "reason": "if the generalized direct-output lowering is valid, it should improve at least part of the bounded terminal-op suite against the refreshed non-fused references"
+        "reason": "if the generalized direct-output lowering is valid, it should improve at least part of the bounded terminal linear plus terminal Relu suite against the refreshed non-fused references"
       }
     }
   ],

@@ -63,6 +63,7 @@ class MapperSplitRegressionTest(unittest.TestCase):
         input_shape: list[int],
         hidden_dims: list[int],
         out_dim: int,
+        final_relu: bool = False,
     ) -> None:
         out_path.write_bytes(
             self.onnx_lite.build_gemm_mlp_model_bytes(
@@ -72,6 +73,7 @@ class MapperSplitRegressionTest(unittest.TestCase):
                 hidden_dims=hidden_dims,
                 out_dim=out_dim,
                 dtype=self.onnx_lite.TENSOR_INT8,
+                final_relu=final_relu,
             )
         )
 
@@ -458,6 +460,40 @@ class MapperSplitRegressionTest(unittest.TestCase):
             self.assertEqual(1, len(monolithic_gemm_ops))
             self.assertEqual(0, len(split_gemm_ops))
             self.assertEqual("softmax1", schedule["events"][0]["signal_on"])
+
+    def test_terminal_relu_chain_lowers_without_softmax(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            onnx_path = tmp / "terminal_relu.onnx"
+            sched_path = tmp / "terminal_relu.yml"
+            bin_path = tmp / "terminal_relu.bin"
+
+            self._write_gemm_mlp_onnx(
+                onnx_path,
+                name="terminal_relu",
+                b=128,
+                input_shape=[2, 4],
+                hidden_dims=[],
+                out_dim=128,
+                final_relu=True,
+            )
+            schedule = self._run_lowering(onnx_path, sched_path)
+            self._validate_and_emit_bin(sched_path, bin_path)
+
+            notes = schedule.get("mapper_notes", {})
+            self.assertFalse(bool(notes.get("terminal_softmax")))
+            self.assertEqual("Y", notes.get("graph_output_name"))
+
+            softmax_ops = [op for op in schedule["ops"] if op.get("type") == "softmax"]
+            self.assertEqual([], softmax_ops)
+
+            gemm_ops = [op for op in schedule["ops"] if op.get("type") == "gemm"]
+            self.assertEqual(1, len(gemm_ops))
+            self.assertEqual("none", gemm_ops[0].get("epilogue"))
+
+            dma_y_ops = [op for op in schedule["ops"] if str(op.get("id", "")).startswith("dma_y")]
+            self.assertEqual(1, len(dma_y_ops))
+            self.assertEqual("dma_y1", schedule["events"][0]["signal_on"])
 
 
 if __name__ == "__main__":

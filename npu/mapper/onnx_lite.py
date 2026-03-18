@@ -485,12 +485,13 @@ def build_gemm_mlp_model_bytes(
     out_dim: int,
     dtype: int = TENSOR_INT8,
     add_flatten: bool = True,
+    final_relu: bool = False,
     opset_version: int = 13,
     ir_version: int = 8,
 ) -> bytes:
     """
     Build a small imported-style MLP ONNX model using:
-      optional Flatten -> Gemm -> Relu -> ... -> Gemm
+      optional Flatten -> Gemm -> Relu -> ... -> Gemm -> optional final Relu
 
     Notes:
     - Weight tensors use [out_dim, in_dim] layout to mirror many exported Gemm
@@ -537,6 +538,7 @@ def build_gemm_mlp_model_bytes(
         w_name = f"W{idx + 1}"
         b_name = f"b{idx + 1}"
         gemm_out = f"G{idx + 1}"
+        is_last = idx == len(layer_dims) - 1
         initializers.extend(
             [
                 _encode_tensor(w_name, [next_dim, current_dim], dtype, zeros(next_dim * current_dim)),
@@ -547,15 +549,17 @@ def build_gemm_mlp_model_bytes(
             _encode_node(
                 "Gemm",
                 [current, w_name, b_name],
-                ["Y" if idx == len(layer_dims) - 1 else gemm_out],
+                [gemm_out if is_last and final_relu else ("Y" if is_last else gemm_out)],
                 name=f"Gemm{idx + 1}",
             )
         )
-        if idx != len(layer_dims) - 1:
+        if not is_last:
             relu_out = f"R{idx + 1}"
             nodes.append(_encode_node("Relu", [gemm_out], [relu_out], name=f"Relu{idx + 1}"))
             current = relu_out
         else:
+            if final_relu:
+                nodes.append(_encode_node("Relu", [gemm_out], ["Y"], name=f"Relu{idx + 1}"))
             current = "Y"
         current_dim = next_dim
 

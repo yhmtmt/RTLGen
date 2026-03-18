@@ -1,0 +1,25 @@
+{
+  "version": 0.1,
+  "model_set_id": "onnx_terminal_direct_output_suite_v1",
+  "description": "Locally generated terminal linear and terminal ReLU models used for measurement-first direct-output mapper generalization.",
+  "models": [
+    {
+      "model_id": "linear_tail_b128_f8_o64",
+      "onnx_path": "runs/models/onnx_terminal_direct_output_suite_v1/linear_tail_b128_f8_o64.onnx",
+      "onnx_sha256": "919022405fca850709cf84e227cf6a38b625897576d4b87c97cada36a0928183",
+      "notes": "Flatten -> Gemm terminal linear output with modest output width."
+    },
+    {
+      "model_id": "linear_tail_b256_f8_o128",
+      "onnx_path": "runs/models/onnx_terminal_direct_output_suite_v1/linear_tail_b256_f8_o128.onnx",
+      "onnx_sha256": "85370fdef606ce1c3d2914bcd703269e8518fd9332c72ed4224f623e6904a59c",
+      "notes": "Flatten -> Gemm terminal linear output with heavier writeback pressure."
+    },
+    {
+      "model_id": "relu_tail_b128_f8_o128",
+      "onnx_path": "runs/models/onnx_terminal_direct_output_suite_v1/relu_tail_b128_f8_o128.onnx",
+      "onnx_sha256": "82948c7de4c81602eec8dd2ca06955537c01702dd19c51091ac5117fbd04d163",
+      "notes": "Flatten -> Gemm -> Relu terminal output accepted by the current mapper for measurement-first baseline collection."
+    }
+  ]
+}
