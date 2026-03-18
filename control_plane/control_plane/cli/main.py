@@ -111,6 +111,9 @@ def main(argv: list[str] | None = None) -> int:
     generate_l2_parser.add_argument("--objective-profiles-json")
     generate_l2_parser.add_argument("--proposal-id")
     generate_l2_parser.add_argument("--proposal-path")
+    generate_l2_parser.add_argument("--evaluation-mode")
+    generate_l2_parser.add_argument("--expected-direction")
+    generate_l2_parser.add_argument("--expected-reason")
     generate_l2_parser.add_argument("--comparison-role")
     generate_l2_parser.add_argument("--paired-baseline-item-id")
     generate_l2_parser.add_argument("--no-run-physical", action="store_true")
@@ -433,6 +436,9 @@ def main(argv: list[str] | None = None) -> int:
             ("--objective-profiles-json", args.objective_profiles_json),
             ("--proposal-id", args.proposal_id),
             ("--proposal-path", args.proposal_path),
+            ("--evaluation-mode", args.evaluation_mode),
+            ("--expected-direction", args.expected_direction),
+            ("--expected-reason", args.expected_reason),
             ("--comparison-role", args.comparison_role),
             ("--paired-baseline-item-id", args.paired_baseline_item_id),
         ]:

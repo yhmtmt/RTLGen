@@ -83,8 +83,13 @@ The proposal should force the agent to answer:
   "required_evaluations": [
     {
       "task_type": "local_quality_precheck | l1_sweep | l2_campaign",
+      "evaluation_mode": "measurement_only | baseline_refresh | paired_comparison | broad_ranking",
       "objective": "string",
-      "cost_class": "low | medium | high"
+      "cost_class": "low | medium | high",
+      "expected_result": {
+        "direction": "better_than_historical | worse_than_historical | same_as_historical | unknown",
+        "reason": "why this outcome is expected"
+      }
     }
   ],
   "baseline_refs": [
@@ -132,13 +137,23 @@ The proposal should force the agent to answer:
   "required_evaluations": [
     {
       "task_type": "local_quality_precheck",
+      "evaluation_mode": "measurement_only",
       "objective": "quality_guard",
-      "cost_class": "low"
+      "cost_class": "low",
+      "expected_result": {
+        "direction": "same_as_historical",
+        "reason": "quality prechecks should preserve accepted model outputs"
+      }
     },
     {
       "task_type": "l2_campaign",
+      "evaluation_mode": "paired_comparison",
       "objective": "balanced",
-      "cost_class": "high"
+      "cost_class": "high",
+      "expected_result": {
+        "direction": "better_than_historical",
+        "reason": "the fused candidate is expected to improve the focused baseline"
+      }
     }
   ],
   "baseline_refs": [
@@ -158,6 +173,23 @@ proposal's causal question. For new proposals:
   decision
 - record broader sweeps as follow-on work instead of mixing them into the
   primary proof by default
+
+`required_evaluations[*].evaluation_mode` exists because not every item should
+emit a win/lose proposal judgment:
+- `measurement_only`: record metrics for named points; no proposal assessment
+- `baseline_refresh`: recompute a historical reference point under a new
+  contract, toolchain, or benchmark; historical deltas are context, not a loss
+- `paired_comparison`: compare a candidate against a named refreshed or
+  accepted baseline and emit the focused proposal outcome
+- `broad_ranking`: run a wider sweep and serialize ranking separately from the
+  focused proposal question
+
+`required_evaluations[*].expected_result` exists because some valid items are
+expected to look worse than older historical runs. Example:
+- a corrected event contract may make a refreshed non-fused baseline slower
+  than an older historical report
+- that should be marked as expected when the measured shift matches the stated
+  reason
 
 ## 2. implementation_summary.md
 
@@ -266,12 +298,17 @@ Timing:
 ## Baseline Comparison
 - what baseline was used
 - key deltas
+- whether the baseline was:
+  - historical context only
+  - refreshed reference point
+  - direct paired-comparison baseline
 
 ## Result
 - win / loss / mixed
 - confidence level
 - estimated mapper optimization room
 - whether the architecture conclusion is robust to plausible schedule changes
+- whether any non-win/lose result matched expectation
 
 ## Failures and Caveats
 - flow failures

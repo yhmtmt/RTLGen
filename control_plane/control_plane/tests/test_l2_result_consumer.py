@@ -446,12 +446,73 @@ def test_consume_l2_result_writes_proposal_assessment_for_focused_comparison() -
             proposal_path = repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{focused_item_id}.json"
             payload = json.loads(proposal_path.read_text(encoding="utf-8"))
             assessment = payload["proposal_assessment"]
+            evaluation_record = payload["evaluation_record"]
             assert assessment["proposal_id"] == "prop_l2_demo_v1"
             assert assessment["outcome"] == "no_measurable_change"
+            assert evaluation_record["evaluation_mode"] == "paired_comparison"
+            assert evaluation_record["expectation_status"] == "unspecified"
             assert assessment["matched_row_count"] == 2
             assert assessment["matched_rows"][0]["arch_id"] == "fp16_nm1_demo"
             assert payload["source_refs"]["baseline_summary_csv"] == "runs/campaigns/npu/baseline_campaign/summary.csv"
             assert payload["source_refs"]["baseline_report_md"] == "runs/campaigns/npu/baseline_campaign/report.md"
+
+
+def test_consume_l2_result_measurement_only_omits_proposal_assessment() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            proposal_dir = repo_root / "docs" / "developer_loop" / "prop_l2_demo_v1"
+            _write(
+                proposal_dir / "proposal.json",
+                json.dumps(
+                    {
+                        "proposal_id": "prop_l2_demo_v1",
+                        "kind": "architecture",
+                        "title": "Demo measurement-only",
+                        "direct_comparison": {
+                            "primary_question": "Record the metric for this architecture point.",
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            item_id = _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id="l2_measurement_only",
+                campaign_dir_rel="runs/campaigns/npu/measurement_only_campaign",
+                summary_rows=(
+                    "scope,arch_id,macro_mode,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,throughput_infer_per_s_mean\n"
+                    "aggregate,fp16_nm1_demo,flat_nomacro,1,0.4,0.15,5.5,0.18,1000,1.0\n"
+                ),
+                proposal_path="docs/developer_loop/prop_l2_demo_v1",
+                comparison={"role": "measurement_only"},
+            )
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            payload = dict(work_item.task_request.request_payload or {})
+            payload["developer_loop"]["evaluation"] = {
+                "mode": "measurement_only",
+                "expected_direction": "unknown",
+                "expected_reason": "This item only records the metric reference point.",
+            }
+            work_item.task_request.request_payload = payload
+            session.commit()
+
+            consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=item_id))
+
+            decision_payload = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{item_id}.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            assert decision_payload["proposal_assessment"] is None
+            assert decision_payload["evaluation_record"]["evaluation_mode"] == "measurement_only"
+            assert decision_payload["evaluation_record"]["expectation_status"] == "not_applicable"
 
 
 def test_consume_l2_result_marks_refreshed_baseline_without_proposal_judgment() -> None:
@@ -498,6 +559,15 @@ def test_consume_l2_result_marks_refreshed_baseline_without_proposal_judgment() 
                 proposal_path="docs/developer_loop/prop_l2_demo_v1",
                 comparison={"role": "refreshed_baseline"},
             )
+            work_item = session.query(WorkItem).filter_by(item_id=baseline_item_id).one()
+            payload = dict(work_item.task_request.request_payload or {})
+            payload["developer_loop"]["evaluation"] = {
+                "mode": "baseline_refresh",
+                "expected_direction": "worse_than_historical",
+                "expected_reason": "The corrected contract should expose previously hidden terminal DMA cost.",
+            }
+            work_item.task_request.request_payload = payload
+            session.commit()
 
             consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=baseline_item_id))
 
@@ -507,9 +577,13 @@ def test_consume_l2_result_marks_refreshed_baseline_without_proposal_judgment() 
                 )
             )
             assessment = payload["proposal_assessment"]
+            evaluation_record = payload["evaluation_record"]
             assert assessment["comparison_role"] == "refreshed_baseline"
+            assert assessment["evaluation_mode"] == "baseline_refresh"
             assert assessment["outcome"] == "baseline_refreshed"
             assert "deferred until the paired candidate run is reviewed" in assessment["summary"]
+            assert evaluation_record["expected_direction"] == "worse_than_historical"
+            assert evaluation_record["expectation_status"] == "as_expected"
             assert payload["source_refs"]["baseline_summary_csv"] == "runs/campaigns/npu/historical_baseline/summary.csv"
 
 
@@ -557,6 +631,15 @@ def test_consume_l2_result_compares_candidate_against_paired_baseline_item() -> 
                 proposal_path="docs/developer_loop/prop_l2_demo_v1",
                 comparison={"role": "refreshed_baseline"},
             )
+            baseline_work_item = session.query(WorkItem).filter_by(item_id=baseline_item_id).one()
+            baseline_payload = dict(baseline_work_item.task_request.request_payload or {})
+            baseline_payload["developer_loop"]["evaluation"] = {
+                "mode": "baseline_refresh",
+                "expected_direction": "worse_than_historical",
+                "expected_reason": "The corrected contract should expose previously hidden terminal DMA cost.",
+            }
+            baseline_work_item.task_request.request_payload = baseline_payload
+            session.commit()
             consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=baseline_item_id))
 
             candidate_item_id = _seed_campaign_work_item(
@@ -571,6 +654,15 @@ def test_consume_l2_result_compares_candidate_against_paired_baseline_item() -> 
                 proposal_path="docs/developer_loop/prop_l2_demo_v1",
                 comparison={"role": "candidate", "paired_baseline_item_id": baseline_item_id},
             )
+            candidate_work_item = session.query(WorkItem).filter_by(item_id=candidate_item_id).one()
+            candidate_payload = dict(candidate_work_item.task_request.request_payload or {})
+            candidate_payload["developer_loop"]["evaluation"] = {
+                "mode": "paired_comparison",
+                "expected_direction": "better_than_historical",
+                "expected_reason": "The candidate should beat the refreshed baseline.",
+            }
+            candidate_work_item.task_request.request_payload = candidate_payload
+            session.commit()
 
             consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=candidate_item_id))
 
@@ -580,10 +672,13 @@ def test_consume_l2_result_compares_candidate_against_paired_baseline_item() -> 
                 )
             )
             assessment = payload["proposal_assessment"]
+            evaluation_record = payload["evaluation_record"]
             assert assessment["comparison_role"] == "candidate"
+            assert assessment["evaluation_mode"] == "paired_comparison"
             assert assessment["baseline_item_id"] == baseline_item_id
             assert assessment["baseline_ref"] == "runs/campaigns/npu/refreshed_baseline_campaign"
             assert assessment["outcome"] == "improved"
+            assert evaluation_record["expectation_status"] == "as_expected"
             assert assessment["matched_rows"][0]["metrics"]["latency_ms_mean"]["baseline"] == 0.5
             assert assessment["matched_rows"][0]["metrics"]["latency_ms_mean"]["candidate"] == 0.4
             assert payload["source_refs"]["baseline_summary_csv"] == "runs/campaigns/npu/refreshed_baseline_campaign/summary.csv"

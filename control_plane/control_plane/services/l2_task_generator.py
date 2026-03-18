@@ -39,6 +39,9 @@ class Layer2CampaignGenerateRequest:
     objective_profiles_json: str | None = None
     proposal_id: str | None = None
     proposal_path: str | None = None
+    evaluation_mode: str | None = None
+    expected_direction: str | None = None
+    expected_reason: str | None = None
     comparison_role: str | None = None
     paired_baseline_item_id: str | None = None
 
@@ -185,6 +188,9 @@ def _build_payload(
     objective_profiles_json: str | None,
     proposal_id: str | None,
     proposal_path: str | None,
+    evaluation_mode: str | None,
+    expected_direction: str | None,
+    expected_reason: str | None,
     comparison_role: str | None,
     paired_baseline_item_id: str | None,
 ) -> dict[str, Any]:
@@ -285,9 +291,20 @@ def _build_payload(
             "proposal_id": proposal_id or "",
             "proposal_path": proposal_path or "",
         }
-        if comparison_role or paired_baseline_item_id:
+        if evaluation_mode or expected_direction or expected_reason:
+            payload["developer_loop"]["evaluation"] = {
+                "mode": evaluation_mode or "",
+                "expected_direction": expected_direction or "",
+                "expected_reason": expected_reason or "",
+            }
+        effective_comparison_role = comparison_role or {
+            "baseline_refresh": "refreshed_baseline",
+            "paired_comparison": "candidate",
+            "broad_ranking": "ranking",
+        }.get(str(evaluation_mode or "").strip(), "")
+        if effective_comparison_role or paired_baseline_item_id:
             payload["developer_loop"]["comparison"] = {
-                "role": comparison_role or "",
+                "role": effective_comparison_role,
                 "paired_baseline_item_id": paired_baseline_item_id or "",
             }
     return payload
@@ -336,6 +353,9 @@ def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateR
         objective_profiles_json=objective_profiles_json,
         proposal_id=request.proposal_id,
         proposal_path=proposal_path,
+        evaluation_mode=request.evaluation_mode,
+        expected_direction=request.expected_direction,
+        expected_reason=request.expected_reason,
         comparison_role=request.comparison_role,
         paired_baseline_item_id=request.paired_baseline_item_id,
     )

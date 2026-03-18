@@ -83,6 +83,9 @@ def test_generate_l2_campaign_task_creates_ready_work_item() -> None:
                     objective_profiles_json="runs/campaigns/npu/base/objective_profiles.json",
                     proposal_id="prop_l2_demo_v1",
                     proposal_path="docs/developer_loop/prop_l2_demo_v1",
+                    evaluation_mode="paired_comparison",
+                    expected_direction="better_than_historical",
+                    expected_reason="Candidate should improve the measured baseline.",
                     comparison_role="candidate",
                     paired_baseline_item_id="l2_demo_baseline",
                 ),
@@ -132,6 +135,11 @@ def test_generate_l2_campaign_task_creates_ready_work_item() -> None:
             assert payload["developer_loop"] == {
                 "proposal_id": "prop_l2_demo_v1",
                 "proposal_path": "docs/developer_loop/prop_l2_demo_v1",
+                "evaluation": {
+                    "mode": "paired_comparison",
+                    "expected_direction": "better_than_historical",
+                    "expected_reason": "Candidate should improve the measured baseline.",
+                },
                 "comparison": {
                     "role": "candidate",
                     "paired_baseline_item_id": "l2_demo_baseline",

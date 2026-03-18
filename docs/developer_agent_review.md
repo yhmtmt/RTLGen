@@ -51,7 +51,7 @@ as lower-confidence.
 The reviewer must answer:
 
 1. Did the run evaluate the intended proposal, not just a technically valid task?
-2. Did it use the intended baseline and objective framing?
+2. Did it use the intended evaluation mode, baseline, and objective framing?
 3. Did it satisfy the proposal’s required gates and evidence rules?
 4. Does the result support the proposal’s stated hypothesis?
 5. Are the claimed improvements meaningful against the referenced baseline?
@@ -60,6 +60,12 @@ The reviewer must answer:
 ## Focused Comparison Rule
 
 Review the result against the proposal's declared direct comparison set first.
+
+For `measurement_only` or `baseline_refresh` items:
+- do not force a win/lose proposal judgment
+- check whether the item recorded the intended metrics or refreshed the intended
+  reference point
+- check whether the observed shift matched the declared expectation and reason
 
 Do not let a broader architecture sweep override the primary proposal question
 when the proposal was intentionally scoped more narrowly.
@@ -74,6 +80,8 @@ Examples:
 When a broader sweep is present, distinguish explicitly between:
 - proposal outcome: did the focused hypothesis succeed?
 - campaign ranking: which point wins under the broader objective?
+- measurement result: what metric reference point was recorded without proposal
+  judgment?
 
 If the direct comparison set is missing or mixed together with a much broader
 comparison set, treat the review as lower-clarity and call that out.

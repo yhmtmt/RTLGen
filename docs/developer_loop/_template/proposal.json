@@ -28,8 +28,13 @@
   "required_evaluations": [
     {
       "task_type": "l2_campaign",
+      "evaluation_mode": "paired_comparison",
       "objective": "balanced",
-      "cost_class": "medium"
+      "cost_class": "medium",
+      "expected_result": {
+        "direction": "better_than_historical",
+        "reason": "replace this with the expected direction for this item"
+      }
     }
   ],
   "baseline_refs": [

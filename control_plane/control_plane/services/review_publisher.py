@@ -171,6 +171,7 @@ def _build_body_md(
         except Exception:
             review_payload = {}
     proposal_assessment = review_payload.get("proposal_assessment")
+    evaluation_record = review_payload.get("evaluation_record")
     lines = [
         f"## Summary",
         f"- item_id: `{work_item.item_id}`",
@@ -195,6 +196,26 @@ def _build_body_md(
         if proposal_path:
             lines.append(f"- proposal_path: `{proposal_path}`")
             lines.append(f"- reviewer_first_read: `{proposal_path}` plus `docs/developer_agent_review.md`")
+    if isinstance(evaluation_record, dict):
+        lines.extend(["", "## Evaluation Mode"])
+        evaluation_mode = str(evaluation_record.get("evaluation_mode", "")).strip()
+        if evaluation_mode:
+            lines.append(f"- evaluation_mode: `{evaluation_mode}`")
+        comparison_role = str(evaluation_record.get("comparison_role", "")).strip()
+        if comparison_role:
+            lines.append(f"- comparison_role: `{comparison_role}`")
+        expected_direction = str(evaluation_record.get("expected_direction", "")).strip()
+        if expected_direction:
+            lines.append(f"- expected_direction: `{expected_direction}`")
+        expected_reason = str(evaluation_record.get("expected_reason", "")).strip()
+        if expected_reason:
+            lines.append(f"- expected_reason: `{expected_reason}`")
+        expectation_status = str(evaluation_record.get("expectation_status", "")).strip()
+        if expectation_status:
+            lines.append(f"- expectation_status: `{expectation_status}`")
+        evaluation_summary = str(evaluation_record.get("summary", "")).strip()
+        if evaluation_summary:
+            lines.append(f"- evaluation_summary: `{evaluation_summary}`")
     if isinstance(proposal_assessment, dict):
         lines.extend(["", "## Focused Comparison"])
         primary_question = str(proposal_assessment.get("primary_question", "")).strip()

@@ -14,6 +14,11 @@
 - direct comparison set:
   - the smallest set of variants or architecture points needed to test the
     hypothesis
+- evaluation modes:
+  - note whether each requested item is `measurement_only`,
+    `baseline_refresh`, `paired_comparison`, or `broad_ranking`
+  - record any expected non-win/lose result, such as a refreshed baseline that
+    is expected to look worse than a historical run
 - excluded first-stage comparisons:
   - broader points intentionally left out of the first evaluation
 - follow-on broad sweep:

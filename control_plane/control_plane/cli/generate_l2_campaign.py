@@ -27,6 +27,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--objective-profiles-json")
     parser.add_argument("--proposal-id")
     parser.add_argument("--proposal-path")
+    parser.add_argument("--evaluation-mode")
+    parser.add_argument("--expected-direction")
+    parser.add_argument("--expected-reason")
     parser.add_argument("--comparison-role")
     parser.add_argument("--paired-baseline-item-id")
     parser.add_argument("--no-run-physical", action="store_true")
@@ -55,6 +58,9 @@ def main(argv: list[str] | None = None) -> int:
                 objective_profiles_json=args.objective_profiles_json,
                 proposal_id=args.proposal_id,
                 proposal_path=args.proposal_path,
+                evaluation_mode=args.evaluation_mode,
+                expected_direction=args.expected_direction,
+                expected_reason=args.expected_reason,
                 comparison_role=args.comparison_role,
                 paired_baseline_item_id=args.paired_baseline_item_id,
             ),

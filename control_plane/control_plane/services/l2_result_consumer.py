@@ -208,6 +208,41 @@ def _developer_loop_comparison(work_item: WorkItem) -> dict[str, Any]:
     return dict(comparison) if isinstance(comparison, dict) else {}
 
 
+def _developer_loop_evaluation(work_item: WorkItem) -> dict[str, Any]:
+    developer_loop = _developer_loop_payload(work_item)
+    evaluation = developer_loop.get("evaluation")
+    return dict(evaluation) if isinstance(evaluation, dict) else {}
+
+
+def _effective_evaluation_mode(work_item: WorkItem) -> str:
+    evaluation = _developer_loop_evaluation(work_item)
+    mode = str(evaluation.get("mode", "")).strip()
+    if mode:
+        return mode
+    comparison = _developer_loop_comparison(work_item)
+    role = str(comparison.get("role", "")).strip()
+    mapping = {
+        "refreshed_baseline": "baseline_refresh",
+        "candidate": "paired_comparison",
+        "ranking": "broad_ranking",
+        "measurement_only": "measurement_only",
+    }
+    return mapping.get(role, "paired_comparison" if role else "paired_comparison")
+
+
+def _effective_comparison_role(work_item: WorkItem) -> str:
+    comparison = _developer_loop_comparison(work_item)
+    role = str(comparison.get("role", "")).strip()
+    if role:
+        return role
+    return {
+        "baseline_refresh": "refreshed_baseline",
+        "paired_comparison": "candidate",
+        "broad_ranking": "ranking",
+        "measurement_only": "measurement_only",
+    }.get(_effective_evaluation_mode(work_item), "standalone")
+
+
 def _resolve_baseline_summary_from_work_item(
     session: Session,
     *,
@@ -354,6 +389,60 @@ def _comparison_outcome(comparisons: list[dict[str, Any]]) -> tuple[str, str]:
     return "mixed", "Focused comparison changed matched rows, but the deltas are mixed across latency and energy."
 
 
+def _expectation_status(*, expected_direction: str, outcome: str) -> str:
+    if not expected_direction or expected_direction == "unknown":
+        return "unspecified"
+    if expected_direction == "same_as_historical":
+        return "as_expected" if outcome == "no_measurable_change" else "unexpected"
+    if expected_direction == "better_than_historical":
+        return "as_expected" if outcome == "improved" else "unexpected"
+    if expected_direction == "worse_than_historical":
+        return "as_expected" if outcome == "regressed" else "unexpected"
+    return "unspecified"
+
+
+def _build_evaluation_record(
+    *,
+    work_item: WorkItem,
+    proposal: dict[str, Any] | None,
+    evaluation_mode: str,
+    comparison_role: str,
+    baseline_ref: str | None,
+    baseline_item_id: str | None,
+    outcome: str | None,
+    expectation_outcome: str | None,
+    summary: str,
+) -> dict[str, Any] | None:
+    if proposal is None:
+        return None
+    evaluation = _developer_loop_evaluation(work_item)
+    expected_direction = str(evaluation.get("expected_direction", "")).strip() or "unknown"
+    expected_reason = str(evaluation.get("expected_reason", "")).strip()
+    record = {
+        "proposal_id": str(proposal.get("proposal_id", "")).strip(),
+        "title": str(proposal.get("title", "")).strip(),
+        "primary_question": str((proposal.get("direct_comparison") or {}).get("primary_question", "")).strip(),
+        "evaluation_mode": evaluation_mode,
+        "comparison_role": comparison_role,
+        "expected_direction": expected_direction,
+        "expected_reason": expected_reason,
+        "summary": summary,
+    }
+    if baseline_ref:
+        record["baseline_ref"] = baseline_ref
+    if baseline_item_id:
+        record["baseline_item_id"] = baseline_item_id
+    if outcome:
+        record["outcome"] = outcome
+        record["expectation_status"] = _expectation_status(
+            expected_direction=expected_direction,
+            outcome=expectation_outcome or outcome,
+        )
+    else:
+        record["expectation_status"] = "not_applicable"
+    return record
+
+
 def _build_proposal_assessment(
     *,
     session: Session,
@@ -361,27 +450,48 @@ def _build_proposal_assessment(
     repo_root: Path,
     proposal: dict[str, Any] | None,
     summary_rows: list[dict[str, str]],
-) -> tuple[dict[str, Any] | None, dict[str, str]]:
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None, dict[str, str]]:
     if proposal is None:
-        return None, {}
+        return None, None, {}
+    evaluation_mode = _effective_evaluation_mode(work_item)
+    comparison_role = _effective_comparison_role(work_item)
+    if evaluation_mode == "measurement_only":
+        summary = "This item records metrics for the requested architecture point and does not emit a proposal judgment."
+        return (
+            None,
+            _build_evaluation_record(
+                work_item=work_item,
+                proposal=proposal,
+                evaluation_mode=evaluation_mode,
+                comparison_role=comparison_role,
+                baseline_ref=None,
+                baseline_item_id=None,
+                outcome=None,
+                expectation_outcome=None,
+                summary=summary,
+            ),
+            {},
+        )
     comparison = _developer_loop_comparison(work_item)
-    comparison_role = str(comparison.get("role", "")).strip() or "standalone"
     baseline_ref, baseline_rows, baseline_report, assessment_meta, source_refs = _resolve_baseline_summary(
         session,
         repo_root=repo_root,
         proposal=proposal,
         comparison=comparison,
     )
+    baseline_item_id = None
+    if isinstance(assessment_meta, dict):
+        baseline_item_id = str(assessment_meta.get("baseline_item_id", "")).strip() or None
     if baseline_ref is None or baseline_rows is None:
         if comparison_role == "candidate" and str(comparison.get("paired_baseline_item_id", "")).strip():
             missing_summary = "Paired baseline item could not be resolved for focused candidate comparison."
         else:
             missing_summary = "Focused comparison baseline could not be resolved from proposal baseline_refs."
-        return (
-            {
+        assessment = {
                 "proposal_id": str(proposal.get("proposal_id", "")).strip(),
                 "title": str(proposal.get("title", "")).strip(),
                 "primary_question": str((proposal.get("direct_comparison") or {}).get("primary_question", "")).strip(),
+                "evaluation_mode": evaluation_mode,
                 "comparison_role": comparison_role,
                 "outcome": "unavailable",
                 "summary": missing_summary,
@@ -389,7 +499,20 @@ def _build_proposal_assessment(
                 "baseline_item_id": str(comparison.get("paired_baseline_item_id", "")).strip() or None,
                 "matched_row_count": 0,
                 "matched_rows": [],
-            },
+            }
+        return (
+            assessment,
+            _build_evaluation_record(
+                work_item=work_item,
+                proposal=proposal,
+                evaluation_mode=evaluation_mode,
+                comparison_role=comparison_role,
+                baseline_ref=None,
+                baseline_item_id=assessment.get("baseline_item_id"),
+                outcome="unavailable",
+                expectation_outcome="unavailable",
+                summary=missing_summary,
+            ),
             {},
         )
 
@@ -418,7 +541,8 @@ def _build_proposal_assessment(
             }
         )
 
-    outcome, summary = _comparison_outcome(comparisons)
+    raw_outcome, summary = _comparison_outcome(comparisons)
+    outcome = raw_outcome
     if comparison_role == "refreshed_baseline":
         outcome = "baseline_refreshed"
         summary = (
@@ -426,12 +550,12 @@ def _build_proposal_assessment(
             "proposal judgment is deferred until the paired candidate run is reviewed."
         )
     extra_refs = dict(source_refs or {})
-    return (
-        {
+    assessment = {
             "proposal_id": str(proposal.get("proposal_id", "")).strip(),
             "title": str(proposal.get("title", "")).strip(),
             "kind": str(proposal.get("kind", "")).strip(),
             "primary_question": str((proposal.get("direct_comparison") or {}).get("primary_question", "")).strip(),
+            "evaluation_mode": evaluation_mode,
             "comparison_role": comparison_role,
             "outcome": outcome,
             "summary": summary,
@@ -439,7 +563,20 @@ def _build_proposal_assessment(
             **(assessment_meta or {}),
             "matched_row_count": len(comparisons),
             "matched_rows": comparisons,
-        },
+        }
+    return (
+        assessment,
+        _build_evaluation_record(
+            work_item=work_item,
+            proposal=proposal,
+            evaluation_mode=evaluation_mode,
+            comparison_role=comparison_role,
+            baseline_ref=baseline_ref,
+            baseline_item_id=baseline_item_id,
+            outcome=outcome,
+            expectation_outcome=raw_outcome,
+            summary=summary,
+        ),
         extra_refs,
     )
 
@@ -452,6 +589,7 @@ def _build_payload(
     summary_best: dict[str, str],
     objective_profiles: list[dict[str, Any]],
     source_refs: dict[str, str],
+    evaluation_record: dict[str, Any] | None,
     proposal_assessment: dict[str, Any] | None,
 ) -> dict[str, Any]:
     best = best_point.get("best") or {}
@@ -480,6 +618,7 @@ def _build_payload(
             "flow_elapsed_s_mean": best.get("flow_elapsed_s_mean") or summary_best.get("flow_elapsed_s_mean"),
         },
         "objective_profiles": objective_profiles,
+        "evaluation_record": evaluation_record,
         "proposal_assessment": proposal_assessment,
         "source_refs": source_refs,
     }
@@ -528,7 +667,7 @@ def consume_l2_result(session: Session, request: Layer2ConsumeRequest) -> Layer2
     results_rows = _load_csv(_resolve_path(repo_root=repo_root, path_text=results_rel))
     summary_best = _summary_best_row(summary_rows)
     proposal = _load_proposal(repo_root, work_item)
-    proposal_assessment, proposal_source_refs = _build_proposal_assessment(
+    proposal_assessment, evaluation_record, proposal_source_refs = _build_proposal_assessment(
         session=session,
         work_item=work_item,
         repo_root=repo_root,
@@ -549,6 +688,7 @@ def consume_l2_result(session: Session, request: Layer2ConsumeRequest) -> Layer2
         best_point=best_point,
         summary_best=summary_best,
         objective_profiles=objective_profiles,
+        evaluation_record=evaluation_record,
         proposal_assessment=proposal_assessment,
         source_refs={
             "best_point_json": best_point_rel,
