@@ -1,0 +1,395 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-03-18T12:06:53.316800Z",
+  "item_id": "l2_prop_cross_non_mlp_terminal_suite_v1_nm1_fused_r1",
+  "run_key": "l2_prop_cross_non_mlp_terminal_suite_v1_nm1_fused_r1_run_40af2795b96518ef",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "5db83794f4091d2ccaff6ec6e47f034bf5d2a63c",
+  "objective": "fused_vs_nonfused_nm1",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/sweep_compare_softmax_33.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/config_nm1_softmax.json"
+    ],
+    "design_dirs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp"
+    ],
+    "macro_manifests": [
+      "runs/designs/npu_macros/npu_fp16_nm1_softmax_bundle_ng45/macro_manifest.json"
+    ],
+    "generated_campaign": {
+      "path": "runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_fused_output_nm1_v1/campaign__l2_prop_cross_non_mlp_terminal_suite_v1_nm1_fused_r1.json",
+      "outputs": {
+        "report_md": "runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_fused_output_nm1_v1__l2_prop_cross_non_mlp_terminal_suite_v1_nm1_fused_r1/report.md",
+        "results_csv": "runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_fused_output_nm1_v1__l2_prop_cross_non_mlp_terminal_suite_v1_nm1_fused_r1/results.csv",
+        "campaign_dir": "runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_fused_output_nm1_v1__l2_prop_cross_non_mlp_terminal_suite_v1_nm1_fused_r1"
+      },
+      "base_campaign_path": "runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_fused_output_nm1_v1/campaign.json"
+    },
+    "candidate_manifests": [
+      "runs/candidates/nangate45/module_candidates.json"
+    ]
+  },
+  "recommendation": {
+    "arch_id": "fp16_nm1_softmax_r4",
+    "macro_mode": "flat_nomacro",
+    "objective_rank": 1,
+    "objective_score": "0.0",
+    "latency_ms_mean": 0.0036516666666666663,
+    "energy_mj_mean": 6.740538466666667e-07,
+    "critical_path_ns_mean": 5.690256573668907,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.184588,
+    "flow_elapsed_s_mean": 1318.74
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_cross_non_mlp_terminal_suite_v1",
+    "title": "Terminal-sensitive softmax suite",
+    "primary_question": "Does fused terminal output improve a corrected-contract non-fused nm1 reference across a small terminal-sensitive softmax-tail model slice?",
+    "evaluation_mode": "paired_comparison",
+    "comparison_role": "candidate",
+    "expected_direction": "better_than_historical",
+    "expected_reason": "The fused terminal-output path should reduce latency and energy relative to the refreshed non-fused nm1 suite baseline.",
+    "summary": "Focused comparison improved latency and/or energy without regressing matched rows.",
+    "baseline_ref": "runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_submit_nm1_v1__l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1",
+    "baseline_item_id": "l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1",
+    "outcome": "improved",
+    "expectation_status": "as_expected"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_cross_non_mlp_terminal_suite_v1",
+    "title": "Terminal-sensitive softmax suite",
+    "kind": "architecture",
+    "primary_question": "Does fused terminal output improve a corrected-contract non-fused nm1 reference across a small terminal-sensitive softmax-tail model slice?",
+    "evaluation_mode": "paired_comparison",
+    "comparison_role": "candidate",
+    "outcome": "improved",
+    "summary": "Focused comparison improved latency and/or energy without regressing matched rows.",
+    "baseline_ref": "runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_submit_nm1_v1__l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1",
+    "baseline_item_id": "l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1",
+    "matched_row_count": 8,
+    "matched_rows": [
+      {
+        "scope": "model",
+        "arch_id": "fp16_nm1_softmax_r4",
+        "macro_mode": "flat_nomacro",
+        "model_id": "softmax_cls_b128_i4_o128",
+        "metrics": {
+          "latency_ms_mean": {
+            "baseline": 0.005869999999999999,
+            "candidate": 0.004746,
+            "delta": -0.0011239999999999991
+          },
+          "energy_mj_mean": {
+            "baseline": 1.08353156e-06,
+            "candidate": 8.760546480000001e-07,
+            "delta": -2.0747691199999992e-07
+          },
+          "critical_path_ns_mean": {
+            "baseline": 5.690256573668907,
+            "candidate": 5.690256573668907,
+            "delta": 0.0
+          },
+          "total_power_mw_mean": {
+            "baseline": 0.184588,
+            "candidate": 0.184588,
+            "delta": 0.0
+          },
+          "flow_elapsed_s_mean": {
+            "baseline": 1318.74,
+            "candidate": 1318.74,
+            "delta": 0.0
+          },
+          "throughput_infer_per_s_mean": {
+            "baseline": 170357.75127768316,
+            "candidate": 210703.7505267594,
+            "delta": 40345.99924907624
+          }
+        }
+      },
+      {
+        "scope": "model",
+        "arch_id": "fp16_nm1_softmax_r4",
+        "macro_mode": "flat_nomacro",
+        "model_id": "softmax_cls_b128_i8_o16",
+        "metrics": {
+          "latency_ms_mean": {
+            "baseline": 0.0014069999999999996,
+            "candidate": 0.001179,
+            "delta": -0.0002279999999999997
+          },
+          "energy_mj_mean": {
+            "baseline": 2.5971531600000005e-07,
+            "candidate": 2.1762925199999998e-07,
+            "delta": -4.208606400000007e-08
+          },
+          "critical_path_ns_mean": {
+            "baseline": 5.690256573668907,
+            "candidate": 5.690256573668907,
+            "delta": 0.0
+          },
+          "total_power_mw_mean": {
+            "baseline": 0.184588,
+            "candidate": 0.184588,
+            "delta": 0.0
+          },
+          "flow_elapsed_s_mean": {
+            "baseline": 1318.74,
+            "candidate": 1318.74,
+            "delta": 0.0
+          },
+          "throughput_infer_per_s_mean": {
+            "baseline": 710732.0540156361,
+            "candidate": 848176.4206955048,
+            "delta": 137444.36667986866
+          }
+        }
+      },
+      {
+        "scope": "model",
+        "arch_id": "fp16_nm1_softmax_r4",
+        "macro_mode": "flat_nomacro",
+        "model_id": "softmax_cls_b256_i8_o64",
+        "metrics": {
+          "latency_ms_mean": {
+            "baseline": 0.006154,
+            "candidate": 0.00503,
+            "delta": -0.001124
+          },
+          "energy_mj_mean": {
+            "baseline": 1.1359545519999999e-06,
+            "candidate": 9.284776400000002e-07,
+            "delta": -2.074769119999997e-07
+          },
+          "critical_path_ns_mean": {
+            "baseline": 5.690256573668907,
+            "candidate": 5.690256573668907,
+            "delta": 0.0
+          },
+          "total_power_mw_mean": {
+            "baseline": 0.184588,
+            "candidate": 0.184588,
+            "delta": 0.0
+          },
+          "flow_elapsed_s_mean": {
+            "baseline": 1318.74,
+            "candidate": 1318.74,
+            "delta": 0.0
+          },
+          "throughput_infer_per_s_mean": {
+            "baseline": 162495.93760155997,
+            "candidate": 198807.15705765408,
+            "delta": 36311.21945609411
+          }
+        }
+      },
+      {
+        "scope": "model",
+        "arch_id": "fp16_nm1_softmax_r4",
+        "macro_mode": "hier_macro",
+        "model_id": "softmax_cls_b128_i4_o128",
+        "metrics": {
+          "latency_ms_mean": {
+            "baseline": 0.005869999999999999,
+            "candidate": 0.004746,
+            "delta": -0.0011239999999999991
+          },
+          "energy_mj_mean": {
+            "baseline": 1.1896142e-06,
+            "candidate": 9.618243600000001e-07,
+            "delta": -2.2778983999999995e-07
+          },
+          "critical_path_ns_mean": {
+            "baseline": 5.601707400415646,
+            "candidate": 5.601707400415646,
+            "delta": 0.0
+          },
+          "total_power_mw_mean": {
+            "baseline": 0.20265999999999998,
+            "candidate": 0.20265999999999998,
+            "delta": 0.0
+          },
+          "flow_elapsed_s_mean": {
+            "baseline": 1146.61,
+            "candidate": 1146.61,
+            "delta": 0.0
+          },
+          "throughput_infer_per_s_mean": {
+            "baseline": 170357.75127768316,
+            "candidate": 210703.7505267594,
+            "delta": 40345.99924907624
+          }
+        }
+      },
+      {
+        "scope": "model",
+        "arch_id": "fp16_nm1_softmax_r4",
+        "macro_mode": "hier_macro",
+        "model_id": "softmax_cls_b128_i8_o16",
+        "metrics": {
+          "latency_ms_mean": {
+            "baseline": 0.0014069999999999996,
+            "candidate": 0.001179,
+            "delta": -0.0002279999999999997
+          },
+          "energy_mj_mean": {
+            "baseline": 2.8514262000000005e-07,
+            "candidate": 2.3893614e-07,
+            "delta": -4.620648000000003e-08
+          },
+          "critical_path_ns_mean": {
+            "baseline": 5.601707400415646,
+            "candidate": 5.601707400415646,
+            "delta": 0.0
+          },
+          "total_power_mw_mean": {
+            "baseline": 0.20265999999999998,
+            "candidate": 0.20265999999999998,
+            "delta": 0.0
+          },
+          "flow_elapsed_s_mean": {
+            "baseline": 1146.61,
+            "candidate": 1146.61,
+            "delta": 0.0
+          },
+          "throughput_infer_per_s_mean": {
+            "baseline": 710732.0540156361,
+            "candidate": 848176.4206955048,
+            "delta": 137444.36667986866
+          }
+        }
+      },
+      {
+        "scope": "model",
+        "arch_id": "fp16_nm1_softmax_r4",
+        "macro_mode": "hier_macro",
+        "model_id": "softmax_cls_b256_i8_o64",
+        "metrics": {
+          "latency_ms_mean": {
+            "baseline": 0.006154,
+            "candidate": 0.00503,
+            "delta": -0.001124
+          },
+          "energy_mj_mean": {
+            "baseline": 1.24716964e-06,
+            "candidate": 1.0193798000000001e-06,
+            "delta": -2.2778983999999995e-07
+          },
+          "critical_path_ns_mean": {
+            "baseline": 5.601707400415646,
+            "candidate": 5.601707400415646,
+            "delta": 0.0
+          },
+          "total_power_mw_mean": {
+            "baseline": 0.20265999999999998,
+            "candidate": 0.20265999999999998,
+            "delta": 0.0
+          },
+          "flow_elapsed_s_mean": {
+            "baseline": 1146.61,
+            "candidate": 1146.61,
+            "delta": 0.0
+          },
+          "throughput_infer_per_s_mean": {
+            "baseline": 162495.93760155997,
+            "candidate": 198807.15705765408,
+            "delta": 36311.21945609411
+          }
+        }
+      },
+      {
+        "scope": "aggregate",
+        "arch_id": "fp16_nm1_softmax_r4",
+        "macro_mode": "flat_nomacro",
+        "model_id": null,
+        "metrics": {
+          "latency_ms_mean": {
+            "baseline": 0.004476999999999999,
+            "candidate": 0.0036516666666666663,
+            "delta": -0.0008253333333333329
+          },
+          "energy_mj_mean": {
+            "baseline": 8.26400476e-07,
+            "candidate": 6.740538466666667e-07,
+            "delta": -1.5234662933333326e-07
+          },
+          "critical_path_ns_mean": {
+            "baseline": 5.690256573668907,
+            "candidate": 5.690256573668907,
+            "delta": 0.0
+          },
+          "total_power_mw_mean": {
+            "baseline": 0.184588,
+            "candidate": 0.184588,
+            "delta": 0.0
+          },
+          "flow_elapsed_s_mean": {
+            "baseline": 1318.74,
+            "candidate": 1318.74,
+            "delta": 0.0
+          },
+          "throughput_infer_per_s_mean": {
+            "baseline": 347861.9142982931,
+            "candidate": 419229.10942663945,
+            "delta": 71367.19512834633
+          }
+        }
+      },
+      {
+        "scope": "aggregate",
+        "arch_id": "fp16_nm1_softmax_r4",
+        "macro_mode": "hier_macro",
+        "model_id": null,
+        "metrics": {
+          "latency_ms_mean": {
+            "baseline": 0.004476999999999999,
+            "candidate": 0.0036516666666666663,
+            "delta": -0.0008253333333333329
+          },
+          "energy_mj_mean": {
+            "baseline": 9.0730882e-07,
+            "candidate": 7.400467666666667e-07,
+            "delta": -1.6726205333333326e-07
+          },
+          "critical_path_ns_mean": {
+            "baseline": 5.601707400415646,
+            "candidate": 5.601707400415646,
+            "delta": 0.0
+          },
+          "total_power_mw_mean": {
+            "baseline": 0.20265999999999998,
+            "candidate": 0.20265999999999998,
+            "delta": 0.0
+          },
+          "flow_elapsed_s_mean": {
+            "baseline": 1146.61,
+            "candidate": 1146.61,
+            "delta": 0.0
+          },
+          "throughput_infer_per_s_mean": {
+            "baseline": 347861.9142982931,
+            "candidate": 419229.10942663945,
+            "delta": 71367.19512834633
+          }
+        }
+      }
+    ]
+  },
+  "source_refs": {
+    "best_point_json": "runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_fused_output_nm1_v1__l2_prop_cross_non_mlp_terminal_suite_v1_nm1_fused_r1/best_point.json",
+    "summary_csv": "runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_fused_output_nm1_v1__l2_prop_cross_non_mlp_terminal_suite_v1_nm1_fused_r1/summary.csv",
+    "results_csv": "runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_fused_output_nm1_v1__l2_prop_cross_non_mlp_terminal_suite_v1_nm1_fused_r1/results.csv",
+    "report_md": "runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_fused_output_nm1_v1__l2_prop_cross_non_mlp_terminal_suite_v1_nm1_fused_r1/report.md",
+    "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_fused_output_nm1_v1__l2_prop_cross_non_mlp_terminal_suite_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1_softmax_r4/softmax_cls_b128_i8_o16/schedule.yml",
+    "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_fused_output_nm1_v1__l2_prop_cross_non_mlp_terminal_suite_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1_softmax_r4/softmax_cls_b128_i8_o16/descriptors.bin",
+    "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_fused_output_nm1_v1__l2_prop_cross_non_mlp_terminal_suite_v1_nm1_fused_r1/artifacts/perf/fp16_nm1_softmax_r4/softmax_cls_b128_i8_o16/trace.json",
+    "baseline_summary_csv": "runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_submit_nm1_v1__l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1/summary.csv",
+    "baseline_report_md": "runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_submit_nm1_v1__l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1/report.md"
+  }
+}
