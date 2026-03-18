@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_cross_terminal_output_overlap_probe_v1",
   "decision": "promoted",
-  "pr_number": 0,
-  "merge_commit": "git-sha",
-  "merged_utc": "2026-03-18T07:17:51Z"
+  "pr_number": 48,
+  "merge_commit": "531a3abdc8efa4947cf4b1fe5ec099ce771b198d",
+  "merged_utc": "2026-03-18T10:23:10Z"
 }
