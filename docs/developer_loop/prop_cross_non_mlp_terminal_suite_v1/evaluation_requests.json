@@ -1,5 +1,14 @@
 {
   "proposal_id": "prop_cross_non_mlp_terminal_suite_v1",
-  "source_commit": "78d1cb1",
-  "requested_items": []
+  "source_commit": "e6e545229c42e07c9e09fcc2b2a0310a7897e69a",
+  "requested_items": [
+    {
+      "item_id": "l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1",
+      "task_type": "l2_campaign",
+      "evaluation_mode": "measurement_only",
+      "objective": "corrected_nonfused_reference",
+      "candidate_id": "measure_terminal_softmax_suite_nm1_nonfused_r1",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_submit_nm1_v1/campaign.json"
+    }
+  ]
 }

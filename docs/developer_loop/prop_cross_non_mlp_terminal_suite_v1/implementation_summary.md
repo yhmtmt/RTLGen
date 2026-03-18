@@ -31,8 +31,11 @@
 - `python3 npu/eval/validate.py --campaign runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_submit_nm1_v1/campaign.json --check_paths`
 
 ## Evaluation Request
-- next step: queue one `measurement_only` Layer 2 item for corrected-contract
-  non-fused `nm1` reference points on the selected suite
+- queued `l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1`
+- mode: `measurement_only`
+- campaign:
+  `runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_submit_nm1_v1/campaign.json`
+- status at queue time: `READY`
 
 ## Risks
 - locally generated softmax-tail graphs are a bounded generalization step, not
