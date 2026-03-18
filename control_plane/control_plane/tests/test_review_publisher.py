@@ -391,6 +391,56 @@ def test_publish_review_package_includes_comparison_role_and_baseline_item() -> 
             assert "baseline_item_id: `l2_baseline_demo`" in body_md
 
 
+def test_publish_review_package_labels_model_specific_comparison_lines() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, _run_key = _seed_l2_reviewable(session, repo_root)
+            artifact_path = repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{item_id}.json"
+            payload = json.loads(artifact_path.read_text(encoding="utf-8"))
+            payload["proposal_assessment"] = {
+                "primary_question": "Does the fused path improve per-model suite rows?",
+                "comparison_role": "candidate",
+                "outcome": "improved",
+                "summary": "Per-model rows improved.",
+                "baseline_ref": "runs/campaigns/npu/baseline",
+                "baseline_item_id": "l2_baseline_demo",
+                "matched_rows": [
+                    {
+                        "scope": "model",
+                        "arch_id": "fp16_nm1_demo",
+                        "macro_mode": "flat_nomacro",
+                        "model_id": "model_a",
+                        "metrics": {
+                            "latency_ms_mean": {"baseline": 0.5, "candidate": 0.4},
+                            "energy_mj_mean": {"baseline": 0.2, "candidate": 0.15},
+                        },
+                    }
+                ],
+            }
+            artifact_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+            publish_review_package(
+                session,
+                ReviewPublishRequest(
+                    repo_root=str(repo_root),
+                    item_id=item_id,
+                    evaluator_id="cpbot",
+                    session_id="s20260310t071500z",
+                    host="cp-host",
+                ),
+            )
+
+            package_path = repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "review_package.json"
+            review_payload = json.loads(package_path.read_text(encoding="utf-8"))
+            body_md = review_payload["pr_payload"]["body_md"]
+            assert "latency_delta fp16_nm1_demo/flat_nomacro/model_a: `0.5` -> `0.4` ms" in body_md
+            assert "energy_delta fp16_nm1_demo/flat_nomacro/model_a: `0.2` -> `0.15` mJ" in body_md
+
+
 def test_publish_review_package_measurement_only_uses_evaluation_section_without_proposal_assessment() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

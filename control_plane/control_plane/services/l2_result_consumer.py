@@ -324,11 +324,14 @@ def _comparable_rows(rows: list[dict[str, str]]) -> list[dict[str, str]]:
     return result
 
 
-def _row_key(row: dict[str, str]) -> tuple[str, str, str]:
+def _row_key(row: dict[str, str]) -> tuple[str, str, str, str]:
+    scope = str(row.get("scope", "")).strip()
+    model_id = str(row.get("model_id", "")).strip() if scope == "model" else ""
     return (
-        str(row.get("scope", "")).strip(),
+        scope,
         str(row.get("arch_id", "")).strip(),
         str(row.get("macro_mode", "")).strip(),
+        model_id,
     )
 
 
@@ -528,6 +531,7 @@ def _build_proposal_assessment(
                 "scope": key[0],
                 "arch_id": key[1],
                 "macro_mode": key[2],
+                "model_id": key[3] or None,
                 "metrics": {
                     "latency_ms_mean": _metric_triplet(candidate_row, baseline_row, "latency_ms_mean"),
                     "energy_mj_mean": _metric_triplet(candidate_row, baseline_row, "energy_mj_mean"),

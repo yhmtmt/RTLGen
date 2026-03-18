@@ -241,18 +241,22 @@ def _build_body_md(
             for row in matched_rows[:2]:
                 arch_id = str(row.get("arch_id", "")).strip()
                 macro_mode = str(row.get("macro_mode", "")).strip()
+                model_id = str(row.get("model_id", "")).strip()
                 metrics = row.get("metrics")
                 if not arch_id or not macro_mode or not isinstance(metrics, dict):
                     continue
+                label = f"{arch_id}/{macro_mode}"
+                if model_id:
+                    label = f"{label}/{model_id}"
                 latency = metrics.get("latency_ms_mean")
                 energy = metrics.get("energy_mj_mean")
                 if isinstance(latency, dict):
                     lines.append(
-                        f"- latency_delta {arch_id}/{macro_mode}: `{latency.get('baseline')}` -> `{latency.get('candidate')}` ms"
+                        f"- latency_delta {label}: `{latency.get('baseline')}` -> `{latency.get('candidate')}` ms"
                     )
                 if isinstance(energy, dict):
                     lines.append(
-                        f"- energy_delta {arch_id}/{macro_mode}: `{energy.get('baseline')}` -> `{energy.get('candidate')}` mJ"
+                        f"- energy_delta {label}: `{energy.get('baseline')}` -> `{energy.get('candidate')}` mJ"
                     )
     checklist = handoff.get("checklist")
     if isinstance(checklist, list) and checklist:

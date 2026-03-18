@@ -679,6 +679,87 @@ def test_consume_l2_result_compares_candidate_against_paired_baseline_item() -> 
             assert assessment["baseline_ref"] == "runs/campaigns/npu/refreshed_baseline_campaign"
             assert assessment["outcome"] == "improved"
             assert evaluation_record["expectation_status"] == "as_expected"
+            assert assessment["matched_rows"][0]["model_id"] is None
             assert assessment["matched_rows"][0]["metrics"]["latency_ms_mean"]["baseline"] == 0.5
             assert assessment["matched_rows"][0]["metrics"]["latency_ms_mean"]["candidate"] == 0.4
             assert payload["source_refs"]["baseline_summary_csv"] == "runs/campaigns/npu/refreshed_baseline_campaign/summary.csv"
+
+
+def test_consume_l2_result_paired_comparison_matches_model_rows_by_model_id() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            proposal_dir = repo_root / "docs" / "developer_loop" / "prop_l2_demo_v1"
+            proposal_dir.mkdir(parents=True, exist_ok=True)
+            (proposal_dir / "proposal.json").write_text(
+                json.dumps(
+                    {
+                        "proposal_id": "prop_l2_demo_v1",
+                        "title": "Layer2 review demo",
+                        "kind": "architecture",
+                        "direct_comparison": {
+                            "primary_question": "Does the candidate improve the per-model baseline?"
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            baseline_item_id = _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id="l2_model_baseline",
+                campaign_dir_rel="runs/campaigns/npu/model_baseline_campaign",
+                summary_rows=(
+                    "scope,arch_id,macro_mode,model_id,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,throughput_infer_per_s_mean\n"
+                    "model,fp16_nm1_demo,flat_nomacro,model_a,1,0.5,0.20,5.5,0.18,1000,1.0\n"
+                    "model,fp16_nm1_demo,flat_nomacro,model_b,1,0.8,0.30,5.5,0.18,1000,1.0\n"
+                ),
+                proposal_path="docs/developer_loop/prop_l2_demo_v1",
+                comparison={"role": "measurement_only"},
+            )
+            consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=baseline_item_id))
+
+            candidate_item_id = _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id="l2_model_candidate",
+                campaign_dir_rel="runs/campaigns/npu/model_candidate_campaign",
+                summary_rows=(
+                    "scope,arch_id,macro_mode,model_id,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,throughput_infer_per_s_mean\n"
+                    "model,fp16_nm1_demo,flat_nomacro,model_a,1,0.4,0.15,5.5,0.18,1000,1.0\n"
+                    "model,fp16_nm1_demo,flat_nomacro,model_b,1,0.7,0.25,5.5,0.18,1000,1.0\n"
+                ),
+                proposal_path="docs/developer_loop/prop_l2_demo_v1",
+                comparison={"role": "candidate", "paired_baseline_item_id": baseline_item_id},
+            )
+            candidate_work_item = session.query(WorkItem).filter_by(item_id=candidate_item_id).one()
+            candidate_payload = dict(candidate_work_item.task_request.request_payload or {})
+            candidate_payload["developer_loop"]["evaluation"] = {
+                "mode": "paired_comparison",
+                "expected_direction": "better_than_historical",
+                "expected_reason": "The candidate should improve both model rows.",
+            }
+            candidate_work_item.task_request.request_payload = candidate_payload
+            session.commit()
+
+            consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=candidate_item_id))
+
+            payload = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{candidate_item_id}.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            matched_rows = payload["proposal_assessment"]["matched_rows"]
+            assert len(matched_rows) == 2
+            assert matched_rows[0]["model_id"] == "model_a"
+            assert matched_rows[0]["metrics"]["latency_ms_mean"]["baseline"] == 0.5
+            assert matched_rows[0]["metrics"]["latency_ms_mean"]["candidate"] == 0.4
+            assert matched_rows[1]["model_id"] == "model_b"
+            assert matched_rows[1]["metrics"]["latency_ms_mean"]["baseline"] == 0.8
+            assert matched_rows[1]["metrics"]["latency_ms_mean"]["candidate"] == 0.7
