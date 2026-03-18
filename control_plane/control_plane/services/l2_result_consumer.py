@@ -8,6 +8,7 @@ import csv
 import hashlib
 import json
 from pathlib import Path
+import math
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -141,6 +142,197 @@ def _profile_recommendations(rows: list[dict[str, str]]) -> list[dict[str, Any]]
     return result
 
 
+def _load_proposal(repo_root: Path, work_item: WorkItem) -> dict[str, Any] | None:
+    payload = dict(work_item.task_request.request_payload or {})
+    developer_loop = payload.get("developer_loop")
+    if not isinstance(developer_loop, dict):
+        return None
+    proposal_path_text = str(developer_loop.get("proposal_path", "")).strip()
+    if not proposal_path_text:
+        return None
+    proposal_path = _resolve_path(repo_root=repo_root, path_text=proposal_path_text)
+    if proposal_path.is_dir():
+        proposal_file = proposal_path / "proposal.json"
+    elif proposal_path.name == "proposal.json":
+        proposal_file = proposal_path
+    else:
+        proposal_file = proposal_path / "proposal.json"
+    if not proposal_file.exists():
+        return None
+    try:
+        return _load_json(proposal_file)
+    except Exception:
+        return None
+
+
+def _resolve_baseline_summary(
+    repo_root: Path, proposal: dict[str, Any]
+) -> tuple[str, list[dict[str, str]], str | None] | tuple[None, None, None]:
+    for ref in proposal.get("baseline_refs") or []:
+        ref_text = str(ref).strip()
+        if not ref_text:
+            continue
+        candidate = _resolve_path(repo_root=repo_root, path_text=ref_text)
+        if candidate.is_dir():
+            summary_path = candidate / "summary.csv"
+            if summary_path.exists():
+                report_path = candidate / "report.md"
+                return ref_text, _load_csv(summary_path), (
+                    str(report_path.relative_to(repo_root)) if report_path.exists() else None
+                )
+    return None, None, None
+
+
+def _comparable_rows(rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    result: list[dict[str, str]] = []
+    for row in rows:
+        scope = str(row.get("scope", "")).strip()
+        if scope not in {"aggregate", "model"}:
+            continue
+        if not str(row.get("arch_id", "")).strip():
+            continue
+        if not str(row.get("macro_mode", "")).strip():
+            continue
+        result.append(row)
+    return result
+
+
+def _row_key(row: dict[str, str]) -> tuple[str, str, str]:
+    return (
+        str(row.get("scope", "")).strip(),
+        str(row.get("arch_id", "")).strip(),
+        str(row.get("macro_mode", "")).strip(),
+    )
+
+
+def _parse_float(value: Any) -> float | None:
+    try:
+        parsed = float(str(value).strip())
+    except Exception:
+        return None
+    if math.isnan(parsed) or math.isinf(parsed):
+        return None
+    return parsed
+
+
+def _metric_triplet(candidate: dict[str, str], baseline: dict[str, str], field: str) -> dict[str, float | None]:
+    candidate_value = _parse_float(candidate.get(field))
+    baseline_value = _parse_float(baseline.get(field))
+    delta = None
+    if candidate_value is not None and baseline_value is not None:
+        delta = candidate_value - baseline_value
+    return {
+        "baseline": baseline_value,
+        "candidate": candidate_value,
+        "delta": delta,
+    }
+
+
+def _comparison_outcome(comparisons: list[dict[str, Any]]) -> tuple[str, str]:
+    if not comparisons:
+        return "unavailable", "Focused comparison baseline could not be matched to any candidate rows."
+    tol = 1e-15
+    any_change = False
+    all_non_worse = True
+    all_non_better = True
+    latency_energy_improved = False
+    latency_energy_regressed = False
+    for comparison in comparisons:
+        latency_delta = comparison["metrics"]["latency_ms_mean"]["delta"]
+        energy_delta = comparison["metrics"]["energy_mj_mean"]["delta"]
+        for delta in (latency_delta, energy_delta):
+            if delta is None:
+                continue
+            if abs(delta) > tol:
+                any_change = True
+            if delta > tol:
+                all_non_worse = False
+            if delta < -tol:
+                all_non_better = False
+        if (latency_delta is not None and latency_delta < -tol) or (energy_delta is not None and energy_delta < -tol):
+            latency_energy_improved = True
+        if (latency_delta is not None and latency_delta > tol) or (energy_delta is not None and energy_delta > tol):
+            latency_energy_regressed = True
+    if not any_change:
+        return "no_measurable_change", "Focused comparison matched the baseline with no measurable latency or energy delta."
+    if latency_energy_improved and not latency_energy_regressed and all_non_worse:
+        return "improved", "Focused comparison improved latency and/or energy without regressing matched rows."
+    if latency_energy_regressed and not latency_energy_improved and all_non_better:
+        return "regressed", "Focused comparison regressed latency and/or energy versus the matched baseline rows."
+    return "mixed", "Focused comparison changed matched rows, but the deltas are mixed across latency and energy."
+
+
+def _build_proposal_assessment(
+    *,
+    repo_root: Path,
+    proposal: dict[str, Any] | None,
+    summary_rows: list[dict[str, str]],
+) -> tuple[dict[str, Any] | None, dict[str, str]]:
+    if proposal is None:
+        return None, {}
+    baseline_ref, baseline_rows, baseline_report = _resolve_baseline_summary(repo_root, proposal)
+    if baseline_ref is None or baseline_rows is None:
+        return (
+            {
+                "proposal_id": str(proposal.get("proposal_id", "")).strip(),
+                "title": str(proposal.get("title", "")).strip(),
+                "primary_question": str((proposal.get("direct_comparison") or {}).get("primary_question", "")).strip(),
+                "outcome": "unavailable",
+                "summary": "Focused comparison baseline could not be resolved from proposal baseline_refs.",
+                "baseline_ref": None,
+                "matched_row_count": 0,
+                "matched_rows": [],
+            },
+            {},
+        )
+
+    baseline_by_key = {_row_key(row): row for row in _comparable_rows(baseline_rows)}
+    comparisons: list[dict[str, Any]] = []
+    for candidate_row in _comparable_rows(summary_rows):
+        key = _row_key(candidate_row)
+        baseline_row = baseline_by_key.get(key)
+        if baseline_row is None:
+            continue
+        comparisons.append(
+            {
+                "scope": key[0],
+                "arch_id": key[1],
+                "macro_mode": key[2],
+                "metrics": {
+                    "latency_ms_mean": _metric_triplet(candidate_row, baseline_row, "latency_ms_mean"),
+                    "energy_mj_mean": _metric_triplet(candidate_row, baseline_row, "energy_mj_mean"),
+                    "critical_path_ns_mean": _metric_triplet(candidate_row, baseline_row, "critical_path_ns_mean"),
+                    "total_power_mw_mean": _metric_triplet(candidate_row, baseline_row, "total_power_mw_mean"),
+                    "flow_elapsed_s_mean": _metric_triplet(candidate_row, baseline_row, "flow_elapsed_s_mean"),
+                    "throughput_infer_per_s_mean": _metric_triplet(
+                        candidate_row, baseline_row, "throughput_infer_per_s_mean"
+                    ),
+                },
+            }
+        )
+
+    outcome, summary = _comparison_outcome(comparisons)
+    extra_refs = {
+        "baseline_summary_csv": f"{baseline_ref}/summary.csv",
+    }
+    if baseline_report:
+        extra_refs["baseline_report_md"] = baseline_report
+    return (
+        {
+            "proposal_id": str(proposal.get("proposal_id", "")).strip(),
+            "title": str(proposal.get("title", "")).strip(),
+            "kind": str(proposal.get("kind", "")).strip(),
+            "primary_question": str((proposal.get("direct_comparison") or {}).get("primary_question", "")).strip(),
+            "outcome": outcome,
+            "summary": summary,
+            "baseline_ref": baseline_ref,
+            "matched_row_count": len(comparisons),
+            "matched_rows": comparisons,
+        },
+        extra_refs,
+    )
+
+
 def _build_payload(
     *,
     work_item: WorkItem,
@@ -149,6 +341,7 @@ def _build_payload(
     summary_best: dict[str, str],
     objective_profiles: list[dict[str, Any]],
     source_refs: dict[str, str],
+    proposal_assessment: dict[str, Any] | None,
 ) -> dict[str, Any]:
     best = best_point.get("best") or {}
     return {
@@ -176,6 +369,7 @@ def _build_payload(
             "flow_elapsed_s_mean": best.get("flow_elapsed_s_mean") or summary_best.get("flow_elapsed_s_mean"),
         },
         "objective_profiles": objective_profiles,
+        "proposal_assessment": proposal_assessment,
         "source_refs": source_refs,
     }
 
@@ -221,6 +415,12 @@ def consume_l2_result(session: Session, request: Layer2ConsumeRequest) -> Layer2
     best_point = _load_json(_resolve_path(repo_root=repo_root, path_text=best_point_rel))
     summary_rows = _load_csv(_resolve_path(repo_root=repo_root, path_text=summary_rel))
     summary_best = _summary_best_row(summary_rows)
+    proposal = _load_proposal(repo_root, work_item)
+    proposal_assessment, proposal_source_refs = _build_proposal_assessment(
+        repo_root=repo_root,
+        proposal=proposal,
+        summary_rows=summary_rows,
+    )
     objective_profiles: list[dict[str, Any]] = []
     objective_sweep_exists = False
     if objective_sweep_rel:
@@ -235,11 +435,13 @@ def consume_l2_result(session: Session, request: Layer2ConsumeRequest) -> Layer2
         best_point=best_point,
         summary_best=summary_best,
         objective_profiles=objective_profiles,
+        proposal_assessment=proposal_assessment,
         source_refs={
             "best_point_json": best_point_rel,
             "summary_csv": summary_rel,
             "results_csv": results_rel,
             "report_md": report_rel,
+            **proposal_source_refs,
             **({"objective_sweep_csv": objective_sweep_rel} if objective_sweep_exists else {}),
         },
     )

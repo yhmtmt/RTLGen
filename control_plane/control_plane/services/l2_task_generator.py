@@ -393,6 +393,8 @@ def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateR
     existing.expected_outputs = payload["task"]["expected_outputs"]
     existing.acceptance_rules = payload["task"]["acceptance"]
     existing.source_commit = request.source_commit
+    existing.state = WorkItemState.READY
+    existing.queue_snapshot_path = None
     session.commit()
     return Layer2TaskGenerateResult(
         item_id=item_id,

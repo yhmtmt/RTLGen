@@ -295,7 +295,7 @@ def test_worker_skips_non_transportable_expected_outputs() -> None:
             assert shadow_rel not in artifact_paths
 
 
-def test_materialize_generated_inputs_rewrites_physical_source_campaign() -> None:
+def test_materialize_generated_inputs_preserves_physical_source_campaign() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
         repo_root.mkdir()
@@ -341,7 +341,7 @@ def test_materialize_generated_inputs_rewrites_physical_source_campaign() -> Non
 
         generated = json.loads(target_campaign_path.read_text(encoding="utf-8"))
         assert generated["outputs"]["campaign_dir"] == "runs/campaigns/npu/demo__item"
-        assert generated["physical_source_campaign"] == "runs/campaigns/npu/demo/campaign__item.json"
+        assert generated["physical_source_campaign"] == "runs/campaigns/npu/old/campaign.json"
 
 
 def test_worker_marks_failed_run_when_command_fails() -> None:

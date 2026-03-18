@@ -164,6 +164,33 @@ def _seed_l2_reviewable(session: Session, repo_root: Path) -> tuple[str, str]:
             "balanced,1,1,0,0,0,fp16_nm1_demo,flat_nomacro,0.0,0.5,0.2,1000,control_plane/shadow_exports/campaigns/demo_l2/objective_profiles/balanced/best_point.json,control_plane/shadow_exports/campaigns/demo_l2/objective_profiles/balanced/report.md,control_plane/shadow_exports/campaigns/demo_l2/objective_profiles/balanced/pareto.csv\n"
         ),
     )
+    baseline_dir = repo_root / "runs" / "campaigns" / "npu" / "baseline_campaign"
+    _write(
+        baseline_dir / "summary.csv",
+        (
+            "scope,arch_id,macro_mode,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,throughput_infer_per_s_mean\n"
+            "aggregate,fp16_nm1_demo,flat_nomacro,1,0.5,0.2,5.5,0.18,1000,1.0\n"
+            "aggregate,fp16_nm1_demo,hier_macro,2,0.5,0.25,5.6,0.20,1100,1.0\n"
+        ),
+    )
+    _write(baseline_dir / "report.md", "# baseline report\n")
+    proposal_dir = repo_root / "docs" / "developer_loop" / "prop_l2_review_demo_v1"
+    _write(
+        proposal_dir / "proposal.json",
+        json.dumps(
+            {
+                "proposal_id": "prop_l2_review_demo_v1",
+                "kind": "architecture",
+                "title": "Layer2 review demo",
+                "direct_comparison": {
+                    "primary_question": "Does the focused candidate improve the fixed baseline?",
+                },
+                "baseline_refs": ["runs/campaigns/npu/baseline_campaign"],
+            },
+            indent=2,
+        )
+        + "\n",
+    )
 
     payload = {
         "item_id": "l2_review_demo",
@@ -320,7 +347,10 @@ def test_publish_review_package_for_l2() -> None:
             assert payload["pr_payload"]["branch"] == "eval/l2_review_demo/s20260310t071500z"
             assert payload["review_artifact"]["kind"] == "decision_proposal"
             assert payload["review_artifact"]["payload"]["recommendation"]["arch_id"] == "fp16_nm1_demo"
+            assert payload["review_artifact"]["payload"]["proposal_assessment"]["outcome"] == "no_measurable_change"
             assert payload["developer_loop"]["proposal_id"] == "prop_l2_review_demo_v1"
             assert payload["developer_loop"]["proposal_path"] == "docs/developer_loop/prop_l2_review_demo_v1"
             assert payload["queue_snapshot"]["result"]["status"] == "ok"
             assert "reviewer_first_read: `docs/developer_loop/prop_l2_review_demo_v1` plus `docs/developer_agent_review.md`" in payload["pr_payload"]["body_md"]
+            assert "proposal_outcome: `no_measurable_change`" in payload["pr_payload"]["body_md"]
+            assert "baseline_ref: `runs/campaigns/npu/baseline_campaign`" in payload["pr_payload"]["body_md"]

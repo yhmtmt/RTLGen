@@ -179,3 +179,41 @@ def test_generate_l2_campaign_task_upserts_existing_item() -> None:
             )
             assert "runs/campaigns/npu/demo_campaign__l2_demo_campaign/objective_sweep.csv" not in work_item.expected_outputs
             assert "runs/campaigns/npu/demo_campaign__l2_demo_campaign/objective_sweep.md" not in work_item.expected_outputs
+
+
+def test_generate_l2_campaign_task_requeues_failed_item_on_upsert() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_demo_campaign",
+                    requested_by="@tester",
+                ),
+            )
+            work_item = session.query(WorkItem).filter_by(item_id="l2_demo_campaign").one()
+            work_item.state = WorkItemState.FAILED
+            work_item.queue_snapshot_path = "runs/eval_queue/openroad/failed/l2_demo_campaign.json"
+            session.commit()
+
+            generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_demo_campaign",
+                    requested_by="@tester2",
+                ),
+            )
+
+            session.refresh(work_item)
+            assert work_item.state == WorkItemState.READY
+            assert work_item.queue_snapshot_path is None

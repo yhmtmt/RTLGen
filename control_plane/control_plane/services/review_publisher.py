@@ -154,6 +154,7 @@ def _artifact_summary(*, repo_root: Path, artifact: Artifact | None) -> dict[str
 
 def _build_body_md(
     *,
+    repo_root: Path,
     work_item: WorkItem,
     run: Run,
     snapshot_path: str,
@@ -163,6 +164,13 @@ def _build_body_md(
     developer_loop: dict[str, Any],
 ) -> str:
     result = dict(snapshot_payload.get("result") or {})
+    review_payload: dict[str, Any] = {}
+    if review_artifact is not None:
+        try:
+            review_payload = _load_json(_resolve_rel_path(review_artifact.path, repo_root))
+        except Exception:
+            review_payload = {}
+    proposal_assessment = review_payload.get("proposal_assessment")
     lines = [
         f"## Summary",
         f"- item_id: `{work_item.item_id}`",
@@ -187,6 +195,38 @@ def _build_body_md(
         if proposal_path:
             lines.append(f"- proposal_path: `{proposal_path}`")
             lines.append(f"- reviewer_first_read: `{proposal_path}` plus `docs/developer_agent_review.md`")
+    if isinstance(proposal_assessment, dict):
+        lines.extend(["", "## Focused Comparison"])
+        primary_question = str(proposal_assessment.get("primary_question", "")).strip()
+        if primary_question:
+            lines.append(f"- primary_question: `{primary_question}`")
+        outcome = str(proposal_assessment.get("outcome", "")).strip()
+        if outcome:
+            lines.append(f"- proposal_outcome: `{outcome}`")
+        summary_text = str(proposal_assessment.get("summary", "")).strip()
+        if summary_text:
+            lines.append(f"- comparison_summary: `{summary_text}`")
+        baseline_ref = str(proposal_assessment.get("baseline_ref", "")).strip()
+        if baseline_ref:
+            lines.append(f"- baseline_ref: `{baseline_ref}`")
+        matched_rows = proposal_assessment.get("matched_rows")
+        if isinstance(matched_rows, list):
+            for row in matched_rows[:2]:
+                arch_id = str(row.get("arch_id", "")).strip()
+                macro_mode = str(row.get("macro_mode", "")).strip()
+                metrics = row.get("metrics")
+                if not arch_id or not macro_mode or not isinstance(metrics, dict):
+                    continue
+                latency = metrics.get("latency_ms_mean")
+                energy = metrics.get("energy_mj_mean")
+                if isinstance(latency, dict):
+                    lines.append(
+                        f"- latency_delta {arch_id}/{macro_mode}: `{latency.get('baseline')}` -> `{latency.get('candidate')}` ms"
+                    )
+                if isinstance(energy, dict):
+                    lines.append(
+                        f"- energy_delta {arch_id}/{macro_mode}: `{energy.get('baseline')}` -> `{energy.get('candidate')}` mJ"
+                    )
     checklist = handoff.get("checklist")
     if isinstance(checklist, list) and checklist:
         lines.extend(["", "## Checklist"])
@@ -282,6 +322,7 @@ def publish_review_package(session: Session, request: ReviewPublishRequest) -> R
             "title": pr_title,
             "body_fields": handoff.get("pr_body_fields"),
             "body_md": _build_body_md(
+                repo_root=repo_root,
                 work_item=work_item,
                 run=run,
                 snapshot_path=snapshot_rel,
