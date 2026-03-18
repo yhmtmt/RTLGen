@@ -3,11 +3,11 @@
 - item_id: `item_eval_non_mlp_terminal_suite_v1`
 - layer: `cross`
 - kind: `architecture`
-- status: `promoted_to_proposal`
+- status: `merged`
 - priority: `high`
 - owner: `developer_agent`
 - created_utc: `2026-03-18T11:05:00Z`
-- updated_utc: `2026-03-18T12:05:00Z`
+- updated_utc: `2026-03-18T13:20:00Z`
 - proposal_id: `prop_cross_non_mlp_terminal_suite_v1`
 - proposal_path: `docs/developer_loop/prop_cross_non_mlp_terminal_suite_v1`
 - triggered_by_proposal: `prop_cross_terminal_output_overlap_probe_v1`
@@ -88,3 +88,14 @@
   - point measurement or baseline refresh first
   - paired fused vs non-fused comparison second
   - broad ranking deferred until after the focused per-model evidence
+
+## Outcome
+- merged evidence PRs:
+  - measurement baseline: `#49`
+  - paired fused comparison: `#52`
+- proposal result:
+  - `docs/developer_loop/prop_cross_non_mlp_terminal_suite_v1/promotion_result.json`
+- closing note:
+  - the bounded terminal-sensitive softmax suite confirmed that the fused
+    terminal-output path improves latency and energy across the accepted suite
+    under the corrected event contract

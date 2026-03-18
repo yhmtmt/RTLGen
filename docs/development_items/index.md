@@ -20,7 +20,7 @@
 | `item_l2_mapper_tile_scheduler_v1` | `layer2` | `mapper` | `Tile scheduler improvement` | `seed` | `high` | `developer_agent` |  | `2026-03-16T06:00:00Z` |
 | `item_l2_mapper_memory_aware_split_v1` | `layer2` | `mapper` | `Memory-aware split policy` | `promoted_to_proposal` | `high` | `developer_agent` | `prop_l2_mapper_memory_aware_split_v1` | `2026-03-17T13:10:00Z` |
 | `item_l2_mapper_objective_aware_lowering_v1` | `layer2` | `mapper` | `Objective-aware lowering` | `seed` | `medium` | `developer_agent` |  | `2026-03-16T06:00:00Z` |
-| `item_l2_mapper_terminal_op_generalization_v1` | `layer2` | `mapper` | `Generalized terminal-op direct output` | `seed` | `medium` | `developer_agent` |  | `2026-03-16T06:00:00Z` |
+| `item_l2_mapper_terminal_op_generalization_v1` | `layer2` | `mapper` | `Generalized terminal-op direct output` | `promoted_to_proposal` | `medium` | `developer_agent` | `prop_l2_mapper_terminal_op_generalization_v1` | `2026-03-18T13:25:00Z` |
 | `item_l2_mapper_batch_override_autotune_v1` | `layer2` | `mapper` | `Batch override autotune` | `seed` | `medium` | `developer_agent` |  | `2026-03-16T06:00:00Z` |
 | `item_l2_mapper_wrapped_macro_legality_v1` | `layer2` | `mapper` | `Wrapped and macro legality hardening` | `seed` | `high` | `developer_agent` |  | `2026-03-16T06:00:00Z` |
 | `item_l2_mapper_multi_model_constraint_v1` | `layer2` | `mapper` | `Multi-model mapping constraints` | `seed` | `medium` | `developer_agent` |  | `2026-03-16T06:00:00Z` |
@@ -42,7 +42,7 @@
 | `item_eval_reference_output_pipeline_v1` | `cross` | `architecture` | `Reference output pipeline` | `seed` | `high` | `developer_agent` |  | `2026-03-16T06:00:00Z` |
 | `item_eval_terminal_output_overlap_probe_v1` | `cross` | `architecture` | `Terminal-output overlap probe` | `promoted_to_proposal` | `high` | `developer_agent` | `prop_cross_terminal_output_overlap_probe_v1` | `2026-03-18T07:16:43Z` |
 | `item_eval_small_model_suite_expansion_v1` | `cross` | `architecture` | `Small-model suite expansion` | `seed` | `high` | `developer_agent` |  | `2026-03-16T06:00:00Z` |
-| `item_eval_non_mlp_terminal_suite_v1` | `cross` | `architecture` | `Terminal-sensitive softmax suite` | `promoted_to_proposal` | `high` | `developer_agent` | `prop_cross_non_mlp_terminal_suite_v1` | `2026-03-18T12:05:00Z` |
+| `item_eval_non_mlp_terminal_suite_v1` | `cross` | `architecture` | `Terminal-sensitive softmax suite` | `merged` | `high` | `developer_agent` | `prop_cross_non_mlp_terminal_suite_v1` | `2026-03-18T13:20:00Z` |
 | `item_eval_cross_objective_stability_v1` | `cross` | `architecture` | `Cross-objective stability checks` | `seed` | `medium` | `developer_agent` |  | `2026-03-16T06:00:00Z` |
 | `item_eval_quality_vs_ppa_tradeoff_v1` | `cross` | `architecture` | `Quality vs PPA tradeoff policy` | `seed` | `high` | `developer_agent` |  | `2026-03-16T06:00:00Z` |
 | `item_eval_campaign_repro_bundle_v1` | `cross` | `architecture` | `Campaign reproducibility bundle` | `seed` | `high` | `developer_agent` |  | `2026-03-16T06:00:00Z` |

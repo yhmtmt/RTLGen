@@ -1,0 +1,67 @@
+{
+  "proposal_id": "prop_l2_mapper_terminal_op_generalization_v1",
+  "created_utc": "2026-03-18T13:25:00Z",
+  "created_by": "developer_agent",
+  "layer": "l2",
+  "kind": "mapper",
+  "title": "Generalized terminal-op direct output",
+  "hypothesis": "The accepted direct terminal-output mechanism can be generalized beyond terminal Softmax to a small bounded terminal-op family on the existing nm1 hardware, but the first proof should be staged as measurement-only non-fused references followed by paired comparison on those same points.",
+  "direct_comparison": {
+    "primary_question": "Can a bounded mapper generalization extend direct terminal output beyond Softmax while preserving a clean measurement-first proof on fixed nm1 architecture points?",
+    "include": [
+      "measurement-only non-fused nm1 reference points on a minimal generalized terminal-op suite",
+      "paired direct-output vs non-fused nm1 comparison on the same terminal-op suite"
+    ],
+    "exclude": [
+      "nm1 vs nm2 ranking",
+      "broad architecture sweeps before terminal-op legality and local gain are established",
+      "broad non-MLP model support claims beyond the chosen first-pass terminal-op family"
+    ],
+    "follow_on_broad_sweep": [
+      "run broader ranking or broader model-support evaluation only if the bounded generalized terminal-op comparison is positive or mixed enough to justify reintegration"
+    ]
+  },
+  "expected_benefit": [
+    "extends the accepted direct-output mechanism beyond a softmax-only rule",
+    "keeps the next proof focused on mapper legality and lowering quality instead of architecture ranking noise",
+    "uses measurement-only first-stage evaluation so reference points can be recorded without forcing a premature proposal judgment"
+  ],
+  "risks": [
+    "the chosen terminal-op family may still be too close to the existing softmax-tail proof",
+    "quality-gate requirements may grow if the generalized path touches numerically sensitive ops",
+    "a later broader model-support item may still be needed even if the first generalized mapper proof succeeds"
+  ],
+  "needs_mapper_change": true,
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "measurement_only",
+      "objective": "terminal_op_reference_metrics",
+      "cost_class": "medium",
+      "expected_result": {
+        "direction": "unknown",
+        "reason": "the first item should only record fixed-point non-fused nm1 reference metrics for the chosen bounded terminal-op suite"
+      }
+    },
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "paired_comparison",
+      "objective": "terminal_op_direct_output_vs_nonfused",
+      "cost_class": "medium",
+      "expected_result": {
+        "direction": "better_than_historical",
+        "reason": "if the generalized direct-output lowering is valid, it should improve at least part of the bounded terminal-op suite against the refreshed non-fused references"
+      }
+    }
+  ],
+  "baseline_refs": [
+    "docs/developer_loop/prop_cross_non_mlp_terminal_suite_v1/analysis_report.md",
+    "runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_submit_nm1_v1__l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1/report.md",
+    "runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_fused_output_nm1_v1__l2_prop_cross_non_mlp_terminal_suite_v1_nm1_fused_r1/report.md"
+  ],
+  "knowledge_refs": [
+    "docs/developer_loop/prop_cross_non_mlp_terminal_suite_v1/analysis_report.md",
+    "docs/developer_loop/prop_cross_non_mlp_terminal_suite_v1/promotion_decision.json",
+    "discussion:2026-03-18-user-session"
+  ]
+}
