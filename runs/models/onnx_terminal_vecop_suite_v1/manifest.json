@@ -1,0 +1,25 @@
+{
+  "version": 0.1,
+  "model_set_id": "onnx_terminal_vecop_suite_v1",
+  "description": "Locally generated terminal ReLU vec-op models used for measurement-first direct-output mapper bring-up.",
+  "models": [
+    {
+      "model_id": "relu_vec_b128_f64",
+      "onnx_path": "runs/models/onnx_terminal_vecop_suite_v1/relu_vec_b128_f64.onnx",
+      "onnx_sha256": "8fd4ae372bce999fbc97ad0a8005146ba8e458d4b6001af63609ad9c50431bd4",
+      "notes": "Standalone terminal Relu on a 2D activation tensor."
+    },
+    {
+      "model_id": "relu_vec_b256_f256",
+      "onnx_path": "runs/models/onnx_terminal_vecop_suite_v1/relu_vec_b256_f256.onnx",
+      "onnx_sha256": "b162daaf2569401fcffc14f0fbd0867626a02de6ca3e22f61b31a5df2f95e025",
+      "notes": "Larger standalone terminal Relu to increase writeback pressure."
+    },
+    {
+      "model_id": "relu_vec_flatten_b128_2x4x8",
+      "onnx_path": "runs/models/onnx_terminal_vecop_suite_v1/relu_vec_flatten_b128_2x4x8.onnx",
+      "onnx_sha256": "8460c80257a778cdde21e72a1d9da047f79a0bc4103eea2b6825588a585ec05a",
+      "notes": "Flatten -> Relu terminal vec-op to prove the prelude path stays legal."
+    }
+  ]
+}

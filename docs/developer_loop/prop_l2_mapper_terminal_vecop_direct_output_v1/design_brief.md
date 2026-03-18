@@ -47,6 +47,9 @@
 ## Candidate Direction
 - pick the smallest terminal vec-op family that is not already covered by final
   GEMM epilogue handling
+- first bounded family: standalone terminal `Relu`, including one
+  `Flatten -> Relu` prelude case to keep the proof on a real imported-graph
+  shape rather than a hand-authored schedule only
 - keep the architecture fixed to plain `fp16_nm1` for the first pass
 - record non-fused references first and require schedule-level evidence before
   any broader remote spend

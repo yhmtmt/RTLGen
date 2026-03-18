@@ -660,6 +660,68 @@ def build_softmax_classifier_model_bytes(
     return bytes(model)
 
 
+def build_terminal_relu_model_bytes(
+    *,
+    name: str,
+    b: int,
+    input_shape: List[int],
+    dtype: int = TENSOR_INT8,
+    add_flatten: bool = False,
+    add_cast: bool = False,
+    opset_version: int = 13,
+    ir_version: int = 8,
+) -> bytes:
+    """
+    Build a tiny terminal vec-op ONNX graph using:
+      optional Flatten -> optional Cast -> Relu
+
+    Notes:
+    - This is intentionally small and shape-driven for mapper bring-up.
+    - The output shape follows the final tensor shape after optional Flatten.
+    """
+
+    if int(b) <= 0:
+        raise ValueError("b must be positive")
+    if not input_shape:
+        raise ValueError("input_shape must be non-empty")
+    dims = [int(v) for v in input_shape]
+    if any(v <= 0 for v in dims):
+        raise ValueError(f"input_shape must be positive, got {input_shape}")
+
+    flat_dim = 1
+    for v in dims:
+        flat_dim *= int(v)
+
+    vi_x = _encode_value_info("X", dtype, [b] + dims)
+    output_shape = [b, flat_dim] if add_flatten else [b] + dims
+    vi_y = _encode_value_info("Y", dtype, output_shape)
+
+    nodes: List[bytes] = []
+    current = "X"
+    if add_flatten:
+        current = "Xf"
+        nodes.append(_encode_node("Flatten", ["X"], [current], name="Flatten0"))
+    if add_cast:
+        cast_out = "Xc"
+        nodes.append(_encode_node("Cast", [current], [cast_out], name="Cast0"))
+        current = cast_out
+    nodes.append(_encode_node("Relu", [current], ["Y"], name="Relu0"))
+
+    graph = _encode_graph(
+        name=name,
+        nodes=nodes,
+        inputs=[vi_x],
+        outputs=[vi_y],
+        initializers=[],
+    )
+
+    model = bytearray()
+    model += _enc_v(1, int(ir_version))
+    model += _enc_ld(8, _encode_opset_import("", opset_version))
+    model += _enc_ld(7, graph)
+    return bytes(model)
+
+
 def write_mlp_model(path: Union[str, Path], *, preset: str) -> None:
     preset = preset.lower().strip()
     if preset == "mlp1":

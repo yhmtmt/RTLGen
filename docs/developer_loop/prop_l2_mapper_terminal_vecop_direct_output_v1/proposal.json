@@ -9,13 +9,13 @@
   "direct_comparison": {
     "primary_question": "Can a bounded terminal vec-op family establish clean nm1 reference points first, then show a direct-output win on those same points without reopening broader ranking?",
     "include": [
-      "measurement-only non-fused nm1 reference points on a bounded terminal vec-op suite",
-      "paired direct-output vs non-fused nm1 comparison on the same suite after local legality and quality checks"
+      "measurement-only non-fused nm1 reference points on a bounded standalone terminal Relu vec-op suite",
+      "paired direct-output vs non-fused nm1 comparison on the same standalone terminal Relu suite after local legality and quality checks"
     ],
     "exclude": [
       "nm1 vs nm2 ranking",
       "broad architecture sweeps before terminal vec-op legality is established",
-      "broad terminal-op-family claims beyond the chosen first-pass vec-op family"
+      "broad terminal-op-family claims beyond the chosen first-pass standalone terminal Relu family"
     ],
     "follow_on_broad_sweep": [
       "run broader ranking or broader terminal-op-family evaluation only if the bounded vec-op comparison is positive or mixed enough to justify reintegration"
@@ -27,9 +27,9 @@
     "reuses the measurement-first evaluation model so reference points can be recorded without forcing premature win/loss language"
   ],
   "risks": [
-    "the chosen vec-op family may still be too narrow to justify a separate proposal",
-    "the mapper and schedule IR may need more explicit terminal-op handling than the current bounded direct-output path",
-    "a quality gate may be required before spending remote evaluation budget on numerically sensitive terminal ops"
+    "the chosen standalone terminal Relu family may still be too narrow to justify a separate proposal",
+    "the mapper may need more explicit terminal vec-op handling than the current bounded direct-output path",
+    "the measurement-first suite might still miss a later need for broader activation coverage"
   ],
   "needs_mapper_change": true,
   "required_evaluations": [
@@ -40,7 +40,7 @@
       "cost_class": "medium",
       "expected_result": {
         "direction": "unknown",
-        "reason": "the first item should only record non-fused nm1 reference metrics for the bounded terminal vec-op suite"
+        "reason": "the first item should only record non-fused nm1 reference metrics for the bounded standalone terminal Relu vec-op suite"
       }
     },
     {
@@ -50,7 +50,7 @@
       "cost_class": "medium",
       "expected_result": {
         "direction": "better_than_historical",
-        "reason": "if terminal vec-op direct-output lowering is valid, it should improve at least part of the bounded suite against the refreshed non-fused references"
+        "reason": "if terminal vec-op direct-output lowering is valid, it should improve at least part of the bounded standalone terminal Relu suite against the refreshed non-fused references"
       }
     }
   ],
