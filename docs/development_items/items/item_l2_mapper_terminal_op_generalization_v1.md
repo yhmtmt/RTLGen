@@ -3,11 +3,11 @@
 - item_id: `item_l2_mapper_terminal_op_generalization_v1`
 - layer: `layer2`
 - kind: `mapper`
-- status: `promoted_to_proposal`
+- status: `merged`
 - priority: `medium`
 - owner: `developer_agent`
 - created_utc: `2026-03-16T06:00:00Z`
-- updated_utc: `2026-03-18T13:25:00Z`
+- updated_utc: `2026-03-18T13:52:04Z`
 - proposal_id: `prop_l2_mapper_terminal_op_generalization_v1`
 - proposal_path: `docs/developer_loop/prop_l2_mapper_terminal_op_generalization_v1`
 - triggered_by_proposal: `prop_cross_non_mlp_terminal_suite_v1`
@@ -85,3 +85,14 @@
     across the bounded supported family
   - the next limiting factor is mapper generalization, not another broader
     ranking sweep on the same softmax-only lowering path
+
+## Completion Outcome
+- merged evidence:
+  - measurement baseline PR `#54`
+  - paired comparison PR `#56`
+- result:
+  - bounded direct terminal-output lowering for terminal linear plus terminal
+    `Relu` improved latency and energy across the whole first-pass `nm1` suite
+- next direction:
+  - expand mapper or lowering support to broader terminal-op families before
+    reopening broader architecture ranking
