@@ -1,9 +1,9 @@
 # Campaign Report: npu_e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v1
 
-- generated_utc: `2026-03-17T14:39:48+00:00`
+- generated_utc: `2026-03-18T02:19:41+00:00`
 - model_set_id: `onnx_imported_softmax_tail_v1`
 - model_manifest: `runs/models/onnx_imported_softmax_tail_v1/manifest.json`
-- physical_source_campaign: `runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v1/campaign__l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2.json`
+- physical_source_campaign: `runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_v1/campaign.json`
 - results_csv: `runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v1__l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2/results.csv`
 - summary_csv: `runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v1__l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2/summary.csv`
 - pareto_csv: `runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v1__l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2/pareto.csv`
