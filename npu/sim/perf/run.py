@@ -821,6 +821,7 @@ def build_trace(descs, cfg, overlap, memory=None):
     gemm_engine_times = [0.0 for _ in range(gemm_engine_count)]
     event_times = {}
     issue_overhead = float(cfg.get("issue_overhead_ns", 0.0))
+    last_op_end = 0.0
 
     for desc in descs:
         event = desc_to_event(desc, cfg, memory=memory)
@@ -845,7 +846,9 @@ def build_trace(descs, cfg, overlap, memory=None):
                 misc_compute_time = end
                 queue_time += issue_overhead
             elif name == "EVENT_SIGNAL":
-                start = queue_time
+                # Signals inserted after a producer op should not become visible
+                # before that producer has completed.
+                start = max(queue_time, last_op_end)
                 end = start + dur
                 queue_time = end
                 event_times[event.get("event_id")] = end
@@ -863,6 +866,8 @@ def build_trace(descs, cfg, overlap, memory=None):
                 queue_time = end
             event["start_ns"] = start
             event["end_ns"] = end
+            if name not in ("EVENT_SIGNAL", "EVENT_WAIT"):
+                last_op_end = end
         else:
             event["start_ns"] = now_ns
             event["end_ns"] = now_ns + dur
