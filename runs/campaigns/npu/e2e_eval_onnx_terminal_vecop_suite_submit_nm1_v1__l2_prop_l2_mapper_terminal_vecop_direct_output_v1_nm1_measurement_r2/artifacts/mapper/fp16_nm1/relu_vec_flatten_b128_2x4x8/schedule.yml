@@ -1,0 +1,53 @@
+version: 0.1
+arch: npu/arch/examples/minimal.yml
+mapper_notes:
+  graph_kind: terminal_vec_op
+  terminal_vec_op: relu
+  input_flattened: true
+  input_cast_ignored: false
+  effective_batch: 128
+  terminal_vecop_direct_output: false
+  graph_output_name: Y
+  ignored_graph_outputs: []
+buffers:
+- id: X_DRAM
+  addr: '0x3000000000'
+  bytes: 8192
+- id: Y_DRAM
+  addr: '0x3000002000'
+  bytes: 8192
+- id: ACT_A_SRAM
+  addr: '0x80000000'
+  bytes: 8192
+- id: ACT_B_SRAM
+  addr: '0x80002000'
+  bytes: 8192
+ops:
+- id: dma_x
+  type: dma_copy
+  src: X_DRAM
+  dst: ACT_A_SRAM
+  bytes: 8192
+- id: vec1
+  type: vec_op
+  src: ACT_A_SRAM
+  dst: ACT_B_SRAM
+  bytes: 8192
+  op: relu
+  dtype: int8
+- id: dma_y
+  type: dma_copy
+  src: ACT_B_SRAM
+  dst: Y_DRAM
+  bytes: 8192
+deps:
+- wait:
+  - dma_x
+  then: vec1
+- wait:
+  - vec1
+  then: dma_y
+events:
+- id: 1000
+  signal_on: dma_y
+  irq: true
