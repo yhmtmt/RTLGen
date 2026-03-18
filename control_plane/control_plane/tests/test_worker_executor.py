@@ -728,6 +728,49 @@ def test_prepare_checkout_materializes_missing_submodules_only() -> None:
         assert submodule_calls[0][-1] == "third_party/cacti"
 
 
+def test_prepare_checkout_skips_submodules_when_not_requested() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        (repo_root / ".gitmodules").write_text(
+            (
+                '[submodule "cacti"]\n'
+                "\tpath = third_party/cacti\n"
+            ),
+            encoding="utf-8",
+        )
+
+        calls: list[list[str]] = []
+
+        def fake_run(args, check=None, capture_output=None, text=None):
+            calls.append(list(args))
+            if "worktree" in args and "add" in args:
+                checkout_root = Path(args[-2])
+                checkout_root.mkdir(parents=True, exist_ok=True)
+                (checkout_root / ".gitmodules").write_text(
+                    (repo_root / ".gitmodules").read_text(encoding="utf-8"),
+                    encoding="utf-8",
+                )
+                return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+            if args[-3:] == ["cat-file", "-e", "HEAD^{commit}"]:
+                return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+            if args[-2:] == ["rev-parse", "HEAD"]:
+                return subprocess.CompletedProcess(args, 0, stdout="deadbeef\n", stderr="")
+            if args[-3:] == ["status", "--porcelain", "--untracked-files=no"]:
+                return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+            raise AssertionError(f"unexpected subprocess args: {args}")
+
+        with mock.patch("control_plane.workers.checkout.subprocess.run", side_effect=fake_run):
+            info = prepare_checkout(
+                repo_root=str(repo_root),
+                source_commit="HEAD",
+            )
+
+        assert info.materialized_submodules == ()
+        submodule_calls = [args for args in calls if "submodule" in args]
+        assert submodule_calls == []
+
+
 def test_prepare_checkout_creates_and_cleans_worktree() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

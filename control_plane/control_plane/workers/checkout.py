@@ -67,7 +67,9 @@ def _materialize_missing_submodules(
     *,
     required_submodules: list[str] | tuple[str, ...] | None = None,
 ) -> tuple[str, ...]:
-    allowed = set(required_submodules or [])
+    if required_submodules is None:
+        return ()
+    allowed = set(required_submodules)
     missing: list[str] = []
     for rel in _read_submodule_paths(checkout_root):
         if allowed and rel not in allowed:
