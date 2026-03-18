@@ -12,7 +12,8 @@ from sqlalchemy.orm import Session
 
 from control_plane.clock import utcnow
 from control_plane.models.artifacts import Artifact
-from control_plane.models.enums import ArtifactStorageMode
+from control_plane.models.enums import ArtifactStorageMode, GitHubLinkState
+from control_plane.models.github_links import GitHubLink
 from control_plane.models.run_events import RunEvent
 from control_plane.models.runs import Run
 from control_plane.models.work_items import WorkItem
@@ -103,6 +104,42 @@ def _load_existing_submission_identity(manifest_path: Path) -> tuple[str | None,
         if match:
             session_id = match.group(1)
     return branch_name, session_id
+
+
+def _load_existing_submission_manifest(manifest_path: Path) -> dict[str, Any] | None:
+    if not manifest_path.exists():
+        return None
+    try:
+        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
+def _is_reusable_submission_manifest(
+    session: Session,
+    *,
+    work_item: WorkItem,
+    run: Run,
+    manifest_path: Path,
+) -> bool:
+    manifest = _load_existing_submission_manifest(manifest_path)
+    if manifest is None:
+        return False
+    if str(manifest.get("run_key", "")).strip() != run.run_key:
+        return False
+    branch_name = str(manifest.get("branch_name", "")).strip()
+    if not branch_name:
+        return False
+    link = (
+        session.query(GitHubLink)
+        .filter(GitHubLink.work_item_id == work_item.id, GitHubLink.branch_name == branch_name)
+        .order_by(GitHubLink.updated_at.desc(), GitHubLink.created_at.desc())
+        .first()
+    )
+    if link is None:
+        return True
+    return link.state in {GitHubLinkState.NONE, GitHubLinkState.BRANCH_CREATED, GitHubLinkState.PR_OPEN}
 
 
 def _required_review_artifact_kind(task_type: str) -> str | None:
@@ -211,7 +248,15 @@ def operate_submission(session: Session, request: OperatorSubmissionRequest) -> 
     work_item, run = _resolve_run(session, request)
     _check_submission_eligibility(session, work_item=work_item, run=run, force=request.force)
     manifest_path = _default_manifest_path(repo_root, work_item.item_id)
-    existing_branch_name, existing_session_id = _load_existing_submission_identity(manifest_path)
+    reusable_manifest = _is_reusable_submission_manifest(
+        session,
+        work_item=work_item,
+        run=run,
+        manifest_path=manifest_path,
+    )
+    existing_branch_name, existing_session_id = (
+        _load_existing_submission_identity(manifest_path) if reusable_manifest else (None, None)
+    )
     effective_branch_name = request.branch_name or existing_branch_name
     effective_session_id = request.session_id or existing_session_id
 
@@ -233,7 +278,7 @@ def operate_submission(session: Session, request: OperatorSubmissionRequest) -> 
 
     submission_prepared = False
     submission_prepared_reused = False
-    if manifest_path.exists():
+    if reusable_manifest:
         submission_prepared_reused = True
     else:
         prepare_submission_branch(

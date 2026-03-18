@@ -387,6 +387,59 @@ def test_operate_submission_runs_full_chain_and_reuses_manifest() -> None:
             assert artifact.path == f"control_plane/shadow_exports/review/{item_id}/operator_submission.json"
 
 
+def test_operate_submission_rebuilds_manifest_when_latest_run_differs() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, _run_key = _seed_l1_reviewable(session, repo_root)
+            fake_bin = repo_root / "fake_bin"
+            log_path = repo_root / "fake_cmds.log"
+            _make_fake_bin(fake_bin, log_path)
+            old_path = os.environ.get("PATH", "")
+            os.environ["PATH"] = f"{fake_bin}:{old_path}"
+            try:
+                first = operate_submission(
+                    session,
+                    OperatorSubmissionRequest(
+                        repo_root=str(repo_root),
+                        repo="yhmtmt/RTLGen",
+                        item_id=item_id,
+                        evaluator_id="cpbot",
+                        session_id="s20260310t090000z",
+                        host="cp-host",
+                        worktree_root=str(repo_root / "tmp_submit"),
+                    ),
+                )
+                manifest_path = repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "submission_manifest.json"
+                manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+                manifest["run_key"] = "stale_run_key"
+                manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+                second = operate_submission(
+                    session,
+                    OperatorSubmissionRequest(
+                        repo_root=str(repo_root),
+                        repo="yhmtmt/RTLGen",
+                        item_id=item_id,
+                        evaluator_id="cpbot",
+                        session_id="s20260310t090123z",
+                        host="cp-host",
+                        worktree_root=str(repo_root / "tmp_submit2"),
+                    ),
+                )
+            finally:
+                os.environ["PATH"] = old_path
+
+            assert second.submission_prepared is True
+            assert second.submission_prepared_reused is False
+            assert second.branch_name != first.branch_name
+
+
 def test_operate_submission_blocks_non_reviewable_state_without_force() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

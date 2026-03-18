@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
+import copy
 import csv
 from pathlib import Path
 import re
@@ -407,8 +408,9 @@ def sync_run_artifacts(session: Session, request: ArtifactSyncRequest) -> Artifa
     payload["queue_result"] = queue_result
     run.result_payload = payload
     run.branch_name = branch_name
+    original_request_payload = copy.deepcopy(dict(work_item.task_request.request_payload or {}))
     work_item.task_request.request_payload = _fill_handoff_placeholders(
-        source_payload=dict(work_item.task_request.request_payload or {}),
+        source_payload=copy.deepcopy(original_request_payload),
         evaluator_id=request.evaluator_id,
         session_id=session_id,
         host=host,
@@ -425,6 +427,7 @@ def sync_run_artifacts(session: Session, request: ArtifactSyncRequest) -> Artifa
             target_path=request.target_path or _default_shadow_target_path(item_id=work_item.item_id),
         ),
     )
+    work_item.task_request.request_payload = original_request_payload
 
     _ensure_queue_snapshot_artifact(
         session,
