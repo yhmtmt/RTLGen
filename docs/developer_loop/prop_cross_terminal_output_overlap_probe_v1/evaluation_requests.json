@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_cross_terminal_output_overlap_probe_v1",
-  "source_commit": "86610533dc223eb881fe5cd11f6a1b1f0f080fd7",
+  "source_commit": "dd1f4f5",
   "requested_items": [
     {
       "item_id": "l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r1",
