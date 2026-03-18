@@ -1,0 +1,321 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-03-18T02:50:24.341733Z",
+  "item_id": "l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2",
+  "run_key": "l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2_run_392da4f54afe565a",
+  "layer": "layer2",
+  "flow": "openroad",
+  "task_type": "l2_campaign",
+  "source_commit": "7b63d4207d6353d773a3c322b87b7710d8e88f3d",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2/evaluated.json",
+    "result": {
+      "branch": "eval/l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2/s20260318t023600z",
+      "completed_utc": "2026-03-18T02:19:41.620333Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "d7def79549f9",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260318t023600z][host:d7def79549f9][item:l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2]",
+      "metrics_rows": [
+        {
+          "tag": "npu_fp16_nm1_softcmp33_flat_nomacro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "c20283de",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/work/c20283de/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_softcmp33_flat_nomacro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "a53adbdd",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/work/a53adbdd/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_softcmp33_flat_nomacro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "b9f5f7d7",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/work/b9f5f7d7/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_softcmp33_hier_macro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "bffea8c7",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/work/bffea8c7/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_softcmp33_hier_macro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "e024ec35",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/work/e024ec35/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_softcmp33_hier_macro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "2a79e834",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/work/2a79e834/result.json"
+        }
+      ],
+      "queue_item_id": "l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2",
+      "session_id": "s20260318t023600z",
+      "status": "ok",
+      "summary": "5/5 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "decision_proposal",
+    "path": "control_plane/shadow_exports/l2_decisions/l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2.json",
+    "storage_mode": "repo",
+    "sha256": "2e96dc360941345135a9aa51d66dcccc1f41e5e2887a928b36593d9acfce9da2",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-03-18T02:20:03.582622Z",
+      "item_id": "l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2",
+      "run_key": "l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2_run_392da4f54afe565a",
+      "layer": "layer2",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l2_campaign",
+      "source_commit": "7b63d4207d6353d773a3c322b87b7710d8e88f3d",
+      "objective": "Focused Layer2 benchmark for the fused-output SOFTMAX-tail path on the fixed fp16_nm1_softmax_r4 architecture point.",
+      "input_manifest": {
+        "sweeps": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/sweep_compare_softmax_33.json"
+        ],
+        "configs": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/config_nm1_softmax.json"
+        ],
+        "design_dirs": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp"
+        ],
+        "macro_manifests": [
+          "runs/designs/npu_macros/npu_fp16_nm1_softmax_bundle_ng45/macro_manifest.json"
+        ],
+        "generated_campaign": {
+          "path": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v1/campaign__l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2.json",
+          "outputs": {
+            "report_md": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v1__l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2/report.md",
+            "results_csv": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v1__l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2/results.csv",
+            "campaign_dir": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v1__l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2"
+          },
+          "base_campaign_path": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v1/campaign.json"
+        },
+        "candidate_manifests": [
+          "runs/candidates/nangate45/module_candidates.json"
+        ]
+      },
+      "recommendation": {
+        "arch_id": "fp16_nm1_softmax_r4",
+        "macro_mode": "flat_nomacro",
+        "objective_rank": 1,
+        "objective_score": "0.0",
+        "latency_ms_mean": 0.000621,
+        "energy_mj_mean": 1.1462914800000001e-07,
+        "critical_path_ns_mean": 5.690256573668907,
+        "die_area_um2_mean": 2250000.0,
+        "total_power_mw_mean": 0.184588,
+        "flow_elapsed_s_mean": 1318.74
+      },
+      "objective_profiles": [],
+      "proposal_assessment": {
+        "proposal_id": "prop_l2_softmax_tile_fusion_v1",
+        "title": "Softmax-tail fused tile path",
+        "kind": "architecture",
+        "primary_question": "Does fused terminal output improve the softmax-tail path on the fixed nm1 softmax baseline?",
+        "outcome": "no_measurable_change",
+        "summary": "Focused comparison matched the baseline with no measurable latency or energy delta.",
+        "baseline_ref": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_v1",
+        "matched_row_count": 4,
+        "matched_rows": [
+          {
+            "scope": "model",
+            "arch_id": "fp16_nm1_softmax_r4",
+            "macro_mode": "flat_nomacro",
+            "metrics": {
+              "latency_ms_mean": {
+                "baseline": 0.000621,
+                "candidate": 0.000621,
+                "delta": 0.0
+              },
+              "energy_mj_mean": {
+                "baseline": 1.1462914800000001e-07,
+                "candidate": 1.1462914800000001e-07,
+                "delta": 0.0
+              },
+              "critical_path_ns_mean": {
+                "baseline": 5.690256573668907,
+                "candidate": 5.690256573668907,
+                "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.184588,
+                "candidate": 0.184588,
+                "delta": 0.0
+              },
+              "flow_elapsed_s_mean": {
+                "baseline": 1318.74,
+                "candidate": 1318.74,
+                "delta": 0.0
+              },
+              "throughput_infer_per_s_mean": {
+                "baseline": 1610305.958132045,
+                "candidate": 1610305.958132045,
+                "delta": 0.0
+              }
+            }
+          },
+          {
+            "scope": "model",
+            "arch_id": "fp16_nm1_softmax_r4",
+            "macro_mode": "hier_macro",
+            "metrics": {
+              "latency_ms_mean": {
+                "baseline": 0.000621,
+                "candidate": 0.000621,
+                "delta": 0.0
+              },
+              "energy_mj_mean": {
+                "baseline": 1.2585186e-07,
+                "candidate": 1.2585186e-07,
+                "delta": 0.0
+              },
+              "critical_path_ns_mean": {
+                "baseline": 5.601707400415646,
+                "candidate": 5.601707400415646,
+                "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.20265999999999998,
+                "candidate": 0.20265999999999998,
+                "delta": 0.0
+              },
+              "flow_elapsed_s_mean": {
+                "baseline": 1146.61,
+                "candidate": 1146.61,
+                "delta": 0.0
+              },
+              "throughput_infer_per_s_mean": {
+                "baseline": 1610305.958132045,
+                "candidate": 1610305.958132045,
+                "delta": 0.0
+              }
+            }
+          },
+          {
+            "scope": "aggregate",
+            "arch_id": "fp16_nm1_softmax_r4",
+            "macro_mode": "flat_nomacro",
+            "metrics": {
+              "latency_ms_mean": {
+                "baseline": 0.000621,
+                "candidate": 0.000621,
+                "delta": 0.0
+              },
+              "energy_mj_mean": {
+                "baseline": 1.1462914800000001e-07,
+                "candidate": 1.1462914800000001e-07,
+                "delta": 0.0
+              },
+              "critical_path_ns_mean": {
+                "baseline": 5.690256573668907,
+                "candidate": 5.690256573668907,
+                "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.184588,
+                "candidate": 0.184588,
+                "delta": 0.0
+              },
+              "flow_elapsed_s_mean": {
+                "baseline": 1318.74,
+                "candidate": 1318.74,
+                "delta": 0.0
+              },
+              "throughput_infer_per_s_mean": {
+                "baseline": 1610305.958132045,
+                "candidate": 1610305.958132045,
+                "delta": 0.0
+              }
+            }
+          },
+          {
+            "scope": "aggregate",
+            "arch_id": "fp16_nm1_softmax_r4",
+            "macro_mode": "hier_macro",
+            "metrics": {
+              "latency_ms_mean": {
+                "baseline": 0.000621,
+                "candidate": 0.000621,
+                "delta": 0.0
+              },
+              "energy_mj_mean": {
+                "baseline": 1.2585186e-07,
+                "candidate": 1.2585186e-07,
+                "delta": 0.0
+              },
+              "critical_path_ns_mean": {
+                "baseline": 5.601707400415646,
+                "candidate": 5.601707400415646,
+                "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.20265999999999998,
+                "candidate": 0.20265999999999998,
+                "delta": 0.0
+              },
+              "flow_elapsed_s_mean": {
+                "baseline": 1146.61,
+                "candidate": 1146.61,
+                "delta": 0.0
+              },
+              "throughput_infer_per_s_mean": {
+                "baseline": 1610305.958132045,
+                "candidate": 1610305.958132045,
+                "delta": 0.0
+              }
+            }
+          }
+        ]
+      },
+      "source_refs": {
+        "best_point_json": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v1__l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2/best_point.json",
+        "summary_csv": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v1__l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2/summary.csv",
+        "results_csv": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v1__l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2/results.csv",
+        "report_md": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v1__l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2/report.md",
+        "baseline_summary_csv": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_v1/summary.csv",
+        "baseline_report_md": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_v1/report.md"
+      }
+    }
+  },
+  "developer_loop": {
+    "proposal_id": "prop_l2_softmax_tile_fusion_v1",
+    "proposal_path": "docs/developer_loop/prop_l2_softmax_tile_fusion_v1"
+  },
+  "pr_payload": {
+    "branch": "eval/l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2/s20260318t023600z",
+    "title": "eval: run layer2 campaign npu_e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v1 on nangate45",
+    "body_fields": {
+      "host": "d7def79549f9",
+      "session_id": "s20260318t023600z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2"
+    },
+    "body_md": "## Summary\n- item_id: `l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2`\n- run_key: `l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2_run_392da4f54afe565a`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `5/5 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2/evaluated.json`\n- metrics_rows_count: `6`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2.json`\n\n## Developer Context\n- proposal_id: `prop_l2_softmax_tile_fusion_v1`\n- proposal_path: `docs/developer_loop/prop_l2_softmax_tile_fusion_v1`\n- reviewer_first_read: `docs/developer_loop/prop_l2_softmax_tile_fusion_v1` plus `docs/developer_agent_review.md`\n\n## Focused Comparison\n- primary_question: `Does fused terminal output improve the softmax-tail path on the fixed nm1 softmax baseline?`\n- proposal_outcome: `no_measurable_change`\n- comparison_summary: `Focused comparison matched the baseline with no measurable latency or energy delta.`\n- baseline_ref: `runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_v1`\n- latency_delta fp16_nm1_softmax_r4/flat_nomacro: `0.000621` -> `0.000621` ms\n- energy_delta fp16_nm1_softmax_r4/flat_nomacro: `1.1462914800000001e-07` -> `1.1462914800000001e-07` mJ\n- latency_delta fp16_nm1_softmax_r4/hier_macro: `0.000621` -> `0.000621` ms\n- energy_delta fp16_nm1_softmax_r4/hier_macro: `1.2585186e-07` -> `1.2585186e-07` mJ\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
