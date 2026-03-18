@@ -112,6 +112,22 @@ exists.
 
 ## Merge Policy
 
+Evaluation PR merge rule:
+
+- merge the PR when it is valid, self-contained evidence for the proposal's
+  direct comparison
+- do not hold merge until after notebook-side analysis artifacts are updated
+- a flat or negative result can still be merge-worthy if the evidence is
+  correct
+
+Post-merge rule:
+
+- once the evidence PR is merged, update the proposal workspace with:
+  - `analysis_report.md`
+  - `promotion_decision.json`
+- use those artifacts to record whether the next step is `promote`, `iterate`,
+  or `reject`
+
 For now:
 
 - agent review may draft findings

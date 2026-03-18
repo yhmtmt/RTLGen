@@ -1,16 +1,16 @@
 {
   "proposal_id": "prop_l2_softmax_tile_fusion_v1",
-  "candidate_id": "cand_softmax_tail_fused_output_v1_r1",
+  "candidate_id": "cand_softmax_tail_fused_output_nm1_focus_r2",
   "decision": "iterate",
-  "reason": "The fused-output mapper path is valid, but the evaluated result did not beat the accepted dedicated-softmax baseline and the nm2 ranking is still confounded by heuristic row-splitting behavior.",
+  "reason": "The focused nm1 fused-output evaluation was valid evidence, but it matched the accepted non-fused softmax baseline exactly and did not prove a measurable benefit from skipping the intermediate memory access on this benchmark.",
   "evidence_refs": [
-    "work_item:l2_prop_l2_softmax_tile_fusion_v1_20260316051355",
-    "run_key:l2_prop_l2_softmax_tile_fusion_v1_20260316051355_run_b992c4d7a804af22",
-    "pr:36",
-    "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_v1/best_point.json",
-    "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_v1__l2_prop_l2_softmax_tile_fusion_v1_20260316051355/best_point.json",
-    "docs/developer_loop/prop_l2_softmax_tile_fusion_v1/quality_report.md"
+    "work_item:l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2",
+    "run_key:l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2_run_392da4f54afe565a",
+    "pr:41",
+    "control_plane/shadow_exports/l2_decisions/l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2.json",
+    "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_v1/report.md",
+    "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v1__l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2/report.md"
   ],
-  "next_action": "Promote docs/development_items/items/item_l2_mapper_memory_aware_split_v1.md into a bounded mapper proposal that compares monolithic and split multi-module lowering on the same softmaxcmp hardware.",
+  "next_action": "Run a bounded follow-on analysis or evaluation that tests whether terminal-memory savings are hidden by overlap or benchmark shape, and only broaden the architecture sweep after that mechanism-level question is answered.",
   "requires_human_approval": true
 }

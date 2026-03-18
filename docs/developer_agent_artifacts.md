@@ -242,6 +242,13 @@ Examples:
 
 Summarize evaluated evidence for a promotion decision.
 
+Timing:
+- update this artifact after the evaluation PR that contains the evidence is
+  merged
+- treat the merged PR and its committed artifacts as the canonical evidence
+  boundary
+- only write pre-merge draft analysis when a human explicitly asks for it
+
 ### Required sections
 
 ```md
@@ -291,6 +298,12 @@ When mapper limitations are material, include:
 ### Purpose
 
 Provide a small machine-readable decision record after analysis.
+
+Timing:
+- write or update this artifact after `analysis_report.md`
+- do not treat a still-open evaluation PR as final evidence by default
+- this artifact should reflect the merged evidence set and the current accepted
+  next step
 
 ### Required fields
 

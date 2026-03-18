@@ -242,6 +242,27 @@ Evaluator daemon:
 
 This stage is already implemented by the control plane.
 
+### Stage 7.5. Evidence Review And Merge
+
+Treat the evaluation PR as the reviewed evidence boundary for a remote run.
+
+Review questions at this stage:
+- did the PR serialize the intended direct comparison and baseline?
+- is the committed evidence reproducible and complete?
+- is the run valid evidence for the proposal, even if the result is flat or
+  negative?
+
+Decision at this stage:
+- merge the PR when it is valid evidence
+- do not merge the PR when the payload is incomplete, misleading, or tied to an
+  invalid run
+
+Important:
+- PR merge means "accepted evaluation evidence"
+- PR merge does not mean "proposal succeeded"
+- analysis and promotion decisions should consume merged evidence, not draft PR
+  state, by default
+
 ### Stage 8. Result Analysis
 
 Notebook analysis agent reads:
@@ -257,6 +278,14 @@ Required outputs:
 
 Concrete artifact schema:
 - `docs/developer_agent_artifacts.md`
+
+Ordering rule:
+- update `analysis_report.md` only after the evaluation PR is merged, unless a
+  human explicitly wants a pre-merge draft analysis
+- update `promotion_decision.json` only after `analysis_report.md` reflects the
+  merged evidence set
+- use `iterate` when the evidence is valid but the next step is further bounded
+  evaluation rather than promotion or rejection
 
 `promotion_decision.json` should include:
 - `candidate_id`
