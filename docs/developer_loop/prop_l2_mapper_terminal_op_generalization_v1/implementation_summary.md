@@ -49,9 +49,10 @@
 - paired comparison is intentionally deferred until the direct-output lowering
   rule for the selected family exists locally
 - queue status:
-  - not queued yet
-  - local queue insertion failed because the local control-plane PostgreSQL
-    endpoint at `localhost:5432` was unavailable during this session
+  - queued
+  - `item_id`: `l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_measurement_r1`
+  - `task_request_id`: `ec5cfac8-df02-4c3b-a7a9-327d0e002db6`
+  - `work_item_id`: `c053c2ee-a998-4e65-b767-e651e2ecf47f`
 
 ## Risks
 - terminal linear plus terminal `Relu` is a bounded but still close neighbor to
