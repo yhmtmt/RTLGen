@@ -1,0 +1,574 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-03-18T13:49:20.782422Z",
+  "item_id": "l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1",
+  "run_key": "l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1_run_baa0b349b4e529b5",
+  "layer": "layer2",
+  "flow": "openroad",
+  "task_type": "l2_campaign",
+  "source_commit": "f111f8cd99a77f455c4d4cc0f87d144033fe2c4b",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1/evaluated.json",
+    "result": {
+      "branch": "eval/l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1/s20260318t135000z",
+      "completed_utc": "2026-03-18T13:41:12.526056Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "d7def79549f9",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260318t135000z][host:d7def79549f9][item:l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1]",
+      "metrics_rows": [
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "362e11ef",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/362e11ef/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "6f738885",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/6f738885/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "3e84d92b",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3e84d92b/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "13a2c990",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/13a2c990/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "34eeb6e5",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/34eeb6e5/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r4",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "439adb1e",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/439adb1e/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r5",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "936b2a7b",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/936b2a7b/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "54a235ae",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/54a235ae/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "f190a078",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/f190a078/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "b874bef7",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/b874bef7/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r4",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "3a650f98",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3a650f98/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r5",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "3fa4f194",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3fa4f194/result.json"
+        }
+      ],
+      "queue_item_id": "l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1",
+      "session_id": "s20260318t135000z",
+      "status": "ok",
+      "summary": "5/5 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "decision_proposal",
+    "path": "control_plane/shadow_exports/l2_decisions/l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1.json",
+    "storage_mode": "repo",
+    "sha256": "90b1e8c45a88bb3d602615cfb2e402fa13db08cb90e5ee3f409c4bf440e4fae8",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-03-18T13:41:57.960890Z",
+      "item_id": "l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1",
+      "run_key": "l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1_run_baa0b349b4e529b5",
+      "layer": "layer2",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l2_campaign",
+      "source_commit": "f111f8cd99a77f455c4d4cc0f87d144033fe2c4b",
+      "objective": "Compare bounded terminal direct-output lowering against the merged non-fused nm1 baseline on the terminal linear plus terminal Relu suite.",
+      "input_manifest": {
+        "sweeps": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json"
+        ],
+        "configs": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json"
+        ],
+        "design_dirs": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp"
+        ],
+        "macro_manifests": [
+          "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json"
+        ],
+        "generated_campaign": {
+          "path": "runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_fused_nm1_v1/campaign__l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1.json",
+          "outputs": {
+            "report_md": "runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1/report.md",
+            "results_csv": "runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1/results.csv",
+            "campaign_dir": "runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1"
+          },
+          "base_campaign_path": "runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_fused_nm1_v1/campaign.json"
+        },
+        "candidate_manifests": [
+          "runs/candidates/nangate45/module_candidates.json"
+        ]
+      },
+      "recommendation": {
+        "arch_id": "fp16_nm1",
+        "macro_mode": "flat_nomacro",
+        "objective_rank": 1,
+        "objective_score": "0.0",
+        "latency_ms_mean": 0.003162,
+        "energy_mj_mean": 6.10651764e-07,
+        "critical_path_ns_mean": 5.557037432204143,
+        "die_area_um2_mean": 2250000.0,
+        "total_power_mw_mean": 0.193122,
+        "flow_elapsed_s_mean": 844.5733333333334
+      },
+      "objective_profiles": [],
+      "evaluation_record": {
+        "proposal_id": "prop_l2_mapper_terminal_op_generalization_v1",
+        "title": "Generalized terminal-op direct output",
+        "primary_question": "Can a bounded mapper program for terminal linear and terminal Relu outputs establish clean nm1 reference points first, before direct-output generalization is attempted on those same points?",
+        "evaluation_mode": "paired_comparison",
+        "comparison_role": "candidate",
+        "expected_direction": "better_than_historical",
+        "expected_reason": "Direct terminal-output lowering should remove the final dma_y tail on at least part of the bounded terminal linear plus terminal Relu suite.",
+        "summary": "Focused comparison improved latency and/or energy without regressing matched rows.",
+        "baseline_ref": "runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_measurement_r1",
+        "baseline_item_id": "l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_measurement_r1",
+        "outcome": "improved",
+        "expectation_status": "as_expected"
+      },
+      "proposal_assessment": {
+        "proposal_id": "prop_l2_mapper_terminal_op_generalization_v1",
+        "title": "Generalized terminal-op direct output",
+        "kind": "mapper",
+        "primary_question": "Can a bounded mapper program for terminal linear and terminal Relu outputs establish clean nm1 reference points first, before direct-output generalization is attempted on those same points?",
+        "evaluation_mode": "paired_comparison",
+        "comparison_role": "candidate",
+        "outcome": "improved",
+        "summary": "Focused comparison improved latency and/or energy without regressing matched rows.",
+        "baseline_ref": "runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_measurement_r1",
+        "baseline_item_id": "l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_measurement_r1",
+        "matched_row_count": 8,
+        "matched_rows": [
+          {
+            "scope": "model",
+            "arch_id": "fp16_nm1",
+            "macro_mode": "flat_nomacro",
+            "model_id": "linear_tail_b128_f8_o64",
+            "metrics": {
+              "latency_ms_mean": {
+                "baseline": 0.002278,
+                "candidate": 0.001666,
+                "delta": -0.0006120000000000001
+              },
+              "energy_mj_mean": {
+                "baseline": 4.39931916e-07,
+                "candidate": 3.21741252e-07,
+                "delta": -1.18190664e-07
+              },
+              "critical_path_ns_mean": {
+                "baseline": 5.557037432204143,
+                "candidate": 5.557037432204143,
+                "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.193122,
+                "candidate": 0.193122,
+                "delta": 0.0
+              },
+              "flow_elapsed_s_mean": {
+                "baseline": 844.5733333333334,
+                "candidate": 844.5733333333334,
+                "delta": 0.0
+              },
+              "throughput_infer_per_s_mean": {
+                "baseline": 438981.56277436344,
+                "candidate": 600240.0960384153,
+                "delta": 161258.5332640519
+              }
+            }
+          },
+          {
+            "scope": "model",
+            "arch_id": "fp16_nm1",
+            "macro_mode": "flat_nomacro",
+            "model_id": "linear_tail_b256_f8_o128",
+            "metrics": {
+              "latency_ms_mean": {
+                "baseline": 0.0071779999999999995,
+                "candidate": 0.00503,
+                "delta": -0.0021479999999999997
+              },
+              "energy_mj_mean": {
+                "baseline": 1.386229716e-06,
+                "candidate": 9.7140366e-07,
+                "delta": -4.148260559999999e-07
+              },
+              "critical_path_ns_mean": {
+                "baseline": 5.557037432204143,
+                "candidate": 5.557037432204143,
+                "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.193122,
+                "candidate": 0.193122,
+                "delta": 0.0
+              },
+              "flow_elapsed_s_mean": {
+                "baseline": 844.5733333333334,
+                "candidate": 844.5733333333334,
+                "delta": 0.0
+              },
+              "throughput_infer_per_s_mean": {
+                "baseline": 139314.57230426304,
+                "candidate": 198807.15705765408,
+                "delta": 59492.58475339104
+              }
+            }
+          },
+          {
+            "scope": "model",
+            "arch_id": "fp16_nm1",
+            "macro_mode": "flat_nomacro",
+            "model_id": "relu_tail_b128_f8_o128",
+            "metrics": {
+              "latency_ms_mean": {
+                "baseline": 0.003914,
+                "candidate": 0.0027900000000000004,
+                "delta": -0.0011239999999999996
+              },
+              "energy_mj_mean": {
+                "baseline": 7.55879508e-07,
+                "candidate": 5.3881038e-07,
+                "delta": -2.1706912800000004e-07
+              },
+              "critical_path_ns_mean": {
+                "baseline": 5.557037432204143,
+                "candidate": 5.557037432204143,
+                "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.193122,
+                "candidate": 0.193122,
+                "delta": 0.0
+              },
+              "flow_elapsed_s_mean": {
+                "baseline": 844.5733333333334,
+                "candidate": 844.5733333333334,
+                "delta": 0.0
+              },
+              "throughput_infer_per_s_mean": {
+                "baseline": 255493.10168625446,
+                "candidate": 358422.93906810024,
+                "delta": 102929.83738184578
+              }
+            }
+          },
+          {
+            "scope": "model",
+            "arch_id": "fp16_nm1",
+            "macro_mode": "hier_macro",
+            "model_id": "linear_tail_b128_f8_o64",
+            "metrics": {
+              "latency_ms_mean": {
+                "baseline": 0.002278,
+                "candidate": 0.001666,
+                "delta": -0.0006120000000000001
+              },
+              "energy_mj_mean": {
+                "baseline": 4.4977059800000004e-07,
+                "candidate": 3.2893670600000005e-07,
+                "delta": -1.20833892e-07
+              },
+              "critical_path_ns_mean": {
+                "baseline": 5.774905724664045,
+                "candidate": 5.774905724664045,
+                "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.197441,
+                "candidate": 0.197441,
+                "delta": 0.0
+              },
+              "flow_elapsed_s_mean": {
+                "baseline": 976.8733333333333,
+                "candidate": 976.8733333333333,
+                "delta": 0.0
+              },
+              "throughput_infer_per_s_mean": {
+                "baseline": 438981.56277436344,
+                "candidate": 600240.0960384153,
+                "delta": 161258.5332640519
+              }
+            }
+          },
+          {
+            "scope": "model",
+            "arch_id": "fp16_nm1",
+            "macro_mode": "hier_macro",
+            "model_id": "linear_tail_b256_f8_o128",
+            "metrics": {
+              "latency_ms_mean": {
+                "baseline": 0.0071779999999999995,
+                "candidate": 0.00503,
+                "delta": -0.0021479999999999997
+              },
+              "energy_mj_mean": {
+                "baseline": 1.4172314980000003e-06,
+                "candidate": 9.931282300000002e-07,
+                "delta": -4.241032680000001e-07
+              },
+              "critical_path_ns_mean": {
+                "baseline": 5.774905724664045,
+                "candidate": 5.774905724664045,
+                "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.197441,
+                "candidate": 0.197441,
+                "delta": 0.0
+              },
+              "flow_elapsed_s_mean": {
+                "baseline": 976.8733333333333,
+                "candidate": 976.8733333333333,
+                "delta": 0.0
+              },
+              "throughput_infer_per_s_mean": {
+                "baseline": 139314.57230426304,
+                "candidate": 198807.15705765408,
+                "delta": 59492.58475339104
+              }
+            }
+          },
+          {
+            "scope": "model",
+            "arch_id": "fp16_nm1",
+            "macro_mode": "hier_macro",
+            "model_id": "relu_tail_b128_f8_o128",
+            "metrics": {
+              "latency_ms_mean": {
+                "baseline": 0.003914,
+                "candidate": 0.0027900000000000004,
+                "delta": -0.0011239999999999996
+              },
+              "energy_mj_mean": {
+                "baseline": 7.727840740000002e-07,
+                "candidate": 5.508603900000001e-07,
+                "delta": -2.219236840000001e-07
+              },
+              "critical_path_ns_mean": {
+                "baseline": 5.774905724664045,
+                "candidate": 5.774905724664045,
+                "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.197441,
+                "candidate": 0.197441,
+                "delta": 0.0
+              },
+              "flow_elapsed_s_mean": {
+                "baseline": 976.8733333333333,
+                "candidate": 976.8733333333333,
+                "delta": 0.0
+              },
+              "throughput_infer_per_s_mean": {
+                "baseline": 255493.10168625446,
+                "candidate": 358422.93906810024,
+                "delta": 102929.83738184578
+              }
+            }
+          },
+          {
+            "scope": "aggregate",
+            "arch_id": "fp16_nm1",
+            "macro_mode": "flat_nomacro",
+            "model_id": null,
+            "metrics": {
+              "latency_ms_mean": {
+                "baseline": 0.004456666666666667,
+                "candidate": 0.003162,
+                "delta": -0.001294666666666667
+              },
+              "energy_mj_mean": {
+                "baseline": 8.6068038e-07,
+                "candidate": 6.10651764e-07,
+                "delta": -2.50028616e-07
+              },
+              "critical_path_ns_mean": {
+                "baseline": 5.557037432204143,
+                "candidate": 5.557037432204143,
+                "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.193122,
+                "candidate": 0.193122,
+                "delta": 0.0
+              },
+              "flow_elapsed_s_mean": {
+                "baseline": 844.5733333333334,
+                "candidate": 844.5733333333334,
+                "delta": 0.0
+              },
+              "throughput_infer_per_s_mean": {
+                "baseline": 277929.74558829365,
+                "candidate": 385823.39738805656,
+                "delta": 107893.65179976291
+              }
+            }
+          },
+          {
+            "scope": "aggregate",
+            "arch_id": "fp16_nm1",
+            "macro_mode": "hier_macro",
+            "model_id": null,
+            "metrics": {
+              "latency_ms_mean": {
+                "baseline": 0.004456666666666667,
+                "candidate": 0.003162,
+                "delta": -0.001294666666666667
+              },
+              "energy_mj_mean": {
+                "baseline": 8.799287233333336e-07,
+                "candidate": 6.243084420000001e-07,
+                "delta": -2.5562028133333343e-07
+              },
+              "critical_path_ns_mean": {
+                "baseline": 5.774905724664045,
+                "candidate": 5.774905724664045,
+                "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.197441,
+                "candidate": 0.197441,
+                "delta": 0.0
+              },
+              "flow_elapsed_s_mean": {
+                "baseline": 976.8733333333333,
+                "candidate": 976.8733333333333,
+                "delta": 0.0
+              },
+              "throughput_infer_per_s_mean": {
+                "baseline": 277929.74558829365,
+                "candidate": 385823.39738805656,
+                "delta": 107893.65179976291
+              }
+            }
+          }
+        ]
+      },
+      "source_refs": {
+        "best_point_json": "runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1/best_point.json",
+        "summary_csv": "runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1/summary.csv",
+        "results_csv": "runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1/results.csv",
+        "report_md": "runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1/report.md",
+        "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1/linear_tail_b128_f8_o64/schedule.yml",
+        "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1/linear_tail_b128_f8_o64/descriptors.bin",
+        "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1/artifacts/perf/fp16_nm1/linear_tail_b128_f8_o64/trace.json",
+        "focused_model_artifacts": [
+          {
+            "model_id": "linear_tail_b128_f8_o64",
+            "schedule_yml": "runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1/linear_tail_b128_f8_o64/schedule.yml",
+            "descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1/linear_tail_b128_f8_o64/descriptors.bin",
+            "perf_trace_json": "runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1/artifacts/perf/fp16_nm1/linear_tail_b128_f8_o64/trace.json"
+          },
+          {
+            "model_id": "linear_tail_b256_f8_o128",
+            "schedule_yml": "runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1/linear_tail_b256_f8_o128/schedule.yml",
+            "descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1/linear_tail_b256_f8_o128/descriptors.bin",
+            "perf_trace_json": "runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1/artifacts/perf/fp16_nm1/linear_tail_b256_f8_o128/trace.json"
+          },
+          {
+            "model_id": "relu_tail_b128_f8_o128",
+            "schedule_yml": "runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1/relu_tail_b128_f8_o128/schedule.yml",
+            "descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1/relu_tail_b128_f8_o128/descriptors.bin",
+            "perf_trace_json": "runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1/artifacts/perf/fp16_nm1/relu_tail_b128_f8_o128/trace.json"
+          }
+        ],
+        "baseline_summary_csv": "runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_measurement_r1/summary.csv",
+        "baseline_report_md": "runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_measurement_r1/report.md"
+      }
+    }
+  },
+  "developer_loop": {
+    "comparison": {
+      "role": "candidate",
+      "paired_baseline_item_id": "l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_measurement_r1"
+    },
+    "evaluation": {
+      "mode": "paired_comparison",
+      "expected_reason": "Direct terminal-output lowering should remove the final dma_y tail on at least part of the bounded terminal linear plus terminal Relu suite.",
+      "expected_direction": "better_than_historical"
+    },
+    "proposal_id": "prop_l2_mapper_terminal_op_generalization_v1",
+    "proposal_path": "docs/developer_loop/prop_l2_mapper_terminal_op_generalization_v1"
+  },
+  "pr_payload": {
+    "branch": "eval/l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1/s20260318t135000z",
+    "title": "eval: run terminal direct-output nm1 fused comparison",
+    "body_fields": {
+      "host": "d7def79549f9",
+      "session_id": "s20260318t135000z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1"
+    },
+    "body_md": "## Summary\n- item_id: `l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1`\n- run_key: `l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1_run_baa0b349b4e529b5`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `5/5 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1/evaluated.json`\n- metrics_rows_count: `12`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1.json`\n\n## Developer Context\n- proposal_id: `prop_l2_mapper_terminal_op_generalization_v1`\n- proposal_path: `docs/developer_loop/prop_l2_mapper_terminal_op_generalization_v1`\n- reviewer_first_read: `docs/developer_loop/prop_l2_mapper_terminal_op_generalization_v1` plus `docs/developer_agent_review.md`\n\n## Evaluation Mode\n- evaluation_mode: `paired_comparison`\n- comparison_role: `candidate`\n- expected_direction: `better_than_historical`\n- expected_reason: `Direct terminal-output lowering should remove the final dma_y tail on at least part of the bounded terminal linear plus terminal Relu suite.`\n- expectation_status: `as_expected`\n- evaluation_summary: `Focused comparison improved latency and/or energy without regressing matched rows.`\n\n## Focused Comparison\n- primary_question: `Can a bounded mapper program for terminal linear and terminal Relu outputs establish clean nm1 reference points first, before direct-output generalization is attempted on those same points?`\n- comparison_role: `candidate`\n- proposal_outcome: `improved`\n- comparison_summary: `Focused comparison improved latency and/or energy without regressing matched rows.`\n- baseline_ref: `runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_measurement_r1`\n- baseline_item_id: `l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_measurement_r1`\n- latency_delta fp16_nm1/flat_nomacro/linear_tail_b128_f8_o64: `0.002278` -> `0.001666` ms\n- energy_delta fp16_nm1/flat_nomacro/linear_tail_b128_f8_o64: `4.39931916e-07` -> `3.21741252e-07` mJ\n- latency_delta fp16_nm1/flat_nomacro/linear_tail_b256_f8_o128: `0.0071779999999999995` -> `0.00503` ms\n- energy_delta fp16_nm1/flat_nomacro/linear_tail_b256_f8_o128: `1.386229716e-06` -> `9.7140366e-07` mJ\n- latency_delta fp16_nm1/flat_nomacro/relu_tail_b128_f8_o128: `0.003914` -> `0.0027900000000000004` ms\n- energy_delta fp16_nm1/flat_nomacro/relu_tail_b128_f8_o128: `7.55879508e-07` -> `5.3881038e-07` mJ\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
