@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_mapper_terminal_op_generalization_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": null,
-  "merged_utc": null
+  "decision": "promoted",
+  "pr_number": 56,
+  "merge_commit": "756bea5cdf6f7d3f1a4a9f7b47f235a01c9d5c0c",
+  "merged_utc": "2026-03-18T13:52:04Z"
 }

@@ -1,9 +1,18 @@
 {
   "proposal_id": "prop_l2_mapper_terminal_op_generalization_v1",
-  "candidate_id": "pending",
-  "decision": "pending",
-  "reason": "pending",
-  "evidence_refs": [],
-  "next_action": "pending",
+  "candidate_id": "cand_l2_mapper_terminal_op_generalization_v1_r1",
+  "decision": "promote",
+  "reason": "Merged PRs #54 and #56 established a refreshed non-fused nm1 baseline and then showed bounded direct terminal-output lowering improving latency and energy across terminal linear and terminal Relu suite rows.",
+  "evidence_refs": [
+    "control_plane/shadow_exports/l2_decisions/l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_measurement_r1.json",
+    "control_plane/shadow_exports/l2_decisions/l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1.json",
+    "control_plane/shadow_exports/review/l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_measurement_r1/review_package.json",
+    "control_plane/shadow_exports/review/l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1/review_package.json",
+    "runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_measurement_r1/report.md",
+    "runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1/report.md",
+    "runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1/relu_tail_b128_f8_o128/schedule.yml",
+    "runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_fused_r1/artifacts/perf/fp16_nm1/relu_tail_b128_f8_o128/trace.json"
+  ],
+  "next_action": "Promote the next mapper or lowering item toward broader terminal-op family support before reopening broader architecture ranking or nm1/nm2 comparisons.",
   "requires_human_approval": true
 }
