@@ -8,6 +8,6 @@
   - second remote stage may use `paired_comparison` only after local legality
     and quality checks are in place
 - blocked_on:
-  - defining the bounded terminal vec-op family
-  - local generation and validation of the first measurement suite
-  - defining the required quality gate before the paired-comparison stage
+  - queueing the first `measurement_only` standalone terminal `Relu` suite item
+  - accepting the measurement evidence and deciding whether the paired stage
+    needs any extra quality gate beyond schedule and perf artifacts

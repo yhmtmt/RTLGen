@@ -15,6 +15,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 ARCH_PATH = REPO_ROOT / "npu/arch/examples/minimal.yml"
 ARCH_SOFTMAX_FUSED_PATH = REPO_ROOT / "npu/arch/examples/minimal_softmax_tail_fused.yml"
 ARCH_TERMINAL_DIRECT_OUTPUT_PATH = REPO_ROOT / "npu/arch/examples/minimal_terminal_direct_output.yml"
+ARCH_TERMINAL_VECOP_DIRECT_OUTPUT_PATH = REPO_ROOT / "npu/arch/examples/minimal_terminal_vecop_direct_output.yml"
 
 
 def load_script_module(name: str, relative_path: str):
@@ -98,6 +99,27 @@ class MapperSplitRegressionTest(unittest.TestCase):
                 dtype=self.onnx_lite.TENSOR_INT8,
                 add_cast=add_cast,
                 add_label_output=add_label_output,
+            )
+        )
+
+    def _write_terminal_relu_onnx(
+        self,
+        out_path: Path,
+        *,
+        name: str,
+        b: int,
+        input_shape: list[int],
+        add_flatten: bool = False,
+        add_cast: bool = False,
+    ) -> None:
+        out_path.write_bytes(
+            self.onnx_lite.build_terminal_relu_model_bytes(
+                name=name,
+                b=b,
+                input_shape=input_shape,
+                dtype=self.onnx_lite.TENSOR_INT8,
+                add_flatten=add_flatten,
+                add_cast=add_cast,
             )
         )
 
@@ -569,6 +591,70 @@ class MapperSplitRegressionTest(unittest.TestCase):
             dma_y_ops = [op for op in schedule["ops"] if str(op.get("id", "")).startswith("dma_y")]
             self.assertEqual([], dma_y_ops)
             self.assertEqual("gemm1", schedule["events"][0]["signal_on"])
+
+    def test_terminal_vecop_relu_lowers_without_direct_output(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            onnx_path = tmp / "terminal_vec_relu.onnx"
+            sched_path = tmp / "terminal_vec_relu.yml"
+            bin_path = tmp / "terminal_vec_relu.bin"
+
+            self._write_terminal_relu_onnx(
+                onnx_path,
+                name="terminal_vec_relu",
+                b=128,
+                input_shape=[64],
+            )
+            schedule = self._run_lowering(onnx_path, sched_path)
+            self._validate_and_emit_bin(sched_path, bin_path)
+
+            notes = schedule.get("mapper_notes", {})
+            self.assertEqual("terminal_vec_op", notes.get("graph_kind"))
+            self.assertEqual("relu", notes.get("terminal_vec_op"))
+            self.assertFalse(bool(notes.get("terminal_vecop_direct_output")))
+
+            vec_ops = [op for op in schedule["ops"] if op.get("type") == "vec_op"]
+            dma_y_ops = [op for op in schedule["ops"] if str(op.get("id", "")).startswith("dma_y")]
+            self.assertEqual(1, len(vec_ops))
+            self.assertEqual("relu", vec_ops[0].get("op"))
+            self.assertEqual("ACT_B_SRAM", vec_ops[0].get("dst"))
+            self.assertEqual(1, len(dma_y_ops))
+            self.assertEqual("ACT_B_SRAM", dma_y_ops[0].get("src"))
+            self.assertEqual("Y_DRAM", dma_y_ops[0].get("dst"))
+            self.assertEqual("dma_y", schedule["events"][0]["signal_on"])
+
+    def test_terminal_vecop_relu_direct_output_when_arch_requests_it(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            onnx_path = tmp / "terminal_vec_relu_direct.onnx"
+            sched_path = tmp / "terminal_vec_relu_direct.yml"
+            bin_path = tmp / "terminal_vec_relu_direct.bin"
+
+            self._write_terminal_relu_onnx(
+                onnx_path,
+                name="terminal_vec_relu_direct",
+                b=128,
+                input_shape=[2, 4, 8],
+                add_flatten=True,
+            )
+            schedule = self._run_lowering(
+                onnx_path,
+                sched_path,
+                arch_path=ARCH_TERMINAL_VECOP_DIRECT_OUTPUT_PATH,
+            )
+            self._validate_and_emit_bin(sched_path, bin_path)
+
+            notes = schedule.get("mapper_notes", {})
+            self.assertEqual("terminal_vec_op", notes.get("graph_kind"))
+            self.assertTrue(bool(notes.get("input_flattened")))
+            self.assertTrue(bool(notes.get("terminal_vecop_direct_output")))
+
+            vec_ops = [op for op in schedule["ops"] if op.get("type") == "vec_op"]
+            dma_y_ops = [op for op in schedule["ops"] if str(op.get("id", "")).startswith("dma_y")]
+            self.assertEqual(1, len(vec_ops))
+            self.assertEqual("Y_DRAM", vec_ops[0].get("dst"))
+            self.assertEqual([], dma_y_ops)
+            self.assertEqual("vec1", schedule["events"][0]["signal_on"])
 
 
 if __name__ == "__main__":

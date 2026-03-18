@@ -122,6 +122,18 @@ def _direct_terminal_output_enabled(arch: dict) -> bool:
     return bool(constraints.get("direct_terminal_output", False))
 
 
+def _direct_terminal_vecop_output_enabled(arch: dict) -> bool:
+    if not isinstance(arch, dict):
+        return False
+    mapping = arch.get("mapping")
+    if not isinstance(mapping, dict):
+        return False
+    constraints = mapping.get("constraints")
+    if not isinstance(constraints, dict):
+        return False
+    return bool(constraints.get("direct_terminal_vecop_output", False))
+
+
 def _choose_stage_row_chunks(
     *,
     batch: int,
@@ -167,6 +179,16 @@ class _SupportedLinearGraph:
     input_cast: bool
     layers: List[_LinearLayer]
     terminal_softmax: bool
+    terminal_output_name: str
+    ignored_graph_outputs: List[str]
+
+
+@dataclass
+class _SupportedTerminalVecOpGraph:
+    input_name: str
+    flatten_input: bool
+    input_cast: bool
+    vec_op: str
     terminal_output_name: str
     ignored_graph_outputs: List[str]
 
@@ -399,6 +421,80 @@ def _infer_sequential_mlp(
         input_cast=input_cast,
         layers=layers,
         terminal_softmax=terminal_softmax,
+        terminal_output_name=terminal_output_name,
+        ignored_graph_outputs=sorted(name for name in graph_outputs if name != terminal_output_name),
+    )
+
+
+def _infer_terminal_vecop_graph(
+    g: OnnxGraph,
+    *,
+    batch_override: Optional[int],
+) -> _SupportedTerminalVecOpGraph:
+    if not g.inputs:
+        raise ValueError("ONNX graph has no inputs")
+    x_name = next(iter(g.inputs.keys()))
+    input_shape = g.inputs.get(x_name, [])
+    consumers = _consumers_by_input(g)
+
+    flatten_input = False
+    input_cast = False
+    current_name = x_name
+    if not input_shape:
+        raise ValueError(f"missing input shape for {x_name!r}")
+    while True:
+        prelude_consumers = consumers.get(current_name, [])
+        flatten_nodes = [n for n in prelude_consumers if n.op_type == "Flatten"]
+        if not flatten_input and flatten_nodes:
+            if len(flatten_nodes) != 1 or len(prelude_consumers) != 1:
+                raise ValueError("expected a single Flatten consumer on the graph input path")
+            flatten_node = flatten_nodes[0]
+            if not flatten_node.outputs:
+                raise ValueError("Flatten node missing outputs")
+            flatten_input = True
+            current_name = flatten_node.outputs[0]
+            continue
+
+        cast_nodes = [n for n in prelude_consumers if n.op_type == "Cast"]
+        if not input_cast and cast_nodes:
+            if len(cast_nodes) != 1 or len(prelude_consumers) != 1:
+                raise ValueError("expected a single Cast consumer on the graph input path")
+            cast_node = cast_nodes[0]
+            if not cast_node.outputs:
+                raise ValueError("Cast node missing outputs")
+            input_cast = True
+            current_name = cast_node.outputs[0]
+            continue
+        break
+
+    _input_batch_and_in_dim(
+        x_name,
+        input_shape,
+        flatten_input=flatten_input,
+        batch_override=batch_override,
+    )
+    tail_consumers = consumers.get(current_name, [])
+    relu_nodes = [n for n in tail_consumers if n.op_type == "Relu"]
+    if len(relu_nodes) != 1 or len(tail_consumers) != 1:
+        raise ValueError(
+            f"expected a single terminal Relu consumer on {current_name!r}, "
+            f"got {[n.op_type for n in tail_consumers]}"
+        )
+    relu_node = relu_nodes[0]
+    if not relu_node.outputs:
+        raise ValueError("Relu node missing outputs")
+    terminal_output_name = relu_node.outputs[0]
+    graph_outputs = set(g.outputs.keys())
+    if terminal_output_name not in graph_outputs:
+        raise ValueError(
+            f"supported terminal vec-op must terminate at a graph output, got {terminal_output_name!r}"
+        )
+
+    return _SupportedTerminalVecOpGraph(
+        input_name=x_name,
+        flatten_input=flatten_input,
+        input_cast=input_cast,
+        vec_op="relu",
         terminal_output_name=terminal_output_name,
         ignored_graph_outputs=sorted(name for name in graph_outputs if name != terminal_output_name),
     )
@@ -890,16 +986,27 @@ def build_schedule_for_supported_graph(
             batch_override=batch_override,
         )
     except Exception:
-        return build_schedule_for_mlp(
-            g=g,
-            arch_path=arch_path,
-            activation_sram_name=activation_sram_name,
-            weight_sram_name=weight_sram_name,
-            dram_base=dram_base,
-            dram_size=dram_size,
-            dtype_bytes=dtype_bytes,
-            gemm_num_modules=gemm_num_modules,
-        )
+        try:
+            return build_schedule_for_terminal_vecop_graph(
+                g=g,
+                arch_path=arch_path,
+                activation_sram_name=activation_sram_name,
+                dram_base=dram_base,
+                dram_size=dram_size,
+                dtype_bytes=dtype_bytes,
+                batch_override=batch_override,
+            )
+        except Exception:
+            return build_schedule_for_mlp(
+                g=g,
+                arch_path=arch_path,
+                activation_sram_name=activation_sram_name,
+                weight_sram_name=weight_sram_name,
+                dram_base=dram_base,
+                dram_size=dram_size,
+                dtype_bytes=dtype_bytes,
+                gemm_num_modules=gemm_num_modules,
+            )
 
     x_name = supported.input_name
     flatten_input = supported.flatten_input
@@ -1463,6 +1570,101 @@ def build_schedule_for_supported_graph(
             }
         )
 
+    return {
+        "version": 0.1,
+        "arch": arch_path,
+        "mapper_notes": mapper_notes,
+        "buffers": buffers,
+        "ops": ops,
+        "deps": deps,
+        "events": [{"id": 1000, "signal_on": last_dma_y_id, "irq": True}],
+    }
+
+
+def build_schedule_for_terminal_vecop_graph(
+    *,
+    g: OnnxGraph,
+    arch_path: str,
+    activation_sram_name: str = "activation_sram",
+    dram_base: int = 0x0000003000000000,
+    dram_size: int = 1 << 28,
+    dtype_bytes: int = 1,
+    batch_override: Optional[int] = None,
+) -> Dict:
+    supported = _infer_terminal_vecop_graph(
+        g,
+        batch_override=batch_override,
+    )
+    x_name = supported.input_name
+    batch, in_dim = _input_batch_and_in_dim(
+        x_name,
+        g.inputs.get(x_name, []),
+        flatten_input=supported.flatten_input,
+        batch_override=batch_override,
+    )
+
+    arch = yaml.safe_load(Path(arch_path).read_text(encoding="utf-8"))
+    direct_terminal_vecop_output = _direct_terminal_vecop_output_enabled(arch)
+    act_inst = _find_sram_instance(arch, activation_sram_name)
+    act_base = int(act_inst["base_addr"])
+    act_size = _sram_instance_size_bytes(act_inst)
+    act_align = int(act_inst.get("alignment_bytes", 64))
+
+    def bytes_2d(m: int, n: int) -> int:
+        return int(m) * int(n) * int(dtype_bytes)
+
+    input_bytes = bytes_2d(batch, in_dim)
+    dram = _Region.create("dram", dram_base, dram_size, 32)
+    act = _Region.create(activation_sram_name, act_base, act_size, act_align)
+
+    x_dram = dram.alloc(input_bytes)
+    y_dram = dram.alloc(input_bytes)
+    act_a_sram = act.alloc(input_bytes)
+    act_b_sram = act.alloc(input_bytes)
+
+    buffers = [
+        {"id": "X_DRAM", "addr": hex(x_dram), "bytes": input_bytes},
+        {"id": "Y_DRAM", "addr": hex(y_dram), "bytes": input_bytes},
+        {"id": "ACT_A_SRAM", "addr": hex(act_a_sram), "bytes": input_bytes},
+        {"id": "ACT_B_SRAM", "addr": hex(act_b_sram), "bytes": input_bytes},
+    ]
+    ops = [
+        {"id": "dma_x", "type": "dma_copy", "src": "X_DRAM", "dst": "ACT_A_SRAM", "bytes": input_bytes},
+        {
+            "id": "vec1",
+            "type": "vec_op",
+            "src": "ACT_A_SRAM",
+            "dst": "Y_DRAM" if direct_terminal_vecop_output else "ACT_B_SRAM",
+            "bytes": input_bytes,
+            "op": supported.vec_op,
+            "dtype": "int8",
+        },
+    ]
+    deps: List[Dict[str, object]] = [{"wait": ["dma_x"], "then": "vec1"}]
+    last_dma_y_id = "vec1"
+    if not direct_terminal_vecop_output:
+        ops.append(
+            {
+                "id": "dma_y",
+                "type": "dma_copy",
+                "src": "ACT_B_SRAM",
+                "dst": "Y_DRAM",
+                "bytes": input_bytes,
+            }
+        )
+        deps.append({"wait": ["vec1"], "then": "dma_y"})
+        last_dma_y_id = "dma_y"
+
+    mapper_notes = {
+        "graph_kind": "terminal_vec_op",
+        "terminal_vec_op": supported.vec_op,
+        "input_flattened": supported.flatten_input,
+        "input_cast_ignored": supported.input_cast,
+        "effective_batch": int(batch),
+        "terminal_vecop_direct_output": bool(direct_terminal_vecop_output),
+        "graph_output_name": supported.terminal_output_name,
+        "ignored_graph_outputs": list(supported.ignored_graph_outputs),
+    }
     return {
         "version": 0.1,
         "arch": arch_path,

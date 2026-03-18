@@ -5,9 +5,12 @@
 - `title`: `Terminal vec-op direct output`
 
 ## Scope
-- proposal workspace bootstrapped only
-- no mapper implementation yet
-- no remote evaluation requested yet
+- bounded first-pass family defined as standalone terminal `Relu`
+- mapper now lowers standalone terminal `Relu` graphs to `vec_op`
+- direct terminal vec-op output is locally supported behind a dedicated arch
+  constraint, but remote work stays `measurement_only` first
+- first measurement suite and campaign are generated locally; no remote result
+  yet
 
 ## Files Changed
 - `docs/development_items/items/item_l2_mapper_terminal_vecop_direct_output_v1.md`
@@ -16,22 +19,39 @@
 - `docs/developer_loop/prop_l2_mapper_terminal_vecop_direct_output_v1/evaluation_gate.md`
 - `docs/developer_loop/prop_l2_mapper_terminal_vecop_direct_output_v1/implementation_summary.md`
 - `docs/developer_loop/prop_l2_mapper_terminal_vecop_direct_output_v1/evaluation_requests.json`
+- `npu/mapper/onnx_lite.py`
+- `npu/mapper/onnx_to_schedule.py`
+- `npu/mapper/examples/gen_terminal_vecop_suite_lite.py`
+- `npu/arch/examples/minimal_terminal_vecop_direct_output.yml`
+- `tests/test_mapper_split.py`
+- `runs/models/onnx_terminal_vecop_suite_v1/README.md`
+- `runs/models/onnx_terminal_vecop_suite_v1/manifest.json`
+- `runs/models/onnx_terminal_vecop_suite_v1/relu_vec_b128_f64.onnx`
+- `runs/models/onnx_terminal_vecop_suite_v1/relu_vec_b256_f256.onnx`
+- `runs/models/onnx_terminal_vecop_suite_v1/relu_vec_flatten_b128_2x4x8.onnx`
+- `runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_submit_nm1_v1/campaign.json`
 
 ## Local Validation
-- none yet
+- `python3 npu/mapper/examples/gen_terminal_vecop_suite_lite.py --out-dir runs/models/onnx_terminal_vecop_suite_v1`
+- `python3 tests/test_mapper_split.py`
+- `python3 npu/eval/validate.py --campaign runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_submit_nm1_v1/campaign.json --check_paths`
+- `python3 -m py_compile npu/mapper/onnx_lite.py npu/mapper/onnx_to_schedule.py npu/mapper/examples/gen_terminal_vecop_suite_lite.py`
 - result:
-  - pending first bounded family definition and local legality checks
+  - local lowering is legal for standalone terminal `Relu`
+  - local direct-output emission is legal behind the dedicated vec-op arch flag
+  - first measurement-only campaign is path-valid
 
 ## Evaluation Request
-- none yet
+- not queued yet
 - next local step:
-  - define the bounded terminal vec-op family
-  - add local legality tests
-  - generate the first `measurement_only` campaign before queueing any remote
-    work
+  - queue the first `measurement_only` item for the standalone terminal `Relu`
+    suite
+  - require committed schedule and perf evidence for all suite models because
+    the suite is small and model identity matters to the proof
 
 ## Risks
-- the chosen vec-op family may require more schedule IR support than expected
-- the smallest useful suite may still need a quality gate before remote spend
-- it is still possible that a different mapper or lowering bottleneck should be
-  prioritized first once the family is defined
+- the bounded `Relu` family may be too narrow to justify a later broader claim
+- direct-output for standalone vec-op tails may still expose a separate perf
+  or review-evidence issue once the paired stage starts
+- the next bottleneck after measurement may be export/review structure rather
+  than mapper legality
