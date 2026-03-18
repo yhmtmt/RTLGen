@@ -1,9 +1,14 @@
 {
   "proposal_id": "prop_l2_mapper_memory_aware_split_v1",
   "candidate_id": "cand_l2_mapper_memory_aware_split_v1_r1",
-  "decision": "iterate",
-  "reason": "Pending implementation and evaluation.",
-  "evidence_refs": [],
-  "next_action": "Complete direction gate, implement the bounded mapper policy, and request the dedicated-softmax baseline rerun.",
+  "decision": "promote",
+  "reason": "Merged PR #44 validated the bounded mapper policy on the focused nm2 softmax-tail proof, with material latency and energy improvement versus the prior old-mapper baseline and committed emitted schedule evidence.",
+  "evidence_refs": [
+    "control_plane/shadow_exports/l2_decisions/l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2.json",
+    "control_plane/shadow_exports/review/l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2/review_package.json",
+    "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm2_v1__l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2/report.md",
+    "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm2_v1__l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2/artifacts/mapper/fp16_nm2_softmax_r4/logistic_regression/schedule.yml"
+  ],
+  "next_action": "Adopt the bounded mapper policy for future focused multi-module softmax-tail evaluations and open a separate broader reintegration evaluation if cross-architecture ranking needs to be revisited.",
   "requires_human_approval": true
 }
