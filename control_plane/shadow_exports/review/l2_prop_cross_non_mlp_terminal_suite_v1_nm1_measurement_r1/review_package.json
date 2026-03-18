@@ -1,0 +1,183 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-03-18T11:39:57.524705Z",
+  "item_id": "l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1",
+  "run_key": "l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1_run_cf78984dc7672a8b",
+  "layer": "layer2",
+  "flow": "openroad",
+  "task_type": "l2_campaign",
+  "source_commit": "69a4a7996f232b8dd9d81e35935da1d21fdb26d1",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1/evaluated.json",
+    "result": {
+      "branch": "eval/l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1/s20260318t113957z",
+      "completed_utc": "2026-03-18T11:39:18.270022Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "3737d43ba95e",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260318t113957z][host:3737d43ba95e][item:l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1]",
+      "metrics_rows": [
+        {
+          "tag": "npu_fp16_nm1_softcmp33_flat_nomacro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "c20283de",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/work/c20283de/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_softcmp33_flat_nomacro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "a53adbdd",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/work/a53adbdd/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_softcmp33_flat_nomacro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "b9f5f7d7",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/work/b9f5f7d7/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_softcmp33_hier_macro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "bffea8c7",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/work/bffea8c7/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_softcmp33_hier_macro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "e024ec35",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/work/e024ec35/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_softcmp33_hier_macro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "2a79e834",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/work/2a79e834/result.json"
+        }
+      ],
+      "queue_item_id": "l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1",
+      "session_id": "s20260318t113957z",
+      "status": "ok",
+      "summary": "5/5 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "decision_proposal",
+    "path": "control_plane/shadow_exports/l2_decisions/l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1.json",
+    "storage_mode": "repo",
+    "sha256": "17a724365945881174e9cf13e5014e5585a76c93b0a7a4bfd501166494f3d727",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-03-18T11:39:57.480079Z",
+      "item_id": "l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1",
+      "run_key": "l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1_run_cf78984dc7672a8b",
+      "layer": "layer2",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l2_campaign",
+      "source_commit": "69a4a7996f232b8dd9d81e35935da1d21fdb26d1",
+      "objective": "corrected_nonfused_reference",
+      "input_manifest": {
+        "sweeps": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/sweep_compare_softmax_33.json"
+        ],
+        "configs": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/config_nm1_softmax.json"
+        ],
+        "design_dirs": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp"
+        ],
+        "macro_manifests": [
+          "runs/designs/npu_macros/npu_fp16_nm1_softmax_bundle_ng45/macro_manifest.json"
+        ],
+        "generated_campaign": {
+          "path": "runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_submit_nm1_v1/campaign__l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1.json",
+          "outputs": {
+            "report_md": "runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_submit_nm1_v1__l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1/report.md",
+            "results_csv": "runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_submit_nm1_v1__l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1/results.csv",
+            "campaign_dir": "runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_submit_nm1_v1__l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1"
+          },
+          "base_campaign_path": "runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_submit_nm1_v1/campaign.json"
+        },
+        "candidate_manifests": [
+          "runs/candidates/nangate45/module_candidates.json"
+        ]
+      },
+      "recommendation": {
+        "arch_id": "fp16_nm1_softmax_r4",
+        "macro_mode": "flat_nomacro",
+        "objective_rank": 1,
+        "objective_score": "0.0",
+        "latency_ms_mean": 0.004476999999999999,
+        "energy_mj_mean": 8.26400476e-07,
+        "critical_path_ns_mean": 5.690256573668907,
+        "die_area_um2_mean": 2250000.0,
+        "total_power_mw_mean": 0.184588,
+        "flow_elapsed_s_mean": 1318.74
+      },
+      "objective_profiles": [],
+      "evaluation_record": {
+        "proposal_id": "prop_cross_non_mlp_terminal_suite_v1",
+        "title": "Terminal-sensitive softmax suite",
+        "primary_question": "Does fused terminal output improve a corrected-contract non-fused nm1 reference across a small terminal-sensitive softmax-tail model slice?",
+        "evaluation_mode": "measurement_only",
+        "comparison_role": "measurement_only",
+        "expected_direction": "unknown",
+        "expected_reason": "Record corrected-contract non-fused nm1 reference metrics for the terminal-sensitive softmax-tail suite before any fused comparison.",
+        "summary": "This item records metrics for the requested architecture point and does not emit a proposal judgment.",
+        "expectation_status": "not_applicable"
+      },
+      "proposal_assessment": null,
+      "source_refs": {
+        "best_point_json": "runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_submit_nm1_v1__l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1/best_point.json",
+        "summary_csv": "runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_submit_nm1_v1__l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1/summary.csv",
+        "results_csv": "runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_submit_nm1_v1__l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1/results.csv",
+        "report_md": "runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_submit_nm1_v1__l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1/report.md",
+        "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_submit_nm1_v1__l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1/artifacts/mapper/fp16_nm1_softmax_r4/softmax_cls_b128_i8_o16/schedule.yml",
+        "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_submit_nm1_v1__l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1/artifacts/mapper/fp16_nm1_softmax_r4/softmax_cls_b128_i8_o16/descriptors.bin",
+        "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_onnx_terminal_softmax_suite_submit_nm1_v1__l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1/artifacts/perf/fp16_nm1_softmax_r4/softmax_cls_b128_i8_o16/trace.json"
+      }
+    }
+  },
+  "developer_loop": {
+    "comparison": {
+      "role": "measurement_only",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "measurement_only",
+      "expected_reason": "Record corrected-contract non-fused nm1 reference metrics for the terminal-sensitive softmax-tail suite before any fused comparison.",
+      "expected_direction": "unknown"
+    },
+    "proposal_id": "prop_cross_non_mlp_terminal_suite_v1",
+    "proposal_path": "docs/developer_loop/prop_cross_non_mlp_terminal_suite_v1"
+  },
+  "pr_payload": {
+    "branch": "eval/l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1/s20260318t113957z",
+    "title": "eval: run terminal-sensitive softmax suite corrected non-fused nm1 measurement",
+    "body_fields": {
+      "host": "3737d43ba95e",
+      "session_id": "s20260318t113957z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1"
+    },
+    "body_md": "## Summary\n- item_id: `l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1`\n- run_key: `l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1_run_cf78984dc7672a8b`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `5/5 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1/evaluated.json`\n- metrics_rows_count: `6`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_prop_cross_non_mlp_terminal_suite_v1_nm1_measurement_r1.json`\n\n## Developer Context\n- proposal_id: `prop_cross_non_mlp_terminal_suite_v1`\n- proposal_path: `docs/developer_loop/prop_cross_non_mlp_terminal_suite_v1`\n- reviewer_first_read: `docs/developer_loop/prop_cross_non_mlp_terminal_suite_v1` plus `docs/developer_agent_review.md`\n\n## Evaluation Mode\n- evaluation_mode: `measurement_only`\n- comparison_role: `measurement_only`\n- expected_direction: `unknown`\n- expected_reason: `Record corrected-contract non-fused nm1 reference metrics for the terminal-sensitive softmax-tail suite before any fused comparison.`\n- expectation_status: `not_applicable`\n- evaluation_summary: `This item records metrics for the requested architecture point and does not emit a proposal judgment.`\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
