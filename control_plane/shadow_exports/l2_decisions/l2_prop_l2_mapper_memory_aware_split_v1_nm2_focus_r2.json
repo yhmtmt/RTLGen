@@ -1,6 +1,6 @@
 {
   "version": 0.1,
-  "generated_utc": "2026-03-18T02:25:07.046635Z",
+  "generated_utc": "2026-03-18T03:54:11.786571Z",
   "item_id": "l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2",
   "run_key": "l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2_run_222d50984d386595",
   "layer": "layer2",
@@ -213,6 +213,9 @@
     "summary_csv": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm2_v1__l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2/summary.csv",
     "results_csv": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm2_v1__l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2/results.csv",
     "report_md": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm2_v1__l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2/report.md",
+    "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm2_v1__l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2/artifacts/mapper/fp16_nm2_softmax_r4/logistic_regression/schedule.yml",
+    "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm2_v1__l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2/artifacts/mapper/fp16_nm2_softmax_r4/logistic_regression/descriptors.bin",
+    "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm2_v1__l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2/artifacts/perf/fp16_nm2_softmax_r4/logistic_regression/trace.json",
     "baseline_summary_csv": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_v1__l2_prop_l2_softmax_tile_fusion_v1_20260316051355/summary.csv",
     "baseline_report_md": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_v1__l2_prop_l2_softmax_tile_fusion_v1_20260316051355/report.md"
   }

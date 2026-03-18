@@ -76,7 +76,7 @@
     "evaluator_id": "control_plane",
     "executor": "@control_plane",
     "host": "d7def79549f9",
-    "identity_block": "[role:evaluator][account:control_plane][session:s20260318t023610z][host:d7def79549f9][item:l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2]",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260318t120500z][host:d7def79549f9][item:l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2]",
     "metrics_rows": [
       {
         "tag": "npu_fp16_nm2_softcmp33_flat_nomacro_r1",
@@ -128,12 +128,12 @@
       }
     ],
     "queue_item_id": "l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2",
-    "session_id": "s20260318t023610z",
+    "session_id": "s20260318t120500z",
     "status": "ok",
     "summary": "5/5 commands succeeded"
   },
   "handoff": {
-    "branch": "eval/l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2/s20260318t023610z",
+    "branch": "eval/l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2/s20260318t120500z",
     "pr_title": "eval: run layer2 campaign npu_e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm2_v1 on nangate45",
     "checklist": [
       "Commit lightweight campaign artifacts only",
@@ -143,7 +143,7 @@
     ],
     "pr_body_fields": {
       "host": "d7def79549f9",
-      "session_id": "s20260318t023610z",
+      "session_id": "s20260318t120500z",
       "evaluator_id": "control_plane",
       "queue_item_id": "l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2"
     },
