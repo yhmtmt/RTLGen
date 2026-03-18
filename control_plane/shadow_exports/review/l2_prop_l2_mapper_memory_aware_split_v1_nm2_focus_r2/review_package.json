@@ -1,0 +1,324 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-03-18T03:55:25.113151Z",
+  "item_id": "l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2",
+  "run_key": "l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2_run_222d50984d386595",
+  "layer": "layer2",
+  "flow": "openroad",
+  "task_type": "l2_campaign",
+  "source_commit": "7b63d4207d6353d773a3c322b87b7710d8e88f3d",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2/evaluated.json",
+    "result": {
+      "branch": "eval/l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2/s20260318t120500z",
+      "completed_utc": "2026-03-18T02:23:36.529659Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "d7def79549f9",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260318t120500z][host:d7def79549f9][item:l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2]",
+      "metrics_rows": [
+        {
+          "tag": "npu_fp16_nm2_softcmp33_flat_nomacro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "265c7f95",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/work/265c7f95/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_softcmp33_flat_nomacro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "d30ccc92",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/work/d30ccc92/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_softcmp33_flat_nomacro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "0a363651",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/work/0a363651/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_softcmp33_hier_macro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "63124ec8",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/work/63124ec8/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_softcmp33_hier_macro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "9d565569",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/work/9d565569/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_softcmp33_hier_macro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "cebcbcaf",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/work/cebcbcaf/result.json"
+        }
+      ],
+      "queue_item_id": "l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2",
+      "session_id": "s20260318t120500z",
+      "status": "ok",
+      "summary": "5/5 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "decision_proposal",
+    "path": "control_plane/shadow_exports/l2_decisions/l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2.json",
+    "storage_mode": "repo",
+    "sha256": "7237a42dd9cb80f17ab0985e4fdf56c5479b7a59d4b84ad091097f89b3d86f32",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-03-18T03:54:11.786571Z",
+      "item_id": "l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2",
+      "run_key": "l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2_run_222d50984d386595",
+      "layer": "layer2",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l2_campaign",
+      "source_commit": "7b63d4207d6353d773a3c322b87b7710d8e88f3d",
+      "objective": "Focused Layer2 benchmark for the memory-aware mapper update on the fixed fp16_nm2_softmax_r4 architecture point.",
+      "input_manifest": {
+        "sweeps": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/sweep_compare_softmax_33.json"
+        ],
+        "configs": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/config_nm2_softmax.json"
+        ],
+        "design_dirs": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp"
+        ],
+        "macro_manifests": [
+          "runs/designs/npu_macros/npu_fp16_nm2_softmax_bundle_ng45/macro_manifest.json"
+        ],
+        "generated_campaign": {
+          "path": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm2_v1/campaign__l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2.json",
+          "outputs": {
+            "report_md": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm2_v1__l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2/report.md",
+            "results_csv": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm2_v1__l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2/results.csv",
+            "campaign_dir": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm2_v1__l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2"
+          },
+          "base_campaign_path": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm2_v1/campaign.json"
+        },
+        "candidate_manifests": [
+          "runs/candidates/nangate45/module_candidates.json"
+        ]
+      },
+      "recommendation": {
+        "arch_id": "fp16_nm2_softmax_r4",
+        "macro_mode": "flat_nomacro",
+        "objective_rank": 1,
+        "objective_score": "0.0",
+        "latency_ms_mean": 0.000621,
+        "energy_mj_mean": 1.17414954e-07,
+        "critical_path_ns_mean": 5.476841177082707,
+        "die_area_um2_mean": 2250000.0,
+        "total_power_mw_mean": 0.189074,
+        "flow_elapsed_s_mean": 1194.5266666666666
+      },
+      "objective_profiles": [],
+      "proposal_assessment": {
+        "proposal_id": "prop_l2_mapper_memory_aware_split_v1",
+        "title": "Memory-aware split policy for multi-module softmax-tail mapping",
+        "kind": "mapper",
+        "primary_question": "Does the bounded mapper change materially improve nm2 on the existing softmaxcmp hardware?",
+        "outcome": "improved",
+        "summary": "Focused comparison improved latency and/or energy without regressing matched rows.",
+        "baseline_ref": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_v1__l2_prop_l2_softmax_tile_fusion_v1_20260316051355",
+        "matched_row_count": 4,
+        "matched_rows": [
+          {
+            "scope": "model",
+            "arch_id": "fp16_nm2_softmax_r4",
+            "macro_mode": "flat_nomacro",
+            "metrics": {
+              "latency_ms_mean": {
+                "baseline": 0.000928,
+                "candidate": 0.000621,
+                "delta": -0.000307
+              },
+              "energy_mj_mean": {
+                "baseline": 1.7546067199999999e-07,
+                "candidate": 1.17414954e-07,
+                "delta": -5.8045717999999985e-08
+              },
+              "critical_path_ns_mean": {
+                "baseline": 5.476841177082707,
+                "candidate": 5.476841177082707,
+                "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.189074,
+                "candidate": 0.189074,
+                "delta": 0.0
+              },
+              "flow_elapsed_s_mean": {
+                "baseline": 1194.5266666666666,
+                "candidate": 1194.5266666666666,
+                "delta": 0.0
+              },
+              "throughput_infer_per_s_mean": {
+                "baseline": 1077586.2068965517,
+                "candidate": 1610305.958132045,
+                "delta": 532719.7512354935
+              }
+            }
+          },
+          {
+            "scope": "model",
+            "arch_id": "fp16_nm2_softmax_r4",
+            "macro_mode": "hier_macro",
+            "metrics": {
+              "latency_ms_mean": {
+                "baseline": 0.000928,
+                "candidate": 0.000621,
+                "delta": -0.000307
+              },
+              "energy_mj_mean": {
+                "baseline": 1.8455878400000002e-07,
+                "candidate": 1.23503238e-07,
+                "delta": -6.105554600000001e-08
+              },
+              "critical_path_ns_mean": {
+                "baseline": 5.67814029549042,
+                "candidate": 5.67814029549042,
+                "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.198878,
+                "candidate": 0.198878,
+                "delta": 0.0
+              },
+              "flow_elapsed_s_mean": {
+                "baseline": 1233.9233333333334,
+                "candidate": 1233.9233333333334,
+                "delta": 0.0
+              },
+              "throughput_infer_per_s_mean": {
+                "baseline": 1077586.2068965517,
+                "candidate": 1610305.958132045,
+                "delta": 532719.7512354935
+              }
+            }
+          },
+          {
+            "scope": "aggregate",
+            "arch_id": "fp16_nm2_softmax_r4",
+            "macro_mode": "flat_nomacro",
+            "metrics": {
+              "latency_ms_mean": {
+                "baseline": 0.000928,
+                "candidate": 0.000621,
+                "delta": -0.000307
+              },
+              "energy_mj_mean": {
+                "baseline": 1.7546067199999999e-07,
+                "candidate": 1.17414954e-07,
+                "delta": -5.8045717999999985e-08
+              },
+              "critical_path_ns_mean": {
+                "baseline": 5.476841177082707,
+                "candidate": 5.476841177082707,
+                "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.189074,
+                "candidate": 0.189074,
+                "delta": 0.0
+              },
+              "flow_elapsed_s_mean": {
+                "baseline": 1194.5266666666666,
+                "candidate": 1194.5266666666666,
+                "delta": 0.0
+              },
+              "throughput_infer_per_s_mean": {
+                "baseline": 1077586.2068965517,
+                "candidate": 1610305.958132045,
+                "delta": 532719.7512354935
+              }
+            }
+          },
+          {
+            "scope": "aggregate",
+            "arch_id": "fp16_nm2_softmax_r4",
+            "macro_mode": "hier_macro",
+            "metrics": {
+              "latency_ms_mean": {
+                "baseline": 0.000928,
+                "candidate": 0.000621,
+                "delta": -0.000307
+              },
+              "energy_mj_mean": {
+                "baseline": 1.8455878400000002e-07,
+                "candidate": 1.23503238e-07,
+                "delta": -6.105554600000001e-08
+              },
+              "critical_path_ns_mean": {
+                "baseline": 5.67814029549042,
+                "candidate": 5.67814029549042,
+                "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.198878,
+                "candidate": 0.198878,
+                "delta": 0.0
+              },
+              "flow_elapsed_s_mean": {
+                "baseline": 1233.9233333333334,
+                "candidate": 1233.9233333333334,
+                "delta": 0.0
+              },
+              "throughput_infer_per_s_mean": {
+                "baseline": 1077586.2068965517,
+                "candidate": 1610305.958132045,
+                "delta": 532719.7512354935
+              }
+            }
+          }
+        ]
+      },
+      "source_refs": {
+        "best_point_json": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm2_v1__l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2/best_point.json",
+        "summary_csv": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm2_v1__l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2/summary.csv",
+        "results_csv": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm2_v1__l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2/results.csv",
+        "report_md": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm2_v1__l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2/report.md",
+        "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm2_v1__l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2/artifacts/mapper/fp16_nm2_softmax_r4/logistic_regression/schedule.yml",
+        "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm2_v1__l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2/artifacts/mapper/fp16_nm2_softmax_r4/logistic_regression/descriptors.bin",
+        "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm2_v1__l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2/artifacts/perf/fp16_nm2_softmax_r4/logistic_regression/trace.json",
+        "baseline_summary_csv": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_v1__l2_prop_l2_softmax_tile_fusion_v1_20260316051355/summary.csv",
+        "baseline_report_md": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_v1__l2_prop_l2_softmax_tile_fusion_v1_20260316051355/report.md"
+      }
+    }
+  },
+  "developer_loop": {
+    "proposal_id": "prop_l2_mapper_memory_aware_split_v1",
+    "proposal_path": "docs/developer_loop/prop_l2_mapper_memory_aware_split_v1"
+  },
+  "pr_payload": {
+    "branch": "eval/l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2/s20260318t120500z",
+    "title": "eval: run layer2 campaign npu_e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm2_v1 on nangate45",
+    "body_fields": {
+      "host": "d7def79549f9",
+      "session_id": "s20260318t120500z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2"
+    },
+    "body_md": "## Summary\n- item_id: `l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2`\n- run_key: `l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2_run_222d50984d386595`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `5/5 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2/evaluated.json`\n- metrics_rows_count: `6`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2.json`\n\n## Developer Context\n- proposal_id: `prop_l2_mapper_memory_aware_split_v1`\n- proposal_path: `docs/developer_loop/prop_l2_mapper_memory_aware_split_v1`\n- reviewer_first_read: `docs/developer_loop/prop_l2_mapper_memory_aware_split_v1` plus `docs/developer_agent_review.md`\n\n## Focused Comparison\n- primary_question: `Does the bounded mapper change materially improve nm2 on the existing softmaxcmp hardware?`\n- proposal_outcome: `improved`\n- comparison_summary: `Focused comparison improved latency and/or energy without regressing matched rows.`\n- baseline_ref: `runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_v1__l2_prop_l2_softmax_tile_fusion_v1_20260316051355`\n- latency_delta fp16_nm2_softmax_r4/flat_nomacro: `0.000928` -> `0.000621` ms\n- energy_delta fp16_nm2_softmax_r4/flat_nomacro: `1.7546067199999999e-07` -> `1.17414954e-07` mJ\n- latency_delta fp16_nm2_softmax_r4/hier_macro: `0.000928` -> `0.000621` ms\n- energy_delta fp16_nm2_softmax_r4/hier_macro: `1.8455878400000002e-07` -> `1.23503238e-07` mJ\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
