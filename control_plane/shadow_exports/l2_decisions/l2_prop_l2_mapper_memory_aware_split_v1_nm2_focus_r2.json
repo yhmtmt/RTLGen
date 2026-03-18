@@ -1,0 +1,222 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-03-18T04:30:14.328805Z",
+  "item_id": "l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2",
+  "run_key": "l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2_run_1814edb5310cb2e8",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "68857fd1c017c9025d20c12607e29e8733cfd580",
+  "objective": "Focused Layer2 benchmark for the memory-aware mapper update on the fixed fp16_nm2_softmax_r4 architecture point.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/sweep_compare_softmax_33.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp/config_nm2_softmax.json"
+    ],
+    "design_dirs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_softmaxcmp"
+    ],
+    "macro_manifests": [
+      "runs/designs/npu_macros/npu_fp16_nm2_softmax_bundle_ng45/macro_manifest.json"
+    ],
+    "generated_campaign": {
+      "path": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm2_v1/campaign__l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2.json",
+      "outputs": {
+        "report_md": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm2_v1__l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2/report.md",
+        "results_csv": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm2_v1__l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2/results.csv",
+        "campaign_dir": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm2_v1__l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2"
+      },
+      "base_campaign_path": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm2_v1/campaign.json"
+    },
+    "candidate_manifests": [
+      "runs/candidates/nangate45/module_candidates.json"
+    ]
+  },
+  "recommendation": {
+    "arch_id": "fp16_nm2_softmax_r4",
+    "macro_mode": "flat_nomacro",
+    "objective_rank": 1,
+    "objective_score": "0.0",
+    "latency_ms_mean": 0.000621,
+    "energy_mj_mean": 1.17414954e-07,
+    "critical_path_ns_mean": 5.476841177082707,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.189074,
+    "flow_elapsed_s_mean": 1194.5266666666666
+  },
+  "objective_profiles": [],
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_mapper_memory_aware_split_v1",
+    "title": "Memory-aware split policy for multi-module softmax-tail mapping",
+    "kind": "mapper",
+    "primary_question": "Does the bounded mapper change materially improve nm2 on the existing softmaxcmp hardware?",
+    "outcome": "improved",
+    "summary": "Focused comparison improved latency and/or energy without regressing matched rows.",
+    "baseline_ref": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_v1__l2_prop_l2_softmax_tile_fusion_v1_20260316051355",
+    "matched_row_count": 4,
+    "matched_rows": [
+      {
+        "scope": "model",
+        "arch_id": "fp16_nm2_softmax_r4",
+        "macro_mode": "flat_nomacro",
+        "metrics": {
+          "latency_ms_mean": {
+            "baseline": 0.000928,
+            "candidate": 0.000621,
+            "delta": -0.000307
+          },
+          "energy_mj_mean": {
+            "baseline": 1.7546067199999999e-07,
+            "candidate": 1.17414954e-07,
+            "delta": -5.8045717999999985e-08
+          },
+          "critical_path_ns_mean": {
+            "baseline": 5.476841177082707,
+            "candidate": 5.476841177082707,
+            "delta": 0.0
+          },
+          "total_power_mw_mean": {
+            "baseline": 0.189074,
+            "candidate": 0.189074,
+            "delta": 0.0
+          },
+          "flow_elapsed_s_mean": {
+            "baseline": 1194.5266666666666,
+            "candidate": 1194.5266666666666,
+            "delta": 0.0
+          },
+          "throughput_infer_per_s_mean": {
+            "baseline": 1077586.2068965517,
+            "candidate": 1610305.958132045,
+            "delta": 532719.7512354935
+          }
+        }
+      },
+      {
+        "scope": "model",
+        "arch_id": "fp16_nm2_softmax_r4",
+        "macro_mode": "hier_macro",
+        "metrics": {
+          "latency_ms_mean": {
+            "baseline": 0.000928,
+            "candidate": 0.000621,
+            "delta": -0.000307
+          },
+          "energy_mj_mean": {
+            "baseline": 1.8455878400000002e-07,
+            "candidate": 1.23503238e-07,
+            "delta": -6.105554600000001e-08
+          },
+          "critical_path_ns_mean": {
+            "baseline": 5.67814029549042,
+            "candidate": 5.67814029549042,
+            "delta": 0.0
+          },
+          "total_power_mw_mean": {
+            "baseline": 0.198878,
+            "candidate": 0.198878,
+            "delta": 0.0
+          },
+          "flow_elapsed_s_mean": {
+            "baseline": 1233.9233333333334,
+            "candidate": 1233.9233333333334,
+            "delta": 0.0
+          },
+          "throughput_infer_per_s_mean": {
+            "baseline": 1077586.2068965517,
+            "candidate": 1610305.958132045,
+            "delta": 532719.7512354935
+          }
+        }
+      },
+      {
+        "scope": "aggregate",
+        "arch_id": "fp16_nm2_softmax_r4",
+        "macro_mode": "flat_nomacro",
+        "metrics": {
+          "latency_ms_mean": {
+            "baseline": 0.000928,
+            "candidate": 0.000621,
+            "delta": -0.000307
+          },
+          "energy_mj_mean": {
+            "baseline": 1.7546067199999999e-07,
+            "candidate": 1.17414954e-07,
+            "delta": -5.8045717999999985e-08
+          },
+          "critical_path_ns_mean": {
+            "baseline": 5.476841177082707,
+            "candidate": 5.476841177082707,
+            "delta": 0.0
+          },
+          "total_power_mw_mean": {
+            "baseline": 0.189074,
+            "candidate": 0.189074,
+            "delta": 0.0
+          },
+          "flow_elapsed_s_mean": {
+            "baseline": 1194.5266666666666,
+            "candidate": 1194.5266666666666,
+            "delta": 0.0
+          },
+          "throughput_infer_per_s_mean": {
+            "baseline": 1077586.2068965517,
+            "candidate": 1610305.958132045,
+            "delta": 532719.7512354935
+          }
+        }
+      },
+      {
+        "scope": "aggregate",
+        "arch_id": "fp16_nm2_softmax_r4",
+        "macro_mode": "hier_macro",
+        "metrics": {
+          "latency_ms_mean": {
+            "baseline": 0.000928,
+            "candidate": 0.000621,
+            "delta": -0.000307
+          },
+          "energy_mj_mean": {
+            "baseline": 1.8455878400000002e-07,
+            "candidate": 1.23503238e-07,
+            "delta": -6.105554600000001e-08
+          },
+          "critical_path_ns_mean": {
+            "baseline": 5.67814029549042,
+            "candidate": 5.67814029549042,
+            "delta": 0.0
+          },
+          "total_power_mw_mean": {
+            "baseline": 0.198878,
+            "candidate": 0.198878,
+            "delta": 0.0
+          },
+          "flow_elapsed_s_mean": {
+            "baseline": 1233.9233333333334,
+            "candidate": 1233.9233333333334,
+            "delta": 0.0
+          },
+          "throughput_infer_per_s_mean": {
+            "baseline": 1077586.2068965517,
+            "candidate": 1610305.958132045,
+            "delta": 532719.7512354935
+          }
+        }
+      }
+    ]
+  },
+  "source_refs": {
+    "best_point_json": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm2_v1__l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2/best_point.json",
+    "summary_csv": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm2_v1__l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2/summary.csv",
+    "results_csv": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm2_v1__l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2/results.csv",
+    "report_md": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm2_v1__l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2/report.md",
+    "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm2_v1__l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2/artifacts/mapper/fp16_nm2_softmax_r4/logistic_regression/schedule.yml",
+    "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm2_v1__l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2/artifacts/mapper/fp16_nm2_softmax_r4/logistic_regression/descriptors.bin",
+    "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm2_v1__l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2/artifacts/perf/fp16_nm2_softmax_r4/logistic_regression/trace.json",
+    "baseline_summary_csv": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_v1__l2_prop_l2_softmax_tile_fusion_v1_20260316051355/summary.csv",
+    "baseline_report_md": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_v1__l2_prop_l2_softmax_tile_fusion_v1_20260316051355/report.md"
+  }
+}
