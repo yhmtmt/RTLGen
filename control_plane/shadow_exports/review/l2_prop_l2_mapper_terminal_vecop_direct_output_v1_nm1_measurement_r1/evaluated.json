@@ -1,0 +1,219 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json"
+      ],
+      "configs": [
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json"
+      ],
+      "design_dirs": [
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp"
+      ],
+      "macro_manifests": [
+        "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json"
+      ],
+      "generated_campaign": {
+        "path": "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_submit_nm1_v1/campaign__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_measurement_r1.json",
+        "outputs": {
+          "report_md": "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_measurement_r1/report.md",
+          "results_csv": "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_measurement_r1/results.csv",
+          "campaign_dir": "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_measurement_r1"
+        },
+        "base_campaign_path": "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_submit_nm1_v1/campaign.json"
+      },
+      "candidate_manifests": [
+        "runs/candidates/nangate45/module_candidates.json"
+      ]
+    },
+    "commands": [
+      {
+        "run": "python3 npu/eval/fetch_models.py --manifest runs/models/onnx_terminal_vecop_suite_v1/manifest.json",
+        "name": "fetch_models"
+      },
+      {
+        "run": "python3 npu/eval/validate.py --campaign runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_submit_nm1_v1/campaign__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_measurement_r1.json --check_paths",
+        "name": "validate_campaign"
+      },
+      {
+        "run": "python3 npu/eval/run_campaign.py --campaign runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_submit_nm1_v1/campaign__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_measurement_r1.json --run_physical --jobs 2 --batch_id l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_measurement_r1_r1",
+        "name": "run_campaign"
+      },
+      {
+        "run": "python3 npu/eval/report_campaign.py --campaign runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_submit_nm1_v1/campaign__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_measurement_r1.json",
+        "name": "report_campaign"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "terminal_vecop_reference_metrics",
+    "acceptance": [
+      "Populate metrics.csv for all referenced design dirs",
+      "Write campaign summary outputs under the campaign output directory",
+      "Keep result_path/work_result_json fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_submit_nm1_v1/campaign__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_measurement_r1.json",
+      "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_measurement_r1/results.csv",
+      "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_measurement_r1/report.md",
+      "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_measurement_r1/summary.csv",
+      "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_measurement_r1/pareto.csv",
+      "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_measurement_r1/best_point.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "Terminal vec-op nm1 measurement",
+  "result": {
+    "branch": "eval/l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_measurement_r1/s20260318t144018z",
+    "completed_utc": "2026-03-18T14:36:38.255865Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "d7def79549f9",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260318t144018z][host:d7def79549f9][item:l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_measurement_r1]",
+    "metrics_rows": [
+      {
+        "tag": "npu_fp16_nm1_cmp33_flat_nomacro",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "362e11ef",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/362e11ef/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_cmp33_hier_macro",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "6f738885",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/6f738885/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r1",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "3e84d92b",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3e84d92b/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r2",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "13a2c990",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/13a2c990/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r3",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "34eeb6e5",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/34eeb6e5/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r4",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "439adb1e",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/439adb1e/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r5",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "936b2a7b",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/936b2a7b/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_cmp33_hier_macro_r1",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "54a235ae",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/54a235ae/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_cmp33_hier_macro_r2",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "f190a078",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/f190a078/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_cmp33_hier_macro_r3",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "b874bef7",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/b874bef7/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_cmp33_hier_macro_r4",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "3a650f98",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3a650f98/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_cmp33_hier_macro_r5",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "3fa4f194",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3fa4f194/result.json"
+      }
+    ],
+    "queue_item_id": "l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_measurement_r1",
+    "session_id": "s20260318t144018z",
+    "status": "ok",
+    "summary": "5/5 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_measurement_r1/s20260318t144018z",
+    "pr_title": "eval: run terminal vec-op nm1 measurement",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "d7def79549f9",
+      "session_id": "s20260318t144018z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_measurement_r1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_measurement_r1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-03-18T14:36:33.797316Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "comparison": {
+      "role": "measurement_only",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "measurement_only",
+      "expected_reason": "Record plain nm1 non-fused reference metrics for the bounded standalone terminal Relu vec-op suite before any direct-output mapper change.",
+      "expected_direction": "unknown"
+    },
+    "proposal_id": "prop_l2_mapper_terminal_vecop_direct_output_v1",
+    "proposal_path": "docs/developer_loop/prop_l2_mapper_terminal_vecop_direct_output_v1"
+  }
+}
