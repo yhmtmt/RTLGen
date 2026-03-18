@@ -1,0 +1,222 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-03-18T09:23:06.378041Z",
+  "item_id": "l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r1",
+  "run_key": "l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r1_run_542e33af753dbe08",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "ac9fcf0ac3fc12018dfdc5cc9c069f8e7893b455",
+  "objective": "Refresh the accepted nm1 non-fused baseline under the corrected event contract.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/sweep_compare_softmax_33.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/config_nm1_softmax.json"
+    ],
+    "design_dirs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp"
+    ],
+    "macro_manifests": [
+      "runs/designs/npu_macros/npu_fp16_nm1_softmax_bundle_ng45/macro_manifest.json"
+    ],
+    "generated_campaign": {
+      "path": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_nm1_v2/campaign__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r1.json",
+      "outputs": {
+        "report_md": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r1/report.md",
+        "results_csv": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r1/results.csv",
+        "campaign_dir": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r1"
+      },
+      "base_campaign_path": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_nm1_v2/campaign.json"
+    },
+    "candidate_manifests": [
+      "runs/candidates/nangate45/module_candidates.json"
+    ]
+  },
+  "recommendation": {
+    "arch_id": "fp16_nm1_softmax_r4",
+    "macro_mode": "flat_nomacro",
+    "objective_rank": 1,
+    "objective_score": "0.0",
+    "latency_ms_mean": 0.00096775,
+    "energy_mj_mean": 1.78635037e-07,
+    "critical_path_ns_mean": 5.690256573668907,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.184588,
+    "flow_elapsed_s_mean": 1318.74
+  },
+  "objective_profiles": [],
+  "proposal_assessment": {
+    "proposal_id": "prop_cross_terminal_output_overlap_probe_v1",
+    "title": "Terminal-output overlap probe",
+    "kind": "architecture",
+    "primary_question": "Does fused terminal output show a measurable benefit once the comparison is restricted to a terminal-output-sensitive proof setup rather than the original tiny softmax-tail benchmark alone?",
+    "outcome": "regressed",
+    "summary": "Focused comparison regressed latency and/or energy versus the matched baseline rows.",
+    "baseline_ref": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_v1",
+    "matched_row_count": 4,
+    "matched_rows": [
+      {
+        "scope": "model",
+        "arch_id": "fp16_nm1_softmax_r4",
+        "macro_mode": "flat_nomacro",
+        "metrics": {
+          "latency_ms_mean": {
+            "baseline": 0.000621,
+            "candidate": 0.00096775,
+            "delta": 0.00034674999999999994
+          },
+          "energy_mj_mean": {
+            "baseline": 1.1462914800000001e-07,
+            "candidate": 1.78635037e-07,
+            "delta": 6.4005889e-08
+          },
+          "critical_path_ns_mean": {
+            "baseline": 5.690256573668907,
+            "candidate": 5.690256573668907,
+            "delta": 0.0
+          },
+          "total_power_mw_mean": {
+            "baseline": 0.184588,
+            "candidate": 0.184588,
+            "delta": 0.0
+          },
+          "flow_elapsed_s_mean": {
+            "baseline": 1318.74,
+            "candidate": 1318.74,
+            "delta": 0.0
+          },
+          "throughput_infer_per_s_mean": {
+            "baseline": 1610305.958132045,
+            "candidate": 1033324.7222939809,
+            "delta": -576981.2358380642
+          }
+        }
+      },
+      {
+        "scope": "model",
+        "arch_id": "fp16_nm1_softmax_r4",
+        "macro_mode": "hier_macro",
+        "metrics": {
+          "latency_ms_mean": {
+            "baseline": 0.000621,
+            "candidate": 0.00096775,
+            "delta": 0.00034674999999999994
+          },
+          "energy_mj_mean": {
+            "baseline": 1.2585186e-07,
+            "candidate": 1.96124215e-07,
+            "delta": 7.0272355e-08
+          },
+          "critical_path_ns_mean": {
+            "baseline": 5.601707400415646,
+            "candidate": 5.601707400415646,
+            "delta": 0.0
+          },
+          "total_power_mw_mean": {
+            "baseline": 0.20265999999999998,
+            "candidate": 0.20265999999999998,
+            "delta": 0.0
+          },
+          "flow_elapsed_s_mean": {
+            "baseline": 1146.61,
+            "candidate": 1146.61,
+            "delta": 0.0
+          },
+          "throughput_infer_per_s_mean": {
+            "baseline": 1610305.958132045,
+            "candidate": 1033324.7222939809,
+            "delta": -576981.2358380642
+          }
+        }
+      },
+      {
+        "scope": "aggregate",
+        "arch_id": "fp16_nm1_softmax_r4",
+        "macro_mode": "flat_nomacro",
+        "metrics": {
+          "latency_ms_mean": {
+            "baseline": 0.000621,
+            "candidate": 0.00096775,
+            "delta": 0.00034674999999999994
+          },
+          "energy_mj_mean": {
+            "baseline": 1.1462914800000001e-07,
+            "candidate": 1.78635037e-07,
+            "delta": 6.4005889e-08
+          },
+          "critical_path_ns_mean": {
+            "baseline": 5.690256573668907,
+            "candidate": 5.690256573668907,
+            "delta": 0.0
+          },
+          "total_power_mw_mean": {
+            "baseline": 0.184588,
+            "candidate": 0.184588,
+            "delta": 0.0
+          },
+          "flow_elapsed_s_mean": {
+            "baseline": 1318.74,
+            "candidate": 1318.74,
+            "delta": 0.0
+          },
+          "throughput_infer_per_s_mean": {
+            "baseline": 1610305.958132045,
+            "candidate": 1033324.7222939809,
+            "delta": -576981.2358380642
+          }
+        }
+      },
+      {
+        "scope": "aggregate",
+        "arch_id": "fp16_nm1_softmax_r4",
+        "macro_mode": "hier_macro",
+        "metrics": {
+          "latency_ms_mean": {
+            "baseline": 0.000621,
+            "candidate": 0.00096775,
+            "delta": 0.00034674999999999994
+          },
+          "energy_mj_mean": {
+            "baseline": 1.2585186e-07,
+            "candidate": 1.96124215e-07,
+            "delta": 7.0272355e-08
+          },
+          "critical_path_ns_mean": {
+            "baseline": 5.601707400415646,
+            "candidate": 5.601707400415646,
+            "delta": 0.0
+          },
+          "total_power_mw_mean": {
+            "baseline": 0.20265999999999998,
+            "candidate": 0.20265999999999998,
+            "delta": 0.0
+          },
+          "flow_elapsed_s_mean": {
+            "baseline": 1146.61,
+            "candidate": 1146.61,
+            "delta": 0.0
+          },
+          "throughput_infer_per_s_mean": {
+            "baseline": 1610305.958132045,
+            "candidate": 1033324.7222939809,
+            "delta": -576981.2358380642
+          }
+        }
+      }
+    ]
+  },
+  "source_refs": {
+    "best_point_json": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r1/best_point.json",
+    "summary_csv": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r1/summary.csv",
+    "results_csv": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r1/results.csv",
+    "report_md": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r1/report.md",
+    "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r1/artifacts/mapper/fp16_nm1_softmax_r4/logistic_regression/schedule.yml",
+    "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r1/artifacts/mapper/fp16_nm1_softmax_r4/logistic_regression/descriptors.bin",
+    "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r1/artifacts/perf/fp16_nm1_softmax_r4/logistic_regression/trace.json",
+    "baseline_summary_csv": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_v1/summary.csv",
+    "baseline_report_md": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_v1/report.md"
+  }
+}
