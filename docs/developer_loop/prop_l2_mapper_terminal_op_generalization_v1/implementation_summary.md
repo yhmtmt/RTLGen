@@ -11,7 +11,8 @@
   that suite
 - confirm the current mapper can lower terminal `Relu` graphs as non-fused
   baselines before any direct-output generalization is attempted
-- do not queue the paired-comparison stage yet
+- implement the bounded direct-output lowering for the same family and queue a
+  paired comparison against the merged measurement baseline
 
 ## Files Changed
 - `npu/mapper/onnx_lite.py`
@@ -21,6 +22,8 @@
 - `runs/models/onnx_terminal_direct_output_suite_v1/manifest.json`
 - `runs/models/onnx_terminal_direct_output_suite_v1/*.onnx`
 - `runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_submit_nm1_v1/campaign.json`
+- `runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_fused_nm1_v1/campaign.json`
+- `npu/arch/examples/minimal_terminal_direct_output.yml`
 - `docs/developer_loop/prop_l2_mapper_terminal_op_generalization_v1/proposal.json`
 - `docs/developer_loop/prop_l2_mapper_terminal_op_generalization_v1/design_brief.md`
 - `docs/developer_loop/prop_l2_mapper_terminal_op_generalization_v1/evaluation_gate.md`
@@ -30,12 +33,15 @@
 - `python3 npu/mapper/examples/gen_terminal_direct_output_suite_lite.py --out-dir runs/models/onnx_terminal_direct_output_suite_v1`
 - `python3 tests/test_mapper_split.py`
 - `python3 npu/eval/validate.py --campaign runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_submit_nm1_v1/campaign.json --check_paths`
+- `python3 npu/eval/validate.py --campaign runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_fused_nm1_v1/campaign.json --check_paths`
 - `python3 -m py_compile npu/mapper/onnx_lite.py npu/mapper/examples/gen_terminal_direct_output_suite_lite.py`
 - result:
   - pass
-  - the terminal `Relu` model is accepted by the current mapper as a legal
-    measurement baseline, but it still lowers to a non-fused final `dma_y1`
-    tail rather than a direct-output writeback
+  - terminal `Relu` is now preserved as a final GEMM epilogue instead of being
+    dropped on the last stage
+  - the bounded direct-output arch constraint now writes terminal linear and
+    terminal `Relu` outputs directly to `Y_DRAM`, removing the final `dma_y*`
+    tail on the candidate path
 
 ## Evaluation Request
 - first remote stage should use:
@@ -46,13 +52,18 @@
 - first-stage purpose:
   - record plain `fp16_nm1` non-fused reference metrics for terminal linear and
     terminal `Relu` before any mapper direct-output change is implemented
-- paired comparison is intentionally deferred until the direct-output lowering
-  rule for the selected family exists locally
+- second remote stage should use:
+  - campaign: `runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_fused_nm1_v1/campaign.json`
+  - mode: `paired_comparison`
+  - objective: `terminal_op_direct_output_vs_nonfused`
+  - baseline item: `l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_measurement_r1`
+- second-stage purpose:
+  - compare bounded direct-output lowering against the merged non-fused
+    measurement baseline on the same terminal linear plus terminal `Relu` suite
 - queue status:
-  - queued
-  - `item_id`: `l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_measurement_r1`
-  - `task_request_id`: `ec5cfac8-df02-4c3b-a7a9-327d0e002db6`
-  - `work_item_id`: `c053c2ee-a998-4e65-b767-e651e2ecf47f`
+  - first stage merged via PR `#54`
+  - second stage pending queue insertion after this implementation commit is
+    pushed
 
 ## Risks
 - terminal linear plus terminal `Relu` is a bounded but still close neighbor to

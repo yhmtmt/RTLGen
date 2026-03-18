@@ -14,6 +14,7 @@ import yaml  # type: ignore
 REPO_ROOT = Path(__file__).resolve().parents[1]
 ARCH_PATH = REPO_ROOT / "npu/arch/examples/minimal.yml"
 ARCH_SOFTMAX_FUSED_PATH = REPO_ROOT / "npu/arch/examples/minimal_softmax_tail_fused.yml"
+ARCH_TERMINAL_DIRECT_OUTPUT_PATH = REPO_ROOT / "npu/arch/examples/minimal_terminal_direct_output.yml"
 
 
 def load_script_module(name: str, relative_path: str):
@@ -105,6 +106,7 @@ class MapperSplitRegressionTest(unittest.TestCase):
         onnx_path: Path,
         sched_path: Path,
         *,
+        arch_path: Path | None = None,
         gemm_num_modules: int | None = None,
         batch_override: int | None = None,
         softmax_backend: str | None = None,
@@ -115,7 +117,7 @@ class MapperSplitRegressionTest(unittest.TestCase):
             "--onnx",
             str(onnx_path),
             "--arch",
-            str(ARCH_PATH),
+            str(arch_path or ARCH_PATH),
             "--out",
             str(sched_path),
         ]
@@ -489,11 +491,84 @@ class MapperSplitRegressionTest(unittest.TestCase):
 
             gemm_ops = [op for op in schedule["ops"] if op.get("type") == "gemm"]
             self.assertEqual(1, len(gemm_ops))
-            self.assertEqual("none", gemm_ops[0].get("epilogue"))
+            self.assertEqual("relu", gemm_ops[0].get("epilogue"))
 
             dma_y_ops = [op for op in schedule["ops"] if str(op.get("id", "")).startswith("dma_y")]
             self.assertEqual(1, len(dma_y_ops))
             self.assertEqual("dma_y1", schedule["events"][0]["signal_on"])
+
+    def test_terminal_linear_direct_output_when_arch_requests_it(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            onnx_path = tmp / "terminal_linear.onnx"
+            sched_path = tmp / "terminal_linear.yml"
+            bin_path = tmp / "terminal_linear.bin"
+
+            self._write_gemm_mlp_onnx(
+                onnx_path,
+                name="terminal_linear",
+                b=128,
+                input_shape=[2, 4],
+                hidden_dims=[],
+                out_dim=64,
+                final_relu=False,
+            )
+            schedule = self._run_lowering(
+                onnx_path,
+                sched_path,
+                arch_path=ARCH_TERMINAL_DIRECT_OUTPUT_PATH,
+            )
+            self._validate_and_emit_bin(sched_path, bin_path)
+
+            notes = schedule.get("mapper_notes", {})
+            self.assertFalse(bool(notes.get("terminal_softmax")))
+            self.assertTrue(bool(notes.get("terminal_direct_output")))
+            self.assertFalse(bool(notes.get("final_linear_row_parallel_enabled")))
+
+            gemm_ops = [op for op in schedule["ops"] if op.get("type") == "gemm"]
+            self.assertEqual(1, len(gemm_ops))
+            self.assertEqual("Y_DRAM", gemm_ops[0].get("c"))
+            self.assertEqual("none", gemm_ops[0].get("epilogue"))
+
+            dma_y_ops = [op for op in schedule["ops"] if str(op.get("id", "")).startswith("dma_y")]
+            self.assertEqual([], dma_y_ops)
+            self.assertEqual("gemm1", schedule["events"][0]["signal_on"])
+
+    def test_terminal_relu_direct_output_when_arch_requests_it(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            onnx_path = tmp / "terminal_relu_direct.onnx"
+            sched_path = tmp / "terminal_relu_direct.yml"
+            bin_path = tmp / "terminal_relu_direct.bin"
+
+            self._write_gemm_mlp_onnx(
+                onnx_path,
+                name="terminal_relu_direct",
+                b=128,
+                input_shape=[2, 4],
+                hidden_dims=[],
+                out_dim=128,
+                final_relu=True,
+            )
+            schedule = self._run_lowering(
+                onnx_path,
+                sched_path,
+                arch_path=ARCH_TERMINAL_DIRECT_OUTPUT_PATH,
+            )
+            self._validate_and_emit_bin(sched_path, bin_path)
+
+            notes = schedule.get("mapper_notes", {})
+            self.assertFalse(bool(notes.get("terminal_softmax")))
+            self.assertTrue(bool(notes.get("terminal_direct_output")))
+
+            gemm_ops = [op for op in schedule["ops"] if op.get("type") == "gemm"]
+            self.assertEqual(1, len(gemm_ops))
+            self.assertEqual("Y_DRAM", gemm_ops[0].get("c"))
+            self.assertEqual("relu", gemm_ops[0].get("epilogue"))
+
+            dma_y_ops = [op for op in schedule["ops"] if str(op.get("id", "")).startswith("dma_y")]
+            self.assertEqual([], dma_y_ops)
+            self.assertEqual("gemm1", schedule["events"][0]["signal_on"])
 
 
 if __name__ == "__main__":

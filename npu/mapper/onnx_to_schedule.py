@@ -110,6 +110,18 @@ def _direct_terminal_softmax_output_enabled(arch: dict) -> bool:
     return bool(constraints.get("direct_terminal_softmax_output", False))
 
 
+def _direct_terminal_output_enabled(arch: dict) -> bool:
+    if not isinstance(arch, dict):
+        return False
+    mapping = arch.get("mapping")
+    if not isinstance(mapping, dict):
+        return False
+    constraints = mapping.get("constraints")
+    if not isinstance(constraints, dict):
+        return False
+    return bool(constraints.get("direct_terminal_output", False))
+
+
 def _choose_stage_row_chunks(
     *,
     batch: int,
@@ -545,6 +557,7 @@ def build_schedule_for_mlp(
 
     arch = yaml.safe_load(Path(arch_path).read_text(encoding="utf-8"))
     direct_terminal_softmax_output = _direct_terminal_softmax_output_enabled(arch)
+    direct_terminal_output = _direct_terminal_output_enabled(arch)
     act_inst = _find_sram_instance(arch, activation_sram_name)
     wgt_inst = _find_sram_instance(arch, weight_sram_name)
 
@@ -911,6 +924,7 @@ def build_schedule_for_supported_graph(
 
     arch = yaml.safe_load(Path(arch_path).read_text(encoding="utf-8"))
     direct_terminal_softmax_output = _direct_terminal_softmax_output_enabled(arch)
+    direct_terminal_output = _direct_terminal_output_enabled(arch)
     act_inst = _find_sram_instance(arch, activation_sram_name)
     wgt_inst = _find_sram_instance(arch, weight_sram_name)
 
@@ -1151,12 +1165,17 @@ def build_schedule_for_supported_graph(
             stage_ready_ids = stage_complete_ids
             continue
 
-        stage_row_chunks = _choose_stage_row_chunks(
-            batch=batch,
-            gemm_num_modules=gemm_num_modules,
-            k_dim=k_dim,
-            n_dim=final_out_dim,
-            terminal_softmax_stage=terminal_softmax,
+        terminal_direct_output = bool(idx == len(layers) - 1 and not terminal_softmax and direct_terminal_output)
+        stage_row_chunks = (
+            [(0, batch)]
+            if terminal_direct_output
+            else _choose_stage_row_chunks(
+                batch=batch,
+                gemm_num_modules=gemm_num_modules,
+                k_dim=k_dim,
+                n_dim=final_out_dim,
+                terminal_softmax_stage=terminal_softmax,
+            )
         )
         stage_row_parallel_enabled = len(stage_row_chunks) > 1
         final_row_chunks = list(stage_row_chunks)
@@ -1269,7 +1288,7 @@ def build_schedule_for_supported_graph(
                             "dtype": "int8",
                             "layout": "row_major",
                             "bias": "b_SRAM_TMP",
-                            "epilogue": "none",
+                            "epilogue": "relu" if layer.relu else "none",
                         }
                     )
                     deps.append(
@@ -1281,20 +1300,23 @@ def build_schedule_for_supported_graph(
                     if terminal_softmax:
                         chunk_done_ids.append(gemm_id)
                     else:
-                        ops.append(
-                            {
-                                "id": dma_y_id,
-                                "type": "dma_copy",
-                                "src": out_sram_id,
-                                "dst": out_dram_id,
-                                "bytes": bytes_2d(m_chunk, n_chunk),
-                            }
-                        )
-                        dma_waits = [gemm_id]
-                        if prev_row_tail_id:
-                            dma_waits.append(prev_row_tail_id)
-                        deps.append({"wait": dma_waits, "then": dma_y_id})
-                        prev_row_tail_id = dma_y_id
+                        if terminal_direct_output:
+                            chunk_done_ids.append(gemm_id)
+                        else:
+                            ops.append(
+                                {
+                                    "id": dma_y_id,
+                                    "type": "dma_copy",
+                                    "src": out_sram_id,
+                                    "dst": out_dram_id,
+                                    "bytes": bytes_2d(m_chunk, n_chunk),
+                                }
+                            )
+                            dma_waits = [gemm_id]
+                            if prev_row_tail_id:
+                                dma_waits.append(prev_row_tail_id)
+                            deps.append({"wait": dma_waits, "then": dma_y_id})
+                            prev_row_tail_id = dma_y_id
             else:
                 gemm_id = gemm_base_id
                 out_buf = next_output_buf
@@ -1307,6 +1329,8 @@ def build_schedule_for_supported_graph(
                             "bytes": y_chunk_bytes,
                         }
                     )
+                elif terminal_direct_output:
+                    out_buf = y_chunk_id
                 ops.append(
                     {
                         "id": gemm_id,
@@ -1323,31 +1347,39 @@ def build_schedule_for_supported_graph(
                         "dtype": "int8",
                         "layout": "row_major",
                         "bias": "b_SRAM_TMP",
-                        "epilogue": "none",
+                        "epilogue": "relu" if layer.relu else "none",
                     }
                 )
                 deps.append({"wait": stage_ready_ids + [dma_w_chunk_id, dma_b_chunk_id], "then": gemm_id})
                 if terminal_softmax:
                     chunk_done_ids.append(gemm_id)
                 else:
-                    dma_y_id = dma_y_base_id
-                    ops.append(
-                        {
-                            "id": dma_y_id,
-                            "type": "dma_copy",
-                            "src": next_output_buf,
-                            "dst": y_chunk_id,
-                            "bytes": y_chunk_bytes,
-                        }
-                    )
-                    deps.append({"wait": [gemm_id], "then": dma_y_id})
-                    prev_row_tail_id = dma_y_id
+                    if terminal_direct_output:
+                        prev_row_tail_id = gemm_id
+                    else:
+                        dma_y_id = dma_y_base_id
+                        ops.append(
+                            {
+                                "id": dma_y_id,
+                                "type": "dma_copy",
+                                "src": next_output_buf,
+                                "dst": y_chunk_id,
+                                "bytes": y_chunk_bytes,
+                            }
+                        )
+                        deps.append({"wait": [gemm_id], "then": dma_y_id})
+                        prev_row_tail_id = dma_y_id
 
             if terminal_softmax:
                 prev_chunk_wait_ids = list(chunk_done_ids)
             else:
-                prev_chunk_wait_ids = [prev_row_tail_id] if prev_row_tail_id else []
-                last_dma_y_id = prev_row_tail_id
+                if terminal_direct_output:
+                    prev_chunk_wait_ids = list(chunk_done_ids) if chunk_done_ids else ([prev_row_tail_id] if prev_row_tail_id else [])
+                    if prev_chunk_wait_ids:
+                        last_dma_y_id = prev_chunk_wait_ids[-1]
+                else:
+                    prev_chunk_wait_ids = [prev_row_tail_id] if prev_row_tail_id else []
+                    last_dma_y_id = prev_row_tail_id
 
         if terminal_softmax:
             if not prev_chunk_wait_ids:
@@ -1418,6 +1450,7 @@ def build_schedule_for_supported_graph(
         "terminal_softmax_direct_output": bool(
             terminal_softmax and softmax_backend == "dedicated" and direct_terminal_softmax_output
         ),
+        "terminal_direct_output": bool(not terminal_softmax and direct_terminal_output),
         "graph_output_name": supported.terminal_output_name,
         "ignored_graph_outputs": list(supported.ignored_graph_outputs),
     }
