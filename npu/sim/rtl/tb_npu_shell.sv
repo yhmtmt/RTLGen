@@ -142,6 +142,7 @@ module tb_npu_shell;
   integer test_bytes;
   integer gemm_test_bytes;
   integer gemm_count;
+  integer dma_req_count;
   integer gemm_desc_count;
   integer gemm_desc_offsets [0:127];
   reg [31:0] gemm_desc_tags [0:127];
@@ -182,6 +183,7 @@ module tb_npu_shell;
   reg [1:0] gemm_slot_valid_prev;
   reg [1:0] gemm_slot_done_prev;
   reg vec_done_pulse_prev;
+  reg dma_req_valid_prev;
   reg [63:0] gemm_slot_start_cycle0;
   reg [63:0] gemm_slot_start_cycle1;
   reg [63:0] gemm_done_uid;
@@ -190,9 +192,11 @@ module tb_npu_shell;
   reg [63:0] expected_dma_dst;
   reg sram_test;
   reg event_test;
+  reg event_dma_test;
   reg vec_test;
   reg vec_gelu_test;
   reg vec_ext_test;
+  reg second_dma_seen_before_first_bvalid;
   string bin_path;
   `include "npu/rtlgen/out/sram_map.vh"
   localparam [63:0] MEM_DST_BASE = 64'h0000_0000_0001_0000;
@@ -208,13 +212,16 @@ module tb_npu_shell;
     sim_cycle = 0;
     gemm_slot_valid_prev = 2'b00;
     gemm_slot_done_prev = 2'b00;
+    dma_req_valid_prev = 1'b0;
     gemm_slot_start_cycle0 = 0;
     gemm_slot_start_cycle1 = 0;
     gemm_count = 0;
+    dma_req_count = 0;
     gemm_desc_count = 0;
     vec_count = 0;
     vec_desc_count = 0;
     vec_done_pulse_prev = 1'b0;
+    second_dma_seen_before_first_bvalid = 1'b0;
     gemm_elem_bits = dut.GEMM_ELEM_BITS;
     if (gemm_elem_bits < 8)
       gemm_elem_bits = 8;
@@ -237,6 +244,9 @@ module tb_npu_shell;
     event_test = 0;
     if ($value$plusargs("event_test=%d", event_test))
       event_test = (event_test != 0);
+    event_dma_test = 0;
+    if ($value$plusargs("event_dma_test=%d", event_dma_test))
+      event_dma_test = (event_dma_test != 0);
     vec_test = 0;
     if ($value$plusargs("vec_test=%d", vec_test))
       vec_test = (vec_test != 0);
@@ -264,22 +274,48 @@ module tb_npu_shell;
         $display("ERROR: no bytes read from descriptor bin file %s", bin_path);
         $finish(1);
       end
-    end else if (event_test) begin
+    end else if (event_test || event_dma_test) begin
       integer idx;
-      for (idx = 0; idx < 96; idx = idx + 1)
+      for (idx = 0; idx < 128; idx = idx + 1)
         bin_data[idx] = 0;
 
-      // Descriptor 0: GEMM
-      bin_data[0] = 8'h10;
-      bin_data[2] = 8'h01;
+      // Descriptor 0: producer op
+      if (event_dma_test) begin
+        // DMA_COPY src=0x0 dst=0x10000 bytes=256
+        bin_data[0] = 8'h01;
+        bin_data[2] = 8'h01;
+        {bin_data[15], bin_data[14], bin_data[13], bin_data[12],
+         bin_data[11], bin_data[10], bin_data[9], bin_data[8]} = 64'h0000_0000_0000_0000;
+        {bin_data[23], bin_data[22], bin_data[21], bin_data[20],
+         bin_data[19], bin_data[18], bin_data[17], bin_data[16]} = 64'h0000_0000_0001_0000;
+        {bin_data[27], bin_data[26], bin_data[25], bin_data[24]} = 32'd256;
+      end else begin
+        // GEMM
+        bin_data[0] = 8'h10;
+        bin_data[2] = 8'h01;
+      end
       // Descriptor 1: EVENT_SIGNAL
       bin_data[32] = 8'h20;
       bin_data[34] = 8'h01;
       // Descriptor 2: EVENT_WAIT
       bin_data[64] = 8'h21;
       bin_data[66] = 8'h01;
-
-      bytes_read = 96;
+      if (event_dma_test) begin
+        // Descriptor 3: DMA_COPY
+        bin_data[96] = 8'h01;
+        bin_data[98] = 8'h01;
+        {bin_data[111], bin_data[110], bin_data[109], bin_data[108],
+         bin_data[107], bin_data[106], bin_data[105], bin_data[104]} = 64'h0000_0000_0000_0200;
+        {bin_data[119], bin_data[118], bin_data[117], bin_data[116],
+         bin_data[115], bin_data[114], bin_data[113], bin_data[112]} = 64'h0000_0000_0001_0200;
+        {bin_data[123], bin_data[122], bin_data[121], bin_data[120]} = 32'd256;
+        expected_dma_src = 64'h0000_0000_0000_0200;
+        expected_dma_dst = 64'h0000_0000_0001_0200;
+        expected_dma_bytes = 32'd256;
+        bytes_read = 128;
+      end else begin
+        bytes_read = 96;
+      end
     end else if (sram_test) begin
       // Build two DMA_COPY descriptors: mem->SRAM, SRAM->mem
       integer idx;
@@ -610,7 +646,7 @@ module tb_npu_shell;
     mmio_write(OFF_DOORBELL, 32'h1);
 
     // DMA request should assert; handshake and complete
-    if (!event_test && !vec_test) begin
+    if (!event_test && !event_dma_test && !vec_test) begin
       repeat (5) @(posedge clk);
       if (dma_req_valid !== 1'b1) begin
         $display("ERROR: expected dma_req_valid");
@@ -625,6 +661,36 @@ module tb_npu_shell;
           $display("ERROR: dma_req_dst mismatch %h", dma_req_dst);
           $finish(1);
         end
+      end
+      if (dma_req_bytes !== expected_dma_bytes) begin
+        $display("ERROR: dma_req_bytes mismatch %h", dma_req_bytes);
+        $finish(1);
+      end
+      dma_req_ready = 1'b1;
+      @(posedge clk);
+      dma_req_ready = 1'b0;
+    end else if (event_dma_test) begin
+      begin : wait_dma_req_after_gemm
+        integer t2;
+        for (t2 = 0; t2 < 600; t2 = t2 + 1) begin
+          @(posedge clk);
+          if (dma_req_valid === 1'b1)
+            disable wait_dma_req_after_gemm;
+        end
+      end
+      if (dma_req_valid !== 1'b1) begin
+        mmio_read(OFF_CQ_HEAD, cq_head);
+        $display("ERROR: expected dma_req_valid in event_dma_test head=%h tail=%h last_opcode=%h event0=%b dma_pending=%b bvalid=%b",
+                 cq_head, cq_tail, dut.last_opcode, dut.event_state[0], dut.dma_pending, saw_bvalid);
+        $finish(1);
+      end
+      if (dma_req_src !== expected_dma_src) begin
+        $display("ERROR: dma_req_src mismatch %h", dma_req_src);
+        $finish(1);
+      end
+      if (dma_req_dst !== expected_dma_dst) begin
+        $display("ERROR: dma_req_dst mismatch %h", dma_req_dst);
+        $finish(1);
       end
       if (dma_req_bytes !== expected_dma_bytes) begin
         $display("ERROR: dma_req_bytes mismatch %h", dma_req_bytes);
@@ -672,6 +738,23 @@ module tb_npu_shell;
 
     if (event_test || vec_test) begin
       // No data check for GEMM/event stubs
+    end else if (event_dma_test) begin
+      if (dma_req_count != 2) begin
+        mmio_read(OFF_CQ_HEAD, cq_head);
+        $display("ERROR: expected 2 DMA requests in event_dma_test, saw %0d head=%h tail=%h last_opcode=%h event0=%b dma_pending=%b bvalid=%b",
+                 dma_req_count, cq_head, cq_tail, dut.last_opcode, dut.event_state[0], dut.dma_pending, saw_bvalid);
+        $finish(1);
+      end
+      if (second_dma_seen_before_first_bvalid) begin
+        $display("ERROR: observed second DMA request before first DMA completed in event_dma_test");
+        $finish(1);
+      end
+      for (j = 0; j < expected_dma_bytes; j = j + 1) begin
+        if (axi_mem.mem[expected_dma_dst[20:0] + j] !== axi_mem.mem[expected_dma_src[20:0] + j]) begin
+          $display("ERROR: event-gated DMA copy mismatch at byte %0d", j);
+          $finish(1);
+        end
+      end
     end else if (sram_test) begin
       // Check SRAM->mem copy result at MEM_DST_BASE
       for (j = 0; j < 256; j = j + 1) begin
@@ -785,11 +868,14 @@ module tb_npu_shell;
     if (!rst_n) begin
       gemm_slot_valid_prev <= 2'b00;
       gemm_slot_done_prev <= 2'b00;
+      dma_req_valid_prev <= 1'b0;
       gemm_slot_start_cycle0 <= 0;
       gemm_slot_start_cycle1 <= 0;
       gemm_count <= 0;
+      dma_req_count <= 0;
       vec_count <= 0;
       vec_done_pulse_prev <= 1'b0;
+      second_dma_seen_before_first_bvalid <= 1'b0;
     end else begin
       if (!gemm_slot_valid_prev[0] && dut.gemm_slot_valid[0]) begin
         gemm_slot_start_cycle0 <= sim_cycle;
@@ -895,9 +981,15 @@ module tb_npu_shell;
         $display("VEC_DONE index=%0d offset=%0d op=%0d result=0x%016h",
                  vec_count, vec_desc_offsets[vec_count-1], vec_desc_op[vec_count-1], dut.vec_last_result);
       end
+      if (!dma_req_valid_prev && dma_req_valid) begin
+        dma_req_count <= dma_req_count + 1;
+        if (event_dma_test && (dma_req_count >= 1) && !saw_bvalid)
+          second_dma_seen_before_first_bvalid <= 1'b1;
+      end
       gemm_slot_valid_prev <= dut.gemm_slot_valid;
       gemm_slot_done_prev <= dut.gemm_slot_done;
       vec_done_pulse_prev <= dut.vec_done_pulse;
+      dma_req_valid_prev <= dma_req_valid;
     end
   end
 

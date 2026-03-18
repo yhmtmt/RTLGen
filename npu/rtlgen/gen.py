@@ -46,6 +46,7 @@ module {top_name} (
   reg [31:0] dma_size;
   reg        cq_stage_valid;
   reg        dma_pending;
+  reg [65535:0] event_state;
   reg [2:0]  dma_state;
 {gemm_state_regs}
 {compute_state_regs}
@@ -152,6 +153,7 @@ module {top_name} (
       dma_size <= 0;
       cq_stage_valid <= 0;
       dma_pending <= 0;
+      event_state <= 0;
       dma_state <= 0;
 {gemm_reset}
 {compute_reset}
@@ -2142,12 +2144,14 @@ endmodule
           cq_mem_addr <= {{cq_base_hi, cq_base_lo}} + cq_head;
           cq_stage_valid <= 1'b1;
         end else if (cq_stage_valid && !cq_pending_ext) begin
+          reg consume_desc;
           cq_word0 <= cq_mem_rdata;
           cq_word0_size <= cq_mem_rdata[23:16];
           if (cq_mem_rdata[23:16] >= 8'h02) begin
             cq_pending_ext <= 1'b1;
             cq_stage_valid <= 1'b0;
           end else begin
+            consume_desc = 1'b1;
             last_opcode <= cq_mem_rdata[7:0];
             last_tag <= cq_mem_rdata[63:32];
             last_src <= cq_mem_rdata[127:64];
@@ -2235,20 +2239,33 @@ endmodule
                 softmax_pending <= 1'b1;
               end
             end else if (cq_mem_rdata[7:0] == 8'h20) begin
-              // EVENT_SIGNAL: immediately signal
-              irq_status[IRQ_EVENT] <= 1'b1;
+              // EVENT_SIGNAL: only retires once prior in-flight work has completed.
+              if (dma_pending || vec_pending || softmax_pending || {gemm_slots_busy_expr}) begin
+                consume_desc = 1'b0;
+              end else begin
+                event_state[cq_mem_rdata[47:32]] <= 1'b1;
+                if (cq_mem_rdata[8]) begin
+                  irq_status[IRQ_EVENT] <= 1'b1;
+                end
+              end
             end else if (cq_mem_rdata[7:0] == 8'h21) begin
-              // EVENT_WAIT: stubbed as immediately satisfied
-              irq_status[IRQ_EVENT] <= 1'b1;
+              // EVENT_WAIT: stall command retirement until the event is signaled.
+              if (!event_state[cq_mem_rdata[47:32]]) begin
+                consume_desc = 1'b0;
+              end else begin
+                event_state[cq_mem_rdata[47:32]] <= 1'b0;
+              end
             end else begin
               error_code <= 32'h1;
             end
-            cq_head <= cq_head + 32;
-            if (cq_count == 1) begin
-              irq_status[IRQ_CQ_EMPTY] <= 1'b1;
+            if (consume_desc) begin
+              cq_head <= cq_head + 32;
+              if (cq_count == 1) begin
+                irq_status[IRQ_CQ_EMPTY] <= 1'b1;
+              end
+              cq_count <= cq_count - 1;
+              cq_stage_valid <= 1'b0;
             end
-            cq_count <= cq_count - 1;
-            cq_stage_valid <= 1'b0;
           end
         end else if (cq_pending_ext) begin
           if (!cq_stage_valid) begin

@@ -261,6 +261,12 @@ Events are 16-bit IDs scoped to a queue. The host manages ID reuse.
 - EVENT_WAIT: stalls command processing until the event is signaled.
 - Events are auto-cleared after a successful EVENT_WAIT.
 
+For dependency-carrying streams, the intended contract is completion-bound:
+- when an `EVENT_SIGNAL` descriptor is emitted immediately after a producer op,
+  the event becomes visible only after that producer has completed
+- a following `EVENT_WAIT` must therefore block retirement of dependent
+  descriptors until the producer-backed signal is observed
+
 ## 7. Error Reporting
 On error, the device sets STATUS.ERROR, latches ERROR_CODE and ERROR_ADDR, and
 raises IRQ_ERROR if enabled.
