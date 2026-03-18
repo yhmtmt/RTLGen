@@ -111,6 +111,8 @@ def main(argv: list[str] | None = None) -> int:
     generate_l2_parser.add_argument("--objective-profiles-json")
     generate_l2_parser.add_argument("--proposal-id")
     generate_l2_parser.add_argument("--proposal-path")
+    generate_l2_parser.add_argument("--comparison-role")
+    generate_l2_parser.add_argument("--paired-baseline-item-id")
     generate_l2_parser.add_argument("--no-run-physical", action="store_true")
 
     github_parser = subparsers.add_parser("reconcile-github", help="Reconcile GitHub branch/PR metadata into the DB")
@@ -431,6 +433,8 @@ def main(argv: list[str] | None = None) -> int:
             ("--objective-profiles-json", args.objective_profiles_json),
             ("--proposal-id", args.proposal_id),
             ("--proposal-path", args.proposal_path),
+            ("--comparison-role", args.comparison_role),
+            ("--paired-baseline-item-id", args.paired_baseline_item_id),
         ]:
             if value is not None:
                 argv2.extend([key, str(value)])
