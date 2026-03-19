@@ -1,0 +1,14 @@
+{
+  "proposal_id": "prop_l1_terminal_sigmoid_block_v1",
+  "source_commit": "pending",
+  "requested_items": [
+    {
+      "item_id": "l1_prop_l1_terminal_sigmoid_block_v1_nangate45_r1",
+      "task_type": "l1_sweep",
+      "evaluation_mode": "measurement_only",
+      "objective": "terminal_sigmoid_physical_metrics",
+      "status": "pending",
+      "notes": "Layer 1 prerequisite physical sweep for a bounded terminal sigmoid block."
+    }
+  ]
+}
