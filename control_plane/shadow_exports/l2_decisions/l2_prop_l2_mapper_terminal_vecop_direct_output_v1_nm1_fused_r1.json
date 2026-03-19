@@ -1,0 +1,106 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-03-19T10:28:29.835021Z",
+  "item_id": "l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_fused_r1",
+  "run_key": "l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_fused_r1_run_9ca3905be8de3980",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "af4d14017f2568428121ea9c9516c6284ffcc66b",
+  "objective": "terminal_vecop_direct_output_vs_nonfused",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json"
+    ],
+    "design_dirs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp"
+    ],
+    "macro_manifests": [
+      "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json"
+    ],
+    "generated_campaign": {
+      "path": "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_fused_nm1_v1/campaign__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_fused_r1.json",
+      "outputs": {
+        "report_md": "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_fused_r1/report.md",
+        "results_csv": "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_fused_r1/results.csv",
+        "campaign_dir": "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_fused_r1"
+      },
+      "base_campaign_path": "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_fused_nm1_v1/campaign.json"
+    },
+    "candidate_manifests": [
+      "runs/candidates/nangate45/module_candidates.json"
+    ]
+  },
+  "recommendation": {
+    "arch_id": "fp16_nm1",
+    "macro_mode": "flat_nomacro",
+    "objective_rank": 1,
+    "objective_score": "0.0",
+    "latency_ms_mean": 0.0052699999999999995,
+    "energy_mj_mean": 1.01775294e-06,
+    "critical_path_ns_mean": 5.557037432204143,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.193122,
+    "flow_elapsed_s_mean": 844.5733333333334
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_mapper_terminal_vecop_direct_output_v1",
+    "title": "Terminal vec-op direct output",
+    "primary_question": "Can a bounded terminal vec-op family establish clean nm1 reference points first, then show a direct-output win on those same points without reopening broader ranking?",
+    "evaluation_mode": "paired_comparison",
+    "comparison_role": "candidate",
+    "expected_direction": "better_than_historical",
+    "expected_reason": "Direct terminal vec-op output should reduce the final writeback tail on at least part of the bounded standalone terminal ReLU suite.",
+    "summary": "Paired baseline item could not be resolved for focused candidate comparison.",
+    "baseline_item_id": "l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_measurement_r2",
+    "outcome": "unavailable",
+    "expectation_status": "unexpected"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_mapper_terminal_vecop_direct_output_v1",
+    "title": "Terminal vec-op direct output",
+    "primary_question": "Can a bounded terminal vec-op family establish clean nm1 reference points first, then show a direct-output win on those same points without reopening broader ranking?",
+    "evaluation_mode": "paired_comparison",
+    "comparison_role": "candidate",
+    "outcome": "unavailable",
+    "summary": "Paired baseline item could not be resolved for focused candidate comparison.",
+    "baseline_ref": null,
+    "baseline_item_id": "l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_measurement_r2",
+    "matched_row_count": 0,
+    "matched_rows": []
+  },
+  "source_refs": {
+    "best_point_json": "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_fused_r1/best_point.json",
+    "summary_csv": "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_fused_r1/summary.csv",
+    "results_csv": "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_fused_r1/results.csv",
+    "report_md": "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_fused_r1/report.md",
+    "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1/relu_vec_b128_f64/schedule.yml",
+    "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1/relu_vec_b128_f64/descriptors.bin",
+    "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_fused_r1/artifacts/perf/fp16_nm1/relu_vec_b128_f64/trace.json",
+    "focused_model_artifacts": [
+      {
+        "model_id": "relu_vec_b128_f64",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1/relu_vec_b128_f64/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1/relu_vec_b128_f64/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_fused_r1/artifacts/perf/fp16_nm1/relu_vec_b128_f64/trace.json"
+      },
+      {
+        "model_id": "relu_vec_b256_f256",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1/relu_vec_b256_f256/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1/relu_vec_b256_f256/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_fused_r1/artifacts/perf/fp16_nm1/relu_vec_b256_f256/trace.json"
+      },
+      {
+        "model_id": "relu_vec_flatten_b128_2x4x8",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1/relu_vec_flatten_b128_2x4x8/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1/relu_vec_flatten_b128_2x4x8/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_fused_r1/artifacts/perf/fp16_nm1/relu_vec_flatten_b128_2x4x8/trace.json"
+      }
+    ]
+  }
+}
