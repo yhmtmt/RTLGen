@@ -3,6 +3,7 @@
 
 import importlib.util
 import json
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -185,6 +186,26 @@ class RunsParserRegressionTest(unittest.TestCase):
             lines = (circuit_root / "metrics.csv").read_text(encoding="utf-8").splitlines()
             self.assertEqual(2, len(lines))
             self.assertTrue(lines[1].endswith("runs/designs/activations/demo_wrapper/work/abcd1234/result.json"))
+
+    def test_run_sweep_snapshot_artifacts_tolerates_in_place_config(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            circuit_root = root / "runs" / "designs" / "activations" / "demo_wrapper"
+            circuit_root.mkdir(parents=True, exist_ok=True)
+            config_path = circuit_root / "config_demo.json"
+            config_path.write_text("{\"demo\": true}\n", encoding="utf-8")
+
+            src_base_old = self.run_sweep.SRC_BASE
+            self.addCleanup(setattr, self.run_sweep, "SRC_BASE", src_base_old)
+            src_dir = root / "src" / "demo_wrapper"
+            src_dir.mkdir(parents=True, exist_ok=True)
+            (src_dir / "demo_wrapper.v").write_text("module demo_wrapper; endmodule\n", encoding="utf-8")
+            self.run_sweep.SRC_BASE = root / "src"
+
+            self.run_sweep.snapshot_artifacts(config_path, "demo_wrapper", circuit_root)
+
+            self.assertEqual("{\"demo\": true}\n", config_path.read_text(encoding="utf-8"))
+            self.assertTrue((circuit_root / "verilog" / "demo_wrapper.v").exists())
 
     def test_validate_runs_module_candidates_manifest_success(self):
         with tempfile.TemporaryDirectory() as td:
