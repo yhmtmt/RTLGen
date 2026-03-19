@@ -40,6 +40,7 @@ def register_github_routes(app) -> None:
                         state=payload["state"],
                         run_key=payload.get("run_key"),
                         metadata=payload.get("metadata"),
+                        repo_root=payload.get("repo_root"),
                     ),
                 )
             except GitHubReconcileNotFound as exc:

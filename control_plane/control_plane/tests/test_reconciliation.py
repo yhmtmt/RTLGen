@@ -14,6 +14,7 @@ from control_plane.api.app import create_app
 from control_plane.clock import utcnow
 from control_plane.db import create_all
 from control_plane.models.enums import LeaseStatus, WorkItemState
+from control_plane.models.artifacts import Artifact
 from control_plane.models.github_links import GitHubLink
 from control_plane.models.run_events import RunEvent
 from control_plane.models.runs import Run
@@ -189,3 +190,84 @@ def test_github_route_works_in_process() -> None:
                 del os.environ["RTLCP_DATABASE_URL"]
             else:
                 os.environ["RTLCP_DATABASE_URL"] = old
+
+
+def test_reconcile_merge_releases_blocked_dependent_when_materialized() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        summary_rel = "runs/campaigns/baseline_run/summary.csv"
+        report_rel = "runs/campaigns/baseline_run/report.md"
+        queue_rel = "control_plane/shadow_exports/review/item_review/evaluated.json"
+        decision_rel = "control_plane/shadow_exports/l2_decisions/item_review.json"
+        review_rel = "control_plane/shadow_exports/review/item_review/review_package.json"
+        for rel in (summary_rel, report_rel, queue_rel, decision_rel, review_rel):
+            path = repo_root / rel
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("ok\n", encoding="utf-8")
+
+        with make_session() as session:
+            run = seed_reviewable_run(session)
+            for kind, rel in (
+                ("expected_output", summary_rel),
+                ("expected_output", report_rel),
+                ("queue_snapshot", queue_rel),
+                ("decision_proposal", decision_rel),
+                ("review_package", review_rel),
+            ):
+                session.add(Artifact(run_id=run.id, kind=kind, storage_mode="repo", path=rel, sha256="x", metadata_={}))
+
+            dep_task = TaskRequest(
+                request_key="queue:item_dependent",
+                source="test",
+                requested_by="tester",
+                title="dependent",
+                description="dependent objective",
+                layer="layer2",
+                flow="openroad",
+                priority=1,
+                request_payload={
+                    "developer_loop": {
+                        "dependencies": {
+                            "item_ids": ["item_review"],
+                            "requires_merged_inputs": True,
+                            "requires_materialized_refs": True,
+                        }
+                    }
+                },
+            )
+            session.add(dep_task)
+            session.flush()
+            dependent = WorkItem(
+                work_item_key="queue:item_dependent",
+                task_request_id=dep_task.id,
+                item_id="item_dependent",
+                layer="layer2",
+                flow="openroad",
+                platform="nangate45",
+                task_type="l2_campaign",
+                state=WorkItemState.BLOCKED,
+                priority=1,
+                input_manifest={},
+                command_manifest=[],
+                expected_outputs=[],
+                acceptance_rules=[],
+            )
+            session.add(dependent)
+            session.commit()
+
+            reconcile_github_link(
+                session,
+                GitHubReconcileRequest(
+                    repo="yhmtmt/RTLGen",
+                    item_id="item_review",
+                    branch_name="eval/item_review/s20260308t000000z",
+                    pr_number=42,
+                    pr_url="https://github.com/yhmtmt/RTLGen/pull/42",
+                    state="pr_merged",
+                    run_key=run.run_key,
+                    repo_root=str(repo_root),
+                ),
+            )
+            session.refresh(dependent)
+            assert dependent.state == WorkItemState.READY

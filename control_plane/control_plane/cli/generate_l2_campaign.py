@@ -32,6 +32,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--expected-reason")
     parser.add_argument("--comparison-role")
     parser.add_argument("--paired-baseline-item-id")
+    parser.add_argument("--depends-on-item-id", action="append", default=[])
+    parser.add_argument("--requires-merged-inputs", action="store_true")
+    parser.add_argument("--requires-materialized-refs", action="store_true")
     parser.add_argument("--no-run-physical", action="store_true")
     args = parser.parse_args(argv)
 
@@ -63,6 +66,9 @@ def main(argv: list[str] | None = None) -> int:
                 expected_reason=args.expected_reason,
                 comparison_role=args.comparison_role,
                 paired_baseline_item_id=args.paired_baseline_item_id,
+                depends_on_item_ids=args.depends_on_item_id,
+                requires_merged_inputs=args.requires_merged_inputs,
+                requires_materialized_refs=args.requires_materialized_refs,
             ),
         )
     print(json.dumps(result.__dict__, indent=2, sort_keys=True))

@@ -56,6 +56,8 @@ The reviewer must answer:
 4. Does the result support the proposal’s stated hypothesis?
 5. Are the claimed improvements meaningful against the referenced baseline?
 6. Does the PR contain the exact evidence required for reproducibility?
+7. If the item depends on prior developer-loop evidence, were those
+   prerequisites merged and materialized before this PR was exported?
 
 ## Focused Comparison Rule
 

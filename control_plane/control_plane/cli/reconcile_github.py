@@ -22,6 +22,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--state", required=True)
     parser.add_argument("--run-key")
     parser.add_argument("--metadata-json")
+    parser.add_argument("--repo-root")
     args = parser.parse_args(argv)
 
     metadata = json.loads(args.metadata_json) if args.metadata_json else None
@@ -42,6 +43,7 @@ def main(argv: list[str] | None = None) -> int:
                 state=args.state,
                 run_key=args.run_key,
                 metadata=metadata,
+                repo_root=args.repo_root,
             ),
         )
     print(json.dumps(result.__dict__, indent=2, sort_keys=True))
