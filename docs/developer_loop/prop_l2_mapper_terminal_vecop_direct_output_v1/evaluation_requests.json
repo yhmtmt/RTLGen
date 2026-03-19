@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_mapper_terminal_vecop_direct_output_v1",
-  "source_commit": "37d18aae5dba13086d7b15ac57381e6fa719f40f",
+  "source_commit": "pending_push",
   "requested_items": [
     {
       "item_id": "l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_measurement_r2",
@@ -11,6 +11,22 @@
       "pr_number": 58,
       "campaign_path": "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_submit_nm1_v1/campaign.json",
       "notes": "Bounded standalone terminal Relu suite on fixed nm1; first-stage reference collection only."
+    },
+    {
+      "item_id": "l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_fused_r1",
+      "task_type": "l2_campaign",
+      "evaluation_mode": "paired_comparison",
+      "objective": "terminal_vecop_direct_output_vs_nonfused",
+      "candidate_id": "cand_l2_mapper_terminal_vecop_direct_output_v1_r1",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_fused_nm1_v1/campaign.json",
+      "comparison_role": "candidate",
+      "paired_baseline_item_id": "l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_measurement_r2",
+      "expected_result": {
+        "direction": "better_than_historical",
+        "reason": "Direct terminal vec-op output should reduce the final writeback tail on at least part of the bounded standalone terminal Relu suite."
+      },
+      "status": "queued_pending_run",
+      "status_reason": "Ready to queue once the fused vec-op campaign and proposal bookkeeping are pushed."
     }
   ]
 }

@@ -1,0 +1,56 @@
+{
+  "version": 0.1,
+  "campaign_id": "npu_e2e_eval_onnx_terminal_vecop_suite_fused_nm1_v1",
+  "model_set_id": "onnx_terminal_vecop_suite_v1",
+  "model_manifest": "runs/models/onnx_terminal_vecop_suite_v1/manifest.json",
+  "physical_source_campaign": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1/campaign.json",
+  "description": "Paired-comparison Layer2 benchmark for nm1 direct terminal vec-op output on a bounded standalone terminal ReLU suite.",
+  "platform": "nangate45",
+  "make_target": "3_3_place_gp",
+  "repeats": 3,
+  "models": [
+    {
+      "model_id": "relu_vec_b128_f64",
+      "onnx_path": "runs/models/onnx_terminal_vecop_suite_v1/relu_vec_b128_f64.onnx",
+      "mapper_arch": "npu/arch/examples/minimal_terminal_vecop_direct_output.yml",
+      "perf_config": "npu/sim/perf/example_config_fp16_cpp.json"
+    },
+    {
+      "model_id": "relu_vec_b256_f256",
+      "onnx_path": "runs/models/onnx_terminal_vecop_suite_v1/relu_vec_b256_f256.onnx",
+      "mapper_arch": "npu/arch/examples/minimal_terminal_vecop_direct_output.yml",
+      "perf_config": "npu/sim/perf/example_config_fp16_cpp.json"
+    },
+    {
+      "model_id": "relu_vec_flatten_b128_2x4x8",
+      "onnx_path": "runs/models/onnx_terminal_vecop_suite_v1/relu_vec_flatten_b128_2x4x8.onnx",
+      "mapper_arch": "npu/arch/examples/minimal_terminal_vecop_direct_output.yml",
+      "perf_config": "npu/sim/perf/example_config_fp16_cpp.json"
+    }
+  ],
+  "architecture_points": [
+    {
+      "arch_id": "fp16_nm1",
+      "rtlgen_config": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+      "synth_design_dir": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+      "sweep_file": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+      "macro_manifest": "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+      "layer1_modules": {
+        "manifest": "runs/candidates/nangate45/module_candidates.json",
+        "variant_ids": [
+          "mult16u_normal_koggestone_nangate45_base",
+          "adder_koggestone_64u_nangate45_base"
+        ]
+      },
+      "physical_select": {
+        "compare_group": "baed737c",
+        "tag_prefix": "npu_fp16_nm1_cmp33"
+      }
+    }
+  ],
+  "outputs": {
+    "campaign_dir": "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_fused_nm1_v1",
+    "results_csv": "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_fused_nm1_v1/results.csv",
+    "report_md": "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_fused_nm1_v1/report.md"
+  }
+}
