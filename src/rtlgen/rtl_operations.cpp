@@ -823,30 +823,60 @@ void emitActivationModule(const ActivationOperationConfig &config, const Operand
             }
             int segs = static_cast<int>(xs.size()) - 1;
             os << "  // PWL from user-specified points (" << segs << " segments), symmetric=" << (config.symmetric ? 1 : 0) << "\n";
-            os << "  wire [" << (data_width - 1) << ":0] abs_x = x_signed[" << (data_width - 1)
-               << "] ? (~X + 1'b1) : X;\n";
-            os << "  reg [" << (data_width - 1) << ":0] y_abs;\n";
-            os << "  always @* begin\n";
-            os << "    y_abs = 0;\n";
-            for (int i = 0; i < segs; ++i) {
-                double x0 = xs[i];
-                double x1 = xs[i + 1];
-                double y0 = ys[i];
-                double y1 = ys[i + 1];
-                double m = (y1 - y0) / (x1 - x0);
-                double c = y0 - m * x0;
-                long long x0f = static_cast<long long>(std::llround(x0 * (1LL << frac_bits)));
-                long long x1f = static_cast<long long>(std::llround(x1 * (1LL << frac_bits)));
-                long long mf = static_cast<long long>(std::llround(m * (1LL << frac_bits)));
-                long long cf = static_cast<long long>(std::llround(c * (1LL << frac_bits)));
-                os << "    if (abs_x >= " << x0f << " && abs_x < " << x1f << ") y_abs = ((" << mf << " * abs_x) >> "
-                   << frac_bits << ") + " << cf << ";\n";
+            if (config.symmetric) {
+                os << "  wire [" << (data_width - 1) << ":0] abs_x = x_signed[" << (data_width - 1)
+                   << "] ? (~X + 1'b1) : X;\n";
+                os << "  reg [" << (data_width - 1) << ":0] y_abs;\n";
+                os << "  always @* begin\n";
+                os << "    y_abs = 0;\n";
+                for (int i = 0; i < segs; ++i) {
+                    double x0 = xs[i];
+                    double x1 = xs[i + 1];
+                    double y0 = ys[i];
+                    double y1 = ys[i + 1];
+                    double m = (y1 - y0) / (x1 - x0);
+                    double c = y0 - m * x0;
+                    long long x0f = static_cast<long long>(std::llround(x0 * (1LL << frac_bits)));
+                    long long x1f = static_cast<long long>(std::llround(x1 * (1LL << frac_bits)));
+                    long long mf = static_cast<long long>(std::llround(m * (1LL << frac_bits)));
+                    long long cf = static_cast<long long>(std::llround(c * (1LL << frac_bits)));
+                    os << "    " << (i == 0 ? "if" : "else if") << " (abs_x >= " << x0f << " && abs_x < " << x1f << ") y_abs = ((" << mf << " * abs_x) >> "
+                       << frac_bits << ") + " << cf << ";\n";
+                }
+                if (config.clamp) {
+                    os << "    else y_abs = " << ((1LL << (data_width - 1)) - 1) << ";\n";
+                }
+                os << "  end\n";
+                os << "  assign Y = (x_signed[" << (data_width - 1) << "] ? (~y_abs + 1'b1) : y_abs);\n";
+            } else {
+                os << "  reg signed [" << (data_width - 1) << ":0] y_signed;\n";
+                os << "  always @* begin\n";
+                os << "    y_signed = 0;\n";
+                for (int i = 0; i < segs; ++i) {
+                    double x0 = xs[i];
+                    double x1 = xs[i + 1];
+                    double y0 = ys[i];
+                    double y1 = ys[i + 1];
+                    double m = (y1 - y0) / (x1 - x0);
+                    double c = y0 - m * x0;
+                    long long x0f = static_cast<long long>(std::llround(x0 * (1LL << frac_bits)));
+                    long long x1f = static_cast<long long>(std::llround(x1 * (1LL << frac_bits)));
+                    long long mf = static_cast<long long>(std::llround(m * (1LL << frac_bits)));
+                    long long cf = static_cast<long long>(std::llround(c * (1LL << frac_bits)));
+                    os << "    " << (i == 0 ? "if" : "else if") << " (x_signed >= " << x0f << " && x_signed < " << x1f << ") y_signed = ((" << mf << " * x_signed) >>> "
+                       << frac_bits << ") + " << cf << ";\n";
+                }
+                if (config.clamp) {
+                    long long low_sat = static_cast<long long>(std::llround(ys.front() * (1LL << frac_bits)));
+                    long long high_sat = static_cast<long long>(std::llround(ys.back() * (1LL << frac_bits)));
+                    os << "    else if (x_signed < "
+                       << static_cast<long long>(std::llround(xs.front() * (1LL << frac_bits)))
+                       << ") y_signed = " << low_sat << ";\n";
+                    os << "    else y_signed = " << high_sat << ";\n";
+                }
+                os << "  end\n";
+                os << "  assign Y = y_signed;\n";
             }
-            if (config.clamp) {
-                os << "    else y_abs = " << ((1LL << (data_width - 1)) - 1) << ";\n";
-            }
-            os << "  end\n";
-            os << "  assign Y = " << (config.symmetric ? "(x_signed[" + std::to_string(data_width - 1) + "] ? (~y_abs + 1'b1) : y_abs)" : "y_abs") << ";\n";
         } else {
             os << "  assign Y = x_signed[" << (data_width - 1)
                << "] ? zero_val : X;\n";
