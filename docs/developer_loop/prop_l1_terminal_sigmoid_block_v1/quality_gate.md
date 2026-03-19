@@ -20,9 +20,11 @@
 - local RTL smoke check for wrapper integration and signed int8 saturation
 
 ## Local Commands
-- pending: generate the block from `src/rtlgen` `pwl` activation config
-- pending: run local RTL smoke test on representative signed int8 inputs
+- `cmake -S /workspaces/RTLGen -B /tmp/rtlgen-build -G Ninja`
+- `cmake --build /tmp/rtlgen-build --target rtlgen`
+- `bash /workspaces/RTLGen/tests/test_activation_int.sh`
+- `TMP=$(mktemp -d); cp /workspaces/RTLGen/examples/config_activation_sigmoid_int8.json "$TMP/config.json"; cd "$TMP"; /tmp/rtlgen-build/rtlgen config.json; iverilog -g2012 -s activation_sigmoid_int_tb -o sim sigmoid_int8_pwl.v /workspaces/RTLGen/tests/activation_sigmoid_int_tb.v; vvp sim`
 
 ## Result
-- status: pending
-- note:
+- status: pass_local
+- note: The bounded int8 sigmoid PWL path is implemented locally and passes RTL smoke checks; remote physical evaluation is the remaining gate.

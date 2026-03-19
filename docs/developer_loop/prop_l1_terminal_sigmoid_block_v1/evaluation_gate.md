@@ -9,6 +9,5 @@
   - keep the first pass focused on a bounded `int8` sigmoid block
   - do not mix in Layer 2 perf campaigns yet
 - blocked_on:
-  - choosing the bounded `int8` sigmoid implementation path
-  - fixing the first-pass `pwl` point set for the sigmoid approximation
-  - defining the target wrapper contract and local smoke checks
+  - executing the staged Nangate45 physical sweep
+  - reviewing the resulting `metrics.csv` rows and accepted seed choice

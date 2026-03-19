@@ -1,0 +1,72 @@
+{
+  "version": 0.1,
+  "item_id": "l1_terminal_sigmoid_int8_pwl_nangate45_v1",
+  "title": "Layer1 terminal int8 sigmoid PWL Nangate45 seed sweep",
+  "layer": "layer1",
+  "flow": "openroad",
+  "state": "queued",
+  "priority": 1,
+  "created_utc": "2026-03-19T12:20:00Z",
+  "requested_by": "@codex",
+  "platform": "nangate45",
+  "task": {
+    "objective": "Run the first real Layer1 Nangate45 OpenROAD sweep for the bounded terminal int8 sigmoid PWL seed so later Layer2 nonlinear activation evaluation can consume measured physical timing, power, and area instead of assumptions.",
+    "source_mode": "config",
+    "inputs": {
+      "configs": [
+        "runs/designs/activations/terminal_sigmoid_int8_pwl_wrapper/config_terminal_sigmoid_int8_pwl.json"
+      ],
+      "design_dirs": [],
+      "sweeps": [
+        "runs/designs/activations/sweeps/nangate45_terminal_sigmoid_int8_pwl_v1.json"
+      ],
+      "macro_manifests": [],
+      "candidate_manifests": []
+    },
+    "commands": [
+      {
+        "name": "build_generator",
+        "run": "cmake --build build --target rtlgen"
+      },
+      {
+        "name": "run_sweep",
+        "run": "python3 scripts/run_sweep.py --configs runs/designs/activations/terminal_sigmoid_int8_pwl_wrapper/config_terminal_sigmoid_int8_pwl.json --platform nangate45 --sweep runs/designs/activations/sweeps/nangate45_terminal_sigmoid_int8_pwl_v1.json --out_root runs/designs/activations"
+      },
+      {
+        "name": "build_runs_index",
+        "run": "python3 scripts/build_runs_index.py"
+      },
+      {
+        "name": "validate",
+        "run": "python3 scripts/validate_runs.py"
+      }
+    ],
+    "expected_outputs": [
+      "runs/designs/activations/terminal_sigmoid_int8_pwl_wrapper/metrics.csv",
+      "runs/index.csv"
+    ],
+    "acceptance": [
+      "The terminal_sigmoid_int8_pwl_wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+      "Committed artifacts stay lightweight under runs/designs/activations/terminal_sigmoid_int8_pwl_wrapper/ plus runs/index.csv",
+      "The evaluated item records metrics_rows for the completed sigmoid seed",
+      "python3 scripts/validate_runs.py passes"
+    ]
+  },
+  "handoff": {
+    "branch": "eval/l1_terminal_sigmoid_int8_pwl_nangate45_v1/<session_id>",
+    "pr_title": "eval: run Layer1 terminal int8 sigmoid PWL Nangate45 seed sweep",
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]",
+    "pr_body_fields": {
+      "evaluator_id": "<evaluator_id>",
+      "session_id": "<session_id>",
+      "host": "<host>",
+      "queue_item_id": "l1_terminal_sigmoid_int8_pwl_nangate45_v1"
+    },
+    "checklist": [
+      "Commit only lightweight artifacts and regenerated runs/index.csv",
+      "Move this item from queued/ to evaluated/ and fill result",
+      "Include metrics row references for each completed sigmoid candidate",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py before pushing"
+    ]
+  }
+}
