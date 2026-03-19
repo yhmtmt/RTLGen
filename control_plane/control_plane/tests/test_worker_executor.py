@@ -803,9 +803,13 @@ def test_prepare_checkout_refreshes_remote_refs_not_raw_sha() -> None:
                 checkout_root = Path(args[-2])
                 checkout_root.mkdir(parents=True, exist_ok=True)
                 return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+            if args[-2:] == ["rev-parse", "9adb961"]:
+                return subprocess.CompletedProcess(args, 0, stdout="9adb961000000000000000000000000000000000\n", stderr="")
             if args[-2:] == ["rev-parse", "HEAD"]:
-                return subprocess.CompletedProcess(args, 0, stdout="9adb961\n", stderr="")
+                return subprocess.CompletedProcess(args, 0, stdout="9adb961000000000000000000000000000000000\n", stderr="")
             if args[-3:] == ["status", "--porcelain", "--untracked-files=no"]:
+                return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+            if args[-4:] == ["merge-base", "--is-ancestor", "9adb961000000000000000000000000000000000", "HEAD"]:
                 return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
             raise AssertionError(f"unexpected subprocess args: {args}")
 
@@ -820,7 +824,45 @@ def test_prepare_checkout_refreshes_remote_refs_not_raw_sha() -> None:
             with mock.patch("control_plane.workers.checkout._git_success", side_effect=fake_git_success):
                 info = prepare_checkout(repo_root=str(repo_root), source_commit="9adb961")
 
-        assert info.head_sha == "9adb961"
+        assert info.head_sha == "9adb961000000000000000000000000000000000"
+        assert info.source_commit == "9adb961000000000000000000000000000000000"
         fetch_calls = [args for args in calls if args[-3:] == ["fetch", "--quiet", "origin"]]
         assert len(fetch_calls) == 1
         assert not any(args[-1] == "9adb961" for args in calls if "fetch" in args)
+
+
+def test_prepare_checkout_accepts_short_source_commit_when_head_matches_resolved_sha() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+
+        calls: list[list[str]] = []
+
+        def fake_run(args, check=None, capture_output=None, text=None):
+            calls.append(list(args))
+            if "worktree" in args and "add" in args:
+                checkout_root = Path(args[-2])
+                checkout_root.mkdir(parents=True, exist_ok=True)
+                return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+            if args[-2:] == ["rev-parse", "81a0705"]:
+                return subprocess.CompletedProcess(args, 0, stdout="81a07051896adcdb9649dd445f93c550b62dd135\n", stderr="")
+            if args[-2:] == ["rev-parse", "HEAD"]:
+                return subprocess.CompletedProcess(args, 0, stdout="81a07051896adcdb9649dd445f93c550b62dd135\n", stderr="")
+            if args[-3:] == ["status", "--porcelain", "--untracked-files=no"]:
+                return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+            raise AssertionError(f"unexpected subprocess args: {args}")
+
+        def fake_git_success(_repo_root, *args):
+            return " ".join(args) == "cat-file -e 81a0705^{commit}"
+
+        with mock.patch("control_plane.workers.checkout.subprocess.run", side_effect=fake_run):
+            with mock.patch("control_plane.workers.checkout._git_success", side_effect=fake_git_success):
+                info = prepare_checkout(
+                    repo_root=str(repo_root),
+                    source_commit="81a0705",
+                    enforce_source_commit=True,
+                )
+
+        assert info.source_commit == "81a07051896adcdb9649dd445f93c550b62dd135"
+        assert info.head_sha == "81a07051896adcdb9649dd445f93c550b62dd135"
+        assert info.source_commit_relation == "exact"
