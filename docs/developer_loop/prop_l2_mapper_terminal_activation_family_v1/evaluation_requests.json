@@ -8,7 +8,7 @@
       "evaluation_mode": "measurement_only",
       "objective": "terminal_sigmoid_physical_metrics",
       "status": "pending_prerequisite",
-      "notes": "Layer 1 prerequisite for nonlinear terminal activation-family evaluation."
+      "notes": "Layer 1 prerequisite for nonlinear terminal activation-family evaluation, focused on a bounded int8 sigmoid block."
     },
     {
       "item_id": "l2_prop_l2_mapper_terminal_activation_family_v1_nm1_measurement_r1",
@@ -16,7 +16,7 @@
       "evaluation_mode": "measurement_only",
       "objective": "terminal_activation_reference_metrics",
       "status": "blocked_on_l1_prerequisite",
-      "notes": "First-stage bounded nonlinear activation-family reference collection on fixed nm1; blocked until the Layer 1 sigmoid block has accepted physical metrics."
+      "notes": "First-stage bounded nonlinear activation-family reference collection on fixed nm1; blocked until the Layer 1 int8 sigmoid block has accepted physical metrics."
     },
     {
       "item_id": "l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1",
@@ -31,7 +31,7 @@
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
       "status": "blocked_on_l1_and_baseline",
-      "notes": "Second-stage paired comparison; first blocked on the Layer 1 sigmoid prerequisite, then on the merged/materialized measurement baseline."
+      "notes": "Second-stage paired comparison; first blocked on the Layer 1 int8 sigmoid prerequisite, then on the merged/materialized measurement baseline."
     }
   ]
 }
