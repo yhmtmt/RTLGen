@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_mapper_terminal_activation_family_v1",
-  "source_commit": "7498c54991e5ed5f8606749fced8150b21946db2",
+  "source_commit": "pending",
   "requested_items": [
     {
       "item_id": "l1_prop_l1_terminal_sigmoid_block_v1_nangate45_r3",
@@ -11,12 +11,20 @@
       "notes": "Layer 1 prerequisite is satisfied by merged PR #63 for the bounded int8 sigmoid block."
     },
     {
+      "item_id": "l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r1",
+      "task_type": "l1_sweep",
+      "evaluation_mode": "measurement_only",
+      "objective": "npu_nm1_sigmoid_vec_physical_metrics",
+      "status": "blocked_on_integrated_implementation",
+      "notes": "Integrated sigmoid-enabled nm1 block physical source is still missing; queue after the new Layer 1 proposal is implemented."
+    },
+    {
       "item_id": "l2_prop_l2_mapper_terminal_activation_family_v1_nm1_measurement_r1",
       "task_type": "l2_campaign",
       "evaluation_mode": "measurement_only",
       "objective": "terminal_activation_reference_metrics",
-      "status": "ready_to_queue",
-      "notes": "First-stage bounded nonlinear activation-family reference collection on fixed nm1; Layer 1 sigmoid prerequisite is now merged."
+      "status": "blocked_on_integrated_l1_prerequisite",
+      "notes": "First-stage bounded nonlinear activation-family reference collection on fixed nm1; blocked until the integrated sigmoid-enabled nm1 block has accepted physical metrics."
     },
     {
       "item_id": "l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1",

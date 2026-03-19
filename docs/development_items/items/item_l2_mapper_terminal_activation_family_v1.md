@@ -3,16 +3,16 @@
 - item_id: `item_l2_mapper_terminal_activation_family_v1`
 - layer: `layer2`
 - kind: `mapper`
-- status: `promoted_to_proposal`
+- status: `blocked_on_l1_prerequisite`
 - priority: `medium`
 - owner: `developer_agent`
 - created_utc: `2026-03-19T11:20:00Z`
-- updated_utc: `2026-03-19T13:00:39Z`
+- updated_utc: `2026-03-19T14:05:00Z`
 - proposal_id: `prop_l2_mapper_terminal_activation_family_v1`
 - proposal_path: `docs/developer_loop/prop_l2_mapper_terminal_activation_family_v1`
 - triggered_by_proposal: `prop_l2_mapper_terminal_vecop_direct_output_v1`
-- blocked_on_item: `item_l1_terminal_sigmoid_block_v1`
-- blocked_on_proposal: `prop_l1_terminal_sigmoid_block_v1`
+- blocked_on_item: `item_l1_npu_nm1_sigmoid_vec_enable_v1`
+- blocked_on_proposal: `prop_l1_npu_nm1_sigmoid_vec_enable_v1`
 - triggering_evidence:
   - `docs/developer_loop/prop_l2_mapper_terminal_vecop_direct_output_v1/analysis_report.md`
   - `docs/developer_loop/prop_l2_mapper_terminal_vecop_direct_output_v1/promotion_decision.json`
@@ -33,8 +33,9 @@
 ## Candidate Idea
 - define a bounded terminal activation family beyond standalone `Relu`, starting
   from a tiny nonlinear set on fixed `nm1`
-- in the first blocked follow-on, assume an accepted Layer 1 `int8` sigmoid
-  block rather than a native `fp16` sigmoid
+- in the first blocked follow-on, assume both:
+  - an accepted standalone Layer 1 `int8` sigmoid block
+  - an accepted integrated sigmoid-enabled `nm1` NPU block
 - keep the same staged workflow:
   - `measurement_only` non-fused references first
   - `paired_comparison` only after baseline evidence is merged and materialized
@@ -79,13 +80,14 @@
 - whether the current schedule IR needs any additional terminal vec-op metadata
   beyond the accepted standalone `Relu` path
 
-## Prerequisite Outcome
-- Layer 1 prerequisite is now satisfied by merged PR `#63`
-- accepted prerequisite item:
-  `l1_prop_l1_terminal_sigmoid_block_v1_nangate45_r3`
-- next concrete step:
-  queue the `measurement_only` `nm1` reference campaign for the bounded
-  nonlinear activation family
+## Blocked Reason
+- the standalone sigmoid wrapper is accepted, but current `nm1` NPU hardware
+  still exposes only vec ops `add/mul/relu`
+- Layer 2 campaigns derive physical provenance from the integrated `nm1` NPU
+  block, so a sigmoid campaign would still be physically grounded on the wrong
+  hardware if queued now
+- new prerequisite:
+  `item_l1_npu_nm1_sigmoid_vec_enable_v1`
 
 ## Promotion Rule
 - promote when the proposal names a bounded nonlinear activation family,
