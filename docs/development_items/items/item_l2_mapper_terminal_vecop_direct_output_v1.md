@@ -3,11 +3,11 @@
 - item_id: `item_l2_mapper_terminal_vecop_direct_output_v1`
 - layer: `layer2`
 - kind: `mapper`
-- status: `promoted_to_proposal`
+- status: `merged`
 - priority: `medium`
 - owner: `developer_agent`
 - created_utc: `2026-03-18T14:05:00Z`
-- updated_utc: `2026-03-18T14:05:00Z`
+- updated_utc: `2026-03-19T11:14:02Z`
 - proposal_id: `prop_l2_mapper_terminal_vecop_direct_output_v1`
 - proposal_path: `docs/developer_loop/prop_l2_mapper_terminal_vecop_direct_output_v1`
 - triggered_by_proposal: `prop_l2_mapper_terminal_op_generalization_v1`
@@ -78,3 +78,25 @@
 - promote when the proposal names a bounded terminal vec-op family, keeps the
   first remote stage as `measurement_only`, and treats broad ranking as
   follow-on work rather than first-stage proof
+
+## Promotion Outcome
+- promoted to `docs/developer_loop/prop_l2_mapper_terminal_vecop_direct_output_v1`
+- promotion rationale:
+  - the bounded standalone terminal `Relu` vec-op family was specific enough to
+    support a clean measurement-first proof
+  - the next limiting factor was mapper lowering and staged evaluation order,
+    not another broad ranking sweep
+
+## Completion Outcome
+- merged evidence:
+  - measurement baseline PR `#58`
+  - paired comparison PR `#61`
+- result:
+  - bounded terminal vec-op direct-output lowering improved latency and energy
+    across the whole standalone terminal `Relu` suite on fixed `nm1`
+- workflow note:
+  - the first paired PR `#60` was superseded after exposing a real dependency
+    ordering gap between merged baseline evidence and paired candidate export
+- next direction:
+  - expand mapper or lowering support to broader terminal vec-op or activation
+    families using the new dependency-ordered evaluation model

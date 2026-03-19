@@ -1,15 +1,22 @@
 {
   "proposal_id": "prop_l2_mapper_terminal_vecop_direct_output_v1",
   "candidate_id": "cand_l2_mapper_terminal_vecop_direct_output_v1_r1",
-  "decision": "iterate",
-  "reason": "Merged PR #58 established the bounded standalone terminal Relu nm1 baseline cleanly under measurement_only, but the proposal's direct-output hypothesis still requires the paired comparison stage before a promote/reject judgment.",
+  "decision": "promote",
+  "reason": "Merged PRs #58 and #61 established a refreshed non-fused nm1 baseline and then showed bounded terminal vec-op direct-output lowering improving latency and energy across the whole standalone terminal Relu suite.",
   "evidence_refs": [
     "work_item:l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_measurement_r2",
     "run_key:l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_measurement_r2_run_eacb4da28b6e09ba",
     "pr:58",
     "control_plane/shadow_exports/l2_decisions/l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_measurement_r2.json",
-    "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_measurement_r2/report.md"
+    "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_measurement_r2/report.md",
+    "work_item:l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_fused_r1",
+    "run_key:l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_fused_r1_run_9ca3905be8de3980",
+    "pr:61",
+    "control_plane/shadow_exports/l2_decisions/l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_fused_r1.json",
+    "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_fused_r1/report.md",
+    "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1/relu_vec_b128_f64/schedule.yml",
+    "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_fused_r1/artifacts/perf/fp16_nm1/relu_vec_b128_f64/trace.json"
   ],
-  "next_action": "Queue the paired direct-output vs non-fused comparison on the same bounded standalone terminal Relu suite and use that focused result for the proposal-level promote/reject decision.",
+  "next_action": "Promote the next mapper or lowering item toward broader terminal vec-op or activation-family support under the staged dependency-ordered evaluation model before reopening broader architecture ranking.",
   "requires_human_approval": true
 }

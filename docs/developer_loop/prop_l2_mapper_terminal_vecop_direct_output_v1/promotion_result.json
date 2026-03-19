@@ -1,8 +1,8 @@
 {
   "proposal_id": "prop_l2_mapper_terminal_vecop_direct_output_v1",
-  "decision": "iterate",
-  "pr_number": 58,
-  "merge_commit": "fa702f64ee05d9e4be6e9636452c2734ebfef850",
-  "merged_utc": "2026-03-18T22:53:13Z",
-  "note": "PR #58 is accepted measurement-only evidence for the bounded standalone terminal Relu nm1 baseline. The proposal remains active and should advance to the paired direct-output comparison stage."
+  "decision": "promote",
+  "pr_number": 61,
+  "merge_commit": "03030262e1989a05e1257a6294704415894cb4d4",
+  "merged_utc": "2026-03-19T11:14:02Z",
+  "note": "PR #58 is the accepted measurement-only baseline and PR #61 is the accepted paired-comparison win for the bounded standalone terminal Relu vec-op suite on fixed nm1."
 }
