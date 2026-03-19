@@ -225,7 +225,7 @@ Vector unary/binary ops, such as activation and normalization.
 | 24..27 | SIZE |
 | 28..31 | RESERVED |
 
-FLAGS encode op type (ReLU, GELU, RMSNorm) and datatype.
+FLAGS encode op type (ReLU, GELU, Sigmoid, RMSNorm) and datatype.
 
 ### 5.3 SOFTMAX
 Row-wise normalized softmax over contiguous rows.

@@ -65,6 +65,51 @@ def _write_example_repo(repo_root: Path) -> tuple[str, str]:
     )
 
 
+def _write_example_block_repo(repo_root: Path) -> tuple[str, str]:
+    design_dir = repo_root / "runs" / "designs" / "npu_blocks" / "npu_fp16_cpp_nm1_sigmoidcmp"
+    design_dir.mkdir(parents=True, exist_ok=True)
+    config_path = design_dir / "config_nm1_sigmoid.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "version": "0.1",
+                "top_name": "npu_top",
+                "mmio_addr_width": 12,
+                "compute": {
+                    "enabled": True,
+                    "gemm": {"mac_type": "fp16", "lanes": 1, "accum_width": 16},
+                    "vec": {"lanes": 1, "ops": ["add", "mul", "relu", "sigmoid"]},
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    sweep_path = design_dir / "sweep_compare_33.json"
+    sweep_path.write_text(
+        json.dumps(
+            {
+                "flow_params": {
+                    "CLOCK_PERIOD": [10.0],
+                    "DIE_AREA": ["0 0 1500 1500"],
+                    "CORE_AREA": ["50 50 1450 1450"],
+                },
+                "tag_prefix": "npu_fp16_nm1_sigmoidcmp",
+                "mode_compare": True,
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return (
+        str(config_path.relative_to(repo_root)),
+        str(sweep_path.relative_to(repo_root)),
+    )
+
+
 def test_generate_l1_sweep_task_creates_ready_work_item() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
@@ -155,3 +200,57 @@ def test_generate_l1_sweep_task_upserts_existing_item() -> None:
             work_item = session.query(WorkItem).filter_by(item_id="l1_demo_softmax").one()
             assert work_item.task_request.title == "Layer1 demo updated"
             assert work_item.task_request.requested_by == "@tester2"
+
+
+def test_generate_l1_sweep_task_supports_integrated_npu_block_configs() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_block_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/npu_blocks",
+                    requested_by="@tester",
+                    source_commit="sig123",
+                    proposal_id="prop_l1_npu_nm1_sigmoid_vec_enable_v1",
+                    proposal_path="docs/developer_loop/prop_l1_npu_nm1_sigmoid_vec_enable_v1",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert result.status == "applied"
+            assert work_item.task_type == "l1_sweep"
+            assert work_item.state == WorkItemState.READY
+            assert [command["name"] for command in work_item.command_manifest] == [
+                "build_generator",
+                "generate_block_rtl",
+                "run_block_sweep",
+                "build_runs_index",
+                "validate",
+            ]
+            assert work_item.command_manifest[1]["run"] == (
+                "python3 npu/rtlgen/gen.py "
+                "--config runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/config_nm1_sigmoid.json "
+                "--out runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/verilog"
+            )
+            assert work_item.command_manifest[2]["run"] == (
+                "python3 npu/synth/run_block_sweep.py "
+                "--design_dir runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp "
+                "--platform nangate45 "
+                "--top npu_top "
+                "--sweep runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/sweep_compare_33.json "
+                "--skip_existing"
+            )
+            assert work_item.expected_outputs == [
+                "runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/metrics.csv",
+                "runs/index.csv",
+            ]

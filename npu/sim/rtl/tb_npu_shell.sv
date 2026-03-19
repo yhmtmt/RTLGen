@@ -201,6 +201,7 @@ module tb_npu_shell;
   reg vec_test;
   reg vec_gelu_test;
   reg vec_ext_test;
+  reg vec_sigmoid_test;
   reg contract_trace;
   reg second_dma_seen_before_first_bvalid;
   reg [DATA_W-1:0] cq_head_prev_mon;
@@ -272,6 +273,9 @@ module tb_npu_shell;
     vec_ext_test = 0;
     if ($value$plusargs("vec_ext_test=%d", vec_ext_test))
       vec_ext_test = (vec_ext_test != 0);
+    vec_sigmoid_test = 0;
+    if ($value$plusargs("vec_sigmoid_test=%d", vec_sigmoid_test))
+      vec_sigmoid_test = (vec_sigmoid_test != 0);
     contract_trace = 0;
     if ($value$plusargs("contract_trace=%d", contract_trace))
       contract_trace = (contract_trace != 0);
@@ -366,7 +370,7 @@ module tb_npu_shell;
       bytes_read = 64;
     end else if (vec_test) begin
       integer idx;
-      for (idx = 0; idx < 320; idx = idx + 1)
+      for (idx = 0; idx < 352; idx = idx + 1)
         bin_data[idx] = 0;
 
       // Descriptor 0: VEC_OP relu (op=0x0)
@@ -515,7 +519,23 @@ module tb_npu_shell;
         bin_data[302] = 8'h10;
         bin_data[303] = 8'h20;
 
-        bytes_read = 320;
+        if (vec_sigmoid_test) begin
+          // Descriptor 10: VEC_OP sigmoid (op=0xA)
+          bin_data[320] = 8'h11;
+          bin_data[321] = 8'h0A;
+          bin_data[322] = 8'h01;
+          bin_data[328] = 8'hc0; // -64 -> 0
+          bin_data[329] = 8'he0; // -32 -> 2
+          bin_data[330] = 8'h00; // 0 -> 8
+          bin_data[331] = 8'h20; // 32 -> 14
+          bin_data[332] = 8'h40; // 64 -> 16
+          bin_data[333] = 8'h10; // 16 -> 11
+          bin_data[334] = 8'hf0; // -16 -> 5
+          bin_data[335] = 8'h7f; // clamp high -> 16
+          bytes_read = 352;
+        end else begin
+          bytes_read = 320;
+        end
       end else begin
         bytes_read = 128;
       end
@@ -646,6 +666,18 @@ module tb_npu_shell;
               vec_tmp = (vec_softmax_tmp * (127 - vec_softmax_tmp)) >>> 7;
             end else if (vec_op_sel == 9) begin
               vec_tmp = 1;
+            end else if (vec_op_sel == 10) begin
+              vec_tmp = sx8(bin_data[scan_off + 8 + gemm_lane]);
+              if (vec_tmp < -64)
+                vec_tmp = 0;
+              else if (vec_tmp < -32)
+                vec_tmp = (vec_tmp + 64) >>> 4;
+              else if (vec_tmp < 32)
+                vec_tmp = ((vec_tmp * 3) >>> 4) + 8;
+              else if (vec_tmp < 64)
+                vec_tmp = (vec_tmp >>> 4) + 12;
+              else
+                vec_tmp = 16;
             end else begin
               vec_tmp = sx8(bin_data[scan_off + 8 + gemm_lane]);
               if (vec_tmp < 0)

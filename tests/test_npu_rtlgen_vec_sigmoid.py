@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression tests for dedicated NPU SOFTMAX RTL generation."""
+"""Regression tests for integrated nm1 sigmoid vec-op RTL generation."""
 
 import json
 import subprocess
@@ -10,32 +10,30 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-BASE_CFG = REPO_ROOT / "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json"
+SIGMOID_CFG = (
+    REPO_ROOT
+    / "runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/config_nm1_sigmoid.json"
+)
 RTLGEN_BIN = REPO_ROOT / "build/rtlgen"
 FALLBACK_RTLGEN_BIN = Path("/workspaces/RTLGen/build/rtlgen")
 
 
-class NpuRtlgenSoftmaxRegressionTest(unittest.TestCase):
-    def test_generates_dedicated_softmax_wrapper_and_opcode_path(self):
+class NpuRtlgenVecSigmoidRegressionTest(unittest.TestCase):
+    def test_generates_sigmoid_enabled_nm1_top_and_runs_vec_smoke(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             cfg_path = root / "cfg.json"
-            out_dir = root / "out"
-
-            cfg = json.loads(BASE_CFG.read_text(encoding="utf-8"))
+            out_dir = root / "npu" / "rtlgen" / "out"
+            vvp_path = root / "npu_top.vvp"
+            cfg = json.loads(SIGMOID_CFG.read_text(encoding="utf-8"))
             gemm_cpp = cfg.setdefault("compute", {}).setdefault("gemm", {}).setdefault("rtlgen_cpp", {})
+            vec_cpp = cfg.setdefault("compute", {}).setdefault("vec", {}).setdefault("rtlgen_cpp", {})
             if RTLGEN_BIN.exists():
                 gemm_cpp["binary_path"] = str(RTLGEN_BIN)
+                vec_cpp["binary_path"] = str(RTLGEN_BIN)
             else:
                 gemm_cpp["binary_path"] = str(FALLBACK_RTLGEN_BIN)
-            cfg.setdefault("compute", {})["softmax"] = {
-                "enabled": True,
-                "dtype": "int8",
-                "row_bytes": 4,
-                "module_name": "softmax_rowwise_int8_r4_wrapper",
-                "accum_bits": 16,
-                "max_shift": 7,
-            }
+                vec_cpp["binary_path"] = str(FALLBACK_RTLGEN_BIN)
             cfg_path.write_text(json.dumps(cfg, indent=2) + "\n", encoding="utf-8")
 
             subprocess.run(
@@ -52,10 +50,9 @@ class NpuRtlgenSoftmaxRegressionTest(unittest.TestCase):
             )
 
             top_v = (out_dir / "top.v").read_text(encoding="utf-8")
-            self.assertIn("module softmax_rowwise_int8_r4_wrapper(", top_v)
-            self.assertIn("u_softmax_engine", top_v)
-            self.assertIn("SOFTMAX_DESC_ENABLED = 1", top_v)
-            self.assertIn("cq_mem_rdata[7:0] == 8'h12", top_v)
+            self.assertIn("VEC_OP_SIGMOID   = 4'ha", top_v)
+            self.assertIn("vec_act_sigmoid_int8", top_v)
+            self.assertIn("VEC_EN_SIGMOID   = 1", top_v)
 
             subprocess.run(
                 [
@@ -64,13 +61,13 @@ class NpuRtlgenSoftmaxRegressionTest(unittest.TestCase):
                     "-I",
                     str(out_dir),
                     "-o",
-                    str(out_dir / "top.vvp"),
+                    str(vvp_path),
                     str(out_dir / "top.v"),
                     str(out_dir / "top_axi.v"),
                     str(out_dir / "axi_lite_mmio_bridge.sv"),
                     str(out_dir / "sram_models.sv"),
                 ],
-                cwd=str(REPO_ROOT),
+                cwd=str(root),
                 check=True,
             )
 

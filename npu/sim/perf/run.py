@@ -38,6 +38,7 @@ VEC_OP_NAMES = {
     0x7: "dgelu",
     0x8: "dsoftmax",
     0x9: "dlayernorm",
+    0xA: "sigmoid",
 }
 
 def parse_desc_stream(data):
@@ -214,6 +215,19 @@ def _vec_softmax_int8(x):
     return _u8(x << 2)
 
 
+def _vec_sigmoid_int8(x):
+    x = int(x)
+    if x < -64:
+        return 0
+    if x < -32:
+        return _u8((x + 64) >> 4)
+    if x < 32:
+        return _u8(((3 * x) >> 4) + 8)
+    if x < 64:
+        return _u8((x >> 4) + 12)
+    return 16
+
+
 def _fp16_add_bits(a_bits, b_bits):
     return _fp16_canonicalize_zero(
         _float_to_fp16_bits(_fp16_bits_to_float(a_bits) + _fp16_bits_to_float(b_bits))
@@ -352,6 +366,8 @@ def _vec_expected_result(raw, flags, cfg, dtype_code=0x0):
             out = _u8((p * (127 - p)) >> 7)
         elif op_code == 0x9:  # dlayernorm
             out = 1
+        elif op_code == 0xA:  # sigmoid
+            out = _vec_sigmoid_int8(x)
         else:  # relu / fallback
             out = 0 if x < 0 else _u8(x)
         result.append(_u8(out))

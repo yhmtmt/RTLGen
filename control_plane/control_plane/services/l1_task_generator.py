@@ -47,6 +47,14 @@ class Layer1TaskGenerateResult:
     task_request_id: str
 
 
+@dataclass(frozen=True)
+class Layer1ConfigTarget:
+    design_kind: str
+    design_name: str
+    expected_metrics_path: str
+    commands: list[dict[str, str]]
+
+
 def _repo_rel(path_text: str, repo_root: Path) -> str:
     path = Path(path_text)
     if path.is_absolute():
@@ -61,23 +69,161 @@ def _load_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def _read_wrapper_name(config_path: Path) -> str:
+def _read_config_target(
+    config_path: Path,
+    *,
+    repo_root: Path,
+    config_rel: str,
+    out_root: str,
+) -> Layer1ConfigTarget:
     cfg = _load_json(config_path)
     if "multiplier" in cfg:
         module_name = cfg["multiplier"]["module_name"]
+        wrapper = f"{module_name}_wrapper"
+        return Layer1ConfigTarget(
+            design_kind="wrapper",
+            design_name=wrapper,
+            expected_metrics_path=f"{out_root}/{wrapper}/metrics.csv",
+            commands=[
+                {
+                    "name": "build_generator",
+                    "run": "cmake -S . -B build && cmake --build build --target rtlgen",
+                },
+                {
+                    "name": "run_sweep",
+                    "run": (
+                        "python3 scripts/run_sweep.py "
+                        f"--configs {config_rel} "
+                        "--platform {platform} "
+                        f"--sweep {{sweep_path}} "
+                        f"--out_root {out_root} "
+                        "--skip_existing"
+                    ),
+                },
+            ],
+        )
     elif "multiplier_yosys" in cfg:
         module_name = cfg["multiplier_yosys"]["module_name"]
+        wrapper = f"{module_name}_wrapper"
+        return Layer1ConfigTarget(
+            design_kind="wrapper",
+            design_name=wrapper,
+            expected_metrics_path=f"{out_root}/{wrapper}/metrics.csv",
+            commands=[
+                {
+                    "name": "build_generator",
+                    "run": "cmake -S . -B build && cmake --build build --target rtlgen",
+                },
+                {
+                    "name": "run_sweep",
+                    "run": (
+                        "python3 scripts/run_sweep.py "
+                        f"--configs {config_rel} "
+                        "--platform {platform} "
+                        f"--sweep {{sweep_path}} "
+                        f"--out_root {out_root} "
+                        "--skip_existing"
+                    ),
+                },
+            ],
+        )
     elif "adder" in cfg:
         module_name = cfg["adder"]["module_name"]
+        wrapper = f"{module_name}_wrapper"
+        return Layer1ConfigTarget(
+            design_kind="wrapper",
+            design_name=wrapper,
+            expected_metrics_path=f"{out_root}/{wrapper}/metrics.csv",
+            commands=[
+                {
+                    "name": "build_generator",
+                    "run": "cmake -S . -B build && cmake --build build --target rtlgen",
+                },
+                {
+                    "name": "run_sweep",
+                    "run": (
+                        "python3 scripts/run_sweep.py "
+                        f"--configs {config_rel} "
+                        "--platform {platform} "
+                        f"--sweep {{sweep_path}} "
+                        f"--out_root {out_root} "
+                        "--skip_existing"
+                    ),
+                },
+            ],
+        )
     elif "operations" in cfg and len(cfg["operations"]) == 1:
         entry = cfg["operations"][0]
         op_type = entry.get("type")
         if op_type not in {"activation", "softmax_rowwise"}:
             raise Layer1TaskGenerationError(f"unsupported single-operation design type in {config_path}: {op_type}")
         module_name = entry["module_name"]
+        wrapper = f"{module_name}_wrapper"
+        return Layer1ConfigTarget(
+            design_kind="wrapper",
+            design_name=wrapper,
+            expected_metrics_path=f"{out_root}/{wrapper}/metrics.csv",
+            commands=[
+                {
+                    "name": "build_generator",
+                    "run": "cmake -S . -B build && cmake --build build --target rtlgen",
+                },
+                {
+                    "name": "run_sweep",
+                    "run": (
+                        "python3 scripts/run_sweep.py "
+                        f"--configs {config_rel} "
+                        "--platform {platform} "
+                        f"--sweep {{sweep_path}} "
+                        f"--out_root {out_root} "
+                        "--skip_existing"
+                    ),
+                },
+            ],
+        )
+    elif "top_name" in cfg and "compute" in cfg:
+        top_name = str(cfg["top_name"]).strip()
+        if not top_name:
+            raise Layer1TaskGenerationError(f"top_name must not be empty in {config_path}")
+        try:
+            design_dir = str(config_path.parent.resolve().relative_to(repo_root.resolve()))
+        except ValueError as exc:
+            raise Layer1TaskGenerationError(
+                f"integrated NPU block config must live under repo_root/runs/designs/...: {config_path}"
+            ) from exc
+        design_name = config_path.parent.name
+        return Layer1ConfigTarget(
+            design_kind="block",
+            design_name=design_name,
+            expected_metrics_path=f"{design_dir}/metrics.csv",
+            commands=[
+                {
+                    "name": "build_generator",
+                    "run": "cmake -S . -B build && cmake --build build --target rtlgen",
+                },
+                {
+                    "name": "generate_block_rtl",
+                    "run": (
+                        "python3 npu/rtlgen/gen.py "
+                        f"--config {config_rel} "
+                        f"--out {design_dir}/verilog"
+                    ),
+                },
+                {
+                    "name": "run_block_sweep",
+                    "run": (
+                        "python3 npu/synth/run_block_sweep.py "
+                        f"--design_dir {design_dir} "
+                        "--platform {platform} "
+                        f"--top {top_name} "
+                        f"--sweep {{sweep_path}} "
+                        "--skip_existing"
+                    ),
+                },
+            ],
+        )
     else:
         raise Layer1TaskGenerationError(f"unsupported config format for sweep generation: {config_path}")
-    return f"{module_name}_wrapper"
 
 
 def _default_item_id(*, sweep_path: str, platform: str, config_paths: list[str]) -> str:
@@ -109,6 +255,7 @@ def _build_payload(
     config_paths: list[str],
     out_root: str,
     expected_outputs: list[str],
+    command_manifest: list[dict[str, str]],
     proposal_id: str | None,
     proposal_path: str | None,
 ) -> dict[str, Any]:
@@ -138,21 +285,7 @@ def _build_payload(
                 ],
             },
             "commands": [
-                {
-                    "name": "build_generator",
-                    "run": "cmake -S . -B build && cmake --build build --target rtlgen",
-                },
-                {
-                    "name": "run_sweep",
-                    "run": (
-                        "python3 scripts/run_sweep.py "
-                        f"--configs {' '.join(config_paths)} "
-                        f"--platform {platform} "
-                        f"--sweep {sweep_path} "
-                        f"--out_root {out_root} "
-                        "--skip_existing"
-                    ),
-                },
+                *command_manifest,
                 {
                     "name": "build_runs_index",
                     "run": "python3 scripts/build_runs_index.py",
@@ -205,8 +338,26 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
     out_root = _repo_rel(request.out_root, repo_root)
     proposal_path = _repo_rel(request.proposal_path, repo_root) if request.proposal_path else None
 
-    wrappers = [_read_wrapper_name((repo_root / config_path).resolve()) for config_path in config_paths]
-    expected_outputs = [f"{out_root}/{wrapper}/metrics.csv" for wrapper in wrappers]
+    targets = [
+        _read_config_target(
+            (repo_root / config_path).resolve(),
+            repo_root=repo_root,
+            config_rel=config_path,
+            out_root=out_root,
+        )
+        for config_path in config_paths
+    ]
+    if not targets:
+        raise Layer1TaskGenerationError("config_paths must not be empty")
+    design_kinds = {target.design_kind for target in targets}
+    if len(design_kinds) != 1:
+        raise Layer1TaskGenerationError(
+            f"mixed Layer1 config kinds are not supported in one sweep item: {sorted(design_kinds)}"
+        )
+    command_manifest = list(targets[0].commands)
+    for command in command_manifest:
+        command["run"] = command["run"].format(platform=request.platform, sweep_path=sweep_path)
+    expected_outputs = [target.expected_metrics_path for target in targets]
     expected_outputs.append("runs/index.csv")
 
     item_id = request.item_id or _default_item_id(
@@ -231,6 +382,7 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
         config_paths=config_paths,
         out_root=out_root,
         expected_outputs=expected_outputs,
+        command_manifest=command_manifest,
         proposal_id=request.proposal_id,
         proposal_path=proposal_path,
     )

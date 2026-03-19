@@ -1,14 +1,14 @@
 {
   "proposal_id": "prop_l1_npu_nm1_sigmoid_vec_enable_v1",
-  "source_commit": "pending",
+  "source_commit": "pending_push",
   "requested_items": [
     {
       "item_id": "l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r1",
       "task_type": "l1_sweep",
       "evaluation_mode": "measurement_only",
       "objective": "npu_nm1_sigmoid_vec_physical_metrics",
-      "status": "pending_implementation",
-      "notes": "Queue after the sigmoid-enabled nm1 block design/config is implemented and locally validated."
+      "status": "pending_push",
+      "notes": "Queue after the integrated sigmoid vec support and DB-native block-sweep generator update are committed and pushed."
     }
   ]
 }
