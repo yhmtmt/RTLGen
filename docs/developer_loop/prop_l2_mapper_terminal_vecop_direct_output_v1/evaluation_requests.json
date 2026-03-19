@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_mapper_terminal_vecop_direct_output_v1",
-  "source_commit": "pending_push",
+  "source_commit": "27e9e44cfb4858f433d07fe16b8e22b53d3f50af",
   "requested_items": [
     {
       "item_id": "l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_measurement_r2",
@@ -25,8 +25,10 @@
         "direction": "better_than_historical",
         "reason": "Direct terminal vec-op output should reduce the final writeback tail on at least part of the bounded standalone terminal Relu suite."
       },
-      "status": "queued_pending_run",
-      "status_reason": "Ready to queue once the fused vec-op campaign and proposal bookkeeping are pushed."
+      "status": "queued",
+      "status_reason": "Inserted into the local control-plane PostgreSQL queue on 2026-03-19 after the fused vec-op campaign was pushed.",
+      "task_request_id": "2aeb0973-8424-4944-9d1b-09fd5f90cd8f",
+      "work_item_id": "499b29e2-f68a-41e1-83b9-71cb6c3ec0fc"
     }
   ]
 }
