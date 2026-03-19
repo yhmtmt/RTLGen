@@ -79,7 +79,24 @@ std::filesystem::path locateFlopoco(const std::filesystem::path &exePath) {
     if (std::filesystem::exists(cwdBin)) {
         return cwdBin;
     }
-    throw std::runtime_error("Unable to locate FloPoCo binary. Set FLOPOCO_BIN or ensure bin/flopoco exists.");
+    std::filesystem::path repoInstall = exeDir.parent_path() / "third_party" / "flopoco-install" / "bin" / "flopoco";
+    if (std::filesystem::exists(repoInstall)) {
+        return repoInstall;
+    }
+    if (const char *pathEnv = std::getenv("PATH")) {
+        std::stringstream pathStream(pathEnv);
+        std::string segment;
+        while (std::getline(pathStream, segment, ':')) {
+            if (segment.empty()) {
+                continue;
+            }
+            std::filesystem::path candidate = std::filesystem::path(segment) / "flopoco";
+            if (std::filesystem::exists(candidate)) {
+                return candidate;
+            }
+        }
+    }
+    throw std::runtime_error("Unable to locate FloPoCo binary. Set FLOPOCO_BIN, install flopoco on PATH, or ensure bin/flopoco exists.");
 }
 
 void runCommandOrThrow(const std::string &cmd, const std::string &what) {
