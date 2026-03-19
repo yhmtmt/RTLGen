@@ -2,11 +2,12 @@
 
 ## Proposal
 - `proposal_id`: `prop_l1_terminal_sigmoid_block_v1`
-- `title`: `Terminal sigmoid block`
+- `title`: `Terminal int8 sigmoid block`
 
 ## Scope
 - proposal seeded only
 - no circuit implementation yet
+- first pass now explicitly targets an `int8` sigmoid block, not native `fp16`
 - this proposal exists to provide the physical prerequisite for the blocked
   Layer 2 terminal activation-family proposal
 
@@ -31,11 +32,16 @@
 ## Evaluation Request
 - not queued yet
 - next local step:
-  - choose the bounded sigmoid implementation path
+  - instantiate the bounded int8 sigmoid through the existing `src/rtlgen`
+    integer `pwl` activation path
+  - choose the first-pass breakpoint and output-point set for the sigmoid
+    approximation
   - implement the block and wrapper
   - run local smoke checks
   - queue the first Layer 1 physical sweep
 
 ## Risks
-- the first sigmoid implementation path may be too costly or inaccurate
+- the first bounded int8 sigmoid implementation path may be too costly or inaccurate
 - later Layer 2 integration may still require interface adjustments
+- later `fp16`-pipeline use may require a separate conversion or native-fp16
+  follow-on

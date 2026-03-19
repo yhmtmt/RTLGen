@@ -1,4 +1,4 @@
-# Terminal sigmoid block
+# Terminal int8 sigmoid block
 
 - item_id: `item_l1_terminal_sigmoid_block_v1`
 - layer: `layer1`
@@ -25,7 +25,9 @@
 
 ## Candidate Idea
 - implement the smallest useful nonlinear terminal activation block:
-  `sigmoid`
+  `int8 sigmoid`
+- prefer a bounded piecewise-linear (`pwl`) implementation on the existing
+  `src/rtlgen` integer activation path
 - keep the first pass tightly bounded so later Layer 2 work can consume real
   physical timing, power, and area
 
@@ -60,7 +62,10 @@
   physical evaluation
 
 ## Open Questions
-- which sigmoid implementation style is the smallest viable first pass
+- which bounded `int8` sigmoid implementation style is the smallest viable
+  first pass
+- which first-pass `pwl` points are good enough to support physical
+  characterization without widening the scope into a quality-study project
 - whether one wrapper is enough or whether a tiny family is needed immediately
 - what acceptance metric threshold is sufficient before Layer 2 consumption
 

@@ -9,7 +9,7 @@
 - no mapper, architecture, or circuit implementation yet
 - scope corrected immediately after seeding:
   - nonlinear terminal activation support is not mapper-only
-  - the next concrete prerequisite is a bounded Layer 1 sigmoid block
+  - the next concrete prerequisite is a bounded Layer 1 `int8` sigmoid block
   - this Layer 2 proposal is now blocked on that accepted physical evidence
 
 ## Files Changed
@@ -34,7 +34,7 @@
 ## Evaluation Request
 - not queued yet
 - next local step:
-  - seed and promote the Layer 1 sigmoid block proposal
+  - seed and promote the Layer 1 `int8` sigmoid block proposal
   - wait for accepted physical implementation evidence
   - then return to this Layer 2 proposal for measurement-suite generation
 

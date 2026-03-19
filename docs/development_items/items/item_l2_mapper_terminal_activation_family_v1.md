@@ -33,6 +33,8 @@
 ## Candidate Idea
 - define a bounded terminal activation family beyond standalone `Relu`, starting
   from a tiny nonlinear set on fixed `nm1`
+- in the first blocked follow-on, assume an accepted Layer 1 `int8` sigmoid
+  block rather than a native `fp16` sigmoid
 - keep the same staged workflow:
   - `measurement_only` non-fused references first
   - `paired_comparison` only after baseline evidence is merged and materialized
@@ -70,7 +72,8 @@
   export and about using measurement-only items for pure metric collection
 
 ## Open Questions
-- which bounded nonlinear family is the best next step:
+- which bounded nonlinear family is the best next step after the Layer 1
+  `int8` sigmoid block:
   terminal `Sigmoid` only, `Sigmoid + Tanh`, or another tiny activation set
 - what local output-quality threshold is required before remote evaluation
 - whether the current schedule IR needs any additional terminal vec-op metadata

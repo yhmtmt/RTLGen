@@ -8,7 +8,7 @@
       "evaluation_mode": "measurement_only",
       "objective": "terminal_sigmoid_physical_metrics",
       "status": "pending",
-      "notes": "Layer 1 prerequisite physical sweep for a bounded terminal sigmoid block."
+      "notes": "Layer 1 prerequisite physical sweep for a bounded terminal int8 sigmoid block."
     }
   ]
 }

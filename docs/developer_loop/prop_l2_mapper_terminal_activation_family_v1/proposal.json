@@ -5,7 +5,7 @@
   "layer": "l2",
   "kind": "mapper",
   "title": "Terminal activation-family direct output",
-  "hypothesis": "After proving direct terminal-output for standalone terminal Relu vec-op tails, the next bounded activation-family step should test whether a small nonlinear terminal activation family can also write directly to Y_DRAM on fixed nm1, but only after a real Layer 1 activation block has accepted physical implementation results.",
+  "hypothesis": "After proving direct terminal-output for standalone terminal Relu vec-op tails, the next bounded activation-family step should test whether a small nonlinear terminal activation family can also write directly to Y_DRAM on fixed nm1, but only after a real Layer 1 int8 activation block has accepted physical implementation results.",
   "direct_comparison": {
     "primary_question": "Can a bounded nonlinear terminal activation family establish clean nm1 reference points first, then show a direct-output win on those same points without reopening broader ranking?",
     "include": [
@@ -43,7 +43,7 @@
       "requires_materialized_refs": false,
       "expected_result": {
         "direction": "unknown",
-        "reason": "the first requirement is an accepted Layer 1 sigmoid block with measured physical timing, power, and area"
+        "reason": "the first requirement is an accepted Layer 1 int8 sigmoid block with measured physical timing, power, and area"
       }
     },
     {
@@ -58,7 +58,7 @@
       "requires_materialized_refs": true,
       "expected_result": {
         "direction": "unknown",
-        "reason": "the first layer2 item should only run after the Layer 1 sigmoid block has accepted physical metrics and should then record non-fused nm1 reference metrics and legality evidence"
+        "reason": "the first layer2 item should only run after the Layer 1 int8 sigmoid block has accepted physical metrics and should then record non-fused nm1 reference metrics and legality evidence"
       }
     },
     {

@@ -19,8 +19,10 @@
 ## Hypothesis
 - a bounded nonlinear terminal activation family can establish clean non-fused
   reference points first, then show a direct-output win on those same points
-- the first proof must start with a bounded Layer 1 sigmoid block so that later
-  perf-sim comparisons use real measured physical parameters
+- the first proof must start with a bounded Layer 1 `int8` sigmoid block so
+  that later perf-sim comparisons use real measured physical parameters
+- any native `fp16` nonlinear block should be treated as a later follow-on, not
+  part of this first proof
 
 ## Evaluation Scope
 - direct comparison set:
@@ -29,7 +31,7 @@
   - paired direct-output vs non-fused `nm1` comparison on the same suite
 - evaluation modes:
   - prerequisite first-stage item: Layer 1 `measurement_only` physical sweep
-    for a bounded terminal sigmoid block
+    for a bounded terminal `int8` sigmoid block
   - first Layer 2 item: `measurement_only`
   - second Layer 2 item: `paired_comparison`
   - expected Layer 1 result: accepted physical timing, power, and area for the
@@ -60,7 +62,8 @@
 
 ## Candidate Direction
 - first create the smallest useful nonlinear activation block:
-  - terminal `Sigmoid`
+  - terminal `int8` `Sigmoid`, preferably via the existing `pwl` activation
+    path in `src/rtlgen`
 - only after accepted Layer 1 physical results:
   - expose the block in fixed `fp16_nm1`
   - define a tiny terminal activation suite
