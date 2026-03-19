@@ -8,5 +8,5 @@ sigmoid support in the fixed `nm1` vec path.
 - compute.gemm.num_modules: `1`
 - compute.vec.ops: `add`, `mul`, `relu`, `sigmoid`
 - compute.vec.activation_source: `rtlgen_cpp`
-- compute.gemm.rtlgen_cpp.binary_path: `/workspaces/RTLGen/build/rtlgen`
-- compute.vec.rtlgen_cpp.binary_path: `/workspaces/RTLGen/build/rtlgen`
+- compute.gemm.rtlgen_cpp.binary_path: `build/rtlgen`
+- compute.vec.rtlgen_cpp.binary_path: `build/rtlgen`
