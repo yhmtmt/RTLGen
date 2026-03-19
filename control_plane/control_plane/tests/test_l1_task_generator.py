@@ -143,7 +143,14 @@ def test_generate_l1_sweep_task_creates_ready_work_item() -> None:
                 "build_runs_index",
                 "validate",
             ]
+            assert work_item.command_manifest[0]["run"] == (
+                "export PATH=/oss-cad-suite/bin:$PATH && "
+                "cmake -S . -B build && cmake --build build --target rtlgen"
+            )
             assert "--skip_existing" in work_item.command_manifest[1]["run"]
+            assert work_item.command_manifest[1]["run"].startswith(
+                "export PATH=/oss-cad-suite/bin:$PATH && python3 scripts/run_sweep.py "
+            )
             assert work_item.command_manifest[3]["run"] == "python3 scripts/validate_runs.py --skip_eval_queue"
             assert work_item.expected_outputs == [
                 "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv",
@@ -237,12 +244,18 @@ def test_generate_l1_sweep_task_supports_integrated_npu_block_configs() -> None:
                 "build_runs_index",
                 "validate",
             ]
+            assert work_item.command_manifest[0]["run"] == (
+                "export PATH=/oss-cad-suite/bin:$PATH && "
+                "cmake -S . -B build && cmake --build build --target rtlgen"
+            )
             assert work_item.command_manifest[1]["run"] == (
+                "export PATH=/oss-cad-suite/bin:$PATH && "
                 "python3 npu/rtlgen/gen.py "
                 "--config runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/config_nm1_sigmoid.json "
                 "--out runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/verilog"
             )
             assert work_item.command_manifest[2]["run"] == (
+                "export PATH=/oss-cad-suite/bin:$PATH && "
                 "python3 npu/synth/run_block_sweep.py "
                 "--design_dir runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp "
                 "--platform nangate45 "

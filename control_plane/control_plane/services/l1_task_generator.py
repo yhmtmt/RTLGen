@@ -55,6 +55,10 @@ class Layer1ConfigTarget:
     commands: list[dict[str, str]]
 
 
+def _with_oss_cad_path(command: str) -> str:
+    return f"export PATH=/oss-cad-suite/bin:$PATH && {command}"
+
+
 def _repo_rel(path_text: str, repo_root: Path) -> str:
     path = Path(path_text)
     if path.is_absolute():
@@ -87,17 +91,19 @@ def _read_config_target(
             commands=[
                 {
                     "name": "build_generator",
-                    "run": "cmake -S . -B build && cmake --build build --target rtlgen",
+                    "run": _with_oss_cad_path("cmake -S . -B build && cmake --build build --target rtlgen"),
                 },
                 {
                     "name": "run_sweep",
-                    "run": (
+                    "run": _with_oss_cad_path(
+                        (
                         "python3 scripts/run_sweep.py "
                         f"--configs {config_rel} "
                         "--platform {platform} "
                         f"--sweep {{sweep_path}} "
                         f"--out_root {out_root} "
                         "--skip_existing"
+                        )
                     ),
                 },
             ],
@@ -112,17 +118,19 @@ def _read_config_target(
             commands=[
                 {
                     "name": "build_generator",
-                    "run": "cmake -S . -B build && cmake --build build --target rtlgen",
+                    "run": _with_oss_cad_path("cmake -S . -B build && cmake --build build --target rtlgen"),
                 },
                 {
                     "name": "run_sweep",
-                    "run": (
+                    "run": _with_oss_cad_path(
+                        (
                         "python3 scripts/run_sweep.py "
                         f"--configs {config_rel} "
                         "--platform {platform} "
                         f"--sweep {{sweep_path}} "
                         f"--out_root {out_root} "
                         "--skip_existing"
+                        )
                     ),
                 },
             ],
@@ -137,17 +145,19 @@ def _read_config_target(
             commands=[
                 {
                     "name": "build_generator",
-                    "run": "cmake -S . -B build && cmake --build build --target rtlgen",
+                    "run": _with_oss_cad_path("cmake -S . -B build && cmake --build build --target rtlgen"),
                 },
                 {
                     "name": "run_sweep",
-                    "run": (
+                    "run": _with_oss_cad_path(
+                        (
                         "python3 scripts/run_sweep.py "
                         f"--configs {config_rel} "
                         "--platform {platform} "
                         f"--sweep {{sweep_path}} "
                         f"--out_root {out_root} "
                         "--skip_existing"
+                        )
                     ),
                 },
             ],
@@ -166,17 +176,19 @@ def _read_config_target(
             commands=[
                 {
                     "name": "build_generator",
-                    "run": "cmake -S . -B build && cmake --build build --target rtlgen",
+                    "run": _with_oss_cad_path("cmake -S . -B build && cmake --build build --target rtlgen"),
                 },
                 {
                     "name": "run_sweep",
-                    "run": (
+                    "run": _with_oss_cad_path(
+                        (
                         "python3 scripts/run_sweep.py "
                         f"--configs {config_rel} "
                         "--platform {platform} "
                         f"--sweep {{sweep_path}} "
                         f"--out_root {out_root} "
                         "--skip_existing"
+                        )
                     ),
                 },
             ],
@@ -199,25 +211,29 @@ def _read_config_target(
             commands=[
                 {
                     "name": "build_generator",
-                    "run": "cmake -S . -B build && cmake --build build --target rtlgen",
+                    "run": _with_oss_cad_path("cmake -S . -B build && cmake --build build --target rtlgen"),
                 },
                 {
                     "name": "generate_block_rtl",
-                    "run": (
+                    "run": _with_oss_cad_path(
+                        (
                         "python3 npu/rtlgen/gen.py "
                         f"--config {config_rel} "
                         f"--out {design_dir}/verilog"
+                        )
                     ),
                 },
                 {
                     "name": "run_block_sweep",
-                    "run": (
+                    "run": _with_oss_cad_path(
+                        (
                         "python3 npu/synth/run_block_sweep.py "
                         f"--design_dir {design_dir} "
                         "--platform {platform} "
                         f"--top {top_name} "
                         f"--sweep {{sweep_path}} "
                         "--skip_existing"
+                        )
                     ),
                 },
             ],
