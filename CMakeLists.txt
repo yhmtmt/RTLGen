@@ -161,14 +161,40 @@ add_test(NAME test_mac_pp_feedback COMMAND bash ${PROJECT_SOURCE_DIR}/tests/test
 set_tests_properties(test_mac_pp_feedback PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
 if(RTLGEN_BUILD_FLOPOCO)
-    find_package(GMPXX)
-    find_package(MPFR)
-    find_package(MPFI)
-    find_package(LAPACK)
-    find_package(Sollya)
+    find_path(GMP_INCLUDE_DIR gmp.h)
+    find_path(GMPXX_INCLUDE_DIR gmpxx.h)
+    find_library(GMP_LIBRARY gmp)
+    find_library(GMPXX_LIBRARY gmpxx)
+    find_path(MPFR_INCLUDE_DIR mpfr.h)
+    find_library(MPFR_LIBRARY mpfr)
+    find_path(MPFI_INCLUDE_DIR mpfi.h)
+    find_library(MPFI_LIBRARY mpfi)
+    find_path(SOLLYA_INCLUDE_DIR sollya.h)
+    find_library(SOLLYA_LIBRARY sollya)
+    find_package(LAPACK QUIET)
 
-    if(NOT GMPXX_FOUND OR NOT MPFR_FOUND OR NOT MPFI_FOUND OR NOT LAPACK_FOUND OR NOT Sollya_FOUND)
-        message(WARNING "FloPoCo build skipped: missing GMP/MPFR/MPFI/LAPACK/Sollya (install libgmp-dev, libmpfr-dev, libmpfi-dev, liblapack-dev, libsollya-dev or equivalents) then re-enable RTLGEN_BUILD_FLOPOCO.")
+    set(FLOPOCO_DEPS_FOUND ON)
+    foreach(dep
+            GMP_INCLUDE_DIR
+            GMPXX_INCLUDE_DIR
+            GMP_LIBRARY
+            GMPXX_LIBRARY
+            MPFR_INCLUDE_DIR
+            MPFR_LIBRARY
+            MPFI_INCLUDE_DIR
+            MPFI_LIBRARY
+            SOLLYA_INCLUDE_DIR
+            SOLLYA_LIBRARY)
+        if(NOT ${dep})
+            set(FLOPOCO_DEPS_FOUND OFF)
+        endif()
+    endforeach()
+    if(NOT LAPACK_FOUND)
+        set(FLOPOCO_DEPS_FOUND OFF)
+    endif()
+
+    if(NOT FLOPOCO_DEPS_FOUND)
+        message(WARNING "FloPoCo build skipped: missing GMP/MPFR/MPFI/LAPACK/Sollya headers or libraries (install libgmp-dev, libmpfr-dev, libmpfi-dev, liblapack-dev, libsollya-dev or equivalents) then re-enable RTLGEN_BUILD_FLOPOCO.")
         set(RTLGEN_BUILD_FLOPOCO OFF)
     endif()
 endif()
