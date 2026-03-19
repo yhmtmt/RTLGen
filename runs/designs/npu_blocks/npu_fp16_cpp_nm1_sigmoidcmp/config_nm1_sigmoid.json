@@ -43,7 +43,7 @@
         "subnormals": "preserve"
       },
       "rtlgen_cpp": {
-        "binary_path": "build/rtlgen",
+        "binary_path": "/workspaces/RTLGen/build/rtlgen",
         "module_name": "gemm_mac_fp16_ieee",
         "total_width": 16,
         "mantissa_width": 10
@@ -61,7 +61,7 @@
       ],
       "activation_source": "rtlgen_cpp",
       "rtlgen_cpp": {
-        "binary_path": "build/rtlgen",
+        "binary_path": "/workspaces/RTLGen/build/rtlgen",
         "module_prefix": "vec_act"
       }
     }
