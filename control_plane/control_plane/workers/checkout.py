@@ -147,10 +147,12 @@ def prepare_checkout(
     if not repo_path.is_dir():
         raise CheckoutError(f"repo root is not a directory: {repo_path}")
 
+    resolved_source_commit = source_commit
     try:
         if source_commit:
             _ensure_source_commit(repo_path, source_commit)
-        checkout_path, cleanup_path = _create_worktree(repo_path, source_commit)
+            resolved_source_commit = _run_git(repo_path, "rev-parse", source_commit)
+        checkout_path, cleanup_path = _create_worktree(repo_path, resolved_source_commit)
     except (subprocess.CalledProcessError, FileNotFoundError, CheckoutError) as exc:
         raise CheckoutError(f"failed to prepare worktree: {exc}") from exc
 
@@ -166,7 +168,7 @@ def prepare_checkout(
                 work_dir=str(checkout_path),
                 head_sha=None,
                 git_dirty=None,
-                source_commit=source_commit,
+                source_commit=resolved_source_commit,
                 source_commit_matches=None,
                 source_commit_relation=None,
                 materialized_submodules=(),
@@ -187,15 +189,15 @@ def prepare_checkout(
 
     source_commit_matches = None
     source_commit_relation: str | None = None
-    if source_commit:
-        source_commit_matches = head_sha == source_commit
+    if resolved_source_commit:
+        source_commit_matches = head_sha == resolved_source_commit
         source_commit_relation = "mismatch"
         if source_commit_matches:
             source_commit_relation = "exact"
         elif head_sha is not None:
             try:
                 subprocess.run(
-                    ["git", "-C", str(repo_path), "merge-base", "--is-ancestor", source_commit, "HEAD"],
+                    ["git", "-C", str(checkout_path), "merge-base", "--is-ancestor", resolved_source_commit, "HEAD"],
                     check=True,
                     capture_output=True,
                     text=True,
@@ -208,7 +210,7 @@ def prepare_checkout(
         if enforce_source_commit and source_commit_relation not in {"exact", "descendant"}:
             raise CheckoutError(
                 "source commit not satisfied: "
-                f"expected at-or-ahead-of {source_commit}, found {head_sha or 'unknown'}"
+                f"expected at-or-ahead-of {resolved_source_commit}, found {head_sha or 'unknown'}"
             )
 
     return CheckoutInfo(
@@ -216,7 +218,7 @@ def prepare_checkout(
         work_dir=str(checkout_path),
         head_sha=head_sha,
         git_dirty=git_dirty,
-        source_commit=source_commit,
+        source_commit=resolved_source_commit,
         source_commit_matches=source_commit_matches,
         source_commit_relation=source_commit_relation,
         materialized_submodules=materialized_submodules,
