@@ -152,7 +152,9 @@ def snapshot_artifacts(config_path: Path, wrapper: str, circuit_root: Path):
     verilog_out.mkdir(parents=True, exist_ok=True)
 
     # Copy config
-    shutil.copy(config_path, circuit_root / config_path.name)
+    config_dest = circuit_root / config_path.name
+    if config_path.resolve() != config_dest.resolve():
+        shutil.copy(config_path, config_dest)
 
     # Copy generated Verilog
     src_dir = SRC_BASE / wrapper
