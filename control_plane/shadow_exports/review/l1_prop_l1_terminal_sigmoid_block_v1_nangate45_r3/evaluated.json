@@ -1,0 +1,124 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/designs/activations/sweeps/nangate45_terminal_sigmoid_int8_pwl_v1.json"
+      ],
+      "configs": [
+        "runs/designs/activations/terminal_sigmoid_int8_pwl_wrapper/config_terminal_sigmoid_int8_pwl.json"
+      ],
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": [
+        "third_party/nlohmann_json",
+        "third_party/cacti"
+      ]
+    },
+    "commands": [
+      {
+        "run": "cmake -S . -B build && cmake --build build --target rtlgen",
+        "name": "build_generator"
+      },
+      {
+        "run": "python3 scripts/run_sweep.py --configs runs/designs/activations/terminal_sigmoid_int8_pwl_wrapper/config_terminal_sigmoid_int8_pwl.json --platform nangate45 --sweep runs/designs/activations/sweeps/nangate45_terminal_sigmoid_int8_pwl_v1.json --out_root runs/designs/activations --skip_existing",
+        "name": "run_sweep"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "objective": "terminal_sigmoid_physical_metrics",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+      "Committed outputs stay lightweight (metrics.csv and runs/index.csv only)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/activations/terminal_sigmoid_int8_pwl_wrapper/metrics.csv",
+      "runs/index.csv"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Layer1 terminal int8 sigmoid PWL Nangate45 seed sweep",
+  "result": {
+    "branch": "eval/l1_prop_l1_terminal_sigmoid_block_v1_nangate45_r3/s20260319t124847z-clean",
+    "completed_utc": "2026-03-19T12:46:40.393085Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "d7def79549f9",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260319t125530z][host:d7def79549f9][item:l1_prop_l1_terminal_sigmoid_block_v1_nangate45_r3]",
+    "metrics_rows": [
+      {
+        "tag": "terminal_sigmoid_int8_pwl_ng45_v1_97899059",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "be0c03cc",
+        "metrics_csv": "runs/designs/activations/terminal_sigmoid_int8_pwl_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/terminal_sigmoid_int8_pwl_wrapper/work/be0c03cc/result.json"
+      },
+      {
+        "tag": "terminal_sigmoid_int8_pwl_ng45_v1_3ba5ddc4",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "2042fcb3",
+        "metrics_csv": "runs/designs/activations/terminal_sigmoid_int8_pwl_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/terminal_sigmoid_int8_pwl_wrapper/work/2042fcb3/result.json"
+      },
+      {
+        "tag": "terminal_sigmoid_int8_pwl_ng45_v1_91e30912",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "d3ba16d6",
+        "metrics_csv": "runs/designs/activations/terminal_sigmoid_int8_pwl_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/terminal_sigmoid_int8_pwl_wrapper/work/d3ba16d6/result.json"
+      },
+      {
+        "tag": "terminal_sigmoid_int8_pwl_ng45_v1_6b32a08e",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "f1770f9c",
+        "metrics_csv": "runs/designs/activations/terminal_sigmoid_int8_pwl_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/terminal_sigmoid_int8_pwl_wrapper/work/f1770f9c/result.json"
+      }
+    ],
+    "queue_item_id": "l1_prop_l1_terminal_sigmoid_block_v1_nangate45_r3",
+    "session_id": "s20260319t125530z",
+    "status": "ok",
+    "summary": "4/4 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_prop_l1_terminal_sigmoid_block_v1_nangate45_r3/s20260319t125530z",
+    "pr_title": "eval: run layer1 terminal int8 sigmoid pwl nangate45 seed sweep",
+    "checklist": [
+      "Commit only lightweight metrics and regenerated runs/index.csv",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "d7def79549f9",
+      "session_id": "s20260319t125530z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_prop_l1_terminal_sigmoid_block_v1_nangate45_r3"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_prop_l1_terminal_sigmoid_block_v1_nangate45_r3",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-03-19T12:44:30.507589Z",
+  "requested_by": "@developer_agent",
+  "developer_loop": {
+    "proposal_id": "prop_l1_terminal_sigmoid_block_v1",
+    "proposal_path": "docs/developer_loop/prop_l1_terminal_sigmoid_block_v1"
+  }
+}
