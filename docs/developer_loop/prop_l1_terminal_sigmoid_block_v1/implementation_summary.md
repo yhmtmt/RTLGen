@@ -42,9 +42,11 @@
   PWL ladder for non-symmetric curves
 
 ## Evaluation Request
-- staged in `runs/eval_queue/openroad/queued/l1_terminal_sigmoid_int8_pwl_nangate45_v1.json`
+- DB-native `l1_sweep` generation is now the intended next step
+- the queued JSON at `runs/eval_queue/openroad/queued/l1_terminal_sigmoid_int8_pwl_nangate45_v1.json`
+  is kept only as a legacy/manual fallback description
 - next local step:
-  - execute the first Layer 1 physical sweep on Nangate45
+  - generate the first DB-backed Layer 1 sweep item for Nangate45
   - inspect `metrics.csv` rows and pick the accepted sigmoid seed
   - decide whether macro hardening is required before Layer 2 consumption
 
