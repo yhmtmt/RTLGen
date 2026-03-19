@@ -143,6 +143,9 @@ module tb_npu_shell;
   integer gemm_test_bytes;
   integer gemm_count;
   integer dma_req_count;
+  integer dma_issue_index;
+  integer dma_desc_count;
+  integer dma_desc_offsets [0:127];
   integer gemm_desc_count;
   integer gemm_desc_offsets [0:127];
   reg [31:0] gemm_desc_tags [0:127];
@@ -184,6 +187,7 @@ module tb_npu_shell;
   reg [1:0] gemm_slot_done_prev;
   reg vec_done_pulse_prev;
   reg dma_req_valid_prev;
+  reg m_axi_bvalid_prev;
   reg [63:0] gemm_slot_start_cycle0;
   reg [63:0] gemm_slot_start_cycle1;
   reg [63:0] gemm_done_uid;
@@ -193,10 +197,14 @@ module tb_npu_shell;
   reg sram_test;
   reg event_test;
   reg event_dma_test;
+  reg contract_gemm_event_dma_test;
   reg vec_test;
   reg vec_gelu_test;
   reg vec_ext_test;
+  reg contract_trace;
   reg second_dma_seen_before_first_bvalid;
+  reg [DATA_W-1:0] cq_head_prev_mon;
+  integer dma_complete_index;
   string bin_path;
   `include "npu/rtlgen/out/sram_map.vh"
   localparam [63:0] MEM_DST_BASE = 64'h0000_0000_0001_0000;
@@ -213,15 +221,20 @@ module tb_npu_shell;
     gemm_slot_valid_prev = 2'b00;
     gemm_slot_done_prev = 2'b00;
     dma_req_valid_prev = 1'b0;
+    m_axi_bvalid_prev = 1'b0;
     gemm_slot_start_cycle0 = 0;
     gemm_slot_start_cycle1 = 0;
     gemm_count = 0;
     dma_req_count = 0;
+    dma_issue_index = 0;
+    dma_desc_count = 0;
     gemm_desc_count = 0;
     vec_count = 0;
     vec_desc_count = 0;
     vec_done_pulse_prev = 1'b0;
     second_dma_seen_before_first_bvalid = 1'b0;
+    cq_head_prev_mon = 0;
+    dma_complete_index = 0;
     gemm_elem_bits = dut.GEMM_ELEM_BITS;
     if (gemm_elem_bits < 8)
       gemm_elem_bits = 8;
@@ -247,6 +260,9 @@ module tb_npu_shell;
     event_dma_test = 0;
     if ($value$plusargs("event_dma_test=%d", event_dma_test))
       event_dma_test = (event_dma_test != 0);
+    contract_gemm_event_dma_test = 0;
+    if ($value$plusargs("contract_gemm_event_dma_test=%d", contract_gemm_event_dma_test))
+      contract_gemm_event_dma_test = (contract_gemm_event_dma_test != 0);
     vec_test = 0;
     if ($value$plusargs("vec_test=%d", vec_test))
       vec_test = (vec_test != 0);
@@ -256,6 +272,9 @@ module tb_npu_shell;
     vec_ext_test = 0;
     if ($value$plusargs("vec_ext_test=%d", vec_ext_test))
       vec_ext_test = (vec_ext_test != 0);
+    contract_trace = 0;
+    if ($value$plusargs("contract_trace=%d", contract_trace))
+      contract_trace = (contract_trace != 0);
     gemm_mac_test = 0;
     if ($value$plusargs("gemm_mac_test=%d", gemm_mac_test))
       gemm_mac_test = (gemm_mac_test != 0);
@@ -529,7 +548,8 @@ module tb_npu_shell;
                         bin_data[11], bin_data[10], bin_data[9], bin_data[8]};
     expected_dma_dst = {bin_data[23], bin_data[22], bin_data[21], bin_data[20],
                         bin_data[19], bin_data[18], bin_data[17], bin_data[16]};
-    // Parse descriptor stream so GEMM timing logs can include stable tag/offset IDs.
+    // Parse descriptor stream so contract logs can include stable descriptor offsets.
+    dma_desc_count = 0;
     gemm_desc_count = 0;
     vec_desc_count = 0;
     scan_off = 0;
@@ -582,6 +602,9 @@ module tb_npu_shell;
           gemm_cycles = gemm_cycles + 8;
         gemm_desc_expected_accum[gemm_desc_count] = gemm_dot * gemm_cycles;
         gemm_desc_count = gemm_desc_count + 1;
+      end else if ((scan_opcode == 8'h01) && (dma_desc_count < 128)) begin
+        dma_desc_offsets[dma_desc_count] = scan_off;
+        dma_desc_count = dma_desc_count + 1;
       end else if ((scan_opcode == 8'h11) && (vec_desc_count < 128)) begin
         vec_op_sel = bin_data[scan_off + 1] & 8'hf;
         vec_desc_dtype[vec_desc_count] = (bin_data[scan_off + 1] >> 4) & 4'hf;
@@ -646,7 +669,7 @@ module tb_npu_shell;
     mmio_write(OFF_DOORBELL, 32'h1);
 
     // DMA request should assert; handshake and complete
-    if (!event_test && !event_dma_test && !vec_test) begin
+    if (!event_test && !event_dma_test && !vec_test && !contract_gemm_event_dma_test) begin
       repeat (5) @(posedge clk);
       if (dma_req_valid !== 1'b1) begin
         $display("ERROR: expected dma_req_valid");
@@ -664,6 +687,24 @@ module tb_npu_shell;
       end
       if (dma_req_bytes !== expected_dma_bytes) begin
         $display("ERROR: dma_req_bytes mismatch %h", dma_req_bytes);
+        $finish(1);
+      end
+      dma_req_ready = 1'b1;
+      @(posedge clk);
+      dma_req_ready = 1'b0;
+    end else if (contract_gemm_event_dma_test) begin
+      begin : wait_dma_req_after_gemm_contract
+        integer t3;
+        for (t3 = 0; t3 < 600; t3 = t3 + 1) begin
+          @(posedge clk);
+          if (dma_req_valid === 1'b1)
+            disable wait_dma_req_after_gemm_contract;
+        end
+      end
+      if (dma_req_valid !== 1'b1) begin
+        mmio_read(OFF_CQ_HEAD, cq_head);
+        $display("ERROR: expected dma_req_valid in contract_gemm_event_dma_test head=%h tail=%h last_opcode=%h event0=%b dma_pending=%b",
+                 cq_head, cq_tail, dut.last_opcode, dut.event_state[0], dut.dma_pending);
         $finish(1);
       end
       dma_req_ready = 1'b1;
@@ -738,6 +779,11 @@ module tb_npu_shell;
 
     if (event_test || vec_test) begin
       // No data check for GEMM/event stubs
+    end else if (contract_gemm_event_dma_test) begin
+      if (dma_req_count != 1) begin
+        $display("ERROR: expected 1 DMA request in contract_gemm_event_dma_test, saw %0d", dma_req_count);
+        $finish(1);
+      end
     end else if (event_dma_test) begin
       if (dma_req_count != 2) begin
         mmio_read(OFF_CQ_HEAD, cq_head);
@@ -869,14 +915,24 @@ module tb_npu_shell;
       gemm_slot_valid_prev <= 2'b00;
       gemm_slot_done_prev <= 2'b00;
       dma_req_valid_prev <= 1'b0;
+      m_axi_bvalid_prev <= 1'b0;
       gemm_slot_start_cycle0 <= 0;
       gemm_slot_start_cycle1 <= 0;
       gemm_count <= 0;
       dma_req_count <= 0;
+      dma_issue_index <= 0;
       vec_count <= 0;
       vec_done_pulse_prev <= 1'b0;
       second_dma_seen_before_first_bvalid <= 1'b0;
+      cq_head_prev_mon <= 0;
+      dma_complete_index <= 0;
     end else begin
+      if (contract_trace && (dut.cq_head != cq_head_prev_mon)) begin
+        if ((bin_data[cq_head_prev_mon[11:0]] == 8'h20) || (bin_data[cq_head_prev_mon[11:0]] == 8'h21)) begin
+          $display("CONTRACT_TRACE kind=retire opcode=0x%02h offset=%0d cycle=%0d",
+                   bin_data[cq_head_prev_mon[11:0]], cq_head_prev_mon, sim_cycle);
+        end
+      end
       if (!gemm_slot_valid_prev[0] && dut.gemm_slot_valid[0]) begin
         gemm_slot_start_cycle0 <= sim_cycle;
       end
@@ -918,6 +974,10 @@ module tb_npu_shell;
           end
         end
         gemm_count = gemm_count + 1;
+        if (contract_trace) begin
+          $display("CONTRACT_TRACE kind=done opcode=0x10 offset=%0d cycle=%0d",
+                   gemm_log_offset, sim_cycle);
+        end
         $display("GEMM_TIMING index=%0d op_uid=0x%016h tag=0x%08h offset=%0d start_cycle=%0d end_cycle=%0d cycles=%0d accum=%0d",
                  gemm_count, gemm_log_uid, gemm_log_tag, gemm_log_offset,
                  gemm_slot_start_cycle0, sim_cycle, (sim_cycle - gemm_slot_start_cycle0), dut.gemm_slot_accum0);
@@ -957,6 +1017,10 @@ module tb_npu_shell;
           end
         end
         gemm_count = gemm_count + 1;
+        if (contract_trace) begin
+          $display("CONTRACT_TRACE kind=done opcode=0x10 offset=%0d cycle=%0d",
+                   gemm_log_offset, sim_cycle);
+        end
         $display("GEMM_TIMING index=%0d op_uid=0x%016h tag=0x%08h offset=%0d start_cycle=%0d end_cycle=%0d cycles=%0d accum=%0d",
                  gemm_count, gemm_log_uid, gemm_log_tag, gemm_log_offset,
                  gemm_slot_start_cycle1, sim_cycle, (sim_cycle - gemm_slot_start_cycle1), dut.gemm_slot_accum1);
@@ -982,14 +1046,36 @@ module tb_npu_shell;
                  vec_count, vec_desc_offsets[vec_count-1], vec_desc_op[vec_count-1], dut.vec_last_result);
       end
       if (!dma_req_valid_prev && dma_req_valid) begin
+        if (contract_trace) begin
+          if (dma_issue_index < dma_desc_count) begin
+            $display("CONTRACT_TRACE kind=issue opcode=0x01 offset=%0d cycle=%0d",
+                     dma_desc_offsets[dma_issue_index], sim_cycle);
+          end else begin
+            $display("CONTRACT_TRACE kind=issue opcode=0x01 offset=-1 cycle=%0d", sim_cycle);
+          end
+        end
+        dma_issue_index <= dma_issue_index + 1;
         dma_req_count <= dma_req_count + 1;
         if (event_dma_test && (dma_req_count >= 1) && !saw_bvalid)
           second_dma_seen_before_first_bvalid <= 1'b1;
+      end
+      if (!m_axi_bvalid_prev && m_axi_bvalid) begin
+        if (contract_trace) begin
+          if (dma_complete_index < dma_desc_count) begin
+            $display("CONTRACT_TRACE kind=complete opcode=0x01 offset=%0d cycle=%0d",
+                     dma_desc_offsets[dma_complete_index], sim_cycle);
+          end else begin
+            $display("CONTRACT_TRACE kind=complete opcode=0x01 offset=-1 cycle=%0d", sim_cycle);
+          end
+        end
+        dma_complete_index <= dma_complete_index + 1;
       end
       gemm_slot_valid_prev <= dut.gemm_slot_valid;
       gemm_slot_done_prev <= dut.gemm_slot_done;
       vec_done_pulse_prev <= dut.vec_done_pulse;
       dma_req_valid_prev <= dma_req_valid;
+      m_axi_bvalid_prev <= m_axi_bvalid;
+      cq_head_prev_mon <= dut.cq_head;
     end
   end
 
