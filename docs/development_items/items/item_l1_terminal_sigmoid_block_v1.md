@@ -3,11 +3,11 @@
 - item_id: `item_l1_terminal_sigmoid_block_v1`
 - layer: `layer1`
 - kind: `circuit`
-- status: `promoted_to_proposal`
+- status: `merged`
 - priority: `high`
 - owner: `developer_agent`
 - created_utc: `2026-03-19T11:35:00Z`
-- updated_utc: `2026-03-19T11:35:00Z`
+- updated_utc: `2026-03-19T13:00:39Z`
 - proposal_id: `prop_l1_terminal_sigmoid_block_v1`
 - proposal_path: `docs/developer_loop/prop_l1_terminal_sigmoid_block_v1`
 - triggered_by_proposal: `prop_l2_mapper_terminal_activation_family_v1`
@@ -73,3 +73,12 @@
 - promote when the proposal names one bounded sigmoid block path, keeps the
   remote evaluation focused on physical implementation evidence, and clearly
   unblocks the Layer 2 activation-family proposal
+
+## Outcome
+- merged evidence PR: `#63`
+- accepted best point:
+  - `param_hash`: `d3ba16d6`
+  - `critical_path_ns`: `0.1904`
+  - `die_area`: `25600.0`
+  - `total_power_mw`: `5.84e-05`
+- follow-on: unblock `prop_l2_mapper_terminal_activation_family_v1`

@@ -1,14 +1,14 @@
 {
   "proposal_id": "prop_l1_terminal_sigmoid_block_v1",
-  "source_commit": "pending",
+  "source_commit": "a8db0117c882ebda73d63ee1f73ee4488b4c95fc",
   "requested_items": [
     {
-      "item_id": "l1_prop_l1_terminal_sigmoid_block_v1_nangate45_r1",
+      "item_id": "l1_prop_l1_terminal_sigmoid_block_v1_nangate45_r3",
       "task_type": "l1_sweep",
       "evaluation_mode": "measurement_only",
       "objective": "terminal_sigmoid_physical_metrics",
-      "status": "pending_db_queue",
-      "notes": "Layer 1 prerequisite physical sweep for a bounded terminal int8 sigmoid block. Generate through control-plane generate-l1-sweep; the queued JSON is legacy fallback only."
+      "status": "merged",
+      "notes": "Accepted Layer 1 prerequisite physical sweep for the bounded terminal int8 sigmoid block. Earlier r1/r2 attempts failed during infrastructure bring-up; r3 is the merged evidence item via PR #63."
     }
   ]
 }

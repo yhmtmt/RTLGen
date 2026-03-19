@@ -52,7 +52,7 @@
       "objective": "terminal_activation_reference_metrics",
       "cost_class": "medium",
       "depends_on_item_ids": [
-        "l1_prop_l1_terminal_sigmoid_block_v1_nangate45_r1"
+        "l1_prop_l1_terminal_sigmoid_block_v1_nangate45_r3"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
@@ -79,6 +79,8 @@
   ],
   "baseline_refs": [
     "docs/developer_loop/prop_l1_terminal_sigmoid_block_v1/proposal.json",
+    "docs/developer_loop/prop_l1_terminal_sigmoid_block_v1/analysis_report.md",
+    "docs/developer_loop/prop_l1_terminal_sigmoid_block_v1/promotion_decision.json",
     "docs/developer_loop/prop_l2_mapper_terminal_vecop_direct_output_v1/analysis_report.md",
     "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_measurement_r2/report.md",
     "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_fused_r1/report.md"

@@ -26,5 +26,7 @@
 - `TMP=$(mktemp -d); cp /workspaces/RTLGen/examples/config_activation_sigmoid_int8.json "$TMP/config.json"; cd "$TMP"; /tmp/rtlgen-build/rtlgen config.json; iverilog -g2012 -s activation_sigmoid_int_tb -o sim sigmoid_int8_pwl.v /workspaces/RTLGen/tests/activation_sigmoid_int_tb.v; vvp sim`
 
 ## Result
-- status: pass_local
-- note: The bounded int8 sigmoid PWL path is implemented locally and passes RTL smoke checks; remote physical evaluation is the remaining gate.
+- status: pass_remote
+- note: Local RTL/smoke checks passed, and the merged remote Layer 1 sweep
+  established accepted Nangate45 physical metrics for the bounded int8 sigmoid
+  `pwl` wrapper.

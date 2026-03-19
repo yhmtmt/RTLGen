@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l1_terminal_sigmoid_block_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": null,
-  "merged_utc": null
+  "decision": "promote",
+  "pr_number": 63,
+  "merge_commit": "7498c54991e5ed5f8606749fced8150b21946db2",
+  "merged_utc": "2026-03-19T13:00:39Z"
 }

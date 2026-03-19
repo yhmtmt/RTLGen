@@ -3,11 +3,11 @@
 - item_id: `item_l2_mapper_terminal_activation_family_v1`
 - layer: `layer2`
 - kind: `mapper`
-- status: `blocked_on_l1_prerequisite`
+- status: `promoted_to_proposal`
 - priority: `medium`
 - owner: `developer_agent`
 - created_utc: `2026-03-19T11:20:00Z`
-- updated_utc: `2026-03-19T11:35:00Z`
+- updated_utc: `2026-03-19T13:00:39Z`
 - proposal_id: `prop_l2_mapper_terminal_activation_family_v1`
 - proposal_path: `docs/developer_loop/prop_l2_mapper_terminal_activation_family_v1`
 - triggered_by_proposal: `prop_l2_mapper_terminal_vecop_direct_output_v1`
@@ -79,11 +79,13 @@
 - whether the current schedule IR needs any additional terminal vec-op metadata
   beyond the accepted standalone `Relu` path
 
-## Blocked Reason
-- a nonlinear terminal activation family should not be evaluated in perf sim
-  without an accepted Layer 1 circuit and physical implementation result
-- the next concrete step is therefore `item_l1_terminal_sigmoid_block_v1`, not
-  a mapper-only remote evaluation
+## Prerequisite Outcome
+- Layer 1 prerequisite is now satisfied by merged PR `#63`
+- accepted prerequisite item:
+  `l1_prop_l1_terminal_sigmoid_block_v1_nangate45_r3`
+- next concrete step:
+  queue the `measurement_only` `nm1` reference campaign for the bounded
+  nonlinear activation family
 
 ## Promotion Rule
 - promote when the proposal names a bounded nonlinear activation family,

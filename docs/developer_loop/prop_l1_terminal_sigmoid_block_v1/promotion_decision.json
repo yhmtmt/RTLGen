@@ -1,9 +1,14 @@
 {
   "proposal_id": "prop_l1_terminal_sigmoid_block_v1",
-  "candidate_id": "pending",
-  "decision": "pending",
-  "reason": "pending",
-  "evidence_refs": [],
-  "next_action": "pending",
-  "requires_human_approval": true
+  "candidate_id": "l1_prop_l1_terminal_sigmoid_block_v1_nangate45_r3",
+  "decision": "promote",
+  "reason": "Merged PR #63 establishes the first accepted physical implementation result for the bounded int8 sigmoid pwl wrapper on Nangate45, with multiple ok rows and a selected best point sufficient to unblock Layer 2 nonlinear activation-family measurement work.",
+  "evidence_refs": [
+    "https://github.com/yhmtmt/RTLGen/pull/63",
+    "control_plane/shadow_exports/l1_promotions/l1_prop_l1_terminal_sigmoid_block_v1_nangate45_r3.json",
+    "runs/designs/activations/terminal_sigmoid_int8_pwl_wrapper/metrics.csv",
+    "runs/index.csv"
+  ],
+  "next_action": "unblock prop_l2_mapper_terminal_activation_family_v1 and queue its measurement_only nm1 reference item against the accepted Layer 1 sigmoid block",
+  "requires_human_approval": false
 }

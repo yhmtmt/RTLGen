@@ -41,7 +41,8 @@
   - expected second Layer 2 result: direct output should improve at least part
     of the bounded nonlinear activation suite
 - dependency order:
-  - the Layer 2 proposal is blocked on `prop_l1_terminal_sigmoid_block_v1`
+  - the Layer 2 proposal depends on merged Layer 1 evidence from
+    `l1_prop_l1_terminal_sigmoid_block_v1_nangate45_r3` / PR `#63`
   - the paired item depends on
     `l2_prop_l2_mapper_terminal_activation_family_v1_nm1_measurement_r1`
   - it requires both merged inputs and materialized repo refs before export
