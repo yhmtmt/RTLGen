@@ -15,6 +15,7 @@ from control_plane.clock import utcnow
 from control_plane.models.enums import FlowName, LayerName, WorkItemState
 from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
+from control_plane.services.dependency_gate import evaluate_work_item_dependencies
 
 
 class Layer2TaskGenerationError(RuntimeError):
@@ -44,6 +45,9 @@ class Layer2CampaignGenerateRequest:
     expected_reason: str | None = None
     comparison_role: str | None = None
     paired_baseline_item_id: str | None = None
+    depends_on_item_ids: list[str] | None = None
+    requires_merged_inputs: bool = False
+    requires_materialized_refs: bool = False
 
 
 @dataclass(frozen=True)
@@ -193,6 +197,9 @@ def _build_payload(
     expected_reason: str | None,
     comparison_role: str | None,
     paired_baseline_item_id: str | None,
+    depends_on_item_ids: list[str] | None,
+    requires_merged_inputs: bool,
+    requires_materialized_refs: bool,
 ) -> dict[str, Any]:
     commands: list[dict[str, str]] = []
     if model_manifest:
@@ -307,6 +314,13 @@ def _build_payload(
                 "role": effective_comparison_role,
                 "paired_baseline_item_id": paired_baseline_item_id or "",
             }
+        dependency_ids = [str(item).strip() for item in (depends_on_item_ids or []) if str(item).strip()]
+        if dependency_ids or requires_merged_inputs or requires_materialized_refs:
+            payload["developer_loop"]["dependencies"] = {
+                "item_ids": dependency_ids,
+                "requires_merged_inputs": requires_merged_inputs,
+                "requires_materialized_refs": requires_materialized_refs,
+            }
     return payload
 
 
@@ -358,7 +372,39 @@ def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateR
         expected_reason=request.expected_reason,
         comparison_role=request.comparison_role,
         paired_baseline_item_id=request.paired_baseline_item_id,
+        depends_on_item_ids=request.depends_on_item_ids,
+        requires_merged_inputs=request.requires_merged_inputs,
+        requires_materialized_refs=request.requires_materialized_refs,
     )
+    initial_state = WorkItemState.READY
+    transient_work_item = WorkItem(
+        work_item_key=f"l2_campaign:{item_id}",
+        task_request_id="",
+        item_id=item_id,
+        layer=LayerName.LAYER2,
+        flow=FlowName.OPENROAD,
+        platform=platform,
+        task_type="l2_campaign",
+        state=WorkItemState.DRAFT,
+        priority=request.priority,
+        source_mode="src_verilog",
+    )
+    transient_task_request = TaskRequest(
+        request_key=f"l2_campaign:{item_id}",
+        source="l2_task_generator",
+        requested_by=request.requested_by,
+        title=title,
+        description=objective,
+        layer=LayerName.LAYER2,
+        flow=FlowName.OPENROAD,
+        priority=request.priority,
+        request_payload=payload,
+        source_commit=request.source_commit,
+    )
+    transient_work_item.task_request = transient_task_request
+    gate = evaluate_work_item_dependencies(session, repo_root=repo_root, work_item=transient_work_item)
+    if not gate.satisfied:
+        initial_state = WorkItemState.BLOCKED
 
     existing = session.query(WorkItem).filter(WorkItem.item_id == item_id).one_or_none()
     if existing is None:
@@ -385,7 +431,7 @@ def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateR
             flow=FlowName.OPENROAD,
             platform=platform,
             task_type="l2_campaign",
-            state=WorkItemState.READY,
+            state=initial_state,
             priority=request.priority,
             source_mode="src_verilog",
             input_manifest=payload["task"]["inputs"],
@@ -424,7 +470,7 @@ def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateR
     existing.expected_outputs = payload["task"]["expected_outputs"]
     existing.acceptance_rules = payload["task"]["acceptance"]
     existing.source_commit = request.source_commit
-    existing.state = WorkItemState.READY
+    existing.state = initial_state
     existing.queue_snapshot_path = None
     session.commit()
     return Layer2TaskGenerateResult(

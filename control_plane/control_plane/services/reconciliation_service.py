@@ -19,6 +19,7 @@ from control_plane.models.enums import ArtifactStorageMode, RunStatus, WorkItemS
 from control_plane.models.run_events import RunEvent
 from control_plane.models.runs import Run
 from control_plane.models.work_items import WorkItem
+from control_plane.services.dependency_gate import evaluate_work_item_dependencies
 from control_plane.services.queue_exporter import QueueExportRequest, export_queue_item
 
 
@@ -435,7 +436,8 @@ def sync_run_artifacts(session: Session, request: ArtifactSyncRequest) -> Artifa
         target_path=_relative_repo_path(export_result.target_path, repo_root),
         queue_sha256=export_result.queue_sha256,
     )
-    work_item.state = WorkItemState.AWAITING_REVIEW
+    gate = evaluate_work_item_dependencies(session, repo_root=repo_root, work_item=work_item)
+    work_item.state = WorkItemState.AWAITING_REVIEW if gate.satisfied else WorkItemState.BLOCKED
     session.add(
         RunEvent(
             run_id=run.id,
@@ -444,6 +446,8 @@ def sync_run_artifacts(session: Session, request: ArtifactSyncRequest) -> Artifa
             event_payload={
                 "target_path": _relative_repo_path(export_result.target_path, repo_root),
                 "queue_sha256": export_result.queue_sha256,
+                "dependency_gate_satisfied": gate.satisfied,
+                "dependency_gate_reason": gate.reason,
             },
         )
     )

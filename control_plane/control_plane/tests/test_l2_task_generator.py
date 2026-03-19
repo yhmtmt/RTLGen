@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from control_plane.db import create_all
 from control_plane.models.enums import WorkItemState
+from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
 from control_plane.services.l2_task_generator import Layer2CampaignGenerateRequest, generate_l2_campaign_task
 
@@ -147,6 +148,75 @@ def test_generate_l2_campaign_task_creates_ready_work_item() -> None:
             }
             assert payload["task"]["commands"][0]["name"] == "fetch_models"
             assert "--run_physical" in payload["task"]["commands"][2]["run"]
+
+
+def test_generate_l2_campaign_task_blocks_when_dependency_not_merged() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            baseline_task = TaskRequest(
+                request_key="queue:l2_demo_baseline",
+                source="test",
+                requested_by="@tester",
+                title="baseline",
+                description="baseline",
+                layer="layer2",
+                flow="openroad",
+                priority=1,
+                request_payload={},
+            )
+            session.add(baseline_task)
+            session.flush()
+            session.add(
+                WorkItem(
+                    work_item_key="queue:l2_demo_baseline",
+                    task_request_id=baseline_task.id,
+                    item_id="l2_demo_baseline",
+                    layer="layer2",
+                    flow="openroad",
+                    platform="nangate45",
+                    task_type="l2_campaign",
+                    state=WorkItemState.AWAITING_REVIEW,
+                    priority=1,
+                    source_mode="src_verilog",
+                    input_manifest={},
+                    command_manifest=[],
+                    expected_outputs=[],
+                    acceptance_rules=[],
+                )
+            )
+            session.commit()
+
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_demo_candidate",
+                    requested_by="@tester",
+                    proposal_id="prop_l2_demo_v1",
+                    proposal_path="docs/developer_loop/prop_l2_demo_v1",
+                    evaluation_mode="paired_comparison",
+                    comparison_role="candidate",
+                    paired_baseline_item_id="l2_demo_baseline",
+                    depends_on_item_ids=["l2_demo_baseline"],
+                    requires_merged_inputs=True,
+                    requires_materialized_refs=True,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert work_item.state == WorkItemState.BLOCKED
+            assert work_item.task_request.request_payload["developer_loop"]["dependencies"] == {
+                "item_ids": ["l2_demo_baseline"],
+                "requires_merged_inputs": True,
+                "requires_materialized_refs": True,
+            }
 
 
 def test_generate_l2_campaign_task_upserts_existing_item() -> None:

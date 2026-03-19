@@ -232,6 +232,19 @@ Required metadata per work item:
 - `expected_outputs`
 - `required_submodules`
 - evaluation objective or comparison target
+- dependency ordering metadata when the item consumes prior developer-loop
+  evidence:
+  - `depends_on_item_ids`
+  - `requires_merged_inputs`
+  - `requires_materialized_refs`
+
+Ordering rule:
+- `measurement_only` items may usually queue immediately
+- `paired_comparison` items that consume a prior baseline should default to
+  `BLOCKED` until the prerequisite item is merged and its repo-backed evidence
+  is materialized
+- do not treat "baseline run finished" as sufficient when the comparison
+  exporter reads baseline evidence from repo paths
 
 ### Stage 7. Remote Evaluation
 

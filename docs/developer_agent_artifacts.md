@@ -86,6 +86,11 @@ The proposal should force the agent to answer:
       "evaluation_mode": "measurement_only | baseline_refresh | paired_comparison | broad_ranking",
       "objective": "string",
       "cost_class": "low | medium | high",
+      "depends_on_item_ids": [
+        "optional prerequisite developer-loop item ids"
+      ],
+      "requires_merged_inputs": false,
+      "requires_materialized_refs": false,
       "expected_result": {
         "direction": "better_than_historical | worse_than_historical | same_as_historical | unknown",
         "reason": "why this outcome is expected"
@@ -140,6 +145,9 @@ The proposal should force the agent to answer:
       "evaluation_mode": "measurement_only",
       "objective": "quality_guard",
       "cost_class": "low",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": false,
+      "requires_materialized_refs": false,
       "expected_result": {
         "direction": "same_as_historical",
         "reason": "quality prechecks should preserve accepted model outputs"
@@ -150,6 +158,11 @@ The proposal should force the agent to answer:
       "evaluation_mode": "paired_comparison",
       "objective": "balanced",
       "cost_class": "high",
+      "depends_on_item_ids": [
+        "l2_prop_l2_softmax_tile_fusion_v1_nm1_measurement_r1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
       "expected_result": {
         "direction": "better_than_historical",
         "reason": "the fused candidate is expected to improve the focused baseline"
@@ -190,6 +203,15 @@ expected to look worse than older historical runs. Example:
   than an older historical report
 - that should be marked as expected when the measured shift matches the stated
   reason
+
+`depends_on_item_ids` and the two `requires_*` flags exist because some items
+consume prior developer-loop evidence rather than only historical baselines:
+- use `depends_on_item_ids` when an item depends on an earlier measurement or
+  refreshed-baseline item
+- set `requires_merged_inputs` when the dependent item should not leave
+  `BLOCKED` until the prerequisite PR is merged
+- set `requires_materialized_refs` when the dependent item's exporter resolves
+  baseline evidence by repo path, not only by DB metadata
 
 ## 2. implementation_summary.md
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 import re
 from typing import Any
 
@@ -14,6 +15,7 @@ from control_plane.models.github_links import GitHubLink
 from control_plane.models.run_events import RunEvent
 from control_plane.models.runs import Run
 from control_plane.models.work_items import WorkItem
+from control_plane.services.dependency_gate import refresh_blocked_dependents
 
 _EVAL_BRANCH_RE = re.compile(r"^eval/(?P<item_id>[^/]+)/(?P<session_id>[^/]+)$")
 
@@ -49,6 +51,7 @@ class GitHubReconcileRequest:
     state: str = "none"
     run_key: str | None = None
     metadata: dict[str, Any] | None = None
+    repo_root: str | None = None
 
 
 def _infer_item_id(branch_name: str | None) -> str | None:
@@ -162,6 +165,14 @@ def reconcile_github_link(session: Session, request: GitHubReconcileRequest) -> 
         "state": state.value,
     }
     if state == GitHubLinkState.PR_MERGED:
+        if request.repo_root:
+            released = refresh_blocked_dependents(
+                session,
+                repo_root=Path(request.repo_root).resolve(),
+                dependency_item_id=work_item.item_id,
+            )
+            if released:
+                event_payload["released_dependent_items"] = released
         _emit_run_event(session, run, "pr_merged", event_payload)
     else:
         _emit_run_event(session, run, "pr_linked", event_payload)

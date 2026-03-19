@@ -19,6 +19,11 @@
     `baseline_refresh`, `paired_comparison`, or `broad_ranking`
   - record any expected non-win/lose result, such as a refreshed baseline that
     is expected to look worse than a historical run
+- dependency order:
+  - list any item ids that must merge before a dependent item can be exported
+    or reviewed
+  - note whether the dependent item requires merged inputs, materialized repo
+    refs, or both
 - excluded first-stage comparisons:
   - broader points intentionally left out of the first evaluation
 - follow-on broad sweep:
