@@ -5,7 +5,7 @@
   "layer": "l2",
   "kind": "mapper",
   "title": "Terminal activation-family direct output",
-  "hypothesis": "After proving direct terminal-output for standalone terminal Relu vec-op tails, the next bounded mapper step should test whether a small nonlinear terminal activation family can also write directly to Y_DRAM on fixed nm1, using a quality-gated measurement-first workflow before any paired judgment.",
+  "hypothesis": "After proving direct terminal-output for standalone terminal Relu vec-op tails, the next bounded activation-family step should test whether a small nonlinear terminal activation family can also write directly to Y_DRAM on fixed nm1, but only after a real Layer 1 activation block has accepted physical implementation results.",
   "direct_comparison": {
     "primary_question": "Can a bounded nonlinear terminal activation family establish clean nm1 reference points first, then show a direct-output win on those same points without reopening broader ranking?",
     "include": [
@@ -34,16 +34,31 @@
   "needs_mapper_change": true,
   "required_evaluations": [
     {
-      "task_type": "l2_campaign",
+      "task_type": "l1_sweep",
       "evaluation_mode": "measurement_only",
-      "objective": "terminal_activation_reference_metrics",
-      "cost_class": "medium",
+      "objective": "terminal_sigmoid_physical_metrics",
+      "cost_class": "high",
       "depends_on_item_ids": [],
       "requires_merged_inputs": false,
       "requires_materialized_refs": false,
       "expected_result": {
         "direction": "unknown",
-        "reason": "the first item should only record non-fused nm1 reference metrics and legality evidence for the bounded nonlinear activation suite"
+        "reason": "the first requirement is an accepted Layer 1 sigmoid block with measured physical timing, power, and area"
+      }
+    },
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "measurement_only",
+      "objective": "terminal_activation_reference_metrics",
+      "cost_class": "medium",
+      "depends_on_item_ids": [
+        "l1_prop_l1_terminal_sigmoid_block_v1_nangate45_r1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "unknown",
+        "reason": "the first layer2 item should only run after the Layer 1 sigmoid block has accepted physical metrics and should then record non-fused nm1 reference metrics and legality evidence"
       }
     },
     {
@@ -63,6 +78,7 @@
     }
   ],
   "baseline_refs": [
+    "docs/developer_loop/prop_l1_terminal_sigmoid_block_v1/proposal.json",
     "docs/developer_loop/prop_l2_mapper_terminal_vecop_direct_output_v1/analysis_report.md",
     "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_measurement_r2/report.md",
     "runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_fused_r1/report.md"

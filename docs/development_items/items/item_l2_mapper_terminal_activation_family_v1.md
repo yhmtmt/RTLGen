@@ -3,14 +3,16 @@
 - item_id: `item_l2_mapper_terminal_activation_family_v1`
 - layer: `layer2`
 - kind: `mapper`
-- status: `promoted_to_proposal`
+- status: `blocked_on_l1_prerequisite`
 - priority: `medium`
 - owner: `developer_agent`
 - created_utc: `2026-03-19T11:20:00Z`
-- updated_utc: `2026-03-19T11:20:00Z`
+- updated_utc: `2026-03-19T11:35:00Z`
 - proposal_id: `prop_l2_mapper_terminal_activation_family_v1`
 - proposal_path: `docs/developer_loop/prop_l2_mapper_terminal_activation_family_v1`
 - triggered_by_proposal: `prop_l2_mapper_terminal_vecop_direct_output_v1`
+- blocked_on_item: `item_l1_terminal_sigmoid_block_v1`
+- blocked_on_proposal: `prop_l1_terminal_sigmoid_block_v1`
 - triggering_evidence:
   - `docs/developer_loop/prop_l2_mapper_terminal_vecop_direct_output_v1/analysis_report.md`
   - `docs/developer_loop/prop_l2_mapper_terminal_vecop_direct_output_v1/promotion_decision.json`
@@ -44,7 +46,7 @@
   `nm1`/`nm2` ranking too early
 
 ## Required Work
-- l1 change: no for the first pass
+- l1 change: yes for the first pass
 - l2 change: no new hardware for the first pass
 - mapper change: yes
 - quality gate required: yes
@@ -73,6 +75,12 @@
 - what local output-quality threshold is required before remote evaluation
 - whether the current schedule IR needs any additional terminal vec-op metadata
   beyond the accepted standalone `Relu` path
+
+## Blocked Reason
+- a nonlinear terminal activation family should not be evaluated in perf sim
+  without an accepted Layer 1 circuit and physical implementation result
+- the next concrete step is therefore `item_l1_terminal_sigmoid_block_v1`, not
+  a mapper-only remote evaluation
 
 ## Promotion Rule
 - promote when the proposal names a bounded nonlinear activation family,

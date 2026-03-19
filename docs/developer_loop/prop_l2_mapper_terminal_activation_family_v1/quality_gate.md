@@ -9,8 +9,9 @@
   `Relu`
 - those ops are more numerically sensitive than the accepted standalone `Relu`
   vec-op path
-- remote PPA evaluation should not proceed until local output-quality checks are
-  defined
+- remote PPA evaluation should not proceed until:
+  - a real Layer 1 sigmoid block exists with accepted physical results
+  - local output-quality checks are defined
 
 ## Reference
 - baseline_ref: pending bounded nonlinear activation measurement suite
@@ -25,4 +26,4 @@
 
 ## Result
 - status: pending
-- note:
+- note: blocked on `prop_l1_terminal_sigmoid_block_v1`

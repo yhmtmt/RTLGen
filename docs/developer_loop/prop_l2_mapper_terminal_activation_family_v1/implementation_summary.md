@@ -7,8 +7,10 @@
 ## Scope
 - proposal seeded only
 - no mapper, architecture, or circuit implementation yet
-- first pass is intended to move one step beyond standalone terminal `Relu`
-  while staying bounded and quality-gated
+- scope corrected immediately after seeding:
+  - nonlinear terminal activation support is not mapper-only
+  - the next concrete prerequisite is a bounded Layer 1 sigmoid block
+  - this Layer 2 proposal is now blocked on that accepted physical evidence
 
 ## Files Changed
 - `docs/development_items/items/item_l2_mapper_terminal_activation_family_v1.md`
@@ -32,13 +34,13 @@
 ## Evaluation Request
 - not queued yet
 - next local step:
-  - choose the bounded nonlinear activation family
-  - define the quality gate
-  - generate the first `measurement_only` campaign on fixed `nm1`
+  - seed and promote the Layer 1 sigmoid block proposal
+  - wait for accepted physical implementation evidence
+  - then return to this Layer 2 proposal for measurement-suite generation
 
 ## Risks
 - nonlinear activation quality tolerance may make the first pass too broad if
   the family is not kept small
-- the existing terminal vec-op schedule form may need extra metadata for
-  numerically sensitive activations
+- the eventual Layer 2 lowering may still need extra terminal vec-op metadata
+  for numerically sensitive activations
 - the next bottleneck may be quality-gate design rather than schedule legality

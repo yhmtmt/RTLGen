@@ -3,12 +3,20 @@
   "source_commit": "pending",
   "requested_items": [
     {
+      "item_id": "l1_prop_l1_terminal_sigmoid_block_v1_nangate45_r1",
+      "task_type": "l1_sweep",
+      "evaluation_mode": "measurement_only",
+      "objective": "terminal_sigmoid_physical_metrics",
+      "status": "pending_prerequisite",
+      "notes": "Layer 1 prerequisite for nonlinear terminal activation-family evaluation."
+    },
+    {
       "item_id": "l2_prop_l2_mapper_terminal_activation_family_v1_nm1_measurement_r1",
       "task_type": "l2_campaign",
       "evaluation_mode": "measurement_only",
       "objective": "terminal_activation_reference_metrics",
-      "status": "pending",
-      "notes": "First-stage bounded nonlinear activation-family reference collection on fixed nm1."
+      "status": "blocked_on_l1_prerequisite",
+      "notes": "First-stage bounded nonlinear activation-family reference collection on fixed nm1; blocked until the Layer 1 sigmoid block has accepted physical metrics."
     },
     {
       "item_id": "l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1",
@@ -22,8 +30,8 @@
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
-      "status": "blocked_pending_baseline",
-      "notes": "Second-stage paired comparison; do not queue or export before the merged measurement baseline is materialized."
+      "status": "blocked_on_l1_and_baseline",
+      "notes": "Second-stage paired comparison; first blocked on the Layer 1 sigmoid prerequisite, then on the merged/materialized measurement baseline."
     }
   ]
 }
