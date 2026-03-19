@@ -7,8 +7,8 @@
       "task_type": "l1_sweep",
       "evaluation_mode": "measurement_only",
       "objective": "terminal_sigmoid_physical_metrics",
-      "status": "staged_in_openroad_queue",
-      "notes": "Layer 1 prerequisite physical sweep for a bounded terminal int8 sigmoid block. See runs/eval_queue/openroad/queued/l1_terminal_sigmoid_int8_pwl_nangate45_v1.json."
+      "status": "pending_db_queue",
+      "notes": "Layer 1 prerequisite physical sweep for a bounded terminal int8 sigmoid block. Generate through control-plane generate-l1-sweep; the queued JSON is legacy fallback only."
     }
   ]
 }

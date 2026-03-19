@@ -79,13 +79,15 @@ using multiple real ONNX models.
   - each candidate must declare `evaluation_scope`:
     - `wrapped_io` (wrapper-level physical eval with IO regs),
     - `macro_hardened` (hardened macro eval suitable for hierarchical claims).
-- OpenROAD-heavy execution queue for distributed evaluation:
-  - `runs/eval_queue/openroad/queued/` -> `runs/eval_queue/openroad/evaluated/`
-  - evaluated items must include concrete metrics-row references.
 - Internal production execution path:
   - `control_plane/operator_runbook.md`
-  - workers execute the same evaluation commands under DB-backed scheduling
+  - Layer 1 and Layer 2 workers execute the same evaluation commands under
+    DB-backed scheduling
   - Git remains the reviewed evidence boundary through submission PRs
+- Legacy/manual OpenROAD queue format remains available as a fallback:
+  - `runs/eval_queue/openroad/queued/` -> `runs/eval_queue/openroad/evaluated/`
+  - use only when DB-backed execution is unavailable or intentionally bypassed
+  - evaluated items must include concrete metrics-row references.
 
 ### Layer 2 -> Layer 1 (feedback handoff)
 - Bottleneck-driven requests for new module algorithms or parameter regions.

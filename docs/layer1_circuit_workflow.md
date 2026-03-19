@@ -100,16 +100,65 @@ python3 scripts/build_runs_index.py
 - Do not commit large temporary logs or DEF/GDS.
 - Preserve reproducibility with stable design names, tags, and parameter hashes.
 
-## Remote evaluator queue (OpenROAD-heavy tasks)
-- Author heavy evaluation requests as one JSON file per item under:
-  - `runs/eval_queue/openroad/queued/`
-- Use the template:
+## Remote execution
+
+### Default path: DB-native `l1_sweep`
+Use the control plane as the default execution path for new Layer 1 physical
+evaluation items.
+
+Generate a DB-backed Layer 1 work item:
+```sh
+PYTHONPATH=/workspaces/RTLGen/control_plane \
+python3 -m control_plane.cli.main generate-l1-sweep \
+  --database-url "$RTLCP_DATABASE_URL" \
+  --repo-root /workspaces/RTLGen \
+  --sweep-path runs/designs/activations/sweeps/nangate45_softmax_rowwise_v1.json \
+  --configs examples/config_softmax_rowwise_int8.json examples/config_softmax_rowwise_int8_r8_acc20.json \
+  --platform nangate45 \
+  --out-root runs/designs/activations \
+  --requested-by @yhmtmt \
+  --proposal-id <proposal_id> \
+  --proposal-path docs/developer_loop/<proposal_id>
+```
+
+Then use the normal operator flow:
+1. worker executes the `l1_sweep` item from the DB
+2. completion service syncs allowlisted evidence
+3. submission service opens the evaluation PR
+4. review the PR and merge valid evidence
+5. consume Layer 1 result if needed:
+   ```sh
+   PYTHONPATH=/workspaces/RTLGen/control_plane \
+   python3 -m control_plane.cli.main consume-l1-result \
+     --database-url "$RTLCP_DATABASE_URL" \
+     --repo-root /workspaces/RTLGen \
+     --item-id <l1_item_id>
+   ```
+
+Recommended bookkeeping:
+- record DB-created item ids in
+  `docs/developer_loop/<proposal_id>/evaluation_requests.json`
+- treat the evaluation PR as the evidence boundary, same as Layer 2
+
+### Legacy/manual fallback: file queue JSON
+The file queue under `runs/eval_queue/openroad/queued/` is still readable as a
+manual evaluator handoff format, but it is now a fallback path rather than the
+default for new items.
+
+Use it only when:
+- DB-backed operator services are unavailable
+- you need a manual/offline handoff to an external evaluator
+- you are preserving an older historical lane for comparison
+
+Legacy references:
+- template:
   - `runs/eval_queue/openroad/templates/item_template.json`
-- Current softmax-rowwise seed sweep result:
+- historical Layer 1 seed sweep result:
   - `runs/eval_queue/openroad/evaluated/l1_softmax_rowwise_candidates_nangate45_v1.json`
-- Current softmax-rowwise macro-hardening item:
-  - `runs/eval_queue/openroad/queued/l1_macro_harden_softmax_rowwise_r4_nangate45_v1.json`
-- Evaluator workflow:
+- historical macro-hardening item:
+  - `runs/eval_queue/openroad/evaluated/l1_macro_harden_softmax_rowwise_r4_nangate45_v1.json`
+
+Legacy manual evaluator workflow:
 1. Create branch `eval/<item_id>/<session_id>` on high-performance machine.
 2. Execute commands listed in the item.
 3. Commit lightweight outputs (`metrics.csv`, manifests, config updates).
