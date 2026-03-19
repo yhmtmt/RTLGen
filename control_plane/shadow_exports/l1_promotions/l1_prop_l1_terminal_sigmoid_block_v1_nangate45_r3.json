@@ -1,0 +1,46 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-03-19T12:48:47.658981Z",
+  "item_id": "l1_prop_l1_terminal_sigmoid_block_v1_nangate45_r3",
+  "run_key": "l1_prop_l1_terminal_sigmoid_block_v1_nangate45_r3_run_c943c10d5cd66b04",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "a8db0117c882ebda73d63ee1f73ee4488b4c95fc",
+  "objective": "terminal_sigmoid_physical_metrics",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/activations/sweeps/nangate45_terminal_sigmoid_int8_pwl_v1.json"
+    ],
+    "configs": [
+      "runs/designs/activations/terminal_sigmoid_int8_pwl_wrapper/config_terminal_sigmoid_int8_pwl.json"
+    ],
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": [
+      "third_party/nlohmann_json",
+      "third_party/cacti"
+    ]
+  },
+  "proposal_count": 1,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/terminal_sigmoid_int8_pwl_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "param_hash": "d3ba16d6",
+        "tag": "terminal_sigmoid_int8_pwl_ng45_v1_91e30912",
+        "result_path": "runs/designs/activations/terminal_sigmoid_int8_pwl_wrapper/work/d3ba16d6/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 0.1904,
+        "die_area": 25600.0,
+        "total_power_mw": 5.84e-05
+      }
+    }
+  ]
+}
