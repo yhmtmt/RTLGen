@@ -13,7 +13,6 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 RTLGEN_CONFIG = REPO_ROOT / "npu/rtlgen/examples/minimal.json"
-RTLGEN_OUT = REPO_ROOT / "npu/rtlgen/out"
 
 
 def _pack_desc(opcode: int, flags: int = 0, size_units: int = 1, tag: int = 0) -> bytearray:
@@ -108,35 +107,37 @@ def _normalize_perf_trace(trace: list[dict[str, object]], scenario: str) -> list
 
 
 def _run_rtl(bin_path: Path, plusargs: list[str]) -> list[dict[str, object]]:
-    subprocess.run(
-        [
-            sys.executable,
-            str(REPO_ROOT / "npu/rtlgen/gen.py"),
-            "--config",
-            str(RTLGEN_CONFIG),
-            "--out",
-            str(RTLGEN_OUT),
-        ],
-        cwd=str(REPO_ROOT),
-        check=True,
-    )
     with tempfile.TemporaryDirectory() as td:
+        tmp = Path(td)
+        rtl_out = tmp / "rtl_out"
+        subprocess.run(
+            [
+                sys.executable,
+                str(REPO_ROOT / "npu/rtlgen/gen.py"),
+                "--config",
+                str(RTLGEN_CONFIG),
+                "--out",
+                str(rtl_out),
+            ],
+            cwd=str(REPO_ROOT),
+            check=True,
+        )
         vvp_path = Path(td) / "tb_npu_shell.vvp"
         subprocess.run(
             [
                 "iverilog",
                 "-g2012",
                 "-I",
-                str(RTLGEN_OUT),
+                str(rtl_out),
                 "-s",
                 "tb_npu_shell",
                 "-o",
                 str(vvp_path),
-                str(RTLGEN_OUT / "top.v"),
+                str(rtl_out / "top.v"),
                 str(REPO_ROOT / "npu/sim/rtl/tb_npu_shell.sv"),
                 str(REPO_ROOT / "npu/sim/rtl/axi_mem_router.sv"),
                 str(REPO_ROOT / "npu/sim/rtl/axi_mem_model.sv"),
-                str(RTLGEN_OUT / "sram_models.sv"),
+                str(rtl_out / "sram_models.sv"),
             ],
             cwd=str(REPO_ROOT),
             check=True,
