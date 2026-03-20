@@ -1,14 +1,14 @@
 {
   "proposal_id": "prop_l1_npu_nm1_sigmoid_vec_enable_v1",
-  "source_commit": "pending_push",
+  "source_commit": "79c4cdac4940ddc250383c117229b32e326ac581",
   "requested_items": [
     {
-      "item_id": "l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r1",
+      "item_id": "l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r8",
       "task_type": "l1_sweep",
       "evaluation_mode": "measurement_only",
       "objective": "npu_nm1_sigmoid_vec_physical_metrics",
-      "status": "pending_push",
-      "notes": "Queue after the integrated sigmoid vec support and DB-native block-sweep generator update are committed and pushed."
+      "status": "running_then_interrupted_for_runtime_control",
+      "notes": "Integrated nm1 sigmoid sweep now reaches run_block_sweep on the merged config/runtime fixes, but full npu_top abc mapping remains impractical without better cancel/stall/progress controls."
     }
   ]
 }

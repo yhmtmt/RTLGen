@@ -5,23 +5,24 @@
 - `title`: `NPU nm1 sigmoid vec enable`
 
 ## Scope
-- bounded `int8` sigmoid support is implemented in the integrated `nm1` vec path
-- a sigmoid-enabled `nm1` block config/design is staged under
-  `runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/`
-- the DB-native Layer 1 sweep path now accepts integrated NPU block configs and
-  routes them through `npu/synth/run_block_sweep.py`
+- bounded sigmoid support is now implemented in the fixed `nm1` vec path
+- one integrated sigmoid-enabled `nm1` block design/config is staged for Layer 1
+  physical evaluation
+- the immediate blocker is not feature implementation anymore, but practical
+  physical-flow execution for the full `npu_top` proof target
 
 ## Local Validation
-- `python3 tests/test_npu_rtlgen_vec_sigmoid.py`
-- `python3 npu/sim/perf/tests/test_perf_vec_sigmoid.py`
-- `PYTHONPATH=control_plane python3 control_plane/control_plane/tests/test_l1_task_generator.py`
-- `PYTHONPATH=control_plane python3 control_plane/control_plane/cli/generate_l1_sweep.py ...`
-  against a temporary SQLite DB
+- local RTL/perf/control-plane smoke checks passed during bring-up of the
+  integrated sigmoid-enabled `nm1` block
+- remote Layer 1 attempts exposed two runtime issues that are now fixed:
+  - FloPoCo provisioning/default build contract
+  - integrated config `binary_path` for `rtlgen`
+- the remaining problem is long-duration `abc` mapping during full-top sweep
 
 ## Evaluation Request
-- not queued yet from this proposal workspace because the integrated support is
-  still local to the clean implementation worktree
-- next step:
-  - commit and push the integrated `nm1` sigmoid support plus DB-native Layer 1
-    sweep generator update
-  - queue `l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r1`
+- remote attempts have reached `run_block_sweep` successfully
+- next local step:
+  - land control-plane long-run controls for cancel/stall/progress
+  - then re-run the integrated Layer 1 sweep under those controls
+  - if runtime is still impractical, reduce the physical proof target before
+    spending more evaluator time

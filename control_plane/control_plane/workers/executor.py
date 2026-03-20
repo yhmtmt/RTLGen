@@ -13,7 +13,12 @@ from control_plane.ids import make_id
 from control_plane.models.runs import Run
 from control_plane.models.work_items import WorkItem
 from control_plane.services.lease_service import acquire_next_lease
-from control_plane.services.run_service import append_run_event, complete_run, start_run
+from control_plane.services.run_service import (
+    append_run_event,
+    complete_run,
+    is_run_cancel_requested,
+    start_run,
+)
 from control_plane.services.scheduler import NoEligibleWorkItem
 from control_plane.workers.artifact_stage import (
     build_queue_result_payload,
@@ -37,6 +42,8 @@ class WorkerConfig:
     lease_seconds: int = 1800
     heartbeat_seconds: int = 30
     command_timeout_seconds: int | None = None
+    command_stall_timeout_seconds: int | None = None
+    command_progress_seconds: int = 60
     max_retry_attempts: int = 2
     enforce_source_commit: bool = True
     log_root: str | None = None
@@ -85,7 +92,13 @@ def _classify_failure(
         detail = "timed out" if failed.timed_out else f"exit_code={failed.returncode}"
         if failed.timed_out:
             category = "command_timeout"
-            retryable = True
+            retryable = False
+        elif failed.stalled:
+            category = "command_stall"
+            retryable = False
+        elif failed.canceled:
+            category = "command_canceled"
+            retryable = False
         elif failed.name in {"validate", "validate_runs", "validate_campaign"}:
             category = "validation_error"
             retryable = False
@@ -275,6 +288,26 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
             work_dir=checkout_info.work_dir,
             log_dir=log_dir,
             timeout_seconds=config.command_timeout_seconds,
+            stall_timeout_seconds=config.command_stall_timeout_seconds,
+            progress_interval_seconds=config.command_progress_seconds,
+            cancel_requested=lambda: _is_cancel_requested(
+                session_factory=session_factory,
+                run_key=run_key,
+            ),
+            on_command_started=lambda payload: _record_command_started(
+                session_factory=session_factory,
+                run_key=run_key,
+                item_id=work_item.item_id,
+                payload=payload,
+                heartbeat=heartbeat,
+            ),
+            on_command_progress=lambda payload: _record_command_progress(
+                session_factory=session_factory,
+                run_key=run_key,
+                item_id=work_item.item_id,
+                payload=payload,
+                heartbeat=heartbeat,
+            ),
             on_command_finished=lambda result: _record_command_result(
                 session_factory=session_factory,
                 run_key=run_key,
@@ -332,6 +365,8 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
                 "stdout_log": result.stdout_log,
                 "stderr_log": result.stderr_log,
                 "timed_out": result.timed_out,
+                "stalled": result.stalled,
+                "canceled": result.canceled,
             }
             for result in command_results
         ],
@@ -389,7 +424,7 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
         completed = complete_run(
             session,
             run_key=run_key,
-            status="succeeded" if success else "failed",
+            status=_terminal_run_status(success=success, failure_category=failure["category"]),
             result_summary=worker_error or summarize_command_results(command_results),
             result_payload=result_payload,
             artifacts=[
@@ -443,8 +478,73 @@ def _record_command_result(
                 "stdout_log": result.stdout_log,
                 "stderr_log": result.stderr_log,
                 "timed_out": result.timed_out,
+                "stalled": result.stalled,
+                "canceled": result.canceled,
             },
         )
+
+
+def _record_command_started(
+    *,
+    session_factory: sessionmaker,
+    run_key: str,
+    item_id: str,
+    payload: dict[str, Any],
+    heartbeat: LeaseHeartbeatPump,
+) -> None:
+    progress = {
+        "phase": "command_running",
+        "item_id": item_id,
+        "command_name": payload["command_name"],
+        "stdout_log": payload["stdout_log"],
+        "stderr_log": payload["stderr_log"],
+    }
+    heartbeat.update_progress(progress)
+    with session_factory() as session:
+        append_run_event(
+            session,
+            run_key=run_key,
+            event_type="command_started",
+            event_payload=payload,
+        )
+
+
+def _record_command_progress(
+    *,
+    session_factory: sessionmaker,
+    run_key: str,
+    item_id: str,
+    payload: dict[str, Any],
+    heartbeat: LeaseHeartbeatPump,
+) -> None:
+    progress = {
+        "phase": "command_running",
+        "item_id": item_id,
+        **payload,
+    }
+    heartbeat.update_progress(progress)
+    with session_factory() as session:
+        append_run_event(
+            session,
+            run_key=run_key,
+            event_type="command_progress",
+            event_payload=progress,
+        )
+
+
+def _is_cancel_requested(*, session_factory: sessionmaker, run_key: str) -> bool:
+    with session_factory() as session:
+        return is_run_cancel_requested(session, run_key=run_key)
+
+
+def _terminal_run_status(*, success: bool, failure_category: str) -> str:
+    if success:
+        return "succeeded"
+    if failure_category == "command_canceled":
+        return "canceled"
+    if failure_category in {"command_timeout", "command_stall"}:
+        return "timed_out"
+    return "failed"
 
 
 def execute_worker_loop(

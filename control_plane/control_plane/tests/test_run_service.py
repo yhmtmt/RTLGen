@@ -20,7 +20,13 @@ from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
 from control_plane.models.worker_leases import WorkerLease
 from control_plane.models.worker_machines import WorkerMachine
-from control_plane.services.run_service import append_run_event, complete_run, start_run
+from control_plane.services.run_service import (
+    append_run_event,
+    complete_run,
+    is_run_cancel_requested,
+    request_run_cancel,
+    start_run,
+)
 
 
 def make_session() -> Session:
@@ -188,3 +194,27 @@ def test_run_routes_work_in_process() -> None:
                 del os.environ["RTLCP_DATABASE_URL"]
             else:
                 os.environ["RTLCP_DATABASE_URL"] = old
+
+
+def test_request_run_cancel_marks_active_run() -> None:
+    with make_session() as session:
+        lease, _ = seed_leased_work_item(session)
+        start_run(
+            session,
+            lease_token=lease.lease_token,
+            run_key="run-cancel-1",
+            attempt=1,
+            executor_type="internal_worker",
+        )
+
+        result = request_run_cancel(
+            session,
+            run_key="run-cancel-1",
+            requested_by="tester",
+            reason="operator stop",
+        )
+        assert result.event_type == "cancel_requested"
+        assert is_run_cancel_requested(session, run_key="run-cancel-1") is True
+
+        again = request_run_cancel(session, run_key="run-cancel-1", requested_by="tester")
+        assert again.event_id == result.event_id

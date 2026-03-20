@@ -65,6 +65,13 @@ class RunCompleteResult:
     artifact_count: int
 
 
+def _get_run(session: Session, run_key: str) -> Run:
+    run = session.query(Run).filter(Run.run_key == run_key).one_or_none()
+    if run is None:
+        raise RunNotFound(f"run not found: {run_key}")
+    return run
+
+
 def _get_active_lease(session: Session, lease_token: str) -> WorkerLease:
     lease = (
         session.query(WorkerLease)
@@ -151,9 +158,7 @@ def append_run_event(
     event_type: str,
     event_payload: dict[str, Any] | None = None,
 ) -> RunEventResult:
-    run = session.query(Run).filter(Run.run_key == run_key).one_or_none()
-    if run is None:
-        raise RunNotFound(f"run not found: {run_key}")
+    run = _get_run(session, run_key)
     event = RunEvent(
         run_id=run.id,
         event_time=utcnow(),
@@ -171,6 +176,61 @@ def append_run_event(
     )
 
 
+def request_run_cancel(
+    session: Session,
+    *,
+    run_key: str,
+    requested_by: str | None = None,
+    reason: str | None = None,
+) -> RunEventResult:
+    run = _get_run(session, run_key)
+    if run.status in _TERMINAL_RUN_STATUSES:
+        raise RunLifecycleError(f"run is already terminal: {run_key}")
+    existing = (
+        session.query(RunEvent)
+        .filter(RunEvent.run_id == run.id)
+        .filter(RunEvent.event_type == "cancel_requested")
+        .order_by(RunEvent.id.desc())
+        .first()
+    )
+    if existing is not None:
+        return RunEventResult(
+            run_id=run.id,
+            run_key=run.run_key,
+            event_id=existing.id,
+            event_type=existing.event_type,
+        )
+    event = RunEvent(
+        run_id=run.id,
+        event_time=utcnow(),
+        event_type="cancel_requested",
+        event_payload={
+            "requested_by": requested_by,
+            "reason": reason,
+        },
+    )
+    session.add(event)
+    session.flush()
+    session.commit()
+    return RunEventResult(
+        run_id=run.id,
+        run_key=run.run_key,
+        event_id=event.id,
+        event_type=event.event_type,
+    )
+
+
+def is_run_cancel_requested(session: Session, *, run_key: str) -> bool:
+    run = _get_run(session, run_key)
+    existing = (
+        session.query(RunEvent.id)
+        .filter(RunEvent.run_id == run.id)
+        .filter(RunEvent.event_type == "cancel_requested")
+        .first()
+    )
+    return existing is not None
+
+
 def complete_run(
     session: Session,
     *,
@@ -180,9 +240,7 @@ def complete_run(
     result_payload: dict[str, Any] | None = None,
     artifacts: list[dict[str, Any]] | None = None,
 ) -> RunCompleteResult:
-    run = session.query(Run).filter(Run.run_key == run_key).one_or_none()
-    if run is None:
-        raise RunNotFound(f"run not found: {run_key}")
+    run = _get_run(session, run_key)
 
     run_status = RunStatus(status)
     if run_status not in _TERMINAL_RUN_STATUSES:

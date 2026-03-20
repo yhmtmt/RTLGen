@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 import tempfile
 import subprocess
+import threading
+import time
 from unittest import mock
 
 from sqlalchemy import create_engine
@@ -16,6 +18,7 @@ from control_plane.models.runs import Run
 from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
 from control_plane.models.worker_leases import WorkerLease
+from control_plane.services.run_service import request_run_cancel
 from control_plane.services.worker_service import run_worker
 from control_plane.workers.checkout import cleanup_checkout, prepare_checkout
 from control_plane.workers.executor import WorkerConfig, _materialize_generated_inputs
@@ -495,7 +498,7 @@ def test_worker_marks_failed_run_when_command_fails() -> None:
             assert run.result_payload["retry_decision"]["requeue"] is False
 
 
-def test_worker_requeues_retryable_timeout_once() -> None:
+def test_worker_marks_command_timeout_terminal() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
         repo_root.mkdir()
@@ -528,11 +531,11 @@ def test_worker_requeues_retryable_timeout_once() -> None:
             work_item = session.query(WorkItem).filter_by(item_id=seeded.item_id).one()
             run = session.query(Run).filter_by(run_key=results[0].run_key).one()
             lease = session.query(WorkerLease).filter_by(work_item_id=work_item.id).one()
-            assert work_item.state == WorkItemState.READY
-            assert run.status == RunStatus.FAILED
+            assert work_item.state == WorkItemState.FAILED
+            assert run.status == RunStatus.TIMED_OUT
             assert lease.status == LeaseStatus.RELEASED
             assert run.result_payload["failure_classification"]["category"] == "command_timeout"
-            assert run.result_payload["retry_decision"]["requeue"] is True
+            assert run.result_payload["retry_decision"]["requeue"] is False
 
 
 def test_worker_stops_retrying_after_max_attempts() -> None:
@@ -560,15 +563,107 @@ def test_worker_stops_retrying_after_max_attempts() -> None:
         second = run_worker(session_factory, config=config, max_items=1)
 
         assert first[0].status == "failed"
-        assert second[0].status == "failed"
+        assert second[0].status == "no_work"
 
         with Session(engine) as session:
             work_item = session.query(WorkItem).filter_by(item_id=seeded.item_id).one()
             runs = session.query(Run).filter_by(work_item_id=work_item.id).order_by(Run.attempt.asc()).all()
-            assert len(runs) == 2
+            assert len(runs) == 1
             assert work_item.state == WorkItemState.FAILED
-            assert runs[0].result_payload["retry_decision"]["requeue"] is True
-            assert runs[1].result_payload["retry_decision"]["requeue"] is False
+            assert runs[0].result_payload["retry_decision"]["requeue"] is False
+
+
+def test_worker_honors_cancel_requested_during_command() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        db_path = Path(td) / "cp.db"
+        engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            seeded = seed_timeout_work_item(session, item_id="item_cancel")
+
+        session_factory = build_session_factory(engine)
+        results_box: list[list] = []
+
+        def _run_worker() -> None:
+            results_box.append(
+                run_worker(
+                    session_factory,
+                    config=WorkerConfig(
+                        repo_root=str(repo_root),
+                        machine_key="worker-1",
+                        capabilities={"platform": "nangate45", "flow": "openroad"},
+                        capability_filter={"platform": "nangate45", "flow": "openroad"},
+                        lease_seconds=60,
+                        heartbeat_seconds=1,
+                        command_progress_seconds=1,
+                    ),
+                    max_items=1,
+                )
+            )
+
+        worker_thread = threading.Thread(target=_run_worker)
+        worker_thread.start()
+
+        run_key = None
+        deadline = time.time() + 5
+        while time.time() < deadline and run_key is None:
+            with Session(engine) as session:
+                run = session.query(Run).join(WorkItem).filter(WorkItem.item_id == seeded.item_id).first()
+                if run is not None:
+                    run_key = run.run_key
+                    request_run_cancel(session, run_key=run_key, requested_by="tester", reason="stop test")
+                    break
+            time.sleep(0.1)
+
+        worker_thread.join(timeout=10)
+        assert run_key is not None
+        assert results_box
+        assert results_box[0][0].status == "canceled"
+
+        with Session(engine) as session:
+            work_item = session.query(WorkItem).filter_by(item_id=seeded.item_id).one()
+            run = session.query(Run).filter_by(run_key=run_key).one()
+            assert work_item.state == WorkItemState.FAILED
+            assert run.status == RunStatus.CANCELED
+            assert run.result_payload["failure_classification"]["category"] == "command_canceled"
+
+
+def test_worker_marks_stalled_command_as_timed_out() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        db_path = Path(td) / "cp.db"
+        engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            seeded = seed_timeout_work_item(session, item_id="item_stall")
+
+        session_factory = build_session_factory(engine)
+        results = run_worker(
+            session_factory,
+            config=WorkerConfig(
+                repo_root=str(repo_root),
+                machine_key="worker-1",
+                capabilities={"platform": "nangate45", "flow": "openroad"},
+                capability_filter={"platform": "nangate45", "flow": "openroad"},
+                lease_seconds=60,
+                heartbeat_seconds=1,
+                command_stall_timeout_seconds=1,
+                command_progress_seconds=1,
+            ),
+            max_items=1,
+        )
+
+        assert results[0].status == "timed_out"
+
+        with Session(engine) as session:
+            work_item = session.query(WorkItem).filter_by(item_id=seeded.item_id).one()
+            run = session.query(Run).filter_by(run_key=results[0].run_key).one()
+            assert work_item.state == WorkItemState.FAILED
+            assert run.status == RunStatus.TIMED_OUT
+            assert run.result_payload["failure_classification"]["category"] == "command_stall"
 
 
 def test_worker_fetches_source_commit_into_clean_worktree() -> None:

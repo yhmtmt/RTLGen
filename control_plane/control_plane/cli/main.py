@@ -6,6 +6,7 @@ import argparse
 import json
 
 from control_plane.api.app import main as serve_api_main
+from control_plane.cli.cancel_run import main as cancel_run_main
 from control_plane.cli.cleanup import main as cleanup_main
 from control_plane.cli.consume_l1_result import main as consume_l1_result_main
 from control_plane.cli.consume_l2_result import main as consume_l2_result_main
@@ -91,6 +92,13 @@ def main(argv: list[str] | None = None) -> int:
     consume_l2_parser.add_argument("--run-key")
     consume_l2_parser.add_argument("--target-path")
 
+    cancel_parser = subparsers.add_parser("cancel-run", help="Request cancellation of an active run")
+    cancel_parser.add_argument("--database-url", required=True)
+    cancel_parser.add_argument("--run-key")
+    cancel_parser.add_argument("--item-id")
+    cancel_parser.add_argument("--requested-by", default="developer_agent")
+    cancel_parser.add_argument("--reason")
+
     generate_l2_parser = subparsers.add_parser(
         "generate-l2-campaign",
         help="Generate a Layer 2 campaign work item directly into the control-plane DB",
@@ -146,6 +154,8 @@ def main(argv: list[str] | None = None) -> int:
     worker_parser.add_argument("--lease-seconds", type=int, default=1800)
     worker_parser.add_argument("--heartbeat-seconds", type=int, default=30)
     worker_parser.add_argument("--command-timeout-seconds", type=int)
+    worker_parser.add_argument("--command-stall-timeout-seconds", type=int)
+    worker_parser.add_argument("--command-progress-seconds", type=int, default=60)
     worker_parser.add_argument("--max-retry-attempts", type=int, default=2)
     worker_parser.add_argument("--allow-stale-checkout", action="store_true")
     worker_parser.add_argument("--log-root")
@@ -162,6 +172,8 @@ def main(argv: list[str] | None = None) -> int:
     worker_daemon_parser.add_argument("--lease-seconds", type=int, default=1800)
     worker_daemon_parser.add_argument("--heartbeat-seconds", type=int, default=30)
     worker_daemon_parser.add_argument("--command-timeout-seconds", type=int)
+    worker_daemon_parser.add_argument("--command-stall-timeout-seconds", type=int)
+    worker_daemon_parser.add_argument("--command-progress-seconds", type=int, default=60)
     worker_daemon_parser.add_argument("--max-retry-attempts", type=int, default=2)
     worker_daemon_parser.add_argument("--allow-stale-checkout", action="store_true")
     worker_daemon_parser.add_argument("--log-root")
@@ -409,6 +421,16 @@ def main(argv: list[str] | None = None) -> int:
             if value is not None:
                 argv2.extend([key, str(value)])
         return consume_l2_result_main(argv2)
+    if args.command == "cancel-run":
+        argv2 = ["--database-url", args.database_url, "--requested-by", args.requested_by]
+        for key, value in [
+            ("--run-key", args.run_key),
+            ("--item-id", args.item_id),
+            ("--reason", args.reason),
+        ]:
+            if value is not None:
+                argv2.extend([key, str(value)])
+        return cancel_run_main(argv2)
     if args.command == "generate-l2-campaign":
         argv2 = [
             "--database-url",
@@ -494,6 +516,8 @@ def main(argv: list[str] | None = None) -> int:
             ("--capabilities-json", args.capabilities_json),
             ("--capability-filter-json", args.capability_filter_json),
             ("--command-timeout-seconds", args.command_timeout_seconds),
+            ("--command-stall-timeout-seconds", args.command_stall_timeout_seconds),
+            ("--command-progress-seconds", args.command_progress_seconds),
             ("--log-root", args.log_root),
         ]:
             if value is not None:
@@ -527,6 +551,8 @@ def main(argv: list[str] | None = None) -> int:
             ("--capabilities-json", args.capabilities_json),
             ("--capability-filter-json", args.capability_filter_json),
             ("--command-timeout-seconds", args.command_timeout_seconds),
+            ("--command-stall-timeout-seconds", args.command_stall_timeout_seconds),
+            ("--command-progress-seconds", args.command_progress_seconds),
             ("--log-root", args.log_root),
             ("--max-polls", args.max_polls),
         ]:
