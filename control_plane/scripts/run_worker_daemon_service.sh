@@ -46,6 +46,14 @@ if [[ -n "${RTLCP_COMMAND_TIMEOUT_SECONDS:-}" ]]; then
   cmd+=(--command-timeout-seconds "${RTLCP_COMMAND_TIMEOUT_SECONDS}")
 fi
 
+if [[ -n "${RTLCP_COMMAND_STALL_TIMEOUT_SECONDS:-}" ]]; then
+  cmd+=(--command-stall-timeout-seconds "${RTLCP_COMMAND_STALL_TIMEOUT_SECONDS}")
+fi
+
+if [[ -n "${RTLCP_COMMAND_PROGRESS_SECONDS:-}" ]]; then
+  cmd+=(--command-progress-seconds "${RTLCP_COMMAND_PROGRESS_SECONDS}")
+fi
+
 if [[ -n "${RTLCP_LOG_ROOT:-}" ]]; then
   cmd+=(--log-root "${RTLCP_LOG_ROOT}")
 fi
