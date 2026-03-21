@@ -37,6 +37,7 @@ class Layer1SweepGenerateRequest:
     mode: str = "upsert"
     proposal_id: str | None = None
     proposal_path: str | None = None
+    make_target: str | None = None
 
 
 @dataclass(frozen=True)
@@ -79,6 +80,7 @@ def _read_config_target(
     repo_root: Path,
     config_rel: str,
     out_root: str,
+    make_target: str | None,
 ) -> Layer1ConfigTarget:
     cfg = _load_json(config_path)
     if "multiplier" in cfg:
@@ -232,7 +234,8 @@ def _read_config_target(
                         "--platform {platform} "
                         f"--top {top_name} "
                         f"--sweep {{sweep_path}} "
-                        "--skip_existing"
+                        + (f"--make_target {make_target} " if make_target else "")
+                        + "--skip_existing"
                         )
                     ),
                 },

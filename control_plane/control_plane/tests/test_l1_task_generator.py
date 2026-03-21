@@ -263,6 +263,33 @@ def test_generate_l1_sweep_task_supports_integrated_npu_block_configs() -> None:
                 "--sweep runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/sweep_compare_33.json "
                 "--skip_existing"
             )
+
+
+def test_generate_l1_sweep_task_supports_make_target_for_integrated_blocks() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_block_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/npu_blocks",
+                    requested_by="@tester",
+                    source_commit="sig123",
+                    make_target="1_1_yosys_canonicalize",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert "--make_target 1_1_yosys_canonicalize" in work_item.command_manifest[2]["run"]
             assert work_item.expected_outputs == [
                 "runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/metrics.csv",
                 "runs/index.csv",
