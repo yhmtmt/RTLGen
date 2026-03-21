@@ -363,6 +363,7 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
             repo_root=repo_root,
             config_rel=config_path,
             out_root=out_root,
+            make_target=request.make_target,
         )
         for config_path in config_paths
     ]
