@@ -1,0 +1,27 @@
+{
+  "flow_params": {
+    "TAG": [
+      "npu_fp16_nm1_sigmoidcmp33_firstpass"
+    ],
+    "FLOW_VARIANT": [
+      "nm1_sigmoidcmp33_firstpass"
+    ],
+    "CLOCK_PERIOD": [
+      12.0
+    ],
+    "DIE_AREA": [
+      "0 0 1800 1800"
+    ],
+    "CORE_AREA": [
+      "80 80 1720 1720"
+    ],
+    "PLACE_DENSITY": [
+      0.3
+    ],
+    "SYNTH_KEEP_MODULES": [
+      "gemm_compute_array vec_act_sigmoid_int8"
+    ]
+  },
+  "tag_prefix": "npu_fp16_nm1_sigmoidcmp_firstpass",
+  "mode_compare": true
+}

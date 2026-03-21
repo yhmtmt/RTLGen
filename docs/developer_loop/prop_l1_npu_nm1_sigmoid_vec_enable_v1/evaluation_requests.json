@@ -1,14 +1,30 @@
 {
   "proposal_id": "prop_l1_npu_nm1_sigmoid_vec_enable_v1",
-  "source_commit": "79c4cdac4940ddc250383c117229b32e326ac581",
+  "source_commit": "75484b2d46b451501ff8bc726ed04d1f082b6ea1",
   "requested_items": [
     {
       "item_id": "l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r8",
       "task_type": "l1_sweep",
       "evaluation_mode": "measurement_only",
       "objective": "npu_nm1_sigmoid_vec_physical_metrics",
-      "status": "running_then_interrupted_for_runtime_control",
-      "notes": "Integrated nm1 sigmoid sweep now reaches run_block_sweep on the merged config/runtime fixes, but full npu_top abc mapping remains impractical without better cancel/stall/progress controls."
+      "status": "superseded_by_runtime_bounded_r9",
+      "notes": "Original full-top sweep reached run_block_sweep but remained impractical before stall-aware control-plane runtime controls were landed."
+    },
+    {
+      "item_id": "l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r9",
+      "task_type": "l1_sweep",
+      "evaluation_mode": "measurement_only",
+      "objective": "npu_nm1_sigmoid_vec_physical_metrics",
+      "status": "failed_stalled_runtime_bounded",
+      "notes": "Evaluator-local DB plus worker stall/progress controls correctly classified the original full-top run_block_sweep as stalled after 300 seconds without new output."
+    },
+    {
+      "item_id": "l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r10",
+      "task_type": "l1_sweep",
+      "evaluation_mode": "measurement_only",
+      "objective": "npu_nm1_sigmoid_vec_physical_metrics",
+      "status": "planned_firstpass_reduced_sweep",
+      "notes": "Next integrated proof should use sweep_compare_33_firstpass.json with preserved sigmoid vec hierarchy and relaxed timing/floorplan settings."
     }
   ]
 }

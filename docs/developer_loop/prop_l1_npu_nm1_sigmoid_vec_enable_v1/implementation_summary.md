@@ -18,11 +18,12 @@
   - FloPoCo provisioning/default build contract
   - integrated config `binary_path` for `rtlgen`
 - the remaining problem is long-duration `abc` mapping during full-top sweep
+- first runtime-bounded retry `r9` confirmed the issue is a `run_block_sweep` stall, not worker death: the command was classified as stalled after 300s without new output
+- next proof target should therefore be a cheaper first-pass integrated sweep that preserves both `gemm_compute_array` and `vec_act_sigmoid_int8` and relaxes timing/floorplan pressure
 
 ## Evaluation Request
 - remote attempts have reached `run_block_sweep` successfully
+- `r9` validated the new control-plane runtime controls: `run_block_sweep` now terminates as `TIMED_OUT` with `stalled=true` instead of hanging indefinitely
 - next local step:
-  - land control-plane long-run controls for cancel/stall/progress
-  - then re-run the integrated Layer 1 sweep under those controls
-  - if runtime is still impractical, reduce the physical proof target before
-    spending more evaluator time
+  - use `runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/sweep_compare_33_firstpass.json` as the next integrated proof target
+  - if that cheaper first-pass target still stalls, split the sweep further or add a synth-only prefilter before another full OpenROAD spend

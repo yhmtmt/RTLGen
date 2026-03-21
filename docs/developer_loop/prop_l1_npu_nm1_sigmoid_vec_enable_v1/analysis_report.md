@@ -58,3 +58,8 @@
 - after that, either:
   - rerun the integrated `nm1` sweep with bounded runtime controls, or
   - define a smaller integrated physical proof target than full `npu_top`
+
+## Next Reduced Sweep
+- use `runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/sweep_compare_33_firstpass.json` for the next attempt
+- preserve `gemm_compute_array` and `vec_act_sigmoid_int8` hierarchy
+- relax `CLOCK_PERIOD` to `12.0` and `PLACE_DENSITY` to `0.3`
