@@ -63,3 +63,7 @@
 - use `runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/sweep_compare_33_firstpass.json` for the next attempt
 - preserve `gemm_compute_array` and `vec_act_sigmoid_int8` hierarchy
 - relax `CLOCK_PERIOD` to `12.0` and `PLACE_DENSITY` to `0.3`
+
+## Next Reduced Sweep
+- queue `sweep_hier_firstpass.json` as a single hierarchy-preserving point
+- do not include `mode_compare` or any flat variant in the next proof

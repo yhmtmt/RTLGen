@@ -27,3 +27,8 @@
 - next local step:
   - use `runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/sweep_compare_33_firstpass.json` as the next integrated proof target
   - if that cheaper first-pass target still stalls, split the sweep further or add a synth-only prefilter before another full OpenROAD spend
+
+## Next Reduced Sweep
+- use `runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/sweep_hier_firstpass.json` for the next retry
+- this removes the flat mode entirely and runs one hierarchy-preserving point only
+- keep both `gemm_compute_array` and `vec_act_sigmoid_int8` visible while relaxing timing and density

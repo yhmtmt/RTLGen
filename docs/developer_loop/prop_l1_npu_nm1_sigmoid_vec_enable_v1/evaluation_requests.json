@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_npu_nm1_sigmoid_vec_enable_v1",
-  "source_commit": "75484b2d46b451501ff8bc726ed04d1f082b6ea1",
+  "source_commit": "04cd2057b5920a9a4179a591e7d1e93d91b49879",
   "requested_items": [
     {
       "item_id": "l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r8",
@@ -25,6 +25,14 @@
       "objective": "npu_nm1_sigmoid_vec_physical_metrics",
       "status": "planned_firstpass_reduced_sweep",
       "notes": "Next integrated proof should use sweep_compare_33_firstpass.json with preserved sigmoid vec hierarchy and relaxed timing/floorplan settings."
+    },
+    {
+      "item_id": "l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r12",
+      "task_type": "l1_sweep",
+      "evaluation_mode": "measurement_only",
+      "objective": "npu_nm1_sigmoid_vec_physical_metrics",
+      "status": "planned_hier_only_firstpass",
+      "notes": "Next retry removes mode_compare and flat synthesis entirely, using sweep_hier_firstpass.json as a single hierarchy-preserving point."
     }
   ]
 }
