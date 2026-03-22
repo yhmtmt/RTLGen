@@ -3,6 +3,7 @@
 
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -227,3 +228,46 @@ class SynthTargetMappingRegressionTest(unittest.TestCase):
     def test_resolve_make_target_maps_synth_variants_to_synth(self):
         self.assertEqual("synth", self.run_block_sweep.resolve_make_target("1_2_yosys"))
         self.assertEqual("synth", self.run_block_sweep.resolve_make_target("1_synth.v"))
+
+
+class YosysStatsPrefilterRegressionTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.run_block_sweep = load_script_module(
+            "run_block_sweep_stats", "npu/synth/run_block_sweep.py"
+        )
+
+    def test_is_yosys_stats_target_accepts_prefilter_token(self):
+        self.assertTrue(self.run_block_sweep.is_yosys_stats_target("yosys_stats_prefilter"))
+
+    def test_run_yosys_stats_prefilter_emits_summary_for_tiny_design(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            verilog_dir = tmp / "verilog"
+            verilog_dir.mkdir(parents=True, exist_ok=True)
+            (verilog_dir / "top.v").write_text(
+                "module npu_top(input clk, input rst_n, output done);\n"
+                "  wire a = clk & rst_n;\n"
+                "  assign done = a;\n"
+                "endmodule\n",
+                encoding="utf-8",
+            )
+            run_dir = tmp / "run"
+            run_dir.mkdir(parents=True, exist_ok=True)
+            env = dict(os.environ)
+            env["PATH"] = f"/oss-cad-suite/bin:{env.get('PATH', '')}"
+            old_path = os.environ.get("PATH", "")
+            os.environ["PATH"] = env["PATH"]
+            try:
+                result = self.run_block_sweep.run_yosys_stats_prefilter(
+                    verilog_dir=verilog_dir,
+                    top="npu_top",
+                    run_dir=run_dir,
+                )
+            finally:
+                os.environ["PATH"] = old_path
+            self.assertTrue((run_dir / "yosys_stats_prefilter.json").exists())
+            self.assertGreaterEqual(result["flow_elapsed_seconds"], 0.0)
+            summary = result["prefilter_summary"]
+            self.assertGreaterEqual(int(summary.get("module_count", 0)), 1)
+            self.assertGreaterEqual(int(summary.get("top_num_cells", 0)), 1)

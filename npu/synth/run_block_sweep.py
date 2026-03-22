@@ -21,6 +21,7 @@ import shutil
 import statistics
 import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -916,6 +917,12 @@ def copy_manifest_blackbox_verilog(manifest: Dict[str, object], dest_src_dir: Pa
         shutil.copy(src_path, dst)
 
 
+def is_yosys_stats_target(make_target: Optional[str]) -> bool:
+    if not make_target:
+        return False
+    return make_target in {"yosys_stats_prefilter", "yosys_stats"}
+
+
 def is_synth_target(make_target: Optional[str]) -> bool:
     if not make_target:
         return False
@@ -953,6 +960,112 @@ def synth_result_artifact(platform: str, design_name: str, flow_variant: str, ma
         return candidate if candidate.exists() else base_dir / "1_2_yosys.v"
     candidate = result_dir / "1_synth.v"
     return candidate if candidate.exists() else base_dir / "1_synth.v"
+
+
+def parse_embedded_json_object(text: str) -> Dict[str, object]:
+    start = text.find("{")
+    if start < 0:
+        raise ValueError("No JSON object found in Yosys stats output")
+    decoder = json.JSONDecoder()
+    payload, _ = decoder.raw_decode(text[start:])
+    if not isinstance(payload, dict):
+        raise ValueError("Yosys stats payload is not a JSON object")
+    return payload
+
+
+def summarize_yosys_stats(stats_json: Dict[str, object], top: str) -> Dict[str, object]:
+    modules = stats_json.get("modules")
+    if not isinstance(modules, dict):
+        return {}
+
+    top_keys = [top, f"\\{top}"]
+    top_module = None
+    for key in top_keys:
+        candidate = modules.get(key)
+        if isinstance(candidate, dict):
+            top_module = candidate
+            break
+    if top_module is None:
+        for key, candidate in modules.items():
+            if str(key).lstrip('\\') == top and isinstance(candidate, dict):
+                top_module = candidate
+                break
+
+    summary: Dict[str, object] = {
+        "module_count": len(modules),
+    }
+    if top_module is not None:
+        for src_key, dst_key in [
+            ("num_cells", "top_num_cells"),
+            ("num_wires", "top_num_wires"),
+            ("num_wire_bits", "top_num_wire_bits"),
+            ("num_pub_wires", "top_num_pub_wires"),
+            ("num_pub_wire_bits", "top_num_pub_wire_bits"),
+            ("num_memories", "top_num_memories"),
+            ("num_memory_bits", "top_num_memory_bits"),
+            ("num_processes", "top_num_processes"),
+        ]:
+            value = top_module.get(src_key)
+            if isinstance(value, (int, float)):
+                summary[dst_key] = value
+        cell_types = top_module.get("num_cells_by_type")
+        if isinstance(cell_types, dict):
+            summary["top_cell_types"] = dict(cell_types)
+    return summary
+
+
+def run_yosys_stats_prefilter(
+    *,
+    verilog_dir: Path,
+    top: str,
+    run_dir: Path,
+) -> Dict[str, object]:
+    verilog_files = sorted(verilog_dir.glob("*.v"))
+    if not verilog_files:
+        raise FileNotFoundError(f"No .v files found in {verilog_dir}")
+
+    script_path = run_dir / "yosys_stats_prefilter.ys"
+    stats_json_path = run_dir / "yosys_stats_prefilter.json"
+    log_path = run_dir / "yosys_stats_prefilter.log"
+
+    read_files = " ".join(str(path.resolve()) for path in verilog_files)
+    script_path.write_text(
+        "\n".join(
+            [
+                f"read_verilog {read_files}",
+                f"hierarchy -check -top {top}",
+                "proc",
+                "opt",
+                "stat -json",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    start = time.monotonic()
+    with stats_json_path.open("w", encoding="utf-8") as stdout_handle, log_path.open(
+        "w", encoding="utf-8"
+    ) as stderr_handle:
+        subprocess.run(
+            ["yosys", "-Q", "-s", str(script_path)],
+            cwd=str(REPO_ROOT),
+            check=True,
+            stdout=stdout_handle,
+            stderr=stderr_handle,
+        )
+    elapsed = time.monotonic() - start
+
+    stats_payload = parse_embedded_json_object(
+        stats_json_path.read_text(encoding="utf-8")
+    )
+    summary = summarize_yosys_stats(stats_payload, top)
+    return {
+        "result_path": str(stats_json_path),
+        "flow_elapsed_seconds": elapsed,
+        "stage_elapsed_seconds": elapsed,
+        "prefilter_summary": summary,
+    }
 
 
 def deduplicate_verilog_sources(src_dir: Path) -> List[Path]:
@@ -1363,6 +1476,47 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
             "mode_use_macro": bool(mode_use_macro),
             "compare_group": compare_group,
         }
+
+    if is_yosys_stats_target(make_target):
+        yosys_prefilter = run_yosys_stats_prefilter(
+            verilog_dir=verilog_dir,
+            top=top,
+            run_dir=run_dir,
+        )
+        payload = {
+            "design": design_name,
+            "platform": platform,
+            "config_hash": config_hash,
+            "param_hash": run_id,
+            "tag": tag,
+            "status": "ok",
+            "critical_path_ns": None,
+            "die_area": None,
+            "total_power_mw": None,
+            "flow_elapsed_seconds": yosys_prefilter.get("flow_elapsed_seconds"),
+            "stage_elapsed_seconds": yosys_prefilter.get("stage_elapsed_seconds"),
+            "params_json": json.dumps(sweep_params, sort_keys=True),
+            "result_path": str(Path(yosys_prefilter["result_path"]).relative_to(REPO_ROOT)),
+            "blackbox_instance_counts": {},
+            "missing_blackboxes": [],
+            "macro_manifest_path": (
+                str(macro_manifest.get("manifest_path", ""))
+                if macro_manifest is not None
+                else ""
+            ),
+            "macro_selection": macro_selection or {},
+            "prefilter_summary": yosys_prefilter.get("prefilter_summary", {}),
+            "work_result_json": str(result_path),
+            "synth_script_path": "",
+            "synth_script_sha1": "",
+            "mode_name": mode_name or "",
+            "mode_use_macro": bool(mode_use_macro),
+            "compare_group": compare_group,
+        }
+        result_path.write_text(json.dumps(payload, indent=2))
+        metrics_path = circuit_root / "metrics.csv"
+        append_metrics(metrics_path, payload)
+        return payload
 
     ensure_design_assets(
         design_name,

@@ -71,6 +71,8 @@ def main(argv: list[str] | None = None) -> int:
     generate_l1_parser.add_argument("--mode", default="upsert")
     generate_l1_parser.add_argument("--proposal-id")
     generate_l1_parser.add_argument("--proposal-path")
+    generate_l1_parser.add_argument("--make-target")
+    generate_l1_parser.add_argument("--evaluation-mode")
 
     consume_l1_parser = subparsers.add_parser(
         "consume-l1-result",
@@ -387,6 +389,8 @@ def main(argv: list[str] | None = None) -> int:
             ("--source-commit", args.source_commit),
             ("--proposal-id", args.proposal_id),
             ("--proposal-path", args.proposal_path),
+            ("--make-target", args.make_target),
+            ("--evaluation-mode", args.evaluation_mode),
         ]:
             if value is not None:
                 argv2.extend([key, str(value)])
