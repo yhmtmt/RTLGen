@@ -1,0 +1,104 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/sweep_hier_firstpass.json"
+      ],
+      "configs": [
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/config_nm1_sigmoid.json"
+      ],
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": [
+        "third_party/nlohmann_json",
+        "third_party/cacti"
+      ]
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && cmake -S . -B build && cmake --build build --target rtlgen",
+        "name": "build_generator"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen.py --config runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/config_nm1_sigmoid.json --out runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/verilog",
+        "name": "generate_block_rtl"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp --platform nangate45 --top npu_top --sweep runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/sweep_hier_firstpass.json --make_target 1_1_yosys_canonicalize --skip_existing",
+        "name": "run_block_sweep"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "objective": "npu_nm1_sigmoid_vec_physical_metrics",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+      "Committed outputs stay lightweight (metrics.csv and runs/index.csv only)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/metrics.csv",
+      "runs/index.csv"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Integrated nm1 sigmoid vec enable yosys prefilter",
+  "result": {
+    "branch": "eval/l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r14/s20260322t091806z",
+    "completed_utc": "2026-03-22T08:19:20.205702Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "e69e358a8ff2",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260322t091806z][host:e69e358a8ff2][item:l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r14]",
+    "metrics_rows": [
+      {
+        "tag": "npu_fp16_nm1_sigmoidcmp_hier_firstpass",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "6f70a40e",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/work/6f70a40e/result.json"
+      }
+    ],
+    "queue_item_id": "l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r14",
+    "session_id": "s20260322t091806z",
+    "status": "ok",
+    "summary": "5/5 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r14/s20260322t091806z",
+    "pr_title": "eval: run integrated nm1 sigmoid vec enable yosys prefilter",
+    "checklist": [
+      "Commit only lightweight metrics and regenerated runs/index.csv",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "e69e358a8ff2",
+      "session_id": "s20260322t091806z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r14"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r14",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-03-22T08:19:19.041604Z",
+  "requested_by": "codex",
+  "developer_loop": {
+    "proposal_id": "prop_l1_npu_nm1_sigmoid_vec_enable_v1",
+    "proposal_path": "docs/developer_loop/prop_l1_npu_nm1_sigmoid_vec_enable_v1/proposal.json"
+  }
+}

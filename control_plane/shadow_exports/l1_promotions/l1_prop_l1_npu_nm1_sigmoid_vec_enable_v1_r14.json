@@ -1,0 +1,42 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-03-22T09:18:06.586478Z",
+  "item_id": "l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r14",
+  "run_key": "l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r14_run_e5669ec1aac9d7a7",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "580a735d34a0caca3e3b2a996d2a7900bb4e3b8f",
+  "objective": "npu_nm1_sigmoid_vec_physical_metrics",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/sweep_hier_firstpass.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/config_nm1_sigmoid.json"
+    ],
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": [
+      "third_party/nlohmann_json",
+      "third_party/cacti"
+    ]
+  },
+  "proposal_count": 1,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "param_hash": "6f70a40e",
+        "tag": "npu_fp16_nm1_sigmoidcmp_hier_firstpass",
+        "result_path": "/orfs/flow/results/nangate45/npu_fp16_cpp_nm1_sigmoidcmp/nm1_sigmoidcmp_hier_firstpass/1_1_yosys_canonicalize.rtlil",
+        "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/work/6f70a40e/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows"
+    }
+  ]
+}

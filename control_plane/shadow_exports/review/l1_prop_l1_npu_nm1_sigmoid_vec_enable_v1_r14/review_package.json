@@ -1,0 +1,103 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-03-22T09:18:08.536033Z",
+  "item_id": "l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r14",
+  "run_key": "l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r14_run_e5669ec1aac9d7a7",
+  "layer": "layer1",
+  "flow": "openroad",
+  "task_type": "l1_sweep",
+  "source_commit": "580a735d34a0caca3e3b2a996d2a7900bb4e3b8f",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r14/evaluated.json",
+    "result": {
+      "branch": "eval/l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r14/s20260322t091806z",
+      "completed_utc": "2026-03-22T08:19:20.205702Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "e69e358a8ff2",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260322t091806z][host:e69e358a8ff2][item:l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r14]",
+      "metrics_rows": [
+        {
+          "tag": "npu_fp16_nm1_sigmoidcmp_hier_firstpass",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "6f70a40e",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/work/6f70a40e/result.json"
+        }
+      ],
+      "queue_item_id": "l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r14",
+      "session_id": "s20260322t091806z",
+      "status": "ok",
+      "summary": "5/5 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "promotion_proposal",
+    "path": "control_plane/shadow_exports/l1_promotions/l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r14.json",
+    "storage_mode": "repo",
+    "sha256": "f58b1d91eda60b007c67cb49baf159e17fcdfabcb261105f7aa2c7bad9627b37",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-03-22T09:18:06.586478Z",
+      "item_id": "l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r14",
+      "run_key": "l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r14_run_e5669ec1aac9d7a7",
+      "layer": "layer1",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l1_sweep",
+      "source_commit": "580a735d34a0caca3e3b2a996d2a7900bb4e3b8f",
+      "objective": "npu_nm1_sigmoid_vec_physical_metrics",
+      "input_manifest": {
+        "sweeps": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/sweep_hier_firstpass.json"
+        ],
+        "configs": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/config_nm1_sigmoid.json"
+        ],
+        "design_dirs": [],
+        "macro_manifests": [],
+        "candidate_manifests": [],
+        "required_submodules": [
+          "third_party/nlohmann_json",
+          "third_party/cacti"
+        ]
+      },
+      "proposal_count": 1,
+      "proposals": [
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "param_hash": "6f70a40e",
+            "tag": "npu_fp16_nm1_sigmoidcmp_hier_firstpass",
+            "result_path": "/orfs/flow/results/nangate45/npu_fp16_cpp_nm1_sigmoidcmp/nm1_sigmoidcmp_hier_firstpass/1_1_yosys_canonicalize.rtlil",
+            "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/work/6f70a40e/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows"
+        }
+      ]
+    }
+  },
+  "developer_loop": {
+    "proposal_id": "prop_l1_npu_nm1_sigmoid_vec_enable_v1",
+    "proposal_path": "docs/developer_loop/prop_l1_npu_nm1_sigmoid_vec_enable_v1/proposal.json"
+  },
+  "pr_payload": {
+    "branch": "eval/l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r14/s20260322t091806z",
+    "title": "eval: run integrated nm1 sigmoid vec enable yosys prefilter",
+    "body_fields": {
+      "host": "e69e358a8ff2",
+      "session_id": "s20260322t091806z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r14"
+    },
+    "body_md": "## Summary\n- item_id: `l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r14`\n- run_key: `l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r14_run_e5669ec1aac9d7a7`\n- layer: `layer1`\n- task_type: `l1_sweep`\n- status: `ok`\n- summary: `5/5 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r14/evaluated.json`\n- metrics_rows_count: `1`\n- review_artifact: `promotion_proposal` at `control_plane/shadow_exports/l1_promotions/l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r14.json`\n\n## Developer Context\n- proposal_id: `prop_l1_npu_nm1_sigmoid_vec_enable_v1`\n- proposal_path: `docs/developer_loop/prop_l1_npu_nm1_sigmoid_vec_enable_v1/proposal.json`\n- reviewer_first_read: `docs/developer_loop/prop_l1_npu_nm1_sigmoid_vec_enable_v1/proposal.json` plus `docs/developer_agent_review.md`\n\n## Checklist\n- [ ] Commit only lightweight metrics and regenerated runs/index.csv\n- [ ] Include metrics row references for each completed design\n- [ ] Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit only lightweight metrics and regenerated runs/index.csv",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
