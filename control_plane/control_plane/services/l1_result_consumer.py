@@ -131,6 +131,53 @@ def _load_metrics_rows(path: Path) -> list[dict[str, str]]:
     return rows
 
 
+def _work_item_make_target(work_item: WorkItem) -> str:
+    for command in work_item.command_manifest or []:
+        if str(command.get("name", "")).strip() != "run_block_sweep":
+            continue
+        run_text = str(command.get("run", ""))
+        match = re.search(r"--make_target\s+(\S+)", run_text)
+        if match:
+            return match.group(1).strip()
+    return ""
+
+
+def _row_has_physical_metrics(row: dict[str, Any]) -> bool:
+    return any(_safe_float(row.get(key)) is not None for key in ("critical_path_ns", "die_area", "total_power_mw"))
+
+
+def _effective_evaluation_record(*, work_item: WorkItem, best_row: dict[str, Any]) -> dict[str, Any]:
+    payload = dict(work_item.task_request.request_payload or {})
+    developer_loop = payload.get("developer_loop") if isinstance(payload.get("developer_loop"), dict) else {}
+    evaluation = developer_loop.get("evaluation") if isinstance(developer_loop.get("evaluation"), dict) else {}
+    mode = str(evaluation.get("mode", "")).strip()
+    make_target = _work_item_make_target(work_item)
+    has_physical_metrics = _row_has_physical_metrics(best_row)
+    if not mode:
+        if make_target and not has_physical_metrics:
+            mode = "synth_prefilter"
+        else:
+            mode = "measurement_only"
+    summary = ""
+    result_kind = "physical_metrics"
+    if mode == "synth_prefilter":
+        result_kind = "synth_prefilter"
+        target_text = make_target or str(best_row.get("result_path", "")).strip()
+        summary = (
+            "Synth-stage prefilter passed"
+            + (f" at `{target_text}`" if target_text else "")
+            + "; no physical metrics are recorded yet."
+        )
+    else:
+        summary = "Physical metrics recorded from an accepted status=ok Layer 1 row."
+    return {
+        "evaluation_mode": mode,
+        "result_kind": result_kind,
+        "physical_metrics_present": has_physical_metrics,
+        "summary": summary,
+    }
+
+
 def _best_metrics_row(*, repo_root: Path, metrics_csv: str) -> dict[str, Any] | None:
     path = _resolve_path(repo_root=repo_root, path_text=metrics_csv)
     if not path.exists():
@@ -145,14 +192,19 @@ def _best_metrics_row(*, repo_root: Path, metrics_csv: str) -> dict[str, Any] | 
     return sorted(rows, key=_row_sort_key)[0]
 
 
-def _proposal_entry(*, metrics_csv: str, best_row: dict[str, Any]) -> dict[str, Any]:
+def _proposal_entry(*, metrics_csv: str, best_row: dict[str, Any], evaluation_record: dict[str, Any]) -> dict[str, Any]:
     proposal: dict[str, Any] = {
         "metrics_ref": {
             "metrics_csv": metrics_csv,
             "platform": str(best_row.get("platform", "")).strip(),
             "status": str(best_row.get("status", "")).strip(),
+            "result_kind": str(evaluation_record.get("result_kind", "physical_metrics")).strip(),
         },
-        "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+        "selection_reason": (
+            "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows"
+            if str(evaluation_record.get("result_kind", "")) != "synth_prefilter"
+            else "first status=ok synth-stage prefilter row; no physical metrics are recorded yet"
+        ),
     }
     for key in ("param_hash", "tag", "run_id", "sample_id", "batch_id", "result_path", "work_result_json"):
         value = str(best_row.get(key, "")).strip()
@@ -169,7 +221,7 @@ def _proposal_entry(*, metrics_csv: str, best_row: dict[str, Any]) -> dict[str, 
     return proposal
 
 
-def _build_payload(*, work_item: WorkItem, run: Run, proposals: list[dict[str, Any]]) -> dict[str, Any]:
+def _build_payload(*, work_item: WorkItem, run: Run, proposals: list[dict[str, Any]], evaluation_record: dict[str, Any]) -> dict[str, Any]:
     return {
         "version": 0.1,
         "generated_utc": utcnow().astimezone(timezone.utc).isoformat().replace("+00:00", "Z"),
@@ -183,6 +235,8 @@ def _build_payload(*, work_item: WorkItem, run: Run, proposals: list[dict[str, A
         "objective": work_item.task_request.description,
         "input_manifest": work_item.input_manifest,
         "proposal_count": len(proposals),
+        "evaluation_record": evaluation_record,
+        "proposal_assessment": None,
         "proposals": proposals,
     }
 
@@ -225,16 +279,31 @@ def consume_l1_result(session: Session, request: Layer1ConsumeRequest) -> Layer1
         if str(path).endswith("/metrics.csv") or str(path).endswith("metrics.csv")
     ]
     proposals: list[dict[str, Any]] = []
+    evaluation_record: dict[str, Any] | None = None
     for metrics_csv in metrics_csvs:
         best_row = _best_metrics_row(repo_root=repo_root, metrics_csv=metrics_csv)
         if best_row is None:
             continue
-        proposals.append(_proposal_entry(metrics_csv=metrics_csv, best_row=best_row))
+        row_evaluation = _effective_evaluation_record(work_item=work_item, best_row=best_row)
+        if evaluation_record is None:
+            evaluation_record = row_evaluation
+        proposals.append(
+            _proposal_entry(
+                metrics_csv=metrics_csv,
+                best_row=best_row,
+                evaluation_record=row_evaluation,
+            )
+        )
 
-    if not proposals:
+    if not proposals or evaluation_record is None:
         raise Layer1ResultConsumerError(f"no status=ok metrics rows found for work item: {work_item.item_id}")
 
-    payload = _build_payload(work_item=work_item, run=run, proposals=proposals)
+    payload = _build_payload(
+        work_item=work_item,
+        run=run,
+        proposals=proposals,
+        evaluation_record=evaluation_record,
+    )
     target_rel = request.target_path or _default_target_path(item_id=work_item.item_id)
     target_path = _resolve_path(repo_root=repo_root, path_text=target_rel)
     target_path.parent.mkdir(parents=True, exist_ok=True)

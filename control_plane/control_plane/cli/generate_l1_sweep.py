@@ -27,6 +27,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--proposal-id")
     parser.add_argument("--proposal-path")
     parser.add_argument("--make-target")
+    parser.add_argument("--evaluation-mode")
     args = parser.parse_args(argv)
 
     engine = build_engine(args.database_url)
@@ -51,6 +52,7 @@ def main(argv: list[str] | None = None) -> int:
                 proposal_id=args.proposal_id,
                 proposal_path=args.proposal_path,
                 make_target=args.make_target,
+                evaluation_mode=args.evaluation_mode,
             ),
         )
     print(json.dumps(result.__dict__, indent=2, sort_keys=True))

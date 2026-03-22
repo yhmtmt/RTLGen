@@ -168,6 +168,8 @@ def test_consume_l1_result_writes_promotion_proposal() -> None:
             proposal_path = repo_root / "control_plane" / "shadow_exports" / "l1_promotions" / f"{item_id}.json"
             payload = json.loads(proposal_path.read_text(encoding="utf-8"))
             assert payload["proposal_count"] == 2
+            assert payload["evaluation_record"]["evaluation_mode"] == "measurement_only"
+            assert payload["evaluation_record"]["physical_metrics_present"] is True
             assert payload["proposals"][0]["metrics_ref"]["param_hash"] == "fast0001"
             assert (
                 payload["proposals"][0]["metrics_ref"]["result_path"]
@@ -299,5 +301,9 @@ def test_consume_l1_result_accepts_synth_only_metrics_row() -> None:
             )
             payload = json.loads(proposal_path.read_text(encoding="utf-8"))
             assert payload["proposal_count"] == 1
+            assert payload["evaluation_record"]["evaluation_mode"] == "synth_prefilter"
+            assert payload["evaluation_record"]["physical_metrics_present"] is False
             assert payload["proposals"][0]["metrics_ref"]["param_hash"] == "6f70a40e"
+            assert payload["proposals"][0]["metrics_ref"]["result_kind"] == "synth_prefilter"
+            assert payload["proposals"][0]["selection_reason"] == "first status=ok synth-stage prefilter row; no physical metrics are recorded yet"
             assert "metric_summary" not in payload["proposals"][0]

@@ -38,6 +38,7 @@ class Layer1SweepGenerateRequest:
     proposal_id: str | None = None
     proposal_path: str | None = None
     make_target: str | None = None
+    evaluation_mode: str | None = None
 
 
 @dataclass(frozen=True)
@@ -262,6 +263,15 @@ def _default_objective(*, platform: str, config_paths: list[str], sweep_path: st
     )
 
 
+def _effective_evaluation_mode(*, evaluation_mode: str | None, make_target: str | None) -> str:
+    mode = str(evaluation_mode or "").strip()
+    if mode:
+        return mode
+    if str(make_target or "").strip():
+        return "synth_prefilter"
+    return "measurement_only"
+
+
 def _build_payload(
     *,
     item_id: str,
@@ -277,6 +287,7 @@ def _build_payload(
     command_manifest: list[dict[str, str]],
     proposal_id: str | None,
     proposal_path: str | None,
+    evaluation_mode: str,
 ) -> dict[str, Any]:
     payload = {
         "version": 0.1,
@@ -343,6 +354,9 @@ def _build_payload(
         payload["developer_loop"] = {
             "proposal_id": proposal_id or "",
             "proposal_path": proposal_path or "",
+            "evaluation": {
+                "mode": evaluation_mode,
+            },
         }
     return payload
 
@@ -405,6 +419,10 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
         command_manifest=command_manifest,
         proposal_id=request.proposal_id,
         proposal_path=proposal_path,
+        evaluation_mode=_effective_evaluation_mode(
+            evaluation_mode=request.evaluation_mode,
+            make_target=request.make_target,
+        ),
     )
 
     existing = session.query(WorkItem).filter(WorkItem.item_id == item_id).one_or_none()

@@ -284,6 +284,8 @@ def test_generate_l1_sweep_task_supports_make_target_for_integrated_blocks() -> 
                     out_root="runs/designs/npu_blocks",
                     requested_by="@tester",
                     source_commit="sig123",
+                    proposal_id="prop_l1_npu_nm1_sigmoid_vec_enable_v1",
+                    proposal_path="docs/developer_loop/prop_l1_npu_nm1_sigmoid_vec_enable_v1/proposal.json",
                     make_target="1_1_yosys_canonicalize",
                 ),
             )
@@ -294,3 +296,4 @@ def test_generate_l1_sweep_task_supports_make_target_for_integrated_blocks() -> 
                 "runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/metrics.csv",
                 "runs/index.csv",
             ]
+            assert work_item.task_request.request_payload["developer_loop"]["evaluation"]["mode"] == "synth_prefilter"
