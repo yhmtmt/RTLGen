@@ -198,3 +198,106 @@ def test_consume_l1_result_allows_explicit_target_path() -> None:
             )
             assert result.target_path.endswith("runs/proposals/l1_test_softmax.json")
             assert (repo_root / "runs" / "proposals" / "l1_test_softmax.json").exists()
+
+
+def test_consume_l1_result_accepts_synth_only_metrics_row() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        metrics_path = "runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/metrics.csv"
+        metrics_file = repo_root / metrics_path
+        metrics_file.parent.mkdir(parents=True, exist_ok=True)
+        metrics_file.write_text(
+            "\n".join(
+                [
+                    "design,platform,config_hash,param_hash,tag,status,critical_path_ns,die_area,total_power_mw,flow_elapsed_seconds,stage_elapsed_seconds,params_json,result_path,work_result_json,synth_script_path,synth_script_sha1",
+                    'npu_fp16_cpp_nm1_sigmoidcmp,nangate45,bbc47ba9eb29,6f70a40e,npu_fp16_nm1_sigmoidcmp_hier_firstpass,ok,,,,0.52,0.52,"{""CLOCK_PERIOD"": 12.0, ""TAG"": ""npu_fp16_nm1_sigmoidcmp_hier_firstpass""}",/orfs/flow/results/nangate45/npu_fp16_cpp_nm1_sigmoidcmp/nm1_sigmoidcmp_hier_firstpass/1_1_yosys_canonicalize.rtlil,runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/work/6f70a40e/result.json,,',
+                ]
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        with Session(engine) as session:
+            task_request = TaskRequest(
+                request_key="l1_sweep:test_sigmoid_prefilter",
+                source="test",
+                requested_by="@tester",
+                title="Layer1 sigmoid prefilter test",
+                description="test synth-only l1 result consumer",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                priority=1,
+                request_payload={
+                    "item_id": "l1_test_sigmoid_prefilter",
+                    "layer": "layer1",
+                    "flow": "openroad",
+                },
+                source_commit="deadbeef",
+            )
+            session.add(task_request)
+            session.flush()
+
+            work_item = WorkItem(
+                work_item_key="l1_sweep:l1_test_sigmoid_prefilter",
+                task_request_id=task_request.id,
+                item_id="l1_test_sigmoid_prefilter",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                platform="nangate45",
+                task_type="l1_sweep",
+                state=WorkItemState.ARTIFACT_SYNC,
+                priority=1,
+                source_mode="config",
+                input_manifest={
+                    "configs": [
+                        "runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/config_nm1_sigmoid.json",
+                    ],
+                    "sweeps": [
+                        "runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/sweep_hier_firstpass.json",
+                    ],
+                },
+                command_manifest=[],
+                expected_outputs=[metrics_path, "runs/index.csv"],
+                acceptance_rules=[],
+                source_commit="deadbeef",
+            )
+            session.add(work_item)
+            session.flush()
+
+            run = Run(
+                run_key="l1_test_sigmoid_prefilter_run_1",
+                work_item_id=work_item.id,
+                attempt=1,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.SUCCEEDED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="deadbeef",
+                result_summary="5/5 commands succeeded",
+                result_payload={"queue_result": {"status": "ok", "metrics_rows": [f"{metrics_path}:2"]}},
+            )
+            session.add(run)
+            session.commit()
+
+            result = consume_l1_result(
+                session,
+                Layer1ConsumeRequest(
+                    repo_root=str(repo_root),
+                    item_id=work_item.item_id,
+                ),
+            )
+
+            assert result.item_id == work_item.item_id
+            assert result.proposal_count == 1
+
+            proposal_path = (
+                repo_root / "control_plane" / "shadow_exports" / "l1_promotions" / f"{work_item.item_id}.json"
+            )
+            payload = json.loads(proposal_path.read_text(encoding="utf-8"))
+            assert payload["proposal_count"] == 1
+            assert payload["proposals"][0]["metrics_ref"]["param_hash"] == "6f70a40e"
+            assert "metric_summary" not in payload["proposals"][0]

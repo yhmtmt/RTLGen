@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 from dataclasses import dataclass
 from datetime import timezone
 import hashlib
@@ -99,8 +100,15 @@ def _load_metrics_rows(path: Path) -> list[dict[str, str]]:
     lines = text.splitlines()
     if not lines:
         return []
+
+    csv_reader = csv.DictReader(lines)
+    csv_rows = list(csv_reader)
+    good_csv_rows = [row for row in csv_rows if None not in row]
+    if csv_reader.fieldnames and good_csv_rows and len(good_csv_rows) == len(csv_rows):
+        return [{str(key): str(value or "") for key, value in row.items()} for row in good_csv_rows]
+
     header = lines[0].split(",")
-    rows: list[dict[str, str]] = []
+    rows: list[dict[str, str]] = [{str(key): str(value or "") for key, value in row.items()} for row in good_csv_rows]
     for line in lines[1:]:
         if not line.strip():
             continue
