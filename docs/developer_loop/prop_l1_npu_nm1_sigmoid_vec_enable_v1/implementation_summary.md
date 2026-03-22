@@ -5,30 +5,31 @@
 - `title`: `NPU nm1 sigmoid vec enable`
 
 ## Scope
-- bounded sigmoid support is now implemented in the fixed `nm1` vec path
-- one integrated sigmoid-enabled `nm1` block design/config is staged for Layer 1
-  physical evaluation
-- the immediate blocker is not feature implementation anymore, but practical
-  physical-flow execution for the full `npu_top` proof target
+- bounded sigmoid support is implemented in the fixed `nm1` vec path
+- one integrated sigmoid-enabled `nm1` block design/config is staged for Layer 1 evaluation
+- the immediate blocker is no longer implementation correctness; it is obtaining a practical integrated physical proof target
 
 ## Local Validation
-- local RTL/perf/control-plane smoke checks passed during bring-up of the
-  integrated sigmoid-enabled `nm1` block
-- remote Layer 1 attempts exposed two runtime issues that are now fixed:
+- local RTL/perf/control-plane smoke checks passed during bring-up of the integrated sigmoid-enabled `nm1` block
+- remote Layer 1 attempts fixed two runtime issues:
   - FloPoCo provisioning/default build contract
   - integrated config `binary_path` for `rtlgen`
-- the remaining problem is long-duration `abc` mapping during full-top sweep
-- first runtime-bounded retry `r9` confirmed the issue is a `run_block_sweep` stall, not worker death: the command was classified as stalled after 300s without new output
-- next proof target should therefore be a cheaper first-pass integrated sweep that preserves both `gemm_compute_array` and `vec_act_sigmoid_int8` and relaxes timing/floorplan pressure
+- the stable remote checkpoint is now `r14`, which proves:
+  - `build_generator` succeeds
+  - `generate_block_rtl` succeeds
+  - `1_1_yosys_canonicalize` succeeds on the integrated design
+- later stages remain impractical on the full-top target:
+  - `r15`: `1_2_yosys` timed out
+  - `r16`: direct `yosys_stats_prefilter` experiment was buggy and has been abandoned
 
 ## Evaluation Request
-- remote attempts have reached `run_block_sweep` successfully
-- `r9` validated the new control-plane runtime controls: `run_block_sweep` now terminates as `TIMED_OUT` with `stalled=true` instead of hanging indefinitely
-- next local step:
-  - use `runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/sweep_compare_33_firstpass.json` as the next integrated proof target
-  - if that cheaper first-pass target still stalls, split the sweep further or add a synth-only prefilter before another full OpenROAD spend
+- current accepted checkpoint for this proposal is synth-only, not physical:
+  - `r14` / PR `#69`
+  - `evaluation_mode = synth_prefilter`
+- next local step is not another full `npu_top` retry
+- next local step is to define a reduced integrated physical proxy that preserves the sigmoid vec path and enough surrounding fabric to be architecturally meaningful
 
-## Next Reduced Sweep
-- use `runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/sweep_hier_firstpass.json` for the next retry
-- this removes the flat mode entirely and runs one hierarchy-preserving point only
-- keep both `gemm_compute_array` and `vec_act_sigmoid_int8` visible while relaxing timing and density
+## Next Reduced Target
+- keep the existing canonicalize prefilter as the legality gate before physical spend
+- design a smaller integrated top or physical proxy below full `npu_top`
+- queue the next real Layer 1 physical metrics item only after that reduced target is defined
