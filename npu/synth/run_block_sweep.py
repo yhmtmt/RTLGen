@@ -930,6 +930,31 @@ def is_synth_target(make_target: Optional[str]) -> bool:
     }
 
 
+def resolve_make_target(make_target: Optional[str]) -> Optional[str]:
+    if not make_target:
+        return make_target
+    if make_target == "1_1_yosys_canonicalize":
+        return "do-yosys-canonicalize"
+    if make_target in {"1_3_synth", "1_synth", "1_synth.v"}:
+        return "synth"
+    if make_target == "1_2_yosys":
+        return "synth"
+    return make_target
+
+
+def synth_result_artifact(platform: str, design_name: str, flow_variant: str, make_target: str) -> Path:
+    result_dir = RESULT_BASE / platform / design_name / flow_variant
+    base_dir = RESULT_BASE / platform / design_name / "base"
+    if make_target == "1_1_yosys_canonicalize":
+        candidate = result_dir / "1_1_yosys_canonicalize.rtlil"
+        return candidate if candidate.exists() else base_dir / "1_1_yosys_canonicalize.rtlil"
+    if make_target in {"1_2_yosys", "1_2_yosys.v"}:
+        candidate = result_dir / "1_2_yosys.v"
+        return candidate if candidate.exists() else base_dir / "1_2_yosys.v"
+    candidate = result_dir / "1_synth.v"
+    return candidate if candidate.exists() else base_dir / "1_synth.v"
+
+
 def deduplicate_verilog_sources(src_dir: Path) -> List[Path]:
     kept: List[Path] = []
     seen_hashes: Dict[str, Path] = {}
@@ -1407,8 +1432,9 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
             raise FileNotFoundError(f"Missing synthesized netlist: {synth_netlist}")
         make_cmd.append(f"SYNTH_NETLIST_FILES={synth_netlist}")
 
-    if make_target:
-        make_cmd.append(make_target)
+    actual_make_target = resolve_make_target(make_target)
+    if actual_make_target:
+        make_cmd.append(actual_make_target)
     print(f"[INFO] Running OpenROAD flow: {' '.join(make_cmd)}")
     subprocess.run(make_cmd, cwd="/orfs/flow", check=True, env=env)
 
@@ -1440,6 +1466,7 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
         "4_1_cts": "cts",
     }
     use_stage_metrics = bool(make_target and make_target in stage_prefix_map)
+    synth_only_target = bool(make_target and is_synth_target(make_target) and not use_stage_metrics)
     if use_stage_metrics:
         metrics_path = resolve_stage_metrics_path(
             platform,
@@ -1450,6 +1477,13 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
         )
         metrics = parse_stage_metrics(metrics_path, stage_prefix_map[str(make_target)])
         report_path = metrics_path
+    elif synth_only_target:
+        report_path = synth_result_artifact(platform, design_name, flow_variant, str(make_target))
+        metrics = {
+            "critical_path_ns": None,
+            "die_area": None,
+            "total_power_mw": None,
+        }
     else:
         report_path = REPORT_BASE / platform / design_name / str(tag) / "6_finish.rpt"
         def_path = RESULT_BASE / platform / design_name / str(tag) / "6_final.def"
@@ -1477,7 +1511,7 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
     stage_elapsed_seconds = None
     if make_target:
         stage_elapsed_seconds = parse_elapsed_seconds_from_log(log_dir / f"{make_target}.log")
-    status = "ok" if metrics.get("critical_path_ns") is not None else "fail"
+    status = "ok" if (metrics.get("critical_path_ns") is not None or (synth_only_target and Path(report_path).exists())) else "fail"
 
     payload = {
         "design": design_name,

@@ -206,3 +206,24 @@ class ModeCompareRegressionTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SynthTargetMappingRegressionTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.run_block_sweep = load_script_module(
+            "run_block_sweep_map", "npu/synth/run_block_sweep.py"
+        )
+
+    def test_is_synth_target_accepts_canonicalize_stage_token(self):
+        self.assertTrue(self.run_block_sweep.is_synth_target("1_1_yosys_canonicalize"))
+
+    def test_resolve_make_target_maps_canonicalize_to_valid_rule(self):
+        self.assertEqual(
+            "do-yosys-canonicalize",
+            self.run_block_sweep.resolve_make_target("1_1_yosys_canonicalize"),
+        )
+
+    def test_resolve_make_target_maps_synth_variants_to_synth(self):
+        self.assertEqual("synth", self.run_block_sweep.resolve_make_target("1_2_yosys"))
+        self.assertEqual("synth", self.run_block_sweep.resolve_make_target("1_synth.v"))
