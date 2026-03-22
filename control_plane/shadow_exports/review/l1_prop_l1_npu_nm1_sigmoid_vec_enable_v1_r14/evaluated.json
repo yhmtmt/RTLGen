@@ -59,7 +59,7 @@
     "evaluator_id": "control_plane",
     "executor": "@control_plane",
     "host": "e69e358a8ff2",
-    "identity_block": "[role:evaluator][account:control_plane][session:s20260322t091806z][host:e69e358a8ff2][item:l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r14]",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260322t094000z][host:e69e358a8ff2][item:l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r14]",
     "metrics_rows": [
       {
         "tag": "npu_fp16_nm1_sigmoidcmp_hier_firstpass",
@@ -71,12 +71,12 @@
       }
     ],
     "queue_item_id": "l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r14",
-    "session_id": "s20260322t091806z",
+    "session_id": "s20260322t094000z",
     "status": "ok",
     "summary": "5/5 commands succeeded"
   },
   "handoff": {
-    "branch": "eval/l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r14/s20260322t091806z",
+    "branch": "eval/l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r14/s20260322t094000z",
     "pr_title": "eval: run integrated nm1 sigmoid vec enable yosys prefilter",
     "checklist": [
       "Commit only lightweight metrics and regenerated runs/index.csv",
@@ -85,7 +85,7 @@
     ],
     "pr_body_fields": {
       "host": "e69e358a8ff2",
-      "session_id": "s20260322t091806z",
+      "session_id": "s20260322t094000z",
       "evaluator_id": "control_plane",
       "queue_item_id": "l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r14"
     },

@@ -14,6 +14,10 @@
 - proposal_path: `docs/developer_loop/prop_l1_npu_nm1_sigmoid_vec_enable_v1/proposal.json`
 - reviewer_first_read: `docs/developer_loop/prop_l1_npu_nm1_sigmoid_vec_enable_v1/proposal.json` plus `docs/developer_agent_review.md`
 
+## Evaluation Mode
+- evaluation_mode: `synth_prefilter`
+- evaluation_summary: `Synth-stage prefilter passed at `1_1_yosys_canonicalize`; no physical metrics are recorded yet.`
+
 ## Checklist
 - [ ] Commit only lightweight metrics and regenerated runs/index.csv
 - [ ] Include metrics row references for each completed design
