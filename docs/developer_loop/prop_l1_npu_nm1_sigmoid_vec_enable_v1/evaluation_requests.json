@@ -31,11 +31,12 @@
     }
   ],
   "next_required_item": {
+    "item_id": "l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r17",
     "task_type": "l1_sweep",
     "evaluation_mode": "measurement_only",
     "objective": "npu_nm1_sigmoid_vec_reduced_proxy_physical_metrics",
-    "status": "blocked_on_reduced_integrated_target_definition",
-    "notes": "Define a reduced integrated physical proxy below full npu_top, then queue the next real physical metrics sweep against that target.",
+    "status": "ready_to_queue",
+    "notes": "Use reduced integrated proxy `runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidproxy` with `config_nm1_sigmoidproxy.json` and `sweep_proxy_firstpass.json`, gated by the accepted canonicalize checkpoint from `r14`.",
     "abstraction_layer": "architecture_block"
   }
 }

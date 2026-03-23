@@ -33,5 +33,11 @@
 
 ## Next Reduced Target
 - keep the existing canonicalize prefilter as the legality gate before physical spend
-- design a smaller integrated top or physical proxy below full `npu_top`
-- queue the next real Layer 1 physical metrics item only after that reduced target is defined
+- the reduced integrated proxy is now defined as:
+  - design: `runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidproxy`
+  - config: `config_nm1_sigmoidproxy.json`
+  - sweep: `sweep_proxy_firstpass.json`
+- the proxy preserves the fixed `nm1` GEMM plus sigmoid vec path while removing
+  shell-facing DMA/CQ/AXI/MMIO wrapper overhead and SRAM integration
+- next real Layer 1 physical metrics item should target this reduced proxy
+  rather than full `npu_top`

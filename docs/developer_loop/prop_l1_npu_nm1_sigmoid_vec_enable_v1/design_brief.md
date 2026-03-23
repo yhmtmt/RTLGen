@@ -28,7 +28,10 @@
 ## Candidate Direction
 - add bounded sigmoid support to the NPU vec-op path and descriptor contract
 - generate a sigmoid-enabled `npu_fp16_cpp_nm1_*` variant
-- characterize it physically on Nangate45 first
+- keep the existing full-top `npu_fp16_cpp_nm1_sigmoidcmp` target only as an
+  integrated legality/prefilter checkpoint
+- characterize a reduced integrated proxy physically on Nangate45 first:
+  `npu_fp16_cpp_nm1_sigmoidproxy`
 
 ## Direction Gate
 - status: approved

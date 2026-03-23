@@ -44,9 +44,14 @@
 - keep the proposal active but do not promote yet
 - treat `r14` / PR `#69` as the current stable integrated checkpoint
 - do not spend more cycles on full `npu_top` synth/OpenROAD retries under the current proof target
-- next technical step is to define a reduced integrated physical proxy that still includes the sigmoid vec path in realistic context, then queue a real physical metrics item against that smaller target
+- next technical step is to use the newly defined reduced integrated physical
+  proxy `npu_fp16_cpp_nm1_sigmoidproxy`, then queue a real physical metrics item
+  against that smaller target
 
 ## Next Step
 - retain the canonicalize prefilter path as the current legality gate
-- design a reduced integrated proof target below full `npu_top`
-- once that proxy target is defined, queue a new `measurement_only` Layer 1 physical sweep for real PPA
+- use the reduced integrated proof target below full `npu_top`:
+  - design: `npu_fp16_cpp_nm1_sigmoidproxy`
+  - sweep: `sweep_proxy_firstpass.json`
+- queue a new `measurement_only` Layer 1 physical sweep for real PPA against
+  that reduced proxy
