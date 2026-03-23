@@ -37,13 +37,13 @@ When content overlaps, use this precedence:
 14. Historical execution trail: `plan/log.md`
 
 ## Optimization layers
-- Layer model and interaction contract: `docs/two_layer_workflow.md`
+- Generalized abstraction-layer definition: `docs/abstraction_layering.md`
+- Current active two-family workflow: `docs/two_layer_workflow.md`
 - Internal vs external evaluation policy: `docs/internal_external_evaluator_policy.md`
 - Notebook-side autonomous development loop: `docs/developer_agent_loop.md`
 - Layer 1 runbook: `docs/layer1_circuit_workflow.md`
-- Layer 1 (circuit module physical loop): module generation + OpenROAD PPA
-- Layer 2 (NPU architecture model loop): ONNX/perf/campaign optimization with
-  Layer 1 module candidates
+- Current Layer 1 operational loop: block/module generation + OpenROAD PPA
+- Current Layer 2 operational loop: NPU architecture optimization with ONNX/perf/campaign evaluation grounded in lower-layer evidence
 
 ## Consistency rules
 - Keep one canonical home per topic; cross-link instead of duplicating text.

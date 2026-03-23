@@ -1,14 +1,20 @@
 # RTLGen
 
-RTLGen is a hardware-generation and optimization workspace with two coupled
-layers:
+RTLGen is a hardware-generation and optimization workspace with two currently active operational layers:
 
 1. `Layer 1`: parameterized circuit module generation + physical optimization.
 2. `Layer 2`: parameterized NPU generation + architecture optimization on real
    ONNX workloads.
 
-The repository is organized so each layer can iterate independently while
+The repository is organized so each active layer can iterate independently while
 sharing reproducible artifacts and evaluation results.
+
+Generalized layer meaning is defined by abstraction level, not by one fixed
+evaluation method. The current two-layer model is the repository's present
+active instantiation, not the final ontology.
+
+Canonical generalized layer spec:
+- `docs/abstraction_layering.md`
 
 ## Evaluator First Read
 
@@ -89,6 +95,7 @@ Layer coupling is explicit and file-based.
     based on model-level campaign outcomes.
 
 Canonical specification for this split:
+- `docs/abstraction_layering.md`
 - `docs/two_layer_workflow.md`
 - `docs/internal_external_evaluator_policy.md`
 

@@ -1,12 +1,14 @@
 # RTLGen Two-Layer Optimization Workflow
 
 ## Purpose
-Clarify the two optimization layers in RTLGen and define how they interact:
+Clarify the current two active operational layers in RTLGen and define how they interact:
 - Layer 1: parameterized circuit module exploration (C++ RTLGen).
 - Layer 2: parameterized NPU architecture exploration (`npu/` flow).
 
 This separation keeps module-level physical tuning and model-level architectural
 search coupled but not conflated.
+
+This document describes the current repository instantiation of the workflow, not the final generalized layer ontology. Generalized layer meaning is defined in `docs/abstraction_layering.md`.
 
 Evaluation control is separate from the layer split:
 - internal/trusted execution uses the DB-backed control plane in `control_plane/`

@@ -55,13 +55,17 @@ Read these in order for every new developer-agent session:
 7. `docs/developer_agent_orchestration.md`
 - practical notebook-side working procedure
 
-8. `docs/two_layer_workflow.md`
-- Layer 1 / Layer 2 contract
+8. `docs/abstraction_layering.md`
+- generalized layer meaning
+- abstraction level vs evaluation mode
 
-9. `npu/docs/status.md`
+9. `docs/two_layer_workflow.md`
+- current active Layer 1 / Layer 2 workflow contract
+
+10. `npu/docs/status.md`
 - current NPU status and active technical constraints
 
-10. `control_plane/operator_runbook.md`
+11. `control_plane/operator_runbook.md`
 - current remote evaluation operating model
 
 This set is the default startup context.
