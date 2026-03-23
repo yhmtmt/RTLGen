@@ -326,7 +326,7 @@ def consume_l1_result(session: Session, request: Layer1ConsumeRequest) -> Layer1
     target_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
     _upsert_artifact(session, run=run, target_path=str(target_path.relative_to(repo_root)), payload=payload)
-    work_item.state = WorkItemState.AWAITING_REVIEW
+    work_item.state = WorkItemState.ARTIFACT_SYNC
     session.add(
         RunEvent(
             run_id=run.id,

@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from control_plane.clock import utcnow
 from control_plane.models.artifacts import Artifact
-from control_plane.models.enums import ArtifactStorageMode, GitHubLinkState
+from control_plane.models.enums import ArtifactStorageMode, GitHubLinkState, WorkItemState
 from control_plane.models.github_links import GitHubLink
 from control_plane.models.run_events import RunEvent
 from control_plane.models.runs import Run
@@ -193,7 +193,7 @@ def assess_submission_eligibility(
         latest_run = sorted(work_item.runs, key=lambda row: (row.attempt, row.created_at or utcnow()))[-1]
 
     reason: str | None = None
-    if work_item.state.value != "awaiting_review":
+    if work_item.state not in {WorkItemState.ARTIFACT_SYNC, WorkItemState.AWAITING_REVIEW}:
         reason = f"state={work_item.state.value}"
     elif latest_run is None:
         reason = "no_runs"
