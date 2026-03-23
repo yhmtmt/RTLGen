@@ -2,8 +2,8 @@
 
 ## Candidate
 - `proposal_id`: `prop_l1_npu_nm1_sigmoid_vec_enable_v1`
+- `candidate_id`: `l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r18`
 - `abstraction_layer`: `architecture_block`
-- current stable checkpoint: `l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r14`
 
 ## Evaluations Consumed
 - upstream accepted prerequisite:
@@ -22,36 +22,30 @@
   - `r14`: accepted synth-prefilter checkpoint at `1_1_yosys_canonicalize`; integrated RTL generation and canonicalization both succeed
   - `r15`: `1_2_yosys` still times out at the full-top scale
   - `r16`: experimental direct `yosys_stats_prefilter` path failed immediately due to an implementation bug and is not accepted evidence
+  - `r18`: reduced proxy physical sweep succeeded and was accepted by merged PR `#74`
 
 ## Baseline Comparison
 - baseline physical source for this proposal is the accepted standalone sigmoid wrapper from `prop_l1_terminal_sigmoid_block_v1`
-- this proposal's added requirement is not sigmoid arithmetic legality itself, but an accepted integrated `nm1` physical point suitable for downstream Layer 2 campaigns
-- no accepted integrated `nm1` sigmoid physical point exists yet
+- this proposal's added requirement was an accepted integrated `nm1` physical point suitable for downstream Layer 2 campaigns
+- accepted integrated best point from the merged evidence:
+  - `param_hash`: `b5526579`
+  - `critical_path_ns`: `2.7883`
+  - `die_area`: `1440000.0`
+  - `total_power_mw`: `0.00036`
+  - `metrics_csv`: `runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidproxy/metrics.csv`
 
 ## Result
-- result: iterate
+- result: accepted first-pass integrated sigmoid-enabled `nm1` architecture-block source
 - confidence level: medium
-- estimated optimization room: high
-- circuit conclusion robustness: not yet sufficient for downstream Layer 2 activation-family evaluation
+- estimated optimization room: moderate
+- circuit conclusion robustness: sufficient to unblock downstream Layer 2 activation-family measurement-first work
 
 ## Failures and Caveats
-- the standalone `int8` sigmoid block itself is accepted evidence and no longer the blocker
-- the current blocker is practical full-top synthesis cost for the integrated `npu_top` target
-- the stable integrated checkpoint is only `r14` (`synth_prefilter` at canonicalize), not physical metrics
-- the direct `yosys_stats_prefilter` experiment from `r16` was a buggy side path and has been backed out
+- the accepted result comes from the reduced integrated proxy `npu_fp16_cpp_nm1_sigmoidproxy`, not full `npu_top`
+- the reduced proxy preserves the fixed `nm1` GEMM plus sigmoid vec path while intentionally removing shell-facing DMA/CQ/AXI/MMIO wrapper overhead and SRAM integration
+- this is sufficient as an `architecture_block` physical source for the next bounded Layer 2 activation-family campaign, but it is not yet a claim about full-top `nm1` feasibility under the same flow budget
+- the earlier `r14` canonicalize checkpoint remains useful as a legality gate history, but the proposal is now grounded on real physical metrics from `r18`
 
 ## Recommendation
-- keep the proposal active but do not promote yet
-- treat `r14` / PR `#69` as the current stable integrated checkpoint
-- do not spend more cycles on full `npu_top` synth/OpenROAD retries under the current proof target
-- next technical step is to use the newly defined reduced integrated physical
-  proxy `npu_fp16_cpp_nm1_sigmoidproxy`, then queue a real physical metrics item
-  against that smaller target
-
-## Next Step
-- retain the canonicalize prefilter path as the current legality gate
-- use the reduced integrated proof target below full `npu_top`:
-  - design: `npu_fp16_cpp_nm1_sigmoidproxy`
-  - sweep: `sweep_proxy_firstpass.json`
-- queue a new `measurement_only` Layer 1 physical sweep for real PPA against
-  that reduced proxy
+- promote this integrated sigmoid-enabled `nm1` source as the accepted `architecture_block` prerequisite for `prop_l2_mapper_terminal_activation_family_v1`
+- queue the Layer 2 `measurement_only` bounded activation-family reference item next, using the accepted reduced proxy as the lower-layer physical grounding

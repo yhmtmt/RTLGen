@@ -1,7 +1,8 @@
 {
   "proposal_id": "prop_l1_npu_nm1_sigmoid_vec_enable_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": null,
-  "merged_utc": null
+  "decision": "promote",
+  "pr_number": 74,
+  "merge_commit": "955c4b4950d945cf41d48a85b4ceeafa006ba974",
+  "merged_utc": "2026-03-23T22:47:46Z",
+  "note": "PR #69 remains the accepted integrated canonicalize checkpoint; PR #74 is the accepted reduced-proxy physical metrics evidence that closes this proposal."
 }

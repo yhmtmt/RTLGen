@@ -14,13 +14,9 @@
 - the next unsupported area is a broader nonlinear terminal activation family
 - this is not mapper-only: nonlinear terminal activations need a real Layer 1
   circuit and physical implementation before perf-sim evaluation is credible
-- the accepted standalone sigmoid wrapper is still not the correct physical
-  source for Layer 2, because current `nm1` NPU blocks do not yet integrate
-  sigmoid in the vec path
-- the next question is therefore staged:
-  - first standalone Layer 1 sigmoid proof
-  - then integrated `nm1` sigmoid-enabled NPU block proof
-  - only then Layer 2 mapper lowering on top of that accepted block
+- the accepted standalone sigmoid wrapper was not enough by itself for Layer 2, because campaign physical provenance must come from an integrated `nm1` source
+- that integrated `nm1` sigmoid-enabled source is now accepted via `prop_l1_npu_nm1_sigmoid_vec_enable_v1` / PR `#74`
+- the next question is therefore no longer blocked on lower-layer hardware bring-up; it is ready to move into the first bounded Layer 2 measurement stage
 
 ## Hypothesis
 - a bounded nonlinear terminal activation family can establish clean non-fused
@@ -47,8 +43,8 @@
   - expected second Layer 2 result: direct output should improve at least part
     of the bounded nonlinear activation suite
 - dependency order:
-  - the Layer 2 proposal now depends on merged integrated-NPU evidence from
-    `prop_l1_npu_nm1_sigmoid_vec_enable_v1`
+  - the merged integrated-NPU prerequisite is now satisfied by
+    `l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r18` / PR `#74`
   - the paired item depends on
     `l2_prop_l2_mapper_terminal_activation_family_v1_nm1_measurement_r1`
   - it requires both merged inputs and materialized repo refs before export

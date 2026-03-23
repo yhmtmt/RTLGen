@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_npu_nm1_sigmoid_vec_enable_v1",
-  "source_commit": "bccac7cae104c66278ffbd726de79ac031b97d08",
+  "source_commit": "2e7fcdf2a6d9c4de02698f3fddd6272ed4b3f99c",
   "requested_items": [
     {
       "item_id": "l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r14",
@@ -8,7 +8,7 @@
       "evaluation_mode": "synth_prefilter",
       "objective": "npu_nm1_sigmoid_vec_yosys_canonicalize_prefilter",
       "status": "accepted_checkpoint",
-      "notes": "Current stable integrated checkpoint. The sigmoid-enabled nm1 block passes build_generator, generate_block_rtl, and 1_1_yosys_canonicalize, but this does not yet provide physical metrics.",
+      "notes": "Stable integrated legality checkpoint. The sigmoid-enabled nm1 block passes build_generator, generate_block_rtl, and 1_1_yosys_canonicalize, but this item is not itself physical-metrics evidence.",
       "abstraction_layer": "architecture_block"
     },
     {
@@ -17,7 +17,7 @@
       "evaluation_mode": "synth_prefilter",
       "objective": "npu_nm1_sigmoid_vec_yosys_synth_prefilter",
       "status": "failed_timeout",
-      "notes": "The next synth stage (1_2_yosys) still times out on the full-top target, so the current integrated proof target remains too large.",
+      "notes": "The next synth stage (1_2_yosys) still timed out on the full-top target, confirming that the original integrated proof target remained too large.",
       "abstraction_layer": "architecture_block"
     },
     {
@@ -26,17 +26,23 @@
       "evaluation_mode": "synth_prefilter",
       "objective": "npu_nm1_sigmoid_vec_yosys_stats_prefilter",
       "status": "abandoned_buggy_experiment",
-      "notes": "The direct yosys_stats_prefilter side path failed immediately due to an implementation bug and has been backed out; it is not accepted evidence.",
+      "notes": "The direct yosys_stats_prefilter side path failed immediately due to an implementation bug and was backed out; it is not accepted evidence.",
+      "abstraction_layer": "architecture_block"
+    },
+    {
+      "item_id": "l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r18",
+      "task_type": "l1_sweep",
+      "evaluation_mode": "measurement_only",
+      "objective": "npu_nm1_sigmoid_vec_reduced_proxy_physical_metrics",
+      "status": "merged_prerequisite",
+      "notes": "Accepted integrated reduced-proxy physical source from merged PR #74. This is the first architecture_block physical result suitable to ground the downstream Layer 2 activation-family work.",
       "abstraction_layer": "architecture_block"
     }
   ],
   "next_required_item": {
-    "item_id": "l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r17",
-    "task_type": "l1_sweep",
-    "evaluation_mode": "measurement_only",
-    "objective": "npu_nm1_sigmoid_vec_reduced_proxy_physical_metrics",
-    "status": "ready_to_queue",
-    "notes": "Use reduced integrated proxy `runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidproxy` with `config_nm1_sigmoidproxy.json` and `sweep_proxy_firstpass.json`, gated by the accepted canonicalize checkpoint from `r14`.",
+    "task_type": "none",
+    "status": "proposal_closed",
+    "notes": "This proposal is closed by merged PR #74; the next work moves to prop_l2_mapper_terminal_activation_family_v1.",
     "abstraction_layer": "architecture_block"
   }
 }

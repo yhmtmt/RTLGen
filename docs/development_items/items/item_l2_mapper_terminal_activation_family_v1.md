@@ -3,16 +3,14 @@
 - item_id: `item_l2_mapper_terminal_activation_family_v1`
 - layer: `layer2`
 - kind: `mapper`
-- status: `blocked_on_l1_prerequisite`
+- status: `promoted_to_proposal`
 - priority: `medium`
 - owner: `developer_agent`
 - created_utc: `2026-03-19T11:20:00Z`
-- updated_utc: `2026-03-19T14:05:00Z`
+- updated_utc: `2026-03-23T22:47:46Z`
 - proposal_id: `prop_l2_mapper_terminal_activation_family_v1`
 - proposal_path: `docs/developer_loop/prop_l2_mapper_terminal_activation_family_v1`
 - triggered_by_proposal: `prop_l2_mapper_terminal_vecop_direct_output_v1`
-- blocked_on_item: `item_l1_npu_nm1_sigmoid_vec_enable_v1`
-- blocked_on_proposal: `prop_l1_npu_nm1_sigmoid_vec_enable_v1`
 - triggering_evidence:
   - `docs/developer_loop/prop_l2_mapper_terminal_vecop_direct_output_v1/analysis_report.md`
   - `docs/developer_loop/prop_l2_mapper_terminal_vecop_direct_output_v1/promotion_decision.json`
@@ -80,14 +78,10 @@
 - whether the current schedule IR needs any additional terminal vec-op metadata
   beyond the accepted standalone `Relu` path
 
-## Blocked Reason
-- the standalone sigmoid wrapper is accepted, but current `nm1` NPU hardware
-  still exposes only vec ops `add/mul/relu`
-- Layer 2 campaigns derive physical provenance from the integrated `nm1` NPU
-  block, so a sigmoid campaign would still be physically grounded on the wrong
-  hardware if queued now
-- new prerequisite:
-  `item_l1_npu_nm1_sigmoid_vec_enable_v1`
+## Unblocked State
+- the standalone sigmoid wrapper prerequisite is accepted via PR `#63`
+- the integrated sigmoid-enabled `nm1` architecture-block prerequisite is now accepted via PR `#74`
+- the next active step is the bounded `measurement_only` Layer 2 reference item on fixed `nm1`
 
 ## Promotion Rule
 - promote when the proposal names a bounded nonlinear activation family,

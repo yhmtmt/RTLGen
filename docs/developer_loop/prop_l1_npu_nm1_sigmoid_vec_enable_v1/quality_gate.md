@@ -8,7 +8,9 @@
 - local vec-op legality and descriptor decode checks
 - local contract checks for the bounded sigmoid vec op
 - integrated `nm1` RTL generation smoke
+- accepted integrated canonicalize checkpoint from `r14`
+- accepted reduced-proxy physical metrics from `r18`
 
 ## Result
-- status: pending
-- note: pending implementation
+- status: passed
+- note: The integrated sigmoid-enabled `nm1` architecture-block now has both an accepted legality checkpoint (`r14`) and accepted reduced-proxy physical metrics (`r18`).

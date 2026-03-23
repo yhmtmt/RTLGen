@@ -8,36 +8,28 @@
 ## Scope
 - generalized abstraction level: `architecture_block`
 - bounded sigmoid support is implemented in the fixed `nm1` vec path
-- one integrated sigmoid-enabled `nm1` block design/config is staged for Layer 1 evaluation
-- the immediate blocker is no longer implementation correctness; it is obtaining a practical integrated physical proof target
+- the accepted first-pass physical source is the reduced integrated proxy `npu_fp16_cpp_nm1_sigmoidproxy`
+- this closes the architecture-block prerequisite for downstream Layer 2 activation-family work
 
 ## Local Validation
 - local RTL/perf/control-plane smoke checks passed during bring-up of the integrated sigmoid-enabled `nm1` block
 - remote Layer 1 attempts fixed two runtime issues:
   - FloPoCo provisioning/default build contract
   - integrated config `binary_path` for `rtlgen`
-- the stable remote checkpoint is now `r14`, which proves:
-  - `build_generator` succeeds
-  - `generate_block_rtl` succeeds
-  - `1_1_yosys_canonicalize` succeeds on the integrated design
-- later stages remain impractical on the full-top target:
-  - `r15`: `1_2_yosys` timed out
-  - `r16`: direct `yosys_stats_prefilter` experiment was buggy and has been abandoned
+- accepted remote checkpoints are now:
+  - `r14`: integrated legality/synth-prefilter checkpoint at `1_1_yosys_canonicalize`
+  - `r18`: reduced-proxy physical metrics checkpoint accepted by merged PR `#74`
 
-## Evaluation Request
-- current accepted checkpoint for this proposal is synth-only, not physical:
-  - `r14` / PR `#69`
-  - `evaluation_mode = synth_prefilter`
-- next local step is not another full `npu_top` retry
-- next local step is to define a reduced integrated physical proxy that preserves the sigmoid vec path and enough surrounding fabric to be architecturally meaningful
+## Accepted Physical Source
+- design: `runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidproxy`
+- config: `config_nm1_sigmoidproxy.json`
+- sweep: `sweep_proxy_firstpass.json`
+- accepted best point:
+  - `param_hash`: `b5526579`
+  - `critical_path_ns`: `2.7883`
+  - `die_area`: `1440000.0`
+  - `total_power_mw`: `0.00036`
 
-## Next Reduced Target
-- keep the existing canonicalize prefilter as the legality gate before physical spend
-- the reduced integrated proxy is now defined as:
-  - design: `runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidproxy`
-  - config: `config_nm1_sigmoidproxy.json`
-  - sweep: `sweep_proxy_firstpass.json`
-- the proxy preserves the fixed `nm1` GEMM plus sigmoid vec path while removing
-  shell-facing DMA/CQ/AXI/MMIO wrapper overhead and SRAM integration
-- next real Layer 1 physical metrics item should target this reduced proxy
-  rather than full `npu_top`
+## Follow-on
+- use this accepted `architecture_block` source to unblock `prop_l2_mapper_terminal_activation_family_v1`
+- do not reopen full `npu_top` integrated physical attempts as a prerequisite for the next bounded Layer 2 activation-family measurement item

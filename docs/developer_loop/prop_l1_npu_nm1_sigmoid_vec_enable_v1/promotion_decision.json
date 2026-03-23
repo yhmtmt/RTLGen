@@ -1,9 +1,14 @@
 {
   "proposal_id": "prop_l1_npu_nm1_sigmoid_vec_enable_v1",
-  "candidate_id": "pending",
-  "decision": "pending",
-  "reason": "pending",
-  "evidence_refs": [],
-  "next_action": "pending",
-  "requires_human_approval": true
+  "candidate_id": "l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r18",
+  "decision": "promote",
+  "reason": "Merged PR #74 establishes the first accepted integrated sigmoid-enabled nm1 architecture-block physical result, using the reduced proxy target to produce real Nangate45 timing, area, and power metrics sufficient to unblock downstream Layer 2 activation-family measurement work.",
+  "evidence_refs": [
+    "https://github.com/yhmtmt/RTLGen/pull/74",
+    "control_plane/shadow_exports/l1_promotions/l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r18.json",
+    "runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidproxy/metrics.csv",
+    "runs/index.csv"
+  ],
+  "next_action": "unblock prop_l2_mapper_terminal_activation_family_v1 and queue its measurement_only nm1 activation-family reference item against the accepted integrated sigmoid architecture-block source",
+  "requires_human_approval": false
 }
