@@ -6,6 +6,7 @@ SERVICE="${2:-}"
 DEFAULT_SERVICE_REPO="/workspaces/rtlgen-eval-clean"
 SERVICE_REPO_ROOT="${RTLGEN_SERVICE_REPO:-${DEFAULT_SERVICE_REPO}}"
 
+ENSURE_SERVICE_REPO="${REPO_ROOT:-/workspaces/RTLGen}/control_plane/scripts/ensure_service_repo.sh"
 RUNTIME_DIR="${RTLCP_RUNTIME_DIR:-/tmp/rtlgen-control-plane}"
 mkdir -p "${RUNTIME_DIR}"
 
@@ -48,6 +49,7 @@ _tail_log() {
 
 case "${ACTION}" in
   start)
+    "${ENSURE_SERVICE_REPO}"
     if _is_running; then
       echo "${SERVICE} already running: pid=$(cat "${PID_FILE}") log=${LOG_FILE}"
       exit 0
