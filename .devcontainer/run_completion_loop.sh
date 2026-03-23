@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_ROOT="${RTLGEN_SERVICE_REPO:-${REPO_ROOT:-/workspaces/RTLGen}}"
+DEFAULT_SERVICE_REPO="/workspaces/rtlgen-eval-clean"
+REPO_ROOT="${RTLGEN_SERVICE_REPO:-${REPO_ROOT:-${DEFAULT_SERVICE_REPO}}}"
 VENV_PATH="${VENV_PATH:-$REPO_ROOT/control_plane/.venv}"
 SLEEP_SECONDS="${RTLCP_COMPLETION_LOOP_SECONDS:-300}"
 

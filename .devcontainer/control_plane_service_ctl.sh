@@ -3,7 +3,8 @@ set -euo pipefail
 
 ACTION="${1:-}"
 SERVICE="${2:-}"
-SERVICE_REPO_ROOT="${RTLGEN_SERVICE_REPO:-${REPO_ROOT:-/workspaces/RTLGen}}"
+DEFAULT_SERVICE_REPO="/workspaces/rtlgen-eval-clean"
+SERVICE_REPO_ROOT="${RTLGEN_SERVICE_REPO:-${DEFAULT_SERVICE_REPO}}"
 
 RUNTIME_DIR="${RTLCP_RUNTIME_DIR:-/tmp/rtlgen-control-plane}"
 mkdir -p "${RUNTIME_DIR}"

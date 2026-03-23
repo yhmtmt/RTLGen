@@ -2,7 +2,8 @@
 set -euo pipefail
 
 REPO_ROOT="${REPO_ROOT:-/workspaces/RTLGen}"
-SERVICE_REPO_ROOT="${RTLGEN_SERVICE_REPO:-${REPO_ROOT}}"
+DEFAULT_SERVICE_REPO="/workspaces/rtlgen-eval-clean"
+SERVICE_REPO_ROOT="${RTLGEN_SERVICE_REPO:-${DEFAULT_SERVICE_REPO}}"
 SERVICE_CTL="${SERVICE_REPO_ROOT}/.devcontainer/control_plane_service_ctl.sh"
 RUNTIME_DIR="${RTLCP_RUNTIME_DIR:-/tmp/rtlgen-control-plane}"
 
