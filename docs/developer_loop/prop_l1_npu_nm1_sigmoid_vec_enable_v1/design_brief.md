@@ -3,8 +3,10 @@
 ## Proposal
 - `proposal_id`: `prop_l1_npu_nm1_sigmoid_vec_enable_v1`
 - `title`: `NPU nm1 sigmoid vec enable`
+- `abstraction_layer`: `architecture_block`
 
 ## Problem
+- this proposal sits at the generalized `architecture_block` layer: it is larger than a reusable sigmoid block, but still a reduced integrated proof target below workload-level architecture evaluation
 - accepted standalone sigmoid physical evidence is not sufficient for Layer 2
   sigmoid evaluation because campaign physical provenance comes from the
   hardened `nm1` NPU block

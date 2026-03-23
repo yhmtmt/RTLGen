@@ -8,7 +8,8 @@
       "evaluation_mode": "measurement_only",
       "objective": "terminal_sigmoid_physical_metrics",
       "status": "merged_prerequisite",
-      "notes": "Layer 1 prerequisite is satisfied by merged PR #63 for the bounded int8 sigmoid block."
+      "notes": "Layer 1 prerequisite is satisfied by merged PR #63 for the bounded int8 sigmoid block.",
+      "abstraction_layer": "circuit_block"
     },
     {
       "item_id": "l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r1",
@@ -16,7 +17,8 @@
       "evaluation_mode": "measurement_only",
       "objective": "npu_nm1_sigmoid_vec_physical_metrics",
       "status": "blocked_on_integrated_implementation",
-      "notes": "Integrated sigmoid-enabled nm1 block physical source is still missing; queue after the new Layer 1 proposal is implemented."
+      "notes": "Integrated sigmoid-enabled nm1 block physical source is still missing; queue after the new Layer 1 proposal is implemented.",
+      "abstraction_layer": "architecture_block"
     },
     {
       "item_id": "l2_prop_l2_mapper_terminal_activation_family_v1_nm1_measurement_r1",
@@ -24,7 +26,8 @@
       "evaluation_mode": "measurement_only",
       "objective": "terminal_activation_reference_metrics",
       "status": "blocked_on_integrated_l1_prerequisite",
-      "notes": "First-stage bounded nonlinear activation-family reference collection on fixed nm1; blocked until the integrated sigmoid-enabled nm1 block has accepted physical metrics."
+      "notes": "First-stage bounded nonlinear activation-family reference collection on fixed nm1; blocked until the integrated sigmoid-enabled nm1 block has accepted physical metrics.",
+      "abstraction_layer": "full_architecture"
     },
     {
       "item_id": "l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1",
@@ -39,7 +42,8 @@
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
       "status": "blocked_on_l1_and_baseline",
-      "notes": "Second-stage paired comparison; first blocked on the Layer 1 int8 sigmoid prerequisite, then on the merged/materialized measurement baseline."
+      "notes": "Second-stage paired comparison; first blocked on the Layer 1 int8 sigmoid prerequisite, then on the merged/materialized measurement baseline.",
+      "abstraction_layer": "full_architecture"
     }
   ]
 }

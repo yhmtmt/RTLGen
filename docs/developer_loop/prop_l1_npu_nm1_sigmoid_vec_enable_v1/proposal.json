@@ -33,7 +33,8 @@
       "expected_result": {
         "direction": "unknown",
         "reason": "the goal is to establish the first accepted sigmoid-enabled nm1 block physical metrics"
-      }
+      },
+      "abstraction_layer": "architecture_block"
     }
   ],
   "baseline_refs": [
@@ -43,5 +44,6 @@
   "knowledge_refs": [
     "docs/developer_loop/prop_l2_mapper_terminal_activation_family_v1/proposal.json",
     "discussion:2026-03-19-user-session"
-  ]
+  ],
+  "abstraction_layer": "architecture_block"
 }

@@ -8,7 +8,8 @@
       "evaluation_mode": "synth_prefilter",
       "objective": "npu_nm1_sigmoid_vec_yosys_canonicalize_prefilter",
       "status": "accepted_checkpoint",
-      "notes": "Current stable integrated checkpoint. The sigmoid-enabled nm1 block passes build_generator, generate_block_rtl, and 1_1_yosys_canonicalize, but this does not yet provide physical metrics."
+      "notes": "Current stable integrated checkpoint. The sigmoid-enabled nm1 block passes build_generator, generate_block_rtl, and 1_1_yosys_canonicalize, but this does not yet provide physical metrics.",
+      "abstraction_layer": "architecture_block"
     },
     {
       "item_id": "l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r15",
@@ -16,7 +17,8 @@
       "evaluation_mode": "synth_prefilter",
       "objective": "npu_nm1_sigmoid_vec_yosys_synth_prefilter",
       "status": "failed_timeout",
-      "notes": "The next synth stage (1_2_yosys) still times out on the full-top target, so the current integrated proof target remains too large."
+      "notes": "The next synth stage (1_2_yosys) still times out on the full-top target, so the current integrated proof target remains too large.",
+      "abstraction_layer": "architecture_block"
     },
     {
       "item_id": "l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r16",
@@ -24,7 +26,8 @@
       "evaluation_mode": "synth_prefilter",
       "objective": "npu_nm1_sigmoid_vec_yosys_stats_prefilter",
       "status": "abandoned_buggy_experiment",
-      "notes": "The direct yosys_stats_prefilter side path failed immediately due to an implementation bug and has been backed out; it is not accepted evidence."
+      "notes": "The direct yosys_stats_prefilter side path failed immediately due to an implementation bug and has been backed out; it is not accepted evidence.",
+      "abstraction_layer": "architecture_block"
     }
   ],
   "next_required_item": {
@@ -32,6 +35,7 @@
     "evaluation_mode": "measurement_only",
     "objective": "npu_nm1_sigmoid_vec_reduced_proxy_physical_metrics",
     "status": "blocked_on_reduced_integrated_target_definition",
-    "notes": "Define a reduced integrated physical proxy below full npu_top, then queue the next real physical metrics sweep against that target."
+    "notes": "Define a reduced integrated physical proxy below full npu_top, then queue the next real physical metrics sweep against that target.",
+    "abstraction_layer": "architecture_block"
   }
 }

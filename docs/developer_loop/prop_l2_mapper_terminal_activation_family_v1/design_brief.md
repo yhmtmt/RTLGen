@@ -3,8 +3,10 @@
 ## Proposal
 - `proposal_id`: `prop_l2_mapper_terminal_activation_family_v1`
 - `title`: `Terminal activation-family direct output`
+- `abstraction_layer`: `full_architecture`
 
 ## Problem
+- this proposal sits at the generalized `full_architecture` layer, so it must cite lower-layer physical grounding before workload-level evaluation is considered authoritative
 - direct terminal-output is now accepted for:
   - final GEMM tails
   - terminal linear plus terminal `Relu`

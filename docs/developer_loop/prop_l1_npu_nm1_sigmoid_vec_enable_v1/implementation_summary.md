@@ -3,8 +3,10 @@
 ## Proposal
 - `proposal_id`: `prop_l1_npu_nm1_sigmoid_vec_enable_v1`
 - `title`: `NPU nm1 sigmoid vec enable`
+- `abstraction_layer`: `architecture_block`
 
 ## Scope
+- generalized abstraction level: `architecture_block`
 - bounded sigmoid support is implemented in the fixed `nm1` vec path
 - one integrated sigmoid-enabled `nm1` block design/config is staged for Layer 1 evaluation
 - the immediate blocker is no longer implementation correctness; it is obtaining a practical integrated physical proof target

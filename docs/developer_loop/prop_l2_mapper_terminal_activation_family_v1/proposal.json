@@ -44,7 +44,8 @@
       "expected_result": {
         "direction": "unknown",
         "reason": "the first requirement is an accepted Layer 1 int8 sigmoid block with measured physical timing, power, and area"
-      }
+      },
+      "abstraction_layer": "circuit_block"
     },
     {
       "task_type": "l1_sweep",
@@ -59,7 +60,8 @@
       "expected_result": {
         "direction": "unknown",
         "reason": "the first Layer 2 sigmoid campaign needs an integrated sigmoid-enabled nm1 block as its physical source, not only the standalone wrapper metrics"
-      }
+      },
+      "abstraction_layer": "architecture_block"
     },
     {
       "task_type": "l2_campaign",
@@ -74,7 +76,8 @@
       "expected_result": {
         "direction": "unknown",
         "reason": "the first layer2 item should only run after the Layer 1 int8 sigmoid block has accepted physical metrics and should then record non-fused nm1 reference metrics and legality evidence"
-      }
+      },
+      "abstraction_layer": "full_architecture"
     },
     {
       "task_type": "l2_campaign",
@@ -89,7 +92,8 @@
       "expected_result": {
         "direction": "better_than_historical",
         "reason": "if terminal nonlinear activation direct-output lowering is valid, it should reduce the final writeback tail on at least part of the bounded activation suite against the refreshed non-fused baseline"
-      }
+      },
+      "abstraction_layer": "full_architecture"
     }
   ],
   "baseline_refs": [
@@ -105,5 +109,6 @@
     "docs/developer_loop/prop_l2_mapper_terminal_vecop_direct_output_v1/analysis_report.md",
     "docs/developer_loop/prop_l2_mapper_terminal_vecop_direct_output_v1/promotion_decision.json",
     "discussion:2026-03-19-user-session"
-  ]
+  ],
+  "abstraction_layer": "full_architecture"
 }

@@ -2,6 +2,7 @@
 
 ## Candidate
 - `proposal_id`: `prop_l1_npu_nm1_sigmoid_vec_enable_v1`
+- `abstraction_layer`: `architecture_block`
 - current stable checkpoint: `l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r14`
 
 ## Evaluations Consumed
