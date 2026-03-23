@@ -85,6 +85,7 @@ def test_generate_l2_campaign_task_creates_ready_work_item() -> None:
                     proposal_id="prop_l2_demo_v1",
                     proposal_path="docs/developer_loop/prop_l2_demo_v1",
                     evaluation_mode="paired_comparison",
+                    abstraction_layer="full_architecture",
                     expected_direction="better_than_historical",
                     expected_reason="Candidate should improve the measured baseline.",
                     comparison_role="candidate",
@@ -140,6 +141,9 @@ def test_generate_l2_campaign_task_creates_ready_work_item() -> None:
                     "mode": "paired_comparison",
                     "expected_direction": "better_than_historical",
                     "expected_reason": "Candidate should improve the measured baseline.",
+                },
+                "abstraction": {
+                    "layer": "full_architecture",
                 },
                 "comparison": {
                     "role": "candidate",

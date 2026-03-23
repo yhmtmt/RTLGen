@@ -201,6 +201,9 @@ def _build_body_md(
         evaluation_mode = str(evaluation_record.get("evaluation_mode", "")).strip()
         if evaluation_mode:
             lines.append(f"- evaluation_mode: `{evaluation_mode}`")
+        abstraction_layer = str(evaluation_record.get("abstraction_layer", "")).strip()
+        if abstraction_layer:
+            lines.append(f"- abstraction_layer: `{abstraction_layer}`")
         comparison_role = str(evaluation_record.get("comparison_role", "")).strip()
         if comparison_role:
             lines.append(f"- comparison_role: `{comparison_role}`")

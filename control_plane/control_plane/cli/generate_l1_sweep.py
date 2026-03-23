@@ -28,6 +28,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--proposal-path")
     parser.add_argument("--make-target")
     parser.add_argument("--evaluation-mode")
+    parser.add_argument("--abstraction-layer")
     args = parser.parse_args(argv)
 
     engine = build_engine(args.database_url)
@@ -53,6 +54,7 @@ def main(argv: list[str] | None = None) -> int:
                 proposal_path=args.proposal_path,
                 make_target=args.make_target,
                 evaluation_mode=args.evaluation_mode,
+                abstraction_layer=args.abstraction_layer,
             ),
         )
     print(json.dumps(result.__dict__, indent=2, sort_keys=True))

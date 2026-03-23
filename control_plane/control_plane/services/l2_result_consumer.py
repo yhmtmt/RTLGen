@@ -265,6 +265,14 @@ def _developer_loop_evaluation(work_item: WorkItem) -> dict[str, Any]:
     return dict(evaluation) if isinstance(evaluation, dict) else {}
 
 
+def _developer_loop_abstraction_layer(work_item: WorkItem) -> str:
+    developer_loop = _developer_loop_payload(work_item)
+    abstraction = developer_loop.get("abstraction")
+    if not isinstance(abstraction, dict):
+        return ""
+    return str(abstraction.get("layer", "")).strip()
+
+
 def _effective_evaluation_mode(work_item: WorkItem) -> str:
     evaluation = _developer_loop_evaluation(work_item)
     mode = str(evaluation.get("mode", "")).strip()
@@ -478,6 +486,7 @@ def _build_evaluation_record(
         "primary_question": str((proposal.get("direct_comparison") or {}).get("primary_question", "")).strip(),
         "evaluation_mode": evaluation_mode,
         "comparison_role": comparison_role,
+        "abstraction_layer": _developer_loop_abstraction_layer(work_item),
         "expected_direction": expected_direction,
         "expected_reason": expected_reason,
         "summary": summary,

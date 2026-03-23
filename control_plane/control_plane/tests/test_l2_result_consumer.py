@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 from pathlib import Path
 import tempfile
@@ -301,6 +302,7 @@ def _seed_focused_l2_campaign_with_baseline(session: Session, repo_root: Path) -
             "developer_loop": {
                 "proposal_id": "prop_l2_demo_v1",
                 "proposal_path": "docs/developer_loop/prop_l2_demo_v1",
+                "abstraction": {"layer": "full_architecture"},
             },
         },
         source_commit="deadbeef",
@@ -491,8 +493,8 @@ def test_consume_l2_result_writes_decision_proposal() -> None:
             assert payload["recommendation"]["arch_id"] == "fp16_nm1_demo"
             assert payload["recommendation"]["macro_mode"] == "flat_nomacro"
             assert len(payload["objective_profiles"]) == 2
-            assert payload["source_refs"]["focused_candidate_schedule_yml"] == schedule_rel
-            assert payload["source_refs"]["focused_candidate_descriptors_bin"] == descriptors_rel
+            assert payload["source_refs"]["focused_candidate_schedule_yml"] == "runs/campaigns/npu/demo_campaign/artifacts/mapper/fp16_nm1_demo/demo_model/schedule.yml"
+            assert payload["source_refs"]["focused_candidate_descriptors_bin"] == "runs/campaigns/npu/demo_campaign/artifacts/mapper/fp16_nm1_demo/demo_model/descriptors.bin"
 
             artifact = session.query(Artifact).filter_by(kind="decision_proposal").one()
             assert artifact.path == f"control_plane/shadow_exports/l2_decisions/{item_id}.json"
@@ -571,8 +573,9 @@ def test_consume_l2_result_writes_proposal_assessment_for_focused_comparison() -
             assert assessment["proposal_id"] == "prop_l2_demo_v1"
             assert assessment["outcome"] == "no_measurable_change"
             assert evaluation_record["evaluation_mode"] == "paired_comparison"
+            assert evaluation_record["abstraction_layer"] == "full_architecture"
             assert evaluation_record["expectation_status"] == "unspecified"
-            assert assessment["matched_row_count"] == 2
+            assert assessment["matched_row_count"] == 1
             assert assessment["matched_rows"][0]["arch_id"] == "fp16_nm1_demo"
             assert payload["source_refs"]["baseline_summary_csv"] == "runs/campaigns/npu/baseline_campaign/summary.csv"
             assert payload["source_refs"]["baseline_report_md"] == "runs/campaigns/npu/baseline_campaign/report.md"
@@ -615,11 +618,14 @@ def test_consume_l2_result_measurement_only_omits_proposal_assessment() -> None:
                 comparison={"role": "measurement_only"},
             )
             work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
-            payload = dict(work_item.task_request.request_payload or {})
+            payload = copy.deepcopy(work_item.task_request.request_payload or {})
             payload["developer_loop"]["evaluation"] = {
                 "mode": "measurement_only",
                 "expected_direction": "unknown",
                 "expected_reason": "This item only records the metric reference point.",
+            }
+            payload["developer_loop"]["abstraction"] = {
+                "layer": "full_architecture",
             }
             work_item.task_request.request_payload = payload
             session.commit()
@@ -633,6 +639,7 @@ def test_consume_l2_result_measurement_only_omits_proposal_assessment() -> None:
             )
             assert decision_payload["proposal_assessment"] is None
             assert decision_payload["evaluation_record"]["evaluation_mode"] == "measurement_only"
+            assert decision_payload["evaluation_record"]["abstraction_layer"] == "full_architecture"
             assert decision_payload["evaluation_record"]["expectation_status"] == "not_applicable"
 
 
@@ -706,7 +713,7 @@ def test_consume_l2_result_marks_refreshed_baseline_without_proposal_judgment() 
                 comparison={"role": "refreshed_baseline"},
             )
             work_item = session.query(WorkItem).filter_by(item_id=baseline_item_id).one()
-            payload = dict(work_item.task_request.request_payload or {})
+            payload = copy.deepcopy(work_item.task_request.request_payload or {})
             payload["developer_loop"]["evaluation"] = {
                 "mode": "baseline_refresh",
                 "expected_direction": "worse_than_historical",
@@ -778,7 +785,7 @@ def test_consume_l2_result_compares_candidate_against_paired_baseline_item() -> 
                 comparison={"role": "refreshed_baseline"},
             )
             baseline_work_item = session.query(WorkItem).filter_by(item_id=baseline_item_id).one()
-            baseline_payload = dict(baseline_work_item.task_request.request_payload or {})
+            baseline_payload = copy.deepcopy(baseline_work_item.task_request.request_payload or {})
             baseline_payload["developer_loop"]["evaluation"] = {
                 "mode": "baseline_refresh",
                 "expected_direction": "worse_than_historical",
@@ -801,7 +808,7 @@ def test_consume_l2_result_compares_candidate_against_paired_baseline_item() -> 
                 comparison={"role": "candidate", "paired_baseline_item_id": baseline_item_id},
             )
             candidate_work_item = session.query(WorkItem).filter_by(item_id=candidate_item_id).one()
-            candidate_payload = dict(candidate_work_item.task_request.request_payload or {})
+            candidate_payload = copy.deepcopy(candidate_work_item.task_request.request_payload or {})
             candidate_payload["developer_loop"]["evaluation"] = {
                 "mode": "paired_comparison",
                 "expected_direction": "better_than_historical",
@@ -885,7 +892,7 @@ def test_consume_l2_result_paired_comparison_matches_model_rows_by_model_id() ->
                 comparison={"role": "candidate", "paired_baseline_item_id": baseline_item_id},
             )
             candidate_work_item = session.query(WorkItem).filter_by(item_id=candidate_item_id).one()
-            candidate_payload = dict(candidate_work_item.task_request.request_payload or {})
+            candidate_payload = copy.deepcopy(candidate_work_item.task_request.request_payload or {})
             candidate_payload["developer_loop"]["evaluation"] = {
                 "mode": "paired_comparison",
                 "expected_direction": "better_than_historical",

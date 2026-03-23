@@ -73,6 +73,7 @@ def main(argv: list[str] | None = None) -> int:
     generate_l1_parser.add_argument("--proposal-path")
     generate_l1_parser.add_argument("--make-target")
     generate_l1_parser.add_argument("--evaluation-mode")
+    generate_l1_parser.add_argument("--abstraction-layer")
 
     consume_l1_parser = subparsers.add_parser(
         "consume-l1-result",
@@ -122,6 +123,7 @@ def main(argv: list[str] | None = None) -> int:
     generate_l2_parser.add_argument("--proposal-id")
     generate_l2_parser.add_argument("--proposal-path")
     generate_l2_parser.add_argument("--evaluation-mode")
+    generate_l2_parser.add_argument("--abstraction-layer")
     generate_l2_parser.add_argument("--expected-direction")
     generate_l2_parser.add_argument("--expected-reason")
     generate_l2_parser.add_argument("--comparison-role")
@@ -391,6 +393,7 @@ def main(argv: list[str] | None = None) -> int:
             ("--proposal-path", args.proposal_path),
             ("--make-target", args.make_target),
             ("--evaluation-mode", args.evaluation_mode),
+            ("--abstraction-layer", args.abstraction_layer),
         ]:
             if value is not None:
                 argv2.extend([key, str(value)])
@@ -463,6 +466,7 @@ def main(argv: list[str] | None = None) -> int:
             ("--proposal-id", args.proposal_id),
             ("--proposal-path", args.proposal_path),
             ("--evaluation-mode", args.evaluation_mode),
+            ("--abstraction-layer", args.abstraction_layer),
             ("--expected-direction", args.expected_direction),
             ("--expected-reason", args.expected_reason),
             ("--comparison-role", args.comparison_role),

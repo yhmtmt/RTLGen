@@ -109,14 +109,15 @@ def _load_metrics_rows(path: Path) -> list[dict[str, str]]:
 
     header = lines[0].split(",")
     rows: list[dict[str, str]] = [{str(key): str(value or "") for key, value in row.items()} for row in good_csv_rows]
+    prefix_len = max(len(header) - 2, 0)
     for line in lines[1:]:
         if not line.strip():
             continue
-        parts = line.split(",", 9)
-        if len(parts) < 10:
+        parts = line.split(",", prefix_len)
+        if len(parts) < prefix_len + 1:
             continue
-        front = parts[:9]
-        rest = parts[9]
+        front = parts[:prefix_len]
+        rest = parts[prefix_len]
         if "," in rest:
             params_json, result_path = rest.rsplit(",", 1)
         else:
@@ -146,6 +147,20 @@ def _row_has_physical_metrics(row: dict[str, Any]) -> bool:
     return any(_safe_float(row.get(key)) is not None for key in ("critical_path_ns", "die_area", "total_power_mw"))
 
 
+def _developer_loop_payload(work_item: WorkItem) -> dict[str, Any]:
+    payload = dict(work_item.task_request.request_payload or {})
+    developer_loop = payload.get("developer_loop")
+    return dict(developer_loop) if isinstance(developer_loop, dict) else {}
+
+
+def _developer_loop_abstraction_layer(work_item: WorkItem) -> str:
+    developer_loop = _developer_loop_payload(work_item)
+    abstraction = developer_loop.get("abstraction")
+    if not isinstance(abstraction, dict):
+        return ""
+    return str(abstraction.get("layer", "")).strip()
+
+
 def _effective_evaluation_record(*, work_item: WorkItem, best_row: dict[str, Any]) -> dict[str, Any]:
     payload = dict(work_item.task_request.request_payload or {})
     developer_loop = payload.get("developer_loop") if isinstance(payload.get("developer_loop"), dict) else {}
@@ -172,6 +187,7 @@ def _effective_evaluation_record(*, work_item: WorkItem, best_row: dict[str, Any
         summary = "Physical metrics recorded from an accepted status=ok Layer 1 row."
     return {
         "evaluation_mode": mode,
+        "abstraction_layer": _developer_loop_abstraction_layer(work_item),
         "result_kind": result_kind,
         "physical_metrics_present": has_physical_metrics,
         "summary": summary,

@@ -28,6 +28,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--proposal-id")
     parser.add_argument("--proposal-path")
     parser.add_argument("--evaluation-mode")
+    parser.add_argument("--abstraction-layer")
     parser.add_argument("--expected-direction")
     parser.add_argument("--expected-reason")
     parser.add_argument("--comparison-role")
@@ -62,6 +63,7 @@ def main(argv: list[str] | None = None) -> int:
                 proposal_id=args.proposal_id,
                 proposal_path=args.proposal_path,
                 evaluation_mode=args.evaluation_mode,
+                abstraction_layer=args.abstraction_layer,
                 expected_direction=args.expected_direction,
                 expected_reason=args.expected_reason,
                 comparison_role=args.comparison_role,

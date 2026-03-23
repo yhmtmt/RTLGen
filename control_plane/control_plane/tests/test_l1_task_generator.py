@@ -129,6 +129,7 @@ def test_generate_l1_sweep_task_creates_ready_work_item() -> None:
                     out_root="runs/designs/activations",
                     requested_by="@tester",
                     source_commit="abc123",
+                    abstraction_layer="circuit_block",
                 ),
             )
 
@@ -163,6 +164,7 @@ def test_generate_l1_sweep_task_creates_ready_work_item() -> None:
                 "third_party/nlohmann_json",
                 "third_party/cacti",
             ]
+            assert payload["developer_loop"]["abstraction"] == {"layer": "circuit_block"}
             assert payload["handoff"]["pr_body_fields"]["queue_item_id"] == result.item_id
 
 

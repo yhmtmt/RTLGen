@@ -41,6 +41,7 @@ class Layer2CampaignGenerateRequest:
     proposal_id: str | None = None
     proposal_path: str | None = None
     evaluation_mode: str | None = None
+    abstraction_layer: str | None = None
     expected_direction: str | None = None
     expected_reason: str | None = None
     comparison_role: str | None = None
@@ -193,6 +194,7 @@ def _build_payload(
     proposal_id: str | None,
     proposal_path: str | None,
     evaluation_mode: str | None,
+    abstraction_layer: str | None,
     expected_direction: str | None,
     expected_reason: str | None,
     comparison_role: str | None,
@@ -293,7 +295,7 @@ def _build_payload(
         },
         "result": None,
     }
-    if proposal_id or proposal_path:
+    if proposal_id or proposal_path or evaluation_mode or abstraction_layer or expected_direction or expected_reason or comparison_role or paired_baseline_item_id or depends_on_item_ids or requires_merged_inputs or requires_materialized_refs:
         payload["developer_loop"] = {
             "proposal_id": proposal_id or "",
             "proposal_path": proposal_path or "",
@@ -303,6 +305,10 @@ def _build_payload(
                 "mode": evaluation_mode or "",
                 "expected_direction": expected_direction or "",
                 "expected_reason": expected_reason or "",
+            }
+        if abstraction_layer:
+            payload["developer_loop"]["abstraction"] = {
+                "layer": abstraction_layer,
             }
         effective_comparison_role = comparison_role or {
             "baseline_refresh": "refreshed_baseline",
@@ -368,6 +374,7 @@ def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateR
         proposal_id=request.proposal_id,
         proposal_path=proposal_path,
         evaluation_mode=request.evaluation_mode,
+        abstraction_layer=request.abstraction_layer,
         expected_direction=request.expected_direction,
         expected_reason=request.expected_reason,
         comparison_role=request.comparison_role,

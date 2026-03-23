@@ -44,6 +44,7 @@ def _seed_l1_reviewable(session: Session, repo_root: Path) -> tuple[str, str]:
         "developer_loop": {
             "proposal_id": "prop_l1_review_demo_v1",
             "proposal_path": "docs/developer_loop/prop_l1_review_demo_v1",
+            "abstraction": {"layer": "circuit_block"},
         },
         "handoff": {
             "branch": "eval/l1_review_demo/<session_id>",
@@ -200,6 +201,7 @@ def _seed_l2_reviewable(session: Session, repo_root: Path) -> tuple[str, str]:
         "developer_loop": {
             "proposal_id": "prop_l2_review_demo_v1",
             "proposal_path": "docs/developer_loop/prop_l2_review_demo_v1",
+            "abstraction": {"layer": "full_architecture"},
         },
         "handoff": {
             "branch": "eval/l2_review_demo/<session_id>",
@@ -314,10 +316,12 @@ def test_publish_review_package_for_l1() -> None:
             assert payload["queue_snapshot"]["result"]["status"] == "ok"
             assert len(payload["queue_snapshot"]["result"]["metrics_rows"]) == 1
             assert (
-                payload["queue_snapshot"]["result"]["metrics_rows"][0]["result_path"]
-                == "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/work/fast0001/result.json"
+                payload["queue_snapshot"]["result"]["metrics_rows"][0]["metrics_csv"]
+                == "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv"
             )
+            assert payload["queue_snapshot"]["result"]["metrics_rows"][0]["param_hash"] == "fast0001"
             assert "proposal_id: `prop_l1_review_demo_v1`" in payload["pr_payload"]["body_md"]
+            assert "abstraction_layer: `circuit_block`" in payload["pr_payload"]["body_md"]
 
 
 def test_publish_review_package_for_l2() -> None:
@@ -354,6 +358,7 @@ def test_publish_review_package_for_l2() -> None:
             assert payload["queue_snapshot"]["result"]["status"] == "ok"
             assert "reviewer_first_read: `docs/developer_loop/prop_l2_review_demo_v1` plus `docs/developer_agent_review.md`" in payload["pr_payload"]["body_md"]
             assert "evaluation_mode: `paired_comparison`" in payload["pr_payload"]["body_md"]
+            assert "abstraction_layer: `full_architecture`" in payload["pr_payload"]["body_md"]
             assert "proposal_outcome: `no_measurable_change`" in payload["pr_payload"]["body_md"]
             assert "baseline_ref: `runs/campaigns/npu/baseline_campaign`" in payload["pr_payload"]["body_md"]
 
@@ -549,6 +554,7 @@ def test_publish_review_package_measurement_only_uses_evaluation_section_without
                 "title": "Layer2 review demo",
                 "primary_question": "Record the metric for this architecture point.",
                 "evaluation_mode": "measurement_only",
+                "abstraction_layer": "full_architecture",
                 "comparison_role": "measurement_only",
                 "expected_direction": "unknown",
                 "expected_reason": "This item only records a metric reference point.",
@@ -573,5 +579,6 @@ def test_publish_review_package_measurement_only_uses_evaluation_section_without
             body_md = review_payload["pr_payload"]["body_md"]
             assert result.item_id == item_id
             assert "evaluation_mode: `measurement_only`" in body_md
+            assert "abstraction_layer: `full_architecture`" in body_md
             assert "evaluation_summary: `This item records metrics for the requested architecture point and does not emit a proposal judgment.`" in body_md
             assert "## Focused Comparison" not in body_md

@@ -39,6 +39,7 @@ class Layer1SweepGenerateRequest:
     proposal_path: str | None = None
     make_target: str | None = None
     evaluation_mode: str | None = None
+    abstraction_layer: str | None = None
 
 
 @dataclass(frozen=True)
@@ -288,6 +289,7 @@ def _build_payload(
     proposal_id: str | None,
     proposal_path: str | None,
     evaluation_mode: str,
+    abstraction_layer: str | None,
 ) -> dict[str, Any]:
     payload = {
         "version": 0.1,
@@ -350,7 +352,7 @@ def _build_payload(
         },
         "result": None,
     }
-    if proposal_id or proposal_path:
+    if proposal_id or proposal_path or evaluation_mode or abstraction_layer:
         payload["developer_loop"] = {
             "proposal_id": proposal_id or "",
             "proposal_path": proposal_path or "",
@@ -358,6 +360,10 @@ def _build_payload(
                 "mode": evaluation_mode,
             },
         }
+        if abstraction_layer:
+            payload["developer_loop"]["abstraction"] = {
+                "layer": abstraction_layer,
+            }
     return payload
 
 
@@ -423,6 +429,7 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
             evaluation_mode=request.evaluation_mode,
             make_target=request.make_target,
         ),
+        abstraction_layer=request.abstraction_layer,
     )
 
     existing = session.query(WorkItem).filter(WorkItem.item_id == item_id).one_or_none()
