@@ -10,7 +10,7 @@ if [[ "${SERVICE_REPO_ROOT}" == "${REPO_ROOT}" ]]; then
   exit 0
 fi
 
-if [[ -d "${SERVICE_REPO_ROOT}/.git" ]]; then
+if git -C "${SERVICE_REPO_ROOT}" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   exit 0
 fi
 
