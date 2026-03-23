@@ -163,7 +163,7 @@ def test_consume_l1_result_writes_promotion_proposal() -> None:
             assert result.item_id == item_id
             assert result.run_key == run_key
             assert result.proposal_count == 2
-            assert result.work_item_state == "awaiting_review"
+            assert result.work_item_state == "artifact_sync"
 
             proposal_path = repo_root / "control_plane" / "shadow_exports" / "l1_promotions" / f"{item_id}.json"
             payload = json.loads(proposal_path.read_text(encoding="utf-8"))

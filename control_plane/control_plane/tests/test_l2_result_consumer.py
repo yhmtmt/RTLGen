@@ -486,7 +486,7 @@ def test_consume_l2_result_writes_decision_proposal() -> None:
             assert result.recommended_arch_id == "fp16_nm1_demo"
             assert result.recommended_macro_mode == "flat_nomacro"
             assert result.profile_count == 2
-            assert result.work_item_state == "awaiting_review"
+            assert result.work_item_state == "artifact_sync"
 
             proposal_path = repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{item_id}.json"
             payload = json.loads(proposal_path.read_text(encoding="utf-8"))

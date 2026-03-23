@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 import tempfile
+from unittest.mock import patch
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
@@ -22,6 +23,7 @@ from control_plane.services.completion_service import (
     CompletionProcessingError,
     process_completed_items,
 )
+from control_plane.services.operator_submission import OperatorSubmissionError
 
 
 def _write(path: Path, text: str) -> None:
@@ -123,7 +125,7 @@ def test_process_completed_items_consumes_l1_item() -> None:
             assert results[0].item_id == item_id
             assert results[0].consumed is True
             assert results[0].submitted is False
-            assert results[0].work_item_state == "awaiting_review"
+            assert results[0].work_item_state == "artifact_sync"
             assert results[0].target_path
 
 
@@ -286,10 +288,42 @@ def test_process_completed_items_materializes_expected_output_artifacts_for_cano
             )
             assert len(results) == 1
             assert results[0].consumed is True
-            assert results[0].work_item_state == "awaiting_review"
+            assert results[0].work_item_state == "artifact_sync"
 
         assert (repo_root / metrics_rel).read_text(encoding="utf-8") == metrics_text
         assert (repo_root / index_rel).read_text(encoding="utf-8") == index_text
+
+
+def test_process_completed_items_submission_failure_keeps_artifact_sync() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id = _seed_l1_artifact_sync(session, repo_root)
+            with patch(
+                "control_plane.services.completion_service.operate_submission",
+                side_effect=OperatorSubmissionError("gh pr create failed"),
+            ):
+                try:
+                    process_completed_items(
+                        session,
+                        CompletionProcessRequest(
+                            repo_root=str(repo_root),
+                            item_id=item_id,
+                            submit=True,
+                            repo="yhmtmt/RTLGen",
+                            force=True,
+                        ),
+                    )
+                except CompletionProcessingError as exc:
+                    assert "gh pr create failed" in str(exc)
+                else:
+                    raise AssertionError("expected CompletionProcessingError")
+
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            assert work_item.state == WorkItemState.ARTIFACT_SYNC
 
 
 def test_process_completed_items_materializes_supporting_output_artifacts() -> None:
