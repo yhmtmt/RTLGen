@@ -3,16 +3,17 @@ set -euo pipefail
 
 ACTION="${1:-}"
 SERVICE="${2:-}"
+SERVICE_REPO_ROOT="${RTLGEN_SERVICE_REPO:-${REPO_ROOT:-/workspaces/RTLGen}}"
 
 RUNTIME_DIR="${RTLCP_RUNTIME_DIR:-/tmp/rtlgen-control-plane}"
 mkdir -p "${RUNTIME_DIR}"
 
 case "${SERVICE}" in
   worker)
-    TARGET_CMD=(/workspaces/RTLGen/control_plane/scripts/run_worker_daemon_service.sh)
+    TARGET_CMD=("${SERVICE_REPO_ROOT}/control_plane/scripts/run_worker_daemon_service.sh")
     ;;
   completions)
-    TARGET_CMD=(/workspaces/RTLGen/.devcontainer/run_completion_loop.sh)
+    TARGET_CMD=("${SERVICE_REPO_ROOT}/.devcontainer/run_completion_loop.sh")
     ;;
   *)
     echo "Unknown service '${SERVICE}'. Expected 'worker' or 'completions'." >&2

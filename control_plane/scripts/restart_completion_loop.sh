@@ -2,10 +2,11 @@
 set -euo pipefail
 
 REPO_ROOT="${REPO_ROOT:-/workspaces/RTLGen}"
-SERVICE_CTL="${REPO_ROOT}/.devcontainer/control_plane_service_ctl.sh"
+SERVICE_REPO_ROOT="${RTLGEN_SERVICE_REPO:-${REPO_ROOT}}"
+SERVICE_CTL="${SERVICE_REPO_ROOT}/.devcontainer/control_plane_service_ctl.sh"
 RUNTIME_DIR="${RTLCP_RUNTIME_DIR:-/tmp/rtlgen-control-plane}"
 
-cd "${REPO_ROOT}"
+cd "${SERVICE_REPO_ROOT}"
 
 git pull --ff-only origin master
 

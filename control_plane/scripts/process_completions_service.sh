@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_ROOT="${REPO_ROOT:-/workspaces/RTLGen}"
+REPO_ROOT="${RTLGEN_SERVICE_REPO:-${REPO_ROOT:-/workspaces/RTLGen}}"
 VENV_PATH="${VENV_PATH:-$REPO_ROOT/control_plane/.venv}"
 
 : "${RTLCP_DATABASE_URL:?RTLCP_DATABASE_URL is required}"
