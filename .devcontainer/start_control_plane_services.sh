@@ -9,11 +9,7 @@ case "${ROLE}" in
   server)
     export RTLCP_DATABASE_URL="${RTLCP_DATABASE_URL:-postgresql+psycopg://rtlgen:rtlgen@localhost:5432/rtlgen_control_plane}"
     /workspaces/RTLGen/.devcontainer/start_postgres.sh
-    if [[ "${AUTOSTART_COMPLETIONS:-0}" == "1" ]]; then
-      /workspaces/RTLGen/.devcontainer/control_plane_service_ctl.sh start completions
-    else
-      echo "Skipping completion loop autostart for server role"
-    fi
+    echo "Skipping completion loop autostart for server role"
     ;;
   evaluator)
     : "${RTLCP_DATABASE_URL:?RTLCP_DATABASE_URL is required for evaluator role}"
@@ -22,6 +18,11 @@ case "${ROLE}" in
       /workspaces/RTLGen/.devcontainer/control_plane_service_ctl.sh start worker
     else
       echo "Skipping worker daemon autostart for evaluator role"
+    fi
+    if [[ "${AUTOSTART_COMPLETIONS:-0}" == "1" ]]; then
+      /workspaces/RTLGen/.devcontainer/control_plane_service_ctl.sh start completions
+    else
+      echo "Skipping completion loop autostart for evaluator role"
     fi
     ;;
   *)
