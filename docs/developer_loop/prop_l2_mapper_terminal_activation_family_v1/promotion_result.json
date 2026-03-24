@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_mapper_terminal_activation_family_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": null,
-  "merged_utc": null
+  "decision": "iterate",
+  "pr_number": 75,
+  "merge_commit": "1f2e12368a9b9d209436a189bf08c6e80850b722",
+  "merged_utc": "2026-03-24T08:57:47Z"
 }

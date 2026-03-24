@@ -1,9 +1,15 @@
 {
   "proposal_id": "prop_l2_mapper_terminal_activation_family_v1",
-  "candidate_id": "pending",
-  "decision": "pending",
-  "reason": "pending",
-  "evidence_refs": [],
-  "next_action": "pending",
+  "candidate_id": "cand_l2_mapper_terminal_activation_family_v1_r1",
+  "decision": "iterate",
+  "reason": "Merged PR #75 established the bounded sigmoid-first non-fused nm1 baseline on the accepted reduced sigmoid proxy, but the direct-output hypothesis still needs the paired candidate campaign on the same suite.",
+  "evidence_refs": [
+    "work_item:l2_prop_l2_mapper_terminal_activation_family_v1_nm1_measurement_r1",
+    "run_key:l2_prop_l2_mapper_terminal_activation_family_v1_nm1_measurement_r1_run_8b59dfa21c40c9c5",
+    "pr:75",
+    "control_plane/shadow_exports/l2_decisions/l2_prop_l2_mapper_terminal_activation_family_v1_nm1_measurement_r1.json",
+    "runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_activation_family_v1_nm1_measurement_r1/report.md"
+  ],
+  "next_action": "Implement and queue the paired direct-output candidate campaign `l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1` against the merged/materialized `r1` baseline.",
   "requires_human_approval": true
 }

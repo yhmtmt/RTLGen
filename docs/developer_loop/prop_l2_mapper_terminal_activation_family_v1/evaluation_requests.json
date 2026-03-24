@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_mapper_terminal_activation_family_v1",
-  "source_commit": "955c4b4950d945cf41d48a85b4ceeafa006ba974",
+  "source_commit": "1f2e12368a9b9d209436a189bf08c6e80850b722",
   "requested_items": [
     {
       "item_id": "l1_prop_l1_terminal_sigmoid_block_v1_nangate45_r3",
@@ -25,9 +25,12 @@
       "task_type": "l2_campaign",
       "evaluation_mode": "measurement_only",
       "objective": "terminal_activation_reference_metrics",
-      "status": "ready_to_queue",
-      "notes": "First-stage bounded nonlinear activation-family reference collection on fixed nm1. Lower-layer prerequisites are now satisfied; this is the next item to queue.",
-      "abstraction_layer": "full_architecture"
+      "status": "merged_evidence",
+      "notes": "Accepted first-stage bounded nonlinear activation-family reference collection on fixed nm1.",
+      "abstraction_layer": "full_architecture",
+      "pr_number": 75,
+      "status_reason": "Accepted bounded sigmoid-first non-fused baseline after clean evidence-only PR #75 merged.",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_submit_nm1_v1/campaign.json"
     },
     {
       "item_id": "l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1",
@@ -41,9 +44,10 @@
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
-      "status": "blocked_on_baseline",
-      "notes": "Second-stage paired comparison. Lower-layer prerequisites are satisfied; it now waits only on the merged/materialized measurement baseline.",
-      "abstraction_layer": "full_architecture"
+      "status": "needs_campaign_implementation",
+      "notes": "Next step: implement the paired direct-output campaign on the same sigmoid-first suite, then queue it against the merged baseline.",
+      "abstraction_layer": "full_architecture",
+      "status_reason": "Baseline is now merged and materialized, but the paired direct-output campaign artifact has not been implemented yet."
     }
   ]
 }
