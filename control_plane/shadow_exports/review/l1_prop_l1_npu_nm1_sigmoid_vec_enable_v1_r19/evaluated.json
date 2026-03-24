@@ -54,12 +54,12 @@
   "state": "evaluated",
   "title": "Run nm1 sigmoid full-top hierarchy-preserving canonicalize checkpoint",
   "result": {
-    "branch": "eval/l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r19/s20260324t094656z",
+    "branch": "eval/l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r19/s20260324t100711z",
     "completed_utc": "2026-03-24T09:44:30.140229Z",
     "evaluator_id": "control_plane",
     "executor": "@control_plane",
     "host": "73c7e3a71ee5",
-    "identity_block": "[role:evaluator][account:control_plane][session:s20260324t094656z][host:73c7e3a71ee5][item:l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r19]",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260324t100711z][host:73c7e3a71ee5][item:l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r19]",
     "metrics_rows": [
       {
         "tag": "npu_fp16_nm1_sigmoidcmp_hier_firstpass",
@@ -71,12 +71,12 @@
       }
     ],
     "queue_item_id": "l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r19",
-    "session_id": "s20260324t094656z",
+    "session_id": "s20260324t100711z",
     "status": "ok",
     "summary": "5/5 commands succeeded"
   },
   "handoff": {
-    "branch": "eval/l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r19/s20260324t094656z",
+    "branch": "eval/l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r19/s20260324t100711z",
     "pr_title": "eval: run run nm1 sigmoid full-top hierarchy-preserving canonicalize checkpoint",
     "checklist": [
       "Commit only lightweight metrics and regenerated runs/index.csv",
@@ -85,7 +85,7 @@
     ],
     "pr_body_fields": {
       "host": "73c7e3a71ee5",
-      "session_id": "s20260324t094656z",
+      "session_id": "s20260324t100711z",
       "evaluator_id": "control_plane",
       "queue_item_id": "l1_prop_l1_npu_nm1_sigmoid_vec_enable_v1_r19"
     },
