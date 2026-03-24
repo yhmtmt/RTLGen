@@ -1,0 +1,123 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-03-24T12:55:07.979582Z",
+  "item_id": "l1_prop_l1_npu_nm1_tanh_vec_enable_v1_r2",
+  "run_key": "l1_prop_l1_npu_nm1_tanh_vec_enable_v1_r2_run_9016f46685448d12",
+  "layer": "layer1",
+  "flow": "openroad",
+  "task_type": "l1_sweep",
+  "source_commit": "63f003accd22559c6bd0200b2adfcd9b5873f6f3",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l1_prop_l1_npu_nm1_tanh_vec_enable_v1_r2/evaluated.json",
+    "result": {
+      "branch": "eval/l1_prop_l1_npu_nm1_tanh_vec_enable_v1_r2/s20260324t125507z",
+      "completed_utc": "2026-03-24T12:53:07.920723Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "73c7e3a71ee5",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260324t125507z][host:73c7e3a71ee5][item:l1_prop_l1_npu_nm1_tanh_vec_enable_v1_r2]",
+      "metrics_rows": [
+        {
+          "tag": "npu_fp16_nm1_tanhproxy_firstpass",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "bf5fc187",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_tanhproxy/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_tanhproxy/work/bf5fc187/result.json"
+        }
+      ],
+      "queue_item_id": "l1_prop_l1_npu_nm1_tanh_vec_enable_v1_r2",
+      "session_id": "s20260324t125507z",
+      "status": "ok",
+      "summary": "5/5 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "promotion_proposal",
+    "path": "control_plane/shadow_exports/l1_promotions/l1_prop_l1_npu_nm1_tanh_vec_enable_v1_r2.json",
+    "storage_mode": "repo",
+    "sha256": "b5ab863b1d5a3a6116a883d4a0a7f34d0fe73da39d6dfabf10e1f997c230dbdd",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-03-24T12:55:07.948258Z",
+      "item_id": "l1_prop_l1_npu_nm1_tanh_vec_enable_v1_r2",
+      "run_key": "l1_prop_l1_npu_nm1_tanh_vec_enable_v1_r2_run_9016f46685448d12",
+      "layer": "layer1",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l1_sweep",
+      "source_commit": "63f003accd22559c6bd0200b2adfcd9b5873f6f3",
+      "objective": "npu_nm1_tanh_vec_physical_metrics",
+      "input_manifest": {
+        "sweeps": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_tanhproxy/sweep_proxy_firstpass.json"
+        ],
+        "configs": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_tanhproxy/config_nm1_tanhproxy.json"
+        ],
+        "design_dirs": [],
+        "macro_manifests": [],
+        "candidate_manifests": [],
+        "required_submodules": [
+          "third_party/nlohmann_json",
+          "third_party/cacti"
+        ]
+      },
+      "proposal_count": 1,
+      "evaluation_record": {
+        "evaluation_mode": "measurement_only",
+        "abstraction_layer": "architecture_block",
+        "result_kind": "physical_metrics",
+        "physical_metrics_present": true,
+        "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+      },
+      "proposal_assessment": null,
+      "proposals": [
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_tanhproxy/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "bf5fc187",
+            "tag": "npu_fp16_nm1_tanhproxy_firstpass",
+            "result_path": "/orfs/flow/reports/nangate45/npu_fp16_cpp_nm1_tanhproxy/nm1_tanhproxy_firstpass/6_finish.rpt",
+            "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_tanhproxy/work/bf5fc187/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 2.8082,
+            "die_area": 1440000.0,
+            "total_power_mw": 0.000358
+          }
+        }
+      ]
+    }
+  },
+  "developer_loop": {
+    "evaluation": {
+      "mode": "measurement_only"
+    },
+    "abstraction": {
+      "layer": "architecture_block"
+    },
+    "proposal_id": "prop_l1_npu_nm1_tanh_vec_enable_v1",
+    "proposal_path": "docs/developer_loop/prop_l1_npu_nm1_tanh_vec_enable_v1"
+  },
+  "pr_payload": {
+    "branch": "eval/l1_prop_l1_npu_nm1_tanh_vec_enable_v1_r2/s20260324t125507z",
+    "title": "eval: run run integrated nm1 tanh proxy nangate45 sweep",
+    "body_fields": {
+      "host": "73c7e3a71ee5",
+      "session_id": "s20260324t125507z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_prop_l1_npu_nm1_tanh_vec_enable_v1_r2"
+    },
+    "body_md": "## Summary\n- item_id: `l1_prop_l1_npu_nm1_tanh_vec_enable_v1_r2`\n- run_key: `l1_prop_l1_npu_nm1_tanh_vec_enable_v1_r2_run_9016f46685448d12`\n- layer: `layer1`\n- task_type: `l1_sweep`\n- status: `ok`\n- summary: `5/5 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l1_prop_l1_npu_nm1_tanh_vec_enable_v1_r2/evaluated.json`\n- metrics_rows_count: `1`\n- review_artifact: `promotion_proposal` at `control_plane/shadow_exports/l1_promotions/l1_prop_l1_npu_nm1_tanh_vec_enable_v1_r2.json`\n\n## Developer Context\n- proposal_id: `prop_l1_npu_nm1_tanh_vec_enable_v1`\n- proposal_path: `docs/developer_loop/prop_l1_npu_nm1_tanh_vec_enable_v1`\n- reviewer_first_read: `docs/developer_loop/prop_l1_npu_nm1_tanh_vec_enable_v1` plus `docs/developer_agent_review.md`\n\n## Evaluation Mode\n- evaluation_mode: `measurement_only`\n- abstraction_layer: `architecture_block`\n- evaluation_summary: `Physical metrics recorded from an accepted status=ok Layer 1 row.`\n\n## Checklist\n- [ ] Commit only lightweight metrics and regenerated runs/index.csv\n- [ ] Include metrics row references for each completed design\n- [ ] Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit only lightweight metrics and regenerated runs/index.csv",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
