@@ -844,7 +844,8 @@ void emitActivationModule(const ActivationOperationConfig &config, const Operand
                        << frac_bits << ") + " << cf << ";\n";
                 }
                 if (config.clamp) {
-                    os << "    else y_abs = " << ((1LL << (data_width - 1)) - 1) << ";\n";
+                    long long high_sat = static_cast<long long>(std::llround(ys.back() * (1LL << frac_bits)));
+                    os << "    else y_abs = " << high_sat << ";\n";
                 }
                 os << "  end\n";
                 os << "  assign Y = (x_signed[" << (data_width - 1) << "] ? (~y_abs + 1'b1) : y_abs);\n";

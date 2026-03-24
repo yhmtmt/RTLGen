@@ -5,35 +5,39 @@
 - `title`: `Terminal int8 tanh block`
 
 ## Scope
-- proposal seeded only
-- no RTL, sweep, or eval artifacts exist yet
-- intended first pass mirrors the accepted sigmoid path:
-  - bounded `int8` `pwl` block
-  - local smoke validation
-  - one remote physical sweep
+- first-pass bounded `int8` tanh implementation added
+- implemented by reusing the existing integer `pwl` activation emission path with a symmetric signed-domain point set
+- includes a small generic fix so symmetric integer `pwl` clamp mode saturates to the configured top `y` value instead of full-scale `127`
+- this proposal exists to provide the physical prerequisite for later integrated `nm1` tanh enable and then bounded Layer 2 terminal `tanh` direct-output evaluation
 
-## Planned Files
-- expected implementation direction:
-  - `src/rtlgen/rtl_operations.cpp` if a small `pwl` extension is needed
-  - `examples/config_activation_tanh_int8.json`
-  - `tests/activation_tanh_int_tb.v`
-  - `tests/test_activation_tanh_int.sh`
-  - `runs/designs/activations/terminal_tanh_int8_pwl_wrapper/*`
-  - `runs/designs/activations/sweeps/nangate45_terminal_tanh_int8_pwl_v1.json`
+## Files Changed
+- `src/rtlgen/rtl_operations.cpp`
+- `examples/config_activation_tanh_int8.json`
+- `tests/activation_tanh_int_tb.v`
+- `tests/test_activation_tanh_int.sh`
+- `runs/designs/activations/terminal_tanh_int8_pwl_wrapper/config_terminal_tanh_int8_pwl.json`
+- `runs/designs/activations/sweeps/nangate45_terminal_tanh_int8_pwl_v1.json`
+- `docs/development_items/items/item_l1_terminal_tanh_block_v1.md`
+- `docs/development_items/index.md`
+- `docs/developer_loop/prop_l1_terminal_tanh_block_v1/proposal.json`
+- `docs/developer_loop/prop_l1_terminal_tanh_block_v1/design_brief.md`
+- `docs/developer_loop/prop_l1_terminal_tanh_block_v1/evaluation_gate.md`
+- `docs/developer_loop/prop_l1_terminal_tanh_block_v1/implementation_summary.md`
+- `docs/developer_loop/prop_l1_terminal_tanh_block_v1/quality_gate.md`
+- `docs/developer_loop/prop_l1_terminal_tanh_block_v1/evaluation_requests.json`
 
-## Local Validation Plan
-- rebuild or reuse local `rtlgen`
-- validate the new `int8` tanh `pwl` smoke test on representative signed inputs and saturation points
-- confirm monotonicity and boundedness of the emitted RTL
+## Local Validation
+- rebuilt a temporary local `rtlgen` binary in `/tmp/rtlgen-impl-tanh-build`
+- validated the new `int8` tanh PWL smoke test on representative signed Q4 inputs, monotonicity points, and odd-symmetry checks
+- confirmed the emitted RTL uses the existing symmetric signed-domain `pwl` path and that symmetric clamp mode now saturates to the configured top `y` value
 
 ## Evaluation Request
 - next step:
-  - implement the bounded tanh block and smoke checks
   - generate the first DB-backed Layer 1 sweep item for Nangate45
   - inspect `metrics.csv` rows and pick the accepted tanh seed
   - then decide whether an integrated `nm1` tanh-enable follow-on should be seeded immediately
 
 ## Risks
-- the first bounded int8 tanh implementation path may be too costly or inaccurate
+- the first bounded int8 tanh implementation path may still be too costly or inaccurate
 - later integrated use may still require interface adjustments
 - later `fp16`-pipeline use may require a separate conversion or native-fp16 follow-on
