@@ -39,6 +39,7 @@ VEC_OP_NAMES = {
     0x8: "dsoftmax",
     0x9: "dlayernorm",
     0xA: "sigmoid",
+    0xB: "tanh",
 }
 
 def parse_desc_stream(data):
@@ -228,6 +229,19 @@ def _vec_sigmoid_int8(x):
     return 16
 
 
+def _vec_tanh_int8(x):
+    x = int(x)
+    if x <= -32:
+        return _u8(-16)
+    if x <= -16:
+        return _u8(-12)
+    if x < 16:
+        return _u8(0)
+    if x < 32:
+        return _u8(12)
+    return _u8(16)
+
+
 def _fp16_add_bits(a_bits, b_bits):
     return _fp16_canonicalize_zero(
         _float_to_fp16_bits(_fp16_bits_to_float(a_bits) + _fp16_bits_to_float(b_bits))
@@ -368,6 +382,8 @@ def _vec_expected_result(raw, flags, cfg, dtype_code=0x0):
             out = 1
         elif op_code == 0xA:  # sigmoid
             out = _vec_sigmoid_int8(x)
+        elif op_code == 0xB:  # tanh
+            out = _vec_tanh_int8(x)
         else:  # relu / fallback
             out = 0 if x < 0 else _u8(x)
         result.append(_u8(out))

@@ -97,6 +97,7 @@ def _vec_op_cost(op_name, cfg):
         "dsoftmax": 4.0,
         "dlayernorm": 1.0,
         "sigmoid": 2.0,
+        "tanh": 2.0,
     }
     op = str(op_name or "").lower()
     costs = cfg.get("vec_op_costs", {})
