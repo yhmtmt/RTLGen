@@ -273,6 +273,20 @@ def _developer_loop_abstraction_layer(work_item: WorkItem) -> str:
     return str(abstraction.get("layer", "")).strip()
 
 
+def _proposal_context(work_item: WorkItem, proposal: dict[str, Any] | None) -> dict[str, Any]:
+    developer_loop = _developer_loop_payload(work_item)
+    direct_comparison = (proposal or {}).get("direct_comparison") if isinstance(proposal, dict) else {}
+    if not isinstance(direct_comparison, dict):
+        direct_comparison = {}
+    return {
+        "proposal_id": str((proposal or {}).get("proposal_id", "")).strip() or str(developer_loop.get("proposal_id", "")).strip(),
+        "title": str((proposal or {}).get("title", "")).strip(),
+        "kind": str((proposal or {}).get("kind", "")).strip(),
+        "primary_question": str(direct_comparison.get("primary_question", "")).strip(),
+        "baseline_refs": list((proposal or {}).get("baseline_refs") or []),
+    }
+
+
 def _effective_evaluation_mode(work_item: WorkItem) -> str:
     evaluation = _developer_loop_evaluation(work_item)
     mode = str(evaluation.get("mode", "")).strip()
@@ -337,7 +351,7 @@ def _resolve_baseline_summary(
     session: Session,
     *,
     repo_root: Path,
-    proposal: dict[str, Any],
+    proposal: dict[str, Any] | None,
     comparison: dict[str, Any],
 ) -> tuple[str, list[dict[str, str]], str | None, dict[str, Any], dict[str, str]] | tuple[None, None, None, None, None]:
     paired_baseline_item_id = str(comparison.get("paired_baseline_item_id", "")).strip()
@@ -350,7 +364,7 @@ def _resolve_baseline_summary(
         if resolved[0] is not None:
             return resolved
         return None, None, None, None, None
-    for ref in proposal.get("baseline_refs") or []:
+    for ref in (proposal or {}).get("baseline_refs") or []:
         ref_text = str(ref).strip()
         if not ref_text:
             continue
@@ -475,15 +489,16 @@ def _build_evaluation_record(
     expectation_outcome: str | None,
     summary: str,
 ) -> dict[str, Any] | None:
-    if proposal is None:
+    context = _proposal_context(work_item, proposal)
+    if not any((context.get("proposal_id"), context.get("title"), context.get("primary_question"))):
         return None
     evaluation = _developer_loop_evaluation(work_item)
     expected_direction = str(evaluation.get("expected_direction", "")).strip() or "unknown"
     expected_reason = str(evaluation.get("expected_reason", "")).strip()
     record = {
-        "proposal_id": str(proposal.get("proposal_id", "")).strip(),
-        "title": str(proposal.get("title", "")).strip(),
-        "primary_question": str((proposal.get("direct_comparison") or {}).get("primary_question", "")).strip(),
+        "proposal_id": str(context.get("proposal_id", "")).strip(),
+        "title": str(context.get("title", "")).strip(),
+        "primary_question": str(context.get("primary_question", "")).strip(),
         "evaluation_mode": evaluation_mode,
         "comparison_role": comparison_role,
         "abstraction_layer": _developer_loop_abstraction_layer(work_item),
@@ -514,7 +529,8 @@ def _build_proposal_assessment(
     proposal: dict[str, Any] | None,
     summary_rows: list[dict[str, str]],
 ) -> tuple[dict[str, Any] | None, dict[str, Any] | None, dict[str, str]]:
-    if proposal is None:
+    context = _proposal_context(work_item, proposal)
+    if proposal is None and not context.get("proposal_id"):
         return None, None, {}
     evaluation_mode = _effective_evaluation_mode(work_item)
     comparison_role = _effective_comparison_role(work_item)
@@ -551,9 +567,9 @@ def _build_proposal_assessment(
         else:
             missing_summary = "Focused comparison baseline could not be resolved from proposal baseline_refs."
         assessment = {
-                "proposal_id": str(proposal.get("proposal_id", "")).strip(),
-                "title": str(proposal.get("title", "")).strip(),
-                "primary_question": str((proposal.get("direct_comparison") or {}).get("primary_question", "")).strip(),
+                "proposal_id": str(context.get("proposal_id", "")).strip(),
+                "title": str(context.get("title", "")).strip(),
+                "primary_question": str(context.get("primary_question", "")).strip(),
                 "evaluation_mode": evaluation_mode,
                 "comparison_role": comparison_role,
                 "outcome": "unavailable",
@@ -615,10 +631,10 @@ def _build_proposal_assessment(
         )
     extra_refs = dict(source_refs or {})
     assessment = {
-            "proposal_id": str(proposal.get("proposal_id", "")).strip(),
-            "title": str(proposal.get("title", "")).strip(),
-            "kind": str(proposal.get("kind", "")).strip(),
-            "primary_question": str((proposal.get("direct_comparison") or {}).get("primary_question", "")).strip(),
+            "proposal_id": str(context.get("proposal_id", "")).strip(),
+            "title": str(context.get("title", "")).strip(),
+            "kind": str(context.get("kind", "")).strip(),
+            "primary_question": str(context.get("primary_question", "")).strip(),
             "evaluation_mode": evaluation_mode,
             "comparison_role": comparison_role,
             "outcome": outcome,
@@ -731,6 +747,8 @@ def consume_l2_result(session: Session, request: Layer2ConsumeRequest) -> Layer2
     results_rows = _load_csv(_resolve_path(repo_root=repo_root, path_text=results_rel))
     summary_best = _summary_best_row(summary_rows)
     proposal = _load_proposal(repo_root, work_item)
+    evaluation_mode = _effective_evaluation_mode(work_item)
+    comparison_role = _effective_comparison_role(work_item)
     proposal_assessment, evaluation_record, proposal_source_refs = _build_proposal_assessment(
         session=session,
         work_item=work_item,
@@ -738,6 +756,11 @@ def consume_l2_result(session: Session, request: Layer2ConsumeRequest) -> Layer2
         proposal=proposal,
         summary_rows=summary_rows,
     )
+    if evaluation_mode == "paired_comparison" and comparison_role == "candidate":
+        if proposal_assessment is None or evaluation_record is None:
+            raise Layer2ResultConsumerError(
+                "paired comparison candidate did not serialize proposal assessment/evaluation record"
+            )
     focused_result_rows = _select_focused_result_rows(
         results_rows,
         arch_id=str((best_point.get("best") or {}).get("arch_id") or summary_best.get("arch_id") or "").strip(),

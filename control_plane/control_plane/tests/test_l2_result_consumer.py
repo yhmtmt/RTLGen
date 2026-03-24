@@ -838,6 +838,83 @@ def test_consume_l2_result_compares_candidate_against_paired_baseline_item() -> 
             assert payload["source_refs"]["baseline_summary_csv"] == "runs/campaigns/npu/refreshed_baseline_campaign/summary.csv"
 
 
+def test_consume_l2_result_candidate_falls_back_to_developer_loop_when_proposal_missing() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            baseline_item_id = _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id="l2_missing_proposal_baseline",
+                campaign_dir_rel="runs/campaigns/npu/missing_proposal_baseline_campaign",
+                summary_rows=(
+                    "scope,arch_id,macro_mode,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,throughput_infer_per_s_mean\n"
+                    "aggregate,fp16_nm1_demo,flat_nomacro,1,0.5,0.2,5.5,0.18,1000,1.0\n"
+                ),
+                proposal_path="docs/developer_loop/prop_l2_missing_v1/proposal.json",
+                comparison={"role": "measurement_only"},
+            )
+            baseline_work_item = session.query(WorkItem).filter_by(item_id=baseline_item_id).one()
+            baseline_payload = copy.deepcopy(baseline_work_item.task_request.request_payload or {})
+            baseline_payload["developer_loop"]["evaluation"] = {
+                "mode": "measurement_only",
+                "expected_direction": "unknown",
+                "expected_reason": "Baseline metric capture only.",
+            }
+            baseline_work_item.task_request.request_payload = baseline_payload
+            session.commit()
+
+            candidate_item_id = _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id="l2_missing_proposal_candidate",
+                campaign_dir_rel="runs/campaigns/npu/missing_proposal_candidate_campaign",
+                summary_rows=(
+                    "scope,arch_id,macro_mode,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,throughput_infer_per_s_mean\n"
+                    "aggregate,fp16_nm1_demo,flat_nomacro,1,0.4,0.15,5.5,0.18,1000,1.0\n"
+                ),
+                proposal_path="docs/developer_loop/prop_l2_missing_v1/proposal.json",
+                comparison={"role": "candidate", "paired_baseline_item_id": baseline_item_id},
+            )
+            candidate_work_item = session.query(WorkItem).filter_by(item_id=candidate_item_id).one()
+            candidate_payload = copy.deepcopy(candidate_work_item.task_request.request_payload or {})
+            candidate_payload["developer_loop"]["evaluation"] = {
+                "mode": "paired_comparison",
+                "expected_direction": "better_than_historical",
+                "expected_reason": "The candidate should beat the persisted baseline even if proposal.json is unavailable.",
+            }
+            candidate_payload["developer_loop"]["abstraction"] = {
+                "layer": "full_architecture",
+            }
+            candidate_work_item.task_request.request_payload = candidate_payload
+            session.commit()
+
+            consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=candidate_item_id))
+
+            payload = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{candidate_item_id}.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            assessment = payload["proposal_assessment"]
+            evaluation_record = payload["evaluation_record"]
+            assert assessment["proposal_id"] == "prop_l2_missing_v1"
+            assert assessment["baseline_item_id"] == baseline_item_id
+            assert assessment["outcome"] == "improved"
+            assert evaluation_record["proposal_id"] == "prop_l2_missing_v1"
+            assert evaluation_record["evaluation_mode"] == "paired_comparison"
+            assert evaluation_record["comparison_role"] == "candidate"
+            assert evaluation_record["abstraction_layer"] == "full_architecture"
+            assert evaluation_record["expectation_status"] == "as_expected"
+            assert payload["source_refs"]["baseline_summary_csv"] == (
+                "runs/campaigns/npu/missing_proposal_baseline_campaign/summary.csv"
+            )
+
+
 def test_consume_l2_result_paired_comparison_matches_model_rows_by_model_id() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
