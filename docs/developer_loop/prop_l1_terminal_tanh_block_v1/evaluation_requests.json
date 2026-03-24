@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l1_terminal_tanh_block_v1",
+  "source_commit": "pending_local_implementation",
+  "requested_items": [
+    {
+      "item_id": "l1_prop_l1_terminal_tanh_block_v1_nangate45_r1",
+      "task_type": "l1_sweep",
+      "evaluation_mode": "measurement_only",
+      "objective": "terminal_tanh_physical_metrics",
+      "status": "planned",
+      "notes": "First bounded Layer 1 physical sweep for the int8 tanh block once RTL and local smoke checks exist.",
+      "abstraction_layer": "circuit_block"
+    }
+  ]
+}
