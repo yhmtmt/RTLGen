@@ -1,14 +1,15 @@
 {
   "proposal_id": "prop_l2_mapper_terminal_tanh_direct_output_v1",
-  "candidate_id": "l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_measurement_r1",
-  "decision": "iterate",
-  "reason": "Merged PR #82 establishes the bounded non-fused tanh baseline on fixed nm1, but the proposal hypothesis concerns direct-output improvement and still requires the paired fused comparison against that merged baseline.",
+  "candidate_id": "l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1",
+  "decision": "promote",
+  "reason": "Focused comparison improved latency and/or energy without regressing matched rows.",
   "evidence_refs": [
-    "https://github.com/yhmtmt/RTLGen/pull/82",
-    "control_plane/shadow_exports/l2_decisions/l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_measurement_r1.json",
-    "control_plane/shadow_exports/review/l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_measurement_r1/review_package.json",
-    "runs/campaigns/npu/e2e_eval_onnx_terminal_tanh_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_measurement_r1/report.md"
+    "item:l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1",
+    "run:l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1_run_b01600a408e657fc",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1.json",
+    "pr:#85",
+    "https://github.com/yhmtmt/RTLGen/pull/85"
   ],
-  "next_action": "Queue l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1 against the merged baseline.",
+  "next_action": "close the proposal as promoted",
   "requires_human_approval": false
 }

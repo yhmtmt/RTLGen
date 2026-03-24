@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_mapper_terminal_tanh_direct_output_v1",
-  "decision": "iterate",
-  "pr_number": 82,
-  "merge_commit": "3c59fef5cba188af7de847f05643dfb79dd220f2",
-  "merged_utc": "2026-03-24T13:29:53Z"
+  "decision": "promote",
+  "pr_number": 85,
+  "merge_commit": "d99e9a99ebed13f585c97a2ff59a0910551b44dc",
+  "merged_utc": "2026-03-24T14:42:19Z"
 }
