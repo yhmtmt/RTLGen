@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_mapper_terminal_activation_family_v1",
-  "source_commit": "1f2e12368a9b9d209436a189bf08c6e80850b722",
+  "source_commit": "7a1bb83f2790210e5fb7b29dcfcdbc8d89cf6609",
   "requested_items": [
     {
       "item_id": "l1_prop_l1_terminal_sigmoid_block_v1_nangate45_r3",
@@ -44,11 +44,12 @@
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
-      "status": "ready_to_queue",
+      "status": "merged_evidence",
       "notes": "Second-stage paired comparison on the same bounded sigmoid-first suite using direct terminal vec-op output.",
       "abstraction_layer": "full_architecture",
-      "status_reason": "Paired direct-output campaign is now implemented and the merged/materialized r1 baseline is available.",
-      "campaign_path": "runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_fused_nm1_v1/campaign.json"
+      "status_reason": "Accepted paired direct-output comparison after clean evidence-only PR #76 merged.",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_fused_nm1_v1/campaign.json",
+      "pr_number": 76
     }
   ]
 }

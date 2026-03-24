@@ -10,20 +10,23 @@
 - remote paired-comparison evaluation should not proceed until:
   - accepted lower-layer sigmoid physical sources exist
   - the non-fused Layer 2 baseline is merged
-  - local output-quality checks for direct-output `Sigmoid` are defined
+  - the paired direct-output candidate stays on the same bounded suite and resolves the merged baseline correctly
 
 ## Reference
 - baseline_ref: `l2_prop_l2_mapper_terminal_activation_family_v1_nm1_measurement_r1` / PR `#75`
-- reference_ref: accepted reduced integrated sigmoid proxy `npu_fp16_cpp_nm1_sigmoidproxy`
+- paired_ref: `l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1` / PR `#76`
+- physical_ref: accepted reduced integrated sigmoid proxy `npu_fp16_cpp_nm1_sigmoidproxy`
 
 ## Checks
-- confirm non-fused and direct-output schedules preserve bounded terminal sigmoid legality
-- define a local output-quality comparison for the paired direct-output candidate
-- keep the paired candidate on the same three-model bounded suite as the accepted baseline
+- non-fused and direct-output schedules stay within bounded terminal sigmoid legality
+- the paired candidate compares only against the merged/materialized baseline on the same three-model suite
+- the paired candidate improves latency and energy without regressing the shared physical source metrics
 
 ## Local Commands
-- pending paired direct-output implementation
+- `python3 tests/test_mapper_split.py`
+- `python3 npu/eval/validate.py --campaign runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_submit_nm1_v1/campaign.json --check_paths`
+- `python3 npu/eval/validate.py --campaign runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_fused_nm1_v1/campaign.json --check_paths`
 
 ## Result
-- status: pending_paired_candidate
-- note: lower-layer prerequisites and the measurement baseline are accepted; the remaining gate is the direct-output paired candidate quality check
+- status: accepted_for_bounded_sigmoid_scope
+- note: the bounded sigmoid-first suite now has accepted baseline and paired direct-output evidence; broader nonlinear-family quality hooks remain follow-on work

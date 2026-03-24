@@ -22,7 +22,7 @@
 | `item_l2_mapper_objective_aware_lowering_v1` | `layer2` | `mapper` | `Objective-aware lowering` | `seed` | `medium` | `developer_agent` |  | `2026-03-16T06:00:00Z` |
 | `item_l2_mapper_terminal_op_generalization_v1` | `layer2` | `mapper` | `Generalized terminal-op direct output` | `merged` | `medium` | `developer_agent` | `prop_l2_mapper_terminal_op_generalization_v1` | `2026-03-18T13:52:04Z` |
 | `item_l2_mapper_terminal_vecop_direct_output_v1` | `layer2` | `mapper` | `Terminal vec-op direct output` | `promoted_to_proposal` | `medium` | `developer_agent` | `prop_l2_mapper_terminal_vecop_direct_output_v1` | `2026-03-18T14:05:00Z` |
-| `item_l2_mapper_terminal_activation_family_v1` | `layer2` | `mapper` | `Terminal activation-family direct output` | `promoted_to_proposal` | `medium` | `developer_agent` | `prop_l2_mapper_terminal_activation_family_v1` | `2026-03-23T22:47:46Z` |
+| `item_l2_mapper_terminal_activation_family_v1` | `layer2` | `mapper` | `Terminal activation-family direct output` | `merged` | `medium` | `developer_agent` | `prop_l2_mapper_terminal_activation_family_v1` | `2026-03-24T09:17:16Z` |
 | `item_l1_terminal_sigmoid_block_v1` | `layer1` | `circuit` | `Terminal sigmoid block` | `merged` | `high` | `developer_agent` | `prop_l1_terminal_sigmoid_block_v1` | `2026-03-19T13:00:39Z` |
 | `item_l1_npu_nm1_sigmoid_vec_enable_v1` | `layer1` | `circuit` | `NPU nm1 sigmoid vec enable` | `merged` | `high` | `developer_agent` | `prop_l1_npu_nm1_sigmoid_vec_enable_v1` | `2026-03-23T22:47:46Z` |
 | `item_l2_mapper_batch_override_autotune_v1` | `layer2` | `mapper` | `Batch override autotune` | `seed` | `medium` | `developer_agent` |  | `2026-03-16T06:00:00Z` |

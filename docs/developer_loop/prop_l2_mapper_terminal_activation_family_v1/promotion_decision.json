@@ -1,15 +1,22 @@
 {
   "proposal_id": "prop_l2_mapper_terminal_activation_family_v1",
   "candidate_id": "cand_l2_mapper_terminal_activation_family_v1_r1",
-  "decision": "iterate",
-  "reason": "Merged PR #75 established the bounded sigmoid-first non-fused nm1 baseline on the accepted reduced sigmoid proxy, but the direct-output hypothesis still needs the paired candidate campaign on the same suite.",
+  "decision": "promote",
+  "reason": "Merged PR #75 established the bounded sigmoid-first non-fused nm1 baseline and merged PR #76 showed direct terminal sigmoid vec-op output improving latency and energy across the same bounded suite on fixed nm1.",
   "evidence_refs": [
     "work_item:l2_prop_l2_mapper_terminal_activation_family_v1_nm1_measurement_r1",
     "run_key:l2_prop_l2_mapper_terminal_activation_family_v1_nm1_measurement_r1_run_8b59dfa21c40c9c5",
     "pr:75",
     "control_plane/shadow_exports/l2_decisions/l2_prop_l2_mapper_terminal_activation_family_v1_nm1_measurement_r1.json",
-    "runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_activation_family_v1_nm1_measurement_r1/report.md"
+    "runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_activation_family_v1_nm1_measurement_r1/report.md",
+    "work_item:l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1",
+    "run_key:l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1_run_094dcc51a8e51d63",
+    "pr:76",
+    "control_plane/shadow_exports/l2_decisions/l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1.json",
+    "runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1/report.md",
+    "runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1_sigmoidproxy/sigmoid_vec_b128_f64/schedule.yml",
+    "runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1/artifacts/perf/fp16_nm1_sigmoidproxy/sigmoid_vec_b128_f64/trace.json"
   ],
-  "next_action": "Implement and queue the paired direct-output candidate campaign `l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1` against the merged/materialized `r1` baseline.",
+  "next_action": "Promote the next mapper or lowering item toward the next bounded nonlinear activation family while preserving the same dependency-ordered staged evaluation model before any broader architecture ranking.",
   "requires_human_approval": true
 }

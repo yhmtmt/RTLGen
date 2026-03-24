@@ -1,7 +1,8 @@
 {
   "proposal_id": "prop_l2_mapper_terminal_activation_family_v1",
-  "decision": "iterate",
-  "pr_number": 75,
-  "merge_commit": "1f2e12368a9b9d209436a189bf08c6e80850b722",
-  "merged_utc": "2026-03-24T08:57:47Z"
+  "decision": "promote",
+  "pr_number": 76,
+  "merge_commit": "7a1bb83f2790210e5fb7b29dcfcdbc8d89cf6609",
+  "merged_utc": "2026-03-24T09:17:16Z",
+  "note": "PR #75 is the accepted measurement-only baseline and PR #76 is the accepted paired-comparison win for the bounded sigmoid-first activation-family suite on fixed nm1."
 }

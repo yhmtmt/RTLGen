@@ -13,37 +13,44 @@
   - run key: `l2_prop_l2_mapper_terminal_activation_family_v1_nm1_measurement_r1_run_8b59dfa21c40c9c5`
   - merged evidence PR: `#75`
   - source commit under test: `b3c45a2842671dafa41730d15b840aff69c538b2`
+- accepted Layer 2 paired direct-output comparison:
+  - work item: `l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1`
+  - run key: `l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1_run_094dcc51a8e51d63`
+  - merged evidence PR: `#76`
+  - source commit under test: `91724473c5a6c1f697a3d36ca9c1d353f9871816`
 
 ## Baseline Comparison
 - the activation-family mapper work is no longer blocked on lower-layer physical grounding
-- the accepted integrated source remains the reduced proxy `npu_fp16_cpp_nm1_sigmoidproxy`, which is sufficient to ground this bounded Layer 2 measurement-first campaign
-- the bounded first-pass suite now has accepted non-fused reference evidence for:
+- the accepted integrated source remains the reduced proxy `npu_fp16_cpp_nm1_sigmoidproxy`, which is sufficient to ground this bounded Layer 2 staged proof
+- the bounded first-pass sigmoid suite has accepted paired evidence for:
   - `sigmoid_vec_b128_f64`
   - `sigmoid_vec_b256_f256`
   - `sigmoid_vec_flatten_b128_2x4x8`
 - aggregate accepted means on `fp16_nm1_sigmoidproxy` / `hier_macro`:
-  - latency: `0.007076666666666666 ms`
-  - energy: `2.5476e-09 mJ`
-  - critical path: `2.7883 ns`
-  - die area: `1440000.0 um^2`
-  - total power: `0.00036 mW`
-- no direct-output candidate has run yet, so there is still no proposal judgment on win/loss for sigmoid direct output
+  - non-fused latency: `0.007076666666666666 ms`
+  - fused latency: `0.0052699999999999995 ms`
+  - non-fused energy: `2.5476e-09 mJ`
+  - fused energy: `1.8972e-09 mJ`
+  - critical path: `2.7883 ns` unchanged
+  - die area: `1440000.0 um^2` unchanged
+  - total power: `0.00036 mW` unchanged
+- the paired direct-output candidate improves latency and energy on all four matched rows without regressing the shared physical source metrics
 
 ## Result
-- result: `baseline_accepted`
+- result: `paired_win_accepted`
 - confidence level: `medium`
-- estimated mapper optimization room: `still promising for a bounded nonlinear family on fixed nm1`
-- architecture conclusion robustness: `not yet evaluable until the paired direct-output candidate is measured against this accepted baseline`
+- estimated mapper optimization room: `validated for the bounded sigmoid-first family on fixed nm1`
+- architecture conclusion robustness: `sufficient for bounded staged promotion, but still grounded by the reduced sigmoid proxy rather than full npu_top`
 
 ## Failures and Caveats
 - the accepted integrated physical source is a reduced `architecture_block` proxy rather than full `npu_top`
-- that is sufficient for this staged bounded Layer 2 follow-on, but it should not be overstated as a full-top architecture ranking result
-- the accepted result is only a `measurement_only` baseline; it does not answer the direct-output hypothesis yet
-- the paired direct-output campaign is still missing as a tracked implementation artifact and must be added before the next queue step
+- that is sufficient for this staged bounded Layer 2 proof, but it should not be overstated as a full-top architecture ranking result
+- the first bounded nonlinear family is still only `Sigmoid`; broader activation-family claims remain open
+- stronger quality and legality hooks may still be required before extending beyond this bounded sigmoid-first scope
 
 ## Recommendation
-- `iterate`
+- `promote`
 - short reason:
-  accept the bounded sigmoid-first non-fused baseline and move next to the paired direct-output candidate on the same suite
+  merged PR `#75` established the bounded sigmoid-first non-fused baseline and merged PR `#76` showed direct terminal sigmoid vec-op output improving latency and energy across the whole matched suite on fixed `nm1`
 - follow-on:
-  implement and queue `l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1` with the merged/materialized `r1` baseline as its required dependency
+  broaden mapper or lowering support to the next bounded nonlinear activation family only after preserving the same dependency-ordered staged evaluation model

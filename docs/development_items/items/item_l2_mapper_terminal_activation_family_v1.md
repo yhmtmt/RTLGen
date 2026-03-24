@@ -3,11 +3,11 @@
 - item_id: `item_l2_mapper_terminal_activation_family_v1`
 - layer: `layer2`
 - kind: `mapper`
-- status: `promoted_to_proposal`
+- status: `merged`
 - priority: `medium`
 - owner: `developer_agent`
 - created_utc: `2026-03-19T11:20:00Z`
-- updated_utc: `2026-03-23T22:47:46Z`
+- updated_utc: `2026-03-24T09:17:16Z`
 - proposal_id: `prop_l2_mapper_terminal_activation_family_v1`
 - proposal_path: `docs/developer_loop/prop_l2_mapper_terminal_activation_family_v1`
 - triggered_by_proposal: `prop_l2_mapper_terminal_vecop_direct_output_v1`
@@ -18,15 +18,15 @@
   - `runs/campaigns/npu/e2e_eval_onnx_terminal_vecop_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_vecop_direct_output_v1_nm1_fused_r1/report.md`
 
 ## Problem
-- direct terminal-output lowering is now accepted for:
+- direct terminal-output lowering is now proven for:
   - final GEMM writeback
   - final GEMM + `Relu`
   - standalone terminal `Relu` vec-op tails
-- the next remaining gap is broader terminal activation support, especially
+- the next remaining gap was broader terminal activation support, especially
   non-linear activation families that are likely to require explicit quality
   gates and clearer legality handling than `Relu`
-- broad architecture ranking is still the wrong next question; the limiting
-  factor remains mapper and lowering coverage
+- broad architecture ranking was still the wrong next question; the limiting
+  factor remained mapper and lowering coverage
 
 ## Candidate Idea
 - define a bounded terminal activation family beyond standalone `Relu`, starting
@@ -71,19 +71,41 @@
   export and about using measurement-only items for pure metric collection
 
 ## Open Questions
-- which bounded nonlinear family is the best next step after the Layer 1
-  `int8` sigmoid block:
-  terminal `Sigmoid` only, `Sigmoid + Tanh`, or another tiny activation set
-- what local output-quality threshold is required before remote evaluation
+- which bounded nonlinear family is the best next step after the accepted
+  sigmoid-first proof: keep extending `Sigmoid`, add `Tanh`, or choose another
+  tiny activation set
+- what stronger local output-quality threshold is required before broadening
+  beyond this first bounded sigmoid scope
 - whether the current schedule IR needs any additional terminal vec-op metadata
-  beyond the accepted standalone `Relu` path
-
-## Unblocked State
-- the standalone sigmoid wrapper prerequisite is accepted via PR `#63`
-- the integrated sigmoid-enabled `nm1` architecture-block prerequisite is now accepted via PR `#74`
-- the next active step is the bounded `measurement_only` Layer 2 reference item on fixed `nm1`
+  beyond the accepted sigmoid path
 
 ## Promotion Rule
 - promote when the proposal names a bounded nonlinear activation family,
   requires a quality gate, and keeps the remote evaluation staged as
   `measurement_only` first and dependency-gated `paired_comparison` second
+
+## Promotion Outcome
+- promoted to `docs/developer_loop/prop_l2_mapper_terminal_activation_family_v1`
+- promotion rationale:
+  - the bounded sigmoid-first activation family was specific enough to support
+    a clean measurement-first proof
+  - the next limiting factor was mapper lowering and staged evaluation order,
+    not another broad ranking sweep
+
+## Completion Outcome
+- merged lower-layer prerequisites:
+  - standalone sigmoid block PR `#63`
+  - integrated sigmoid-enabled `nm1` source PR `#74`
+- merged evidence:
+  - measurement baseline PR `#75`
+  - paired comparison PR `#76`
+- result:
+  - bounded terminal sigmoid direct-output lowering improved latency and energy
+    across the whole sigmoid-first suite on fixed `nm1`
+- workflow note:
+  - the accepted evidence remains grounded by the reduced
+    `npu_fp16_cpp_nm1_sigmoidproxy` architecture-block source rather than full
+    `npu_top`
+- next direction:
+  - expand mapper or lowering support to the next bounded nonlinear activation
+    family using the same dependency-ordered staged evaluation model
