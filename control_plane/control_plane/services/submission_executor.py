@@ -144,7 +144,44 @@ def _copy_into_worktree(*, repo_root: Path, worktree_path: Path, rel_path: str) 
     shutil.copy2(src, dst)
 
 
-def _refresh_submission_worktree(*, repo_root: Path, worktree_path: Path, manifest: dict[str, Any], item_id: str) -> str:
+def _has_origin_remote(repo_root: Path) -> bool:
+    result = subprocess.run(
+        ["git", "-C", str(repo_root), "remote", "get-url", "origin"],
+        capture_output=True,
+        text=True,
+    )
+    return result.returncode == 0
+
+
+def _resolve_submission_base(*, repo_root: Path, pr_base: str) -> tuple[str, str]:
+    base_branch = pr_base.strip() or "master"
+    if _has_origin_remote(repo_root):
+        fetch = subprocess.run(
+            ["git", "-C", str(repo_root), "fetch", "origin", base_branch],
+            capture_output=True,
+            text=True,
+        )
+        if fetch.returncode != 0:
+            raise SubmissionExecuteError(fetch.stderr.strip() or f"failed to fetch origin/{base_branch}")
+        base_ref = f"refs/remotes/origin/{base_branch}"
+    else:
+        base_ref = f"refs/heads/{base_branch}"
+    try:
+        base_commit = _run_cmd(["git", "rev-parse", base_ref], cwd=repo_root)
+    except subprocess.CalledProcessError as exc:
+        raise SubmissionExecuteError(f"submission base not found: {base_ref}") from exc
+    return base_ref, base_commit
+
+
+def _refresh_submission_worktree(
+    *,
+    repo_root: Path,
+    worktree_path: Path,
+    manifest: dict[str, Any],
+    item_id: str,
+    branch_name: str,
+    pr_base: str,
+) -> tuple[str, str]:
     package_rel = str(manifest.get("package_path", "")).strip()
     snapshot_rel = str(manifest.get("snapshot_path", "")).strip()
     review_rel = str(manifest.get("review_artifact_path") or "").strip()
@@ -160,6 +197,11 @@ def _refresh_submission_worktree(*, repo_root: Path, worktree_path: Path, manife
     pr_body_md = str(((package_payload.get("pr_payload") or {}).get("body_md")) or "")
     if not pr_body_md.strip():
         raise SubmissionExecuteError(f"review package is missing pr_payload.body_md: {package_path}")
+
+    submission_base_ref, submission_base_commit = _resolve_submission_base(repo_root=repo_root, pr_base=pr_base)
+    _run_cmd(["git", "checkout", branch_name], cwd=worktree_path)
+    _run_cmd(["git", "reset", "--hard", submission_base_ref], cwd=worktree_path)
+    _run_cmd(["git", "clean", "-fd"], cwd=worktree_path)
 
     for rel_path in [snapshot_rel, package_rel, *([review_rel] if review_rel else []), *evidence_paths]:
         _copy_into_worktree(repo_root=repo_root, worktree_path=worktree_path, rel_path=rel_path)
@@ -181,7 +223,7 @@ def _refresh_submission_worktree(*, repo_root: Path, worktree_path: Path, manife
             cwd=worktree_path,
             env=_commit_env(),
         )
-    return _run_cmd(["git", "rev-parse", "HEAD"], cwd=worktree_path)
+    return _run_cmd(["git", "rev-parse", "HEAD"], cwd=worktree_path), submission_base_commit
 
 
 def _upsert_execution_artifact(
@@ -257,23 +299,26 @@ def execute_submission(session: Session, request: SubmissionExecuteRequest) -> S
     pr_body_path = Path(str(manifest.get("pr_body_path", "")).strip())
     if not pr_body_path.is_absolute():
         pr_body_path = worktree_path / pr_body_path
-    commit_sha = _refresh_submission_worktree(
+    commit_sha, submission_base_commit = _refresh_submission_worktree(
         repo_root=repo_root,
         worktree_path=worktree_path,
         manifest=manifest,
         item_id=work_item.item_id,
+        branch_name=branch_name,
+        pr_base=pr_base,
     )
     evidence_paths = [str(path).strip() for path in (manifest.get("evidence_paths") or []) if str(path).strip()]
-    branch_diff_paths = _repo_diff_paths(cwd=worktree_path, base_ref=pr_base)
+    branch_diff_paths = _repo_diff_paths(cwd=worktree_path, base_ref=submission_base_commit)
     if evidence_paths and not any(path in branch_diff_paths for path in evidence_paths):
         raise SubmissionExecuteError(
             f"submission branch has no canonical runs evidence diff for {work_item.item_id}"
         )
     manifest["commit_sha"] = commit_sha
+    manifest["submission_base_commit"] = submission_base_commit
     manifest["generated_utc"] = utcnow().isoformat().replace("+00:00", "Z")
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
 
-    _run_cmd(["git", "push", "-u", "origin", branch_name], cwd=worktree_path)
+    _run_cmd(["git", "push", "--force-with-lease", "-u", "origin", branch_name], cwd=worktree_path)
     pr_view_proc = _run_cmd_capture(
         [
             "gh",
@@ -363,6 +408,7 @@ def execute_submission(session: Session, request: SubmissionExecuteRequest) -> S
         "repo": request.repo,
         "manifest_path": str(manifest_path.relative_to(repo_root)),
         "pr_base": str(pr_view.get("baseRefName", pr_base)).strip() or pr_base,
+        "submission_base_commit": submission_base_commit,
     }
     execution_path.write_text(json.dumps(execution_payload, indent=2) + "\n", encoding="utf-8")
 
@@ -381,6 +427,7 @@ def execute_submission(session: Session, request: SubmissionExecuteRequest) -> S
                 "branch_name": branch_name,
                 "pr_number": pr_number,
                 "pr_url": execution_payload["pr_url"],
+                "submission_base_commit": submission_base_commit,
                 "manifest_path": execution_payload["manifest_path"],
             },
         )

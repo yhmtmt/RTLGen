@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 from pathlib import Path
 import subprocess
 import tempfile
@@ -280,17 +281,21 @@ def _seed_l1_reviewable(session: Session, repo_root: Path) -> tuple[str, str]:
 
 def _make_fake_bin(fake_bin: Path, log_path: Path) -> None:
     fake_bin.mkdir(parents=True, exist_ok=True)
+    real_git = shutil.which("git")
+    assert real_git is not None
     _write(
         fake_bin / "git",
         "#!/usr/bin/env python3\n"
-        "import json, sys\n"
+        "import json, subprocess, sys\n"
         f"log={json.dumps(str(log_path))}\n"
-        "with open(log, 'a', encoding='utf-8') as h:\n"
-        "    h.write(json.dumps({'tool':'git','argv':sys.argv[1:]})+'\\n')\n"
+        f"real_git={json.dumps(real_git)}\n"
         "argv=sys.argv[1:]\n"
-        "if argv[:3] == ['push', '-u', 'origin']:\n"
+        "with open(log, 'a', encoding='utf-8') as h:\n"
+        "    h.write(json.dumps({'tool':'git','argv':argv})+'\\n')\n"
+        "if argv[:4] == ['push', '--force-with-lease', '-u', 'origin'] or argv[:3] == ['push', '-u', 'origin']:\n"
         "    sys.exit(0)\n"
-        "sys.exit(1)\n",
+        "completed = subprocess.run([real_git, *argv])\n"
+        "sys.exit(completed.returncode)\n",
     )
     _write(
         fake_bin / "gh",

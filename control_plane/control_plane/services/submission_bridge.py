@@ -168,6 +168,35 @@ def _branch_exists(repo_root: Path, branch_name: str) -> bool:
     return result.returncode == 0
 
 
+def _has_origin_remote(repo_root: Path) -> bool:
+    result = subprocess.run(
+        ["git", "-C", str(repo_root), "remote", "get-url", "origin"],
+        capture_output=True,
+        text=True,
+    )
+    return result.returncode == 0
+
+
+def _resolve_submission_base(repo_root: Path, pr_base: str) -> tuple[str, str]:
+    base_branch = pr_base.strip() or "master"
+    if _has_origin_remote(repo_root):
+        fetch = subprocess.run(
+            ["git", "-C", str(repo_root), "fetch", "origin", base_branch],
+            capture_output=True,
+            text=True,
+        )
+        if fetch.returncode != 0:
+            raise SubmissionPrepareError(fetch.stderr.strip() or f"failed to fetch origin/{base_branch}")
+        base_ref = f"refs/remotes/origin/{base_branch}"
+    else:
+        base_ref = f"refs/heads/{base_branch}"
+    try:
+        base_commit = _run_git(repo_root, "rev-parse", base_ref)
+    except subprocess.CalledProcessError as exc:
+        raise SubmissionPrepareError(f"submission base not found: {base_ref}") from exc
+    return base_ref, base_commit
+
+
 def _worktree_root(item_id: str, requested: str | None) -> Path:
     if requested:
         return Path(requested).resolve()
@@ -269,9 +298,10 @@ def prepare_submission_branch(session: Session, request: SubmissionPrepareReques
 
     worktree_root = _worktree_root(work_item.item_id, request.worktree_root)
     worktree_path = worktree_root / "repo"
+    submission_base_ref, submission_base_commit = _resolve_submission_base(repo_root, request.pr_base)
     if _branch_exists(repo_root, branch_name):
         raise SubmissionPrepareError(f"branch already exists: {branch_name}")
-    _run_git(repo_root, "worktree", "add", "-b", branch_name, str(worktree_path), "HEAD")
+    _run_git(repo_root, "worktree", "add", "-b", branch_name, str(worktree_path), submission_base_ref)
 
     try:
         for rel_path in files_to_copy:
@@ -322,6 +352,8 @@ def prepare_submission_branch(session: Session, request: SubmissionPrepareReques
         "run_key": run.run_key,
         "branch_name": branch_name,
         "base_branch": request.pr_base,
+        "submission_base_ref": submission_base_ref,
+        "submission_base_commit": submission_base_commit,
         "worktree_path": str(worktree_path),
         "commit_sha": commit_sha,
         "package_path": package_rel,
@@ -352,6 +384,7 @@ def prepare_submission_branch(session: Session, request: SubmissionPrepareReques
             event_payload={
                 "branch_name": branch_name,
                 "commit_sha": commit_sha,
+                "submission_base_commit": submission_base_commit,
                 "manifest_path": manifest_rel,
             },
         )

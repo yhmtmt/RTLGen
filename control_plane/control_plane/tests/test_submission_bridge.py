@@ -364,6 +364,50 @@ def test_prepare_submission_branch_includes_canonical_runs_evidence_for_real_ite
             assert (Path(result.worktree_path) / "runs" / "index.csv").exists()
 
 
+def test_prepare_submission_branch_uses_current_base_branch_instead_of_head() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+        _write(repo_root / "base.txt", "newer\n")
+        _git(repo_root, "add", "base.txt")
+        subprocess.run(
+            ["git", "-C", str(repo_root), "commit", "-m", "advance master"],
+            check=True,
+            capture_output=True,
+            text=True,
+            env={
+                **__import__("os").environ,
+                "GIT_AUTHOR_NAME": "Test",
+                "GIT_AUTHOR_EMAIL": "test@example.com",
+                "GIT_COMMITTER_NAME": "Test",
+                "GIT_COMMITTER_EMAIL": "test@example.com",
+            },
+        )
+        master_head = _git(repo_root, "rev-parse", "master")
+        _git(repo_root, "checkout", "HEAD~1")
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, _run_key = _seed_l1_reviewable(session, repo_root)
+            result = prepare_submission_branch(
+                session,
+                SubmissionPrepareRequest(
+                    repo_root=str(repo_root),
+                    item_id=item_id,
+                    evaluator_id="cpbot",
+                    session_id="s20260312t090000z",
+                    host="cp-host",
+                    worktree_root=str(repo_root / "tmp_submit"),
+                ),
+            )
+
+            manifest = json.loads((repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "submission_manifest.json").read_text())
+            assert manifest["submission_base_commit"] == master_head
+            assert _git(repo_root, "rev-parse", f"{result.branch_name}^") == master_head
+
+
 def test_prepare_submission_branch_rejects_missing_canonical_evidence_diff() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

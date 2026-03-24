@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 from pathlib import Path
 import subprocess
 import tempfile
@@ -278,16 +279,21 @@ def _seed_l1_reviewable(session: Session, repo_root: Path) -> tuple[str, str]:
 def _make_fake_bin(fake_bin: Path, log_path: Path) -> None:
     fake_bin.mkdir(parents=True, exist_ok=True)
     state_path = fake_bin / "gh_state.json"
+    real_git = shutil.which("git")
+    assert real_git is not None
     _write(
         fake_bin / "git",
         "#!/usr/bin/env python3\n"
-        "import json, os, sys\n"
+        "import json, os, subprocess, sys\n"
         f"log={json.dumps(str(log_path))}\n"
+        f"real_git={json.dumps(real_git)}\n"
+        "argv=sys.argv[1:]\n"
         "with open(log, 'a', encoding='utf-8') as h:\n"
-        "    h.write(json.dumps({'tool':'git','argv':sys.argv[1:]})+'\\n')\n"
-        "if sys.argv[1:3] == ['push', '-u']:\n"
+        "    h.write(json.dumps({'tool':'git','argv':argv})+'\\n')\n"
+        "if argv[:4] == ['push', '--force-with-lease', '-u', 'origin'] or argv[:3] == ['push', '-u', 'origin']:\n"
         "    sys.exit(0)\n"
-        "sys.exit(1)\n",
+        "completed = subprocess.run([real_git, *argv])\n"
+        "sys.exit(completed.returncode)\n",
     )
     _write(
         fake_bin / "gh",
@@ -375,7 +381,7 @@ def test_execute_submission_pushes_and_reconciles() -> None:
             assert artifact.path == f"control_plane/shadow_exports/review/{item_id}/submission_execution.json"
 
             log_entries = [json.loads(line) for line in log_path.read_text(encoding="utf-8").splitlines()]
-            assert any(entry["tool"] == "git" and entry["argv"][:3] == ["push", "-u", "origin"] for entry in log_entries)
+            assert any(entry["tool"] == "git" and entry["argv"][:4] == ["push", "--force-with-lease", "-u", "origin"] for entry in log_entries)
             assert any(entry["tool"] == "gh" and entry["argv"][:4] == ["--repo", "yhmtmt/RTLGen", "pr", "create"] for entry in log_entries)
             assert any(entry["tool"] == "gh" and entry["argv"][:4] == ["--repo", "yhmtmt/RTLGen", "pr", "view"] for entry in log_entries)
 
@@ -436,7 +442,7 @@ def test_execute_submission_reuses_existing_pr_on_rerun() -> None:
 
             assert result.pr_number == 123
             log_entries = [json.loads(line) for line in log_path.read_text(encoding="utf-8").splitlines() if line.strip()]
-            assert any(entry["tool"] == "git" and entry["argv"][:3] == ["push", "-u", "origin"] for entry in log_entries)
+            assert any(entry["tool"] == "git" and entry["argv"][:4] == ["push", "--force-with-lease", "-u", "origin"] for entry in log_entries)
             assert not any(entry["tool"] == "gh" and entry["argv"][:4] == ["--repo", "yhmtmt/RTLGen", "pr", "create"] for entry in log_entries)
             assert any(entry["tool"] == "gh" and entry["argv"][:4] == ["--repo", "yhmtmt/RTLGen", "pr", "view"] for entry in log_entries)
 
@@ -493,6 +499,69 @@ def test_execute_submission_backfills_missing_evidence_paths_on_rerun() -> None:
                 "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv",
                 "runs/index.csv",
             ]
+
+
+def test_execute_submission_refreshes_branch_to_current_base() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, _run_key = _seed_l1_reviewable(session, repo_root)
+            prepare_submission_branch(
+                session,
+                SubmissionPrepareRequest(
+                    repo_root=str(repo_root),
+                    item_id=item_id,
+                    evaluator_id="cpbot",
+                    session_id="s20260310t081900z",
+                    host="cp-host",
+                    worktree_root=str(repo_root / "tmp_submit"),
+                ),
+            )
+            _write(repo_root / "post_prepare.txt", "new base\n")
+            _git(repo_root, "add", "post_prepare.txt")
+            subprocess.run(
+                ["git", "-C", str(repo_root), "commit", "-m", "advance base"],
+                check=True,
+                capture_output=True,
+                text=True,
+                env={
+                    **os.environ,
+                    "GIT_AUTHOR_NAME": "Test",
+                    "GIT_AUTHOR_EMAIL": "test@example.com",
+                    "GIT_COMMITTER_NAME": "Test",
+                    "GIT_COMMITTER_EMAIL": "test@example.com",
+                },
+            )
+            base_head = _git(repo_root, "rev-parse", "master")
+
+            fake_bin = repo_root / "fake_bin"
+            log_path = repo_root / "fake_cmds.log"
+            _make_fake_bin(fake_bin, log_path)
+            old_path = os.environ.get("PATH", "")
+            os.environ["PATH"] = f"{fake_bin}:{old_path}"
+            try:
+                result = execute_submission(
+                    session,
+                    SubmissionExecuteRequest(
+                        repo_root=str(repo_root),
+                        repo="yhmtmt/RTLGen",
+                        item_id=item_id,
+                        evaluator_id="cpbot",
+                        session_id="s20260310t081900z",
+                        host="cp-host",
+                    ),
+                )
+            finally:
+                os.environ["PATH"] = old_path
+
+            manifest = json.loads((repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "submission_manifest.json").read_text(encoding="utf-8"))
+            assert manifest["submission_base_commit"] == base_head
+            assert _git(repo_root, "rev-parse", f"{result.branch_name}^") == base_head
 
 
 def test_execute_submission_rejects_branch_without_canonical_evidence_diff() -> None:
