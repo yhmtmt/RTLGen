@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l1_npu_nm1_tanh_vec_enable_v1",
+  "source_commit": "pending_integrated_tanh_enable_commit",
+  "requested_items": [
+    {
+      "item_id": "l1_prop_l1_npu_nm1_tanh_vec_enable_v1_r1",
+      "task_type": "l1_sweep",
+      "evaluation_mode": "measurement_only",
+      "objective": "npu_nm1_tanh_vec_physical_metrics",
+      "status": "not_queued",
+      "notes": "Queue only after integrated nm1 tanh enablement is implemented and the first bounded reduced physical target is defined.",
+      "abstraction_layer": "architecture_block"
+    }
+  ]
+}

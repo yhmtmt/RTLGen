@@ -3,11 +3,11 @@
 - item_id: `item_l1_terminal_tanh_block_v1`
 - layer: `layer1`
 - kind: `circuit`
-- status: `promoted_to_proposal`
+- status: `merged`
 - priority: `high`
 - owner: `developer_agent`
 - created_utc: `2026-03-24T12:00:00Z`
-- updated_utc: `2026-03-24T12:00:00Z`
+- updated_utc: `2026-03-24T12:01:06Z`
 - proposal_id: `prop_l1_terminal_tanh_block_v1`
 - proposal_path: `docs/developer_loop/prop_l1_terminal_tanh_block_v1`
 - triggered_by_proposal: `prop_l2_mapper_terminal_activation_family_v1`
@@ -61,3 +61,12 @@
 
 ## Promotion Rule
 - promote when the proposal names one bounded tanh block path, keeps the remote evaluation focused on physical implementation evidence, and explicitly defers integrated `nm1` and Layer 2 follow-ons until that evidence exists
+
+## Outcome
+- accepted physical evidence: PR `#80` / item `l1_prop_l1_terminal_tanh_block_v1_nangate45_r1`
+- accepted best point:
+  - `param_hash`: `23010967`
+  - `critical_path_ns`: `0.1899`
+  - `die_area`: `25600.0`
+  - `total_power_mw`: `0.000111`
+- follow-on: seed integrated `nm1` tanh-enable architecture-block work

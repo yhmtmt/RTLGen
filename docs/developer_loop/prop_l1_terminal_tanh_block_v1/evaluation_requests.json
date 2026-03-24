@@ -1,14 +1,14 @@
 {
   "proposal_id": "prop_l1_terminal_tanh_block_v1",
-  "source_commit": "pending_commit_after_local_validation",
+  "source_commit": "285e73d18ab46245c99ccbca44ce8e4590ece723",
   "requested_items": [
     {
       "item_id": "l1_prop_l1_terminal_tanh_block_v1_nangate45_r1",
       "task_type": "l1_sweep",
       "evaluation_mode": "measurement_only",
       "objective": "terminal_tanh_physical_metrics",
-      "status": "ready_after_push",
-      "notes": "First bounded Layer 1 physical sweep for the int8 tanh block once this implementation commit is pushed.",
+      "status": "merged",
+      "notes": "Accepted Layer 1 prerequisite physical sweep for the bounded terminal int8 tanh block, merged via PR #80.",
       "abstraction_layer": "circuit_block",
       "config_path": "runs/designs/activations/terminal_tanh_int8_pwl_wrapper/config_terminal_tanh_int8_pwl.json",
       "sweep_path": "runs/designs/activations/sweeps/nangate45_terminal_tanh_int8_pwl_v1.json"

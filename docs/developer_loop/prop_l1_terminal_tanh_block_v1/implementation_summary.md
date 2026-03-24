@@ -32,10 +32,17 @@
 - confirmed the emitted RTL uses the existing symmetric signed-domain `pwl` path and that symmetric clamp mode now saturates to the configured top `y` value
 
 ## Evaluation Request
+- accepted evaluation:
+  - PR `#80`
+  - DB item `l1_prop_l1_terminal_tanh_block_v1_nangate45_r1`
+  - accepted best point:
+    - `param_hash`: `23010967`
+    - `critical_path_ns`: `0.1899`
+    - `die_area`: `25600.0`
+    - `total_power_mw`: `0.000111`
 - next step:
-  - generate the first DB-backed Layer 1 sweep item for Nangate45
-  - inspect `metrics.csv` rows and pick the accepted tanh seed
-  - then decide whether an integrated `nm1` tanh-enable follow-on should be seeded immediately
+  - seed and implement an integrated `nm1` tanh-enable `architecture_block`
+    follow-on before any Layer 2 terminal `tanh` campaign is queued
 
 ## Risks
 - the first bounded int8 tanh implementation path may still be too costly or inaccurate

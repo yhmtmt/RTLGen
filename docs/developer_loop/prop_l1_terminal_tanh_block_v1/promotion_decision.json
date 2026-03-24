@@ -1,0 +1,14 @@
+{
+  "proposal_id": "prop_l1_terminal_tanh_block_v1",
+  "candidate_id": "l1_prop_l1_terminal_tanh_block_v1_nangate45_r1",
+  "decision": "promote",
+  "reason": "Merged PR #80 establishes the first accepted physical implementation result for the bounded int8 tanh pwl wrapper on Nangate45, with multiple ok rows and a selected best point sufficient to unblock the integrated nm1 tanh-enable follow-on.",
+  "evidence_refs": [
+    "https://github.com/yhmtmt/RTLGen/pull/80",
+    "control_plane/shadow_exports/l1_promotions/l1_prop_l1_terminal_tanh_block_v1_nangate45_r1.json",
+    "runs/designs/activations/terminal_tanh_int8_pwl_wrapper/metrics.csv",
+    "runs/index.csv"
+  ],
+  "next_action": "seed and implement prop_l1_npu_nm1_tanh_vec_enable_v1 using the accepted bounded int8 tanh block as its lower-layer physical source",
+  "requires_human_approval": false
+}

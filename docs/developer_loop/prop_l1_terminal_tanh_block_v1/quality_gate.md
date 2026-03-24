@@ -6,3 +6,8 @@
   - monotonicity on representative points is preserved
   - saturation endpoints remain bounded in the expected int8 range
 - any broader output-quality gate belongs to the later integrated or Layer 2 use of this block
+- result:
+  - status: `pass_remote`
+  - note: local RTL/smoke checks passed, and merged PR `#80` established
+    accepted Nangate45 physical metrics for the bounded int8 tanh `pwl`
+    wrapper
