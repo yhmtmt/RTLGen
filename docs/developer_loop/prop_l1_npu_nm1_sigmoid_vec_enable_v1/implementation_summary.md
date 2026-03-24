@@ -33,3 +33,5 @@
 ## Follow-on
 - use this accepted `architecture_block` source to unblock `prop_l2_mapper_terminal_activation_family_v1`
 - do not reopen full `npu_top` integrated physical attempts as a prerequisite for the next bounded Layer 2 activation-family measurement item
+
+- policy update: early-stage `architecture_block` sweeps now reject `mode_compare` / `flat_nomacro` and require hierarchy-preserving first-pass configs

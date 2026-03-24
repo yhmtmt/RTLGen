@@ -95,6 +95,18 @@ python3 scripts/build_runs_index.py
   hardened macro and publish `evaluation_scope=macro_hardened` plus
   `macro_manifest`.
 
+### Architecture-block hierarchy policy
+- For `architecture_block` Layer 1 items, early-stage evaluation must preserve
+  hierarchy.
+- Do not queue `mode_compare`, `flat_nomacro`, or `SYNTH_HIERARCHICAL=0`
+  sweeps as the first integrated proof for large tops such as `npu_top`.
+- Use this ladder instead:
+  1. legality or synth-prefilter checkpoint
+  2. hierarchy-preserving reduced proxy physical run
+  3. only later, selective local flattening after identifying a bounded hotspot
+- Treat full-top flattening as an explicit later-stage exception, not the
+  default search baseline.
+
 ## Data hygiene
 - Keep committed artifacts lightweight (configs, RTL, `metrics.csv`, summaries).
 - Do not commit large temporary logs or DEF/GDS.

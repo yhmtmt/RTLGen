@@ -32,6 +32,10 @@
   integrated legality/prefilter checkpoint
 - characterize a reduced integrated proxy physically on Nangate45 first:
   `npu_fp16_cpp_nm1_sigmoidproxy`
+- keep early-stage `architecture_block` evaluation hierarchy-preserving:
+  no `mode_compare`, `flat_nomacro`, or `SYNTH_HIERARCHICAL=0` sweeps on
+  `npu_top` until a smaller bounded hotspot justifies a later selective
+  flattening pass
 
 ## Direction Gate
 - status: approved

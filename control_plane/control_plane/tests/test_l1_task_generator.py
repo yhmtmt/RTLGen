@@ -12,7 +12,11 @@ from sqlalchemy.orm import Session
 from control_plane.db import create_all
 from control_plane.models.enums import WorkItemState
 from control_plane.models.work_items import WorkItem
-from control_plane.services.l1_task_generator import Layer1SweepGenerateRequest, generate_l1_sweep_task
+from control_plane.services.l1_task_generator import (
+    Layer1SweepGenerateRequest,
+    Layer1TaskGenerationError,
+    generate_l1_sweep_task,
+)
 
 
 def _write_example_repo(repo_root: Path) -> tuple[str, str]:
@@ -65,7 +69,12 @@ def _write_example_repo(repo_root: Path) -> tuple[str, str]:
     )
 
 
-def _write_example_block_repo(repo_root: Path) -> tuple[str, str]:
+def _write_example_block_repo(
+    repo_root: Path,
+    *,
+    mode_compare: bool = True,
+    synth_hierarchical: int | None = None,
+) -> tuple[str, str]:
     design_dir = repo_root / "runs" / "designs" / "npu_blocks" / "npu_fp16_cpp_nm1_sigmoidcmp"
     design_dir.mkdir(parents=True, exist_ok=True)
     config_path = design_dir / "config_nm1_sigmoid.json"
@@ -87,21 +96,23 @@ def _write_example_block_repo(repo_root: Path) -> tuple[str, str]:
         encoding="utf-8",
     )
 
+    flow_params = {
+        "CLOCK_PERIOD": [10.0],
+        "DIE_AREA": ["0 0 1500 1500"],
+        "CORE_AREA": ["50 50 1450 1450"],
+    }
+    if synth_hierarchical is not None:
+        flow_params["SYNTH_HIERARCHICAL"] = [synth_hierarchical]
+    sweep_payload = {
+        "flow_params": flow_params,
+        "tag_prefix": "npu_fp16_nm1_sigmoidcmp",
+    }
+    if mode_compare:
+        sweep_payload["mode_compare"] = True
+
     sweep_path = design_dir / "sweep_compare_33.json"
     sweep_path.write_text(
-        json.dumps(
-            {
-                "flow_params": {
-                    "CLOCK_PERIOD": [10.0],
-                    "DIE_AREA": ["0 0 1500 1500"],
-                    "CORE_AREA": ["50 50 1450 1450"],
-                },
-                "tag_prefix": "npu_fp16_nm1_sigmoidcmp",
-                "mode_compare": True,
-            },
-            indent=2,
-        )
-        + "\n",
+        json.dumps(sweep_payload, indent=2) + "\n",
         encoding="utf-8",
     )
     return (
@@ -266,6 +277,33 @@ def test_generate_l1_sweep_task_supports_integrated_npu_block_configs() -> None:
                 "--skip_existing"
             )
 
+def test_generate_l1_sweep_task_rejects_flattened_architecture_block_sweeps() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_block_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            try:
+                generate_l1_sweep_task(
+                    session,
+                    Layer1SweepGenerateRequest(
+                        repo_root=str(repo_root),
+                        sweep_path=sweep_path,
+                        config_paths=[config_path],
+                        platform="nangate45",
+                        out_root="runs/designs/npu_blocks",
+                        requested_by="@tester",
+                        abstraction_layer="architecture_block",
+                    ),
+                )
+            except Layer1TaskGenerationError as exc:
+                assert "architecture_block sweeps must not use mode_compare/flat_nomacro" in str(exc)
+            else:
+                raise AssertionError("expected Layer1TaskGenerationError for flattened architecture_block sweep")
+
 
 def test_generate_l1_sweep_task_supports_make_target_for_integrated_blocks() -> None:
     with tempfile.TemporaryDirectory() as td:
@@ -299,3 +337,38 @@ def test_generate_l1_sweep_task_supports_make_target_for_integrated_blocks() -> 
                 "runs/index.csv",
             ]
             assert work_item.task_request.request_payload["developer_loop"]["evaluation"]["mode"] == "synth_prefilter"
+
+
+def test_generate_l1_sweep_task_accepts_hierarchical_architecture_block_sweeps() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_block_repo(
+            repo_root,
+            mode_compare=False,
+            synth_hierarchical=1,
+        )
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/npu_blocks",
+                    requested_by="@tester",
+                    source_commit="sig123",
+                    abstraction_layer="architecture_block",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert result.status == "applied"
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
+                "layer": "architecture_block"
+            }
+            assert "--sweep runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/sweep_compare_33.json" in work_item.command_manifest[2]["run"]

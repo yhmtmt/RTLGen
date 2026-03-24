@@ -76,6 +76,41 @@ def _load_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _contains_disabled_hierarchy(value: object) -> bool:
+    if isinstance(value, list):
+        return any(_contains_disabled_hierarchy(entry) for entry in value)
+    if isinstance(value, bool):
+        return not value
+    if isinstance(value, (int, float)):
+        return int(value) == 0
+    token = str(value).strip().lower()
+    return token in {"0", "false", "no", "off", "disable", "disabled"}
+
+
+def _validate_architecture_block_sweep_policy(
+    *,
+    sweep_path: Path,
+    abstraction_layer: str | None,
+) -> None:
+    if str(abstraction_layer or "").strip() != "architecture_block":
+        return
+    sweep = _load_json(sweep_path)
+    flow_params = sweep.get("flow_params") or {}
+    if not isinstance(flow_params, dict):
+        raise Layer1TaskGenerationError(f"flow_params must be an object in {sweep_path}")
+    hier_value = flow_params.get("SYNTH_HIERARCHICAL")
+    if hier_value is not None and _contains_disabled_hierarchy(hier_value):
+        raise Layer1TaskGenerationError(
+            "architecture_block sweeps must keep hierarchy in early-stage evaluation; "
+            f"found non-hierarchical SYNTH_HIERARCHICAL setting in {sweep_path}"
+        )
+    if sweep.get("mode_compare") is not None:
+        raise Layer1TaskGenerationError(
+            "architecture_block sweeps must not use mode_compare/flat_nomacro in early-stage evaluation; "
+            f"use a hierarchy-preserving sweep instead: {sweep_path}"
+        )
+
+
 def _read_config_target(
     config_path: Path,
     *,
@@ -373,6 +408,10 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
 
     repo_root = Path(request.repo_root).resolve()
     sweep_path = _repo_rel(request.sweep_path, repo_root)
+    _validate_architecture_block_sweep_policy(
+        sweep_path=(repo_root / sweep_path).resolve(),
+        abstraction_layer=request.abstraction_layer,
+    )
     config_paths = [_repo_rel(path, repo_root) for path in request.config_paths]
     out_root = _repo_rel(request.out_root, repo_root)
     proposal_path = _repo_rel(request.proposal_path, repo_root) if request.proposal_path else None
