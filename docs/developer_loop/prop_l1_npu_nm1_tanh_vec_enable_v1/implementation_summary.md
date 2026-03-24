@@ -32,13 +32,14 @@
 ## Remote Evaluation
 - pushed implementation commit: `63f003accd22559c6bd0200b2adfcd9b5873f6f3`
 - initial queue attempt `r1` failed only because of an incorrect full SHA
-- current valid item:
-  - `l1_prop_l1_npu_nm1_tanh_vec_enable_v1_r2`
-  - state: `LEASED`
-  - objective: `npu_nm1_tanh_vec_physical_metrics`
-  - config: `runs/designs/npu_blocks/npu_fp16_cpp_nm1_tanhproxy/config_nm1_tanhproxy.json`
-  - sweep: `runs/designs/npu_blocks/npu_fp16_cpp_nm1_tanhproxy/sweep_proxy_firstpass.json`
+- accepted remote evidence:
+  - PR `#81`
+  - DB item `l1_prop_l1_npu_nm1_tanh_vec_enable_v1_r2`
+  - accepted best point:
+    - `param_hash`: `bf5fc187`
+    - `critical_path_ns`: `2.8082`
+    - `die_area`: `1440000.0`
+    - `total_power_mw`: `0.000358`
 
 ## Next Step
-- let `r2` finish on the evaluator
-- then review the resulting Layer 1 evidence PR for the reduced tanh proxy source
+- seed the next bounded Layer 2 tanh direct-output work against the accepted reduced tanh architecture-block source

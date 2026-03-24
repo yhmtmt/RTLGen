@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l1_npu_nm1_tanh_vec_enable_v1",
+  "decision": "promote",
+  "pr_number": 81,
+  "merge_commit": "2e444224c4cd46a943897baf2b9fdcc6e9685c82",
+  "merged_utc": "2026-03-24T12:58:59Z"
+}

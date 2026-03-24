@@ -16,8 +16,8 @@
       "task_type": "l1_sweep",
       "evaluation_mode": "measurement_only",
       "objective": "npu_nm1_tanh_vec_physical_metrics",
-      "status": "leased",
-      "notes": "Current valid reduced-proxy architecture-block sweep against the correct pushed tanh-enable commit.",
+      "status": "merged",
+      "notes": "Accepted reduced-proxy architecture-block sweep for the integrated nm1 tanh-enable source, merged via PR #81.",
       "abstraction_layer": "architecture_block",
       "config_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_tanhproxy/config_nm1_tanhproxy.json",
       "sweep_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_tanhproxy/sweep_proxy_firstpass.json"

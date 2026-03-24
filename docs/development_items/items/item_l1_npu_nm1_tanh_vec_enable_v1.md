@@ -3,11 +3,11 @@
 - item_id: `item_l1_npu_nm1_tanh_vec_enable_v1`
 - layer: `layer1`
 - kind: `circuit`
-- status: `promoted_to_proposal`
+- status: `merged`
 - priority: `high`
 - owner: `developer_agent`
 - created_utc: `2026-03-24T12:15:00Z`
-- updated_utc: `2026-03-24T12:15:00Z`
+- updated_utc: `2026-03-24T12:58:59Z`
 - proposal_id: `prop_l1_npu_nm1_tanh_vec_enable_v1`
 - proposal_path: `docs/developer_loop/prop_l1_npu_nm1_tanh_vec_enable_v1`
 - triggered_by_proposal: `prop_l2_mapper_terminal_activation_family_v1`
@@ -65,3 +65,12 @@
 - promote when the proposal names one bounded integrated tanh-enabled `nm1`
   path, keeps the first remote evaluation focused on physical source evidence,
   and explicitly defers Layer 2 tanh evaluation until that source exists
+
+## Outcome
+- accepted physical evidence: PR `#81` / item `l1_prop_l1_npu_nm1_tanh_vec_enable_v1_r2`
+- accepted best reduced-proxy point:
+  - `param_hash`: `bf5fc187`
+  - `critical_path_ns`: `2.8082`
+  - `die_area`: `1440000.0`
+  - `total_power_mw`: `0.000358`
+- follow-on: seed bounded Layer 2 tanh direct-output work

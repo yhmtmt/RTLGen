@@ -1,0 +1,14 @@
+{
+  "proposal_id": "prop_l1_npu_nm1_tanh_vec_enable_v1",
+  "candidate_id": "l1_prop_l1_npu_nm1_tanh_vec_enable_v1_r2",
+  "decision": "promote",
+  "reason": "Merged PR #81 establishes the first accepted integrated tanh-enabled nm1 architecture-block physical result, using the reduced proxy target to produce real Nangate45 timing, area, and power metrics sufficient to unblock downstream bounded Layer 2 tanh work.",
+  "evidence_refs": [
+    "https://github.com/yhmtmt/RTLGen/pull/81",
+    "control_plane/shadow_exports/l1_promotions/l1_prop_l1_npu_nm1_tanh_vec_enable_v1_r2.json",
+    "runs/designs/npu_blocks/npu_fp16_cpp_nm1_tanhproxy/metrics.csv",
+    "runs/index.csv"
+  ],
+  "next_action": "seed the next bounded Layer 2 tanh direct-output work against the accepted integrated tanh architecture-block source",
+  "requires_human_approval": false
+}
