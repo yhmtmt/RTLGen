@@ -1,0 +1,55 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-03-24T11:54:58.898998Z",
+  "item_id": "l1_prop_l1_terminal_tanh_block_v1_nangate45_r1",
+  "run_key": "l1_prop_l1_terminal_tanh_block_v1_nangate45_r1_run_2ab9ac7613b484ad",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "285e73d18ab46245c99ccbca44ce8e4590ece723",
+  "objective": "terminal_tanh_physical_metrics",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/activations/sweeps/nangate45_terminal_tanh_int8_pwl_v1.json"
+    ],
+    "configs": [
+      "runs/designs/activations/terminal_tanh_int8_pwl_wrapper/config_terminal_tanh_int8_pwl.json"
+    ],
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": [
+      "third_party/nlohmann_json",
+      "third_party/cacti"
+    ]
+  },
+  "proposal_count": 1,
+  "evaluation_record": {
+    "evaluation_mode": "measurement_only",
+    "abstraction_layer": "circuit_block",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/terminal_tanh_int8_pwl_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "23010967",
+        "tag": "terminal_tanh_int8_pwl_ng45_v1_97899059",
+        "result_path": "runs/designs/activations/terminal_tanh_int8_pwl_wrapper/work/23010967/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 0.1899,
+        "die_area": 25600.0,
+        "total_power_mw": 0.000111
+      }
+    }
+  ]
+}
