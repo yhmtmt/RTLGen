@@ -660,11 +660,12 @@ def build_softmax_classifier_model_bytes(
     return bytes(model)
 
 
-def build_terminal_relu_model_bytes(
+def _build_terminal_unary_model_bytes(
     *,
     name: str,
     b: int,
     input_shape: List[int],
+    op_type: str,
     dtype: int = TENSOR_INT8,
     add_flatten: bool = False,
     add_cast: bool = False,
@@ -672,8 +673,8 @@ def build_terminal_relu_model_bytes(
     ir_version: int = 8,
 ) -> bytes:
     """
-    Build a tiny terminal vec-op ONNX graph using:
-      optional Flatten -> optional Cast -> Relu
+    Build a tiny terminal unary-op ONNX graph using:
+      optional Flatten -> optional Cast -> <op_type>
 
     Notes:
     - This is intentionally small and shape-driven for mapper bring-up.
@@ -705,7 +706,7 @@ def build_terminal_relu_model_bytes(
         cast_out = "Xc"
         nodes.append(_encode_node("Cast", [current], [cast_out], name="Cast0"))
         current = cast_out
-    nodes.append(_encode_node("Relu", [current], ["Y"], name="Relu0"))
+    nodes.append(_encode_node(op_type, [current], ["Y"], name=f"{op_type}0"))
 
     graph = _encode_graph(
         name=name,
@@ -720,6 +721,54 @@ def build_terminal_relu_model_bytes(
     model += _enc_ld(8, _encode_opset_import("", opset_version))
     model += _enc_ld(7, graph)
     return bytes(model)
+
+
+def build_terminal_relu_model_bytes(
+    *,
+    name: str,
+    b: int,
+    input_shape: List[int],
+    dtype: int = TENSOR_INT8,
+    add_flatten: bool = False,
+    add_cast: bool = False,
+    opset_version: int = 13,
+    ir_version: int = 8,
+) -> bytes:
+    return _build_terminal_unary_model_bytes(
+        name=name,
+        b=b,
+        input_shape=input_shape,
+        op_type="Relu",
+        dtype=dtype,
+        add_flatten=add_flatten,
+        add_cast=add_cast,
+        opset_version=opset_version,
+        ir_version=ir_version,
+    )
+
+
+def build_terminal_sigmoid_model_bytes(
+    *,
+    name: str,
+    b: int,
+    input_shape: List[int],
+    dtype: int = TENSOR_INT8,
+    add_flatten: bool = False,
+    add_cast: bool = False,
+    opset_version: int = 13,
+    ir_version: int = 8,
+) -> bytes:
+    return _build_terminal_unary_model_bytes(
+        name=name,
+        b=b,
+        input_shape=input_shape,
+        op_type="Sigmoid",
+        dtype=dtype,
+        add_flatten=add_flatten,
+        add_cast=add_cast,
+        opset_version=opset_version,
+        ir_version=ir_version,
+    )
 
 
 def write_mlp_model(path: Union[str, Path], *, preset: str) -> None:

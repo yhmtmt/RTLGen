@@ -53,6 +53,7 @@ VEC_OP_FLAGS = {
     "dgelu": 0x7,
     "dsoftmax": 0x8,
     "dlayernorm": 0x9,
+    "sigmoid": 0xA,
 }
 
 

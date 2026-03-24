@@ -474,16 +474,16 @@ def _infer_terminal_vecop_graph(
         batch_override=batch_override,
     )
     tail_consumers = consumers.get(current_name, [])
-    relu_nodes = [n for n in tail_consumers if n.op_type == "Relu"]
-    if len(relu_nodes) != 1 or len(tail_consumers) != 1:
+    terminal_vec_nodes = [n for n in tail_consumers if n.op_type in {"Relu", "Sigmoid"}]
+    if len(terminal_vec_nodes) != 1 or len(tail_consumers) != 1:
         raise ValueError(
-            f"expected a single terminal Relu consumer on {current_name!r}, "
+            f"expected a single terminal Relu or Sigmoid consumer on {current_name!r}, "
             f"got {[n.op_type for n in tail_consumers]}"
         )
-    relu_node = relu_nodes[0]
-    if not relu_node.outputs:
-        raise ValueError("Relu node missing outputs")
-    terminal_output_name = relu_node.outputs[0]
+    terminal_vec_node = terminal_vec_nodes[0]
+    if not terminal_vec_node.outputs:
+        raise ValueError(f"{terminal_vec_node.op_type} node missing outputs")
+    terminal_output_name = terminal_vec_node.outputs[0]
     graph_outputs = set(g.outputs.keys())
     if terminal_output_name not in graph_outputs:
         raise ValueError(
@@ -494,7 +494,7 @@ def _infer_terminal_vecop_graph(
         input_name=x_name,
         flatten_input=flatten_input,
         input_cast=input_cast,
-        vec_op="relu",
+        vec_op=str(terminal_vec_node.op_type).lower(),
         terminal_output_name=terminal_output_name,
         ignored_graph_outputs=sorted(name for name in graph_outputs if name != terminal_output_name),
     )
