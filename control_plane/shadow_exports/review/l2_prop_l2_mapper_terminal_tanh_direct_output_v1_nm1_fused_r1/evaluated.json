@@ -1,0 +1,130 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm1_tanhproxy/sweep_proxy_firstpass.json"
+      ],
+      "configs": [
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm1_tanhproxy/config_nm1_tanhproxy.json"
+      ],
+      "design_dirs": [
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm1_tanhproxy"
+      ],
+      "macro_manifests": [],
+      "generated_campaign": {
+        "path": "runs/campaigns/npu/e2e_eval_onnx_terminal_tanh_suite_fused_nm1_v1/campaign__l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1.json",
+        "outputs": {
+          "report_md": "runs/campaigns/npu/e2e_eval_onnx_terminal_tanh_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1/report.md",
+          "results_csv": "runs/campaigns/npu/e2e_eval_onnx_terminal_tanh_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1/results.csv",
+          "campaign_dir": "runs/campaigns/npu/e2e_eval_onnx_terminal_tanh_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1"
+        },
+        "base_campaign_path": "runs/campaigns/npu/e2e_eval_onnx_terminal_tanh_suite_fused_nm1_v1/campaign.json"
+      },
+      "candidate_manifests": []
+    },
+    "commands": [
+      {
+        "run": "python3 npu/eval/fetch_models.py --manifest runs/models/onnx_terminal_tanh_suite_v1/manifest.json",
+        "name": "fetch_models"
+      },
+      {
+        "run": "python3 npu/eval/validate.py --campaign runs/campaigns/npu/e2e_eval_onnx_terminal_tanh_suite_fused_nm1_v1/campaign__l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1.json --check_paths",
+        "name": "validate_campaign"
+      },
+      {
+        "run": "python3 npu/eval/run_campaign.py --campaign runs/campaigns/npu/e2e_eval_onnx_terminal_tanh_suite_fused_nm1_v1/campaign__l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1.json --run_physical --jobs 2 --batch_id l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1_r1",
+        "name": "run_campaign"
+      },
+      {
+        "run": "python3 npu/eval/report_campaign.py --campaign runs/campaigns/npu/e2e_eval_onnx_terminal_tanh_suite_fused_nm1_v1/campaign__l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1.json",
+        "name": "report_campaign"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "terminal_tanh_direct_output_pair",
+    "acceptance": [
+      "Populate metrics.csv for all referenced design dirs",
+      "Write campaign summary outputs under the campaign output directory",
+      "Keep result_path/work_result_json fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/campaigns/npu/e2e_eval_onnx_terminal_tanh_suite_fused_nm1_v1/campaign__l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1.json",
+      "runs/campaigns/npu/e2e_eval_onnx_terminal_tanh_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1/results.csv",
+      "runs/campaigns/npu/e2e_eval_onnx_terminal_tanh_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1/report.md",
+      "runs/campaigns/npu/e2e_eval_onnx_terminal_tanh_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1/summary.csv",
+      "runs/campaigns/npu/e2e_eval_onnx_terminal_tanh_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1/pareto.csv",
+      "runs/campaigns/npu/e2e_eval_onnx_terminal_tanh_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1/best_point.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_tanhproxy/metrics.csv"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "Terminal tanh direct-output paired comparison",
+  "result": {
+    "branch": "eval/l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1/s20260324t140524z",
+    "completed_utc": "2026-03-24T14:00:27.105294Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "73c7e3a71ee5",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260324t140524z][host:73c7e3a71ee5][item:l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1]",
+    "metrics_rows": [
+      {
+        "tag": "npu_fp16_nm1_tanhproxy_firstpass",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "bf5fc187",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_tanhproxy/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_tanhproxy/work/bf5fc187/result.json"
+      }
+    ],
+    "queue_item_id": "l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1",
+    "session_id": "s20260324t140524z",
+    "status": "ok",
+    "summary": "5/5 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1/s20260324t140524z",
+    "pr_title": "eval: run terminal tanh direct-output paired comparison",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "73c7e3a71ee5",
+      "session_id": "s20260324t140524z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-03-24T14:00:15.076934Z",
+  "requested_by": "control_plane",
+  "developer_loop": {
+    "comparison": {
+      "role": "candidate",
+      "paired_baseline_item_id": "l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_measurement_r1"
+    },
+    "evaluation": {
+      "mode": "paired_comparison",
+      "expected_reason": "direct vec-op output should remove the final activation-SRAM writeback roundtrip on the bounded tanh suite",
+      "expected_direction": "improved"
+    },
+    "abstraction": {
+      "layer": "full_architecture"
+    },
+    "proposal_id": "prop_l2_mapper_terminal_tanh_direct_output_v1",
+    "proposal_path": "docs/developer_loop/prop_l2_mapper_terminal_tanh_direct_output_v1/proposal.json"
+  }
+}

@@ -1,0 +1,152 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-03-24T14:05:24.463106Z",
+  "item_id": "l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1",
+  "run_key": "l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1_run_b01600a408e657fc",
+  "layer": "layer2",
+  "flow": "openroad",
+  "task_type": "l2_campaign",
+  "source_commit": "d23d995834b2af9eed81b52aa4320838c7fd2d75",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1/evaluated.json",
+    "result": {
+      "branch": "eval/l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1/s20260324t140524z",
+      "completed_utc": "2026-03-24T14:00:27.105294Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "73c7e3a71ee5",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260324t140524z][host:73c7e3a71ee5][item:l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1]",
+      "metrics_rows": [
+        {
+          "tag": "npu_fp16_nm1_tanhproxy_firstpass",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "bf5fc187",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_tanhproxy/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_tanhproxy/work/bf5fc187/result.json"
+        }
+      ],
+      "queue_item_id": "l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1",
+      "session_id": "s20260324t140524z",
+      "status": "ok",
+      "summary": "5/5 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "decision_proposal",
+    "path": "control_plane/shadow_exports/l2_decisions/l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1.json",
+    "storage_mode": "repo",
+    "sha256": "1c71f5a0b7e907fc6f6ef281bec69536395f12a1487a75e5215daf44633abee7",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-03-24T14:05:24.435842Z",
+      "item_id": "l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1",
+      "run_key": "l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1_run_b01600a408e657fc",
+      "layer": "layer2",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l2_campaign",
+      "source_commit": "d23d995834b2af9eed81b52aa4320838c7fd2d75",
+      "objective": "terminal_tanh_direct_output_pair",
+      "input_manifest": {
+        "sweeps": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_tanhproxy/sweep_proxy_firstpass.json"
+        ],
+        "configs": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_tanhproxy/config_nm1_tanhproxy.json"
+        ],
+        "design_dirs": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_tanhproxy"
+        ],
+        "macro_manifests": [],
+        "generated_campaign": {
+          "path": "runs/campaigns/npu/e2e_eval_onnx_terminal_tanh_suite_fused_nm1_v1/campaign__l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1.json",
+          "outputs": {
+            "report_md": "runs/campaigns/npu/e2e_eval_onnx_terminal_tanh_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1/report.md",
+            "results_csv": "runs/campaigns/npu/e2e_eval_onnx_terminal_tanh_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1/results.csv",
+            "campaign_dir": "runs/campaigns/npu/e2e_eval_onnx_terminal_tanh_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1"
+          },
+          "base_campaign_path": "runs/campaigns/npu/e2e_eval_onnx_terminal_tanh_suite_fused_nm1_v1/campaign.json"
+        },
+        "candidate_manifests": []
+      },
+      "recommendation": {
+        "arch_id": "fp16_nm1_tanhproxy",
+        "macro_mode": "hier_macro",
+        "objective_rank": 1,
+        "objective_score": "0.0",
+        "latency_ms_mean": 0.0052699999999999995,
+        "energy_mj_mean": 1.88666e-09,
+        "critical_path_ns_mean": 2.8082,
+        "die_area_um2_mean": 1440000.0,
+        "total_power_mw_mean": 0.000358,
+        "flow_elapsed_s_mean": 48.03
+      },
+      "objective_profiles": [],
+      "evaluation_record": null,
+      "proposal_assessment": null,
+      "source_refs": {
+        "best_point_json": "runs/campaigns/npu/e2e_eval_onnx_terminal_tanh_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1/best_point.json",
+        "summary_csv": "runs/campaigns/npu/e2e_eval_onnx_terminal_tanh_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1/summary.csv",
+        "results_csv": "runs/campaigns/npu/e2e_eval_onnx_terminal_tanh_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1/results.csv",
+        "report_md": "runs/campaigns/npu/e2e_eval_onnx_terminal_tanh_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1/report.md",
+        "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_onnx_terminal_tanh_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1_tanhproxy/tanh_vec_b128_f64/schedule.yml",
+        "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_terminal_tanh_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1_tanhproxy/tanh_vec_b128_f64/descriptors.bin",
+        "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_onnx_terminal_tanh_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1/artifacts/perf/fp16_nm1_tanhproxy/tanh_vec_b128_f64/trace.json",
+        "focused_model_artifacts": [
+          {
+            "model_id": "tanh_vec_b128_f64",
+            "schedule_yml": "runs/campaigns/npu/e2e_eval_onnx_terminal_tanh_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1_tanhproxy/tanh_vec_b128_f64/schedule.yml",
+            "descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_terminal_tanh_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1_tanhproxy/tanh_vec_b128_f64/descriptors.bin",
+            "perf_trace_json": "runs/campaigns/npu/e2e_eval_onnx_terminal_tanh_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1/artifacts/perf/fp16_nm1_tanhproxy/tanh_vec_b128_f64/trace.json"
+          },
+          {
+            "model_id": "tanh_vec_b256_f256",
+            "schedule_yml": "runs/campaigns/npu/e2e_eval_onnx_terminal_tanh_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1_tanhproxy/tanh_vec_b256_f256/schedule.yml",
+            "descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_terminal_tanh_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1_tanhproxy/tanh_vec_b256_f256/descriptors.bin",
+            "perf_trace_json": "runs/campaigns/npu/e2e_eval_onnx_terminal_tanh_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1/artifacts/perf/fp16_nm1_tanhproxy/tanh_vec_b256_f256/trace.json"
+          },
+          {
+            "model_id": "tanh_vec_flatten_b128_2x4x8",
+            "schedule_yml": "runs/campaigns/npu/e2e_eval_onnx_terminal_tanh_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1_tanhproxy/tanh_vec_flatten_b128_2x4x8/schedule.yml",
+            "descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_terminal_tanh_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1_tanhproxy/tanh_vec_flatten_b128_2x4x8/descriptors.bin",
+            "perf_trace_json": "runs/campaigns/npu/e2e_eval_onnx_terminal_tanh_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1/artifacts/perf/fp16_nm1_tanhproxy/tanh_vec_flatten_b128_2x4x8/trace.json"
+          }
+        ]
+      }
+    }
+  },
+  "developer_loop": {
+    "comparison": {
+      "role": "candidate",
+      "paired_baseline_item_id": "l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_measurement_r1"
+    },
+    "evaluation": {
+      "mode": "paired_comparison",
+      "expected_reason": "direct vec-op output should remove the final activation-SRAM writeback roundtrip on the bounded tanh suite",
+      "expected_direction": "improved"
+    },
+    "abstraction": {
+      "layer": "full_architecture"
+    },
+    "proposal_id": "prop_l2_mapper_terminal_tanh_direct_output_v1",
+    "proposal_path": "docs/developer_loop/prop_l2_mapper_terminal_tanh_direct_output_v1/proposal.json"
+  },
+  "pr_payload": {
+    "branch": "eval/l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1/s20260324t140524z",
+    "title": "eval: run terminal tanh direct-output paired comparison",
+    "body_fields": {
+      "host": "73c7e3a71ee5",
+      "session_id": "s20260324t140524z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1"
+    },
+    "body_md": "## Summary\n- item_id: `l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1`\n- run_key: `l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1_run_b01600a408e657fc`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `5/5 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1/evaluated.json`\n- metrics_rows_count: `1`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_prop_l2_mapper_terminal_tanh_direct_output_v1_nm1_fused_r1.json`\n\n## Developer Context\n- proposal_id: `prop_l2_mapper_terminal_tanh_direct_output_v1`\n- proposal_path: `docs/developer_loop/prop_l2_mapper_terminal_tanh_direct_output_v1/proposal.json`\n- reviewer_first_read: `docs/developer_loop/prop_l2_mapper_terminal_tanh_direct_output_v1/proposal.json` plus `docs/developer_agent_review.md`\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
