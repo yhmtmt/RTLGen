@@ -1,0 +1,334 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-03-24T09:11:49.075788Z",
+  "item_id": "l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1",
+  "run_key": "l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1_run_094dcc51a8e51d63",
+  "layer": "layer2",
+  "flow": "openroad",
+  "task_type": "l2_campaign",
+  "source_commit": "91724473c5a6c1f697a3d36ca9c1d353f9871816",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1/evaluated.json",
+    "result": {
+      "branch": "eval/l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1/s20260324t091149z",
+      "completed_utc": "2026-03-24T09:08:43.988488Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "73c7e3a71ee5",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260324t091149z][host:73c7e3a71ee5][item:l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1]",
+      "metrics_rows": [
+        {
+          "tag": "npu_fp16_nm1_sigmoidproxy_firstpass",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "b5526579",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidproxy/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidproxy/work/b5526579/result.json"
+        }
+      ],
+      "queue_item_id": "l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1",
+      "session_id": "s20260324t091149z",
+      "status": "ok",
+      "summary": "5/5 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "decision_proposal",
+    "path": "control_plane/shadow_exports/l2_decisions/l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1.json",
+    "storage_mode": "repo",
+    "sha256": "ee574429d98245336137c71b6851e0a62909714ab850049cbb93e91bcc30f7d7",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-03-24T09:11:49.041585Z",
+      "item_id": "l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1",
+      "run_key": "l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1_run_094dcc51a8e51d63",
+      "layer": "layer2",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l2_campaign",
+      "source_commit": "91724473c5a6c1f697a3d36ca9c1d353f9871816",
+      "objective": "terminal_activation_direct_output_vs_nonfused",
+      "input_manifest": {
+        "sweeps": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidproxy/sweep_proxy_firstpass.json"
+        ],
+        "configs": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidproxy/config_nm1_sigmoidproxy.json"
+        ],
+        "design_dirs": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidproxy"
+        ],
+        "macro_manifests": [],
+        "generated_campaign": {
+          "path": "runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_fused_nm1_v1/campaign__l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1.json",
+          "outputs": {
+            "report_md": "runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1/report.md",
+            "results_csv": "runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1/results.csv",
+            "campaign_dir": "runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1"
+          },
+          "base_campaign_path": "runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_fused_nm1_v1/campaign.json"
+        },
+        "candidate_manifests": []
+      },
+      "recommendation": {
+        "arch_id": "fp16_nm1_sigmoidproxy",
+        "macro_mode": "hier_macro",
+        "objective_rank": 1,
+        "objective_score": "0.0",
+        "latency_ms_mean": 0.0052699999999999995,
+        "energy_mj_mean": 1.8972e-09,
+        "critical_path_ns_mean": 2.7883,
+        "die_area_um2_mean": 1440000.0,
+        "total_power_mw_mean": 0.00036,
+        "flow_elapsed_s_mean": 55.809999999999995
+      },
+      "objective_profiles": [],
+      "evaluation_record": {
+        "proposal_id": "prop_l2_mapper_terminal_activation_family_v1",
+        "title": "Terminal activation-family direct output",
+        "primary_question": "Can a bounded nonlinear terminal activation family establish clean nm1 reference points first, then show a direct-output win on those same points without reopening broader ranking?",
+        "evaluation_mode": "paired_comparison",
+        "comparison_role": "candidate",
+        "abstraction_layer": "full_architecture",
+        "expected_direction": "better_than_historical",
+        "expected_reason": "Direct terminal sigmoid vec-op output should reduce the final writeback tail on at least part of the bounded sigmoid-first suite against the accepted non-fused baseline.",
+        "summary": "Focused comparison improved latency and/or energy without regressing matched rows.",
+        "baseline_ref": "runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_activation_family_v1_nm1_measurement_r1",
+        "baseline_item_id": "l2_prop_l2_mapper_terminal_activation_family_v1_nm1_measurement_r1",
+        "outcome": "improved",
+        "expectation_status": "as_expected"
+      },
+      "proposal_assessment": {
+        "proposal_id": "prop_l2_mapper_terminal_activation_family_v1",
+        "title": "Terminal activation-family direct output",
+        "kind": "mapper",
+        "primary_question": "Can a bounded nonlinear terminal activation family establish clean nm1 reference points first, then show a direct-output win on those same points without reopening broader ranking?",
+        "evaluation_mode": "paired_comparison",
+        "comparison_role": "candidate",
+        "outcome": "improved",
+        "summary": "Focused comparison improved latency and/or energy without regressing matched rows.",
+        "baseline_ref": "runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_activation_family_v1_nm1_measurement_r1",
+        "baseline_item_id": "l2_prop_l2_mapper_terminal_activation_family_v1_nm1_measurement_r1",
+        "matched_row_count": 4,
+        "matched_rows": [
+          {
+            "scope": "model",
+            "arch_id": "fp16_nm1_sigmoidproxy",
+            "macro_mode": "hier_macro",
+            "model_id": "sigmoid_vec_b128_f64",
+            "metrics": {
+              "latency_ms_mean": {
+                "baseline": 0.0022979999999999997,
+                "candidate": 0.001686,
+                "delta": -0.0006119999999999997
+              },
+              "energy_mj_mean": {
+                "baseline": 8.272800000000001e-10,
+                "candidate": 6.0696e-10,
+                "delta": -2.2032000000000002e-10
+              },
+              "critical_path_ns_mean": {
+                "baseline": 2.7883,
+                "candidate": 2.7883,
+                "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.00036,
+                "candidate": 0.00036,
+                "delta": 0.0
+              },
+              "flow_elapsed_s_mean": {
+                "baseline": 55.809999999999995,
+                "candidate": 55.809999999999995,
+                "delta": 0.0
+              },
+              "throughput_infer_per_s_mean": {
+                "baseline": 435161.0095735423,
+                "candidate": 593119.8102016607,
+                "delta": 157958.80062811845
+              }
+            }
+          },
+          {
+            "scope": "model",
+            "arch_id": "fp16_nm1_sigmoidproxy",
+            "macro_mode": "hier_macro",
+            "model_id": "sigmoid_vec_b256_f256",
+            "metrics": {
+              "latency_ms_mean": {
+                "baseline": 0.016634,
+                "candidate": 0.012438,
+                "delta": -0.004196
+              },
+              "energy_mj_mean": {
+                "baseline": 5.988240000000001e-09,
+                "candidate": 4.47768e-09,
+                "delta": -1.5105600000000006e-09
+              },
+              "critical_path_ns_mean": {
+                "baseline": 2.7883,
+                "candidate": 2.7883,
+                "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.00036,
+                "candidate": 0.00036,
+                "delta": 0.0
+              },
+              "flow_elapsed_s_mean": {
+                "baseline": 55.809999999999995,
+                "candidate": 55.809999999999995,
+                "delta": 0.0
+              },
+              "throughput_infer_per_s_mean": {
+                "baseline": 60117.83094865937,
+                "candidate": 80398.77793857534,
+                "delta": 20280.946989915967
+              }
+            }
+          },
+          {
+            "scope": "model",
+            "arch_id": "fp16_nm1_sigmoidproxy",
+            "macro_mode": "hier_macro",
+            "model_id": "sigmoid_vec_flatten_b128_2x4x8",
+            "metrics": {
+              "latency_ms_mean": {
+                "baseline": 0.0022979999999999997,
+                "candidate": 0.001686,
+                "delta": -0.0006119999999999997
+              },
+              "energy_mj_mean": {
+                "baseline": 8.272800000000001e-10,
+                "candidate": 6.0696e-10,
+                "delta": -2.2032000000000002e-10
+              },
+              "critical_path_ns_mean": {
+                "baseline": 2.7883,
+                "candidate": 2.7883,
+                "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.00036,
+                "candidate": 0.00036,
+                "delta": 0.0
+              },
+              "flow_elapsed_s_mean": {
+                "baseline": 55.809999999999995,
+                "candidate": 55.809999999999995,
+                "delta": 0.0
+              },
+              "throughput_infer_per_s_mean": {
+                "baseline": 435161.0095735423,
+                "candidate": 593119.8102016607,
+                "delta": 157958.80062811845
+              }
+            }
+          },
+          {
+            "scope": "aggregate",
+            "arch_id": "fp16_nm1_sigmoidproxy",
+            "macro_mode": "hier_macro",
+            "model_id": null,
+            "metrics": {
+              "latency_ms_mean": {
+                "baseline": 0.007076666666666666,
+                "candidate": 0.0052699999999999995,
+                "delta": -0.0018066666666666665
+              },
+              "energy_mj_mean": {
+                "baseline": 2.5476e-09,
+                "candidate": 1.8972e-09,
+                "delta": -6.504000000000002e-10
+              },
+              "critical_path_ns_mean": {
+                "baseline": 2.7883,
+                "candidate": 2.7883,
+                "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.00036,
+                "candidate": 0.00036,
+                "delta": 0.0
+              },
+              "flow_elapsed_s_mean": {
+                "baseline": 55.809999999999995,
+                "candidate": 55.809999999999995,
+                "delta": 0.0
+              },
+              "throughput_infer_per_s_mean": {
+                "baseline": 310146.6166985813,
+                "candidate": 422212.799447299,
+                "delta": 112066.18274871766
+              }
+            }
+          }
+        ]
+      },
+      "source_refs": {
+        "best_point_json": "runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1/best_point.json",
+        "summary_csv": "runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1/summary.csv",
+        "results_csv": "runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1/results.csv",
+        "report_md": "runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1/report.md",
+        "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1_sigmoidproxy/sigmoid_vec_b128_f64/schedule.yml",
+        "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1_sigmoidproxy/sigmoid_vec_b128_f64/descriptors.bin",
+        "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1/artifacts/perf/fp16_nm1_sigmoidproxy/sigmoid_vec_b128_f64/trace.json",
+        "focused_model_artifacts": [
+          {
+            "model_id": "sigmoid_vec_b128_f64",
+            "schedule_yml": "runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1_sigmoidproxy/sigmoid_vec_b128_f64/schedule.yml",
+            "descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1_sigmoidproxy/sigmoid_vec_b128_f64/descriptors.bin",
+            "perf_trace_json": "runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1/artifacts/perf/fp16_nm1_sigmoidproxy/sigmoid_vec_b128_f64/trace.json"
+          },
+          {
+            "model_id": "sigmoid_vec_b256_f256",
+            "schedule_yml": "runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1_sigmoidproxy/sigmoid_vec_b256_f256/schedule.yml",
+            "descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1_sigmoidproxy/sigmoid_vec_b256_f256/descriptors.bin",
+            "perf_trace_json": "runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1/artifacts/perf/fp16_nm1_sigmoidproxy/sigmoid_vec_b256_f256/trace.json"
+          },
+          {
+            "model_id": "sigmoid_vec_flatten_b128_2x4x8",
+            "schedule_yml": "runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1_sigmoidproxy/sigmoid_vec_flatten_b128_2x4x8/schedule.yml",
+            "descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1_sigmoidproxy/sigmoid_vec_flatten_b128_2x4x8/descriptors.bin",
+            "perf_trace_json": "runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1/artifacts/perf/fp16_nm1_sigmoidproxy/sigmoid_vec_flatten_b128_2x4x8/trace.json"
+          }
+        ],
+        "baseline_summary_csv": "runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_activation_family_v1_nm1_measurement_r1/summary.csv",
+        "baseline_report_md": "runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_activation_family_v1_nm1_measurement_r1/report.md"
+      }
+    }
+  },
+  "developer_loop": {
+    "comparison": {
+      "role": "candidate",
+      "paired_baseline_item_id": "l2_prop_l2_mapper_terminal_activation_family_v1_nm1_measurement_r1"
+    },
+    "evaluation": {
+      "mode": "paired_comparison",
+      "expected_reason": "Direct terminal sigmoid vec-op output should reduce the final writeback tail on at least part of the bounded sigmoid-first suite against the accepted non-fused baseline.",
+      "expected_direction": "better_than_historical"
+    },
+    "abstraction": {
+      "layer": "full_architecture"
+    },
+    "proposal_id": "prop_l2_mapper_terminal_activation_family_v1",
+    "proposal_path": "docs/developer_loop/prop_l2_mapper_terminal_activation_family_v1"
+  },
+  "pr_payload": {
+    "branch": "eval/l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1/s20260324t091149z",
+    "title": "eval: run compare sigmoid activation-family direct output on nm1",
+    "body_fields": {
+      "host": "73c7e3a71ee5",
+      "session_id": "s20260324t091149z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1"
+    },
+    "body_md": "## Summary\n- item_id: `l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1`\n- run_key: `l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1_run_094dcc51a8e51d63`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `5/5 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1/evaluated.json`\n- metrics_rows_count: `1`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1.json`\n\n## Developer Context\n- proposal_id: `prop_l2_mapper_terminal_activation_family_v1`\n- proposal_path: `docs/developer_loop/prop_l2_mapper_terminal_activation_family_v1`\n- reviewer_first_read: `docs/developer_loop/prop_l2_mapper_terminal_activation_family_v1` plus `docs/developer_agent_review.md`\n\n## Evaluation Mode\n- evaluation_mode: `paired_comparison`\n- abstraction_layer: `full_architecture`\n- comparison_role: `candidate`\n- expected_direction: `better_than_historical`\n- expected_reason: `Direct terminal sigmoid vec-op output should reduce the final writeback tail on at least part of the bounded sigmoid-first suite against the accepted non-fused baseline.`\n- expectation_status: `as_expected`\n- evaluation_summary: `Focused comparison improved latency and/or energy without regressing matched rows.`\n\n## Focused Comparison\n- primary_question: `Can a bounded nonlinear terminal activation family establish clean nm1 reference points first, then show a direct-output win on those same points without reopening broader ranking?`\n- comparison_role: `candidate`\n- proposal_outcome: `improved`\n- comparison_summary: `Focused comparison improved latency and/or energy without regressing matched rows.`\n- baseline_ref: `runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_activation_family_v1_nm1_measurement_r1`\n- baseline_item_id: `l2_prop_l2_mapper_terminal_activation_family_v1_nm1_measurement_r1`\n- latency_delta fp16_nm1_sigmoidproxy/hier_macro/sigmoid_vec_b128_f64: `0.0022979999999999997` -> `0.001686` ms\n- energy_delta fp16_nm1_sigmoidproxy/hier_macro/sigmoid_vec_b128_f64: `8.272800000000001e-10` -> `6.0696e-10` mJ\n- latency_delta fp16_nm1_sigmoidproxy/hier_macro/sigmoid_vec_b256_f256: `0.016634` -> `0.012438` ms\n- energy_delta fp16_nm1_sigmoidproxy/hier_macro/sigmoid_vec_b256_f256: `5.988240000000001e-09` -> `4.47768e-09` mJ\n- latency_delta fp16_nm1_sigmoidproxy/hier_macro/sigmoid_vec_flatten_b128_2x4x8: `0.0022979999999999997` -> `0.001686` ms\n- energy_delta fp16_nm1_sigmoidproxy/hier_macro/sigmoid_vec_flatten_b128_2x4x8: `8.272800000000001e-10` -> `6.0696e-10` mJ\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}

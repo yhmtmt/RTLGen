@@ -1,0 +1,106 @@
+{
+  "meta": {
+    "version": "0.1",
+    "source_bin": "runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1_sigmoidproxy/sigmoid_vec_b128_f64/descriptors.bin",
+    "mode": "overlap",
+    "source_mem_json": null
+  },
+  "stats": {
+    "total_bytes": 16384,
+    "dma_ops": 1,
+    "gemm_ops": 0,
+    "vec_ops": 1,
+    "softmax_ops": 0,
+    "event_ops": 3,
+    "noop_ops": 0,
+    "unknown_ops": 0,
+    "irq_events": 1,
+    "dma_time_ns": 512.0,
+    "gemm_time_ns": 0.0,
+    "vec_time_ns": 1024.0,
+    "softmax_time_ns": 0.0,
+    "event_time_ns": 150.0,
+    "noop_time_ns": 0.0,
+    "unknown_time_ns": 0.0,
+    "queue_time_ns": 1686.0,
+    "dma_engine_time_ns": 512.0,
+    "gemm_engine_time_ns": 0.0,
+    "gemm_engine_count": 1,
+    "misc_compute_time_ns": 1636.0,
+    "total_time_ns": 1686.0
+  },
+  "warnings": [],
+  "trace": [
+    {
+      "offset": 0,
+      "opcode": 1,
+      "tag": 0,
+      "flags": 0,
+      "name": "DMA_COPY",
+      "src": "0x0000003000000000",
+      "dst": "0x0000000080000000",
+      "bytes": 8192,
+      "duration_ns": 512.0,
+      "start_ns": 0.0,
+      "end_ns": 512.0,
+      "achieved_gbps": 15.999999999999998
+    },
+    {
+      "offset": 32,
+      "opcode": 32,
+      "tag": 1,
+      "flags": 0,
+      "name": "EVENT_SIGNAL",
+      "event_id": 1,
+      "irq": false,
+      "duration_ns": 50.0,
+      "start_ns": 512.0,
+      "end_ns": 562.0
+    },
+    {
+      "offset": 64,
+      "opcode": 33,
+      "tag": 1,
+      "flags": 0,
+      "name": "EVENT_WAIT",
+      "event_id": 1,
+      "duration_ns": 50.0,
+      "start_ns": 562.0,
+      "end_ns": 612.0
+    },
+    {
+      "offset": 96,
+      "opcode": 17,
+      "tag": 0,
+      "flags": 10,
+      "name": "VEC_OP",
+      "op": "sigmoid",
+      "op_code": 10,
+      "dtype": "int8",
+      "dtype_code": 0,
+      "src": "0x0000000080000000",
+      "dst": "0x0000003000002000",
+      "bytes": 8192,
+      "duration_ns": 1024.0,
+      "expected_result": "0x08",
+      "expected_result_bytes": [
+        8
+      ],
+      "lanes": 1,
+      "start_ns": 612.0,
+      "end_ns": 1636.0
+    },
+    {
+      "offset": 128,
+      "opcode": 32,
+      "tag": 1000,
+      "flags": 1,
+      "name": "EVENT_SIGNAL",
+      "event_id": 1000,
+      "irq": true,
+      "duration_ns": 50.0,
+      "start_ns": 1636.0,
+      "end_ns": 1686.0
+    }
+  ]
+}
