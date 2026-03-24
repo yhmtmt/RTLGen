@@ -1,15 +1,26 @@
 {
   "proposal_id": "prop_l1_npu_nm1_tanh_vec_enable_v1",
-  "source_commit": "pending_integrated_tanh_enable_commit",
+  "source_commit": "63f003accd22559c6bd0200b2adfcd9b5873f6f3",
   "requested_items": [
     {
       "item_id": "l1_prop_l1_npu_nm1_tanh_vec_enable_v1_r1",
       "task_type": "l1_sweep",
       "evaluation_mode": "measurement_only",
       "objective": "npu_nm1_tanh_vec_physical_metrics",
-      "status": "not_queued",
-      "notes": "Queue only after integrated nm1 tanh enablement is implemented and the first bounded reduced physical target is defined.",
+      "status": "failed",
+      "notes": "Initial queue attempt used the wrong full source SHA and failed before execution. Kept only as history.",
       "abstraction_layer": "architecture_block"
+    },
+    {
+      "item_id": "l1_prop_l1_npu_nm1_tanh_vec_enable_v1_r2",
+      "task_type": "l1_sweep",
+      "evaluation_mode": "measurement_only",
+      "objective": "npu_nm1_tanh_vec_physical_metrics",
+      "status": "leased",
+      "notes": "Current valid reduced-proxy architecture-block sweep against the correct pushed tanh-enable commit.",
+      "abstraction_layer": "architecture_block",
+      "config_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_tanhproxy/config_nm1_tanhproxy.json",
+      "sweep_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_tanhproxy/sweep_proxy_firstpass.json"
     }
   ]
 }

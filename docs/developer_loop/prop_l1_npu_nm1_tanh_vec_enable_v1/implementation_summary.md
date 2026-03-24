@@ -21,6 +21,7 @@
 - `runs/designs/npu_blocks/npu_fp16_cpp_nm1_tanhproxy/README.md`
 - `runs/designs/npu_blocks/npu_fp16_cpp_nm1_tanhproxy/sweep_proxy_firstpass.json`
 - `docs/developer_loop/prop_l1_npu_nm1_tanh_vec_enable_v1/implementation_summary.md`
+- `docs/developer_loop/prop_l1_npu_nm1_tanh_vec_enable_v1/evaluation_requests.json`
 
 ## Local Validation
 - `python3 -m py_compile npu/rtlgen/gen.py npu/sim/perf/run.py tests/test_npu_rtlgen_vec_tanh.py npu/sim/perf/tests/test_perf_vec_tanh.py`
@@ -28,6 +29,16 @@
 - `python3 tests/test_npu_rtlgen_vec_tanh.py`
 - `python3 npu/rtlgen/gen.py --config runs/designs/npu_blocks/npu_fp16_cpp_nm1_tanhproxy/config_nm1_tanhproxy.json --out runs/designs/npu_blocks/npu_fp16_cpp_nm1_tanhproxy/verilog`
 
+## Remote Evaluation
+- pushed implementation commit: `63f003accd22559c6bd0200b2adfcd9b5873f6f3`
+- initial queue attempt `r1` failed only because of an incorrect full SHA
+- current valid item:
+  - `l1_prop_l1_npu_nm1_tanh_vec_enable_v1_r2`
+  - state: `LEASED`
+  - objective: `npu_nm1_tanh_vec_physical_metrics`
+  - config: `runs/designs/npu_blocks/npu_fp16_cpp_nm1_tanhproxy/config_nm1_tanhproxy.json`
+  - sweep: `runs/designs/npu_blocks/npu_fp16_cpp_nm1_tanhproxy/sweep_proxy_firstpass.json`
+
 ## Next Step
-- commit and push this integrated tanh-enable implementation
-- queue `l1_prop_l1_npu_nm1_tanh_vec_enable_v1_r1` against the reduced proxy config and first-pass sweep
+- let `r2` finish on the evaluator
+- then review the resulting Layer 1 evidence PR for the reduced tanh proxy source
