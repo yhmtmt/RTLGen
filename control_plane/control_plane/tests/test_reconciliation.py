@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import tempfile
+from unittest.mock import patch
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
@@ -96,6 +97,40 @@ def seed_reviewable_run(session: Session) -> Run:
     session.add(run)
     session.commit()
     return run
+
+
+def test_reconcile_merge_triggers_proposal_finalizer_when_repo_root_is_present() -> None:
+    with make_session() as session:
+        run = seed_reviewable_run(session)
+        with patch("control_plane.services.github_bridge.finalize_after_merge") as finalize_mock:
+            from control_plane.services.proposal_finalizer import ProposalFinalizeResult
+
+            finalize_mock.return_value = ProposalFinalizeResult(
+                item_id="item_review",
+                proposal_id="prop_demo_v1",
+                decision="iterate",
+                next_item_id="item_followon",
+                commit_sha="feedface",
+                skipped=False,
+                skip_reason=None,
+            )
+            result = reconcile_github_link(
+                session,
+                GitHubReconcileRequest(
+                    repo="yhmtmt/RTLGen",
+                    item_id="item_review",
+                    branch_name="eval/item_review/s20260308t000000z",
+                    pr_number=42,
+                    pr_url="https://github.com/yhmtmt/RTLGen/pull/42",
+                    state="pr_merged",
+                    run_key=run.run_key,
+                    repo_root="/tmp/repo",
+                ),
+            )
+        assert result.finalized_proposal_id == "prop_demo_v1"
+        assert result.finalization_commit == "feedface"
+        assert result.finalization_error is None
+        finalize_mock.assert_called_once()
 
 
 def test_reconcile_github_link_open_and_merge() -> None:

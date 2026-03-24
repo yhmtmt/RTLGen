@@ -16,6 +16,7 @@ from control_plane.models.run_events import RunEvent
 from control_plane.models.runs import Run
 from control_plane.models.work_items import WorkItem
 from control_plane.services.dependency_gate import refresh_blocked_dependents
+from control_plane.services.proposal_finalizer import ProposalFinalizeRequest, ProposalFinalizationError, finalize_after_merge
 
 _EVAL_BRANCH_RE = re.compile(r"^eval/(?P<item_id>[^/]+)/(?P<session_id>[^/]+)$")
 
@@ -37,6 +38,9 @@ class GitHubReconcileResult:
     pr_number: int | None
     work_item_state: str
     run_id: str | None
+    finalized_proposal_id: str | None = None
+    finalization_commit: str | None = None
+    finalization_error: str | None = None
 
 
 @dataclass(frozen=True)
@@ -179,6 +183,30 @@ def reconcile_github_link(session: Session, request: GitHubReconcileRequest) -> 
 
     session.flush()
     session.commit()
+
+    finalized_proposal_id: str | None = None
+    finalization_commit: str | None = None
+    finalization_error: str | None = None
+    if state == GitHubLinkState.PR_MERGED and request.repo_root:
+        try:
+            finalize_result = finalize_after_merge(
+                session,
+                ProposalFinalizeRequest(
+                    repo_root=request.repo_root,
+                    item_id=work_item.item_id,
+                    run_key=run.run_key if run is not None else None,
+                    pr_number=request.pr_number,
+                    pr_url=request.pr_url,
+                    merge_commit=request.head_sha,
+                    git_publish=True,
+                ),
+            )
+            if not finalize_result.skipped:
+                finalized_proposal_id = finalize_result.proposal_id
+                finalization_commit = finalize_result.commit_sha
+        except ProposalFinalizationError as exc:
+            finalization_error = str(exc)
+
     return GitHubReconcileResult(
         item_id=work_item.item_id,
         github_link_id=link.id,
@@ -187,4 +215,7 @@ def reconcile_github_link(session: Session, request: GitHubReconcileRequest) -> 
         pr_number=link.pr_number,
         work_item_state=work_item.state.value,
         run_id=run.id if run is not None else None,
+        finalized_proposal_id=finalized_proposal_id,
+        finalization_commit=finalization_commit,
+        finalization_error=finalization_error,
     )

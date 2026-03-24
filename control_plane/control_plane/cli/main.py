@@ -11,6 +11,7 @@ from control_plane.cli.cleanup import main as cleanup_main
 from control_plane.cli.consume_l1_result import main as consume_l1_result_main
 from control_plane.cli.consume_l2_result import main as consume_l2_result_main
 from control_plane.cli.execute_submission import main as execute_submission_main
+from control_plane.cli.finalize_after_merge import main as finalize_after_merge_main
 from control_plane.cli.export_queue import main as export_queue_main
 from control_plane.cli.generate_l1_sweep import main as generate_l1_sweep_main
 from control_plane.cli.generate_l2_campaign import main as generate_l2_campaign_main
@@ -71,9 +72,6 @@ def main(argv: list[str] | None = None) -> int:
     generate_l1_parser.add_argument("--mode", default="upsert")
     generate_l1_parser.add_argument("--proposal-id")
     generate_l1_parser.add_argument("--proposal-path")
-    generate_l1_parser.add_argument("--make-target")
-    generate_l1_parser.add_argument("--evaluation-mode")
-    generate_l1_parser.add_argument("--abstraction-layer")
 
     consume_l1_parser = subparsers.add_parser(
         "consume-l1-result",
@@ -123,7 +121,6 @@ def main(argv: list[str] | None = None) -> int:
     generate_l2_parser.add_argument("--proposal-id")
     generate_l2_parser.add_argument("--proposal-path")
     generate_l2_parser.add_argument("--evaluation-mode")
-    generate_l2_parser.add_argument("--abstraction-layer")
     generate_l2_parser.add_argument("--expected-direction")
     generate_l2_parser.add_argument("--expected-reason")
     generate_l2_parser.add_argument("--comparison-role")
@@ -142,6 +139,7 @@ def main(argv: list[str] | None = None) -> int:
     github_parser.add_argument("--state", required=True)
     github_parser.add_argument("--run-key")
     github_parser.add_argument("--metadata-json")
+    github_parser.add_argument("--repo-root")
 
     scheduler_parser = subparsers.add_parser("scheduler", help="Run scheduler maintenance commands")
     scheduler_parser.add_argument("--database-url", required=True)
@@ -254,6 +252,20 @@ def main(argv: list[str] | None = None) -> int:
     submission_parser.add_argument("--worktree-root")
     submission_parser.add_argument("--commit-message")
     submission_parser.add_argument("--pr-base", default="master")
+
+    finalize_parser = subparsers.add_parser(
+        "finalize-after-merge",
+        help="Finalize a proposal workspace after its review PR has merged",
+    )
+    finalize_parser.add_argument("--database-url", required=True)
+    finalize_parser.add_argument("--repo-root", required=True)
+    finalize_parser.add_argument("--item-id")
+    finalize_parser.add_argument("--run-key")
+    finalize_parser.add_argument("--pr-number", type=int)
+    finalize_parser.add_argument("--pr-url")
+    finalize_parser.add_argument("--merge-commit")
+    finalize_parser.add_argument("--merged-utc")
+    finalize_parser.add_argument("--no-git-publish", action="store_true")
 
     execute_parser = subparsers.add_parser(
         "execute-submission",
@@ -391,9 +403,6 @@ def main(argv: list[str] | None = None) -> int:
             ("--source-commit", args.source_commit),
             ("--proposal-id", args.proposal_id),
             ("--proposal-path", args.proposal_path),
-            ("--make-target", args.make_target),
-            ("--evaluation-mode", args.evaluation_mode),
-            ("--abstraction-layer", args.abstraction_layer),
         ]:
             if value is not None:
                 argv2.extend([key, str(value)])
@@ -466,7 +475,6 @@ def main(argv: list[str] | None = None) -> int:
             ("--proposal-id", args.proposal_id),
             ("--proposal-path", args.proposal_path),
             ("--evaluation-mode", args.evaluation_mode),
-            ("--abstraction-layer", args.abstraction_layer),
             ("--expected-direction", args.expected_direction),
             ("--expected-reason", args.expected_reason),
             ("--comparison-role", args.comparison_role),
@@ -488,10 +496,26 @@ def main(argv: list[str] | None = None) -> int:
             ("--base-branch", args.base_branch),
             ("--run-key", args.run_key),
             ("--metadata-json", args.metadata_json),
+            ("--repo-root", args.repo_root),
         ]:
             if value is not None:
                 argv2.extend([key, str(value)])
         return reconcile_github_main(argv2)
+    if args.command == "finalize-after-merge":
+        argv2 = ["--database-url", args.database_url, "--repo-root", args.repo_root]
+        for key, value in [
+            ("--item-id", args.item_id),
+            ("--run-key", args.run_key),
+            ("--pr-number", args.pr_number),
+            ("--pr-url", args.pr_url),
+            ("--merge-commit", args.merge_commit),
+            ("--merged-utc", args.merged_utc),
+        ]:
+            if value is not None:
+                argv2.extend([key, str(value)])
+        if args.no_git_publish:
+            argv2.append("--no-git-publish")
+        return finalize_after_merge_main(argv2)
     if args.command == "scheduler":
         return run_scheduler_main(
             [
