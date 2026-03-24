@@ -386,18 +386,6 @@ def finalize_after_merge(session: Session, request: ProposalFinalizeRequest) -> 
     promotion_decision = _load_json(promotion_decision_path)
     promotion_result = _load_json(promotion_result_path)
 
-    existing_decision = str(promotion_result.get("decision", "")).strip().lower()
-    if existing_decision and existing_decision != "pending":
-        return ProposalFinalizeResult(
-            item_id=work_item.item_id,
-            proposal_id=proposal_id,
-            decision=existing_decision,
-            next_item_id=None,
-            commit_sha=None,
-            skipped=True,
-            skip_reason=f"proposal already finalized with decision={existing_decision}",
-        )
-
     payload, artifact_rel = _load_review_payload(session, repo_root=repo_root, run=run, task_type=work_item.task_type)
     merged_link = _latest_merged_link(session, work_item=work_item, pr_number=request.pr_number)
     pr_number = request.pr_number if request.pr_number is not None else (merged_link.pr_number if merged_link is not None else None)
@@ -420,6 +408,20 @@ def finalize_after_merge(session: Session, request: ProposalFinalizeRequest) -> 
             break
     if matched_entry is None:
         raise ProposalFinalizationError(f"item {work_item.item_id} is not present in {evaluation_requests_path}")
+
+    existing_decision = str(promotion_result.get("decision", "")).strip().lower()
+    matched_status = str(matched_entry.get("status", "")).strip().lower()
+    if existing_decision and existing_decision != "pending" and _is_merged_status(matched_status):
+        return ProposalFinalizeResult(
+            item_id=work_item.item_id,
+            proposal_id=proposal_id,
+            decision=existing_decision,
+            next_item_id=None,
+            commit_sha=None,
+            skipped=True,
+            skip_reason=f"proposal already finalized with decision={existing_decision}",
+        )
+
     _mark_merged_requested_item(
         matched_entry,
         pr_number=pr_number,

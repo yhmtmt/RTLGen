@@ -212,6 +212,147 @@ def test_finalize_l1_merge_promotes_and_releases_next_item() -> None:
         assert "- `promote`" in analysis_report
 
 
+def test_finalize_l2_candidate_merge_promotes_after_iterate_baseline() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        proposal_id = "prop_l2_demo_v1"
+        proposal_path = _seed_repo_files(
+            repo_root,
+            proposal_id,
+            [
+                {
+                    "item_id": "l2_demo_measurement_r1",
+                    "task_type": "l2_campaign",
+                    "evaluation_mode": "measurement_only",
+                    "status": "merged",
+                },
+                {
+                    "item_id": "l2_demo_fused_r1",
+                    "task_type": "l2_campaign",
+                    "evaluation_mode": "paired_comparison",
+                    "paired_baseline_item_id": "l2_demo_measurement_r1",
+                    "depends_on_item_ids": ["l2_demo_measurement_r1"],
+                    "status": "ready_to_queue",
+                },
+            ],
+        )
+        promotion_result_path = proposal_path / "promotion_result.json"
+        promotion_result = json.loads(promotion_result_path.read_text())
+        promotion_result["decision"] = "iterate"
+        promotion_result["pr_number"] = 82
+        promotion_result["merge_commit"] = "cafebabe"
+        promotion_result["merged_utc"] = "2026-03-24T01:00:00Z"
+        promotion_result_path.write_text(json.dumps(promotion_result, indent=2) + "\n", encoding="utf-8")
+
+        payload_path = repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / "l2_demo_fused_r1.json"
+        _write(
+            payload_path,
+            json.dumps(
+                {
+                    "item_id": "l2_demo_fused_r1",
+                    "run_key": "l2_demo_fused_r1_run_1",
+                    "source_commit": "fedcba",
+                    "evaluation_record": {"summary": "Focused comparison improved latency and/or energy without regressing matched rows."},
+                    "proposal_assessment": {
+                        "outcome": "improved",
+                        "summary": "Focused comparison improved latency and/or energy without regressing matched rows.",
+                    },
+                },
+                indent=2,
+            )
+            + "\n",
+        )
+
+        with _session() as session:
+            task = TaskRequest(
+                request_key="l2:l2_demo_fused_r1",
+                source="test",
+                requested_by="tester",
+                title="demo l2 fused",
+                description="demo l2 candidate",
+                layer=LayerName.LAYER2,
+                flow=FlowName.OPENROAD,
+                priority=1,
+                request_payload={
+                    "developer_loop": {
+                        "proposal_id": proposal_id,
+                        "proposal_path": str((proposal_path / "proposal.json").relative_to(repo_root)),
+                        "evaluation": {"mode": "paired_comparison"},
+                        "comparison": {"role": "candidate", "paired_baseline_item_id": "l2_demo_measurement_r1"},
+                    }
+                },
+            )
+            session.add(task)
+            session.flush()
+            work_item = WorkItem(
+                work_item_key="l2:l2_demo_fused_r1",
+                task_request_id=task.id,
+                item_id="l2_demo_fused_r1",
+                layer=LayerName.LAYER2,
+                flow=FlowName.OPENROAD,
+                platform="nangate45",
+                task_type="l2_campaign",
+                state=WorkItemState.MERGED,
+                priority=1,
+                input_manifest={},
+                command_manifest=[],
+                expected_outputs=["runs/campaigns/demo/report.md"],
+                acceptance_rules=[],
+                source_commit="fedcba",
+            )
+            session.add(work_item)
+            session.flush()
+            run = Run(
+                run_key="l2_demo_fused_r1_run_1",
+                work_item_id=work_item.id,
+                attempt=1,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.SUCCEEDED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="fedcba",
+                result_summary="ok",
+                result_payload={"queue_result": {"status": "ok"}},
+            )
+            session.add(run)
+            session.flush()
+            session.add(
+                Artifact(
+                    run_id=run.id,
+                    kind="decision_proposal",
+                    storage_mode="repo",
+                    path=str(payload_path.relative_to(repo_root)),
+                    sha256="z",
+                    metadata_={},
+                )
+            )
+            session.commit()
+
+            result = finalize_after_merge(
+                session,
+                ProposalFinalizeRequest(
+                    repo_root=str(repo_root),
+                    item_id="l2_demo_fused_r1",
+                    pr_number=85,
+                    merge_commit="deadbeef",
+                    merged_utc="2026-03-24T02:00:00Z",
+                    git_publish=False,
+                ),
+            )
+
+        assert result.skipped is False
+        assert result.decision == "promote"
+        assert result.next_item_id is None
+        evaluation_requests = json.loads((proposal_path / "evaluation_requests.json").read_text())
+        fused = evaluation_requests["requested_items"][1]
+        assert fused["status"] == "merged"
+        promotion_decision = json.loads((proposal_path / "promotion_decision.json").read_text())
+        assert promotion_decision["decision"] == "promote"
+        promotion_result = json.loads((proposal_path / "promotion_result.json").read_text())
+        assert promotion_result["decision"] == "promote"
+        assert promotion_result["pr_number"] == 85
+
+
 def test_finalize_l2_measurement_merge_iterates_and_unblocks_candidate() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
