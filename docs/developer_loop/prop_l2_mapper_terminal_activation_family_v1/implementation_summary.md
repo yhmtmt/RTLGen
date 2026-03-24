@@ -11,8 +11,7 @@
   - terminal `Sigmoid` mapper lowering through the existing terminal vec-op path
   - bounded ONNX suite generation for three small sigmoid terminal cases
   - measurement-only `nm1` campaign wired to the accepted reduced sigmoid proxy
-- current missing step:
-  - paired direct-output campaign implementation on the same suite
+- paired direct-output campaign is now implemented on the same suite
 
 ## Files Changed
 - `npu/mapper/onnx_lite.py`
@@ -34,8 +33,8 @@
   - `l2_prop_l2_mapper_terminal_activation_family_v1_nm1_measurement_r1`
   - merged evidence PR: `#75`
 - next local step:
-  - implement the paired direct-output campaign for the same sigmoid-first suite
-  - then queue `l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1`
+  - queue `l2_prop_l2_mapper_terminal_activation_family_v1_nm1_fused_r1`
+  - review the paired direct-output evidence against the merged `r1` baseline
 
 ## Risks
 - the first bounded family is still only `Sigmoid`, not a broader nonlinear set

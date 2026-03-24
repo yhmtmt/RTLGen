@@ -44,10 +44,11 @@
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
-      "status": "needs_campaign_implementation",
-      "notes": "Next step: implement the paired direct-output campaign on the same sigmoid-first suite, then queue it against the merged baseline.",
+      "status": "ready_to_queue",
+      "notes": "Second-stage paired comparison on the same bounded sigmoid-first suite using direct terminal vec-op output.",
       "abstraction_layer": "full_architecture",
-      "status_reason": "Baseline is now merged and materialized, but the paired direct-output campaign artifact has not been implemented yet."
+      "status_reason": "Paired direct-output campaign is now implemented and the merged/materialized r1 baseline is available.",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_onnx_terminal_activation_family_suite_fused_nm1_v1/campaign.json"
     }
   ]
 }
