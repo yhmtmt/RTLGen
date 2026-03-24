@@ -54,6 +54,7 @@ VEC_OP_FLAGS = {
     "dsoftmax": 0x8,
     "dlayernorm": 0x9,
     "sigmoid": 0xA,
+    "tanh": 0xB,
 }
 
 

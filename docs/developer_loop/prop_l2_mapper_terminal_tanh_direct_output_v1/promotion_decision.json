@@ -1,0 +1,9 @@
+{
+  "proposal_id": "prop_l2_mapper_terminal_tanh_direct_output_v1",
+  "candidate_id": "pending",
+  "decision": "pending",
+  "reason": "pending",
+  "evidence_refs": [],
+  "next_action": "queue the bounded tanh measurement baseline",
+  "requires_human_approval": true
+}

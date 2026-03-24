@@ -64,3 +64,4 @@
 - keep entries brief
 - put full detail in `items/<item_id>.md`
 - when promoted, set `proposal_id` and link the proposal path in the item file
+| `item_l2_mapper_terminal_tanh_direct_output_v1` | `layer2` | `mapper` | `Terminal tanh direct output` | `promoted_to_proposal` | `medium` | `developer_agent` | `prop_l2_mapper_terminal_tanh_direct_output_v1` | `2026-03-24T13:10:00Z` |

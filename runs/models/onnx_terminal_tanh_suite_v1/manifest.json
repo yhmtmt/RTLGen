@@ -1,0 +1,25 @@
+{
+  "version": 0.1,
+  "model_set_id": "onnx_terminal_tanh_suite_v1",
+  "description": "Locally generated bounded terminal tanh models used for the first tanh measurement-only Layer 2 mapper pass.",
+  "models": [
+    {
+      "model_id": "tanh_vec_b128_f64",
+      "onnx_path": "runs/models/onnx_terminal_tanh_suite_v1/tanh_vec_b128_f64.onnx",
+      "onnx_sha256": "5e02e5c622d4deae240ab002dbfd4cdf247e947f3ad509fe98ea0ff6cfeeb609",
+      "notes": "First-pass standalone terminal Tanh on a 2D activation tensor."
+    },
+    {
+      "model_id": "tanh_vec_b256_f256",
+      "onnx_path": "runs/models/onnx_terminal_tanh_suite_v1/tanh_vec_b256_f256.onnx",
+      "onnx_sha256": "31ac93390eabb56e012f449a8d98c47329c6a2500a500f4a22df7b575ffb971a",
+      "notes": "Larger standalone terminal Tanh to increase writeback pressure."
+    },
+    {
+      "model_id": "tanh_vec_flatten_b128_2x4x8",
+      "onnx_path": "runs/models/onnx_terminal_tanh_suite_v1/tanh_vec_flatten_b128_2x4x8.onnx",
+      "onnx_sha256": "d78fc33e3c2d1615fdec1dda54237bc492f1f02db30d63443080ec1a33bab58e",
+      "notes": "Flatten -> Tanh terminal vec-op to prove the prelude path stays legal."
+    }
+  ]
+}
