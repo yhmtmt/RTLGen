@@ -132,6 +132,11 @@ def test_operator_status_summarizes_live_state() -> None:
                 result_summary="command validate failed (exit_code=1)",
                 result_payload={
                     "failure_classification": {"category": "validation_error"},
+                    "failure_issue": {
+                        "issue_number": 123,
+                        "issue_url": "https://github.com/yhmtmt/RTLGen/issues/123",
+                        "reported_utc": now.isoformat(),
+                    },
                     "retry_decision": {"requeue": False},
                 },
             )
@@ -212,6 +217,8 @@ def test_operator_status_summarizes_live_state() -> None:
         assert len(status.recent_failures) == 1
         assert status.recent_failures[0]["item_id"] == "failed_item"
         assert status.recent_failures[0]["failure_category"] == "validation_error"
+        assert status.recent_failures[0]["failure_issue_status"] == "reported"
+        assert status.recent_failures[0]["failure_issue_number"] == 123
         assert len(status.recent_submissions) == 1
         assert status.recent_submissions[0]["item_id"] == "review_item"
         assert status.recent_submissions[0]["pr_number"] == 99

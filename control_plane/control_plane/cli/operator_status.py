@@ -72,7 +72,7 @@ def _render_section(payload: dict[str, object], only: str) -> list[str]:
             _render_rows(
                 "Recent Failures",
                 list(payload["recent_failures"]),
-                ["item_id", "failure_category", "summary", "retry_requeue", "worker_host", "run_key"],
+                ["item_id", "failure_category", "failure_issue_status", "failure_issue_number", "summary", "retry_requeue", "worker_host", "run_key"],
             )
         )
     if only in ("all", "submissions"):

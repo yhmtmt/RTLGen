@@ -87,6 +87,14 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
     ):
         payload = dict(run.result_payload or {})
         failure = dict(payload.get("failure_classification") or {})
+        failure_issue = dict(payload.get("failure_issue") or {})
+        failure_issue_number = failure_issue.get("issue_number")
+        if str(failure_issue_number or "").strip():
+            failure_issue_status = "reported"
+        elif bool(failure_issue.get("skipped")):
+            failure_issue_status = f"skipped:{failure_issue.get('reason') or 'unspecified'}"
+        else:
+            failure_issue_status = "pending"
         recent_failures.append(
             {
                 "item_id": run.work_item.item_id,
@@ -96,6 +104,8 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
                 "status": run.status.value,
                 "summary": run.result_summary,
                 "failure_category": failure.get("category"),
+                "failure_issue_status": failure_issue_status,
+                "failure_issue_number": failure_issue_number,
                 "retry_requeue": (payload.get("retry_decision") or {}).get("requeue"),
                 "completed_at": run.completed_at.isoformat() if run.completed_at else None,
                 "worker_host": run.machine.hostname if run.machine is not None else None,
