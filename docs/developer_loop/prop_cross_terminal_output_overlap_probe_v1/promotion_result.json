@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_cross_terminal_output_overlap_probe_v1",
-  "decision": "iterate",
-  "pr_number": 103,
-  "merge_commit": "ae1cb4bcc3d4219e67626193c8d182267e0f3590",
-  "merged_utc": "2026-03-25T11:56:30.143741Z"
+  "decision": "promote",
+  "pr_number": 105,
+  "merge_commit": "240758d7bd2bf9cc4371b63e4d70c609b3af5e06",
+  "merged_utc": "2026-03-25T12:47:23.752884Z"
 }

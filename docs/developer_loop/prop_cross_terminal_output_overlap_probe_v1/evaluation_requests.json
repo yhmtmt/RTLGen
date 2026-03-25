@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_cross_terminal_output_overlap_probe_v1",
-  "source_commit": "26edb52106d8da049822c149082a456d5ad1a6f5",
+  "source_commit": "988a30a2fea6ae8f7c726051938946cefebbc3b7",
   "requested_items": [
     {
       "item_id": "l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r2",
@@ -18,11 +18,19 @@
       "notes": "Merged via PR #103 and merge ae1cb4bcc3d4219e67626193c8d182267e0f3590 at 2026-03-25T11:56:30.143741Z."
     },
     {
-      "item_id": "l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1",
+      "item_id": "l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r2",
       "task_type": "l2_campaign",
       "objective": "focused_candidate",
       "candidate_id": "cand_terminal_output_overlap_probe_nm1_fused_r1",
-      "campaign_path": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2/campaign.json"
+      "campaign_path": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2/campaign.json",
+      "prior_item_ids": [
+        "l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1"
+      ],
+      "status": "merged",
+      "merged_pr_number": 105,
+      "merge_commit": "240758d7bd2bf9cc4371b63e4d70c609b3af5e06",
+      "merged_utc": "2026-03-25T12:47:23.752884Z",
+      "notes": "Merged via PR #105 and merge 240758d7bd2bf9cc4371b63e4d70c609b3af5e06 at 2026-03-25T12:47:23.752884Z."
     }
   ]
 }

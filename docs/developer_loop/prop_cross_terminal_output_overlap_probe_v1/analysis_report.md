@@ -2,28 +2,31 @@
 
 ## Candidate
 - `proposal_id`: `prop_cross_terminal_output_overlap_probe_v1`
-- `candidate_id`: `l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r2`
+- `candidate_id`: `l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r2`
 
 ## Evaluations Consumed
-- `l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r2`
-- `l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r2_run_99f5bf377842ef74`
-- source commit: `26edb52106d8da049822c149082a456d5ad1a6f5`
-- review: PR #103
+- `l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r2`
+- `l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r2_run_35a79d43f75fae4e`
+- source commit: `988a30a2fea6ae8f7c726051938946cefebbc3b7`
+- review: PR #105
 
 ## Baseline Comparison
-- not applicable
+- baseline_ref: `runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r2`
+- baseline_item_id: `l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r2`
+- outcome: `improved`
+- summary: Focused comparison improved latency and/or energy without regressing matched rows.
 
 ## Result
-- result: `iterate`
+- result: `promote`
 - confidence level: merged accepted evidence
-- estimated optimization room: pending follow-on comparison
-- architecture conclusion robustness: staged evidence
-- summary: This item records metrics for the requested architecture point and does not emit a proposal judgment.
+- estimated optimization room: accepted at current stage
+- architecture conclusion robustness: accepted for the current proposal scope
+- summary: Focused comparison improved latency and/or energy without regressing matched rows.
 
 ## Failures and Caveats
 - no additional caveats recorded during automatic finalization
 
 ## Recommendation
-- `iterate`
-- reason: Accepted measurement-only baseline evidence was merged; proposal judgment remains deferred until the paired comparison is reviewed.
-- next_action: queue the paired comparison item
+- `promote`
+- reason: Focused comparison improved latency and/or energy without regressing matched rows.
+- next_action: close the proposal as promoted

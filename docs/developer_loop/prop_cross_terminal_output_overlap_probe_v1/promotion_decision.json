@@ -1,15 +1,15 @@
 {
   "proposal_id": "prop_cross_terminal_output_overlap_probe_v1",
-  "candidate_id": "l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r2",
-  "decision": "iterate",
-  "reason": "Accepted measurement-only baseline evidence was merged; proposal judgment remains deferred until the paired comparison is reviewed.",
+  "candidate_id": "l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r2",
+  "decision": "promote",
+  "reason": "Focused comparison improved latency and/or energy without regressing matched rows.",
   "evidence_refs": [
-    "item:l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r2",
-    "run:l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r2_run_99f5bf377842ef74",
-    "artifact:control_plane/shadow_exports/l2_decisions/l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r2.json",
-    "pr:#103",
-    "https://github.com/yhmtmt/RTLGen/pull/103"
+    "item:l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r2",
+    "run:l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r2_run_35a79d43f75fae4e",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r2.json",
+    "pr:#105",
+    "https://github.com/yhmtmt/RTLGen/pull/105"
   ],
-  "next_action": "queue the paired comparison item",
+  "next_action": "close the proposal as promoted",
   "requires_human_approval": false
 }
