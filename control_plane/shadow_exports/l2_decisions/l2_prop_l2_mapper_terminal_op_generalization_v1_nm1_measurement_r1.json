@@ -1,13 +1,13 @@
 {
   "version": 0.1,
-  "generated_utc": "2026-03-18T13:03:08.842224Z",
+  "generated_utc": "2026-03-25T07:48:03.361727Z",
   "item_id": "l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_measurement_r1",
-  "run_key": "l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_measurement_r1_run_8308af94f8150433",
+  "run_key": "l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_measurement_r1_run_5527bf8eefa698f4",
   "layer": "layer2",
   "flow": "openroad",
   "platform": "nangate45",
   "task_type": "l2_campaign",
-  "source_commit": "fec11e31cc03c66e7e053b823621912977abb8a6",
+  "source_commit": "17919f9d024756de1760c734ea050a3732c1e0a0",
   "objective": "terminal_op_reference_metrics",
   "input_manifest": {
     "sweeps": [
@@ -45,7 +45,7 @@
     "critical_path_ns_mean": 5.557037432204143,
     "die_area_um2_mean": 2250000.0,
     "total_power_mw_mean": 0.193122,
-    "flow_elapsed_s_mean": 844.5733333333334
+    "flow_elapsed_s_mean": 844.5733333333333
   },
   "objective_profiles": [],
   "evaluation_record": {
@@ -54,8 +54,9 @@
     "primary_question": "Can a bounded mapper program for terminal linear and terminal Relu outputs establish clean nm1 reference points first, before direct-output generalization is attempted on those same points?",
     "evaluation_mode": "measurement_only",
     "comparison_role": "measurement_only",
+    "abstraction_layer": "",
     "expected_direction": "unknown",
-    "expected_reason": "Record plain nm1 non-fused reference metrics for the bounded terminal linear plus terminal Relu suite before any direct-output mapper change.",
+    "expected_reason": "Record plain nm1 non-fused reference metrics for the bounded terminal linear plus terminal ReLU suite before any direct-output mapper change.",
     "summary": "This item records metrics for the requested architecture point and does not emit a proposal judgment.",
     "expectation_status": "not_applicable"
   },

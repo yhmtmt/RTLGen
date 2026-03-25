@@ -1,6 +1,6 @@
 # Campaign Report: npu_e2e_eval_onnx_terminal_direct_output_suite_submit_nm1_v1
 
-- generated_utc: `2026-03-18T12:46:19+00:00`
+- generated_utc: `2026-03-25T07:44:37+00:00`
 - model_set_id: `onnx_terminal_direct_output_suite_v1`
 - model_manifest: `runs/models/onnx_terminal_direct_output_suite_v1/manifest.json`
 - physical_source_campaign: `runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1/campaign.json`
@@ -8,8 +8,8 @@
 - summary_csv: `runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_measurement_r1/summary.csv`
 - pareto_csv: `runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_measurement_r1/pareto.csv`
 - best_json: `runs/campaigns/npu/e2e_eval_onnx_terminal_direct_output_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_measurement_r1/best_point.json`
-- total_rows: `18`
-- ok_rows: `18`
+- total_rows: `36`
+- ok_rows: `36`
 - non_ok_rows: `0`
 - duplicate_sample_rows_dropped: `0`
 
@@ -39,9 +39,9 @@
 
 | arch_id | macro_mode | model_id | n | latency_mean_ms | latency_std_ms | throughput_mean | energy_mean_mj | cp_mean_ns | area_mean_um2 | power_mean_mw | flow_mean_s | place_gp_mean_s |
 |---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| fp16_nm1 | flat_nomacro | linear_tail_b128_f8_o64 | 3 | 0.0023 | 0.0000 | 438981.5628 | 0.00000044 | 5.5570 | 2250000.0000 | 0.193122 | 844.5733 | 422.0267 |
-| fp16_nm1 | hier_macro | linear_tail_b128_f8_o64 | 3 | 0.0023 | 0.0000 | 438981.5628 | 0.00000045 | 5.7749 | 2250000.0000 | 0.197441 | 976.8733 | 478.5867 |
-| fp16_nm1 | flat_nomacro | linear_tail_b256_f8_o128 | 3 | 0.0072 | 0.0000 | 139314.5723 | 0.00000139 | 5.5570 | 2250000.0000 | 0.193122 | 844.5733 | 422.0267 |
-| fp16_nm1 | hier_macro | linear_tail_b256_f8_o128 | 3 | 0.0072 | 0.0000 | 139314.5723 | 0.00000142 | 5.7749 | 2250000.0000 | 0.197441 | 976.8733 | 478.5867 |
-| fp16_nm1 | flat_nomacro | relu_tail_b128_f8_o128 | 3 | 0.0039 | 0.0000 | 255493.1017 | 0.00000076 | 5.5570 | 2250000.0000 | 0.193122 | 844.5733 | 422.0267 |
-| fp16_nm1 | hier_macro | relu_tail_b128_f8_o128 | 3 | 0.0039 | 0.0000 | 255493.1017 | 0.00000077 | 5.7749 | 2250000.0000 | 0.197441 | 976.8733 | 478.5867 |
+| fp16_nm1 | flat_nomacro | linear_tail_b128_f8_o64 | 6 | 0.0023 | 0.0000 | 438981.5628 | 0.00000044 | 5.5570 | 2250000.0000 | 0.193122 | 844.5733 | 422.0267 |
+| fp16_nm1 | hier_macro | linear_tail_b128_f8_o64 | 6 | 0.0023 | 0.0000 | 438981.5628 | 0.00000045 | 5.7749 | 2250000.0000 | 0.197441 | 976.8733 | 478.5867 |
+| fp16_nm1 | flat_nomacro | linear_tail_b256_f8_o128 | 6 | 0.0072 | 0.0000 | 139314.5723 | 0.00000139 | 5.5570 | 2250000.0000 | 0.193122 | 844.5733 | 422.0267 |
+| fp16_nm1 | hier_macro | linear_tail_b256_f8_o128 | 6 | 0.0072 | 0.0000 | 139314.5723 | 0.00000142 | 5.7749 | 2250000.0000 | 0.197441 | 976.8733 | 478.5867 |
+| fp16_nm1 | flat_nomacro | relu_tail_b128_f8_o128 | 6 | 0.0039 | 0.0000 | 255493.1017 | 0.00000076 | 5.5570 | 2250000.0000 | 0.193122 | 844.5733 | 422.0267 |
+| fp16_nm1 | hier_macro | relu_tail_b128_f8_o128 | 6 | 0.0039 | 0.0000 | 255493.1017 | 0.00000077 | 5.7749 | 2250000.0000 | 0.197441 | 976.8733 | 478.5867 |

@@ -1,6 +1,6 @@
 ## Summary
 - item_id: `l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_measurement_r1`
-- run_key: `l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_measurement_r1_run_8308af94f8150433`
+- run_key: `l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_measurement_r1_run_5527bf8eefa698f4`
 - layer: `layer2`
 - task_type: `l2_campaign`
 - status: `ok`
@@ -11,14 +11,14 @@
 
 ## Developer Context
 - proposal_id: `prop_l2_mapper_terminal_op_generalization_v1`
-- proposal_path: `docs/developer_loop/prop_l2_mapper_terminal_op_generalization_v1`
-- reviewer_first_read: `docs/developer_loop/prop_l2_mapper_terminal_op_generalization_v1` plus `docs/developer_agent_review.md`
+- proposal_path: `docs/developer_loop/prop_l2_mapper_terminal_op_generalization_v1/proposal.json`
+- reviewer_first_read: `docs/developer_loop/prop_l2_mapper_terminal_op_generalization_v1/proposal.json` plus `docs/developer_agent_review.md`
 
 ## Evaluation Mode
 - evaluation_mode: `measurement_only`
 - comparison_role: `measurement_only`
 - expected_direction: `unknown`
-- expected_reason: `Record plain nm1 non-fused reference metrics for the bounded terminal linear plus terminal Relu suite before any direct-output mapper change.`
+- expected_reason: `Record plain nm1 non-fused reference metrics for the bounded terminal linear plus terminal ReLU suite before any direct-output mapper change.`
 - expectation_status: `not_applicable`
 - evaluation_summary: `This item records metrics for the requested architecture point and does not emit a proposal judgment.`
 

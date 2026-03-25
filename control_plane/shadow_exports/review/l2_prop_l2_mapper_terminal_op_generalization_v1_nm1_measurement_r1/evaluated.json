@@ -69,14 +69,14 @@
   },
   "layer": "layer2",
   "state": "evaluated",
-  "title": "Terminal direct-output nm1 measurement",
+  "title": "L2 terminal-op direct-output nm1 baseline",
   "result": {
-    "branch": "eval/l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_measurement_r1/s20260318t070500z",
-    "completed_utc": "2026-03-18T12:46:19.876903Z",
+    "branch": "eval/l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_measurement_r1/s20260325t074803z",
+    "completed_utc": "2026-03-25T07:44:39.804332Z",
     "evaluator_id": "control_plane",
     "executor": "@control_plane",
-    "host": "d7def79549f9",
-    "identity_block": "[role:evaluator][account:control_plane][session:s20260318t070500z][host:d7def79549f9][item:l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_measurement_r1]",
+    "host": "73c7e3a71ee5",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260325t074803z][host:73c7e3a71ee5][item:l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_measurement_r1]",
     "metrics_rows": [
       {
         "tag": "npu_fp16_nm1_cmp33_flat_nomacro",
@@ -176,13 +176,13 @@
       }
     ],
     "queue_item_id": "l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_measurement_r1",
-    "session_id": "s20260318t070500z",
+    "session_id": "s20260325t074803z",
     "status": "ok",
     "summary": "5/5 commands succeeded"
   },
   "handoff": {
-    "branch": "eval/l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_measurement_r1/s20260318t070500z",
-    "pr_title": "eval: run terminal direct-output nm1 measurement",
+    "branch": "eval/l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_measurement_r1/s20260325t074803z",
+    "pr_title": "eval: run l2 terminal-op direct-output nm1 baseline",
     "checklist": [
       "Commit lightweight campaign artifacts only",
       "Include metrics row references in result.metrics_rows",
@@ -190,8 +190,8 @@
       "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
     ],
     "pr_body_fields": {
-      "host": "d7def79549f9",
-      "session_id": "s20260318t070500z",
+      "host": "73c7e3a71ee5",
+      "session_id": "s20260325t074803z",
       "evaluator_id": "control_plane",
       "queue_item_id": "l2_prop_l2_mapper_terminal_op_generalization_v1_nm1_measurement_r1"
     },
@@ -201,7 +201,7 @@
   "version": 0.1,
   "platform": "nangate45",
   "priority": 1,
-  "created_utc": "2026-03-18T12:44:53.270301Z",
+  "created_utc": "2026-03-25T07:44:26.616369Z",
   "requested_by": "developer_agent",
   "developer_loop": {
     "comparison": {
@@ -210,10 +210,10 @@
     },
     "evaluation": {
       "mode": "measurement_only",
-      "expected_reason": "Record plain nm1 non-fused reference metrics for the bounded terminal linear plus terminal Relu suite before any direct-output mapper change.",
+      "expected_reason": "Record plain nm1 non-fused reference metrics for the bounded terminal linear plus terminal ReLU suite before any direct-output mapper change.",
       "expected_direction": "unknown"
     },
     "proposal_id": "prop_l2_mapper_terminal_op_generalization_v1",
-    "proposal_path": "docs/developer_loop/prop_l2_mapper_terminal_op_generalization_v1"
+    "proposal_path": "docs/developer_loop/prop_l2_mapper_terminal_op_generalization_v1/proposal.json"
   }
 }
