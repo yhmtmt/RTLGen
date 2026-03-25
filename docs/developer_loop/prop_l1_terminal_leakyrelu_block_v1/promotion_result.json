@@ -1,0 +1,8 @@
+{
+  "proposal_id": "prop_l1_terminal_leakyrelu_block_v1",
+  "decision": "promote",
+  "pr_number": 91,
+  "merge_commit": "5ad5fae2cba1d3db1194dd97428d78c58cb7266c",
+  "merged_utc": "2026-03-25T02:29:27.192003Z",
+  "note": "Pending first physical sweep evidence."
+}

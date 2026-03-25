@@ -1,0 +1,17 @@
+{
+  "proposal_id": "prop_l1_terminal_leakyrelu_block_v1",
+  "source_commit": "pending",
+  "requested_items": [
+    {
+      "item_id": "l1_prop_l1_terminal_leakyrelu_block_v1_nangate45_r1",
+      "task_type": "l1_sweep",
+      "evaluation_mode": "measurement_only",
+      "objective": "terminal_leakyrelu_physical_metrics",
+      "status": "ready_to_queue",
+      "notes": "First bounded Layer 1 physical sweep for the terminal int8 LeakyReLU block.",
+      "abstraction_layer": "circuit_block",
+      "config_path": "runs/designs/activations/terminal_leakyrelu_int8_wrapper/config_terminal_leakyrelu_int8.json",
+      "sweep_path": "runs/designs/activations/sweeps/nangate45_terminal_leakyrelu_int8_v1.json"
+    }
+  ]
+}
