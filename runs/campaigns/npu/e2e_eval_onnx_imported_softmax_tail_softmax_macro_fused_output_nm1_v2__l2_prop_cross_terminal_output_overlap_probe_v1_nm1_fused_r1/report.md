@@ -1,6 +1,6 @@
 # Campaign Report: npu_e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2
 
-- generated_utc: `2026-03-18T10:18:19+00:00`
+- generated_utc: `2026-03-25T12:16:58+00:00`
 - model_set_id: `onnx_imported_softmax_tail_v1`
 - model_manifest: `runs/models/onnx_imported_softmax_tail_v1/manifest.json`
 - physical_source_campaign: `runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_v1/campaign.json`

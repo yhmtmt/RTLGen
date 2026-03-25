@@ -21,6 +21,7 @@
           "results_csv": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1/results.csv",
           "campaign_dir": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1"
         },
+        "clean_outputs": true,
         "base_campaign_path": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2/campaign.json"
       },
       "candidate_manifests": [
@@ -49,7 +50,7 @@
         "name": "validate_runs"
       }
     ],
-    "objective": "Rerun the fused nm1 candidate under the corrected event contract against the refreshed non-fused baseline.",
+    "objective": "focused_candidate",
     "acceptance": [
       "Populate metrics.csv for all referenced design dirs",
       "Write campaign summary outputs under the campaign output directory",
@@ -69,14 +70,14 @@
   },
   "layer": "layer2",
   "state": "evaluated",
-  "title": "Focused nm1 fused rerun",
+  "title": "L2 overlap-probe nm1 fused candidate",
   "result": {
-    "branch": "eval/l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1/s20260318t101856z",
-    "completed_utc": "2026-03-18T10:18:19.585592Z",
+    "branch": "eval/l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1/s20260325t122145z",
+    "completed_utc": "2026-03-25T12:17:00.118353Z",
     "evaluator_id": "control_plane",
     "executor": "@control_plane",
-    "host": "d7def79549f9",
-    "identity_block": "[role:evaluator][account:control_plane][session:s20260318t101856z][host:d7def79549f9][item:l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1]",
+    "host": "73c7e3a71ee5",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260325t122145z][host:73c7e3a71ee5][item:l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1]",
     "metrics_rows": [
       {
         "tag": "npu_fp16_nm1_softcmp33_flat_nomacro_r1",
@@ -128,13 +129,13 @@
       }
     ],
     "queue_item_id": "l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1",
-    "session_id": "s20260318t101856z",
+    "session_id": "s20260325t122145z",
     "status": "ok",
     "summary": "5/5 commands succeeded"
   },
   "handoff": {
-    "branch": "eval/l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1/s20260318t101856z",
-    "pr_title": "eval: run focused nm1 fused rerun",
+    "branch": "eval/l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1/s20260325t122145z",
+    "pr_title": "eval: run l2 overlap-probe nm1 fused candidate",
     "checklist": [
       "Commit lightweight campaign artifacts only",
       "Include metrics row references in result.metrics_rows",
@@ -142,8 +143,8 @@
       "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
     ],
     "pr_body_fields": {
-      "host": "d7def79549f9",
-      "session_id": "s20260318t101856z",
+      "host": "73c7e3a71ee5",
+      "session_id": "s20260325t122145z",
       "evaluator_id": "control_plane",
       "queue_item_id": "l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1"
     },
@@ -153,14 +154,19 @@
   "version": 0.1,
   "platform": "nangate45",
   "priority": 1,
-  "created_utc": "2026-03-18T10:18:03.447836Z",
+  "created_utc": "2026-03-25T12:16:51.286908Z",
   "requested_by": "developer_agent",
   "developer_loop": {
     "comparison": {
       "role": "candidate",
-      "paired_baseline_item_id": "l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r1"
+      "paired_baseline_item_id": "l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r2"
+    },
+    "evaluation": {
+      "mode": "paired_comparison",
+      "expected_reason": "Fused terminal output should reduce latency and energy if terminal-output traffic is the mechanism hiding the benefit in the baseline setup.",
+      "expected_direction": "improved"
     },
     "proposal_id": "prop_cross_terminal_output_overlap_probe_v1",
-    "proposal_path": "docs/developer_loop/prop_cross_terminal_output_overlap_probe_v1"
+    "proposal_path": "docs/developer_loop/prop_cross_terminal_output_overlap_probe_v1/proposal.json"
   }
 }
