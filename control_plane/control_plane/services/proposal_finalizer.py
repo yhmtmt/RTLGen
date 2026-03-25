@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import json
 from pathlib import Path
+import re
 import subprocess
 from typing import Any
 
@@ -44,6 +45,9 @@ class ProposalFinalizeResult:
     skip_reason: str | None
 
 
+_RETRY_SUFFIX_RE = re.compile(r"_r\d+$")
+
+
 def _resolve_run(session: Session, request: ProposalFinalizeRequest) -> tuple[WorkItem, Run]:
     if request.run_key:
         run = session.query(Run).filter(Run.run_key == request.run_key).one_or_none()
@@ -77,6 +81,85 @@ def _comparison_payload(work_item: WorkItem) -> dict[str, Any]:
     developer_loop = _developer_loop_payload(work_item)
     comparison = developer_loop.get("comparison")
     return dict(comparison) if isinstance(comparison, dict) else {}
+
+
+def _work_item_objective(work_item: WorkItem) -> str:
+    payload = (work_item.task_request.request_payload or {}) if work_item.task_request is not None else {}
+    task = payload.get("task")
+    if isinstance(task, dict):
+        objective = str(task.get("objective", "")).strip()
+        if objective:
+            return objective
+    if work_item.task_request is not None:
+        return str(work_item.task_request.description or "").strip()
+    return ""
+
+
+def _retry_base(item_id: str) -> str:
+    return _RETRY_SUFFIX_RE.sub("", item_id.strip())
+
+
+def _rebind_requested_entry(entry: dict[str, Any], *, item_id: str) -> None:
+    previous_item_id = str(entry.get("item_id", "")).strip()
+    if previous_item_id and previous_item_id != item_id:
+        prior = entry.get("prior_item_ids")
+        values = [str(v).strip() for v in prior] if isinstance(prior, list) else []
+        if previous_item_id not in values:
+            values.append(previous_item_id)
+        entry["prior_item_ids"] = values
+    entry["item_id"] = item_id
+
+
+def _resolve_requested_entry(
+    requested_items: list[dict[str, Any]],
+    *,
+    work_item: WorkItem,
+    evaluation_requests_path: Path,
+) -> dict[str, Any]:
+    for entry in requested_items:
+        if isinstance(entry, dict) and str(entry.get("item_id", "")).strip() == work_item.item_id:
+            return entry
+
+    work_retry_base = _retry_base(work_item.item_id)
+    retry_matches = [
+        entry
+        for entry in requested_items
+        if isinstance(entry, dict) and _retry_base(str(entry.get("item_id", "")).strip()) == work_retry_base
+    ]
+    if len(retry_matches) == 1:
+        entry = retry_matches[0]
+        _rebind_requested_entry(entry, item_id=work_item.item_id)
+        return entry
+    if len(retry_matches) > 1:
+        raise ProposalFinalizationError(
+            f"item {work_item.item_id} has multiple retry-base matches in {evaluation_requests_path}"
+        )
+
+    work_objective = _work_item_objective(work_item)
+    work_eval_mode = str(_evaluation_payload(work_item).get("mode", "")).strip()
+    fallback_matches = []
+    for entry in requested_items:
+        if not isinstance(entry, dict):
+            continue
+        if str(entry.get("task_type", "")).strip() != work_item.task_type:
+            continue
+        entry_objective = str(entry.get("objective", "")).strip()
+        if work_objective and entry_objective and entry_objective != work_objective:
+            continue
+        entry_eval_mode = str(entry.get("evaluation_mode", "")).strip()
+        if work_eval_mode and entry_eval_mode and entry_eval_mode != work_eval_mode:
+            continue
+        fallback_matches.append(entry)
+    if len(fallback_matches) == 1:
+        entry = fallback_matches[0]
+        _rebind_requested_entry(entry, item_id=work_item.item_id)
+        return entry
+    if len(fallback_matches) > 1:
+        raise ProposalFinalizationError(
+            f"item {work_item.item_id} has multiple objective matches in {evaluation_requests_path}"
+        )
+
+    raise ProposalFinalizationError(f"item {work_item.item_id} is not present in {evaluation_requests_path}")
 
 
 def _proposal_path(repo_root: Path, work_item: WorkItem) -> Path | None:
@@ -401,13 +484,11 @@ def finalize_after_merge(session: Session, request: ProposalFinalizeRequest) -> 
     requested_items = evaluation_requests.get("requested_items")
     if not isinstance(requested_items, list):
         raise ProposalFinalizationError(f"expected requested_items list in {evaluation_requests_path}")
-    matched_entry = None
-    for entry in requested_items:
-        if isinstance(entry, dict) and str(entry.get("item_id", "")).strip() == work_item.item_id:
-            matched_entry = entry
-            break
-    if matched_entry is None:
-        raise ProposalFinalizationError(f"item {work_item.item_id} is not present in {evaluation_requests_path}")
+    matched_entry = _resolve_requested_entry(
+        [entry for entry in requested_items if isinstance(entry, dict)],
+        work_item=work_item,
+        evaluation_requests_path=evaluation_requests_path,
+    )
 
     existing_decision = str(promotion_result.get("decision", "")).strip().lower()
     matched_status = str(matched_entry.get("status", "")).strip().lower()
