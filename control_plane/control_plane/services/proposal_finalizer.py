@@ -461,8 +461,11 @@ def finalize_after_merge(session: Session, request: ProposalFinalizeRequest) -> 
         )
 
     merge_commit = request.merge_commit
+    prepared_repo_head: str | None = None
     if request.git_publish:
-        merge_commit = merge_commit or _prepare_repo(repo_root)
+        prepared_repo_head = _prepare_repo(repo_root)
+        if not merge_commit:
+            merge_commit = prepared_repo_head
 
     proposal_payload = _load_json(proposal_path)
     proposal_id = str(proposal_payload.get("proposal_id", "")).strip() or proposal_path.parent.name

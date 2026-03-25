@@ -723,6 +723,7 @@ def test_finalize_refreshes_repo_before_loading_proposal_files() -> None:
                         repo_root=str(repo_root),
                         item_id="l1_refresh_demo_r1",
                         pr_number=86,
+                        merge_commit="mergedeadbeef",
                         git_publish=True,
                     ),
                 )
@@ -735,7 +736,7 @@ def test_finalize_refreshes_repo_before_loading_proposal_files() -> None:
         assert result.decision == "promote"
         assert result.commit_sha == "finalize123"
         promotion_result = json.loads((proposal_path / "promotion_result.json").read_text())
-        assert promotion_result["merge_commit"] == "merge123"
+        assert promotion_result["merge_commit"] == "mergedeadbeef"
 
 
 def test_prepare_repo_resets_detached_worktree_to_origin_master() -> None:
