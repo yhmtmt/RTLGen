@@ -569,7 +569,11 @@ def main() -> int:
     if args.campaign:
         path = Path(args.campaign)
         doc = load_json(path)
-        validate_campaign(doc, check_paths=args.check_paths)
+        validate_campaign(
+            doc,
+            check_paths=args.check_paths,
+            allow_fetch_missing_paths=True,
+        )
         print(f"OK: campaign {path}")
         return 0
 
