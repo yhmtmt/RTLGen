@@ -5,22 +5,32 @@
 - `title`: `NPU nm1 hard-sigmoid vec enable`
 
 ## Scope
-- proposal seeded only; integrated `nm1` hard-sigmoid support is not implemented yet
-- intended shape mirrors the accepted sigmoid/tanh path:
-  - local vec-op legality/generation support first
-  - reduced integrated physical proxy second
-  - Layer 2 later
+- integrated bounded `int8` hard-sigmoid support added to the fixed `nm1` vec path
+- reduced integrated physical proxy added so the first remote item can target a practical `architecture_block` source instead of full `npu_top`
+- this follows the accepted sigmoid/tanh pattern: integrated legality/generation first, reduced physical source next, Layer 2 later
 
-## Planned Work
-- add hard-sigmoid vec op support to the integrated `nm1` generator and perf path
-- add local legality / smoke checks for the bounded op
-- define a reduced integrated physical proxy suitable for first-pass `architecture_block` measurement
-- queue the first Layer 1 reduced-proxy sweep only after the local path exists
+## Files Changed
+- `npu/rtlgen/gen.py`
+- `npu/rtlgen/config_spec.md`
+- `npu/sim/perf/model.py`
+- `npu/sim/perf/run.py`
+- `tests/test_npu_rtlgen_vec_hardsigmoid.py`
+- `npu/sim/perf/tests/test_perf_vec_hardsigmoid.py`
+- `runs/designs/npu_blocks/npu_fp16_cpp_nm1_hardsigmoidcmp/config_nm1_hardsigmoid.json`
+- `runs/designs/npu_blocks/npu_fp16_cpp_nm1_hardsigmoidcmp/README.md`
+- `runs/designs/npu_blocks/npu_fp16_cpp_nm1_hardsigmoidproxy/config_nm1_hardsigmoidproxy.json`
+- `runs/designs/npu_blocks/npu_fp16_cpp_nm1_hardsigmoidproxy/README.md`
+- `runs/designs/npu_blocks/npu_fp16_cpp_nm1_hardsigmoidproxy/sweep_proxy_firstpass.json`
+- `docs/developer_loop/prop_l1_npu_nm1_hardsigmoid_vec_enable_v1/implementation_summary.md`
 
-## Current State
-- accepted lower-layer source exists:
-  - standalone hard-sigmoid block proposal `prop_l1_terminal_hardsigmoid_block_v1`
-- no integrated `nm1` hard-sigmoid implementation or remote evaluation has been queued yet
+## Local Validation
+- `python3 -m py_compile npu/rtlgen/gen.py npu/sim/perf/model.py npu/sim/perf/run.py tests/test_npu_rtlgen_vec_hardsigmoid.py npu/sim/perf/tests/test_perf_vec_hardsigmoid.py`
+- `python3 npu/sim/perf/tests/test_perf_vec_hardsigmoid.py`
+- `python3 tests/test_npu_rtlgen_vec_hardsigmoid.py`
+- `python3 npu/rtlgen/gen.py --config runs/designs/npu_blocks/npu_fp16_cpp_nm1_hardsigmoidproxy/config_nm1_hardsigmoidproxy.json --out /tmp/nm1_hardsigmoidproxy_out`
+
+## Remote Evaluation
+- not queued yet in this commit; the first reduced-proxy sweep should be queued against this implementation commit
 
 ## Next Step
-- implement bounded integrated `nm1` hard-sigmoid vec support and seed the first reduced-proxy sweep request
+- queue the first reduced-proxy Layer 1 sweep for the integrated `nm1` hard-sigmoid source
