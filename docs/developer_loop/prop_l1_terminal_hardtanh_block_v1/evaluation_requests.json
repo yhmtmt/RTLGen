@@ -1,17 +1,23 @@
 {
   "proposal_id": "prop_l1_terminal_hardtanh_block_v1",
-  "source_commit": "pending",
+  "source_commit": "926cb8d43643d02455d953db2347faef9c60c4d2",
   "requested_items": [
     {
-      "item_id": "l1_prop_l1_terminal_hardtanh_block_v1_nangate45_r1",
+      "item_id": "l1_prop_l1_terminal_hardtanh_block_v1_nangate45_r2",
       "task_type": "l1_sweep",
       "evaluation_mode": "measurement_only",
       "objective": "terminal_hardtanh_physical_metrics",
-      "status": "ready_to_queue",
-      "notes": "First bounded Layer 1 physical sweep for the terminal int8 hardtanh block.",
+      "status": "merged",
+      "notes": "First bounded Layer 1 physical sweep for the terminal int8 hardtanh block. Merged via PR #89 and merge ba5eb4c55d28b490b2e31ce63ec6d0b4713237c7 at 2026-03-25T01:59:06.968858Z.",
       "abstraction_layer": "circuit_block",
       "config_path": "runs/designs/activations/terminal_hardtanh_int8_pwl_wrapper/config_terminal_hardtanh_int8_pwl.json",
-      "sweep_path": "runs/designs/activations/sweeps/nangate45_terminal_hardtanh_int8_pwl_v1.json"
+      "sweep_path": "runs/designs/activations/sweeps/nangate45_terminal_hardtanh_int8_pwl_v1.json",
+      "prior_item_ids": [
+        "l1_prop_l1_terminal_hardtanh_block_v1_nangate45_r1"
+      ],
+      "merged_pr_number": 89,
+      "merge_commit": "ba5eb4c55d28b490b2e31ce63ec6d0b4713237c7",
+      "merged_utc": "2026-03-25T01:59:06.968858Z"
     }
   ]
 }

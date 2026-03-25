@@ -1,8 +1,8 @@
 {
   "proposal_id": "prop_l1_terminal_hardtanh_block_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": null,
-  "merged_utc": null,
+  "decision": "promote",
+  "pr_number": 89,
+  "merge_commit": "ba5eb4c55d28b490b2e31ce63ec6d0b4713237c7",
+  "merged_utc": "2026-03-25T01:59:06.968858Z",
   "note": "Pending first physical sweep evidence."
 }
