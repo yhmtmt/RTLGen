@@ -2,13 +2,13 @@
 
 ## Candidate
 - `proposal_id`: `prop_l1_terminal_leakyrelu_block_v1`
-- `candidate_id`: `l1_prop_l1_terminal_leakyrelu_block_v1_nangate45_r2`
+- `candidate_id`: `l1_prop_l1_terminal_leakyrelu_block_v1_nangate45_r1`
 
 ## Evaluations Consumed
-- `l1_prop_l1_terminal_leakyrelu_block_v1_nangate45_r2`
-- `l1_prop_l1_terminal_leakyrelu_block_v1_nangate45_r2_run_0529d84d968268c3`
-- source commit: `4aab8f3ec45924f8d7f7673279ce573a1302e602`
-- review: PR #91
+- `l1_prop_l1_terminal_leakyrelu_block_v1_nangate45_r1`
+- `l1_prop_l1_terminal_leakyrelu_block_v1_nangate45_r1_run_5f54011974e7107a`
+- source commit: `1b46667acc08716a86ec6f37f68072d3a37ba6c7`
+- review: PR #93
 
 ## Baseline Comparison
 - not applicable
@@ -25,5 +25,5 @@
 
 ## Recommendation
 - `promote`
-- reason: Accepted Layer 1 physical metrics were merged in PR #91 for the current candidate.
+- reason: Accepted Layer 1 physical metrics were merged in PR #93 for the current candidate.
 - next_action: inspect the next dependent item

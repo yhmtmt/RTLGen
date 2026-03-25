@@ -1,17 +1,20 @@
 {
   "proposal_id": "prop_l1_terminal_leakyrelu_block_v1",
-  "source_commit": "pending",
+  "source_commit": "1b46667acc08716a86ec6f37f68072d3a37ba6c7",
   "requested_items": [
     {
       "item_id": "l1_prop_l1_terminal_leakyrelu_block_v1_nangate45_r1",
       "task_type": "l1_sweep",
       "evaluation_mode": "measurement_only",
       "objective": "terminal_leakyrelu_physical_metrics",
-      "status": "ready_to_queue",
-      "notes": "First bounded Layer 1 physical sweep for the terminal int8 LeakyReLU block.",
+      "status": "merged",
+      "notes": "First bounded Layer 1 physical sweep for the terminal int8 LeakyReLU block. Merged via PR #93 and merge fc3b0fc3c854e08a5add77df7cde92b6587639b4 at 2026-03-25T05:30:09.544588Z.",
       "abstraction_layer": "circuit_block",
       "config_path": "runs/designs/activations/terminal_leakyrelu_int8_wrapper/config_terminal_leakyrelu_int8.json",
-      "sweep_path": "runs/designs/activations/sweeps/nangate45_terminal_leakyrelu_int8_v1.json"
+      "sweep_path": "runs/designs/activations/sweeps/nangate45_terminal_leakyrelu_int8_v1.json",
+      "merged_pr_number": 93,
+      "merge_commit": "fc3b0fc3c854e08a5add77df7cde92b6587639b4",
+      "merged_utc": "2026-03-25T05:30:09.544588Z"
     }
   ]
 }
