@@ -375,6 +375,10 @@ def finalize_after_merge(session: Session, request: ProposalFinalizeRequest) -> 
             skip_reason="work item has no developer_loop proposal metadata",
         )
 
+    merge_commit = request.merge_commit
+    if request.git_publish:
+        merge_commit = merge_commit or _prepare_repo(repo_root)
+
     proposal_payload = _load_json(proposal_path)
     proposal_id = str(proposal_payload.get("proposal_id", "")).strip() or proposal_path.parent.name
     evaluation_requests_path = proposal_path.parent / "evaluation_requests.json"
@@ -392,10 +396,7 @@ def finalize_after_merge(session: Session, request: ProposalFinalizeRequest) -> 
     pr_url = request.pr_url or (merged_link.pr_url if merged_link is not None else None)
     merged_utc = request.merged_utc or utcnow().isoformat().replace("+00:00", "Z")
 
-    merge_commit = request.merge_commit
-    if request.git_publish:
-        merge_commit = merge_commit or _prepare_repo(repo_root)
-    elif not merge_commit and merged_link is not None:
+    if not request.git_publish and not merge_commit and merged_link is not None:
         merge_commit = merged_link.head_sha
 
     requested_items = evaluation_requests.get("requested_items")

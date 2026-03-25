@@ -16,6 +16,7 @@ from control_plane.models.enums import ExecutorType, FlowName, LayerName, RunSta
 from control_plane.models.runs import Run
 from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
+import control_plane.services.proposal_finalizer as proposal_finalizer
 from control_plane.services.proposal_finalizer import ProposalFinalizeRequest, finalize_after_merge
 
 
@@ -480,3 +481,141 @@ def test_finalize_l2_measurement_merge_iterates_and_unblocks_candidate() -> None
         promotion_decision = json.loads((proposal_path / "promotion_decision.json").read_text())
         assert promotion_decision["decision"] == "iterate"
         assert promotion_decision["next_action"] == "queue l2_demo_fused_r1"
+
+
+def test_finalize_refreshes_repo_before_loading_proposal_files() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        proposal_id = "prop_l1_refresh_demo_v1"
+        proposal_path = repo_root / "docs" / "developer_loop" / proposal_id
+        payload_path = repo_root / "control_plane" / "shadow_exports" / "l1_promotions" / "l1_refresh_demo_r1.json"
+        _write(
+            payload_path,
+            json.dumps(
+                {
+                    "item_id": "l1_refresh_demo_r1",
+                    "run_key": "l1_refresh_demo_r1_run_1",
+                    "source_commit": "abc123",
+                    "proposals": [
+                        {
+                            "metrics_ref": {"metrics_csv": "runs/designs/demo/metrics.csv", "platform": "nangate45", "status": "ok"},
+                            "metric_summary": {"critical_path_ns": 1.0, "die_area": 10.0, "total_power_mw": 0.1},
+                        }
+                    ],
+                },
+                indent=2,
+            )
+            + "\n",
+        )
+
+        with _session() as session:
+            task = TaskRequest(
+                request_key="l1:l1_refresh_demo_r1",
+                source="test",
+                requested_by="tester",
+                title="refresh l1",
+                description="refresh l1 objective",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                priority=1,
+                request_payload={
+                    "developer_loop": {
+                        "proposal_id": proposal_id,
+                        "proposal_path": str((proposal_path / "proposal.json").relative_to(repo_root)),
+                    }
+                },
+            )
+            session.add(task)
+            session.flush()
+            work_item = WorkItem(
+                work_item_key="l1:l1_refresh_demo_r1",
+                task_request_id=task.id,
+                item_id="l1_refresh_demo_r1",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                platform="nangate45",
+                task_type="l1_sweep",
+                state=WorkItemState.MERGED,
+                priority=1,
+                input_manifest={},
+                command_manifest=[],
+                expected_outputs=["runs/designs/demo/metrics.csv"],
+                acceptance_rules=[],
+                source_commit="abc123",
+            )
+            session.add(work_item)
+            session.flush()
+            run = Run(
+                run_key="l1_refresh_demo_r1_run_1",
+                work_item_id=work_item.id,
+                attempt=1,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.SUCCEEDED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="abc123",
+                result_summary="ok",
+                result_payload={"queue_result": {"status": "ok"}},
+            )
+            session.add(run)
+            session.flush()
+            session.add(
+                Artifact(
+                    run_id=run.id,
+                    kind="promotion_proposal",
+                    storage_mode="repo",
+                    path=str(payload_path.relative_to(repo_root)),
+                    sha256="x",
+                    metadata_={},
+                )
+            )
+            session.commit()
+
+            original_prepare = proposal_finalizer._prepare_repo
+            original_git_dirty = proposal_finalizer._git_dirty
+            original_run_git = proposal_finalizer._run_git
+            try:
+                def fake_prepare(root: Path) -> str:
+                    _seed_repo_files(
+                        root,
+                        proposal_id,
+                        [
+                            {
+                                "item_id": "l1_refresh_demo_r1",
+                                "task_type": "l1_sweep",
+                                "objective": "demo_metrics",
+                                "status": "pending",
+                            }
+                        ],
+                    )
+                    return "merge123"
+
+                proposal_finalizer._prepare_repo = fake_prepare
+                proposal_finalizer._git_dirty = lambda _root: True
+
+                def fake_run_git(_root: Path, *args: str, env=None) -> str:
+                    if args[:1] == ("rev-parse",):
+                        return "finalize123"
+                    return ""
+
+                proposal_finalizer._run_git = fake_run_git
+
+                result = finalize_after_merge(
+                    session,
+                    ProposalFinalizeRequest(
+                        repo_root=str(repo_root),
+                        item_id="l1_refresh_demo_r1",
+                        pr_number=86,
+                        git_publish=True,
+                    ),
+                )
+            finally:
+                proposal_finalizer._prepare_repo = original_prepare
+                proposal_finalizer._git_dirty = original_git_dirty
+                proposal_finalizer._run_git = original_run_git
+
+        assert result.skipped is False
+        assert result.decision == "promote"
+        assert result.commit_sha == "finalize123"
+        promotion_result = json.loads((proposal_path / "promotion_result.json").read_text())
+        assert promotion_result["merge_commit"] == "merge123"
