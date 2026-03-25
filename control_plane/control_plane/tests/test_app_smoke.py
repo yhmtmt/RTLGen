@@ -54,3 +54,26 @@ def test_operator_status_route() -> None:
     assert "change_token" in payload
     assert payload["health_summary"]["status"] in {"healthy", "attention"}
     assert isinstance(payload["state_counts"], dict)
+
+
+def test_operator_status_change_token_stable_without_state_change() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        db_path = Path(td) / "cp.db"
+        engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
+        create_all(engine)
+
+        previous = os.environ.get("RTLCP_DATABASE_URL")
+        os.environ["RTLCP_DATABASE_URL"] = f"sqlite+pysqlite:///{db_path}"
+        try:
+            app = create_app()
+            _status1, _headers1, body1 = app.handle("GET", "/api/v1/operator-status")
+            _status2, _headers2, body2 = app.handle("GET", "/api/v1/operator-status")
+        finally:
+            if previous is None:
+                os.environ.pop("RTLCP_DATABASE_URL", None)
+            else:
+                os.environ["RTLCP_DATABASE_URL"] = previous
+
+    payload1 = json.loads(body1.decode("utf-8"))
+    payload2 = json.loads(body2.decode("utf-8"))
+    assert payload1["change_token"] == payload2["change_token"]

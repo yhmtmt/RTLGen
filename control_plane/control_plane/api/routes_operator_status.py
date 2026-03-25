@@ -246,7 +246,7 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
     };
 
     let pollHandle = null;
-    let previousToken = null;
+    let previousAlertToken = null;
     let soundEnabled = true;
     let audioContext = null;
     const transitionHistory = [];
@@ -307,8 +307,40 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
       });
       while (transitionHistory.length > 8) transitionHistory.pop();
       eventLog.innerHTML = transitionHistory.map((event) => (
-        `<li><span class=\"time\">${escapeHtml(formatTime(event.at))}</span>${escapeHtml(event.message)}</li>`
-      )).join(\"\");
+        `<li><span class="time">${escapeHtml(formatTime(event.at))}</span>${escapeHtml(event.message)}</li>`
+      )).join("");
+    }
+
+    function buildAlertToken(payload) {
+      const signature = {
+        health: {
+          status: payload.health_summary?.status || null,
+          message: payload.health_summary?.message || null,
+        },
+        state_counts: payload.state_counts || {},
+        active_runs: (payload.active_runs || []).map((row) => ({
+          item_id: row.item_id || null,
+          task_type: row.task_type || null,
+          worker_host: row.worker_host || null,
+        })),
+        recent_submissions: (payload.recent_submissions || []).map((row) => ({
+          item_id: row.item_id || null,
+          pr_number: row.pr_number ?? null,
+          state: row.state || null,
+        })),
+        recent_failures: (payload.recent_failures || []).map((row) => ({
+          item_id: row.item_id || null,
+          failure_category: row.failure_category || null,
+          failure_issue_status: row.failure_issue_status || null,
+          failure_issue_number: row.failure_issue_number ?? null,
+          summary: row.summary || null,
+        })),
+        stale_leases: (payload.stale_leases || []).map((row) => ({
+          item_id: row.item_id || null,
+          hostname: row.hostname || null,
+        })),
+      };
+      return JSON.stringify(signature);
     }
 
     function classifyTransition(payload, previousPayload) {
@@ -317,27 +349,27 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
       const previousFailures = previousPayload.recent_failures?.length || 0;
       const awaitingReview = payload.state_counts?.awaiting_review || 0;
       const previousAwaitingReview = previousPayload.state_counts?.awaiting_review || 0;
-      const mergedSubmissions = (payload.recent_submissions || []).filter((row) => row.state === \"pr_merged\").length;
-      const previousMergedSubmissions = (previousPayload.recent_submissions || []).filter((row) => row.state === \"pr_merged\").length;
+      const mergedSubmissions = (payload.recent_submissions || []).filter((row) => row.state === "pr_merged").length;
+      const previousMergedSubmissions = (previousPayload.recent_submissions || []).filter((row) => row.state === "pr_merged").length;
       const activeRuns = payload.active_runs?.length || 0;
       const previousActiveRuns = previousPayload.active_runs?.length || 0;
 
       if (failures > previousFailures) {
-        return { message: `New failed job detected (${failures}).`, tone: \"failure\" };
+        return { message: `New failed job detected (${failures}).`, tone: "failure" };
       }
       if (awaitingReview > previousAwaitingReview) {
-        return { message: `New review item awaiting attention (${awaitingReview}).`, tone: \"review\" };
+        return { message: `New review item awaiting attention (${awaitingReview}).`, tone: "review" };
       }
       if (mergedSubmissions > previousMergedSubmissions) {
-        return { message: `Merged review reconciled (${mergedSubmissions}).`, tone: \"merge\" };
+        return { message: `Merged review reconciled (${mergedSubmissions}).`, tone: "merge" };
       }
       if (activeRuns !== previousActiveRuns) {
-        return { message: `Active run count changed (${previousActiveRuns} -> ${activeRuns}).`, tone: \"activity\" };
+        return { message: `Active run count changed (${previousActiveRuns} -> ${activeRuns}).`, tone: "activity" };
       }
       if (payload.health_summary?.message !== previousPayload.health_summary?.message) {
-        return { message: payload.health_summary?.message || \"Health summary changed.\", tone: \"activity\" };
+        return { message: payload.health_summary?.message || "Health summary changed.", tone: "activity" };
       }
-      return { message: \"Control-plane state changed.\", tone: \"activity\" };
+      return null;
     }
 
     function tonePattern(name) {
@@ -401,18 +433,19 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
     }
 
     async function loadStatus() {
-      const response = await fetch(statusUrl, { cache: \"no-store\" });
+      const response = await fetch(statusUrl, { cache: "no-store" });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const payload = await response.json();
       const previousPayload = window.__lastPayload || null;
-      if (previousToken && previousToken !== payload.change_token) {
+      const alertToken = buildAlertToken(payload);
+      if (previousAlertToken && previousAlertToken !== alertToken) {
         const transition = classifyTransition(payload, previousPayload);
         if (transition) {
           pushEvent(transition.message);
           playTone(tonePattern(transition.tone));
         }
       }
-      previousToken = payload.change_token;
+      previousAlertToken = alertToken;
       window.__lastPayload = payload;
       renderPayload(payload);
     }
@@ -468,7 +501,9 @@ def _status_payload(database_url: str, recent_limit: int) -> dict[str, object]:
         "recent_failures": status.recent_failures,
         "recent_submissions": status.recent_submissions,
     }
-    fingerprint = hashlib.sha256(json.dumps(payload, sort_keys=True).encode("utf-8")).hexdigest()
+    fingerprint_payload = dict(payload)
+    fingerprint_payload.pop("generated_utc", None)
+    fingerprint = hashlib.sha256(json.dumps(fingerprint_payload, sort_keys=True).encode("utf-8")).hexdigest()
     payload["change_token"] = fingerprint
     return payload
 
