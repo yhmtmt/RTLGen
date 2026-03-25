@@ -167,7 +167,10 @@ def _proposal_path(repo_root: Path, work_item: WorkItem) -> Path | None:
     proposal_path = str(developer_loop.get("proposal_path", "")).strip()
     proposal_id = str(developer_loop.get("proposal_id", "")).strip()
     if proposal_path:
-        return (repo_root / proposal_path).resolve()
+        resolved = (repo_root / proposal_path).resolve()
+        if resolved.is_dir():
+            return (resolved / "proposal.json").resolve()
+        return resolved
     if proposal_id:
         return (repo_root / "docs" / "developer_loop" / proposal_id / "proposal.json").resolve()
     return None

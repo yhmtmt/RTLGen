@@ -76,6 +76,123 @@ def _seed_repo_files(repo_root: Path, proposal_id: str, requested_items: list[di
     return proposal_dir
 
 
+def test_finalize_accepts_directory_style_proposal_path() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        proposal_id = "prop_dir_style_v1"
+        proposal_dir = _seed_repo_files(
+            repo_root,
+            proposal_id,
+            [
+                {
+                    "item_id": "dir_style_r1",
+                    "task_type": "l1_sweep",
+                    "objective": "dir_style_metrics",
+                    "status": "pending",
+                }
+            ],
+        )
+        payload_path = repo_root / "control_plane" / "shadow_exports" / "l1_promotions" / "dir_style_r1.json"
+        _write(
+            payload_path,
+            json.dumps(
+                {
+                    "item_id": "dir_style_r1",
+                    "run_key": "dir_style_r1_run_1",
+                    "source_commit": "abc123",
+                    "proposals": [
+                        {
+                            "metrics_ref": {"metrics_csv": "runs/designs/demo/metrics.csv", "platform": "nangate45", "status": "ok"},
+                            "metric_summary": {"critical_path_ns": 1.0, "die_area": 100.0, "total_power_mw": 0.01},
+                        }
+                    ],
+                },
+                indent=2,
+            )
+            + "\n",
+        )
+
+        with _session() as session:
+            task = TaskRequest(
+                request_key="l1:dir_style_r1",
+                source="test",
+                requested_by="tester",
+                title="dir style l1",
+                description="dir style objective",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                priority=1,
+                request_payload={
+                    "developer_loop": {
+                        "proposal_id": proposal_id,
+                        "proposal_path": str(proposal_dir.relative_to(repo_root)),
+                    }
+                },
+            )
+            session.add(task)
+            session.flush()
+            work_item = WorkItem(
+                work_item_key="l1:dir_style_r1",
+                task_request_id=task.id,
+                item_id="dir_style_r1",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                platform="nangate45",
+                task_type="l1_sweep",
+                state=WorkItemState.MERGED,
+                priority=1,
+                input_manifest={},
+                command_manifest=[],
+                expected_outputs=["runs/designs/demo/metrics.csv"],
+                acceptance_rules=[],
+                source_commit="abc123",
+            )
+            session.add(work_item)
+            session.flush()
+            run = Run(
+                run_key="dir_style_r1_run_1",
+                work_item_id=work_item.id,
+                attempt=1,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.SUCCEEDED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="abc123",
+                result_summary="ok",
+                result_payload={"queue_result": {"status": "ok"}},
+            )
+            session.add(run)
+            session.flush()
+            session.add(
+                Artifact(
+                    run_id=run.id,
+                    kind="promotion_proposal",
+                    storage_mode="repo",
+                    path=str(payload_path.relative_to(repo_root)),
+                    sha256="x",
+                    metadata_={},
+                )
+            )
+            session.commit()
+
+            result = finalize_after_merge(
+                session,
+                ProposalFinalizeRequest(
+                    repo_root=str(repo_root),
+                    item_id="dir_style_r1",
+                    pr_number=99,
+                    merge_commit="facefeed",
+                    merged_utc="2026-03-25T03:00:00Z",
+                    git_publish=False,
+                ),
+            )
+
+        assert result.skipped is False
+        assert result.decision == "promote"
+        promotion_result = json.loads((proposal_dir / "promotion_result.json").read_text())
+        assert promotion_result["merge_commit"] == "facefeed"
+
+
 def test_finalize_l1_merge_promotes_and_releases_next_item() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
