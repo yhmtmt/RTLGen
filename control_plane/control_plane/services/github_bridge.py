@@ -137,7 +137,7 @@ def reconcile_github_link(session: Session, request: GitHubReconcileRequest) -> 
             head_sha=request.head_sha,
             base_branch=request.base_branch,
             state=state,
-            metadata_=request.metadata or {},
+            metadata_=dict(request.metadata or {}),
         )
         session.add(link)
     else:
@@ -155,7 +155,9 @@ def reconcile_github_link(session: Session, request: GitHubReconcileRequest) -> 
             link.base_branch = request.base_branch
         link.state = state
         if request.metadata is not None:
-            link.metadata_ = request.metadata
+            merged_metadata = dict(link.metadata_ or {})
+            merged_metadata.update(request.metadata)
+            link.metadata_ = merged_metadata
 
     if run is not None and request.branch_name and run.branch_name != request.branch_name:
         run.branch_name = request.branch_name
@@ -201,11 +203,36 @@ def reconcile_github_link(session: Session, request: GitHubReconcileRequest) -> 
                     git_publish=True,
                 ),
             )
-            if not finalize_result.skipped:
-                finalized_proposal_id = finalize_result.proposal_id
-                finalization_commit = finalize_result.commit_sha
+            finalized_proposal_id = finalize_result.proposal_id
+            finalization_commit = finalize_result.commit_sha
+            merged_metadata = dict(link.metadata_ or {})
+            merged_metadata.update(
+                {
+                    "finalization_attempted_utc": utcnow().isoformat().replace("+00:00", "Z"),
+                    "finalized_proposal_id": finalize_result.proposal_id,
+                    "finalization_commit": finalize_result.commit_sha,
+                    "finalization_skipped": finalize_result.skipped,
+                    "finalization_skip_reason": finalize_result.skip_reason,
+                    "finalization_error": None,
+                }
+            )
+            link.metadata_ = merged_metadata
         except ProposalFinalizationError as exc:
             finalization_error = str(exc)
+            merged_metadata = dict(link.metadata_ or {})
+            merged_metadata.update(
+                {
+                    "finalization_attempted_utc": utcnow().isoformat().replace("+00:00", "Z"),
+                    "finalized_proposal_id": None,
+                    "finalization_commit": None,
+                    "finalization_skipped": False,
+                    "finalization_skip_reason": None,
+                    "finalization_error": finalization_error,
+                }
+            )
+            link.metadata_ = merged_metadata
+        session.flush()
+        session.commit()
 
     return GitHubReconcileResult(
         item_id=work_item.item_id,

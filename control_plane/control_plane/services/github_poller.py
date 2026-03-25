@@ -45,10 +45,19 @@ def _gh_api_pull(repo: str, pr_number: int) -> dict[str, Any]:
     return payload
 
 
+def _finalization_terminal(link: GitHubLink) -> bool:
+    metadata = dict(link.metadata_ or {})
+    if str(metadata.get("finalization_commit") or "").strip():
+        return True
+    if bool(metadata.get("finalization_skipped")):
+        return True
+    return False
+
+
 def poll_github_links(session: Session, request: GitHubPollRequest) -> GitHubPollResult:
     query = session.query(GitHubLink).filter(
         GitHubLink.pr_number.isnot(None),
-        GitHubLink.state == GitHubLinkState.PR_OPEN,
+        GitHubLink.state.in_((GitHubLinkState.PR_OPEN, GitHubLinkState.PR_MERGED)),
     )
     if request.repo:
         query = query.filter(GitHubLink.repo == request.repo)
@@ -60,6 +69,10 @@ def poll_github_links(session: Session, request: GitHubPollRequest) -> GitHubPol
     errors: list[str] = []
 
     for link in links:
+        if link.state == GitHubLinkState.PR_MERGED and _finalization_terminal(link):
+            skipped_count += 1
+            continue
+
         checked_count += 1
         pr_number = int(link.pr_number)
         try:

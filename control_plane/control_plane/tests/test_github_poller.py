@@ -25,7 +25,12 @@ def _session() -> Session:
     return Session(engine)
 
 
-def _seed_link(session: Session, *, pr_state: GitHubLinkState = GitHubLinkState.PR_OPEN) -> tuple[WorkItem, Run]:
+def _seed_link(
+    session: Session,
+    *,
+    pr_state: GitHubLinkState = GitHubLinkState.PR_OPEN,
+    metadata: dict | None = None,
+) -> tuple[WorkItem, Run]:
     task = TaskRequest(
         request_key="l2:l2_demo_fused_r1",
         source="test",
@@ -89,7 +94,7 @@ def _seed_link(session: Session, *, pr_state: GitHubLinkState = GitHubLinkState.
             head_sha="oldhead",
             base_branch="master",
             state=pr_state,
-            metadata_={},
+            metadata_=dict(metadata or {}),
         )
     )
     session.commit()
@@ -157,4 +162,61 @@ def test_poll_github_links_skips_open_pr() -> None:
         assert result.merged_count == 0
         assert result.skipped_count == 1
         assert result.errors == []
+        reconcile_mock.assert_not_called()
+
+
+
+def test_poll_github_links_retries_merged_pr_without_finalization_commit() -> None:
+    with _session() as session:
+        work_item, run = _seed_link(
+            session,
+            pr_state=GitHubLinkState.PR_MERGED,
+            metadata={"finalization_error": "proposal files missing"},
+        )
+        merged_payload = {
+            "merged_at": "2026-03-25T00:00:00Z",
+            "merge_commit_sha": "deadbeef",
+            "html_url": "https://github.com/yhmtmt/RTLGen/pull/85",
+            "head": {"ref": "eval/l2_demo_fused_r1/s20260325t000000z"},
+            "base": {"ref": "master"},
+        }
+        with patch("control_plane.services.github_poller.subprocess.run") as run_mock, patch(
+            "control_plane.services.github_poller.reconcile_github_link"
+        ) as reconcile_mock:
+            run_mock.return_value = subprocess.CompletedProcess(
+                args=["gh", "api"],
+                returncode=0,
+                stdout=json.dumps(merged_payload),
+                stderr="",
+            )
+            result = poll_github_links(session, GitHubPollRequest(repo_root="/tmp/repo"))
+
+        assert result.checked_count == 1
+        assert result.merged_count == 1
+        assert result.skipped_count == 0
+        assert result.errors == []
+        reconcile_mock.assert_called_once()
+        request = reconcile_mock.call_args.args[1]
+        assert request.item_id == work_item.item_id
+        assert request.run_key == run.run_key
+        assert request.state == "pr_merged"
+
+
+def test_poll_github_links_skips_merged_pr_with_terminal_finalization_metadata() -> None:
+    with _session() as session:
+        _seed_link(
+            session,
+            pr_state=GitHubLinkState.PR_MERGED,
+            metadata={"finalization_commit": "feedface"},
+        )
+        with patch("control_plane.services.github_poller.subprocess.run") as run_mock, patch(
+            "control_plane.services.github_poller.reconcile_github_link"
+        ) as reconcile_mock:
+            result = poll_github_links(session, GitHubPollRequest(repo_root="/tmp/repo"))
+
+        assert result.checked_count == 0
+        assert result.merged_count == 0
+        assert result.skipped_count == 1
+        assert result.errors == []
+        run_mock.assert_not_called()
         reconcile_mock.assert_not_called()

@@ -24,6 +24,7 @@ from control_plane.models.work_items import WorkItem
 from control_plane.models.worker_leases import WorkerLease
 from control_plane.models.worker_machines import WorkerMachine
 from control_plane.services.github_bridge import GitHubReconcileRequest, reconcile_github_link
+from control_plane.services.proposal_finalizer import ProposalFinalizationError
 
 
 def make_session() -> Session:
@@ -130,7 +131,37 @@ def test_reconcile_merge_triggers_proposal_finalizer_when_repo_root_is_present()
         assert result.finalized_proposal_id == "prop_demo_v1"
         assert result.finalization_commit == "feedface"
         assert result.finalization_error is None
+        link = session.query(GitHubLink).filter_by(pr_number=42).one()
+        assert link.metadata_["finalized_proposal_id"] == "prop_demo_v1"
+        assert link.metadata_["finalization_commit"] == "feedface"
+        assert link.metadata_["finalization_error"] is None
         finalize_mock.assert_called_once()
+
+
+def test_reconcile_merge_persists_finalization_error_for_retry() -> None:
+    with make_session() as session:
+        run = seed_reviewable_run(session)
+        with patch("control_plane.services.github_bridge.finalize_after_merge") as finalize_mock:
+            finalize_mock.side_effect = ProposalFinalizationError("proposal files missing")
+            result = reconcile_github_link(
+                session,
+                GitHubReconcileRequest(
+                    repo="yhmtmt/RTLGen",
+                    item_id="item_review",
+                    branch_name="eval/item_review/s20260308t000000z",
+                    pr_number=43,
+                    pr_url="https://github.com/yhmtmt/RTLGen/pull/43",
+                    state="pr_merged",
+                    run_key=run.run_key,
+                    repo_root="/tmp/repo",
+                ),
+            )
+        assert result.finalization_commit is None
+        assert result.finalization_error == "proposal files missing"
+        link = session.query(GitHubLink).filter_by(pr_number=43).one()
+        assert link.metadata_["finalization_commit"] is None
+        assert link.metadata_["finalization_error"] == "proposal files missing"
+        assert link.metadata_["finalization_skipped"] is False
 
 
 def test_reconcile_github_link_open_and_merge() -> None:
