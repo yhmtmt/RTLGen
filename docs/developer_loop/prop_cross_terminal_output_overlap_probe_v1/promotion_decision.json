@@ -1,18 +1,15 @@
 {
   "proposal_id": "prop_cross_terminal_output_overlap_probe_v1",
-  "candidate_id": "cand_terminal_output_overlap_probe_nm1_fused_r1",
-  "decision": "promote",
-  "reason": "Merged PRs #47 and #48 validated the corrected completion-bound event contract and showed that the fused nm1 candidate improves latency and energy versus the refreshed non-fused baseline.",
+  "candidate_id": "l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r2",
+  "decision": "iterate",
+  "reason": "Accepted measurement-only baseline evidence was merged; proposal judgment remains deferred until the paired comparison is reviewed.",
   "evidence_refs": [
-    "control_plane/shadow_exports/l2_decisions/l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r1.json",
-    "control_plane/shadow_exports/l2_decisions/l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1.json",
-    "control_plane/shadow_exports/review/l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r1/review_package.json",
-    "control_plane/shadow_exports/review/l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1/review_package.json",
-    "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r1/report.md",
-    "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1/report.md",
-    "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1/artifacts/mapper/fp16_nm1_softmax_r4/logistic_regression/schedule.yml",
-    "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r1/artifacts/perf/fp16_nm1_softmax_r4/logistic_regression/trace.json"
+    "item:l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r2",
+    "run:l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r2_run_99f5bf377842ef74",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r2.json",
+    "pr:#103",
+    "https://github.com/yhmtmt/RTLGen/pull/103"
   ],
-  "next_action": "Treat the corrected completion-bound event contract as the new evaluation baseline for terminal-output studies, and open a separate broader reintegration evaluation only if cross-architecture or cross-workload ranking needs to be revisited.",
-  "requires_human_approval": true
+  "next_action": "queue the paired comparison item",
+  "requires_human_approval": false
 }
