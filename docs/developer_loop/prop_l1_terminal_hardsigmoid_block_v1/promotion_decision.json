@@ -1,0 +1,9 @@
+{
+  "proposal_id": "prop_l1_terminal_hardsigmoid_block_v1",
+  "candidate_id": "pending",
+  "decision": "pending",
+  "reason": "pending",
+  "evidence_refs": [],
+  "next_action": "queue l1_prop_l1_terminal_hardsigmoid_block_v1_nangate45_r1",
+  "requires_human_approval": true
+}
