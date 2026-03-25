@@ -1,17 +1,23 @@
 {
   "proposal_id": "prop_l1_terminal_relu6_block_v1",
-  "source_commit": "pending",
+  "source_commit": "4aab8f3ec45924f8d7f7673279ce573a1302e602",
   "requested_items": [
     {
-      "item_id": "l1_prop_l1_terminal_relu6_block_v1_nangate45_r1",
+      "item_id": "l1_prop_l1_terminal_relu6_block_v1_nangate45_r2",
       "task_type": "l1_sweep",
       "evaluation_mode": "measurement_only",
       "objective": "terminal_relu6_physical_metrics",
-      "status": "ready_to_queue",
-      "notes": "First bounded Layer 1 physical sweep for the terminal int8 ReLU6 block.",
+      "status": "merged",
+      "notes": "First bounded Layer 1 physical sweep for the terminal int8 ReLU6 block. Merged via PR #91 and merge 5ad5fae2cba1d3db1194dd97428d78c58cb7266c at 2026-03-25T02:29:27.192003Z.",
       "abstraction_layer": "circuit_block",
       "config_path": "runs/designs/activations/terminal_relu6_int8_wrapper/config_terminal_relu6_int8.json",
-      "sweep_path": "runs/designs/activations/sweeps/nangate45_terminal_relu6_int8_v1.json"
+      "sweep_path": "runs/designs/activations/sweeps/nangate45_terminal_relu6_int8_v1.json",
+      "prior_item_ids": [
+        "l1_prop_l1_terminal_relu6_block_v1_nangate45_r1"
+      ],
+      "merged_pr_number": 91,
+      "merge_commit": "5ad5fae2cba1d3db1194dd97428d78c58cb7266c",
+      "merged_utc": "2026-03-25T02:29:27.192003Z"
     }
   ]
 }
