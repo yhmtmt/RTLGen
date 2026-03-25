@@ -1,0 +1,17 @@
+{
+  "proposal_id": "prop_l1_terminal_hardtanh_block_v1",
+  "source_commit": "pending",
+  "requested_items": [
+    {
+      "item_id": "l1_prop_l1_terminal_hardtanh_block_v1_nangate45_r1",
+      "task_type": "l1_sweep",
+      "evaluation_mode": "measurement_only",
+      "objective": "terminal_hardtanh_physical_metrics",
+      "status": "ready_to_queue",
+      "notes": "First bounded Layer 1 physical sweep for the terminal int8 hardtanh block.",
+      "abstraction_layer": "circuit_block",
+      "config_path": "runs/designs/activations/terminal_hardtanh_int8_pwl_wrapper/config_terminal_hardtanh_int8_pwl.json",
+      "sweep_path": "runs/designs/activations/sweeps/nangate45_terminal_hardtanh_int8_pwl_v1.json"
+    }
+  ]
+}
