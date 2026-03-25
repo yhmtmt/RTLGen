@@ -1,5 +1,17 @@
 {
   "proposal_id": "prop_l1_npu_nm1_hardsigmoid_vec_enable_v1",
-  "source_commit": "defa4837a90b450bbc3129a6319924904facf92c",
-  "requested_items": []
+  "source_commit": "cbb20620f15f8cff516dda5bee938f328f2e0d3c",
+  "requested_items": [
+    {
+      "item_id": "l1_prop_l1_npu_nm1_hardsigmoid_vec_enable_v1_r1",
+      "task_type": "l1_sweep",
+      "evaluation_mode": "measurement_only",
+      "objective": "npu_nm1_hardsigmoid_vec_physical_metrics",
+      "status": "leased",
+      "notes": "First reduced-proxy architecture-block sweep for the integrated nm1 hard-sigmoid source.",
+      "abstraction_layer": "architecture_block",
+      "config_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_hardsigmoidproxy/config_nm1_hardsigmoidproxy.json",
+      "sweep_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_hardsigmoidproxy/sweep_proxy_firstpass.json"
+    }
+  ]
 }

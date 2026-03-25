@@ -22,6 +22,7 @@
 - `runs/designs/npu_blocks/npu_fp16_cpp_nm1_hardsigmoidproxy/README.md`
 - `runs/designs/npu_blocks/npu_fp16_cpp_nm1_hardsigmoidproxy/sweep_proxy_firstpass.json`
 - `docs/developer_loop/prop_l1_npu_nm1_hardsigmoid_vec_enable_v1/implementation_summary.md`
+- `docs/developer_loop/prop_l1_npu_nm1_hardsigmoid_vec_enable_v1/evaluation_requests.json`
 
 ## Local Validation
 - `python3 -m py_compile npu/rtlgen/gen.py npu/sim/perf/model.py npu/sim/perf/run.py tests/test_npu_rtlgen_vec_hardsigmoid.py npu/sim/perf/tests/test_perf_vec_hardsigmoid.py`
@@ -30,7 +31,11 @@
 - `python3 npu/rtlgen/gen.py --config runs/designs/npu_blocks/npu_fp16_cpp_nm1_hardsigmoidproxy/config_nm1_hardsigmoidproxy.json --out /tmp/nm1_hardsigmoidproxy_out`
 
 ## Remote Evaluation
-- not queued yet in this commit; the first reduced-proxy sweep should be queued against this implementation commit
+- pushed implementation commit: `cbb20620f15f8cff516dda5bee938f328f2e0d3c`
+- queued first remote evidence item:
+  - DB item `l1_prop_l1_npu_nm1_hardsigmoid_vec_enable_v1_r1`
+  - current DB state at queue-record time: `LEASED`
+  - objective: `npu_nm1_hardsigmoid_vec_physical_metrics`
 
 ## Next Step
-- queue the first reduced-proxy Layer 1 sweep for the integrated `nm1` hard-sigmoid source
+- let `r1` finish and review the resulting reduced-proxy evidence PR
