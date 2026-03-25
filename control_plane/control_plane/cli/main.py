@@ -17,6 +17,7 @@ from control_plane.cli.generate_l1_sweep import main as generate_l1_sweep_main
 from control_plane.cli.generate_l2_campaign import main as generate_l2_campaign_main
 from control_plane.cli.import_queue import main as import_queue_main
 from control_plane.cli.operate_submission import main as operate_submission_main
+from control_plane.cli.poll_github import main as poll_github_main
 from control_plane.cli.operator_status import main as operator_status_main
 from control_plane.cli.process_completions import main as process_completions_main
 from control_plane.cli.prepare_submission import main as prepare_submission_main
@@ -126,6 +127,11 @@ def main(argv: list[str] | None = None) -> int:
     generate_l2_parser.add_argument("--comparison-role")
     generate_l2_parser.add_argument("--paired-baseline-item-id")
     generate_l2_parser.add_argument("--no-run-physical", action="store_true")
+
+    github_poll_parser = subparsers.add_parser("poll-github", help="Poll GitHub review PR state and reconcile merged PRs")
+    github_poll_parser.add_argument("--database-url", required=True)
+    github_poll_parser.add_argument("--repo-root", required=True)
+    github_poll_parser.add_argument("--repo")
 
     github_parser = subparsers.add_parser("reconcile-github", help="Reconcile GitHub branch/PR metadata into the DB")
     github_parser.add_argument("--database-url", required=True)
@@ -485,6 +491,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.no_run_physical:
             argv2.append("--no-run-physical")
         return generate_l2_campaign_main(argv2)
+    if args.command == "poll-github":
+        return poll_github_main(["--database-url", args.database_url, "--repo-root", args.repo_root, *(["--repo", args.repo] if args.repo else [])])
     if args.command == "reconcile-github":
         argv2 = ["--database-url", args.database_url, "--repo", args.repo, "--state", args.state]
         for key, value in [
