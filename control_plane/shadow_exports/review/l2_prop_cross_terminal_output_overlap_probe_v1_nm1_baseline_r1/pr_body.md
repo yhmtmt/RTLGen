@@ -1,6 +1,6 @@
 ## Summary
 - item_id: `l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r1`
-- run_key: `l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r1_run_dfc22867015d55ad`
+- run_key: `l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r1_run_1aaaecfbcaf532bc`
 - layer: `layer2`
 - task_type: `l2_campaign`
 - status: `ok`
@@ -11,19 +11,16 @@
 
 ## Developer Context
 - proposal_id: `prop_cross_terminal_output_overlap_probe_v1`
-- proposal_path: `docs/developer_loop/prop_cross_terminal_output_overlap_probe_v1`
-- reviewer_first_read: `docs/developer_loop/prop_cross_terminal_output_overlap_probe_v1` plus `docs/developer_agent_review.md`
+- proposal_path: `docs/developer_loop/prop_cross_terminal_output_overlap_probe_v1/proposal.json`
+- reviewer_first_read: `docs/developer_loop/prop_cross_terminal_output_overlap_probe_v1/proposal.json` plus `docs/developer_agent_review.md`
 
-## Focused Comparison
-- primary_question: `Does fused terminal output show a measurable benefit once the comparison is restricted to a terminal-output-sensitive proof setup rather than the original tiny softmax-tail benchmark alone?`
-- comparison_role: `refreshed_baseline`
-- proposal_outcome: `baseline_refreshed`
-- comparison_summary: `This run refreshes the focused comparison baseline under the corrected contract; proposal judgment is deferred until the paired candidate run is reviewed.`
-- baseline_ref: `runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_v1`
-- latency_delta fp16_nm1_softmax_r4/flat_nomacro: `0.000621` -> `0.00096775` ms
-- energy_delta fp16_nm1_softmax_r4/flat_nomacro: `1.1462914800000001e-07` -> `1.78635037e-07` mJ
-- latency_delta fp16_nm1_softmax_r4/hier_macro: `0.000621` -> `0.00096775` ms
-- energy_delta fp16_nm1_softmax_r4/hier_macro: `1.2585186e-07` -> `1.96124215e-07` mJ
+## Evaluation Mode
+- evaluation_mode: `measurement_only`
+- comparison_role: `measurement_only`
+- expected_direction: `unknown`
+- expected_reason: `Record the non-fused softmax-tail baseline on the corrected event contract before the focused fused comparison.`
+- expectation_status: `not_applicable`
+- evaluation_summary: `This item records metrics for the requested architecture point and does not emit a proposal judgment.`
 
 ## Checklist
 - [ ] Commit lightweight campaign artifacts only
