@@ -1,0 +1,55 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-03-25T05:11:44.744300Z",
+  "item_id": "l1_prop_l1_terminal_leakyrelu_block_v1_nangate45_r1",
+  "run_key": "l1_prop_l1_terminal_leakyrelu_block_v1_nangate45_r1_run_5f54011974e7107a",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "1b46667acc08716a86ec6f37f68072d3a37ba6c7",
+  "objective": "terminal_leakyrelu_physical_metrics",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/activations/sweeps/nangate45_terminal_leakyrelu_int8_v1.json"
+    ],
+    "configs": [
+      "runs/designs/activations/terminal_leakyrelu_int8_wrapper/config_terminal_leakyrelu_int8.json"
+    ],
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": [
+      "third_party/nlohmann_json",
+      "third_party/cacti"
+    ]
+  },
+  "proposal_count": 1,
+  "evaluation_record": {
+    "evaluation_mode": "measurement_only",
+    "abstraction_layer": "",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/terminal_leakyrelu_int8_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "2cec7cad",
+        "tag": "terminal_leakyrelu_int8_ng45_v1_6b32a08e",
+        "result_path": "runs/designs/activations/terminal_leakyrelu_int8_wrapper/work/2cec7cad/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 0.184,
+        "die_area": 25600.0,
+        "total_power_mw": 3.08e-05
+      }
+    }
+  ]
+}
