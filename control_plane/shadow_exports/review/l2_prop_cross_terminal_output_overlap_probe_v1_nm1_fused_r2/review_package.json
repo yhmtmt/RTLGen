@@ -1,0 +1,364 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-03-25T12:42:07.389886Z",
+  "item_id": "l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r2",
+  "run_key": "l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r2_run_35a79d43f75fae4e",
+  "layer": "layer2",
+  "flow": "openroad",
+  "task_type": "l2_campaign",
+  "source_commit": "988a30a2fea6ae8f7c726051938946cefebbc3b7",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r2/evaluated.json",
+    "result": {
+      "branch": "eval/l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r2/s20260325t124207z",
+      "completed_utc": "2026-03-25T12:41:38.320650Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "73c7e3a71ee5",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260325t124207z][host:73c7e3a71ee5][item:l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r2]",
+      "metrics_rows": [
+        {
+          "tag": "npu_fp16_nm1_softcmp33_flat_nomacro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "c20283de",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/work/c20283de/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_softcmp33_flat_nomacro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "a53adbdd",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/work/a53adbdd/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_softcmp33_flat_nomacro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "b9f5f7d7",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/work/b9f5f7d7/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_softcmp33_hier_macro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "bffea8c7",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/work/bffea8c7/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_softcmp33_hier_macro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "e024ec35",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/work/e024ec35/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_softcmp33_hier_macro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "2a79e834",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/work/2a79e834/result.json"
+        }
+      ],
+      "queue_item_id": "l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r2",
+      "session_id": "s20260325t124207z",
+      "status": "ok",
+      "summary": "5/5 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "decision_proposal",
+    "path": "control_plane/shadow_exports/l2_decisions/l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r2.json",
+    "storage_mode": "repo",
+    "sha256": "fb50a05e9149c1aebe248452ae84e58caa6ead9afff8478a0eada53e64eb7ff5",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-03-25T12:42:07.354380Z",
+      "item_id": "l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r2",
+      "run_key": "l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r2_run_35a79d43f75fae4e",
+      "layer": "layer2",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l2_campaign",
+      "source_commit": "988a30a2fea6ae8f7c726051938946cefebbc3b7",
+      "objective": "focused_candidate",
+      "input_manifest": {
+        "sweeps": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/sweep_compare_softmax_33.json"
+        ],
+        "configs": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp/config_nm1_softmax.json"
+        ],
+        "design_dirs": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_softmaxcmp"
+        ],
+        "macro_manifests": [
+          "runs/designs/npu_macros/npu_fp16_nm1_softmax_bundle_ng45/macro_manifest.json"
+        ],
+        "generated_campaign": {
+          "path": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2/campaign__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r2.json",
+          "outputs": {
+            "report_md": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r2/report.md",
+            "results_csv": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r2/results.csv",
+            "campaign_dir": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r2"
+          },
+          "clean_outputs": true,
+          "base_campaign_path": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2/campaign.json"
+        },
+        "candidate_manifests": [
+          "runs/candidates/nangate45/module_candidates.json"
+        ]
+      },
+      "recommendation": {
+        "arch_id": "fp16_nm1_softmax_r4",
+        "macro_mode": "flat_nomacro",
+        "objective_rank": 1,
+        "objective_score": "0.0",
+        "latency_ms_mean": 0.0008037500000000001,
+        "energy_mj_mean": 1.48362605e-07,
+        "critical_path_ns_mean": 5.690256573668907,
+        "die_area_um2_mean": 2250000.0,
+        "total_power_mw_mean": 0.184588,
+        "flow_elapsed_s_mean": 1318.74
+      },
+      "objective_profiles": [],
+      "evaluation_record": {
+        "proposal_id": "prop_cross_terminal_output_overlap_probe_v1",
+        "title": "Terminal-output overlap probe",
+        "primary_question": "Does fused terminal output show a measurable benefit once the comparison is restricted to a terminal-output-sensitive proof setup rather than the original tiny softmax-tail benchmark alone?",
+        "evaluation_mode": "paired_comparison",
+        "comparison_role": "candidate",
+        "abstraction_layer": "",
+        "expected_direction": "improved",
+        "expected_reason": "Fused terminal output should reduce latency and energy if terminal-output traffic is the mechanism hiding the benefit in the baseline setup.",
+        "summary": "Focused comparison improved latency and/or energy without regressing matched rows.",
+        "baseline_ref": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r2",
+        "baseline_item_id": "l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r2",
+        "outcome": "improved",
+        "expectation_status": "unspecified"
+      },
+      "proposal_assessment": {
+        "proposal_id": "prop_cross_terminal_output_overlap_probe_v1",
+        "title": "Terminal-output overlap probe",
+        "kind": "architecture",
+        "primary_question": "Does fused terminal output show a measurable benefit once the comparison is restricted to a terminal-output-sensitive proof setup rather than the original tiny softmax-tail benchmark alone?",
+        "evaluation_mode": "paired_comparison",
+        "comparison_role": "candidate",
+        "outcome": "improved",
+        "summary": "Focused comparison improved latency and/or energy without regressing matched rows.",
+        "baseline_ref": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r2",
+        "baseline_item_id": "l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r2",
+        "matched_row_count": 4,
+        "matched_rows": [
+          {
+            "scope": "model",
+            "arch_id": "fp16_nm1_softmax_r4",
+            "macro_mode": "flat_nomacro",
+            "model_id": "logistic_regression",
+            "metrics": {
+              "latency_ms_mean": {
+                "baseline": 0.00096775,
+                "candidate": 0.0008037500000000001,
+                "delta": -0.00016399999999999987
+              },
+              "energy_mj_mean": {
+                "baseline": 1.78635037e-07,
+                "candidate": 1.48362605e-07,
+                "delta": -3.0272432e-08
+              },
+              "critical_path_ns_mean": {
+                "baseline": 5.690256573668907,
+                "candidate": 5.690256573668907,
+                "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.184588,
+                "candidate": 0.184588,
+                "delta": 0.0
+              },
+              "flow_elapsed_s_mean": {
+                "baseline": 1318.74,
+                "candidate": 1318.74,
+                "delta": 0.0
+              },
+              "throughput_infer_per_s_mean": {
+                "baseline": 1033324.7222939809,
+                "candidate": 1244167.9626749612,
+                "delta": 210843.2403809803
+              }
+            }
+          },
+          {
+            "scope": "model",
+            "arch_id": "fp16_nm1_softmax_r4",
+            "macro_mode": "hier_macro",
+            "model_id": "logistic_regression",
+            "metrics": {
+              "latency_ms_mean": {
+                "baseline": 0.00096775,
+                "candidate": 0.0008037500000000001,
+                "delta": -0.00016399999999999987
+              },
+              "energy_mj_mean": {
+                "baseline": 1.96124215e-07,
+                "candidate": 1.6288797499999998e-07,
+                "delta": -3.323624000000002e-08
+              },
+              "critical_path_ns_mean": {
+                "baseline": 5.601707400415646,
+                "candidate": 5.601707400415646,
+                "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.20265999999999998,
+                "candidate": 0.20265999999999998,
+                "delta": 0.0
+              },
+              "flow_elapsed_s_mean": {
+                "baseline": 1146.61,
+                "candidate": 1146.61,
+                "delta": 0.0
+              },
+              "throughput_infer_per_s_mean": {
+                "baseline": 1033324.7222939809,
+                "candidate": 1244167.9626749612,
+                "delta": 210843.2403809803
+              }
+            }
+          },
+          {
+            "scope": "aggregate",
+            "arch_id": "fp16_nm1_softmax_r4",
+            "macro_mode": "flat_nomacro",
+            "model_id": null,
+            "metrics": {
+              "latency_ms_mean": {
+                "baseline": 0.00096775,
+                "candidate": 0.0008037500000000001,
+                "delta": -0.00016399999999999987
+              },
+              "energy_mj_mean": {
+                "baseline": 1.78635037e-07,
+                "candidate": 1.48362605e-07,
+                "delta": -3.0272432e-08
+              },
+              "critical_path_ns_mean": {
+                "baseline": 5.690256573668907,
+                "candidate": 5.690256573668907,
+                "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.184588,
+                "candidate": 0.184588,
+                "delta": 0.0
+              },
+              "flow_elapsed_s_mean": {
+                "baseline": 1318.74,
+                "candidate": 1318.74,
+                "delta": 0.0
+              },
+              "throughput_infer_per_s_mean": {
+                "baseline": 1033324.7222939809,
+                "candidate": 1244167.9626749612,
+                "delta": 210843.2403809803
+              }
+            }
+          },
+          {
+            "scope": "aggregate",
+            "arch_id": "fp16_nm1_softmax_r4",
+            "macro_mode": "hier_macro",
+            "model_id": null,
+            "metrics": {
+              "latency_ms_mean": {
+                "baseline": 0.00096775,
+                "candidate": 0.0008037500000000001,
+                "delta": -0.00016399999999999987
+              },
+              "energy_mj_mean": {
+                "baseline": 1.96124215e-07,
+                "candidate": 1.6288797499999998e-07,
+                "delta": -3.323624000000002e-08
+              },
+              "critical_path_ns_mean": {
+                "baseline": 5.601707400415646,
+                "candidate": 5.601707400415646,
+                "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.20265999999999998,
+                "candidate": 0.20265999999999998,
+                "delta": 0.0
+              },
+              "flow_elapsed_s_mean": {
+                "baseline": 1146.61,
+                "candidate": 1146.61,
+                "delta": 0.0
+              },
+              "throughput_infer_per_s_mean": {
+                "baseline": 1033324.7222939809,
+                "candidate": 1244167.9626749612,
+                "delta": 210843.2403809803
+              }
+            }
+          }
+        ]
+      },
+      "source_refs": {
+        "best_point_json": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r2/best_point.json",
+        "summary_csv": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r2/summary.csv",
+        "results_csv": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r2/results.csv",
+        "report_md": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r2/report.md",
+        "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r2/artifacts/mapper/fp16_nm1_softmax_r4/logistic_regression/schedule.yml",
+        "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r2/artifacts/mapper/fp16_nm1_softmax_r4/logistic_regression/descriptors.bin",
+        "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r2/artifacts/perf/fp16_nm1_softmax_r4/logistic_regression/trace.json",
+        "focused_model_artifacts": [
+          {
+            "model_id": "logistic_regression",
+            "schedule_yml": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r2/artifacts/mapper/fp16_nm1_softmax_r4/logistic_regression/schedule.yml",
+            "descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r2/artifacts/mapper/fp16_nm1_softmax_r4/logistic_regression/descriptors.bin",
+            "perf_trace_json": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r2/artifacts/perf/fp16_nm1_softmax_r4/logistic_regression/trace.json"
+          }
+        ],
+        "baseline_summary_csv": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r2/summary.csv",
+        "baseline_report_md": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r2/report.md"
+      }
+    }
+  },
+  "developer_loop": {
+    "comparison": {
+      "role": "candidate",
+      "paired_baseline_item_id": "l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r2"
+    },
+    "evaluation": {
+      "mode": "paired_comparison",
+      "expected_reason": "Fused terminal output should reduce latency and energy if terminal-output traffic is the mechanism hiding the benefit in the baseline setup.",
+      "expected_direction": "improved"
+    },
+    "proposal_id": "prop_cross_terminal_output_overlap_probe_v1",
+    "proposal_path": "docs/developer_loop/prop_cross_terminal_output_overlap_probe_v1/proposal.json"
+  },
+  "pr_payload": {
+    "branch": "eval/l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r2/s20260325t124207z",
+    "title": "eval: run l2 overlap-probe nm1 fused candidate",
+    "body_fields": {
+      "host": "73c7e3a71ee5",
+      "session_id": "s20260325t124207z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r2"
+    },
+    "body_md": "## Summary\n- item_id: `l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r2`\n- run_key: `l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r2_run_35a79d43f75fae4e`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `5/5 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r2/evaluated.json`\n- metrics_rows_count: `6`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_prop_cross_terminal_output_overlap_probe_v1_nm1_fused_r2.json`\n\n## Developer Context\n- proposal_id: `prop_cross_terminal_output_overlap_probe_v1`\n- proposal_path: `docs/developer_loop/prop_cross_terminal_output_overlap_probe_v1/proposal.json`\n- reviewer_first_read: `docs/developer_loop/prop_cross_terminal_output_overlap_probe_v1/proposal.json` plus `docs/developer_agent_review.md`\n\n## Evaluation Mode\n- evaluation_mode: `paired_comparison`\n- comparison_role: `candidate`\n- expected_direction: `improved`\n- expected_reason: `Fused terminal output should reduce latency and energy if terminal-output traffic is the mechanism hiding the benefit in the baseline setup.`\n- expectation_status: `unspecified`\n- evaluation_summary: `Focused comparison improved latency and/or energy without regressing matched rows.`\n\n## Focused Comparison\n- primary_question: `Does fused terminal output show a measurable benefit once the comparison is restricted to a terminal-output-sensitive proof setup rather than the original tiny softmax-tail benchmark alone?`\n- comparison_role: `candidate`\n- proposal_outcome: `improved`\n- comparison_summary: `Focused comparison improved latency and/or energy without regressing matched rows.`\n- baseline_ref: `runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_nm1_v2__l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r2`\n- baseline_item_id: `l2_prop_cross_terminal_output_overlap_probe_v1_nm1_baseline_r2`\n- latency_delta fp16_nm1_softmax_r4/flat_nomacro/logistic_regression: `0.00096775` -> `0.0008037500000000001` ms\n- energy_delta fp16_nm1_softmax_r4/flat_nomacro/logistic_regression: `1.78635037e-07` -> `1.48362605e-07` mJ\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
