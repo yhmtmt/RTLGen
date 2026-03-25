@@ -10,6 +10,7 @@
   "runArgs": [
     "--platform=linux/amd64",
     "-p", "5432:5432",
+    "-p", "8080:8080",
     "-e", "DISPLAY=${env:DISPLAY}",
     "-v", "/tmp/.X11-unix:/tmp/.X11-unix"
   ],
@@ -19,7 +20,10 @@
     "RTLCP_ROLE": "${localEnv:RTLCP_ROLE}",
     "RTLCP_AUTOSTART_COMPLETIONS":"${localEnv:RTLCP_AUTOSTART_COMPLETIONS}",
     "RTLCP_SUBMIT": "${localEnv:RTLCP_SUBMIT}",
-    "RTLCP_AUTOSTART_WORKER_DAEMON": "${localEnv:RTLCP_AUTOSTART_WORKER_DAEMON}"
+    "RTLCP_AUTOSTART_WORKER_DAEMON": "${localEnv:RTLCP_AUTOSTART_WORKER_DAEMON}",
+    "RTLCP_AUTOSTART_API": "${localEnv:RTLCP_AUTOSTART_API}",
+    "RTLCP_HOST": "${localEnv:RTLCP_HOST}",
+    "RTLCP_PORT": "${localEnv:RTLCP_PORT}"
   },
   "postStartCommand": "/workspaces/RTLGen/.devcontainer/start_control_plane_services.sh",
   "settings": {

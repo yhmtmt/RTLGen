@@ -17,8 +17,11 @@ case "${SERVICE}" in
   completions)
     TARGET_CMD=("${SERVICE_REPO_ROOT}/.devcontainer/run_completion_loop.sh")
     ;;
+  api)
+    TARGET_CMD=("${SERVICE_REPO_ROOT}/control_plane/scripts/run_api_service.sh")
+    ;;
   *)
-    echo "Unknown service '${SERVICE}'. Expected 'worker' or 'completions'." >&2
+    echo "Unknown service '${SERVICE}'. Expected 'worker', 'completions', or 'api'." >&2
     exit 1
     ;;
 esac
@@ -68,6 +71,10 @@ case "${ACTION}" in
           printf '[%s] service=%s repo=%s db=%s submit=%s\n' \
             "$(_timestamp)" "${SERVICE}" "${RTLCP_REPO_SLUG:-}" "${RTLCP_DATABASE_URL:-}" "${RTLCP_SUBMIT:-0}"
           ;;
+        api)
+          printf '[%s] service=%s host=%s port=%s db=%s\n' \
+            "$(_timestamp)" "${SERVICE}" "${RTLCP_HOST:-0.0.0.0}" "${RTLCP_PORT:-8080}" "${RTLCP_DATABASE_URL:-}"
+          ;;
       esac
     } >>"${LOG_FILE}"
     if command -v setsid >/dev/null 2>&1; then
@@ -111,7 +118,7 @@ case "${ACTION}" in
     _tail_log "${TAIL_LINES:-40}"
     ;;
   *)
-    echo "Usage: $0 <start|stop|restart|status|logs> <worker|completions>" >&2
+    echo "Usage: $0 <start|stop|restart|status|logs> <worker|completions|api>" >&2
     exit 1
     ;;
 esac

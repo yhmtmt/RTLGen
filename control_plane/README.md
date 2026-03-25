@@ -38,6 +38,17 @@ Serve the minimal HTTP app:
 PYTHONPATH=/workspaces/RTLGen/control_plane python3 -m control_plane.cli.main serve-api --host 127.0.0.1 --port 8080
 ```
 
+Dashboard endpoints:
+- HTML dashboard: `http://<host>:8080/dashboard`
+- JSON status feed: `http://<host>:8080/api/v1/operator-status`
+
+The dashboard polls the operator-status feed, renders live queue/run state, and plays browser-side sound notifications when the state changes.
+
+On the evaluator, use the service wrapper:
+```sh
+/workspaces/RTLGen/control_plane/scripts/restart_api.sh
+```
+
 The current app is intentionally dependency-light and keeps the handler surface testable in-process.
 In this Codex sandbox, live socket bind is blocked, so the primary verification path is direct handler and service tests.
 
@@ -208,6 +219,7 @@ Role-gated behavior:
   - skips local PostgreSQL
   - requires `RTLCP_DATABASE_URL` from host/local env
   - starts the worker daemon automatically unless `RTLCP_AUTOSTART_WORKER_DAEMON=0`
+  - starts the dashboard API automatically unless `RTLCP_AUTOSTART_API=0`
 
 Helper scripts:
 - [.devcontainer/control_plane_service_ctl.sh](/workspaces/RTLGen/.devcontainer/control_plane_service_ctl.sh)

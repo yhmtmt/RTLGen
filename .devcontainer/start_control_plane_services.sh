@@ -4,6 +4,7 @@ set -euo pipefail
 ROLE=${RTLCP_ROLE:-server}
 AUTOSTART_WORKER="${RTLCP_AUTOSTART_WORKER_DAEMON:-}"
 AUTOSTART_COMPLETIONS="${RTLCP_AUTOSTART_COMPLETIONS:-}"
+AUTOSTART_API="${RTLCP_AUTOSTART_API:-}"
 
 case "${ROLE}" in
   server)
@@ -23,6 +24,11 @@ case "${ROLE}" in
       /workspaces/RTLGen/.devcontainer/control_plane_service_ctl.sh start completions
     else
       echo "Skipping completion loop autostart for evaluator role"
+    fi
+    if [[ "${AUTOSTART_API:-1}" == "1" ]]; then
+      /workspaces/RTLGen/.devcontainer/control_plane_service_ctl.sh start api
+    else
+      echo "Skipping control-plane API autostart for evaluator role"
     fi
     ;;
   *)

@@ -12,6 +12,7 @@ from urllib.parse import urlparse
 from control_plane.api.routes_github import register_github_routes
 from control_plane.api.routes_health import register_health_routes
 from control_plane.api.routes_leases import register_lease_routes
+from control_plane.api.routes_operator_status import register_operator_status_routes
 from control_plane.api.routes_queue import register_queue_routes
 from control_plane.api.routes_runs import register_run_routes
 from control_plane.api.routes_workers import register_worker_routes
@@ -63,6 +64,7 @@ def create_app() -> SimpleAPIApp:
     app = SimpleAPIApp()
     register_github_routes(app)
     register_health_routes(app)
+    register_operator_status_routes(app)
     register_queue_routes(app)
     register_lease_routes(app)
     register_run_routes(app)
