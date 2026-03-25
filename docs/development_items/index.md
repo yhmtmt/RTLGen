@@ -26,6 +26,7 @@
 | `item_l1_terminal_sigmoid_block_v1` | `layer1` | `circuit` | `Terminal sigmoid block` | `merged` | `high` | `developer_agent` | `prop_l1_terminal_sigmoid_block_v1` | `2026-03-19T13:00:39Z` |
 | `item_l1_terminal_tanh_block_v1` | `layer1` | `circuit` | `Terminal tanh block` | `merged` | `high` | `developer_agent` | `prop_l1_terminal_tanh_block_v1` | `2026-03-24T12:01:06Z` |
 | `item_l1_npu_nm1_tanh_vec_enable_v1` | `layer1` | `circuit` | `NPU nm1 tanh vec enable` | `merged` | `high` | `developer_agent` | `prop_l1_npu_nm1_tanh_vec_enable_v1` | `2026-03-24T12:58:59Z` |
+| `item_l1_npu_nm1_hardsigmoid_vec_enable_v1` | `layer1` | `circuit` | `NPU nm1 hard-sigmoid vec enable` | `promoted_to_proposal` | `high` | `developer_agent` | `prop_l1_npu_nm1_hardsigmoid_vec_enable_v1` | `2026-03-25T03:30:00Z` |
 | `item_l1_npu_nm1_sigmoid_vec_enable_v1` | `layer1` | `circuit` | `NPU nm1 sigmoid vec enable` | `merged` | `high` | `developer_agent` | `prop_l1_npu_nm1_sigmoid_vec_enable_v1` | `2026-03-23T22:47:46Z` |
 | `item_l2_mapper_batch_override_autotune_v1` | `layer2` | `mapper` | `Batch override autotune` | `seed` | `medium` | `developer_agent` |  | `2026-03-16T06:00:00Z` |
 | `item_l2_mapper_wrapped_macro_legality_v1` | `layer2` | `mapper` | `Wrapped and macro legality hardening` | `seed` | `high` | `developer_agent` |  | `2026-03-16T06:00:00Z` |
