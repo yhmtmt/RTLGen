@@ -619,3 +619,26 @@ def test_finalize_refreshes_repo_before_loading_proposal_files() -> None:
         assert result.commit_sha == "finalize123"
         promotion_result = json.loads((proposal_path / "promotion_result.json").read_text())
         assert promotion_result["merge_commit"] == "merge123"
+
+
+def test_prepare_repo_resets_detached_worktree_to_origin_master() -> None:
+    calls: list[tuple[str, ...]] = []
+    original_run_git = proposal_finalizer._run_git
+    try:
+        def fake_run_git(_root: Path, *args: str, env=None) -> str:
+            calls.append(args)
+            if args[:1] == ("rev-parse",):
+                return "finalize123"
+            return ""
+
+        proposal_finalizer._run_git = fake_run_git
+        commit_sha = proposal_finalizer._prepare_repo(Path('/tmp/repo'))
+    finally:
+        proposal_finalizer._run_git = original_run_git
+
+    assert commit_sha == "finalize123"
+    assert calls == [
+        ("fetch", "origin"),
+        ("reset", "--hard", "refs/remotes/origin/master"),
+        ("rev-parse", "HEAD"),
+    ]

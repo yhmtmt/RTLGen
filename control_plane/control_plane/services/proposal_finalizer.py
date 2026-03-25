@@ -355,8 +355,7 @@ def _git_dirty(repo_root: Path) -> bool:
 
 def _prepare_repo(repo_root: Path) -> str:
     _run_git(repo_root, "fetch", "origin")
-    _run_git(repo_root, "checkout", "master")
-    _run_git(repo_root, "pull", "--ff-only", "origin", "master")
+    _run_git(repo_root, "reset", "--hard", "refs/remotes/origin/master")
     return _run_git(repo_root, "rev-parse", "HEAD")
 
 
