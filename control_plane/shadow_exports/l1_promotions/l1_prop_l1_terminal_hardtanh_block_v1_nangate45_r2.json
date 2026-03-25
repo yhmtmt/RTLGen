@@ -1,0 +1,55 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-03-25T01:38:18.147802Z",
+  "item_id": "l1_prop_l1_terminal_hardtanh_block_v1_nangate45_r2",
+  "run_key": "l1_prop_l1_terminal_hardtanh_block_v1_nangate45_r2_run_d9f180befc8f8bce",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "926cb8d43643d02455d953db2347faef9c60c4d2",
+  "objective": "terminal_hardtanh_physical_metrics",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/activations/sweeps/nangate45_terminal_hardtanh_int8_pwl_v1.json"
+    ],
+    "configs": [
+      "runs/designs/activations/terminal_hardtanh_int8_pwl_wrapper/config_terminal_hardtanh_int8_pwl.json"
+    ],
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": [
+      "third_party/nlohmann_json",
+      "third_party/cacti"
+    ]
+  },
+  "proposal_count": 1,
+  "evaluation_record": {
+    "evaluation_mode": "measurement_only",
+    "abstraction_layer": "",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/terminal_hardtanh_int8_pwl_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "b7671125",
+        "tag": "terminal_hardtanh_int8_pwl_ng45_v1_6b32a08e",
+        "result_path": "runs/designs/activations/terminal_hardtanh_int8_pwl_wrapper/work/b7671125/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 0.1903,
+        "die_area": 25600.0,
+        "total_power_mw": 3.62e-05
+      }
+    }
+  ]
+}
