@@ -264,6 +264,7 @@ def _build_payload(
                 "generated_campaign": {
                     "base_campaign_path": campaign_path,
                     "path": generated_campaign_path,
+                    "clean_outputs": True,
                     "outputs": generated_outputs,
                 },
             },

@@ -458,6 +458,59 @@ def test_materialize_generated_inputs_preserves_physical_source_campaign() -> No
         assert generated["physical_source_campaign"] == "runs/campaigns/npu/old/campaign.json"
 
 
+def test_materialize_generated_inputs_cleans_existing_l2_campaign_outputs() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        base_campaign_path = repo_root / "runs" / "campaigns" / "npu" / "demo" / "campaign.json"
+        target_campaign_path = repo_root / "runs" / "campaigns" / "npu" / "demo" / "campaign__item.json"
+        output_dir = repo_root / "runs" / "campaigns" / "npu" / "demo__item"
+        stale_results = output_dir / "results.csv"
+        base_campaign_path.parent.mkdir(parents=True, exist_ok=True)
+        base_campaign_path.write_text(
+            json.dumps(
+                {
+                    "campaign_id": "demo",
+                    "platform": "nangate45",
+                    "models": [],
+                    "architecture_points": [],
+                    "outputs": {
+                        "campaign_dir": "runs/campaigns/npu/demo",
+                        "results_csv": "runs/campaigns/npu/demo/results.csv",
+                        "report_md": "runs/campaigns/npu/demo/report.md",
+                    },
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        output_dir.mkdir(parents=True, exist_ok=True)
+        stale_results.write_text("stale\n", encoding="utf-8")
+
+        work_item = WorkItem(
+            item_id="item",
+            task_type="l2_campaign",
+            input_manifest={
+                "generated_campaign": {
+                    "base_campaign_path": "runs/campaigns/npu/demo/campaign.json",
+                    "path": "runs/campaigns/npu/demo/campaign__item.json",
+                    "outputs": {
+                        "campaign_dir": "runs/campaigns/npu/demo__item",
+                        "results_csv": "runs/campaigns/npu/demo__item/results.csv",
+                        "report_md": "runs/campaigns/npu/demo__item/report.md",
+                    },
+                }
+            },
+        )
+
+        _materialize_generated_inputs(checkout_root=str(repo_root), work_item=work_item)
+
+        assert not stale_results.exists()
+        generated = json.loads(target_campaign_path.read_text(encoding="utf-8"))
+        assert generated["outputs"]["campaign_dir"] == "runs/campaigns/npu/demo__item"
+
+
 def test_worker_marks_failed_run_when_command_fails() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

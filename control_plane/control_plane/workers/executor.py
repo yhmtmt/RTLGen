@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import json
 from pathlib import Path
+import shutil
 from typing import Any
 
 from sqlalchemy.orm import Session, sessionmaker
@@ -157,6 +158,15 @@ def _materialize_generated_inputs(*, checkout_root: str, work_item: WorkItem) ->
     campaign = json.loads(base_file.read_text(encoding="utf-8"))
     if not outputs:
         raise RuntimeError("generated_campaign.outputs is required")
+    campaign_dir = str(outputs.get("campaign_dir", "")).strip()
+    clean_outputs = bool(generated_campaign.get("clean_outputs", False)) or str(work_item.task_type) == "l2_campaign"
+    if clean_outputs and campaign_dir:
+        output_root = (repo_root / campaign_dir).resolve()
+        if output_root.exists():
+            if output_root.is_dir():
+                shutil.rmtree(output_root)
+            else:
+                output_root.unlink()
     campaign["outputs"] = outputs
     target_file.parent.mkdir(parents=True, exist_ok=True)
     target_file.write_text(json.dumps(campaign, indent=2) + "\n", encoding="utf-8")
