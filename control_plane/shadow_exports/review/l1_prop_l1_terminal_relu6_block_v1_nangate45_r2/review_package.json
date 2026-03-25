@@ -1,0 +1,140 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-03-25T02:17:11.381062Z",
+  "item_id": "l1_prop_l1_terminal_relu6_block_v1_nangate45_r2",
+  "run_key": "l1_prop_l1_terminal_relu6_block_v1_nangate45_r2_run_0529d84d968268c3",
+  "layer": "layer1",
+  "flow": "openroad",
+  "task_type": "l1_sweep",
+  "source_commit": "4aab8f3ec45924f8d7f7673279ce573a1302e602",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l1_prop_l1_terminal_relu6_block_v1_nangate45_r2/evaluated.json",
+    "result": {
+      "branch": "eval/l1_prop_l1_terminal_relu6_block_v1_nangate45_r2/s20260325t021711z",
+      "completed_utc": "2026-03-25T02:14:00.914696Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "73c7e3a71ee5",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260325t021711z][host:73c7e3a71ee5][item:l1_prop_l1_terminal_relu6_block_v1_nangate45_r2]",
+      "metrics_rows": [
+        {
+          "tag": "terminal_relu6_int8_ng45_v1_97899059",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "2e9007b1",
+          "metrics_csv": "runs/designs/activations/terminal_relu6_int8_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/terminal_relu6_int8_wrapper/work/2e9007b1/result.json"
+        },
+        {
+          "tag": "terminal_relu6_int8_ng45_v1_3ba5ddc4",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "fb378c5f",
+          "metrics_csv": "runs/designs/activations/terminal_relu6_int8_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/terminal_relu6_int8_wrapper/work/fb378c5f/result.json"
+        },
+        {
+          "tag": "terminal_relu6_int8_ng45_v1_91e30912",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "83b0453f",
+          "metrics_csv": "runs/designs/activations/terminal_relu6_int8_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/terminal_relu6_int8_wrapper/work/83b0453f/result.json"
+        },
+        {
+          "tag": "terminal_relu6_int8_ng45_v1_6b32a08e",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "0485362a",
+          "metrics_csv": "runs/designs/activations/terminal_relu6_int8_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/terminal_relu6_int8_wrapper/work/0485362a/result.json"
+        }
+      ],
+      "queue_item_id": "l1_prop_l1_terminal_relu6_block_v1_nangate45_r2",
+      "session_id": "s20260325t021711z",
+      "status": "ok",
+      "summary": "4/4 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "promotion_proposal",
+    "path": "control_plane/shadow_exports/l1_promotions/l1_prop_l1_terminal_relu6_block_v1_nangate45_r2.json",
+    "storage_mode": "repo",
+    "sha256": "99dceec35d0b3294d44926499dbaba0964a7002f8d5431a7d5cb64e21fc0d36f",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-03-25T02:17:11.354585Z",
+      "item_id": "l1_prop_l1_terminal_relu6_block_v1_nangate45_r2",
+      "run_key": "l1_prop_l1_terminal_relu6_block_v1_nangate45_r2_run_0529d84d968268c3",
+      "layer": "layer1",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l1_sweep",
+      "source_commit": "4aab8f3ec45924f8d7f7673279ce573a1302e602",
+      "objective": "terminal_relu6_physical_metrics",
+      "input_manifest": {
+        "sweeps": [
+          "runs/designs/activations/sweeps/nangate45_terminal_relu6_int8_v1.json"
+        ],
+        "configs": [
+          "runs/designs/activations/terminal_relu6_int8_wrapper/config_terminal_relu6_int8.json"
+        ],
+        "design_dirs": [],
+        "macro_manifests": [],
+        "candidate_manifests": [],
+        "required_submodules": [
+          "third_party/nlohmann_json",
+          "third_party/cacti"
+        ]
+      },
+      "proposal_count": 1,
+      "evaluation_record": {
+        "evaluation_mode": "measurement_only",
+        "abstraction_layer": "",
+        "result_kind": "physical_metrics",
+        "physical_metrics_present": true,
+        "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+      },
+      "proposal_assessment": null,
+      "proposals": [
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/activations/terminal_relu6_int8_wrapper/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "0485362a",
+            "tag": "terminal_relu6_int8_ng45_v1_6b32a08e",
+            "result_path": "runs/designs/activations/terminal_relu6_int8_wrapper/work/0485362a/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 0.1864,
+            "die_area": 25600.0,
+            "total_power_mw": 2.3e-05
+          }
+        }
+      ]
+    }
+  },
+  "developer_loop": {
+    "proposal_id": "prop_l1_terminal_relu6_block_v1",
+    "proposal_path": "docs/developer_loop/prop_l1_terminal_relu6_block_v1/proposal.json"
+  },
+  "pr_payload": {
+    "branch": "eval/l1_prop_l1_terminal_relu6_block_v1_nangate45_r2/s20260325t021711z",
+    "title": "eval: run evaluate l1_prop_l1_terminal_relu6_block_v1_nangate45_r2",
+    "body_fields": {
+      "host": "73c7e3a71ee5",
+      "session_id": "s20260325t021711z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_prop_l1_terminal_relu6_block_v1_nangate45_r2"
+    },
+    "body_md": "## Summary\n- item_id: `l1_prop_l1_terminal_relu6_block_v1_nangate45_r2`\n- run_key: `l1_prop_l1_terminal_relu6_block_v1_nangate45_r2_run_0529d84d968268c3`\n- layer: `layer1`\n- task_type: `l1_sweep`\n- status: `ok`\n- summary: `4/4 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l1_prop_l1_terminal_relu6_block_v1_nangate45_r2/evaluated.json`\n- metrics_rows_count: `4`\n- review_artifact: `promotion_proposal` at `control_plane/shadow_exports/l1_promotions/l1_prop_l1_terminal_relu6_block_v1_nangate45_r2.json`\n\n## Developer Context\n- proposal_id: `prop_l1_terminal_relu6_block_v1`\n- proposal_path: `docs/developer_loop/prop_l1_terminal_relu6_block_v1/proposal.json`\n- reviewer_first_read: `docs/developer_loop/prop_l1_terminal_relu6_block_v1/proposal.json` plus `docs/developer_agent_review.md`\n\n## Evaluation Mode\n- evaluation_mode: `measurement_only`\n- evaluation_summary: `Physical metrics recorded from an accepted status=ok Layer 1 row.`\n\n## Checklist\n- [ ] Commit only lightweight metrics and regenerated runs/index.csv\n- [ ] Include metrics row references for each completed design\n- [ ] Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit only lightweight metrics and regenerated runs/index.csv",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
