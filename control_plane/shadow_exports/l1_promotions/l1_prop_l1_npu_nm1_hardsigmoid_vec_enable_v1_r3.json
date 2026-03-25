@@ -1,0 +1,56 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-03-25T14:04:28.039898Z",
+  "item_id": "l1_prop_l1_npu_nm1_hardsigmoid_vec_enable_v1_r3",
+  "run_key": "l1_prop_l1_npu_nm1_hardsigmoid_vec_enable_v1_r3_run_20ea1d6d0f8fe7f8",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "5d247d16dfc0bd51ecc5aa74491e3cf796c169ee",
+  "objective": "npu_nm1_hardsigmoid_vec_physical_metrics",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_hardsigmoidproxy/sweep_proxy_firstpass.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_hardsigmoidproxy/config_nm1_hardsigmoidproxy.json"
+    ],
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": [
+      "third_party/nlohmann_json",
+      "third_party/cacti"
+    ]
+  },
+  "proposal_count": 1,
+  "evaluation_record": {
+    "evaluation_mode": "measurement_only",
+    "abstraction_layer": "architecture_block",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_hardsigmoidproxy/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "89908fb6",
+        "tag": "npu_fp16_nm1_hardsigmoidproxy_firstpass",
+        "result_path": "/orfs/flow/reports/nangate45/npu_fp16_cpp_nm1_hardsigmoidproxy/nm1_hardsigmoidproxy_firstpass/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_hardsigmoidproxy/work/89908fb6/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 2.7883,
+        "die_area": 1440000.0,
+        "total_power_mw": 0.00036
+      }
+    }
+  ]
+}
