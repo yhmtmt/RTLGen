@@ -1,0 +1,55 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-03-25T02:17:11.354585Z",
+  "item_id": "l1_prop_l1_terminal_relu6_block_v1_nangate45_r2",
+  "run_key": "l1_prop_l1_terminal_relu6_block_v1_nangate45_r2_run_0529d84d968268c3",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "4aab8f3ec45924f8d7f7673279ce573a1302e602",
+  "objective": "terminal_relu6_physical_metrics",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/activations/sweeps/nangate45_terminal_relu6_int8_v1.json"
+    ],
+    "configs": [
+      "runs/designs/activations/terminal_relu6_int8_wrapper/config_terminal_relu6_int8.json"
+    ],
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": [
+      "third_party/nlohmann_json",
+      "third_party/cacti"
+    ]
+  },
+  "proposal_count": 1,
+  "evaluation_record": {
+    "evaluation_mode": "measurement_only",
+    "abstraction_layer": "",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/terminal_relu6_int8_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "0485362a",
+        "tag": "terminal_relu6_int8_ng45_v1_6b32a08e",
+        "result_path": "runs/designs/activations/terminal_relu6_int8_wrapper/work/0485362a/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 0.1864,
+        "die_area": 25600.0,
+        "total_power_mw": 2.3e-05
+      }
+    }
+  ]
+}
