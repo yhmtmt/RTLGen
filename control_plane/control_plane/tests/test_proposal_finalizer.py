@@ -760,6 +760,134 @@ def test_prepare_repo_resets_detached_worktree_to_origin_master() -> None:
         ("rev-parse", "HEAD"),
     ]
 
+def test_finalize_skips_unlisted_supplemental_item_when_proposal_already_finalized() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        proposal_id = "prop_l1_supplemental_demo_v1"
+        proposal_dir = _seed_repo_files(
+            repo_root,
+            proposal_id,
+            [
+                {
+                    "item_id": "supp_demo_r1",
+                    "task_type": "l1_sweep",
+                    "objective": "demo_metrics",
+                    "status": "merged",
+                },
+                {
+                    "item_id": "supp_demo_r2",
+                    "task_type": "l1_sweep",
+                    "objective": "demo_metrics",
+                    "status": "merged",
+                },
+            ],
+        )
+        promotion_result_path = proposal_dir / "promotion_result.json"
+        promotion_result = json.loads(promotion_result_path.read_text())
+        promotion_result["decision"] = "promote"
+        promotion_result_path.write_text(json.dumps(promotion_result, indent=2) + "\n")
+
+        payload_path = repo_root / "control_plane" / "shadow_exports" / "l1_promotions" / "supp_demo_r3.json"
+        _write(
+            payload_path,
+            json.dumps(
+                {
+                    "item_id": "supp_demo_r3",
+                    "run_key": "supp_demo_r3_run_1",
+                    "source_commit": "abc123",
+                    "proposals": [
+                        {
+                            "metrics_ref": {"metrics_csv": "runs/designs/demo/metrics.csv", "platform": "nangate45", "status": "ok"},
+                            "metric_summary": {"critical_path_ns": 1.0, "die_area": 100.0, "total_power_mw": 0.01},
+                        }
+                    ],
+                },
+                indent=2,
+            )
+            + "\n",
+        )
+
+        with _session() as session:
+            task = TaskRequest(
+                request_key="l1:supp_demo_r3",
+                source="test",
+                requested_by="tester",
+                title="supplemental l1",
+                description="demo_metrics",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                priority=1,
+                request_payload={
+                    "developer_loop": {
+                        "proposal_id": proposal_id,
+                        "proposal_path": str((proposal_dir / "proposal.json").relative_to(repo_root)),
+                    },
+                    "task": {"objective": "demo_metrics"},
+                },
+            )
+            session.add(task)
+            session.flush()
+            work_item = WorkItem(
+                work_item_key="l1:supp_demo_r3",
+                task_request_id=task.id,
+                item_id="supp_demo_r3",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                platform="nangate45",
+                task_type="l1_sweep",
+                state=WorkItemState.MERGED,
+                priority=1,
+                input_manifest={},
+                command_manifest=[],
+                expected_outputs=["runs/designs/demo/metrics.csv"],
+                acceptance_rules=[],
+                source_commit="abc123",
+            )
+            session.add(work_item)
+            session.flush()
+            run = Run(
+                run_key="supp_demo_r3_run_1",
+                work_item_id=work_item.id,
+                attempt=1,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.SUCCEEDED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="abc123",
+                result_summary="ok",
+                result_payload={"queue_result": {"status": "ok"}},
+            )
+            session.add(run)
+            session.flush()
+            session.add(
+                Artifact(
+                    run_id=run.id,
+                    kind="promotion_proposal",
+                    storage_mode="repo",
+                    path=str(payload_path.relative_to(repo_root)),
+                    sha256="x",
+                    metadata_={},
+                )
+            )
+            session.commit()
+
+            result = finalize_after_merge(
+                session,
+                ProposalFinalizeRequest(
+                    repo_root=str(repo_root),
+                    item_id="supp_demo_r3",
+                    pr_number=123,
+                    merge_commit="deadbeef",
+                    merged_utc="2026-03-25T04:00:00Z",
+                    git_publish=False,
+                ),
+            )
+
+        assert result.skipped is True
+        assert result.decision == "promote"
+        assert result.skip_reason == "proposal already finalized with decision=promote"
+
+
 def test_finalize_l1_retry_item_rebinds_requested_entry() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

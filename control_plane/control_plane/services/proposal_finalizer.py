@@ -487,13 +487,28 @@ def finalize_after_merge(session: Session, request: ProposalFinalizeRequest) -> 
     requested_items = evaluation_requests.get("requested_items")
     if not isinstance(requested_items, list):
         raise ProposalFinalizationError(f"expected requested_items list in {evaluation_requests_path}")
-    matched_entry = _resolve_requested_entry(
-        [entry for entry in requested_items if isinstance(entry, dict)],
-        work_item=work_item,
-        evaluation_requests_path=evaluation_requests_path,
-    )
 
     existing_decision = str(promotion_result.get("decision", "")).strip().lower()
+    filtered_requested_items = [entry for entry in requested_items if isinstance(entry, dict)]
+    try:
+        matched_entry = _resolve_requested_entry(
+            filtered_requested_items,
+            work_item=work_item,
+            evaluation_requests_path=evaluation_requests_path,
+        )
+    except ProposalFinalizationError:
+        if existing_decision and existing_decision != "pending":
+            return ProposalFinalizeResult(
+                item_id=work_item.item_id,
+                proposal_id=proposal_id,
+                decision=existing_decision,
+                next_item_id=None,
+                commit_sha=None,
+                skipped=True,
+                skip_reason=f"proposal already finalized with decision={existing_decision}",
+            )
+        raise
+
     matched_status = str(matched_entry.get("status", "")).strip().lower()
     if existing_decision and existing_decision != "pending" and _is_merged_status(matched_status):
         return ProposalFinalizeResult(
