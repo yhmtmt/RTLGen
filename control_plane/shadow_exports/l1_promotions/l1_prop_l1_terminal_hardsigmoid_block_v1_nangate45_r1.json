@@ -1,0 +1,55 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-03-25T00:33:13.981518Z",
+  "item_id": "l1_prop_l1_terminal_hardsigmoid_block_v1_nangate45_r1",
+  "run_key": "l1_prop_l1_terminal_hardsigmoid_block_v1_nangate45_r1_run_3e62347b23516839",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "f922648c7770a86fb6daf51857c7dbec1602340a",
+  "objective": "terminal_hardsigmoid_physical_metrics",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/activations/sweeps/nangate45_terminal_hardsigmoid_int8_pwl_v1.json"
+    ],
+    "configs": [
+      "runs/designs/activations/terminal_hardsigmoid_int8_pwl_wrapper/config_terminal_hardsigmoid_int8_pwl.json"
+    ],
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": [
+      "third_party/nlohmann_json",
+      "third_party/cacti"
+    ]
+  },
+  "proposal_count": 1,
+  "evaluation_record": {
+    "evaluation_mode": "measurement_only",
+    "abstraction_layer": "",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/terminal_hardsigmoid_int8_pwl_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "35c87b7c",
+        "tag": "terminal_hardsigmoid_int8_pwl_ng45_v1_3ba5ddc4",
+        "result_path": "runs/designs/activations/terminal_hardsigmoid_int8_pwl_wrapper/work/35c87b7c/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 0.1908,
+        "die_area": 25600.0,
+        "total_power_mw": 8.76e-05
+      }
+    }
+  ]
+}
