@@ -1,9 +1,15 @@
 {
   "proposal_id": "prop_l1_terminal_hardsigmoid_block_v1",
-  "candidate_id": "pending",
-  "decision": "pending",
-  "reason": "pending",
-  "evidence_refs": [],
-  "next_action": "queue l1_prop_l1_terminal_hardsigmoid_block_v1_nangate45_r1",
-  "requires_human_approval": true
+  "candidate_id": "l1_prop_l1_terminal_hardsigmoid_block_v1_nangate45_r1",
+  "decision": "promote",
+  "reason": "Accepted Layer 1 physical metrics were merged in PR #86 for the current candidate.",
+  "evidence_refs": [
+    "item:l1_prop_l1_terminal_hardsigmoid_block_v1_nangate45_r1",
+    "run:l1_prop_l1_terminal_hardsigmoid_block_v1_nangate45_r1_run_3e62347b23516839",
+    "artifact:control_plane/shadow_exports/l1_promotions/l1_prop_l1_terminal_hardsigmoid_block_v1_nangate45_r1.json",
+    "pr:#86",
+    "https://github.com/yhmtmt/RTLGen/pull/86"
+  ],
+  "next_action": "inspect the next dependent item",
+  "requires_human_approval": false
 }

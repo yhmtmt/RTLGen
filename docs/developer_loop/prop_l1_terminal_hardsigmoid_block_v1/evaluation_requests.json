@@ -1,17 +1,20 @@
 {
   "proposal_id": "prop_l1_terminal_hardsigmoid_block_v1",
-  "source_commit": "pending",
+  "source_commit": "f922648c7770a86fb6daf51857c7dbec1602340a",
   "requested_items": [
     {
       "item_id": "l1_prop_l1_terminal_hardsigmoid_block_v1_nangate45_r1",
       "task_type": "l1_sweep",
       "evaluation_mode": "measurement_only",
       "objective": "terminal_hardsigmoid_physical_metrics",
-      "status": "ready_to_queue",
-      "notes": "First bounded Layer 1 physical sweep for the terminal int8 hard-sigmoid block.",
+      "status": "merged",
+      "notes": "First bounded Layer 1 physical sweep for the terminal int8 hard-sigmoid block. Merged via PR #86 and merge 7b922eeb1835aaba4205167eb12bfe0b8cdc566d at 2026-03-25T01:16:20.913962Z.",
       "abstraction_layer": "circuit_block",
       "config_path": "runs/designs/activations/terminal_hardsigmoid_int8_pwl_wrapper/config_terminal_hardsigmoid_int8_pwl.json",
-      "sweep_path": "runs/designs/activations/sweeps/nangate45_terminal_hardsigmoid_int8_pwl_v1.json"
+      "sweep_path": "runs/designs/activations/sweeps/nangate45_terminal_hardsigmoid_int8_pwl_v1.json",
+      "merged_pr_number": 86,
+      "merge_commit": "7b922eeb1835aaba4205167eb12bfe0b8cdc566d",
+      "merged_utc": "2026-03-25T01:16:20.913962Z"
     }
   ]
 }

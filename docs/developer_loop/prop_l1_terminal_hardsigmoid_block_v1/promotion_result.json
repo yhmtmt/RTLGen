@@ -1,8 +1,8 @@
 {
   "proposal_id": "prop_l1_terminal_hardsigmoid_block_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": null,
-  "merged_utc": null,
+  "decision": "promote",
+  "pr_number": 86,
+  "merge_commit": "7b922eeb1835aaba4205167eb12bfe0b8cdc566d",
+  "merged_utc": "2026-03-25T01:16:20.913962Z",
   "note": "Pending first physical sweep evidence."
 }
