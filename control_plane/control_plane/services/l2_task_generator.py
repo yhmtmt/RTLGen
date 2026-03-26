@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import timezone
 from hashlib import sha256
 import json
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -71,6 +72,27 @@ def _repo_rel(path_text: str, repo_root: Path) -> str:
 
 def _load_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _resolve_source_commit(repo_root: Path, source_commit: str | None) -> str:
+    resolved = str(source_commit or "").strip()
+    if resolved:
+        return resolved
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(repo_root), "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        stderr = (exc.stderr or "").strip()
+        detail = f": {stderr}" if stderr else ""
+        raise Layer2TaskGenerationError(f"failed to resolve source commit from repo_root {repo_root}{detail}") from exc
+    resolved = result.stdout.strip()
+    if not resolved:
+        raise Layer2TaskGenerationError(f"failed to resolve source commit from repo_root {repo_root}: empty git rev-parse output")
+    return resolved
 
 
 def _uniq(items: list[str]) -> list[str]:
@@ -349,6 +371,7 @@ def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateR
         _repo_rel(request.objective_profiles_json, repo_root) if request.objective_profiles_json else None
     )
     proposal_path = _repo_rel(request.proposal_path, repo_root) if request.proposal_path else None
+    source_commit = _resolve_source_commit(repo_root, request.source_commit)
     expected_outputs = _build_expected_outputs(
         campaign=campaign,
         generated_campaign_path=generated_campaign_path,
@@ -407,7 +430,7 @@ def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateR
         flow=FlowName.OPENROAD,
         priority=request.priority,
         request_payload=payload,
-        source_commit=request.source_commit,
+        source_commit=source_commit,
     )
     transient_work_item.task_request = transient_task_request
     gate = evaluate_work_item_dependencies(session, repo_root=repo_root, work_item=transient_work_item)
@@ -426,7 +449,7 @@ def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateR
             flow=FlowName.OPENROAD,
             priority=request.priority,
             request_payload=payload,
-            source_commit=request.source_commit,
+            source_commit=source_commit,
         )
         session.add(task_request)
         session.flush()
@@ -446,7 +469,7 @@ def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateR
             command_manifest=payload["task"]["commands"],
             expected_outputs=payload["task"]["expected_outputs"],
             acceptance_rules=payload["task"]["acceptance"],
-            source_commit=request.source_commit,
+            source_commit=source_commit,
         )
         session.add(work_item)
         session.commit()
@@ -468,7 +491,7 @@ def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateR
     existing.task_request.description = objective
     existing.task_request.priority = request.priority
     existing.task_request.request_payload = payload
-    existing.task_request.source_commit = request.source_commit
+    existing.task_request.source_commit = source_commit
 
     existing.priority = request.priority
     existing.platform = platform
@@ -477,7 +500,7 @@ def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateR
     existing.command_manifest = payload["task"]["commands"]
     existing.expected_outputs = payload["task"]["expected_outputs"]
     existing.acceptance_rules = payload["task"]["acceptance"]
-    existing.source_commit = request.source_commit
+    existing.source_commit = source_commit
     existing.state = initial_state
     existing.queue_snapshot_path = None
     session.commit()

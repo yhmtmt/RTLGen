@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import subprocess
 import tempfile
+from unittest.mock import patch
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
@@ -305,3 +307,34 @@ def test_generate_l2_campaign_task_requeues_failed_item_on_upsert() -> None:
             session.refresh(work_item)
             assert work_item.state == WorkItemState.READY
             assert work_item.queue_snapshot_path is None
+
+
+def test_generate_l2_campaign_task_defaults_source_commit_from_repo_head() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with patch("control_plane.services.l2_task_generator.subprocess.run") as mock_run:
+            mock_run.return_value = subprocess.CompletedProcess(
+                args=["git", "-C", str(repo_root), "rev-parse", "HEAD"],
+                returncode=0,
+                stdout="feedface12345678\n",
+                stderr="",
+            )
+            with Session(engine) as session:
+                result = generate_l2_campaign_task(
+                    session,
+                    Layer2CampaignGenerateRequest(
+                        repo_root=str(repo_root),
+                        campaign_path=campaign_path,
+                        requested_by="@tester",
+                    ),
+                )
+
+                work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+                assert work_item.source_commit == "feedface12345678"
+                assert work_item.task_request.source_commit == "feedface12345678"
+                mock_run.assert_called_once()

@@ -383,6 +383,9 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
           item_id: row.item_id || null,
           pr_number: row.pr_number ?? null,
           state: row.state || null,
+          finalization_status: row.finalization_status || null,
+          finalized_proposal_id: row.finalized_proposal_id || null,
+          finalization_commit: row.finalization_commit || null,
         })),
         recent_failures: (payload.recent_failures || []).map((row) => ({
           item_id: row.item_id || null,
@@ -409,6 +412,8 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
       const previousAwaitingReview = previousPayload.state_counts?.awaiting_review || 0;
       const mergedSubmissions = (payload.recent_submissions || []).filter((row) => row.state === "pr_merged").length;
       const previousMergedSubmissions = (previousPayload.recent_submissions || []).filter((row) => row.state === "pr_merged").length;
+      const finalizedSubmissions = (payload.recent_submissions || []).filter((row) => row.finalization_status === "finalized" || row.finalization_status === "skipped").length;
+      const previousFinalizedSubmissions = (previousPayload.recent_submissions || []).filter((row) => row.finalization_status === "finalized" || row.finalization_status === "skipped").length;
       const activeRuns = payload.active_runs?.length || 0;
       const previousActiveRuns = previousPayload.active_runs?.length || 0;
 
@@ -423,6 +428,9 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
       }
       if (mergedSubmissions > previousMergedSubmissions) {
         return { message: `Merged review reconciled (${mergedSubmissions}).`, tone: "merge" };
+      }
+      if (finalizedSubmissions > previousFinalizedSubmissions) {
+        return { message: `Proposal finalization updated (${finalizedSubmissions}).`, tone: "merge" };
       }
       if (activeRuns !== previousActiveRuns) {
         return { message: `Active run count changed (${previousActiveRuns} -> ${activeRuns}).`, tone: "activity" };
@@ -472,7 +480,10 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
       renderTable(tables.submissions, [
         { key: "item_id", label: "Item", render: (value) => `<span class='mono'>${escapeHtml(value)}</span>` },
         { key: "pr_number", label: "PR" },
-        { key: "state", label: "State" },
+        { key: "state", label: "PR State" },
+        { key: "finalization_status", label: "Finalize" },
+        { key: "finalized_proposal_id", label: "Proposal", render: (value) => value ? `<span class='mono'>${escapeHtml(value)}</span>` : "" },
+        { key: "finalization_commit", label: "Commit", render: (value, row) => value ? `<span class='mono' title='${escapeHtml(value)}'>${escapeHtml(value.slice(0, 10))}</span>` : (row.finalization_error ? `<span title='${escapeHtml(row.finalization_error)}'>failed</span>` : "") },
         { key: "updated_at", label: "Updated", render: (value) => escapeHtml(formatTime(value)) },
       ], payload.recent_submissions || []);
       renderTable(tables.failures, [

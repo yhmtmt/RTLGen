@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import subprocess
 import tempfile
+from unittest.mock import patch
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
@@ -372,3 +374,37 @@ def test_generate_l1_sweep_task_accepts_hierarchical_architecture_block_sweeps()
                 "layer": "architecture_block"
             }
             assert "--sweep runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/sweep_compare_33.json" in work_item.command_manifest[2]["run"]
+
+
+def test_generate_l1_sweep_task_defaults_source_commit_from_repo_head() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with patch("control_plane.services.l1_task_generator.subprocess.run") as mock_run:
+            mock_run.return_value = subprocess.CompletedProcess(
+                args=["git", "-C", str(repo_root), "rev-parse", "HEAD"],
+                returncode=0,
+                stdout="deadbeefcafefeed\n",
+                stderr="",
+            )
+            with Session(engine) as session:
+                result = generate_l1_sweep_task(
+                    session,
+                    Layer1SweepGenerateRequest(
+                        repo_root=str(repo_root),
+                        sweep_path=sweep_path,
+                        config_paths=[config_path],
+                        platform="nangate45",
+                        out_root="runs/designs/activations",
+                        requested_by="@tester",
+                    ),
+                )
+
+                work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+                assert work_item.source_commit == "deadbeefcafefeed"
+                assert work_item.task_request.source_commit == "deadbeefcafefeed"
+                mock_run.assert_called_once()

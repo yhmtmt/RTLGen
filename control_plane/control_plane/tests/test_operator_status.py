@@ -194,7 +194,10 @@ def test_operator_status_summarizes_live_state() -> None:
                     pr_number=99,
                     pr_url="https://github.com/yhmtmt/RTLGen/pull/99",
                     state=GitHubLinkState.PR_OPEN,
-                    metadata_={},
+                    metadata_={
+                        "finalized_proposal_id": "prop_demo_v1",
+                        "finalization_commit": "feedfacecafebeef",
+                    },
                 )
             )
             session.commit()
@@ -218,6 +221,10 @@ def test_operator_status_summarizes_live_state() -> None:
         assert len(status.stale_leases) == 1
         assert status.stale_leases[0]["item_id"] == "ready_item"
         assert len(status.recent_failures) == 1
+        assert len(status.recent_submissions) == 1
+        assert status.recent_submissions[0]["finalization_status"] == "finalized"
+        assert status.recent_submissions[0]["finalized_proposal_id"] == "prop_demo_v1"
+        assert status.recent_submissions[0]["finalization_commit"] == "feedfacecafebeef"
         assert status.recent_failures[0]["item_id"] == "failed_item"
         assert status.recent_failures[0]["failure_category"] == "validation_error"
         assert status.recent_failures[0]["failure_issue_status"] == "reported"

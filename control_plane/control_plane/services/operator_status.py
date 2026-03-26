@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 from sqlalchemy.orm import Session
 
@@ -13,6 +14,31 @@ from control_plane.models.runs import Run
 from control_plane.models.worker_leases import WorkerLease
 from control_plane.models.work_items import WorkItem
 from control_plane.services.operator_submission import assess_submission_eligibility
+
+
+def _submission_finalization_fields(link: GitHubLink) -> dict[str, Any]:
+    metadata = dict(link.metadata_ or {})
+    finalization_commit = str(metadata.get("finalization_commit") or "").strip() or None
+    finalized_proposal_id = str(metadata.get("finalized_proposal_id") or "").strip() or None
+    finalization_error = str(metadata.get("finalization_error") or "").strip() or None
+    skip_reason = str(metadata.get("finalization_skip_reason") or "").strip() or None
+    if finalization_commit:
+        status = "finalized"
+    elif bool(metadata.get("finalization_skipped")):
+        status = "skipped"
+    elif finalization_error:
+        status = "failed"
+    elif link.state.value == "pr_merged":
+        status = "pending"
+    else:
+        status = "not_merged"
+    return {
+        "finalization_status": status,
+        "finalized_proposal_id": finalized_proposal_id,
+        "finalization_commit": finalization_commit,
+        "finalization_error": finalization_error,
+        "finalization_skip_reason": skip_reason,
+    }
 
 
 @dataclass(frozen=True)
@@ -147,6 +173,7 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
         .limit(request.recent_limit)
         .all()
     ):
+        finalization = _submission_finalization_fields(link)
         recent_submissions.append(
             {
                 "item_id": link.work_item.item_id,
@@ -156,6 +183,7 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
                 "state": link.state.value,
                 "branch_name": link.branch_name,
                 "updated_at": link.updated_at.isoformat() if link.updated_at else None,
+                **finalization,
             }
         )
 
