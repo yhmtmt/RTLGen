@@ -1,0 +1,30 @@
+{
+  "proposal_id": "prop_l2_mapper_terminal_hardtanh_direct_output_v1",
+  "source_commit": "b8def16b6d1c0732a24dfe096f3f8dfb0d49a09d",
+  "requested_items": [
+    {
+      "item_id": "l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r1",
+      "task_type": "l2_campaign",
+      "objective": "terminal_hardtanh_baseline_measurement",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "full_architecture",
+      "status": "not_queued",
+      "notes": "First bounded HardTanh reference collection on fixed nm1 using the accepted reduced HardTanh architecture-block source."
+    },
+    {
+      "item_id": "l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_fused_r1",
+      "task_type": "l2_campaign",
+      "objective": "terminal_hardtanh_direct_output_pair",
+      "evaluation_mode": "paired_comparison",
+      "abstraction_layer": "full_architecture",
+      "status": "not_queued",
+      "paired_baseline_item_id": "l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r1",
+      "depends_on_item_ids": [
+        "l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "notes": "Queue only after the baseline item is merged and materialized."
+    }
+  ]
+}

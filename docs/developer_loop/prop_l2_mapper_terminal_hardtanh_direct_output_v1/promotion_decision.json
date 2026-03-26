@@ -1,0 +1,9 @@
+{
+  "proposal_id": "prop_l2_mapper_terminal_hardtanh_direct_output_v1",
+  "candidate_id": "cand_l2_mapper_terminal_hardtanh_direct_output_v1_r1",
+  "decision": "pending",
+  "reason": "awaiting remote evaluation evidence",
+  "evidence_refs": [],
+  "next_action": "run the bounded measurement baseline",
+  "requires_human_approval": false
+}

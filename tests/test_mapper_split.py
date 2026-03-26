@@ -186,6 +186,27 @@ class MapperSplitRegressionTest(unittest.TestCase):
             )
         )
 
+    def _write_terminal_hardtanh_onnx(
+        self,
+        out_path: Path,
+        *,
+        name: str,
+        b: int,
+        input_shape: list[int],
+        add_flatten: bool = False,
+        add_cast: bool = False,
+    ) -> None:
+        out_path.write_bytes(
+            self.onnx_lite.build_terminal_hardtanh_model_bytes(
+                name=name,
+                b=b,
+                input_shape=input_shape,
+                dtype=self.onnx_lite.TENSOR_INT8,
+                add_flatten=add_flatten,
+                add_cast=add_cast,
+            )
+        )
+
     def _run_lowering(
         self,
         onnx_path: Path,
@@ -916,6 +937,73 @@ class MapperSplitRegressionTest(unittest.TestCase):
             dma_y_ops = [op for op in schedule["ops"] if str(op.get("id", "")).startswith("dma_y")]
             self.assertEqual(1, len(vec_ops))
             self.assertEqual("hardsigmoid", vec_ops[0].get("op"))
+            self.assertEqual("Y_DRAM", vec_ops[0].get("dst"))
+            self.assertEqual([], dma_y_ops)
+            self.assertEqual("vec1", schedule["events"][0]["signal_on"])
+
+
+    def test_terminal_vecop_hardtanh_lowers_without_direct_output(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            onnx_path = tmp / "terminal_vec_hardtanh.onnx"
+            sched_path = tmp / "terminal_vec_hardtanh.yml"
+            bin_path = tmp / "terminal_vec_hardtanh.bin"
+
+            self._write_terminal_hardtanh_onnx(
+                onnx_path,
+                name="terminal_vec_hardtanh",
+                b=128,
+                input_shape=[64],
+            )
+            schedule = self._run_lowering(onnx_path, sched_path)
+            self._validate_and_emit_bin(sched_path, bin_path)
+
+            notes = schedule.get("mapper_notes", {})
+            self.assertEqual("terminal_vec_op", notes.get("graph_kind"))
+            self.assertEqual("hardtanh", notes.get("terminal_vec_op"))
+            self.assertFalse(bool(notes.get("terminal_vecop_direct_output")))
+
+            vec_ops = [op for op in schedule["ops"] if op.get("type") == "vec_op"]
+            dma_y_ops = [op for op in schedule["ops"] if str(op.get("id", "")).startswith("dma_y")]
+            self.assertEqual(1, len(vec_ops))
+            self.assertEqual("hardtanh", vec_ops[0].get("op"))
+            self.assertEqual("ACT_B_SRAM", vec_ops[0].get("dst"))
+            self.assertEqual(1, len(dma_y_ops))
+            self.assertEqual("ACT_B_SRAM", dma_y_ops[0].get("src"))
+            self.assertEqual("Y_DRAM", dma_y_ops[0].get("dst"))
+            self.assertEqual("dma_y", schedule["events"][0]["signal_on"])
+
+    def test_terminal_vecop_hardtanh_direct_output_when_arch_requests_it(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            onnx_path = tmp / "terminal_vec_hardtanh_direct.onnx"
+            sched_path = tmp / "terminal_vec_hardtanh_direct.yml"
+            bin_path = tmp / "terminal_vec_hardtanh_direct.bin"
+
+            self._write_terminal_hardtanh_onnx(
+                onnx_path,
+                name="terminal_vec_hardtanh_direct",
+                b=128,
+                input_shape=[2, 4, 8],
+                add_flatten=True,
+            )
+            schedule = self._run_lowering(
+                onnx_path,
+                sched_path,
+                arch_path=ARCH_TERMINAL_VECOP_DIRECT_OUTPUT_PATH,
+            )
+            self._validate_and_emit_bin(sched_path, bin_path)
+
+            notes = schedule.get("mapper_notes", {})
+            self.assertEqual("terminal_vec_op", notes.get("graph_kind"))
+            self.assertEqual("hardtanh", notes.get("terminal_vec_op"))
+            self.assertTrue(bool(notes.get("input_flattened")))
+            self.assertTrue(bool(notes.get("terminal_vecop_direct_output")))
+
+            vec_ops = [op for op in schedule["ops"] if op.get("type") == "vec_op"]
+            dma_y_ops = [op for op in schedule["ops"] if str(op.get("id", "")).startswith("dma_y")]
+            self.assertEqual(1, len(vec_ops))
+            self.assertEqual("hardtanh", vec_ops[0].get("op"))
             self.assertEqual("Y_DRAM", vec_ops[0].get("dst"))
             self.assertEqual([], dma_y_ops)
             self.assertEqual("vec1", schedule["events"][0]["signal_on"])

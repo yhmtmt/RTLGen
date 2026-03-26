@@ -1,0 +1,25 @@
+{
+  "version": 0.1,
+  "model_set_id": "onnx_terminal_hardtanh_suite_v1",
+  "description": "Locally generated bounded terminal HardTanh models used for the first HardTanh measurement-only Layer 2 mapper pass.",
+  "models": [
+    {
+      "model_id": "hardtanh_vec_b128_f64",
+      "onnx_path": "runs/models/onnx_terminal_hardtanh_suite_v1/hardtanh_vec_b128_f64.onnx",
+      "onnx_sha256": "a6d08a9c273ea645e08d253e779fcf6d93b775a91ab3f8b30850039f0222e32c",
+      "notes": "First-pass standalone terminal HardTanh on a 2D activation tensor."
+    },
+    {
+      "model_id": "hardtanh_vec_b256_f256",
+      "onnx_path": "runs/models/onnx_terminal_hardtanh_suite_v1/hardtanh_vec_b256_f256.onnx",
+      "onnx_sha256": "d12885f3c4dc3de9ff7fba3ad44cb643a1360e25d3caa576dcd0fa83e18e094b",
+      "notes": "Larger standalone terminal HardTanh to increase writeback pressure."
+    },
+    {
+      "model_id": "hardtanh_vec_flatten_b128_2x4x8",
+      "onnx_path": "runs/models/onnx_terminal_hardtanh_suite_v1/hardtanh_vec_flatten_b128_2x4x8.onnx",
+      "onnx_sha256": "d2b109fa80dfb3f7c99c0452543e8cab9ce56c02dbb2382d82d8d5fbe449380c",
+      "notes": "Flatten -> HardTanh terminal vec-op to prove the prelude path stays legal."
+    }
+  ]
+}
