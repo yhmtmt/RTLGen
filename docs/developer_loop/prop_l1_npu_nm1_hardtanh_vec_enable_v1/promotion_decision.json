@@ -1,9 +1,15 @@
 {
   "proposal_id": "prop_l1_npu_nm1_hardtanh_vec_enable_v1",
-  "candidate_id": null,
-  "decision": "pending",
-  "reason": "Awaiting merged Layer 1 evidence for the integrated nm1 hardtanh source.",
-  "evidence_refs": [],
-  "next_action": "wait for the first merged review PR",
+  "candidate_id": "l1_prop_l1_npu_nm1_hardtanh_vec_enable_v1_r1",
+  "decision": "promote",
+  "reason": "Accepted Layer 1 physical metrics were merged in PR #112 for the current candidate.",
+  "evidence_refs": [
+    "item:l1_prop_l1_npu_nm1_hardtanh_vec_enable_v1_r1",
+    "run:l1_prop_l1_npu_nm1_hardtanh_vec_enable_v1_r1_run_cac90ce03f6292c8",
+    "artifact:control_plane/shadow_exports/l1_promotions/l1_prop_l1_npu_nm1_hardtanh_vec_enable_v1_r1.json",
+    "pr:#112",
+    "https://github.com/yhmtmt/RTLGen/pull/112"
+  ],
+  "next_action": "inspect the next dependent item",
   "requires_human_approval": false
 }

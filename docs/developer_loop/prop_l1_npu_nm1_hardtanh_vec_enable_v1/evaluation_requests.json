@@ -1,17 +1,20 @@
 {
   "proposal_id": "prop_l1_npu_nm1_hardtanh_vec_enable_v1",
-  "source_commit": "",
+  "source_commit": "77c2fb23a8eb66d8f3adbf4e8e220e028b4e6bac",
   "requested_items": [
     {
       "item_id": "l1_prop_l1_npu_nm1_hardtanh_vec_enable_v1_r1",
       "task_type": "l1_sweep",
       "evaluation_mode": "measurement_only",
       "objective": "npu_nm1_hardtanh_vec_physical_metrics",
-      "status": "ready_to_queue",
-      "notes": "First reduced-proxy architecture-block sweep for the integrated nm1 hardtanh source.",
+      "status": "merged",
+      "notes": "First reduced-proxy architecture-block sweep for the integrated nm1 hardtanh source. Merged via PR #112 and merge ebefd71668128a174fd5e8edbd344510cc77c25d at 2026-03-26T12:02:54.184326Z.",
       "abstraction_layer": "architecture_block",
       "config_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_hardtanhproxy/config_nm1_hardtanhproxy.json",
-      "sweep_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_hardtanhproxy/sweep_proxy_firstpass.json"
+      "sweep_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_hardtanhproxy/sweep_proxy_firstpass.json",
+      "merged_pr_number": 112,
+      "merge_commit": "ebefd71668128a174fd5e8edbd344510cc77c25d",
+      "merged_utc": "2026-03-26T12:02:54.184326Z"
     }
   ]
 }

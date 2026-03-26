@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l1_npu_nm1_hardtanh_vec_enable_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": null,
-  "merged_utc": null
+  "decision": "promote",
+  "pr_number": 112,
+  "merge_commit": "ebefd71668128a174fd5e8edbd344510cc77c25d",
+  "merged_utc": "2026-03-26T12:02:54.184326Z"
 }
