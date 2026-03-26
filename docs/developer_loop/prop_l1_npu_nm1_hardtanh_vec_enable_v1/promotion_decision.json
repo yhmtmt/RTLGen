@@ -1,0 +1,9 @@
+{
+  "proposal_id": "prop_l1_npu_nm1_hardtanh_vec_enable_v1",
+  "candidate_id": null,
+  "decision": "pending",
+  "reason": "Awaiting merged Layer 1 evidence for the integrated nm1 hardtanh source.",
+  "evidence_refs": [],
+  "next_action": "wait for the first merged review PR",
+  "requires_human_approval": false
+}
