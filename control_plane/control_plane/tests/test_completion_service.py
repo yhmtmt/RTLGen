@@ -15,6 +15,7 @@ from control_plane.db import create_all
 from control_plane.models.artifacts import Artifact
 from control_plane.models.enums import ArtifactStorageMode
 from control_plane.models.enums import ExecutorType, FlowName, LayerName, RunStatus, WorkItemState
+from control_plane.models.run_events import RunEvent
 from control_plane.models.runs import Run
 from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
@@ -306,24 +307,131 @@ def test_process_completed_items_submission_failure_keeps_artifact_sync() -> Non
                 "control_plane.services.completion_service.operate_submission",
                 side_effect=OperatorSubmissionError("gh pr create failed"),
             ):
-                try:
-                    process_completed_items(
-                        session,
-                        CompletionProcessRequest(
-                            repo_root=str(repo_root),
-                            item_id=item_id,
-                            submit=True,
-                            repo="yhmtmt/RTLGen",
-                            force=True,
-                        ),
-                    )
-                except CompletionProcessingError as exc:
-                    assert "gh pr create failed" in str(exc)
-                else:
-                    raise AssertionError("expected CompletionProcessingError")
+                results = process_completed_items(
+                    session,
+                    CompletionProcessRequest(
+                        repo_root=str(repo_root),
+                        item_id=item_id,
+                        submit=True,
+                        repo="yhmtmt/RTLGen",
+                        force=True,
+                    ),
+                )
 
+            assert len(results) == 1
+            assert results[0].submitted is False
+            assert results[0].submission_error == "gh pr create failed"
             work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
             assert work_item.state == WorkItemState.ARTIFACT_SYNC
+            run = session.query(Run).filter_by(work_item_id=work_item.id).one()
+            events = session.query(RunEvent).filter_by(run_id=run.id, event_type="submission_failed").all()
+            assert len(events) == 1
+            assert events[0].event_payload["error"] == "gh pr create failed"
+
+
+def test_process_completed_items_continues_after_submission_failure() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            first = _seed_l1_artifact_sync(session, repo_root)
+            first_item = session.query(WorkItem).filter_by(item_id=first).one()
+            first_run = session.query(Run).filter_by(work_item_id=first_item.id).one()
+
+            second_payload = {
+                "item_id": "completion_l1_demo_second",
+                "title": "completion demo second",
+                "layer": "layer1",
+                "flow": "openroad",
+                "handoff": {
+                    "branch": "eval/completion_l1_demo_second/<session_id>",
+                    "pr_title": "eval: completion demo second",
+                    "pr_body_fields": {
+                        "evaluator_id": "control_plane",
+                        "session_id": "<session_id>",
+                        "host": "<host>",
+                        "queue_item_id": "completion_l1_demo_second",
+                    },
+                    "checklist": ["demo"],
+                },
+            }
+            task = TaskRequest(
+                request_key="completion:l1_second",
+                source="test",
+                requested_by="@tester",
+                title="completion demo second",
+                description="completion service test second",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                priority=1,
+                request_payload=second_payload,
+            )
+            session.add(task)
+            session.flush()
+            work_item = WorkItem(
+                work_item_key="completion:l1_second",
+                task_request_id=task.id,
+                item_id="completion_l1_demo_second",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                platform="nangate45",
+                task_type="l1_sweep",
+                state=WorkItemState.ARTIFACT_SYNC,
+                priority=1,
+                source_mode="config",
+                input_manifest={},
+                command_manifest=[],
+                expected_outputs=list(first_item.expected_outputs or []),
+                acceptance_rules=[],
+            )
+            session.add(work_item)
+            session.flush()
+            run = Run(
+                run_key="completion_l1_demo_second_run_1",
+                work_item_id=work_item.id,
+                attempt=1,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.SUCCEEDED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                result_summary="4/4 commands succeeded",
+                result_payload=first_run.result_payload,
+            )
+            session.add(run)
+            session.commit()
+
+            calls = []
+            def _fake_submit(_session, req):
+                calls.append(req.item_id)
+                if req.item_id == first:
+                    raise OperatorSubmissionError("gh pr create failed")
+                class _Result:
+                    pr_url = "https://example.invalid/pr/1"
+                return _Result()
+
+            with patch(
+                "control_plane.services.completion_service.operate_submission",
+                side_effect=_fake_submit,
+            ):
+                results = process_completed_items(
+                    session,
+                    CompletionProcessRequest(
+                        repo_root=str(repo_root),
+                        submit=True,
+                        repo="yhmtmt/RTLGen",
+                        force=True,
+                    ),
+                )
+
+            assert calls == [first, "completion_l1_demo_second"]
+            assert len(results) == 2
+            by_item = {result.item_id: result for result in results}
+            assert by_item[first].submission_error == "gh pr create failed"
+            assert by_item[first].submitted is False
+            assert by_item["completion_l1_demo_second"].submitted is True
+            assert by_item["completion_l1_demo_second"].pr_url == "https://example.invalid/pr/1"
 
 
 def test_process_completed_items_materializes_supporting_output_artifacts() -> None:

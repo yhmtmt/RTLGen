@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from control_plane.artifact_policy import is_transportable_expected_output
 from control_plane.models.enums import WorkItemState
+from control_plane.models.run_events import RunEvent
 from control_plane.models.runs import Run
 from control_plane.models.work_items import WorkItem
 from control_plane.services.l1_result_consumer import Layer1ConsumeRequest, consume_l1_result
@@ -54,6 +55,7 @@ class CompletionProcessResult:
     work_item_state: str
     target_path: str | None = None
     pr_url: str | None = None
+    submission_error: str | None = None
 
 
 def _latest_run_for_item(work_item: WorkItem) -> Run:
@@ -100,6 +102,18 @@ def _materialize_expected_output_artifacts(*, repo_root: str, run: Run) -> list[
         path.write_text(inline_text, encoding="utf-8")
         materialized.append(rel_path)
     return materialized
+
+
+def _record_submission_failure(session: Session, *, run: Run, error: str) -> None:
+    session.add(
+        RunEvent(
+            run_id=run.id,
+            event_time=utcnow(),
+            event_type="submission_failed",
+            event_payload={"error": error},
+        )
+    )
+    session.commit()
 
 
 def _iter_target_items(session: Session, *, item_id: str | None) -> list[WorkItem]:
@@ -151,6 +165,7 @@ def process_completed_items(session: Session, request: CompletionProcessRequest)
 
         submitted = False
         pr_url: str | None = None
+        submission_error: str | None = None
         if request.submit:
             if not request.repo:
                 raise CompletionProcessingError("repo is required when submit=True")
@@ -175,9 +190,11 @@ def process_completed_items(session: Session, request: CompletionProcessRequest)
                     ),
                 )
             except OperatorSubmissionError as exc:
-                raise CompletionProcessingError(str(exc)) from exc
-            submitted = True
-            pr_url = operate_result.pr_url
+                submission_error = str(exc)
+                _record_submission_failure(session, run=latest_run, error=submission_error)
+            else:
+                submitted = True
+                pr_url = operate_result.pr_url
 
         session.refresh(work_item)
         results.append(
@@ -190,6 +207,7 @@ def process_completed_items(session: Session, request: CompletionProcessRequest)
                 work_item_state=work_item.state.value,
                 target_path=target_path,
                 pr_url=pr_url,
+                submission_error=submission_error,
             )
         )
 
