@@ -31,4 +31,5 @@
 - result: `pass`
 
 ## Remote Evaluation
-- not queued yet
+- queued baseline item:
+  - `l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r1`

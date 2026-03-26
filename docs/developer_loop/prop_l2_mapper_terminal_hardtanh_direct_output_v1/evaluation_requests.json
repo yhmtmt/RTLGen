@@ -8,8 +8,11 @@
       "objective": "terminal_hardtanh_baseline_measurement",
       "evaluation_mode": "measurement_only",
       "abstraction_layer": "full_architecture",
-      "status": "not_queued",
-      "notes": "First bounded HardTanh reference collection on fixed nm1 using the accepted reduced HardTanh architecture-block source."
+      "status": "queued",
+      "notes": "First bounded HardTanh reference collection on fixed nm1 using the accepted reduced HardTanh architecture-block source.",
+      "status_reason": "Inserted into the evaluator PostgreSQL queue after local validation passed.",
+      "task_request_id": "f0ff8387-6989-4880-bd5a-882520a773fc",
+      "work_item_id": "9bbcbe88-e619-4c73-a65d-18890d57100d"
     },
     {
       "item_id": "l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_fused_r1",
