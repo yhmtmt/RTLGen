@@ -795,6 +795,30 @@ def build_terminal_sigmoid_model_bytes(
     )
 
 
+def build_terminal_hardsigmoid_model_bytes(
+    *,
+    name: str,
+    b: int,
+    input_shape: List[int],
+    dtype: int = TENSOR_INT8,
+    add_flatten: bool = False,
+    add_cast: bool = False,
+    opset_version: int = 13,
+    ir_version: int = 8,
+) -> bytes:
+    return _build_terminal_unary_model_bytes(
+        name=name,
+        b=b,
+        input_shape=input_shape,
+        op_type="HardSigmoid",
+        dtype=dtype,
+        add_flatten=add_flatten,
+        add_cast=add_cast,
+        opset_version=opset_version,
+        ir_version=ir_version,
+    )
+
+
 def write_mlp_model(path: Union[str, Path], *, preset: str) -> None:
     preset = preset.lower().strip()
     if preset == "mlp1":

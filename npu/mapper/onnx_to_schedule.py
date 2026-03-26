@@ -474,10 +474,10 @@ def _infer_terminal_vecop_graph(
         batch_override=batch_override,
     )
     tail_consumers = consumers.get(current_name, [])
-    terminal_vec_nodes = [n for n in tail_consumers if n.op_type in {"Relu", "Sigmoid", "Tanh"}]
+    terminal_vec_nodes = [n for n in tail_consumers if n.op_type in {"Relu", "Sigmoid", "Tanh", "HardSigmoid"}]
     if len(terminal_vec_nodes) != 1 or len(tail_consumers) != 1:
         raise ValueError(
-            f"expected a single terminal Relu, Sigmoid, or Tanh consumer on {current_name!r}, "
+            f"expected a single terminal Relu, Sigmoid, Tanh, or HardSigmoid consumer on {current_name!r}, "
             f"got {[n.op_type for n in tail_consumers]}"
         )
     terminal_vec_node = terminal_vec_nodes[0]

@@ -1,0 +1,25 @@
+{
+  "version": 0.1,
+  "model_set_id": "onnx_terminal_hardsigmoid_suite_v1",
+  "description": "Locally generated bounded terminal hard-sigmoid models used for the first hard-sigmoid measurement-only Layer 2 mapper pass.",
+  "models": [
+    {
+      "model_id": "hardsigmoid_vec_b128_f64",
+      "onnx_path": "runs/models/onnx_terminal_hardsigmoid_suite_v1/hardsigmoid_vec_b128_f64.onnx",
+      "onnx_sha256": "4bcc433491f6af6c3f4bb173fa3c6eb1d326f0ea4efa3748574d2b6c2fdab463",
+      "notes": "First-pass standalone terminal HardSigmoid on a 2D activation tensor."
+    },
+    {
+      "model_id": "hardsigmoid_vec_b256_f256",
+      "onnx_path": "runs/models/onnx_terminal_hardsigmoid_suite_v1/hardsigmoid_vec_b256_f256.onnx",
+      "onnx_sha256": "da8520f3f013b3b302d4bbdcbaea45cd57eb1ae72ac4bd658562f1d6c11dedfe",
+      "notes": "Larger standalone terminal HardSigmoid to increase writeback pressure."
+    },
+    {
+      "model_id": "hardsigmoid_vec_flatten_b128_2x4x8",
+      "onnx_path": "runs/models/onnx_terminal_hardsigmoid_suite_v1/hardsigmoid_vec_flatten_b128_2x4x8.onnx",
+      "onnx_sha256": "d5ea3ff62f84a7958185817339ab95180e18c2fd154d996d8684d333d4f6eae0",
+      "notes": "Flatten -> HardSigmoid terminal vec-op to prove the prelude path stays legal."
+    }
+  ]
+}

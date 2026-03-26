@@ -55,6 +55,7 @@ VEC_OP_FLAGS = {
     "dlayernorm": 0x9,
     "sigmoid": 0xA,
     "tanh": 0xB,
+    "hardsigmoid": 0xC,
 }
 
 
