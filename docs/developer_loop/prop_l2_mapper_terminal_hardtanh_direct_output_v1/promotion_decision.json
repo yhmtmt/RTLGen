@@ -1,9 +1,15 @@
 {
   "proposal_id": "prop_l2_mapper_terminal_hardtanh_direct_output_v1",
-  "candidate_id": "cand_l2_mapper_terminal_hardtanh_direct_output_v1_r1",
-  "decision": "pending",
-  "reason": "awaiting remote evaluation evidence",
-  "evidence_refs": [],
-  "next_action": "run the bounded measurement baseline",
+  "candidate_id": "l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r1",
+  "decision": "iterate",
+  "reason": "Accepted measurement-only baseline evidence was merged; proposal judgment remains deferred until the paired comparison is reviewed.",
+  "evidence_refs": [
+    "item:l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r1",
+    "run:l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r1_run_b6e0446d16f5144a",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r1.json",
+    "pr:#113",
+    "https://github.com/yhmtmt/RTLGen/pull/113"
+  ],
+  "next_action": "queue the paired comparison item",
   "requires_human_approval": false
 }
