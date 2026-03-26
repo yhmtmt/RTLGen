@@ -1,0 +1,164 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-03-26T10:31:14.840031Z",
+  "item_id": "l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1",
+  "run_key": "l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1_run_0b0e4ba82439b96b",
+  "layer": "layer2",
+  "flow": "openroad",
+  "task_type": "l2_campaign",
+  "source_commit": "e450e266dc00f670598b4d69d81d788b1a3eff67",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1/evaluated.json",
+    "result": {
+      "branch": "eval/l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1/s20260326t103113z",
+      "completed_utc": "2026-03-26T08:55:55.905451Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "ed94bd15ec25",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260326t103113z][host:ed94bd15ec25][item:l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1]",
+      "metrics_rows": [
+        {
+          "tag": "npu_fp16_nm1_hardsigmoidproxy_firstpass",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "89908fb6",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_hardsigmoidproxy/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_hardsigmoidproxy/work/89908fb6/result.json"
+        }
+      ],
+      "queue_item_id": "l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1",
+      "session_id": "s20260326t103113z",
+      "status": "ok",
+      "summary": "5/5 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "decision_proposal",
+    "path": "control_plane/shadow_exports/l2_decisions/l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1.json",
+    "storage_mode": "repo",
+    "sha256": "d6174f2acac4040e0e773c7fbc9d667e2ecf3df1e80708f9e2b4e53470b42e6d",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-03-26T10:31:12.827539Z",
+      "item_id": "l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1",
+      "run_key": "l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1_run_0b0e4ba82439b96b",
+      "layer": "layer2",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l2_campaign",
+      "source_commit": "e450e266dc00f670598b4d69d81d788b1a3eff67",
+      "objective": "terminal_hardsigmoid_baseline_measurement",
+      "input_manifest": {
+        "sweeps": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_hardsigmoidproxy/sweep_proxy_firstpass.json"
+        ],
+        "configs": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_hardsigmoidproxy/config_nm1_hardsigmoidproxy.json"
+        ],
+        "design_dirs": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_hardsigmoidproxy"
+        ],
+        "macro_manifests": [],
+        "generated_campaign": {
+          "path": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardsigmoid_suite_submit_nm1_v1/campaign__l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1.json",
+          "outputs": {
+            "report_md": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardsigmoid_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1/report.md",
+            "results_csv": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardsigmoid_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1/results.csv",
+            "campaign_dir": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardsigmoid_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1"
+          },
+          "clean_outputs": true,
+          "base_campaign_path": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardsigmoid_suite_submit_nm1_v1/campaign.json"
+        },
+        "candidate_manifests": []
+      },
+      "recommendation": {
+        "arch_id": "fp16_nm1_hardsigmoidproxy",
+        "macro_mode": "hier_macro",
+        "objective_rank": 1,
+        "objective_score": "0.0",
+        "latency_ms_mean": 0.007076666666666666,
+        "energy_mj_mean": 2.5476e-09,
+        "critical_path_ns_mean": 2.7883,
+        "die_area_um2_mean": 1440000.0,
+        "total_power_mw_mean": 0.00036,
+        "flow_elapsed_s_mean": 49.320000000000014
+      },
+      "objective_profiles": [],
+      "evaluation_record": {
+        "proposal_id": "prop_l2_mapper_terminal_hardsigmoid_direct_output_v1",
+        "title": "Terminal hard-sigmoid direct output",
+        "primary_question": "Does bounded terminal hard-sigmoid direct vec-op output improve latency and energy on fixed nm1 against the non-fused baseline?",
+        "evaluation_mode": "measurement_only",
+        "comparison_role": "baseline",
+        "abstraction_layer": "full_architecture",
+        "expected_direction": "baseline_only",
+        "expected_reason": "first collect non-fused legality and reference metrics on the bounded hard-sigmoid suite",
+        "summary": "This item records metrics for the requested architecture point and does not emit a proposal judgment.",
+        "expectation_status": "not_applicable"
+      },
+      "proposal_assessment": null,
+      "source_refs": {
+        "best_point_json": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardsigmoid_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1/best_point.json",
+        "summary_csv": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardsigmoid_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1/summary.csv",
+        "results_csv": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardsigmoid_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1/results.csv",
+        "report_md": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardsigmoid_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1/report.md",
+        "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardsigmoid_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1/artifacts/mapper/fp16_nm1_hardsigmoidproxy/hardsigmoid_vec_b128_f64/schedule.yml",
+        "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardsigmoid_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1/artifacts/mapper/fp16_nm1_hardsigmoidproxy/hardsigmoid_vec_b128_f64/descriptors.bin",
+        "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardsigmoid_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1/artifacts/perf/fp16_nm1_hardsigmoidproxy/hardsigmoid_vec_b128_f64/trace.json",
+        "focused_model_artifacts": [
+          {
+            "model_id": "hardsigmoid_vec_b128_f64",
+            "schedule_yml": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardsigmoid_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1/artifacts/mapper/fp16_nm1_hardsigmoidproxy/hardsigmoid_vec_b128_f64/schedule.yml",
+            "descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardsigmoid_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1/artifacts/mapper/fp16_nm1_hardsigmoidproxy/hardsigmoid_vec_b128_f64/descriptors.bin",
+            "perf_trace_json": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardsigmoid_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1/artifacts/perf/fp16_nm1_hardsigmoidproxy/hardsigmoid_vec_b128_f64/trace.json"
+          },
+          {
+            "model_id": "hardsigmoid_vec_b256_f256",
+            "schedule_yml": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardsigmoid_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1/artifacts/mapper/fp16_nm1_hardsigmoidproxy/hardsigmoid_vec_b256_f256/schedule.yml",
+            "descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardsigmoid_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1/artifacts/mapper/fp16_nm1_hardsigmoidproxy/hardsigmoid_vec_b256_f256/descriptors.bin",
+            "perf_trace_json": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardsigmoid_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1/artifacts/perf/fp16_nm1_hardsigmoidproxy/hardsigmoid_vec_b256_f256/trace.json"
+          },
+          {
+            "model_id": "hardsigmoid_vec_flatten_b128_2x4x8",
+            "schedule_yml": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardsigmoid_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1/artifacts/mapper/fp16_nm1_hardsigmoidproxy/hardsigmoid_vec_flatten_b128_2x4x8/schedule.yml",
+            "descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardsigmoid_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1/artifacts/mapper/fp16_nm1_hardsigmoidproxy/hardsigmoid_vec_flatten_b128_2x4x8/descriptors.bin",
+            "perf_trace_json": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardsigmoid_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1/artifacts/perf/fp16_nm1_hardsigmoidproxy/hardsigmoid_vec_flatten_b128_2x4x8/trace.json"
+          }
+        ]
+      }
+    }
+  },
+  "developer_loop": {
+    "comparison": {
+      "role": "baseline",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "measurement_only",
+      "expected_reason": "first collect non-fused legality and reference metrics on the bounded hard-sigmoid suite",
+      "expected_direction": "baseline_only"
+    },
+    "abstraction": {
+      "layer": "full_architecture"
+    },
+    "proposal_id": "prop_l2_mapper_terminal_hardsigmoid_direct_output_v1",
+    "proposal_path": "docs/developer_loop/prop_l2_mapper_terminal_hardsigmoid_direct_output_v1"
+  },
+  "pr_payload": {
+    "branch": "eval/l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1/s20260326t103113z",
+    "title": "eval: run evaluate l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1",
+    "body_fields": {
+      "host": "ed94bd15ec25",
+      "session_id": "s20260326t103113z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1"
+    },
+    "body_md": "## Summary\n- item_id: `l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1`\n- run_key: `l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1_run_0b0e4ba82439b96b`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `5/5 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1/evaluated.json`\n- metrics_rows_count: `1`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1.json`\n\n## Developer Context\n- proposal_id: `prop_l2_mapper_terminal_hardsigmoid_direct_output_v1`\n- proposal_path: `docs/developer_loop/prop_l2_mapper_terminal_hardsigmoid_direct_output_v1`\n- reviewer_first_read: `docs/developer_loop/prop_l2_mapper_terminal_hardsigmoid_direct_output_v1` plus `docs/developer_agent_review.md`\n\n## Evaluation Mode\n- evaluation_mode: `measurement_only`\n- abstraction_layer: `full_architecture`\n- comparison_role: `baseline`\n- expected_direction: `baseline_only`\n- expected_reason: `first collect non-fused legality and reference metrics on the bounded hard-sigmoid suite`\n- expectation_status: `not_applicable`\n- evaluation_summary: `This item records metrics for the requested architecture point and does not emit a proposal judgment.`\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
