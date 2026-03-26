@@ -6,6 +6,7 @@ import argparse
 import json
 
 from control_plane.api.app import main as serve_api_main
+from control_plane.cli.backfill_review_states import main as backfill_review_states_main
 from control_plane.cli.cancel_run import main as cancel_run_main
 from control_plane.cli.cleanup import main as cleanup_main
 from control_plane.cli.consume_l1_result import main as consume_l1_result_main
@@ -141,6 +142,13 @@ def main(argv: list[str] | None = None) -> int:
     failure_issue_parser.add_argument("--database-url", required=True)
     failure_issue_parser.add_argument("--repo", required=True)
     failure_issue_parser.add_argument("--max-items", type=int)
+
+    backfill_review_parser = subparsers.add_parser(
+        "backfill-review-states",
+        help="Move stale awaiting_review items without PRs back to artifact_sync",
+    )
+    backfill_review_parser.add_argument("--database-url", required=True)
+    backfill_review_parser.add_argument("--item-id")
 
     github_parser = subparsers.add_parser("reconcile-github", help="Reconcile GitHub branch/PR metadata into the DB")
     github_parser.add_argument("--database-url", required=True)
@@ -512,6 +520,11 @@ def main(argv: list[str] | None = None) -> int:
                 *(["--max-items", str(args.max_items)] if args.max_items is not None else []),
             ]
         )
+    if args.command == "backfill-review-states":
+        argv2 = ["--database-url", args.database_url]
+        if args.item_id is not None:
+            argv2.extend(["--item-id", str(args.item_id)])
+        return backfill_review_states_main(argv2)
     if args.command == "reconcile-github":
         argv2 = ["--database-url", args.database_url, "--repo", args.repo, "--state", args.state]
         for key, value in [
