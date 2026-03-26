@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l1_npu_nm1_hardsigmoid_vec_enable_v1",
+  "decision": "promote",
+  "pr_number": 108,
+  "merge_commit": "dc59c9b46eeeaa3479371ed4c4c68494e5b97276",
+  "merged_utc": "2026-03-26T08:48:05.602878Z"
+}

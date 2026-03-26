@@ -1,17 +1,23 @@
 {
   "proposal_id": "prop_l1_npu_nm1_hardsigmoid_vec_enable_v1",
-  "source_commit": "cbb20620f15f8cff516dda5bee938f328f2e0d3c",
+  "source_commit": "5d247d16dfc0bd51ecc5aa74491e3cf796c169ee",
   "requested_items": [
     {
-      "item_id": "l1_prop_l1_npu_nm1_hardsigmoid_vec_enable_v1_r1",
+      "item_id": "l1_prop_l1_npu_nm1_hardsigmoid_vec_enable_v1_r3",
       "task_type": "l1_sweep",
       "evaluation_mode": "measurement_only",
       "objective": "npu_nm1_hardsigmoid_vec_physical_metrics",
-      "status": "leased",
-      "notes": "First reduced-proxy architecture-block sweep for the integrated nm1 hard-sigmoid source.",
+      "status": "merged",
+      "notes": "First reduced-proxy architecture-block sweep for the integrated nm1 hard-sigmoid source. Merged via PR #108 and merge dc59c9b46eeeaa3479371ed4c4c68494e5b97276 at 2026-03-26T08:48:05.602878Z.",
       "abstraction_layer": "architecture_block",
       "config_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_hardsigmoidproxy/config_nm1_hardsigmoidproxy.json",
-      "sweep_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_hardsigmoidproxy/sweep_proxy_firstpass.json"
+      "sweep_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_hardsigmoidproxy/sweep_proxy_firstpass.json",
+      "prior_item_ids": [
+        "l1_prop_l1_npu_nm1_hardsigmoid_vec_enable_v1_r1"
+      ],
+      "merged_pr_number": 108,
+      "merge_commit": "dc59c9b46eeeaa3479371ed4c4c68494e5b97276",
+      "merged_utc": "2026-03-26T08:48:05.602878Z"
     }
   ]
 }

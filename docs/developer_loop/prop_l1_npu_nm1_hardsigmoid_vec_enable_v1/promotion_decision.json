@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l1_npu_nm1_hardsigmoid_vec_enable_v1",
+  "candidate_id": "l1_prop_l1_npu_nm1_hardsigmoid_vec_enable_v1_r3",
+  "decision": "promote",
+  "reason": "Accepted Layer 1 physical metrics were merged in PR #108 for the current candidate.",
+  "evidence_refs": [
+    "item:l1_prop_l1_npu_nm1_hardsigmoid_vec_enable_v1_r3",
+    "run:l1_prop_l1_npu_nm1_hardsigmoid_vec_enable_v1_r3_run_20ea1d6d0f8fe7f8",
+    "artifact:control_plane/shadow_exports/l1_promotions/l1_prop_l1_npu_nm1_hardsigmoid_vec_enable_v1_r3.json",
+    "pr:#108",
+    "https://github.com/yhmtmt/RTLGen/pull/108"
+  ],
+  "next_action": "inspect the next dependent item",
+  "requires_human_approval": false
+}
