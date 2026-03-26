@@ -1,0 +1,17 @@
+{
+  "proposal_id": "prop_l1_npu_nm1_hardtanh_vec_enable_v1",
+  "source_commit": "",
+  "requested_items": [
+    {
+      "item_id": "l1_prop_l1_npu_nm1_hardtanh_vec_enable_v1_r1",
+      "task_type": "l1_sweep",
+      "evaluation_mode": "measurement_only",
+      "objective": "npu_nm1_hardtanh_vec_physical_metrics",
+      "status": "ready_to_queue",
+      "notes": "First reduced-proxy architecture-block sweep for the integrated nm1 hardtanh source.",
+      "abstraction_layer": "architecture_block",
+      "config_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_hardtanhproxy/config_nm1_hardtanhproxy.json",
+      "sweep_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_hardtanhproxy/sweep_proxy_firstpass.json"
+    }
+  ]
+}

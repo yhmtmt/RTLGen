@@ -1,0 +1,55 @@
+{
+  "version": "0.1",
+  "top_name": "npu_hardtanh_proxy_top",
+  "mmio_addr_width": 12,
+  "data_width": 32,
+  "dma_addr_width": 64,
+  "dma_data_width": 256,
+  "axi_addr_width": 64,
+  "axi_data_width": 256,
+  "axi_id_width": 4,
+  "sram_instances": [],
+  "queue_depth": 2,
+  "enable_irq": false,
+  "enable_dma_ports": false,
+  "enable_cq_mem_ports": false,
+  "enable_axi_ports": false,
+  "enable_axi_lite_wrapper": false,
+  "compute": {
+    "enabled": true,
+    "gemm": {
+      "mac_type": "fp16",
+      "lanes": 1,
+      "accum_width": 16,
+      "pipeline": 1,
+      "fp16": {
+        "semantics": "ieee_half",
+        "accumulation": "fp16",
+        "rounding": "rne",
+        "subnormals": "preserve"
+      },
+      "rtlgen_cpp": {
+        "binary_path": "build/rtlgen",
+        "module_name": "gemm_mac_fp16_ieee",
+        "total_width": 16,
+        "mantissa_width": 10
+      },
+      "num_modules": 1,
+      "lanes_per_module": 1
+    },
+    "vec": {
+      "lanes": 1,
+      "ops": [
+        "add",
+        "mul",
+        "relu",
+        "hardtanh"
+      ],
+      "activation_source": "rtlgen_cpp",
+      "rtlgen_cpp": {
+        "binary_path": "build/rtlgen",
+        "module_prefix": "vec_act"
+      }
+    }
+  }
+}
