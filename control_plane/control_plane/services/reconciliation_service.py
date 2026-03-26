@@ -437,7 +437,7 @@ def sync_run_artifacts(session: Session, request: ArtifactSyncRequest) -> Artifa
         queue_sha256=export_result.queue_sha256,
     )
     gate = evaluate_work_item_dependencies(session, repo_root=repo_root, work_item=work_item)
-    work_item.state = WorkItemState.AWAITING_REVIEW if gate.satisfied else WorkItemState.BLOCKED
+    work_item.state = WorkItemState.ARTIFACT_SYNC if gate.satisfied else WorkItemState.BLOCKED
     session.add(
         RunEvent(
             run_id=run.id,

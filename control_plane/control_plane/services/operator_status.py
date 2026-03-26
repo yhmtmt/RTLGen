@@ -139,6 +139,9 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
         attention_flags.append(f"recent_failures={len(recent_failures)}")
     if active_runs:
         attention_flags.append(f"active_runs={len(active_runs)}")
+    pending_submission = state_counts.get(WorkItemState.ARTIFACT_SYNC.value, 0)
+    if pending_submission:
+        attention_flags.append(f"artifact_sync={pending_submission}")
     awaiting_review = state_counts.get(WorkItemState.AWAITING_REVIEW.value, 0)
     if awaiting_review:
         attention_flags.append(f"awaiting_review={awaiting_review}")
@@ -154,7 +157,7 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
     else:
         health_summary = {
             "status": "healthy",
-            "message": "healthy: no stale leases, no recent failures, no active runs, no queued review items",
+            "message": "healthy: no stale leases, no recent failures, no active runs, no pending submissions, no queued review items",
         }
 
     return OperatorStatusResult(

@@ -176,7 +176,7 @@ def test_sync_run_artifacts_roundtrips_internal_worker_run() -> None:
                 .filter(Artifact.run_id == run.id, Artifact.kind == "queue_snapshot")
                 .one()
             )
-            assert work_item.state == WorkItemState.AWAITING_REVIEW
+            assert work_item.state == WorkItemState.ARTIFACT_SYNC
             assert run.status == RunStatus.SUCCEEDED
             assert queue_snapshot.path == "runs/eval_queue/openroad/evaluated/cp009_item.json"
 
@@ -228,7 +228,7 @@ def test_sync_run_artifacts_allows_failed_terminal_run() -> None:
                     target_path="runs/eval_queue/openroad/evaluated/cp009_item.json",
                 ),
             )
-            assert result.work_item_state == "awaiting_review"
+            assert result.work_item_state == "artifact_sync"
 
         payload = json.loads(
             (repo_root / "runs" / "eval_queue" / "openroad" / "evaluated" / "cp009_item.json").read_text(encoding="utf-8")

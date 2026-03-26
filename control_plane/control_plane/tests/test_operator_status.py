@@ -81,6 +81,7 @@ def test_operator_status_summarizes_live_state() -> None:
         with Session(engine) as session:
             failed_item = _seed_item(session, item_id="failed_item", state=WorkItemState.FAILED)
             ready_item = _seed_item(session, item_id="ready_item", state=WorkItemState.READY)
+            pending_item = _seed_item(session, item_id="pending_item", state=WorkItemState.ARTIFACT_SYNC)
             review_item = _seed_item(session, item_id="review_item", state=WorkItemState.AWAITING_REVIEW)
 
             machine = WorkerMachine(
@@ -205,8 +206,10 @@ def test_operator_status_summarizes_live_state() -> None:
         assert status.health_summary["status"] == "attention"
         assert "stale_leases=1" in str(status.health_summary["message"])
         assert "recent_failures=1" in str(status.health_summary["message"])
+        assert "artifact_sync=1" in str(status.health_summary["message"])
         assert status.state_counts["failed"] == 1
         assert status.state_counts["ready"] == 1
+        assert status.state_counts["artifact_sync"] == 1
         assert status.state_counts["awaiting_review"] == 1
         assert status.state_counts["running"] == 1
         assert len(status.active_runs) == 1

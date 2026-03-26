@@ -347,6 +347,8 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
       if (!previousPayload) return null;
       const failures = payload.recent_failures?.length || 0;
       const previousFailures = previousPayload.recent_failures?.length || 0;
+      const pendingSubmission = payload.state_counts?.artifact_sync || 0;
+      const previousPendingSubmission = previousPayload.state_counts?.artifact_sync || 0;
       const awaitingReview = payload.state_counts?.awaiting_review || 0;
       const previousAwaitingReview = previousPayload.state_counts?.awaiting_review || 0;
       const mergedSubmissions = (payload.recent_submissions || []).filter((row) => row.state === "pr_merged").length;
@@ -357,8 +359,11 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
       if (failures > previousFailures) {
         return { message: `New failed job detected (${failures}).`, tone: "failure" };
       }
+      if (pendingSubmission > previousPendingSubmission) {
+        return { message: `New submission-ready item pending publication (${pendingSubmission}).`, tone: "review" };
+      }
       if (awaitingReview > previousAwaitingReview) {
-        return { message: `New review item awaiting attention (${awaitingReview}).`, tone: "review" };
+        return { message: `New PR awaiting review (${awaitingReview}).`, tone: "review" };
       }
       if (mergedSubmissions > previousMergedSubmissions) {
         return { message: `Merged review reconciled (${mergedSubmissions}).`, tone: "merge" };
@@ -384,7 +389,7 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
         { label: \"Health\", value: payload.health_summary?.status || \"unknown\" },
         { label: \"Ready\", value: payload.state_counts?.ready || 0 },
         { label: \"Running\", value: payload.active_runs?.length || 0 },
-        { label: \"Awaiting Review\", value: payload.state_counts?.awaiting_review || 0 },
+        { label: \"Pending Submission\", value: payload.state_counts?.artifact_sync || 0 },
         { label: \"Recent Failures\", value: payload.recent_failures?.length || 0 },
       ];
       summaryGrid.innerHTML = cards.map((card) => `
