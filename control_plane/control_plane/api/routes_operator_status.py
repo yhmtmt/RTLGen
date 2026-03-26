@@ -199,31 +199,44 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
         </ul>
       </div>
     </section>
-    <section class=\"layout\">
-      <div class=\"stack\">
-        <div class=\"panel\">
+    <section class="layout">
+      <div class="stack">
+        <div class="panel">
           <h2>Active Runs</h2>
-          <div class=\"table-wrap\"><table id=\"active-runs-table\"></table></div>
+          <div class="table-wrap"><table id="active-runs-table"></table></div>
         </div>
-        <div class=\"panel\">
+        <div class="panel">
           <h2>Recent Submissions</h2>
-          <div class=\"table-wrap\"><table id=\"submissions-table\"></table></div>
+          <div class="table-wrap"><table id="submissions-table"></table></div>
         </div>
       </div>
-      <div class=\"stack\">
-        <div class=\"panel\">
+      <div class="stack">
+        <div class="panel">
           <h2>Recent Failures</h2>
-          <div class=\"table-wrap\"><table id=\"failures-table\"></table></div>
+          <div class="table-wrap"><table id="failures-table"></table></div>
         </div>
-        <div class=\"panel\">
+        <div class="panel">
           <h2>Stale Leases</h2>
-          <div class=\"table-wrap\"><table id=\"leases-table\"></table></div>
+          <div class="table-wrap"><table id="leases-table"></table></div>
         </div>
       </div>
-      <div class=\"stack\">
-        <div class=\"panel\">
+      <div class="stack">
+        <div class="panel">
+          <h2>Operator Controls</h2>
+          <div class="controls" style="justify-content:flex-start; margin-bottom: 10px;">
+            <button id="process-completions-button" class="primary">Process Completions</button>
+            <button id="poll-github-button">Poll GitHub</button>
+            <button id="backfill-review-button">Backfill Review States</button>
+          </div>
+          <p class="meta" id="control-status">No control actions yet.</p>
+        </div>
+        <div class="panel">
+          <h2>Pending Submission</h2>
+          <div class="table-wrap"><table id="pending-submissions-table"></table></div>
+        </div>
+        <div class="panel">
           <h2>State Counts</h2>
-          <div class=\"table-wrap\"><table id=\"states-table\"></table></div>
+          <div class="table-wrap"><table id="states-table"></table></div>
         </div>
       </div>
     </section>
@@ -237,12 +250,17 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
     const soundToggle = document.getElementById(\"sound-toggle\");
     const refreshButton = document.getElementById(\"refresh-button\");
     const pollSelect = document.getElementById(\"poll-select\");
+    const processCompletionsButton = document.getElementById(\"process-completions-button\");
+    const pollGithubButton = document.getElementById(\"poll-github-button\");
+    const backfillReviewButton = document.getElementById(\"backfill-review-button\");
+    const controlStatus = document.getElementById(\"control-status\");
     const tables = {
-      activeRuns: document.getElementById(\"active-runs-table\"),
-      submissions: document.getElementById(\"submissions-table\"),
-      failures: document.getElementById(\"failures-table\"),
-      leases: document.getElementById(\"leases-table\"),
-      states: document.getElementById(\"states-table\"),
+      activeRuns: document.getElementById("active-runs-table"),
+      submissions: document.getElementById("submissions-table"),
+      failures: document.getElementById("failures-table"),
+      leases: document.getElementById("leases-table"),
+      pendingSubmissions: document.getElementById("pending-submissions-table"),
+      states: document.getElementById("states-table"),
     };
 
     let pollHandle = null;
@@ -277,6 +295,44 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
         }).join(\"\") + \"</tr>\";
       }).join(\"\") + \"</tbody>\";
       target.innerHTML = head + body;
+    }
+
+    async function postJson(url, payload = {}) {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const detail = data?.detail || `HTTP ${response.status}`;
+        throw new Error(detail);
+      }
+      return data;
+    }
+
+    function setControlStatus(message) {
+      controlStatus.textContent = message;
+    }
+
+    async function runControlAction(button, url, payload, successMessage) {
+      const originalLabel = button.textContent;
+      button.disabled = true;
+      button.textContent = "Working...";
+      try {
+        const result = await postJson(url, payload);
+        const message = typeof successMessage === "function" ? successMessage(result) : successMessage;
+        setControlStatus(message);
+        pushEvent(message);
+        await refreshNow();
+      } catch (error) {
+        const message = `Control action failed: ${error}`;
+        setControlStatus(message);
+        pushEvent(message);
+      } finally {
+        button.disabled = false;
+        button.textContent = originalLabel;
+      }
     }
 
     function playTone(pattern) {
@@ -407,33 +463,47 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
       refreshMeta.textContent = `Last refresh: ${formatTime(payload.generated_utc)} | token ${payload.change_token.slice(0, 10)}`;
       renderSummary(payload);
       renderTable(tables.activeRuns, [
-        { key: \"item_id\", label: \"Item\", render: (value) => `<span class='mono'>${escapeHtml(value)}</span>` },
-        { key: \"task_type\", label: \"Task\" },
-        { key: \"worker_host\", label: \"Host\" },
-        { key: \"started_at\", label: \"Started\", render: (value) => escapeHtml(formatTime(value)) },
-        { key: \"last_heartbeat_at\", label: \"Heartbeat\", render: (value) => escapeHtml(formatTime(value)) },
+        { key: "item_id", label: "Item", render: (value) => `<span class='mono'>${escapeHtml(value)}</span>` },
+        { key: "task_type", label: "Task" },
+        { key: "worker_host", label: "Host" },
+        { key: "started_at", label: "Started", render: (value) => escapeHtml(formatTime(value)) },
+        { key: "last_heartbeat_at", label: "Heartbeat", render: (value) => escapeHtml(formatTime(value)) },
       ], payload.active_runs || []);
       renderTable(tables.submissions, [
-        { key: \"item_id\", label: \"Item\", render: (value) => `<span class='mono'>${escapeHtml(value)}</span>` },
-        { key: \"pr_number\", label: \"PR\" },
-        { key: \"state\", label: \"State\" },
-        { key: \"updated_at\", label: \"Updated\", render: (value) => escapeHtml(formatTime(value)) },
+        { key: "item_id", label: "Item", render: (value) => `<span class='mono'>${escapeHtml(value)}</span>` },
+        { key: "pr_number", label: "PR" },
+        { key: "state", label: "State" },
+        { key: "updated_at", label: "Updated", render: (value) => escapeHtml(formatTime(value)) },
       ], payload.recent_submissions || []);
       renderTable(tables.failures, [
-        { key: \"item_id\", label: \"Item\", render: (value) => `<span class='mono'>${escapeHtml(value)}</span>` },
-        { key: \"failure_category\", label: \"Category\" },
-        { key: \"failure_issue_status\", label: \"Issue\" },
-        { key: \"summary\", label: \"Summary\" },
+        { key: "item_id", label: "Item", render: (value) => `<span class='mono'>${escapeHtml(value)}</span>` },
+        { key: "failure_category", label: "Category" },
+        { key: "failure_issue_status", label: "Issue" },
+        { key: "summary", label: "Summary" },
       ], payload.recent_failures || []);
       renderTable(tables.leases, [
-        { key: \"item_id\", label: \"Item\", render: (value) => `<span class='mono'>${escapeHtml(value)}</span>` },
-        { key: \"hostname\", label: \"Host\" },
-        { key: \"expires_at\", label: \"Expired\", render: (value) => escapeHtml(formatTime(value)) },
+        { key: "item_id", label: "Item", render: (value) => `<span class='mono'>${escapeHtml(value)}</span>` },
+        { key: "hostname", label: "Host" },
+        { key: "expires_at", label: "Expired", render: (value) => escapeHtml(formatTime(value)) },
       ], payload.stale_leases || []);
+      renderTable(tables.pendingSubmissions, [
+        { key: "item_id", label: "Item", render: (value) => `<span class='mono'>${escapeHtml(value)}</span>` },
+        { key: "run_status", label: "Run" },
+        { key: "reason", label: "Eligibility", render: (value, row) => row.eligible ? "eligible" : escapeHtml(value || "not eligible") },
+        { key: "updated_at", label: "Updated", render: (value) => escapeHtml(formatTime(value)) },
+        { key: "item_id", label: "Actions", render: (_value, row) => {
+          const submitDisabled = row.eligible ? "" : "disabled";
+          const submitTitle = row.eligible ? "" : `title="${escapeHtml(row.reason || "not eligible")}"`;
+          return `
+            <button data-action="submit" data-item-id="${escapeHtml(row.item_id)}" ${submitDisabled} ${submitTitle}>Submit</button>
+            <button data-action="supersede" data-item-id="${escapeHtml(row.item_id)}">Supersede</button>
+          `;
+        } },
+      ], payload.pending_submission_items || []);
       const stateRows = Object.entries(payload.state_counts || {}).map(([name, count]) => ({ name, count }));
       renderTable(tables.states, [
-        { key: \"name\", label: \"State\" },
-        { key: \"count\", label: \"Count\" },
+        { key: "name", label: "State" },
+        { key: "count", label: "Count" },
       ], stateRows);
     }
 
@@ -468,9 +538,58 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
       pollHandle = window.setInterval(refreshNow, Number(pollSelect.value));
     }
 
-    soundToggle.addEventListener(\"click\", () => {
+    processCompletionsButton.addEventListener("click", () => runControlAction(
+      processCompletionsButton,
+      "/api/v1/control/process-completions",
+      { submit: true },
+      (result) => `Processed completions (${(result.results || []).length}).`,
+    ));
+    pollGithubButton.addEventListener("click", () => runControlAction(
+      pollGithubButton,
+      "/api/v1/control/poll-github",
+      {},
+      (result) => `Polled GitHub (${result.checked_count || 0} links checked).`,
+    ));
+    backfillReviewButton.addEventListener("click", () => runControlAction(
+      backfillReviewButton,
+      "/api/v1/control/backfill-review-states",
+      {},
+      (result) => `Backfilled review states (${(result.results || []).length}).`,
+    ));
+    tables.pendingSubmissions.addEventListener("click", async (event) => {
+      const button = event.target.closest("button[data-action]");
+      if (!button) return;
+      const itemId = button.dataset.itemId;
+      const action = button.dataset.action;
+      if (!itemId || !action) return;
+      if (action === "supersede" && !window.confirm(`Supersede ${itemId}?`)) return;
+      const url = action === "submit"
+        ? `/api/v1/control/items/${encodeURIComponent(itemId)}/submit`
+        : `/api/v1/control/items/${encodeURIComponent(itemId)}/supersede`;
+      const payload = action === "submit" ? {} : { reason: "dashboard_superseded" };
+      const originalLabel = button.textContent;
+      button.disabled = true;
+      button.textContent = "Working...";
+      try {
+        await postJson(url, payload);
+        const message = action === "submit"
+          ? `Submission triggered for ${itemId}.`
+          : `Superseded ${itemId}.`;
+        setControlStatus(message);
+        pushEvent(message);
+        await refreshNow();
+      } catch (error) {
+        const message = `Item action failed for ${itemId}: ${error}`;
+        setControlStatus(message);
+        pushEvent(message);
+      } finally {
+        button.disabled = false;
+        button.textContent = originalLabel;
+      }
+    });
+    soundToggle.addEventListener("click", () => {
       soundEnabled = !soundEnabled;
-      soundToggle.textContent = soundEnabled ? \"Sound On\" : \"Sound Off\";
+      soundToggle.textContent = soundEnabled ? "Sound On" : "Sound Off";
       if (soundEnabled) {
         try {
           playTone([{frequency: 659.25, gain: 0.04}, {frequency: 783.99, gain: 0.04}]);
@@ -478,8 +597,8 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
         }
       }
     });
-    refreshButton.addEventListener(\"click\", refreshNow);
-    pollSelect.addEventListener(\"change\", restartPolling);
+    refreshButton.addEventListener("click", refreshNow);
+    pollSelect.addEventListener("change", restartPolling);
 
     refreshNow();
     restartPolling();
@@ -503,6 +622,7 @@ def _status_payload(database_url: str, recent_limit: int) -> dict[str, object]:
         "state_counts": status.state_counts,
         "active_runs": status.active_runs,
         "stale_leases": status.stale_leases,
+        "pending_submission_items": status.pending_submission_items,
         "recent_failures": status.recent_failures,
         "recent_submissions": status.recent_submissions,
     }

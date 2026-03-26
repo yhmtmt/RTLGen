@@ -12,6 +12,7 @@ from control_plane.models.github_links import GitHubLink
 from control_plane.models.runs import Run
 from control_plane.models.worker_leases import WorkerLease
 from control_plane.models.work_items import WorkItem
+from control_plane.services.operator_submission import assess_submission_eligibility
 
 
 @dataclass(frozen=True)
@@ -25,6 +26,7 @@ class OperatorStatusResult:
     state_counts: dict[str, int]
     active_runs: list[dict[str, object]]
     stale_leases: list[dict[str, object]]
+    pending_submission_items: list[dict[str, object]]
     recent_failures: list[dict[str, object]]
     recent_submissions: list[dict[str, object]]
 
@@ -74,6 +76,31 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
                 "hostname": lease.machine.hostname if lease.machine is not None else None,
                 "expires_at": lease.expires_at.isoformat(),
                 "last_heartbeat_at": lease.last_heartbeat_at.isoformat() if lease.last_heartbeat_at else None,
+            }
+        )
+
+    pending_submission_items = []
+    for work_item in (
+        session.query(WorkItem)
+        .filter(WorkItem.state == WorkItemState.ARTIFACT_SYNC)
+        .order_by(WorkItem.updated_at.desc(), WorkItem.created_at.desc())
+        .limit(request.recent_limit)
+        .all()
+    ):
+        latest_run = None
+        if work_item.runs:
+            latest_run = sorted(work_item.runs, key=lambda row: (row.attempt, row.created_at or utcnow()))[-1]
+        eligibility = assess_submission_eligibility(session, work_item=work_item, run=latest_run)
+        pending_submission_items.append(
+            {
+                "item_id": work_item.item_id,
+                "task_type": work_item.task_type,
+                "platform": work_item.platform,
+                "updated_at": work_item.updated_at.isoformat() if work_item.updated_at else None,
+                "run_key": latest_run.run_key if latest_run is not None else None,
+                "run_status": latest_run.status.value if latest_run is not None else None,
+                "eligible": eligibility.eligible,
+                "reason": eligibility.reason,
             }
         )
 
@@ -165,6 +192,7 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
         state_counts=state_counts,
         active_runs=active_runs,
         stale_leases=stale_leases,
+        pending_submission_items=pending_submission_items,
         recent_failures=recent_failures,
         recent_submissions=recent_submissions,
     )
