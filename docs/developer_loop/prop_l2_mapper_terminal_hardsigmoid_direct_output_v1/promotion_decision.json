@@ -1,9 +1,15 @@
 {
   "proposal_id": "prop_l2_mapper_terminal_hardsigmoid_direct_output_v1",
-  "candidate_id": "",
-  "decision": "pending",
-  "reason": "Pending bounded hard-sigmoid baseline and paired direct-output evidence.",
-  "evidence_refs": [],
-  "next_action": "queue the bounded hard-sigmoid baseline",
+  "candidate_id": "l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1",
+  "decision": "iterate",
+  "reason": "Accepted measurement-only baseline evidence was merged; proposal judgment remains deferred until the paired comparison is reviewed.",
+  "evidence_refs": [
+    "item:l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1",
+    "run:l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1_run_0b0e4ba82439b96b",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1.json",
+    "pr:#109",
+    "https://github.com/yhmtmt/RTLGen/pull/109"
+  ],
+  "next_action": "queue l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_fused_r1",
   "requires_human_approval": false
 }

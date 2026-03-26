@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_mapper_terminal_hardsigmoid_direct_output_v1",
-  "source_commit": "",
+  "source_commit": "e450e266dc00f670598b4d69d81d788b1a3eff67",
   "requested_items": [
     {
       "item_id": "l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1",
@@ -8,9 +8,12 @@
       "objective": "terminal_hardsigmoid_baseline_measurement",
       "evaluation_mode": "measurement_only",
       "abstraction_layer": "full_architecture",
-      "status": "ready_to_queue",
+      "status": "merged",
       "status_reason": "Bounded hard-sigmoid baseline is the first required remote evaluation once local validation passes.",
-      "notes": "First bounded hard-sigmoid reference collection on fixed nm1 using the accepted reduced hard-sigmoid architecture-block source."
+      "notes": "First bounded hard-sigmoid reference collection on fixed nm1 using the accepted reduced hard-sigmoid architecture-block source. Merged via PR #109 and merge b3c98813f96204959f31f7b9393ca370d416177b at 2026-03-26T10:41:42.087537Z.",
+      "merged_pr_number": 109,
+      "merge_commit": "b3c98813f96204959f31f7b9393ca370d416177b",
+      "merged_utc": "2026-03-26T10:41:42.087537Z"
     },
     {
       "item_id": "l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_fused_r1",
@@ -18,14 +21,14 @@
       "objective": "terminal_hardsigmoid_direct_output_pair",
       "evaluation_mode": "paired_comparison",
       "abstraction_layer": "full_architecture",
-      "status": "blocked",
+      "status": "ready_to_queue",
       "paired_baseline_item_id": "l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1",
       "depends_on_item_ids": [
         "l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
-      "notes": "Queue only after the baseline item is merged and materialized."
+      "notes": "Queue only after the baseline item is merged and materialized. Prerequisites are merged; item is ready to queue."
     }
   ]
 }
