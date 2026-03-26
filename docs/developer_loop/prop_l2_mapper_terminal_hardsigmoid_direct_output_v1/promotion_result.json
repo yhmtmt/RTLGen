@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_mapper_terminal_hardsigmoid_direct_output_v1",
-  "decision": "iterate",
-  "pr_number": 109,
-  "merge_commit": "b3c98813f96204959f31f7b9393ca370d416177b",
-  "merged_utc": "2026-03-26T10:41:42.087537Z"
+  "decision": "promote",
+  "pr_number": 110,
+  "merge_commit": "01712f5865856612d75ea1390bd9df2086718d83",
+  "merged_utc": "2026-03-26T11:17:22.066793Z"
 }

@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_mapper_terminal_hardsigmoid_direct_output_v1",
-  "source_commit": "e450e266dc00f670598b4d69d81d788b1a3eff67",
+  "source_commit": "d7555d3749d0ace8134480cedee5c1a2f5972a55",
   "requested_items": [
     {
       "item_id": "l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1",
@@ -16,19 +16,25 @@
       "merged_utc": "2026-03-26T10:41:42.087537Z"
     },
     {
-      "item_id": "l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_fused_r1",
+      "item_id": "l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_fused_r2",
       "task_type": "l2_campaign",
       "objective": "terminal_hardsigmoid_direct_output_pair",
       "evaluation_mode": "paired_comparison",
       "abstraction_layer": "full_architecture",
-      "status": "ready_to_queue",
+      "status": "merged",
       "paired_baseline_item_id": "l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1",
       "depends_on_item_ids": [
         "l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_measurement_r1"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
-      "notes": "Queue only after the baseline item is merged and materialized. Prerequisites are merged; item is ready to queue."
+      "notes": "Queue only after the baseline item is merged and materialized. Prerequisites are merged; item is ready to queue. Merged via PR #110 and merge 01712f5865856612d75ea1390bd9df2086718d83 at 2026-03-26T11:17:22.066793Z.",
+      "prior_item_ids": [
+        "l2_prop_l2_mapper_terminal_hardsigmoid_direct_output_v1_nm1_fused_r1"
+      ],
+      "merged_pr_number": 110,
+      "merge_commit": "01712f5865856612d75ea1390bd9df2086718d83",
+      "merged_utc": "2026-03-26T11:17:22.066793Z"
     }
   ]
 }
