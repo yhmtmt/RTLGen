@@ -1,0 +1,56 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-03-27T04:24:29.578723Z",
+  "item_id": "l1_prop_l1_npu_nm1_leakyrelu_vec_enable_v1_r1",
+  "run_key": "l1_prop_l1_npu_nm1_leakyrelu_vec_enable_v1_r1_run_eede5f12cb12bedf",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "17883eca1a1c99c6f569507eaadd015305649f09",
+  "objective": "reduced_proxy_firstpass",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_leakyreluproxy/sweep_proxy_firstpass.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_leakyreluproxy/config_nm1_leakyreluproxy.json"
+    ],
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": [
+      "third_party/nlohmann_json",
+      "third_party/cacti"
+    ]
+  },
+  "proposal_count": 1,
+  "evaluation_record": {
+    "evaluation_mode": "measurement_only",
+    "abstraction_layer": "architecture_block",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_leakyreluproxy/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "89908fb6",
+        "tag": "npu_fp16_nm1_leakyreluproxy_firstpass",
+        "result_path": "/orfs/flow/reports/nangate45/npu_fp16_cpp_nm1_leakyreluproxy/nm1_leakyreluproxy_firstpass/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_leakyreluproxy/work/89908fb6/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 2.7883,
+        "die_area": 1440000.0,
+        "total_power_mw": 0.00036
+      }
+    }
+  ]
+}
