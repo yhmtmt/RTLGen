@@ -53,6 +53,10 @@ def _resolve_path(*, repo_root: Path, path_text: str) -> Path:
     return repo_root / path
 
 
+def _load_json(path: Path) -> dict[str, Any]:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
 def _resolve_run(session: Session, request: Layer1ConsumeRequest) -> tuple[WorkItem, Run]:
     if request.run_key:
         run = session.query(Run).filter(Run.run_key == request.run_key).one_or_none()
