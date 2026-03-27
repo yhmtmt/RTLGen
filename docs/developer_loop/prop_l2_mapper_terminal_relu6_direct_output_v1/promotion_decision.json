@@ -1,15 +1,15 @@
 {
   "proposal_id": "prop_l2_mapper_terminal_relu6_direct_output_v1",
-  "candidate_id": "l2_prop_l2_mapper_terminal_relu6_direct_output_v1_nm1_measurement_r1",
-  "decision": "iterate",
-  "reason": "Accepted measurement-only baseline evidence was merged; proposal judgment remains deferred until the paired comparison is reviewed.",
+  "candidate_id": "l2_prop_l2_mapper_terminal_relu6_direct_output_v1_nm1_fused_r2",
+  "decision": "promote",
+  "reason": "Focused comparison improved latency and/or energy without regressing matched rows.",
   "evidence_refs": [
-    "item:l2_prop_l2_mapper_terminal_relu6_direct_output_v1_nm1_measurement_r1",
-    "run:l2_prop_l2_mapper_terminal_relu6_direct_output_v1_nm1_measurement_r1_run_ea65b1ccc4fa4c16",
-    "artifact:control_plane/shadow_exports/l2_decisions/l2_prop_l2_mapper_terminal_relu6_direct_output_v1_nm1_measurement_r1.json",
-    "pr:#119",
-    "https://github.com/yhmtmt/RTLGen/pull/119"
+    "item:l2_prop_l2_mapper_terminal_relu6_direct_output_v1_nm1_fused_r2",
+    "run:l2_prop_l2_mapper_terminal_relu6_direct_output_v1_nm1_fused_r2_run_89b2ce3bf918ab40",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_prop_l2_mapper_terminal_relu6_direct_output_v1_nm1_fused_r2.json",
+    "pr:#127",
+    "https://github.com/yhmtmt/RTLGen/pull/127"
   ],
-  "next_action": "queue the paired comparison item",
+  "next_action": "close the proposal as promoted",
   "requires_human_approval": false
 }

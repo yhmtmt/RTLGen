@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_mapper_terminal_relu6_direct_output_v1",
-  "source_commit": "c64cd71106634aaedca77437018a986e5728822f",
+  "source_commit": "fc3c1182933b91ce2f765dd5c9a57f43ec843799",
   "requested_items": [
     {
       "item_id": "l2_prop_l2_mapper_terminal_relu6_direct_output_v1_nm1_measurement_r1",
@@ -18,19 +18,25 @@
       "merged_utc": "2026-03-27T06:59:29.426632Z"
     },
     {
-      "item_id": "l2_prop_l2_mapper_terminal_relu6_direct_output_v1_nm1_fused_r1",
+      "item_id": "l2_prop_l2_mapper_terminal_relu6_direct_output_v1_nm1_fused_r2",
       "task_type": "l2_campaign",
       "objective": "terminal_relu6_direct_output_pair",
       "evaluation_mode": "paired_comparison",
       "abstraction_layer": "full_architecture",
-      "status": "not_queued",
+      "status": "merged",
       "paired_baseline_item_id": "l2_prop_l2_mapper_terminal_relu6_direct_output_v1_nm1_measurement_r1",
       "depends_on_item_ids": [
         "l2_prop_l2_mapper_terminal_relu6_direct_output_v1_nm1_measurement_r1"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
-      "notes": "Queue only after the baseline item is merged and materialized."
+      "notes": "Queue only after the baseline item is merged and materialized. Merged via PR #127 and merge facef361183f233208ec846d778f66456b759c3d at 2026-03-27T12:55:57.832796Z.",
+      "prior_item_ids": [
+        "l2_prop_l2_mapper_terminal_relu6_direct_output_v1_nm1_fused_r1"
+      ],
+      "merged_pr_number": 127,
+      "merge_commit": "facef361183f233208ec846d778f66456b759c3d",
+      "merged_utc": "2026-03-27T12:55:57.832796Z"
     }
   ]
 }
