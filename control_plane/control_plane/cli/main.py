@@ -212,6 +212,7 @@ def main(argv: list[str] | None = None) -> int:
     worker_daemon_parser.add_argument("--log-root")
     worker_daemon_parser.add_argument("--poll-seconds", type=int, default=15)
     worker_daemon_parser.add_argument("--max-items-per-poll", type=int, default=1)
+    worker_daemon_parser.add_argument("--concurrency", type=int, default=1)
     worker_daemon_parser.add_argument("--max-polls", type=int)
     worker_daemon_parser.add_argument("--stop-on-no-work", action="store_true")
     worker_daemon_parser.add_argument("--no-scheduler-maintenance", action="store_true")
@@ -627,6 +628,8 @@ def main(argv: list[str] | None = None) -> int:
             str(args.poll_seconds),
             "--max-items-per-poll",
             str(args.max_items_per_poll),
+            "--concurrency",
+            str(args.concurrency),
         ]
         for key, value in [
             ("--hostname", args.hostname),
