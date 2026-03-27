@@ -1,5 +1,33 @@
 {
   "proposal_id": "prop_l2_mapper_terminal_leakyrelu_direct_output_v1",
-  "source_commit": "",
-  "requested_items": []
+  "source_commit": "c64cd717fc5fda3a4c948bbcc2b0a7c9f4a50691",
+  "requested_items": [
+    {
+      "item_id": "l2_prop_l2_mapper_terminal_leakyrelu_direct_output_v1_nm1_measurement_r1",
+      "task_type": "l2_campaign",
+      "objective": "terminal_leakyrelu_baseline_measurement",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "full_architecture",
+      "status": "queued",
+      "notes": "First bounded LeakyReLU reference collection on fixed nm1 using the accepted reduced architecture-block source.",
+      "status_reason": "Inserted into the evaluator PostgreSQL queue after local validation passed.",
+      "task_request_id": "381efd06-a587-4d4e-835b-61a68104b246",
+      "work_item_id": "72730a9b-d2a8-4279-bf11-74a207a333b1"
+    },
+    {
+      "item_id": "l2_prop_l2_mapper_terminal_leakyrelu_direct_output_v1_nm1_fused_r1",
+      "task_type": "l2_campaign",
+      "objective": "terminal_leakyrelu_direct_output_pair",
+      "evaluation_mode": "paired_comparison",
+      "abstraction_layer": "full_architecture",
+      "status": "not_queued",
+      "paired_baseline_item_id": "l2_prop_l2_mapper_terminal_leakyrelu_direct_output_v1_nm1_measurement_r1",
+      "depends_on_item_ids": [
+        "l2_prop_l2_mapper_terminal_leakyrelu_direct_output_v1_nm1_measurement_r1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "notes": "Queue only after the baseline item is merged and materialized."
+    }
+  ]
 }
