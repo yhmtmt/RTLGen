@@ -39,15 +39,18 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
       color: var(--ink);
     }
     .shell {
+      width: 100%;
       max-width: 1500px;
       margin: 0 auto;
       padding: 24px;
+      overflow-x: clip;
     }
     .hero {
       display: grid;
-      grid-template-columns: 2fr 1fr;
+      grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
       gap: 16px;
       margin-bottom: 18px;
+      min-width: 0;
     }
     .panel {
       background: rgba(255, 253, 248, 0.9);
@@ -56,6 +59,8 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
       box-shadow: var(--shadow);
       padding: 18px 20px;
       backdrop-filter: blur(8px);
+      min-width: 0;
+      overflow: hidden;
     }
     .headline {
       display: flex;
@@ -123,24 +128,44 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
     .summary-card .value { font-size: 1.6rem; font-weight: 700; margin-top: 8px; }
     .layout {
       display: grid;
-      grid-template-columns: 1.1fr 1.1fr 0.8fr;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(280px, 0.8fr);
       gap: 16px;
+      min-width: 0;
+      align-items: start;
     }
-    .stack { display: grid; gap: 16px; }
-    .table-wrap { overflow-x: auto; }
+    .stack {
+      display: grid;
+      gap: 16px;
+      min-width: 0;
+    }
+    .table-wrap {
+      overflow-x: auto;
+      min-width: 0;
+      width: 100%;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
       font-size: 0.92rem;
+      table-layout: fixed;
     }
     th, td {
       text-align: left;
       padding: 10px 8px;
       border-bottom: 1px solid rgba(217, 207, 191, 0.7);
       vertical-align: top;
+      min-width: 0;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
     th { color: var(--muted); font-weight: 600; }
-    .mono { font-family: \"IBM Plex Mono\", \"SFMono-Regular\", monospace; font-size: 0.86rem; }
+    .mono {
+      font-family: "IBM Plex Mono", "SFMono-Regular", monospace;
+      font-size: 0.86rem;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
     .event-log {
       list-style: none;
       padding: 0;
@@ -154,7 +179,9 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
     }
     .event-log .time { color: var(--muted); font-size: 0.82rem; display: block; }
     @media (max-width: 1080px) {
-      .hero, .layout, .summary-grid { grid-template-columns: 1fr 1fr; }
+      .hero,
+      .layout,
+      .summary-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
     }
     @media (max-width: 720px) {
       .hero, .layout, .summary-grid { grid-template-columns: 1fr; }
