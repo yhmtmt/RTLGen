@@ -42,6 +42,8 @@ VEC_OP_NAMES = {
     0xB: "tanh",
     0xC: "hardsigmoid",
     0xD: "hardtanh",
+    0xE: "relu6",
+    0xF: "leakyrelu",
 }
 
 def parse_desc_stream(data):
@@ -266,6 +268,21 @@ def _vec_hardtanh_int8(x):
         return _u8(16)
     return _u8(x)
 
+def _vec_relu6_int8(x):
+    x = int(x)
+    if x <= 0:
+        return 0
+    if x >= 6:
+        return 6
+    return _u8(x)
+
+
+def _vec_leakyrelu_int8(x):
+    x = int(x)
+    if x >= 0:
+        return _u8(x)
+    return _u8(int(x / 8))
+
 def _fp16_add_bits(a_bits, b_bits):
     return _fp16_canonicalize_zero(
         _float_to_fp16_bits(_fp16_bits_to_float(a_bits) + _fp16_bits_to_float(b_bits))
@@ -412,6 +429,10 @@ def _vec_expected_result(raw, flags, cfg, dtype_code=0x0):
             out = _vec_hardsigmoid_int8(x)
         elif op_code == 0xD:  # hardtanh
             out = _vec_hardtanh_int8(x)
+        elif op_code == 0xE:  # relu6
+            out = _vec_relu6_int8(x)
+        elif op_code == 0xF:  # leakyrelu
+            out = _vec_leakyrelu_int8(x)
         else:  # relu / fallback
             out = 0 if x < 0 else _u8(x)
         result.append(_u8(out))

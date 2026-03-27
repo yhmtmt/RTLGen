@@ -1,0 +1,9 @@
+{
+  "proposal_id": "prop_l1_npu_nm1_relu6_vec_enable_v1",
+  "candidate_id": null,
+  "decision": "iterate",
+  "reason": "Proposal seeded; no remote evaluation merged yet.",
+  "evidence_refs": [],
+  "next_action": "implement bounded integrated nm1 relu6 support and run the first reduced-proxy Layer 1 sweep.",
+  "requires_human_approval": false
+}

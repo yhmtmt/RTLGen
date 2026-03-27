@@ -100,6 +100,8 @@ def _vec_op_cost(op_name, cfg):
         "tanh": 2.0,
         "hardsigmoid": 2.0,
         "hardtanh": 2.0,
+        "relu6": 1.0,
+        "leakyrelu": 1.0,
     }
     op = str(op_name or "").lower()
     costs = cfg.get("vec_op_costs", {})

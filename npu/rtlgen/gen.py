@@ -116,6 +116,8 @@ module {top_name} (
   localparam [3:0] VEC_OP_TANH      = 4'hb;
   localparam [3:0] VEC_OP_HARDSIGMOID = 4'hc;
   localparam [3:0] VEC_OP_HARDTANH = 4'hd;
+  localparam [3:0] VEC_OP_RELU6     = 4'he;
+  localparam [3:0] VEC_OP_LEAKYRELU = 4'hf;
   localparam [3:0] VEC_DTYPE_INT8   = 4'h0;
   localparam [3:0] VEC_DTYPE_FP16   = 4'h1;
   localparam       VEC_EN_ADD       = {vec_en_add};
@@ -132,6 +134,8 @@ module {top_name} (
   localparam       VEC_EN_TANH      = {vec_en_tanh};
   localparam       VEC_EN_HARDSIGMOID = {vec_en_hardsigmoid};
   localparam       VEC_EN_HARDTANH = {vec_en_hardtanh};
+  localparam       VEC_EN_RELU6     = {vec_en_relu6};
+  localparam       VEC_EN_LEAKYRELU = {vec_en_leakyrelu};
   localparam       VEC_FP16_ENABLED = {vec_fp16_enabled};
   localparam       SOFTMAX_DESC_ENABLED = {softmax_desc_enabled};
   localparam integer SOFTMAX_ROW_BYTES = {softmax_row_bytes};
@@ -903,6 +907,8 @@ def generate_cpp_vec_activation_modules(
         "tanh": "tanh",
         "hardsigmoid": "pwl",
         "hardtanh": "pwl",
+        "relu6": "relu6",
+        "leakyrelu": "leaky_relu",
     }
     pending_ops = {
         "rmsnorm",
@@ -983,6 +989,14 @@ def generate_cpp_vec_activation_modules(
                 "symmetric": False,
                 "points": [[x, y] for x, y in HARDSIGMOID_INT8_PWL_POINTS],
                 "clamp": True,
+            }
+        elif op == "leakyrelu":
+            if activation_operand_kind != "int8":
+                die("compute.vec.rtlgen_cpp leakyrelu currently supports only int8 operands")
+            act_options = {
+                "function": "leaky_relu",
+                "alpha_num": 1,
+                "alpha_den": 8,
             }
         else:
             act_options = {"function": fn}
@@ -1292,6 +1306,8 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         "tanh",
         "hardsigmoid",
         "hardtanh",
+        "relu6",
+        "leakyrelu",
     }
     unknown_vec_ops = sorted({op for op in vec_ops if op not in supported_vec_ops})
     if unknown_vec_ops:
@@ -1310,6 +1326,8 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
     vec_en_tanh = 1 if "tanh" in vec_ops else 0
     vec_en_hardsigmoid = 1 if "hardsigmoid" in vec_ops else 0
     vec_en_hardtanh = 1 if "hardtanh" in vec_ops else 0
+    vec_en_relu6 = 1 if "relu6" in vec_ops else 0
+    vec_en_leakyrelu = 1 if "leakyrelu" in vec_ops else 0
 
     if gemm_pipeline < 1:
         die("compute.gemm.pipeline must be >= 1")
@@ -1514,6 +1532,8 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
     vec_cpp_tanh_module = vec_cpp_modules.get("tanh", "")
     vec_cpp_hardsigmoid_module = vec_cpp_modules.get("hardsigmoid", "")
     vec_cpp_hardtanh_module = vec_cpp_modules.get("hardtanh", "")
+    vec_cpp_relu6_module = vec_cpp_modules.get("relu6", "")
+    vec_cpp_leakyrelu_module = vec_cpp_modules.get("leakyrelu", "")
     use_cpp_relu = bool(vec_cpp_relu_module) and vec_cpp_activation_operand_kind == "int8"
     use_cpp_gelu = bool(vec_cpp_gelu_module) and vec_cpp_activation_operand_kind == "int8"
     use_cpp_softmax = bool(vec_cpp_softmax_module) and vec_cpp_activation_operand_kind == "int8"
@@ -1526,6 +1546,8 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
     use_cpp_tanh = bool(vec_cpp_tanh_module) and vec_cpp_activation_operand_kind == "int8"
     use_cpp_hardsigmoid = bool(vec_cpp_hardsigmoid_module) and vec_cpp_activation_operand_kind == "int8"
     use_cpp_hardtanh = bool(vec_cpp_hardtanh_module) and vec_cpp_activation_operand_kind == "int8"
+    use_cpp_relu6 = bool(vec_cpp_relu6_module) and vec_cpp_activation_operand_kind == "int8"
+    use_cpp_leakyrelu = bool(vec_cpp_leakyrelu_module) and vec_cpp_activation_operand_kind == "int8"
     use_cpp_fp16_relu = bool(vec_cpp_relu_module) and vec_cpp_activation_operand_kind == "fp16"
     use_cpp_fp16_gelu = bool(vec_cpp_gelu_module) and vec_cpp_activation_operand_kind == "fp16"
     use_cpp_fp16_softmax = bool(vec_cpp_softmax_module) and vec_cpp_activation_operand_kind == "fp16"
@@ -1793,6 +1815,26 @@ endmodule
                                              (vec_hardtanh_x >=  9'sd16) ?  8'sd16 :
                                                                               vec_in0[(gi*8) +: 8];""",
     )
+    relu6_lane_body = vec_lane_body(
+        use_cpp_relu6,
+        vec_cpp_relu6_module,
+        "relu6",
+        "vec_relu6_res",
+        """      wire signed [8:0] vec_relu6_x = $signed({vec_in0[(gi*8)+7], vec_in0[(gi*8) +: 8]});
+      assign vec_relu6_res[(gi*8) +: 8] = vec_relu6_x < 0 ? 8'd0 :
+                                          vec_relu6_x > 9'sd6 ? 8'd6 :
+                                                                 vec_in0[(gi*8) +: 8];""",
+    )
+    leakyrelu_lane_body = vec_lane_body(
+        use_cpp_leakyrelu,
+        vec_cpp_leakyrelu_module,
+        "leakyrelu",
+        "vec_leakyrelu_res",
+        """      wire signed [7:0] vec_leakyrelu_x = $signed(vec_in0[(gi*8) +: 8]);
+      wire signed [15:0] vec_leakyrelu_scaled = vec_leakyrelu_x;
+      wire signed [15:0] vec_leakyrelu_div = vec_leakyrelu_scaled / 16'sd8;
+      assign vec_leakyrelu_res[(gi*8) +: 8] = vec_leakyrelu_x < 0 ? vec_leakyrelu_div[7:0] : vec_in0[(gi*8) +: 8];""",
+    )
 
     if use_cpp_fp16_relu:
         relu_lane_body_fp16 = f"""      wire [17:0] vec_fp16_relu_cpp_y;
@@ -2017,6 +2059,8 @@ endmodule
   wire [{vec_data_width_minus1}:0] vec_tanh_res;
   wire [{vec_data_width_minus1}:0] vec_hardsigmoid_res;
   wire [{vec_data_width_minus1}:0] vec_hardtanh_res;
+  wire [{vec_data_width_minus1}:0] vec_relu6_res;
+  wire [{vec_data_width_minus1}:0] vec_leakyrelu_res;
   wire [{vec_data_width_minus1}:0] vec_result_next_int8;
   wire [{vec_data_width_minus1}:0] vec_result_next_fp16;
   wire [{vec_data_width_minus1}:0] vec_result_next;
@@ -2039,6 +2083,8 @@ endmodule
 {tanh_lane_body}
 {hardsigmoid_lane_body}
 {hardtanh_lane_body}
+{relu6_lane_body}
+{leakyrelu_lane_body}
     end
   endgenerate
 
@@ -2058,6 +2104,8 @@ endmodule
                                 (vec_op_sel == VEC_OP_TANH) ? vec_tanh_res :
                                 (vec_op_sel == VEC_OP_HARDSIGMOID) ? vec_hardsigmoid_res :
                                 (vec_op_sel == VEC_OP_HARDTANH) ? vec_hardtanh_res :
+                                (vec_op_sel == VEC_OP_RELU6) ? vec_relu6_res :
+                                (vec_op_sel == VEC_OP_LEAKYRELU) ? vec_leakyrelu_res :
                                 vec_relu_res;
 
   assign vec_result_next_fp16 = (vec_op_sel == VEC_OP_ADD) ? vec_add_res_fp16 :
@@ -2493,7 +2541,9 @@ endmodule
                      (cq_word0[11:8] != VEC_OP_SIGMOID)   &&
                      (cq_word0[11:8] != VEC_OP_TANH)      &&
                      (cq_word0[11:8] != VEC_OP_HARDSIGMOID) &&
-                     (cq_word0[11:8] != VEC_OP_HARDTANH)) ||
+                     (cq_word0[11:8] != VEC_OP_HARDTANH) &&
+                     (cq_word0[11:8] != VEC_OP_RELU6) &&
+                     (cq_word0[11:8] != VEC_OP_LEAKYRELU)) ||
                     (cq_word0[11:8] == VEC_OP_ADD       && !VEC_EN_ADD)       ||
                     (cq_word0[11:8] == VEC_OP_MUL       && !VEC_EN_MUL)       ||
                     (cq_word0[11:8] == VEC_OP_RELU      && !VEC_EN_RELU)      ||
@@ -2508,6 +2558,8 @@ endmodule
                     (cq_word0[11:8] == VEC_OP_TANH      && !VEC_EN_TANH)      ||
                     (cq_word0[11:8] == VEC_OP_HARDSIGMOID && !VEC_EN_HARDSIGMOID) ||
                     (cq_word0[11:8] == VEC_OP_HARDTANH  && !VEC_EN_HARDTANH)  ||
+                    (cq_word0[11:8] == VEC_OP_RELU6     && !VEC_EN_RELU6)     ||
+                    (cq_word0[11:8] == VEC_OP_LEAKYRELU && !VEC_EN_LEAKYRELU) ||
                     ((cq_word0[11:8] != VEC_OP_RELU)      &&
                      (cq_word0[11:8] != VEC_OP_ADD)       &&
                      (cq_word0[11:8] != VEC_OP_MUL)       &&
@@ -2521,7 +2573,9 @@ endmodule
                      (cq_word0[11:8] != VEC_OP_SIGMOID)   &&
                      (cq_word0[11:8] != VEC_OP_TANH)      &&
                      (cq_word0[11:8] != VEC_OP_HARDSIGMOID) &&
-                     (cq_word0[11:8] != VEC_OP_HARDTANH))) begin
+                     (cq_word0[11:8] != VEC_OP_HARDTANH) &&
+                     (cq_word0[11:8] != VEC_OP_RELU6) &&
+                     (cq_word0[11:8] != VEC_OP_LEAKYRELU))) begin
                   error_code <= 32'h6;
                 end else begin
                   vec_pending <= 1'b1;
@@ -2689,6 +2743,8 @@ endmodule
         vec_en_tanh=vec_en_tanh,
         vec_en_hardsigmoid=vec_en_hardsigmoid,
         vec_en_hardtanh=vec_en_hardtanh,
+        vec_en_relu6=vec_en_relu6,
+        vec_en_leakyrelu=vec_en_leakyrelu,
         vec_fp16_enabled=vec_fp16_enabled,
         softmax_desc_enabled=1 if softmax_enabled else 0,
         softmax_row_bytes=softmax_row_bytes,
