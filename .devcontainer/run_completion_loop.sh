@@ -25,6 +25,11 @@ while true; do
       printf "[%s] github reconcile poll failed\n" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >&2
     fi
   fi
+  if ! env PYTHONPATH="${REPO_ROOT}/control_plane" \
+    "${REPO_ROOT}/control_plane/scripts/refresh_blocked_dependents_service.sh"
+  then
+    printf "[%s] blocked dependent refresh failed\n" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >&2
+  fi
   if [[ "${AUTOREPORT_FAILURE_ISSUES}" == "1" ]]; then
     if ! env PYTHONPATH="${REPO_ROOT}/control_plane" \
       "${REPO_ROOT}/control_plane/scripts/report_failure_issues_service.sh"

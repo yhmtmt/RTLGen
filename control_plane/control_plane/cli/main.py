@@ -25,6 +25,7 @@ from control_plane.cli.process_completions import main as process_completions_ma
 from control_plane.cli.prepare_submission import main as prepare_submission_main
 from control_plane.cli.publish_review import main as publish_review_main
 from control_plane.cli.reconcile_github import main as reconcile_github_main
+from control_plane.cli.refresh_blocked_dependents import main as refresh_blocked_dependents_main
 from control_plane.cli.run_scheduler import main as run_scheduler_main
 from control_plane.cli.run_worker_daemon import main as run_worker_daemon_main
 from control_plane.cli.run_worker import main as run_worker_main
@@ -149,6 +150,13 @@ def main(argv: list[str] | None = None) -> int:
     )
     backfill_review_parser.add_argument("--database-url", required=True)
     backfill_review_parser.add_argument("--item-id")
+
+    refresh_blocked_parser = subparsers.add_parser(
+        "refresh-blocked-dependents",
+        help="Release blocked items whose dependency gates are now satisfied",
+    )
+    refresh_blocked_parser.add_argument("--database-url", required=True)
+    refresh_blocked_parser.add_argument("--repo-root", required=True)
 
     github_parser = subparsers.add_parser("reconcile-github", help="Reconcile GitHub branch/PR metadata into the DB")
     github_parser.add_argument("--database-url", required=True)
@@ -525,6 +533,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.item_id is not None:
             argv2.extend(["--item-id", str(args.item_id)])
         return backfill_review_states_main(argv2)
+    if args.command == "refresh-blocked-dependents":
+        return refresh_blocked_dependents_main(["--database-url", args.database_url, "--repo-root", args.repo_root])
     if args.command == "reconcile-github":
         argv2 = ["--database-url", args.database_url, "--repo", args.repo, "--state", args.state]
         for key, value in [

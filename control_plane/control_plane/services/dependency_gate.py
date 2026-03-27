@@ -119,3 +119,16 @@ def refresh_blocked_dependents(session: Session, *, repo_root: str | Path, depen
             work_item.queue_snapshot_path = None
             released.append(work_item.item_id)
     return released
+
+
+def refresh_all_blocked_items(session: Session, *, repo_root: str | Path) -> list[str]:
+    root = Path(repo_root).resolve()
+    released: list[str] = []
+    blocked_items = session.query(WorkItem).filter(WorkItem.state == WorkItemState.BLOCKED).all()
+    for work_item in blocked_items:
+        gate = evaluate_work_item_dependencies(session, repo_root=root, work_item=work_item)
+        if gate.satisfied:
+            work_item.state = WorkItemState.READY
+            work_item.queue_snapshot_path = None
+            released.append(work_item.item_id)
+    return released
