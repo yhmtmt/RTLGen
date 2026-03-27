@@ -452,14 +452,14 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
 
     repo_root = Path(request.repo_root).resolve()
     sweep_path = _repo_rel(request.sweep_path, repo_root)
-    _validate_architecture_block_sweep_policy(
-        sweep_path=(repo_root / sweep_path).resolve(),
-        abstraction_layer=effective_abstraction_layer,
-    )
     config_paths = [_repo_rel(path, repo_root) for path in request.config_paths]
     out_root = _repo_rel(request.out_root, repo_root)
     proposal_path = _repo_rel(request.proposal_path, repo_root) if request.proposal_path else None
     effective_abstraction_layer = _resolve_proposal_abstraction_layer(repo_root, proposal_path, request.abstraction_layer)
+    _validate_architecture_block_sweep_policy(
+        sweep_path=(repo_root / sweep_path).resolve(),
+        abstraction_layer=effective_abstraction_layer,
+    )
     source_commit = _resolve_source_commit(repo_root, request.source_commit)
 
     targets = [

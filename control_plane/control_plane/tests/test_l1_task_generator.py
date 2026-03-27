@@ -415,3 +415,33 @@ def test_generate_l1_sweep_task_defaults_source_commit_from_repo_head() -> None:
                 assert work_item.source_commit == "deadbeefcafefeed"
                 assert work_item.task_request.source_commit == "deadbeefcafefeed"
                 mock_run.assert_called_once()
+
+
+def test_generate_l1_sweep_task_accepts_explicit_hierarchical_architecture_block_sweeps() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_block_repo(repo_root, mode_compare=False, synth_hierarchical=1)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/npu_blocks",
+                    requested_by="@tester",
+                    source_commit="sig123",
+                    proposal_id="prop_l1_npu_nm1_sigmoid_vec_enable_v1",
+                    proposal_path="docs/developer_loop/prop_l1_npu_nm1_sigmoid_vec_enable_v1",
+                    abstraction_layer="architecture_block",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert result.status == "applied"
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {"layer": "architecture_block"}
