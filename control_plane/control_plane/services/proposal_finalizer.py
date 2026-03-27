@@ -222,6 +222,11 @@ def _is_merged_status(status: str) -> bool:
     return status.startswith("merged")
 
 
+def _is_terminal_decision(decision: str) -> bool:
+    normalized = str(decision or "").strip().lower()
+    return normalized in {"promote", "promoted", "reject", "rejected", "close", "closed", "superseded"}
+
+
 def _mark_merged_requested_item(
     entry: dict[str, Any],
     *,
@@ -501,6 +506,17 @@ def finalize_after_merge(session: Session, request: ProposalFinalizeRequest) -> 
         )
     except ProposalFinalizationError:
         if _is_terminal_decision(existing_decision):
+            finalized_pr_number = str(promotion_result.get("pr_number") or "").strip()
+            if pr_number is not None and finalized_pr_number == str(pr_number):
+                return ProposalFinalizeResult(
+                    item_id=work_item.item_id,
+                    proposal_id=proposal_id,
+                    decision=existing_decision,
+                    next_item_id=None,
+                    commit_sha=merge_commit or str(promotion_result.get("merge_commit") or "").strip() or None,
+                    skipped=False,
+                    skip_reason=None,
+                )
             return ProposalFinalizeResult(
                 item_id=work_item.item_id,
                 proposal_id=proposal_id,
@@ -514,6 +530,17 @@ def finalize_after_merge(session: Session, request: ProposalFinalizeRequest) -> 
 
     matched_status = str(matched_entry.get("status", "")).strip().lower()
     if _is_terminal_decision(existing_decision) and _is_merged_status(matched_status):
+        finalized_pr_number = str(promotion_result.get("pr_number") or "").strip()
+        if pr_number is not None and finalized_pr_number == str(pr_number):
+            return ProposalFinalizeResult(
+                item_id=work_item.item_id,
+                proposal_id=proposal_id,
+                decision=existing_decision,
+                next_item_id=None,
+                commit_sha=merge_commit or str(promotion_result.get("merge_commit") or "").strip() or None,
+                skipped=False,
+                skip_reason=None,
+            )
         return ProposalFinalizeResult(
             item_id=work_item.item_id,
             proposal_id=proposal_id,
