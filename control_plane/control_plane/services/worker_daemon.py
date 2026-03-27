@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 import time
 from typing import Callable
@@ -19,6 +20,7 @@ class WorkerDaemonConfig:
     worker: WorkerConfig
     poll_seconds: int = 15
     max_items_per_poll: int = 1
+    concurrency: int = 1
     max_polls: int | None = None
     stop_on_no_work: bool = False
     run_scheduler_maintenance: bool = True
@@ -34,6 +36,35 @@ class WorkerDaemonResult:
 
 def _default_log(message: str) -> None:
     print(f"[{utcnow().isoformat().replace('+00:00', 'Z')}] {message}", flush=True)
+
+
+def _run_parallel_batch(
+    session_factory: sessionmaker,
+    *,
+    config: WorkerDaemonConfig,
+) -> list[WorkerLoopResult]:
+    target = max(1, config.max_items_per_poll)
+    slots = max(1, min(config.concurrency, target))
+    if slots == 1:
+        return run_worker(session_factory, config=config.worker, max_items=target)
+
+    results: list[WorkerLoopResult] = []
+    remaining = target
+    while remaining > 0:
+        batch_size = min(slots, remaining)
+        with ThreadPoolExecutor(max_workers=batch_size) as executor:
+            futures = [
+                executor.submit(run_worker, session_factory, config=config.worker, max_items=1)
+                for _ in range(batch_size)
+            ]
+            batch: list[WorkerLoopResult] = []
+            for future in futures:
+                batch.extend(future.result())
+        results.extend(batch)
+        remaining -= len(batch)
+        if any(result.status == "no_work" for result in batch):
+            break
+    return results
 
 
 def run_worker_daemon(
@@ -53,7 +84,8 @@ def run_worker_daemon(
         f"machine_key={config.worker.machine_key} "
         f"hostname={config.worker.hostname} "
         f"poll_seconds={config.poll_seconds} "
-        f"max_items_per_poll={config.max_items_per_poll}"
+        f"max_items_per_poll={config.max_items_per_poll} "
+        f"concurrency={config.concurrency}"
     )
 
     while config.max_polls is None or poll_count < config.max_polls:
@@ -62,7 +94,7 @@ def run_worker_daemon(
             with session_factory() as session:
                 expire_stale_leases(session)
 
-        batch = run_worker(session_factory, config=config.worker, max_items=config.max_items_per_poll)
+        batch = _run_parallel_batch(session_factory, config=config)
         results.extend(batch)
 
         batch_executed = sum(1 for result in batch if result.status != "no_work")

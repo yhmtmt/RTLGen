@@ -36,6 +36,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--log-root")
     parser.add_argument("--poll-seconds", type=int, default=15)
     parser.add_argument("--max-items-per-poll", type=int, default=1)
+    parser.add_argument("--concurrency", type=int, default=1)
     parser.add_argument("--max-polls", type=int)
     parser.add_argument("--stop-on-no-work", action="store_true")
     parser.add_argument("--no-scheduler-maintenance", action="store_true")
@@ -65,6 +66,7 @@ def main(argv: list[str] | None = None) -> int:
             ),
             poll_seconds=args.poll_seconds,
             max_items_per_poll=args.max_items_per_poll,
+            concurrency=args.concurrency,
             max_polls=args.max_polls,
             stop_on_no_work=args.stop_on_no_work,
             run_scheduler_maintenance=not args.no_scheduler_maintenance,

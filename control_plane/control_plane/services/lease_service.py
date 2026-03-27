@@ -16,6 +16,8 @@ from control_plane.models.worker_leases import WorkerLease
 from control_plane.models.worker_machines import WorkerMachine
 from control_plane.services.scheduler import NoEligibleWorkItem, select_next_work_item
 
+_LEASE_CONFLICT_RETRIES = 8
+
 
 class LeaseServiceError(RuntimeError):
     pass
@@ -102,52 +104,56 @@ def acquire_next_lease(
     capability_filter: dict[str, Any] | None = None,
     lease_seconds: int = 1800,
 ) -> LeaseAcquireResult:
-    machine = upsert_worker_machine(
-        session,
-        machine_key=machine_key,
-        hostname=hostname,
-        executor_kind=executor_kind,
-        capabilities=capabilities,
-    )
-
-    try:
-        work_item = select_next_work_item(
+    last_error: IntegrityError | None = None
+    for _ in range(_LEASE_CONFLICT_RETRIES):
+        machine = upsert_worker_machine(
             session,
-            machine_capabilities=machine.capabilities,
-            capability_filter=capability_filter,
+            machine_key=machine_key,
+            hostname=hostname,
+            executor_kind=executor_kind,
+            capabilities=capabilities,
         )
-    except NoEligibleWorkItem:
-        session.commit()
-        raise
+        try:
+            work_item = select_next_work_item(
+                session,
+                machine_capabilities=machine.capabilities,
+                capability_filter=capability_filter,
+            )
+        except NoEligibleWorkItem:
+            session.commit()
+            raise
 
-    now = utcnow()
-    lease = WorkerLease(
-        work_item_id=work_item.id,
-        machine_id=machine.id,
-        lease_token=make_id("lease"),
-        status=LeaseStatus.ACTIVE,
-        leased_at=now,
-        expires_at=now + timedelta(seconds=lease_seconds),
-        last_heartbeat_at=now,
-    )
-    session.add(lease)
-    work_item.state = WorkItemState.LEASED
-    try:
-        session.commit()
-    except IntegrityError as exc:
-        session.rollback()
-        raise LeaseConflict(f"failed to acquire lease due to integrity error: {exc}") from exc
+        now = utcnow()
+        lease = WorkerLease(
+            work_item_id=work_item.id,
+            machine_id=machine.id,
+            lease_token=make_id("lease"),
+            status=LeaseStatus.ACTIVE,
+            leased_at=now,
+            expires_at=now + timedelta(seconds=lease_seconds),
+            last_heartbeat_at=now,
+        )
+        session.add(lease)
+        work_item.state = WorkItemState.LEASED
+        try:
+            session.commit()
+        except IntegrityError as exc:
+            session.rollback()
+            last_error = exc
+            continue
 
-    return LeaseAcquireResult(
-        lease_id=lease.id,
-        lease_token=lease.lease_token,
-        work_item_id=work_item.id,
-        item_id=work_item.item_id,
-        machine_id=machine.id,
-        machine_key=machine.machine_key,
-        expires_at=_as_iso(lease.expires_at),
-        status=lease.status.value,
-    )
+        return LeaseAcquireResult(
+            lease_id=lease.id,
+            lease_token=lease.lease_token,
+            work_item_id=work_item.id,
+            item_id=work_item.item_id,
+            machine_id=machine.id,
+            machine_key=machine.machine_key,
+            expires_at=_as_iso(lease.expires_at),
+            status=lease.status.value,
+        )
+
+    raise LeaseConflict(f"failed to acquire lease due to integrity error: {last_error}") from last_error
 
 
 def heartbeat_lease(

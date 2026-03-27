@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import subprocess
 import tempfile
 
 from sqlalchemy import create_engine
@@ -142,3 +143,53 @@ def test_worker_daemon_emits_positive_poll_logs() -> None:
         assert any("poll=1" in entry and "succeeded" in entry for entry in messages)
         assert any("poll=2" in entry and "no_work" in entry for entry in messages)
         assert any("worker-daemon exit" in entry for entry in messages)
+
+
+def _init_git_repo(repo_root: Path) -> None:
+    subprocess.run(["git", "init", str(repo_root)], check=True, capture_output=True, text=True)
+    subprocess.run(["git", "-C", str(repo_root), "config", "user.email", "tester@example.com"], check=True)
+    subprocess.run(["git", "-C", str(repo_root), "config", "user.name", "Tester"], check=True)
+    (repo_root / "README.md").write_text("worker daemon test\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(repo_root), "add", "README.md"], check=True, capture_output=True, text=True)
+    subprocess.run(["git", "-C", str(repo_root), "commit", "-m", "init"], check=True, capture_output=True, text=True)
+
+
+def test_worker_daemon_executes_two_items_with_concurrency() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_git_repo(repo_root)
+        db_path = Path(td) / "cp.db"
+        engine = create_engine(
+            f"sqlite+pysqlite:///{db_path}",
+            future=True,
+            connect_args={"check_same_thread": False},
+        )
+        create_all(engine)
+        with Session(engine) as session:
+            _seed_ready_work_item(session, item_id="daemon_item_parallel_a", repo_root=repo_root)
+            _seed_ready_work_item(session, item_id="daemon_item_parallel_b", repo_root=repo_root)
+
+        session_factory = build_session_factory(engine)
+        result = run_worker_daemon(
+            session_factory,
+            config=WorkerDaemonConfig(
+                worker=WorkerConfig(
+                    repo_root=str(repo_root),
+                    machine_key="daemon-worker-parallel",
+                    capabilities={"platform": "nangate45", "flow": "openroad"},
+                    capability_filter={"platform": "nangate45", "flow": "openroad"},
+                    heartbeat_seconds=1,
+                ),
+                poll_seconds=0,
+                max_polls=1,
+                max_items_per_poll=2,
+                concurrency=2,
+            ),
+        )
+
+        assert result.executed_items == 2
+        assert sorted(row.item_id for row in result.results if row.item_id) == [
+            "daemon_item_parallel_a",
+            "daemon_item_parallel_b",
+        ]
