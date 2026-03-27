@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l1_npu_nm1_leakyrelu_vec_enable_v1",
-  "decision": "iterate",
-  "pr_number": null,
-  "merge_commit": null,
-  "merged_utc": null
+  "decision": "promote",
+  "pr_number": 117,
+  "merge_commit": "f047d752bd8813bab322c8778e65fde55ae033c9",
+  "merged_utc": "2026-03-27T06:09:05.973163Z"
 }

@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_npu_nm1_leakyrelu_vec_enable_v1",
-  "source_commit": "",
+  "source_commit": "17883eca1a1c99c6f569507eaadd015305649f09",
   "requested_items": [
     {
       "item_id": "l1_prop_l1_npu_nm1_leakyrelu_vec_enable_v1_r1",
@@ -9,7 +9,11 @@
       "objective": "npu_nm1_leakyrelu_vec_physical_metrics",
       "abstraction_layer": "architecture_block",
       "status": "merged",
-      "merged_pr": 117
+      "merged_pr": 117,
+      "merged_pr_number": 117,
+      "merge_commit": "f047d752bd8813bab322c8778e65fde55ae033c9",
+      "merged_utc": "2026-03-27T06:09:05.973163Z",
+      "notes": "Merged via PR #117 and merge f047d752bd8813bab322c8778e65fde55ae033c9 at 2026-03-27T06:09:05.973163Z."
     }
   ]
 }
