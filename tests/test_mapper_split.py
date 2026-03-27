@@ -123,6 +123,48 @@ class MapperSplitRegressionTest(unittest.TestCase):
             )
         )
 
+    def _write_terminal_relu6_onnx(
+        self,
+        out_path: Path,
+        *,
+        name: str,
+        b: int,
+        input_shape: list[int],
+        add_flatten: bool = False,
+        add_cast: bool = False,
+    ) -> None:
+        out_path.write_bytes(
+            self.onnx_lite.build_terminal_relu6_model_bytes(
+                name=name,
+                b=b,
+                input_shape=input_shape,
+                dtype=self.onnx_lite.TENSOR_INT8,
+                add_flatten=add_flatten,
+                add_cast=add_cast,
+            )
+        )
+
+    def _write_terminal_leakyrelu_onnx(
+        self,
+        out_path: Path,
+        *,
+        name: str,
+        b: int,
+        input_shape: list[int],
+        add_flatten: bool = False,
+        add_cast: bool = False,
+    ) -> None:
+        out_path.write_bytes(
+            self.onnx_lite.build_terminal_leakyrelu_model_bytes(
+                name=name,
+                b=b,
+                input_shape=input_shape,
+                dtype=self.onnx_lite.TENSOR_INT8,
+                add_flatten=add_flatten,
+                add_cast=add_cast,
+            )
+        )
+
     def _write_terminal_sigmoid_onnx(
         self,
         out_path: Path,
@@ -874,6 +916,134 @@ class MapperSplitRegressionTest(unittest.TestCase):
             self.assertEqual([], dma_y_ops)
             self.assertEqual("vec1", schedule["events"][0]["signal_on"])
 
+
+    def test_terminal_vecop_relu6_lowers_without_direct_output(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            onnx_path = tmp / "terminal_vec_relu6.onnx"
+            sched_path = tmp / "terminal_vec_relu6.yml"
+            bin_path = tmp / "terminal_vec_relu6.bin"
+
+            self._write_terminal_relu6_onnx(
+                onnx_path,
+                name="terminal_vec_relu6",
+                b=128,
+                input_shape=[64],
+            )
+            schedule = self._run_lowering(onnx_path, sched_path)
+            self._validate_and_emit_bin(sched_path, bin_path)
+
+            notes = schedule.get("mapper_notes", {})
+            self.assertEqual("terminal_vec_op", notes.get("graph_kind"))
+            self.assertEqual("relu6", notes.get("terminal_vec_op"))
+            self.assertFalse(bool(notes.get("terminal_vecop_direct_output")))
+
+            vec_ops = [op for op in schedule["ops"] if op.get("type") == "vec_op"]
+            dma_y_ops = [op for op in schedule["ops"] if str(op.get("id", "")).startswith("dma_y")]
+            self.assertEqual(1, len(vec_ops))
+            self.assertEqual("relu6", vec_ops[0].get("op"))
+            self.assertEqual("ACT_B_SRAM", vec_ops[0].get("dst"))
+            self.assertEqual(1, len(dma_y_ops))
+            self.assertEqual("ACT_B_SRAM", dma_y_ops[0].get("src"))
+            self.assertEqual("Y_DRAM", dma_y_ops[0].get("dst"))
+
+    def test_terminal_vecop_relu6_direct_output_when_arch_requests_it(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            onnx_path = tmp / "terminal_vec_relu6_direct.onnx"
+            sched_path = tmp / "terminal_vec_relu6_direct.yml"
+            bin_path = tmp / "terminal_vec_relu6_direct.bin"
+
+            self._write_terminal_relu6_onnx(
+                onnx_path,
+                name="terminal_vec_relu6_direct",
+                b=128,
+                input_shape=[2, 4, 8],
+                add_flatten=True,
+            )
+            schedule = self._run_lowering(
+                onnx_path,
+                sched_path,
+                arch_path=ARCH_TERMINAL_VECOP_DIRECT_OUTPUT_PATH,
+            )
+            self._validate_and_emit_bin(sched_path, bin_path)
+
+            notes = schedule.get("mapper_notes", {})
+            self.assertEqual("terminal_vec_op", notes.get("graph_kind"))
+            self.assertEqual("relu6", notes.get("terminal_vec_op"))
+            self.assertTrue(bool(notes.get("input_flattened")))
+            self.assertTrue(bool(notes.get("terminal_vecop_direct_output")))
+
+            vec_ops = [op for op in schedule["ops"] if op.get("type") == "vec_op"]
+            dma_y_ops = [op for op in schedule["ops"] if str(op.get("id", "")).startswith("dma_y")]
+            self.assertEqual(1, len(vec_ops))
+            self.assertEqual("relu6", vec_ops[0].get("op"))
+            self.assertEqual("Y_DRAM", vec_ops[0].get("dst"))
+            self.assertEqual([], dma_y_ops)
+
+    def test_terminal_vecop_leakyrelu_lowers_without_direct_output(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            onnx_path = tmp / "terminal_vec_leakyrelu.onnx"
+            sched_path = tmp / "terminal_vec_leakyrelu.yml"
+            bin_path = tmp / "terminal_vec_leakyrelu.bin"
+
+            self._write_terminal_leakyrelu_onnx(
+                onnx_path,
+                name="terminal_vec_leakyrelu",
+                b=128,
+                input_shape=[64],
+            )
+            schedule = self._run_lowering(onnx_path, sched_path)
+            self._validate_and_emit_bin(sched_path, bin_path)
+
+            notes = schedule.get("mapper_notes", {})
+            self.assertEqual("terminal_vec_op", notes.get("graph_kind"))
+            self.assertEqual("leakyrelu", notes.get("terminal_vec_op"))
+            self.assertFalse(bool(notes.get("terminal_vecop_direct_output")))
+
+            vec_ops = [op for op in schedule["ops"] if op.get("type") == "vec_op"]
+            dma_y_ops = [op for op in schedule["ops"] if str(op.get("id", "")).startswith("dma_y")]
+            self.assertEqual(1, len(vec_ops))
+            self.assertEqual("leakyrelu", vec_ops[0].get("op"))
+            self.assertEqual("ACT_B_SRAM", vec_ops[0].get("dst"))
+            self.assertEqual(1, len(dma_y_ops))
+            self.assertEqual("ACT_B_SRAM", dma_y_ops[0].get("src"))
+            self.assertEqual("Y_DRAM", dma_y_ops[0].get("dst"))
+
+    def test_terminal_vecop_leakyrelu_direct_output_when_arch_requests_it(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            onnx_path = tmp / "terminal_vec_leakyrelu_direct.onnx"
+            sched_path = tmp / "terminal_vec_leakyrelu_direct.yml"
+            bin_path = tmp / "terminal_vec_leakyrelu_direct.bin"
+
+            self._write_terminal_leakyrelu_onnx(
+                onnx_path,
+                name="terminal_vec_leakyrelu_direct",
+                b=128,
+                input_shape=[2, 4, 8],
+                add_flatten=True,
+            )
+            schedule = self._run_lowering(
+                onnx_path,
+                sched_path,
+                arch_path=ARCH_TERMINAL_VECOP_DIRECT_OUTPUT_PATH,
+            )
+            self._validate_and_emit_bin(sched_path, bin_path)
+
+            notes = schedule.get("mapper_notes", {})
+            self.assertEqual("terminal_vec_op", notes.get("graph_kind"))
+            self.assertEqual("leakyrelu", notes.get("terminal_vec_op"))
+            self.assertTrue(bool(notes.get("input_flattened")))
+            self.assertTrue(bool(notes.get("terminal_vecop_direct_output")))
+
+            vec_ops = [op for op in schedule["ops"] if op.get("type") == "vec_op"]
+            dma_y_ops = [op for op in schedule["ops"] if str(op.get("id", "")).startswith("dma_y")]
+            self.assertEqual(1, len(vec_ops))
+            self.assertEqual("leakyrelu", vec_ops[0].get("op"))
+            self.assertEqual("Y_DRAM", vec_ops[0].get("dst"))
+            self.assertEqual([], dma_y_ops)
 
     def test_terminal_vecop_hardsigmoid_lowers_without_direct_output(self):
         with tempfile.TemporaryDirectory() as td:

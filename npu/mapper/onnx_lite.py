@@ -747,6 +747,54 @@ def build_terminal_relu_model_bytes(
     )
 
 
+def build_terminal_relu6_model_bytes(
+    *,
+    name: str,
+    b: int,
+    input_shape: List[int],
+    dtype: int = TENSOR_INT8,
+    add_flatten: bool = False,
+    add_cast: bool = False,
+    opset_version: int = 13,
+    ir_version: int = 8,
+) -> bytes:
+    return _build_terminal_unary_model_bytes(
+        name=name,
+        b=b,
+        input_shape=input_shape,
+        op_type="Relu6",
+        dtype=dtype,
+        add_flatten=add_flatten,
+        add_cast=add_cast,
+        opset_version=opset_version,
+        ir_version=ir_version,
+    )
+
+
+def build_terminal_leakyrelu_model_bytes(
+    *,
+    name: str,
+    b: int,
+    input_shape: List[int],
+    dtype: int = TENSOR_INT8,
+    add_flatten: bool = False,
+    add_cast: bool = False,
+    opset_version: int = 13,
+    ir_version: int = 8,
+) -> bytes:
+    return _build_terminal_unary_model_bytes(
+        name=name,
+        b=b,
+        input_shape=input_shape,
+        op_type="LeakyRelu",
+        dtype=dtype,
+        add_flatten=add_flatten,
+        add_cast=add_cast,
+        opset_version=opset_version,
+        ir_version=ir_version,
+    )
+
+
 def build_terminal_tanh_model_bytes(
     *,
     name: str,

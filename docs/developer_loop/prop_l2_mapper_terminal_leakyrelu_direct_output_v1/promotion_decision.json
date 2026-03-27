@@ -1,0 +1,9 @@
+{
+  "proposal_id": "prop_l2_mapper_terminal_leakyrelu_direct_output_v1",
+  "candidate_id": "",
+  "decision": "pending",
+  "reason": "Awaiting baseline evidence.",
+  "evidence_refs": [],
+  "next_action": "queue the baseline measurement item",
+  "requires_human_approval": false
+}

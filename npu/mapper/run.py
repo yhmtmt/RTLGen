@@ -57,6 +57,8 @@ VEC_OP_FLAGS = {
     "tanh": 0xB,
     "hardsigmoid": 0xC,
     "hardtanh": 0xD,
+    "relu6": 0xE,
+    "leakyrelu": 0xF,
 }
 
 

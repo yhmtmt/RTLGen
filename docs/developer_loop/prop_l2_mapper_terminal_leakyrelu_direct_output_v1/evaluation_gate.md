@@ -1,0 +1,3 @@
+# Evaluation Gate
+
+- baseline `l2_prop_l2_mapper_terminal_leakyrelu_direct_output_v1_nm1_measurement_r1` must merge before queuing `l2_prop_l2_mapper_terminal_leakyrelu_direct_output_v1_nm1_fused_r1`
