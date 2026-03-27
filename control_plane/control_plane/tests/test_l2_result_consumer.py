@@ -981,6 +981,8 @@ def test_consume_l2_result_paired_comparison_recovers_baseline_and_abstraction_f
             baseline_work_item.state = WorkItemState.MERGED
             session.commit()
             consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=baseline_item_id))
+            session.delete(baseline_work_item)
+            session.commit()
 
             candidate_item_id = _seed_campaign_work_item(
                 session,

@@ -384,6 +384,43 @@ def _effective_comparison_role(repo_root: Path, work_item: WorkItem) -> str:
     }.get(_effective_evaluation_mode(repo_root, work_item), "standalone")
 
 
+def _resolve_baseline_summary_from_decision_payload(
+    *,
+    repo_root: Path,
+    item_id: str,
+) -> tuple[str, list[dict[str, str]], str | None, dict[str, Any], dict[str, str]] | tuple[None, None, None, None, None]:
+    decision_path = repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{item_id}.json"
+    if not decision_path.exists():
+        return None, None, None, None, None
+    try:
+        payload = _load_json(decision_path)
+    except Exception:
+        return None, None, None, None, None
+    source_refs = payload.get("source_refs")
+    if not isinstance(source_refs, dict):
+        return None, None, None, None, None
+    summary_rel = str(source_refs.get("summary_csv", "")).strip()
+    if not summary_rel:
+        return None, None, None, None, None
+    summary_path = _resolve_path(repo_root=repo_root, path_text=summary_rel)
+    if not summary_path.exists():
+        return None, None, None, None, None
+    report_rel = str(source_refs.get("report_md", "")).strip() or None
+    report_path = _resolve_path(repo_root=repo_root, path_text=report_rel) if report_rel else None
+    baseline_ref = str(Path(summary_rel).parent.as_posix())
+    resolved_source_refs = {
+        "baseline_summary_csv": summary_rel,
+    }
+    report_rel_value: str | None = None
+    if report_path is not None and report_path.exists():
+        report_rel_value = str(report_path.relative_to(repo_root))
+        resolved_source_refs["baseline_report_md"] = report_rel_value
+    assessment_meta = {
+        "baseline_item_id": item_id,
+    }
+    return baseline_ref, _load_csv(summary_path), report_rel_value, assessment_meta, resolved_source_refs
+
+
 def _resolve_baseline_summary_from_work_item(
     session: Session,
     *,
@@ -392,13 +429,13 @@ def _resolve_baseline_summary_from_work_item(
 ) -> tuple[str, list[dict[str, str]], str | None, dict[str, Any], dict[str, str]] | tuple[None, None, None, None, None]:
     baseline_item = session.query(WorkItem).filter(WorkItem.item_id == item_id).one_or_none()
     if baseline_item is None:
-        return None, None, None, None, None
+        return _resolve_baseline_summary_from_decision_payload(repo_root=repo_root, item_id=item_id)
     summary_rel = _find_output_path_optional(baseline_item, "/summary.csv")
     if not summary_rel:
-        return None, None, None, None, None
+        return _resolve_baseline_summary_from_decision_payload(repo_root=repo_root, item_id=item_id)
     summary_path = _resolve_path(repo_root=repo_root, path_text=summary_rel)
     if not summary_path.exists():
-        return None, None, None, None, None
+        return _resolve_baseline_summary_from_decision_payload(repo_root=repo_root, item_id=item_id)
     report_rel = _find_output_path_optional(baseline_item, "/report.md")
     report_path = _resolve_path(repo_root=repo_root, path_text=report_rel) if report_rel else None
     baseline_ref = str(Path(summary_rel).parent.as_posix())
