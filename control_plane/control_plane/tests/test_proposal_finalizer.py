@@ -889,6 +889,162 @@ def test_finalize_skips_unlisted_supplemental_item_when_proposal_already_finaliz
         assert result.skip_reason == "proposal already finalized with decision=promote"
 
 
+def test_finalize_seeded_iterate_l1_proposal_advances_instead_of_skipping() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        proposal_id = "prop_l1_seeded_iterate_demo_v1"
+        proposal_path = _seed_repo_files(
+            repo_root,
+            proposal_id,
+            [
+                {
+                    "item_id": "l1_seeded_iterate_demo_r1",
+                    "task_type": "l1_sweep",
+                    "objective": "demo_metrics",
+                    "evaluation_mode": "measurement_only",
+                    "abstraction_layer": "architecture_block",
+                    "status": "merged",
+                }
+            ],
+        )
+        (proposal_path.parent / "promotion_decision.json").write_text(
+            json.dumps(
+                {
+                    "proposal_id": proposal_id,
+                    "candidate_id": None,
+                    "decision": "iterate",
+                    "reason": "Proposal seeded; no remote evaluation merged yet.",
+                    "evidence_refs": [],
+                    "next_action": "run first item",
+                    "requires_human_approval": False,
+                },
+                indent=2,
+            ) + "\n",
+            encoding="utf-8",
+        )
+        (proposal_path.parent / "promotion_result.json").write_text(
+            json.dumps(
+                {
+                    "proposal_id": proposal_id,
+                    "decision": "iterate",
+                    "reason": "Proposal seeded; no remote evaluation merged yet.",
+                    "merged_prs": [],
+                    "accepted_items": [],
+                },
+                indent=2,
+            ) + "\n",
+            encoding="utf-8",
+        )
+
+        payload_path = repo_root / "control_plane" / "shadow_exports" / "l1_promotions" / "l1_seeded_iterate_demo_r1.json"
+        _write(
+            payload_path,
+            json.dumps(
+                {
+                    "item_id": "l1_seeded_iterate_demo_r1",
+                    "run_key": "l1_seeded_iterate_demo_r1_run_1",
+                    "source_commit": "abc123",
+                    "objective": "demo_metrics",
+                    "evaluation_record": {
+                        "evaluation_mode": "measurement_only",
+                        "abstraction_layer": "architecture_block",
+                        "result_kind": "physical_metrics",
+                        "physical_metrics_present": True,
+                        "summary": "demo",
+                    },
+                    "proposals": [
+                        {
+                            "metrics_ref": {"metrics_csv": "runs/designs/demo/metrics.csv", "platform": "nangate45", "status": "ok"},
+                            "metric_summary": {"critical_path_ns": 1.11, "die_area": 123.0, "total_power_mw": 0.2},
+                        }
+                    ],
+                },
+                indent=2,
+            ) + "\n",
+        )
+
+        with _session() as session:
+            task = TaskRequest(
+                request_key="l1:l1_seeded_iterate_demo_r1",
+                source="test",
+                requested_by="tester",
+                title="seeded iterate l1",
+                description="demo_metrics",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                priority=1,
+                request_payload={
+                    "developer_loop": {
+                        "proposal_id": proposal_id,
+                        "proposal_path": str(proposal_path.relative_to(repo_root)),
+                    },
+                    "task": {"objective": "demo_metrics"},
+                },
+            )
+            session.add(task)
+            session.flush()
+            work_item = WorkItem(
+                work_item_key="l1:l1_seeded_iterate_demo_r1",
+                task_request_id=task.id,
+                item_id="l1_seeded_iterate_demo_r1",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                platform="nangate45",
+                task_type="l1_sweep",
+                state=WorkItemState.MERGED,
+                priority=1,
+                input_manifest={},
+                command_manifest=[],
+                expected_outputs=["runs/designs/demo/metrics.csv"],
+                acceptance_rules=[],
+                source_commit="abc123",
+            )
+            session.add(work_item)
+            session.flush()
+            run = Run(
+                run_key="l1_seeded_iterate_demo_r1_run_1",
+                work_item_id=work_item.id,
+                attempt=1,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.SUCCEEDED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="abc123",
+                result_summary="ok",
+                result_payload={"queue_result": {"status": "ok"}},
+            )
+            session.add(run)
+            session.flush()
+            session.add(
+                Artifact(
+                    run_id=run.id,
+                    kind="promotion_proposal",
+                    storage_mode="repo",
+                    path=str(payload_path.relative_to(repo_root)),
+                    sha256="x",
+                    metadata_={},
+                )
+            )
+            session.commit()
+
+            result = finalize_after_merge(
+                session,
+                ProposalFinalizeRequest(
+                    repo_root=str(repo_root),
+                    item_id="l1_seeded_iterate_demo_r1",
+                    pr_number=321,
+                    merge_commit="deadbeef",
+                    merged_utc="2026-03-27T04:30:00Z",
+                    git_publish=False,
+                ),
+            )
+
+            assert result.skipped is False
+            assert result.decision == "promote"
+
+
+
+
 def test_finalize_l1_retry_item_rebinds_requested_entry() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

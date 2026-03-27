@@ -500,7 +500,7 @@ def finalize_after_merge(session: Session, request: ProposalFinalizeRequest) -> 
             evaluation_requests_path=evaluation_requests_path,
         )
     except ProposalFinalizationError:
-        if existing_decision and existing_decision != "pending":
+        if _is_terminal_decision(existing_decision):
             return ProposalFinalizeResult(
                 item_id=work_item.item_id,
                 proposal_id=proposal_id,
@@ -513,7 +513,7 @@ def finalize_after_merge(session: Session, request: ProposalFinalizeRequest) -> 
         raise
 
     matched_status = str(matched_entry.get("status", "")).strip().lower()
-    if existing_decision and existing_decision != "pending" and _is_merged_status(matched_status):
+    if _is_terminal_decision(existing_decision) and _is_merged_status(matched_status):
         return ProposalFinalizeResult(
             item_id=work_item.item_id,
             proposal_id=proposal_id,
