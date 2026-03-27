@@ -1,0 +1,46 @@
+{
+  "version": 0.1,
+  "campaign_id": "npu_e2e_eval_onnx_terminal_hardtanh_suite_fused_nm1_v1",
+  "model_set_id": "onnx_terminal_hardtanh_suite_v1",
+  "model_manifest": "runs/models/onnx_terminal_hardtanh_suite_v1/manifest.json",
+  "description": "Paired-comparison Layer2 benchmark for nm1 direct terminal vec-op output on a bounded HardTanh-first terminal suite.",
+  "platform": "nangate45",
+  "make_target": "3_3_place_gp",
+  "repeats": 3,
+  "models": [
+    {
+      "model_id": "hardtanh_vec_b128_f64",
+      "onnx_path": "runs/models/onnx_terminal_hardtanh_suite_v1/hardtanh_vec_b128_f64.onnx",
+      "mapper_arch": "npu/arch/examples/minimal_terminal_vecop_direct_output.yml",
+      "perf_config": "npu/sim/perf/example_config_fp16_cpp.json"
+    },
+    {
+      "model_id": "hardtanh_vec_b256_f256",
+      "onnx_path": "runs/models/onnx_terminal_hardtanh_suite_v1/hardtanh_vec_b256_f256.onnx",
+      "mapper_arch": "npu/arch/examples/minimal_terminal_vecop_direct_output.yml",
+      "perf_config": "npu/sim/perf/example_config_fp16_cpp.json"
+    },
+    {
+      "model_id": "hardtanh_vec_flatten_b128_2x4x8",
+      "onnx_path": "runs/models/onnx_terminal_hardtanh_suite_v1/hardtanh_vec_flatten_b128_2x4x8.onnx",
+      "mapper_arch": "npu/arch/examples/minimal_terminal_vecop_direct_output.yml",
+      "perf_config": "npu/sim/perf/example_config_fp16_cpp.json"
+    }
+  ],
+  "architecture_points": [
+    {
+      "arch_id": "fp16_nm1_hardtanhproxy",
+      "rtlgen_config": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_hardtanhproxy/config_nm1_hardtanhproxy.json",
+      "synth_design_dir": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_hardtanhproxy",
+      "sweep_file": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_hardtanhproxy/sweep_proxy_firstpass.json",
+      "physical_select": {
+        "tag_prefix": "npu_fp16_nm1_hardtanhproxy"
+      }
+    }
+  ],
+  "outputs": {
+    "report_md": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardtanh_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_fused_r1/report.md",
+    "results_csv": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardtanh_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_fused_r1/results.csv",
+    "campaign_dir": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardtanh_suite_fused_nm1_v1__l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_fused_r1"
+  }
+}
