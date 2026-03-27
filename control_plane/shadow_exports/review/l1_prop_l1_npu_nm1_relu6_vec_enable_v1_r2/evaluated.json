@@ -1,0 +1,110 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm1_relu6cmp/sweep_hier_firstpass.json"
+      ],
+      "configs": [
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm1_relu6cmp/config_nm1_relu6.json"
+      ],
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": [
+        "third_party/nlohmann_json",
+        "third_party/cacti"
+      ]
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && cmake -S . -B build && cmake --build build --target rtlgen",
+        "name": "build_generator"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen.py --config runs/designs/npu_blocks/npu_fp16_cpp_nm1_relu6cmp/config_nm1_relu6.json --out runs/designs/npu_blocks/npu_fp16_cpp_nm1_relu6cmp/verilog",
+        "name": "generate_block_rtl"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/npu_fp16_cpp_nm1_relu6cmp --platform nangate45 --top npu_top --sweep runs/designs/npu_blocks/npu_fp16_cpp_nm1_relu6cmp/sweep_hier_firstpass.json --make_target 1_1_yosys_canonicalize --skip_existing",
+        "name": "run_block_sweep"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "objective": "terminal_relu6_full_top_hier_prefilter",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+      "Committed outputs stay lightweight (metrics.csv and runs/index.csv only)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_relu6cmp/metrics.csv",
+      "runs/index.csv"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Integrated nm1 ReLU6 full-top hierarchy prefilter",
+  "result": {
+    "branch": "eval/l1_prop_l1_npu_nm1_relu6_vec_enable_v1_r2/s20260327t063757z",
+    "completed_utc": "2026-03-27T06:36:47.624414Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "ed94bd15ec25",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260327t063757z][host:ed94bd15ec25][item:l1_prop_l1_npu_nm1_relu6_vec_enable_v1_r2]",
+    "metrics_rows": [
+      {
+        "tag": "npu_fp16_nm1_relu6cmp_hier_firstpass",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "afe69bd5",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_relu6cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_relu6cmp/work/afe69bd5/result.json"
+      }
+    ],
+    "queue_item_id": "l1_prop_l1_npu_nm1_relu6_vec_enable_v1_r2",
+    "session_id": "s20260327t063757z",
+    "status": "ok",
+    "summary": "5/5 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_prop_l1_npu_nm1_relu6_vec_enable_v1_r2/s20260327t063757z",
+    "pr_title": "eval: run integrated nm1 relu6 full-top hierarchy prefilter",
+    "checklist": [
+      "Commit only lightweight metrics and regenerated runs/index.csv",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "ed94bd15ec25",
+      "session_id": "s20260327t063757z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_prop_l1_npu_nm1_relu6_vec_enable_v1_r2"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_prop_l1_npu_nm1_relu6_vec_enable_v1_r2",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-03-27T06:35:36.627084Z",
+  "requested_by": "control_plane",
+  "developer_loop": {
+    "evaluation": {
+      "mode": "synth_prefilter"
+    },
+    "abstraction": {
+      "layer": "architecture_block"
+    },
+    "proposal_id": "prop_l1_npu_nm1_relu6_vec_enable_v1",
+    "proposal_path": "docs/developer_loop/prop_l1_npu_nm1_relu6_vec_enable_v1"
+  }
+}
