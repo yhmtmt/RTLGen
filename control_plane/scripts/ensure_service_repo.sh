@@ -10,11 +10,18 @@ if [[ "${SERVICE_REPO_ROOT}" == "${REPO_ROOT}" ]]; then
   exit 0
 fi
 
+git -C "${REPO_ROOT}" worktree prune
+
 if git -C "${SERVICE_REPO_ROOT}" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   exit 0
 fi
 
 mkdir -p "$(dirname "${SERVICE_REPO_ROOT}")"
+
+if git -C "${REPO_ROOT}" worktree list --porcelain | grep -Fx "worktree ${SERVICE_REPO_ROOT}" >/dev/null 2>&1; then
+  git -C "${REPO_ROOT}" worktree remove --force "${SERVICE_REPO_ROOT}" >/dev/null 2>&1 || true
+  git -C "${REPO_ROOT}" worktree prune
+fi
 
 if [[ -e "${SERVICE_REPO_ROOT}" ]]; then
   if [[ -d "${SERVICE_REPO_ROOT}" ]] && [[ -z "$(ls -A "${SERVICE_REPO_ROOT}" 2>/dev/null)" ]]; then
