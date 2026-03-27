@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_mapper_terminal_hardtanh_direct_output_v1",
-  "source_commit": "d5c6a38b10cd64d2f6cd3264379cb4b0bb82220a",
+  "source_commit": "241d57aeb5b7e3af89e29e1468caa0c1201527bb",
   "requested_items": [
     {
       "item_id": "l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r1",
@@ -23,14 +23,17 @@
       "objective": "terminal_hardtanh_direct_output_pair",
       "evaluation_mode": "paired_comparison",
       "abstraction_layer": "full_architecture",
-      "status": "not_queued",
+      "status": "merged",
       "paired_baseline_item_id": "l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r1",
       "depends_on_item_ids": [
         "l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r1"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
-      "notes": "Queue only after the baseline item is merged and materialized."
+      "notes": "Queue only after the baseline item is merged and materialized. Merged via PR #114 and merge ac01e49608698c0ab6b3a045563ce53d9c919677 at 2026-03-27T03:10:07.849387Z.",
+      "merged_pr_number": 114,
+      "merge_commit": "ac01e49608698c0ab6b3a045563ce53d9c919677",
+      "merged_utc": "2026-03-27T03:10:07.849387Z"
     }
   ]
 }

@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_mapper_terminal_hardtanh_direct_output_v1",
-  "decision": "iterate",
-  "pr_number": 113,
-  "merge_commit": "0621d5ab89ff360f49db045815f31ee8d9699fbf",
-  "merged_utc": "2026-03-26T12:24:10.078639Z"
+  "decision": "promote",
+  "pr_number": 114,
+  "merge_commit": "ac01e49608698c0ab6b3a045563ce53d9c919677",
+  "merged_utc": "2026-03-27T03:10:07.849387Z"
 }

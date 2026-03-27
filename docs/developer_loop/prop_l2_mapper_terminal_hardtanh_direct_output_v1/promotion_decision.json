@@ -1,15 +1,15 @@
 {
   "proposal_id": "prop_l2_mapper_terminal_hardtanh_direct_output_v1",
-  "candidate_id": "l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r1",
-  "decision": "iterate",
-  "reason": "Accepted measurement-only baseline evidence was merged; proposal judgment remains deferred until the paired comparison is reviewed.",
+  "candidate_id": "l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_fused_r1",
+  "decision": "promote",
+  "reason": "Focused comparison improved latency and/or energy without regressing matched rows.",
   "evidence_refs": [
-    "item:l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r1",
-    "run:l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r1_run_b6e0446d16f5144a",
-    "artifact:control_plane/shadow_exports/l2_decisions/l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r1.json",
-    "pr:#113",
-    "https://github.com/yhmtmt/RTLGen/pull/113"
+    "item:l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_fused_r1",
+    "run:l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_fused_r1_run_5cc6e59482654b6b",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_fused_r1.json",
+    "pr:#114",
+    "https://github.com/yhmtmt/RTLGen/pull/114"
   ],
-  "next_action": "queue the paired comparison item",
+  "next_action": "close the proposal as promoted",
   "requires_human_approval": false
 }
