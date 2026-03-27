@@ -188,7 +188,7 @@ def _developer_loop_abstraction_layer(repo_root: Path, work_item: WorkItem) -> s
     return ""
 
 
-def _effective_evaluation_record(*, work_item: WorkItem, best_row: dict[str, Any]) -> dict[str, Any]:
+def _effective_evaluation_record(*, repo_root: Path, work_item: WorkItem, best_row: dict[str, Any]) -> dict[str, Any]:
     payload = dict(work_item.task_request.request_payload or {})
     developer_loop = payload.get("developer_loop") if isinstance(payload.get("developer_loop"), dict) else {}
     evaluation = developer_loop.get("evaluation") if isinstance(developer_loop.get("evaluation"), dict) else {}
@@ -327,7 +327,7 @@ def consume_l1_result(session: Session, request: Layer1ConsumeRequest) -> Layer1
         best_row = _best_metrics_row(repo_root=repo_root, metrics_csv=metrics_csv)
         if best_row is None:
             continue
-        row_evaluation = _effective_evaluation_record(work_item=work_item, best_row=best_row)
+        row_evaluation = _effective_evaluation_record(repo_root=repo_root, work_item=work_item, best_row=best_row)
         if evaluation_record is None:
             evaluation_record = row_evaluation
         proposals.append(
