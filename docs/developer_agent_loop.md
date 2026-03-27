@@ -45,6 +45,7 @@ Notebook developer agents:
 Evaluator desktop:
 - consumes queued work
 - executes deterministic evaluation tasks
+- is the sole node that runs worker/completion/finalization/submission services
 - does not invent new designs or policies
 
 ## Design Principle
@@ -54,7 +55,8 @@ Keep execution on the evaluator.
 
 In practice:
 - creative work stays notebook-local
-- evaluation work goes through the control plane
+- evaluation work goes through the evaluator-hosted control plane
+- the notebook/developer container must not run competing worker or completion services
 - Git remains the reviewed evidence boundary
 
 ## Session Start

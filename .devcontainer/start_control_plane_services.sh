@@ -10,11 +10,13 @@ case "${ROLE}" in
   server)
     export RTLCP_DATABASE_URL="${RTLCP_DATABASE_URL:-postgresql+psycopg://rtlgen:rtlgen@localhost:5432/rtlgen_control_plane}"
     echo "Skipping local PostgreSQL startup for server role"
+    echo "Developer/server role is not an execution node; worker/completion/api stay on evaluator"
     echo "Skipping completion loop autostart for server role"
     ;;
   evaluator)
     export RTLCP_DATABASE_URL="${RTLCP_DATABASE_URL:-postgresql+psycopg://rtlgen:rtlgen@localhost:5432/rtlgen_control_plane}"
     /workspaces/RTLGen/.devcontainer/start_postgres.sh
+    echo "Evaluator role owns worker/completion/finalization services for the internal lane"
     if [[ "${AUTOSTART_WORKER:-1}" == "1" ]]; then
       /workspaces/RTLGen/.devcontainer/control_plane_service_ctl.sh start worker
     else

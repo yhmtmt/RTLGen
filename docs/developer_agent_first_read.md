@@ -208,6 +208,15 @@ Reason:
 
 Only pull them in when directly relevant to the current candidate.
 
+## Service Ownership Reminder
+
+Notebook-side developer agents must treat service ownership as fixed context:
+- evaluator container: sole worker/completion/finalization/submission node
+- developer/notebook container: planning, coding, DB inspection, review, and queue insertion only
+
+Do not start or restart the completion loop or worker daemon from the developer container during normal operation.
+If local debugging temporarily starts one, stop it before continuing.
+
 ## Session Startup Checklist
 
 Before the first code change, confirm:

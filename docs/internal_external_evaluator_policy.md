@@ -51,6 +51,20 @@ Current operator documents:
 - `notes/evaluation_agent_guidance.md`
 - `runs/eval_queue/README.md`
 
+## Service Ownership Rule
+
+For the current internal trusted lane, service ownership is single-node by policy:
+- the evaluator container is the only node allowed to run the worker daemon, completion loop, GitHub poller, auto-finalizer, and review PR submission path,
+- the notebook/developer container must not run those background services, even if it has the same repo checkout and credentials,
+- the notebook/developer container may inspect DB state, edit code, review PRs, and queue work, but it is not an execution or submission node.
+
+Reason:
+- running more than one completion/submission node creates duplicate or racing publication, reconcile, and finalization behavior,
+- role separation is part of the internal-lane contract, not just an operational convenience.
+
+Operational consequence:
+- if a developer container accidentally starts `run_completion_loop.sh` or the worker daemon, stop it immediately and leave the evaluator as the sole live service node.
+
 ## Internal Evaluator Lane
 
 ### Intended use
