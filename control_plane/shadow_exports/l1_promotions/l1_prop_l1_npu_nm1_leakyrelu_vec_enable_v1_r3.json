@@ -1,0 +1,51 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-03-27T06:49:16.889411Z",
+  "item_id": "l1_prop_l1_npu_nm1_leakyrelu_vec_enable_v1_r3",
+  "run_key": "l1_prop_l1_npu_nm1_leakyrelu_vec_enable_v1_r3_run_53f1c172071b8e8a",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "adf9e953611dfe45a4dd9e78e5e46aa8cbe97ff4",
+  "objective": "terminal_leakyrelu_full_top_hier_prefilter",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_leakyrelucmp/sweep_hier_firstpass.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_leakyrelucmp/config_nm1_leakyrelu.json"
+    ],
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": [
+      "third_party/nlohmann_json",
+      "third_party/cacti"
+    ]
+  },
+  "proposal_count": 1,
+  "evaluation_record": {
+    "evaluation_mode": "synth_prefilter",
+    "abstraction_layer": "architecture_block",
+    "result_kind": "synth_prefilter",
+    "physical_metrics_present": false,
+    "summary": "Synth-stage prefilter passed at `1_1_yosys_canonicalize`; no physical metrics are recorded yet."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_leakyrelucmp/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "synth_prefilter",
+        "param_hash": "ec421a27",
+        "tag": "npu_fp16_nm1_leakyrelucmp_hier_firstpass",
+        "result_path": "/orfs/flow/results/nangate45/npu_fp16_cpp_nm1_leakyrelucmp/nm1_leakyrelucmp_hier_firstpass/1_1_yosys_canonicalize.rtlil",
+        "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_leakyrelucmp/work/ec421a27/result.json"
+      },
+      "selection_reason": "first status=ok synth-stage prefilter row; no physical metrics are recorded yet"
+    }
+  ]
+}
