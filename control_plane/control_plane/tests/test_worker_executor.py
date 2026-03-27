@@ -20,7 +20,7 @@ from control_plane.models.work_items import WorkItem
 from control_plane.models.worker_leases import WorkerLease
 from control_plane.services.run_service import request_run_cancel
 from control_plane.services.worker_service import run_worker
-from control_plane.workers.checkout import cleanup_checkout, prepare_checkout
+from control_plane.workers.checkout import cleanup_checkout, prepare_checkout, _materialize_missing_submodules
 from control_plane.workers.executor import WorkerConfig, _materialize_generated_inputs
 
 
@@ -876,6 +876,38 @@ def test_prepare_checkout_materializes_missing_submodules_only() -> None:
         assert submodule_calls[0][-1] == "third_party/cacti"
 
 
+
+
+def test_prepare_checkout_retries_submodule_materialization() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        checkout_root = Path(td) / "checkout"
+        (checkout_root / ".gitmodules").write_text(
+            '[submodule "cacti"]\n'
+            '  path = third_party/cacti\n'
+            '  url = https://example.invalid/cacti.git\n',
+            encoding="utf-8",
+        )
+
+        calls: list[tuple[str, ...]] = []
+        submodule_attempts = {"count": 0}
+
+        def fake_run(args, check=False, capture_output=False, text=False, **kwargs):
+            calls.append(tuple(args))
+            if args[:4] == ("git", "-C", str(checkout_root), "submodule"):
+                submodule_attempts["count"] += 1
+                if submodule_attempts["count"] == 1:
+                    raise subprocess.CalledProcessError(returncode=1, cmd=args, stderr="temporary submodule lock")
+            return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+
+        with mock.patch("control_plane.workers.checkout.subprocess.run", side_effect=fake_run):
+            materialized = _materialize_missing_submodules(
+                checkout_root,
+                required_submodules=["third_party/cacti"],
+            )
+
+        assert materialized == ("third_party/cacti",)
+        submodule_calls = [args for args in calls if args[:4] == ("git", "-C", str(checkout_root), "submodule")]
+        assert len(submodule_calls) == 2
 def test_prepare_checkout_skips_submodules_when_not_requested() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

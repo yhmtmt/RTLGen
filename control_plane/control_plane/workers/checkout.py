@@ -8,6 +8,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import shutil
+import time
 
 
 class CheckoutError(RuntimeError):
@@ -79,12 +80,25 @@ def _materialize_missing_submodules(
             missing.append(rel)
     if not missing:
         return ()
-    subprocess.run(
-        ["git", "-C", str(checkout_root), "submodule", "update", "--init", *missing],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
+    cmd = ["git", "-C", str(checkout_root), "submodule", "update", "--init", *missing]
+    attempts = 3
+    last_exc: subprocess.CalledProcessError | None = None
+    for attempt in range(1, attempts + 1):
+        try:
+            subprocess.run(
+                cmd,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            return tuple(missing)
+        except subprocess.CalledProcessError as exc:
+            last_exc = exc
+            if attempt >= attempts:
+                raise
+            time.sleep(0.2 * attempt)
+    if last_exc is not None:
+        raise last_exc
     return tuple(missing)
 
 
