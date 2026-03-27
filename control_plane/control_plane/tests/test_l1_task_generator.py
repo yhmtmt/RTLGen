@@ -229,6 +229,12 @@ def test_generate_l1_sweep_task_supports_integrated_npu_block_configs() -> None:
         repo_root = Path(td) / "repo"
         repo_root.mkdir()
         config_path, sweep_path = _write_example_block_repo(repo_root)
+        proposal_dir = repo_root / "docs" / "developer_loop" / "prop_l1_npu_nm1_sigmoid_vec_enable_v1"
+        proposal_dir.mkdir(parents=True, exist_ok=True)
+        (proposal_dir / "proposal.json").write_text(
+            json.dumps({"proposal_id": "prop_l1_npu_nm1_sigmoid_vec_enable_v1", "abstraction_layer": "architecture_block"}, indent=2) + "\n",
+            encoding="utf-8",
+        )
         engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
         create_all(engine)
 
@@ -278,6 +284,7 @@ def test_generate_l1_sweep_task_supports_integrated_npu_block_configs() -> None:
                 "--sweep runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/sweep_compare_33.json "
                 "--skip_existing"
             )
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {"layer": "architecture_block"}
 
 def test_generate_l1_sweep_task_rejects_flattened_architecture_block_sweeps() -> None:
     with tempfile.TemporaryDirectory() as td:

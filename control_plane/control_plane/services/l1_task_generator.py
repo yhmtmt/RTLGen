@@ -77,6 +77,28 @@ def _load_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _resolve_proposal_abstraction_layer(repo_root: Path, proposal_path: str | None, abstraction_layer: str | None) -> str | None:
+    layer = str(abstraction_layer or "").strip()
+    if layer:
+        return layer
+    proposal_path_text = str(proposal_path or "").strip()
+    if not proposal_path_text:
+        return None
+    proposal_file = (repo_root / proposal_path_text).resolve()
+    if proposal_file.is_dir():
+        proposal_file = proposal_file / "proposal.json"
+    elif proposal_file.name != "proposal.json":
+        proposal_file = proposal_file / "proposal.json"
+    if not proposal_file.exists():
+        return None
+    try:
+        proposal = _load_json(proposal_file)
+    except Exception:
+        return None
+    resolved = str(proposal.get("abstraction_layer", "")).strip()
+    return resolved or None
+
+
 def _resolve_source_commit(repo_root: Path, source_commit: str | None) -> str:
     resolved = str(source_commit or "").strip()
     if resolved:
@@ -432,11 +454,12 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
     sweep_path = _repo_rel(request.sweep_path, repo_root)
     _validate_architecture_block_sweep_policy(
         sweep_path=(repo_root / sweep_path).resolve(),
-        abstraction_layer=request.abstraction_layer,
+        abstraction_layer=effective_abstraction_layer,
     )
     config_paths = [_repo_rel(path, repo_root) for path in request.config_paths]
     out_root = _repo_rel(request.out_root, repo_root)
     proposal_path = _repo_rel(request.proposal_path, repo_root) if request.proposal_path else None
+    effective_abstraction_layer = _resolve_proposal_abstraction_layer(repo_root, proposal_path, request.abstraction_layer)
     source_commit = _resolve_source_commit(repo_root, request.source_commit)
 
     targets = [
@@ -491,7 +514,7 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
             evaluation_mode=request.evaluation_mode,
             make_target=request.make_target,
         ),
-        abstraction_layer=request.abstraction_layer,
+        abstraction_layer=effective_abstraction_layer,
     )
 
     existing = session.query(WorkItem).filter(WorkItem.item_id == item_id).one_or_none()

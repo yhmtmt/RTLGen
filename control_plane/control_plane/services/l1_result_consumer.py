@@ -153,12 +153,39 @@ def _developer_loop_payload(work_item: WorkItem) -> dict[str, Any]:
     return dict(developer_loop) if isinstance(developer_loop, dict) else {}
 
 
-def _developer_loop_abstraction_layer(work_item: WorkItem) -> str:
+def _load_proposal(repo_root: Path, work_item: WorkItem) -> dict[str, Any] | None:
+    developer_loop = _developer_loop_payload(work_item)
+    if not isinstance(developer_loop, dict):
+        return None
+    proposal_path_text = str(developer_loop.get("proposal_path", "")).strip()
+    if not proposal_path_text:
+        return None
+    proposal_path = _resolve_path(repo_root=repo_root, path_text=proposal_path_text)
+    if proposal_path.is_dir():
+        proposal_file = proposal_path / "proposal.json"
+    elif proposal_path.name == "proposal.json":
+        proposal_file = proposal_path
+    else:
+        proposal_file = proposal_path / "proposal.json"
+    if not proposal_file.exists():
+        return None
+    try:
+        return _load_json(proposal_file)
+    except Exception:
+        return None
+
+
+def _developer_loop_abstraction_layer(repo_root: Path, work_item: WorkItem) -> str:
     developer_loop = _developer_loop_payload(work_item)
     abstraction = developer_loop.get("abstraction")
-    if not isinstance(abstraction, dict):
-        return ""
-    return str(abstraction.get("layer", "")).strip()
+    if isinstance(abstraction, dict):
+        layer = str(abstraction.get("layer", "")).strip()
+        if layer:
+            return layer
+    proposal = _load_proposal(repo_root, work_item)
+    if isinstance(proposal, dict):
+        return str(proposal.get("abstraction_layer", "")).strip()
+    return ""
 
 
 def _effective_evaluation_record(*, work_item: WorkItem, best_row: dict[str, Any]) -> dict[str, Any]:
@@ -187,7 +214,7 @@ def _effective_evaluation_record(*, work_item: WorkItem, best_row: dict[str, Any
         summary = "Physical metrics recorded from an accepted status=ok Layer 1 row."
     return {
         "evaluation_mode": mode,
-        "abstraction_layer": _developer_loop_abstraction_layer(work_item),
+        "abstraction_layer": _developer_loop_abstraction_layer(repo_root, work_item),
         "result_kind": result_kind,
         "physical_metrics_present": has_physical_metrics,
         "summary": summary,

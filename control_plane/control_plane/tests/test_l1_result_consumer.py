@@ -202,6 +202,47 @@ def test_consume_l1_result_allows_explicit_target_path() -> None:
             assert (repo_root / "runs" / "proposals" / "l1_test_softmax.json").exists()
 
 
+def test_consume_l1_result_falls_back_to_proposal_abstraction_layer() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        proposal_dir = repo_root / "docs" / "developer_loop" / "prop_l1_npu_nm1_relu6_vec_enable_v1"
+        proposal_dir.mkdir(parents=True, exist_ok=True)
+        (proposal_dir / "proposal.json").write_text(
+            json.dumps({"proposal_id": "prop_l1_npu_nm1_relu6_vec_enable_v1", "abstraction_layer": "architecture_block"}, indent=2) + "\n",
+            encoding="utf-8",
+        )
+
+        with Session(engine) as session:
+            item_id, _run_key = _seed_succeeded_l1_sweep(session, repo_root)
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            payload = dict(work_item.task_request.request_payload or {})
+            payload["developer_loop"] = {
+                "proposal_id": "prop_l1_npu_nm1_relu6_vec_enable_v1",
+                "proposal_path": "docs/developer_loop/prop_l1_npu_nm1_relu6_vec_enable_v1",
+                "evaluation": {"mode": "measurement_only"},
+            }
+            work_item.task_request.request_payload = payload
+            session.flush()
+
+            consume_l1_result(
+                session,
+                Layer1ConsumeRequest(
+                    repo_root=str(repo_root),
+                    item_id=item_id,
+                ),
+            )
+
+            proposal_path = repo_root / "control_plane" / "shadow_exports" / "l1_promotions" / f"{item_id}.json"
+            rendered = json.loads(proposal_path.read_text(encoding="utf-8"))
+            assert rendered["evaluation_record"]["abstraction_layer"] == "architecture_block"
+
+
+
+
 def test_consume_l1_result_accepts_synth_only_metrics_row() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
