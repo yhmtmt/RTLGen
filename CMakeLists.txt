@@ -8,6 +8,7 @@ include(ExternalProject)
 option(RTLGEN_BUILD_FLOPOCO "Enable FloPoCo-backed floating-point generator support" ON)
 option(RTLGEN_USE_SYSTEM_FLOPOCO "Use an installed/provisioned FloPoCo binary before falling back to bundled sources" ON)
 option(RTLGEN_BUILD_FLOPOCO_FROM_SOURCE "Build bundled FloPoCo/PAGSuite from third_party sources" OFF)
+option(RTLGEN_USE_SYSTEM_CACTI "Use a provisioned CACTI binary before falling back to bundled sources" ON)
 option(RTLGEN_BUILD_CACTI "Build the bundled CACTI SRAM estimator" ON)
 
 # Enable testing
@@ -45,6 +46,37 @@ else()
 endif()
 set(ONNXRUNTIME_DIR $ENV{ONNXRUNTIME_DIR})
 
+set(NLOHMANN_JSON_ROOT "" CACHE PATH "nlohmann/json provisioned root")
+if(NOT NLOHMANN_JSON_ROOT)
+    if(DEFINED ENV{RTLGEN_NLOHMANN_JSON_ROOT} AND NOT "$ENV{RTLGEN_NLOHMANN_JSON_ROOT}" STREQUAL "")
+        set(NLOHMANN_JSON_ROOT "$ENV{RTLGEN_NLOHMANN_JSON_ROOT}")
+    elseif(EXISTS "${PROJECT_SOURCE_DIR}/third_party/nlohmann_json")
+        set(NLOHMANN_JSON_ROOT "${PROJECT_SOURCE_DIR}/third_party/nlohmann_json")
+    endif()
+endif()
+find_path(NLOHMANN_JSON_INCLUDE_DIR
+    NAMES nlohmann/json.hpp
+    HINTS ${NLOHMANN_JSON_ROOT} /usr/local /usr
+    PATH_SUFFIXES include
+)
+if(NOT NLOHMANN_JSON_INCLUDE_DIR)
+    message(FATAL_ERROR "nlohmann/json headers not found. Set RTLGEN_NLOHMANN_JSON_ROOT or populate third_party/nlohmann_json.")
+endif()
+
+set(CACTI_ROOT "" CACHE PATH "CACTI provisioned root")
+if(NOT CACTI_ROOT)
+    if(DEFINED ENV{RTLGEN_CACTI_ROOT} AND NOT "$ENV{RTLGEN_CACTI_ROOT}" STREQUAL "")
+        set(CACTI_ROOT "$ENV{RTLGEN_CACTI_ROOT}")
+    elseif(EXISTS "${PROJECT_SOURCE_DIR}/third_party/cacti")
+        set(CACTI_ROOT "${PROJECT_SOURCE_DIR}/third_party/cacti")
+    endif()
+endif()
+find_program(CACTI_SYSTEM_BIN
+    NAMES cacti
+    HINTS ${CACTI_ROOT} /usr/local /usr
+    PATH_SUFFIXES bin
+)
+
 set(CONSTANT_MULTIPLICATION_SOURCES
     src/algorithms/mcm.cpp
     src/algorithms/mcm_algorithms.cpp
@@ -63,7 +95,7 @@ target_link_libraries(constant_multiplication PUBLIC ortools)
 
 # Add the main executable
 add_executable(rtlgen apps/rtlgen_main.cpp src/rtlgen/multiplier.cpp src/rtlgen/adder.cpp src/rtlgen/config.cpp src/rtlgen/rtl_operations.cpp)
-target_include_directories(rtlgen PUBLIC ${ORTOOLS_DIR}/include ${PROJECT_SOURCE_DIR}/third_party/nlohmann_json/include ${ONNXRUNTIME_DIR}/include ${PROJECT_SOURCE_DIR}/src/rtlgen ${PROJECT_SOURCE_DIR}/src/algorithms)
+target_include_directories(rtlgen PUBLIC ${ORTOOLS_DIR}/include ${NLOHMANN_JSON_INCLUDE_DIR} ${ONNXRUNTIME_DIR}/include ${PROJECT_SOURCE_DIR}/src/rtlgen ${PROJECT_SOURCE_DIR}/src/algorithms)
 target_link_directories(rtlgen PUBLIC ${ORTOOLS_LIB_DIR} ${ONNXRUNTIME_DIR}/lib)
 target_link_libraries(rtlgen constant_multiplication ortools onnxruntime)
 
@@ -71,24 +103,35 @@ set (CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR})
 install(TARGETS rtlgen DESTINATION bin)
 
 if(RTLGEN_BUILD_CACTI)
-    set(CACTI_SOURCE_DIR ${PROJECT_SOURCE_DIR}/third_party/cacti)
-    ExternalProject_Add(cacti
-        SOURCE_DIR ${CACTI_SOURCE_DIR}
-        CONFIGURE_COMMAND ""
-        BUILD_COMMAND ${CMAKE_COMMAND} -E env make -C <SOURCE_DIR>
-        INSTALL_COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_SOURCE_DIR}/bin
-                      COMMAND ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/cacti ${PROJECT_SOURCE_DIR}/bin/cacti
-                      COMMAND ${CMAKE_COMMAND} -E remove -f <SOURCE_DIR>/cacti <SOURCE_DIR>/cache.cfg.out
-                      COMMAND ${CMAKE_COMMAND} -E remove_directory <SOURCE_DIR>/obj_dbg
-        BUILD_IN_SOURCE 1
-    )
+    if(RTLGEN_USE_SYSTEM_CACTI AND CACTI_SYSTEM_BIN)
+        add_custom_target(cacti_stage
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_SOURCE_DIR}/bin
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CACTI_SYSTEM_BIN} ${PROJECT_SOURCE_DIR}/bin/cacti
+            COMMENT "Staging provisioned CACTI from ${CACTI_SYSTEM_BIN}"
+        )
+        add_custom_target(cacti_tool ALL DEPENDS cacti_stage)
+    elseif(EXISTS "${PROJECT_SOURCE_DIR}/third_party/cacti/Makefile")
+        set(CACTI_SOURCE_DIR ${PROJECT_SOURCE_DIR}/third_party/cacti)
+        ExternalProject_Add(cacti
+            SOURCE_DIR ${CACTI_SOURCE_DIR}
+            CONFIGURE_COMMAND ""
+            BUILD_COMMAND ${CMAKE_COMMAND} -E env make -C <SOURCE_DIR>
+            INSTALL_COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_SOURCE_DIR}/bin
+                          COMMAND ${CMAKE_COMMAND} -E copy <SOURCE_DIR>/cacti ${PROJECT_SOURCE_DIR}/bin/cacti
+                          COMMAND ${CMAKE_COMMAND} -E remove -f <SOURCE_DIR>/cacti <SOURCE_DIR>/cache.cfg.out
+                          COMMAND ${CMAKE_COMMAND} -E remove_directory <SOURCE_DIR>/obj_dbg
+            BUILD_IN_SOURCE 1
+        )
 
-    add_custom_target(cacti_tool ALL DEPENDS cacti)
+        add_custom_target(cacti_tool ALL DEPENDS cacti)
+    else()
+        message(WARNING "CACTI build skipped: no provisioned CACTI binary found and third_party/cacti is not populated.")
+    endif()
 endif()
 
 # Add the test executable
 add_executable(test_boolexp tests/test_boolexp.cpp src/rtlgen/multiplier.cpp src/rtlgen/adder.cpp)
-target_include_directories(test_boolexp PUBLIC ${ORTOOLS_DIR}/include ${PROJECT_SOURCE_DIR}/third_party/nlohmann_json/include ${PROJECT_SOURCE_DIR}/src/rtlgen)
+target_include_directories(test_boolexp PUBLIC ${ORTOOLS_DIR}/include ${NLOHMANN_JSON_INCLUDE_DIR} ${PROJECT_SOURCE_DIR}/src/rtlgen)
 target_link_directories(test_boolexp PUBLIC ${ORTOOLS_LIB_DIR})
 target_link_libraries(test_boolexp ${GTEST_LIBRARIES} GTest::Main pthread ortools)
 
@@ -97,12 +140,12 @@ add_test(NAME BoolExpTest COMMAND test_boolexp)
 
 # Add the test executable for adder
 add_executable(test_adder tests/test_adder.cpp src/rtlgen/adder.cpp)
-target_include_directories(test_adder PUBLIC ${ORTOOLS_DIR}/include ${PROJECT_SOURCE_DIR}/third_party/nlohmann_json/include ${PROJECT_SOURCE_DIR}/src/rtlgen)
+target_include_directories(test_adder PUBLIC ${ORTOOLS_DIR}/include ${NLOHMANN_JSON_INCLUDE_DIR} ${PROJECT_SOURCE_DIR}/src/rtlgen)
 target_link_directories(test_adder PUBLIC ${ORTOOLS_LIB_DIR})
 target_link_libraries(test_adder ${GTEST_LIBRARIES} GTest::Main pthread ortools)
 
 add_executable(test_multiplier tests/test_multiplier.cpp src/rtlgen/multiplier.cpp src/rtlgen/adder.cpp)
-target_include_directories(test_multiplier PUBLIC ${ORTOOLS_DIR}/include ${PROJECT_SOURCE_DIR}/third_party/nlohmann_json/include ${PROJECT_SOURCE_DIR}/src/rtlgen)
+target_include_directories(test_multiplier PUBLIC ${ORTOOLS_DIR}/include ${NLOHMANN_JSON_INCLUDE_DIR} ${PROJECT_SOURCE_DIR}/src/rtlgen)
 target_link_directories(test_multiplier PUBLIC ${ORTOOLS_LIB_DIR})
 target_link_libraries(test_multiplier ${GTEST_LIBRARIES} GTest::Main pthread ortools)
 
@@ -110,7 +153,7 @@ add_test(NAME test_adder COMMAND test_adder)
 add_test(NAME test_multiplier COMMAND test_multiplier)
 
 add_executable(test_onnx tests/test_onnx.cpp src/rtlgen/config.cpp)
-target_include_directories(test_onnx PUBLIC ${ORTOOLS_DIR}/include ${PROJECT_SOURCE_DIR}/third_party/nlohmann_json/include ${ONNXRUNTIME_DIR}/include ${PROJECT_SOURCE_DIR}/src/rtlgen)
+target_include_directories(test_onnx PUBLIC ${ORTOOLS_DIR}/include ${NLOHMANN_JSON_INCLUDE_DIR} ${ONNXRUNTIME_DIR}/include ${PROJECT_SOURCE_DIR}/src/rtlgen)
 target_link_directories(test_onnx PUBLIC ${ORTOOLS_LIB_DIR}  ${ONNXRUNTIME_DIR}/lib)
 target_compile_definitions(test_onnx PRIVATE TEST_ONNX_MODEL_PATH=\"${PROJECT_SOURCE_DIR}/tests/fixtures/test_model.onnx\")
 target_link_libraries(test_onnx ${GTEST_LIBRARIES} GTest::Main pthread onnxruntime)

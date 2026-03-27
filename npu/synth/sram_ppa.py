@@ -2,6 +2,7 @@
 import argparse
 import csv
 import json
+import os
 import re
 import subprocess
 import sys
@@ -150,6 +151,8 @@ def run_cacti(cacti_bin: Path, template: Path, instance: dict, tech_node_nm: int
 
 
 def main():
+    default_cacti_root = Path(os.environ.get("RTLGEN_CACTI_ROOT", "third_party/cacti"))
+    default_cacti_bin = os.environ.get("RTLGEN_CACTI_BIN", "").strip()
     parser = argparse.ArgumentParser(
         description="Estimate SRAM PPA metrics using CACTI (1R1W)."
     )
@@ -164,13 +167,13 @@ def main():
     parser.add_argument(
         "--cacti-dir",
         type=Path,
-        default=Path("third_party/cacti"),
-        help="CACTI submodule directory",
+        default=default_cacti_root,
+        help="CACTI root directory",
     )
     parser.add_argument(
         "--cacti-bin",
         type=Path,
-        default=None,
+        default=Path(default_cacti_bin) if default_cacti_bin else None,
         help="Path to CACTI binary (defaults to <cacti-dir>/cacti)",
     )
     parser.add_argument(

@@ -79,6 +79,16 @@ RUN git clone https://github.com/ivmai/cudd.git /tmp/cudd && \
     
 RUN pip3 install PyYAML
 
+# Provision stable evaluator dependencies once in the image so worker checkouts
+# do not need to materialize these submodules per job.
+RUN mkdir -p /opt/rtlcp-deps && \
+    git clone https://github.com/nlohmann/json /opt/rtlcp-deps/nlohmann_json && \
+    git -C /opt/rtlcp-deps/nlohmann_json checkout 11a835df85677002a8aadc5b4e945684c5b7f68b && \
+    git clone https://github.com/HewlettPackard/cacti.git /opt/rtlcp-deps/cacti && \
+    git -C /opt/rtlcp-deps/cacti checkout 1ffd8dfb10303d306ecd8d215320aea07651e878 && \
+    make -C /opt/rtlcp-deps/cacti -j$(nproc) && \
+    ln -sf /opt/rtlcp-deps/cacti/cacti /usr/local/bin/cacti
+
 # Install SystemC 2.3.0a for NVDLA VP
 RUN wget -O /tmp/systemc-2.3.0a.tar.gz https://www.accellera.org/images/downloads/standards/systemc/systemc-2.3.0a.tar.gz && \
     tar -xzf /tmp/systemc-2.3.0a.tar.gz -C /tmp && \
@@ -148,6 +158,8 @@ ENV PATH="/oss-cad-suite/bin:/orfs/tools/AutoTuner/autotuner_env/bin:/workspaces
 ENV OPENROAD_EXE="/usr/bin/openroad"
 ENV YOSYS_EXE="/oss-cad-suite/bin/yosys"
 ENV LD_LIBRARY_PATH="/usr/bin/:${PATH}"
+ENV RTLGEN_CACTI_ROOT="/opt/rtlcp-deps/cacti"
+ENV RTLGEN_NLOHMANN_JSON_ROOT="/opt/rtlcp-deps/nlohmann_json"
 
 # Install ONNX Runtime
 # Set ONNX_VERSION to the desired version, e.g., 1.23.1

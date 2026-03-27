@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import timezone
 from hashlib import sha256
 import json
+import os
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -97,6 +98,26 @@ def _resolve_proposal_abstraction_layer(repo_root: Path, proposal_path: str | No
         return None
     resolved = str(proposal.get("abstraction_layer", "")).strip()
     return resolved or None
+
+
+def _image_provided_l1_runtime_deps_available() -> bool:
+    cacti_root = Path(os.environ.get("RTLGEN_CACTI_ROOT", "/opt/rtlcp-deps/cacti"))
+    json_root = Path(os.environ.get("RTLGEN_NLOHMANN_JSON_ROOT", "/opt/rtlcp-deps/nlohmann_json"))
+    cacti_bin = cacti_root / "cacti"
+    json_candidates = [
+        json_root / "include" / "nlohmann" / "json.hpp",
+        json_root / "nlohmann" / "json.hpp",
+    ]
+    return cacti_bin.exists() and any(path.exists() for path in json_candidates)
+
+
+def _required_l1_runtime_submodules() -> list[str]:
+    if _image_provided_l1_runtime_deps_available():
+        return []
+    return [
+        "third_party/nlohmann_json",
+        "third_party/cacti",
+    ]
 
 
 def _resolve_source_commit(repo_root: Path, source_commit: str | None) -> str:
@@ -390,10 +411,7 @@ def _build_payload(
                 "sweeps": [sweep_path],
                 "macro_manifests": [],
                 "candidate_manifests": [],
-                "required_submodules": [
-                    "third_party/nlohmann_json",
-                    "third_party/cacti",
-                ],
+                "required_submodules": _required_l1_runtime_submodules(),
             },
             "commands": [
                 *command_manifest,

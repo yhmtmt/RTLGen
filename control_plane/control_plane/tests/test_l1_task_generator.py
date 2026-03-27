@@ -132,19 +132,23 @@ def test_generate_l1_sweep_task_creates_ready_work_item() -> None:
         create_all(engine)
 
         with Session(engine) as session:
-            result = generate_l1_sweep_task(
-                session,
-                Layer1SweepGenerateRequest(
-                    repo_root=str(repo_root),
-                    sweep_path=sweep_path,
-                    config_paths=[config_path],
-                    platform="nangate45",
-                    out_root="runs/designs/activations",
-                    requested_by="@tester",
-                    source_commit="abc123",
-                    abstraction_layer="circuit_block",
-                ),
-            )
+            with patch(
+                "control_plane.services.l1_task_generator._image_provided_l1_runtime_deps_available",
+                return_value=False,
+            ):
+                result = generate_l1_sweep_task(
+                    session,
+                    Layer1SweepGenerateRequest(
+                        repo_root=str(repo_root),
+                        sweep_path=sweep_path,
+                        config_paths=[config_path],
+                        platform="nangate45",
+                        out_root="runs/designs/activations",
+                        requested_by="@tester",
+                        source_commit="abc123",
+                        abstraction_layer="circuit_block",
+                    ),
+                )
 
             work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
             assert result.status == "applied"
@@ -179,6 +183,40 @@ def test_generate_l1_sweep_task_creates_ready_work_item() -> None:
             ]
             assert payload["developer_loop"]["abstraction"] == {"layer": "circuit_block"}
             assert payload["handoff"]["pr_body_fields"]["queue_item_id"] == result.item_id
+
+
+def test_generate_l1_sweep_task_omits_runtime_submodules_when_image_provides_deps() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            with patch(
+                "control_plane.services.l1_task_generator._image_provided_l1_runtime_deps_available",
+                return_value=True,
+            ):
+                result = generate_l1_sweep_task(
+                    session,
+                    Layer1SweepGenerateRequest(
+                        repo_root=str(repo_root),
+                        sweep_path=sweep_path,
+                        config_paths=[config_path],
+                        platform="nangate45",
+                        out_root="runs/designs/activations",
+                        item_id="l1_demo_softmax_image_deps",
+                        title="Layer1 demo image deps",
+                        requested_by="@tester",
+                    ),
+                )
+
+            assert result.status == "applied"
+            work_item = session.get(WorkItem, result.work_item_id)
+            assert work_item is not None
+            payload = work_item.task_request.request_payload
+            assert payload["task"]["inputs"]["required_submodules"] == []
 
 
 def test_generate_l1_sweep_task_upserts_existing_item() -> None:
