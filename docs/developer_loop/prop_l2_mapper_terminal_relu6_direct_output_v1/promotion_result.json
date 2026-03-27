@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_mapper_terminal_relu6_direct_output_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": null,
-  "merged_utc": null
+  "decision": "iterate",
+  "pr_number": 119,
+  "merge_commit": "b4d71bb669028a046158e649843a76e73e2c2203",
+  "merged_utc": "2026-03-27T06:59:29.426632Z"
 }

@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_mapper_terminal_relu6_direct_output_v1",
-  "source_commit": "c64cd717fc5fda3a4c948bbcc2b0a7c9f4a50691",
+  "source_commit": "c64cd71106634aaedca77437018a986e5728822f",
   "requested_items": [
     {
       "item_id": "l2_prop_l2_mapper_terminal_relu6_direct_output_v1_nm1_measurement_r1",
@@ -8,11 +8,14 @@
       "objective": "terminal_relu6_baseline_measurement",
       "evaluation_mode": "measurement_only",
       "abstraction_layer": "full_architecture",
-      "status": "queued",
-      "notes": "First bounded ReLU6 reference collection on fixed nm1 using the accepted reduced architecture-block source.",
+      "status": "merged",
+      "notes": "First bounded ReLU6 reference collection on fixed nm1 using the accepted reduced architecture-block source. Merged via PR #119 and merge b4d71bb669028a046158e649843a76e73e2c2203 at 2026-03-27T06:59:29.426632Z.",
       "status_reason": "Inserted into the evaluator PostgreSQL queue after local validation passed.",
       "task_request_id": "8259a1f1-b9cf-43d1-8c65-e8ffb38e886e",
-      "work_item_id": "01044b50-99b8-4a2a-8dfb-74c475a6e118"
+      "work_item_id": "01044b50-99b8-4a2a-8dfb-74c475a6e118",
+      "merged_pr_number": 119,
+      "merge_commit": "b4d71bb669028a046158e649843a76e73e2c2203",
+      "merged_utc": "2026-03-27T06:59:29.426632Z"
     },
     {
       "item_id": "l2_prop_l2_mapper_terminal_relu6_direct_output_v1_nm1_fused_r1",
