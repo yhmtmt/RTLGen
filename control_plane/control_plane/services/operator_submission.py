@@ -6,7 +6,7 @@ from dataclasses import asdict, dataclass
 import json
 from pathlib import Path
 import re
-from typing import Optional
+from typing import Any, Optional
 
 from sqlalchemy.orm import Session
 
@@ -173,6 +173,68 @@ def _has_review_artifact(session: Session, *, run_id: str, kind: str | None) -> 
     return artifact is not None
 
 
+def _load_review_artifact_payload(
+    session: Session,
+    *,
+    repo_root: Path,
+    run_id: str,
+    kind: str | None,
+) -> dict[str, Any] | None:
+    if not kind:
+        return None
+    artifact = (
+        session.query(Artifact)
+        .filter(Artifact.run_id == run_id, Artifact.kind == kind)
+        .one_or_none()
+    )
+    if artifact is None:
+        return None
+    path = repo_root / str(artifact.path)
+    if not path.exists():
+        return None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
+def _validate_submission_review_payload(repo_root: Path, *, session: Session, work_item: WorkItem, run: Run) -> None:
+    required_kind = _required_review_artifact_kind(work_item.task_type)
+    payload = _load_review_artifact_payload(session, repo_root=repo_root, run_id=run.id, kind=required_kind)
+    if not isinstance(payload, dict):
+        return
+    if work_item.task_type != "l2_campaign":
+        return
+    evaluation_record = payload.get("evaluation_record")
+    proposal_assessment = payload.get("proposal_assessment")
+    if not isinstance(evaluation_record, dict):
+        return
+    evaluation_mode = str(evaluation_record.get("evaluation_mode", "")).strip()
+    comparison_role = str(evaluation_record.get("comparison_role", "")).strip()
+    if evaluation_mode != "paired_comparison" or comparison_role != "candidate":
+        return
+    abstraction_layer = str(evaluation_record.get("abstraction_layer", "")).strip()
+    if not abstraction_layer:
+        raise OperatorSubmissionError(
+            f"work item {work_item.item_id} is not eligible for submission: invalid decision_proposal payload: missing abstraction_layer"
+        )
+    if not isinstance(proposal_assessment, dict):
+        raise OperatorSubmissionError(
+            f"work item {work_item.item_id} is not eligible for submission: invalid decision_proposal payload: missing proposal_assessment"
+        )
+    baseline_item_id = str(proposal_assessment.get("baseline_item_id", "")).strip()
+    if not baseline_item_id:
+        raise OperatorSubmissionError(
+            f"work item {work_item.item_id} is not eligible for submission: invalid decision_proposal payload: missing baseline_item_id"
+        )
+    outcome = str(proposal_assessment.get("outcome", "")).strip()
+    if outcome == "unavailable":
+        raise OperatorSubmissionError(
+            f"work item {work_item.item_id} is not eligible for submission: invalid decision_proposal payload: unresolved paired baseline"
+        )
+
+
 def _check_submission_eligibility(session: Session, *, work_item: WorkItem, run: Run, force: bool) -> None:
     eligibility = assess_submission_eligibility(session, work_item=work_item, run=run)
     if force or eligibility.eligible:
@@ -247,6 +309,8 @@ def operate_submission(session: Session, request: OperatorSubmissionRequest) -> 
     repo_root = Path(request.repo_root).resolve()
     work_item, run = _resolve_run(session, request)
     _check_submission_eligibility(session, work_item=work_item, run=run, force=request.force)
+    if not request.force:
+        _validate_submission_review_payload(repo_root, session=session, work_item=work_item, run=run)
     manifest_path = _default_manifest_path(repo_root, work_item.item_id)
     reusable_manifest = _is_reusable_submission_manifest(
         session,

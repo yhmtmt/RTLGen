@@ -502,6 +502,45 @@ def test_operate_submission_blocks_missing_review_artifact_without_force() -> No
                 assert "missing decision_proposal artifact" in str(exc)
 
 
+def test_operate_submission_blocks_invalid_paired_l2_review_payload_without_force() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, run_key = _seed_l2_reviewable(session, repo_root)
+            run = session.query(Run).filter_by(run_key=run_key).one()
+            artifact = session.query(Artifact).filter_by(run_id=run.id, kind="decision_proposal").one()
+            payload = json.loads((repo_root / artifact.path).read_text(encoding="utf-8"))
+            payload["evaluation_record"] = {
+                **(payload.get("evaluation_record") or {}),
+                "evaluation_mode": "paired_comparison",
+                "comparison_role": "candidate",
+                "abstraction_layer": "",
+            }
+            payload["proposal_assessment"] = {
+                "outcome": "unavailable",
+                "baseline_item_id": "",
+            }
+            (repo_root / artifact.path).write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+            try:
+                operate_submission(
+                    session,
+                    OperatorSubmissionRequest(
+                        repo_root=str(repo_root),
+                        repo="yhmtmt/RTLGen",
+                        item_id=item_id,
+                    ),
+                )
+                assert False, "expected OperatorSubmissionError"
+            except OperatorSubmissionError as exc:
+                assert "invalid decision_proposal payload" in str(exc)
+
+
 def test_operate_submission_blocks_shadow_only_outputs_without_force() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

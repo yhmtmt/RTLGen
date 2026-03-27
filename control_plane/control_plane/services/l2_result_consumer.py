@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import timezone
 import csv
+import re
 import hashlib
 import json
 from pathlib import Path
@@ -23,6 +24,9 @@ from control_plane.models.work_items import WorkItem
 
 class Layer2ResultConsumerError(RuntimeError):
     pass
+
+
+_RETRY_SUFFIX_RE = re.compile(r"_r\d+$")
 
 
 @dataclass(frozen=True)
@@ -225,26 +229,8 @@ def _focused_model_artifact_refs(result_rows: list[dict[str, str]]) -> dict[str,
     return {"focused_model_artifacts": focused_models} if focused_models else {}
 
 
-def _load_proposal(repo_root: Path, work_item: WorkItem) -> dict[str, Any] | None:
-    developer_loop = _developer_loop_payload(work_item)
-    if not isinstance(developer_loop, dict):
-        return None
-    proposal_path_text = str(developer_loop.get("proposal_path", "")).strip()
-    if not proposal_path_text:
-        return None
-    proposal_path = _resolve_path(repo_root=repo_root, path_text=proposal_path_text)
-    if proposal_path.is_dir():
-        proposal_file = proposal_path / "proposal.json"
-    elif proposal_path.name == "proposal.json":
-        proposal_file = proposal_path
-    else:
-        proposal_file = proposal_path / "proposal.json"
-    if not proposal_file.exists():
-        return None
-    try:
-        return _load_json(proposal_file)
-    except Exception:
-        return None
+def _retry_base(item_id: str) -> str:
+    return _RETRY_SUFFIX_RE.sub("", item_id.strip())
 
 
 def _developer_loop_payload(work_item: WorkItem) -> dict[str, Any]:
@@ -253,24 +239,106 @@ def _developer_loop_payload(work_item: WorkItem) -> dict[str, Any]:
     return dict(developer_loop) if isinstance(developer_loop, dict) else {}
 
 
-def _developer_loop_comparison(work_item: WorkItem) -> dict[str, Any]:
+def _proposal_file(repo_root: Path, work_item: WorkItem) -> Path | None:
+    developer_loop = _developer_loop_payload(work_item)
+    if not isinstance(developer_loop, dict):
+        return None
+    proposal_path_text = str(developer_loop.get("proposal_path", "")).strip()
+    if not proposal_path_text:
+        return None
+    proposal_path = _resolve_path(repo_root=repo_root, path_text=proposal_path_text)
+    if proposal_path.is_dir():
+        return proposal_path / "proposal.json"
+    if proposal_path.name == "proposal.json":
+        return proposal_path
+    return proposal_path / "proposal.json"
+
+
+def _load_proposal(repo_root: Path, work_item: WorkItem) -> dict[str, Any] | None:
+    proposal_file = _proposal_file(repo_root, work_item)
+    if proposal_file is None or not proposal_file.exists():
+        return None
+    try:
+        return _load_json(proposal_file)
+    except Exception:
+        return None
+
+
+def _load_requested_item_entry(repo_root: Path, work_item: WorkItem) -> dict[str, Any] | None:
+    proposal_file = _proposal_file(repo_root, work_item)
+    if proposal_file is None:
+        return None
+    evaluation_requests_path = proposal_file.parent / "evaluation_requests.json"
+    if not evaluation_requests_path.exists():
+        return None
+    try:
+        payload = _load_json(evaluation_requests_path)
+    except Exception:
+        return None
+    requested_items = payload.get("requested_items")
+    if not isinstance(requested_items, list):
+        return None
+    for entry in requested_items:
+        if isinstance(entry, dict) and str(entry.get("item_id", "")).strip() == work_item.item_id:
+            return entry
+    work_retry_base = _retry_base(work_item.item_id)
+    retry_matches = [
+        entry
+        for entry in requested_items
+        if isinstance(entry, dict) and _retry_base(str(entry.get("item_id", "")).strip()) == work_retry_base
+    ]
+    if len(retry_matches) == 1:
+        return retry_matches[0]
+    return None
+
+
+def _requested_entry_text(repo_root: Path, work_item: WorkItem, *, key: str) -> str:
+    entry = _load_requested_item_entry(repo_root, work_item)
+    if not isinstance(entry, dict):
+        return ""
+    return str(entry.get(key, "")).strip()
+
+
+def _developer_loop_comparison(repo_root: Path, work_item: WorkItem) -> dict[str, Any]:
     developer_loop = _developer_loop_payload(work_item)
     comparison = developer_loop.get("comparison")
-    return dict(comparison) if isinstance(comparison, dict) else {}
+    result = dict(comparison) if isinstance(comparison, dict) else {}
+    if not str(result.get("paired_baseline_item_id", "")).strip():
+        fallback_baseline = _requested_entry_text(repo_root, work_item, key="paired_baseline_item_id")
+        if fallback_baseline:
+            result["paired_baseline_item_id"] = fallback_baseline
+    if not str(result.get("role", "")).strip():
+        fallback_role = _requested_entry_text(repo_root, work_item, key="comparison_role")
+        if fallback_role:
+            result["role"] = fallback_role
+    return result
 
 
-def _developer_loop_evaluation(work_item: WorkItem) -> dict[str, Any]:
+def _developer_loop_evaluation(repo_root: Path, work_item: WorkItem) -> dict[str, Any]:
     developer_loop = _developer_loop_payload(work_item)
     evaluation = developer_loop.get("evaluation")
-    return dict(evaluation) if isinstance(evaluation, dict) else {}
+    result = dict(evaluation) if isinstance(evaluation, dict) else {}
+    if not str(result.get("mode", "")).strip():
+        fallback_mode = _requested_entry_text(repo_root, work_item, key="evaluation_mode")
+        if fallback_mode:
+            result["mode"] = fallback_mode
+    return result
 
 
-def _developer_loop_abstraction_layer(work_item: WorkItem) -> str:
+def _developer_loop_abstraction_layer(repo_root: Path, work_item: WorkItem) -> str:
     developer_loop = _developer_loop_payload(work_item)
     abstraction = developer_loop.get("abstraction")
-    if not isinstance(abstraction, dict):
-        return ""
-    return str(abstraction.get("layer", "")).strip()
+    if isinstance(abstraction, dict):
+        layer = str(abstraction.get("layer", "")).strip()
+        if layer:
+            return layer
+    fallback_layer = _requested_entry_text(repo_root, work_item, key="abstraction_layer")
+    if fallback_layer:
+        return fallback_layer
+    proposal = _load_proposal(repo_root, work_item)
+    if isinstance(proposal, dict):
+        return str(proposal.get("abstraction_layer", "")).strip()
+    return ""
 
 
 def _proposal_context(work_item: WorkItem, proposal: dict[str, Any] | None) -> dict[str, Any]:
@@ -287,12 +355,12 @@ def _proposal_context(work_item: WorkItem, proposal: dict[str, Any] | None) -> d
     }
 
 
-def _effective_evaluation_mode(work_item: WorkItem) -> str:
-    evaluation = _developer_loop_evaluation(work_item)
+def _effective_evaluation_mode(repo_root: Path, work_item: WorkItem) -> str:
+    evaluation = _developer_loop_evaluation(repo_root, work_item)
     mode = str(evaluation.get("mode", "")).strip()
     if mode:
         return mode
-    comparison = _developer_loop_comparison(work_item)
+    comparison = _developer_loop_comparison(repo_root, work_item)
     role = str(comparison.get("role", "")).strip()
     mapping = {
         "refreshed_baseline": "baseline_refresh",
@@ -303,8 +371,8 @@ def _effective_evaluation_mode(work_item: WorkItem) -> str:
     return mapping.get(role, "paired_comparison" if role else "paired_comparison")
 
 
-def _effective_comparison_role(work_item: WorkItem) -> str:
-    comparison = _developer_loop_comparison(work_item)
+def _effective_comparison_role(repo_root: Path, work_item: WorkItem) -> str:
+    comparison = _developer_loop_comparison(repo_root, work_item)
     role = str(comparison.get("role", "")).strip()
     if role:
         return role
@@ -313,7 +381,7 @@ def _effective_comparison_role(work_item: WorkItem) -> str:
         "paired_comparison": "candidate",
         "broad_ranking": "ranking",
         "measurement_only": "measurement_only",
-    }.get(_effective_evaluation_mode(work_item), "standalone")
+    }.get(_effective_evaluation_mode(repo_root, work_item), "standalone")
 
 
 def _resolve_baseline_summary_from_work_item(
@@ -351,9 +419,10 @@ def _resolve_baseline_summary(
     session: Session,
     *,
     repo_root: Path,
+    work_item: WorkItem,
     proposal: dict[str, Any] | None,
-    comparison: dict[str, Any],
 ) -> tuple[str, list[dict[str, str]], str | None, dict[str, Any], dict[str, str]] | tuple[None, None, None, None, None]:
+    comparison = _developer_loop_comparison(repo_root, work_item)
     paired_baseline_item_id = str(comparison.get("paired_baseline_item_id", "")).strip()
     if paired_baseline_item_id:
         resolved = _resolve_baseline_summary_from_work_item(
@@ -481,6 +550,7 @@ def _build_evaluation_record(
     *,
     work_item: WorkItem,
     proposal: dict[str, Any] | None,
+    repo_root: Path,
     evaluation_mode: str,
     comparison_role: str,
     baseline_ref: str | None,
@@ -492,7 +562,7 @@ def _build_evaluation_record(
     context = _proposal_context(work_item, proposal)
     if not any((context.get("proposal_id"), context.get("title"), context.get("primary_question"))):
         return None
-    evaluation = _developer_loop_evaluation(work_item)
+    evaluation = _developer_loop_evaluation(repo_root, work_item)
     expected_direction = str(evaluation.get("expected_direction", "")).strip() or "unknown"
     expected_reason = str(evaluation.get("expected_reason", "")).strip()
     record = {
@@ -501,7 +571,7 @@ def _build_evaluation_record(
         "primary_question": str(context.get("primary_question", "")).strip(),
         "evaluation_mode": evaluation_mode,
         "comparison_role": comparison_role,
-        "abstraction_layer": _developer_loop_abstraction_layer(work_item),
+        "abstraction_layer": _developer_loop_abstraction_layer(repo_root, work_item),
         "expected_direction": expected_direction,
         "expected_reason": expected_reason,
         "summary": summary,
@@ -532,8 +602,8 @@ def _build_proposal_assessment(
     context = _proposal_context(work_item, proposal)
     if proposal is None and not context.get("proposal_id"):
         return None, None, {}
-    evaluation_mode = _effective_evaluation_mode(work_item)
-    comparison_role = _effective_comparison_role(work_item)
+    evaluation_mode = _effective_evaluation_mode(repo_root, work_item)
+    comparison_role = _effective_comparison_role(repo_root, work_item)
     if evaluation_mode == "measurement_only":
         summary = "This item records metrics for the requested architecture point and does not emit a proposal judgment."
         return (
@@ -541,6 +611,7 @@ def _build_proposal_assessment(
             _build_evaluation_record(
                 work_item=work_item,
                 proposal=proposal,
+                repo_root=repo_root,
                 evaluation_mode=evaluation_mode,
                 comparison_role=comparison_role,
                 baseline_ref=None,
@@ -551,12 +622,12 @@ def _build_proposal_assessment(
             ),
             {},
         )
-    comparison = _developer_loop_comparison(work_item)
+    comparison = _developer_loop_comparison(repo_root, work_item)
     baseline_ref, baseline_rows, baseline_report, assessment_meta, source_refs = _resolve_baseline_summary(
         session,
         repo_root=repo_root,
+        work_item=work_item,
         proposal=proposal,
-        comparison=comparison,
     )
     baseline_item_id = None
     if isinstance(assessment_meta, dict):
@@ -584,6 +655,7 @@ def _build_proposal_assessment(
             _build_evaluation_record(
                 work_item=work_item,
                 proposal=proposal,
+                repo_root=repo_root,
                 evaluation_mode=evaluation_mode,
                 comparison_role=comparison_role,
                 baseline_ref=None,
@@ -649,6 +721,7 @@ def _build_proposal_assessment(
         _build_evaluation_record(
             work_item=work_item,
             proposal=proposal,
+            repo_root=repo_root,
             evaluation_mode=evaluation_mode,
             comparison_role=comparison_role,
             baseline_ref=baseline_ref,
@@ -747,8 +820,8 @@ def consume_l2_result(session: Session, request: Layer2ConsumeRequest) -> Layer2
     results_rows = _load_csv(_resolve_path(repo_root=repo_root, path_text=results_rel))
     summary_best = _summary_best_row(summary_rows)
     proposal = _load_proposal(repo_root, work_item)
-    evaluation_mode = _effective_evaluation_mode(work_item)
-    comparison_role = _effective_comparison_role(work_item)
+    evaluation_mode = _effective_evaluation_mode(repo_root, work_item)
+    comparison_role = _effective_comparison_role(repo_root, work_item)
     proposal_assessment, evaluation_record, proposal_source_refs = _build_proposal_assessment(
         session=session,
         work_item=work_item,
@@ -760,6 +833,18 @@ def consume_l2_result(session: Session, request: Layer2ConsumeRequest) -> Layer2
         if proposal_assessment is None or evaluation_record is None:
             raise Layer2ResultConsumerError(
                 "paired comparison candidate did not serialize proposal assessment/evaluation record"
+            )
+        if str((proposal_assessment or {}).get("outcome", "")).strip() == "unavailable":
+            raise Layer2ResultConsumerError(
+                "paired comparison candidate baseline could not be resolved"
+            )
+        if not str((proposal_assessment or {}).get("baseline_item_id", "")).strip():
+            raise Layer2ResultConsumerError(
+                "paired comparison candidate did not serialize baseline_item_id"
+            )
+        if not str((evaluation_record or {}).get("abstraction_layer", "")).strip():
+            raise Layer2ResultConsumerError(
+                "paired comparison candidate did not serialize abstraction_layer"
             )
     focused_result_rows = _select_focused_result_rows(
         results_rows,

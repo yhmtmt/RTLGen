@@ -915,6 +915,104 @@ def test_consume_l2_result_candidate_falls_back_to_developer_loop_when_proposal_
             )
 
 
+def test_consume_l2_result_paired_comparison_recovers_baseline_and_abstraction_from_evaluation_requests() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        proposal_dir = repo_root / "docs" / "developer_loop" / "prop_l2_demo_v1"
+        _write(
+            proposal_dir / "proposal.json",
+            json.dumps(
+                {
+                    "proposal_id": "prop_l2_demo_v1",
+                    "kind": "architecture",
+                    "title": "Demo focused comparison",
+                    "direct_comparison": {
+                        "primary_question": "Does the focused candidate improve the fixed baseline?",
+                    },
+                },
+                indent=2,
+            )
+            + "\n",
+        )
+        _write(
+            proposal_dir / "evaluation_requests.json",
+            json.dumps(
+                {
+                    "proposal_id": "prop_l2_demo_v1",
+                    "requested_items": [
+                        {
+                            "item_id": "l2_demo_measurement_r1",
+                            "task_type": "l2_campaign",
+                            "evaluation_mode": "measurement_only",
+                            "abstraction_layer": "full_architecture",
+                            "status": "merged",
+                        },
+                        {
+                            "item_id": "l2_demo_fused_r1",
+                            "task_type": "l2_campaign",
+                            "evaluation_mode": "paired_comparison",
+                            "abstraction_layer": "full_architecture",
+                            "paired_baseline_item_id": "l2_demo_measurement_r1",
+                            "status": "not_queued",
+                        },
+                    ],
+                },
+                indent=2,
+            )
+            + "\n",
+        )
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            baseline_item_id = _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id="l2_demo_measurement_r1",
+                campaign_dir_rel="runs/campaigns/npu/demo_baseline_refresh",
+                summary_rows=(
+                    "scope,arch_id,macro_mode,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,throughput_infer_per_s_mean\n"
+                    "aggregate,fp16_nm1_demo,flat_nomacro,1,0.50,0.20,5.5,0.18,1000,1.0\n"
+                ),
+                proposal_path="docs/developer_loop/prop_l2_demo_v1",
+            )
+            baseline_work_item = session.query(WorkItem).filter_by(item_id=baseline_item_id).one()
+            baseline_work_item.state = WorkItemState.MERGED
+            session.commit()
+            consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=baseline_item_id))
+
+            candidate_item_id = _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id="l2_demo_fused_r1",
+                campaign_dir_rel="runs/campaigns/npu/demo_candidate_refresh",
+                summary_rows=(
+                    "scope,arch_id,macro_mode,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,throughput_infer_per_s_mean\n"
+                    "aggregate,fp16_nm1_demo,flat_nomacro,1,0.40,0.15,5.5,0.18,950,1.1\n"
+                ),
+                proposal_path="docs/developer_loop/prop_l2_demo_v1",
+            )
+            candidate_work_item = session.query(WorkItem).filter_by(item_id=candidate_item_id).one()
+            candidate_work_item.task_request.request_payload["developer_loop"] = {
+                "proposal_id": "prop_l2_demo_v1",
+                "proposal_path": "docs/developer_loop/prop_l2_demo_v1",
+            }
+            session.commit()
+
+            consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=candidate_item_id))
+
+            payload = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{candidate_item_id}.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            assert payload["proposal_assessment"]["baseline_item_id"] == baseline_item_id
+            assert payload["proposal_assessment"]["outcome"] == "improved"
+            assert payload["evaluation_record"]["abstraction_layer"] == "full_architecture"
+            assert payload["evaluation_record"]["comparison_role"] == "candidate"
+
+
 def test_consume_l2_result_paired_comparison_matches_model_rows_by_model_id() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

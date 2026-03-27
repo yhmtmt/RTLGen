@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import timezone
 from hashlib import sha256
 import json
+import re
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -21,6 +22,9 @@ from control_plane.services.dependency_gate import evaluate_work_item_dependenci
 
 class Layer2TaskGenerationError(RuntimeError):
     pass
+
+
+_RETRY_SUFFIX_RE = re.compile(r"_r\d+$")
 
 
 @dataclass(frozen=True)
@@ -74,6 +78,92 @@ def _load_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _retry_base(item_id: str) -> str:
+    return _RETRY_SUFFIX_RE.sub("", item_id.strip())
+
+
+def _proposal_dir(repo_root: Path, proposal_path: str | None) -> Path | None:
+    proposal_rel = str(proposal_path or "").strip()
+    if not proposal_rel:
+        return None
+    resolved = (repo_root / proposal_rel).resolve()
+    if resolved.is_file():
+        return resolved.parent
+    return resolved
+
+
+def _load_requested_item_entry(repo_root: Path, proposal_path: str | None, item_id: str) -> dict[str, Any] | None:
+    proposal_dir = _proposal_dir(repo_root, proposal_path)
+    if proposal_dir is None:
+        return None
+    evaluation_requests_path = proposal_dir / "evaluation_requests.json"
+    if not evaluation_requests_path.exists():
+        return None
+    try:
+        payload = _load_json(evaluation_requests_path)
+    except Exception:
+        return None
+    requested_items = payload.get("requested_items")
+    if not isinstance(requested_items, list):
+        return None
+    for entry in requested_items:
+        if isinstance(entry, dict) and str(entry.get("item_id", "")).strip() == item_id:
+            return entry
+    item_retry_base = _retry_base(item_id)
+    retry_matches = [
+        entry
+        for entry in requested_items
+        if isinstance(entry, dict) and _retry_base(str(entry.get("item_id", "")).strip()) == item_retry_base
+    ]
+    if len(retry_matches) == 1:
+        return retry_matches[0]
+    return None
+
+
+def _resolve_requested_entry_text(
+    entry: dict[str, Any] | None,
+    *,
+    key: str,
+    explicit: str | None,
+) -> str | None:
+    resolved = str(explicit or "").strip()
+    if resolved:
+        return resolved
+    if not isinstance(entry, dict):
+        return None
+    candidate = str(entry.get(key, "")).strip()
+    return candidate or None
+
+
+def _resolve_requested_entry_list(
+    entry: dict[str, Any] | None,
+    *,
+    key: str,
+    explicit: list[str] | None,
+) -> list[str] | None:
+    if explicit is not None:
+        return [str(value).strip() for value in explicit if str(value).strip()]
+    if not isinstance(entry, dict):
+        return None
+    values = entry.get(key)
+    if not isinstance(values, list):
+        return None
+    return [str(value).strip() for value in values if str(value).strip()]
+
+
+def _resolve_requested_entry_bool(
+    entry: dict[str, Any] | None,
+    *,
+    key: str,
+    explicit: bool,
+) -> bool:
+    if explicit:
+        return True
+    if not isinstance(entry, dict):
+        return False
+    return bool(entry.get(key))
+
+
 def _resolve_source_commit(repo_root: Path, source_commit: str | None) -> str:
     resolved = str(source_commit or "").strip()
     if resolved:
@@ -113,6 +203,14 @@ def _default_item_id(*, campaign_path: str, platform: str) -> str:
 
 def _default_title(*, campaign_id: str, platform: str) -> str:
     return f"Layer2 campaign {campaign_id} on {platform}"
+
+
+def _default_pr_title(*, title: str) -> str:
+    normalized = str(title).strip()
+    lowered = normalized.lower()
+    if lowered.startswith("run "):
+        return f"eval: {lowered}"
+    return f"eval: run {lowered}"
 
 
 def _default_objective(*, campaign: dict[str, Any]) -> str:
@@ -301,7 +399,7 @@ def _build_payload(
         },
         "handoff": {
             "branch": f"eval/{item_id}/<session_id>",
-            "pr_title": f"eval: run {title.lower()}",
+            "pr_title": _default_pr_title(title=title),
             "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]",
             "pr_body_fields": {
                 "evaluator_id": requested_by.lstrip("@") or "control_plane",
@@ -371,6 +469,42 @@ def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateR
         _repo_rel(request.objective_profiles_json, repo_root) if request.objective_profiles_json else None
     )
     proposal_path = _repo_rel(request.proposal_path, repo_root) if request.proposal_path else None
+    requested_entry = _load_requested_item_entry(repo_root, proposal_path, item_id)
+    effective_evaluation_mode = _resolve_requested_entry_text(
+        requested_entry,
+        key="evaluation_mode",
+        explicit=request.evaluation_mode,
+    )
+    effective_abstraction_layer = _resolve_requested_entry_text(
+        requested_entry,
+        key="abstraction_layer",
+        explicit=request.abstraction_layer,
+    )
+    effective_comparison_role = _resolve_requested_entry_text(
+        requested_entry,
+        key="comparison_role",
+        explicit=request.comparison_role,
+    )
+    effective_paired_baseline_item_id = _resolve_requested_entry_text(
+        requested_entry,
+        key="paired_baseline_item_id",
+        explicit=request.paired_baseline_item_id,
+    )
+    effective_depends_on_item_ids = _resolve_requested_entry_list(
+        requested_entry,
+        key="depends_on_item_ids",
+        explicit=request.depends_on_item_ids,
+    )
+    effective_requires_merged_inputs = _resolve_requested_entry_bool(
+        requested_entry,
+        key="requires_merged_inputs",
+        explicit=request.requires_merged_inputs,
+    )
+    effective_requires_materialized_refs = _resolve_requested_entry_bool(
+        requested_entry,
+        key="requires_materialized_refs",
+        explicit=request.requires_materialized_refs,
+    )
     source_commit = _resolve_source_commit(repo_root, request.source_commit)
     expected_outputs = _build_expected_outputs(
         campaign=campaign,
@@ -397,15 +531,15 @@ def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateR
         objective_profiles_json=objective_profiles_json,
         proposal_id=request.proposal_id,
         proposal_path=proposal_path,
-        evaluation_mode=request.evaluation_mode,
-        abstraction_layer=request.abstraction_layer,
+        evaluation_mode=effective_evaluation_mode,
+        abstraction_layer=effective_abstraction_layer,
         expected_direction=request.expected_direction,
         expected_reason=request.expected_reason,
-        comparison_role=request.comparison_role,
-        paired_baseline_item_id=request.paired_baseline_item_id,
-        depends_on_item_ids=request.depends_on_item_ids,
-        requires_merged_inputs=request.requires_merged_inputs,
-        requires_materialized_refs=request.requires_materialized_refs,
+        comparison_role=effective_comparison_role,
+        paired_baseline_item_id=effective_paired_baseline_item_id,
+        depends_on_item_ids=effective_depends_on_item_ids,
+        requires_merged_inputs=effective_requires_merged_inputs,
+        requires_materialized_refs=effective_requires_materialized_refs,
     )
     initial_state = WorkItemState.READY
     transient_work_item = WorkItem(

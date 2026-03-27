@@ -156,6 +156,66 @@ def test_generate_l2_campaign_task_creates_ready_work_item() -> None:
             assert "--run_physical" in payload["task"]["commands"][2]["run"]
 
 
+def test_generate_l2_campaign_task_recovers_metadata_from_evaluation_requests() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        proposal_dir = repo_root / "docs" / "developer_loop" / "prop_l2_demo_v1"
+        proposal_dir.mkdir(parents=True, exist_ok=True)
+        (proposal_dir / "evaluation_requests.json").write_text(
+            json.dumps(
+                {
+                    "proposal_id": "prop_l2_demo_v1",
+                    "requested_items": [
+                        {
+                            "item_id": "l2_demo_candidate_r1",
+                            "task_type": "l2_campaign",
+                            "evaluation_mode": "paired_comparison",
+                            "abstraction_layer": "full_architecture",
+                            "paired_baseline_item_id": "l2_demo_baseline_r1",
+                            "depends_on_item_ids": ["l2_demo_baseline_r1"],
+                            "requires_merged_inputs": True,
+                            "requires_materialized_refs": True,
+                        }
+                    ],
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_demo_candidate_r1",
+                    requested_by="@tester",
+                    proposal_id="prop_l2_demo_v1",
+                    proposal_path="docs/developer_loop/prop_l2_demo_v1",
+                ),
+            )
+
+            payload = session.query(WorkItem).filter_by(item_id=result.item_id).one().task_request.request_payload
+            assert payload["handoff"]["pr_title"] == "eval: run layer2 campaign demo_campaign on nangate45"
+            assert payload["developer_loop"]["evaluation"]["mode"] == "paired_comparison"
+            assert payload["developer_loop"]["abstraction"]["layer"] == "full_architecture"
+            assert payload["developer_loop"]["comparison"] == {
+                "role": "candidate",
+                "paired_baseline_item_id": "l2_demo_baseline_r1",
+            }
+            assert payload["developer_loop"]["dependencies"] == {
+                "item_ids": ["l2_demo_baseline_r1"],
+                "requires_merged_inputs": True,
+                "requires_materialized_refs": True,
+            }
+
+
 def test_generate_l2_campaign_task_blocks_when_dependency_not_merged() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
