@@ -1,9 +1,15 @@
 {
   "proposal_id": "prop_l2_mapper_terminal_leakyrelu_direct_output_v1",
-  "candidate_id": "",
-  "decision": "pending",
-  "reason": "Awaiting baseline evidence.",
-  "evidence_refs": [],
-  "next_action": "queue the baseline measurement item",
+  "candidate_id": "l2_prop_l2_mapper_terminal_leakyrelu_direct_output_v1_nm1_measurement_r1",
+  "decision": "iterate",
+  "reason": "Accepted measurement-only baseline evidence was merged; proposal judgment remains deferred until the paired comparison is reviewed.",
+  "evidence_refs": [
+    "item:l2_prop_l2_mapper_terminal_leakyrelu_direct_output_v1_nm1_measurement_r1",
+    "run:l2_prop_l2_mapper_terminal_leakyrelu_direct_output_v1_nm1_measurement_r1_run_7e3550f96fab937c",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_prop_l2_mapper_terminal_leakyrelu_direct_output_v1_nm1_measurement_r1.json",
+    "pr:#118",
+    "https://github.com/yhmtmt/RTLGen/pull/118"
+  ],
+  "next_action": "queue the paired comparison item",
   "requires_human_approval": false
 }
