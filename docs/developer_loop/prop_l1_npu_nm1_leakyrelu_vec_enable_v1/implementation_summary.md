@@ -18,6 +18,7 @@
 - `npu/sim/perf/tests/test_perf_vec_leakyrelu.py`
 - `runs/designs/npu_blocks/npu_fp16_cpp_nm1_leakyrelucmp/config_nm1_leakyrelu.json`
 - `runs/designs/npu_blocks/npu_fp16_cpp_nm1_leakyrelucmp/README.md`
+- `runs/designs/npu_blocks/npu_fp16_cpp_nm1_leakyrelucmp/sweep_hier_firstpass.json`
 - `runs/designs/npu_blocks/npu_fp16_cpp_nm1_leakyreluproxy/config_nm1_leakyreluproxy.json`
 - `runs/designs/npu_blocks/npu_fp16_cpp_nm1_leakyreluproxy/README.md`
 - `runs/designs/npu_blocks/npu_fp16_cpp_nm1_leakyreluproxy/sweep_proxy_firstpass.json`

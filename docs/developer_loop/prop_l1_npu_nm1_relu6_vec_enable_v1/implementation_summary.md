@@ -18,6 +18,7 @@
 - `npu/sim/perf/tests/test_perf_vec_relu6.py`
 - `runs/designs/npu_blocks/npu_fp16_cpp_nm1_relu6cmp/config_nm1_relu6.json`
 - `runs/designs/npu_blocks/npu_fp16_cpp_nm1_relu6cmp/README.md`
+- `runs/designs/npu_blocks/npu_fp16_cpp_nm1_relu6cmp/sweep_hier_firstpass.json`
 - `runs/designs/npu_blocks/npu_fp16_cpp_nm1_relu6proxy/config_nm1_relu6proxy.json`
 - `runs/designs/npu_blocks/npu_fp16_cpp_nm1_relu6proxy/README.md`
 - `runs/designs/npu_blocks/npu_fp16_cpp_nm1_relu6proxy/sweep_proxy_firstpass.json`
