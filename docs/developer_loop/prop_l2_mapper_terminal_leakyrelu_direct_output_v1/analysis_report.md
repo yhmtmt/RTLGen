@@ -2,28 +2,31 @@
 
 ## Candidate
 - `proposal_id`: `prop_l2_mapper_terminal_leakyrelu_direct_output_v1`
-- `candidate_id`: `l2_prop_l2_mapper_terminal_leakyrelu_direct_output_v1_nm1_measurement_r1`
+- `candidate_id`: `l2_prop_l2_mapper_terminal_leakyrelu_direct_output_v1_nm1_fused_r2`
 
 ## Evaluations Consumed
-- `l2_prop_l2_mapper_terminal_leakyrelu_direct_output_v1_nm1_measurement_r1`
-- `l2_prop_l2_mapper_terminal_leakyrelu_direct_output_v1_nm1_measurement_r1_run_7e3550f96fab937c`
-- source commit: `c64cd71106634aaedca77437018a986e5728822f`
-- review: PR #118
+- `l2_prop_l2_mapper_terminal_leakyrelu_direct_output_v1_nm1_fused_r2`
+- `l2_prop_l2_mapper_terminal_leakyrelu_direct_output_v1_nm1_fused_r2_run_c01060b439543e0c`
+- source commit: `fc3c1182933b91ce2f765dd5c9a57f43ec843799`
+- review: PR #126
 
 ## Baseline Comparison
-- not applicable
+- baseline_ref: `runs/campaigns/npu/e2e_eval_onnx_terminal_leakyrelu_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_leakyrelu_direct_output_v1_nm1_measurement_r1`
+- baseline_item_id: `l2_prop_l2_mapper_terminal_leakyrelu_direct_output_v1_nm1_measurement_r1`
+- outcome: `improved`
+- summary: Focused comparison improved latency and/or energy without regressing matched rows.
 
 ## Result
-- result: `iterate`
+- result: `promote`
 - confidence level: merged accepted evidence
-- estimated optimization room: pending follow-on comparison
-- architecture conclusion robustness: staged evidence
-- summary: This item records metrics for the requested architecture point and does not emit a proposal judgment.
+- estimated optimization room: accepted at current stage
+- architecture conclusion robustness: accepted for the current proposal scope
+- summary: Focused comparison improved latency and/or energy without regressing matched rows.
 
 ## Failures and Caveats
 - no additional caveats recorded during automatic finalization
 
 ## Recommendation
-- `iterate`
-- reason: Accepted measurement-only baseline evidence was merged; proposal judgment remains deferred until the paired comparison is reviewed.
-- next_action: queue the paired comparison item
+- `promote`
+- reason: Focused comparison improved latency and/or energy without regressing matched rows.
+- next_action: close the proposal as promoted

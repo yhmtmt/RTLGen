@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_mapper_terminal_leakyrelu_direct_output_v1",
-  "decision": "iterate",
-  "pr_number": 118,
-  "merge_commit": "6e2d0ee963ad6f195f571f5d6cd1176cd468999f",
-  "merged_utc": "2026-03-27T06:59:33.001977Z"
+  "decision": "promote",
+  "pr_number": 126,
+  "merge_commit": "37c48edf41a3ccd56d3b2f1a83ec685402960dbc",
+  "merged_utc": "2026-03-27T12:55:55.781799Z"
 }
