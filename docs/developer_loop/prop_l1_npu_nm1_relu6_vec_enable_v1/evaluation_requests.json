@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_npu_nm1_relu6_vec_enable_v1",
-  "source_commit": "",
+  "source_commit": "17883eca1a1c99c6f569507eaadd015305649f09",
   "requested_items": [
     {
       "item_id": "l1_prop_l1_npu_nm1_relu6_vec_enable_v1_r1",
@@ -9,7 +9,11 @@
       "objective": "npu_nm1_relu6_vec_physical_metrics",
       "abstraction_layer": "architecture_block",
       "status": "merged",
-      "merged_pr": 116
+      "merged_pr": 116,
+      "merged_pr_number": 116,
+      "merge_commit": "2bab373794058ab4db1c855be577c6b45cc654fd",
+      "merged_utc": "2026-03-27T04:33:17.197445Z",
+      "notes": "Merged via PR #116 and merge 2bab373794058ab4db1c855be577c6b45cc654fd at 2026-03-27T04:33:17.197445Z."
     }
   ]
 }
