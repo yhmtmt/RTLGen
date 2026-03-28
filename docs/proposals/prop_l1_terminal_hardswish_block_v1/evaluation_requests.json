@@ -1,0 +1,17 @@
+{
+  "proposal_id": "prop_l1_terminal_hardswish_block_v1",
+  "source_commit": "PENDING_SOURCE_COMMIT",
+  "requested_items": [
+    {
+      "item_id": "l1_prop_l1_terminal_hardswish_block_v1_nangate45_r1",
+      "task_type": "l1_sweep",
+      "evaluation_mode": "measurement_only",
+      "objective": "terminal_hardswish_physical_metrics",
+      "status": "not_queued",
+      "notes": "First bounded Layer 1 physical sweep for the terminal int8 HardSwish block under canonical docs/proposals paths.",
+      "abstraction_layer": "circuit_block",
+      "config_path": "runs/designs/activations/terminal_hardswish_int8_pwl_wrapper/config_terminal_hardswish_int8_pwl.json",
+      "sweep_path": "runs/designs/activations/sweeps/nangate45_terminal_hardswish_int8_pwl_v1.json"
+    }
+  ]
+}
