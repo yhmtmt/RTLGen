@@ -7,11 +7,14 @@
       "task_type": "l1_sweep",
       "evaluation_mode": "measurement_only",
       "objective": "terminal_hardswish_physical_metrics",
-      "status": "leased",
-      "notes": "First bounded Layer 1 physical sweep for the terminal int8 HardSwish block under canonical docs/proposals paths. Local rtlgen smoke passed, source commit was auto-filled from the clean repo, and the live r1 item is currently leased on the evaluator.",
+      "status": "merged",
+      "notes": "First bounded Layer 1 physical sweep for the terminal int8 HardSwish block under canonical docs/proposals paths. Local rtlgen smoke passed, source commit was auto-filled from the clean repo, and the live r1 item is currently leased on the evaluator. Merged via PR #129 and merge d8a9b1311b905cf96a05de1ff294c40feebf3e6e at 2026-03-28T13:45:25.758030Z.",
       "abstraction_layer": "circuit_block",
       "config_path": "runs/designs/activations/terminal_hardswish_int8_pwl_wrapper/config_terminal_hardswish_int8_pwl.json",
-      "sweep_path": "runs/designs/activations/sweeps/nangate45_terminal_hardswish_int8_pwl_v1.json"
+      "sweep_path": "runs/designs/activations/sweeps/nangate45_terminal_hardswish_int8_pwl_v1.json",
+      "merged_pr_number": 129,
+      "merge_commit": "d8a9b1311b905cf96a05de1ff294c40feebf3e6e",
+      "merged_utc": "2026-03-28T13:45:25.758030Z"
     }
   ]
 }

@@ -1,9 +1,15 @@
 {
   "proposal_id": "prop_l1_terminal_hardswish_block_v1",
-  "candidate_id": null,
-  "decision": "iterate",
-  "reason": "Pending first physical sweep evidence.",
-  "evidence_refs": [],
-  "next_action": "queue the first bounded Layer 1 physical sweep",
+  "candidate_id": "l1_prop_l1_terminal_hardswish_block_v1_nangate45_r1",
+  "decision": "promote",
+  "reason": "Accepted Layer 1 physical metrics were merged in PR #129 for the current candidate.",
+  "evidence_refs": [
+    "item:l1_prop_l1_terminal_hardswish_block_v1_nangate45_r1",
+    "run:l1_prop_l1_terminal_hardswish_block_v1_nangate45_r1_run_1cfde8cad40f38ca",
+    "artifact:control_plane/shadow_exports/l1_promotions/l1_prop_l1_terminal_hardswish_block_v1_nangate45_r1.json",
+    "pr:#129",
+    "https://github.com/yhmtmt/RTLGen/pull/129"
+  ],
+  "next_action": "inspect the next dependent item",
   "requires_human_approval": false
 }
