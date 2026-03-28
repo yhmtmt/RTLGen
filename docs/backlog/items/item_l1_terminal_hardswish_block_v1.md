@@ -7,7 +7,7 @@
 - priority: `high`
 - owner: `developer_agent`
 - created_utc: `2026-03-28T00:00:00Z`
-- updated_utc: `2026-03-28T00:00:00Z`
+- updated_utc: `2026-03-28T00:15:00Z`
 - proposal_id: `prop_l1_terminal_hardswish_block_v1`
 - proposal_path: `docs/proposals/prop_l1_terminal_hardswish_block_v1`
 

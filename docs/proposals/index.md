@@ -13,6 +13,7 @@ Canonical source of truth for new proposal workspaces lives under `docs/proposal
 | `prop_l1_npu_nm1_sigmoid_vec_enable_v1` | `l1` | `circuit` | `architecture_block` | NPU nm1 sigmoid vec enable | `promote` | `2026-03-19T13:10:00Z` | `docs/proposals/prop_l1_npu_nm1_sigmoid_vec_enable_v1` |
 | `prop_l1_npu_nm1_tanh_vec_enable_v1` | `l1` | `circuit` | `architecture_block` | NPU nm1 tanh vec enable | `promote` | `2026-03-24T12:15:00Z` | `docs/proposals/prop_l1_npu_nm1_tanh_vec_enable_v1` |
 | `prop_l1_terminal_hardsigmoid_block_v1` | `layer1` | `circuit` | `circuit_block` | Terminal int8 hard-sigmoid block | `promote` | `2026-03-25T00:00:00Z` | `docs/proposals/prop_l1_terminal_hardsigmoid_block_v1` |
+| `prop_l1_terminal_hardswish_block_v1` | `layer1` | `circuit` | `circuit_block` | Terminal int8 HardSwish block | `iterate` | `2026-03-28T00:00:00Z` | `docs/proposals/prop_l1_terminal_hardswish_block_v1` |
 | `prop_l1_terminal_hardtanh_block_v1` | `layer1` | `circuit` | `circuit_block` | Terminal int8 hardtanh block | `promote` | `2026-03-25T00:00:00Z` | `docs/proposals/prop_l1_terminal_hardtanh_block_v1` |
 | `prop_l1_terminal_leakyrelu_block_v1` | `layer1` | `circuit` | `circuit_block` | Terminal int8 LeakyReLU block | `promote` | `2026-03-25T00:00:00Z` | `docs/proposals/prop_l1_terminal_leakyrelu_block_v1` |
 | `prop_l1_terminal_relu6_block_v1` | `layer1` | `circuit` | `circuit_block` | Terminal int8 ReLU6 block | `promote` | `2026-03-25T00:00:00Z` | `docs/proposals/prop_l1_terminal_relu6_block_v1` |
