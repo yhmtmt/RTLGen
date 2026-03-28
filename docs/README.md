@@ -1,32 +1,20 @@
-# docs/ (Canonical Shared Docs)
+# docs/
 
-This directory contains canonical shared documentation for the repo:
-- stable policies
-- workflow contracts
-- runbooks
-- doc navigation helpers
-- browser-facing static assets
+This directory is the canonical shared documentation hub for RTLGen.
 
-## Contents
-- `docs/runs/`: static evaluation browser and assets.
-- `docs/development.md`: canonical development environment and devcontainer guide.
-- `docs/structure.md`: repository documentation role map and precedence rules.
-- `docs/layer1_circuit_workflow.md`: canonical Layer 1 module optimization runbook.
-- `docs/two_layer_workflow.md`: circuit-layer vs NPU-layer workflow split and
-  handoff contract.
-- `docs/internal_external_evaluator_policy.md`: evaluation-lane policy.
-- `docs/developer_agent_loop.md`: notebook-side autonomous development loop and approval gates.
-- `docs/developer_agent_first_read.md`: mandatory startup context and proposal-id rule for new developer-agent sessions.
-- `docs/developer_agent_artifacts.md`: concrete file schemas for proposal, analysis, and promotion artifacts.
-- `docs/developer_agent_orchestration.md`: practical notebook-side procedure for advancing candidates through approval gates.
-- `docs/developer_agent_review.md`: reviewer first-read order and checklist for fresh-session PR review.
-- `docs/development_items/`: canonical intake backlog for preliminary Layer 1 / Layer 2 ideas before promotion into `docs/developer_loop/`.
-- `docs/developer_loop/`: ready-to-copy workspace skeleton for proposal directories.
-- `scripts/bootstrap_developer_loop.sh`: one-command bootstrap for a proposal workspace.
-- `docs/runs_artifact_policy.md`: shared artifact rules across evaluation lanes.
+Start with:
 
-## Boundaries
-- Working notes, studies, and exploratory contributor guidance belong in `notes/`.
-- Planning and chronological execution logs belong in `plan/`.
-- Canonical NPU workflow/status/plan docs belong in `npu/docs/`.
-- Control-plane operator procedures belong in `control_plane/`.
+- `docs/index.md`
+
+Key sections:
+
+- `docs/repo/`
+- `docs/architecture/`
+- `docs/workflows/`
+- `docs/operations/`
+- `docs/reference/`
+- `docs/backlog/`
+- `docs/proposals/`
+
+Existing legacy entry docs in this directory are retained as compatibility
+stubs while the repo migrates to the cleaner topic-based layout.

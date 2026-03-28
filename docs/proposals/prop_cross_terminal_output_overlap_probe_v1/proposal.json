@@ -1,0 +1,60 @@
+{
+  "proposal_id": "prop_cross_terminal_output_overlap_probe_v1",
+  "created_utc": "2026-03-18T07:17:51Z",
+  "created_by": "developer_agent",
+  "layer": "cross",
+  "kind": "architecture",
+  "title": "Terminal-output overlap probe",
+  "hypothesis": "The fused softmax terminal-output path may still be beneficial, but its gain is currently hidden either by overlap in the perf/execution path or by a benchmark that does not make terminal output traffic part of the critical path. A bounded follow-on probe should determine which explanation is dominating before any broader architecture sweep is attempted.",
+  "direct_comparison": {
+    "primary_question": "Does fused terminal output show a measurable benefit once the comparison is restricted to a terminal-output-sensitive proof setup rather than the original tiny softmax-tail benchmark alone?",
+    "include": [
+      "non-fused vs fused softmax-tail execution on one fixed architecture under a terminal-output-sensitive setup",
+      "trace-based overlap inspection tied to the same direct comparison"
+    ],
+    "exclude": [
+      "nm1 vs nm2 architecture ranking",
+      "broad multi-workload sweep before the mechanism-level question is answered"
+    ],
+    "follow_on_broad_sweep": [
+      "reintroduce broader workload and architecture comparisons only if the focused overlap-sensitive proof is positive or remains ambiguous"
+    ]
+  },
+  "expected_benefit": [
+    "clarifies whether fused-output benefit is real but hidden",
+    "prevents broad reruns that do not answer the mechanism question",
+    "improves future first-stage evaluation design for terminal-op proposals"
+  ],
+  "risks": [
+    "the benchmark redesign could accidentally broaden into a workload-suite effort",
+    "perf-trace inference could still be ambiguous if the overlap model is not directly exposed",
+    "the real issue may be event/perf-model semantics rather than workload shape, which would redirect the work into a simulator or shell-contract fix",
+    "the follow-on may show that the fused mechanism is not practically important on current workloads"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "task_type": "local_quality_precheck",
+      "objective": "overlap_audit",
+      "cost_class": "low"
+    },
+    {
+      "task_type": "l2_campaign",
+      "objective": "balanced",
+      "cost_class": "medium"
+    }
+  ],
+  "baseline_refs": [
+    "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_v1",
+    "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v1__l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2"
+  ],
+  "knowledge_refs": [
+    "docs/proposals/prop_l2_softmax_tile_fusion_v1/analysis_report.md",
+    "docs/proposals/prop_l2_softmax_tile_fusion_v1/promotion_decision.json",
+    "npu/mapper/run.py",
+    "npu/sim/perf/run.py",
+    "npu/shell/spec.md",
+    "npu/rtlgen/gen.py",
+    "discussion:2026-03-18-user-session"
+  ]
+}

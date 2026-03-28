@@ -1,0 +1,51 @@
+{
+  "proposal_id": "prop_l1_npu_nm1_relu6_vec_enable_v1",
+  "created_utc": "2026-03-27T04:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "l1",
+  "kind": "circuit",
+  "title": "NPU nm1 ReLU6 vec enable",
+  "hypothesis": "A bounded int8 ReLU6 op can be integrated into the fixed nm1 vec path and physically characterized as a relu6-enabled NPU block, providing the correct architecture_block physical source before any later ReLU6 mapper or terminal-output evaluation.",
+  "direct_comparison": {
+    "primary_question": "Can we produce an accepted ReLU6-enabled nm1 design point with real physical metrics before any Layer 2 ReLU6 campaign runs?",
+    "include": [
+      "one bounded ReLU6-enabled nm1 block design/config variant",
+      "one focused Layer 1 physical sweep on that integrated design"
+    ],
+    "exclude": [
+      "Layer 2 model campaigns",
+      "nm1 vs nm2 ranking",
+      "broad nonlinear-family claims beyond bounded ReLU6 enablement"
+    ],
+    "follow_on_broad_sweep": [
+      "return to Layer 2 ReLU6 or broader terminal-family work only after this integrated physical source is accepted"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "task_type": "l1_sweep",
+      "evaluation_mode": "measurement_only",
+      "objective": "npu_nm1_relu6_vec_physical_metrics",
+      "cost_class": "high",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": false,
+      "requires_materialized_refs": false,
+      "expected_result": {
+        "direction": "unknown",
+        "reason": "the goal is to establish the first accepted relu6-enabled nm1 block physical metrics"
+      },
+      "abstraction_layer": "architecture_block"
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l1_terminal_relu6_block_v1/analysis_report.md",
+    "docs/proposals/prop_l1_terminal_relu6_block_v1/promotion_result.json",
+    "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json"
+  ],
+  "knowledge_refs": [
+    "docs/proposals/prop_l1_npu_nm1_sigmoid_vec_enable_v1/promotion_result.json",
+    "docs/proposals/prop_l1_npu_nm1_tanh_vec_enable_v1/promotion_result.json",
+    "discussion:2026-03-27-user-session"
+  ],
+  "abstraction_layer": "architecture_block"
+}

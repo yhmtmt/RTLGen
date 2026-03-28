@@ -19,6 +19,7 @@ from control_plane.models.enums import ArtifactStorageMode, RunStatus, WorkItemS
 from control_plane.models.run_events import RunEvent
 from control_plane.models.runs import Run
 from control_plane.models.work_items import WorkItem
+from control_plane.services.docs_paths import resolve_proposal_file
 
 
 class Layer1ResultConsumerError(RuntimeError):
@@ -164,13 +165,9 @@ def _load_proposal(repo_root: Path, work_item: WorkItem) -> dict[str, Any] | Non
     proposal_path_text = str(developer_loop.get("proposal_path", "")).strip()
     if not proposal_path_text:
         return None
-    proposal_path = _resolve_path(repo_root=repo_root, path_text=proposal_path_text)
-    if proposal_path.is_dir():
-        proposal_file = proposal_path / "proposal.json"
-    elif proposal_path.name == "proposal.json":
-        proposal_file = proposal_path
-    else:
-        proposal_file = proposal_path / "proposal.json"
+    proposal_file = resolve_proposal_file(repo_root, proposal_path=proposal_path_text)
+    if proposal_file is None:
+        return None
     if not proposal_file.exists():
         return None
     try:

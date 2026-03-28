@@ -1,0 +1,49 @@
+{
+  "proposal_id": "prop_l1_npu_nm1_sigmoid_vec_enable_v1",
+  "created_utc": "2026-03-19T13:10:00Z",
+  "created_by": "developer_agent",
+  "layer": "l1",
+  "kind": "circuit",
+  "title": "NPU nm1 sigmoid vec enable",
+  "hypothesis": "A bounded int8 sigmoid op can be integrated into the fixed nm1 vec path and physically characterized as a sigmoid-enabled NPU block, providing the correct physical source for later Layer 2 activation-family campaigns.",
+  "direct_comparison": {
+    "primary_question": "Can we produce an accepted sigmoid-enabled nm1 NPU design point with real physical metrics before any Layer 2 sigmoid mapping campaign runs?",
+    "include": [
+      "one bounded sigmoid-enabled nm1 block design/config variant",
+      "one focused Layer 1 physical sweep on that integrated design"
+    ],
+    "exclude": [
+      "Layer 2 model campaigns",
+      "nm1 vs nm2 ranking",
+      "broad nonlinear family claims beyond bounded sigmoid enablement"
+    ],
+    "follow_on_broad_sweep": [
+      "return to prop_l2_mapper_terminal_activation_family_v1 only after this integrated physical source is accepted"
+    ]
+  },
+  "required_evaluations": [
+    {
+      "task_type": "l1_sweep",
+      "evaluation_mode": "measurement_only",
+      "objective": "npu_nm1_sigmoid_vec_physical_metrics",
+      "cost_class": "high",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": false,
+      "requires_materialized_refs": false,
+      "expected_result": {
+        "direction": "unknown",
+        "reason": "the goal is to establish the first accepted sigmoid-enabled nm1 block physical metrics"
+      },
+      "abstraction_layer": "architecture_block"
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l1_terminal_sigmoid_block_v1/analysis_report.md",
+    "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json"
+  ],
+  "knowledge_refs": [
+    "docs/proposals/prop_l2_mapper_terminal_activation_family_v1/proposal.json",
+    "discussion:2026-03-19-user-session"
+  ],
+  "abstraction_layer": "architecture_block"
+}

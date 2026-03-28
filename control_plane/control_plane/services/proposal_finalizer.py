@@ -16,6 +16,7 @@ from control_plane.models.artifacts import Artifact
 from control_plane.models.github_links import GitHubLink
 from control_plane.models.runs import Run
 from control_plane.models.work_items import WorkItem
+from control_plane.services.docs_paths import resolve_proposal_file
 
 
 class ProposalFinalizationError(RuntimeError):
@@ -166,14 +167,7 @@ def _proposal_path(repo_root: Path, work_item: WorkItem) -> Path | None:
     developer_loop = _developer_loop_payload(work_item)
     proposal_path = str(developer_loop.get("proposal_path", "")).strip()
     proposal_id = str(developer_loop.get("proposal_id", "")).strip()
-    if proposal_path:
-        resolved = (repo_root / proposal_path).resolve()
-        if resolved.is_dir():
-            return (resolved / "proposal.json").resolve()
-        return resolved
-    if proposal_id:
-        return (repo_root / "docs" / "developer_loop" / proposal_id / "proposal.json").resolve()
-    return None
+    return resolve_proposal_file(repo_root, proposal_path=proposal_path or None, proposal_id=proposal_id or None)
 
 
 def _load_json(path: Path) -> dict[str, Any]:

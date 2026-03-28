@@ -17,6 +17,7 @@ from control_plane.clock import utcnow
 from control_plane.models.enums import FlowName, LayerName, WorkItemState
 from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
+from control_plane.services.docs_paths import canonicalize_proposal_path, resolve_proposal_file
 
 
 class Layer1TaskGenerationError(RuntimeError):
@@ -85,11 +86,9 @@ def _resolve_proposal_abstraction_layer(repo_root: Path, proposal_path: str | No
     proposal_path_text = str(proposal_path or "").strip()
     if not proposal_path_text:
         return None
-    proposal_file = (repo_root / proposal_path_text).resolve()
-    if proposal_file.is_dir():
-        proposal_file = proposal_file / "proposal.json"
-    elif proposal_file.name != "proposal.json":
-        proposal_file = proposal_file / "proposal.json"
+    proposal_file = resolve_proposal_file(repo_root, proposal_path=proposal_path_text)
+    if proposal_file is None:
+        return None
     if not proposal_file.exists():
         return None
     try:
@@ -473,6 +472,7 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
     config_paths = [_repo_rel(path, repo_root) for path in request.config_paths]
     out_root = _repo_rel(request.out_root, repo_root)
     proposal_path = _repo_rel(request.proposal_path, repo_root) if request.proposal_path else None
+    proposal_path = canonicalize_proposal_path(repo_root, proposal_path=proposal_path, proposal_id=request.proposal_id)
     effective_abstraction_layer = _resolve_proposal_abstraction_layer(repo_root, proposal_path, request.abstraction_layer)
     _validate_architecture_block_sweep_policy(
         sweep_path=(repo_root / sweep_path).resolve(),

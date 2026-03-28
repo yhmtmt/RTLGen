@@ -1,117 +1,37 @@
 # NPU Documentation Index
 
-## Purpose
-This folder contains the living documentation for NPU development in RTLGen.
-Documents are grouped by purpose: **specs**, **plans**, and **logs**.
+This folder is the NPU subsystem documentation hub.
 
-## Document roles
-- `npu/docs/workflow.md`: canonical NPU execution order/runbook.
-- `npu/docs/status.md`: concise current snapshot for quick checks.
-- `npu/docs/*_plan.md` + `npu/synth/plan.md`: deeper plan detail.
-- `npu/docs/*_log.md`: append-only development logs.
-- `npu/nvdla/**`: external reference docs (not canonical local policy).
+Use it for NPU-specific material only:
 
-Cross-directory boundaries are defined in `docs/structure.md`.
-Two-layer optimization split and interaction contract are defined in
-`docs/two_layer_workflow.md`.
+- specs
+- plans
+- logs
+- NPU runbooks
 
-## Current status
-- **Implemented**: shell/spec, RTL generator config spec, mapper IR, and RTL/perf simulator docs.
-- **Implemented**: OpenROAD block-flow docs and fp16 backend sweep runbooks.
-- **Implemented**: fp16 backend `finish`-level comparison report in
-  `runs/designs/npu_blocks/fp16_backend_decision_nangate45.md`.
-- **Implemented**: `arch v0.2-draft` schema + example and `to_rtlgen` v0.2
-  derivation path (arch intent -> rtlgen candidate).
-- **Implemented**: pre-synthesis SRAM stage wrapper with memgen-first policy
-  and CACTI fallback.
-- **Implemented**: end-to-end evaluation flow contract + campaign tooling
-  (`npu/eval/`, `npu/docs/eval_flow_plan.md`), including the scaffold
-  `runs/campaigns/npu/e2e_eval_v0/` and active reuse campaigns
-  `runs/campaigns/npu/e2e_eval_mlp_smoke_v2_reuse/` and
-  `runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse_num_modules_v1/`.
-- **Implemented**: evaluator-side external ONNX fetch support via
-  `npu/eval/fetch_models.py`, so model manifests can stay lightweight.
-- **Implemented**: first broader imported fetched-model campaign in
-  `runs/campaigns/npu/e2e_eval_onnx_imported_mlp_num_modules_v1/`, backed by
-  `runs/models/onnx_imported_mlp_v1/`.
-- **Implemented**: first non-GEMM terminal-op fetched-model campaign in
-  `runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1/`,
-  backed by `runs/models/onnx_imported_softmax_tail_v1/`.
-- **Implemented**: current Nangate45 Layer 1 row-wise SOFTMAX seed selection in
-  `runs/candidates/nangate45/module_candidates.json`, with
-  `softmax_rowwise_int8_r4_wrapper` selected as the wrapped candidate for the
-  current `row_bytes=4` NPU contract.
-- **Implemented**: dedicated NPU `SOFTMAX` integration in
-  `runs/designs/npu_blocks/npu_fp16_cpp_nm{1,2}_softmaxcmp/`, backed by merged
-  hierarchical macro manifests in
-  `runs/designs/npu_macros/npu_fp16_nm{1,2}_softmax_bundle_ng45/`.
-- **Implemented**: phase-1 mapper split for oversized MLP `GEMM2`
-  weight-SRAM cases, including schedule metadata and campaign-row provenance.
+Start with:
 
-## Specs
-- `npu/shell/spec.md`: shell contract (MMIO, queue, DMA, events).
-- `npu/rtlgen/config_spec.md`: RTLGen NPU config fields.
-- `npu/mapper/ir.md`: schedule IR aligned with shell descriptors.
-- `npu/sim/report.md`: simulation report schema (draft).
-- `npu/docs/arch_v0_2_draft.md`: architecture-layer hierarchy and `arch v0.2` draft direction.
+- `npu/docs/workflow.md`
+- `npu/docs/status.md`
 
-## Plans
-- `npu/setup.md`: environment + integration phases.
-- `npu/docs/sim_dev_plan.md`: simulator development plan (RTL + performance).
-- `npu/synth/plan.md`: OpenROAD integration plan.
-- `npu/docs/eval_flow_plan.md`: system-level ONNX + physical + perf flow plan.
-- `npu/docs/mapper_split_plan.md`: mapper-side split/tiling plan for
-  large-model fit.
-- `npu/synth/cacti.md`: CACTI SRAM estimation workflow and scaling rules.
-- `npu/docs/workflow.md`: end-to-end workflow guide.
+Key groups:
 
-## Runbooks
-- `npu/sim/run_golden.sh`: golden regression across RTL + performance simulator.
-- `npu/sim/rtl/README.md`: RTL simulation coverage and local commands.
-- `npu/sim/perf/README.md`: perf model assumptions, options, and test coverage.
-- `npu/eval/fetch_models.py`: materialize externally hosted ONNX files declared in model manifests.
-- `npu/synth/pre_synth_memory.py`: pre-synthesis SRAM stage (memgen/cacti policy).
-- `npu/synth/run_fp16_backend_sweep.py`: fp16 backend sweep (`builtin_raw16` vs `cpp_ieee`).
+- specs:
+  - `npu/shell/spec.md`
+  - `npu/rtlgen/config_spec.md`
+  - `npu/mapper/ir.md`
+- plans:
+  - `npu/docs/*_plan.md`
+  - `npu/synth/plan.md`
+- logs:
+  - `npu/docs/*_log.md`
+- runbooks:
+  - `npu/sim/rtl/README.md`
+  - `npu/sim/perf/README.md`
+  - `npu/docs/workflow.md`
 
-## Logs
-- `npu/docs/shell_spec_log.md`: shell spec work log.
-- `npu/docs/rtl_sim_log.md`: RTL sim bring-up log.
+Cross-repo canonical docs live under:
 
-## References
-- `npu/docs/nvdla_compatibility.md`: NVDLA compatibility guidance.
-
-## Conventions
-- `npu/docs/conventions.md`: documentation structure and status vocabulary.
-
-## Status
-- `npu/docs/status.md`: single-page status snapshot.
-
-## Next steps
-- Keep `flat_nomacro` as the default physical mode for the current practical
-  `onnx_practical_v1` baseline.
-- Use `fp16_nm2 + flat_nomacro` as the balanced-default practical point in
-  `runs/campaigns/npu/e2e_eval_onnx_practical_v1_reuse_num_modules_v1/`.
-  Keep `fp16_nm1 + flat_nomacro` as the explicit energy/PPA alternative. The
-  imported fetched-model campaign
-  `runs/campaigns/npu/e2e_eval_onnx_imported_mlp_num_modules_v1/` confirms the
-  same ranking on real upstream MLP exports.
-- Validate the `num_modules`-aware contract beyond the current imported MLP
-  set before treating the current result as universal.
-- Use `runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1/`
-  as the first boundary-case check for non-GEMM terminal ops. Its tiny
-  classifier currently favors `fp16_nm1 + flat_nomacro` because queue/event
-  overhead dominates the split GEMM.
-- Execute `runs/eval_queue/openroad/queued/l2_e2e_softmax_macro_tail_v1.json`
-  to benchmark the integrated SOFTMAX macro on the imported softmax-tail
-  campaign.
-- Use `runs/campaigns/npu/e2e_eval_onnx_practical_v1_fetch_mirror_num_modules_v1/`
-  as the bootstrap reference for evaluator-fetched model sets.
-- Keep `runs/campaigns/npu/e2e_eval_onnx_imported_mlp_num_modules_v1/` as the
-  first broader externally fetched imported ONNX benchmark set instead of
-  tracking large model binaries in the repo.
-- Keep `status.md`, `workflow.md`, and synthesis plans synced with each sweep milestone.
-- Add explicit runbook for compute-enabled NPU block sweeps beyond fp16 backend comparison.
-- Generalize the currently implemented phase-1 mapper split/tiling path beyond
-  MLP `GEMM2` N-axis chunking and keep explicit provenance in reports.
-- Harden `arch v0.2` validation and wire interconnect/mapping constraints into
-  mapper/perf policy.
+- `docs/index.md`
+- `docs/architecture/`
+- `docs/workflows/`

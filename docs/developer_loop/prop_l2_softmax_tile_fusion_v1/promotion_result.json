@@ -1,8 +1,0 @@
-{
-  "proposal_id": "prop_l2_softmax_tile_fusion_v1",
-  "decision": "iterate",
-  "pr_number": 41,
-  "merge_commit": "201c04c762865ecf9c11aec8bbe42013fe057701",
-  "merged_utc": "2026-03-18T03:07:06+00:00",
-  "note": "PR #41 is accepted focused evidence: fused terminal output was legal on nm1 but showed no measurable benefit on the current benchmark, so the proposal remains iterate and needs a mechanism-level follow-on rather than a broader ranking sweep."
-}

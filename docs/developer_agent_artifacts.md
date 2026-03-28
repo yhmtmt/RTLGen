@@ -406,9 +406,10 @@ proposal path rather than a vague free-form note.
 
 Initial recommendation:
 - keep these artifacts in the notebook-side working branch
-- store them under a small dedicated directory such as:
-  - `docs/developer_loop/`
-  - or another future notebook-local workflow directory
+- store new proposal workspaces under:
+  - `docs/proposals/`
+- use `docs/proposals/` for proposal workspaces
+- treat any legacy proposal path only as a compatibility symlink when an older reference still mentions it
 
 Do not put them in the evaluator execution area.
 

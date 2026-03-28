@@ -1,0 +1,58 @@
+{
+  "proposal_id": "prop_l1_terminal_hardtanh_block_v1",
+  "created_utc": "2026-03-25T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "title": "Terminal int8 hardtanh block",
+  "abstraction_layer": "circuit_block",
+  "hypothesis": "A bounded int8 hardtanh activation block can be implemented and physically characterized well enough to serve as another low-risk nonlinear circuit_block reference using the existing integer pwl path.",
+  "direct_comparison": {
+    "primary_question": "Can one bounded int8 hardtanh block produce accepted physical implementation metrics suitable for later integrated and Layer 2 evaluation use?",
+    "include": [
+      "one bounded int8 hardtanh block candidate",
+      "one bounded physical sweep on the target platform"
+    ],
+    "exclude": [
+      "integrated nm1 architecture-block evaluation in the first pass",
+      "layer2 mapper or architecture ranking",
+      "native fp16 hardtanh in the first pass"
+    ],
+    "follow_on_broad_sweep": [
+      "only if the first hardtanh block is accepted and broader nonlinear-family exploration becomes necessary"
+    ]
+  },
+  "expected_benefit": [
+    "provides real physical timing, power, and area for another bounded int8 nonlinear activation block",
+    "gives a second small real evaluation task to exercise automatic merge-to-finalization without broader architecture risk"
+  ],
+  "risks": [
+    "the first point set may need adjustment for clamp behavior around the piecewise breakpoints",
+    "later integrated use may still require a separate architecture-block follow-on"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "task_type": "l1_sweep",
+      "evaluation_mode": "measurement_only",
+      "objective": "terminal_hardtanh_physical_metrics",
+      "cost_class": "high",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": false,
+      "requires_materialized_refs": false,
+      "abstraction_layer": "circuit_block",
+      "expected_result": {
+        "direction": "unknown",
+        "reason": "the first goal is simply to obtain accepted physical implementation metrics for one bounded int8 hardtanh block"
+      }
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l1_terminal_tanh_block_v1/promotion_result.json",
+    "docs/proposals/prop_l1_terminal_hardsigmoid_block_v1/promotion_result.json"
+  ],
+  "knowledge_refs": [
+    "docs/proposals/prop_l1_terminal_tanh_block_v1/design_brief.md",
+    "discussion:2026-03-25-user-session"
+  ]
+}

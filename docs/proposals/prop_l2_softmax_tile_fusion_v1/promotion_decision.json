@@ -1,0 +1,21 @@
+{
+  "proposal_id": "prop_l2_softmax_tile_fusion_v1",
+  "candidate_id": "cand_softmax_tail_fused_output_nm1_focus_r2",
+  "decision": "superseded",
+  "reason": "The original focused nm1 fused-output experiment was accepted and remains useful historical evidence, but the open mechanism question was taken over by the newer overlap-probe and bounded terminal direct-output proposals, so this proposal is now closed as superseded rather than kept in iterate indefinitely.",
+  "evidence_refs": [
+    "work_item:l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2",
+    "run_key:l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2_run_392da4f54afe565a",
+    "pr:41",
+    "control_plane/shadow_exports/l2_decisions/l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2.json",
+    "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_submit_v1/report.md",
+    "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_softmax_macro_fused_output_nm1_v1__l2_prop_l2_softmax_tile_fusion_v1_nm1_focus_r2/report.md",
+    "docs/proposals/prop_cross_terminal_output_overlap_probe_v1/promotion_result.json",
+    "docs/proposals/prop_l2_mapper_terminal_hardsigmoid_direct_output_v1/promotion_result.json",
+    "docs/proposals/prop_l2_mapper_terminal_hardtanh_direct_output_v1/promotion_result.json",
+    "docs/proposals/prop_l2_mapper_terminal_leakyrelu_direct_output_v1/promotion_result.json",
+    "docs/proposals/prop_l2_mapper_terminal_relu6_direct_output_v1/promotion_result.json"
+  ],
+  "next_action": "Close the proposal as superseded by the newer overlap-probe and bounded terminal direct-output lines.",
+  "requires_human_approval": false
+}

@@ -82,12 +82,12 @@ prop_l2_softmax_tile_fusion_v1
 This avoids deriving a task identity from stale session residue.
 Recommended artifact location:
 ```text
-docs/developer_loop/<proposal_id>/
+docs/proposals/<proposal_id>/
 ```
 
 Bootstrap from:
 ```text
-docs/developer_loop/_template/
+docs/proposals/_template/
 ```
 
 Or use:
@@ -97,7 +97,7 @@ Or use:
 
 Initial file set:
 ```text
-docs/developer_loop/<proposal_id>/
+docs/proposals/<proposal_id>/
   design_brief.md
   proposal.json
 ```
@@ -134,7 +134,7 @@ If approved, the developer agent:
 
 Updated file set:
 ```text
-docs/developer_loop/<proposal_id>/
+docs/proposals/<proposal_id>/
   design_brief.md
   proposal.json
   implementation_summary.md
@@ -160,7 +160,7 @@ Examples:
 
 Recommended file:
 ```text
-docs/developer_loop/<proposal_id>/quality_gate.md
+docs/proposals/<proposal_id>/quality_gate.md
 ```
 
 Minimum content:
@@ -192,7 +192,7 @@ Approval result should be recorded explicitly.
 
 Recommended file:
 ```text
-docs/developer_loop/<proposal_id>/evaluation_gate.md
+docs/proposals/<proposal_id>/evaluation_gate.md
 ```
 
 Minimum content:
@@ -215,7 +215,7 @@ If approved, notebook developer agent:
 
 Recommended file:
 ```text
-docs/developer_loop/<proposal_id>/evaluation_requests.json
+docs/proposals/<proposal_id>/evaluation_requests.json
 ```
 
 Recommended fields:
@@ -260,7 +260,7 @@ After enough evidence is available, the notebook analysis agent:
 
 Updated file set:
 ```text
-docs/developer_loop/<proposal_id>/
+docs/proposals/<proposal_id>/
   design_brief.md
   proposal.json
   implementation_summary.md
@@ -282,7 +282,7 @@ Approval input:
 
 Recommended file:
 ```text
-docs/developer_loop/<proposal_id>/promotion_gate.md
+docs/proposals/<proposal_id>/promotion_gate.md
 ```
 
 Minimum content:
@@ -304,7 +304,7 @@ If approved, notebook developer agent:
 
 Recommended final file:
 ```text
-docs/developer_loop/<proposal_id>/promotion_result.json
+docs/proposals/<proposal_id>/promotion_result.json
 ```
 
 Suggested fields:

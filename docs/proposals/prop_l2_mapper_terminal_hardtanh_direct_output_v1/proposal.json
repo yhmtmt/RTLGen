@@ -1,0 +1,74 @@
+{
+  "proposal_id": "prop_l2_mapper_terminal_hardtanh_direct_output_v1",
+  "created_utc": "2026-03-26T12:30:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "full_architecture",
+  "title": "Terminal hardtanh direct output",
+  "hypothesis": "With accepted lower-layer HardTanh grounding in place, bounded terminal HardTanh vec-op tails on fixed nm1 should benefit from writing directly to Y_DRAM instead of staging through activation SRAM.",
+  "direct_comparison": {
+    "primary_question": "Does bounded terminal HardTanh direct vec-op output improve latency and energy on fixed nm1 against the non-fused baseline?",
+    "include": [
+      "one bounded HardTanh measurement baseline on fixed nm1",
+      "one paired direct-output candidate on the same model suite"
+    ],
+    "exclude": [
+      "broad nonlinear-family ranking beyond HardTanh in the first pass",
+      "full npu_top physical claims beyond the accepted reduced HardTanh proxy grounding"
+    ],
+    "follow_on_broad_sweep": [
+      "optional wider nonlinear-family sweep only after the bounded HardTanh comparison is accepted"
+    ]
+  },
+  "expected_benefit": [
+    "reduced terminal writeback latency for HardTanh vec-op tails",
+    "lower energy from removing a redundant SRAM write/read pair"
+  ],
+  "risks": [
+    "HardTanh perf gains may be smaller than tanh on the chosen bounded suite",
+    "reduced proxy physical grounding is sufficient for this staged proof but not for broad full-top ranking"
+  ],
+  "needs_mapper_change": true,
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "full_architecture",
+      "objective": "terminal_hardtanh_baseline_measurement",
+      "cost_class": "medium",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": false,
+      "requires_materialized_refs": false,
+      "expected_result": {
+        "direction": "baseline_only",
+        "reason": "first collect non-fused legality and reference metrics on the bounded HardTanh suite"
+      }
+    },
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "paired_comparison",
+      "abstraction_layer": "full_architecture",
+      "objective": "terminal_hardtanh_direct_output_pair",
+      "cost_class": "medium",
+      "depends_on_item_ids": [
+        "l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "improved",
+        "reason": "direct vec-op output should remove the final activation-SRAM writeback roundtrip on the bounded HardTanh suite"
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/designs/npu_blocks/npu_fp16_cpp_nm1_hardtanhproxy/metrics.csv",
+    "docs/proposals/prop_l1_npu_nm1_hardtanh_vec_enable_v1/analysis_report.md"
+  ],
+  "knowledge_refs": [
+    "docs/proposals/prop_l2_mapper_terminal_tanh_direct_output_v1/analysis_report.md",
+    "docs/proposals/prop_l2_mapper_terminal_hardsigmoid_direct_output_v1/analysis_report.md",
+    "discussion:2026-03-26 next-evaluation selection"
+  ]
+}

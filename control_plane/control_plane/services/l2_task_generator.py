@@ -18,6 +18,7 @@ from control_plane.models.enums import FlowName, LayerName, WorkItemState
 from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
 from control_plane.services.dependency_gate import evaluate_work_item_dependencies
+from control_plane.services.docs_paths import canonicalize_proposal_path, resolve_proposal_dir
 
 
 class Layer2TaskGenerationError(RuntimeError):
@@ -86,10 +87,7 @@ def _proposal_dir(repo_root: Path, proposal_path: str | None) -> Path | None:
     proposal_rel = str(proposal_path or "").strip()
     if not proposal_rel:
         return None
-    resolved = (repo_root / proposal_rel).resolve()
-    if resolved.is_file():
-        return resolved.parent
-    return resolved
+    return resolve_proposal_dir(repo_root, proposal_path=proposal_rel)
 
 
 def _load_requested_item_entry(repo_root: Path, proposal_path: str | None, item_id: str) -> dict[str, Any] | None:
@@ -469,6 +467,7 @@ def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateR
         _repo_rel(request.objective_profiles_json, repo_root) if request.objective_profiles_json else None
     )
     proposal_path = _repo_rel(request.proposal_path, repo_root) if request.proposal_path else None
+    proposal_path = canonicalize_proposal_path(repo_root, proposal_path=proposal_path, proposal_id=request.proposal_id)
     requested_entry = _load_requested_item_entry(repo_root, proposal_path, item_id)
     effective_evaluation_mode = _resolve_requested_entry_text(
         requested_entry,

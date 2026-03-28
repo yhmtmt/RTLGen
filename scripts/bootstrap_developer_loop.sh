@@ -3,10 +3,10 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-TEMPLATE_DIR="$REPO_ROOT/docs/developer_loop/_template"
+CANONICAL_TEMPLATE_DIR="$REPO_ROOT/docs/proposals/_template"
 
 usage() {
-  cat <<'EOF'
+  cat <<'USAGE'
 Usage:
   scripts/bootstrap_developer_loop.sh <proposal_id> [layer] [kind]
 
@@ -16,11 +16,11 @@ Arguments:
   kind          Optional. Default: architecture
 
 This creates:
-  docs/developer_loop/<proposal_id>/
+  docs/proposals/<proposal_id>/
 
 from the template workspace and stamps the proposal id, timestamp, layer, and
 kind into the initial files.
-EOF
+USAGE
 }
 
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
@@ -37,7 +37,8 @@ proposal_id="$1"
 layer="${2:-layer2}"
 kind="${3:-architecture}"
 created_utc="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-target_dir="$REPO_ROOT/docs/developer_loop/$proposal_id"
+target_dir="$REPO_ROOT/docs/proposals/$proposal_id"
+template_dir="$CANONICAL_TEMPLATE_DIR"
 
 case "$proposal_id" in
   prop_*)
@@ -48,8 +49,8 @@ case "$proposal_id" in
     ;;
 esac
 
-if [[ ! -d "$TEMPLATE_DIR" ]]; then
-  echo "ERROR: template directory not found: $TEMPLATE_DIR" >&2
+if [[ ! -f "$template_dir/proposal.json" ]]; then
+  echo "ERROR: proposal template not found: $CANONICAL_TEMPLATE_DIR" >&2
   exit 2
 fi
 
@@ -59,7 +60,7 @@ if [[ -e "$target_dir" ]]; then
 fi
 
 mkdir -p "$target_dir"
-cp -R "$TEMPLATE_DIR"/. "$target_dir"/
+cp -R "$template_dir"/. "$target_dir"/
 
 python3 - <<'PY' "$target_dir" "$proposal_id" "$layer" "$kind" "$created_utc"
 import json
@@ -88,17 +89,13 @@ eval_requests_path.write_text(json.dumps(eval_requests, indent=2) + "\n", encodi
 promotion_decision_path = target_dir / "promotion_decision.json"
 promotion_decision = json.loads(promotion_decision_path.read_text(encoding="utf-8"))
 promotion_decision["proposal_id"] = proposal_id
-promotion_decision_path.write_text(
-    json.dumps(promotion_decision, indent=2) + "\n", encoding="utf-8"
-)
+promotion_decision_path.write_text(json.dumps(promotion_decision, indent=2) + "\n", encoding="utf-8")
 
 promotion_result_path = target_dir / "promotion_result.json"
 promotion_result = json.loads(promotion_result_path.read_text(encoding="utf-8"))
 promotion_result["proposal_id"] = proposal_id
 promotion_result["merged_utc"] = created_utc
-promotion_result_path.write_text(
-    json.dumps(promotion_result, indent=2) + "\n", encoding="utf-8"
-)
+promotion_result_path.write_text(json.dumps(promotion_result, indent=2) + "\n", encoding="utf-8")
 PY
 
 sed -i \
@@ -108,7 +105,7 @@ sed -i \
   "$target_dir"/implementation_summary.md \
   "$target_dir"/analysis_report.md
 
-echo "Created developer-loop workspace:"
+echo "Created proposal workspace:"
 echo "  $target_dir"
 echo
 echo "Next steps:"

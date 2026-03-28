@@ -20,6 +20,7 @@ from control_plane.models.enums import ArtifactStorageMode, RunStatus, WorkItemS
 from control_plane.models.run_events import RunEvent
 from control_plane.models.runs import Run
 from control_plane.models.work_items import WorkItem
+from control_plane.services.docs_paths import resolve_proposal_file
 
 
 class Layer2ResultConsumerError(RuntimeError):
@@ -246,12 +247,7 @@ def _proposal_file(repo_root: Path, work_item: WorkItem) -> Path | None:
     proposal_path_text = str(developer_loop.get("proposal_path", "")).strip()
     if not proposal_path_text:
         return None
-    proposal_path = _resolve_path(repo_root=repo_root, path_text=proposal_path_text)
-    if proposal_path.is_dir():
-        return proposal_path / "proposal.json"
-    if proposal_path.name == "proposal.json":
-        return proposal_path
-    return proposal_path / "proposal.json"
+    return resolve_proposal_file(repo_root, proposal_path=proposal_path_text)
 
 
 def _load_proposal(repo_root: Path, work_item: WorkItem) -> dict[str, Any] | None:

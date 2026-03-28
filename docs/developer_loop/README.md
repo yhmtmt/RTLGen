@@ -1,36 +1,18 @@
 # Developer Loop Workspace
 
-This directory is the notebook-side working area for developer-agent proposal
-artifacts.
+This directory remains the active proposal workspace root for now.
+
+Longer-term target:
+
+- `docs/proposals/`
 
 Use it for:
-- one subdirectory per active proposal
-- approval-gate records
-- local analysis artifacts that support notebook-side autonomous iteration
 
-Recommended layout:
-```text
-docs/developer_loop/
-  README.md
-  _template/
-  <proposal_id>/
-```
+- one directory per proposal
+- proposal-local implementation and decision artifacts
+- notebook-side analysis and evaluation bookkeeping
 
-Rules:
-- keep one proposal directory per active direction
-- keep artifacts notebook-local until the direction is promotion-worthy
-- do not use this directory for evaluator execution products
-- use the control plane only for deterministic remote evaluation, not for these notebook-side artifacts
+Do not use it for:
 
-Start from:
-- `_template/`
-
-Or bootstrap a new proposal directory with:
-```sh
-/workspaces/RTLGen/scripts/bootstrap_developer_loop.sh <proposal_id> [layer] [kind]
-```
-
-Canonical design docs:
-- `docs/developer_agent_loop.md`
-- `docs/developer_agent_artifacts.md`
-- `docs/developer_agent_orchestration.md`
+- evaluator runtime outputs
+- raw worker work directories

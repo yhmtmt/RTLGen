@@ -12,15 +12,15 @@ Related documents:
 - `docs/developer_agent_loop.md`
 - `docs/developer_agent_artifacts.md`
 - `docs/developer_agent_orchestration.md`
-- `docs/internal_external_evaluator_policy.md`
+- `docs/workflows/evaluation_lanes.md`
 
 ## Startup Rule
 
 Before creating or updating a proposal, the developer agent should:
 1. read the mandatory first-read set in order,
 2. select only the topic-relevant baselines,
-3. inspect the preliminary intake backlog in `docs/development_items/`,
-4. inspect existing open proposal directories for overlap,
+3. inspect the preliminary intake backlog in `docs/backlog/`,
+4. inspect existing proposal directories for overlap through the canonical proposal catalog,
 5. then choose or update the `proposal_id`.
 
 Do not start from old session residue or broad repo-wide grep alone.
@@ -38,7 +38,7 @@ Read these in order for every new developer-agent session:
 - doc roles
 - canonical precedence
 
-3. `docs/internal_external_evaluator_policy.md`
+3. `docs/workflows/evaluation_lanes.md`
 - internal vs external evaluation lane boundaries
 
 4. `docs/developer_agent_loop.md`
@@ -49,17 +49,17 @@ Read these in order for every new developer-agent session:
 5. `docs/developer_agent_artifacts.md`
 - required proposal/analysis/promotion artifacts
 
-6. `docs/development_items/README.md`
+6. `docs/backlog/README.md`
 - intake backlog structure and item-id rule
 
 7. `docs/developer_agent_orchestration.md`
 - practical notebook-side working procedure
 
-8. `docs/abstraction_layering.md`
+8. `docs/architecture/layers.md`
 - generalized layer meaning
 - abstraction level vs evaluation mode
 
-9. `docs/two_layer_workflow.md`
+9. `docs/architecture/layer_interaction.md`
 - current active Layer 1 / Layer 2 workflow contract
 
 10. `npu/docs/status.md`
@@ -141,10 +141,10 @@ Reason:
 ## Existing Proposal Check
 
 Before choosing a new `proposal_id`, inspect:
-- `docs/development_items/index.md`
-- relevant `docs/development_items/items/<item_id>.md`
-- `docs/developer_loop/README.md`
-- existing directories under `docs/developer_loop/`
+- `docs/backlog/index.md`
+- relevant backlog entries referenced from `docs/backlog/`
+- `docs/proposals/index.md`
+- existing proposal workspaces referenced from `docs/proposals/`
 
 Goal:
 - avoid duplicate proposals,
@@ -156,7 +156,7 @@ Mapper-specific rule:
   legal or basically runnable, continue the existing proposal
 - if an evaluated architecture proposal reached `iterate` because the mapper
   heuristic likely prevented a fair architecture comparison, create or update a
-  mapper intake item in `docs/development_items/` first and promote that item
+  mapper intake item in `docs/backlog/` first and promote that item
   into its own mapper proposal
 
 ## Proposal ID Rule
@@ -198,7 +198,7 @@ Do not bulk-ingest these at session start:
 - all of `notes/`
 - archived control-plane proof logs
 - every campaign directory in `runs/campaigns/`
-- every proposal directory in `docs/developer_loop/`
+- every proposal directory under the legacy or canonical proposal trees
 - old session handoff artifacts
 
 Reason:
@@ -223,12 +223,21 @@ Before the first code change, confirm:
 
 1. mandatory first-read set is covered
 2. topic-relevant baselines are selected
-3. relevant intake items are checked in `docs/development_items/`
+3. relevant intake items are checked in `docs/backlog/`
 4. overlapping proposal directories are checked
 5. `proposal_id` is chosen or reused
-6. `docs/developer_loop/<proposal_id>/` exists
+6. `docs/proposals/<proposal_id>/` exists for new work, or the legacy proposal workspace is intentionally reused
 7. `proposal.json` and `design_brief.md` are initialized
 8. for mapper follow-on work, the triggering proposal/result evidence is linked
    from the intake item or proposal artifacts
 
 Only then move to the direction gate.
+
+
+## Migration Note
+
+The canonical navigation views are now:
+- `docs/backlog/`
+- `docs/proposals/`
+
+Legacy documentation paths now exist only as compatibility symlinks. Read and edit through the canonical trees by default.

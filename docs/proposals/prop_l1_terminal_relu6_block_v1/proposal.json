@@ -1,0 +1,57 @@
+{
+  "proposal_id": "prop_l1_terminal_relu6_block_v1",
+  "created_utc": "2026-03-25T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "title": "Terminal int8 ReLU6 block",
+  "abstraction_layer": "circuit_block",
+  "hypothesis": "A standalone int8 ReLU6 activation block can be physically characterized as a simple bounded circuit_block reference using the built-in integer activation path.",
+  "direct_comparison": {
+    "primary_question": "Can one standalone int8 ReLU6 block produce accepted physical implementation metrics suitable as another simple bounded circuit_block reference?",
+    "include": [
+      "one int8 ReLU6 block candidate",
+      "one bounded physical sweep on the target platform"
+    ],
+    "exclude": [
+      "integrated architecture-block evaluation in the first pass",
+      "layer2 mapper or architecture ranking",
+      "scaled or fp16 variants in the first pass"
+    ],
+    "follow_on_broad_sweep": [
+      "only if this simple bounded reference proves useful for later comparisons"
+    ]
+  },
+  "expected_benefit": [
+    "provides real physical timing, power, and area for another simple bounded activation block",
+    "provides one more small real evaluation task to verify fully automatic merge-to-finalization"
+  ],
+  "risks": [
+    "ReLU6 integer semantics are literal clamp-to-6, not scaled fixed-point saturation",
+    "later integrated use may require a differently scaled representation"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "task_type": "l1_sweep",
+      "evaluation_mode": "measurement_only",
+      "objective": "terminal_relu6_physical_metrics",
+      "cost_class": "high",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": false,
+      "requires_materialized_refs": false,
+      "abstraction_layer": "circuit_block",
+      "expected_result": {
+        "direction": "unknown",
+        "reason": "the first goal is simply to obtain accepted physical implementation metrics for one standalone int8 ReLU6 block"
+      }
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l1_terminal_hardsigmoid_block_v1/promotion_result.json",
+    "docs/proposals/prop_l1_terminal_hardtanh_block_v1/promotion_result.json"
+  ],
+  "knowledge_refs": [
+    "discussion:2026-03-25-user-session"
+  ]
+}
