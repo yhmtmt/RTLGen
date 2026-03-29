@@ -567,6 +567,14 @@ def finalize_after_merge(session: Session, request: ProposalFinalizeRequest) -> 
         if _is_terminal_decision(existing_decision):
             finalized_pr_number = str(promotion_result.get("pr_number") or "").strip()
             if pr_number is not None and finalized_pr_number == str(pr_number):
+                _supersede_stale_sibling_reviews(
+                    session,
+                    proposal_id=proposal_id,
+                    current_item_id=work_item.item_id,
+                    decision=existing_decision,
+                )
+                session.flush()
+                session.commit()
                 return ProposalFinalizeResult(
                     item_id=work_item.item_id,
                     proposal_id=proposal_id,
@@ -591,6 +599,14 @@ def finalize_after_merge(session: Session, request: ProposalFinalizeRequest) -> 
     if _is_terminal_decision(existing_decision) and _is_merged_status(matched_status):
         finalized_pr_number = str(promotion_result.get("pr_number") or "").strip()
         if pr_number is not None and finalized_pr_number == str(pr_number):
+            _supersede_stale_sibling_reviews(
+                session,
+                proposal_id=proposal_id,
+                current_item_id=work_item.item_id,
+                decision=existing_decision,
+            )
+            session.flush()
+            session.commit()
             return ProposalFinalizeResult(
                 item_id=work_item.item_id,
                 proposal_id=proposal_id,
