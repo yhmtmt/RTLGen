@@ -12,7 +12,8 @@ from sqlalchemy.orm import Session
 from control_plane.clock import utcnow
 from control_plane.db import create_all
 from control_plane.models.artifacts import Artifact
-from control_plane.models.enums import ExecutorType, FlowName, LayerName, RunStatus, WorkItemState
+from control_plane.models.enums import ExecutorType, FlowName, GitHubLinkState, LayerName, RunStatus, WorkItemState
+from control_plane.models.github_links import GitHubLink
 from control_plane.models.runs import Run
 from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
@@ -1169,3 +1170,192 @@ def test_finalize_l1_retry_item_rebinds_requested_entry() -> None:
         assert current["prior_item_ids"] == ["l1_retry_demo_r1"]
         assert current["status"] == "merged"
         assert current["merged_pr_number"] == 89
+
+
+def test_finalize_terminal_decision_supersedes_stale_sibling_review_items() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        proposal_id = "prop_l1_supersede_demo_v1"
+        proposal_path = _seed_repo_files(
+            repo_root,
+            proposal_id,
+            [
+                {
+                    "item_id": "l1_supersede_demo_r2",
+                    "task_type": "l1_sweep",
+                    "objective": "demo_metrics",
+                    "evaluation_mode": "measurement_only",
+                    "status": "pending",
+                }
+            ],
+        )
+        payload_path = repo_root / "control_plane" / "shadow_exports" / "l1_promotions" / "l1_supersede_demo_r2.json"
+        _write(
+            payload_path,
+            json.dumps(
+                {
+                    "item_id": "l1_supersede_demo_r2",
+                    "run_key": "l1_supersede_demo_r2_run_1",
+                    "source_commit": "abc123",
+                    "objective": "demo_metrics",
+                    "proposals": [
+                        {
+                            "metrics_ref": {"metrics_csv": "runs/designs/demo/metrics.csv", "platform": "nangate45", "status": "ok"},
+                            "metric_summary": {"critical_path_ns": 1.11, "die_area": 123.0, "total_power_mw": 0.2},
+                        }
+                    ],
+                },
+                indent=2,
+            )
+            + "\n",
+        )
+
+        with _session() as session:
+            current_task = TaskRequest(
+                request_key="l1:l1_supersede_demo_r2",
+                source="test",
+                requested_by="tester",
+                title="current",
+                description="demo_metrics",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                priority=1,
+                request_payload={
+                    "developer_loop": {
+                        "proposal_id": proposal_id,
+                        "proposal_path": str((proposal_path / "proposal.json").relative_to(repo_root)),
+                    },
+                    "task": {"objective": "demo_metrics"},
+                },
+            )
+            session.add(current_task)
+            session.flush()
+            current_work_item = WorkItem(
+                work_item_key="l1:l1_supersede_demo_r2",
+                task_request_id=current_task.id,
+                item_id="l1_supersede_demo_r2",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                platform="nangate45",
+                task_type="l1_sweep",
+                state=WorkItemState.MERGED,
+                priority=1,
+                input_manifest={},
+                command_manifest=[],
+                expected_outputs=["runs/designs/demo/metrics.csv"],
+                acceptance_rules=[],
+                source_commit="abc123",
+            )
+            session.add(current_work_item)
+            session.flush()
+            current_run = Run(
+                run_key="l1_supersede_demo_r2_run_1",
+                work_item_id=current_work_item.id,
+                attempt=1,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.SUCCEEDED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="abc123",
+                result_summary="ok",
+                result_payload={"queue_result": {"status": "ok"}},
+            )
+            session.add(current_run)
+            session.flush()
+            session.add(
+                Artifact(
+                    run_id=current_run.id,
+                    kind="promotion_proposal",
+                    storage_mode="repo",
+                    path=str(payload_path.relative_to(repo_root)),
+                    sha256="x",
+                    metadata_={},
+                )
+            )
+
+            stale_task = TaskRequest(
+                request_key="l1:l1_supersede_demo_r1",
+                source="test",
+                requested_by="tester",
+                title="stale",
+                description="demo_metrics",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                priority=1,
+                request_payload={
+                    "developer_loop": {
+                        "proposal_id": proposal_id,
+                        "proposal_path": str((proposal_path / "proposal.json").relative_to(repo_root)),
+                    },
+                    "task": {"objective": "demo_metrics"},
+                },
+            )
+            session.add(stale_task)
+            session.flush()
+            stale_work_item = WorkItem(
+                work_item_key="l1:l1_supersede_demo_r1",
+                task_request_id=stale_task.id,
+                item_id="l1_supersede_demo_r1",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                platform="nangate45",
+                task_type="l1_sweep",
+                state=WorkItemState.AWAITING_REVIEW,
+                priority=1,
+                input_manifest={},
+                command_manifest=[],
+                expected_outputs=["runs/designs/demo/metrics.csv"],
+                acceptance_rules=[],
+                source_commit="old123",
+            )
+            session.add(stale_work_item)
+            session.flush()
+            stale_run = Run(
+                run_key="l1_supersede_demo_r1_run_1",
+                work_item_id=stale_work_item.id,
+                attempt=1,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.SUCCEEDED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="old123",
+                result_summary="ok",
+                result_payload={"queue_result": {"status": "ok"}},
+            )
+            session.add(stale_run)
+            session.flush()
+            session.add(
+                GitHubLink(
+                    work_item_id=stale_work_item.id,
+                    run_id=stale_run.id,
+                    repo="yhmtmt/RTLGen",
+                    branch_name="eval/l1_supersede_demo_r1/s1",
+                    pr_number=124,
+                    pr_url="https://github.com/yhmtmt/RTLGen/pull/124",
+                    state=GitHubLinkState.PR_OPEN,
+                    metadata_={},
+                )
+            )
+            session.commit()
+
+            result = finalize_after_merge(
+                session,
+                ProposalFinalizeRequest(
+                    repo_root=str(repo_root),
+                    item_id="l1_supersede_demo_r2",
+                    pr_number=126,
+                    merge_commit="deadbeef",
+                    merged_utc="2026-03-29T00:00:00Z",
+                    git_publish=False,
+                ),
+            )
+
+            session.refresh(stale_work_item)
+            stale_link = session.query(GitHubLink).filter_by(pr_number=124).one()
+
+        assert result.skipped is False
+        assert result.decision == "promote"
+        assert stale_work_item.state == WorkItemState.SUPERSEDED
+        assert stale_link.state == GitHubLinkState.PR_CLOSED
+        assert stale_link.metadata_["superseded_by_item_id"] == "l1_supersede_demo_r2"
+        assert stale_link.metadata_["superseded_proposal_id"] == proposal_id

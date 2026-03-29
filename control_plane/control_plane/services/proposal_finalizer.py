@@ -13,7 +13,9 @@ from sqlalchemy.orm import Session
 
 from control_plane.clock import utcnow
 from control_plane.models.artifacts import Artifact
+from control_plane.models.enums import GitHubLinkState, WorkItemState
 from control_plane.models.github_links import GitHubLink
+from control_plane.models.run_events import RunEvent
 from control_plane.models.runs import Run
 from control_plane.models.work_items import WorkItem
 from control_plane.services.docs_paths import resolve_proposal_file
@@ -210,6 +212,69 @@ def _latest_merged_link(session: Session, *, work_item: WorkItem, pr_number: int
         if link is not None:
             return link
     return query.order_by(GitHubLink.updated_at.desc(), GitHubLink.created_at.desc()).first()
+
+
+def _latest_run_for_work_item(work_item: WorkItem) -> Run | None:
+    if not work_item.runs:
+        return None
+    return sorted(work_item.runs, key=lambda row: (row.attempt, row.created_at or utcnow()))[-1]
+
+
+def _supersede_stale_sibling_reviews(
+    session: Session,
+    *,
+    proposal_id: str,
+    current_item_id: str,
+    decision: str,
+) -> list[str]:
+    if not _is_terminal_decision(decision):
+        return []
+    superseded: list[str] = []
+    reason = f"proposal finalized with decision={decision}"
+    superseded_utc = utcnow().isoformat().replace("+00:00", "Z")
+    for sibling in session.query(WorkItem).all():
+        if sibling.item_id == current_item_id:
+            continue
+        if sibling.state in {WorkItemState.MERGED, WorkItemState.SUPERSEDED}:
+            continue
+        sibling_payload = _developer_loop_payload(sibling)
+        if str(sibling_payload.get("proposal_id", "")).strip() != proposal_id:
+            continue
+        pr_links = [link for link in sibling.github_links if link.pr_number is not None]
+        if not pr_links:
+            continue
+        if any(link.state == GitHubLinkState.PR_MERGED for link in pr_links):
+            continue
+        sibling.state = WorkItemState.SUPERSEDED
+        latest_run = _latest_run_for_work_item(sibling)
+        if latest_run is not None:
+            session.add(
+                RunEvent(
+                    run_id=latest_run.id,
+                    event_time=utcnow(),
+                    event_type="work_item_superseded",
+                    event_payload={
+                        "reason": reason,
+                        "actor": "proposal_finalizer",
+                        "superseded_by_item_id": current_item_id,
+                        "proposal_id": proposal_id,
+                    },
+                )
+            )
+        for link in pr_links:
+            link.state = GitHubLinkState.PR_CLOSED
+            metadata = dict(link.metadata_ or {})
+            metadata.update(
+                {
+                    "superseded_utc": superseded_utc,
+                    "superseded_reason": reason,
+                    "superseded_by_item_id": current_item_id,
+                    "superseded_proposal_id": proposal_id,
+                }
+            )
+            link.metadata_ = metadata
+        superseded.append(sibling.item_id)
+    return superseded
 
 
 def _is_merged_status(status: str) -> bool:
@@ -604,6 +669,13 @@ def finalize_after_merge(session: Session, request: ProposalFinalizeRequest) -> 
         next_action=next_action,
     )
 
+    _supersede_stale_sibling_reviews(
+        session,
+        proposal_id=proposal_id,
+        current_item_id=work_item.item_id,
+        decision=decision,
+    )
+
     _write_json(evaluation_requests_path, evaluation_requests)
     _write_json(promotion_decision_path, promotion_decision)
     _write_json(promotion_result_path, promotion_result)
@@ -629,6 +701,9 @@ def finalize_after_merge(session: Session, request: ProposalFinalizeRequest) -> 
         )
         _run_git(repo_root, "push", "origin", "HEAD:master")
         commit_sha = _run_git(repo_root, "rev-parse", "HEAD")
+
+    session.flush()
+    session.commit()
 
     return ProposalFinalizeResult(
         item_id=work_item.item_id,
