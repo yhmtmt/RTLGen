@@ -316,3 +316,52 @@ def test_worker_daemon_records_immediate_completion_failure_without_poisoning_ru
                 .one()
             )
             assert event.event_payload["error"] == "boom"
+
+
+def test_worker_daemon_records_unexpected_immediate_completion_failure_without_poisoning_run() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_git_repo(repo_root)
+        db_path = Path(td) / "cp.db"
+        engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            _seed_ready_work_item(session, item_id="daemon_item_completion_runtime_failure", repo_root=repo_root)
+
+        session_factory = build_session_factory(engine)
+        with patch(
+            "control_plane.workers.executor.process_completed_items",
+            side_effect=RuntimeError("unexpected boom"),
+        ):
+            result = run_worker_daemon(
+                session_factory,
+                config=WorkerDaemonConfig(
+                    worker=WorkerConfig(
+                        repo_root=str(repo_root),
+                        machine_key="daemon-worker-immediate-runtime-fail",
+                        capabilities={"platform": "nangate45", "flow": "openroad"},
+                        capability_filter={"platform": "nangate45", "flow": "openroad"},
+                        heartbeat_seconds=1,
+                        auto_process_completions=True,
+                        completion_repo="yhmtmt/RTLGen",
+                    ),
+                    poll_seconds=0,
+                    max_polls=1,
+                ),
+            )
+
+        assert result.executed_items == 1
+        with Session(engine) as session:
+            work_item = (
+                session.query(WorkItem)
+                .filter(WorkItem.item_id == "daemon_item_completion_runtime_failure")
+                .one()
+            )
+            assert work_item.state == WorkItemState.ARTIFACT_SYNC
+            event = (
+                session.query(RunEvent)
+                .filter(RunEvent.event_type == "completion_processing_failed")
+                .one()
+            )
+            assert event.event_payload["error"] == "unexpected boom"

@@ -17,9 +17,23 @@ from control_plane.models.github_links import GitHubLink
 from control_plane.models.run_events import RunEvent
 from control_plane.models.runs import Run
 from control_plane.models.work_items import WorkItem
-from control_plane.services.review_publisher import ReviewPublishRequest, publish_review_package
-from control_plane.services.submission_bridge import SubmissionPrepareRequest, prepare_submission_branch
-from control_plane.services.submission_executor import SubmissionExecuteRequest, execute_submission
+from control_plane.services.l1_result_consumer import (
+    Layer1ConsumeRequest,
+    Layer1ResultConsumerError,
+    consume_l1_result,
+)
+from control_plane.services.l2_result_consumer import (
+    Layer2ConsumeRequest,
+    Layer2ResultConsumerError,
+    consume_l2_result,
+)
+from control_plane.services.review_publisher import (
+    ReviewPublishError,
+    ReviewPublishRequest,
+    publish_review_package,
+)
+from control_plane.services.submission_bridge import SubmissionPrepareError, SubmissionPrepareRequest, prepare_submission_branch
+from control_plane.services.submission_executor import SubmissionExecuteError, SubmissionExecuteRequest, execute_submission
 
 
 class OperatorSubmissionError(RuntimeError):
@@ -173,6 +187,60 @@ def _has_review_artifact(session: Session, *, run_id: str, kind: str | None) -> 
     return artifact is not None
 
 
+def _review_artifact(session: Session, *, run_id: str, kind: str | None) -> Artifact | None:
+    if not kind:
+        return None
+    return (
+        session.query(Artifact)
+        .filter(Artifact.run_id == run_id, Artifact.kind == kind)
+        .one_or_none()
+    )
+
+
+def _review_artifact_exists_on_disk(*, repo_root: Path, artifact: Artifact | None) -> bool:
+    if artifact is None:
+        return False
+    path = repo_root / str(artifact.path)
+    return path.exists() and path.is_file()
+
+
+def _ensure_review_artifact_materialized(
+    session: Session,
+    *,
+    repo_root: Path,
+    work_item: WorkItem,
+    run: Run,
+) -> None:
+    required_kind = _required_review_artifact_kind(work_item.task_type)
+    artifact = _review_artifact(session, run_id=run.id, kind=required_kind)
+    if artifact is not None and _review_artifact_exists_on_disk(repo_root=repo_root, artifact=artifact):
+        return
+
+    target_path = str(artifact.path).strip() if artifact is not None else None
+    if work_item.task_type == "l1_sweep":
+        consume_l1_result(
+            session,
+            Layer1ConsumeRequest(
+                repo_root=str(repo_root),
+                item_id=work_item.item_id,
+                run_key=run.run_key,
+                target_path=target_path or None,
+            ),
+        )
+    elif work_item.task_type == "l2_campaign":
+        consume_l2_result(
+            session,
+            Layer2ConsumeRequest(
+                repo_root=str(repo_root),
+                item_id=work_item.item_id,
+                run_key=run.run_key,
+                target_path=target_path or None,
+            ),
+        )
+    session.refresh(work_item)
+    session.refresh(run)
+
+
 def _load_review_artifact_payload(
     session: Session,
     *,
@@ -235,8 +303,8 @@ def _validate_submission_review_payload(repo_root: Path, *, session: Session, wo
         )
 
 
-def _check_submission_eligibility(session: Session, *, work_item: WorkItem, run: Run, force: bool) -> None:
-    eligibility = assess_submission_eligibility(session, work_item=work_item, run=run)
+def _check_submission_eligibility(session: Session, *, repo_root: Path, work_item: WorkItem, run: Run, force: bool) -> None:
+    eligibility = assess_submission_eligibility(session, work_item=work_item, run=run, repo_root=repo_root)
     if force or eligibility.eligible:
         return
     raise OperatorSubmissionError(
@@ -249,6 +317,7 @@ def assess_submission_eligibility(
     *,
     work_item: WorkItem,
     run: Optional[Run] = None,
+    repo_root: Path | None = None,
 ) -> SubmissionEligibility:
     latest_run = run
     if latest_run is None and work_item.runs:
@@ -261,10 +330,13 @@ def assess_submission_eligibility(
         reason = "no_runs"
     else:
         required_kind = _required_review_artifact_kind(work_item.task_type)
+        artifact = _review_artifact(session, run_id=latest_run.id, kind=required_kind)
         if not required_kind:
             reason = f"unsupported_task_type={work_item.task_type}"
-        elif not _has_review_artifact(session, run_id=latest_run.id, kind=required_kind):
+        elif artifact is None:
             reason = f"missing {required_kind} artifact"
+        elif repo_root is not None and not _review_artifact_exists_on_disk(repo_root=repo_root, artifact=artifact):
+            reason = f"missing {required_kind} review file"
         elif not _has_canonical_runs_evidence(work_item):
             reason = "missing canonical runs evidence outputs"
 
@@ -308,9 +380,19 @@ def _upsert_operator_artifact(session: Session, *, run: Run, payload: dict[str, 
 def operate_submission(session: Session, request: OperatorSubmissionRequest) -> OperatorSubmissionResult:
     repo_root = Path(request.repo_root).resolve()
     work_item, run = _resolve_run(session, request)
-    _check_submission_eligibility(session, work_item=work_item, run=run, force=request.force)
-    if not request.force:
-        _validate_submission_review_payload(repo_root, session=session, work_item=work_item, run=run)
+    try:
+        _ensure_review_artifact_materialized(session, repo_root=repo_root, work_item=work_item, run=run)
+        _check_submission_eligibility(session, repo_root=repo_root, work_item=work_item, run=run, force=request.force)
+        if not request.force:
+            _validate_submission_review_payload(repo_root, session=session, work_item=work_item, run=run)
+    except (
+        Layer1ResultConsumerError,
+        Layer2ResultConsumerError,
+        ReviewPublishError,
+        SubmissionPrepareError,
+        SubmissionExecuteError,
+    ) as exc:
+        raise OperatorSubmissionError(str(exc)) from exc
     manifest_path = _default_manifest_path(repo_root, work_item.item_id)
     reusable_manifest = _is_reusable_submission_manifest(
         session,
@@ -324,31 +406,53 @@ def operate_submission(session: Session, request: OperatorSubmissionRequest) -> 
     effective_branch_name = request.branch_name or existing_branch_name
     effective_session_id = request.session_id or existing_session_id
 
-    review_result = publish_review_package(
-        session,
-        ReviewPublishRequest(
-            repo_root=str(repo_root),
-            item_id=work_item.item_id,
-            run_key=run.run_key,
-            evaluator_id=request.evaluator_id,
-            session_id=effective_session_id,
-            host=request.host,
-            executor=request.executor,
-            branch_name=effective_branch_name,
-            snapshot_target_path=request.snapshot_target_path,
-            package_target_path=request.package_target_path,
-        ),
-    )
-
-    submission_prepared = False
-    submission_prepared_reused = False
-    if reusable_manifest:
-        submission_prepared_reused = True
-    else:
-        prepare_submission_branch(
+    try:
+        review_result = publish_review_package(
             session,
-            SubmissionPrepareRequest(
+            ReviewPublishRequest(
                 repo_root=str(repo_root),
+                item_id=work_item.item_id,
+                run_key=run.run_key,
+                evaluator_id=request.evaluator_id,
+                session_id=effective_session_id,
+                host=request.host,
+                executor=request.executor,
+                branch_name=effective_branch_name,
+                snapshot_target_path=request.snapshot_target_path,
+                package_target_path=request.package_target_path,
+            ),
+        )
+
+        submission_prepared = False
+        submission_prepared_reused = False
+        if reusable_manifest:
+            submission_prepared_reused = True
+        else:
+            prepare_submission_branch(
+                session,
+                SubmissionPrepareRequest(
+                    repo_root=str(repo_root),
+                    item_id=work_item.item_id,
+                    run_key=run.run_key,
+                    evaluator_id=request.evaluator_id,
+                    session_id=effective_session_id,
+                    host=request.host,
+                    executor=request.executor,
+                    branch_name=effective_branch_name,
+                    snapshot_target_path=request.snapshot_target_path,
+                    package_target_path=request.package_target_path,
+                    worktree_root=request.worktree_root,
+                    commit_message=request.commit_message,
+                    pr_base=request.pr_base,
+                ),
+            )
+            submission_prepared = True
+
+        execute_result = execute_submission(
+            session,
+            SubmissionExecuteRequest(
+                repo_root=str(repo_root),
+                repo=request.repo,
                 item_id=work_item.item_id,
                 run_key=run.run_key,
                 evaluator_id=request.evaluator_id,
@@ -361,30 +465,11 @@ def operate_submission(session: Session, request: OperatorSubmissionRequest) -> 
                 worktree_root=request.worktree_root,
                 commit_message=request.commit_message,
                 pr_base=request.pr_base,
+                manifest_path=str(manifest_path),
             ),
         )
-        submission_prepared = True
-
-    execute_result = execute_submission(
-        session,
-        SubmissionExecuteRequest(
-            repo_root=str(repo_root),
-            repo=request.repo,
-            item_id=work_item.item_id,
-            run_key=run.run_key,
-            evaluator_id=request.evaluator_id,
-            session_id=effective_session_id,
-            host=request.host,
-            executor=request.executor,
-            branch_name=effective_branch_name,
-            snapshot_target_path=request.snapshot_target_path,
-            package_target_path=request.package_target_path,
-            worktree_root=request.worktree_root,
-            commit_message=request.commit_message,
-            pr_base=request.pr_base,
-            manifest_path=str(manifest_path),
-        ),
-    )
+    except (ReviewPublishError, SubmissionPrepareError, SubmissionExecuteError) as exc:
+        raise OperatorSubmissionError(str(exc)) from exc
 
     result = OperatorSubmissionResult(
         item_id=work_item.item_id,

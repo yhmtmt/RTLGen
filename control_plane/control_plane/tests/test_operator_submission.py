@@ -502,6 +502,49 @@ def test_operate_submission_blocks_missing_review_artifact_without_force() -> No
                 assert "missing decision_proposal artifact" in str(exc)
 
 
+def test_operate_submission_rebuilds_missing_l1_review_file_before_submission() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, run_key = _seed_l1_reviewable(session, repo_root)
+            run = session.query(Run).filter_by(run_key=run_key).one()
+            artifact = session.query(Artifact).filter_by(run_id=run.id, kind="promotion_proposal").one()
+            artifact_path = repo_root / artifact.path
+            artifact_path.unlink()
+            assert not artifact_path.exists()
+
+            fake_bin = repo_root / "fake_bin"
+            log_path = repo_root / "fake_cmds.log"
+            _make_fake_bin(fake_bin, log_path)
+            old_path = os.environ.get("PATH", "")
+            os.environ["PATH"] = f"{fake_bin}:{old_path}"
+            try:
+                result = operate_submission(
+                    session,
+                    OperatorSubmissionRequest(
+                        repo_root=str(repo_root),
+                        repo="yhmtmt/RTLGen",
+                        item_id=item_id,
+                        evaluator_id="cpbot",
+                        session_id="s20260310t090000z",
+                        host="cp-host",
+                        worktree_root=str(repo_root / "tmp_submit"),
+                    ),
+                )
+            finally:
+                os.environ["PATH"] = old_path
+
+            assert result.pr_number == 321
+            assert artifact_path.exists()
+            payload = json.loads(artifact_path.read_text(encoding="utf-8"))
+            assert payload["item_id"] == item_id
+
+
 def test_operate_submission_blocks_invalid_paired_l2_review_payload_without_force() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

@@ -189,7 +189,7 @@ def process_completed_items(session: Session, request: CompletionProcessRequest)
                         force=request.force,
                     ),
                 )
-            except OperatorSubmissionError as exc:
+            except Exception as exc:
                 submission_error = str(exc)
                 _record_submission_failure(session, run=latest_run, error=submission_error)
             else:

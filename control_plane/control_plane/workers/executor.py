@@ -225,6 +225,14 @@ def _process_completed_work_item(
             payload={"error": error, "item_id": work_item.item_id},
         )
         return
+    except Exception as exc:
+        _record_completion_result(
+            session_factory=session_factory,
+            run_key=run_key,
+            event_type="completion_processing_failed",
+            payload={"error": str(exc), "item_id": work_item.item_id},
+        )
+        return
 
     if not results:
         _record_completion_result(
