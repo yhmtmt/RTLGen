@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -116,7 +117,12 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
         latest_run = None
         if work_item.runs:
             latest_run = sorted(work_item.runs, key=lambda row: (row.attempt, row.created_at or utcnow()))[-1]
-        eligibility = assess_submission_eligibility(session, work_item=work_item, run=latest_run)
+        eligibility = assess_submission_eligibility(
+            session,
+            work_item=work_item,
+            run=latest_run,
+            repo_root=Path(request.repo_root).resolve(),
+        )
         pending_submission_items.append(
             {
                 "item_id": work_item.item_id,

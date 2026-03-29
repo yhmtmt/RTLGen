@@ -6,6 +6,7 @@ from dataclasses import asdict, dataclass
 import json
 from pathlib import Path
 import re
+import subprocess
 from typing import Any, Optional
 
 from sqlalchemy.orm import Session
@@ -176,6 +177,29 @@ def _has_canonical_runs_evidence(work_item: WorkItem) -> bool:
     return any(_is_canonical_runs_evidence(str(output)) for output in (work_item.expected_outputs or []))
 
 
+def _has_canonical_runs_evidence_diff(*, repo_root: Path, work_item: WorkItem) -> bool:
+    evidence_files: list[str] = []
+    seen: set[str] = set()
+    for output in work_item.expected_outputs or []:
+        rel_path = str(output).strip()
+        if not _is_canonical_runs_evidence(rel_path):
+            continue
+        candidate = repo_root / rel_path
+        if not candidate.exists() or not candidate.is_file() or rel_path in seen:
+            continue
+        seen.add(rel_path)
+        evidence_files.append(rel_path)
+    if not evidence_files:
+        return False
+    completed = subprocess.run(
+        ['git', '-C', str(repo_root), 'status', '--porcelain', '--', *evidence_files],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return bool(completed.stdout.strip())
+
+
 def _has_review_artifact(session: Session, *, run_id: str, kind: str | None) -> bool:
     if not kind:
         return False
@@ -339,6 +363,8 @@ def assess_submission_eligibility(
             reason = f"missing {required_kind} review file"
         elif not _has_canonical_runs_evidence(work_item):
             reason = "missing canonical runs evidence outputs"
+        elif repo_root is not None and not _has_canonical_runs_evidence_diff(repo_root=repo_root, work_item=work_item):
+            reason = "no canonical runs evidence diff"
 
     return SubmissionEligibility(
         item_id=work_item.item_id,

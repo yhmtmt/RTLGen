@@ -21,6 +21,7 @@ from control_plane.models.enums import ExecutorType, FlowName, LayerName, RunSta
 from control_plane.models.task_requests import TaskRequest
 from control_plane.models.runs import Run
 from control_plane.models.work_items import WorkItem
+from control_plane.services.l1_result_consumer import Layer1ConsumeRequest, consume_l1_result
 from control_plane.services.l2_result_consumer import Layer2ConsumeRequest, consume_l2_result
 from control_plane.services.operator_submission import assess_submission_eligibility
 
@@ -38,6 +39,23 @@ def _git(repo_root: Path, *args: str) -> str:
         capture_output=True,
     )
     return result.stdout.strip()
+
+
+def _commit_paths(repo_root: Path, *paths: str) -> None:
+    _git(repo_root, 'add', *paths)
+    subprocess.run(
+        ['git', '-C', str(repo_root), 'commit', '-m', 'record evidence'],
+        check=True,
+        capture_output=True,
+        text=True,
+        env={
+            **os.environ,
+            'GIT_AUTHOR_NAME': 'Test',
+            'GIT_AUTHOR_EMAIL': 'test@example.com',
+            'GIT_COMMITTER_NAME': 'Test',
+            'GIT_COMMITTER_EMAIL': 'test@example.com',
+        },
+    )
 
 
 def _init_repo(repo_root: Path) -> None:
@@ -187,6 +205,93 @@ def _seed_l2_reviewable(session: Session, repo_root: Path) -> tuple[str, str]:
     return work_item.item_id, run.run_key
 
 
+def _seed_l1_reviewable(session: Session, repo_root: Path) -> tuple[str, str]:
+    metrics_rel = "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv"
+    _write(
+        repo_root / metrics_rel,
+        (
+            "platform,status,param_hash,tag,critical_path_ns,die_area,total_power_mw,params_json,result_path\n"
+            'nangate45,ok,fast0001,tag_fast,12.0,30000,0.18,{"CLOCK_PERIOD": 6.0},runs/designs/activations/softmax_rowwise_int8_r4_wrapper/work/fast0001/result.json\n'
+        ),
+    )
+    _write(
+        repo_root / "runs/index.csv",
+        (
+            "circuit_type,design,platform,status,critical_path_ns,die_area,total_power_mw,config_hash,param_hash,tag,result_path,params_json,metrics_path,design_path,sram_area_um2,sram_read_energy_pj,sram_write_energy_pj,sram_max_access_time_ns\n"
+            'activations,softmax_rowwise_int8_r4_wrapper,nangate45,ok,12.0,30000,0.18,cfg123,fast0001,tag_fast,runs/designs/activations/softmax_rowwise_int8_r4_wrapper/work/fast0001/result.json,{"CLOCK_PERIOD": 6.0},runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv,runs/designs/activations/softmax_rowwise_int8_r4_wrapper,,,,\n'
+        ),
+    )
+
+    payload = {
+        "item_id": "l1_status_demo",
+        "title": "Layer1 status demo",
+        "layer": "layer1",
+        "flow": "openroad",
+        "handoff": {
+            "branch": "eval/l1_status_demo/<session_id>",
+            "pr_title": "eval: run layer1 status demo",
+            "pr_body_fields": {
+                "evaluator_id": "control_plane",
+                "session_id": "<session_id>",
+                "host": "<host>",
+                "queue_item_id": "l1_status_demo",
+            },
+            "checklist": ["Commit lightweight metrics outputs only"],
+        },
+    }
+    task_request = TaskRequest(
+        request_key="l1_sweep:l1_status_demo",
+        source="test",
+        requested_by="@tester",
+        title="Layer1 status demo",
+        description="test operator submission eligibility",
+        layer=LayerName.LAYER1,
+        flow=FlowName.OPENROAD,
+        priority=1,
+        request_payload=payload,
+        source_commit="deadbeef",
+    )
+    session.add(task_request)
+    session.flush()
+
+    work_item = WorkItem(
+        work_item_key="l1_sweep:l1_status_demo",
+        task_request_id=task_request.id,
+        item_id="l1_status_demo",
+        layer=LayerName.LAYER1,
+        flow=FlowName.OPENROAD,
+        platform="nangate45",
+        task_type="l1_sweep",
+        state=WorkItemState.ARTIFACT_SYNC,
+        priority=1,
+        source_mode="config",
+        input_manifest={"configs": ["examples/config_softmax_rowwise_int8.json"]},
+        command_manifest=[],
+        expected_outputs=[metrics_rel, "runs/index.csv"],
+        acceptance_rules=[],
+        source_commit="deadbeef",
+    )
+    session.add(work_item)
+    session.flush()
+
+    run = Run(
+        run_key="l1_status_demo_run_1",
+        work_item_id=work_item.id,
+        attempt=1,
+        executor_type=ExecutorType.INTERNAL_WORKER,
+        status=RunStatus.SUCCEEDED,
+        started_at=utcnow(),
+        completed_at=utcnow(),
+        checkout_commit="deadbeef",
+        result_summary="4/4 commands succeeded",
+        result_payload={"queue_result": {"status": "ok", "metrics_rows": [f"{metrics_rel}:2"], "notes": []}},
+    )
+    session.add(run)
+    session.commit()
+    consume_l1_result(session, Layer1ConsumeRequest(repo_root=str(repo_root), item_id=work_item.item_id))
+    return work_item.item_id, run.run_key
+
+
 def test_assess_submission_eligibility_ready_item() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
@@ -225,6 +330,36 @@ def test_assess_submission_eligibility_reports_blocked_state() -> None:
             assert status.reason == "state=running"
 
 
+def test_assess_submission_eligibility_reports_no_canonical_runs_evidence_diff() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, run_key = _seed_l2_reviewable(session, repo_root)
+            _commit_paths(
+                repo_root,
+                'control_plane/shadow_exports/campaigns/demo_l2/results.csv',
+                'control_plane/shadow_exports/campaigns/demo_l2/summary.csv',
+                'control_plane/shadow_exports/campaigns/demo_l2/report.md',
+                'control_plane/shadow_exports/campaigns/demo_l2/best_point.json',
+                'control_plane/shadow_exports/campaigns/demo_l2/objective_sweep.csv',
+                'control_plane/shadow_exports/designs/demo_nm1/metrics.csv',
+                'control_plane/shadow_exports/l2_decisions/l2_operate_demo.json',
+                'control_plane/shadow_exports/review/l2_operate_demo/evaluated.json',
+                'control_plane/shadow_exports/review/l2_operate_demo/review_package.json',
+            )
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            run = session.query(Run).filter_by(run_key=run_key).one()
+
+            status = assess_submission_eligibility(session, work_item=work_item, run=run, repo_root=repo_root)
+            assert status.eligible is False
+            assert status.reason == 'no canonical runs evidence diff'
+
+
 def test_assess_submission_eligibility_reports_missing_review_artifact() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
@@ -244,6 +379,29 @@ def test_assess_submission_eligibility_reports_missing_review_artifact() -> None
             status = assess_submission_eligibility(session, work_item=work_item, run=run)
             assert status.eligible is False
             assert status.reason == "missing decision_proposal artifact"
+
+
+def test_assess_submission_eligibility_reports_no_canonical_runs_evidence_diff_l1() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, run_key = _seed_l1_reviewable(session, repo_root)
+            _commit_paths(
+                repo_root,
+                'runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv',
+                'runs/index.csv',
+            )
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            run = session.query(Run).filter_by(run_key=run_key).one()
+
+            status = assess_submission_eligibility(session, work_item=work_item, run=run, repo_root=repo_root)
+            assert status.eligible is False
+            assert status.reason == 'no canonical runs evidence diff'
 
 
 def test_submission_status_table_output() -> None:
