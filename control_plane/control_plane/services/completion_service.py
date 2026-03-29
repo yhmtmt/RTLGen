@@ -8,6 +8,7 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 
+from control_plane.clock import utcnow
 from control_plane.artifact_policy import is_transportable_expected_output
 from control_plane.models.enums import WorkItemState
 from control_plane.models.run_events import RunEvent
