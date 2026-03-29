@@ -192,6 +192,20 @@ def main(argv: list[str] | None = None) -> int:
     worker_parser.add_argument("--max-retry-attempts", type=int, default=2)
     worker_parser.add_argument("--allow-stale-checkout", action="store_true")
     worker_parser.add_argument("--log-root")
+    worker_parser.add_argument("--auto-process-completions", action="store_true")
+    worker_parser.add_argument("--completion-submit", action="store_true")
+    worker_parser.add_argument("--completion-repo")
+    worker_parser.add_argument("--completion-evaluator-id", default="control_plane")
+    worker_parser.add_argument("--completion-session-id")
+    worker_parser.add_argument("--completion-host")
+    worker_parser.add_argument("--completion-executor", default="@control_plane")
+    worker_parser.add_argument("--completion-branch-name")
+    worker_parser.add_argument("--completion-snapshot-target-path")
+    worker_parser.add_argument("--completion-package-target-path")
+    worker_parser.add_argument("--completion-worktree-root")
+    worker_parser.add_argument("--completion-commit-message")
+    worker_parser.add_argument("--completion-pr-base", default="master")
+    worker_parser.add_argument("--completion-force", action="store_true")
     worker_parser.add_argument("--max-items", type=int, default=1)
 
     worker_daemon_parser = subparsers.add_parser("run-worker-daemon", help="Run the internal worker as a polling daemon")
@@ -210,6 +224,20 @@ def main(argv: list[str] | None = None) -> int:
     worker_daemon_parser.add_argument("--max-retry-attempts", type=int, default=2)
     worker_daemon_parser.add_argument("--allow-stale-checkout", action="store_true")
     worker_daemon_parser.add_argument("--log-root")
+    worker_daemon_parser.add_argument("--auto-process-completions", action="store_true")
+    worker_daemon_parser.add_argument("--completion-submit", action="store_true")
+    worker_daemon_parser.add_argument("--completion-repo")
+    worker_daemon_parser.add_argument("--completion-evaluator-id", default="control_plane")
+    worker_daemon_parser.add_argument("--completion-session-id")
+    worker_daemon_parser.add_argument("--completion-host")
+    worker_daemon_parser.add_argument("--completion-executor", default="@control_plane")
+    worker_daemon_parser.add_argument("--completion-branch-name")
+    worker_daemon_parser.add_argument("--completion-snapshot-target-path")
+    worker_daemon_parser.add_argument("--completion-package-target-path")
+    worker_daemon_parser.add_argument("--completion-worktree-root")
+    worker_daemon_parser.add_argument("--completion-commit-message")
+    worker_daemon_parser.add_argument("--completion-pr-base", default="master")
+    worker_daemon_parser.add_argument("--completion-force", action="store_true")
     worker_daemon_parser.add_argument("--poll-seconds", type=int, default=15)
     worker_daemon_parser.add_argument("--max-items-per-poll", type=int, default=1)
     worker_daemon_parser.add_argument("--concurrency", type=int, default=1)
@@ -602,11 +630,28 @@ def main(argv: list[str] | None = None) -> int:
             ("--command-stall-timeout-seconds", args.command_stall_timeout_seconds),
             ("--command-progress-seconds", args.command_progress_seconds),
             ("--log-root", args.log_root),
+            ("--completion-repo", args.completion_repo),
+            ("--completion-evaluator-id", args.completion_evaluator_id),
+            ("--completion-session-id", args.completion_session_id),
+            ("--completion-host", args.completion_host),
+            ("--completion-executor", args.completion_executor),
+            ("--completion-branch-name", args.completion_branch_name),
+            ("--completion-snapshot-target-path", args.completion_snapshot_target_path),
+            ("--completion-package-target-path", args.completion_package_target_path),
+            ("--completion-worktree-root", args.completion_worktree_root),
+            ("--completion-commit-message", args.completion_commit_message),
+            ("--completion-pr-base", args.completion_pr_base),
         ]:
             if value is not None:
                 argv2.extend([key, str(value)])
         if args.allow_stale_checkout:
             argv2.append("--allow-stale-checkout")
+        if args.auto_process_completions:
+            argv2.append("--auto-process-completions")
+        if args.completion_submit:
+            argv2.append("--completion-submit")
+        if args.completion_force:
+            argv2.append("--completion-force")
         return run_worker_main(argv2)
     if args.command == "run-worker-daemon":
         argv2 = [
@@ -640,11 +685,28 @@ def main(argv: list[str] | None = None) -> int:
             ("--command-progress-seconds", args.command_progress_seconds),
             ("--log-root", args.log_root),
             ("--max-polls", args.max_polls),
+            ("--completion-repo", args.completion_repo),
+            ("--completion-evaluator-id", args.completion_evaluator_id),
+            ("--completion-session-id", args.completion_session_id),
+            ("--completion-host", args.completion_host),
+            ("--completion-executor", args.completion_executor),
+            ("--completion-branch-name", args.completion_branch_name),
+            ("--completion-snapshot-target-path", args.completion_snapshot_target_path),
+            ("--completion-package-target-path", args.completion_package_target_path),
+            ("--completion-worktree-root", args.completion_worktree_root),
+            ("--completion-commit-message", args.completion_commit_message),
+            ("--completion-pr-base", args.completion_pr_base),
         ]:
             if value is not None:
                 argv2.extend([key, str(value)])
         if args.allow_stale_checkout:
             argv2.append("--allow-stale-checkout")
+        if args.auto_process_completions:
+            argv2.append("--auto-process-completions")
+        if args.completion_submit:
+            argv2.append("--completion-submit")
+        if args.completion_force:
+            argv2.append("--completion-force")
         if args.stop_on_no_work:
             argv2.append("--stop-on-no-work")
         if args.no_scheduler_maintenance:

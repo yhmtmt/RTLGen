@@ -13,6 +13,11 @@ from sqlalchemy.orm import Session, sessionmaker
 from control_plane.ids import make_id
 from control_plane.models.runs import Run
 from control_plane.models.work_items import WorkItem
+from control_plane.services.completion_service import (
+    CompletionProcessRequest,
+    CompletionProcessingError,
+    process_completed_items,
+)
 from control_plane.services.lease_service import acquire_next_lease
 from control_plane.services.run_service import (
     append_run_event,
@@ -48,6 +53,20 @@ class WorkerConfig:
     max_retry_attempts: int = 2
     enforce_source_commit: bool = True
     log_root: str | None = None
+    auto_process_completions: bool = False
+    completion_submit: bool = False
+    completion_repo: str | None = None
+    completion_evaluator_id: str = "control_plane"
+    completion_session_id: str | None = None
+    completion_host: str | None = None
+    completion_executor: str = "@control_plane"
+    completion_branch_name: str | None = None
+    completion_snapshot_target_path: str | None = None
+    completion_package_target_path: str | None = None
+    completion_worktree_root: str | None = None
+    completion_commit_message: str | None = None
+    completion_pr_base: str = "master"
+    completion_force: bool = False
 
 
 @dataclass(frozen=True)
@@ -141,6 +160,97 @@ def _log_dir(config: WorkerConfig, item_id: str, run_key: str) -> str:
     path = root / item_id / run_key
     path.mkdir(parents=True, exist_ok=True)
     return str(path)
+
+
+SUPPORTED_IMMEDIATE_COMPLETION_TASK_TYPES = {"l1_sweep", "l2_campaign"}
+
+
+def _record_completion_result(
+    *,
+    session_factory: sessionmaker,
+    run_key: str,
+    event_type: str,
+    payload: dict[str, Any],
+) -> None:
+    with session_factory() as session:
+        append_run_event(
+            session,
+            run_key=run_key,
+            event_type=event_type,
+            event_payload=payload,
+        )
+
+
+def _process_completed_work_item(
+    session_factory: sessionmaker,
+    *,
+    config: WorkerConfig,
+    work_item: WorkItem,
+    run_key: str,
+) -> None:
+    if not config.auto_process_completions:
+        return
+    if work_item.task_type not in SUPPORTED_IMMEDIATE_COMPLETION_TASK_TYPES:
+        return
+
+    request = CompletionProcessRequest(
+        repo_root=config.repo_root,
+        repo=config.completion_repo,
+        item_id=work_item.item_id,
+        submit=config.completion_submit and bool(config.completion_repo),
+        evaluator_id=config.completion_evaluator_id,
+        session_id=config.completion_session_id,
+        host=config.completion_host or config.hostname,
+        executor=config.completion_executor,
+        branch_name=config.completion_branch_name,
+        snapshot_target_path=config.completion_snapshot_target_path,
+        package_target_path=config.completion_package_target_path,
+        worktree_root=config.completion_worktree_root,
+        commit_message=config.completion_commit_message,
+        pr_base=config.completion_pr_base,
+        force=config.completion_force,
+    )
+    try:
+        with session_factory() as session:
+            results = process_completed_items(session, request)
+    except CompletionProcessingError as exc:
+        error = str(exc)
+        event_type = "completion_processing_failed"
+        if "not ready for completion processing" in error:
+            event_type = "completion_processing_skipped"
+        _record_completion_result(
+            session_factory=session_factory,
+            run_key=run_key,
+            event_type=event_type,
+            payload={"error": error, "item_id": work_item.item_id},
+        )
+        return
+
+    if not results:
+        _record_completion_result(
+            session_factory=session_factory,
+            run_key=run_key,
+            event_type="completion_processing_skipped",
+            payload={"item_id": work_item.item_id, "reason": "no_completion_results"},
+        )
+        return
+
+    result = results[0]
+    _record_completion_result(
+        session_factory=session_factory,
+        run_key=run_key,
+        event_type="completion_processed",
+        payload={
+            "item_id": result.item_id,
+            "task_type": result.task_type,
+            "consumed": result.consumed,
+            "submitted": result.submitted,
+            "work_item_state": result.work_item_state,
+            "target_path": result.target_path,
+            "pr_url": result.pr_url,
+            "submission_error": result.submission_error,
+        },
+    )
 
 
 def _materialize_generated_inputs(*, checkout_root: str, work_item: WorkItem) -> None:
@@ -449,6 +559,14 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
             ],
         )
     cleanup_checkout(checkout_info)
+
+    if completed.status == "succeeded":
+        _process_completed_work_item(
+            session_factory,
+            config=config,
+            work_item=work_item,
+            run_key=run_key,
+        )
 
     return WorkerLoopResult(
         status=completed.status,

@@ -34,6 +34,20 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-retry-attempts", type=int, default=2)
     parser.add_argument("--allow-stale-checkout", action="store_true")
     parser.add_argument("--log-root")
+    parser.add_argument("--auto-process-completions", action="store_true")
+    parser.add_argument("--completion-submit", action="store_true")
+    parser.add_argument("--completion-repo")
+    parser.add_argument("--completion-evaluator-id", default="control_plane")
+    parser.add_argument("--completion-session-id")
+    parser.add_argument("--completion-host")
+    parser.add_argument("--completion-executor", default="@control_plane")
+    parser.add_argument("--completion-branch-name")
+    parser.add_argument("--completion-snapshot-target-path")
+    parser.add_argument("--completion-package-target-path")
+    parser.add_argument("--completion-worktree-root")
+    parser.add_argument("--completion-commit-message")
+    parser.add_argument("--completion-pr-base", default="master")
+    parser.add_argument("--completion-force", action="store_true")
     parser.add_argument("--max-items", type=int, default=1)
     args = parser.parse_args(argv)
 
@@ -55,6 +69,20 @@ def main(argv: list[str] | None = None) -> int:
         max_retry_attempts=args.max_retry_attempts,
         enforce_source_commit=not args.allow_stale_checkout,
         log_root=args.log_root,
+        auto_process_completions=args.auto_process_completions,
+        completion_submit=args.completion_submit,
+        completion_repo=args.completion_repo,
+        completion_evaluator_id=args.completion_evaluator_id,
+        completion_session_id=args.completion_session_id,
+        completion_host=args.completion_host,
+        completion_executor=args.completion_executor,
+        completion_branch_name=args.completion_branch_name,
+        completion_snapshot_target_path=args.completion_snapshot_target_path,
+        completion_package_target_path=args.completion_package_target_path,
+        completion_worktree_root=args.completion_worktree_root,
+        completion_commit_message=args.completion_commit_message,
+        completion_pr_base=args.completion_pr_base,
+        completion_force=args.completion_force,
     )
     results = run_worker(session_factory, config=config, max_items=args.max_items)
     print(json.dumps(render_worker_results(results), indent=2, sort_keys=True))
