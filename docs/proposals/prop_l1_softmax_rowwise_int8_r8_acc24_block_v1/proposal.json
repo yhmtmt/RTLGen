@@ -1,0 +1,56 @@
+{
+  "proposal_id": "prop_l1_softmax_rowwise_int8_r8_acc24_block_v1",
+  "created_utc": "2026-03-30T10:48:20Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "title": "Softmax rowwise int8 r8 acc24 block",
+  "abstraction_layer": "circuit_block",
+  "hypothesis": "A standalone rowwise int8 softmax block with row_elems=8 and accum_bits=24 can be physically characterized as a bounded circuit_block reference using the existing shift-exp softmax path.",
+  "direct_comparison": {
+    "primary_question": "Can one standalone int8 rowwise softmax block with higher accumulation precision produce accepted physical implementation metrics as a bounded circuit_block reference?",
+    "include": [
+      "one int8 rowwise softmax r8 acc24 block candidate",
+      "one bounded physical sweep on Nangate45"
+    ],
+    "exclude": [
+      "integrated architecture-block evaluation in the first pass",
+      "layer2 mapper or architecture ranking",
+      "alternative row widths or scaling families in the first pass"
+    ],
+    "follow_on_broad_sweep": [
+      "only if the bounded block becomes a useful standalone reference for later mapper or architecture work"
+    ]
+  },
+  "expected_benefit": [
+    "adds one more canonical-path end-to-end proof item under the new docs layout",
+    "provides physical timing, area, and power for a small softmax circuit_block variant with higher accumulation precision"
+  ],
+  "risks": [
+    "this is still a standalone block and may not map directly to later integrated architecture needs",
+    "the higher accumulation width may not materially change physical behavior relative to the existing r8 acc20 block"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "task_type": "l1_sweep",
+      "evaluation_mode": "measurement_only",
+      "objective": "softmax_rowwise_int8_r8_acc24_physical_metrics",
+      "cost_class": "high",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": false,
+      "requires_materialized_refs": false,
+      "abstraction_layer": "circuit_block",
+      "expected_result": {
+        "direction": "unknown",
+        "reason": "the first goal is to obtain accepted physical implementation metrics for one standalone int8 rowwise softmax r8 acc24 block"
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/designs/activations/softmax_rowwise_int8_r8_acc20_wrapper/metrics.csv"
+  ],
+  "knowledge_refs": [
+    "discussion:2026-03-30-service-split-proof"
+  ]
+}

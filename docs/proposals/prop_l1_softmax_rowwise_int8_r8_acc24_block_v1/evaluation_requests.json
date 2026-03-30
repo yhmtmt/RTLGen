@@ -1,0 +1,17 @@
+{
+  "proposal_id": "prop_l1_softmax_rowwise_int8_r8_acc24_block_v1",
+  "source_commit": "",
+  "requested_items": [
+    {
+      "item_id": "l1_prop_l1_softmax_rowwise_int8_r8_acc24_block_v1_nangate45_r1",
+      "task_type": "l1_sweep",
+      "evaluation_mode": "measurement_only",
+      "objective": "softmax_rowwise_int8_r8_acc24_physical_metrics",
+      "status": "not_queued",
+      "abstraction_layer": "circuit_block",
+      "config_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_wrapper/config_softmax_rowwise_int8_r8_acc24.json",
+      "sweep_path": "runs/designs/activations/sweeps/nangate45_softmax_rowwise_v1.json",
+      "notes": "Fresh standalone circuit_block proof item created after the evaluator maintenance-loop split."
+    }
+  ]
+}
