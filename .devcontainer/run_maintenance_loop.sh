@@ -10,10 +10,18 @@ PROCESS_COMPLETIONS_IN_LOOP="${RTLCP_PROCESS_COMPLETIONS_IN_LOOP:-0}"
 
 source "${VENV_PATH}/bin/activate"
 
+AUTODISPATCH_READY="${RTLCP_AUTODISPATCH_READY:-0}"
 AUTORECONCILE_GITHUB="${RTLCP_AUTORECONCILE_GITHUB:-1}"
 AUTOREPORT_FAILURE_ISSUES="${RTLCP_AUTOREPORT_FAILURE_ISSUES:-1}"
 
 while true; do
+  if [[ "${AUTODISPATCH_READY}" == "1" ]]; then
+    if ! env PYTHONPATH="${REPO_ROOT}/control_plane" \
+      "${REPO_ROOT}/control_plane/scripts/dispatch_ready_items_service.sh"
+    then
+      printf '[%s] ready-item dispatch failed\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >&2
+    fi
+  fi
   if [[ "${PROCESS_COMPLETIONS_IN_LOOP}" == "1" ]]; then
     if ! env PYTHONPATH="${REPO_ROOT}/control_plane" \
       "${REPO_ROOT}/control_plane/scripts/process_completions_service.sh"

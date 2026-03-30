@@ -15,6 +15,7 @@ from control_plane.clock import utcnow
 from control_plane.services.completion_service import CompletionProcessRequest, CompletionProcessingError, process_completed_items
 from control_plane.services.github_poller import GitHubPollRequest, poll_github_links
 from control_plane.services.review_state_backfill import ReviewStateBackfillRequest, backfill_review_states
+from control_plane.services.dispatcher_service import DispatchReadyRequest, dispatch_ready_items
 
 
 def _json_response(status: int, payload: dict[str, object]):
@@ -91,6 +92,22 @@ def register_operator_control_routes(app) -> None:
             result = poll_github_links(session, GitHubPollRequest(repo_root=_service_repo_root(), repo=_github_repo()))
         return _json_response(200, result.__dict__)
 
+
+    def dispatch_ready_handler(_method: str, _path: str, _params: dict[str, str], body: bytes):
+        payload = _json_body(body)
+        engine = build_engine(settings.database_url)
+        create_all(engine)
+        session_factory = build_session_factory(engine)
+        with session_factory() as session:
+            result = dispatch_ready_items(
+                session,
+                DispatchReadyRequest(
+                    max_assignments=int(payload.get("max_assignments")) if payload.get("max_assignments") is not None else None,
+                    freshness_seconds=int(payload.get("freshness_seconds", 120)),
+                ),
+            )
+        return _json_response(200, {"results": [row.__dict__ for row in result]})
+
     def backfill_review_handler(_method: str, _path: str, _params: dict[str, str], body: bytes):
         payload = _json_body(body)
         engine = build_engine(settings.database_url)
@@ -149,6 +166,7 @@ def register_operator_control_routes(app) -> None:
         return wrapper
 
     app.add_route("POST", "/api/v1/control/process-completions", guarded(process_completions_handler))
+    app.add_route("POST", "/api/v1/control/dispatch-ready", guarded(dispatch_ready_handler))
     app.add_route("POST", "/api/v1/control/poll-github", guarded(poll_github_handler))
     app.add_route("POST", "/api/v1/control/backfill-review-states", guarded(backfill_review_handler))
     app.add_route("POST", "/api/v1/control/items/{item_id}/submit", guarded(submit_item_handler))

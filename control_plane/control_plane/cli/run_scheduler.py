@@ -8,14 +8,17 @@ import json
 from control_plane.db import build_engine, build_session_factory, create_all
 from control_plane.services.lease_service import expire_stale_leases
 from control_plane.services.scheduler import assign_work_item
+from control_plane.services.dispatcher_service import DispatchReadyRequest, dispatch_ready_items
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run control-plane scheduler maintenance tasks")
     parser.add_argument("--database-url", required=True)
-    parser.add_argument("command", choices=["expire-stale-leases", "assign-item", "clear-assignment"])
+    parser.add_argument("command", choices=["expire-stale-leases", "assign-item", "clear-assignment", "dispatch-ready-items"])
     parser.add_argument("--item-id")
     parser.add_argument("--machine-key")
+    parser.add_argument("--max-assignments", type=int)
+    parser.add_argument("--freshness-seconds", type=int, default=120)
     args = parser.parse_args(argv)
 
     engine = build_engine(args.database_url)
@@ -37,6 +40,13 @@ def main(argv: list[str] | None = None) -> int:
                 raise SystemExit("clear-assignment requires --item-id")
             result = assign_work_item(session, item_id=args.item_id, machine_key=None)
             print(json.dumps(result.__dict__, indent=2, sort_keys=True))
+            return 0
+        if args.command == "dispatch-ready-items":
+            result = dispatch_ready_items(
+                session,
+                DispatchReadyRequest(max_assignments=args.max_assignments, freshness_seconds=args.freshness_seconds),
+            )
+            print(json.dumps([row.__dict__ for row in result], indent=2, sort_keys=True))
             return 0
     return 2
 

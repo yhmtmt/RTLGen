@@ -174,9 +174,11 @@ def main(argv: list[str] | None = None) -> int:
 
     scheduler_parser = subparsers.add_parser("scheduler", help="Run scheduler maintenance commands")
     scheduler_parser.add_argument("--database-url", required=True)
-    scheduler_parser.add_argument("scheduler_command", choices=["expire-stale-leases", "assign-item", "clear-assignment"])
+    scheduler_parser.add_argument("scheduler_command", choices=["expire-stale-leases", "assign-item", "clear-assignment", "dispatch-ready-items"])
     scheduler_parser.add_argument("--item-id")
     scheduler_parser.add_argument("--machine-key")
+    scheduler_parser.add_argument("--max-assignments", type=int)
+    scheduler_parser.add_argument("--freshness-seconds", type=int, default=120)
 
     worker_parser = subparsers.add_parser("run-worker", help="Run the internal worker loop")
     worker_parser.add_argument("--database-url", required=True)
@@ -607,6 +609,10 @@ def main(argv: list[str] | None = None) -> int:
             argv2.extend(["--item-id", str(args.item_id)])
         if args.machine_key is not None:
             argv2.extend(["--machine-key", str(args.machine_key)])
+        if args.max_assignments is not None:
+            argv2.extend(["--max-assignments", str(args.max_assignments)])
+        if args.freshness_seconds is not None:
+            argv2.extend(["--freshness-seconds", str(args.freshness_seconds)])
         return run_scheduler_main(argv2)
     if args.command == "run-worker":
         argv2 = [

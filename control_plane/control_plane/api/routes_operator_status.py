@@ -524,6 +524,14 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
         { key: "hostname", label: "Host" },
         { key: "expires_at", label: "Expired", render: (value) => escapeHtml(formatTime(value)) },
       ], payload.stale_leases || []);
+      renderTable(tables.machines, [
+        { key: "machine_key", label: "Machine", render: (value) => `<span class='mono'>${escapeHtml(value)}</span>` },
+        { key: "role", label: "Role" },
+        { key: "slot_capacity", label: "Slots" },
+        { key: "active_slots", label: "Active" },
+        { key: "assigned_ready", label: "Assigned Ready" },
+        { key: "last_seen_at", label: "Last Seen", render: (value) => escapeHtml(formatTime(value)) },
+      ], payload.evaluator_machines || []);
       renderTable(tables.pendingSubmissions, [
         { key: "item_id", label: "Item", render: (value) => `<span class='mono'>${escapeHtml(value)}</span>` },
         { key: "run_status", label: "Run" },
@@ -576,6 +584,12 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
       pollHandle = window.setInterval(refreshNow, Number(pollSelect.value));
     }
 
+    dispatchReadyButton.addEventListener("click", () => runControlAction(
+      dispatchReadyButton,
+      "/api/v1/control/dispatch-ready",
+      {},
+      (result) => `Dispatched ${(result.results || []).length} items.`,
+    ));
     processCompletionsButton.addEventListener("click", () => runControlAction(
       processCompletionsButton,
       "/api/v1/control/process-completions",
@@ -660,6 +674,7 @@ def _status_payload(database_url: str, recent_limit: int) -> dict[str, object]:
         "state_counts": status.state_counts,
         "active_runs": status.active_runs,
         "stale_leases": status.stale_leases,
+        "evaluator_machines": status.evaluator_machines,
         "pending_submission_items": status.pending_submission_items,
         "recent_failures": status.recent_failures,
         "recent_submissions": status.recent_submissions,
