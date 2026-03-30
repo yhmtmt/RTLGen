@@ -16,7 +16,7 @@ case "${ROLE}" in
   evaluator)
     export RTLCP_DATABASE_URL="${RTLCP_DATABASE_URL:-postgresql+psycopg://rtlgen:rtlgen@localhost:5432/rtlgen_control_plane}"
     /workspaces/RTLGen/.devcontainer/start_postgres.sh
-    echo "Evaluator role owns worker/completion/finalization services for the internal lane"
+    echo "Evaluator role owns worker and periodic maintenance services for the internal lane"
     echo "Configured worker concurrency: ${RTLCP_WORKER_CONCURRENCY:-1}"
     if [[ "${AUTOSTART_WORKER:-1}" == "1" ]]; then
       /workspaces/RTLGen/.devcontainer/control_plane_service_ctl.sh start worker
@@ -26,7 +26,7 @@ case "${ROLE}" in
     if [[ "${AUTOSTART_COMPLETIONS:-0}" == "1" ]]; then
       /workspaces/RTLGen/.devcontainer/control_plane_service_ctl.sh start completions
     else
-      echo "Skipping completion loop autostart for evaluator role"
+      echo "Skipping maintenance loop autostart for evaluator role"
     fi
     if [[ "${AUTOSTART_API:-1}" == "1" ]]; then
       /workspaces/RTLGen/.devcontainer/control_plane_service_ctl.sh start api

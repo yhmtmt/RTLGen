@@ -15,7 +15,7 @@ case "${SERVICE}" in
     TARGET_CMD=("${SERVICE_REPO_ROOT}/control_plane/scripts/run_worker_daemon_service.sh")
     ;;
   completions)
-    TARGET_CMD=("${SERVICE_REPO_ROOT}/.devcontainer/run_completion_loop.sh")
+    TARGET_CMD=("${SERVICE_REPO_ROOT}/.devcontainer/run_maintenance_loop.sh")
     ;;
   api)
     TARGET_CMD=("${SERVICE_REPO_ROOT}/control_plane/scripts/run_api_service.sh")
@@ -68,8 +68,8 @@ case "${ACTION}" in
             "$(_timestamp)" "${SERVICE}" "${RTLCP_MACHINE_KEY:-}" "${RTLCP_HOSTNAME:-$(hostname)}" "${RTLCP_DATABASE_URL:-}"
           ;;
         completions)
-          printf '[%s] service=%s repo=%s db=%s submit=%s\n' \
-            "$(_timestamp)" "${SERVICE}" "${RTLCP_REPO_SLUG:-}" "${RTLCP_DATABASE_URL:-}" "${RTLCP_SUBMIT:-0}"
+          printf '[%s] service=%s repo=%s db=%s process_completions=%s\n' \
+            "$(_timestamp)" "${SERVICE}" "${RTLCP_REPO_SLUG:-}" "${RTLCP_DATABASE_URL:-}" "${RTLCP_PROCESS_COMPLETIONS_IN_LOOP:-0}"
           ;;
         api)
           printf '[%s] service=%s host=%s port=%s db=%s\n' \
