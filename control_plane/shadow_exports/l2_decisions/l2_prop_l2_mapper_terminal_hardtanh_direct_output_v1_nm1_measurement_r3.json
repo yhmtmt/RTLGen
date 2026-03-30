@@ -1,0 +1,90 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-03-30T13:23:55.253536Z",
+  "item_id": "l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r3",
+  "run_key": "l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r3_run_442ab23d904cb459",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "5c3182b46851c70f2ac38f51b521a92662b86ceb",
+  "objective": "bounded_terminal_hardtanh_direct_output_baseline",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_hardtanhproxy/sweep_proxy_firstpass.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_hardtanhproxy/config_nm1_hardtanhproxy.json"
+    ],
+    "design_dirs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_hardtanhproxy"
+    ],
+    "macro_manifests": [],
+    "generated_campaign": {
+      "path": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardtanh_suite_submit_nm1_v1/campaign__l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r3.json",
+      "outputs": {
+        "report_md": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardtanh_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r3/report.md",
+        "results_csv": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardtanh_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r3/results.csv",
+        "campaign_dir": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardtanh_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r3"
+      },
+      "clean_outputs": true,
+      "base_campaign_path": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardtanh_suite_submit_nm1_v1/campaign.json"
+    },
+    "candidate_manifests": []
+  },
+  "recommendation": {
+    "arch_id": "fp16_nm1_hardtanhproxy",
+    "macro_mode": "hier_macro",
+    "objective_rank": 1,
+    "objective_score": "0.0",
+    "latency_ms_mean": 0.007076666666666666,
+    "energy_mj_mean": 2.5476e-09,
+    "critical_path_ns_mean": 2.7883,
+    "die_area_um2_mean": 1440000.0,
+    "total_power_mw_mean": 0.00036,
+    "flow_elapsed_s_mean": 59.44
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_mapper_terminal_hardtanh_direct_output_v1",
+    "title": "Terminal hardtanh direct output",
+    "primary_question": "Does bounded terminal HardTanh direct vec-op output improve latency and energy on fixed nm1 against the non-fused baseline?",
+    "evaluation_mode": "measurement_only",
+    "comparison_role": "measurement_only",
+    "abstraction_layer": "full_architecture",
+    "expected_direction": "unknown",
+    "expected_reason": "maintenance-loop split proof baseline retry",
+    "summary": "This item records metrics for the requested architecture point and does not emit a proposal judgment.",
+    "expectation_status": "not_applicable"
+  },
+  "proposal_assessment": null,
+  "source_refs": {
+    "best_point_json": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardtanh_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r3/best_point.json",
+    "summary_csv": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardtanh_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r3/summary.csv",
+    "results_csv": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardtanh_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r3/results.csv",
+    "report_md": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardtanh_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r3/report.md",
+    "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardtanh_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r3/artifacts/mapper/fp16_nm1_hardtanhproxy/hardtanh_vec_b128_f64/schedule.yml",
+    "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardtanh_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r3/artifacts/mapper/fp16_nm1_hardtanhproxy/hardtanh_vec_b128_f64/descriptors.bin",
+    "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardtanh_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r3/artifacts/perf/fp16_nm1_hardtanhproxy/hardtanh_vec_b128_f64/trace.json",
+    "focused_model_artifacts": [
+      {
+        "model_id": "hardtanh_vec_b128_f64",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardtanh_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r3/artifacts/mapper/fp16_nm1_hardtanhproxy/hardtanh_vec_b128_f64/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardtanh_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r3/artifacts/mapper/fp16_nm1_hardtanhproxy/hardtanh_vec_b128_f64/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardtanh_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r3/artifacts/perf/fp16_nm1_hardtanhproxy/hardtanh_vec_b128_f64/trace.json"
+      },
+      {
+        "model_id": "hardtanh_vec_b256_f256",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardtanh_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r3/artifacts/mapper/fp16_nm1_hardtanhproxy/hardtanh_vec_b256_f256/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardtanh_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r3/artifacts/mapper/fp16_nm1_hardtanhproxy/hardtanh_vec_b256_f256/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardtanh_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r3/artifacts/perf/fp16_nm1_hardtanhproxy/hardtanh_vec_b256_f256/trace.json"
+      },
+      {
+        "model_id": "hardtanh_vec_flatten_b128_2x4x8",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardtanh_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r3/artifacts/mapper/fp16_nm1_hardtanhproxy/hardtanh_vec_flatten_b128_2x4x8/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardtanh_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r3/artifacts/mapper/fp16_nm1_hardtanhproxy/hardtanh_vec_flatten_b128_2x4x8/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_onnx_terminal_hardtanh_suite_submit_nm1_v1__l2_prop_l2_mapper_terminal_hardtanh_direct_output_v1_nm1_measurement_r3/artifacts/perf/fp16_nm1_hardtanhproxy/hardtanh_vec_flatten_b128_2x4x8/trace.json"
+      }
+    ]
+  }
+}
