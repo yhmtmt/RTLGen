@@ -43,6 +43,8 @@ class WorkerConfig:
     machine_key: str
     hostname: str | None = None
     executor_kind: str = "local_process"
+    machine_role: str = "evaluator"
+    slot_capacity: int = 1
     capabilities: dict[str, Any] | None = None
     capability_filter: dict[str, Any] | None = None
     lease_seconds: int = 1800
@@ -301,6 +303,8 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
                 capabilities=config.capabilities,
                 capability_filter=config.capability_filter,
                 lease_seconds=config.lease_seconds,
+                machine_role=config.machine_role,
+                slot_capacity=config.slot_capacity,
             )
         except NoEligibleWorkItem:
             return WorkerLoopResult(status="no_work", summary="no eligible work item")

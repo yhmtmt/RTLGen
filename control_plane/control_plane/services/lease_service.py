@@ -69,6 +69,8 @@ def upsert_worker_machine(
     hostname: str | None = None,
     executor_kind: str = "docker",
     capabilities: dict[str, Any] | None = None,
+    role: str = "evaluator",
+    slot_capacity: int = 1,
 ) -> WorkerMachine:
     machine = session.query(WorkerMachine).filter(WorkerMachine.machine_key == machine_key).one_or_none()
     now = utcnow()
@@ -77,6 +79,8 @@ def upsert_worker_machine(
             machine_key=machine_key,
             hostname=hostname or machine_key,
             executor_kind=executor_kind,
+            role=role,
+            slot_capacity=max(1, int(slot_capacity)),
             capabilities=capabilities or {},
             active=True,
             last_seen_at=now,
@@ -87,6 +91,8 @@ def upsert_worker_machine(
 
     machine.hostname = hostname or machine.hostname
     machine.executor_kind = executor_kind or machine.executor_kind
+    machine.role = role or machine.role
+    machine.slot_capacity = max(1, int(slot_capacity))
     machine.capabilities = capabilities if capabilities is not None else machine.capabilities
     machine.active = True
     machine.last_seen_at = now
@@ -103,6 +109,8 @@ def acquire_next_lease(
     capabilities: dict[str, Any] | None = None,
     capability_filter: dict[str, Any] | None = None,
     lease_seconds: int = 1800,
+    machine_role: str = "evaluator",
+    slot_capacity: int = 1,
 ) -> LeaseAcquireResult:
     last_error: IntegrityError | None = None
     for _ in range(_LEASE_CONFLICT_RETRIES):
@@ -112,10 +120,13 @@ def acquire_next_lease(
             hostname=hostname,
             executor_kind=executor_kind,
             capabilities=capabilities,
+            role=machine_role,
+            slot_capacity=slot_capacity,
         )
         try:
             work_item = select_next_work_item(
                 session,
+                machine_key=machine.machine_key,
                 machine_capabilities=machine.capabilities,
                 capability_filter=capability_filter,
             )

@@ -365,3 +365,39 @@ def test_worker_daemon_records_unexpected_immediate_completion_failure_without_p
                 .one()
             )
             assert event.event_payload["error"] == "unexpected boom"
+
+
+def test_worker_daemon_registers_machine_slot_capacity() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_git_repo(repo_root)
+        db_path = Path(td) / "cp.db"
+        engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
+        create_all(engine)
+        session_factory = build_session_factory(engine)
+
+        run_worker_daemon(
+            session_factory,
+            config=WorkerDaemonConfig(
+                worker=WorkerConfig(
+                    repo_root=str(repo_root),
+                    machine_key="daemon-worker-capacity",
+                    machine_role="evaluator",
+                    slot_capacity=3,
+                    capabilities={"platform": "nangate45", "flow": "openroad"},
+                    capability_filter={"platform": "nangate45", "flow": "openroad"},
+                    heartbeat_seconds=1,
+                ),
+                poll_seconds=0,
+                max_polls=1,
+                stop_on_no_work=True,
+                concurrency=3,
+            ),
+        )
+
+        with Session(engine) as session:
+            from control_plane.models.worker_machines import WorkerMachine
+            machine = session.query(WorkerMachine).filter_by(machine_key="daemon-worker-capacity").one()
+            assert machine.role == "evaluator"
+            assert machine.slot_capacity == 3

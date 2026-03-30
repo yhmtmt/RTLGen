@@ -14,6 +14,7 @@ class WorkItem(TimestampMixin, UpdatedAtMixin, Base):
     __table_args__ = (
         Index("ix_work_items_state_priority_created_at", "state", "priority", "created_at"),
         Index("ix_work_items_layer_platform_state", "layer", "platform", "state"),
+        Index("ix_work_items_assigned_machine_state", "assigned_machine_key", "state", "priority", "created_at"),
     )
 
     id = uuid_column(primary_key=True)
@@ -33,6 +34,7 @@ class WorkItem(TimestampMixin, UpdatedAtMixin, Base):
     acceptance_rules = Column(json_type, nullable=False, default=list)
     queue_snapshot_path = Column(Text)
     source_commit = Column(String(64))
+    assigned_machine_key = Column(String(255))
 
     task_request = relationship("TaskRequest", back_populates="work_items")
     leases = relationship("WorkerLease", back_populates="work_item")

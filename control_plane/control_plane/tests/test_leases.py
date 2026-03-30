@@ -19,6 +19,7 @@ from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
 from control_plane.models.worker_leases import WorkerLease
 from control_plane.services.lease_service import acquire_next_lease, expire_stale_leases, heartbeat_lease
+from control_plane.services.scheduler import assign_work_item
 
 
 def make_session() -> Session:
@@ -192,3 +193,33 @@ def test_lease_routes_work_in_process() -> None:
                 del os.environ["RTLCP_DATABASE_URL"]
             else:
                 os.environ["RTLCP_DATABASE_URL"] = old
+
+
+def test_acquire_next_lease_prefers_item_assigned_to_machine() -> None:
+    with make_session() as session:
+        item_a, item_b = seed_ready_items(session)
+        from control_plane.services.lease_service import upsert_worker_machine
+        upsert_worker_machine(session, machine_key="machine-1")
+        assign_work_item(session, item_id=item_a.item_id, machine_key="machine-1")
+        result = acquire_next_lease(
+            session,
+            machine_key="machine-1",
+            capabilities={"flow": "openroad"},
+            lease_seconds=900,
+        )
+        assert result.item_id == item_a.item_id
+
+
+def test_acquire_next_lease_does_not_take_item_assigned_to_other_machine() -> None:
+    with make_session() as session:
+        item_a, item_b = seed_ready_items(session)
+        from control_plane.services.lease_service import upsert_worker_machine
+        upsert_worker_machine(session, machine_key="machine-2")
+        assign_work_item(session, item_id=item_b.item_id, machine_key="machine-2")
+        result = acquire_next_lease(
+            session,
+            machine_key="machine-1",
+            capabilities={"platform": "sky130hd", "flow": "openroad"},
+            lease_seconds=900,
+        )
+        assert result.item_id == item_a.item_id

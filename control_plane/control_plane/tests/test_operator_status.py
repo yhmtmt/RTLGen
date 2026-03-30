@@ -232,3 +232,56 @@ def test_operator_status_summarizes_live_state() -> None:
         assert len(status.recent_submissions) == 1
         assert status.recent_submissions[0]["item_id"] == "review_item"
         assert status.recent_submissions[0]["pr_number"] == 99
+
+
+def test_operator_status_reports_evaluator_machine_capacity() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_all(engine)
+    with Session(engine) as session:
+        from control_plane.services.lease_service import upsert_worker_machine
+        machine = upsert_worker_machine(
+            session,
+            machine_key="worker-capacity",
+            hostname="worker-capacity",
+            role="evaluator",
+            slot_capacity=4,
+            capabilities={"platform": "nangate45", "flow": "openroad"},
+        )
+        task = TaskRequest(
+            request_key="queue:assigned_ready",
+            source="test",
+            requested_by="tester",
+            title="assigned ready",
+            description="assigned ready",
+            layer="layer2",
+            flow="openroad",
+            priority=1,
+            request_payload={"item_id": "assigned_ready"},
+        )
+        session.add(task)
+        session.flush()
+        session.add(
+            WorkItem(
+                work_item_key="queue:assigned_ready",
+                task_request_id=task.id,
+                item_id="assigned_ready",
+                layer="layer2",
+                flow="openroad",
+                platform="nangate45",
+                task_type="l2_campaign",
+                state=WorkItemState.READY,
+                priority=1,
+                input_manifest={},
+                command_manifest=[],
+                expected_outputs=[],
+                acceptance_rules=[],
+                assigned_machine_key=machine.machine_key,
+            )
+        )
+        session.commit()
+
+        status = load_operator_status(session, OperatorStatusRequest(recent_limit=5))
+        row = next(r for r in status.evaluator_machines if r["machine_key"] == "worker-capacity")
+        assert row["slot_capacity"] == 4
+        assert row["assigned_ready"] == 1
+        assert row["active_slots"] == 0

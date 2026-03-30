@@ -174,7 +174,9 @@ def main(argv: list[str] | None = None) -> int:
 
     scheduler_parser = subparsers.add_parser("scheduler", help="Run scheduler maintenance commands")
     scheduler_parser.add_argument("--database-url", required=True)
-    scheduler_parser.add_argument("scheduler_command", choices=["expire-stale-leases"])
+    scheduler_parser.add_argument("scheduler_command", choices=["expire-stale-leases", "assign-item", "clear-assignment"])
+    scheduler_parser.add_argument("--item-id")
+    scheduler_parser.add_argument("--machine-key")
 
     worker_parser = subparsers.add_parser("run-worker", help="Run the internal worker loop")
     worker_parser.add_argument("--database-url", required=True)
@@ -182,6 +184,8 @@ def main(argv: list[str] | None = None) -> int:
     worker_parser.add_argument("--machine-key", required=True)
     worker_parser.add_argument("--hostname")
     worker_parser.add_argument("--executor-kind", default="local_process")
+    worker_parser.add_argument("--machine-role", default="evaluator")
+    worker_parser.add_argument("--slot-capacity", type=int)
     worker_parser.add_argument("--capabilities-json")
     worker_parser.add_argument("--capability-filter-json")
     worker_parser.add_argument("--lease-seconds", type=int, default=1800)
@@ -214,6 +218,8 @@ def main(argv: list[str] | None = None) -> int:
     worker_daemon_parser.add_argument("--machine-key", required=True)
     worker_daemon_parser.add_argument("--hostname")
     worker_daemon_parser.add_argument("--executor-kind", default="local_process")
+    worker_daemon_parser.add_argument("--machine-role", default="evaluator")
+    worker_daemon_parser.add_argument("--slot-capacity", type=int)
     worker_daemon_parser.add_argument("--capabilities-json")
     worker_daemon_parser.add_argument("--capability-filter-json")
     worker_daemon_parser.add_argument("--lease-seconds", type=int, default=1800)
@@ -596,13 +602,12 @@ def main(argv: list[str] | None = None) -> int:
             argv2.append("--no-git-publish")
         return finalize_after_merge_main(argv2)
     if args.command == "scheduler":
-        return run_scheduler_main(
-            [
-                "--database-url",
-                args.database_url,
-                args.scheduler_command,
-            ]
-        )
+        argv2 = ["--database-url", args.database_url, args.scheduler_command]
+        if args.item_id is not None:
+            argv2.extend(["--item-id", str(args.item_id)])
+        if args.machine_key is not None:
+            argv2.extend(["--machine-key", str(args.machine_key)])
+        return run_scheduler_main(argv2)
     if args.command == "run-worker":
         argv2 = [
             "--database-url",
@@ -615,6 +620,10 @@ def main(argv: list[str] | None = None) -> int:
             args.executor_kind,
             "--lease-seconds",
             str(args.lease_seconds),
+            "--machine-role",
+            str(args.machine_role),
+            "--machine-role",
+            str(args.machine_role),
             "--heartbeat-seconds",
             str(args.heartbeat_seconds),
             "--max-retry-attempts",
@@ -624,6 +633,8 @@ def main(argv: list[str] | None = None) -> int:
         ]
         for key, value in [
             ("--hostname", args.hostname),
+            ("--slot-capacity", args.slot_capacity),
+            ("--slot-capacity", args.slot_capacity),
             ("--capabilities-json", args.capabilities_json),
             ("--capability-filter-json", args.capability_filter_json),
             ("--command-timeout-seconds", args.command_timeout_seconds),
@@ -665,6 +676,8 @@ def main(argv: list[str] | None = None) -> int:
             args.executor_kind,
             "--lease-seconds",
             str(args.lease_seconds),
+            "--machine-role",
+            str(args.machine_role),
             "--heartbeat-seconds",
             str(args.heartbeat_seconds),
             "--max-retry-attempts",
@@ -678,6 +691,7 @@ def main(argv: list[str] | None = None) -> int:
         ]
         for key, value in [
             ("--hostname", args.hostname),
+            ("--slot-capacity", args.slot_capacity),
             ("--capabilities-json", args.capabilities_json),
             ("--capability-filter-json", args.capability_filter_json),
             ("--command-timeout-seconds", args.command_timeout_seconds),

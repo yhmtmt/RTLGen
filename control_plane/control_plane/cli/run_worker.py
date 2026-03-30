@@ -24,6 +24,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--machine-key", required=True)
     parser.add_argument("--hostname", default=socket.gethostname())
     parser.add_argument("--executor-kind", default="local_process")
+    parser.add_argument("--machine-role", default="evaluator")
+    parser.add_argument("--slot-capacity", type=int)
     parser.add_argument("--capabilities-json")
     parser.add_argument("--capability-filter-json")
     parser.add_argument("--lease-seconds", type=int, default=1800)
@@ -59,6 +61,8 @@ def main(argv: list[str] | None = None) -> int:
         machine_key=args.machine_key,
         hostname=args.hostname,
         executor_kind=args.executor_kind,
+        machine_role=args.machine_role,
+        slot_capacity=args.slot_capacity if args.slot_capacity is not None else max(1, args.max_items),
         capabilities=_parse_json_flag(args.capabilities_json),
         capability_filter=_parse_json_flag(args.capability_filter_json),
         lease_seconds=args.lease_seconds,

@@ -13,8 +13,17 @@ from control_plane.models.enums import LeaseStatus, RunStatus, WorkItemState
 from control_plane.models.github_links import GitHubLink
 from control_plane.models.runs import Run
 from control_plane.models.worker_leases import WorkerLease
+from control_plane.models.worker_machines import WorkerMachine
 from control_plane.models.work_items import WorkItem
 from control_plane.services.operator_submission import assess_submission_eligibility
+
+
+def _as_comparable_utc(dt):
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=utcnow().tzinfo)
+    return dt
 
 
 def _submission_finalization_fields(link: GitHubLink) -> dict[str, Any]:
@@ -45,12 +54,14 @@ def _submission_finalization_fields(link: GitHubLink) -> dict[str, Any]:
 @dataclass(frozen=True)
 class OperatorStatusRequest:
     recent_limit: int = 10
+    repo_root: str = "/workspaces/rtlgen-eval-clean"
 
 
 @dataclass(frozen=True)
 class OperatorStatusResult:
     health_summary: dict[str, object]
     state_counts: dict[str, int]
+    evaluator_machines: list[dict[str, object]]
     active_runs: list[dict[str, object]]
     stale_leases: list[dict[str, object]]
     pending_submission_items: list[dict[str, object]]
@@ -64,6 +75,32 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
         state_counts[work_item.state.value] = state_counts.get(work_item.state.value, 0) + 1
 
     now = utcnow()
+
+    evaluator_machines = []
+    for machine in session.query(WorkerMachine).order_by(WorkerMachine.machine_key.asc()).all():
+        active_slots = (
+            session.query(WorkerLease)
+            .filter(WorkerLease.machine_id == machine.id, WorkerLease.status == LeaseStatus.ACTIVE)
+            .count()
+        )
+        assigned_ready = (
+            session.query(WorkItem)
+            .filter(WorkItem.assigned_machine_key == machine.machine_key, WorkItem.state == WorkItemState.READY)
+            .count()
+        )
+        evaluator_machines.append(
+            {
+                "machine_key": machine.machine_key,
+                "hostname": machine.hostname,
+                "role": machine.role,
+                "slot_capacity": machine.slot_capacity,
+                "active_slots": active_slots,
+                "assigned_ready": assigned_ready,
+                "active": machine.active,
+                "last_seen_at": machine.last_seen_at.isoformat() if machine.last_seen_at else None,
+            }
+        )
+
     active_runs = []
     for run in (
         session.query(Run)
@@ -93,7 +130,8 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
         .order_by(WorkerLease.expires_at.asc())
         .all()
     ):
-        if lease.expires_at is None or lease.expires_at > now:
+        expires_at = _as_comparable_utc(lease.expires_at)
+        if expires_at is None or expires_at > now:
             continue
         stale_leases.append(
             {
@@ -224,6 +262,7 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
     return OperatorStatusResult(
         health_summary=health_summary,
         state_counts=state_counts,
+        evaluator_machines=evaluator_machines,
         active_runs=active_runs,
         stale_leases=stale_leases,
         pending_submission_items=pending_submission_items,
