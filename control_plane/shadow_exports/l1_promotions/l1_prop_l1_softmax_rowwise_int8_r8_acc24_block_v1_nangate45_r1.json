@@ -1,0 +1,55 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-03-30T13:23:27.049121Z",
+  "item_id": "l1_prop_l1_softmax_rowwise_int8_r8_acc24_block_v1_nangate45_r1",
+  "run_key": "l1_prop_l1_softmax_rowwise_int8_r8_acc24_block_v1_nangate45_r1_run_2bf54aef57e9c1e6",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "5c3182b46851c70f2ac38f51b521a92662b86ceb",
+  "objective": "softmax_rowwise_int8_r8_acc24_physical_metrics",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/activations/sweeps/nangate45_softmax_rowwise_v1.json"
+    ],
+    "configs": [
+      "runs/designs/activations/softmax_rowwise_int8_r8_acc24_wrapper/config_softmax_rowwise_int8_r8_acc24.json"
+    ],
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": [
+      "third_party/nlohmann_json",
+      "third_party/cacti"
+    ]
+  },
+  "proposal_count": 1,
+  "evaluation_record": {
+    "evaluation_mode": "measurement_only",
+    "abstraction_layer": "circuit_block",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "49828ffb",
+        "tag": "softmax_rowwise_ng45_v1_9dd950f2",
+        "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_wrapper/work/49828ffb/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 20.2712,
+        "die_area": 105898.1764,
+        "total_power_mw": 1.11
+      }
+    }
+  ]
+}
