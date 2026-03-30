@@ -458,3 +458,48 @@ def test_submission_status_jsonl_output() -> None:
         payload = json.loads(lines[0])
         assert payload["item_id"] == "l2_operate_demo"
         assert payload["eligible"] is True
+
+
+def test_assess_submission_eligibility_reports_terminal_proposal() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        proposal_dir = repo_root / "docs" / "proposals" / "prop_terminal_demo"
+        proposal_dir.mkdir(parents=True, exist_ok=True)
+        _write(
+            proposal_dir / "proposal.json",
+            json.dumps({"proposal_id": "prop_terminal_demo"}, indent=2) + "\n",
+        )
+        _write(
+            proposal_dir / "promotion_result.json",
+            json.dumps(
+                {
+                    "proposal_id": "prop_terminal_demo",
+                    "decision": "promote",
+                    "pr_number": 114,
+                    "merge_commit": "deadbeef",
+                    "merged_utc": "2026-03-27T03:10:07Z",
+                },
+                indent=2,
+            ) + "\n",
+        )
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, run_key = _seed_l1_reviewable(session, repo_root)
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            payload = dict(work_item.task_request.request_payload or {})
+            payload["developer_loop"] = {
+                "proposal_id": "prop_terminal_demo",
+                "proposal_path": "docs/proposals/prop_terminal_demo",
+            }
+            work_item.task_request.request_payload = payload
+            session.commit()
+            run = session.query(Run).filter_by(run_key=run_key).one()
+
+            status = assess_submission_eligibility(session, work_item=work_item, run=run, repo_root=repo_root)
+            assert status.eligible is False
+            assert status.reason == "proposal already finalized with decision=promote"

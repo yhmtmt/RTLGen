@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l1_softmax_rowwise_int8_r8_acc24_block_v1",
-  "decision": "promoted",
-  "pr_number": 0,
-  "merge_commit": "git-sha",
-  "merged_utc": "2026-03-30T10:48:20Z"
+  "decision": "pending",
+  "pr_number": null,
+  "merge_commit": "",
+  "merged_utc": ""
 }

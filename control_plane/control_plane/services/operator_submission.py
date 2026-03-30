@@ -35,6 +35,7 @@ from control_plane.services.review_publisher import (
 )
 from control_plane.services.submission_bridge import SubmissionPrepareError, SubmissionPrepareRequest, prepare_submission_branch
 from control_plane.services.submission_executor import SubmissionExecuteError, SubmissionExecuteRequest, execute_submission
+from control_plane.services.docs_paths import resolve_proposal_file
 
 
 class OperatorSubmissionError(RuntimeError):
@@ -228,6 +229,29 @@ def _review_artifact_exists_on_disk(*, repo_root: Path, artifact: Artifact | Non
     return path.exists() and path.is_file()
 
 
+def _terminal_proposal_reason(*, repo_root: Path, work_item: WorkItem) -> str | None:
+    payload = (work_item.task_request.request_payload or {}) if work_item.task_request is not None else {}
+    developer_loop = payload.get("developer_loop")
+    if not isinstance(developer_loop, dict):
+        return None
+    proposal_id = str(developer_loop.get("proposal_id", "")).strip() or None
+    proposal_path = str(developer_loop.get("proposal_path", "")).strip() or None
+    proposal_json = resolve_proposal_file(repo_root, proposal_path=proposal_path, proposal_id=proposal_id)
+    if proposal_json is None:
+        return None
+    promotion_result_path = proposal_json.parent / "promotion_result.json"
+    if not promotion_result_path.exists():
+        return None
+    try:
+        promotion_result = json.loads(promotion_result_path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    decision = str(promotion_result.get("decision", "")).strip().lower()
+    if decision in {"promote", "promoted", "superseded", "closed", "rejected"}:
+        return f"proposal already finalized with decision={decision}"
+    return None
+
+
 def _ensure_review_artifact_materialized(
     session: Session,
     *,
@@ -361,10 +385,16 @@ def assess_submission_eligibility(
             reason = f"missing {required_kind} artifact"
         elif repo_root is not None and not _review_artifact_exists_on_disk(repo_root=repo_root, artifact=artifact):
             reason = f"missing {required_kind} review file"
+        elif repo_root is not None:
+            terminal_reason = _terminal_proposal_reason(repo_root=repo_root, work_item=work_item)
+            if terminal_reason is not None:
+                reason = terminal_reason
+            elif not _has_canonical_runs_evidence(work_item):
+                reason = "missing canonical runs evidence outputs"
+            elif not _has_canonical_runs_evidence_diff(repo_root=repo_root, work_item=work_item):
+                reason = "no canonical runs evidence diff"
         elif not _has_canonical_runs_evidence(work_item):
             reason = "missing canonical runs evidence outputs"
-        elif repo_root is not None and not _has_canonical_runs_evidence_diff(repo_root=repo_root, work_item=work_item):
-            reason = "no canonical runs evidence diff"
 
     return SubmissionEligibility(
         item_id=work_item.item_id,

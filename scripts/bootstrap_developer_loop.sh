@@ -94,7 +94,10 @@ promotion_decision_path.write_text(json.dumps(promotion_decision, indent=2) + "\
 promotion_result_path = target_dir / "promotion_result.json"
 promotion_result = json.loads(promotion_result_path.read_text(encoding="utf-8"))
 promotion_result["proposal_id"] = proposal_id
-promotion_result["merged_utc"] = created_utc
+promotion_result["decision"] = "pending"
+promotion_result["pr_number"] = None
+promotion_result["merge_commit"] = ""
+promotion_result["merged_utc"] = ""
 promotion_result_path.write_text(json.dumps(promotion_result, indent=2) + "\n", encoding="utf-8")
 PY
 
