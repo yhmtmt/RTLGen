@@ -220,3 +220,36 @@ def test_poll_github_links_skips_merged_pr_with_terminal_finalization_metadata()
         assert result.errors == []
         run_mock.assert_not_called()
         reconcile_mock.assert_not_called()
+
+
+def test_poll_github_links_reconciles_closed_unmerged_pr() -> None:
+    with _session() as session:
+        work_item, run = _seed_link(session)
+        closed_payload = {
+            "state": "closed",
+            "merged_at": None,
+            "merge_commit_sha": None,
+            "html_url": "https://github.com/yhmtmt/RTLGen/pull/85",
+            "head": {"ref": "eval/l2_demo_fused_r1/s20260325t000000z"},
+            "base": {"ref": "master"},
+        }
+        with patch("control_plane.services.github_poller.subprocess.run") as run_mock, patch(
+            "control_plane.services.github_poller.reconcile_github_link"
+        ) as reconcile_mock:
+            run_mock.return_value = subprocess.CompletedProcess(
+                args=["gh", "api"],
+                returncode=0,
+                stdout=json.dumps(closed_payload),
+                stderr="",
+            )
+            result = poll_github_links(session, GitHubPollRequest(repo_root="/tmp/repo"))
+
+        assert result.checked_count == 1
+        assert result.merged_count == 0
+        assert result.skipped_count == 0
+        assert result.errors == []
+        reconcile_mock.assert_called_once()
+        request = reconcile_mock.call_args.args[1]
+        assert request.item_id == work_item.item_id
+        assert request.run_key == run.run_key
+        assert request.state == "pr_closed"

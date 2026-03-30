@@ -82,6 +82,7 @@ def poll_github_links(session: Session, request: GitHubPollRequest) -> GitHubPol
             continue
 
         merged_at = str(payload.get("merged_at") or "").strip()
+        pr_state = str(payload.get("state") or "").strip().lower()
         merge_commit_sha = str(payload.get("merge_commit_sha") or "").strip()
         pr_url = str(payload.get("html_url") or link.pr_url or "").strip() or None
         head_ref = payload.get("head") or {}
@@ -89,27 +90,46 @@ def poll_github_links(session: Session, request: GitHubPollRequest) -> GitHubPol
         branch_name = str(head_ref.get("ref") or link.branch_name or "").strip() or None
         base_branch = str(base_ref.get("ref") or link.base_branch or "").strip() or None
 
-        if not merged_at:
-            skipped_count += 1
+        if merged_at:
+            reconcile_github_link(
+                session,
+                GitHubReconcileRequest(
+                    repo=link.repo,
+                    item_id=link.work_item.item_id if link.work_item is not None else None,
+                    branch_name=branch_name,
+                    pr_number=pr_number,
+                    pr_url=pr_url,
+                    head_sha=merge_commit_sha or None,
+                    base_branch=base_branch,
+                    state=GitHubLinkState.PR_MERGED.value,
+                    run_key=link.run.run_key if link.run is not None else None,
+                    metadata={"source": "github_poller", "merged_at": merged_at},
+                    repo_root=request.repo_root,
+                ),
+            )
+            merged_count += 1
             continue
 
-        reconcile_github_link(
-            session,
-            GitHubReconcileRequest(
-                repo=link.repo,
-                item_id=link.work_item.item_id if link.work_item is not None else None,
-                branch_name=branch_name,
-                pr_number=pr_number,
-                pr_url=pr_url,
-                head_sha=merge_commit_sha or None,
-                base_branch=base_branch,
-                state=GitHubLinkState.PR_MERGED.value,
-                run_key=link.run.run_key if link.run is not None else None,
-                metadata={"source": "github_poller", "merged_at": merged_at},
-                repo_root=request.repo_root,
-            ),
-        )
-        merged_count += 1
+        if pr_state == "closed":
+            reconcile_github_link(
+                session,
+                GitHubReconcileRequest(
+                    repo=link.repo,
+                    item_id=link.work_item.item_id if link.work_item is not None else None,
+                    branch_name=branch_name,
+                    pr_number=pr_number,
+                    pr_url=pr_url,
+                    head_sha=merge_commit_sha or None,
+                    base_branch=base_branch,
+                    state=GitHubLinkState.PR_CLOSED.value,
+                    run_key=link.run.run_key if link.run is not None else None,
+                    metadata={"source": "github_poller", "closed_at_poll_utc": __import__("datetime").datetime.utcnow().isoformat() + "Z"},
+                    repo_root=request.repo_root,
+                ),
+            )
+            continue
+
+        skipped_count += 1
 
     return GitHubPollResult(
         checked_count=checked_count,

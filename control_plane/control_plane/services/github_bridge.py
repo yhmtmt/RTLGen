@@ -105,6 +105,8 @@ def _advance_work_item_state(work_item: WorkItem, state: GitHubLinkState) -> Non
             work_item.state = WorkItemState.AWAITING_REVIEW
     elif state == GitHubLinkState.PR_MERGED:
         work_item.state = WorkItemState.MERGED
+    elif state == GitHubLinkState.PR_CLOSED and work_item.state not in {WorkItemState.MERGED, WorkItemState.SUPERSEDED}:
+        work_item.state = WorkItemState.SUPERSEDED
 
 
 def _emit_run_event(session: Session, run: Run | None, event_type: str, payload: dict[str, Any]) -> None:
@@ -180,6 +182,18 @@ def reconcile_github_link(session: Session, request: GitHubReconcileRequest) -> 
             if released:
                 event_payload["released_dependent_items"] = released
         _emit_run_event(session, run, "pr_merged", event_payload)
+    elif state == GitHubLinkState.PR_CLOSED:
+        _emit_run_event(session, run, "pr_closed", event_payload)
+        _emit_run_event(
+            session,
+            run,
+            "work_item_superseded",
+            {
+                "reason": "review_pr_closed",
+                "actor": "github_reconcile",
+                "pr_number": request.pr_number,
+            },
+        )
     else:
         _emit_run_event(session, run, "pr_linked", event_payload)
 

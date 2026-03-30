@@ -337,3 +337,41 @@ def test_reconcile_merge_releases_blocked_dependent_when_materialized() -> None:
             )
             session.refresh(dependent)
             assert dependent.state == WorkItemState.READY
+
+
+def test_reconcile_github_link_closed_supersedes_item() -> None:
+    with make_session() as session:
+        run = seed_reviewable_run(session)
+        reconcile_github_link(
+            session,
+            GitHubReconcileRequest(
+                repo="yhmtmt/RTLGen",
+                item_id="item_review",
+                branch_name="eval/item_review/s20260308t000000z",
+                pr_number=42,
+                pr_url="https://github.com/yhmtmt/RTLGen/pull/42",
+                state="pr_open",
+                run_key=run.run_key,
+                metadata={"source": "test"},
+            ),
+        )
+        result = reconcile_github_link(
+            session,
+            GitHubReconcileRequest(
+                repo="yhmtmt/RTLGen",
+                item_id="item_review",
+                branch_name="eval/item_review/s20260308t000000z",
+                pr_number=42,
+                pr_url="https://github.com/yhmtmt/RTLGen/pull/42",
+                state="pr_closed",
+                run_key=run.run_key,
+            ),
+        )
+        link = session.query(GitHubLink).filter_by(pr_number=42).one()
+        work_item = session.query(WorkItem).filter_by(item_id="item_review").one()
+        assert result.state == "pr_closed"
+        assert work_item.state == WorkItemState.SUPERSEDED
+        assert link.state.value == "pr_closed"
+        event_types = [row.event_type for row in session.query(RunEvent).filter_by(run_id=run.id).all()]
+        assert "pr_closed" in event_types
+        assert "work_item_superseded" in event_types
