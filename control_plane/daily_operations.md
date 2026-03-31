@@ -9,6 +9,7 @@ For the full operating model, read:
 
 Notebook shell:
 ```sh
+export RTLCP_DB_MODE=local
 export RTLCP_DATABASE_URL='postgresql+psycopg://rtlgen:rtlgen@localhost:5432/rtlgen_control_plane'
 ```
 

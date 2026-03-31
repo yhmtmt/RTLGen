@@ -16,6 +16,7 @@
   ],
   "containerEnv": {
     "RTLCP_DATABASE_URL": "${localEnv:RTLCP_DATABASE_URL}",
+    "RTLCP_DB_MODE": "${localEnv:RTLCP_DB_MODE}",
     "RTLCP_PG_ALLOWED_CIDR": "${localEnv:RTLCP_PG_ALLOWED_CIDR}",
     "RTLCP_ROLE": "${localEnv:RTLCP_ROLE}",
     "RTLCP_AUTOSTART_COMPLETIONS":"${localEnv:RTLCP_AUTOSTART_COMPLETIONS}",

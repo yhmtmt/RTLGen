@@ -25,7 +25,7 @@ This document is the operational follow-up to:
 
 Notebook:
 - `RTLCP_ROLE=server`
-- hosts PostgreSQL
+- typically hosts PostgreSQL via `RTLCP_DB_MODE=local`
 - defaults `RTLCP_DATABASE_URL` locally if unset
 - generates DB-native work items
 - consumes completed results
@@ -36,7 +36,8 @@ Notebook:
 
 Evaluator PC:
 - `RTLCP_ROLE=evaluator`
-- does not start local PostgreSQL
+- should use `RTLCP_DB_MODE=remote`
+- does not start local PostgreSQL in remote DB mode
 - must receive `RTLCP_DATABASE_URL` from host/local environment
 - connects to the notebook PostgreSQL over the network
 - runs `run-worker`
@@ -47,6 +48,7 @@ Recommended host-side exports before opening the devcontainer:
 Notebook host:
 ```sh
 export RTLCP_ROLE=server
+export RTLCP_DB_MODE=local
 export RTLCP_AUTOSTART_COMPLETIONS=1
 export RTLCP_SUBMIT=1
 export RTLCP_REPO_SLUG=yhmtmt/RTLGen
@@ -56,6 +58,7 @@ export RTLCP_DATABASE_URL='postgresql+psycopg://rtlgen:rtlgen@localhost:5432/rtl
 Evaluator host:
 ```sh
 export RTLCP_ROLE=evaluator
+export RTLCP_DB_MODE=remote
 export RTLCP_AUTOSTART_WORKER_DAEMON=1
 export RTLCP_DATABASE_URL='postgresql+psycopg://rtlgen:rtlgen@<notebook-host-ip>:5432/rtlgen_control_plane'
 ```

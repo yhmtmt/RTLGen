@@ -19,12 +19,13 @@ If you are browsing `control_plane/` directly:
 
 Notebook:
 - `RTLCP_ROLE=server`
-- hosts PostgreSQL
+- usually hosts PostgreSQL when `RTLCP_DB_MODE=local`
 - runs the completion loop
 - can auto-submit PRs
 
 Evaluator:
 - `RTLCP_ROLE=evaluator`
+- usually uses the shared remote PostgreSQL when `RTLCP_DB_MODE=remote`
 - runs the worker daemon
 - executes each item in a disposable clean git worktree at the task `source_commit`
 
@@ -33,6 +34,7 @@ Evaluator:
 Notebook host before opening the devcontainer:
 ```sh
 export RTLCP_ROLE=server
+export RTLCP_DB_MODE=local
 export RTLCP_DATABASE_URL='postgresql+psycopg://rtlgen:rtlgen@localhost:5432/rtlgen_control_plane'
 export RTLCP_PG_ALLOWED_CIDR='<your evaluator subnet>/24'
 export RTLCP_AUTOSTART_COMPLETIONS=1
@@ -43,6 +45,7 @@ export RTLCP_REPO_SLUG='yhmtmt/RTLGen'
 Evaluator host before opening the devcontainer:
 ```sh
 export RTLCP_ROLE=evaluator
+export RTLCP_DB_MODE=remote
 export RTLCP_DATABASE_URL='postgresql+psycopg://rtlgen:rtlgen@<notebook-host-ip>:5432/rtlgen_control_plane'
 export RTLCP_AUTOSTART_WORKER_DAEMON=1
 ```
