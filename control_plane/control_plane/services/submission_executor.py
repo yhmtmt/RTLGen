@@ -147,9 +147,9 @@ def _commit_env() -> dict[str, str]:
     return env
 
 
-def _copy_into_worktree(*, repo_root: Path, worktree_path: Path, rel_path: str) -> None:
+def _copy_into_worktree(*, repo_root: Path, worktree_path: Path, rel_path: str, target_rel_path: str | None = None) -> None:
     src = repo_root / rel_path
-    dst = worktree_path / rel_path
+    dst = worktree_path / (target_rel_path or rel_path)
     if not src.exists():
         raise SubmissionExecuteError(f"review file missing: {rel_path}")
     dst.parent.mkdir(parents=True, exist_ok=True)
@@ -198,34 +198,45 @@ def _refresh_submission_worktree(
     snapshot_rel = str(manifest.get("snapshot_path", "")).strip()
     review_rel = str(manifest.get("review_artifact_path") or "").strip()
     evidence_paths = [str(path).strip() for path in (manifest.get("evidence_paths") or []) if str(path).strip()]
+    supporting_paths = [str(path).strip() for path in (manifest.get("supporting_paths") or []) if str(path).strip()]
     pr_body_rel = str(manifest.get("pr_body_path", "")).strip()
     if not package_rel or not snapshot_rel or not pr_body_rel:
         raise SubmissionExecuteError("submission manifest is missing package_path, snapshot_path, or pr_body_path")
 
-    package_path = repo_root / package_rel
+    frozen_file_map = manifest.get("frozen_file_map") if isinstance(manifest.get("frozen_file_map"), dict) else {}
+
+    def _source_rel(rel_path: str) -> str:
+        candidate = frozen_file_map.get(rel_path)
+        if isinstance(candidate, str) and candidate.strip():
+            return candidate.strip()
+        return rel_path
+
+    package_source_rel = _source_rel(package_rel)
+    package_path = repo_root / package_source_rel
     if not package_path.exists():
         raise SubmissionExecuteError(f"review package does not exist: {package_path}")
-    package_payload = json.loads(package_path.read_text(encoding="utf-8"))
-    pr_body_md = str(((package_payload.get("pr_payload") or {}).get("body_md")) or "")
-    if not pr_body_md.strip():
-        raise SubmissionExecuteError(f"review package is missing pr_payload.body_md: {package_path}")
+    json.loads(package_path.read_text(encoding="utf-8"))
 
-    submission_base_ref, submission_base_commit = _resolve_submission_base(repo_root=repo_root, pr_base=pr_base)
+    submission_base_commit = str(manifest.get("submission_base_commit", "")).strip()
+    if not submission_base_commit:
+        _submission_base_ref, submission_base_commit = _resolve_submission_base(repo_root=repo_root, pr_base=pr_base)
     _run_cmd(["git", "checkout", branch_name], cwd=worktree_path)
-    _run_cmd(["git", "reset", "--hard", submission_base_ref], cwd=worktree_path)
+    _run_cmd(["git", "reset", "--hard", submission_base_commit], cwd=worktree_path)
     _run_cmd(["git", "clean", "-fd"], cwd=worktree_path)
 
-    for rel_path in [snapshot_rel, package_rel, *([review_rel] if review_rel else []), *evidence_paths]:
-        _copy_into_worktree(repo_root=repo_root, worktree_path=worktree_path, rel_path=rel_path)
-
-    pr_body_path = worktree_path / pr_body_rel
-    pr_body_path.parent.mkdir(parents=True, exist_ok=True)
-    pr_body_path.write_text(pr_body_md, encoding="utf-8")
+    for rel_path in [snapshot_rel, package_rel, *([review_rel] if review_rel else []), *evidence_paths, *supporting_paths, pr_body_rel]:
+        _copy_into_worktree(
+            repo_root=repo_root,
+            worktree_path=worktree_path,
+            rel_path=_source_rel(rel_path),
+            target_rel_path=rel_path,
+        )
 
     add_args = ["git", "add", "-f", snapshot_rel, package_rel, pr_body_rel]
     if review_rel:
         add_args.append(review_rel)
     add_args.extend(evidence_paths)
+    add_args.extend(supporting_paths)
     _run_cmd(add_args, cwd=worktree_path)
 
     status = _run_cmd(["git", "status", "--porcelain"], cwd=worktree_path)

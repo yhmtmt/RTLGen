@@ -604,7 +604,7 @@ def test_execute_submission_backfills_missing_evidence_paths_on_rerun() -> None:
             ]
 
 
-def test_execute_submission_refreshes_branch_to_current_base() -> None:
+def test_execute_submission_reuses_frozen_evidence_and_original_base() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
         repo_root.mkdir()
@@ -625,8 +625,14 @@ def test_execute_submission_refreshes_branch_to_current_base() -> None:
                     worktree_root=str(repo_root / "tmp_submit"),
                 ),
             )
+            manifest_path = repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "submission_manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            original_base = manifest["submission_base_commit"]
+
+            _write(repo_root / "runs" / "designs" / "activations" / "softmax_rowwise_int8_r4_wrapper" / "metrics.csv", "changed\n")
+            _write(repo_root / "runs" / "index.csv", "changed\n")
             _write(repo_root / "post_prepare.txt", "new base\n")
-            _git(repo_root, "add", "post_prepare.txt")
+            _git(repo_root, "add", "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv", "runs/index.csv", "post_prepare.txt")
             subprocess.run(
                 ["git", "-C", str(repo_root), "commit", "-m", "advance base"],
                 check=True,
@@ -640,7 +646,7 @@ def test_execute_submission_refreshes_branch_to_current_base() -> None:
                     "GIT_COMMITTER_EMAIL": "test@example.com",
                 },
             )
-            base_head = _git(repo_root, "rev-parse", "master")
+            new_master = _git(repo_root, "rev-parse", "master")
 
             fake_bin = repo_root / "fake_bin"
             log_path = repo_root / "fake_cmds.log"
@@ -662,9 +668,13 @@ def test_execute_submission_refreshes_branch_to_current_base() -> None:
             finally:
                 os.environ["PATH"] = old_path
 
-            manifest = json.loads((repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "submission_manifest.json").read_text(encoding="utf-8"))
-            assert manifest["submission_base_commit"] == base_head
-            assert _git(repo_root, "rev-parse", f"{result.branch_name}^") == base_head
+            refreshed_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            assert refreshed_manifest["submission_base_commit"] == original_base
+            assert refreshed_manifest["submission_base_commit"] != new_master
+            assert _git(repo_root, "rev-parse", f"{result.branch_name}^") == original_base
+            branch_metrics = (Path(manifest["worktree_path"]) / "runs" / "designs" / "activations" / "softmax_rowwise_int8_r4_wrapper" / "metrics.csv").read_text(encoding="utf-8")
+            assert "changed" not in branch_metrics
+            assert "tag_fast" in branch_metrics
 
 
 def test_execute_submission_rejects_branch_without_canonical_evidence_diff() -> None:

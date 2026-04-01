@@ -360,6 +360,12 @@ def test_prepare_submission_branch_includes_canonical_runs_evidence_for_real_ite
                 "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv",
                 "runs/index.csv",
             ]
+            frozen_map = manifest["frozen_file_map"]
+            assert frozen_map["runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv"].startswith(
+                f"control_plane/shadow_exports/frozen_review/{item_id}/{run_key}/"
+            )
+            assert (repo_root / frozen_map["runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv"]).exists()
+            assert (repo_root / frozen_map["runs/index.csv"]).exists()
             assert (Path(result.worktree_path) / "runs" / "designs" / "activations" / "softmax_rowwise_int8_r4_wrapper" / "metrics.csv").exists()
             assert (Path(result.worktree_path) / "runs" / "index.csv").exists()
 

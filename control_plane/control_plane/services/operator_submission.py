@@ -381,18 +381,27 @@ def assess_submission_eligibility(
         artifact = _review_artifact(session, run_id=latest_run.id, kind=required_kind)
         if not required_kind:
             reason = f"unsupported_task_type={work_item.task_type}"
-        elif artifact is None:
-            reason = f"missing {required_kind} artifact"
-        elif repo_root is not None and not _review_artifact_exists_on_disk(repo_root=repo_root, artifact=artifact):
-            reason = f"missing {required_kind} review file"
         elif repo_root is not None:
             terminal_reason = _terminal_proposal_reason(repo_root=repo_root, work_item=work_item)
+            manifest_path = _default_manifest_path(repo_root, work_item.item_id)
+            reusable_manifest = _is_reusable_submission_manifest(
+                session,
+                work_item=work_item,
+                run=latest_run,
+                manifest_path=manifest_path,
+            )
             if terminal_reason is not None:
                 reason = terminal_reason
+            elif artifact is None:
+                reason = f"missing {required_kind} artifact"
+            elif not _review_artifact_exists_on_disk(repo_root=repo_root, artifact=artifact):
+                reason = f"missing {required_kind} review file"
             elif not _has_canonical_runs_evidence(work_item):
                 reason = "missing canonical runs evidence outputs"
-            elif not _has_canonical_runs_evidence_diff(repo_root=repo_root, work_item=work_item):
+            elif not reusable_manifest and not _has_canonical_runs_evidence_diff(repo_root=repo_root, work_item=work_item):
                 reason = "no canonical runs evidence diff"
+        elif artifact is None:
+            reason = f"missing {required_kind} artifact"
         elif not _has_canonical_runs_evidence(work_item):
             reason = "missing canonical runs evidence outputs"
 

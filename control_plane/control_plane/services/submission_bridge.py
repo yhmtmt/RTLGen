@@ -203,13 +203,36 @@ def _worktree_root(item_id: str, requested: str | None) -> Path:
     return Path(tempfile.mkdtemp(prefix=f"rtlcp-submit-{item_id}-"))
 
 
-def _copy_into_worktree(*, repo_root: Path, worktree_path: Path, rel_path: str) -> None:
+def _copy_into_worktree(*, repo_root: Path, worktree_path: Path, rel_path: str, target_rel_path: str | None = None) -> None:
     src = repo_root / rel_path
-    dst = worktree_path / rel_path
+    dst = worktree_path / (target_rel_path or rel_path)
     if not src.exists():
         raise SubmissionPrepareError(f"review file missing: {rel_path}")
     dst.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(src, dst)
+
+
+def _frozen_rel_path(*, item_id: str, run_key: str, rel_path: str) -> str:
+    return str(Path('control_plane') / 'shadow_exports' / 'frozen_review' / item_id / run_key / rel_path)
+
+
+def _freeze_file(*, repo_root: Path, item_id: str, run_key: str, rel_path: str) -> str:
+    frozen_rel = _frozen_rel_path(item_id=item_id, run_key=run_key, rel_path=rel_path)
+    src = repo_root / rel_path
+    dst = repo_root / frozen_rel
+    if not src.exists():
+        raise SubmissionPrepareError(f"review file missing: {rel_path}")
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(src, dst)
+    return frozen_rel
+
+
+def _freeze_text(*, repo_root: Path, item_id: str, run_key: str, rel_path: str, text: str) -> str:
+    frozen_rel = _frozen_rel_path(item_id=item_id, run_key=run_key, rel_path=rel_path)
+    dst = repo_root / frozen_rel
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    dst.write_text(text, encoding='utf-8')
+    return frozen_rel
 
 
 def _staged_paths(worktree_path: Path) -> list[str]:
@@ -296,6 +319,23 @@ def prepare_submission_branch(session: Session, request: SubmissionPrepareReques
     files_to_copy.extend(evidence_files)
     files_to_copy.extend(supporting_files)
 
+    pr_body_rel = f"control_plane/shadow_exports/review/{work_item.item_id}/pr_body.md"
+    frozen_file_map: dict[str, str] = {}
+    for rel_path in files_to_copy:
+        frozen_file_map[rel_path] = _freeze_file(
+            repo_root=repo_root,
+            item_id=work_item.item_id,
+            run_key=run.run_key,
+            rel_path=rel_path,
+        )
+    frozen_file_map[pr_body_rel] = _freeze_text(
+        repo_root=repo_root,
+        item_id=work_item.item_id,
+        run_key=run.run_key,
+        rel_path=pr_body_rel,
+        text=pr_body_md,
+    )
+
     worktree_root = _worktree_root(work_item.item_id, request.worktree_root)
     worktree_path = worktree_root / "repo"
     submission_base_ref, submission_base_commit = _resolve_submission_base(repo_root, request.pr_base)
@@ -305,12 +345,19 @@ def prepare_submission_branch(session: Session, request: SubmissionPrepareReques
 
     try:
         for rel_path in files_to_copy:
-            _copy_into_worktree(repo_root=repo_root, worktree_path=worktree_path, rel_path=rel_path)
+            _copy_into_worktree(
+                repo_root=repo_root,
+                worktree_path=worktree_path,
+                rel_path=frozen_file_map[rel_path],
+                target_rel_path=rel_path,
+            )
 
-        pr_body_rel = f"control_plane/shadow_exports/review/{work_item.item_id}/pr_body.md"
-        pr_body_path = worktree_path / pr_body_rel
-        pr_body_path.parent.mkdir(parents=True, exist_ok=True)
-        pr_body_path.write_text(pr_body_md, encoding="utf-8")
+        _copy_into_worktree(
+            repo_root=repo_root,
+            worktree_path=worktree_path,
+            rel_path=frozen_file_map[pr_body_rel],
+            target_rel_path=pr_body_rel,
+        )
 
         _run_git(
             worktree_path,
@@ -361,6 +408,7 @@ def prepare_submission_branch(session: Session, request: SubmissionPrepareReques
         "review_artifact_path": review_rel or None,
         "evidence_paths": evidence_files,
         "supporting_paths": supporting_files,
+        "frozen_file_map": frozen_file_map,
         "pr_title": pr_title,
         "pr_body_path": pr_body_rel,
         "pr_create_command": (
