@@ -229,6 +229,19 @@ def _review_artifact_exists_on_disk(*, repo_root: Path, artifact: Artifact | Non
     return path.exists() and path.is_file()
 
 
+def _latest_submission_failure_reason(session: Session, *, run_id: str) -> str | None:
+    event = (
+        session.query(RunEvent)
+        .filter(RunEvent.run_id == run_id, RunEvent.event_type == "submission_failed")
+        .order_by(RunEvent.event_time.desc())
+        .first()
+    )
+    if event is None or not isinstance(event.event_payload, dict):
+        return None
+    reason = str(event.event_payload.get("error", "")).strip()
+    return reason or None
+
+
 def _terminal_proposal_reason(*, repo_root: Path, work_item: WorkItem) -> str | None:
     payload = (work_item.task_request.request_payload or {}) if work_item.task_request is not None else {}
     developer_loop = payload.get("developer_loop")
@@ -379,8 +392,11 @@ def assess_submission_eligibility(
     else:
         required_kind = _required_review_artifact_kind(work_item.task_type)
         artifact = _review_artifact(session, run_id=latest_run.id, kind=required_kind)
+        submission_failure_reason = _latest_submission_failure_reason(session, run_id=latest_run.id)
         if not required_kind:
             reason = f"unsupported_task_type={work_item.task_type}"
+        elif submission_failure_reason is not None:
+            reason = submission_failure_reason
         elif repo_root is not None:
             terminal_reason = _terminal_proposal_reason(repo_root=repo_root, work_item=work_item)
             manifest_path = _default_manifest_path(repo_root, work_item.item_id)

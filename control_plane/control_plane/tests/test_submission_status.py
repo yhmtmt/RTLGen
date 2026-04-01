@@ -19,6 +19,7 @@ from control_plane.db import create_all
 from control_plane.models.artifacts import Artifact
 from control_plane.models.enums import ExecutorType, FlowName, LayerName, RunStatus, WorkItemState
 from control_plane.models.task_requests import TaskRequest
+from control_plane.models.run_events import RunEvent
 from control_plane.models.runs import Run
 from control_plane.models.work_items import WorkItem
 from control_plane.services.l1_result_consumer import Layer1ConsumeRequest, consume_l1_result
@@ -404,6 +405,35 @@ def test_assess_submission_eligibility_reports_no_canonical_runs_evidence_diff_l
             assert status.reason == 'no canonical runs evidence diff'
 
 
+def test_assess_submission_eligibility_prefers_submission_failed_reason_over_missing_review_file() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, run_key = _seed_l1_reviewable(session, repo_root)
+            run = session.query(Run).filter_by(run_key=run_key).one()
+            review_path = repo_root / "control_plane" / "shadow_exports" / "l1_promotions" / f"{item_id}.json"
+            review_path.unlink()
+            session.add(
+                RunEvent(
+                    run_id=run.id,
+                    event_time=utcnow(),
+                    event_type="submission_failed",
+                    event_payload={"error": "gh pr create failed for branch demo: auth required"},
+                )
+            )
+            session.commit()
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+
+            status = assess_submission_eligibility(session, work_item=work_item, run=run, repo_root=repo_root)
+            assert status.eligible is False
+            assert status.reason == "gh pr create failed for branch demo: auth required"
+
+
 def test_submission_status_table_output() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
@@ -498,6 +528,53 @@ def test_assess_submission_eligibility_reports_terminal_proposal() -> None:
             }
             work_item.task_request.request_payload = payload
             session.commit()
+            run = session.query(Run).filter_by(run_key=run_key).one()
+
+            status = assess_submission_eligibility(session, work_item=work_item, run=run, repo_root=repo_root)
+            assert status.eligible is False
+            assert status.reason == "proposal already finalized with decision=promote"
+
+
+def test_assess_submission_eligibility_prefers_terminal_proposal_over_missing_review_file() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        proposal_dir = repo_root / "docs" / "proposals" / "prop_terminal_demo"
+        proposal_dir.mkdir(parents=True, exist_ok=True)
+        _write(
+            proposal_dir / "proposal.json",
+            json.dumps({"proposal_id": "prop_terminal_demo"}, indent=2) + "\n",
+        )
+        _write(
+            proposal_dir / "promotion_result.json",
+            json.dumps(
+                {
+                    "proposal_id": "prop_terminal_demo",
+                    "decision": "promote",
+                    "pr_number": 114,
+                    "merge_commit": "deadbeef",
+                    "merged_utc": "2026-03-27T03:10:07Z",
+                },
+                indent=2,
+            ) + "\n",
+        )
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, run_key = _seed_l1_reviewable(session, repo_root)
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            payload = dict(work_item.task_request.request_payload or {})
+            payload["developer_loop"] = {
+                "proposal_id": "prop_terminal_demo",
+                "proposal_path": "docs/proposals/prop_terminal_demo",
+            }
+            work_item.task_request.request_payload = payload
+            session.commit()
+            review_path = repo_root / "control_plane" / "shadow_exports" / "l1_promotions" / f"{item_id}.json"
+            review_path.unlink()
             run = session.query(Run).filter_by(run_key=run_key).one()
 
             status = assess_submission_eligibility(session, work_item=work_item, run=run, repo_root=repo_root)
