@@ -1,0 +1,57 @@
+{
+  "proposal_id": "prop_l1_softmax_rowwise_int8_r8_acc24_retryproof_v1",
+  "created_utc": "2026-04-01T12:16:17Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "title": "Softmax rowwise int8 r8 acc24 retryproof block",
+  "abstraction_layer": "circuit_block",
+  "hypothesis": "A fresh standalone rowwise int8 softmax r8 acc24 block under a unique canonical path can validate submission recovery after evaluator-side auth or network failure without losing the original reviewable runs diff.",
+  "direct_comparison": {
+    "primary_question": "Can one fresh bounded softmax block run prove that completion-time frozen evidence preserves submission retryability after submission interruption?",
+    "include": [
+      "one standalone int8 rowwise softmax r8 acc24 block under a unique design path",
+      "one bounded Nangate45 physical sweep",
+      "one forced submission interruption followed by submission retry"
+    ],
+    "exclude": [
+      "integrated architecture-block evaluation",
+      "layer2 mapper or scheduler ranking",
+      "parameter broad sweep beyond the single retryproof candidate"
+    ],
+    "follow_on_broad_sweep": [
+      "none unless the recovery path still loses canonical review evidence"
+    ]
+  },
+  "expected_benefit": [
+    "proves that evaluator-side submission retries survive later pulls and repo updates",
+    "adds one more bounded circuit_block physical reference for the softmax rowwise family"
+  ],
+  "risks": [
+    "this is a workflow-proof item more than a product-improvement item",
+    "the block may be physically redundant relative to the existing acc24 reference"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "task_type": "l1_sweep",
+      "evaluation_mode": "measurement_only",
+      "objective": "softmax_rowwise_int8_r8_acc24_retryproof_physical_metrics",
+      "cost_class": "high",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": false,
+      "requires_materialized_refs": false,
+      "abstraction_layer": "circuit_block",
+      "expected_result": {
+        "direction": "unknown",
+        "reason": "the first goal is to complete one fresh bounded run and prove that submission retry uses frozen completion-time evidence"
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/designs/activations/softmax_rowwise_int8_r8_acc24_wrapper/metrics.csv"
+  ],
+  "knowledge_refs": [
+    "discussion:2026-04-01-frozen-submission-evidence"
+  ]
+}
