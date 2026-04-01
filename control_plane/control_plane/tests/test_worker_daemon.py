@@ -209,6 +209,59 @@ def test_worker_daemon_executes_two_items_with_concurrency() -> None:
         ]
 
 
+def test_worker_daemon_syncs_expected_outputs_before_immediate_completion() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_git_repo(repo_root)
+        db_path = Path(td) / "cp.db"
+        engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            _seed_ready_work_item(session, item_id="daemon_item_sync_before_completion", repo_root=repo_root)
+
+        session_factory = build_session_factory(engine)
+
+        def _assert_synced(session, request):
+            metrics_path = repo_root / "runs" / "campaigns" / "daemon_item_sync_before_completion" / "metrics.csv"
+            report_path = repo_root / "runs" / "campaigns" / "daemon_item_sync_before_completion" / "report.md"
+            assert metrics_path.exists(), metrics_path
+            assert report_path.exists(), report_path
+            return [
+                CompletionProcessResult(
+                    item_id="daemon_item_sync_before_completion",
+                    run_key="synthetic",
+                    task_type="l2_campaign",
+                    consumed=True,
+                    submitted=False,
+                    work_item_state="artifact_sync",
+                    target_path="control_plane/shadow_exports/review/demo/evaluated.json",
+                    pr_url=None,
+                    submission_error=None,
+                )
+            ]
+
+        with patch("control_plane.workers.executor.process_completed_items", side_effect=_assert_synced) as process_completed:
+            result = run_worker_daemon(
+                session_factory,
+                config=WorkerDaemonConfig(
+                    worker=WorkerConfig(
+                        repo_root=str(repo_root),
+                        machine_key="daemon-worker-sync-before-completion",
+                        capabilities={"platform": "nangate45", "flow": "openroad"},
+                        capability_filter={"platform": "nangate45", "flow": "openroad"},
+                        heartbeat_seconds=1,
+                        auto_process_completions=True,
+                    ),
+                    poll_seconds=0,
+                    max_polls=1,
+                ),
+            )
+
+        assert result.executed_items == 1
+        assert process_completed.call_count == 1
+
+
 def test_worker_daemon_immediately_processes_completion_for_supported_items() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

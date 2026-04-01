@@ -167,6 +167,31 @@ def _log_dir(config: WorkerConfig, item_id: str, run_key: str) -> str:
 SUPPORTED_IMMEDIATE_COMPLETION_TASK_TYPES = {"l1_sweep", "l2_campaign"}
 
 
+def _sync_expected_outputs_to_repo(*, checkout_root: str, repo_root: str, expected_outputs: list[str]) -> None:
+    source_root = Path(checkout_root).resolve()
+    target_root = Path(repo_root).resolve()
+    if source_root == target_root:
+        return
+
+    rel_paths: set[str] = {str(path) for path in (expected_outputs or []) if str(path).strip()}
+    rel_paths.update(
+        artifact.path
+        for artifact in collect_linked_results_artifacts(
+            repo_root=str(source_root),
+            expected_outputs=expected_outputs or [],
+        )
+        if str(artifact.path).strip()
+    )
+
+    for rel_path in sorted(rel_paths):
+        source_path = (source_root / rel_path).resolve()
+        if not source_path.exists() or not source_path.is_file():
+            continue
+        target_path = (target_root / rel_path).resolve()
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source_path, target_path)
+
+
 def _record_completion_result(
     *,
     session_factory: sessionmaker,
@@ -570,15 +595,21 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
                 for artifact in artifacts
             ],
         )
-    cleanup_checkout(checkout_info)
 
     if completed.status == "succeeded":
+        _sync_expected_outputs_to_repo(
+            checkout_root=checkout_info.work_dir,
+            repo_root=config.repo_root,
+            expected_outputs=work_item.expected_outputs or [],
+        )
         _process_completed_work_item(
             session_factory,
             config=config,
             work_item=work_item,
             run_key=run_key,
         )
+
+    cleanup_checkout(checkout_info)
 
     return WorkerLoopResult(
         status=completed.status,
