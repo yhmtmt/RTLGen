@@ -13,12 +13,14 @@ from sqlalchemy.orm import Session
 from control_plane.db import build_session_factory, create_all
 from control_plane.models.enums import WorkItemState
 from control_plane.models.run_events import RunEvent
+from control_plane.models.runs import Run
 from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
 from control_plane.services.completion_service import CompletionProcessResult, CompletionProcessingError
 from control_plane.services.lease_service import upsert_worker_machine
 from control_plane.services.scheduler import assign_work_item
 from control_plane.services.worker_daemon import WorkerDaemonConfig, run_worker_daemon
+from control_plane.workers.checkout import CheckoutInfo
 from control_plane.workers.executor import WorkerConfig
 
 
@@ -458,3 +460,131 @@ def test_worker_daemon_registers_machine_slot_capacity() -> None:
             machine = session.query(WorkerMachine).filter_by(machine_key="daemon-worker-capacity").one()
             assert machine.role == "evaluator"
             assert machine.slot_capacity == 3
+
+
+def test_worker_daemon_runs_all_l1_trials_before_immediate_completion() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_git_repo(repo_root)
+        db_path = Path(td) / "cp.db"
+        engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            task = TaskRequest(
+                request_key="queue:daemon_item_l1_trials",
+                source="test",
+                requested_by="tester",
+                title="daemon_item_l1_trials title",
+                description="worker daemon l1 trial test",
+                layer="layer1",
+                flow="openroad",
+                priority=1,
+                request_payload={"item_id": "daemon_item_l1_trials"},
+            )
+            session.add(task)
+            session.flush()
+
+            out_root = "runs/designs/activations/trial_demo"
+            work_item = WorkItem(
+                work_item_key="queue:daemon_item_l1_trials",
+                task_request_id=task.id,
+                item_id="daemon_item_l1_trials",
+                layer="layer1",
+                flow="openroad",
+                platform="nangate45",
+                task_type="l1_sweep",
+                state=WorkItemState.READY,
+                priority=1,
+                source_mode="config",
+                input_manifest={"out_root": out_root},
+                command_manifest=[
+                    {"name": "build_generator", "run": "python3 -c \"print(\'build\')\""},
+                    {
+                        "name": "run_sweep",
+                        "run": (
+                            "python3 -c \"from pathlib import Path; import sys; args=sys.argv; "
+                            "out=Path(args[args.index('--out_root')+1]); "
+                            "p=out/'trial_wrapper'/'metrics.csv'; "
+                            "p.parent.mkdir(parents=True, exist_ok=True); "
+                            "p.write_text('platform,status,param_hash,tag,critical_path_ns,die_area,total_power_mw,result_path\\n' "
+                            "'nangate45,ok,trialhash,trialtag,1.0,2.0,3.0,runs/demo/result.json\\n', encoding='utf-8')\" "
+                            f"--out_root {out_root} --skip_existing"
+                        ),
+                    },
+                    {
+                        "name": "build_runs_index",
+                        "run": "python3 -c \"from pathlib import Path; p=Path('runs/index.csv'); p.parent.mkdir(parents=True, exist_ok=True); p.write_text('item_id,status\\n', encoding='utf-8')\"",
+                    },
+                ],
+                expected_outputs=[
+                    f"{out_root}/trial_wrapper/metrics.csv",
+                    "runs/index.csv",
+                ],
+                acceptance_rules=[],
+                trial_policy_json={"trial_count": 2, "seed_start": 7, "stop_after_failures": 2},
+            )
+            session.add(work_item)
+            session.commit()
+            upsert_worker_machine(session, machine_key="daemon-worker-l1-trials", capabilities={"platform": "nangate45", "flow": "openroad"})
+            assign_work_item(session, item_id="daemon_item_l1_trials", machine_key="daemon-worker-l1-trials")
+
+        session_factory = build_session_factory(engine)
+        checkout_info = CheckoutInfo(
+            repo_root=str(repo_root),
+            work_dir=str(repo_root),
+            head_sha=None,
+            git_dirty=False,
+            source_commit=None,
+            source_commit_matches=None,
+            source_commit_relation=None,
+            materialized_submodules=(),
+            checkout_mode="inplace",
+            cleanup_path=None,
+        )
+        with patch("control_plane.workers.executor.process_completed_items") as process_completed, patch(
+            "control_plane.workers.executor.prepare_checkout", return_value=checkout_info
+        ), patch("control_plane.workers.executor.cleanup_checkout"):
+            process_completed.return_value = [
+                CompletionProcessResult(
+                    item_id="daemon_item_l1_trials",
+                    run_key="synthetic",
+                    task_type="l1_sweep",
+                    consumed=True,
+                    submitted=False,
+                    work_item_state="artifact_sync",
+                    target_path="control_plane/shadow_exports/l1_promotions/daemon_item_l1_trials.json",
+                    pr_url=None,
+                    submission_error=None,
+                )
+            ]
+            result = run_worker_daemon(
+                session_factory,
+                config=WorkerDaemonConfig(
+                    worker=WorkerConfig(
+                        repo_root=str(repo_root),
+                        machine_key="daemon-worker-l1-trials",
+                        capabilities={"platform": "nangate45", "flow": "openroad"},
+                        capability_filter={"platform": "nangate45", "flow": "openroad"},
+                        heartbeat_seconds=1,
+                        auto_process_completions=True,
+                    ),
+                    poll_seconds=0,
+                    max_polls=3,
+                    stop_on_no_work=True,
+                ),
+            )
+
+        assert result.executed_items == 2
+        assert [row.status for row in result.results] == ["succeeded", "succeeded", "no_work"]
+        assert process_completed.call_count == 1
+
+        with Session(engine) as session:
+            runs = session.query(Run).filter(Run.work_item_id == work_item.id).order_by(Run.attempt.asc()).all()
+            assert [run.trial_index for run in runs] == [1, 2]
+            assert [run.seed for run in runs] == [7, 8]
+            work_item = session.query(WorkItem).filter(WorkItem.item_id == "daemon_item_l1_trials").one()
+            assert work_item.state == WorkItemState.ARTIFACT_SYNC
+            assert session.query(RunEvent).filter(RunEvent.event_type == "trial_scheduled").count() == 1
+            assert session.query(RunEvent).filter(RunEvent.event_type == "trial_set_completed").count() == 1

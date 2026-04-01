@@ -43,6 +43,9 @@ class Layer1SweepGenerateRequest:
     make_target: str | None = None
     evaluation_mode: str | None = None
     abstraction_layer: str | None = None
+    trial_count: int = 1
+    seed_start: int = 0
+    stop_after_failures: int | None = None
 
 
 @dataclass(frozen=True)
@@ -363,6 +366,20 @@ def _default_objective(*, platform: str, config_paths: list[str], sweep_path: st
     )
 
 
+def _effective_trial_policy(*, trial_count: int, seed_start: int, stop_after_failures: int | None) -> dict[str, int]:
+    effective_trial_count = max(int(trial_count), 1)
+    effective_seed_start = int(seed_start)
+    effective_stop_after_failures = stop_after_failures
+    if effective_stop_after_failures is None:
+        effective_stop_after_failures = effective_trial_count
+    effective_stop_after_failures = max(1, min(int(effective_stop_after_failures), effective_trial_count))
+    return {
+        "trial_count": effective_trial_count,
+        "seed_start": effective_seed_start,
+        "stop_after_failures": effective_stop_after_failures,
+    }
+
+
 def _effective_evaluation_mode(*, evaluation_mode: str | None, make_target: str | None) -> str:
     mode = str(evaluation_mode or "").strip()
     if mode:
@@ -389,6 +406,7 @@ def _build_payload(
     proposal_path: str | None,
     evaluation_mode: str,
     abstraction_layer: str | None,
+    trial_policy: dict[str, int],
 ) -> dict[str, Any]:
     payload = {
         "version": 0.1,
@@ -411,6 +429,7 @@ def _build_payload(
                 "macro_manifests": [],
                 "candidate_manifests": [],
                 "required_submodules": _required_l1_runtime_submodules(),
+                "out_root": out_root,
             },
             "commands": [
                 *command_manifest,
@@ -454,6 +473,7 @@ def _build_payload(
             "proposal_path": proposal_path or "",
             "evaluation": {
                 "mode": evaluation_mode,
+                "trial_policy": trial_policy,
             },
         }
         if abstraction_layer:
@@ -533,6 +553,11 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
             make_target=request.make_target,
         ),
         abstraction_layer=effective_abstraction_layer,
+        trial_policy=_effective_trial_policy(
+            trial_count=request.trial_count,
+            seed_start=request.seed_start,
+            stop_after_failures=request.stop_after_failures,
+        ),
     )
 
     existing = session.query(WorkItem).filter(WorkItem.item_id == item_id).one_or_none()
@@ -568,6 +593,7 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
             expected_outputs=payload["task"]["expected_outputs"],
             acceptance_rules=payload["task"]["acceptance"],
             source_commit=source_commit,
+            trial_policy_json=((payload.get("developer_loop") or {}).get("evaluation") or {}).get("trial_policy") or {},
         )
         session.add(work_item)
         session.commit()
@@ -599,6 +625,7 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
     existing.expected_outputs = payload["task"]["expected_outputs"]
     existing.acceptance_rules = payload["task"]["acceptance"]
     existing.source_commit = source_commit
+    existing.trial_policy_json = ((payload.get("developer_loop") or {}).get("evaluation") or {}).get("trial_policy") or {}
     session.commit()
     return Layer1TaskGenerateResult(
         item_id=item_id,

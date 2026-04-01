@@ -29,6 +29,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--make-target")
     parser.add_argument("--evaluation-mode")
     parser.add_argument("--abstraction-layer")
+    parser.add_argument("--trial-count", type=int, default=1)
+    parser.add_argument("--seed-start", type=int, default=0)
+    parser.add_argument("--stop-after-failures", type=int)
     args = parser.parse_args(argv)
 
     engine = build_engine(args.database_url)
@@ -55,6 +58,9 @@ def main(argv: list[str] | None = None) -> int:
                 make_target=args.make_target,
                 evaluation_mode=args.evaluation_mode,
                 abstraction_layer=args.abstraction_layer,
+                trial_count=args.trial_count,
+                seed_start=args.seed_start,
+                stop_after_failures=args.stop_after_failures,
             ),
         )
     print(json.dumps(result.__dict__, indent=2, sort_keys=True))

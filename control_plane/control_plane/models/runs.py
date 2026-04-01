@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from sqlalchemy import Column, DateTime, Enum, ForeignKey, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Column, DateTime, Enum, Float, ForeignKey, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from control_plane.models.base import Base, TimestampMixin, json_type, uuid_column
@@ -27,6 +27,15 @@ class Run(TimestampMixin, Base):
     container_image = Column(String(255))
     checkout_commit = Column(String(64))
     branch_name = Column(String(255))
+    trial_index = Column(Integer)
+    seed = Column(Integer)
+    trial_group_key = Column(String(255))
+    flow_variant = Column(String(128))
+    scheduler_variant = Column(String(128))
+    failure_stage = Column(String(128))
+    failure_category = Column(String(128))
+    failure_signature = Column(String(255))
+    runtime_seconds = Column(Float)
     status = Column(Enum(RunStatus, native_enum=False), nullable=False, default=RunStatus.STARTING)
     started_at = Column(DateTime(timezone=True))
     completed_at = Column(DateTime(timezone=True))
