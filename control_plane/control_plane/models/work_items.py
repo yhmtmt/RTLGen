@@ -25,7 +25,11 @@ class WorkItem(TimestampMixin, UpdatedAtMixin, Base):
     flow = Column(Enum(FlowName, native_enum=False), nullable=False)
     platform = Column(String(64), nullable=False)
     task_type = Column(String(64), nullable=False)
-    state = Column(Enum(WorkItemState, native_enum=False), nullable=False, default=WorkItemState.DRAFT)
+    state = Column(
+        Enum(WorkItemState, native_enum=False, length=32),
+        nullable=False,
+        default=WorkItemState.DRAFT,
+    )
     priority = Column(Integer, nullable=False)
     source_mode = Column(String(64))
     input_manifest = Column(json_type, nullable=False, default=dict)
