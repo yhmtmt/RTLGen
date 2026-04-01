@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from sqlalchemy import case, or_
+from sqlalchemy import case
 from sqlalchemy.orm import Session
 
 from control_plane.models.enums import FlowName, LeaseStatus, WorkItemState
@@ -35,10 +35,17 @@ def assign_work_item(session: Session, *, item_id: str, machine_key: str | None)
         machine = session.query(WorkerMachine).filter(WorkerMachine.machine_key == machine_key).one_or_none()
         if machine is None:
             raise NoEligibleWorkItem(f"worker machine not found: {machine_key}")
+    update_payload = {WorkItem.assigned_machine_key: machine_key}
+    if machine_key is None:
+        if work_item.state in {WorkItemState.READY, WorkItemState.DISPATCH_PENDING}:
+            update_payload[WorkItem.state] = WorkItemState.DISPATCH_PENDING
+    else:
+        if work_item.state in {WorkItemState.DRAFT, WorkItemState.DISPATCH_PENDING, WorkItemState.READY}:
+            update_payload[WorkItem.state] = WorkItemState.READY
     (
         session.query(WorkItem)
         .filter(WorkItem.id == work_item.id)
-        .update({WorkItem.assigned_machine_key: machine_key}, synchronize_session=False)
+        .update(update_payload, synchronize_session=False)
     )
     session.commit()
     session.refresh(work_item)
@@ -70,9 +77,7 @@ def select_next_work_item(
     )
 
     if machine_key:
-        query = query.filter(
-            or_(WorkItem.assigned_machine_key.is_(None), WorkItem.assigned_machine_key == machine_key)
-        )
+        query = query.filter(WorkItem.assigned_machine_key == machine_key)
     if effective.get("platform"):
         query = query.filter(WorkItem.platform == effective["platform"])
     if effective.get("flow"):

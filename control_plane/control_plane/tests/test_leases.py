@@ -61,7 +61,7 @@ def seed_ready_items(session: Session) -> tuple[WorkItem, WorkItem]:
         flow="openroad",
         platform="sky130hd",
         task_type="l2_campaign",
-        state=WorkItemState.READY,
+        state=WorkItemState.DISPATCH_PENDING,
         priority=1,
         input_manifest={},
         command_manifest=[],
@@ -76,7 +76,7 @@ def seed_ready_items(session: Session) -> tuple[WorkItem, WorkItem]:
         flow="openroad",
         platform="nangate45",
         task_type="l2_campaign",
-        state=WorkItemState.READY,
+        state=WorkItemState.DISPATCH_PENDING,
         priority=5,
         input_manifest={},
         command_manifest=[],
@@ -91,6 +91,9 @@ def seed_ready_items(session: Session) -> tuple[WorkItem, WorkItem]:
 def test_acquire_next_lease_selects_matching_highest_priority_item() -> None:
     with make_session() as session:
         item_a, item_b = seed_ready_items(session)
+        from control_plane.services.lease_service import upsert_worker_machine
+        upsert_worker_machine(session, machine_key="machine-1")
+        assign_work_item(session, item_id=item_b.item_id, machine_key="machine-1")
         result = acquire_next_lease(
             session,
             machine_key="machine-1",
@@ -106,7 +109,10 @@ def test_acquire_next_lease_selects_matching_highest_priority_item() -> None:
 
 def test_heartbeat_updates_expiry_and_machine_progress() -> None:
     with make_session() as session:
-        seed_ready_items(session)
+        _, item_b = seed_ready_items(session)
+        from control_plane.services.lease_service import upsert_worker_machine
+        upsert_worker_machine(session, machine_key="machine-1")
+        assign_work_item(session, item_id=item_b.item_id, machine_key="machine-1")
         acquired = acquire_next_lease(
             session,
             machine_key="machine-1",
@@ -129,6 +135,9 @@ def test_heartbeat_updates_expiry_and_machine_progress() -> None:
 def test_expire_stale_leases_requeues_nonterminal_work() -> None:
     with make_session() as session:
         _, item_b = seed_ready_items(session)
+        from control_plane.services.lease_service import upsert_worker_machine
+        upsert_worker_machine(session, machine_key="machine-1")
+        assign_work_item(session, item_id=item_b.item_id, machine_key="machine-1")
         acquired = acquire_next_lease(
             session,
             machine_key="machine-1",
@@ -145,7 +154,7 @@ def test_expire_stale_leases_requeues_nonterminal_work() -> None:
         assert result.expired_count == 1
         assert result.requeued_count == 1
         assert lease.status == LeaseStatus.EXPIRED
-        assert item_b.state == WorkItemState.READY
+        assert item_b.state == WorkItemState.DISPATCH_PENDING
 
 
 def test_lease_routes_work_in_process() -> None:
@@ -153,13 +162,16 @@ def test_lease_routes_work_in_process() -> None:
         db_path = Path(td) / "cp.db"
         engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
         create_all(engine)
-        with Session(engine) as session:
-            seed_ready_items(session)
-
         old = os.environ.get("RTLCP_DATABASE_URL")
         os.environ["RTLCP_DATABASE_URL"] = f"sqlite+pysqlite:///{db_path}"
         try:
             app = create_app()
+            with Session(engine) as session:
+                from control_plane.services.lease_service import upsert_worker_machine
+                item_a, item_b = seed_ready_items(session)
+                upsert_worker_machine(session, machine_key="machine-1")
+                assign_work_item(session, item_id=item_b.item_id, machine_key="machine-1")
+
             status, _, body = app.handle(
                 "POST",
                 "/api/v1/leases/acquire-next",
@@ -214,7 +226,9 @@ def test_acquire_next_lease_does_not_take_item_assigned_to_other_machine() -> No
     with make_session() as session:
         item_a, item_b = seed_ready_items(session)
         from control_plane.services.lease_service import upsert_worker_machine
+        upsert_worker_machine(session, machine_key="machine-1")
         upsert_worker_machine(session, machine_key="machine-2")
+        assign_work_item(session, item_id=item_a.item_id, machine_key="machine-1")
         assign_work_item(session, item_id=item_b.item_id, machine_key="machine-2")
         result = acquire_next_lease(
             session,
@@ -223,3 +237,19 @@ def test_acquire_next_lease_does_not_take_item_assigned_to_other_machine() -> No
             lease_seconds=900,
         )
         assert result.item_id == item_a.item_id
+
+
+def test_acquire_next_lease_requires_assignment_for_machine() -> None:
+    with make_session() as session:
+        seed_ready_items(session)
+        try:
+            acquire_next_lease(
+                session,
+                machine_key="machine-1",
+                capabilities={"platform": "nangate45", "flow": "openroad"},
+                lease_seconds=900,
+            )
+        except Exception as exc:
+            assert exc.__class__.__name__ == "NoEligibleWorkItem"
+        else:
+            raise AssertionError("expected NoEligibleWorkItem")

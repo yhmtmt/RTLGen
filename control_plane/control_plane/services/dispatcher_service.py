@@ -73,8 +73,8 @@ def _is_machine_dispatchable(machine: WorkerMachine, *, freshness_seconds: int) 
 def _next_unassigned_item_for_machine(session: Session, machine: WorkerMachine) -> WorkItem | None:
     query = (
         session.query(WorkItem)
-        .filter(WorkItem.state == WorkItemState.READY)
         .filter(WorkItem.assigned_machine_key.is_(None))
+        .filter(WorkItem.state.in_([WorkItemState.DISPATCH_PENDING, WorkItemState.READY]))
         .filter(~WorkItem.leases.any(WorkerLease.status == LeaseStatus.ACTIVE))
         .order_by(WorkItem.priority.desc(), WorkItem.created_at.asc(), WorkItem.item_id.asc())
     )

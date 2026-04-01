@@ -560,7 +560,7 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
             flow=FlowName.OPENROAD,
             platform=request.platform,
             task_type="l1_sweep",
-            state=WorkItemState.READY,
+            state=WorkItemState.DISPATCH_PENDING,
             priority=request.priority,
             source_mode="config",
             input_manifest=payload["task"]["inputs"],

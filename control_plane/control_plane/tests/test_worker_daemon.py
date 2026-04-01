@@ -17,11 +17,12 @@ from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
 from control_plane.services.completion_service import CompletionProcessResult, CompletionProcessingError
 from control_plane.services.lease_service import upsert_worker_machine
+from control_plane.services.scheduler import assign_work_item
 from control_plane.services.worker_daemon import WorkerDaemonConfig, run_worker_daemon
 from control_plane.workers.executor import WorkerConfig
 
 
-def _seed_ready_work_item(session: Session, *, item_id: str, repo_root: Path) -> None:
+def _seed_ready_work_item(session: Session, *, item_id: str, repo_root: Path, assigned_machine_key: str | None = None) -> None:
     task = TaskRequest(
         request_key=f"queue:{item_id}",
         source="test",
@@ -47,7 +48,7 @@ def _seed_ready_work_item(session: Session, *, item_id: str, repo_root: Path) ->
         flow="openroad",
         platform="nangate45",
         task_type="l2_campaign",
-        state=WorkItemState.READY,
+        state=WorkItemState.READY if assigned_machine_key else WorkItemState.DISPATCH_PENDING,
         priority=1,
         input_manifest={},
         command_manifest=[
@@ -77,6 +78,9 @@ def _seed_ready_work_item(session: Session, *, item_id: str, repo_root: Path) ->
     )
     session.add(work_item)
     session.commit()
+    if assigned_machine_key:
+        upsert_worker_machine(session, machine_key=assigned_machine_key, capabilities={"platform": "nangate45", "flow": "openroad"})
+        assign_work_item(session, item_id=item_id, machine_key=assigned_machine_key)
 
 
 def test_worker_daemon_executes_item_then_stops_on_no_work() -> None:
@@ -88,7 +92,7 @@ def test_worker_daemon_executes_item_then_stops_on_no_work() -> None:
         engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
         create_all(engine)
         with Session(engine) as session:
-            _seed_ready_work_item(session, item_id="daemon_item_success", repo_root=repo_root)
+            _seed_ready_work_item(session, item_id="daemon_item_success", repo_root=repo_root, assigned_machine_key="daemon-worker-1")
 
         session_factory = build_session_factory(engine)
         result = run_worker_daemon(
@@ -122,7 +126,7 @@ def test_worker_daemon_emits_positive_poll_logs() -> None:
         engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
         create_all(engine)
         with Session(engine) as session:
-            _seed_ready_work_item(session, item_id="daemon_item_log", repo_root=repo_root)
+            _seed_ready_work_item(session, item_id="daemon_item_log", repo_root=repo_root, assigned_machine_key="daemon-worker-log")
 
         messages: list[str] = []
         session_factory = build_session_factory(engine)
@@ -173,8 +177,8 @@ def test_worker_daemon_executes_two_items_with_concurrency() -> None:
         )
         create_all(engine)
         with Session(engine) as session:
-            _seed_ready_work_item(session, item_id="daemon_item_parallel_a", repo_root=repo_root)
-            _seed_ready_work_item(session, item_id="daemon_item_parallel_b", repo_root=repo_root)
+            _seed_ready_work_item(session, item_id="daemon_item_parallel_a", repo_root=repo_root, assigned_machine_key="daemon-worker-parallel")
+            _seed_ready_work_item(session, item_id="daemon_item_parallel_b", repo_root=repo_root, assigned_machine_key="daemon-worker-parallel")
             upsert_worker_machine(
                 session,
                 machine_key="daemon-worker-parallel",
@@ -218,7 +222,7 @@ def test_worker_daemon_syncs_expected_outputs_before_immediate_completion() -> N
         engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
         create_all(engine)
         with Session(engine) as session:
-            _seed_ready_work_item(session, item_id="daemon_item_sync_before_completion", repo_root=repo_root)
+            _seed_ready_work_item(session, item_id="daemon_item_sync_before_completion", repo_root=repo_root, assigned_machine_key="daemon-worker-sync-before-completion")
 
         session_factory = build_session_factory(engine)
 
@@ -271,7 +275,7 @@ def test_worker_daemon_immediately_processes_completion_for_supported_items() ->
         engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
         create_all(engine)
         with Session(engine) as session:
-            _seed_ready_work_item(session, item_id="daemon_item_immediate_completion", repo_root=repo_root)
+            _seed_ready_work_item(session, item_id="daemon_item_immediate_completion", repo_root=repo_root, assigned_machine_key="daemon-worker-immediate")
 
         session_factory = build_session_factory(engine)
         with patch("control_plane.workers.executor.process_completed_items") as process_completed:
@@ -331,7 +335,7 @@ def test_worker_daemon_records_immediate_completion_failure_without_poisoning_ru
         engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
         create_all(engine)
         with Session(engine) as session:
-            _seed_ready_work_item(session, item_id="daemon_item_completion_failure", repo_root=repo_root)
+            _seed_ready_work_item(session, item_id="daemon_item_completion_failure", repo_root=repo_root, assigned_machine_key="daemon-worker-immediate-fail")
 
         session_factory = build_session_factory(engine)
         with patch(
@@ -380,7 +384,7 @@ def test_worker_daemon_records_unexpected_immediate_completion_failure_without_p
         engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
         create_all(engine)
         with Session(engine) as session:
-            _seed_ready_work_item(session, item_id="daemon_item_completion_runtime_failure", repo_root=repo_root)
+            _seed_ready_work_item(session, item_id="daemon_item_completion_runtime_failure", repo_root=repo_root, assigned_machine_key="daemon-worker-immediate-runtime-fail")
 
         session_factory = build_session_factory(engine)
         with patch(

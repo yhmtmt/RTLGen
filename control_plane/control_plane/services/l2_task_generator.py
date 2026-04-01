@@ -540,7 +540,7 @@ def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateR
         requires_merged_inputs=effective_requires_merged_inputs,
         requires_materialized_refs=effective_requires_materialized_refs,
     )
-    initial_state = WorkItemState.READY
+    initial_state = WorkItemState.DISPATCH_PENDING
     transient_work_item = WorkItem(
         work_item_key=f"l2_campaign:{item_id}",
         task_request_id="",
