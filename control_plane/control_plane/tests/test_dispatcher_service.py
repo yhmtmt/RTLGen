@@ -42,7 +42,7 @@ def _seed_ready_item(session: Session, *, item_id: str, platform: str, priority:
             flow="openroad",
             platform=platform,
             task_type="l2_campaign",
-            state=WorkItemState.READY,
+            state=WorkItemState.DISPATCH_PENDING,
             priority=priority,
             input_manifest={},
             command_manifest=[],
@@ -71,6 +71,7 @@ def test_dispatch_ready_items_assigns_matching_unassigned_work() -> None:
         assert [row.item_id for row in results] == ["item_a", "item_b"]
         items = session.query(WorkItem).order_by(WorkItem.item_id.asc()).all()
         assert all(item.assigned_machine_key == "eval-a" for item in items)
+        assert all(item.state == WorkItemState.READY for item in items)
 
 
 def test_dispatch_ready_items_respects_slot_capacity_and_existing_assignment() -> None:
@@ -103,3 +104,4 @@ def test_dispatch_ready_items_respects_slot_capacity_and_existing_assignment() -
         }
         item_b = session.query(WorkItem).filter_by(item_id="item_b").one()
         assert item_b.assigned_machine_key is None
+        assert item_b.state == WorkItemState.DISPATCH_PENDING

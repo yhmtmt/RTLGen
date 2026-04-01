@@ -21,6 +21,7 @@ class FlowName(_StrEnum):
 
 class WorkItemState(_StrEnum):
     DRAFT = "draft"
+    DISPATCH_PENDING = "dispatch_pending"
     READY = "ready"
     LEASED = "leased"
     RUNNING = "running"

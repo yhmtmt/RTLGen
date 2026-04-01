@@ -220,7 +220,7 @@ def expire_stale_leases(session: Session) -> LeaseExpiryResult:
             RunStatus.TIMED_OUT,
         }
         if not latest_run_terminal and work_item.state in {WorkItemState.LEASED, WorkItemState.RUNNING}:
-            work_item.state = WorkItemState.READY
+            work_item.state = WorkItemState.DISPATCH_PENDING
             requeued_count += 1
     session.commit()
     return LeaseExpiryResult(expired_count=expired_count, requeued_count=requeued_count)

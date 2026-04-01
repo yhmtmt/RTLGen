@@ -18,8 +18,9 @@ from control_plane.models.work_items import WorkItem
 
 _STATE_RANK = {
     WorkItemState.DRAFT: 0,
-    WorkItemState.READY: 1,
-    WorkItemState.LEASED: 2,
+    WorkItemState.DISPATCH_PENDING: 1,
+    WorkItemState.READY: 2,
+    WorkItemState.LEASED: 3,
     WorkItemState.RUNNING: 3,
     WorkItemState.ARTIFACT_SYNC: 4,
     WorkItemState.AWAITING_REVIEW: 5,
@@ -93,7 +94,7 @@ def _semantic_payload(payload: dict[str, Any]) -> dict[str, Any]:
 def _queue_state_to_work_item_state(queue_state: str) -> WorkItemState:
     if queue_state == "evaluated":
         return WorkItemState.AWAITING_REVIEW
-    return WorkItemState.READY
+    return WorkItemState.DISPATCH_PENDING
 
 
 def _merge_state(current: WorkItemState, imported: WorkItemState) -> WorkItemState:

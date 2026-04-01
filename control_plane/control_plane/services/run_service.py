@@ -257,7 +257,7 @@ def complete_run(
     if run_status == RunStatus.SUCCEEDED:
         work_item.state = WorkItemState.ARTIFACT_SYNC
     elif requeue_for_retry:
-        work_item.state = WorkItemState.READY
+        work_item.state = WorkItemState.DISPATCH_PENDING
     else:
         work_item.state = WorkItemState.FAILED
 

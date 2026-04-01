@@ -244,6 +244,9 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
     awaiting_review = state_counts.get(WorkItemState.AWAITING_REVIEW.value, 0)
     if awaiting_review:
         attention_flags.append(f"awaiting_review={awaiting_review}")
+    dispatch_pending_items = state_counts.get(WorkItemState.DISPATCH_PENDING.value, 0)
+    if dispatch_pending_items:
+        attention_flags.append(f"dispatch_pending={dispatch_pending_items}")
     ready_items = state_counts.get(WorkItemState.READY.value, 0)
     if ready_items:
         attention_flags.append(f"ready={ready_items}")
