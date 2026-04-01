@@ -1,0 +1,80 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-04-01T19:05:40.450999Z",
+  "item_id": "l1_prop_l1_softmax_rowwise_int8_r8_acc24_retryproof_v1_nangate45_r1",
+  "run_key": "l1_prop_l1_softmax_rowwise_int8_r8_acc24_retryproof_v1_nangate45_r1_run_7feb39fb8b27d907",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "61977dcfda73ac97d25abe2a3665c91f298d35f8",
+  "objective": "softmax_rowwise_int8_r8_acc24_retryproof_physical_metrics",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/activations/sweeps/nangate45_softmax_rowwise_v1.json"
+    ],
+    "configs": [
+      "runs/designs/activations/softmax_rowwise_int8_r8_acc24_retryproof_wrapper/config_softmax_rowwise_int8_r8_acc24_retryproof.json"
+    ],
+    "out_root": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_retryproof_wrapper",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 1,
+  "evaluation_record": {
+    "evaluation_mode": "measurement_only",
+    "abstraction_layer": "circuit_block",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_retryproof_wrapper/softmax_rowwise_int8_r8_acc24_retryproof_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "49828ffb",
+        "tag": "softmax_rowwise_ng45_v1_9dd950f2",
+        "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_retryproof_wrapper/softmax_rowwise_int8_r8_acc24_retryproof_wrapper/work/49828ffb/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 20.2712,
+        "die_area": 105898.1764,
+        "total_power_mw": 1.11
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_prop_l1_softmax_rowwise_int8_r8_acc24_retryproof_v1_nangate45_r1",
+    "completed_trials": 1,
+    "success_count": 1,
+    "failure_count": 0,
+    "success_rate": 1.0,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 20.2712,
+        "mean": 20.2712,
+        "median": 20.2712,
+        "max": 20.2712
+      },
+      "die_area": {
+        "best": 105898.1764,
+        "mean": 105898.1764,
+        "median": 105898.1764,
+        "max": 105898.1764
+      },
+      "total_power_mw": {
+        "best": 1.11,
+        "mean": 1.11,
+        "median": 1.11,
+        "max": 1.11
+      }
+    }
+  }
+}
