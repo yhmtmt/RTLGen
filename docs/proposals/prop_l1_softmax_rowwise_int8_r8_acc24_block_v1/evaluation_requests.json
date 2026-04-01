@@ -1,17 +1,20 @@
 {
   "proposal_id": "prop_l1_softmax_rowwise_int8_r8_acc24_block_v1",
-  "source_commit": "",
+  "source_commit": "76e0c331fb9c85177ba37e9b064e676f73fa4ae2",
   "requested_items": [
     {
       "item_id": "l1_prop_l1_softmax_rowwise_int8_r8_acc24_block_v1_nangate45_r1",
       "task_type": "l1_sweep",
       "evaluation_mode": "measurement_only",
       "objective": "softmax_rowwise_int8_r8_acc24_physical_metrics",
-      "status": "not_queued",
+      "status": "merged",
       "abstraction_layer": "circuit_block",
       "config_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_wrapper/config_softmax_rowwise_int8_r8_acc24.json",
       "sweep_path": "runs/designs/activations/sweeps/nangate45_softmax_rowwise_v1.json",
-      "notes": "Fresh standalone circuit_block proof item created after the evaluator maintenance-loop split."
+      "notes": "Fresh standalone circuit_block proof item created after the evaluator maintenance-loop split. Merged via PR #134 and merge e0d09cb4a838b47fef2dd32b23ad9bf861985cbe at 2026-04-01T00:06:44.657816Z.",
+      "merged_pr_number": 134,
+      "merge_commit": "e0d09cb4a838b47fef2dd32b23ad9bf861985cbe",
+      "merged_utc": "2026-04-01T00:06:44.657816Z"
     }
   ]
 }
