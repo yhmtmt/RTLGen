@@ -1,0 +1,175 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-03-31T23:55:22.071542Z",
+  "item_id": "l1_prop_l1_softmax_rowwise_int8_r8_acc24_block_v1_nangate45_r1",
+  "run_key": "l1_prop_l1_softmax_rowwise_int8_r8_acc24_block_v1_nangate45_r1_run_8ce37b5e95c5bf73",
+  "layer": "layer1",
+  "flow": "openroad",
+  "task_type": "l1_sweep",
+  "source_commit": "76e0c331fb9c85177ba37e9b064e676f73fa4ae2",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l1_prop_l1_softmax_rowwise_int8_r8_acc24_block_v1_nangate45_r1/evaluated.json",
+    "result": {
+      "branch": "eval/l1_prop_l1_softmax_rowwise_int8_r8_acc24_block_v1_nangate45_r1/s20260331t235520z",
+      "completed_utc": "2026-03-31T23:55:17.041184Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "a6a0faa39497",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260331t235520z][host:a6a0faa39497][item:l1_prop_l1_softmax_rowwise_int8_r8_acc24_block_v1_nangate45_r1]",
+      "metrics_rows": [
+        {
+          "tag": "softmax_rowwise_ng45_v1_bd9157ff",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "331b4c0f",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_wrapper/softmax_rowwise_int8_r8_acc24_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_wrapper/softmax_rowwise_int8_r8_acc24_wrapper/work/331b4c0f/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_545b5b4f",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "0881e02c",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_wrapper/softmax_rowwise_int8_r8_acc24_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_wrapper/softmax_rowwise_int8_r8_acc24_wrapper/work/0881e02c/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_84a011f1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "d167bc90",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_wrapper/softmax_rowwise_int8_r8_acc24_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_wrapper/softmax_rowwise_int8_r8_acc24_wrapper/work/d167bc90/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_317024c0",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "7b4a20b8",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_wrapper/softmax_rowwise_int8_r8_acc24_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_wrapper/softmax_rowwise_int8_r8_acc24_wrapper/work/7b4a20b8/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_e8e3ad7e",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "e2c337a8",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_wrapper/softmax_rowwise_int8_r8_acc24_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_wrapper/softmax_rowwise_int8_r8_acc24_wrapper/work/e2c337a8/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_6c63d092",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "57faa721",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_wrapper/softmax_rowwise_int8_r8_acc24_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_wrapper/softmax_rowwise_int8_r8_acc24_wrapper/work/57faa721/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_de52b603",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "91c9afdc",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_wrapper/softmax_rowwise_int8_r8_acc24_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_wrapper/softmax_rowwise_int8_r8_acc24_wrapper/work/91c9afdc/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_9dd950f2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "49828ffb",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_wrapper/softmax_rowwise_int8_r8_acc24_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_wrapper/softmax_rowwise_int8_r8_acc24_wrapper/work/49828ffb/result.json"
+        }
+      ],
+      "queue_item_id": "l1_prop_l1_softmax_rowwise_int8_r8_acc24_block_v1_nangate45_r1",
+      "session_id": "s20260331t235520z",
+      "status": "ok",
+      "summary": "4/4 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "promotion_proposal",
+    "path": "control_plane/shadow_exports/l1_promotions/l1_prop_l1_softmax_rowwise_int8_r8_acc24_block_v1_nangate45_r1.json",
+    "storage_mode": "repo",
+    "sha256": "b7699118f21acdf33da39dcb58e4b3835302c9824bacbea9f11ecd13c97431f5",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-03-31T23:55:19.632323Z",
+      "item_id": "l1_prop_l1_softmax_rowwise_int8_r8_acc24_block_v1_nangate45_r1",
+      "run_key": "l1_prop_l1_softmax_rowwise_int8_r8_acc24_block_v1_nangate45_r1_run_8ce37b5e95c5bf73",
+      "layer": "layer1",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l1_sweep",
+      "source_commit": "76e0c331fb9c85177ba37e9b064e676f73fa4ae2",
+      "objective": "softmax_rowwise_int8_r8_acc24_physical_metrics",
+      "input_manifest": {
+        "sweeps": [
+          "runs/designs/activations/sweeps/nangate45_softmax_rowwise_v1.json"
+        ],
+        "configs": [
+          "runs/designs/activations/softmax_rowwise_int8_r8_acc24_wrapper/config_softmax_rowwise_int8_r8_acc24.json"
+        ],
+        "design_dirs": [],
+        "macro_manifests": [],
+        "candidate_manifests": [],
+        "required_submodules": []
+      },
+      "proposal_count": 1,
+      "evaluation_record": {
+        "evaluation_mode": "measurement_only",
+        "abstraction_layer": "circuit_block",
+        "result_kind": "physical_metrics",
+        "physical_metrics_present": true,
+        "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+      },
+      "proposal_assessment": null,
+      "proposals": [
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_wrapper/softmax_rowwise_int8_r8_acc24_wrapper/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "49828ffb",
+            "tag": "softmax_rowwise_ng45_v1_9dd950f2",
+            "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_wrapper/softmax_rowwise_int8_r8_acc24_wrapper/work/49828ffb/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 20.2712,
+            "die_area": 105898.1764,
+            "total_power_mw": 1.11
+          }
+        }
+      ]
+    }
+  },
+  "developer_loop": {
+    "evaluation": {
+      "mode": "measurement_only"
+    },
+    "abstraction": {
+      "layer": "circuit_block"
+    },
+    "proposal_id": "prop_l1_softmax_rowwise_int8_r8_acc24_block_v1",
+    "proposal_path": "docs/proposals/prop_l1_softmax_rowwise_int8_r8_acc24_block_v1"
+  },
+  "pr_payload": {
+    "branch": "eval/l1_prop_l1_softmax_rowwise_int8_r8_acc24_block_v1_nangate45_r1/s20260331t235520z",
+    "title": "eval: run layer1 sweep from nangate45_softmax_rowwise_v1 on nangate45",
+    "body_fields": {
+      "host": "a6a0faa39497",
+      "session_id": "s20260331t235520z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_prop_l1_softmax_rowwise_int8_r8_acc24_block_v1_nangate45_r1"
+    },
+    "body_md": "## Summary\n- item_id: `l1_prop_l1_softmax_rowwise_int8_r8_acc24_block_v1_nangate45_r1`\n- run_key: `l1_prop_l1_softmax_rowwise_int8_r8_acc24_block_v1_nangate45_r1_run_8ce37b5e95c5bf73`\n- layer: `layer1`\n- task_type: `l1_sweep`\n- status: `ok`\n- summary: `4/4 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l1_prop_l1_softmax_rowwise_int8_r8_acc24_block_v1_nangate45_r1/evaluated.json`\n- metrics_rows_count: `8`\n- review_artifact: `promotion_proposal` at `control_plane/shadow_exports/l1_promotions/l1_prop_l1_softmax_rowwise_int8_r8_acc24_block_v1_nangate45_r1.json`\n\n## Developer Context\n- proposal_id: `prop_l1_softmax_rowwise_int8_r8_acc24_block_v1`\n- proposal_path: `docs/proposals/prop_l1_softmax_rowwise_int8_r8_acc24_block_v1`\n- reviewer_first_read: `docs/proposals/prop_l1_softmax_rowwise_int8_r8_acc24_block_v1` plus `docs/developer_agent_review.md`\n\n## Evaluation Mode\n- evaluation_mode: `measurement_only`\n- abstraction_layer: `circuit_block`\n- evaluation_summary: `Physical metrics recorded from an accepted status=ok Layer 1 row.`\n\n## Checklist\n- [ ] Commit only lightweight metrics and regenerated runs/index.csv\n- [ ] Include metrics row references for each completed design\n- [ ] Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit only lightweight metrics and regenerated runs/index.csv",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
