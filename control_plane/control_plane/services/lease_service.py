@@ -135,16 +135,30 @@ def acquire_next_lease(
             raise
 
         now = utcnow()
-        lease = WorkerLease(
-            work_item_id=work_item.id,
-            machine_id=machine.id,
-            lease_token=make_id("lease"),
-            status=LeaseStatus.ACTIVE,
-            leased_at=now,
-            expires_at=now + timedelta(seconds=lease_seconds),
-            last_heartbeat_at=now,
+        lease = (
+            session.query(WorkerLease)
+            .filter(WorkerLease.work_item_id == work_item.id)
+            .order_by(WorkerLease.leased_at.desc(), WorkerLease.id.desc())
+            .first()
         )
-        session.add(lease)
+        if lease is None:
+            lease = WorkerLease(
+                work_item_id=work_item.id,
+                machine_id=machine.id,
+                lease_token=make_id("lease"),
+                status=LeaseStatus.ACTIVE,
+                leased_at=now,
+                expires_at=now + timedelta(seconds=lease_seconds),
+                last_heartbeat_at=now,
+            )
+            session.add(lease)
+        else:
+            lease.machine_id = machine.id
+            lease.lease_token = make_id("lease")
+            lease.status = LeaseStatus.ACTIVE
+            lease.leased_at = now
+            lease.expires_at = now + timedelta(seconds=lease_seconds)
+            lease.last_heartbeat_at = now
         work_item.state = WorkItemState.LEASED
         try:
             session.commit()

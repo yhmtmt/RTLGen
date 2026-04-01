@@ -278,6 +278,7 @@ def test_consume_l1_result_accepts_synth_only_metrics_row() -> None:
                     "item_id": "l1_test_sigmoid_prefilter",
                     "layer": "layer1",
                     "flow": "openroad",
+                    "developer_loop": {"evaluation": {"mode": "synth_prefilter"}},
                 },
                 source_commit="deadbeef",
             )
@@ -348,3 +349,169 @@ def test_consume_l1_result_accepts_synth_only_metrics_row() -> None:
             assert payload["proposals"][0]["metrics_ref"]["result_kind"] == "synth_prefilter"
             assert payload["proposals"][0]["selection_reason"] == "first status=ok synth-stage prefilter row; no physical metrics are recorded yet"
             assert "metric_summary" not in payload["proposals"][0]
+
+
+def test_consume_l1_result_writes_trial_aggregate_artifacts() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        metrics_trial_1 = "runs/designs/activations/trials/trial_001/softmax_rowwise_int8_r4_wrapper/metrics.csv"
+        metrics_trial_2 = "runs/designs/activations/trials/trial_002/softmax_rowwise_int8_r4_wrapper/metrics.csv"
+        _write_metrics(
+            repo_root / metrics_trial_1,
+            [{
+                "platform": "nangate45",
+                "status": "ok",
+                "param_hash": "trial1",
+                "tag": "trial_1",
+                "critical_path_ns": "12.0",
+                "die_area": "30000",
+                "total_power_mw": "0.18",
+                "result_path": "runs/trials/trial_001/result.json",
+            }],
+        )
+        _write_metrics(
+            repo_root / metrics_trial_2,
+            [{
+                "platform": "nangate45",
+                "status": "ok",
+                "param_hash": "trial2",
+                "tag": "trial_2",
+                "critical_path_ns": "11.0",
+                "die_area": "29000",
+                "total_power_mw": "0.17",
+                "result_path": "runs/trials/trial_002/result.json",
+            }],
+        )
+
+        with Session(engine) as session:
+            task_request = TaskRequest(
+                request_key="l1_sweep:test_trial_aggregate",
+                source="test",
+                requested_by="@tester",
+                title="Layer1 trial aggregate test",
+                description="test l1 trial aggregation",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                priority=1,
+                request_payload={
+                    "item_id": "l1_test_trial_aggregate",
+                    "layer": "layer1",
+                    "flow": "openroad",
+                },
+                source_commit="deadbeef",
+            )
+            session.add(task_request)
+            session.flush()
+
+            work_item = WorkItem(
+                work_item_key="l1_sweep:l1_test_trial_aggregate",
+                task_request_id=task_request.id,
+                item_id="l1_test_trial_aggregate",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                platform="nangate45",
+                task_type="l1_sweep",
+                state=WorkItemState.ARTIFACT_SYNC,
+                priority=1,
+                source_mode="config",
+                input_manifest={},
+                command_manifest=[],
+                expected_outputs=[metrics_trial_1, metrics_trial_2, "runs/index.csv"],
+                acceptance_rules=[],
+                source_commit="deadbeef",
+                trial_policy_json={"trial_count": 3, "seed_start": 3, "stop_after_failures": 3},
+            )
+            session.add(work_item)
+            session.flush()
+
+            run_1 = Run(
+                run_key="l1_test_trial_aggregate_run_1",
+                work_item_id=work_item.id,
+                attempt=1,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.SUCCEEDED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="deadbeef",
+                trial_index=1,
+                seed=3,
+                result_summary="trial 1 succeeded",
+                result_payload={
+                    "trial": {"trial_index": 1, "seed": 3},
+                    "queue_result": {"status": "ok", "metrics_rows": [f"{metrics_trial_1}:2"]},
+                },
+            )
+            run_2 = Run(
+                run_key="l1_test_trial_aggregate_run_2",
+                work_item_id=work_item.id,
+                attempt=2,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.SUCCEEDED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="deadbeef",
+                trial_index=2,
+                seed=4,
+                result_summary="trial 2 succeeded",
+                result_payload={
+                    "trial": {"trial_index": 2, "seed": 4},
+                    "queue_result": {"status": "ok", "metrics_rows": [f"{metrics_trial_2}:2"]},
+                },
+            )
+            run_3 = Run(
+                run_key="l1_test_trial_aggregate_run_3",
+                work_item_id=work_item.id,
+                attempt=3,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.FAILED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="deadbeef",
+                trial_index=3,
+                seed=5,
+                result_summary="trial 3 failed",
+                result_payload={
+                    "trial": {"trial_index": 3, "seed": 5},
+                    "failure_classification": {"category": "timing_unmet", "stage": "route", "signature": "slack<0"},
+                },
+                failure_category="timing_unmet",
+                failure_stage="route",
+                failure_signature="slack<0",
+            )
+            session.add_all([run_1, run_2, run_3])
+            session.commit()
+
+            result = consume_l1_result(
+                session,
+                Layer1ConsumeRequest(
+                    repo_root=str(repo_root),
+                    item_id=work_item.item_id,
+                ),
+            )
+
+            assert result.item_id == work_item.item_id
+            proposal_path = repo_root / "control_plane" / "shadow_exports" / "l1_promotions" / f"{work_item.item_id}.json"
+            payload = json.loads(proposal_path.read_text(encoding="utf-8"))
+            assert payload["trial_summary"]["completed_trials"] == 3
+            assert payload["trial_summary"]["success_count"] == 2
+            assert payload["trial_summary"]["failure_count"] == 1
+            assert payload["trial_summary"]["metrics"]["critical_path_ns"]["best"] == 11.0
+
+            summary_path = repo_root / "control_plane" / "shadow_exports" / "l1_trials" / work_item.item_id / "summary_stats.json"
+            failure_path = repo_root / "control_plane" / "shadow_exports" / "l1_trials" / work_item.item_id / "failure_stats.json"
+            trial_table_path = repo_root / "control_plane" / "shadow_exports" / "l1_trials" / work_item.item_id / "trial_table.csv"
+            summary = json.loads(summary_path.read_text(encoding="utf-8"))
+            failure_stats = json.loads(failure_path.read_text(encoding="utf-8"))
+            trial_table = trial_table_path.read_text(encoding="utf-8")
+            assert summary["success_rate"] == 2 / 3
+            assert failure_stats["by_category"] == {"timing_unmet": 1}
+            assert failure_stats["by_stage"] == {"route": 1}
+            assert "trial_index,seed,status" in trial_table
+            assert "l1_test_trial_aggregate_run_3" in trial_table
+
+            artifact_kinds = {artifact.kind for artifact in session.query(Artifact).all()}
+            assert {"promotion_proposal", "summary_stats", "failure_stats", "trial_table"} <= artifact_kinds

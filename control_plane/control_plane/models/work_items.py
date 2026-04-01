@@ -39,6 +39,7 @@ class WorkItem(TimestampMixin, UpdatedAtMixin, Base):
     queue_snapshot_path = Column(Text)
     source_commit = Column(String(64))
     assigned_machine_key = Column(String(255))
+    trial_policy_json = Column(json_type, nullable=False, default=dict)
 
     task_request = relationship("TaskRequest", back_populates="work_items")
     leases = relationship("WorkerLease", back_populates="work_item")

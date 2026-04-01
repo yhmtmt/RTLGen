@@ -11,6 +11,7 @@ from typing import Any
 from sqlalchemy.orm import Session, sessionmaker
 
 from control_plane.ids import make_id
+from control_plane.models.enums import RunStatus, WorkItemState
 from control_plane.models.runs import Run
 from control_plane.models.work_items import WorkItem
 from control_plane.services.completion_service import (
@@ -128,9 +129,13 @@ def _classify_failure(
             category = "command_failure"
             retryable = False
 
+    stage = "checkout" if checkout_error is not None else ("worker" if worker_error is not None else (failed_command or "execution"))
+    signature = detail if isinstance(detail, str) else None
     requeue = retryable and attempt < max_retry_attempts
     return {
         "category": category,
+        "stage": stage,
+        "signature": signature,
         "retryable": retryable,
         "requeue": requeue,
         "attempt": attempt,
@@ -155,6 +160,133 @@ def _next_attempt(session: Session, work_item_id: str) -> int:
         .first()
     )
     return 1 if latest is None else int(latest.attempt) + 1
+
+
+def _trial_policy(work_item: WorkItem) -> dict[str, int]:
+    raw = dict(getattr(work_item, "trial_policy_json", {}) or {})
+    if str(work_item.task_type) != "l1_sweep":
+        return {"trial_count": 1, "seed_start": 0, "stop_after_failures": 1}
+    trial_count = max(int(raw.get("trial_count", 1) or 1), 1)
+    seed_start = int(raw.get("seed_start", 0) or 0)
+    stop_after_failures = raw.get("stop_after_failures", trial_count)
+    stop_after_failures = max(1, min(int(stop_after_failures or trial_count), trial_count))
+    return {
+        "trial_count": trial_count,
+        "seed_start": seed_start,
+        "stop_after_failures": stop_after_failures,
+    }
+
+
+def _completed_trial_runs(session: Session, work_item_id: str) -> list[Run]:
+    runs = (
+        session.query(Run)
+        .filter(Run.work_item_id == work_item_id)
+        .order_by(Run.attempt.asc(), Run.created_at.asc())
+        .all()
+    )
+    completed: list[Run] = []
+    for run in runs:
+        if run.status not in {RunStatus.SUCCEEDED, RunStatus.FAILED, RunStatus.CANCELED, RunStatus.TIMED_OUT}:
+            continue
+        payload = dict(run.result_payload or {}) if isinstance(run.result_payload, dict) else {}
+        retry = bool((payload.get("retry_decision") or {}).get("requeue"))
+        if retry:
+            continue
+        completed.append(run)
+    return completed
+
+
+def _next_trial_index(session: Session, work_item: WorkItem) -> int:
+    return len(_completed_trial_runs(session, work_item.id)) + 1
+
+
+def _trial_out_root(work_item: WorkItem, trial_index: int) -> str | None:
+    policy = _trial_policy(work_item)
+    if policy["trial_count"] <= 1:
+        return None
+    out_root = str((work_item.input_manifest or {}).get("out_root", "")).strip()
+    if not out_root:
+        return None
+    return f"{out_root}/trials/trial_{trial_index:03d}"
+
+
+def _active_expected_outputs(work_item: WorkItem, trial_index: int) -> list[str]:
+    expected_outputs = [str(path) for path in (work_item.expected_outputs or [])]
+    trial_out_root = _trial_out_root(work_item, trial_index)
+    out_root = str((work_item.input_manifest or {}).get("out_root", "")).strip()
+    if not trial_out_root or not out_root:
+        return expected_outputs
+    prefix = f"{out_root}/"
+    replacement = f"{trial_out_root}/"
+    result: list[str] = []
+    for rel_path in expected_outputs:
+        if rel_path == "runs/index.csv":
+            result.append(rel_path)
+        elif rel_path.startswith(prefix):
+            result.append(rel_path.replace(prefix, replacement, 1))
+        else:
+            result.append(rel_path)
+    return result
+
+
+def _active_command_manifest(work_item: WorkItem, trial_index: int) -> list[dict[str, str]]:
+    commands = [dict(row) for row in (work_item.command_manifest or [])]
+    trial_out_root = _trial_out_root(work_item, trial_index)
+    out_root = str((work_item.input_manifest or {}).get("out_root", "")).strip()
+    if not trial_out_root or not out_root:
+        return commands
+    token = f"--out_root {out_root}"
+    replacement = f"--out_root {trial_out_root}"
+    for command in commands:
+        run_text = str(command.get("run", ""))
+        if token in run_text:
+            command["run"] = run_text.replace(token, replacement)
+    return commands
+
+
+def _should_continue_trials(session: Session, work_item: WorkItem) -> bool:
+    policy = _trial_policy(work_item)
+    completed = _completed_trial_runs(session, work_item.id)
+    completed_count = len(completed)
+    success_count = sum(1 for run in completed if run.status == RunStatus.SUCCEEDED)
+    failure_count = completed_count - success_count
+    if completed_count >= policy["trial_count"]:
+        return False
+    if success_count == 0 and failure_count >= policy["stop_after_failures"]:
+        return False
+    return True
+
+
+def _promote_post_run_state(*, session_factory: sessionmaker, work_item_id: str, run_key: str) -> tuple[bool, bool]:
+    with session_factory() as session:
+        work_item = _load_work_item(session, work_item_id)
+        completed = _completed_trial_runs(session, work_item.id)
+        success_count = sum(1 for row in completed if row.status == RunStatus.SUCCEEDED)
+        continue_trials = _should_continue_trials(session, work_item)
+        if continue_trials:
+            work_item.state = WorkItemState.READY if work_item.assigned_machine_key else WorkItemState.DISPATCH_PENDING
+            next_trial_index = len(completed) + 1
+            next_seed = _trial_policy(work_item)["seed_start"] + next_trial_index - 1
+            session.commit()
+            append_run_event(
+                session,
+                run_key=run_key,
+                event_type="trial_scheduled",
+                event_payload={"next_trial_index": next_trial_index, "next_seed": next_seed},
+            )
+            return True, False
+        if success_count > 0:
+            if work_item.state != WorkItemState.ARTIFACT_SYNC:
+                work_item.state = WorkItemState.ARTIFACT_SYNC
+                session.commit()
+            append_run_event(
+                session,
+                run_key=run_key,
+                event_type="trial_set_completed",
+                event_payload={"success_count": success_count, "completed_trials": len(completed)},
+            )
+            return False, True
+        return False, False
 
 
 def _log_dir(config: WorkerConfig, item_id: str, run_key: str) -> str:
@@ -337,6 +469,8 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
     with session_factory() as session:
         work_item = _load_work_item(session, acquired.work_item_id)
         attempt = _next_attempt(session, work_item.id)
+        trial_index = _next_trial_index(session, work_item)
+        seed = _trial_policy(work_item)["seed_start"] + trial_index - 1
         run_key = f"{work_item.item_id}_{make_id('run')}"
 
     checkout_error: str | None = None
@@ -359,6 +493,9 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
             attempt=attempt,
             executor_type="internal_worker",
             checkout_commit=checkout_info.head_sha if checkout_info is not None else None,
+            trial_index=trial_index,
+            seed=seed,
+            trial_group_key=work_item.item_id,
         )
 
     if checkout_error is not None:
@@ -440,8 +577,10 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
     command_results = []
     worker_error: str | None = None
     try:
+        active_command_manifest = _active_command_manifest(work_item, trial_index)
+        active_expected_outputs = _active_expected_outputs(work_item, trial_index)
         command_results = run_command_manifest(
-            command_manifest=work_item.command_manifest or [],
+            command_manifest=active_command_manifest,
             work_dir=checkout_info.work_dir,
             log_dir=log_dir,
             timeout_seconds=config.command_timeout_seconds,
@@ -484,17 +623,17 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
 
     artifacts = collect_expected_output_artifacts(
         repo_root=checkout_info.work_dir,
-        expected_outputs=work_item.expected_outputs or [],
+        expected_outputs=active_expected_outputs,
     ) + collect_linked_results_artifacts(
         repo_root=checkout_info.work_dir,
-        expected_outputs=work_item.expected_outputs or [],
+        expected_outputs=active_expected_outputs,
     ) + collect_log_artifacts(
         repo_root=checkout_info.work_dir,
         command_results=command_results,
     )
     queue_result = build_queue_result_payload(
         repo_root=checkout_info.work_dir,
-        expected_outputs=work_item.expected_outputs or [],
+        expected_outputs=active_expected_outputs,
         command_results=command_results,
         success=success,
     )
@@ -504,6 +643,8 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
             "metrics_rows": queue_result.metrics_rows,
             "notes": queue_result.notes,
         },
+        "trial": {"trial_index": trial_index, "seed": seed, "trial_group_key": work_item.item_id},
+        "active_expected_outputs": active_expected_outputs,
         "checkout": {
             "repo_root": checkout_info.repo_root,
             "head_sha": checkout_info.head_sha,
@@ -550,7 +691,7 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
     if not success:
         queue_result = build_queue_result_payload(
             repo_root=checkout_info.work_dir,
-            expected_outputs=work_item.expected_outputs or [],
+            expected_outputs=active_expected_outputs,
             command_results=command_results,
             success=False,
         )
@@ -600,8 +741,15 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
         _sync_expected_outputs_to_repo(
             checkout_root=checkout_info.work_dir,
             repo_root=config.repo_root,
-            expected_outputs=work_item.expected_outputs or [],
+            expected_outputs=active_expected_outputs,
         )
+
+    continue_trials, ready_for_completion = _promote_post_run_state(
+        session_factory=session_factory,
+        work_item_id=work_item.id,
+        run_key=run_key,
+    )
+    if ready_for_completion:
         _process_completed_work_item(
             session_factory,
             config=config,

@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import csv
+from collections import Counter
 from dataclasses import dataclass
 from datetime import timezone
 import hashlib
 import json
 from pathlib import Path
 import re
+import statistics
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -71,7 +73,11 @@ def _resolve_run(session: Session, request: Layer1ConsumeRequest) -> tuple[WorkI
         raise Layer1ResultConsumerError(f"work item not found: {request.item_id}")
     if not work_item.runs:
         raise Layer1ResultConsumerError(f"work item has no runs: {request.item_id}")
-    run = sorted(work_item.runs, key=lambda row: (row.attempt, row.created_at or utcnow()))[-1]
+    successful_runs = [row for row in work_item.runs if row.status == RunStatus.SUCCEEDED]
+    if successful_runs:
+        run = sorted(successful_runs, key=lambda row: (row.attempt, row.created_at or utcnow()))[-1]
+    else:
+        run = sorted(work_item.runs, key=lambda row: (row.attempt, row.created_at or utcnow()))[-1]
     return work_item, run
 
 
@@ -265,6 +271,180 @@ def _proposal_entry(*, metrics_csv: str, best_row: dict[str, Any], evaluation_re
     return proposal
 
 
+def _completed_trial_runs(work_item: WorkItem) -> list[Run]:
+    completed: list[Run] = []
+    for run in sorted(work_item.runs, key=lambda row: (row.attempt, row.created_at or utcnow())):
+        if run.status not in {RunStatus.SUCCEEDED, RunStatus.FAILED, RunStatus.CANCELED, RunStatus.TIMED_OUT}:
+            continue
+        payload = dict(run.result_payload or {}) if isinstance(run.result_payload, dict) else {}
+        if bool((payload.get("retry_decision") or {}).get("requeue")):
+            continue
+        completed.append(run)
+    return completed
+
+
+def _metrics_csvs_from_run(run: Run, *, work_item: WorkItem | None = None) -> list[str]:
+    payload = dict(run.result_payload or {}) if isinstance(run.result_payload, dict) else {}
+    queue_result = dict(payload.get("queue_result") or {})
+    result: list[str] = []
+    for ref in queue_result.get("metrics_rows") or []:
+        rel_path = str(ref).split(":", 1)[0].strip()
+        if not rel_path or rel_path == "runs/index.csv" or not rel_path.endswith("metrics.csv"):
+            continue
+        if rel_path not in result:
+            result.append(rel_path)
+    if result or work_item is None:
+        return result
+    for rel_path in work_item.expected_outputs or []:
+        rel_path = str(rel_path).strip()
+        if not rel_path or rel_path == "runs/index.csv" or not rel_path.endswith("metrics.csv"):
+            continue
+        if rel_path not in result:
+            result.append(rel_path)
+    return result
+
+
+def _best_trial_row(repo_root: Path, run: Run) -> tuple[str, dict[str, Any]] | None:
+    candidates: list[tuple[str, dict[str, Any]]] = []
+    for metrics_csv in _metrics_csvs_from_run(run, work_item=run.work_item):
+        best_row = _best_metrics_row(repo_root=repo_root, metrics_csv=metrics_csv)
+        if best_row is None:
+            continue
+        candidates.append((metrics_csv, best_row))
+    if not candidates:
+        return None
+    candidates.sort(key=lambda item: _row_sort_key(item[1]))
+    return candidates[0]
+
+
+def _metric_summary(values: list[float]) -> dict[str, float] | None:
+    if not values:
+        return None
+    return {
+        "best": min(values),
+        "mean": float(statistics.fmean(values)),
+        "median": float(statistics.median(values)),
+        "max": max(values),
+    }
+
+
+def _trial_artifact_paths(item_id: str) -> dict[str, str]:
+    base = f"control_plane/shadow_exports/l1_trials/{item_id}"
+    return {
+        "summary_stats": f"{base}/summary_stats.json",
+        "failure_stats": f"{base}/failure_stats.json",
+        "trial_table": f"{base}/trial_table.csv",
+    }
+
+
+def _write_json(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+
+def _write_trial_table(path: Path, rows: list[dict[str, Any]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fieldnames = [
+        "run_key", "attempt", "trial_index", "seed", "status", "metrics_csv",
+        "critical_path_ns", "die_area", "total_power_mw",
+        "failure_category", "failure_stage", "failure_signature",
+    ]
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({key: row.get(key, "") for key in fieldnames})
+
+
+def _upsert_repo_artifact(session: Session, *, run: Run, kind: str, path: str, metadata: dict[str, Any], repo_root: Path) -> None:
+    artifact = session.query(Artifact).filter(Artifact.run_id == run.id, Artifact.kind == kind).one_or_none()
+    rel_path = str(path)
+    abs_path = repo_root / rel_path
+    sha = hashlib.sha256(abs_path.read_bytes()).hexdigest() if abs_path.exists() else None
+    if artifact is None:
+        artifact = Artifact(
+            run_id=run.id,
+            kind=kind,
+            storage_mode=ArtifactStorageMode.REPO,
+            path=rel_path,
+            sha256=sha,
+            metadata_=metadata,
+        )
+        session.add(artifact)
+    else:
+        artifact.storage_mode = ArtifactStorageMode.REPO
+        artifact.path = rel_path
+        artifact.sha256 = sha
+        artifact.metadata_ = metadata
+
+
+def _trial_aggregate_payloads(repo_root: Path, work_item: WorkItem) -> tuple[list[str], dict[str, Any], dict[str, Any], list[dict[str, Any]]]:
+    completed = _completed_trial_runs(work_item)
+    metrics_csvs: list[str] = []
+    trial_rows: list[dict[str, Any]] = []
+    success_metric_values = {"critical_path_ns": [], "die_area": [], "total_power_mw": []}
+    failure_category = Counter()
+    failure_stage = Counter()
+    success_count = 0
+    for run in completed:
+        payload = dict(run.result_payload or {}) if isinstance(run.result_payload, dict) else {}
+        trial = dict(payload.get("trial") or {})
+        failure = dict(payload.get("failure_classification") or {})
+        run_metrics_csvs = _metrics_csvs_from_run(run, work_item=work_item) if run.status == RunStatus.SUCCEEDED else []
+        for metrics_csv in run_metrics_csvs:
+            if metrics_csv not in metrics_csvs:
+                metrics_csvs.append(metrics_csv)
+        best = _best_trial_row(repo_root, run) if run.status == RunStatus.SUCCEEDED else None
+        metrics_csv = ""
+        best_row = None
+        if best is not None:
+            metrics_csv, best_row = best
+            success_count += 1
+            for key in success_metric_values:
+                value = _safe_float(best_row.get(key))
+                if value is not None:
+                    success_metric_values[key].append(value)
+        else:
+            category = str(failure.get("category", "") or run.failure_category or "unknown").strip() or "unknown"
+            stage = str(failure.get("stage", "") or run.failure_stage or "unknown").strip() or "unknown"
+            failure_category[category] += 1
+            failure_stage[stage] += 1
+        trial_rows.append({
+            "run_key": run.run_key,
+            "attempt": run.attempt,
+            "trial_index": trial.get("trial_index", run.trial_index or ""),
+            "seed": trial.get("seed", run.seed or ""),
+            "status": run.status.value,
+            "metrics_csv": metrics_csv,
+            "critical_path_ns": _safe_float(best_row.get("critical_path_ns")) if best_row else "",
+            "die_area": _safe_float(best_row.get("die_area")) if best_row else "",
+            "total_power_mw": _safe_float(best_row.get("total_power_mw")) if best_row else "",
+            "failure_category": str(failure.get("category", "") or run.failure_category or "").strip(),
+            "failure_stage": str(failure.get("stage", "") or run.failure_stage or "").strip(),
+            "failure_signature": str(failure.get("signature", "") or run.failure_signature or "").strip(),
+        })
+
+    completed_trials = len(completed)
+    failure_count = completed_trials - success_count
+    summary_stats = {
+        "item_id": work_item.item_id,
+        "completed_trials": completed_trials,
+        "success_count": success_count,
+        "failure_count": failure_count,
+        "success_rate": (float(success_count) / float(completed_trials)) if completed_trials else 0.0,
+        "metrics": {key: value for key, value in {metric: _metric_summary(values) for metric, values in success_metric_values.items()}.items() if value is not None},
+    }
+    failure_stats = {
+        "item_id": work_item.item_id,
+        "completed_trials": completed_trials,
+        "success_count": success_count,
+        "failure_count": failure_count,
+        "by_category": dict(failure_category),
+        "by_stage": dict(failure_stage),
+    }
+    return metrics_csvs, summary_stats, failure_stats, trial_rows
+
+
 def _build_payload(*, work_item: WorkItem, run: Run, proposals: list[dict[str, Any]], evaluation_record: dict[str, Any]) -> dict[str, Any]:
     return {
         "version": 0.1,
@@ -282,6 +462,7 @@ def _build_payload(*, work_item: WorkItem, run: Run, proposals: list[dict[str, A
         "evaluation_record": evaluation_record,
         "proposal_assessment": None,
         "proposals": proposals,
+        "trial_summary": None,
     }
 
 
@@ -317,11 +498,7 @@ def consume_l1_result(session: Session, request: Layer1ConsumeRequest) -> Layer1
     if run.status != RunStatus.SUCCEEDED:
         raise Layer1ResultConsumerError(f"run is not succeeded: {run.run_key} status={run.status.value}")
 
-    metrics_csvs = [
-        str(path)
-        for path in (work_item.expected_outputs or [])
-        if str(path).endswith("/metrics.csv") or str(path).endswith("metrics.csv")
-    ]
+    metrics_csvs, summary_stats, failure_stats, trial_rows = _trial_aggregate_payloads(repo_root, work_item)
     proposals: list[dict[str, Any]] = []
     evaluation_record: dict[str, Any] | None = None
     for metrics_csv in metrics_csvs:
@@ -348,12 +525,24 @@ def consume_l1_result(session: Session, request: Layer1ConsumeRequest) -> Layer1
         proposals=proposals,
         evaluation_record=evaluation_record,
     )
+    payload["trial_summary"] = summary_stats
     target_rel = request.target_path or _default_target_path(item_id=work_item.item_id)
     target_path = _resolve_path(repo_root=repo_root, path_text=target_rel)
     target_path.parent.mkdir(parents=True, exist_ok=True)
     target_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
+    trial_paths = _trial_artifact_paths(work_item.item_id)
+    summary_path = _resolve_path(repo_root=repo_root, path_text=trial_paths["summary_stats"])
+    failure_path = _resolve_path(repo_root=repo_root, path_text=trial_paths["failure_stats"])
+    trial_table_path = _resolve_path(repo_root=repo_root, path_text=trial_paths["trial_table"])
+    _write_json(summary_path, summary_stats)
+    _write_json(failure_path, failure_stats)
+    _write_trial_table(trial_table_path, trial_rows)
+
     _upsert_artifact(session, run=run, target_path=str(target_path.relative_to(repo_root)), payload=payload)
+    _upsert_repo_artifact(session, run=run, kind="summary_stats", path=str(summary_path.relative_to(repo_root)), metadata={"completed_trials": summary_stats["completed_trials"]}, repo_root=repo_root)
+    _upsert_repo_artifact(session, run=run, kind="failure_stats", path=str(failure_path.relative_to(repo_root)), metadata={"failure_count": failure_stats["failure_count"]}, repo_root=repo_root)
+    _upsert_repo_artifact(session, run=run, kind="trial_table", path=str(trial_table_path.relative_to(repo_root)), metadata={"row_count": len(trial_rows)}, repo_root=repo_root)
     work_item.state = WorkItemState.ARTIFACT_SYNC
     session.add(
         RunEvent(
@@ -363,6 +552,8 @@ def consume_l1_result(session: Session, request: Layer1ConsumeRequest) -> Layer1
             event_payload={
                 "target_path": str(target_path.relative_to(repo_root)),
                 "proposal_count": len(proposals),
+                "completed_trials": summary_stats["completed_trials"],
+                "success_count": summary_stats["success_count"],
             },
         )
     )

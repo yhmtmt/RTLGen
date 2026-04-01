@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import timezone
 from typing import Any
 
 from sqlalchemy.exc import IntegrityError
@@ -21,6 +22,14 @@ _TERMINAL_RUN_STATUSES = {
     RunStatus.CANCELED,
     RunStatus.TIMED_OUT,
 }
+
+
+def _coerce_utc(dt):
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
 
 
 class RunLifecycleError(RuntimeError):
@@ -85,6 +94,10 @@ def _get_active_lease(session: Session, lease_token: str) -> WorkerLease:
     return lease
 
 
+def _dispatchable_state_for(work_item) -> WorkItemState:
+    return WorkItemState.READY if getattr(work_item, "assigned_machine_key", None) else WorkItemState.DISPATCH_PENDING
+
+
 def start_run(
     session: Session,
     *,
@@ -95,6 +108,11 @@ def start_run(
     container_image: str | None = None,
     checkout_commit: str | None = None,
     branch_name: str | None = None,
+    trial_index: int | None = None,
+    seed: int | None = None,
+    trial_group_key: str | None = None,
+    flow_variant: str | None = None,
+    scheduler_variant: str | None = None,
 ) -> RunStartResult:
     lease = _get_active_lease(session, lease_token)
     work_item = lease.work_item
@@ -117,6 +135,11 @@ def start_run(
         container_image=container_image,
         checkout_commit=checkout_commit,
         branch_name=branch_name,
+        trial_index=trial_index,
+        seed=seed,
+        trial_group_key=trial_group_key,
+        flow_variant=flow_variant,
+        scheduler_variant=scheduler_variant,
         status=RunStatus.RUNNING,
         started_at=utcnow(),
     )
@@ -132,6 +155,9 @@ def start_run(
             "lease_token": lease_token,
             "attempt": attempt,
             "executor_type": executor_type,
+            "trial_index": trial_index,
+            "seed": seed,
+            "trial_group_key": trial_group_key,
         },
     )
     session.add(event)
@@ -250,6 +276,15 @@ def complete_run(
     run.completed_at = utcnow()
     run.result_summary = result_summary
     run.result_payload = result_payload
+    if run.started_at is not None and run.completed_at is not None:
+        started_at = _coerce_utc(run.started_at)
+        completed_at = _coerce_utc(run.completed_at)
+        run.runtime_seconds = max((completed_at - started_at).total_seconds(), 0.0)
+    failure = (result_payload or {}).get("failure_classification") if isinstance(result_payload, dict) else {}
+    if isinstance(failure, dict):
+        run.failure_stage = str(failure.get("stage", "") or "").strip() or None
+        run.failure_category = str(failure.get("category", "") or "").strip() or None
+        run.failure_signature = str(failure.get("signature", "") or failure.get("detail", "") or "").strip() or None
 
     work_item = run.work_item
     retry_decision = (result_payload or {}).get("retry_decision", {}) if isinstance(result_payload, dict) else {}
@@ -257,7 +292,7 @@ def complete_run(
     if run_status == RunStatus.SUCCEEDED:
         work_item.state = WorkItemState.ARTIFACT_SYNC
     elif requeue_for_retry:
-        work_item.state = WorkItemState.DISPATCH_PENDING
+        work_item.state = _dispatchable_state_for(work_item)
     else:
         work_item.state = WorkItemState.FAILED
 
