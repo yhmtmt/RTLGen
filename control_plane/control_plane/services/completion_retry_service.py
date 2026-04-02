@@ -68,13 +68,40 @@ def _latest_retry_request_event(session: Session, *, run_id: str) -> RunEvent | 
     )
 
 
-def _latest_retry_started_event(session: Session, *, run_id: str) -> RunEvent | None:
-    return (
+def _request_id_from_event(event: RunEvent | None) -> str | None:
+    if event is None or not isinstance(event.event_payload, dict):
+        return None
+    request_id = str(event.event_payload.get('request_id', '')).strip()
+    return request_id or None
+
+
+def _retry_request_state(session: Session, *, run_id: str, request_id: str) -> tuple[bool, bool]:
+    events = (
         session.query(RunEvent)
-        .filter(RunEvent.run_id == run_id, RunEvent.event_type == 'submission_retry_started')
-        .order_by(RunEvent.event_time.desc())
-        .first()
+        .filter(
+            RunEvent.run_id == run_id,
+            RunEvent.event_type.in_(
+                [
+                    'submission_retry_started',
+                    'submission_retry_processed',
+                    'submission_retry_failed',
+                    'submission_retry_skipped',
+                ]
+            ),
+        )
+        .all()
     )
+    started = False
+    finished = False
+    for event in events:
+        event_request_id = _request_id_from_event(event)
+        if event_request_id != request_id:
+            continue
+        if event.event_type == 'submission_retry_started':
+            started = True
+        else:
+            finished = True
+    return started, finished
 
 
 def submission_retry_status(
@@ -94,12 +121,14 @@ def submission_retry_status(
             force=False,
             target_machine_key=_target_machine_key(work_item, latest_run),
         )
-    started_event = _latest_retry_started_event(session, run_id=latest_run.id)
     payload = dict(request_event.event_payload or {}) if isinstance(request_event.event_payload, dict) else {}
     request_id = str(payload.get('request_id', '')).strip() or None
     force = bool(payload.get('force', False))
     target_machine_key = str(payload.get('target_machine_key', '')).strip() or _target_machine_key(work_item, latest_run)
-    requested = started_event is None or request_event.event_time > started_event.event_time
+    requested = False
+    if request_id is not None:
+        _started, finished = _retry_request_state(session, run_id=latest_run.id, request_id=request_id)
+        requested = not finished
     return SubmissionRetryStatus(
         requested=requested,
         request_id=request_id,
@@ -171,20 +200,38 @@ def claim_submission_retry(
     *,
     machine_key: str,
 ) -> SubmissionRetryClaim | None:
-    candidates = (
-        session.query(WorkItem)
-        .filter(WorkItem.state == WorkItemState.ARTIFACT_SYNC)
-        .order_by(WorkItem.updated_at.asc(), WorkItem.created_at.asc())
-        .all()
-    )
-    for work_item in candidates:
+    candidate_ids = [
+        row[0]
+        for row in (
+            session.query(WorkItem.id)
+            .filter(WorkItem.state == WorkItemState.ARTIFACT_SYNC)
+            .order_by(WorkItem.updated_at.asc(), WorkItem.created_at.asc())
+            .all()
+        )
+    ]
+    for work_item_id in candidate_ids:
+        work_item = (
+            session.query(WorkItem)
+            .filter(WorkItem.id == work_item_id)
+            .with_for_update(skip_locked=True)
+            .one_or_none()
+        )
+        if work_item is None or work_item.state != WorkItemState.ARTIFACT_SYNC:
+            continue
         latest_run = _latest_run_for_item(work_item)
         if latest_run is None or latest_run.status != RunStatus.SUCCEEDED:
             continue
-        status = submission_retry_status(session, work_item=work_item, run=latest_run)
-        if not status.requested or not status.request_id:
+        request_event = _latest_retry_request_event(session, run_id=latest_run.id)
+        request_id = _request_id_from_event(request_event)
+        if request_event is None or request_id is None:
             continue
-        if status.target_machine_key and status.target_machine_key != machine_key:
+        payload = dict(request_event.event_payload or {}) if isinstance(request_event.event_payload, dict) else {}
+        force = bool(payload.get('force', False))
+        target_machine_key = str(payload.get('target_machine_key', '')).strip() or _target_machine_key(work_item, latest_run)
+        if target_machine_key and target_machine_key != machine_key:
+            continue
+        started, finished = _retry_request_state(session, run_id=latest_run.id, request_id=request_id)
+        if started or finished:
             continue
         session.add(
             RunEvent(
@@ -192,9 +239,9 @@ def claim_submission_retry(
                 event_time=utcnow(),
                 event_type='submission_retry_started',
                 event_payload={
-                    'request_id': status.request_id,
+                    'request_id': request_id,
                     'machine_key': machine_key,
-                    'force': status.force,
+                    'force': force,
                 },
             )
         )
@@ -202,8 +249,8 @@ def claim_submission_retry(
         return SubmissionRetryClaim(
             item_id=work_item.item_id,
             run_key=latest_run.run_key,
-            request_id=status.request_id,
-            force=status.force,
-            target_machine_key=status.target_machine_key,
+            request_id=request_id,
+            force=force,
+            target_machine_key=target_machine_key,
         )
     return None
