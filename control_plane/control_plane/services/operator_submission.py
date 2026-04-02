@@ -106,6 +106,10 @@ def _default_manifest_path(repo_root: Path, item_id: str) -> Path:
     return repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "submission_manifest.json"
 
 
+def _default_session_id() -> str:
+    return utcnow().strftime("s%Y%m%dt%H%M%Sz").lower()
+
+
 def _load_existing_submission_identity(manifest_path: Path) -> tuple[str | None, str | None]:
     if not manifest_path.exists():
         return None, None
@@ -537,6 +541,9 @@ def operate_submission(session: Session, request: OperatorSubmissionRequest) -> 
     )
     effective_branch_name = request.branch_name or existing_branch_name
     effective_session_id = request.session_id or existing_session_id
+    if request.force and not reusable_manifest:
+        effective_session_id = request.session_id or _default_session_id()
+        effective_branch_name = request.branch_name or f"eval/{work_item.item_id}/{effective_session_id}"
 
     try:
         review_result = publish_review_package(
