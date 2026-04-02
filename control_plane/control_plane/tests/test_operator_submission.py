@@ -25,6 +25,7 @@ from control_plane.services.l2_result_consumer import Layer2ConsumeRequest, cons
 from control_plane.services.operator_submission import (
     OperatorSubmissionError,
     OperatorSubmissionRequest,
+    assess_submission_eligibility,
     operate_submission,
 )
 
@@ -209,11 +210,35 @@ def _seed_l1_reviewable(session: Session, repo_root: Path) -> tuple[str, str]:
         ),
     )
 
+    proposal_dir = repo_root / "docs" / "proposals" / "prop_l1_operate_demo"
+    _write(
+        proposal_dir / "proposal.json",
+        json.dumps(
+            {
+                "proposal_id": "prop_l1_operate_demo",
+                "title": "Layer1 operate demo",
+                "abstraction_layer": "circuit_block",
+            },
+            indent=2,
+        )
+        + "\n",
+    )
+    _write(
+        proposal_dir / "promotion_result.json",
+        json.dumps({"decision": "pending"}, indent=2) + "\n",
+    )
+
     payload = {
         "item_id": "l1_operate_demo",
         "title": "Layer1 operate demo",
         "layer": "layer1",
         "flow": "openroad",
+        "developer_loop": {
+            "proposal_id": "prop_l1_operate_demo",
+            "proposal_path": "docs/proposals/prop_l1_operate_demo/proposal.json",
+            "abstraction": {"layer": "circuit_block"},
+            "evaluation": {"mode": "measurement_only", "abstraction_layer": "circuit_block"},
+        },
         "handoff": {
             "branch": "eval/l1_operate_demo/<session_id>",
             "pr_title": "eval: run layer1 operate demo",
@@ -390,6 +415,36 @@ def test_operate_submission_runs_full_chain_and_reuses_manifest() -> None:
             assert link.state == GitHubLinkState.PR_OPEN
             artifact = session.query(Artifact).filter_by(kind="operator_submission").one()
             assert artifact.path == f"control_plane/shadow_exports/review/{item_id}/operator_submission.json"
+
+
+def test_assess_submission_eligibility_rejects_orphan_l1_review_item() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, run_key = _seed_l1_reviewable(session, repo_root)
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            work_item.task_request.request_payload = {
+                "item_id": item_id,
+                "title": "Layer1 operate demo",
+                "layer": "layer1",
+                "flow": "openroad",
+            }
+            session.commit()
+            session.expire_all()
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            eligibility = assess_submission_eligibility(
+                session,
+                work_item=work_item,
+                run=session.query(Run).filter_by(run_key=run_key).one(),
+                repo_root=repo_root,
+            )
+            assert eligibility.eligible is False
+            assert eligibility.reason == "missing developer_loop proposal linkage"
 
 
 def test_operate_submission_recovers_on_retry_after_pr_create_failure() -> None:

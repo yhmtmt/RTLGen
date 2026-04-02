@@ -242,6 +242,21 @@ def _latest_submission_failure_reason(session: Session, *, run_id: str) -> str |
     return reason or None
 
 
+def _proposal_linkage_reason(*, repo_root: Path, work_item: WorkItem) -> str | None:
+    payload = (work_item.task_request.request_payload or {}) if work_item.task_request is not None else {}
+    developer_loop = payload.get("developer_loop")
+    if not isinstance(developer_loop, dict):
+        return "missing developer_loop proposal linkage"
+    proposal_id = str(developer_loop.get("proposal_id", "")).strip() or None
+    proposal_path = str(developer_loop.get("proposal_path", "")).strip() or None
+    if proposal_id is None and proposal_path is None:
+        return "missing developer_loop proposal linkage"
+    proposal_json = resolve_proposal_file(repo_root, proposal_path=proposal_path, proposal_id=proposal_id)
+    if proposal_json is None or not proposal_json.exists():
+        return "developer_loop proposal linkage does not resolve to a proposal"
+    return None
+
+
 def _terminal_proposal_reason(*, repo_root: Path, work_item: WorkItem) -> str | None:
     payload = (work_item.task_request.request_payload or {}) if work_item.task_request is not None else {}
     developer_loop = payload.get("developer_loop")
@@ -398,6 +413,7 @@ def assess_submission_eligibility(
         elif submission_failure_reason is not None:
             reason = submission_failure_reason
         elif repo_root is not None:
+            proposal_linkage_reason = _proposal_linkage_reason(repo_root=repo_root, work_item=work_item)
             terminal_reason = _terminal_proposal_reason(repo_root=repo_root, work_item=work_item)
             manifest_path = _default_manifest_path(repo_root, work_item.item_id)
             reusable_manifest = _is_reusable_submission_manifest(
@@ -406,7 +422,9 @@ def assess_submission_eligibility(
                 run=latest_run,
                 manifest_path=manifest_path,
             )
-            if terminal_reason is not None:
+            if proposal_linkage_reason is not None:
+                reason = proposal_linkage_reason
+            elif terminal_reason is not None:
                 reason = terminal_reason
             elif artifact is None:
                 reason = f"missing {required_kind} artifact"
