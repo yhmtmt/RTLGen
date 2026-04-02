@@ -220,6 +220,34 @@ def _latest_run_for_work_item(work_item: WorkItem) -> Run | None:
     return sorted(work_item.runs, key=lambda row: (row.attempt, row.created_at or utcnow()))[-1]
 
 
+def _update_merged_link_finalization_metadata(
+    session: Session,
+    *,
+    work_item: WorkItem,
+    pr_number: int | None,
+    proposal_id: str | None,
+    commit_sha: str | None,
+    skipped: bool,
+    skip_reason: str | None,
+    error: str | None,
+) -> None:
+    link = _latest_merged_link(session, work_item=work_item, pr_number=pr_number)
+    if link is None:
+        return
+    metadata = dict(link.metadata_ or {})
+    metadata.update(
+        {
+            "finalization_attempted_utc": utcnow().isoformat().replace("+00:00", "Z"),
+            "finalized_proposal_id": proposal_id,
+            "finalization_commit": commit_sha,
+            "finalization_skipped": skipped,
+            "finalization_skip_reason": skip_reason,
+            "finalization_error": error,
+        }
+    )
+    link.metadata_ = metadata
+
+
 def _supersede_stale_sibling_reviews(
     session: Session,
     *,
@@ -718,6 +746,16 @@ def finalize_after_merge(session: Session, request: ProposalFinalizeRequest) -> 
         _run_git(repo_root, "push", "origin", "HEAD:master")
         commit_sha = _run_git(repo_root, "rev-parse", "HEAD")
 
+    _update_merged_link_finalization_metadata(
+        session,
+        work_item=work_item,
+        pr_number=pr_number,
+        proposal_id=proposal_id,
+        commit_sha=commit_sha,
+        skipped=False,
+        skip_reason=None,
+        error=None,
+    )
     session.flush()
     session.commit()
 

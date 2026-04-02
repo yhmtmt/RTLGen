@@ -1172,6 +1172,128 @@ def test_finalize_l1_retry_item_rebinds_requested_entry() -> None:
         assert current["merged_pr_number"] == 89
 
 
+def test_finalize_after_merge_refreshes_github_link_finalization_metadata() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        proposal_id = "prop_l1_refresh_meta_v1"
+        proposal_path = _seed_repo_files(
+            repo_root,
+            proposal_id,
+            [
+                {
+                    "item_id": "l1_refresh_meta_r1",
+                    "task_type": "l1_sweep",
+                    "objective": "refresh_meta",
+                    "status": "pending",
+                }
+            ],
+        )
+        payload_path = repo_root / "control_plane" / "shadow_exports" / "l1_promotions" / "l1_refresh_meta_r1.json"
+        _write(
+            payload_path,
+            json.dumps(
+                {
+                    "item_id": "l1_refresh_meta_r1",
+                    "run_key": "l1_refresh_meta_r1_run_1",
+                    "source_commit": "abc123",
+                    "proposals": [
+                        {
+                            "metrics_ref": {"metrics_csv": "runs/designs/demo/metrics.csv", "platform": "nangate45", "status": "ok"},
+                            "metric_summary": {"critical_path_ns": 1.0, "die_area": 100.0, "total_power_mw": 0.01},
+                        }
+                    ],
+                },
+                indent=2,
+            )
+            + "\n",
+        )
+
+        with _session() as session:
+            task = TaskRequest(
+                request_key="l1:l1_refresh_meta_r1",
+                source="test",
+                requested_by="tester",
+                title="refresh meta l1",
+                description="refresh meta objective",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                priority=1,
+                request_payload={
+                    "developer_loop": {
+                        "proposal_id": proposal_id,
+                        "proposal_path": str(proposal_path.relative_to(repo_root)),
+                    }
+                },
+            )
+            session.add(task)
+            session.flush()
+            work_item = WorkItem(
+                work_item_key="l1:l1_refresh_meta_r1",
+                task_request_id=task.id,
+                item_id="l1_refresh_meta_r1",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                platform="nangate45",
+                task_type="l1_sweep",
+                state=WorkItemState.MERGED,
+                priority=1,
+                input_manifest={},
+                command_manifest=[],
+                expected_outputs=["runs/designs/demo/metrics.csv"],
+                acceptance_rules=[],
+                source_commit="abc123",
+            )
+            session.add(work_item)
+            session.flush()
+            run = Run(
+                run_key="l1_refresh_meta_r1_run_1",
+                work_item_id=work_item.id,
+                attempt=1,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.SUCCEEDED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="abc123",
+                result_summary="ok",
+                result_payload={"queue_result": {"status": "ok"}},
+            )
+            session.add(run)
+            session.flush()
+            session.add(Artifact(run_id=run.id, kind="promotion_proposal", storage_mode="repo", path=str(payload_path.relative_to(repo_root)), sha256="x", metadata_={}))
+            link = GitHubLink(
+                work_item_id=work_item.id,
+                run_id=run.id,
+                repo="yhmtmt/RTLGen",
+                branch_name="eval/l1_refresh_meta_r1/s1",
+                pr_number=77,
+                pr_url="https://github.com/yhmtmt/RTLGen/pull/77",
+                state=GitHubLinkState.PR_MERGED,
+                metadata_={"finalization_error": "old failure"},
+            )
+            session.add(link)
+            session.commit()
+
+            result = finalize_after_merge(
+                session,
+                ProposalFinalizeRequest(
+                    repo_root=str(repo_root),
+                    item_id="l1_refresh_meta_r1",
+                    pr_number=77,
+                    merge_commit="feedface",
+                    merged_utc="2026-04-02T00:00:00Z",
+                    git_publish=False,
+                ),
+            )
+
+            session.refresh(link)
+
+        assert result.skipped is False
+        assert link.metadata_["finalized_proposal_id"] == proposal_id
+        assert link.metadata_["finalization_error"] is None
+        assert link.metadata_["finalization_commit"] is None
+        assert link.metadata_["finalization_skipped"] is False
+
+
 def test_finalize_terminal_decision_supersedes_stale_sibling_review_items() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
