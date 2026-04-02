@@ -81,6 +81,25 @@ def _canonical_evidence_files(*, repo_root: Path, work_item: WorkItem) -> list[s
     return files
 
 
+def _collect_existing_file_refs(*, repo_root: Path, value: Any, files: list[str], seen: set[str]) -> None:
+    if isinstance(value, dict):
+        for nested in value.values():
+            _collect_existing_file_refs(repo_root=repo_root, value=nested, files=files, seen=seen)
+        return
+    if isinstance(value, list):
+        for nested in value:
+            _collect_existing_file_refs(repo_root=repo_root, value=nested, files=files, seen=seen)
+        return
+    rel_path = str(value or "").strip()
+    if not rel_path or rel_path in seen:
+        return
+    candidate = repo_root / rel_path
+    if not candidate.exists() or not candidate.is_file():
+        return
+    seen.add(rel_path)
+    files.append(rel_path)
+
+
 def _review_linked_supporting_files(*, repo_root: Path, package_payload: dict[str, Any]) -> list[str]:
     review_artifact = package_payload.get("review_artifact")
     if not isinstance(review_artifact, dict):
@@ -91,36 +110,9 @@ def _review_linked_supporting_files(*, repo_root: Path, package_payload: dict[st
     source_refs = payload.get("source_refs")
     if not isinstance(source_refs, dict):
         return []
-    supporting_keys = (
-        "focused_candidate_schedule_yml",
-        "focused_candidate_descriptors_bin",
-        "focused_candidate_perf_trace_json",
-    )
     files: list[str] = []
     seen: set[str] = set()
-    for key in supporting_keys:
-        rel_path = str(source_refs.get(key, "")).strip()
-        if not rel_path or rel_path in seen:
-            continue
-        candidate = repo_root / rel_path
-        if not candidate.exists() or not candidate.is_file():
-            continue
-        seen.add(rel_path)
-        files.append(rel_path)
-    focused_model_artifacts = source_refs.get("focused_model_artifacts")
-    if isinstance(focused_model_artifacts, list):
-        for entry in focused_model_artifacts:
-            if not isinstance(entry, dict):
-                continue
-            for key in ("schedule_yml", "descriptors_bin", "perf_trace_json"):
-                rel_path = str(entry.get(key, "")).strip()
-                if not rel_path or rel_path in seen:
-                    continue
-                candidate = repo_root / rel_path
-                if not candidate.exists() or not candidate.is_file():
-                    continue
-                seen.add(rel_path)
-                files.append(rel_path)
+    _collect_existing_file_refs(repo_root=repo_root, value=source_refs, files=files, seen=seen)
     return files
 
 
