@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l1_terminal_hardsigmoid_retryresume_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "promote",
+  "pr_number": 144,
+  "merge_commit": "3fd0f80b94edd363729dd9da342249977e9ce2ee",
+  "merged_utc": "2026-04-02T14:22:46.959780Z"
 }

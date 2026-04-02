@@ -2,24 +2,28 @@
 
 ## Candidate
 - `proposal_id`: `prop_l1_terminal_hardsigmoid_retryresume_v1`
-- `candidate_id`: `l1_prop_l1_terminal_hardsigmoid_retryresume_v1_nangate45_r1`
+- `candidate_id`: `l1_prop_l1_terminal_hardsigmoid_retryresume_v1_nangate45_r6`
 
 ## Evaluations Consumed
-- pending first retry/resume proof run
+- `l1_prop_l1_terminal_hardsigmoid_retryresume_v1_nangate45_r6`
+- `l1_prop_l1_terminal_hardsigmoid_retryresume_v1_nangate45_r6_run_04812fd34ac3891f`
+- source commit: `1ab1146834e3b3769a107caadd72c5e86d699bda`
+- review: PR #144
 
 ## Baseline Comparison
-- baseline used: `prop_l1_terminal_hardsigmoid_block_v1`
-- key deltas: `pending`
+- not applicable
 
 ## Result
-- pending first proof run
-- confidence level: `pending`
-- estimated mapper optimization room: `not_applicable`
-- whether the architecture conclusion is robust to plausible schedule changes: `not_applicable`
+- result: `promote`
+- confidence level: merged accepted evidence
+- estimated optimization room: accepted at current stage
+- architecture conclusion robustness: accepted for the current proposal scope
+- summary: Physical metrics recorded from an accepted status=ok Layer 1 row.
 
 ## Failures and Caveats
-- expected first interruption is evaluator-side submission logout rather than synthesis failure
+- no additional caveats recorded during automatic finalization
 
 ## Recommendation
-- iterate
-- short reason: `awaiting first retry/resume proof run`
+- `promote`
+- reason: Accepted Layer 1 physical metrics were merged in PR #144 for the current candidate.
+- next_action: inspect the next dependent item
