@@ -12,12 +12,13 @@ from sqlalchemy.orm import Session
 
 from control_plane.db import build_session_factory, create_all
 from control_plane.models.artifacts import Artifact
-from control_plane.models.enums import ExecutorType, RunStatus, WorkItemState
+from control_plane.models.enums import ArtifactStorageMode, ExecutorType, RunStatus, WorkItemState
 from control_plane.models.runs import Run
 from control_plane.models.work_items import WorkItem
 from control_plane.services.queue_importer import QueueImportRequest, import_queue_item
 from control_plane.services.reconciliation_service import (
     ArtifactSyncRequest,
+    _ensure_queue_snapshot_artifact,
     _normalize_metrics_csv_refs,
     sync_run_artifacts,
 )
@@ -179,6 +180,75 @@ def test_sync_run_artifacts_roundtrips_internal_worker_run() -> None:
             assert work_item.state == WorkItemState.ARTIFACT_SYNC
             assert run.status == RunStatus.SUCCEEDED
             assert queue_snapshot.path == "runs/eval_queue/openroad/evaluated/cp009_item.json"
+
+
+def test_sync_run_artifacts_deduplicates_queue_snapshot_artifacts() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_all(engine)
+    with Session(engine) as session:
+        work_item = WorkItem(
+            work_item_key="queue:cp009_item",
+            task_request_id="task-id",
+            item_id="cp009_item",
+            layer="layer2",
+            flow="openroad",
+            platform="nangate45",
+            task_type="l2_campaign",
+            state=WorkItemState.ARTIFACT_SYNC,
+            priority=1,
+            input_manifest={},
+            command_manifest=[],
+            expected_outputs=[],
+            acceptance_rules=[],
+        )
+        session.add(work_item)
+        session.flush()
+        run = Run(
+            run_key="cp009_run",
+            work_item_id=work_item.id,
+            attempt=1,
+            executor_type=ExecutorType.INTERNAL_WORKER,
+            status=RunStatus.SUCCEEDED,
+            result_summary="done",
+            result_payload={},
+        )
+        session.add(run)
+        session.flush()
+        session.add(Artifact(
+            run_id=run.id,
+            kind="queue_snapshot",
+            storage_mode=ArtifactStorageMode.REPO,
+            path="runs/eval_queue/openroad/evaluated/old_a.json",
+            sha256="olda",
+            metadata_={},
+        ))
+        session.add(Artifact(
+            run_id=run.id,
+            kind="queue_snapshot",
+            storage_mode=ArtifactStorageMode.REPO,
+            path="runs/eval_queue/openroad/evaluated/old_b.json",
+            sha256="oldb",
+            metadata_={},
+        ))
+        session.commit()
+
+        _ensure_queue_snapshot_artifact(
+            session,
+            run=run,
+            target_path="runs/eval_queue/openroad/evaluated/cp009_item.json",
+            queue_sha256="newsha",
+        )
+        session.commit()
+
+        queue_snapshots = (
+            session.query(Artifact)
+            .filter(Artifact.run_id == run.id, Artifact.kind == "queue_snapshot")
+            .order_by(Artifact.id.asc())
+            .all()
+        )
+        assert len(queue_snapshots) == 1
+        assert queue_snapshots[0].path == "runs/eval_queue/openroad/evaluated/cp009_item.json"
+        assert queue_snapshots[0].sha256 == "newsha"
 
 
 def test_sync_run_artifacts_allows_failed_terminal_run() -> None:

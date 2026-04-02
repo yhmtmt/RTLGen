@@ -341,11 +341,15 @@ def _ensure_queue_snapshot_artifact(
     target_path: str,
     queue_sha256: str,
 ) -> None:
-    artifact = (
+    artifacts = (
         session.query(Artifact)
         .filter(Artifact.run_id == run.id, Artifact.kind == "queue_snapshot")
-        .one_or_none()
+        .order_by(Artifact.created_at.desc(), Artifact.id.desc())
+        .all()
     )
+    artifact = artifacts[0] if artifacts else None
+    for duplicate in artifacts[1:]:
+        session.delete(duplicate)
     if artifact is None:
         artifact = Artifact(
             run_id=run.id,
