@@ -189,6 +189,32 @@ def _resolve_source_commit(repo_root: Path, source_commit: str | None) -> str:
             raise Layer2TaskGenerationError(
                 f"provided source_commit resolved to empty git rev-parse output in repo_root {repo_root}: {resolved}"
             )
+        try:
+            subprocess.run(
+                ["git", "-C", str(repo_root), "fetch", "--quiet", "origin"],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            refs = subprocess.run(
+                [
+                    "git", "-C", str(repo_root), "for-each-ref", "refs/remotes/origin",
+                    "--contains", normalized, "--format=%(refname)",
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+        except subprocess.CalledProcessError as exc:
+            stderr = (exc.stderr or "").strip()
+            detail = f": {stderr}" if stderr else ""
+            raise Layer2TaskGenerationError(
+                f"failed to verify source_commit against origin for repo_root {repo_root}: {normalized}{detail}"
+            ) from exc
+        if not refs.stdout.strip():
+            raise Layer2TaskGenerationError(
+                f"provided source_commit is not reachable from origin in repo_root {repo_root}: {normalized}"
+            )
         return normalized
     try:
         result = subprocess.run(

@@ -72,11 +72,15 @@ def _write_example_repo(repo_root: Path) -> tuple[str, str]:
 
 
 def _init_git_repo(repo_root: Path) -> str:
+    origin_root = repo_root.parent / "origin.git"
+    subprocess.run(["git", "init", "--bare", str(origin_root)], check=True, capture_output=True, text=True)
     subprocess.run(["git", "-C", str(repo_root), "init"], check=True, capture_output=True, text=True)
     subprocess.run(["git", "-C", str(repo_root), "config", "user.email", "tester@example.com"], check=True, capture_output=True, text=True)
     subprocess.run(["git", "-C", str(repo_root), "config", "user.name", "Tester"], check=True, capture_output=True, text=True)
     subprocess.run(["git", "-C", str(repo_root), "add", "."], check=True, capture_output=True, text=True)
     subprocess.run(["git", "-C", str(repo_root), "commit", "-m", "test repo"], check=True, capture_output=True, text=True)
+    subprocess.run(["git", "-C", str(repo_root), "remote", "add", "origin", str(origin_root)], check=True, capture_output=True, text=True)
+    subprocess.run(["git", "-C", str(repo_root), "push", "-u", "origin", "HEAD:master"], check=True, capture_output=True, text=True)
     result = subprocess.run(["git", "-C", str(repo_root), "rev-parse", "HEAD"], check=True, capture_output=True, text=True)
     return result.stdout.strip()
 
@@ -537,5 +541,39 @@ def test_generate_l1_sweep_task_rejects_invalid_explicit_source_commit() -> None
                 )
             except Layer1TaskGenerationError as exc:
                 assert "provided source_commit does not resolve to a commit" in str(exc)
+            else:
+                raise AssertionError("expected Layer1TaskGenerationError")
+
+
+def test_generate_l1_sweep_task_rejects_source_commit_not_pushed_to_origin() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_repo(repo_root)
+        _init_git_repo(repo_root)
+        extra = repo_root / "LOCAL_ONLY.txt"
+        extra.write_text("local only\n", encoding="utf-8")
+        subprocess.run(["git", "-C", str(repo_root), "add", "LOCAL_ONLY.txt"], check=True, capture_output=True, text=True)
+        subprocess.run(["git", "-C", str(repo_root), "commit", "-m", "local only"], check=True, capture_output=True, text=True)
+        local_only_commit = subprocess.run(["git", "-C", str(repo_root), "rev-parse", "HEAD"], check=True, capture_output=True, text=True).stdout.strip()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            try:
+                generate_l1_sweep_task(
+                    session,
+                    Layer1SweepGenerateRequest(
+                        repo_root=str(repo_root),
+                        sweep_path=sweep_path,
+                        config_paths=[config_path],
+                        platform="nangate45",
+                        out_root="runs/designs/activations",
+                        requested_by="@tester",
+                        source_commit=local_only_commit,
+                    ),
+                )
+            except Layer1TaskGenerationError as exc:
+                assert "not reachable from origin" in str(exc)
             else:
                 raise AssertionError("expected Layer1TaskGenerationError")
