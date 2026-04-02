@@ -125,7 +125,31 @@ def _required_l1_runtime_submodules() -> list[str]:
 def _resolve_source_commit(repo_root: Path, source_commit: str | None) -> str:
     resolved = str(source_commit or "").strip()
     if resolved:
-        return resolved
+        try:
+            subprocess.run(
+                ["git", "-C", str(repo_root), "cat-file", "-e", f"{resolved}^{{commit}}"],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            result = subprocess.run(
+                ["git", "-C", str(repo_root), "rev-parse", f"{resolved}^{{commit}}"],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+        except subprocess.CalledProcessError as exc:
+            stderr = (exc.stderr or "").strip()
+            detail = f": {stderr}" if stderr else ""
+            raise Layer1TaskGenerationError(
+                f"provided source_commit does not resolve to a commit in repo_root {repo_root}: {resolved}{detail}"
+            ) from exc
+        normalized = result.stdout.strip()
+        if not normalized:
+            raise Layer1TaskGenerationError(
+                f"provided source_commit resolved to empty git rev-parse output in repo_root {repo_root}: {resolved}"
+            )
+        return normalized
     try:
         result = subprocess.run(
             ["git", "-C", str(repo_root), "rev-parse", "HEAD"],

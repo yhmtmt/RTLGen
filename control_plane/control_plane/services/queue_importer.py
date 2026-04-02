@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from hashlib import sha256
+import subprocess
 import json
 from pathlib import Path
 from typing import Any
@@ -97,6 +98,37 @@ def _queue_state_to_work_item_state(queue_state: str) -> WorkItemState:
     return WorkItemState.DISPATCH_PENDING
 
 
+def _resolve_source_commit(repo_root: Path, source_commit: str | None) -> str | None:
+    resolved = str(source_commit or "").strip()
+    if not resolved:
+        return None
+    try:
+        subprocess.run(
+            ["git", "-C", str(repo_root), "cat-file", "-e", f"{resolved}^{{commit}}"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        result = subprocess.run(
+            ["git", "-C", str(repo_root), "rev-parse", f"{resolved}^{{commit}}"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        stderr = (exc.stderr or "").strip()
+        detail = f": {stderr}" if stderr else ""
+        raise QueueImportError(
+            f"provided source_commit does not resolve to a commit in repo_root {repo_root}: {resolved}{detail}"
+        ) from exc
+    normalized = result.stdout.strip()
+    if not normalized:
+        raise QueueImportError(
+            f"provided source_commit resolved to empty git rev-parse output in repo_root {repo_root}: {resolved}"
+        )
+    return normalized
+
+
 def _merge_state(current: WorkItemState, imported: WorkItemState) -> WorkItemState:
     return imported if _STATE_RANK[imported] > _STATE_RANK[current] else current
 
@@ -141,6 +173,9 @@ def _record_reconciliation(
 
 
 def import_queue_item(session: Session, request: QueueImportRequest) -> QueueImportResult:
+    repo_root = Path(request.repo_root)
+    resolved_source_commit = _resolve_source_commit(repo_root, request.source_commit)
+
     queue_file = request.resolve_path()
     if not queue_file.exists():
         raise QueueImportError(f"queue file not found: {queue_file}")
@@ -166,7 +201,7 @@ def import_queue_item(session: Session, request: QueueImportRequest) -> QueueImp
             flow=FlowName(payload.get("flow")),
             priority=int(payload.get("priority", 1)),
             request_payload=payload,
-            source_commit=request.source_commit,
+            source_commit=resolved_source_commit,
         )
         session.add(task_request)
         session.flush()
@@ -187,7 +222,7 @@ def import_queue_item(session: Session, request: QueueImportRequest) -> QueueImp
             expected_outputs=(payload.get("task") or {}).get("expected_outputs") or [],
             acceptance_rules=(payload.get("task") or {}).get("acceptance") or [],
             queue_snapshot_path=str(queue_file),
-            source_commit=request.source_commit,
+            source_commit=resolved_source_commit,
         )
         session.add(work_item)
         session.flush()
@@ -248,8 +283,8 @@ def import_queue_item(session: Session, request: QueueImportRequest) -> QueueImp
         existing.queue_snapshot_path = new_queue_path
         changed = True
 
-    if request.source_commit and existing.source_commit != request.source_commit:
-        existing.source_commit = request.source_commit
+    if resolved_source_commit and existing.source_commit != resolved_source_commit:
+        existing.source_commit = resolved_source_commit
         changed = True
 
     if changed:

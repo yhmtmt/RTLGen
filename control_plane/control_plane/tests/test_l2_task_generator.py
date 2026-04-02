@@ -15,7 +15,7 @@ from control_plane.db import create_all
 from control_plane.models.enums import WorkItemState
 from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
-from control_plane.services.l2_task_generator import Layer2CampaignGenerateRequest, generate_l2_campaign_task
+from control_plane.services.l2_task_generator import Layer2CampaignGenerateRequest, Layer2TaskGenerationError, generate_l2_campaign_task
 
 
 def _write_campaign(repo_root: Path) -> str:
@@ -67,11 +67,22 @@ def _write_campaign(repo_root: Path) -> str:
     return str(campaign_path.relative_to(repo_root))
 
 
+def _init_git_repo(repo_root: Path) -> str:
+    subprocess.run(["git", "-C", str(repo_root), "init"], check=True, capture_output=True, text=True)
+    subprocess.run(["git", "-C", str(repo_root), "config", "user.email", "tester@example.com"], check=True, capture_output=True, text=True)
+    subprocess.run(["git", "-C", str(repo_root), "config", "user.name", "Tester"], check=True, capture_output=True, text=True)
+    subprocess.run(["git", "-C", str(repo_root), "add", "."], check=True, capture_output=True, text=True)
+    subprocess.run(["git", "-C", str(repo_root), "commit", "-m", "test repo"], check=True, capture_output=True, text=True)
+    result = subprocess.run(["git", "-C", str(repo_root), "rev-parse", "HEAD"], check=True, capture_output=True, text=True)
+    return result.stdout.strip()
+
+
 def test_generate_l2_campaign_task_creates_ready_work_item() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
         repo_root.mkdir()
         campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
         engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
         create_all(engine)
 
@@ -82,7 +93,7 @@ def test_generate_l2_campaign_task_creates_ready_work_item() -> None:
                     repo_root=str(repo_root),
                     campaign_path=campaign_path,
                     requested_by="@tester",
-                    source_commit="abc123",
+                    source_commit=source_commit,
                     objective_profiles_json="runs/campaigns/npu/base/objective_profiles.json",
                     proposal_id="prop_l2_demo_v1",
                     proposal_path="docs/developer_loop/prop_l2_demo_v1",
@@ -98,7 +109,7 @@ def test_generate_l2_campaign_task_creates_ready_work_item() -> None:
             work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
             assert result.status == "applied"
             assert work_item.task_type == "l2_campaign"
-            assert work_item.state == WorkItemState.READY
+            assert work_item.state == WorkItemState.DISPATCH_PENDING
             assert work_item.source_mode == "src_verilog"
             assert [command["name"] for command in work_item.command_manifest] == [
                 "fetch_models",
@@ -135,6 +146,7 @@ def test_generate_l2_campaign_task_creates_ready_work_item() -> None:
                     "results_csv": f"runs/campaigns/npu/demo_campaign__{result.item_id}/results.csv",
                     "report_md": f"runs/campaigns/npu/demo_campaign__{result.item_id}/report.md",
                 },
+                "clean_outputs": True,
             }
             assert payload["developer_loop"] == {
                 "proposal_id": "prop_l2_demo_v1",
@@ -161,6 +173,7 @@ def test_generate_l2_campaign_task_recovers_metadata_from_evaluation_requests() 
         repo_root = Path(td) / "repo"
         repo_root.mkdir()
         campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
         proposal_dir = repo_root / "docs" / "developer_loop" / "prop_l2_demo_v1"
         proposal_dir.mkdir(parents=True, exist_ok=True)
         (proposal_dir / "evaluation_requests.json").write_text(
@@ -221,6 +234,7 @@ def test_generate_l2_campaign_task_blocks_when_dependency_not_merged() -> None:
         repo_root = Path(td) / "repo"
         repo_root.mkdir()
         campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
         engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
         create_all(engine)
 
@@ -290,6 +304,7 @@ def test_generate_l2_campaign_task_upserts_existing_item() -> None:
         repo_root = Path(td) / "repo"
         repo_root.mkdir()
         campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
         engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
         create_all(engine)
 
@@ -336,6 +351,7 @@ def test_generate_l2_campaign_task_requeues_failed_item_on_upsert() -> None:
         repo_root = Path(td) / "repo"
         repo_root.mkdir()
         campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
         engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
         create_all(engine)
 
@@ -365,7 +381,7 @@ def test_generate_l2_campaign_task_requeues_failed_item_on_upsert() -> None:
             )
 
             session.refresh(work_item)
-            assert work_item.state == WorkItemState.READY
+            assert work_item.state == WorkItemState.DISPATCH_PENDING
             assert work_item.queue_snapshot_path is None
 
 
@@ -374,6 +390,7 @@ def test_generate_l2_campaign_task_defaults_source_commit_from_repo_head() -> No
         repo_root = Path(td) / "repo"
         repo_root.mkdir()
         campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
         engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
         create_all(engine)
 
@@ -398,3 +415,29 @@ def test_generate_l2_campaign_task_defaults_source_commit_from_repo_head() -> No
                 assert work_item.source_commit == "feedface12345678"
                 assert work_item.task_request.source_commit == "feedface12345678"
                 mock_run.assert_called_once()
+
+
+def test_generate_l2_campaign_task_rejects_invalid_explicit_source_commit() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            try:
+                generate_l2_campaign_task(
+                    session,
+                    Layer2CampaignGenerateRequest(
+                        repo_root=str(repo_root),
+                        campaign_path=campaign_path,
+                        requested_by="@tester",
+                        source_commit="badbadbad",
+                    ),
+                )
+            except Layer2TaskGenerationError as exc:
+                assert "provided source_commit does not resolve to a commit" in str(exc)
+            else:
+                raise AssertionError("expected invalid source_commit failure")

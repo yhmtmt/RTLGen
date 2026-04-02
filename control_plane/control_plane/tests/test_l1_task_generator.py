@@ -71,6 +71,16 @@ def _write_example_repo(repo_root: Path) -> tuple[str, str]:
     )
 
 
+def _init_git_repo(repo_root: Path) -> str:
+    subprocess.run(["git", "-C", str(repo_root), "init"], check=True, capture_output=True, text=True)
+    subprocess.run(["git", "-C", str(repo_root), "config", "user.email", "tester@example.com"], check=True, capture_output=True, text=True)
+    subprocess.run(["git", "-C", str(repo_root), "config", "user.name", "Tester"], check=True, capture_output=True, text=True)
+    subprocess.run(["git", "-C", str(repo_root), "add", "."], check=True, capture_output=True, text=True)
+    subprocess.run(["git", "-C", str(repo_root), "commit", "-m", "test repo"], check=True, capture_output=True, text=True)
+    result = subprocess.run(["git", "-C", str(repo_root), "rev-parse", "HEAD"], check=True, capture_output=True, text=True)
+    return result.stdout.strip()
+
+
 def _write_example_block_repo(
     repo_root: Path,
     *,
@@ -123,11 +133,13 @@ def _write_example_block_repo(
     )
 
 
+
 def test_generate_l1_sweep_task_creates_ready_work_item() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
         repo_root.mkdir()
         config_path, sweep_path = _write_example_repo(repo_root)
+        source_commit = _init_git_repo(repo_root)
         engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
         create_all(engine)
 
@@ -145,7 +157,7 @@ def test_generate_l1_sweep_task_creates_ready_work_item() -> None:
                         platform="nangate45",
                         out_root="runs/designs/activations",
                         requested_by="@tester",
-                        source_commit="abc123",
+                        source_commit=source_commit,
                         abstraction_layer="circuit_block",
                     ),
                 )
@@ -190,6 +202,7 @@ def test_generate_l1_sweep_task_omits_runtime_submodules_when_image_provides_dep
         repo_root = Path(td) / "repo"
         repo_root.mkdir()
         config_path, sweep_path = _write_example_repo(repo_root)
+        source_commit = _init_git_repo(repo_root)
         engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
         create_all(engine)
 
@@ -209,7 +222,7 @@ def test_generate_l1_sweep_task_omits_runtime_submodules_when_image_provides_dep
                         item_id="l1_demo_softmax_image_deps",
                         title="Layer1 demo image deps",
                         requested_by="@tester",
-                        source_commit="abc123",
+                        source_commit=source_commit,
                     ),
                 )
 
@@ -225,6 +238,7 @@ def test_generate_l1_sweep_task_upserts_existing_item() -> None:
         repo_root = Path(td) / "repo"
         repo_root.mkdir()
         config_path, sweep_path = _write_example_repo(repo_root)
+        source_commit = _init_git_repo(repo_root)
         engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
         create_all(engine)
 
@@ -240,7 +254,7 @@ def test_generate_l1_sweep_task_upserts_existing_item() -> None:
                     item_id="l1_demo_softmax",
                     title="Layer1 demo",
                     requested_by="@tester",
-                    source_commit="abc123",
+                    source_commit=source_commit,
                 ),
             )
             second = generate_l1_sweep_task(
@@ -254,7 +268,7 @@ def test_generate_l1_sweep_task_upserts_existing_item() -> None:
                     item_id="l1_demo_softmax",
                     title="Layer1 demo updated",
                     requested_by="@tester2",
-                    source_commit="def456",
+                    source_commit=source_commit,
                 ),
             )
 
@@ -274,6 +288,7 @@ def test_generate_l1_sweep_task_supports_integrated_npu_block_configs() -> None:
             mode_compare=False,
             synth_hierarchical=1,
         )
+        source_commit = _init_git_repo(repo_root)
         proposal_dir = repo_root / "docs" / "developer_loop" / "prop_l1_npu_nm1_sigmoid_vec_enable_v1"
         proposal_dir.mkdir(parents=True, exist_ok=True)
         (proposal_dir / "proposal.json").write_text(
@@ -293,7 +308,7 @@ def test_generate_l1_sweep_task_supports_integrated_npu_block_configs() -> None:
                     platform="nangate45",
                     out_root="runs/designs/npu_blocks",
                     requested_by="@tester",
-                    source_commit="sig123",
+                    source_commit=source_commit,
                     proposal_id="prop_l1_npu_nm1_sigmoid_vec_enable_v1",
                     proposal_path="docs/developer_loop/prop_l1_npu_nm1_sigmoid_vec_enable_v1",
                 ),
@@ -336,6 +351,7 @@ def test_generate_l1_sweep_task_rejects_flattened_architecture_block_sweeps() ->
         repo_root = Path(td) / "repo"
         repo_root.mkdir()
         config_path, sweep_path = _write_example_block_repo(repo_root)
+        source_commit = _init_git_repo(repo_root)
         engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
         create_all(engine)
 
@@ -364,6 +380,7 @@ def test_generate_l1_sweep_task_supports_make_target_for_integrated_blocks() -> 
         repo_root = Path(td) / "repo"
         repo_root.mkdir()
         config_path, sweep_path = _write_example_block_repo(repo_root)
+        source_commit = _init_git_repo(repo_root)
         engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
         create_all(engine)
 
@@ -377,7 +394,7 @@ def test_generate_l1_sweep_task_supports_make_target_for_integrated_blocks() -> 
                     platform="nangate45",
                     out_root="runs/designs/npu_blocks",
                     requested_by="@tester",
-                    source_commit="sig123",
+                    source_commit=source_commit,
                     proposal_id="prop_l1_npu_nm1_sigmoid_vec_enable_v1",
                     proposal_path="docs/developer_loop/prop_l1_npu_nm1_sigmoid_vec_enable_v1/proposal.json",
                     make_target="1_1_yosys_canonicalize",
@@ -402,6 +419,7 @@ def test_generate_l1_sweep_task_accepts_hierarchical_architecture_block_sweeps()
             mode_compare=False,
             synth_hierarchical=1,
         )
+        source_commit = _init_git_repo(repo_root)
         engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
         create_all(engine)
 
@@ -415,7 +433,7 @@ def test_generate_l1_sweep_task_accepts_hierarchical_architecture_block_sweeps()
                     platform="nangate45",
                     out_root="runs/designs/npu_blocks",
                     requested_by="@tester",
-                    source_commit="sig123",
+                    source_commit=source_commit,
                     abstraction_layer="architecture_block",
                 ),
             )
@@ -433,6 +451,7 @@ def test_generate_l1_sweep_task_defaults_source_commit_from_repo_head() -> None:
         repo_root = Path(td) / "repo"
         repo_root.mkdir()
         config_path, sweep_path = _write_example_repo(repo_root)
+        source_commit = _init_git_repo(repo_root)
         engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
         create_all(engine)
 
@@ -467,6 +486,7 @@ def test_generate_l1_sweep_task_accepts_explicit_hierarchical_architecture_block
         repo_root = Path(td) / "repo"
         repo_root.mkdir()
         config_path, sweep_path = _write_example_block_repo(repo_root, mode_compare=False, synth_hierarchical=1)
+        source_commit = _init_git_repo(repo_root)
         engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
         create_all(engine)
 
@@ -480,7 +500,7 @@ def test_generate_l1_sweep_task_accepts_explicit_hierarchical_architecture_block
                     platform="nangate45",
                     out_root="runs/designs/npu_blocks",
                     requested_by="@tester",
-                    source_commit="sig123",
+                    source_commit=source_commit,
                     proposal_id="prop_l1_npu_nm1_sigmoid_vec_enable_v1",
                     proposal_path="docs/developer_loop/prop_l1_npu_nm1_sigmoid_vec_enable_v1",
                     abstraction_layer="architecture_block",
@@ -490,3 +510,32 @@ def test_generate_l1_sweep_task_accepts_explicit_hierarchical_architecture_block
             work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
             assert result.status == "applied"
             assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {"layer": "architecture_block"}
+
+
+def test_generate_l1_sweep_task_rejects_invalid_explicit_source_commit() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_repo(repo_root)
+        _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            try:
+                generate_l1_sweep_task(
+                    session,
+                    Layer1SweepGenerateRequest(
+                        repo_root=str(repo_root),
+                        sweep_path=sweep_path,
+                        config_paths=[config_path],
+                        platform="nangate45",
+                        out_root="runs/designs/activations",
+                        requested_by="@tester",
+                        source_commit="badbadbad",
+                    ),
+                )
+            except Layer1TaskGenerationError as exc:
+                assert "provided source_commit does not resolve to a commit" in str(exc)
+            else:
+                raise AssertionError("expected Layer1TaskGenerationError")

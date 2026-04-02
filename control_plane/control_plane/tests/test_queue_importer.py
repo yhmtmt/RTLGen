@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from pathlib import Path
 
 from sqlalchemy import create_engine
@@ -12,10 +13,11 @@ from control_plane.db import create_all
 from control_plane.models.queue_reconciliations import QueueReconciliation
 from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
-from control_plane.services.queue_importer import QueueImportConflict, QueueImportRequest, import_queue_item
+from control_plane.services.queue_importer import QueueImportConflict, QueueImportError, QueueImportRequest, import_queue_item
 
 REPO_ROOT = Path("/workspaces/RTLGen")
 REAL_QUEUE_ITEM = REPO_ROOT / "runs/eval_queue/openroad/queued/l2_e2e_softmax_macro_tail_v1.json"
+REAL_SOURCE_COMMIT = subprocess.run(["git", "-C", str(REPO_ROOT), "rev-parse", "HEAD"], check=True, capture_output=True, text=True).stdout.strip()
 
 
 def make_session() -> Session:
@@ -31,7 +33,7 @@ def test_import_real_queue_item() -> None:
             QueueImportRequest(
                 repo_root=str(REPO_ROOT),
                 queue_path=str(REAL_QUEUE_ITEM),
-                source_commit="abc1234",
+                source_commit=REAL_SOURCE_COMMIT,
             ),
         )
         work_item = session.query(WorkItem).filter_by(item_id="l2_e2e_softmax_macro_tail_v1").one()
@@ -40,7 +42,7 @@ def test_import_real_queue_item() -> None:
         assert result.status == "applied"
         assert work_item.platform == "nangate45"
         assert work_item.task_type == "l2_campaign"
-        assert task_request.source_commit == "abc1234"
+        assert task_request.source_commit == REAL_SOURCE_COMMIT
         assert reconciliation.status.value == "applied"
 
 
@@ -90,7 +92,7 @@ def test_import_route_accepts_post_with_sqlite_file(tmp_path: Path) -> None:
     payload = {
         "repo_root": str(REPO_ROOT),
         "queue_path": str(REAL_QUEUE_ITEM),
-        "source_commit": "feedbeef",
+        "source_commit": REAL_SOURCE_COMMIT,
     }
 
     import os
@@ -113,3 +115,20 @@ def test_import_route_accepts_post_with_sqlite_file(tmp_path: Path) -> None:
             del os.environ["RTLCP_DATABASE_URL"]
         else:
             os.environ["RTLCP_DATABASE_URL"] = old
+
+
+def test_import_rejects_invalid_source_commit() -> None:
+    with make_session() as session:
+        try:
+            import_queue_item(
+                session,
+                QueueImportRequest(
+                    repo_root=str(REPO_ROOT),
+                    queue_path=str(REAL_QUEUE_ITEM),
+                    source_commit="badbadbad",
+                ),
+            )
+        except QueueImportError as exc:
+            assert "provided source_commit does not resolve to a commit" in str(exc)
+        else:
+            raise AssertionError("expected QueueImportError")
