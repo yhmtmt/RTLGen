@@ -251,15 +251,24 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
         <div class="panel">
           <h2>Operator Controls</h2>
           <div class="controls" style="justify-content:flex-start; margin-bottom: 10px;">
-            <button id="process-completions-button" class="primary">Process Completions</button>
+            <button id="dispatch-ready-button" class="primary">Dispatch Ready</button>
+            <button id="process-completions-button">Process Completions</button>
             <button id="poll-github-button">Poll GitHub</button>
             <button id="backfill-review-button">Backfill Review States</button>
           </div>
           <p class="meta" id="control-status">No control actions yet.</p>
         </div>
         <div class="panel">
+          <h2>Evaluators</h2>
+          <div class="table-wrap"><table id="machines-table"></table></div>
+        </div>
+        <div class="panel">
           <h2>Pending Submission</h2>
           <div class="table-wrap"><table id="pending-submissions-table"></table></div>
+        </div>
+        <div class="panel">
+          <h2>Dispatch Pending</h2>
+          <div class="table-wrap"><table id="dispatch-pending-table"></table></div>
         </div>
         <div class="panel">
           <h2>State Counts</h2>
@@ -277,6 +286,7 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
     const soundToggle = document.getElementById(\"sound-toggle\");
     const refreshButton = document.getElementById(\"refresh-button\");
     const pollSelect = document.getElementById(\"poll-select\");
+    const dispatchReadyButton = document.getElementById(\"dispatch-ready-button\");
     const processCompletionsButton = document.getElementById(\"process-completions-button\");
     const pollGithubButton = document.getElementById(\"poll-github-button\");
     const backfillReviewButton = document.getElementById(\"backfill-review-button\");
@@ -286,7 +296,9 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
       submissions: document.getElementById("submissions-table"),
       failures: document.getElementById("failures-table"),
       leases: document.getElementById("leases-table"),
+      machines: document.getElementById("machines-table"),
       pendingSubmissions: document.getElementById("pending-submissions-table"),
+      dispatchPending: document.getElementById("dispatch-pending-table"),
       states: document.getElementById("states-table"),
     };
 
@@ -538,14 +550,25 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
         { key: "reason", label: "Eligibility", render: (value, row) => row.eligible ? "eligible" : escapeHtml(value || "not eligible") },
         { key: "updated_at", label: "Updated", render: (value) => escapeHtml(formatTime(value)) },
         { key: "item_id", label: "Actions", render: (_value, row) => {
-          const submitDisabled = row.eligible ? "" : "disabled";
-          const submitTitle = row.eligible ? "" : `title="${escapeHtml(row.reason || "not eligible")}"`;
+          const primaryAction = row.eligible ? "submit" : (row.resumable ? "resume" : "blocked");
+          const primaryLabel = row.eligible ? "Submit" : (row.resumable ? "Resume" : "Blocked");
+          const primaryDisabled = primaryAction === "blocked" ? "disabled" : "";
+          const primaryTitle = primaryAction === "blocked" ? `title="${escapeHtml(row.reason || "not eligible")}"` : "";
           return `
-            <button data-action="submit" data-item-id="${escapeHtml(row.item_id)}" ${submitDisabled} ${submitTitle}>Submit</button>
+            <button data-action="${primaryAction}" data-item-id="${escapeHtml(row.item_id)}" ${primaryDisabled} ${primaryTitle}>${primaryLabel}</button>
             <button data-action="supersede" data-item-id="${escapeHtml(row.item_id)}">Supersede</button>
           `;
         } },
       ], payload.pending_submission_items || []);
+      renderTable(tables.dispatchPending, [
+        { key: "item_id", label: "Item", render: (value) => `<span class='mono'>${escapeHtml(value)}</span>` },
+        { key: "task_type", label: "Task" },
+        { key: "assigned_machine_key", label: "Assigned", render: (value) => value ? `<span class='mono'>${escapeHtml(value)}</span>` : "" },
+        { key: "updated_at", label: "Updated", render: (value) => escapeHtml(formatTime(value)) },
+        { key: "item_id", label: "Actions", render: (_value, row) => `
+            <button data-action="supersede" data-item-id="${escapeHtml(row.item_id)}">Supersede</button>
+          ` },
+      ], payload.dispatch_pending_items || []);
       const stateRows = Object.entries(payload.state_counts || {}).map(([name, count]) => ({ name, count }));
       renderTable(tables.states, [
         { key: "name", label: "State" },
@@ -608,17 +631,18 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
       {},
       (result) => `Backfilled review states (${(result.results || []).length}).`,
     ));
-    tables.pendingSubmissions.addEventListener("click", async (event) => {
+    async function handleItemAction(event) {
       const button = event.target.closest("button[data-action]");
       if (!button) return;
       const itemId = button.dataset.itemId;
       const action = button.dataset.action;
-      if (!itemId || !action) return;
+      if (!itemId || !action || action === "blocked") return;
       if (action === "supersede" && !window.confirm(`Supersede ${itemId}?`)) return;
-      const url = action === "submit"
+      const isSubmitLike = action === "submit" || action === "resume";
+      const url = isSubmitLike
         ? `/api/v1/control/items/${encodeURIComponent(itemId)}/submit`
         : `/api/v1/control/items/${encodeURIComponent(itemId)}/supersede`;
-      const payload = action === "submit" ? {} : { reason: "dashboard_superseded" };
+      const payload = isSubmitLike ? {} : { reason: "dashboard_superseded" };
       const originalLabel = button.textContent;
       button.disabled = true;
       button.textContent = "Working...";
@@ -626,7 +650,9 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
         await postJson(url, payload);
         const message = action === "submit"
           ? `Submission triggered for ${itemId}.`
-          : `Superseded ${itemId}.`;
+          : action === "resume"
+            ? `Completion resumed for ${itemId}.`
+            : `Superseded ${itemId}.`;
         setControlStatus(message);
         pushEvent(message);
         await refreshNow();
@@ -638,7 +664,10 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
         button.disabled = false;
         button.textContent = originalLabel;
       }
-    });
+    }
+
+    tables.pendingSubmissions.addEventListener("click", handleItemAction);
+    tables.dispatchPending.addEventListener("click", handleItemAction);
     soundToggle.addEventListener("click", () => {
       soundEnabled = !soundEnabled;
       soundToggle.textContent = soundEnabled ? "Sound On" : "Sound Off";
@@ -676,6 +705,7 @@ def _status_payload(database_url: str, recent_limit: int) -> dict[str, object]:
         "stale_leases": status.stale_leases,
         "evaluator_machines": status.evaluator_machines,
         "pending_submission_items": status.pending_submission_items,
+        "dispatch_pending_items": status.dispatch_pending_items,
         "recent_failures": status.recent_failures,
         "recent_submissions": status.recent_submissions,
     }

@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from control_plane.clock import utcnow
 from control_plane.models.enums import LeaseStatus, RunStatus, WorkItemState
 from control_plane.models.github_links import GitHubLink
+from control_plane.models.run_events import RunEvent
 from control_plane.models.runs import Run
 from control_plane.models.worker_leases import WorkerLease
 from control_plane.models.worker_machines import WorkerMachine
@@ -65,8 +66,26 @@ class OperatorStatusResult:
     active_runs: list[dict[str, object]]
     stale_leases: list[dict[str, object]]
     pending_submission_items: list[dict[str, object]]
+    dispatch_pending_items: list[dict[str, object]]
     recent_failures: list[dict[str, object]]
     recent_submissions: list[dict[str, object]]
+
+
+def _submission_reason_is_resumable(reason: str | None) -> bool:
+    if not reason:
+        return False
+    normalized = reason.strip().lower()
+    blocked_prefixes = (
+        'no canonical runs evidence diff',
+        'proposal already finalized',
+        'missing developer_loop proposal linkage',
+        'developer_loop proposal linkage does not resolve',
+        'missing canonical runs evidence outputs',
+        'unsupported_task_type=',
+        'state=',
+        'no_runs',
+    )
+    return not any(normalized.startswith(prefix) for prefix in blocked_prefixes)
 
 
 def load_operator_status(session: Session, request: OperatorStatusRequest) -> OperatorStatusResult:
@@ -171,6 +190,37 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
                 "run_status": latest_run.status.value if latest_run is not None else None,
                 "eligible": eligibility.eligible,
                 "reason": eligibility.reason,
+                "resumable": (
+                    latest_run is not None
+                    and latest_run.status == RunStatus.SUCCEEDED
+                    and not eligibility.eligible
+                    and _submission_reason_is_resumable(eligibility.reason)
+                ),
+            }
+        )
+
+    dispatch_pending_items = []
+    for work_item in (
+        session.query(WorkItem)
+        .filter(WorkItem.state == WorkItemState.DISPATCH_PENDING)
+        .order_by(WorkItem.updated_at.desc(), WorkItem.created_at.desc())
+        .limit(request.recent_limit)
+        .all()
+    ):
+        latest_run = None
+        if work_item.runs:
+            latest_run = sorted(work_item.runs, key=lambda row: (row.attempt, row.created_at or utcnow()))[-1]
+        dispatch_pending_items.append(
+            {
+                "item_id": work_item.item_id,
+                "task_type": work_item.task_type,
+                "platform": work_item.platform,
+                "assigned_machine_key": work_item.assigned_machine_key,
+                "source_commit": work_item.source_commit,
+                "created_at": work_item.created_at.isoformat() if work_item.created_at else None,
+                "updated_at": work_item.updated_at.isoformat() if work_item.updated_at else None,
+                "run_key": latest_run.run_key if latest_run is not None else None,
+                "run_status": latest_run.status.value if latest_run is not None else None,
             }
         )
 
@@ -244,9 +294,9 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
     awaiting_review = state_counts.get(WorkItemState.AWAITING_REVIEW.value, 0)
     if awaiting_review:
         attention_flags.append(f"awaiting_review={awaiting_review}")
-    dispatch_pending_items = state_counts.get(WorkItemState.DISPATCH_PENDING.value, 0)
-    if dispatch_pending_items:
-        attention_flags.append(f"dispatch_pending={dispatch_pending_items}")
+    dispatch_pending_count = state_counts.get(WorkItemState.DISPATCH_PENDING.value, 0)
+    if dispatch_pending_count:
+        attention_flags.append(f"dispatch_pending={dispatch_pending_count}")
     ready_items = state_counts.get(WorkItemState.READY.value, 0)
     if ready_items:
         attention_flags.append(f"ready={ready_items}")
@@ -269,6 +319,7 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
         active_runs=active_runs,
         stale_leases=stale_leases,
         pending_submission_items=pending_submission_items,
+        dispatch_pending_items=dispatch_pending_items,
         recent_failures=recent_failures,
         recent_submissions=recent_submissions,
     )

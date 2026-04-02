@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import timedelta
 from pathlib import Path
 import tempfile
+from types import SimpleNamespace
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
@@ -82,6 +83,7 @@ def test_operator_status_summarizes_live_state() -> None:
             failed_item = _seed_item(session, item_id="failed_item", state=WorkItemState.FAILED)
             ready_item = _seed_item(session, item_id="ready_item", state=WorkItemState.READY)
             pending_item = _seed_item(session, item_id="pending_item", state=WorkItemState.ARTIFACT_SYNC)
+            dispatch_item = _seed_item(session, item_id="dispatch_item", state=WorkItemState.DISPATCH_PENDING)
             review_item = _seed_item(session, item_id="review_item", state=WorkItemState.AWAITING_REVIEW)
 
             machine = WorkerMachine(
@@ -200,6 +202,22 @@ def test_operator_status_summarizes_live_state() -> None:
                     },
                 )
             )
+            pending_run = Run(
+                run_key="pending_run",
+                work_item_id=pending_item.id,
+                attempt=1,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                machine_id=machine.id,
+                checkout_commit="deadfeed",
+                status=RunStatus.SUCCEEDED,
+                started_at=now - timedelta(minutes=6),
+                completed_at=now - timedelta(minutes=5),
+                result_summary="submission failed after completed run",
+                result_payload={},
+            )
+            session.add(pending_run)
+            pending_item.assigned_machine_key = machine.machine_key
+            dispatch_item.assigned_machine_key = machine.machine_key
             session.commit()
 
         session_factory = build_session_factory(engine)
@@ -213,6 +231,7 @@ def test_operator_status_summarizes_live_state() -> None:
         assert status.state_counts["failed"] == 1
         assert status.state_counts["ready"] == 1
         assert status.state_counts["artifact_sync"] == 1
+        assert status.state_counts["dispatch_pending"] == 1
         assert status.state_counts["awaiting_review"] == 1
         assert status.state_counts["running"] == 1
         assert len(status.active_runs) == 1
@@ -221,6 +240,11 @@ def test_operator_status_summarizes_live_state() -> None:
         assert len(status.stale_leases) == 1
         assert status.stale_leases[0]["item_id"] == "ready_item"
         assert len(status.recent_failures) == 1
+        assert len(status.dispatch_pending_items) == 1
+        assert status.dispatch_pending_items[0]["item_id"] == "dispatch_item"
+        assert status.dispatch_pending_items[0]["assigned_machine_key"] == "worker-1"
+        assert len(status.pending_submission_items) == 1
+        assert status.pending_submission_items[0]["item_id"] == "pending_item"
         assert len(status.recent_submissions) == 1
         assert status.recent_submissions[0]["finalization_status"] == "finalized"
         assert status.recent_submissions[0]["finalized_proposal_id"] == "prop_demo_v1"
@@ -285,3 +309,48 @@ def test_operator_status_reports_evaluator_machine_capacity() -> None:
         assert row["slot_capacity"] == 4
         assert row["assigned_ready"] == 1
         assert row["active_slots"] == 0
+
+
+def test_operator_status_marks_resumable_pending_submission(monkeypatch) -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_all(engine)
+    now = utcnow()
+    with Session(engine) as session:
+        pending_item = _seed_item(session, item_id="pending_item", state=WorkItemState.ARTIFACT_SYNC)
+        machine = WorkerMachine(
+            machine_key="worker-1",
+            hostname="eval-host",
+            executor_kind="local_process",
+            capabilities={},
+            last_seen_at=now,
+        )
+        session.add(machine)
+        session.flush()
+        session.add(
+            Run(
+                run_key="pending_run",
+                work_item_id=pending_item.id,
+                attempt=1,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                machine_id=machine.id,
+                checkout_commit="deadfeed",
+                status=RunStatus.SUCCEEDED,
+                started_at=now - timedelta(minutes=2),
+                completed_at=now - timedelta(minutes=1),
+                result_summary="submission failed after completed run",
+                result_payload={},
+            )
+        )
+        session.commit()
+
+        monkeypatch.setattr(
+            "control_plane.services.operator_status.assess_submission_eligibility",
+            lambda *args, **kwargs: SimpleNamespace(eligible=False, reason="gh pr create failed after branch push"),
+        )
+
+        status = load_operator_status(session, OperatorStatusRequest(recent_limit=5))
+
+    assert len(status.pending_submission_items) == 1
+    assert status.pending_submission_items[0]["item_id"] == "pending_item"
+    assert status.pending_submission_items[0]["resumable"] is True
+    assert status.pending_submission_items[0]["reason"] == "gh pr create failed after branch push"

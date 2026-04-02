@@ -30,6 +30,8 @@ def test_dashboard_route() -> None:
     assert b'/api/v1/operator-status' in body
     assert b'Operator Controls' in body
     assert b'Pending Submission' in body
+    assert b'Dispatch Pending' in body
+    assert b'dispatch-pending-table' in body
 
 
 def test_operator_status_route() -> None:
@@ -57,6 +59,7 @@ def test_operator_status_route() -> None:
     assert payload["health_summary"]["status"] in {"healthy", "attention"}
     assert isinstance(payload["state_counts"], dict)
     assert isinstance(payload["pending_submission_items"], list)
+    assert isinstance(payload["dispatch_pending_items"], list)
 
 
 def test_operator_status_change_token_stable_without_state_change() -> None:
