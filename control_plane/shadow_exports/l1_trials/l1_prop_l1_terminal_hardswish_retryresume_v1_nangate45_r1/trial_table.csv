@@ -1,0 +1,2 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_prop_l1_terminal_hardswish_retryresume_v1_nangate45_r1_run_516193df84413e26,1,1,0,succeeded,runs/designs/activations/terminal_hardswish_int8_pwl_retryresume_wrapper/terminal_hardswish_int8_pwl_retryresume_wrapper/metrics.csv,0.1947,25600.0,0.000325,none,,
