@@ -17,7 +17,7 @@ from control_plane.clock import utcnow
 from control_plane.models.enums import FlowName, LayerName, WorkItemState
 from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
-from control_plane.services.docs_paths import canonicalize_proposal_path, resolve_proposal_file
+from control_plane.services.docs_paths import canonicalize_proposal_path, resolve_proposal_dir, resolve_proposal_file
 
 
 class Layer1TaskGenerationError(RuntimeError):
@@ -100,6 +100,74 @@ def _resolve_proposal_abstraction_layer(repo_root: Path, proposal_path: str | No
         return None
     resolved = str(proposal.get("abstraction_layer", "")).strip()
     return resolved or None
+
+
+def _retry_base(item_id: str) -> str:
+    return item_id.rsplit("_r", 1)[0] if "_r" in item_id else item_id
+
+
+def _upsert_evaluation_request_entry(
+    *,
+    repo_root: Path,
+    proposal_id: str | None,
+    proposal_path: str | None,
+    item_id: str,
+    task_type: str,
+    objective: str,
+    evaluation_mode: str,
+    abstraction_layer: str | None,
+    source_commit: str,
+) -> None:
+    proposal_dir = resolve_proposal_dir(
+        repo_root,
+        proposal_path=str(proposal_path or "").strip() or None,
+        proposal_id=str(proposal_id or "").strip() or None,
+    )
+    if proposal_dir is None:
+        return
+    evaluation_requests_path = proposal_dir / "evaluation_requests.json"
+    if not evaluation_requests_path.exists():
+        return
+    payload = _load_json(evaluation_requests_path)
+    requested_items = payload.get("requested_items")
+    if not isinstance(requested_items, list):
+        requested_items = []
+        payload["requested_items"] = requested_items
+
+    entry: dict[str, Any] | None = None
+    for candidate in requested_items:
+        if isinstance(candidate, dict) and str(candidate.get("item_id", "")).strip() == item_id:
+            entry = candidate
+            break
+    if entry is None:
+        retry_base = _retry_base(item_id)
+        retry_matches = [
+            candidate
+            for candidate in requested_items
+            if isinstance(candidate, dict) and _retry_base(str(candidate.get("item_id", "")).strip()) == retry_base
+        ]
+        if len(retry_matches) == 1:
+            entry = retry_matches[0]
+            previous_item_id = str(entry.get("item_id", "")).strip()
+            if previous_item_id and previous_item_id != item_id:
+                prior_item_ids = entry.get("prior_item_ids")
+                prior_values = [str(value).strip() for value in prior_item_ids] if isinstance(prior_item_ids, list) else []
+                if previous_item_id not in prior_values:
+                    prior_values.append(previous_item_id)
+                entry["prior_item_ids"] = prior_values
+        else:
+            entry = {}
+            requested_items.append(entry)
+
+    entry["item_id"] = item_id
+    entry["task_type"] = task_type
+    entry["objective"] = objective
+    entry["evaluation_mode"] = evaluation_mode
+    entry["abstraction_layer"] = str(abstraction_layer or "").strip()
+    entry["status"] = "pending"
+    payload["proposal_id"] = str(payload.get("proposal_id") or proposal_id or "").strip()
+    payload["source_commit"] = source_commit
+    evaluation_requests_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
 
 def _image_provided_l1_runtime_deps_available() -> bool:
@@ -608,6 +676,17 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
             seed_start=request.seed_start,
             stop_after_failures=request.stop_after_failures,
         ),
+    )
+    _upsert_evaluation_request_entry(
+        repo_root=repo_root,
+        proposal_id=request.proposal_id,
+        proposal_path=proposal_path,
+        item_id=item_id,
+        task_type="l1_sweep",
+        objective=objective,
+        evaluation_mode=((payload.get("developer_loop") or {}).get("evaluation") or {}).get("mode") or "",
+        abstraction_layer=effective_abstraction_layer,
+        source_commit=source_commit,
     )
 
     existing = session.query(WorkItem).filter(WorkItem.item_id == item_id).one_or_none()

@@ -1,5 +1,14 @@
 {
   "proposal_id": "prop_l1_terminal_hardsigmoid_retryresume_v1",
   "source_commit": "",
-  "requested_items": []
+  "requested_items": [
+    {
+      "item_id": "l1_prop_l1_terminal_hardsigmoid_retryresume_v1_nangate45_r6",
+      "task_type": "l1_sweep",
+      "objective": "Run a Layer1 nangate45 OpenROAD sweep for 1 configs using nangate45_terminal_hardsigmoid_int8_pwl_retryresume_v1.json and record lightweight design metrics for comparison.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "circuit_block",
+      "status": "pending"
+    }
+  ]
 }
