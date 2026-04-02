@@ -646,7 +646,7 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
       const url = isSubmitLike
         ? `/api/v1/control/items/${encodeURIComponent(itemId)}/submit`
         : `/api/v1/control/items/${encodeURIComponent(itemId)}/supersede`;
-      const payload = isSubmitLike ? {} : { reason: "dashboard_superseded" };
+      const payload = isSubmitLike ? (action === "resume" ? { force: true } : {}) : { reason: "dashboard_superseded" };
       const originalLabel = button.textContent;
       button.disabled = true;
       button.textContent = "Working...";

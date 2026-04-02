@@ -447,6 +447,66 @@ def test_assess_submission_eligibility_rejects_orphan_l1_review_item() -> None:
             assert eligibility.reason == "missing developer_loop proposal linkage"
 
 
+
+
+def test_operate_submission_rebuilds_when_saved_manifest_files_are_missing() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, _run_key = _seed_l1_reviewable(session, repo_root)
+            fake_bin = repo_root / "fake_bin"
+            log_path = repo_root / "fake_cmds.log"
+            _make_fake_bin(fake_bin, log_path)
+            old_path = os.environ.get("PATH", "")
+            os.environ["PATH"] = f"{fake_bin}:{old_path}"
+            try:
+                first = operate_submission(
+                    session,
+                    OperatorSubmissionRequest(
+                        repo_root=str(repo_root),
+                        repo="yhmtmt/RTLGen",
+                        item_id=item_id,
+                        evaluator_id="cpbot",
+                        session_id="s20260402t130000z",
+                        host="cp-host",
+                        worktree_root=str(repo_root / "tmp_submit"),
+                    ),
+                )
+
+                manifest_path = repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "submission_manifest.json"
+                manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+                pr_body_rel = str(manifest["pr_body_path"]).strip()
+                frozen_pr_body = str((manifest.get("frozen_file_map") or {}).get(pr_body_rel, "")).strip()
+                assert frozen_pr_body
+                (repo_root / frozen_pr_body).unlink()
+
+                second = operate_submission(
+                    session,
+                    OperatorSubmissionRequest(
+                        repo_root=str(repo_root),
+                        repo="yhmtmt/RTLGen",
+                        item_id=item_id,
+                        evaluator_id="cpbot",
+                        session_id="s20260402t130500z",
+                        host="cp-host",
+                        branch_name="eval/l1_operate_demo/rebuild",
+                        worktree_root=str(repo_root / "tmp_submit_retry"),
+                        force=True,
+                    ),
+                )
+            finally:
+                os.environ["PATH"] = old_path
+
+            assert first.pr_number == 321
+            assert second.submission_prepared is True
+            assert second.submission_prepared_reused is False
+            assert second.branch_name != first.branch_name
+
 def test_operate_submission_recovers_on_retry_after_pr_create_failure() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
@@ -926,7 +986,8 @@ def test_operate_submission_force_bypasses_eligibility_gate() -> None:
                         evaluator_id="cpbot",
                         session_id="s20260310t090000z",
                         host="cp-host",
-                        worktree_root=str(repo_root / "tmp_submit"),
+                        branch_name="eval/l1_operate_demo/rebuild",
+                        worktree_root=str(repo_root / "tmp_submit_retry"),
                         force=True,
                     ),
                 )

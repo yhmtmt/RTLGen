@@ -132,9 +132,38 @@ def _load_existing_submission_manifest(manifest_path: Path) -> dict[str, Any] | 
     return payload if isinstance(payload, dict) else None
 
 
+def _manifest_supporting_files_exist(*, repo_root: Path, manifest: dict[str, Any]) -> bool:
+    required_rel_paths: list[str] = []
+    for key in ("package_path", "snapshot_path", "pr_body_path"):
+        rel_path = str(manifest.get(key, "")).strip()
+        if not rel_path:
+            return False
+        required_rel_paths.append(rel_path)
+    review_rel = str(manifest.get("review_artifact_path", "")).strip()
+    if review_rel:
+        required_rel_paths.append(review_rel)
+    for rel_path in manifest.get("evidence_paths") or []:
+        rel_text = str(rel_path).strip()
+        if rel_text:
+            required_rel_paths.append(rel_text)
+    for rel_path in manifest.get("supporting_paths") or []:
+        rel_text = str(rel_path).strip()
+        if rel_text:
+            required_rel_paths.append(rel_text)
+
+    frozen_file_map = manifest.get("frozen_file_map") if isinstance(manifest.get("frozen_file_map"), dict) else {}
+    for rel_path in required_rel_paths:
+        candidate = str(frozen_file_map.get(rel_path, "")).strip()
+        path = repo_root / (candidate or rel_path)
+        if not path.exists() or not path.is_file():
+            return False
+    return True
+
+
 def _is_reusable_submission_manifest(
     session: Session,
     *,
+    repo_root: Path,
     work_item: WorkItem,
     run: Run,
     manifest_path: Path,
@@ -143,6 +172,8 @@ def _is_reusable_submission_manifest(
     if manifest is None:
         return False
     if str(manifest.get("run_key", "")).strip() != run.run_key:
+        return False
+    if not _manifest_supporting_files_exist(repo_root=repo_root, manifest=manifest):
         return False
     branch_name = str(manifest.get("branch_name", "")).strip()
     if not branch_name:
@@ -418,6 +449,7 @@ def assess_submission_eligibility(
             manifest_path = _default_manifest_path(repo_root, work_item.item_id)
             reusable_manifest = _is_reusable_submission_manifest(
                 session,
+                repo_root=repo_root,
                 work_item=work_item,
                 run=latest_run,
                 manifest_path=manifest_path,
@@ -495,6 +527,7 @@ def operate_submission(session: Session, request: OperatorSubmissionRequest) -> 
     manifest_path = _default_manifest_path(repo_root, work_item.item_id)
     reusable_manifest = _is_reusable_submission_manifest(
         session,
+        repo_root=repo_root,
         work_item=work_item,
         run=run,
         manifest_path=manifest_path,
