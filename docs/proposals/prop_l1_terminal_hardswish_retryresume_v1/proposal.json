@@ -1,0 +1,58 @@
+{
+  "proposal_id": "prop_l1_terminal_hardswish_retryresume_v1",
+  "created_utc": "2026-04-02T03:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "title": "Terminal int8 HardSwish retry/resume proof block",
+  "abstraction_layer": "circuit_block",
+  "hypothesis": "A fresh standalone int8 HardSwish block under a unique canonical path can validate dashboard Resume recovery after evaluator-side submission interruption without rerunning the evaluation.",
+  "direct_comparison": {
+    "primary_question": "Can one fresh bounded HardSwish block prove that dashboard Resume recovers a finished Layer 1 evaluation after evaluator-side gh logout?",
+    "include": [
+      "one standalone int8 HardSwish block under a unique design path",
+      "one bounded Nangate45 physical sweep",
+      "one forced submission interruption followed by dashboard Resume"
+    ],
+    "exclude": [
+      "integrated nm1 architecture-block evaluation",
+      "layer2 mapper or scheduler ranking",
+      "broad parameter sweeps beyond the single retry/resume candidate"
+    ],
+    "follow_on_broad_sweep": [
+      "none unless the dashboard Resume path still loses completion state or reviewable evidence"
+    ]
+  },
+  "expected_benefit": [
+    "proves that a finished proposal-backed Layer 1 run can be resumed from the dashboard after submission interruption",
+    "adds one more bounded HardSwish circuit_block reference under a unique canonical path"
+  ],
+  "risks": [
+    "this is primarily a workflow-proof item rather than a product-improvement item",
+    "the physical metrics may be redundant relative to the accepted HardSwish reference"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "task_type": "l1_sweep",
+      "evaluation_mode": "measurement_only",
+      "objective": "terminal_hardswish_retryresume_physical_metrics",
+      "cost_class": "high",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": false,
+      "requires_materialized_refs": false,
+      "abstraction_layer": "circuit_block",
+      "expected_result": {
+        "direction": "unknown",
+        "reason": "the first goal is to complete one fresh bounded run and prove that dashboard Resume can recover submission without rerunning evaluation"
+      }
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l1_terminal_hardswish_block_v1/promotion_result.json"
+  ],
+  "knowledge_refs": [
+    "docs/proposals/prop_l1_terminal_hardswish_block_v1/proposal.json",
+    "discussion:2026-04-02-dashboard-resume-proof"
+  ]
+}
