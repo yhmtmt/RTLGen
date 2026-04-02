@@ -133,6 +133,30 @@ def _format_failed_command(proc: subprocess.CompletedProcess[str]) -> str:
     return f"command {proc.args!r} failed with exit code {proc.returncode}{suffix}"
 
 
+def _format_pr_create_failure(
+    *,
+    branch_name: str,
+    pr_base: str,
+    worktree_path: Path,
+    pr_body_path: Path,
+    pr_view_before: subprocess.CompletedProcess[str],
+    pr_create: subprocess.CompletedProcess[str],
+    pr_view_after: subprocess.CompletedProcess[str],
+) -> str:
+    details = {
+        'branch_name': branch_name,
+        'pr_base': pr_base,
+        'worktree_path': str(worktree_path),
+        'body_file': str(pr_body_path),
+        'body_file_exists': pr_body_path.exists(),
+        'body_file_size': pr_body_path.stat().st_size if pr_body_path.exists() else None,
+        'pr_view_before': _format_failed_command(pr_view_before),
+        'pr_create': _format_failed_command(pr_create),
+        'pr_view_after': _format_failed_command(pr_view_after),
+    }
+    return "gh pr create failed: " + json.dumps(details, sort_keys=True)
+
+
 def _repo_diff_paths(*, cwd: Path, base_ref: str) -> list[str]:
     output = _run_cmd(["git", "diff", "--name-only", f"{base_ref}...HEAD"], cwd=cwd)
     return [line.strip() for line in output.splitlines() if line.strip()]
@@ -383,7 +407,15 @@ def execute_submission(session: Session, request: SubmissionExecuteRequest) -> S
                 pr_url = str(pr_view.get("url", "")).strip()
             else:
                 raise SubmissionExecuteError(
-                    f"gh pr create failed for branch {branch_name}: {_format_failed_command(pr_create_proc)}"
+                    _format_pr_create_failure(
+                        branch_name=branch_name,
+                        pr_base=pr_base,
+                        worktree_path=worktree_path,
+                        pr_body_path=pr_body_path,
+                        pr_view_before=pr_view_proc,
+                        pr_create=pr_create_proc,
+                        pr_view_after=pr_view_retry,
+                    )
                 )
         else:
             pr_url = pr_create_proc.stdout.strip().splitlines()[-1].strip()

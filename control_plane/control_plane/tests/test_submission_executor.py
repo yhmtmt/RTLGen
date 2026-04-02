@@ -371,6 +371,45 @@ def _make_fake_bin(fake_bin: Path, log_path: Path) -> None:
     os.chmod(fake_bin / "gh", 0o755)
 
 
+def _make_create_failure_fake_bin(fake_bin: Path, log_path: Path) -> None:
+    fake_bin.mkdir(parents=True, exist_ok=True)
+    real_git = shutil.which("git")
+    assert real_git is not None
+    _write(
+        fake_bin / "git",
+        "#!/usr/bin/env python3\n"
+        "import json, subprocess, sys\n"
+        f"log={json.dumps(str(log_path))}\n"
+        f"real_git={json.dumps(real_git)}\n"
+        "argv=sys.argv[1:]\n"
+        "with open(log, 'a', encoding='utf-8') as h:\n"
+        "    h.write(json.dumps({'tool':'git','argv':argv})+'\\n')\n"
+        "if argv[:4] == ['push', '--force-with-lease', '-u', 'origin'] or argv[:3] == ['push', '-u', 'origin']:\n"
+        "    sys.exit(0)\n"
+        "completed = subprocess.run([real_git, *argv])\n"
+        "sys.exit(completed.returncode)\n",
+    )
+    _write(
+        fake_bin / "gh",
+        "#!/usr/bin/env python3\n"
+        "import json, sys\n"
+        f"log={json.dumps(str(log_path))}\n"
+        "argv=sys.argv[1:]\n"
+        "with open(log, 'a', encoding='utf-8') as h:\n"
+        "    h.write(json.dumps({'tool':'gh','argv':argv})+'\\n')\n"
+        "if argv[:4] == ['--repo','yhmtmt/RTLGen','pr','view']:\n"
+        "    print('view failed', file=sys.stderr)\n"
+        "    sys.exit(1)\n"
+        "if argv[:4] == ['--repo','yhmtmt/RTLGen','pr','create']:\n"
+        "    print('transient create stdout')\n"
+        "    print('transient create stderr', file=sys.stderr)\n"
+        "    sys.exit(4)\n"
+        "sys.exit(1)\n",
+    )
+    os.chmod(fake_bin / "git", 0o755)
+    os.chmod(fake_bin / "gh", 0o755)
+
+
 def test_execute_submission_pushes_and_reconciles() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
@@ -432,6 +471,61 @@ def test_execute_submission_pushes_and_reconciles() -> None:
             assert any(entry["tool"] == "git" and entry["argv"][:4] == ["push", "--force-with-lease", "-u", "origin"] for entry in log_entries)
             assert any(entry["tool"] == "gh" and entry["argv"][:4] == ["--repo", "yhmtmt/RTLGen", "pr", "create"] for entry in log_entries)
             assert any(entry["tool"] == "gh" and entry["argv"][:4] == ["--repo", "yhmtmt/RTLGen", "pr", "view"] for entry in log_entries)
+
+
+def test_execute_submission_reports_detailed_pr_create_failure_context() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, _run_key = _seed_l1_reviewable(session, repo_root)
+            prepare_submission_branch(
+                session,
+                SubmissionPrepareRequest(
+                    repo_root=str(repo_root),
+                    item_id=item_id,
+                    evaluator_id="cpbot",
+                    session_id="s20260402t120000z",
+                    host="cp-host",
+                    worktree_root=str(repo_root / "tmp_submit"),
+                ),
+            )
+
+            fake_bin = repo_root / "fake_bin"
+            log_path = repo_root / "fake_cmds.log"
+            _make_create_failure_fake_bin(fake_bin, log_path)
+            old_path = os.environ.get("PATH", "")
+            os.environ["PATH"] = f"{fake_bin}:{old_path}"
+            try:
+                try:
+                    execute_submission(
+                        session,
+                        SubmissionExecuteRequest(
+                            repo_root=str(repo_root),
+                            repo="yhmtmt/RTLGen",
+                            item_id=item_id,
+                            evaluator_id="cpbot",
+                            session_id="s20260402t120000z",
+                            host="cp-host",
+                        ),
+                    )
+                except Exception as exc:
+                    message = str(exc)
+                    assert "gh pr create failed:" in message
+                    assert "transient create stderr" in message
+                    assert "transient create stdout" in message
+                    assert "body_file_exists" in message
+                    assert "worktree_path" in message
+                    assert "pr_view_before" in message
+                    assert "pr_view_after" in message
+                else:
+                    raise AssertionError("expected submission failure")
+            finally:
+                os.environ["PATH"] = old_path
 
 
 def test_execute_submission_recovers_when_pr_create_returns_error_after_pr_exists() -> None:
