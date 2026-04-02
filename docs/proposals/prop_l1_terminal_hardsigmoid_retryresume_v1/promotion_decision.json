@@ -1,0 +1,9 @@
+{
+  "proposal_id": "prop_l1_terminal_hardsigmoid_retryresume_v1",
+  "candidate_id": "",
+  "decision": "iterate",
+  "reason": "Awaiting the first bounded retry/resume proof run.",
+  "evidence_refs": [],
+  "next_action": "Queue the bounded Layer 1 proof run, force evaluator-side gh logout before submission, then recover from the dashboard Resume action.",
+  "requires_human_approval": false
+}
