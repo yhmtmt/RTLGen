@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from control_plane.api.app import create_app
 from control_plane.clock import utcnow
 from control_plane.db import create_all
-from control_plane.models.enums import LeaseStatus, WorkItemState
+from control_plane.models.enums import LeaseStatus, RunStatus, WorkItemState
 from control_plane.models.runs import Run
 from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
@@ -145,16 +145,31 @@ def test_expire_stale_leases_requeues_nonterminal_work() -> None:
             lease_seconds=1,
         )
         lease = session.query(WorkerLease).filter_by(lease_token=acquired.lease_token).one()
+        run = Run(
+            run_key="item_b_run_1",
+            work_item_id=item_b.id,
+            lease_id=lease.id,
+            attempt=1,
+            executor_type="internal_worker",
+            status=RunStatus.RUNNING,
+            started_at=utcnow(),
+        )
+        session.add(run)
         lease.expires_at = utcnow().replace(year=2020)
-        item_b.state = WorkItemState.LEASED
+        item_b.state = WorkItemState.RUNNING
         session.commit()
         result = expire_stale_leases(session)
         session.refresh(item_b)
         session.refresh(lease)
+        session.refresh(run)
         assert result.expired_count == 1
         assert result.requeued_count == 1
+        assert result.cleaned_run_count == 1
         assert lease.status == LeaseStatus.EXPIRED
         assert item_b.state == WorkItemState.DISPATCH_PENDING
+        assert run.status == RunStatus.CANCELED
+        assert run.completed_at is not None
+        assert run.failure_category == "lease_expired"
 
 
 def test_lease_routes_work_in_process() -> None:

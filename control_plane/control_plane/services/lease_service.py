@@ -12,6 +12,8 @@ from sqlalchemy.orm import Session
 from control_plane.clock import utcnow
 from control_plane.ids import make_id
 from control_plane.models.enums import LeaseStatus, RunStatus, WorkItemState
+from control_plane.models.run_events import RunEvent
+from control_plane.models.runs import Run
 from control_plane.models.worker_leases import WorkerLease
 from control_plane.models.worker_machines import WorkerMachine
 from control_plane.services.scheduler import NoEligibleWorkItem, select_next_work_item
@@ -56,6 +58,7 @@ class LeaseHeartbeatResult:
 class LeaseExpiryResult:
     expired_count: int
     requeued_count: int
+    cleaned_run_count: int
 
 
 def _as_iso(dt) -> str:
@@ -210,6 +213,37 @@ def heartbeat_lease(
     )
 
 
+def _mark_run_abandoned(session: Session, *, run, now) -> None:
+    if run.status in {RunStatus.SUCCEEDED, RunStatus.FAILED, RunStatus.CANCELED, RunStatus.TIMED_OUT}:
+        return
+    run.status = RunStatus.CANCELED
+    run.completed_at = now
+    run.result_summary = (run.result_summary or 'run abandoned after stale lease expiry').strip() or 'run abandoned after stale lease expiry'
+    payload = dict(run.result_payload or {})
+    payload.setdefault('stale_lease_cleanup', True)
+    payload.setdefault('failure_classification', {
+        'category': 'lease_expired',
+        'stage': 'control_plane',
+        'signature': 'lease expired before run completion',
+    })
+    run.result_payload = payload
+    if run.started_at is not None and run.completed_at is not None:
+        started_at = run.started_at if getattr(run.started_at, 'tzinfo', None) is not None else run.started_at.replace(tzinfo=now.tzinfo)
+        run.runtime_seconds = max((run.completed_at - started_at).total_seconds(), 0.0)
+    run.failure_category = 'lease_expired'
+    run.failure_stage = 'control_plane'
+    run.failure_signature = 'lease expired before run completion'
+    session.add(RunEvent(
+        run_id=run.id,
+        event_time=now,
+        event_type='run_abandoned',
+        event_payload={
+            'reason': 'lease_expired',
+            'lease_token': run.lease.lease_token if run.lease is not None else None,
+        },
+    ))
+
+
 def expire_stale_leases(session: Session) -> LeaseExpiryResult:
     now = utcnow()
     leases = (
@@ -236,5 +270,18 @@ def expire_stale_leases(session: Session) -> LeaseExpiryResult:
         if not latest_run_terminal and work_item.state in {WorkItemState.LEASED, WorkItemState.RUNNING}:
             work_item.state = WorkItemState.DISPATCH_PENDING
             requeued_count += 1
+
+    cleaned_run_count = 0
+    dangling_runs = (
+        session.query(__import__('control_plane.models.runs', fromlist=['Run']).Run)
+        .join(WorkerLease, __import__('control_plane.models.runs', fromlist=['Run']).Run.lease_id == WorkerLease.id)
+        .filter(__import__('control_plane.models.runs', fromlist=['Run']).Run.status.in_([RunStatus.STARTING, RunStatus.RUNNING]))
+        .filter(WorkerLease.status == LeaseStatus.EXPIRED)
+        .all()
+    )
+    for run in dangling_runs:
+        _mark_run_abandoned(session, run=run, now=now)
+        cleaned_run_count += 1
+
     session.commit()
-    return LeaseExpiryResult(expired_count=expired_count, requeued_count=requeued_count)
+    return LeaseExpiryResult(expired_count=expired_count, requeued_count=requeued_count, cleaned_run_count=cleaned_run_count)
