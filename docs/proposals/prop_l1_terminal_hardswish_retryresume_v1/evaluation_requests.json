@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_terminal_hardswish_retryresume_v1",
-  "source_commit": "",
+  "source_commit": "b27d81990b2b614bddc1713850accfcddac09319",
   "requested_items": [
     {
       "item_id": "l1_prop_l1_terminal_hardswish_retryresume_v1_nangate45_r1",
@@ -8,7 +8,11 @@
       "objective": "Run a Layer1 nangate45 OpenROAD sweep for 1 configs using nangate45_terminal_hardswish_int8_pwl_retryresume_v1.json and record lightweight design metrics for comparison.",
       "evaluation_mode": "measurement_only",
       "abstraction_layer": "circuit_block",
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 148,
+      "merge_commit": "ca21fcd00269e5669458cf0b9573f691194d5a68",
+      "merged_utc": "2026-04-02T14:23:03.367378Z",
+      "notes": "Merged via PR #148 and merge ca21fcd00269e5669458cf0b9573f691194d5a68 at 2026-04-02T14:23:03.367378Z."
     }
   ]
 }

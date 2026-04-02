@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l1_terminal_hardswish_retryresume_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "promote",
+  "pr_number": 148,
+  "merge_commit": "ca21fcd00269e5669458cf0b9573f691194d5a68",
+  "merged_utc": "2026-04-02T14:23:03.367378Z"
 }
