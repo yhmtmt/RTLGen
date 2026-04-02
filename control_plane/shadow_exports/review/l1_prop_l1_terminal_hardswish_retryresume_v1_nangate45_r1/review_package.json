@@ -1,0 +1,149 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-04-02T11:42:32.373745Z",
+  "item_id": "l1_prop_l1_terminal_hardswish_retryresume_v1_nangate45_r1",
+  "run_key": "l1_prop_l1_terminal_hardswish_retryresume_v1_nangate45_r1_run_516193df84413e26",
+  "layer": "layer1",
+  "flow": "openroad",
+  "task_type": "l1_sweep",
+  "source_commit": "b27d81990b2b614bddc1713850accfcddac09319",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l1_prop_l1_terminal_hardswish_retryresume_v1_nangate45_r1/evaluated.json",
+    "result": {
+      "branch": "eval/l1_prop_l1_terminal_hardswish_retryresume_v1_nangate45_r1/s20260402t092400z",
+      "completed_utc": "2026-04-02T07:31:26.226190Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "a6a0faa39497",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260402t092400z][host:a6a0faa39497][item:l1_prop_l1_terminal_hardswish_retryresume_v1_nangate45_r1]",
+      "metrics_rows": [
+        {
+          "tag": "terminal_hardswish_int8_pwl_retryresume_ng45_v1_97899059",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "13d29639",
+          "metrics_csv": "runs/designs/activations/terminal_hardswish_int8_pwl_retryresume_wrapper/terminal_hardswish_int8_pwl_retryresume_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/terminal_hardswish_int8_pwl_retryresume_wrapper/terminal_hardswish_int8_pwl_retryresume_wrapper/work/13d29639/result.json"
+        },
+        {
+          "tag": "terminal_hardswish_int8_pwl_retryresume_ng45_v1_3ba5ddc4",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "53ad44a4",
+          "metrics_csv": "runs/designs/activations/terminal_hardswish_int8_pwl_retryresume_wrapper/terminal_hardswish_int8_pwl_retryresume_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/terminal_hardswish_int8_pwl_retryresume_wrapper/terminal_hardswish_int8_pwl_retryresume_wrapper/work/53ad44a4/result.json"
+        },
+        {
+          "tag": "terminal_hardswish_int8_pwl_retryresume_ng45_v1_91e30912",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "f7a88cf4",
+          "metrics_csv": "runs/designs/activations/terminal_hardswish_int8_pwl_retryresume_wrapper/terminal_hardswish_int8_pwl_retryresume_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/terminal_hardswish_int8_pwl_retryresume_wrapper/terminal_hardswish_int8_pwl_retryresume_wrapper/work/f7a88cf4/result.json"
+        },
+        {
+          "tag": "terminal_hardswish_int8_pwl_retryresume_ng45_v1_6b32a08e",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "2c1fe0d5",
+          "metrics_csv": "runs/designs/activations/terminal_hardswish_int8_pwl_retryresume_wrapper/terminal_hardswish_int8_pwl_retryresume_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/terminal_hardswish_int8_pwl_retryresume_wrapper/terminal_hardswish_int8_pwl_retryresume_wrapper/work/2c1fe0d5/result.json"
+        }
+      ],
+      "queue_item_id": "l1_prop_l1_terminal_hardswish_retryresume_v1_nangate45_r1",
+      "session_id": "s20260402t092400z",
+      "status": "ok",
+      "summary": "4/4 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "promotion_proposal",
+    "path": "control_plane/shadow_exports/l1_promotions/l1_prop_l1_terminal_hardswish_retryresume_v1_nangate45_r1.json",
+    "storage_mode": "repo",
+    "sha256": "61aa9c7b042fde04fe2cab07ad0e570606299b4e34718ea88d2dfacbdf2978e6",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-04-02T11:42:30.223824Z",
+      "item_id": "l1_prop_l1_terminal_hardswish_retryresume_v1_nangate45_r1",
+      "run_key": "l1_prop_l1_terminal_hardswish_retryresume_v1_nangate45_r1_run_516193df84413e26",
+      "layer": "layer1",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l1_sweep",
+      "source_commit": "b27d81990b2b614bddc1713850accfcddac09319",
+      "objective": "terminal_hardswish_retryresume_physical_metrics",
+      "input_manifest": {
+        "sweeps": [
+          "runs/designs/activations/sweeps/nangate45_terminal_hardswish_int8_pwl_retryresume_v1.json"
+        ],
+        "configs": [
+          "runs/designs/activations/terminal_hardswish_int8_pwl_retryresume_wrapper/config_terminal_hardswish_int8_pwl_retryresume.json"
+        ],
+        "out_root": "runs/designs/activations/terminal_hardswish_int8_pwl_retryresume_wrapper",
+        "design_dirs": [],
+        "macro_manifests": [],
+        "candidate_manifests": [],
+        "required_submodules": []
+      },
+      "proposal_count": 1,
+      "evaluation_record": {
+        "evaluation_mode": "measurement_only",
+        "abstraction_layer": "circuit_block",
+        "result_kind": "physical_metrics",
+        "physical_metrics_present": true,
+        "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+      },
+      "proposal_assessment": null,
+      "proposals": [
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/activations/terminal_hardswish_int8_pwl_retryresume_wrapper/terminal_hardswish_int8_pwl_retryresume_wrapper/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "13d29639",
+            "tag": "terminal_hardswish_int8_pwl_retryresume_ng45_v1_97899059",
+            "result_path": "runs/designs/activations/terminal_hardswish_int8_pwl_retryresume_wrapper/terminal_hardswish_int8_pwl_retryresume_wrapper/work/13d29639/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 0.1947,
+            "die_area": 25600.0,
+            "total_power_mw": 0.000325
+          }
+        }
+      ]
+    }
+  },
+  "developer_loop": {
+    "evaluation": {
+      "mode": "measurement_only",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      }
+    },
+    "abstraction": {
+      "layer": "circuit_block"
+    },
+    "proposal_id": "prop_l1_terminal_hardswish_retryresume_v1",
+    "proposal_path": "docs/proposals/prop_l1_terminal_hardswish_retryresume_v1"
+  },
+  "pr_payload": {
+    "branch": "eval/l1_prop_l1_terminal_hardswish_retryresume_v1_nangate45_r1/s20260402t092400z",
+    "title": "eval: run terminal hardswish retry/resume proof run (r1)",
+    "body_fields": {
+      "host": "a6a0faa39497",
+      "session_id": "s20260402t092400z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_prop_l1_terminal_hardswish_retryresume_v1_nangate45_r1"
+    },
+    "body_md": "## Summary\n- item_id: `l1_prop_l1_terminal_hardswish_retryresume_v1_nangate45_r1`\n- run_key: `l1_prop_l1_terminal_hardswish_retryresume_v1_nangate45_r1_run_516193df84413e26`\n- layer: `layer1`\n- task_type: `l1_sweep`\n- status: `ok`\n- summary: `4/4 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l1_prop_l1_terminal_hardswish_retryresume_v1_nangate45_r1/evaluated.json`\n- metrics_rows_count: `4`\n- review_artifact: `promotion_proposal` at `control_plane/shadow_exports/l1_promotions/l1_prop_l1_terminal_hardswish_retryresume_v1_nangate45_r1.json`\n\n## Developer Context\n- proposal_id: `prop_l1_terminal_hardswish_retryresume_v1`\n- proposal_path: `docs/proposals/prop_l1_terminal_hardswish_retryresume_v1`\n- reviewer_first_read: `docs/proposals/prop_l1_terminal_hardswish_retryresume_v1` plus `docs/developer_agent_review.md`\n\n## Evaluation Mode\n- evaluation_mode: `measurement_only`\n- abstraction_layer: `circuit_block`\n- evaluation_summary: `Physical metrics recorded from an accepted status=ok Layer 1 row.`\n\n## Checklist\n- [ ] Commit only lightweight metrics and regenerated runs/index.csv\n- [ ] Include metrics row references for each completed design\n- [ ] Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit only lightweight metrics and regenerated runs/index.csv",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}

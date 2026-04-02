@@ -1,0 +1,53 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-04-02T11:42:30.223824Z",
+  "item_id": "l1_prop_l1_terminal_hardswish_retryresume_v1_nangate45_r1",
+  "run_key": "l1_prop_l1_terminal_hardswish_retryresume_v1_nangate45_r1_run_516193df84413e26",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "b27d81990b2b614bddc1713850accfcddac09319",
+  "objective": "terminal_hardswish_retryresume_physical_metrics",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/activations/sweeps/nangate45_terminal_hardswish_int8_pwl_retryresume_v1.json"
+    ],
+    "configs": [
+      "runs/designs/activations/terminal_hardswish_int8_pwl_retryresume_wrapper/config_terminal_hardswish_int8_pwl_retryresume.json"
+    ],
+    "out_root": "runs/designs/activations/terminal_hardswish_int8_pwl_retryresume_wrapper",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 1,
+  "evaluation_record": {
+    "evaluation_mode": "measurement_only",
+    "abstraction_layer": "circuit_block",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/terminal_hardswish_int8_pwl_retryresume_wrapper/terminal_hardswish_int8_pwl_retryresume_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "13d29639",
+        "tag": "terminal_hardswish_int8_pwl_retryresume_ng45_v1_97899059",
+        "result_path": "runs/designs/activations/terminal_hardswish_int8_pwl_retryresume_wrapper/terminal_hardswish_int8_pwl_retryresume_wrapper/work/13d29639/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 0.1947,
+        "die_area": 25600.0,
+        "total_power_mw": 0.000325
+      }
+    }
+  ]
+}

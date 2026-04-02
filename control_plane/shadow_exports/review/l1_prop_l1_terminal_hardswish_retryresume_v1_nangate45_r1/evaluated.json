@@ -1,0 +1,133 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/designs/activations/sweeps/nangate45_terminal_hardswish_int8_pwl_retryresume_v1.json"
+      ],
+      "configs": [
+        "runs/designs/activations/terminal_hardswish_int8_pwl_retryresume_wrapper/config_terminal_hardswish_int8_pwl_retryresume.json"
+      ],
+      "out_root": "runs/designs/activations/terminal_hardswish_int8_pwl_retryresume_wrapper",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && cmake -S . -B build && cmake --build build --target rtlgen",
+        "name": "build_generator"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 scripts/run_sweep.py --configs runs/designs/activations/terminal_hardswish_int8_pwl_retryresume_wrapper/config_terminal_hardswish_int8_pwl_retryresume.json --platform nangate45 --sweep runs/designs/activations/sweeps/nangate45_terminal_hardswish_int8_pwl_retryresume_v1.json --out_root runs/designs/activations/terminal_hardswish_int8_pwl_retryresume_wrapper --skip_existing",
+        "name": "run_sweep"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "objective": "terminal_hardswish_retryresume_physical_metrics",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+      "Committed outputs stay lightweight (metrics.csv and runs/index.csv only)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/activations/terminal_hardswish_int8_pwl_retryresume_wrapper/terminal_hardswish_int8_pwl_retryresume_wrapper/metrics.csv",
+      "runs/index.csv"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Terminal HardSwish retry/resume proof run (r1)",
+  "result": {
+    "branch": "eval/l1_prop_l1_terminal_hardswish_retryresume_v1_nangate45_r1/s20260402t092400z",
+    "completed_utc": "2026-04-02T07:31:26.226190Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "a6a0faa39497",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260402t092400z][host:a6a0faa39497][item:l1_prop_l1_terminal_hardswish_retryresume_v1_nangate45_r1]",
+    "metrics_rows": [
+      {
+        "tag": "terminal_hardswish_int8_pwl_retryresume_ng45_v1_97899059",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "13d29639",
+        "metrics_csv": "runs/designs/activations/terminal_hardswish_int8_pwl_retryresume_wrapper/terminal_hardswish_int8_pwl_retryresume_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/terminal_hardswish_int8_pwl_retryresume_wrapper/terminal_hardswish_int8_pwl_retryresume_wrapper/work/13d29639/result.json"
+      },
+      {
+        "tag": "terminal_hardswish_int8_pwl_retryresume_ng45_v1_3ba5ddc4",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "53ad44a4",
+        "metrics_csv": "runs/designs/activations/terminal_hardswish_int8_pwl_retryresume_wrapper/terminal_hardswish_int8_pwl_retryresume_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/terminal_hardswish_int8_pwl_retryresume_wrapper/terminal_hardswish_int8_pwl_retryresume_wrapper/work/53ad44a4/result.json"
+      },
+      {
+        "tag": "terminal_hardswish_int8_pwl_retryresume_ng45_v1_91e30912",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "f7a88cf4",
+        "metrics_csv": "runs/designs/activations/terminal_hardswish_int8_pwl_retryresume_wrapper/terminal_hardswish_int8_pwl_retryresume_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/terminal_hardswish_int8_pwl_retryresume_wrapper/terminal_hardswish_int8_pwl_retryresume_wrapper/work/f7a88cf4/result.json"
+      },
+      {
+        "tag": "terminal_hardswish_int8_pwl_retryresume_ng45_v1_6b32a08e",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "2c1fe0d5",
+        "metrics_csv": "runs/designs/activations/terminal_hardswish_int8_pwl_retryresume_wrapper/terminal_hardswish_int8_pwl_retryresume_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/terminal_hardswish_int8_pwl_retryresume_wrapper/terminal_hardswish_int8_pwl_retryresume_wrapper/work/2c1fe0d5/result.json"
+      }
+    ],
+    "queue_item_id": "l1_prop_l1_terminal_hardswish_retryresume_v1_nangate45_r1",
+    "session_id": "s20260402t092400z",
+    "status": "ok",
+    "summary": "4/4 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_prop_l1_terminal_hardswish_retryresume_v1_nangate45_r1/s20260402t092400z",
+    "pr_title": "eval: run terminal hardswish retry/resume proof run (r1)",
+    "checklist": [
+      "Commit only lightweight metrics and regenerated runs/index.csv",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "a6a0faa39497",
+      "session_id": "s20260402t092400z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_prop_l1_terminal_hardswish_retryresume_v1_nangate45_r1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_prop_l1_terminal_hardswish_retryresume_v1_nangate45_r1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-04-02T07:29:51.353584Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "evaluation": {
+      "mode": "measurement_only",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      }
+    },
+    "abstraction": {
+      "layer": "circuit_block"
+    },
+    "proposal_id": "prop_l1_terminal_hardswish_retryresume_v1",
+    "proposal_path": "docs/proposals/prop_l1_terminal_hardswish_retryresume_v1"
+  }
+}
