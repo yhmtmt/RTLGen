@@ -19,6 +19,7 @@ from control_plane.services.completion_service import (
     CompletionProcessingError,
     process_completed_items,
 )
+from control_plane.services.completion_retry_service import claim_submission_retry
 from control_plane.services.lease_service import acquire_next_lease
 from control_plane.services.run_service import (
     append_run_event,
@@ -299,6 +300,31 @@ def _log_dir(config: WorkerConfig, item_id: str, run_key: str) -> str:
 SUPPORTED_IMMEDIATE_COMPLETION_TASK_TYPES = {"l1_sweep", "l2_campaign"}
 
 
+def _build_completion_request(
+    *,
+    config: WorkerConfig,
+    item_id: str,
+    force: bool | None = None,
+) -> CompletionProcessRequest:
+    return CompletionProcessRequest(
+        repo_root=config.repo_root,
+        repo=config.completion_repo,
+        item_id=item_id,
+        submit=config.completion_submit and bool(config.completion_repo),
+        evaluator_id=config.completion_evaluator_id,
+        session_id=config.completion_session_id,
+        host=config.completion_host or config.hostname,
+        executor=config.completion_executor,
+        branch_name=config.completion_branch_name,
+        snapshot_target_path=config.completion_snapshot_target_path,
+        package_target_path=config.completion_package_target_path,
+        worktree_root=config.completion_worktree_root,
+        commit_message=config.completion_commit_message,
+        pr_base=config.completion_pr_base,
+        force=config.completion_force if force is None else force,
+    )
+
+
 def _sync_expected_outputs_to_repo(*, checkout_root: str, repo_root: str, expected_outputs: list[str]) -> None:
     source_root = Path(checkout_root).resolve()
     target_root = Path(repo_root).resolve()
@@ -340,6 +366,68 @@ def _record_completion_result(
         )
 
 
+def _process_requested_submission_retry(
+    session_factory: sessionmaker,
+    *,
+    config: WorkerConfig,
+) -> WorkerLoopResult | None:
+    if not config.auto_process_completions or not config.completion_repo:
+        return None
+    with session_factory() as session:
+        claim = claim_submission_retry(session, machine_key=config.machine_key)
+    if claim is None:
+        return None
+    request = _build_completion_request(config=config, item_id=claim.item_id, force=claim.force or config.completion_force)
+    try:
+        with session_factory() as session:
+            results = process_completed_items(session, request)
+    except CompletionProcessingError as exc:
+        _record_completion_result(
+            session_factory=session_factory,
+            run_key=claim.run_key,
+            event_type="submission_retry_failed",
+            payload={"error": str(exc), "item_id": claim.item_id, "request_id": claim.request_id},
+        )
+        return WorkerLoopResult(status="retry_failed", item_id=claim.item_id, run_key=claim.run_key, summary=str(exc))
+    except Exception as exc:
+        _record_completion_result(
+            session_factory=session_factory,
+            run_key=claim.run_key,
+            event_type="submission_retry_failed",
+            payload={"error": str(exc), "item_id": claim.item_id, "request_id": claim.request_id},
+        )
+        return WorkerLoopResult(status="retry_failed", item_id=claim.item_id, run_key=claim.run_key, summary=str(exc))
+
+    if not results:
+        _record_completion_result(
+            session_factory=session_factory,
+            run_key=claim.run_key,
+            event_type="submission_retry_skipped",
+            payload={"item_id": claim.item_id, "request_id": claim.request_id, "reason": "no_completion_results"},
+        )
+        return WorkerLoopResult(status="retry_skipped", item_id=claim.item_id, run_key=claim.run_key, summary="no completion results")
+
+    result = results[0]
+    _record_completion_result(
+        session_factory=session_factory,
+        run_key=claim.run_key,
+        event_type="submission_retry_processed",
+        payload={
+            "item_id": result.item_id,
+            "request_id": claim.request_id,
+            "task_type": result.task_type,
+            "consumed": result.consumed,
+            "submitted": result.submitted,
+            "work_item_state": result.work_item_state,
+            "target_path": result.target_path,
+            "pr_url": result.pr_url,
+            "submission_error": result.submission_error,
+        },
+    )
+    summary = result.pr_url or result.submission_error or result.work_item_state
+    return WorkerLoopResult(status="resumed", item_id=result.item_id, run_key=result.run_key, summary=summary)
+
+
 def _process_completed_work_item(
     session_factory: sessionmaker,
     *,
@@ -352,23 +440,7 @@ def _process_completed_work_item(
     if work_item.task_type not in SUPPORTED_IMMEDIATE_COMPLETION_TASK_TYPES:
         return
 
-    request = CompletionProcessRequest(
-        repo_root=config.repo_root,
-        repo=config.completion_repo,
-        item_id=work_item.item_id,
-        submit=config.completion_submit and bool(config.completion_repo),
-        evaluator_id=config.completion_evaluator_id,
-        session_id=config.completion_session_id,
-        host=config.completion_host or config.hostname,
-        executor=config.completion_executor,
-        branch_name=config.completion_branch_name,
-        snapshot_target_path=config.completion_snapshot_target_path,
-        package_target_path=config.completion_package_target_path,
-        worktree_root=config.completion_worktree_root,
-        commit_message=config.completion_commit_message,
-        pr_base=config.completion_pr_base,
-        force=config.completion_force,
-    )
+    request = _build_completion_request(config=config, item_id=work_item.item_id)
     try:
         with session_factory() as session:
             results = process_completed_items(session, request)
@@ -450,6 +522,10 @@ def _materialize_generated_inputs(*, checkout_root: str, work_item: WorkItem) ->
 
 
 def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig) -> WorkerLoopResult:
+    retry_result = _process_requested_submission_retry(session_factory, config=config)
+    if retry_result is not None:
+        return retry_result
+
     with session_factory() as session:
         try:
             acquired = acquire_next_lease(

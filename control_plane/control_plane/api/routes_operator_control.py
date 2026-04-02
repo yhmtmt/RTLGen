@@ -13,6 +13,7 @@ from control_plane.models.run_events import RunEvent
 from control_plane.models.work_items import WorkItem
 from control_plane.clock import utcnow
 from control_plane.services.completion_service import CompletionProcessRequest, CompletionProcessingError, process_completed_items
+from control_plane.services.completion_retry_service import CompletionRetryError, request_submission_retry
 from control_plane.services.github_poller import GitHubPollRequest, poll_github_links
 from control_plane.services.review_state_backfill import ReviewStateBackfillRequest, backfill_review_states
 from control_plane.services.dispatcher_service import DispatchReadyRequest, dispatch_ready_items
@@ -123,23 +124,13 @@ def register_operator_control_routes(app) -> None:
         create_all(engine)
         session_factory = build_session_factory(engine)
         with session_factory() as session:
-            result = process_completed_items(
+            result = request_submission_retry(
                 session,
-                CompletionProcessRequest(
-                    repo_root=_service_repo_root(),
-                    repo=_github_repo(),
-                    item_id=params["item_id"],
-                    submit=True,
-                    evaluator_id="control_plane",
-                    host=socket.gethostname(),
-                    executor="@control_plane",
-                    pr_base="master",
-                    force=bool(payload.get("force", False)),
-                ),
+                item_id=params["item_id"],
+                actor="dashboard",
+                force=bool(payload.get("force", False)),
             )
-        if not result:
-            raise ValueError(f"no completion result for item: {params['item_id']}")
-        return _json_response(200, {"results": [row.__dict__ for row in result]})
+        return _json_response(200, {"result": result.__dict__})
 
     def supersede_item_handler(_method: str, _path: str, params: dict[str, str], body: bytes):
         payload = _json_body(body)
@@ -159,7 +150,7 @@ def register_operator_control_routes(app) -> None:
         def wrapper(method: str, path: str, params: dict[str, str], body: bytes):
             try:
                 return handler(method, path, params, body)
-            except (ValueError, CompletionProcessingError) as exc:
+            except (ValueError, CompletionProcessingError, CompletionRetryError) as exc:
                 return _json_response(400, {"detail": str(exc)})
             except Exception as exc:  # pragma: no cover - defensive API boundary
                 return _json_response(500, {"detail": str(exc)})

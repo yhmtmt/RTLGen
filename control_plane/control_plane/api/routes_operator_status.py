@@ -550,10 +550,14 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
         { key: "reason", label: "Eligibility", render: (value, row) => row.eligible ? "eligible" : escapeHtml(value || "not eligible") },
         { key: "updated_at", label: "Updated", render: (value) => escapeHtml(formatTime(value)) },
         { key: "item_id", label: "Actions", render: (_value, row) => {
-          const primaryAction = row.eligible ? "submit" : (row.resumable ? "resume" : "blocked");
-          const primaryLabel = row.eligible ? "Submit" : (row.resumable ? "Resume" : "Blocked");
-          const primaryDisabled = primaryAction === "blocked" ? "disabled" : "";
-          const primaryTitle = primaryAction === "blocked" ? `title="${escapeHtml(row.reason || "not eligible")}"` : "";
+          const primaryAction = row.resume_requested ? "queued" : (row.eligible ? "submit" : (row.resumable ? "resume" : "blocked"));
+          const primaryLabel = row.resume_requested ? "Queued" : (row.eligible ? "Submit" : (row.resumable ? "Resume" : "Blocked"));
+          const primaryDisabled = (primaryAction === "blocked" || primaryAction === "queued") ? "disabled" : "";
+          const primaryTitle = primaryAction === "blocked"
+            ? `title="${escapeHtml(row.reason || "not eligible")}"`
+            : primaryAction === "queued"
+              ? 'title="Resume already requested"'
+              : "";
           return `
             <button data-action="${primaryAction}" data-item-id="${escapeHtml(row.item_id)}" ${primaryDisabled} ${primaryTitle}>${primaryLabel}</button>
             <button data-action="supersede" data-item-id="${escapeHtml(row.item_id)}">Supersede</button>
@@ -636,7 +640,7 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
       if (!button) return;
       const itemId = button.dataset.itemId;
       const action = button.dataset.action;
-      if (!itemId || !action || action === "blocked") return;
+      if (!itemId || !action || action === "blocked" || action === "queued") return;
       if (action === "supersede" && !window.confirm(`Supersede ${itemId}?`)) return;
       const isSubmitLike = action === "submit" || action === "resume";
       const url = isSubmitLike
@@ -649,9 +653,9 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
       try {
         await postJson(url, payload);
         const message = action === "submit"
-          ? `Submission triggered for ${itemId}.`
+          ? `Submission queued for ${itemId}.`
           : action === "resume"
-            ? `Completion resumed for ${itemId}.`
+            ? `Resume requested for ${itemId}.`
             : `Superseded ${itemId}.`;
         setControlStatus(message);
         pushEvent(message);

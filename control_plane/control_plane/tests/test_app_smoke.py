@@ -11,6 +11,11 @@ from sqlalchemy import create_engine
 
 from control_plane.api.app import create_app
 from control_plane.db import create_all
+from control_plane.clock import utcnow
+from control_plane.models.enums import ExecutorType, FlowName, LayerName, RunStatus, WorkItemState
+from control_plane.models.runs import Run
+from control_plane.models.task_requests import TaskRequest
+from control_plane.models.work_items import WorkItem
 
 
 def test_health_route() -> None:
@@ -113,3 +118,74 @@ def test_operator_control_routes_on_empty_db() -> None:
     assert payload_pg["checked_count"] == 0
     assert status_bf == 200
     assert payload_bf["results"] == []
+
+
+def test_operator_submit_route_queues_retry_request() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        db_path = Path(td) / "cp.db"
+        engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
+        create_all(engine)
+        with engine.begin() as conn:
+            pass
+        from sqlalchemy.orm import Session
+        with Session(engine) as session:
+            task = TaskRequest(
+                request_key="queue:retry_item",
+                source="test",
+                requested_by="tester",
+                title="retry_item",
+                description="retry_item",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                priority=1,
+                request_payload={"item_id": "retry_item"},
+            )
+            session.add(task)
+            session.flush()
+            work_item = WorkItem(
+                work_item_key="queue:retry_item",
+                task_request_id=task.id,
+                item_id="retry_item",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                platform="nangate45",
+                task_type="l1_sweep",
+                state=WorkItemState.ARTIFACT_SYNC,
+                priority=1,
+                input_manifest={},
+                command_manifest=[],
+                expected_outputs=[],
+                acceptance_rules=[],
+            )
+            session.add(work_item)
+            session.flush()
+            session.add(
+                Run(
+                    run_key="retry_item_run_1",
+                    work_item_id=work_item.id,
+                    attempt=1,
+                    executor_type=ExecutorType.INTERNAL_WORKER,
+                    status=RunStatus.SUCCEEDED,
+                    started_at=utcnow(),
+                    completed_at=utcnow(),
+                    result_summary="completed",
+                    result_payload={},
+                )
+            )
+            session.commit()
+
+        previous = os.environ.get("RTLCP_DATABASE_URL")
+        os.environ["RTLCP_DATABASE_URL"] = f"sqlite+pysqlite:///{db_path}"
+        try:
+            app = create_app()
+            status, _headers, body = app.handle("POST", "/api/v1/control/items/retry_item/submit", b"{}")
+        finally:
+            if previous is None:
+                os.environ.pop("RTLCP_DATABASE_URL", None)
+            else:
+                os.environ["RTLCP_DATABASE_URL"] = previous
+
+    payload = json.loads(body.decode("utf-8"))
+    assert status == 200
+    assert payload["result"]["item_id"] == "retry_item"
+    assert payload["result"]["already_requested"] is False

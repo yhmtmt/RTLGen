@@ -28,6 +28,7 @@ from control_plane.models.runs import Run
 from control_plane.models.task_requests import TaskRequest
 from control_plane.models.worker_leases import WorkerLease
 from control_plane.models.worker_machines import WorkerMachine
+from control_plane.models.run_events import RunEvent
 from control_plane.models.work_items import WorkItem
 from control_plane.services.operator_status import OperatorStatusRequest, load_operator_status
 
@@ -353,4 +354,58 @@ def test_operator_status_marks_resumable_pending_submission(monkeypatch) -> None
     assert len(status.pending_submission_items) == 1
     assert status.pending_submission_items[0]["item_id"] == "pending_item"
     assert status.pending_submission_items[0]["resumable"] is True
+    assert status.pending_submission_items[0]["resume_requested"] is False
     assert status.pending_submission_items[0]["reason"] == "gh pr create failed after branch push"
+
+
+def test_operator_status_marks_resume_requested_pending_submission(monkeypatch) -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_all(engine)
+    now = utcnow()
+    with Session(engine) as session:
+        pending_item = _seed_item(session, item_id="pending_item", state=WorkItemState.ARTIFACT_SYNC)
+        machine = WorkerMachine(
+            machine_key="worker-1",
+            hostname="eval-host",
+            executor_kind="local_process",
+            capabilities={},
+            last_seen_at=now,
+        )
+        session.add(machine)
+        session.flush()
+        run = Run(
+            run_key="pending_run",
+            work_item_id=pending_item.id,
+            attempt=1,
+            executor_type=ExecutorType.INTERNAL_WORKER,
+            machine_id=machine.id,
+            checkout_commit="deadfeed",
+            status=RunStatus.SUCCEEDED,
+            started_at=now - timedelta(minutes=2),
+            completed_at=now - timedelta(minutes=1),
+            result_summary="submission failed after completed run",
+            result_payload={},
+        )
+        session.add(run)
+        session.flush()
+        session.add(
+            RunEvent(
+                run_id=run.id,
+                event_time=now,
+                event_type="submission_retry_requested",
+                event_payload={"request_id": "resume_123", "target_machine_key": machine.machine_key},
+            )
+        )
+        session.commit()
+
+        monkeypatch.setattr(
+            "control_plane.services.operator_status.assess_submission_eligibility",
+            lambda *args, **kwargs: SimpleNamespace(eligible=False, reason="gh pr create failed after branch push"),
+        )
+
+        status = load_operator_status(session, OperatorStatusRequest(recent_limit=5))
+
+    assert len(status.pending_submission_items) == 1
+    assert status.pending_submission_items[0]["item_id"] == "pending_item"
+    assert status.pending_submission_items[0]["resumable"] is False
+    assert status.pending_submission_items[0]["resume_requested"] is True

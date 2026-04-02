@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
 from pathlib import Path
 import subprocess
 import tempfile
@@ -11,7 +12,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from control_plane.db import build_session_factory, create_all
-from control_plane.models.enums import WorkItemState
+from control_plane.clock import utcnow
+from control_plane.models.enums import ExecutorType, FlowName, LayerName, RunStatus, WorkItemState
 from control_plane.models.run_events import RunEvent
 from control_plane.models.runs import Run
 from control_plane.models.task_requests import TaskRequest
@@ -588,3 +590,110 @@ def test_worker_daemon_runs_all_l1_trials_before_immediate_completion() -> None:
             assert work_item.state == WorkItemState.ARTIFACT_SYNC
             assert session.query(RunEvent).filter(RunEvent.event_type == "trial_scheduled").count() == 1
             assert session.query(RunEvent).filter(RunEvent.event_type == "trial_set_completed").count() == 1
+
+
+def test_worker_daemon_processes_requested_submission_retry() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        now = utcnow()
+        with Session(engine) as session:
+            task_request = TaskRequest(
+                request_key="queue:retry_item",
+                source="test",
+                requested_by="tester",
+                title="retry item",
+                description="retry item",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                priority=1,
+                request_payload={"item_id": "retry_item"},
+                source_commit="deadbeef",
+            )
+            session.add(task_request)
+            session.flush()
+            work_item = WorkItem(
+                work_item_key="queue:retry_item",
+                task_request_id=task_request.id,
+                item_id="retry_item",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                platform="nangate45",
+                task_type="l1_sweep",
+                state=WorkItemState.ARTIFACT_SYNC,
+                priority=1,
+                source_mode="config",
+                input_manifest={},
+                command_manifest=[],
+                expected_outputs=["runs/index.csv"],
+                acceptance_rules=[],
+                assigned_machine_key="retry-worker",
+            )
+            session.add(work_item)
+            session.flush()
+            upsert_worker_machine(session, machine_key="retry-worker", capabilities={"platform": "nangate45", "flow": "openroad"})
+            run = Run(
+                run_key="retry_item_run_1",
+                work_item_id=work_item.id,
+                attempt=1,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.SUCCEEDED,
+                started_at=now - timedelta(minutes=2),
+                completed_at=now - timedelta(minutes=1),
+                result_summary="completed",
+                result_payload={},
+            )
+            session.add(run)
+            session.flush()
+            session.add(
+                RunEvent(
+                    run_id=run.id,
+                    event_time=now,
+                    event_type="submission_retry_requested",
+                    event_payload={"request_id": "resume_123", "target_machine_key": "retry-worker", "force": False},
+                )
+            )
+            session.commit()
+
+        session_factory = build_session_factory(engine)
+        with patch("control_plane.workers.executor.process_completed_items") as process_completed:
+            process_completed.return_value = [
+                CompletionProcessResult(
+                    item_id="retry_item",
+                    run_key="retry_item_run_1",
+                    task_type="l1_sweep",
+                    consumed=True,
+                    submitted=True,
+                    work_item_state="awaiting_review",
+                    target_path="control_plane/shadow_exports/l1_promotions/retry_item.json",
+                    pr_url="https://github.com/yhmtmt/RTLGen/pull/999",
+                    submission_error=None,
+                )
+            ]
+            result = run_worker_daemon(
+                session_factory,
+                config=WorkerDaemonConfig(
+                    worker=WorkerConfig(
+                        repo_root=str(repo_root),
+                        machine_key="retry-worker",
+                        capabilities={"platform": "nangate45", "flow": "openroad"},
+                        capability_filter={"platform": "nangate45", "flow": "openroad"},
+                        auto_process_completions=True,
+                        completion_submit=True,
+                        completion_repo="yhmtmt/RTLGen",
+                    ),
+                    poll_seconds=0,
+                    max_polls=2,
+                    stop_on_no_work=True,
+                ),
+            )
+
+        assert [row.status for row in result.results] == ["resumed", "no_work"]
+        assert process_completed.call_count == 1
+        with Session(engine) as session:
+            started = session.query(RunEvent).filter(RunEvent.event_type == "submission_retry_started").count()
+            processed = session.query(RunEvent).filter(RunEvent.event_type == "submission_retry_processed").count()
+            assert started == 1
+            assert processed == 1

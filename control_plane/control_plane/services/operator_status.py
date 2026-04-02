@@ -16,6 +16,7 @@ from control_plane.models.runs import Run
 from control_plane.models.worker_leases import WorkerLease
 from control_plane.models.worker_machines import WorkerMachine
 from control_plane.models.work_items import WorkItem
+from control_plane.services.completion_retry_service import submission_retry_status
 from control_plane.services.operator_submission import assess_submission_eligibility
 
 
@@ -180,6 +181,7 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
             run=latest_run,
             repo_root=Path(request.repo_root).resolve(),
         )
+        retry_status = submission_retry_status(session, work_item=work_item, run=latest_run)
         pending_submission_items.append(
             {
                 "item_id": work_item.item_id,
@@ -190,10 +192,12 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
                 "run_status": latest_run.status.value if latest_run is not None else None,
                 "eligible": eligibility.eligible,
                 "reason": eligibility.reason,
+                "resume_requested": retry_status.requested,
                 "resumable": (
                     latest_run is not None
                     and latest_run.status == RunStatus.SUCCEEDED
                     and not eligibility.eligible
+                    and not retry_status.requested
                     and _submission_reason_is_resumable(eligibility.reason)
                 ),
             }
