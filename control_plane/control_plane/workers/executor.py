@@ -304,10 +304,11 @@ def _build_completion_request(
     *,
     config: WorkerConfig,
     item_id: str,
+    repo_root: str | None = None,
     force: bool | None = None,
 ) -> CompletionProcessRequest:
     return CompletionProcessRequest(
-        repo_root=config.repo_root,
+        repo_root=repo_root or config.repo_root,
         repo=config.completion_repo,
         item_id=item_id,
         submit=config.completion_submit and bool(config.completion_repo),
@@ -348,6 +349,43 @@ def _sync_expected_outputs_to_repo(*, checkout_root: str, repo_root: str, expect
         target_path = (target_root / rel_path).resolve()
         target_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source_path, target_path)
+
+
+def _sync_completion_artifacts_to_repo(
+    *,
+    checkout_root: str,
+    repo_root: str,
+    item_id: str,
+    target_path: str | None,
+) -> None:
+    source_root = Path(checkout_root).resolve()
+    target_root = Path(repo_root).resolve()
+    if source_root == target_root:
+        return
+
+    def _copy_file(rel_path: str) -> None:
+        source_path = (source_root / rel_path).resolve()
+        if not source_path.exists() or not source_path.is_file():
+            return
+        target_path_obj = (target_root / rel_path).resolve()
+        target_path_obj.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source_path, target_path_obj)
+
+    def _copy_tree(rel_dir: str) -> None:
+        source_dir = (source_root / rel_dir).resolve()
+        if not source_dir.exists() or not source_dir.is_dir():
+            return
+        for source_path in sorted(source_dir.rglob('*')):
+            if not source_path.is_file():
+                continue
+            rel_path = str(source_path.relative_to(source_root))
+            _copy_file(rel_path)
+
+    if target_path:
+        _copy_file(str(target_path))
+    _copy_tree(f'control_plane/shadow_exports/review/{item_id}')
+    _copy_tree(f'control_plane/shadow_exports/frozen_review/{item_id}')
+    _copy_tree(f'control_plane/shadow_exports/l1_trials/{item_id}')
 
 
 def _record_completion_result(
@@ -434,13 +472,18 @@ def _process_completed_work_item(
     config: WorkerConfig,
     work_item: WorkItem,
     run_key: str,
+    completion_repo_root: str,
 ) -> None:
     if not config.auto_process_completions:
         return
     if work_item.task_type not in SUPPORTED_IMMEDIATE_COMPLETION_TASK_TYPES:
         return
 
-    request = _build_completion_request(config=config, item_id=work_item.item_id)
+    request = _build_completion_request(
+        config=config,
+        item_id=work_item.item_id,
+        repo_root=completion_repo_root,
+    )
     try:
         with session_factory() as session:
             results = process_completed_items(session, request)
@@ -475,6 +518,12 @@ def _process_completed_work_item(
         return
 
     result = results[0]
+    _sync_completion_artifacts_to_repo(
+        checkout_root=completion_repo_root,
+        repo_root=config.repo_root,
+        item_id=work_item.item_id,
+        target_path=result.target_path,
+    )
     _record_completion_result(
         session_factory=session_factory,
         run_key=run_key,
@@ -831,6 +880,7 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
             config=config,
             work_item=work_item,
             run_key=run_key,
+            completion_repo_root=checkout_info.work_dir,
         )
 
     cleanup_checkout(checkout_info)

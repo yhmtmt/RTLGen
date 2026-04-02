@@ -235,6 +235,16 @@ def test_worker_daemon_syncs_expected_outputs_before_immediate_completion() -> N
             report_path = repo_root / "runs" / "campaigns" / "daemon_item_sync_before_completion" / "report.md"
             assert metrics_path.exists(), metrics_path
             assert report_path.exists(), report_path
+            assert Path(request.repo_root).resolve() != repo_root.resolve()
+
+            review_path = Path(request.repo_root) / "control_plane" / "shadow_exports" / "review" / "daemon_item_sync_before_completion" / "evaluated.json"
+            review_path.parent.mkdir(parents=True, exist_ok=True)
+            review_path.write_text('{\"ok\": true}\n', encoding='utf-8')
+
+            frozen_path = Path(request.repo_root) / "control_plane" / "shadow_exports" / "frozen_review" / "daemon_item_sync_before_completion" / "run_001" / "evidence.json"
+            frozen_path.parent.mkdir(parents=True, exist_ok=True)
+            frozen_path.write_text('{\"frozen\": true}\n', encoding='utf-8')
+
             return [
                 CompletionProcessResult(
                     item_id="daemon_item_sync_before_completion",
@@ -243,7 +253,7 @@ def test_worker_daemon_syncs_expected_outputs_before_immediate_completion() -> N
                     consumed=True,
                     submitted=False,
                     work_item_state="artifact_sync",
-                    target_path="control_plane/shadow_exports/review/demo/evaluated.json",
+                    target_path="control_plane/shadow_exports/review/daemon_item_sync_before_completion/evaluated.json",
                     pr_url=None,
                     submission_error=None,
                 )
@@ -268,6 +278,8 @@ def test_worker_daemon_syncs_expected_outputs_before_immediate_completion() -> N
 
         assert result.executed_items == 1
         assert process_completed.call_count == 1
+        assert (repo_root / "control_plane" / "shadow_exports" / "review" / "daemon_item_sync_before_completion" / "evaluated.json").exists()
+        assert (repo_root / "control_plane" / "shadow_exports" / "frozen_review" / "daemon_item_sync_before_completion" / "run_001" / "evidence.json").exists()
 
 
 def test_worker_daemon_immediately_processes_completion_for_supported_items() -> None:
