@@ -1,0 +1,27 @@
+{
+  "item_id": "l1_trial_demo_softmax_rowwise_20260401_r1",
+  "completed_trials": 3,
+  "success_count": 3,
+  "failure_count": 0,
+  "success_rate": 1.0,
+  "metrics": {
+    "critical_path_ns": {
+      "best": 12.4087,
+      "mean": 12.408700000000001,
+      "median": 12.4087,
+      "max": 12.4087
+    },
+    "die_area": {
+      "best": 53210.955625,
+      "mean": 53210.955625,
+      "median": 53210.955625,
+      "max": 53210.955625
+    },
+    "total_power_mw": {
+      "best": 0.19,
+      "mean": 0.19000000000000003,
+      "median": 0.19,
+      "max": 0.19
+    }
+  }
+}

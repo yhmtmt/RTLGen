@@ -1,0 +1,4 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_trial_demo_softmax_rowwise_20260401_r1_run_74c09464eff45e84,1,1,100,succeeded,runs/designs/activations/trials/trial_001/softmax_rowwise_int8_r4_wrapper/metrics.csv,12.4087,53210.955625,0.19,none,,
+l1_trial_demo_softmax_rowwise_20260401_r1_run_e326e1921378a3a3,2,2,101,succeeded,runs/designs/activations/trials/trial_002/softmax_rowwise_int8_r4_wrapper/metrics.csv,12.4087,53210.955625,0.19,none,,
+l1_trial_demo_softmax_rowwise_20260401_r1_run_e5c9a73cb1a3e582,3,3,102,succeeded,runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv,12.4087,53210.955625,0.19,none,,

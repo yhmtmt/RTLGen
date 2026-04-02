@@ -1,0 +1,124 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-04-02T01:51:38.263114Z",
+  "item_id": "l1_trial_demo_softmax_rowwise_20260401_r1",
+  "run_key": "l1_trial_demo_softmax_rowwise_20260401_r1_run_e5c9a73cb1a3e582",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "920e9894fc9c922df437a102fbc8dc59b5060f97",
+  "objective": "Measure 3-trial variance for softmax rowwise on nangate45",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/activations/sweeps/nangate45_softmax_rowwise_v1.json"
+    ],
+    "configs": [
+      "examples/config_softmax_rowwise_int8.json"
+    ],
+    "out_root": "runs/designs/activations",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 3,
+  "evaluation_record": {
+    "evaluation_mode": "measurement_only",
+    "abstraction_layer": "circuit_block",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/trials/trial_001/softmax_rowwise_int8_r4_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "57faa721",
+        "tag": "softmax_rowwise_ng45_v1_6c63d092",
+        "result_path": "runs/designs/activations/trials/trial_001/softmax_rowwise_int8_r4_wrapper/work/57faa721/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 12.4087,
+        "die_area": 53210.955625,
+        "total_power_mw": 0.19
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/trials/trial_002/softmax_rowwise_int8_r4_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "57faa721",
+        "tag": "softmax_rowwise_ng45_v1_6c63d092",
+        "result_path": "runs/designs/activations/trials/trial_002/softmax_rowwise_int8_r4_wrapper/work/57faa721/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 12.4087,
+        "die_area": 53210.955625,
+        "total_power_mw": 0.19
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "57faa721",
+        "tag": "softmax_rowwise_ng45_v1_6c63d092",
+        "result_path": "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/work/57faa721/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 12.4087,
+        "die_area": 53210.955625,
+        "total_power_mw": 0.19
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_trial_demo_softmax_rowwise_20260401_r1",
+    "completed_trials": 3,
+    "success_count": 3,
+    "failure_count": 0,
+    "success_rate": 1.0,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 12.4087,
+        "mean": 12.408700000000001,
+        "median": 12.4087,
+        "max": 12.4087
+      },
+      "die_area": {
+        "best": 53210.955625,
+        "mean": 53210.955625,
+        "median": 53210.955625,
+        "max": 53210.955625
+      },
+      "total_power_mw": {
+        "best": 0.19,
+        "mean": 0.19000000000000003,
+        "median": 0.19,
+        "max": 0.19
+      }
+    }
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/activations/trials/trial_001/softmax_rowwise_int8_r4_wrapper/metrics.csv",
+      "runs/designs/activations/trials/trial_002/softmax_rowwise_int8_r4_wrapper/metrics.csv",
+      "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_trial_demo_softmax_rowwise_20260401_r1/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_trial_demo_softmax_rowwise_20260401_r1/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_trial_demo_softmax_rowwise_20260401_r1/trial_table.csv"
+  }
+}

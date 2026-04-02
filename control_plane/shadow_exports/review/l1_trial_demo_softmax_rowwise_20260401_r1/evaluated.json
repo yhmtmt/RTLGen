@@ -1,0 +1,162 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/designs/activations/sweeps/nangate45_softmax_rowwise_v1.json"
+      ],
+      "configs": [
+        "examples/config_softmax_rowwise_int8.json"
+      ],
+      "out_root": "runs/designs/activations",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && cmake -S . -B build && cmake --build build --target rtlgen",
+        "name": "build_generator"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 scripts/run_sweep.py --configs examples/config_softmax_rowwise_int8.json --platform nangate45 --sweep runs/designs/activations/sweeps/nangate45_softmax_rowwise_v1.json --out_root runs/designs/activations --skip_existing",
+        "name": "run_sweep"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "objective": "Measure 3-trial variance for softmax rowwise on nangate45",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+      "Committed outputs stay lightweight (metrics.csv and runs/index.csv only)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv",
+      "runs/index.csv"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "L1 trial demo softmax rowwise",
+  "result": {
+    "branch": "eval/l1_trial_demo_softmax_rowwise_20260401_r1/s20260401t094754z",
+    "completed_utc": "2026-04-01T09:47:51.644343Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "a6a0faa39497",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260401t094754z][host:a6a0faa39497][item:l1_trial_demo_softmax_rowwise_20260401_r1]",
+    "metrics_rows": [
+      {
+        "tag": "softmax_rowwise_ng45_v1_bd9157ff",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "331b4c0f",
+        "metrics_csv": "runs/designs/activations/trials/trial_003/softmax_rowwise_int8_r4_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/trials/trial_003/softmax_rowwise_int8_r4_wrapper/work/331b4c0f/result.json"
+      },
+      {
+        "tag": "softmax_rowwise_ng45_v1_545b5b4f",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "0881e02c",
+        "metrics_csv": "runs/designs/activations/trials/trial_003/softmax_rowwise_int8_r4_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/trials/trial_003/softmax_rowwise_int8_r4_wrapper/work/0881e02c/result.json"
+      },
+      {
+        "tag": "softmax_rowwise_ng45_v1_84a011f1",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "d167bc90",
+        "metrics_csv": "runs/designs/activations/trials/trial_003/softmax_rowwise_int8_r4_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/trials/trial_003/softmax_rowwise_int8_r4_wrapper/work/d167bc90/result.json"
+      },
+      {
+        "tag": "softmax_rowwise_ng45_v1_317024c0",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "7b4a20b8",
+        "metrics_csv": "runs/designs/activations/trials/trial_003/softmax_rowwise_int8_r4_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/trials/trial_003/softmax_rowwise_int8_r4_wrapper/work/7b4a20b8/result.json"
+      },
+      {
+        "tag": "softmax_rowwise_ng45_v1_e8e3ad7e",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "e2c337a8",
+        "metrics_csv": "runs/designs/activations/trials/trial_003/softmax_rowwise_int8_r4_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/trials/trial_003/softmax_rowwise_int8_r4_wrapper/work/e2c337a8/result.json"
+      },
+      {
+        "tag": "softmax_rowwise_ng45_v1_6c63d092",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "57faa721",
+        "metrics_csv": "runs/designs/activations/trials/trial_003/softmax_rowwise_int8_r4_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/trials/trial_003/softmax_rowwise_int8_r4_wrapper/work/57faa721/result.json"
+      },
+      {
+        "tag": "softmax_rowwise_ng45_v1_de52b603",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "91c9afdc",
+        "metrics_csv": "runs/designs/activations/trials/trial_003/softmax_rowwise_int8_r4_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/trials/trial_003/softmax_rowwise_int8_r4_wrapper/work/91c9afdc/result.json"
+      },
+      {
+        "tag": "softmax_rowwise_ng45_v1_9dd950f2",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "49828ffb",
+        "metrics_csv": "runs/designs/activations/trials/trial_003/softmax_rowwise_int8_r4_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/trials/trial_003/softmax_rowwise_int8_r4_wrapper/work/49828ffb/result.json"
+      }
+    ],
+    "queue_item_id": "l1_trial_demo_softmax_rowwise_20260401_r1",
+    "session_id": "s20260401t094754z",
+    "status": "ok",
+    "summary": "4/4 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_trial_demo_softmax_rowwise_20260401_r1/s20260401t094754z",
+    "pr_title": "eval: run l1 trial demo softmax rowwise",
+    "checklist": [
+      "Commit only lightweight metrics and regenerated runs/index.csv",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "a6a0faa39497",
+      "session_id": "s20260401t094754z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_trial_demo_softmax_rowwise_20260401_r1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_trial_demo_softmax_rowwise_20260401_r1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-04-01T06:47:09.725727Z",
+  "requested_by": "@control_plane",
+  "developer_loop": {
+    "evaluation": {
+      "mode": "measurement_only",
+      "trial_policy": {
+        "seed_start": 100,
+        "trial_count": 3,
+        "stop_after_failures": 3
+      }
+    },
+    "proposal_id": "",
+    "proposal_path": ""
+  }
+}
