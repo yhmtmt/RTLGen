@@ -121,6 +121,18 @@ def _run_cmd_capture(args: list[str], *, cwd: Path) -> subprocess.CompletedProce
     return subprocess.run(args, cwd=str(cwd), check=False, text=True, capture_output=True)
 
 
+def _format_failed_command(proc: subprocess.CompletedProcess[str]) -> str:
+    stderr = (proc.stderr or "").strip()
+    stdout = (proc.stdout or "").strip()
+    details: list[str] = []
+    if stderr:
+        details.append(f"stderr={stderr}")
+    if stdout:
+        details.append(f"stdout={stdout}")
+    suffix = f": {'; '.join(details)}" if details else ""
+    return f"command {proc.args!r} failed with exit code {proc.returncode}{suffix}"
+
+
 def _repo_diff_paths(*, cwd: Path, base_ref: str) -> list[str]:
     output = _run_cmd(["git", "diff", "--name-only", f"{base_ref}...HEAD"], cwd=cwd)
     return [line.strip() for line in output.splitlines() if line.strip()]
@@ -319,24 +331,22 @@ def execute_submission(session: Session, request: SubmissionExecuteRequest) -> S
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
 
     _run_cmd(["git", "push", "--force-with-lease", "-u", "origin", branch_name], cwd=worktree_path)
-    pr_view_proc = _run_cmd_capture(
-        [
-            "gh",
-            "--repo",
-            request.repo,
-            "pr",
-            "view",
-            branch_name,
-            "--json",
-            "number,url,headRefName,baseRefName",
-        ],
-        cwd=worktree_path,
-    )
+    pr_view_args = [
+        "gh",
+        "--repo",
+        request.repo,
+        "pr",
+        "view",
+        branch_name,
+        "--json",
+        "number,url,headRefName,baseRefName",
+    ]
+    pr_view_proc = _run_cmd_capture(pr_view_args, cwd=worktree_path)
     if pr_view_proc.returncode == 0:
         pr_view = json.loads(pr_view_proc.stdout.strip())
         pr_url = str(pr_view.get("url", "")).strip()
     else:
-        pr_create_out = _run_cmd(
+        pr_create_proc = _run_cmd_capture(
             [
                 "gh",
                 "--repo",
@@ -355,27 +365,27 @@ def execute_submission(session: Session, request: SubmissionExecuteRequest) -> S
             ],
             cwd=worktree_path,
         )
-        pr_url = pr_create_out.strip().splitlines()[-1].strip()
-        if not pr_url:
-            raise SubmissionExecuteError("gh pr create did not return a PR URL")
-        pr_view_json = _run_cmd(
-            [
-                "gh",
-                "--repo",
-                request.repo,
-                "pr",
-                "view",
-                branch_name,
-                "--json",
-                "number,url,headRefName,baseRefName",
-            ],
-            cwd=worktree_path,
-        )
-        pr_view = json.loads(pr_view_json)
+        if pr_create_proc.returncode != 0:
+            pr_view_retry = _run_cmd_capture(pr_view_args, cwd=worktree_path)
+            if pr_view_retry.returncode == 0:
+                pr_view = json.loads(pr_view_retry.stdout.strip())
+                pr_url = str(pr_view.get("url", "")).strip()
+            else:
+                raise SubmissionExecuteError(
+                    f"gh pr create failed for branch {branch_name}: {_format_failed_command(pr_create_proc)}"
+                )
+        else:
+            pr_url = pr_create_proc.stdout.strip().splitlines()[-1].strip()
+            if not pr_url:
+                raise SubmissionExecuteError("gh pr create did not return a PR URL")
+            pr_view_json = _run_cmd(pr_view_args, cwd=worktree_path)
+            pr_view = json.loads(pr_view_json)
     try:
         pr_number = int(pr_view["number"])
     except Exception as exc:
-        raise SubmissionExecuteError(f"gh pr view did not return a valid PR number: {pr_view_json}") from exc
+        raise SubmissionExecuteError(
+            f"gh pr view did not return a valid PR number: {json.dumps(pr_view, sort_keys=True)}"
+        ) from exc
 
     reconcile = reconcile_github_link(
         session,

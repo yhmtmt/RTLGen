@@ -81,6 +81,25 @@ def _canonical_evidence_files(*, repo_root: Path, work_item: WorkItem) -> list[s
     return files
 
 
+def _collect_existing_file_refs(*, repo_root: Path, value: Any, files: list[str], seen: set[str]) -> None:
+    if isinstance(value, dict):
+        for nested in value.values():
+            _collect_existing_file_refs(repo_root=repo_root, value=nested, files=files, seen=seen)
+        return
+    if isinstance(value, list):
+        for nested in value:
+            _collect_existing_file_refs(repo_root=repo_root, value=nested, files=files, seen=seen)
+        return
+    rel_path = str(value or "").strip()
+    if not rel_path or rel_path in seen:
+        return
+    candidate = repo_root / rel_path
+    if not candidate.exists() or not candidate.is_file():
+        return
+    seen.add(rel_path)
+    files.append(rel_path)
+
+
 def _review_linked_supporting_files(*, repo_root: Path, package_payload: dict[str, Any]) -> list[str]:
     review_artifact = package_payload.get("review_artifact")
     if not isinstance(review_artifact, dict):
@@ -91,36 +110,9 @@ def _review_linked_supporting_files(*, repo_root: Path, package_payload: dict[st
     source_refs = payload.get("source_refs")
     if not isinstance(source_refs, dict):
         return []
-    supporting_keys = (
-        "focused_candidate_schedule_yml",
-        "focused_candidate_descriptors_bin",
-        "focused_candidate_perf_trace_json",
-    )
     files: list[str] = []
     seen: set[str] = set()
-    for key in supporting_keys:
-        rel_path = str(source_refs.get(key, "")).strip()
-        if not rel_path or rel_path in seen:
-            continue
-        candidate = repo_root / rel_path
-        if not candidate.exists() or not candidate.is_file():
-            continue
-        seen.add(rel_path)
-        files.append(rel_path)
-    focused_model_artifacts = source_refs.get("focused_model_artifacts")
-    if isinstance(focused_model_artifacts, list):
-        for entry in focused_model_artifacts:
-            if not isinstance(entry, dict):
-                continue
-            for key in ("schedule_yml", "descriptors_bin", "perf_trace_json"):
-                rel_path = str(entry.get(key, "")).strip()
-                if not rel_path or rel_path in seen:
-                    continue
-                candidate = repo_root / rel_path
-                if not candidate.exists() or not candidate.is_file():
-                    continue
-                seen.add(rel_path)
-                files.append(rel_path)
+    _collect_existing_file_refs(repo_root=repo_root, value=source_refs, files=files, seen=seen)
     return files
 
 
@@ -203,13 +195,36 @@ def _worktree_root(item_id: str, requested: str | None) -> Path:
     return Path(tempfile.mkdtemp(prefix=f"rtlcp-submit-{item_id}-"))
 
 
-def _copy_into_worktree(*, repo_root: Path, worktree_path: Path, rel_path: str) -> None:
+def _copy_into_worktree(*, repo_root: Path, worktree_path: Path, rel_path: str, target_rel_path: str | None = None) -> None:
     src = repo_root / rel_path
-    dst = worktree_path / rel_path
+    dst = worktree_path / (target_rel_path or rel_path)
     if not src.exists():
         raise SubmissionPrepareError(f"review file missing: {rel_path}")
     dst.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(src, dst)
+
+
+def _frozen_rel_path(*, item_id: str, run_key: str, rel_path: str) -> str:
+    return str(Path('control_plane') / 'shadow_exports' / 'frozen_review' / item_id / run_key / rel_path)
+
+
+def _freeze_file(*, repo_root: Path, item_id: str, run_key: str, rel_path: str) -> str:
+    frozen_rel = _frozen_rel_path(item_id=item_id, run_key=run_key, rel_path=rel_path)
+    src = repo_root / rel_path
+    dst = repo_root / frozen_rel
+    if not src.exists():
+        raise SubmissionPrepareError(f"review file missing: {rel_path}")
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(src, dst)
+    return frozen_rel
+
+
+def _freeze_text(*, repo_root: Path, item_id: str, run_key: str, rel_path: str, text: str) -> str:
+    frozen_rel = _frozen_rel_path(item_id=item_id, run_key=run_key, rel_path=rel_path)
+    dst = repo_root / frozen_rel
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    dst.write_text(text, encoding='utf-8')
+    return frozen_rel
 
 
 def _staged_paths(worktree_path: Path) -> list[str]:
@@ -296,6 +311,23 @@ def prepare_submission_branch(session: Session, request: SubmissionPrepareReques
     files_to_copy.extend(evidence_files)
     files_to_copy.extend(supporting_files)
 
+    pr_body_rel = f"control_plane/shadow_exports/review/{work_item.item_id}/pr_body.md"
+    frozen_file_map: dict[str, str] = {}
+    for rel_path in files_to_copy:
+        frozen_file_map[rel_path] = _freeze_file(
+            repo_root=repo_root,
+            item_id=work_item.item_id,
+            run_key=run.run_key,
+            rel_path=rel_path,
+        )
+    frozen_file_map[pr_body_rel] = _freeze_text(
+        repo_root=repo_root,
+        item_id=work_item.item_id,
+        run_key=run.run_key,
+        rel_path=pr_body_rel,
+        text=pr_body_md,
+    )
+
     worktree_root = _worktree_root(work_item.item_id, request.worktree_root)
     worktree_path = worktree_root / "repo"
     submission_base_ref, submission_base_commit = _resolve_submission_base(repo_root, request.pr_base)
@@ -305,12 +337,19 @@ def prepare_submission_branch(session: Session, request: SubmissionPrepareReques
 
     try:
         for rel_path in files_to_copy:
-            _copy_into_worktree(repo_root=repo_root, worktree_path=worktree_path, rel_path=rel_path)
+            _copy_into_worktree(
+                repo_root=repo_root,
+                worktree_path=worktree_path,
+                rel_path=frozen_file_map[rel_path],
+                target_rel_path=rel_path,
+            )
 
-        pr_body_rel = f"control_plane/shadow_exports/review/{work_item.item_id}/pr_body.md"
-        pr_body_path = worktree_path / pr_body_rel
-        pr_body_path.parent.mkdir(parents=True, exist_ok=True)
-        pr_body_path.write_text(pr_body_md, encoding="utf-8")
+        _copy_into_worktree(
+            repo_root=repo_root,
+            worktree_path=worktree_path,
+            rel_path=frozen_file_map[pr_body_rel],
+            target_rel_path=pr_body_rel,
+        )
 
         _run_git(
             worktree_path,
@@ -361,6 +400,7 @@ def prepare_submission_branch(session: Session, request: SubmissionPrepareReques
         "review_artifact_path": review_rel or None,
         "evidence_paths": evidence_files,
         "supporting_paths": supporting_files,
+        "frozen_file_map": frozen_file_map,
         "pr_title": pr_title,
         "pr_body_path": pr_body_rel,
         "pr_create_command": (

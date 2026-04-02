@@ -392,6 +392,114 @@ def test_operate_submission_runs_full_chain_and_reuses_manifest() -> None:
             assert artifact.path == f"control_plane/shadow_exports/review/{item_id}/operator_submission.json"
 
 
+def test_operate_submission_recovers_on_retry_after_pr_create_failure() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, _run_key = _seed_l1_reviewable(session, repo_root)
+            fake_bin = repo_root / "fake_bin"
+            log_path = repo_root / "fake_cmds.log"
+            state_path = fake_bin / "gh_state.json"
+            fake_bin.mkdir(parents=True, exist_ok=True)
+            real_git = shutil.which("git")
+            assert real_git is not None
+            _write(
+                fake_bin / "git",
+                "#!/usr/bin/env python3\n"
+                "import json, subprocess, sys\n"
+                f"log={json.dumps(str(log_path))}\n"
+                f"real_git={json.dumps(real_git)}\n"
+                "argv=sys.argv[1:]\n"
+                "with open(log, 'a', encoding='utf-8') as h:\n"
+                "    h.write(json.dumps({'tool':'git','argv':argv})+'\\n')\n"
+                "if argv[:4] == ['push', '--force-with-lease', '-u', 'origin'] or argv[:3] == ['push', '-u', 'origin']:\n"
+                "    sys.exit(0)\n"
+                "completed = subprocess.run([real_git, *argv])\n"
+                "sys.exit(completed.returncode)\n",
+            )
+            _write(
+                fake_bin / "gh",
+                "#!/usr/bin/env python3\n"
+                "import json, os, sys\n"
+                f"log={json.dumps(str(log_path))}\n"
+                f"state_path={json.dumps(str(state_path))}\n"
+                "argv=sys.argv[1:]\n"
+                "with open(log, 'a', encoding='utf-8') as h:\n"
+                "    h.write(json.dumps({'tool':'gh','argv':argv})+'\\n')\n"
+                "state = {}\n"
+                "if os.path.exists(state_path):\n"
+                "    state = json.loads(open(state_path, 'r', encoding='utf-8').read())\n"
+                "if argv[:4] == ['--repo','yhmtmt/RTLGen','pr','create']:\n"
+                "    attempt = int(state.get('create_attempts', 0)) + 1\n"
+                "    state['create_attempts'] = attempt\n"
+                "    if attempt >= 2:\n"
+                "        state['created'] = True\n"
+                "        open(state_path, 'w', encoding='utf-8').write(json.dumps(state))\n"
+                "        print('https://github.com/yhmtmt/RTLGen/pull/654')\n"
+                "        sys.exit(0)\n"
+                "    open(state_path, 'w', encoding='utf-8').write(json.dumps(state))\n"
+                "    print('temporary network loss', file=sys.stderr)\n"
+                "    sys.exit(1)\n"
+                "if argv[:4] == ['--repo','yhmtmt/RTLGen','pr','view']:\n"
+                "    branch=argv[4]\n"
+                "    if not state.get('created'):\n"
+                "        sys.exit(1)\n"
+                "    print(json.dumps({'number':654,'url':'https://github.com/yhmtmt/RTLGen/pull/654','headRefName':branch,'baseRefName':'master'}))\n"
+                "    sys.exit(0)\n"
+                "sys.exit(1)\n",
+            )
+            os.chmod(fake_bin / "git", 0o755)
+            os.chmod(fake_bin / "gh", 0o755)
+
+            old_path = os.environ.get("PATH", "")
+            os.environ["PATH"] = f"{fake_bin}:{old_path}"
+            try:
+                try:
+                    operate_submission(
+                        session,
+                        OperatorSubmissionRequest(
+                            repo_root=str(repo_root),
+                            repo="yhmtmt/RTLGen",
+                            item_id=item_id,
+                            evaluator_id="cpbot",
+                            session_id="s20260401t103000z",
+                            host="cp-host",
+                            worktree_root=str(repo_root / "tmp_submit"),
+                        ),
+                    )
+                except OperatorSubmissionError as exc:
+                    assert "gh pr create failed" in str(exc)
+                else:
+                    raise AssertionError("expected OperatorSubmissionError")
+
+                result = operate_submission(
+                    session,
+                    OperatorSubmissionRequest(
+                        repo_root=str(repo_root),
+                        repo="yhmtmt/RTLGen",
+                        item_id=item_id,
+                        evaluator_id="cpbot",
+                        session_id="s20260401t103100z",
+                        host="cp-host",
+                        worktree_root=str(repo_root / "tmp_submit"),
+                    ),
+                )
+            finally:
+                os.environ["PATH"] = old_path
+
+            assert result.pr_number == 654
+            assert result.submission_prepared is False
+            assert result.submission_prepared_reused is True
+
+            log_entries = [json.loads(line) for line in log_path.read_text(encoding="utf-8").splitlines() if line.strip()]
+            assert sum(1 for entry in log_entries if entry["tool"] == "gh" and entry["argv"][:4] == ["--repo", "yhmtmt/RTLGen", "pr", "create"]) == 2
+
+
 def test_operate_submission_rebuilds_manifest_when_latest_run_differs() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

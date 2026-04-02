@@ -182,6 +182,45 @@ def _load_proposal(repo_root: Path, work_item: WorkItem) -> dict[str, Any] | Non
         return None
 
 
+def _inferred_l1_abstraction_layer(repo_root: Path, work_item: WorkItem) -> str:
+    input_manifest = dict(work_item.input_manifest or {})
+    configs = input_manifest.get("configs")
+    if isinstance(configs, list):
+        for config_text in configs:
+            config_path = _resolve_path(repo_root=repo_root, path_text=str(config_text))
+            if not config_path.exists():
+                continue
+            try:
+                cfg = _load_json(config_path)
+            except Exception:
+                continue
+            if "top_name" in cfg and "compute" in cfg:
+                return "architecture_block"
+            if any(key in cfg for key in ("multiplier", "multiplier_yosys", "adder")):
+                return "circuit_block"
+            operations = cfg.get("operations")
+            if isinstance(operations, list) and len(operations) == 1:
+                op_type = str((operations[0] or {}).get("type", "")).strip()
+                if op_type in {"activation", "softmax_rowwise"}:
+                    return "circuit_block"
+    expected_outputs = [str(path_text) for path_text in (work_item.expected_outputs or [])]
+    joined = "\n".join(expected_outputs)
+    if "runs/designs/npu_blocks/" in joined:
+        return "architecture_block"
+    if any(
+        marker in joined
+        for marker in (
+            "runs/designs/activations/",
+            "runs/designs/prefix_adders/",
+            "runs/designs/multipliers/",
+            "runs/designs/adders/",
+            "runs/designs/trials/",
+        )
+    ):
+        return "circuit_block"
+    return ""
+
+
 def _developer_loop_abstraction_layer(repo_root: Path, work_item: WorkItem) -> str:
     developer_loop = _developer_loop_payload(work_item)
     abstraction = developer_loop.get("abstraction")
@@ -189,10 +228,21 @@ def _developer_loop_abstraction_layer(repo_root: Path, work_item: WorkItem) -> s
         layer = str(abstraction.get("layer", "")).strip()
         if layer:
             return layer
+    evaluation = developer_loop.get("evaluation")
+    if isinstance(evaluation, dict):
+        layer = str(evaluation.get("abstraction_layer", "")).strip()
+        if layer:
+            return layer
     proposal = _load_proposal(repo_root, work_item)
     if isinstance(proposal, dict):
-        return str(proposal.get("abstraction_layer", "")).strip()
-    return ""
+        layer = str(proposal.get("abstraction_layer", "")).strip()
+        if layer:
+            return layer
+    payload = dict(work_item.task_request.request_payload or {})
+    layer = str(payload.get("abstraction_layer", "")).strip()
+    if layer:
+        return layer
+    return _inferred_l1_abstraction_layer(repo_root, work_item)
 
 
 def _effective_evaluation_record(*, repo_root: Path, work_item: WorkItem, best_row: dict[str, Any]) -> dict[str, Any]:
@@ -445,7 +495,7 @@ def _trial_aggregate_payloads(repo_root: Path, work_item: WorkItem) -> tuple[lis
     return metrics_csvs, summary_stats, failure_stats, trial_rows
 
 
-def _build_payload(*, work_item: WorkItem, run: Run, proposals: list[dict[str, Any]], evaluation_record: dict[str, Any]) -> dict[str, Any]:
+def _build_payload(*, work_item: WorkItem, run: Run, proposals: list[dict[str, Any]], evaluation_record: dict[str, Any], source_refs: dict[str, Any] | None = None) -> dict[str, Any]:
     return {
         "version": 0.1,
         "generated_utc": utcnow().astimezone(timezone.utc).isoformat().replace("+00:00", "Z"),
@@ -463,6 +513,7 @@ def _build_payload(*, work_item: WorkItem, run: Run, proposals: list[dict[str, A
         "proposal_assessment": None,
         "proposals": proposals,
         "trial_summary": None,
+        "source_refs": source_refs or {},
     }
 
 
@@ -519,11 +570,19 @@ def consume_l1_result(session: Session, request: Layer1ConsumeRequest) -> Layer1
     if not proposals or evaluation_record is None:
         raise Layer1ResultConsumerError(f"no status=ok metrics rows found for work item: {work_item.item_id}")
 
+    trial_paths = _trial_artifact_paths(work_item.item_id)
+    source_refs = {
+        "trial_metrics_csvs": metrics_csvs,
+        "summary_stats_json": trial_paths["summary_stats"],
+        "failure_stats_json": trial_paths["failure_stats"],
+        "trial_table_csv": trial_paths["trial_table"],
+    }
     payload = _build_payload(
         work_item=work_item,
         run=run,
         proposals=proposals,
         evaluation_record=evaluation_record,
+        source_refs=source_refs,
     )
     payload["trial_summary"] = summary_stats
     target_rel = request.target_path or _default_target_path(item_id=work_item.item_id)
@@ -531,7 +590,6 @@ def consume_l1_result(session: Session, request: Layer1ConsumeRequest) -> Layer1
     target_path.parent.mkdir(parents=True, exist_ok=True)
     target_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
-    trial_paths = _trial_artifact_paths(work_item.item_id)
     summary_path = _resolve_path(repo_root=repo_root, path_text=trial_paths["summary_stats"])
     failure_path = _resolve_path(repo_root=repo_root, path_text=trial_paths["failure_stats"])
     trial_table_path = _resolve_path(repo_root=repo_root, path_text=trial_paths["trial_table"])

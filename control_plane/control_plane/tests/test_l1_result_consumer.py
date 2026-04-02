@@ -170,6 +170,9 @@ def test_consume_l1_result_writes_promotion_proposal() -> None:
             assert payload["proposal_count"] == 2
             assert payload["evaluation_record"]["evaluation_mode"] == "measurement_only"
             assert payload["evaluation_record"]["physical_metrics_present"] is True
+            assert payload["evaluation_record"]["abstraction_layer"] == "circuit_block"
+            assert payload["source_refs"]["summary_stats_json"].endswith(f"/{item_id}/summary_stats.json")
+            assert payload["source_refs"]["trial_table_csv"].endswith(f"/{item_id}/trial_table.csv")
             assert payload["proposals"][0]["metrics_ref"]["param_hash"] == "fast0001"
             assert (
                 payload["proposals"][0]["metrics_ref"]["result_path"]
@@ -500,6 +503,9 @@ def test_consume_l1_result_writes_trial_aggregate_artifacts() -> None:
             assert payload["trial_summary"]["success_count"] == 2
             assert payload["trial_summary"]["failure_count"] == 1
             assert payload["trial_summary"]["metrics"]["critical_path_ns"]["best"] == 11.0
+            assert payload["evaluation_record"]["abstraction_layer"] == "circuit_block"
+            assert payload["source_refs"]["trial_metrics_csvs"] == [metrics_trial_1, metrics_trial_2]
+            assert payload["source_refs"]["summary_stats_json"].endswith(f"/{work_item.item_id}/summary_stats.json")
 
             summary_path = repo_root / "control_plane" / "shadow_exports" / "l1_trials" / work_item.item_id / "summary_stats.json"
             failure_path = repo_root / "control_plane" / "shadow_exports" / "l1_trials" / work_item.item_id / "failure_stats.json"
