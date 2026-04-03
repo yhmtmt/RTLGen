@@ -1,0 +1,2 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_prop_l1_terminal_relu6_retryfinalize_v1_nangate45_r2_run_8c8719675ad681ea,1,1,0,succeeded,runs/designs/activations/terminal_relu6_int8_retryfinalize_wrapper/metrics.csv,0.1864,25600.0,2.3e-05,none,,
