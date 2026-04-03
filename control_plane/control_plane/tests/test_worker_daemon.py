@@ -440,6 +440,129 @@ def test_worker_daemon_records_unexpected_immediate_completion_failure_without_p
             assert event.event_payload["error"] == "unexpected boom"
 
 
+
+
+def test_worker_daemon_skips_same_file_completion_artifact_sync() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_git_repo(repo_root)
+        db_path = Path(td) / "cp.db"
+        engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            _seed_ready_work_item(session, item_id="daemon_item_same_file_sync", repo_root=repo_root, assigned_machine_key="daemon-worker-same-file-sync")
+
+        session_factory = build_session_factory(engine)
+
+        def _produce_review_file(session, request):
+            review_path = Path(request.repo_root) / "control_plane" / "shadow_exports" / "review" / "daemon_item_same_file_sync" / "evaluated.json"
+            review_path.parent.mkdir(parents=True, exist_ok=True)
+            review_path.write_text('{"ok": true}\n', encoding="utf-8")
+            return [
+                CompletionProcessResult(
+                    item_id="daemon_item_same_file_sync",
+                    run_key="synthetic",
+                    task_type="l2_campaign",
+                    consumed=True,
+                    submitted=False,
+                    work_item_state="artifact_sync",
+                    target_path=str(review_path.relative_to(Path(request.repo_root))),
+                    pr_url=None,
+                    submission_error=None,
+                )
+            ]
+
+        with patch("control_plane.workers.executor.process_completed_items", side_effect=_produce_review_file):
+            result = run_worker_daemon(
+                session_factory,
+                config=WorkerDaemonConfig(
+                    worker=WorkerConfig(
+                        repo_root=str(repo_root),
+                        machine_key="daemon-worker-same-file-sync",
+                        capabilities={"platform": "nangate45", "flow": "openroad"},
+                        capability_filter={"platform": "nangate45", "flow": "openroad"},
+                        heartbeat_seconds=1,
+                        auto_process_completions=True,
+                        completion_repo="yhmtmt/RTLGen",
+                    ),
+                    poll_seconds=0,
+                    max_polls=1,
+                ),
+            )
+
+        assert result.executed_items == 1
+        with Session(engine) as session:
+            event = (
+                session.query(RunEvent)
+                .filter(RunEvent.event_type == "completion_processed")
+                .one()
+            )
+            assert event.event_payload["item_id"] == "daemon_item_same_file_sync"
+
+
+def test_worker_daemon_records_completion_artifact_sync_failure_without_poisoning_run() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_git_repo(repo_root)
+        db_path = Path(td) / "cp.db"
+        engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            _seed_ready_work_item(session, item_id="daemon_item_artifact_sync_failure", repo_root=repo_root, assigned_machine_key="daemon-worker-artifact-sync-fail")
+
+        session_factory = build_session_factory(engine)
+        with patch("control_plane.workers.executor.process_completed_items") as process_completed, patch(
+            "control_plane.workers.executor._sync_completion_artifacts_to_repo",
+            side_effect=RuntimeError("artifact sync boom"),
+        ):
+            process_completed.return_value = [
+                CompletionProcessResult(
+                    item_id="daemon_item_artifact_sync_failure",
+                    run_key="synthetic",
+                    task_type="l2_campaign",
+                    consumed=True,
+                    submitted=False,
+                    work_item_state="artifact_sync",
+                    target_path="control_plane/shadow_exports/review/daemon_item_artifact_sync_failure/evaluated.json",
+                    pr_url=None,
+                    submission_error=None,
+                )
+            ]
+            result = run_worker_daemon(
+                session_factory,
+                config=WorkerDaemonConfig(
+                    worker=WorkerConfig(
+                        repo_root=str(repo_root),
+                        machine_key="daemon-worker-artifact-sync-fail",
+                        capabilities={"platform": "nangate45", "flow": "openroad"},
+                        capability_filter={"platform": "nangate45", "flow": "openroad"},
+                        heartbeat_seconds=1,
+                        auto_process_completions=True,
+                        completion_repo="yhmtmt/RTLGen",
+                    ),
+                    poll_seconds=0,
+                    max_polls=1,
+                ),
+            )
+
+        assert result.executed_items == 1
+        with Session(engine) as session:
+            work_item = (
+                session.query(WorkItem)
+                .filter(WorkItem.item_id == "daemon_item_artifact_sync_failure")
+                .one()
+            )
+            assert work_item.state == WorkItemState.ARTIFACT_SYNC
+            event = (
+                session.query(RunEvent)
+                .filter(RunEvent.event_type == "completion_processing_failed")
+                .one()
+            )
+            assert event.event_payload["error"] == "artifact sync boom"
+            assert event.event_payload["phase"] == "artifact_sync"
+
 def test_worker_daemon_registers_machine_slot_capacity() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

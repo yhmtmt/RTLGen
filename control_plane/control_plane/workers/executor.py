@@ -368,6 +368,8 @@ def _sync_completion_artifacts_to_repo(
         if not source_path.exists() or not source_path.is_file():
             return
         target_path_obj = (target_root / rel_path).resolve()
+        if source_path == target_path_obj:
+            return
         target_path_obj.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source_path, target_path_obj)
 
@@ -518,12 +520,21 @@ def _process_completed_work_item(
         return
 
     result = results[0]
-    _sync_completion_artifacts_to_repo(
-        checkout_root=completion_repo_root,
-        repo_root=config.repo_root,
-        item_id=work_item.item_id,
-        target_path=result.target_path,
-    )
+    try:
+        _sync_completion_artifacts_to_repo(
+            checkout_root=completion_repo_root,
+            repo_root=config.repo_root,
+            item_id=work_item.item_id,
+            target_path=result.target_path,
+        )
+    except Exception as exc:
+        _record_completion_result(
+            session_factory=session_factory,
+            run_key=run_key,
+            event_type="completion_processing_failed",
+            payload={"error": str(exc), "item_id": work_item.item_id, "phase": "artifact_sync"},
+        )
+        return
     _record_completion_result(
         session_factory=session_factory,
         run_key=run_key,
