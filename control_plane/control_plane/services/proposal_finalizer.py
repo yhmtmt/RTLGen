@@ -172,6 +172,40 @@ def _proposal_path(repo_root: Path, work_item: WorkItem) -> Path | None:
     return resolve_proposal_file(repo_root, proposal_path=proposal_path or None, proposal_id=proposal_id or None)
 
 
+def _requested_item_abstraction_layer(work_item: WorkItem) -> str:
+    developer_loop = _developer_loop_payload(work_item)
+    abstraction = developer_loop.get("abstraction")
+    if isinstance(abstraction, dict):
+        layer = str(abstraction.get("layer", "")).strip()
+        if layer:
+            return layer
+    return ""
+
+
+def _append_missing_requested_entry(requested_items: list[dict[str, Any]], *, work_item: WorkItem) -> dict[str, Any]:
+    entry: dict[str, Any] = {
+        "item_id": work_item.item_id,
+        "task_type": work_item.task_type,
+        "objective": _work_item_objective(work_item),
+        "evaluation_mode": str(_evaluation_payload(work_item).get("mode", "")).strip(),
+        "abstraction_layer": _requested_item_abstraction_layer(work_item),
+        "status": "pending",
+    }
+    retry_base = _retry_base(work_item.item_id)
+    prior_item_ids = [
+        str(candidate.get("item_id", "")).strip()
+        for candidate in requested_items
+        if isinstance(candidate, dict)
+        and str(candidate.get("item_id", "")).strip()
+        and _retry_base(str(candidate.get("item_id", "")).strip()) == retry_base
+        and str(candidate.get("item_id", "")).strip() != work_item.item_id
+    ]
+    if prior_item_ids:
+        entry["prior_item_ids"] = prior_item_ids
+    requested_items.append(entry)
+    return entry
+
+
 def _load_json(path: Path) -> dict[str, Any]:
     if not path.exists():
         raise ProposalFinalizationError(f"required proposal artifact is missing: {path}")
@@ -591,7 +625,7 @@ def finalize_after_merge(session: Session, request: ProposalFinalizeRequest) -> 
             work_item=work_item,
             evaluation_requests_path=evaluation_requests_path,
         )
-    except ProposalFinalizationError:
+    except ProposalFinalizationError as exc:
         if _is_terminal_decision(existing_decision):
             finalized_pr_number = str(promotion_result.get("pr_number") or "").strip()
             if pr_number is not None and finalized_pr_number == str(pr_number):
@@ -621,7 +655,9 @@ def finalize_after_merge(session: Session, request: ProposalFinalizeRequest) -> 
                 skipped=True,
                 skip_reason=f"proposal already finalized with decision={existing_decision}",
             )
-        raise
+        if " is not present in " not in str(exc):
+            raise
+        matched_entry = _append_missing_requested_entry(requested_items, work_item=work_item)
 
     matched_status = str(matched_entry.get("status", "")).strip().lower()
     if _is_terminal_decision(existing_decision) and _is_merged_status(matched_status):

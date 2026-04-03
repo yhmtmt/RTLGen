@@ -194,6 +194,134 @@ def test_finalize_accepts_directory_style_proposal_path() -> None:
         assert promotion_result["merge_commit"] == "facefeed"
 
 
+
+
+def test_finalize_appends_missing_requested_item_for_nonterminal_proposal() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        proposal_id = "prop_finalize_append_v1"
+        proposal_path = _seed_repo_files(
+            repo_root,
+            proposal_id,
+            [
+                {
+                    "item_id": "example_item_id",
+                    "task_type": "l2_campaign",
+                    "objective": "balanced",
+                    "status": "pending",
+                }
+            ],
+        )
+        payload_path = repo_root / "control_plane" / "shadow_exports" / "l1_promotions" / "append_missing_r1.json"
+        _write(
+            payload_path,
+            json.dumps(
+                {
+                    "item_id": "append_missing_r1",
+                    "run_key": "append_missing_r1_run_1",
+                    "source_commit": "abc123",
+                    "evaluation_record": {
+                        "evaluation_mode": "measurement_only",
+                        "abstraction_layer": "circuit_block",
+                        "summary": "ok",
+                    },
+                    "proposals": [
+                        {
+                            "metrics_ref": {"metrics_csv": "runs/designs/demo/metrics.csv", "platform": "nangate45", "status": "ok"},
+                            "metric_summary": {"critical_path_ns": 1.0, "die_area": 100.0, "total_power_mw": 0.01},
+                        }
+                    ],
+                },
+                indent=2,
+            )
+            + "\n",
+        )
+
+        with _session() as session:
+            task = TaskRequest(
+                request_key="l1:append_missing_r1",
+                source="test",
+                requested_by="tester",
+                title="append missing l1",
+                description="append missing objective",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                priority=1,
+                request_payload={
+                    "developer_loop": {
+                        "proposal_id": proposal_id,
+                        "proposal_path": str((proposal_path / "proposal.json").relative_to(repo_root)),
+                        "evaluation": {"mode": "measurement_only"},
+                        "abstraction": {"layer": "circuit_block"},
+                    },
+                    "task": {"objective": "append missing objective"},
+                },
+            )
+            session.add(task)
+            session.flush()
+            work_item = WorkItem(
+                work_item_key="l1:append_missing_r1",
+                task_request_id=task.id,
+                item_id="append_missing_r1",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                platform="nangate45",
+                task_type="l1_sweep",
+                state=WorkItemState.MERGED,
+                priority=1,
+                input_manifest={},
+                command_manifest=[],
+                expected_outputs=["runs/designs/demo/metrics.csv"],
+                acceptance_rules=[],
+                source_commit="abc123",
+            )
+            session.add(work_item)
+            session.flush()
+            run = Run(
+                run_key="append_missing_r1_run_1",
+                work_item_id=work_item.id,
+                attempt=1,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.SUCCEEDED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="abc123",
+                result_summary="ok",
+                result_payload={"queue_result": {"status": "ok"}},
+            )
+            session.add(run)
+            session.flush()
+            session.add(
+                Artifact(
+                    run_id=run.id,
+                    kind="promotion_proposal",
+                    storage_mode="repo",
+                    path=str(payload_path.relative_to(repo_root)),
+                    sha256="x",
+                    metadata_={},
+                )
+            )
+            session.commit()
+
+            result = finalize_after_merge(
+                session,
+                ProposalFinalizeRequest(
+                    repo_root=str(repo_root),
+                    item_id="append_missing_r1",
+                    pr_number=101,
+                    merge_commit="facefeed",
+                    merged_utc="2026-04-03T03:00:00Z",
+                    git_publish=False,
+                ),
+            )
+
+        assert result.skipped is False
+        evaluation_requests = json.loads((proposal_path / "evaluation_requests.json").read_text())
+        matched = [entry for entry in evaluation_requests["requested_items"] if entry.get("item_id") == "append_missing_r1"]
+        assert len(matched) == 1
+        assert matched[0]["status"] == "merged"
+        assert matched[0]["objective"] == "append missing objective"
+
 def test_finalize_l1_merge_promotes_and_releases_next_item() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
