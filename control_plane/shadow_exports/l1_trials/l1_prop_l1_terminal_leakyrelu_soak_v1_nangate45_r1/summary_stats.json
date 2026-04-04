@@ -1,0 +1,27 @@
+{
+  "item_id": "l1_prop_l1_terminal_leakyrelu_soak_v1_nangate45_r1",
+  "completed_trials": 1,
+  "success_count": 1,
+  "failure_count": 0,
+  "success_rate": 1.0,
+  "metrics": {
+    "critical_path_ns": {
+      "best": 0.2012,
+      "mean": 0.2012,
+      "median": 0.2012,
+      "max": 0.2012
+    },
+    "die_area": {
+      "best": 25600.0,
+      "mean": 25600.0,
+      "median": 25600.0,
+      "max": 25600.0
+    },
+    "total_power_mw": {
+      "best": 6.22e-05,
+      "mean": 6.22e-05,
+      "median": 6.22e-05,
+      "max": 6.22e-05
+    }
+  }
+}
