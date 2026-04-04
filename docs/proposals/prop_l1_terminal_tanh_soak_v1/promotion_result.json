@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l1_terminal_tanh_soak_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "promote",
+  "pr_number": 153,
+  "merge_commit": "bfaa0bc3d236c2d5427a812fe5f5bc7aa539bcad",
+  "merged_utc": "2026-04-04T07:52:52.049543Z"
 }
