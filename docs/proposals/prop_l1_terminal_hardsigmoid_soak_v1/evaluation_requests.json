@@ -3,12 +3,6 @@
   "source_commit": "e6911805a5a316a8a6fd0f1f69e08cd17603a864",
   "requested_items": [
     {
-      "item_id": "example_item_id",
-      "task_type": "l2_campaign",
-      "objective": "balanced",
-      "candidate_id": "cand_example_v1_r1"
-    },
-    {
       "item_id": "l1_prop_l1_terminal_hardsigmoid_soak_v1_nangate45_r2",
       "task_type": "l1_sweep",
       "objective": "Run a Layer1 nangate45 OpenROAD sweep for 1 configs using nangate45_terminal_hardsigmoid_int8_pwl_v1.json and record lightweight design metrics for comparison.",

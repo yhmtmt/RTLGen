@@ -26,6 +26,19 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
 
+def _is_placeholder_requested_item(value: object) -> bool:
+    if not isinstance(value, dict):
+        return False
+    item_id = str(value.get("item_id", "")).strip()
+    candidate_id = str(value.get("candidate_id", "")).strip()
+    objective = str(value.get("objective", "")).strip().lower()
+    return (
+        item_id == "example_item_id"
+        or candidate_id == "cand_example_v1_r1"
+        or objective == "balanced"
+    )
+
+
 _DEFAULT_TEMPLATE_FILES = {
     "README.md": "# Proposal Workspace\n\nSeeded automatically by the control plane.\n",
     "design_brief.md": "# Design Brief\n\nFill in the design brief.\n",
@@ -129,8 +142,11 @@ def ensure_proposal_scaffold(
     evaluation_requests = _load_json(evaluation_requests_path)
     evaluation_requests["proposal_id"] = proposal_id
     evaluation_requests["source_commit"] = source_commit
-    if not isinstance(evaluation_requests.get("requested_items"), list):
-        evaluation_requests["requested_items"] = []
+    requested_items = evaluation_requests.get("requested_items")
+    if not isinstance(requested_items, list):
+        requested_items = []
+    requested_items = [entry for entry in requested_items if not _is_placeholder_requested_item(entry)]
+    evaluation_requests["requested_items"] = requested_items
     _write_json(evaluation_requests_path, evaluation_requests)
 
     promotion_decision_path = proposal_dir / "promotion_decision.json"

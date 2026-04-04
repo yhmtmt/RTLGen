@@ -265,6 +265,71 @@ def test_generate_l1_sweep_task_records_requested_item_in_proposal_evaluation_re
             assert (proposal_dir / name).exists()
 
 
+def test_generate_l1_sweep_task_strips_placeholder_requested_items_from_template() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_repo(repo_root)
+        template_dir = repo_root / "docs" / "proposals" / "_template"
+        template_dir.mkdir(parents=True, exist_ok=True)
+        (template_dir / "evaluation_requests.json").write_text(
+            json.dumps(
+                {
+                    "proposal_id": "prop_example_v1",
+                    "source_commit": "git-sha",
+                    "requested_items": [
+                        {
+                            "item_id": "example_item_id",
+                            "task_type": "l2_campaign",
+                            "objective": "balanced",
+                            "candidate_id": "cand_example_v1_r1",
+                        }
+                    ],
+                },
+                indent=2,
+            ) + "\n",
+            encoding="utf-8",
+        )
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/activations",
+                    item_id="l1_demo_softmax_template_r1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    proposal_id="prop_l1_template_v1",
+                    proposal_path="docs/proposals/prop_l1_template_v1",
+                    abstraction_layer="circuit_block",
+                ),
+            )
+
+        assert result.status == "applied"
+        proposal_dir = repo_root / "docs" / "proposals" / "prop_l1_template_v1"
+        evaluation_requests = json.loads((proposal_dir / "evaluation_requests.json").read_text(encoding="utf-8"))
+        assert evaluation_requests["requested_items"] == [
+            {
+                "item_id": "l1_demo_softmax_template_r1",
+                "task_type": "l1_sweep",
+                "objective": (
+                    "Run a Layer1 nangate45 OpenROAD sweep for 1 configs using "
+                    "nangate45_softmax_rowwise_v1.json and record lightweight design metrics for comparison."
+                ),
+                "evaluation_mode": "measurement_only",
+                "abstraction_layer": "circuit_block",
+                "status": "pending",
+            }
+        ]
+
+
 def test_generate_l1_sweep_task_omits_runtime_submodules_when_image_provides_deps() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
