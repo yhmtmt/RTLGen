@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l1_terminal_sigmoid_soak_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "promote",
+  "pr_number": 155,
+  "merge_commit": "4a02db1570a7b94240ef5d506b008b737675e8c6",
+  "merged_utc": "2026-04-04T12:28:10.752224Z"
 }

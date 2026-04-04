@@ -8,7 +8,11 @@
       "objective": "Run a Layer1 nangate45 OpenROAD sweep for 1 configs using nangate45_terminal_sigmoid_int8_pwl_v1.json and record lightweight design metrics for comparison.",
       "evaluation_mode": "measurement_only",
       "abstraction_layer": "circuit_block",
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 155,
+      "merge_commit": "4a02db1570a7b94240ef5d506b008b737675e8c6",
+      "merged_utc": "2026-04-04T12:28:10.752224Z",
+      "notes": "Merged via PR #155 and merge 4a02db1570a7b94240ef5d506b008b737675e8c6 at 2026-04-04T12:28:10.752224Z."
     }
   ]
 }
