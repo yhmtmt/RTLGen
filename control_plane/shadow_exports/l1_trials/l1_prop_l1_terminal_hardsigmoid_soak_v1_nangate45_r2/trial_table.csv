@@ -1,0 +1,2 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_prop_l1_terminal_hardsigmoid_soak_v1_nangate45_r2_run_69a66d1af4f9ad1e,1,1,0,succeeded,runs/designs/activations/terminal_hardsigmoid_int8_pwl_soak_wrapper/metrics.csv,0.1908,25600.0,8.76e-05,none,,
