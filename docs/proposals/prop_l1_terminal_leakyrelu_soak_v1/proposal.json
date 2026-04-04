@@ -1,0 +1,45 @@
+{
+  "proposal_id": "prop_l1_terminal_leakyrelu_soak_v1",
+  "created_utc": "2026-04-04T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "title": "Terminal int8 LeakyReLU soak block",
+  "hypothesis": "Measure a fresh standalone activation block on a unique wrapper path to validate normal submit and first-pass finalization.",
+  "direct_comparison": {
+    "primary_question": "Does this fresh standalone Layer 1 activation block submit and finalize cleanly on the normal path?",
+    "include": [
+      "single cheap Nangate45 sweep on a unique canonical wrapper path"
+    ],
+    "exclude": [
+      "paired L2 follow-on work until first-pass finalization is confirmed"
+    ],
+    "follow_on_broad_sweep": [
+      "optional broader parameter or seed sweep after clean first-pass finalization"
+    ]
+  },
+  "expected_benefit": [
+    "Prove stable end-to-end L1 control-plane behavior on a fresh proposal line."
+  ],
+  "risks": [
+    "May collapse to no-diff if canonical output paths are accidentally reused."
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "task_type": "l1_sweep",
+      "evaluation_mode": "measurement_only",
+      "objective": "nangate45 lightweight physical metrics",
+      "cost_class": "low",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": false,
+      "requires_materialized_refs": false,
+      "expected_result": {
+        "direction": "collect_baseline_metrics",
+        "reason": "Establish fresh canonical evidence and validate first-pass finalization."
+      }
+    }
+  ],
+  "baseline_refs": [],
+  "knowledge_refs": []
+}
