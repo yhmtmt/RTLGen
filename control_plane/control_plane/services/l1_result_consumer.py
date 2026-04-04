@@ -326,9 +326,6 @@ def _completed_trial_runs(work_item: WorkItem) -> list[Run]:
     for run in sorted(work_item.runs, key=lambda row: (row.attempt, row.created_at or utcnow())):
         if run.status not in {RunStatus.SUCCEEDED, RunStatus.FAILED, RunStatus.CANCELED, RunStatus.TIMED_OUT}:
             continue
-        payload = dict(run.result_payload or {}) if isinstance(run.result_payload, dict) else {}
-        if bool((payload.get("retry_decision") or {}).get("requeue")):
-            continue
         completed.append(run)
     return completed
 

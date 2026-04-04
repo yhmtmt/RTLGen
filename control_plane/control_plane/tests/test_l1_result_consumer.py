@@ -432,9 +432,34 @@ def test_consume_l1_result_writes_trial_aggregate_artifacts() -> None:
             session.flush()
 
             run_1 = Run(
-                run_key="l1_test_trial_aggregate_run_1",
+                run_key="l1_test_trial_aggregate_run_0",
                 work_item_id=work_item.id,
                 attempt=1,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.FAILED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="deadbeef",
+                trial_index=1,
+                seed=3,
+                result_summary="trial 1 checkout failed and requeued",
+                result_payload={
+                    "trial": {"trial_index": 1, "seed": 3},
+                    "retry_decision": {"requeue": True, "reason": "checkout failure"},
+                    "failure_classification": {
+                        "category": "checkout_error",
+                        "stage": "checkout",
+                        "signature": "fetch_failed",
+                    },
+                },
+                failure_category="checkout_error",
+                failure_stage="checkout",
+                failure_signature="fetch_failed",
+            )
+            run_2 = Run(
+                run_key="l1_test_trial_aggregate_run_1",
+                work_item_id=work_item.id,
+                attempt=2,
                 executor_type=ExecutorType.INTERNAL_WORKER,
                 status=RunStatus.SUCCEEDED,
                 started_at=utcnow(),
@@ -448,10 +473,10 @@ def test_consume_l1_result_writes_trial_aggregate_artifacts() -> None:
                     "queue_result": {"status": "ok", "metrics_rows": [f"{metrics_trial_1}:2"]},
                 },
             )
-            run_2 = Run(
+            run_3 = Run(
                 run_key="l1_test_trial_aggregate_run_2",
                 work_item_id=work_item.id,
-                attempt=2,
+                attempt=3,
                 executor_type=ExecutorType.INTERNAL_WORKER,
                 status=RunStatus.SUCCEEDED,
                 started_at=utcnow(),
@@ -465,10 +490,10 @@ def test_consume_l1_result_writes_trial_aggregate_artifacts() -> None:
                     "queue_result": {"status": "ok", "metrics_rows": [f"{metrics_trial_2}:2"]},
                 },
             )
-            run_3 = Run(
+            run_4 = Run(
                 run_key="l1_test_trial_aggregate_run_3",
                 work_item_id=work_item.id,
-                attempt=3,
+                attempt=4,
                 executor_type=ExecutorType.INTERNAL_WORKER,
                 status=RunStatus.FAILED,
                 started_at=utcnow(),
@@ -485,7 +510,7 @@ def test_consume_l1_result_writes_trial_aggregate_artifacts() -> None:
                 failure_stage="route",
                 failure_signature="slack<0",
             )
-            session.add_all([run_1, run_2, run_3])
+            session.add_all([run_1, run_2, run_3, run_4])
             session.commit()
 
             result = consume_l1_result(
@@ -499,9 +524,9 @@ def test_consume_l1_result_writes_trial_aggregate_artifacts() -> None:
             assert result.item_id == work_item.item_id
             proposal_path = repo_root / "control_plane" / "shadow_exports" / "l1_promotions" / f"{work_item.item_id}.json"
             payload = json.loads(proposal_path.read_text(encoding="utf-8"))
-            assert payload["trial_summary"]["completed_trials"] == 3
+            assert payload["trial_summary"]["completed_trials"] == 4
             assert payload["trial_summary"]["success_count"] == 2
-            assert payload["trial_summary"]["failure_count"] == 1
+            assert payload["trial_summary"]["failure_count"] == 2
             assert payload["trial_summary"]["metrics"]["critical_path_ns"]["best"] == 11.0
             assert payload["evaluation_record"]["abstraction_layer"] == "circuit_block"
             assert payload["source_refs"]["trial_metrics_csvs"] == [metrics_trial_1, metrics_trial_2]
@@ -513,10 +538,11 @@ def test_consume_l1_result_writes_trial_aggregate_artifacts() -> None:
             summary = json.loads(summary_path.read_text(encoding="utf-8"))
             failure_stats = json.loads(failure_path.read_text(encoding="utf-8"))
             trial_table = trial_table_path.read_text(encoding="utf-8")
-            assert summary["success_rate"] == 2 / 3
-            assert failure_stats["by_category"] == {"timing_unmet": 1}
-            assert failure_stats["by_stage"] == {"route": 1}
+            assert summary["success_rate"] == 0.5
+            assert failure_stats["by_category"] == {"checkout_error": 1, "timing_unmet": 1}
+            assert failure_stats["by_stage"] == {"checkout": 1, "route": 1}
             assert "trial_index,seed,status" in trial_table
+            assert "l1_test_trial_aggregate_run_0" in trial_table
             assert "l1_test_trial_aggregate_run_3" in trial_table
 
             artifact_kinds = {artifact.kind for artifact in session.query(Artifact).all()}
