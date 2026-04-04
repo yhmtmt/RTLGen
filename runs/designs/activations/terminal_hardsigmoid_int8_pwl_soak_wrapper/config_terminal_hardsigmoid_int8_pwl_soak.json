@@ -14,7 +14,37 @@
       "module_name": "terminal_hardsigmoid_int8_pwl_soak",
       "operand": "din",
       "options": {
-        "function": "hard_sigmoid"
+        "function": "pwl",
+        "impl": "pwl",
+        "frac_bits": 4,
+        "symmetric": false,
+        "points": [
+          [
+            -2.625,
+            0.0
+          ],
+          [
+            -1.0,
+            0.3125
+          ],
+          [
+            0.0,
+            0.5
+          ],
+          [
+            1.0,
+            0.6875
+          ],
+          [
+            2.6875,
+            1.0
+          ],
+          [
+            7.9375,
+            1.0
+          ]
+        ],
+        "clamp": true
       }
     }
   ]
