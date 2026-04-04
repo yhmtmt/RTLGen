@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l1_terminal_leakyrelu_soak_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "promote",
+  "pr_number": 151,
+  "merge_commit": "f750079f6379a03bb4c253b39eb2747405fea20c",
+  "merged_utc": "2026-04-04T07:52:45.412254Z"
 }

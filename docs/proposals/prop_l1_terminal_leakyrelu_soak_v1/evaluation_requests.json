@@ -1,12 +1,24 @@
 {
   "proposal_id": "prop_l1_terminal_leakyrelu_soak_v1",
-  "source_commit": "git-sha",
+  "source_commit": "124d2d8a419808b8696568fe91e75941d3e4a0e2",
   "requested_items": [
     {
       "item_id": "example_item_id",
       "task_type": "l2_campaign",
       "objective": "balanced",
       "candidate_id": "cand_example_v1_r1"
+    },
+    {
+      "item_id": "l1_prop_l1_terminal_leakyrelu_soak_v1_nangate45_r1",
+      "task_type": "l1_sweep",
+      "objective": "Run a Layer1 nangate45 OpenROAD sweep for 1 configs using nangate45_terminal_leakyrelu_int8_v1.json and record lightweight design metrics for comparison.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "circuit_block",
+      "status": "merged",
+      "merged_pr_number": 151,
+      "merge_commit": "f750079f6379a03bb4c253b39eb2747405fea20c",
+      "merged_utc": "2026-04-04T07:52:45.412254Z",
+      "notes": "Merged via PR #151 and merge f750079f6379a03bb4c253b39eb2747405fea20c at 2026-04-04T07:52:45.412254Z."
     }
   ]
 }
