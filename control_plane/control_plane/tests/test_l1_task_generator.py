@@ -254,6 +254,15 @@ def test_generate_l1_sweep_task_records_requested_item_in_proposal_evaluation_re
                 "status": "pending",
             }
         ]
+        for name in (
+            "proposal.json",
+            "evaluation_requests.json",
+            "promotion_decision.json",
+            "promotion_result.json",
+            "README.md",
+            "analysis_report.md",
+        ):
+            assert (proposal_dir / name).exists()
 
 
 def test_generate_l1_sweep_task_omits_runtime_submodules_when_image_provides_deps() -> None:

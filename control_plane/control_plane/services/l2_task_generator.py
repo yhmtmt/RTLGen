@@ -19,6 +19,7 @@ from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
 from control_plane.services.dependency_gate import evaluate_work_item_dependencies
 from control_plane.services.docs_paths import canonicalize_proposal_path, resolve_proposal_dir
+from control_plane.services.proposal_scaffold import ensure_proposal_scaffold
 
 
 class Layer2TaskGenerationError(RuntimeError):
@@ -160,6 +161,94 @@ def _resolve_requested_entry_bool(
     if not isinstance(entry, dict):
         return False
     return bool(entry.get(key))
+
+
+def _upsert_requested_item_entry(
+    *,
+    repo_root: Path,
+    proposal_id: str | None,
+    proposal_path: str | None,
+    item_id: str,
+    task_type: str,
+    objective: str,
+    evaluation_mode: str | None,
+    abstraction_layer: str | None,
+    comparison_role: str | None,
+    paired_baseline_item_id: str | None,
+    depends_on_item_ids: list[str] | None,
+    requires_merged_inputs: bool,
+    requires_materialized_refs: bool,
+    expected_direction: str | None,
+    expected_reason: str | None,
+    source_commit: str,
+) -> None:
+    proposal_id_text = str(proposal_id or '').strip()
+    proposal_dir = resolve_proposal_dir(
+        repo_root,
+        proposal_path=str(proposal_path or '').strip() or None,
+        proposal_id=proposal_id_text or None,
+    )
+    if proposal_dir is None:
+        return
+    ensure_proposal_scaffold(
+        repo_root=repo_root,
+        proposal_dir=proposal_dir,
+        proposal_id=proposal_id_text or proposal_dir.name,
+        source_commit=source_commit,
+        layer='layer2',
+        kind='architecture',
+    )
+    evaluation_requests_path = proposal_dir / 'evaluation_requests.json'
+    payload = _load_json(evaluation_requests_path)
+    requested_items = payload.get('requested_items')
+    if not isinstance(requested_items, list):
+        requested_items = []
+        payload['requested_items'] = requested_items
+
+    entry = None
+    for candidate in requested_items:
+        if isinstance(candidate, dict) and str(candidate.get('item_id', '')).strip() == item_id:
+            entry = candidate
+            break
+    if entry is None:
+        retry_base = _retry_base(item_id)
+        retry_matches = [
+            candidate
+            for candidate in requested_items
+            if isinstance(candidate, dict) and _retry_base(str(candidate.get('item_id', '')).strip()) == retry_base
+        ]
+        if len(retry_matches) == 1:
+            entry = retry_matches[0]
+            previous_item_id = str(entry.get('item_id', '')).strip()
+            if previous_item_id and previous_item_id != item_id:
+                prior_item_ids = entry.get('prior_item_ids')
+                prior_values = [str(value).strip() for value in prior_item_ids] if isinstance(prior_item_ids, list) else []
+                if previous_item_id not in prior_values:
+                    prior_values.append(previous_item_id)
+                entry['prior_item_ids'] = prior_values
+        else:
+            entry = {}
+            requested_items.append(entry)
+
+    entry['item_id'] = item_id
+    entry['task_type'] = task_type
+    entry['objective'] = objective
+    entry['evaluation_mode'] = str(evaluation_mode or '').strip()
+    entry['abstraction_layer'] = str(abstraction_layer or '').strip()
+    entry['comparison_role'] = str(comparison_role or '').strip()
+    entry['paired_baseline_item_id'] = str(paired_baseline_item_id or '').strip()
+    entry['depends_on_item_ids'] = [str(v).strip() for v in (depends_on_item_ids or []) if str(v).strip()]
+    entry['requires_merged_inputs'] = bool(requires_merged_inputs)
+    entry['requires_materialized_refs'] = bool(requires_materialized_refs)
+    if str(expected_direction or '').strip() or str(expected_reason or '').strip():
+        entry['expected_result'] = {
+            'direction': str(expected_direction or '').strip(),
+            'reason': str(expected_reason or '').strip(),
+        }
+    entry['status'] = 'pending'
+    payload['proposal_id'] = str(payload.get('proposal_id') or proposal_id_text or proposal_dir.name).strip()
+    payload['source_commit'] = source_commit
+    evaluation_requests_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
 
 def _resolve_source_commit(repo_root: Path, source_commit: str | None) -> str:
@@ -555,6 +644,24 @@ def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateR
         explicit=request.requires_materialized_refs,
     )
     source_commit = _resolve_source_commit(repo_root, request.source_commit)
+    _upsert_requested_item_entry(
+        repo_root=repo_root,
+        proposal_id=request.proposal_id,
+        proposal_path=proposal_path,
+        item_id=item_id,
+        task_type='l2_campaign',
+        objective=objective,
+        evaluation_mode=effective_evaluation_mode,
+        abstraction_layer=effective_abstraction_layer,
+        comparison_role=effective_comparison_role,
+        paired_baseline_item_id=effective_paired_baseline_item_id,
+        depends_on_item_ids=effective_depends_on_item_ids,
+        requires_merged_inputs=effective_requires_merged_inputs,
+        requires_materialized_refs=effective_requires_materialized_refs,
+        expected_direction=request.expected_direction,
+        expected_reason=request.expected_reason,
+        source_commit=source_commit,
+    )
     expected_outputs = _build_expected_outputs(
         campaign=campaign,
         generated_campaign_path=generated_campaign_path,

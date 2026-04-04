@@ -18,6 +18,7 @@ from control_plane.models.enums import FlowName, LayerName, WorkItemState
 from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
 from control_plane.services.docs_paths import canonicalize_proposal_path, resolve_proposal_dir, resolve_proposal_file
+from control_plane.services.proposal_scaffold import ensure_proposal_scaffold
 
 
 class Layer1TaskGenerationError(RuntimeError):
@@ -118,16 +119,23 @@ def _upsert_evaluation_request_entry(
     abstraction_layer: str | None,
     source_commit: str,
 ) -> None:
+    proposal_id_text = str(proposal_id or "").strip()
     proposal_dir = resolve_proposal_dir(
         repo_root,
         proposal_path=str(proposal_path or "").strip() or None,
-        proposal_id=str(proposal_id or "").strip() or None,
+        proposal_id=proposal_id_text or None,
     )
     if proposal_dir is None:
         return
+    ensure_proposal_scaffold(
+        repo_root=repo_root,
+        proposal_dir=proposal_dir,
+        proposal_id=proposal_id_text or proposal_dir.name,
+        source_commit=source_commit,
+        layer="layer1",
+        kind="circuit_block",
+    )
     evaluation_requests_path = proposal_dir / "evaluation_requests.json"
-    if not evaluation_requests_path.exists():
-        return
     payload = _load_json(evaluation_requests_path)
     requested_items = payload.get("requested_items")
     if not isinstance(requested_items, list):

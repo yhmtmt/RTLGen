@@ -111,10 +111,42 @@ def test_generate_l2_campaign_task_creates_ready_work_item() -> None:
             )
 
             work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            proposal_dir = repo_root / "docs" / "developer_loop" / "prop_l2_demo_v1"
+            evaluation_requests = json.loads((proposal_dir / "evaluation_requests.json").read_text(encoding="utf-8"))
             assert result.status == "applied"
             assert work_item.task_type == "l2_campaign"
             assert work_item.state == WorkItemState.DISPATCH_PENDING
             assert work_item.source_mode == "src_verilog"
+            assert evaluation_requests["proposal_id"] == "prop_l2_demo_v1"
+            assert evaluation_requests["source_commit"] == source_commit
+            assert evaluation_requests["requested_items"] == [
+                {
+                    "item_id": result.item_id,
+                    "task_type": "l2_campaign",
+                    "objective": "Demo Layer2 campaign for control-plane generation coverage.",
+                    "evaluation_mode": "paired_comparison",
+                    "abstraction_layer": "full_architecture",
+                    "comparison_role": "candidate",
+                    "paired_baseline_item_id": "l2_demo_baseline",
+                    "depends_on_item_ids": [],
+                    "requires_merged_inputs": False,
+                    "requires_materialized_refs": False,
+                    "expected_result": {
+                        "direction": "better_than_historical",
+                        "reason": "Candidate should improve the measured baseline.",
+                    },
+                    "status": "pending",
+                }
+            ]
+            for name in (
+                "proposal.json",
+                "evaluation_requests.json",
+                "promotion_decision.json",
+                "promotion_result.json",
+                "README.md",
+                "analysis_report.md",
+            ):
+                assert (proposal_dir / name).exists()
             assert [command["name"] for command in work_item.command_manifest] == [
                 "fetch_models",
                 "validate_campaign",
