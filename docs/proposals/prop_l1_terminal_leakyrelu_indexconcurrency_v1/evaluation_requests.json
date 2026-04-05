@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_terminal_leakyrelu_indexconcurrency_v1",
-  "source_commit": "PENDING",
+  "source_commit": "b6569f6cbd0efe7acf0eb2a5dae0973c2141069c",
   "requested_items": [
     {
       "item_id": "l1_prop_l1_terminal_leakyrelu_indexconcurrency_v1_nangate45_r1",
@@ -8,7 +8,11 @@
       "objective": "Validate centralized run index export under concurrent submissions.",
       "evaluation_mode": "standard",
       "abstraction_layer": "circuit_block",
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 165,
+      "merge_commit": "56321a94b3fc272cd08c643ec98c30fbcf3032bf",
+      "merged_utc": "2026-04-05T13:18:52.868875Z",
+      "notes": "Merged via PR #165 and merge 56321a94b3fc272cd08c643ec98c30fbcf3032bf at 2026-04-05T13:18:52.868875Z."
     }
   ]
 }

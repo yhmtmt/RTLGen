@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l1_terminal_leakyrelu_indexconcurrency_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "promote",
+  "pr_number": 165,
+  "merge_commit": "56321a94b3fc272cd08c643ec98c30fbcf3032bf",
+  "merged_utc": "2026-04-05T13:18:52.868875Z"
 }
