@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l1_terminal_hardtanh_indexconcurrency_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "promote",
+  "pr_number": 168,
+  "merge_commit": "89eccf072a163f9919b010b17a2296139f285a3f",
+  "merged_utc": "2026-04-05T13:19:01.684360Z"
 }
