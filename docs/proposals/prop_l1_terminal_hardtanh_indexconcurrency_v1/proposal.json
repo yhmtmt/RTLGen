@@ -1,0 +1,51 @@
+{
+  "proposal_id": "prop_l1_terminal_hardtanh_indexconcurrency_v1",
+  "created_utc": "2026-04-05T11:33:16.325188Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "title": "hardtanh index concurrency proof",
+  "hypothesis": "Independent evaluator PRs should no longer conflict on shared index materialization.",
+  "direct_comparison": {
+    "primary_question": "What focused comparison directly tests this proposal?",
+    "include": [
+      "describe the minimum comparison set"
+    ],
+    "exclude": [
+      "describe points intentionally left out of first-stage evaluation"
+    ],
+    "follow_on_broad_sweep": [
+      "optional wider sweep to run only after the focused comparison"
+    ]
+  },
+  "expected_benefit": [
+    "describe expected benefit"
+  ],
+  "risks": [
+    "describe risk"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "paired_comparison",
+      "objective": "balanced",
+      "cost_class": "medium",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": false,
+      "requires_materialized_refs": false,
+      "expected_result": {
+        "direction": "better_than_historical",
+        "reason": "replace this with the expected direction for this item"
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/campaigns/..."
+  ],
+  "knowledge_refs": [
+    "paper:example",
+    "discussion:example"
+  ],
+  "abstraction_layer": "circuit_block"
+}

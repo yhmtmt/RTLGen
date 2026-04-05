@@ -1,0 +1,14 @@
+{
+  "proposal_id": "prop_l1_terminal_leakyrelu_indexconcurrency_v1",
+  "source_commit": "PENDING",
+  "requested_items": [
+    {
+      "item_id": "l1_prop_l1_terminal_leakyrelu_indexconcurrency_v1_nangate45_r1",
+      "task_type": "l1_sweep",
+      "objective": "Validate centralized run index export under concurrent submissions.",
+      "evaluation_mode": "standard",
+      "abstraction_layer": "circuit_block",
+      "status": "pending"
+    }
+  ]
+}
