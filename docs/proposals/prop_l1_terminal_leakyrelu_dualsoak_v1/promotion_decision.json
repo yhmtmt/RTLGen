@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l1_terminal_leakyrelu_dualsoak_v1",
+  "candidate_id": "l1_prop_l1_terminal_leakyrelu_dualsoak_v1_nangate45_r1",
+  "decision": "promote",
+  "reason": "Accepted Layer 1 physical metrics were merged in PR #156 for the current candidate.",
+  "evidence_refs": [
+    "item:l1_prop_l1_terminal_leakyrelu_dualsoak_v1_nangate45_r1",
+    "run:l1_prop_l1_terminal_leakyrelu_dualsoak_v1_nangate45_r1_run_b5fc96e91e997cdd",
+    "artifact:control_plane/shadow_exports/l1_promotions/l1_prop_l1_terminal_leakyrelu_dualsoak_v1_nangate45_r1.json",
+    "pr:#156",
+    "https://github.com/yhmtmt/RTLGen/pull/156"
+  ],
+  "next_action": "inspect the next dependent item",
+  "requires_human_approval": false
+}

@@ -1,0 +1,18 @@
+{
+  "proposal_id": "prop_l1_terminal_leakyrelu_dualsoak_v1",
+  "source_commit": "21bbfe22081377aa52fe5fa9934ba2de1518cb9a",
+  "requested_items": [
+    {
+      "item_id": "l1_prop_l1_terminal_leakyrelu_dualsoak_v1_nangate45_r1",
+      "task_type": "l1_sweep",
+      "objective": "Evaluate a fresh leakyrelu terminal block wrapper under the standard Nangate45 sweep for concurrent multi-evaluator soak coverage.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "circuit_block",
+      "status": "merged",
+      "merged_pr_number": 156,
+      "merge_commit": "af5631b1fa31e9c7cba433291e13d40e8d03f39f",
+      "merged_utc": "2026-04-05T07:45:34.530676Z",
+      "notes": "Merged via PR #156 and merge af5631b1fa31e9c7cba433291e13d40e8d03f39f at 2026-04-05T07:45:34.530676Z."
+    }
+  ]
+}
