@@ -37,6 +37,7 @@ jobs:
         run: python scripts/build_runs_index.py
 
       - name: Check index is up to date
+        if: github.event_name == 'push'
         run: |
           if git diff --ignore-cr-at-eol --exit-code runs/index.csv; then
             echo "Index is up to date"
