@@ -1,0 +1,10 @@
+{
+  "proposal_id": "prop_l1_terminal_sigmoid_dualsoak_v1",
+  "created_utc": "2026-04-05T07:00:00Z",
+  "created_by": "control_plane",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "title": "Terminal int8 sigmoid dual soak block",
+  "summary": "Evaluate a fresh sigmoid terminal block wrapper under the standard Nangate45 sweep for concurrent multi-evaluator soak coverage.",
+  "abstraction_layer": "circuit_block"
+}
