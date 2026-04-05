@@ -1,0 +1,18 @@
+{
+  "proposal_id": "prop_l1_terminal_sigmoid_dualsoak_v1",
+  "source_commit": "21bbfe22081377aa52fe5fa9934ba2de1518cb9a",
+  "requested_items": [
+    {
+      "item_id": "l1_prop_l1_terminal_sigmoid_dualsoak_v1_nangate45_r1",
+      "task_type": "l1_sweep",
+      "objective": "Evaluate a fresh sigmoid terminal block wrapper under the standard Nangate45 sweep for concurrent multi-evaluator soak coverage.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "circuit_block",
+      "status": "merged",
+      "merged_pr_number": 158,
+      "merge_commit": "2aefb87afda7329eca0db94e6b1a8ff504f1a4d5",
+      "merged_utc": "2026-04-05T07:55:53.403777Z",
+      "notes": "Merged via PR #158 and merge 2aefb87afda7329eca0db94e6b1a8ff504f1a4d5 at 2026-04-05T07:55:53.403777Z."
+    }
+  ]
+}
