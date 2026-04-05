@@ -61,6 +61,17 @@ def _seed_rows(session: Session) -> None:
                 total_power_mw="0.80",
                 metrics_path="runs/designs/reductions/softmax_rowwise/metrics.csv",
             ),
+            RunIndexRow(
+                index_order=5,
+                circuit_type="npu_macros",
+                design="comb_only_macro",
+                platform="nangate45",
+                status="ok",
+                critical_path_ns="-1.0",
+                die_area="62500.0",
+                total_power_mw="0.00119",
+                metrics_path="runs/designs/npu_macros/comb_only_macro/metrics.csv",
+            ),
         ]
     )
     session.commit()
@@ -83,9 +94,9 @@ def test_query_run_index_filters_and_sorts() -> None:
             ),
         )
 
-    assert result.total_count == 4
+    assert result.total_count == 5
     assert result.filtered_count == 2
-    assert result.available_filters["circuit_types"] == ["reduction", "terminal"]
+    assert result.available_filters["circuit_types"] == ["npu_macros", "reduction", "terminal"]
     assert [row["design"] for row in result.rows] == ["sigmoid_fast", "sigmoid_backup"]
     assert result.rows[0]["critical_path_ns"] == 1.10
 
@@ -97,10 +108,12 @@ def test_comparative_run_index_reports_leaders_and_failure_rates() -> None:
         _seed_rows(session)
         result = comparative_run_index(session, limit=10)
 
-    assert result.summary["row_count"] == 4
-    assert result.summary["ok_row_count"] == 3
+    assert result.summary["row_count"] == 5
+    assert result.summary["ok_row_count"] == 4
     assert result.summary["platform_count"] == 2
     assert result.families[0]["circuit_type"] == "terminal"
+    assert all(row["design"] != "comb_only_macro" for row in result.best_designs)
+    assert all(row["design"] != "comb_only_macro" for row in result.family_leaders)
     assert result.best_designs[0]["design"] == "sigmoid_fast"
     assert any(row["circuit_type"] == "terminal" and row["design"] == "sigmoid_fast" for row in result.family_leaders)
     terminal_failure = next(row for row in result.failure_rates if row["circuit_type"] == "terminal")

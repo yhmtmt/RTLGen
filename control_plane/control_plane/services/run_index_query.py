@@ -20,6 +20,13 @@ def _safe_float_text(value: object) -> float | None:
         return None
 
 
+def _comparable_critical_path(value: object) -> float | None:
+    numeric = _safe_float_text(value)
+    if numeric is None or numeric <= 0:
+        return None
+    return numeric
+
+
 @dataclass(frozen=True)
 class RunIndexQueryRequest:
     circuit_type: str | None = None
@@ -190,11 +197,13 @@ def comparative_run_index(session: Session, *, limit: int) -> RunIndexComparativ
             continue
 
         bucket["ok_row_count"] = int(bucket["ok_row_count"]) + 1
-        cp = _safe_float_text(row.critical_path_ns)
+        cp = _comparable_critical_path(row.critical_path_ns)
+        if cp is None:
+            continue
         area = _safe_float_text(row.die_area)
         power = _safe_float_text(row.total_power_mw)
         score = (
-            cp if cp is not None else float("inf"),
+            cp,
             area if area is not None else float("inf"),
             power if power is not None else float("inf"),
         )
@@ -249,6 +258,7 @@ def comparative_run_index(session: Session, *, limit: int) -> RunIndexComparativ
             "metrics_path": bucket["metrics_path"],
         }
         for bucket in design_buckets.values()
+        if bucket["best_critical_path_ns"] is not None
     ]
     best_designs.sort(
         key=lambda row: (
