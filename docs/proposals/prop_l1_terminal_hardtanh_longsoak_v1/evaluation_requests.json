@@ -1,0 +1,18 @@
+{
+  "proposal_id": "prop_l1_terminal_hardtanh_longsoak_v1",
+  "source_commit": "5ba908336f71cd3a838562fc871f16ca50bc8241",
+  "requested_items": [
+    {
+      "item_id": "l1_prop_l1_terminal_hardtanh_longsoak_v1_nangate45_r1",
+      "task_type": "l1_sweep",
+      "objective": "Run a Layer1 nangate45 OpenROAD sweep for 1 configs using nangate45_terminal_hardtanh_int8_pwl_v1.json and record lightweight design metrics for comparison.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "circuit_block",
+      "status": "merged",
+      "merged_pr_number": 164,
+      "merge_commit": "1c88ba1d13b648b590032062a9aaec7a0b09e885",
+      "merged_utc": "2026-04-05T10:51:54.683288Z",
+      "notes": "Merged via PR #164 and merge 1c88ba1d13b648b590032062a9aaec7a0b09e885 at 2026-04-05T10:51:54.683288Z."
+    }
+  ]
+}
