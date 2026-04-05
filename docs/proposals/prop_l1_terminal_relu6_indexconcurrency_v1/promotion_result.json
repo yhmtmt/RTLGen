@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l1_terminal_relu6_indexconcurrency_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "promote",
+  "pr_number": 167,
+  "merge_commit": "dca975faf006514722230d400ff29b6b60535fa8",
+  "merged_utc": "2026-04-05T13:18:57.153452Z"
 }
