@@ -1,0 +1,184 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-04-05T10:46:47.427498Z",
+  "item_id": "l1_prop_l1_terminal_hardtanh_longsoak_v1_nangate45_r1",
+  "run_key": "l1_prop_l1_terminal_hardtanh_longsoak_v1_nangate45_r1_run_f1388bc7104cbeb0",
+  "layer": "layer1",
+  "flow": "openroad",
+  "task_type": "l1_sweep",
+  "source_commit": "5ba908336f71cd3a838562fc871f16ca50bc8241",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l1_prop_l1_terminal_hardtanh_longsoak_v1_nangate45_r1/evaluated.json",
+    "result": {
+      "branch": "eval/l1_prop_l1_terminal_hardtanh_longsoak_v1_nangate45_r1/s20260405t084737z",
+      "completed_utc": "2026-04-05T08:47:37.283290Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "d578d339653b",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260405t084737z][host:d578d339653b][item:l1_prop_l1_terminal_hardtanh_longsoak_v1_nangate45_r1]",
+      "metrics_rows": [
+        {
+          "tag": "terminal_hardtanh_int8_pwl_ng45_v1_97899059",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "e81b7355",
+          "metrics_csv": "runs/designs/activations/terminal_hardtanh_int8_pwl_longsoak_wrapper/terminal_hardtanh_int8_pwl_longsoak_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/terminal_hardtanh_int8_pwl_longsoak_wrapper/terminal_hardtanh_int8_pwl_longsoak_wrapper/work/e81b7355/result.json"
+        },
+        {
+          "tag": "terminal_hardtanh_int8_pwl_ng45_v1_3ba5ddc4",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "cedf3454",
+          "metrics_csv": "runs/designs/activations/terminal_hardtanh_int8_pwl_longsoak_wrapper/terminal_hardtanh_int8_pwl_longsoak_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/terminal_hardtanh_int8_pwl_longsoak_wrapper/terminal_hardtanh_int8_pwl_longsoak_wrapper/work/cedf3454/result.json"
+        },
+        {
+          "tag": "terminal_hardtanh_int8_pwl_ng45_v1_91e30912",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "2f4a091e",
+          "metrics_csv": "runs/designs/activations/terminal_hardtanh_int8_pwl_longsoak_wrapper/terminal_hardtanh_int8_pwl_longsoak_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/terminal_hardtanh_int8_pwl_longsoak_wrapper/terminal_hardtanh_int8_pwl_longsoak_wrapper/work/2f4a091e/result.json"
+        },
+        {
+          "tag": "terminal_hardtanh_int8_pwl_ng45_v1_6b32a08e",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "b7671125",
+          "metrics_csv": "runs/designs/activations/terminal_hardtanh_int8_pwl_longsoak_wrapper/terminal_hardtanh_int8_pwl_longsoak_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/terminal_hardtanh_int8_pwl_longsoak_wrapper/terminal_hardtanh_int8_pwl_longsoak_wrapper/work/b7671125/result.json"
+        }
+      ],
+      "queue_item_id": "l1_prop_l1_terminal_hardtanh_longsoak_v1_nangate45_r1",
+      "session_id": "s20260405t084737z",
+      "status": "ok",
+      "summary": "4/4 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "promotion_proposal",
+    "path": "control_plane/shadow_exports/l1_promotions/l1_prop_l1_terminal_hardtanh_longsoak_v1_nangate45_r1.json",
+    "storage_mode": "repo",
+    "sha256": "f9cacf6eab32f5d217f966439a4973615f78a05a89729081830efa7c8cd642db",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-04-05T10:44:08.540508Z",
+      "item_id": "l1_prop_l1_terminal_hardtanh_longsoak_v1_nangate45_r1",
+      "run_key": "l1_prop_l1_terminal_hardtanh_longsoak_v1_nangate45_r1_run_f1388bc7104cbeb0",
+      "layer": "layer1",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l1_sweep",
+      "source_commit": "5ba908336f71cd3a838562fc871f16ca50bc8241",
+      "objective": "Run a Layer1 nangate45 OpenROAD sweep for 1 configs using nangate45_terminal_hardtanh_int8_pwl_v1.json and record lightweight design metrics for comparison.",
+      "input_manifest": {
+        "sweeps": [
+          "runs/designs/activations/sweeps/nangate45_terminal_hardtanh_int8_pwl_v1.json"
+        ],
+        "configs": [
+          "runs/designs/activations/terminal_hardtanh_int8_pwl_longsoak_wrapper/config_terminal_hardtanh_int8_pwl_longsoak.json"
+        ],
+        "out_root": "runs/designs/activations/terminal_hardtanh_int8_pwl_longsoak_wrapper",
+        "design_dirs": [],
+        "macro_manifests": [],
+        "candidate_manifests": [],
+        "required_submodules": []
+      },
+      "proposal_count": 1,
+      "evaluation_record": {
+        "evaluation_mode": "measurement_only",
+        "abstraction_layer": "circuit_block",
+        "result_kind": "physical_metrics",
+        "physical_metrics_present": true,
+        "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+      },
+      "proposal_assessment": null,
+      "proposals": [
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/activations/terminal_hardtanh_int8_pwl_longsoak_wrapper/terminal_hardtanh_int8_pwl_longsoak_wrapper/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "b7671125",
+            "tag": "terminal_hardtanh_int8_pwl_ng45_v1_6b32a08e",
+            "result_path": "runs/designs/activations/terminal_hardtanh_int8_pwl_longsoak_wrapper/terminal_hardtanh_int8_pwl_longsoak_wrapper/work/b7671125/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 0.1903,
+            "die_area": 25600.0,
+            "total_power_mw": 3.62e-05
+          }
+        }
+      ],
+      "trial_summary": {
+        "item_id": "l1_prop_l1_terminal_hardtanh_longsoak_v1_nangate45_r1",
+        "completed_trials": 1,
+        "success_count": 1,
+        "failure_count": 0,
+        "success_rate": 1.0,
+        "metrics": {
+          "critical_path_ns": {
+            "best": 0.1903,
+            "mean": 0.1903,
+            "median": 0.1903,
+            "max": 0.1903
+          },
+          "die_area": {
+            "best": 25600.0,
+            "mean": 25600.0,
+            "median": 25600.0,
+            "max": 25600.0
+          },
+          "total_power_mw": {
+            "best": 3.62e-05,
+            "mean": 3.62e-05,
+            "median": 3.62e-05,
+            "max": 3.62e-05
+          }
+        }
+      },
+      "source_refs": {
+        "trial_metrics_csvs": [
+          "runs/designs/activations/terminal_hardtanh_int8_pwl_longsoak_wrapper/terminal_hardtanh_int8_pwl_longsoak_wrapper/metrics.csv"
+        ],
+        "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_prop_l1_terminal_hardtanh_longsoak_v1_nangate45_r1/summary_stats.json",
+        "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_prop_l1_terminal_hardtanh_longsoak_v1_nangate45_r1/failure_stats.json",
+        "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_prop_l1_terminal_hardtanh_longsoak_v1_nangate45_r1/trial_table.csv"
+      }
+    }
+  },
+  "developer_loop": {
+    "evaluation": {
+      "mode": "measurement_only",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      }
+    },
+    "abstraction": {
+      "layer": "circuit_block"
+    },
+    "proposal_id": "prop_l1_terminal_hardtanh_longsoak_v1",
+    "proposal_path": "docs/proposals/prop_l1_terminal_hardtanh_longsoak_v1"
+  },
+  "pr_payload": {
+    "branch": "eval/l1_prop_l1_terminal_hardtanh_longsoak_v1_nangate45_r1/s20260405t084737z",
+    "title": "eval: run layer1 sweep from nangate45_terminal_hardtanh_int8_pwl_v1 on nangate45",
+    "body_fields": {
+      "host": "d578d339653b",
+      "session_id": "s20260405t084737z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_prop_l1_terminal_hardtanh_longsoak_v1_nangate45_r1"
+    },
+    "body_md": "## Summary\n- item_id: `l1_prop_l1_terminal_hardtanh_longsoak_v1_nangate45_r1`\n- run_key: `l1_prop_l1_terminal_hardtanh_longsoak_v1_nangate45_r1_run_f1388bc7104cbeb0`\n- layer: `layer1`\n- task_type: `l1_sweep`\n- status: `ok`\n- summary: `4/4 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l1_prop_l1_terminal_hardtanh_longsoak_v1_nangate45_r1/evaluated.json`\n- metrics_rows_count: `4`\n- review_artifact: `promotion_proposal` at `control_plane/shadow_exports/l1_promotions/l1_prop_l1_terminal_hardtanh_longsoak_v1_nangate45_r1.json`\n\n## Developer Context\n- proposal_id: `prop_l1_terminal_hardtanh_longsoak_v1`\n- proposal_path: `docs/proposals/prop_l1_terminal_hardtanh_longsoak_v1`\n- reviewer_first_read: `docs/proposals/prop_l1_terminal_hardtanh_longsoak_v1` plus `docs/developer_agent_review.md`\n\n## Evaluation Mode\n- evaluation_mode: `measurement_only`\n- abstraction_layer: `circuit_block`\n- evaluation_summary: `Physical metrics recorded from an accepted status=ok Layer 1 row.`\n\n## Checklist\n- [ ] Commit only lightweight metrics for this item\n- [ ] Include metrics row references for each completed design\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit only lightweight metrics for this item",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
