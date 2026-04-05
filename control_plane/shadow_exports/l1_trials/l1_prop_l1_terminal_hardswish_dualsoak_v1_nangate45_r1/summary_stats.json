@@ -1,0 +1,27 @@
+{
+  "item_id": "l1_prop_l1_terminal_hardswish_dualsoak_v1_nangate45_r1",
+  "completed_trials": 1,
+  "success_count": 1,
+  "failure_count": 0,
+  "success_rate": 1.0,
+  "metrics": {
+    "critical_path_ns": {
+      "best": 0.1947,
+      "mean": 0.1947,
+      "median": 0.1947,
+      "max": 0.1947
+    },
+    "die_area": {
+      "best": 25600.0,
+      "mean": 25600.0,
+      "median": 25600.0,
+      "max": 25600.0
+    },
+    "total_power_mw": {
+      "best": 0.000325,
+      "mean": 0.000325,
+      "median": 0.000325,
+      "max": 0.000325
+    }
+  }
+}
