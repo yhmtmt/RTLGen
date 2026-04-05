@@ -1,0 +1,2 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_prop_l1_terminal_hardtanh_longsoak_v1_nangate45_r1_run_f1388bc7104cbeb0,1,1,0,succeeded,runs/designs/activations/terminal_hardtanh_int8_pwl_longsoak_wrapper/terminal_hardtanh_int8_pwl_longsoak_wrapper/metrics.csv,0.1903,25600.0,3.62e-05,none,,
