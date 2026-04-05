@@ -1,0 +1,88 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-04-05T12:04:03.793963Z",
+  "item_id": "l1_prop_l1_terminal_leakyrelu_indexconcurrency_v1_nangate45_r1",
+  "run_key": "l1_prop_l1_terminal_leakyrelu_indexconcurrency_v1_nangate45_r1_run_54b27fdab226392e",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "b6569f6cbd0efe7acf0eb2a5dae0973c2141069c",
+  "objective": "Validate centralized run index export under concurrent submissions.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/activations/sweeps/nangate45_terminal_leakyrelu_int8_v1.json"
+    ],
+    "configs": [
+      "runs/designs/activations/terminal_leakyrelu_int8_indexconcurrency_wrapper/config_terminal_leakyrelu_int8_indexconcurrency.json"
+    ],
+    "out_root": "runs/designs/activations",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 1,
+  "evaluation_record": {
+    "evaluation_mode": "standard",
+    "abstraction_layer": "circuit_block",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/terminal_leakyrelu_int8_indexconcurrency_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "2cec7cad",
+        "tag": "terminal_leakyrelu_int8_ng45_v1_6b32a08e",
+        "result_path": "runs/designs/activations/terminal_leakyrelu_int8_indexconcurrency_wrapper/work/2cec7cad/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 0.184,
+        "die_area": 25600.0,
+        "total_power_mw": 3.08e-05
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_prop_l1_terminal_leakyrelu_indexconcurrency_v1_nangate45_r1",
+    "completed_trials": 1,
+    "success_count": 1,
+    "failure_count": 0,
+    "success_rate": 1.0,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 0.184,
+        "mean": 0.184,
+        "median": 0.184,
+        "max": 0.184
+      },
+      "die_area": {
+        "best": 25600.0,
+        "mean": 25600.0,
+        "median": 25600.0,
+        "max": 25600.0
+      },
+      "total_power_mw": {
+        "best": 3.08e-05,
+        "mean": 3.08e-05,
+        "median": 3.08e-05,
+        "max": 3.08e-05
+      }
+    }
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/activations/terminal_leakyrelu_int8_indexconcurrency_wrapper/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_prop_l1_terminal_leakyrelu_indexconcurrency_v1_nangate45_r1/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_prop_l1_terminal_leakyrelu_indexconcurrency_v1_nangate45_r1/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_prop_l1_terminal_leakyrelu_indexconcurrency_v1_nangate45_r1/trial_table.csv"
+  }
+}
