@@ -8,6 +8,7 @@ import json
 from control_plane.clock import utcnow
 from control_plane.db import build_engine, build_session_factory, create_all
 from control_plane.services.operator_status import OperatorStatusRequest, load_operator_status
+from control_plane.services.run_index_query import RunIndexQueryRequest, query_run_index
 
 
 _DASHBOARD_HTML = """<!DOCTYPE html>
@@ -286,6 +287,47 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
           <h2>Best Indexed Designs</h2>
           <div class="table-wrap"><table id="run-index-best-designs-table"></table></div>
         </div>
+        <div class="panel">
+          <h2>Family Leaders</h2>
+          <div class="table-wrap"><table id="run-index-family-leaders-table"></table></div>
+        </div>
+        <div class="panel">
+          <h2>Failure Rates</h2>
+          <div class="table-wrap"><table id="run-index-failure-rates-table"></table></div>
+        </div>
+        <div class="panel">
+          <h2>Run Index Drilldown</h2>
+          <div class="controls" style="justify-content:flex-start; margin-bottom: 10px;">
+            <label class="pill">Family
+              <select id="run-index-family-filter"><option value="">All</option></select>
+            </label>
+            <label class="pill">Platform
+              <select id="run-index-platform-filter"><option value="">All</option></select>
+            </label>
+            <label class="pill">Status
+              <select id="run-index-status-filter"><option value="">All</option></select>
+            </label>
+            <label class="pill">Sort
+              <select id="run-index-sort-select">
+                <option value="index_order">Newest</option>
+                <option value="design">Design</option>
+                <option value="critical_path_ns">Critical Path</option>
+                <option value="die_area">Area</option>
+                <option value="total_power_mw">Power</option>
+              </select>
+            </label>
+            <label class="pill">Dir
+              <select id="run-index-direction-select">
+                <option value="desc">Desc</option>
+                <option value="asc">Asc</option>
+              </select>
+            </label>
+            <input id="run-index-design-filter" class="pill" type="text" placeholder="Design contains" />
+            <button id="run-index-query-button">Query</button>
+          </div>
+          <p class="meta" id="run-index-query-meta">Loading run index rows...</p>
+          <div class="table-wrap"><table id="run-index-query-table"></table></div>
+        </div>
       </div>
     </section>
   </div>
@@ -303,6 +345,14 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
     const pollGithubButton = document.getElementById(\"poll-github-button\");
     const backfillReviewButton = document.getElementById(\"backfill-review-button\");
     const controlStatus = document.getElementById(\"control-status\");
+    const runIndexFamilyFilter = document.getElementById(\"run-index-family-filter\");
+    const runIndexPlatformFilter = document.getElementById(\"run-index-platform-filter\");
+    const runIndexStatusFilter = document.getElementById(\"run-index-status-filter\");
+    const runIndexSortSelect = document.getElementById(\"run-index-sort-select\");
+    const runIndexDirectionSelect = document.getElementById(\"run-index-direction-select\");
+    const runIndexDesignFilter = document.getElementById(\"run-index-design-filter\");
+    const runIndexQueryButton = document.getElementById(\"run-index-query-button\");
+    const runIndexQueryMeta = document.getElementById(\"run-index-query-meta\");
     const tables = {
       activeRuns: document.getElementById("active-runs-table"),
       submissions: document.getElementById("submissions-table"),
@@ -315,12 +365,16 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
       runIndexSummary: document.getElementById("run-index-summary-table"),
       runIndexFamilies: document.getElementById("run-index-families-table"),
       runIndexBestDesigns: document.getElementById("run-index-best-designs-table"),
+      runIndexFamilyLeaders: document.getElementById("run-index-family-leaders-table"),
+      runIndexFailureRates: document.getElementById("run-index-failure-rates-table"),
+      runIndexQuery: document.getElementById("run-index-query-table"),
     };
 
     let pollHandle = null;
     let previousAlertToken = null;
     let soundEnabled = true;
     let audioContext = null;
+    let runIndexFiltersLoaded = false;
     const transitionHistory = [];
 
     function formatTime(iso) {
@@ -363,6 +417,46 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
         throw new Error(detail);
       }
       return data;
+    }
+
+    function fillSelectOptions(select, values) {
+      const current = select.value;
+      select.innerHTML = '<option value="">All</option>' + values.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('');
+      if (values.includes(current)) select.value = current;
+    }
+
+    async function loadRunIndexQuery() {
+      runIndexQueryButton.disabled = true;
+      runIndexQueryMeta.textContent = 'Loading run index rows...';
+      try {
+        const payload = await postJson('/api/v1/run-index/query', {
+          circuit_type: runIndexFamilyFilter.value || null,
+          platform: runIndexPlatformFilter.value || null,
+          status: runIndexStatusFilter.value || null,
+          design_query: runIndexDesignFilter.value || null,
+          sort_by: runIndexSortSelect.value || 'index_order',
+          descending: runIndexDirectionSelect.value !== 'asc',
+          limit: 12,
+          offset: 0,
+        });
+        fillSelectOptions(runIndexFamilyFilter, payload.available_filters?.circuit_types || []);
+        fillSelectOptions(runIndexPlatformFilter, payload.available_filters?.platforms || []);
+        fillSelectOptions(runIndexStatusFilter, payload.available_filters?.statuses || []);
+        runIndexFiltersLoaded = true;
+        runIndexQueryMeta.textContent = `Showing ${payload.rows.length} of ${payload.filtered_count} filtered rows (${payload.total_count} total).`;
+        renderTable(tables.runIndexQuery, [
+          { key: 'design', label: 'Design', render: (value) => `<span class='mono'>${escapeHtml(value)}</span>` },
+          { key: 'platform', label: 'Platform' },
+          { key: 'status', label: 'Status' },
+          { key: 'critical_path_ns', label: 'CP' },
+          { key: 'die_area', label: 'Area' },
+          { key: 'total_power_mw', label: 'Power' },
+        ], payload.rows || []);
+      } catch (error) {
+        runIndexQueryMeta.textContent = `Run index query failed: ${error}`;
+      } finally {
+        runIndexQueryButton.disabled = false;
+      }
     }
 
     function setControlStatus(message) {
@@ -618,6 +712,19 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
         { key: "best_die_area", label: "Best Area" },
         { key: "best_total_power_mw", label: "Best Power" },
       ], payload.run_index_best_designs || []);
+      renderTable(tables.runIndexFamilyLeaders, [
+        { key: "circuit_type", label: "Family" },
+        { key: "design", label: "Leader", render: (value) => `<span class='mono'>${escapeHtml(value)}</span>` },
+        { key: "platform", label: "Platform" },
+        { key: "best_critical_path_ns", label: "Best CP" },
+      ], payload.run_index_family_leaders || []);
+      renderTable(tables.runIndexFailureRates, [
+        { key: "circuit_type", label: "Family" },
+        { key: "fail_row_count", label: "Fails" },
+        { key: "row_count", label: "Rows" },
+        { key: "failure_rate", label: "Rate", render: (value) => escapeHtml(((Number(value || 0) * 100).toFixed(1)) + '%') },
+      ], payload.run_index_failure_rates || []);
+      if (!runIndexFiltersLoaded) loadRunIndexQuery();
     }
 
     async function loadStatus() {
@@ -724,6 +831,8 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
     });
     refreshButton.addEventListener("click", refreshNow);
     pollSelect.addEventListener("change", restartPolling);
+    runIndexQueryButton.addEventListener("click", loadRunIndexQuery);
+    runIndexDesignFilter.addEventListener("keydown", (event) => { if (event.key === 'Enter') loadRunIndexQuery(); });
 
     refreshNow();
     restartPolling();
@@ -755,6 +864,8 @@ def _status_payload(database_url: str, recent_limit: int) -> dict[str, object]:
         "run_index_summary": status.run_index_summary,
         "run_index_families": status.run_index_families,
         "run_index_best_designs": status.run_index_best_designs,
+        "run_index_family_leaders": status.run_index_family_leaders,
+        "run_index_failure_rates": status.run_index_failure_rates,
     }
     fingerprint_payload = dict(payload)
     fingerprint_payload.pop("generated_utc", None)
@@ -776,7 +887,35 @@ def register_operator_status_routes(app) -> None:
         body = _DASHBOARD_HTML.encode("utf-8")
         return 200, {"Content-Type": "text/html; charset=utf-8"}, body
 
+    def run_index_query_handler(_method: str, _path: str, _params: dict[str, str], body: bytes):
+        payload = json.loads(body.decode("utf-8") or "{}") if body else {}
+        engine = build_engine(settings.database_url)
+        create_all(engine)
+        session_factory = build_session_factory(engine)
+        with session_factory() as session:
+            result = query_run_index(
+                session,
+                RunIndexQueryRequest(
+                    circuit_type=str(payload.get("circuit_type") or "").strip() or None,
+                    platform=str(payload.get("platform") or "").strip() or None,
+                    status=str(payload.get("status") or "").strip() or None,
+                    design_query=str(payload.get("design_query") or "").strip() or None,
+                    limit=int(payload.get("limit") or 50),
+                    offset=int(payload.get("offset") or 0),
+                    sort_by=str(payload.get("sort_by") or "index_order"),
+                    descending=bool(payload.get("descending", False)),
+                ),
+            )
+        response = {
+            "total_count": result.total_count,
+            "filtered_count": result.filtered_count,
+            "available_filters": result.available_filters,
+            "rows": result.rows,
+        }
+        return 200, {"Content-Type": "application/json"}, json.dumps(response, sort_keys=True).encode("utf-8")
+
     app.add_route("GET", "/", dashboard_handler)
     app.add_route("GET", "/dashboard", dashboard_handler)
     app.add_route("GET", "/api/v1/operator-status", status_handler)
     app.add_route("GET", "/api/v1/dashboard", status_handler)
+    app.add_route("POST", "/api/v1/run-index/query", run_index_query_handler)

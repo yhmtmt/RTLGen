@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -12,7 +11,6 @@ from sqlalchemy.orm import Session
 from control_plane.clock import utcnow
 from control_plane.models.enums import LeaseStatus, RunStatus, WorkItemState
 from control_plane.models.github_links import GitHubLink
-from control_plane.models.run_index_rows import RunIndexRow
 from control_plane.models.run_events import RunEvent
 from control_plane.models.runs import Run
 from control_plane.models.worker_leases import WorkerLease
@@ -20,6 +18,7 @@ from control_plane.models.worker_machines import WorkerMachine
 from control_plane.models.work_items import WorkItem
 from control_plane.services.completion_retry_service import submission_retry_status
 from control_plane.services.operator_submission import assess_submission_eligibility
+from control_plane.services.run_index_query import comparative_run_index
 
 
 def _as_comparable_utc(dt):
@@ -75,6 +74,8 @@ class OperatorStatusResult:
     run_index_summary: dict[str, object]
     run_index_families: list[dict[str, object]]
     run_index_best_designs: list[dict[str, object]]
+    run_index_family_leaders: list[dict[str, object]]
+    run_index_failure_rates: list[dict[str, object]]
 
 
 def _submission_reason_is_resumable(reason: str | None) -> bool:
@@ -92,141 +93,6 @@ def _submission_reason_is_resumable(reason: str | None) -> bool:
         'no_runs',
     )
     return not any(normalized.startswith(prefix) for prefix in blocked_prefixes)
-
-
-def _safe_float_text(value: object) -> float | None:
-    text = str(value or '').strip()
-    if not text:
-        return None
-    try:
-        return float(text)
-    except ValueError:
-        return None
-
-
-def _load_run_index_analytics(session: Session, *, recent_limit: int) -> tuple[dict[str, object], list[dict[str, object]], list[dict[str, object]]]:
-    rows = (
-        session.query(RunIndexRow)
-        .order_by(RunIndexRow.index_order.asc(), RunIndexRow.created_at.asc())
-        .all()
-    )
-    if not rows:
-        return (
-            {
-                'row_count': 0,
-                'ok_row_count': 0,
-                'design_count': 0,
-                'platform_count': 0,
-                'status_counts': {},
-            },
-            [],
-            [],
-        )
-
-    status_counts: Counter[str] = Counter()
-    family_buckets: dict[str, dict[str, object]] = {}
-    design_buckets: dict[tuple[str, str], dict[str, object]] = {}
-    platforms: set[str] = set()
-
-    for row in rows:
-        circuit_type = str(row.circuit_type or '').strip() or 'unknown'
-        design = str(row.design or '').strip() or 'unknown'
-        platform = str(row.platform or '').strip() or 'unknown'
-        status = str(row.status or '').strip() or 'unknown'
-        platforms.add(platform)
-        status_counts[status] += 1
-
-        family = family_buckets.setdefault(
-            circuit_type,
-            {'circuit_type': circuit_type, 'row_count': 0, 'ok_row_count': 0, 'designs': set()},
-        )
-        family['row_count'] = int(family['row_count']) + 1
-        family['designs'].add(design)
-        if status == 'ok':
-            family['ok_row_count'] = int(family['ok_row_count']) + 1
-
-        key = (design, platform)
-        bucket = design_buckets.setdefault(
-            key,
-            {
-                'circuit_type': circuit_type,
-                'design': design,
-                'platform': platform,
-                'row_count': 0,
-                'ok_row_count': 0,
-                'metrics_path': str(row.metrics_path or '').strip(),
-                '_best_score': (float('inf'), float('inf'), float('inf')),
-                'best_critical_path_ns': None,
-                'best_die_area': None,
-                'best_total_power_mw': None,
-            },
-        )
-        bucket['row_count'] = int(bucket['row_count']) + 1
-        if not bucket['metrics_path']:
-            bucket['metrics_path'] = str(row.metrics_path or '').strip()
-        if status != 'ok':
-            continue
-        bucket['ok_row_count'] = int(bucket['ok_row_count']) + 1
-        cp = _safe_float_text(row.critical_path_ns)
-        area = _safe_float_text(row.die_area)
-        power = _safe_float_text(row.total_power_mw)
-        score = (
-            cp if cp is not None else float('inf'),
-            area if area is not None else float('inf'),
-            power if power is not None else float('inf'),
-        )
-        if score < bucket['_best_score']:
-            bucket['_best_score'] = score
-            bucket['best_critical_path_ns'] = cp
-            bucket['best_die_area'] = area
-            bucket['best_total_power_mw'] = power
-
-    summary = {
-        'row_count': len(rows),
-        'ok_row_count': status_counts.get('ok', 0),
-        'design_count': len(design_buckets),
-        'platform_count': len(platforms),
-        'status_counts': dict(sorted(status_counts.items())),
-    }
-
-    families = []
-    for bucket in family_buckets.values():
-        families.append(
-            {
-                'circuit_type': bucket['circuit_type'],
-                'row_count': int(bucket['row_count']),
-                'ok_row_count': int(bucket['ok_row_count']),
-                'design_count': len(bucket['designs']),
-            }
-        )
-    families.sort(key=lambda row: (-int(row['row_count']), str(row['circuit_type'])))
-
-    best_designs = []
-    for bucket in design_buckets.values():
-        best_designs.append(
-            {
-                'circuit_type': bucket['circuit_type'],
-                'design': bucket['design'],
-                'platform': bucket['platform'],
-                'row_count': int(bucket['row_count']),
-                'ok_row_count': int(bucket['ok_row_count']),
-                'best_critical_path_ns': bucket['best_critical_path_ns'],
-                'best_die_area': bucket['best_die_area'],
-                'best_total_power_mw': bucket['best_total_power_mw'],
-                'metrics_path': bucket['metrics_path'],
-            }
-        )
-    best_designs.sort(
-        key=lambda row: (
-            row['best_critical_path_ns'] is None,
-            row['best_critical_path_ns'] if row['best_critical_path_ns'] is not None else float('inf'),
-            row['best_die_area'] if row['best_die_area'] is not None else float('inf'),
-            row['best_total_power_mw'] if row['best_total_power_mw'] is not None else float('inf'),
-            str(row['design']),
-        )
-    )
-
-    return summary, families[:recent_limit], best_designs[:recent_limit]
 
 
 def load_operator_status(session: Session, request: OperatorStatusRequest) -> OperatorStatusResult:
@@ -403,10 +269,7 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
             }
         )
 
-    run_index_summary, run_index_families, run_index_best_designs = _load_run_index_analytics(
-        session,
-        recent_limit=request.recent_limit,
-    )
+    run_index = comparative_run_index(session, limit=request.recent_limit)
 
     recent_submissions = []
     for link in (
@@ -471,7 +334,9 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
         dispatch_pending_items=dispatch_pending_items,
         recent_failures=recent_failures,
         recent_submissions=recent_submissions,
-        run_index_summary=run_index_summary,
-        run_index_families=run_index_families,
-        run_index_best_designs=run_index_best_designs,
+        run_index_summary=run_index.summary,
+        run_index_families=run_index.families,
+        run_index_best_designs=run_index.best_designs,
+        run_index_family_leaders=run_index.family_leaders,
+        run_index_failure_rates=run_index.failure_rates,
     )

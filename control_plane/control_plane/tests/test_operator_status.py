@@ -189,6 +189,33 @@ def test_operator_status_summarizes_live_state() -> None:
                     metadata_={},
                 )
             )
+            session.add_all(
+                [
+                    RunIndexRow(
+                        index_order=1,
+                        circuit_type="terminal",
+                        design="sigmoid_demo",
+                        platform="nangate45",
+                        status="ok",
+                        critical_path_ns="1.25",
+                        die_area="100.0",
+                        total_power_mw="0.5",
+                        metrics_path="runs/designs/activations/sigmoid_demo/metrics.csv",
+                    ),
+                    RunIndexRow(
+                        index_order=2,
+                        circuit_type="terminal",
+                        design="tanh_demo",
+                        platform="asap7",
+                        status="route_failed",
+                        critical_path_ns="",
+                        die_area="140.0",
+                        total_power_mw="",
+                        metrics_path="runs/designs/activations/tanh_demo/metrics.csv",
+                    ),
+                ]
+            )
+
             session.add(
                 GitHubLink(
                     work_item_id=review_item.id,
@@ -258,6 +285,14 @@ def test_operator_status_summarizes_live_state() -> None:
         assert len(status.recent_submissions) == 1
         assert status.recent_submissions[0]["item_id"] == "review_item"
         assert status.recent_submissions[0]["pr_number"] == 99
+        assert status.run_index_summary["row_count"] == 2
+        assert status.run_index_summary["ok_row_count"] == 1
+        assert status.run_index_summary["platform_count"] == 2
+        assert status.run_index_families[0]["circuit_type"] == "terminal"
+        assert status.run_index_best_designs[0]["design"] == "sigmoid_demo"
+        assert status.run_index_family_leaders[0]["design"] == "sigmoid_demo"
+        assert status.run_index_failure_rates[0]["circuit_type"] == "terminal"
+        assert status.run_index_failure_rates[0]["fail_row_count"] == 1
 
 
 def test_operator_status_reports_evaluator_machine_capacity() -> None:

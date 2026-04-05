@@ -38,6 +38,9 @@ def test_dashboard_route() -> None:
     assert b'Dispatch Pending' in body
     assert b'Run Index Summary' in body
     assert b'Best Indexed Designs' in body
+    assert b'Family Leaders' in body
+    assert b'Failure Rates' in body
+    assert b'Run Index Drilldown' in body
     assert b'dispatch-pending-table' in body
     assert b'run-index-summary-table' in body
 
@@ -71,6 +74,8 @@ def test_operator_status_route() -> None:
     assert isinstance(payload["run_index_summary"], dict)
     assert isinstance(payload["run_index_families"], list)
     assert isinstance(payload["run_index_best_designs"], list)
+    assert isinstance(payload["run_index_family_leaders"], list)
+    assert isinstance(payload["run_index_failure_rates"], list)
 
 
 def test_operator_status_change_token_stable_without_state_change() -> None:
@@ -195,3 +200,52 @@ def test_operator_submit_route_queues_retry_request() -> None:
     assert status == 200
     assert payload["result"]["item_id"] == "retry_item"
     assert payload["result"]["already_requested"] is False
+
+
+def test_run_index_query_route() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        db_path = Path(td) / "cp.db"
+        engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
+        create_all(engine)
+
+        from sqlalchemy.orm import Session
+        from control_plane.models.run_index_rows import RunIndexRow
+
+        with Session(engine) as session:
+            session.add(
+                RunIndexRow(
+                    index_order=1,
+                    circuit_type="terminal",
+                    design="sigmoid_demo",
+                    platform="nangate45",
+                    status="ok",
+                    critical_path_ns="1.25",
+                    die_area="100.0",
+                    total_power_mw="0.5",
+                    metrics_path="runs/designs/activations/sigmoid_demo/metrics.csv",
+                )
+            )
+            session.commit()
+
+        previous = os.environ.get("RTLCP_DATABASE_URL")
+        os.environ["RTLCP_DATABASE_URL"] = f"sqlite+pysqlite:///{db_path}"
+        try:
+            app = create_app()
+            status, headers, body = app.handle(
+                "POST",
+                "/api/v1/run-index/query",
+                b'{"circuit_type":"terminal","status":"ok","sort_by":"critical_path_ns","descending":false,"limit":10}',
+            )
+        finally:
+            if previous is None:
+                os.environ.pop("RTLCP_DATABASE_URL", None)
+            else:
+                os.environ["RTLCP_DATABASE_URL"] = previous
+
+    payload = json.loads(body.decode("utf-8"))
+    assert status == 200
+    assert headers["Content-Type"] == "application/json"
+    assert payload["total_count"] == 1
+    assert payload["filtered_count"] == 1
+    assert payload["available_filters"]["circuit_types"] == ["terminal"]
+    assert payload["rows"][0]["design"] == "sigmoid_demo"
