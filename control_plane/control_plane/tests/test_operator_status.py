@@ -24,6 +24,7 @@ from control_plane.models.enums import (
     WorkItemState,
 )
 from control_plane.models.github_links import GitHubLink
+from control_plane.models.run_index_rows import RunIndexRow
 from control_plane.models.runs import Run
 from control_plane.models.task_requests import TaskRequest
 from control_plane.models.worker_leases import WorkerLease
@@ -409,3 +410,82 @@ def test_operator_status_marks_resume_requested_pending_submission(monkeypatch) 
     assert status.pending_submission_items[0]["item_id"] == "pending_item"
     assert status.pending_submission_items[0]["resumable"] is False
     assert status.pending_submission_items[0]["resume_requested"] is True
+
+
+def test_operator_status_includes_run_index_analytics() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        db_path = Path(td) / "cp.db"
+        engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            session.add_all([
+                RunIndexRow(
+                    index_order=0,
+                    circuit_type="activations",
+                    design="terminal_sigmoid_int8_wrapper",
+                    platform="nangate45",
+                    status="ok",
+                    critical_path_ns="0.42",
+                    die_area="12800.0",
+                    total_power_mw="0.00012",
+                    config_hash="cfg1",
+                    param_hash="p1",
+                    tag="sigmoid_a",
+                    result_path="runs/designs/activations/terminal_sigmoid_int8_wrapper/work/p1/result.json",
+                    params_json="{}",
+                    metrics_path="runs/designs/activations/terminal_sigmoid_int8_wrapper/metrics.csv",
+                    design_path="runs/designs/activations/terminal_sigmoid_int8_wrapper",
+                ),
+                RunIndexRow(
+                    index_order=1,
+                    circuit_type="activations",
+                    design="terminal_sigmoid_int8_wrapper",
+                    platform="nangate45",
+                    status="ok",
+                    critical_path_ns="0.40",
+                    die_area="12900.0",
+                    total_power_mw="0.00011",
+                    config_hash="cfg1",
+                    param_hash="p2",
+                    tag="sigmoid_b",
+                    result_path="runs/designs/activations/terminal_sigmoid_int8_wrapper/work/p2/result.json",
+                    params_json="{}",
+                    metrics_path="runs/designs/activations/terminal_sigmoid_int8_wrapper/metrics.csv",
+                    design_path="runs/designs/activations/terminal_sigmoid_int8_wrapper",
+                ),
+                RunIndexRow(
+                    index_order=2,
+                    circuit_type="activations",
+                    design="terminal_tanh_int8_wrapper",
+                    platform="nangate45",
+                    status="fail",
+                    critical_path_ns="",
+                    die_area="",
+                    total_power_mw="",
+                    config_hash="cfg2",
+                    param_hash="p3",
+                    tag="tanh_fail",
+                    result_path="runs/designs/activations/terminal_tanh_int8_wrapper/work/p3/result.json",
+                    params_json="{}",
+                    metrics_path="runs/designs/activations/terminal_tanh_int8_wrapper/metrics.csv",
+                    design_path="runs/designs/activations/terminal_tanh_int8_wrapper",
+                ),
+            ])
+            session.commit()
+
+            status = load_operator_status(session, OperatorStatusRequest(recent_limit=10, repo_root=td))
+
+        assert status.run_index_summary["row_count"] == 3
+        assert status.run_index_summary["ok_row_count"] == 2
+        assert status.run_index_summary["design_count"] == 2
+        assert status.run_index_summary["platform_count"] == 1
+        assert status.run_index_summary["status_counts"] == {"fail": 1, "ok": 2}
+        assert status.run_index_families == [
+            {"circuit_type": "activations", "row_count": 3, "ok_row_count": 2, "design_count": 2}
+        ]
+        assert status.run_index_best_designs[0]["design"] == "terminal_sigmoid_int8_wrapper"
+        assert status.run_index_best_designs[0]["best_critical_path_ns"] == 0.4
+        assert status.run_index_best_designs[0]["ok_row_count"] == 2
+        assert status.run_index_best_designs[1]["design"] == "terminal_tanh_int8_wrapper"
+        assert status.run_index_best_designs[1]["best_critical_path_ns"] is None

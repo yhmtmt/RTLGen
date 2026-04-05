@@ -274,6 +274,18 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
           <h2>State Counts</h2>
           <div class="table-wrap"><table id="states-table"></table></div>
         </div>
+        <div class="panel">
+          <h2>Run Index Summary</h2>
+          <div class="table-wrap"><table id="run-index-summary-table"></table></div>
+        </div>
+        <div class="panel">
+          <h2>Run Index Families</h2>
+          <div class="table-wrap"><table id="run-index-families-table"></table></div>
+        </div>
+        <div class="panel">
+          <h2>Best Indexed Designs</h2>
+          <div class="table-wrap"><table id="run-index-best-designs-table"></table></div>
+        </div>
       </div>
     </section>
   </div>
@@ -300,6 +312,9 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
       pendingSubmissions: document.getElementById("pending-submissions-table"),
       dispatchPending: document.getElementById("dispatch-pending-table"),
       states: document.getElementById("states-table"),
+      runIndexSummary: document.getElementById("run-index-summary-table"),
+      runIndexFamilies: document.getElementById("run-index-families-table"),
+      runIndexBestDesigns: document.getElementById("run-index-best-designs-table"),
     };
 
     let pollHandle = null;
@@ -578,6 +593,31 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
         { key: "name", label: "State" },
         { key: "count", label: "Count" },
       ], stateRows);
+      const runIndexSummaryRows = [
+        { name: "Rows", value: payload.run_index_summary?.row_count || 0 },
+        { name: "OK Rows", value: payload.run_index_summary?.ok_row_count || 0 },
+        { name: "Designs", value: payload.run_index_summary?.design_count || 0 },
+        { name: "Platforms", value: payload.run_index_summary?.platform_count || 0 },
+        { name: "Statuses", value: Object.entries(payload.run_index_summary?.status_counts || {}).map(([name, count]) => `${name}:${count}`).join(", ") },
+      ];
+      renderTable(tables.runIndexSummary, [
+        { key: "name", label: "Metric" },
+        { key: "value", label: "Value" },
+      ], runIndexSummaryRows);
+      renderTable(tables.runIndexFamilies, [
+        { key: "circuit_type", label: "Family" },
+        { key: "row_count", label: "Rows" },
+        { key: "design_count", label: "Designs" },
+        { key: "ok_row_count", label: "OK" },
+      ], payload.run_index_families || []);
+      renderTable(tables.runIndexBestDesigns, [
+        { key: "design", label: "Design", render: (value) => `<span class='mono'>${escapeHtml(value)}</span>` },
+        { key: "platform", label: "Platform" },
+        { key: "ok_row_count", label: "OK" },
+        { key: "best_critical_path_ns", label: "Best CP" },
+        { key: "best_die_area", label: "Best Area" },
+        { key: "best_total_power_mw", label: "Best Power" },
+      ], payload.run_index_best_designs || []);
     }
 
     async function loadStatus() {
@@ -712,6 +752,9 @@ def _status_payload(database_url: str, recent_limit: int) -> dict[str, object]:
         "dispatch_pending_items": status.dispatch_pending_items,
         "recent_failures": status.recent_failures,
         "recent_submissions": status.recent_submissions,
+        "run_index_summary": status.run_index_summary,
+        "run_index_families": status.run_index_families,
+        "run_index_best_designs": status.run_index_best_designs,
     }
     fingerprint_payload = dict(payload)
     fingerprint_payload.pop("generated_utc", None)

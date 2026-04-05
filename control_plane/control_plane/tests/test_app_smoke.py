@@ -36,7 +36,10 @@ def test_dashboard_route() -> None:
     assert b'Operator Controls' in body
     assert b'Pending Submission' in body
     assert b'Dispatch Pending' in body
+    assert b'Run Index Summary' in body
+    assert b'Best Indexed Designs' in body
     assert b'dispatch-pending-table' in body
+    assert b'run-index-summary-table' in body
 
 
 def test_operator_status_route() -> None:
@@ -65,6 +68,9 @@ def test_operator_status_route() -> None:
     assert isinstance(payload["state_counts"], dict)
     assert isinstance(payload["pending_submission_items"], list)
     assert isinstance(payload["dispatch_pending_items"], list)
+    assert isinstance(payload["run_index_summary"], dict)
+    assert isinstance(payload["run_index_families"], list)
+    assert isinstance(payload["run_index_best_designs"], list)
 
 
 def test_operator_status_change_token_stable_without_state_change() -> None:
