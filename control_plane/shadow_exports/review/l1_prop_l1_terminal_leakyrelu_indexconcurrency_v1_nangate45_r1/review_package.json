@@ -1,0 +1,184 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-04-05T12:04:06.163458Z",
+  "item_id": "l1_prop_l1_terminal_leakyrelu_indexconcurrency_v1_nangate45_r1",
+  "run_key": "l1_prop_l1_terminal_leakyrelu_indexconcurrency_v1_nangate45_r1_run_54b27fdab226392e",
+  "layer": "layer1",
+  "flow": "openroad",
+  "task_type": "l1_sweep",
+  "source_commit": "b6569f6cbd0efe7acf0eb2a5dae0973c2141069c",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l1_prop_l1_terminal_leakyrelu_indexconcurrency_v1_nangate45_r1/evaluated.json",
+    "result": {
+      "branch": "eval/l1_prop_l1_terminal_leakyrelu_indexconcurrency_v1_nangate45_r1/s20260405t120404z",
+      "completed_utc": "2026-04-05T12:04:02.913802Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "a6a0faa39497",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260405t120404z][host:a6a0faa39497][item:l1_prop_l1_terminal_leakyrelu_indexconcurrency_v1_nangate45_r1]",
+      "metrics_rows": [
+        {
+          "tag": "terminal_leakyrelu_int8_ng45_v1_97899059",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "1b91e855",
+          "metrics_csv": "runs/designs/activations/terminal_leakyrelu_int8_indexconcurrency_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/terminal_leakyrelu_int8_indexconcurrency_wrapper/work/1b91e855/result.json"
+        },
+        {
+          "tag": "terminal_leakyrelu_int8_ng45_v1_3ba5ddc4",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "bd4c6dc3",
+          "metrics_csv": "runs/designs/activations/terminal_leakyrelu_int8_indexconcurrency_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/terminal_leakyrelu_int8_indexconcurrency_wrapper/work/bd4c6dc3/result.json"
+        },
+        {
+          "tag": "terminal_leakyrelu_int8_ng45_v1_91e30912",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "fba25a3a",
+          "metrics_csv": "runs/designs/activations/terminal_leakyrelu_int8_indexconcurrency_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/terminal_leakyrelu_int8_indexconcurrency_wrapper/work/fba25a3a/result.json"
+        },
+        {
+          "tag": "terminal_leakyrelu_int8_ng45_v1_6b32a08e",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "2cec7cad",
+          "metrics_csv": "runs/designs/activations/terminal_leakyrelu_int8_indexconcurrency_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/terminal_leakyrelu_int8_indexconcurrency_wrapper/work/2cec7cad/result.json"
+        }
+      ],
+      "queue_item_id": "l1_prop_l1_terminal_leakyrelu_indexconcurrency_v1_nangate45_r1",
+      "session_id": "s20260405t120404z",
+      "status": "ok",
+      "summary": "4/4 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "promotion_proposal",
+    "path": "control_plane/shadow_exports/l1_promotions/l1_prop_l1_terminal_leakyrelu_indexconcurrency_v1_nangate45_r1.json",
+    "storage_mode": "repo",
+    "sha256": "8f7bfdde924eacc263ef04ae6cd88a8726ed33655e0b02eeb80ebf836299b79d",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-04-05T12:04:03.793963Z",
+      "item_id": "l1_prop_l1_terminal_leakyrelu_indexconcurrency_v1_nangate45_r1",
+      "run_key": "l1_prop_l1_terminal_leakyrelu_indexconcurrency_v1_nangate45_r1_run_54b27fdab226392e",
+      "layer": "layer1",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l1_sweep",
+      "source_commit": "b6569f6cbd0efe7acf0eb2a5dae0973c2141069c",
+      "objective": "Validate centralized run index export under concurrent submissions.",
+      "input_manifest": {
+        "sweeps": [
+          "runs/designs/activations/sweeps/nangate45_terminal_leakyrelu_int8_v1.json"
+        ],
+        "configs": [
+          "runs/designs/activations/terminal_leakyrelu_int8_indexconcurrency_wrapper/config_terminal_leakyrelu_int8_indexconcurrency.json"
+        ],
+        "out_root": "runs/designs/activations",
+        "design_dirs": [],
+        "macro_manifests": [],
+        "candidate_manifests": [],
+        "required_submodules": []
+      },
+      "proposal_count": 1,
+      "evaluation_record": {
+        "evaluation_mode": "standard",
+        "abstraction_layer": "circuit_block",
+        "result_kind": "physical_metrics",
+        "physical_metrics_present": true,
+        "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+      },
+      "proposal_assessment": null,
+      "proposals": [
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/activations/terminal_leakyrelu_int8_indexconcurrency_wrapper/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "2cec7cad",
+            "tag": "terminal_leakyrelu_int8_ng45_v1_6b32a08e",
+            "result_path": "runs/designs/activations/terminal_leakyrelu_int8_indexconcurrency_wrapper/work/2cec7cad/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 0.184,
+            "die_area": 25600.0,
+            "total_power_mw": 3.08e-05
+          }
+        }
+      ],
+      "trial_summary": {
+        "item_id": "l1_prop_l1_terminal_leakyrelu_indexconcurrency_v1_nangate45_r1",
+        "completed_trials": 1,
+        "success_count": 1,
+        "failure_count": 0,
+        "success_rate": 1.0,
+        "metrics": {
+          "critical_path_ns": {
+            "best": 0.184,
+            "mean": 0.184,
+            "median": 0.184,
+            "max": 0.184
+          },
+          "die_area": {
+            "best": 25600.0,
+            "mean": 25600.0,
+            "median": 25600.0,
+            "max": 25600.0
+          },
+          "total_power_mw": {
+            "best": 3.08e-05,
+            "mean": 3.08e-05,
+            "median": 3.08e-05,
+            "max": 3.08e-05
+          }
+        }
+      },
+      "source_refs": {
+        "trial_metrics_csvs": [
+          "runs/designs/activations/terminal_leakyrelu_int8_indexconcurrency_wrapper/metrics.csv"
+        ],
+        "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_prop_l1_terminal_leakyrelu_indexconcurrency_v1_nangate45_r1/summary_stats.json",
+        "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_prop_l1_terminal_leakyrelu_indexconcurrency_v1_nangate45_r1/failure_stats.json",
+        "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_prop_l1_terminal_leakyrelu_indexconcurrency_v1_nangate45_r1/trial_table.csv"
+      }
+    }
+  },
+  "developer_loop": {
+    "evaluation": {
+      "mode": "standard",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      }
+    },
+    "abstraction": {
+      "layer": "circuit_block"
+    },
+    "proposal_id": "prop_l1_terminal_leakyrelu_indexconcurrency_v1",
+    "proposal_path": "docs/proposals/prop_l1_terminal_leakyrelu_indexconcurrency_v1"
+  },
+  "pr_payload": {
+    "branch": "eval/l1_prop_l1_terminal_leakyrelu_indexconcurrency_v1_nangate45_r1/s20260405t120404z",
+    "title": "eval: run layer1 sweep from nangate45_terminal_leakyrelu_int8_v1 on nangate45",
+    "body_fields": {
+      "host": "a6a0faa39497",
+      "session_id": "s20260405t120404z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_prop_l1_terminal_leakyrelu_indexconcurrency_v1_nangate45_r1"
+    },
+    "body_md": "## Summary\n- item_id: `l1_prop_l1_terminal_leakyrelu_indexconcurrency_v1_nangate45_r1`\n- run_key: `l1_prop_l1_terminal_leakyrelu_indexconcurrency_v1_nangate45_r1_run_54b27fdab226392e`\n- layer: `layer1`\n- task_type: `l1_sweep`\n- status: `ok`\n- summary: `4/4 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l1_prop_l1_terminal_leakyrelu_indexconcurrency_v1_nangate45_r1/evaluated.json`\n- metrics_rows_count: `4`\n- review_artifact: `promotion_proposal` at `control_plane/shadow_exports/l1_promotions/l1_prop_l1_terminal_leakyrelu_indexconcurrency_v1_nangate45_r1.json`\n\n## Developer Context\n- proposal_id: `prop_l1_terminal_leakyrelu_indexconcurrency_v1`\n- proposal_path: `docs/proposals/prop_l1_terminal_leakyrelu_indexconcurrency_v1`\n- reviewer_first_read: `docs/proposals/prop_l1_terminal_leakyrelu_indexconcurrency_v1` plus `docs/developer_agent_review.md`\n\n## Evaluation Mode\n- evaluation_mode: `standard`\n- abstraction_layer: `circuit_block`\n- evaluation_summary: `Physical metrics recorded from an accepted status=ok Layer 1 row.`\n\n## Checklist\n- [ ] Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge\n- [ ] Include metrics row references for each completed design\n- [ ] Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
