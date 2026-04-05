@@ -1,0 +1,27 @@
+{
+  "item_id": "l1_prop_l1_terminal_hardtanh_indexconcurrency_v1_nangate45_r1",
+  "completed_trials": 2,
+  "success_count": 1,
+  "failure_count": 1,
+  "success_rate": 0.5,
+  "metrics": {
+    "critical_path_ns": {
+      "best": 0.1903,
+      "mean": 0.1903,
+      "median": 0.1903,
+      "max": 0.1903
+    },
+    "die_area": {
+      "best": 25600.0,
+      "mean": 25600.0,
+      "median": 25600.0,
+      "max": 25600.0
+    },
+    "total_power_mw": {
+      "best": 3.62e-05,
+      "mean": 3.62e-05,
+      "median": 3.62e-05,
+      "max": 3.62e-05
+    }
+  }
+}
