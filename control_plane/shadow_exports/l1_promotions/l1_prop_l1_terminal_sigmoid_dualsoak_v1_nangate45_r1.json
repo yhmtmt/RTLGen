@@ -1,0 +1,88 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-04-05T07:35:44.792025Z",
+  "item_id": "l1_prop_l1_terminal_sigmoid_dualsoak_v1_nangate45_r1",
+  "run_key": "l1_prop_l1_terminal_sigmoid_dualsoak_v1_nangate45_r1_run_271f9b5be7ee1f2e",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "21bbfe22081377aa52fe5fa9934ba2de1518cb9a",
+  "objective": "Evaluate a fresh sigmoid terminal block wrapper under the standard Nangate45 sweep for concurrent multi-evaluator soak coverage.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/activations/sweeps/nangate45_terminal_sigmoid_int8_pwl_v1.json"
+    ],
+    "configs": [
+      "runs/designs/activations/terminal_sigmoid_int8_pwl_dualsoak_wrapper/config_terminal_sigmoid_int8_pwl_dualsoak.json"
+    ],
+    "out_root": "runs/designs/activations",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 1,
+  "evaluation_record": {
+    "evaluation_mode": "measurement_only",
+    "abstraction_layer": "circuit_block",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/terminal_sigmoid_int8_pwl_dualsoak_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "d3ba16d6",
+        "tag": "terminal_sigmoid_int8_pwl_ng45_v1_91e30912",
+        "result_path": "runs/designs/activations/terminal_sigmoid_int8_pwl_dualsoak_wrapper/work/d3ba16d6/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 0.1904,
+        "die_area": 25600.0,
+        "total_power_mw": 5.84e-05
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_prop_l1_terminal_sigmoid_dualsoak_v1_nangate45_r1",
+    "completed_trials": 2,
+    "success_count": 1,
+    "failure_count": 1,
+    "success_rate": 0.5,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 0.1904,
+        "mean": 0.1904,
+        "median": 0.1904,
+        "max": 0.1904
+      },
+      "die_area": {
+        "best": 25600.0,
+        "mean": 25600.0,
+        "median": 25600.0,
+        "max": 25600.0
+      },
+      "total_power_mw": {
+        "best": 5.84e-05,
+        "mean": 5.84e-05,
+        "median": 5.84e-05,
+        "max": 5.84e-05
+      }
+    }
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/activations/terminal_sigmoid_int8_pwl_dualsoak_wrapper/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_prop_l1_terminal_sigmoid_dualsoak_v1_nangate45_r1/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_prop_l1_terminal_sigmoid_dualsoak_v1_nangate45_r1/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_prop_l1_terminal_sigmoid_dualsoak_v1_nangate45_r1/trial_table.csv"
+  }
+}
