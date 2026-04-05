@@ -1,0 +1,2 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_prop_l1_terminal_sigmoid_longsoak_v1_nangate45_r1_run_ab3ef6cab8e3ddae,1,1,0,succeeded,runs/designs/activations/terminal_sigmoid_int8_pwl_longsoak_wrapper/terminal_sigmoid_int8_pwl_longsoak_wrapper/metrics.csv,0.1904,25600.0,5.84e-05,none,,
