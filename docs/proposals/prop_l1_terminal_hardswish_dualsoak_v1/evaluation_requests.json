@@ -1,0 +1,18 @@
+{
+  "proposal_id": "prop_l1_terminal_hardswish_dualsoak_v1",
+  "source_commit": "21bbfe22081377aa52fe5fa9934ba2de1518cb9a",
+  "requested_items": [
+    {
+      "item_id": "l1_prop_l1_terminal_hardswish_dualsoak_v1_nangate45_r1",
+      "task_type": "l1_sweep",
+      "objective": "Evaluate a fresh hardswish terminal block wrapper under the standard Nangate45 sweep for concurrent multi-evaluator soak coverage.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "circuit_block",
+      "status": "merged",
+      "merged_pr_number": 157,
+      "merge_commit": "a7a2678ab8e0e9c10b54710b09487bac920c828c",
+      "merged_utc": "2026-04-05T07:45:38.480299Z",
+      "notes": "Merged via PR #157 and merge a7a2678ab8e0e9c10b54710b09487bac920c828c at 2026-04-05T07:45:38.480299Z."
+    }
+  ]
+}
