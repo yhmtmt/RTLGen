@@ -522,5 +522,4 @@ def test_operator_status_includes_run_index_analytics() -> None:
         assert status.run_index_best_designs[0]["design"] == "terminal_sigmoid_int8_wrapper"
         assert status.run_index_best_designs[0]["best_critical_path_ns"] == 0.4
         assert status.run_index_best_designs[0]["ok_row_count"] == 2
-        assert status.run_index_best_designs[1]["design"] == "terminal_tanh_int8_wrapper"
-        assert status.run_index_best_designs[1]["best_critical_path_ns"] is None
+        assert len(status.run_index_best_designs) == 1
