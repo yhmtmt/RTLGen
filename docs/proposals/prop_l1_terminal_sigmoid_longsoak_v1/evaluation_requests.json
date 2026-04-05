@@ -1,0 +1,18 @@
+{
+  "proposal_id": "prop_l1_terminal_sigmoid_longsoak_v1",
+  "source_commit": "5ba908336f71cd3a838562fc871f16ca50bc8241",
+  "requested_items": [
+    {
+      "item_id": "l1_prop_l1_terminal_sigmoid_longsoak_v1_nangate45_r1",
+      "task_type": "l1_sweep",
+      "objective": "Run a Layer1 nangate45 OpenROAD sweep for 1 configs using nangate45_terminal_sigmoid_int8_pwl_v1.json and record lightweight design metrics for comparison.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "circuit_block",
+      "status": "merged",
+      "merged_pr_number": 163,
+      "merge_commit": "d15674eaf20007f9c3539c7a7bc93d7145211075",
+      "merged_utc": "2026-04-05T08:49:25.783134Z",
+      "notes": "Merged via PR #163 and merge d15674eaf20007f9c3539c7a7bc93d7145211075 at 2026-04-05T08:49:25.783134Z."
+    }
+  ]
+}
