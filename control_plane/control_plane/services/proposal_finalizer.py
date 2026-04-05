@@ -19,6 +19,7 @@ from control_plane.models.run_events import RunEvent
 from control_plane.models.runs import Run
 from control_plane.models.work_items import WorkItem
 from control_plane.services.docs_paths import resolve_proposal_file
+from control_plane.services.proposal_scaffold import ensure_proposal_scaffold
 
 
 class ProposalFinalizationError(RuntimeError):
@@ -170,6 +171,35 @@ def _proposal_path(repo_root: Path, work_item: WorkItem) -> Path | None:
     proposal_path = str(developer_loop.get("proposal_path", "")).strip()
     proposal_id = str(developer_loop.get("proposal_id", "")).strip()
     return resolve_proposal_file(repo_root, proposal_path=proposal_path or None, proposal_id=proposal_id or None)
+
+
+def _scaffold_proposal_artifacts(
+    repo_root: Path,
+    *,
+    work_item: WorkItem,
+    run: Run,
+    proposal_path: Path,
+) -> None:
+    developer_loop = _developer_loop_payload(work_item)
+    proposal_id = str(developer_loop.get("proposal_id", "")).strip() or proposal_path.parent.name
+    source_commit = str(run.checkout_commit or work_item.source_commit or "").strip() or "pending"
+    if work_item.task_type == "l1_sweep":
+        layer = "layer1"
+        kind = "circuit_block"
+    elif work_item.task_type == "l2_campaign":
+        layer = "layer2"
+        kind = "architecture"
+    else:
+        layer = None
+        kind = None
+    ensure_proposal_scaffold(
+        repo_root=repo_root,
+        proposal_dir=proposal_path.parent,
+        proposal_id=proposal_id,
+        source_commit=source_commit,
+        layer=layer,
+        kind=kind,
+    )
 
 
 def _requested_item_abstraction_layer(work_item: WorkItem) -> str:
@@ -593,6 +623,7 @@ def finalize_after_merge(session: Session, request: ProposalFinalizeRequest) -> 
         if not merge_commit:
             merge_commit = prepared_repo_head
 
+    _scaffold_proposal_artifacts(repo_root, work_item=work_item, run=run, proposal_path=proposal_path)
     proposal_payload = _load_json(proposal_path)
     proposal_id = str(proposal_payload.get("proposal_id", "")).strip() or proposal_path.parent.name
     evaluation_requests_path = proposal_path.parent / "evaluation_requests.json"
