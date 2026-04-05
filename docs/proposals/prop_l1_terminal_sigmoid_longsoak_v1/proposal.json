@@ -1,0 +1,45 @@
+{
+  "proposal_id": "prop_l1_terminal_sigmoid_longsoak_v1",
+  "created_utc": "2026-04-05T08:40:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "title": "Terminal int8 sigmoid long soak block",
+  "hypothesis": "Measure a fresh standalone sigmoid activation block on a unique wrapper path during a longer multi-evaluator soak.",
+  "direct_comparison": {
+    "primary_question": "Does this fresh sigmoid Layer 1 block submit and finalize cleanly during the longer concurrent soak?",
+    "include": [
+      "single cheap Nangate45 sweep on a unique canonical wrapper path"
+    ],
+    "exclude": [
+      "paired L2 follow-on work until the long soak behavior is confirmed"
+    ],
+    "follow_on_broad_sweep": [
+      "optional broader parameter or seed sweep after the long soak settles"
+    ]
+  },
+  "expected_benefit": [
+    "Prove stable multi-evaluator L1 behavior on a fresh activation proposal line."
+  ],
+  "risks": [
+    "May collapse to no-diff if canonical output paths are accidentally reused."
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "task_type": "l1_sweep",
+      "evaluation_mode": "measurement_only",
+      "objective": "nangate45 lightweight physical metrics",
+      "cost_class": "low",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": false,
+      "requires_materialized_refs": false,
+      "expected_result": {
+        "direction": "collect_baseline_metrics",
+        "reason": "Establish fresh canonical evidence during the longer multi-evaluator soak."
+      }
+    }
+  ],
+  "baseline_refs": [],
+  "knowledge_refs": []
+}

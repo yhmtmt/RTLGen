@@ -1,0 +1,23 @@
+{
+  "version": "1.1",
+  "operands": [
+    {
+      "name": "din",
+      "dimensions": 1,
+      "bit_width": 8,
+      "signed": true
+    }
+  ],
+  "operations": [
+    {
+      "type": "activation",
+      "module_name": "terminal_leakyrelu_int8_longsoak",
+      "operand": "din",
+      "options": {
+        "function": "leaky_relu",
+        "alpha_num": 1,
+        "alpha_den": 8
+      }
+    }
+  ]
+}
