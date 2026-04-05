@@ -20,6 +20,7 @@ from control_plane.models.runs import Run
 from control_plane.models.work_items import WorkItem
 from control_plane.services.docs_paths import resolve_proposal_file
 from control_plane.services.proposal_scaffold import ensure_proposal_scaffold
+from control_plane.services.run_index_exporter import refresh_run_index
 
 
 class ProposalFinalizationError(RuntimeError):
@@ -792,6 +793,8 @@ def finalize_after_merge(session: Session, request: ProposalFinalizeRequest) -> 
     _write_json(promotion_result_path, promotion_result)
     analysis_report_path.write_text(analysis_report, encoding="utf-8")
 
+    run_index_refresh = refresh_run_index(session, repo_root=str(repo_root))
+
     commit_sha: str | None = None
     if request.git_publish:
         if not _git_dirty(repo_root):
@@ -802,6 +805,8 @@ def finalize_after_merge(session: Session, request: ProposalFinalizeRequest) -> 
             str(promotion_result_path.relative_to(repo_root)),
             str(analysis_report_path.relative_to(repo_root)),
         ]
+        if not run_index_refresh.skipped:
+            rel_paths.append("runs/index.csv")
         _run_git(repo_root, "add", *rel_paths)
         _run_git(
             repo_root,
@@ -812,6 +817,19 @@ def finalize_after_merge(session: Session, request: ProposalFinalizeRequest) -> 
         )
         _run_git(repo_root, "push", "origin", "HEAD:master")
         commit_sha = _run_git(repo_root, "rev-parse", "HEAD")
+
+    if not run_index_refresh.skipped:
+        session.add(
+            RunEvent(
+                run_id=run.id,
+                event_time=utcnow(),
+                event_type="run_index_refreshed",
+                event_payload={
+                    "index_path": str(Path(run_index_refresh.index_path).relative_to(repo_root)),
+                    "row_count": run_index_refresh.row_count,
+                },
+            )
+        )
 
     _update_merged_link_finalization_metadata(
         session,

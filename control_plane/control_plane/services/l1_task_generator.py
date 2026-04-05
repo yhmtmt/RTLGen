@@ -571,7 +571,7 @@ def _build_payload(
             "expected_outputs": expected_outputs,
             "acceptance": [
                 "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
-                "Committed outputs stay lightweight (metrics.csv and runs/index.csv only)",
+                "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
                 "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass",
             ],
         },
@@ -586,7 +586,7 @@ def _build_payload(
                 "queue_item_id": item_id,
             },
             "checklist": [
-                "Commit only lightweight metrics and regenerated runs/index.csv",
+                "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
                 "Include metrics row references for each completed design",
                 "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing",
             ],
@@ -647,7 +647,6 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
     for command in command_manifest:
         command["run"] = command["run"].format(platform=request.platform, sweep_path=sweep_path)
     expected_outputs = [target.expected_metrics_path for target in targets]
-    expected_outputs.append("runs/index.csv")
 
     item_id = request.item_id or _default_item_id(
         sweep_path=sweep_path,

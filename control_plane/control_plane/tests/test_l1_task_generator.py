@@ -188,7 +188,6 @@ def test_generate_l1_sweep_task_creates_ready_work_item() -> None:
             assert work_item.command_manifest[3]["run"] == "python3 scripts/validate_runs.py --skip_eval_queue"
             assert work_item.expected_outputs == [
                 "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv",
-                "runs/index.csv",
             ]
             payload = work_item.task_request.request_payload
             assert payload["layer"] == "layer1"
@@ -538,7 +537,6 @@ def test_generate_l1_sweep_task_supports_make_target_for_integrated_blocks() -> 
             assert "--make_target 1_1_yosys_canonicalize" in work_item.command_manifest[2]["run"]
             assert work_item.expected_outputs == [
                 "runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/metrics.csv",
-                "runs/index.csv",
             ]
             assert work_item.task_request.request_payload["developer_loop"]["evaluation"]["mode"] == "synth_prefilter"
 

@@ -60,8 +60,23 @@ def _is_canonical_runs_evidence(rel_path: str) -> bool:
     parts = Path(rel_path).parts
     if not parts or parts[0] != "runs":
         return False
+    if rel_path == "runs/index.csv":
+        return False
     blocked = {"work", "artifacts", "comparisons"}
     return not any(part in blocked for part in parts)
+
+
+def _canonical_runs_diff_paths(*paths: str) -> list[str]:
+    ordered: list[str] = []
+    seen: set[str] = set()
+    for rel_path in paths:
+        if not _is_canonical_runs_evidence(rel_path):
+            continue
+        if rel_path in seen:
+            continue
+        seen.add(rel_path)
+        ordered.append(rel_path)
+    return ordered
 
 
 def _canonical_evidence_files(*, repo_root: Path, work_item: WorkItem) -> list[str]:
@@ -310,6 +325,7 @@ def prepare_submission_branch(session: Session, request: SubmissionPrepareReques
         files_to_copy.append(review_rel)
     files_to_copy.extend(evidence_files)
     files_to_copy.extend(supporting_files)
+    canonical_diff_paths = _canonical_runs_diff_paths(*evidence_files, *supporting_files)
 
     pr_body_rel = f"control_plane/shadow_exports/review/{work_item.item_id}/pr_body.md"
     frozen_file_map: dict[str, str] = {}
@@ -363,7 +379,7 @@ def prepare_submission_branch(session: Session, request: SubmissionPrepareReques
             *supporting_files,
         )
         staged_paths = _staged_paths(worktree_path)
-        if evidence_files and not any(path in staged_paths for path in evidence_files):
+        if canonical_diff_paths and not any(path in staged_paths for path in canonical_diff_paths):
             raise SubmissionPrepareError(
                 f"submission has no canonical runs evidence diff for {work_item.item_id}"
             )
@@ -400,6 +416,7 @@ def prepare_submission_branch(session: Session, request: SubmissionPrepareReques
         "review_artifact_path": review_rel or None,
         "evidence_paths": evidence_files,
         "supporting_paths": supporting_files,
+        "canonical_diff_paths": canonical_diff_paths,
         "frozen_file_map": frozen_file_map,
         "pr_title": pr_title,
         "pr_body_path": pr_body_rel,

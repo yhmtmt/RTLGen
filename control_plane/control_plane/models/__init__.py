@@ -4,6 +4,7 @@ from control_plane.models.artifacts import Artifact
 from control_plane.models.base import Base
 from control_plane.models.github_links import GitHubLink
 from control_plane.models.queue_reconciliations import QueueReconciliation
+from control_plane.models.run_index_rows import RunIndexRow
 from control_plane.models.run_events import RunEvent
 from control_plane.models.runs import Run
 from control_plane.models.task_requests import TaskRequest
@@ -16,6 +17,7 @@ __all__ = [
     "Base",
     "GitHubLink",
     "QueueReconciliation",
+    "RunIndexRow",
     "Run",
     "RunEvent",
     "TaskRequest",

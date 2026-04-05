@@ -123,6 +123,10 @@ def _seed_l2_reviewable(session: Session, repo_root: Path) -> tuple[str, str]:
         "title": "Layer2 submit demo",
         "layer": "layer2",
         "flow": "openroad",
+        "developer_loop": {
+            "evaluation": {"mode": "measurement_only"},
+            "comparison": {"role": "baseline"},
+        },
         "handoff": {
             "branch": "eval/l2_submit_demo/<session_id>",
             "pr_title": "eval: run layer2 submit demo",
@@ -258,7 +262,7 @@ def _seed_l1_reviewable(session: Session, repo_root: Path) -> tuple[str, str]:
         source_mode="config",
         input_manifest={"configs": ["examples/config_softmax_rowwise_int8.json"]},
         command_manifest=[],
-        expected_outputs=[metrics_rel, "runs/index.csv"],
+        expected_outputs=[metrics_rel],
         acceptance_rules=[],
         source_commit="deadbeef",
     )
@@ -346,7 +350,7 @@ def _seed_l1_trial_reviewable(session: Session, repo_root: Path) -> tuple[str, s
         source_mode="config",
         input_manifest={"configs": ["examples/config_softmax_rowwise_int8.json"]},
         command_manifest=[],
-        expected_outputs=["runs/index.csv"],
+        expected_outputs=[],
         acceptance_rules=[],
         source_commit="deadbeef",
     )
@@ -401,10 +405,8 @@ def test_prepare_submission_branch_creates_commit_and_manifest() -> None:
             manifest = json.loads((repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "submission_manifest.json").read_text())
             assert manifest["branch_name"] == result.branch_name
             assert manifest["evidence_paths"] == []
-            assert manifest["supporting_paths"] == [
-                "runs/campaigns/demo_l2/artifacts/mapper/fp16_nm1_demo/demo_model/schedule.yml",
-                "runs/campaigns/demo_l2/artifacts/mapper/fp16_nm1_demo/relu_model/schedule.yml",
-            ]
+            assert "runs/campaigns/demo_l2/artifacts/mapper/fp16_nm1_demo/demo_model/schedule.yml" in manifest["supporting_paths"]
+            assert "runs/campaigns/demo_l2/artifacts/mapper/fp16_nm1_demo/relu_model/schedule.yml" in manifest["supporting_paths"]
             assert "gh pr create --draft" in manifest["pr_create_command"]
             assert (
                 Path(result.worktree_path)
@@ -446,16 +448,14 @@ def test_prepare_submission_branch_includes_canonical_runs_evidence_for_real_ite
             manifest = json.loads((repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "submission_manifest.json").read_text())
             assert manifest["evidence_paths"] == [
                 "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv",
-                "runs/index.csv",
             ]
             frozen_map = manifest["frozen_file_map"]
             assert frozen_map["runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv"].startswith(
                 f"control_plane/shadow_exports/frozen_review/{item_id}/{run_key}/"
             )
             assert (repo_root / frozen_map["runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv"]).exists()
-            assert (repo_root / frozen_map["runs/index.csv"]).exists()
             assert (Path(result.worktree_path) / "runs" / "designs" / "activations" / "softmax_rowwise_int8_r4_wrapper" / "metrics.csv").exists()
-            assert (Path(result.worktree_path) / "runs" / "index.csv").exists()
+            assert not (Path(result.worktree_path) / "runs" / "index.csv").exists()
 
 
 def test_prepare_submission_branch_stages_trial_metrics_from_source_refs() -> None:
@@ -481,7 +481,8 @@ def test_prepare_submission_branch_stages_trial_metrics_from_source_refs() -> No
             )
 
             manifest = json.loads((repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "submission_manifest.json").read_text())
-            assert manifest["evidence_paths"] == ["runs/index.csv"]
+            assert manifest["evidence_paths"] == []
+            assert manifest["canonical_diff_paths"] == [metrics_rel]
             assert metrics_rel in manifest["supporting_paths"]
             assert (repo_root / manifest["frozen_file_map"][metrics_rel]).exists()
             assert (Path(result.worktree_path) / metrics_rel).exists()
@@ -545,7 +546,6 @@ def test_prepare_submission_branch_rejects_missing_canonical_evidence_diff() -> 
                 repo_root,
                 "add",
                 "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv",
-                "runs/index.csv",
             )
             subprocess.run(
                 ["git", "-C", str(repo_root), "commit", "-m", "seed canonical evidence"],

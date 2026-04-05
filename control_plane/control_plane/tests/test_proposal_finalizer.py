@@ -14,6 +14,7 @@ from control_plane.db import create_all
 from control_plane.models.artifacts import Artifact
 from control_plane.models.enums import ExecutorType, FlowName, GitHubLinkState, LayerName, RunStatus, WorkItemState
 from control_plane.models.github_links import GitHubLink
+from control_plane.models.run_index_rows import RunIndexRow
 from control_plane.models.runs import Run
 from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
@@ -192,6 +193,187 @@ def test_finalize_accepts_directory_style_proposal_path() -> None:
         assert result.decision == "promote"
         promotion_result = json.loads((proposal_dir / "promotion_result.json").read_text())
         assert promotion_result["merge_commit"] == "facefeed"
+
+
+
+def test_finalize_after_merge_refreshes_central_runs_index() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        proposal_id = "prop_index_export_v1"
+        proposal_dir = _seed_repo_files(
+            repo_root,
+            proposal_id,
+            [
+                {
+                    "item_id": "index_export_r1",
+                    "task_type": "l1_sweep",
+                    "objective": "index export",
+                    "status": "pending",
+                }
+            ],
+        )
+        _write(
+            repo_root / "runs" / "designs" / "demo" / "demo_wrapper" / "metrics.csv",
+            (
+                "platform,status,param_hash,tag,critical_path_ns,die_area,total_power_mw,config_hash,params_json,result_path\n"
+                'nangate45,ok,hash1,tag1,1.0,2.0,3.0,cfg1,"{""CLOCK_PERIOD"": 5.0}",runs/designs/demo/demo_wrapper/work/hash1/result.json\n'
+            ),
+        )
+        _write(
+            repo_root / "scripts" / "build_runs_index.py",
+            (
+                "#!/usr/bin/env python3\n"
+                "import csv\n"
+                "from pathlib import Path\n"
+                "root = Path(__file__).resolve().parent.parent\n"
+                "out = root / 'runs' / 'index.csv'\n"
+                "out.parent.mkdir(parents=True, exist_ok=True)\n"
+                "with out.open('w', newline='', encoding='utf-8') as handle:\n"
+                "    writer = csv.DictWriter(handle, fieldnames=[\n"
+                "        'circuit_type','design','platform','status','critical_path_ns','die_area','total_power_mw',\n"
+                "        'config_hash','param_hash','tag','result_path','params_json','metrics_path','design_path',\n"
+                "        'sram_area_um2','sram_read_energy_pj','sram_write_energy_pj','sram_max_access_time_ns'])\n"
+                "    writer.writeheader()\n"
+                "    writer.writerow({\n"
+                "        'circuit_type': 'demo',\n"
+                "        'design': 'demo_wrapper',\n"
+                "        'platform': 'nangate45',\n"
+                "        'status': 'ok',\n"
+                "        'critical_path_ns': '1.0',\n"
+                "        'die_area': '2.0',\n"
+                "        'total_power_mw': '3.0',\n"
+                "        'config_hash': 'cfg1',\n"
+                "        'param_hash': 'hash1',\n"
+                "        'tag': 'tag1',\n"
+                "        'result_path': 'runs/designs/demo/demo_wrapper/work/hash1/result.json',\n"
+                "        'params_json': '{\"CLOCK_PERIOD\": 5.0}',\n"
+                "        'metrics_path': 'runs/designs/demo/demo_wrapper/metrics.csv',\n"
+                "        'design_path': 'runs/designs/demo/demo_wrapper',\n"
+                "        'sram_area_um2': '',\n"
+                "        'sram_read_energy_pj': '',\n"
+                "        'sram_write_energy_pj': '',\n"
+                "        'sram_max_access_time_ns': '',\n"
+                "    })\n"
+            ),
+        )
+        payload_path = repo_root / "control_plane" / "shadow_exports" / "l1_promotions" / "index_export_r1.json"
+        _write(
+            payload_path,
+            json.dumps(
+                {
+                    "item_id": "index_export_r1",
+                    "run_key": "index_export_r1_run_1",
+                    "source_commit": "abc123",
+                    "evaluation_record": {
+                        "evaluation_mode": "measurement_only",
+                        "abstraction_layer": "circuit_block",
+                        "summary": "ok",
+                    },
+                    "proposals": [
+                        {
+                            "metrics_ref": {
+                                "metrics_csv": "runs/designs/demo/demo_wrapper/metrics.csv",
+                                "platform": "nangate45",
+                                "status": "ok",
+                            },
+                            "metric_summary": {
+                                "critical_path_ns": 1.0,
+                                "die_area": 2.0,
+                                "total_power_mw": 3.0,
+                            },
+                        }
+                    ],
+                },
+                indent=2,
+            )
+            + "\n",
+        )
+
+        with _session() as session:
+            task = TaskRequest(
+                request_key="l1:index_export_r1",
+                source="test",
+                requested_by="tester",
+                title="index export l1",
+                description="index export objective",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                priority=1,
+                request_payload={
+                    "developer_loop": {
+                        "proposal_id": proposal_id,
+                        "proposal_path": str((proposal_dir / "proposal.json").relative_to(repo_root)),
+                        "evaluation": {"mode": "measurement_only"},
+                        "abstraction": {"layer": "circuit_block"},
+                    },
+                    "task": {"objective": "index export objective"},
+                },
+            )
+            session.add(task)
+            session.flush()
+            work_item = WorkItem(
+                work_item_key="l1:index_export_r1",
+                task_request_id=task.id,
+                item_id="index_export_r1",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                platform="nangate45",
+                task_type="l1_sweep",
+                state=WorkItemState.MERGED,
+                priority=1,
+                input_manifest={},
+                command_manifest=[],
+                expected_outputs=["runs/designs/demo/demo_wrapper/metrics.csv"],
+                acceptance_rules=[],
+                source_commit="abc123",
+            )
+            session.add(work_item)
+            session.flush()
+            run = Run(
+                run_key="index_export_r1_run_1",
+                work_item_id=work_item.id,
+                attempt=1,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.SUCCEEDED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="abc123",
+                result_summary="ok",
+                result_payload={"queue_result": {"status": "ok"}},
+            )
+            session.add(run)
+            session.flush()
+            session.add(
+                Artifact(
+                    run_id=run.id,
+                    kind="promotion_proposal",
+                    storage_mode="repo",
+                    path=str(payload_path.relative_to(repo_root)),
+                    sha256="x",
+                    metadata_={},
+                )
+            )
+            session.commit()
+
+            result = finalize_after_merge(
+                session,
+                ProposalFinalizeRequest(
+                    repo_root=str(repo_root),
+                    item_id="index_export_r1",
+                    pr_number=150,
+                    merge_commit="feedface",
+                    merged_utc="2026-04-05T00:00:00Z",
+                    git_publish=False,
+                ),
+            )
+
+            assert result.skipped is False
+            index_rows = session.query(RunIndexRow).order_by(RunIndexRow.index_order.asc()).all()
+            assert len(index_rows) == 1
+            assert index_rows[0].design == "demo_wrapper"
+            exported = (repo_root / "runs" / "index.csv").read_text(encoding="utf-8")
+            assert "demo_wrapper" in exported
+
 
 
 
