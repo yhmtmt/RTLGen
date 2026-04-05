@@ -1,0 +1,18 @@
+{
+  "proposal_id": "prop_l1_terminal_hardtanh_dualsoak_v1",
+  "source_commit": "21bbfe22081377aa52fe5fa9934ba2de1518cb9a",
+  "requested_items": [
+    {
+      "item_id": "l1_prop_l1_terminal_hardtanh_dualsoak_v1_nangate45_r1",
+      "task_type": "l1_sweep",
+      "objective": "Evaluate a fresh hardtanh terminal block wrapper under the standard Nangate45 sweep for concurrent multi-evaluator soak coverage.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "circuit_block",
+      "status": "merged",
+      "merged_pr_number": 159,
+      "merge_commit": "86d8a34ec6dc43b6655f135e016a5603fdba9194",
+      "merged_utc": "2026-04-05T07:50:46.499415Z",
+      "notes": "Merged via PR #159 and merge 86d8a34ec6dc43b6655f135e016a5603fdba9194 at 2026-04-05T07:50:46.499415Z."
+    }
+  ]
+}
