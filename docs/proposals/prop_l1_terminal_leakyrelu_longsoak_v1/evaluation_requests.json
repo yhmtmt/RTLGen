@@ -1,0 +1,18 @@
+{
+  "proposal_id": "prop_l1_terminal_leakyrelu_longsoak_v1",
+  "source_commit": "5ba908336f71cd3a838562fc871f16ca50bc8241",
+  "requested_items": [
+    {
+      "item_id": "l1_prop_l1_terminal_leakyrelu_longsoak_v1_nangate45_r1",
+      "task_type": "l1_sweep",
+      "objective": "Run a Layer1 nangate45 OpenROAD sweep for 1 configs using nangate45_terminal_leakyrelu_int8_v1.json and record lightweight design metrics for comparison.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "circuit_block",
+      "status": "merged",
+      "merged_pr_number": 162,
+      "merge_commit": "c3b3700698d063033a07a9804620a4bfb55cf4f9",
+      "merged_utc": "2026-04-05T08:49:21.322874Z",
+      "notes": "Merged via PR #162 and merge c3b3700698d063033a07a9804620a4bfb55cf4f9 at 2026-04-05T08:49:21.322874Z."
+    }
+  ]
+}
