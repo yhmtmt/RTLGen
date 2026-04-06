@@ -1,0 +1,18 @@
+{
+  "proposal_id": "prop_l1_terminal_sigmoid_seedvariance_v2",
+  "source_commit": "5f98e833e88c6c71d3676b40f6551f024af220d9",
+  "requested_items": [
+    {
+      "item_id": "l1_prop_l1_terminal_sigmoid_seedvariance_v2_nangate45_r2",
+      "task_type": "l1_sweep",
+      "objective": "measure_seed_variance",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "circuit_block",
+      "status": "merged",
+      "merged_pr_number": 170,
+      "merge_commit": "85a2aa4c4577b16223d2f6b705e97e39c4fc49a7",
+      "merged_utc": "2026-04-06T22:16:35.040203Z",
+      "notes": "Merged via PR #170 and merge 85a2aa4c4577b16223d2f6b705e97e39c4fc49a7 at 2026-04-06T22:16:35.040203Z."
+    }
+  ]
+}
