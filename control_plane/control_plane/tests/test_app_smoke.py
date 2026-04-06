@@ -40,6 +40,8 @@ def test_dashboard_route() -> None:
     assert b'Best Indexed Designs' in body
     assert b'Family Leaders' in body
     assert b'Failure Rates' in body
+    assert b'Design Variance' in body
+    assert b'Failure Hotspots' in body
     assert b'Run Index Drilldown' in body
     assert b'dispatch-pending-table' in body
     assert b'run-index-summary-table' in body
@@ -76,6 +78,8 @@ def test_operator_status_route() -> None:
     assert isinstance(payload["run_index_best_designs"], list)
     assert isinstance(payload["run_index_family_leaders"], list)
     assert isinstance(payload["run_index_failure_rates"], list)
+    assert isinstance(payload["run_index_design_variance"], list)
+    assert isinstance(payload["run_index_failure_hotspots"], list)
 
 
 def test_operator_status_change_token_stable_without_state_change() -> None:

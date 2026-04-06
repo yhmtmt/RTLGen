@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass
+import math
 
 from sqlalchemy.orm import Session
 
@@ -25,6 +26,23 @@ def _comparable_critical_path(value: object) -> float | None:
     if numeric is None or numeric <= 0:
         return None
     return numeric
+
+
+def _mean(values: list[float]) -> float | None:
+    if not values:
+        return None
+    return sum(values) / len(values)
+
+
+def _sample_stddev(values: list[float]) -> float | None:
+    if not values:
+        return None
+    if len(values) == 1:
+        return 0.0
+    avg = _mean(values)
+    assert avg is not None
+    variance = sum((value - avg) ** 2 for value in values) / (len(values) - 1)
+    return math.sqrt(variance)
 
 
 @dataclass(frozen=True)
@@ -54,6 +72,8 @@ class RunIndexComparativeResult:
     best_designs: list[dict[str, object]]
     family_leaders: list[dict[str, object]]
     failure_rates: list[dict[str, object]]
+    design_variance: list[dict[str, object]]
+    failure_hotspots: list[dict[str, object]]
 
 
 def _base_rows(session: Session) -> list[RunIndexRow]:
@@ -147,6 +167,8 @@ def comparative_run_index(session: Session, *, limit: int) -> RunIndexComparativ
             best_designs=[],
             family_leaders=[],
             failure_rates=[],
+            design_variance=[],
+            failure_hotspots=[],
         )
 
     status_counts: Counter[str] = Counter()
@@ -183,23 +205,29 @@ def comparative_run_index(session: Session, *, limit: int) -> RunIndexComparativ
                 "platform": platform,
                 "row_count": 0,
                 "ok_row_count": 0,
+                "fail_row_count": 0,
                 "metrics_path": str(row.metrics_path or "").strip(),
                 "_best_score": (float("inf"), float("inf"), float("inf")),
                 "best_critical_path_ns": None,
                 "best_die_area": None,
                 "best_total_power_mw": None,
+                "_cp_values": [],
+                "_status_counts": Counter(),
             },
         )
         bucket["row_count"] = int(bucket["row_count"]) + 1
         if not bucket["metrics_path"]:
             bucket["metrics_path"] = str(row.metrics_path or "").strip()
+        bucket["_status_counts"][status] += 1
         if status != "ok":
+            bucket["fail_row_count"] = int(bucket["fail_row_count"]) + 1
             continue
 
         bucket["ok_row_count"] = int(bucket["ok_row_count"]) + 1
         cp = _comparable_critical_path(row.critical_path_ns)
         if cp is None:
             continue
+        bucket["_cp_values"].append(cp)
         area = _safe_float_text(row.die_area)
         power = _safe_float_text(row.total_power_mw)
         score = (
@@ -303,10 +331,71 @@ def comparative_run_index(session: Session, *, limit: int) -> RunIndexComparativ
         )
     failure_rates.sort(key=lambda row: (-float(row["failure_rate"]), -int(row["row_count"]), str(row["circuit_type"])))
 
+    design_variance = []
+    failure_hotspots = []
+    for bucket in design_buckets.values():
+        cp_values = sorted(float(value) for value in bucket["_cp_values"])
+        if len(cp_values) >= 2:
+            cp_mean = _mean(cp_values)
+            cp_stddev = _sample_stddev(cp_values)
+            design_variance.append(
+                {
+                    "circuit_type": bucket["circuit_type"],
+                    "design": bucket["design"],
+                    "platform": bucket["platform"],
+                    "comparable_ok_count": len(cp_values),
+                    "critical_path_min_ns": cp_values[0],
+                    "critical_path_mean_ns": cp_mean,
+                    "critical_path_max_ns": cp_values[-1],
+                    "critical_path_range_ns": cp_values[-1] - cp_values[0],
+                    "critical_path_stddev_ns": cp_stddev,
+                    "best_critical_path_ns": bucket["best_critical_path_ns"],
+                }
+            )
+
+        fail_row_count = int(bucket["fail_row_count"])
+        row_count = int(bucket["row_count"])
+        if fail_row_count > 0 and row_count > 0:
+            status_breakdown = {
+                status: count
+                for status, count in sorted(bucket["_status_counts"].items())
+                if status != "ok"
+            }
+            failure_hotspots.append(
+                {
+                    "circuit_type": bucket["circuit_type"],
+                    "design": bucket["design"],
+                    "platform": bucket["platform"],
+                    "fail_row_count": fail_row_count,
+                    "row_count": row_count,
+                    "failure_rate": fail_row_count / row_count,
+                    "ok_row_count": int(bucket["ok_row_count"]),
+                    "status_breakdown": status_breakdown,
+                }
+            )
+
+    design_variance.sort(
+        key=lambda row: (
+            -(row["critical_path_stddev_ns"] if row["critical_path_stddev_ns"] is not None else 0.0),
+            -(row["critical_path_range_ns"] if row["critical_path_range_ns"] is not None else 0.0),
+            -int(row["comparable_ok_count"]),
+            str(row["design"]),
+        )
+    )
+    failure_hotspots.sort(
+        key=lambda row: (
+            -float(row["failure_rate"]),
+            -int(row["fail_row_count"]),
+            str(row["design"]),
+        )
+    )
+
     return RunIndexComparativeResult(
         summary=summary,
         families=families[:limit],
         best_designs=best_designs[:limit],
         family_leaders=family_leaders[:limit],
         failure_rates=failure_rates[:limit],
+        design_variance=design_variance[:limit],
+        failure_hotspots=failure_hotspots[:limit],
     )

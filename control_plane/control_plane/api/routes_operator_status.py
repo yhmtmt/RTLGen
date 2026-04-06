@@ -296,6 +296,14 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
           <div class="table-wrap"><table id="run-index-failure-rates-table"></table></div>
         </div>
         <div class="panel">
+          <h2>Design Variance</h2>
+          <div class="table-wrap"><table id="run-index-design-variance-table"></table></div>
+        </div>
+        <div class="panel">
+          <h2>Failure Hotspots</h2>
+          <div class="table-wrap"><table id="run-index-failure-hotspots-table"></table></div>
+        </div>
+        <div class="panel">
           <h2>Run Index Drilldown</h2>
           <div class="controls" style="justify-content:flex-start; margin-bottom: 10px;">
             <label class="pill">Family
@@ -367,6 +375,8 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
       runIndexBestDesigns: document.getElementById("run-index-best-designs-table"),
       runIndexFamilyLeaders: document.getElementById("run-index-family-leaders-table"),
       runIndexFailureRates: document.getElementById("run-index-failure-rates-table"),
+      runIndexDesignVariance: document.getElementById("run-index-design-variance-table"),
+      runIndexFailureHotspots: document.getElementById("run-index-failure-hotspots-table"),
       runIndexQuery: document.getElementById("run-index-query-table"),
     };
 
@@ -724,6 +734,22 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
         { key: "row_count", label: "Rows" },
         { key: "failure_rate", label: "Rate", render: (value) => escapeHtml(((Number(value || 0) * 100).toFixed(1)) + '%') },
       ], payload.run_index_failure_rates || []);
+      renderTable(tables.runIndexDesignVariance, [
+        { key: "design", label: "Design", render: (value) => `<span class='mono'>${escapeHtml(value)}</span>` },
+        { key: "platform", label: "Platform" },
+        { key: "comparable_ok_count", label: "Samples" },
+        { key: "critical_path_mean_ns", label: "Mean CP" },
+        { key: "critical_path_range_ns", label: "Range" },
+        { key: "critical_path_stddev_ns", label: "Stddev" },
+      ], payload.run_index_design_variance || []);
+      renderTable(tables.runIndexFailureHotspots, [
+        { key: "design", label: "Design", render: (value) => `<span class='mono'>${escapeHtml(value)}</span>` },
+        { key: "platform", label: "Platform" },
+        { key: "fail_row_count", label: "Fails" },
+        { key: "row_count", label: "Rows" },
+        { key: "failure_rate", label: "Rate", render: (value) => escapeHtml(((Number(value || 0) * 100).toFixed(1)) + '%') },
+        { key: "status_breakdown", label: "Statuses", render: (value) => escapeHtml(Object.entries(value || {}).map(([name, count]) => `${name}:${count}`).join(', ')) },
+      ], payload.run_index_failure_hotspots || []);
       if (!runIndexFiltersLoaded) loadRunIndexQuery();
     }
 
@@ -866,6 +892,8 @@ def _status_payload(database_url: str, recent_limit: int) -> dict[str, object]:
         "run_index_best_designs": status.run_index_best_designs,
         "run_index_family_leaders": status.run_index_family_leaders,
         "run_index_failure_rates": status.run_index_failure_rates,
+        "run_index_design_variance": status.run_index_design_variance,
+        "run_index_failure_hotspots": status.run_index_failure_hotspots,
     }
     fingerprint_payload = dict(payload)
     fingerprint_payload.pop("generated_utc", None)

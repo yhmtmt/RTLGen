@@ -72,6 +72,17 @@ def _seed_rows(session: Session) -> None:
                 total_power_mw="0.00119",
                 metrics_path="runs/designs/npu_macros/comb_only_macro/metrics.csv",
             ),
+            RunIndexRow(
+                index_order=6,
+                circuit_type="reduction",
+                design="softmax_rowwise",
+                platform="nangate45",
+                status="ok",
+                critical_path_ns="2.80",
+                die_area="210.0",
+                total_power_mw="0.82",
+                metrics_path="runs/designs/reductions/softmax_rowwise/metrics.csv",
+            ),
         ]
     )
     session.commit()
@@ -94,7 +105,7 @@ def test_query_run_index_filters_and_sorts() -> None:
             ),
         )
 
-    assert result.total_count == 5
+    assert result.total_count == 6
     assert result.filtered_count == 2
     assert result.available_filters["circuit_types"] == ["npu_macros", "reduction", "terminal"]
     assert [row["design"] for row in result.rows] == ["sigmoid_fast", "sigmoid_backup"]
@@ -108,8 +119,8 @@ def test_comparative_run_index_reports_leaders_and_failure_rates() -> None:
         _seed_rows(session)
         result = comparative_run_index(session, limit=10)
 
-    assert result.summary["row_count"] == 5
-    assert result.summary["ok_row_count"] == 4
+    assert result.summary["row_count"] == 6
+    assert result.summary["ok_row_count"] == 5
     assert result.summary["platform_count"] == 2
     assert result.families[0]["circuit_type"] == "terminal"
     assert all(row["design"] != "comb_only_macro" for row in result.best_designs)
@@ -119,3 +130,11 @@ def test_comparative_run_index_reports_leaders_and_failure_rates() -> None:
     terminal_failure = next(row for row in result.failure_rates if row["circuit_type"] == "terminal")
     assert terminal_failure["fail_row_count"] == 1
     assert terminal_failure["row_count"] == 3
+    variance = next(row for row in result.design_variance if row["design"] == "softmax_rowwise")
+    assert variance["comparable_ok_count"] == 2
+    assert round(float(variance["critical_path_mean_ns"]), 2) == 2.65
+    assert round(float(variance["critical_path_range_ns"]), 2) == 0.30
+    assert round(float(variance["critical_path_stddev_ns"]), 3) == 0.212
+    hotspot = next(row for row in result.failure_hotspots if row["design"] == "tanh_fragile")
+    assert hotspot["fail_row_count"] == 1
+    assert hotspot["status_breakdown"] == {"route_failed": 1}

@@ -293,6 +293,9 @@ def test_operator_status_summarizes_live_state() -> None:
         assert status.run_index_family_leaders[0]["design"] == "sigmoid_demo"
         assert status.run_index_failure_rates[0]["circuit_type"] == "terminal"
         assert status.run_index_failure_rates[0]["fail_row_count"] == 1
+        assert status.run_index_design_variance == []
+        assert status.run_index_failure_hotspots[0]["design"] == "tanh_demo"
+        assert status.run_index_failure_hotspots[0]["status_breakdown"] == {"route_failed": 1}
 
 
 def test_operator_status_reports_evaluator_machine_capacity() -> None:
@@ -523,3 +526,7 @@ def test_operator_status_includes_run_index_analytics() -> None:
         assert status.run_index_best_designs[0]["best_critical_path_ns"] == 0.4
         assert status.run_index_best_designs[0]["ok_row_count"] == 2
         assert len(status.run_index_best_designs) == 1
+        assert status.run_index_design_variance[0]["design"] == "terminal_sigmoid_int8_wrapper"
+        assert round(float(status.run_index_design_variance[0]["critical_path_range_ns"]), 2) == 0.02
+        assert status.run_index_failure_hotspots[0]["design"] == "terminal_tanh_int8_wrapper"
+        assert status.run_index_failure_hotspots[0]["status_breakdown"] == {"fail": 1}
