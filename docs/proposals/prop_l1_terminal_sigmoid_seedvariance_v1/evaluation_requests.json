@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_terminal_sigmoid_seedvariance_v1",
-  "source_commit": "git-sha",
+  "source_commit": "5935bfcd77e427461e11445fa149f406a87c0187",
   "requested_items": [
     {
       "item_id": "l1_prop_l1_terminal_sigmoid_seedvariance_v1_nangate45_r1",
