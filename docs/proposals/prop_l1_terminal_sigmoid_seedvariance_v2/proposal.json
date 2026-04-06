@@ -1,0 +1,51 @@
+{
+  "proposal_id": "prop_l1_terminal_sigmoid_seedvariance_v2",
+  "created_utc": "2026-04-06T13:40:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "title": "Measure real OpenROAD seed variance for terminal sigmoid PWL under Nangate45",
+  "hypothesis": "Once FLOW_RANDOM_SEED is propagated into detailed placement, global routing, and detailed routing, repeated synthesis with different seeds will expose the achievable timing spread for a fixed terminal sigmoid PWL block configuration.",
+  "direct_comparison": {
+    "primary_question": "What critical-path spread appears when the same terminal sigmoid PWL block is synthesized repeatedly with distinct OpenROAD flow seeds?",
+    "include": [
+      "five repeated L1 trials of the same config and sweep with different FLOW_RANDOM_SEED values"
+    ],
+    "exclude": [
+      "cross-family comparisons",
+      "cross-setting parameter sweeps",
+      "architecture changes"
+    ],
+    "follow_on_broad_sweep": [
+      "larger seed-variance passes on higher-complexity blocks if this first real-seed item shows measurable spread"
+    ]
+  },
+  "expected_benefit": [
+    "establish an empirical timing variance range attributable to real OpenROAD seed changes"
+  ],
+  "risks": [
+    "the chosen block may still be too simple to show meaningful seed sensitivity"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "task_type": "l1_sweep",
+      "evaluation_mode": "multi_trial",
+      "objective": "measure_seed_variance",
+      "cost_class": "low",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": false,
+      "requires_materialized_refs": false,
+      "expected_result": {
+        "direction": "characterize_distribution",
+        "reason": "capture the critical-path spread across real flow seeds for one fixed implementation"
+      }
+    }
+  ],
+  "baseline_refs": [],
+  "knowledge_refs": [
+    "discussion:seed_variance",
+    "patch:flow_random_seed"
+  ],
+  "abstraction_layer": "circuit_block"
+}
