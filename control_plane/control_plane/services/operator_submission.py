@@ -321,10 +321,11 @@ def _ensure_review_artifact_materialized(
     repo_root: Path,
     work_item: WorkItem,
     run: Run,
+    force: bool = False,
 ) -> None:
     required_kind = _required_review_artifact_kind(work_item.task_type)
     artifact = _review_artifact(session, run_id=run.id, kind=required_kind)
-    if artifact is not None and _review_artifact_exists_on_disk(repo_root=repo_root, artifact=artifact):
+    if not force and artifact is not None and _review_artifact_exists_on_disk(repo_root=repo_root, artifact=artifact):
         return
 
     target_path = str(artifact.path).strip() if artifact is not None else None
@@ -516,7 +517,7 @@ def operate_submission(session: Session, request: OperatorSubmissionRequest) -> 
     repo_root = Path(request.repo_root).resolve()
     work_item, run = _resolve_run(session, request)
     try:
-        _ensure_review_artifact_materialized(session, repo_root=repo_root, work_item=work_item, run=run)
+        _ensure_review_artifact_materialized(session, repo_root=repo_root, work_item=work_item, run=run, force=request.force)
         _check_submission_eligibility(session, repo_root=repo_root, work_item=work_item, run=run, force=request.force)
         if not request.force:
             _validate_submission_review_payload(repo_root, session=session, work_item=work_item, run=run)
