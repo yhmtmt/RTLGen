@@ -200,6 +200,42 @@ def test_generate_l1_sweep_task_creates_ready_work_item() -> None:
             assert payload["handoff"]["pr_body_fields"]["queue_item_id"] == result.item_id
 
 
+def test_generate_l1_sweep_task_expands_expected_outputs_for_multi_trial_items() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_repo(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/activations/softmax_rowwise_int8_r4_wrapper",
+                    item_id="l1_seedvariance_demo_r1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="circuit_block",
+                    trial_count=3,
+                    seed_start=100,
+                    stop_after_failures=3,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert work_item.expected_outputs == [
+                "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/trials/trial_001/softmax_rowwise_int8_r4_wrapper/metrics.csv",
+                "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/trials/trial_002/softmax_rowwise_int8_r4_wrapper/metrics.csv",
+                "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/trials/trial_003/softmax_rowwise_int8_r4_wrapper/metrics.csv",
+            ]
+
+
 def test_generate_l1_sweep_task_records_requested_item_in_proposal_evaluation_requests() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

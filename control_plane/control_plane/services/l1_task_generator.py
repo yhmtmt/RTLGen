@@ -506,6 +506,23 @@ def _effective_trial_policy(*, trial_count: int, seed_start: int, stop_after_fai
     }
 
 
+def _expand_expected_outputs_for_trials(*, expected_outputs: list[str], trial_policy: dict[str, int]) -> list[str]:
+    trial_count = max(int((trial_policy or {}).get("trial_count") or 1), 1)
+    if trial_count <= 1:
+        return list(expected_outputs)
+    expanded: list[str] = []
+    for rel_path in expected_outputs:
+        text = str(rel_path).strip()
+        if not text:
+            continue
+        path = Path(text)
+        parent = path.parent
+        name = path.name
+        for trial_index in range(1, trial_count + 1):
+            expanded.append(str(parent.parent / "trials" / f"trial_{trial_index:03d}" / parent.name / name))
+    return expanded
+
+
 def _effective_evaluation_mode(*, evaluation_mode: str | None, make_target: str | None) -> str:
     mode = str(evaluation_mode or "").strip()
     if mode:
@@ -659,6 +676,15 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
         config_paths=config_paths,
         sweep_path=sweep_path,
     )
+    trial_policy = _effective_trial_policy(
+        trial_count=request.trial_count,
+        seed_start=request.seed_start,
+        stop_after_failures=request.stop_after_failures,
+    )
+    expected_outputs = _expand_expected_outputs_for_trials(
+        expected_outputs=expected_outputs,
+        trial_policy=trial_policy,
+    )
     payload = _build_payload(
         item_id=item_id,
         title=title,
@@ -678,11 +704,7 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
             make_target=request.make_target,
         ),
         abstraction_layer=effective_abstraction_layer,
-        trial_policy=_effective_trial_policy(
-            trial_count=request.trial_count,
-            seed_start=request.seed_start,
-            stop_after_failures=request.stop_after_failures,
-        ),
+        trial_policy=trial_policy,
     )
     _upsert_evaluation_request_entry(
         repo_root=repo_root,
