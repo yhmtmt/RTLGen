@@ -457,7 +457,6 @@ def test_consume_l1_result_writes_trial_aggregate_artifacts() -> None:
                 started_at=utcnow(),
                 completed_at=utcnow(),
                 checkout_commit="deadbeef",
-                trial_index=2,
                 seed=4,
                 result_summary="trial 2 succeeded",
                 result_payload={
@@ -617,12 +616,11 @@ def test_consume_l1_result_groups_seed_variance_by_non_seed_params() -> None:
                 started_at=utcnow(),
                 completed_at=utcnow(),
                 checkout_commit="deadbeef",
-                trial_index=2,
                 seed=102,
                 result_summary="trial 2 succeeded",
                 result_payload={
                     "trial": {"trial_index": 2, "seed": 102},
-                    "queue_result": {"status": "ok", "metrics_rows": [f"{metrics_trial_2}:2"]},
+                    "queue_result": {"status": "ok", "metrics_rows": [f"{metrics_trial_1}:2", f"{metrics_trial_2}:2"]},
                 },
             )
             session.add_all([run_1, run_2])
