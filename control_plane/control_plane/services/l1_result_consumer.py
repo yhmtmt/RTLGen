@@ -351,14 +351,18 @@ def _metrics_csvs_from_run(run: Run, *, work_item: WorkItem | None = None) -> li
             continue
         if rel_path not in result:
             result.append(rel_path)
-    if result or work_item is None:
-        return result
-    for rel_path in work_item.expected_outputs or []:
-        rel_path = str(rel_path).strip()
-        if not rel_path or rel_path == "runs/index.csv" or not rel_path.endswith("metrics.csv"):
-            continue
-        if rel_path not in result:
-            result.append(rel_path)
+    if not result and work_item is not None:
+        for rel_path in work_item.expected_outputs or []:
+            rel_path = str(rel_path).strip()
+            if not rel_path or rel_path == "runs/index.csv" or not rel_path.endswith("metrics.csv"):
+                continue
+            if rel_path not in result:
+                result.append(rel_path)
+    if run.trial_index:
+        trial_marker = f"/trial_{int(run.trial_index):03d}/"
+        trial_scoped = [rel_path for rel_path in result if trial_marker in rel_path]
+        if trial_scoped:
+            return trial_scoped
     return result
 
 

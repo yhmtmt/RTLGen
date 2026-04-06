@@ -462,7 +462,7 @@ def test_consume_l1_result_writes_trial_aggregate_artifacts() -> None:
                 result_summary="trial 2 succeeded",
                 result_payload={
                     "trial": {"trial_index": 2, "seed": 4},
-                    "queue_result": {"status": "ok", "metrics_rows": [f"{metrics_trial_2}:2"]},
+                    "queue_result": {"status": "ok", "metrics_rows": [f"{metrics_trial_1}:2", f"{metrics_trial_2}:2"]},
                 },
             )
             run_3 = Run(
@@ -649,3 +649,4 @@ def test_consume_l1_result_groups_seed_variance_by_non_seed_params() -> None:
             assert ",101,succeeded," in trial_table
             assert metrics_trial_1 in trial_table
             assert metrics_trial_2 in trial_table
+            assert "l1_test_seed_variance_run_2,2,2,102,succeeded,{}".format(metrics_trial_2) in trial_table
