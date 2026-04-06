@@ -23,7 +23,7 @@ from control_plane.services.lease_service import upsert_worker_machine
 from control_plane.services.scheduler import assign_work_item
 from control_plane.services.worker_daemon import WorkerDaemonConfig, run_worker_daemon
 from control_plane.workers.checkout import CheckoutInfo
-from control_plane.workers.executor import WorkerConfig, _active_command_manifest
+from control_plane.workers.executor import WorkerConfig, _active_command_manifest, _active_expected_outputs
 
 
 def _seed_ready_work_item(session: Session, *, item_id: str, repo_root: Path, assigned_machine_key: str | None = None) -> None:
@@ -144,6 +144,26 @@ def test_active_command_manifest_injects_flow_random_seed_for_multi_trial_sweep(
 
     assert commands[0]["run"].startswith("export PATH=/oss-cad-suite/bin:$PATH && FLOW_RANDOM_SEED=101 python3")
     assert "--out_root runs/designs/activations/demo_wrapper/trials/trial_002" in commands[0]["run"]
+
+
+def test_active_expected_outputs_keeps_trial_scoped_outputs_for_multi_trial_sweep() -> None:
+    work_item = WorkItem(
+        item_id="seeded_item",
+        task_type="l1_sweep",
+        input_manifest={"out_root": "runs/designs/activations/demo_wrapper"},
+        expected_outputs=[
+            "runs/designs/activations/demo_wrapper/trials/trial_001/demo_wrapper/metrics.csv",
+            "runs/designs/activations/demo_wrapper/trials/trial_002/demo_wrapper/metrics.csv",
+            "runs/designs/activations/demo_wrapper/trials/trial_003/demo_wrapper/metrics.csv",
+        ],
+        trial_policy_json={"trial_count": 3, "seed_start": 100, "stop_after_failures": 3},
+    )
+
+    assert _active_expected_outputs(work_item, 2) == [
+        "runs/designs/activations/demo_wrapper/trials/trial_001/demo_wrapper/metrics.csv",
+        "runs/designs/activations/demo_wrapper/trials/trial_002/demo_wrapper/metrics.csv",
+        "runs/designs/activations/demo_wrapper/trials/trial_003/demo_wrapper/metrics.csv",
+    ]
 
 
 def test_worker_daemon_emits_positive_poll_logs() -> None:
