@@ -9,19 +9,25 @@
       "best": 0.1904,
       "mean": 0.1904,
       "median": 0.1904,
-      "max": 0.1904
+      "max": 0.1904,
+      "range": 0.0,
+      "stddev": 0.0
     },
     "die_area": {
       "best": 25600.0,
       "mean": 25600.0,
       "median": 25600.0,
-      "max": 25600.0
+      "max": 25600.0,
+      "range": 0.0,
+      "stddev": 0.0
     },
     "total_power_mw": {
       "best": 5.84e-05,
       "mean": 5.84e-05,
       "median": 5.84e-05,
-      "max": 5.84e-05
+      "max": 5.84e-05,
+      "range": 0.0,
+      "stddev": 0.0
     }
   }
 }
