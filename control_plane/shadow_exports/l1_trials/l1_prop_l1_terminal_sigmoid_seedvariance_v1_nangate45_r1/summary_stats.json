@@ -1,0 +1,27 @@
+{
+  "item_id": "l1_prop_l1_terminal_sigmoid_seedvariance_v1_nangate45_r1",
+  "completed_trials": 3,
+  "success_count": 3,
+  "failure_count": 0,
+  "success_rate": 1.0,
+  "metrics": {
+    "critical_path_ns": {
+      "best": 0.1904,
+      "mean": 0.1904,
+      "median": 0.1904,
+      "max": 0.1904
+    },
+    "die_area": {
+      "best": 25600.0,
+      "mean": 25600.0,
+      "median": 25600.0,
+      "max": 25600.0
+    },
+    "total_power_mw": {
+      "best": 5.84e-05,
+      "mean": 5.84e-05,
+      "median": 5.84e-05,
+      "max": 5.84e-05
+    }
+  }
+}
