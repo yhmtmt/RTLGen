@@ -528,6 +528,8 @@ def test_consume_l1_result_writes_trial_aggregate_artifacts() -> None:
             assert payload["trial_summary"]["success_count"] == 2
             assert payload["trial_summary"]["failure_count"] == 2
             assert payload["trial_summary"]["metrics"]["critical_path_ns"]["best"] == 11.0
+            assert payload["trial_summary"]["metrics"]["critical_path_ns"]["range"] == 1.0
+            assert payload["trial_summary"]["metrics"]["critical_path_ns"]["stddev"] == 0.5
             assert payload["evaluation_record"]["abstraction_layer"] == "circuit_block"
             assert payload["source_refs"]["trial_metrics_csvs"] == [metrics_trial_1, metrics_trial_2]
             assert payload["source_refs"]["summary_stats_json"].endswith(f"/{work_item.item_id}/summary_stats.json")
@@ -539,6 +541,8 @@ def test_consume_l1_result_writes_trial_aggregate_artifacts() -> None:
             failure_stats = json.loads(failure_path.read_text(encoding="utf-8"))
             trial_table = trial_table_path.read_text(encoding="utf-8")
             assert summary["success_rate"] == 0.5
+            assert summary["metrics"]["critical_path_ns"]["range"] == 1.0
+            assert summary["metrics"]["critical_path_ns"]["stddev"] == 0.5
             assert failure_stats["by_category"] == {"checkout_error": 1, "timing_unmet": 1}
             assert failure_stats["by_stage"] == {"checkout": 1, "route": 1}
             assert "trial_index,seed,status" in trial_table

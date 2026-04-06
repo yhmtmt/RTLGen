@@ -367,11 +367,14 @@ def _best_trial_row(repo_root: Path, run: Run) -> tuple[str, dict[str, Any]] | N
 def _metric_summary(values: list[float]) -> dict[str, float] | None:
     if not values:
         return None
+    stddev = float(statistics.pstdev(values)) if len(values) > 1 else 0.0
     return {
         "best": min(values),
         "mean": float(statistics.fmean(values)),
         "median": float(statistics.median(values)),
         "max": max(values),
+        "range": max(values) - min(values),
+        "stddev": stddev,
     }
 
 
