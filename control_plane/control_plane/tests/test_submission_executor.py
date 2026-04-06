@@ -644,6 +644,71 @@ def test_execute_submission_reuses_existing_pr_on_rerun() -> None:
             assert any(entry["tool"] == "gh" and entry["argv"][:4] == ["--repo", "yhmtmt/RTLGen", "pr", "view"] for entry in log_entries)
 
 
+
+
+def test_execute_submission_refreshes_supporting_paths_from_current_review_package() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, _run_key = _seed_l1_reviewable(session, repo_root)
+            prepare_submission_branch(
+                session,
+                SubmissionPrepareRequest(
+                    repo_root=str(repo_root),
+                    item_id=item_id,
+                    evaluator_id="cpbot",
+                    session_id="s20260310t082100z",
+                    host="cp-host",
+                    worktree_root=str(repo_root / "tmp_submit"),
+                ),
+            )
+            manifest_path = repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "submission_manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            package_path = repo_root / manifest["package_path"]
+            package = json.loads(package_path.read_text(encoding="utf-8"))
+            extra_rel = "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/trials/trial_001/softmax_rowwise_int8_r4_wrapper/metrics.csv"
+            _write(
+                repo_root / extra_rel,
+                (
+                    "platform,status,param_hash,tag,critical_path_ns,die_area,total_power_mw,params_json,result_path\n"
+                    'nangate45,ok,trial1,tag_trial1,11.5,29000,0.17,{"FLOW_RANDOM_SEED":101},'
+                    "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/trials/trial_001/softmax_rowwise_int8_r4_wrapper/work/trial1/result.json\n"
+                ),
+            )
+            package.setdefault("review_artifact", {}).setdefault("payload", {}).setdefault("source_refs", {})["extra_trial_metrics"] = [extra_rel]
+            package_path.write_text(json.dumps(package, indent=2) + "\n", encoding="utf-8")
+
+            fake_bin = repo_root / "fake_bin"
+            log_path = repo_root / "fake_cmds.log"
+            _make_fake_bin(fake_bin, log_path)
+            old_path = os.environ.get("PATH", "")
+            os.environ["PATH"] = f"{fake_bin}:{old_path}"
+            try:
+                result = execute_submission(
+                    session,
+                    SubmissionExecuteRequest(
+                        repo_root=str(repo_root),
+                        repo="yhmtmt/RTLGen",
+                        item_id=item_id,
+                        evaluator_id="cpbot",
+                        session_id="s20260310t082100z",
+                        host="cp-host",
+                    ),
+                )
+            finally:
+                os.environ["PATH"] = old_path
+
+            assert result.pr_number == 123
+            updated_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            assert extra_rel in updated_manifest["supporting_paths"]
+            worktree_path = Path(updated_manifest["worktree_path"])
+            assert (worktree_path / extra_rel).exists()
+
 def test_execute_submission_backfills_missing_evidence_paths_on_rerun() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

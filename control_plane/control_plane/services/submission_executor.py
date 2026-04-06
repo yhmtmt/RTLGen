@@ -20,6 +20,8 @@ from control_plane.models.work_items import WorkItem
 from control_plane.services.github_bridge import GitHubReconcileRequest, reconcile_github_link
 from control_plane.services.submission_bridge import (
     SubmissionPrepareRequest,
+    _canonical_runs_diff_paths,
+    _review_linked_supporting_files,
     prepare_submission_branch,
 )
 
@@ -331,8 +333,20 @@ def execute_submission(session: Session, request: SubmissionExecuteRequest) -> S
         )
         manifest_path = repo_root / "control_plane" / "shadow_exports" / "review" / work_item.item_id / "submission_manifest.json"
     manifest = _load_manifest(manifest_path)
-    if not isinstance(manifest.get("evidence_paths"), list):
-        manifest["evidence_paths"] = _canonical_evidence_files(repo_root=repo_root, work_item=work_item)
+    package_rel = str(manifest.get("package_path", "")).strip()
+    package_payload = {}
+    if package_rel:
+        package_path = repo_root / package_rel
+        if package_path.exists():
+            try:
+                loaded = json.loads(package_path.read_text(encoding="utf-8"))
+            except Exception:
+                loaded = None
+            if isinstance(loaded, dict):
+                package_payload = loaded
+    manifest["evidence_paths"] = _canonical_evidence_files(repo_root=repo_root, work_item=work_item)
+    manifest["supporting_paths"] = _review_linked_supporting_files(repo_root=repo_root, package_payload=package_payload)
+    manifest["canonical_diff_paths"] = _canonical_runs_diff_paths(*manifest["evidence_paths"], *manifest["supporting_paths"])
 
     branch_name = str(manifest.get("branch_name", "")).strip()
     if not branch_name:
