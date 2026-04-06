@@ -709,6 +709,62 @@ def test_execute_submission_refreshes_supporting_paths_from_current_review_packa
             worktree_path = Path(updated_manifest["worktree_path"])
             assert (worktree_path / extra_rel).exists()
 
+
+
+def test_execute_submission_refreshes_frozen_supporting_files_on_rerun() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, _run_key = _seed_l1_reviewable(session, repo_root)
+            prepare_submission_branch(
+                session,
+                SubmissionPrepareRequest(
+                    repo_root=str(repo_root),
+                    item_id=item_id,
+                    evaluator_id="cpbot",
+                    session_id="s20260310t082300z",
+                    host="cp-host",
+                    worktree_root=str(repo_root / "tmp_submit"),
+                ),
+            )
+            manifest_path = repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "submission_manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            summary_rel = next(path for path in manifest["supporting_paths"] if path.endswith("summary_stats.json"))
+            refreshed_summary = json.dumps({"item_id": item_id, "refreshed": True}, indent=2) + "\n"
+            (repo_root / summary_rel).write_text(refreshed_summary, encoding="utf-8")
+
+            fake_bin = repo_root / "fake_bin"
+            log_path = repo_root / "fake_cmds.log"
+            _make_fake_bin(fake_bin, log_path)
+            old_path = os.environ.get("PATH", "")
+            os.environ["PATH"] = f"{fake_bin}:{old_path}"
+            try:
+                result = execute_submission(
+                    session,
+                    SubmissionExecuteRequest(
+                        repo_root=str(repo_root),
+                        repo="yhmtmt/RTLGen",
+                        item_id=item_id,
+                        evaluator_id="cpbot",
+                        session_id="s20260310t082300z",
+                        host="cp-host",
+                    ),
+                )
+            finally:
+                os.environ["PATH"] = old_path
+
+            assert result.pr_number == 123
+            updated_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            frozen_rel = updated_manifest["frozen_file_map"][summary_rel]
+            assert (repo_root / frozen_rel).read_text(encoding="utf-8") == refreshed_summary
+            worktree_path = Path(updated_manifest["worktree_path"])
+            assert (worktree_path / summary_rel).read_text(encoding="utf-8") == refreshed_summary
+
 def test_execute_submission_backfills_missing_evidence_paths_on_rerun() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

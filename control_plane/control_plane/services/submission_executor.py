@@ -21,6 +21,7 @@ from control_plane.services.github_bridge import GitHubReconcileRequest, reconci
 from control_plane.services.submission_bridge import (
     SubmissionPrepareRequest,
     _canonical_runs_diff_paths,
+    _freeze_file,
     _review_linked_supporting_files,
     prepare_submission_branch,
 )
@@ -275,6 +276,44 @@ def _refresh_submission_worktree(
     return _run_cmd(["git", "rev-parse", "HEAD"], cwd=worktree_path), submission_base_commit
 
 
+def _refresh_manifest_frozen_file_map(
+    *,
+    repo_root: Path,
+    manifest: dict[str, Any],
+    item_id: str,
+    run_key: str,
+) -> None:
+    package_rel = str(manifest.get("package_path", "")).strip()
+    snapshot_rel = str(manifest.get("snapshot_path", "")).strip()
+    review_rel = str(manifest.get("review_artifact_path") or "").strip()
+    pr_body_rel = str(manifest.get("pr_body_path", "")).strip()
+    evidence_paths = [str(path).strip() for path in (manifest.get("evidence_paths") or []) if str(path).strip()]
+    supporting_paths = [str(path).strip() for path in (manifest.get("supporting_paths") or []) if str(path).strip()]
+
+    previous_frozen_file_map = manifest.get("frozen_file_map") if isinstance(manifest.get("frozen_file_map"), dict) else {}
+    frozen_file_map: dict[str, str] = {}
+    required_paths = [snapshot_rel, package_rel, *([review_rel] if review_rel else []), *evidence_paths, *supporting_paths, pr_body_rel]
+    for rel_path in required_paths:
+        if not rel_path:
+            continue
+        live_path = repo_root / rel_path
+        if live_path.exists():
+            frozen_file_map[rel_path] = _freeze_file(
+                repo_root=repo_root,
+                item_id=item_id,
+                run_key=run_key,
+                rel_path=rel_path,
+            )
+            continue
+        previous_rel = str(previous_frozen_file_map.get(rel_path, "")).strip()
+        previous_path = repo_root / previous_rel if previous_rel else None
+        if previous_rel and previous_path is not None and previous_path.exists():
+            frozen_file_map[rel_path] = previous_rel
+            continue
+        raise SubmissionExecuteError(f"review file missing: {rel_path}")
+    manifest["frozen_file_map"] = frozen_file_map
+
+
 def _upsert_execution_artifact(
     session: Session,
     *,
@@ -347,6 +386,12 @@ def execute_submission(session: Session, request: SubmissionExecuteRequest) -> S
     manifest["evidence_paths"] = _canonical_evidence_files(repo_root=repo_root, work_item=work_item)
     manifest["supporting_paths"] = _review_linked_supporting_files(repo_root=repo_root, package_payload=package_payload)
     manifest["canonical_diff_paths"] = _canonical_runs_diff_paths(*manifest["evidence_paths"], *manifest["supporting_paths"])
+    _refresh_manifest_frozen_file_map(
+        repo_root=repo_root,
+        manifest=manifest,
+        item_id=work_item.item_id,
+        run_key=run.run_key,
+    )
 
     branch_name = str(manifest.get("branch_name", "")).strip()
     if not branch_name:
