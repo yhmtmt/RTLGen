@@ -898,6 +898,12 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
         run_key=run_key,
     )
     if ready_for_completion:
+        if str(work_item.task_type) == "l1_sweep" and _trial_policy(work_item)["trial_count"] > 1:
+            _sync_expected_outputs_to_repo(
+                checkout_root=config.repo_root,
+                repo_root=checkout_info.work_dir,
+                expected_outputs=[str(path) for path in (work_item.expected_outputs or [])],
+            )
         _process_completed_work_item(
             session_factory,
             config=config,
