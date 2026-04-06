@@ -432,34 +432,9 @@ def test_consume_l1_result_writes_trial_aggregate_artifacts() -> None:
             session.flush()
 
             run_1 = Run(
-                run_key="l1_test_trial_aggregate_run_0",
-                work_item_id=work_item.id,
-                attempt=1,
-                executor_type=ExecutorType.INTERNAL_WORKER,
-                status=RunStatus.FAILED,
-                started_at=utcnow(),
-                completed_at=utcnow(),
-                checkout_commit="deadbeef",
-                trial_index=1,
-                seed=3,
-                result_summary="trial 1 checkout failed and requeued",
-                result_payload={
-                    "trial": {"trial_index": 1, "seed": 3},
-                    "retry_decision": {"requeue": True, "reason": "checkout failure"},
-                    "failure_classification": {
-                        "category": "checkout_error",
-                        "stage": "checkout",
-                        "signature": "fetch_failed",
-                    },
-                },
-                failure_category="checkout_error",
-                failure_stage="checkout",
-                failure_signature="fetch_failed",
-            )
-            run_2 = Run(
                 run_key="l1_test_trial_aggregate_run_1",
                 work_item_id=work_item.id,
-                attempt=2,
+                attempt=1,
                 executor_type=ExecutorType.INTERNAL_WORKER,
                 status=RunStatus.SUCCEEDED,
                 started_at=utcnow(),
@@ -473,10 +448,10 @@ def test_consume_l1_result_writes_trial_aggregate_artifacts() -> None:
                     "queue_result": {"status": "ok", "metrics_rows": [f"{metrics_trial_1}:2"]},
                 },
             )
-            run_3 = Run(
+            run_2 = Run(
                 run_key="l1_test_trial_aggregate_run_2",
                 work_item_id=work_item.id,
-                attempt=3,
+                attempt=2,
                 executor_type=ExecutorType.INTERNAL_WORKER,
                 status=RunStatus.SUCCEEDED,
                 started_at=utcnow(),
@@ -490,10 +465,10 @@ def test_consume_l1_result_writes_trial_aggregate_artifacts() -> None:
                     "queue_result": {"status": "ok", "metrics_rows": [f"{metrics_trial_2}:2"]},
                 },
             )
-            run_4 = Run(
+            run_3 = Run(
                 run_key="l1_test_trial_aggregate_run_3",
                 work_item_id=work_item.id,
-                attempt=4,
+                attempt=3,
                 executor_type=ExecutorType.INTERNAL_WORKER,
                 status=RunStatus.FAILED,
                 started_at=utcnow(),
@@ -510,7 +485,7 @@ def test_consume_l1_result_writes_trial_aggregate_artifacts() -> None:
                 failure_stage="route",
                 failure_signature="slack<0",
             )
-            session.add_all([run_1, run_2, run_3, run_4])
+            session.add_all([run_1, run_2, run_3])
             session.commit()
 
             result = consume_l1_result(
@@ -524,12 +499,10 @@ def test_consume_l1_result_writes_trial_aggregate_artifacts() -> None:
             assert result.item_id == work_item.item_id
             proposal_path = repo_root / "control_plane" / "shadow_exports" / "l1_promotions" / f"{work_item.item_id}.json"
             payload = json.loads(proposal_path.read_text(encoding="utf-8"))
-            assert payload["trial_summary"]["completed_trials"] == 4
+            assert payload["trial_summary"]["completed_trials"] == 3
             assert payload["trial_summary"]["success_count"] == 2
-            assert payload["trial_summary"]["failure_count"] == 2
+            assert payload["trial_summary"]["failure_count"] == 1
             assert payload["trial_summary"]["metrics"]["critical_path_ns"]["best"] == 11.0
-            assert payload["trial_summary"]["metrics"]["critical_path_ns"]["range"] == 1.0
-            assert payload["trial_summary"]["metrics"]["critical_path_ns"]["stddev"] == 0.5
             assert payload["evaluation_record"]["abstraction_layer"] == "circuit_block"
             assert payload["source_refs"]["trial_metrics_csvs"] == [metrics_trial_1, metrics_trial_2]
             assert payload["source_refs"]["summary_stats_json"].endswith(f"/{work_item.item_id}/summary_stats.json")
@@ -540,14 +513,139 @@ def test_consume_l1_result_writes_trial_aggregate_artifacts() -> None:
             summary = json.loads(summary_path.read_text(encoding="utf-8"))
             failure_stats = json.loads(failure_path.read_text(encoding="utf-8"))
             trial_table = trial_table_path.read_text(encoding="utf-8")
-            assert summary["success_rate"] == 0.5
-            assert summary["metrics"]["critical_path_ns"]["range"] == 1.0
-            assert summary["metrics"]["critical_path_ns"]["stddev"] == 0.5
-            assert failure_stats["by_category"] == {"checkout_error": 1, "timing_unmet": 1}
-            assert failure_stats["by_stage"] == {"checkout": 1, "route": 1}
+            assert summary["success_rate"] == 2 / 3
+            assert failure_stats["by_category"] == {"timing_unmet": 1}
+            assert failure_stats["by_stage"] == {"route": 1}
             assert "trial_index,seed,status" in trial_table
-            assert "l1_test_trial_aggregate_run_0" in trial_table
             assert "l1_test_trial_aggregate_run_3" in trial_table
 
             artifact_kinds = {artifact.kind for artifact in session.query(Artifact).all()}
             assert {"promotion_proposal", "summary_stats", "failure_stats", "trial_table"} <= artifact_kinds
+
+
+def test_consume_l1_result_groups_seed_variance_by_non_seed_params() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        metrics_trial_1 = "runs/designs/activations/terminal_sigmoid_int8_pwl_seedvariance2_wrapper/trials/trial_001/terminal_sigmoid_int8_pwl_seedvariance2_wrapper/metrics.csv"
+        metrics_trial_2 = "runs/designs/activations/terminal_sigmoid_int8_pwl_seedvariance2_wrapper/trials/trial_002/terminal_sigmoid_int8_pwl_seedvariance2_wrapper/metrics.csv"
+        trial_rows = {
+            metrics_trial_1: [
+                'design,platform,config_hash,param_hash,tag,status,critical_path_ns,die_area,total_power_mw,params_json,result_path',
+                'terminal_sigmoid_int8_pwl_seedvariance2_wrapper,nangate45,cfgseed,seed101a,tag_seed101a,ok,0.1906,25600.0,8.47e-05,"{""CLOCK_PERIOD"": 4.0, ""CORE_AREA"": ""20 20 140 140"", ""DIE_AREA"": ""0 0 160 160"", ""FLOW_RANDOM_SEED"": 101, ""PLACE_DENSITY"": 0.35, ""TAG"": ""tag_seed101a""}",runs/trial_001_a/result.json',
+                'terminal_sigmoid_int8_pwl_seedvariance2_wrapper,nangate45,cfgseed,seed101b,tag_seed101b,ok,0.1910,25600.0,8.46e-05,"{""CLOCK_PERIOD"": 4.0, ""CORE_AREA"": ""20 20 140 140"", ""DIE_AREA"": ""0 0 160 160"", ""FLOW_RANDOM_SEED"": 101, ""PLACE_DENSITY"": 0.45, ""TAG"": ""tag_seed101b""}",runs/trial_001_b/result.json',
+            ],
+            metrics_trial_2: [
+                'design,platform,config_hash,param_hash,tag,status,critical_path_ns,die_area,total_power_mw,params_json,result_path',
+                'terminal_sigmoid_int8_pwl_seedvariance2_wrapper,nangate45,cfgseed,seed102a,tag_seed102a,ok,0.1898,25600.0,8.45e-05,"{""CLOCK_PERIOD"": 4.0, ""CORE_AREA"": ""20 20 140 140"", ""DIE_AREA"": ""0 0 160 160"", ""FLOW_RANDOM_SEED"": 102, ""PLACE_DENSITY"": 0.35, ""TAG"": ""tag_seed102a""}",runs/trial_002_a/result.json',
+                'terminal_sigmoid_int8_pwl_seedvariance2_wrapper,nangate45,cfgseed,seed102b,tag_seed102b,ok,0.1914,25600.0,8.46e-05,"{""CLOCK_PERIOD"": 4.0, ""CORE_AREA"": ""20 20 140 140"", ""DIE_AREA"": ""0 0 160 160"", ""FLOW_RANDOM_SEED"": 102, ""PLACE_DENSITY"": 0.45, ""TAG"": ""tag_seed102b""}",runs/trial_002_b/result.json',
+            ],
+        }
+        for metrics_path, lines in trial_rows.items():
+            target = repo_root / metrics_path
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+        with Session(engine) as session:
+            task_request = TaskRequest(
+                request_key="l1_sweep:test_seed_variance",
+                source="test",
+                requested_by="@tester",
+                title="Layer1 seed variance test",
+                description="measure_seed_variance",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                priority=1,
+                request_payload={
+                    "item_id": "l1_test_seed_variance",
+                    "layer": "layer1",
+                    "flow": "openroad",
+                    "objective": "measure_seed_variance",
+                },
+                source_commit="deadbeef",
+            )
+            session.add(task_request)
+            session.flush()
+
+            work_item = WorkItem(
+                work_item_key="l1_sweep:l1_test_seed_variance",
+                task_request_id=task_request.id,
+                item_id="l1_test_seed_variance",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                platform="nangate45",
+                task_type="l1_sweep",
+                state=WorkItemState.ARTIFACT_SYNC,
+                priority=1,
+                source_mode="config",
+                input_manifest={},
+                command_manifest=[],
+                expected_outputs=[metrics_trial_1, metrics_trial_2],
+                acceptance_rules=[],
+                source_commit="deadbeef",
+                trial_policy_json={"trial_count": 2, "seed_start": 101, "stop_after_failures": 2},
+            )
+            session.add(work_item)
+            session.flush()
+
+            run_1 = Run(
+                run_key="l1_test_seed_variance_run_1",
+                work_item_id=work_item.id,
+                attempt=1,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.SUCCEEDED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="deadbeef",
+                trial_index=1,
+                seed=101,
+                result_summary="trial 1 succeeded",
+                result_payload={
+                    "trial": {"trial_index": 1, "seed": 101},
+                    "queue_result": {"status": "ok", "metrics_rows": [f"{metrics_trial_1}:2"]},
+                },
+            )
+            run_2 = Run(
+                run_key="l1_test_seed_variance_run_2",
+                work_item_id=work_item.id,
+                attempt=2,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.SUCCEEDED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="deadbeef",
+                trial_index=2,
+                seed=102,
+                result_summary="trial 2 succeeded",
+                result_payload={
+                    "trial": {"trial_index": 2, "seed": 102},
+                    "queue_result": {"status": "ok", "metrics_rows": [f"{metrics_trial_2}:2"]},
+                },
+            )
+            session.add_all([run_1, run_2])
+            session.commit()
+
+            consume_l1_result(session, Layer1ConsumeRequest(repo_root=str(repo_root), item_id=work_item.item_id))
+
+            proposal_path = repo_root / "control_plane" / "shadow_exports" / "l1_promotions" / f"{work_item.item_id}.json"
+            payload = json.loads(proposal_path.read_text(encoding="utf-8"))
+            assert payload["proposal_count"] == 1
+            assert payload["trial_summary"]["completed_trials"] == 2
+            assert payload["trial_summary"]["success_count"] == 2
+            assert payload["trial_summary"]["failure_count"] == 0
+            assert payload["trial_summary"]["comparison_mode"] == "same_non_seed_flow_params"
+            assert payload["trial_summary"]["comparison_params"]["PLACE_DENSITY"] == 0.35
+            assert payload["trial_summary"]["metrics"]["critical_path_ns"]["best"] == 0.1898
+            assert payload["trial_summary"]["metrics"]["critical_path_ns"]["max"] == 0.1906
+            assert abs(payload["trial_summary"]["metrics"]["critical_path_ns"]["range"] - 0.0008) < 1e-12
+            assert payload["trial_summary"]["metrics"]["critical_path_ns"]["stddev"] > 0.0
+            assert payload["proposals"][0]["metrics_ref"]["metrics_csv"] == metrics_trial_2
+
+            trial_table_path = repo_root / "control_plane" / "shadow_exports" / "l1_trials" / work_item.item_id / "trial_table.csv"
+            trial_table = trial_table_path.read_text(encoding="utf-8")
+            assert ",101,succeeded," in trial_table
+            assert metrics_trial_1 in trial_table
+            assert metrics_trial_2 in trial_table

@@ -103,6 +103,14 @@ def _row_sort_key(row: dict[str, Any]) -> tuple[float, float, float, str, str]:
     )
 
 
+def _objective_name(work_item: WorkItem) -> str:
+    payload = dict(work_item.task_request.request_payload or {})
+    objective = str(payload.get("objective", "")).strip()
+    if objective:
+        return objective
+    return str(work_item.task_request.description or "").strip()
+
+
 def _load_metrics_rows(path: Path) -> list[dict[str, str]]:
     # Match the tolerant parsing used by scripts/build_runs_index.py because
     # historical metrics.csv rows may carry unquoted JSON in params_json.
@@ -326,6 +334,9 @@ def _completed_trial_runs(work_item: WorkItem) -> list[Run]:
     for run in sorted(work_item.runs, key=lambda row: (row.attempt, row.created_at or utcnow())):
         if run.status not in {RunStatus.SUCCEEDED, RunStatus.FAILED, RunStatus.CANCELED, RunStatus.TIMED_OUT}:
             continue
+        payload = dict(run.result_payload or {}) if isinstance(run.result_payload, dict) else {}
+        if bool((payload.get("retry_decision") or {}).get("requeue")):
+            continue
         completed.append(run)
     return completed
 
@@ -364,10 +375,23 @@ def _best_trial_row(repo_root: Path, run: Run) -> tuple[str, dict[str, Any]] | N
     return candidates[0]
 
 
+def _ok_trial_rows(repo_root: Path, run: Run) -> list[tuple[str, dict[str, Any]]]:
+    candidates: list[tuple[str, dict[str, Any]]] = []
+    for metrics_csv in _metrics_csvs_from_run(run, work_item=run.work_item):
+        metrics_path = _resolve_path(repo_root=repo_root, path_text=metrics_csv)
+        if not metrics_path.exists():
+            continue
+        for row in _load_metrics_rows(metrics_path):
+            if str(row.get("status", "")).strip() != "ok":
+                continue
+            candidates.append((metrics_csv, dict(row)))
+    return candidates
+
+
 def _metric_summary(values: list[float]) -> dict[str, float] | None:
     if not values:
         return None
-    stddev = float(statistics.pstdev(values)) if len(values) > 1 else 0.0
+    stddev = 0.0 if len(values) == 1 else float(statistics.pstdev(values))
     return {
         "best": min(values),
         "mean": float(statistics.fmean(values)),
@@ -428,7 +452,114 @@ def _upsert_repo_artifact(session: Session, *, run: Run, kind: str, path: str, m
         artifact.metadata_ = metadata
 
 
-def _trial_aggregate_payloads(repo_root: Path, work_item: WorkItem) -> tuple[list[str], dict[str, Any], dict[str, Any], list[dict[str, Any]]]:
+def _normalized_seed_variance_params(row: dict[str, Any]) -> str | None:
+    params_text = str(row.get("params_json", "")).strip()
+    if not params_text:
+        return None
+    try:
+        params = json.loads(params_text)
+    except Exception:
+        return None
+    if not isinstance(params, dict):
+        return None
+    comparable = {
+        str(key): value
+        for key, value in params.items()
+        if str(key) not in {"FLOW_RANDOM_SEED", "TAG"}
+    }
+    return json.dumps(comparable, sort_keys=True, separators=(",", ":"))
+
+
+def _seed_variance_match_key(metrics_csv: str, row: dict[str, Any]) -> str:
+    design = str(row.get("design", "")).strip()
+    platform = str(row.get("platform", "")).strip()
+    config_hash = str(row.get("config_hash", "")).strip()
+    normalized_params = _normalized_seed_variance_params(row)
+    if normalized_params:
+        return "|".join((design, platform, config_hash, normalized_params))
+    metrics_key = re.sub(r"/trials/trial_\d+/", "/trials/*/", metrics_csv)
+    fallback = str(row.get("tag", "")).strip() or str(row.get("param_hash", "")).strip()
+    return "|".join((metrics_key, platform, config_hash, fallback))
+
+
+def _select_seed_variance_rows(
+    repo_root: Path,
+    work_item: WorkItem,
+    completed: list[Run],
+) -> tuple[dict[str, tuple[str, dict[str, Any]]], dict[str, Any] | None]:
+    grouped: dict[str, list[tuple[Run, str, dict[str, Any]]]] = {}
+    for run in completed:
+        if run.status != RunStatus.SUCCEEDED:
+            continue
+        seen_keys: set[str] = set()
+        for metrics_csv, row in _ok_trial_rows(repo_root, run):
+            key = _seed_variance_match_key(metrics_csv, row)
+            if key in seen_keys:
+                continue
+            seen_keys.add(key)
+            grouped.setdefault(key, []).append((run, metrics_csv, row))
+
+    candidates: list[tuple[tuple[Any, ...], dict[str, Any]]] = []
+    for key, entries in grouped.items():
+        distinct_runs = {entry[0].run_key for entry in entries}
+        if len(distinct_runs) < 2:
+            continue
+        cp_values = [
+            value
+            for value in (_safe_float(entry[2].get("critical_path_ns")) for entry in entries)
+            if value is not None
+        ]
+        area_values = [
+            value
+            for value in (_safe_float(entry[2].get("die_area")) for entry in entries)
+            if value is not None
+        ]
+        power_values = [
+            value
+            for value in (_safe_float(entry[2].get("total_power_mw")) for entry in entries)
+            if value is not None
+        ]
+        sort_key = (
+            -len(distinct_runs),
+            float(statistics.fmean(cp_values)) if cp_values else float("inf"),
+            float(statistics.fmean(area_values)) if area_values else float("inf"),
+            float(statistics.fmean(power_values)) if power_values else float("inf"),
+            key,
+        )
+        representative = sorted(((metrics_csv, row) for _run, metrics_csv, row in entries), key=lambda item: _row_sort_key(item[1]))[0]
+        candidates.append(
+            (
+                sort_key,
+                {
+                    "key": key,
+                    "entries": entries,
+                    "representative": representative,
+                },
+            )
+        )
+
+    if not candidates:
+        return {}, None
+    _sort_key, selected = sorted(candidates, key=lambda item: item[0])[0]
+    matched = {
+        run.run_key: (metrics_csv, row)
+        for run, metrics_csv, row in selected["entries"]
+    }
+    representative_metrics_csv, representative_row = selected["representative"]
+    metadata = {
+        "match_key": selected["key"],
+        "matched_run_count": len(matched),
+        "representative_metrics_csv": representative_metrics_csv,
+        "representative_row": representative_row,
+        "comparison_mode": "same_non_seed_flow_params",
+    }
+    normalized_params = _normalized_seed_variance_params(representative_row)
+    if normalized_params:
+        metadata["comparison_params"] = json.loads(normalized_params)
+    return matched, metadata
+
+
+def _trial_aggregate_payloads(repo_root: Path, work_item: WorkItem) -> tuple[list[str], dict[str, Any], dict[str, Any], list[dict[str, Any]], dict[str, Any] | None]:
     completed = _completed_trial_runs(work_item)
     metrics_csvs: list[str] = []
     trial_rows: list[dict[str, Any]] = []
@@ -436,6 +567,10 @@ def _trial_aggregate_payloads(repo_root: Path, work_item: WorkItem) -> tuple[lis
     failure_category = Counter()
     failure_stage = Counter()
     success_count = 0
+    seed_variance_selected_rows: dict[str, tuple[str, dict[str, Any]]] = {}
+    selected_group_metadata: dict[str, Any] | None = None
+    if _objective_name(work_item) == "measure_seed_variance":
+        seed_variance_selected_rows, selected_group_metadata = _select_seed_variance_rows(repo_root, work_item, completed)
     for run in completed:
         payload = dict(run.result_payload or {}) if isinstance(run.result_payload, dict) else {}
         trial = dict(payload.get("trial") or {})
@@ -444,7 +579,10 @@ def _trial_aggregate_payloads(repo_root: Path, work_item: WorkItem) -> tuple[lis
         for metrics_csv in run_metrics_csvs:
             if metrics_csv not in metrics_csvs:
                 metrics_csvs.append(metrics_csv)
-        best = _best_trial_row(repo_root, run) if run.status == RunStatus.SUCCEEDED else None
+        if run.status == RunStatus.SUCCEEDED and seed_variance_selected_rows:
+            best = seed_variance_selected_rows.get(run.run_key)
+        else:
+            best = _best_trial_row(repo_root, run) if run.status == RunStatus.SUCCEEDED else None
         metrics_csv = ""
         best_row = None
         if best is not None:
@@ -484,6 +622,10 @@ def _trial_aggregate_payloads(repo_root: Path, work_item: WorkItem) -> tuple[lis
         "success_rate": (float(success_count) / float(completed_trials)) if completed_trials else 0.0,
         "metrics": {key: value for key, value in {metric: _metric_summary(values) for metric, values in success_metric_values.items()}.items() if value is not None},
     }
+    if selected_group_metadata is not None:
+        summary_stats["comparison_mode"] = selected_group_metadata["comparison_mode"]
+        if "comparison_params" in selected_group_metadata:
+            summary_stats["comparison_params"] = selected_group_metadata["comparison_params"]
     failure_stats = {
         "item_id": work_item.item_id,
         "completed_trials": completed_trials,
@@ -492,7 +634,9 @@ def _trial_aggregate_payloads(repo_root: Path, work_item: WorkItem) -> tuple[lis
         "by_category": dict(failure_category),
         "by_stage": dict(failure_stage),
     }
-    return metrics_csvs, summary_stats, failure_stats, trial_rows
+    if selected_group_metadata is not None:
+        failure_stats["comparison_mode"] = selected_group_metadata["comparison_mode"]
+    return metrics_csvs, summary_stats, failure_stats, trial_rows, selected_group_metadata
 
 
 def _build_payload(*, work_item: WorkItem, run: Run, proposals: list[dict[str, Any]], evaluation_record: dict[str, Any], source_refs: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -549,16 +693,14 @@ def consume_l1_result(session: Session, request: Layer1ConsumeRequest) -> Layer1
     if run.status != RunStatus.SUCCEEDED:
         raise Layer1ResultConsumerError(f"run is not succeeded: {run.run_key} status={run.status.value}")
 
-    metrics_csvs, summary_stats, failure_stats, trial_rows = _trial_aggregate_payloads(repo_root, work_item)
+    metrics_csvs, summary_stats, failure_stats, trial_rows, selected_group_metadata = _trial_aggregate_payloads(repo_root, work_item)
     proposals: list[dict[str, Any]] = []
     evaluation_record: dict[str, Any] | None = None
-    for metrics_csv in metrics_csvs:
-        best_row = _best_metrics_row(repo_root=repo_root, metrics_csv=metrics_csv)
-        if best_row is None:
-            continue
+    if selected_group_metadata and selected_group_metadata.get("representative_row"):
+        metrics_csv = str(selected_group_metadata["representative_metrics_csv"])
+        best_row = dict(selected_group_metadata["representative_row"])
         row_evaluation = _effective_evaluation_record(repo_root=repo_root, work_item=work_item, best_row=best_row)
-        if evaluation_record is None:
-            evaluation_record = row_evaluation
+        evaluation_record = row_evaluation
         proposals.append(
             _proposal_entry(
                 metrics_csv=metrics_csv,
@@ -566,6 +708,21 @@ def consume_l1_result(session: Session, request: Layer1ConsumeRequest) -> Layer1
                 evaluation_record=row_evaluation,
             )
         )
+    else:
+        for metrics_csv in metrics_csvs:
+            best_row = _best_metrics_row(repo_root=repo_root, metrics_csv=metrics_csv)
+            if best_row is None:
+                continue
+            row_evaluation = _effective_evaluation_record(repo_root=repo_root, work_item=work_item, best_row=best_row)
+            if evaluation_record is None:
+                evaluation_record = row_evaluation
+            proposals.append(
+                _proposal_entry(
+                    metrics_csv=metrics_csv,
+                    best_row=best_row,
+                    evaluation_record=row_evaluation,
+                )
+            )
 
     if not proposals or evaluation_record is None:
         raise Layer1ResultConsumerError(f"no status=ok metrics rows found for work item: {work_item.item_id}")
