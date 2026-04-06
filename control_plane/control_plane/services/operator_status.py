@@ -19,6 +19,7 @@ from control_plane.models.work_items import WorkItem
 from control_plane.services.completion_retry_service import submission_retry_status
 from control_plane.services.operator_submission import assess_submission_eligibility
 from control_plane.services.run_index_query import comparative_run_index
+from control_plane.services.trial_variance import load_seed_trial_variance
 
 
 def _as_comparable_utc(dt):
@@ -76,7 +77,7 @@ class OperatorStatusResult:
     run_index_best_designs: list[dict[str, object]]
     run_index_family_leaders: list[dict[str, object]]
     run_index_failure_rates: list[dict[str, object]]
-    run_index_design_variance: list[dict[str, object]]
+    seed_trial_variance: list[dict[str, object]]
     run_index_failure_hotspots: list[dict[str, object]]
 
 
@@ -326,6 +327,8 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
             "message": "healthy: no stale leases, no recent failures, no active runs, no pending submissions, no queued review items",
         }
 
+    seed_trial_variance = load_seed_trial_variance(repo_root=request.repo_root, limit=request.recent_limit)
+
     return OperatorStatusResult(
         health_summary=health_summary,
         state_counts=state_counts,
@@ -341,6 +344,6 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
         run_index_best_designs=run_index.best_designs,
         run_index_family_leaders=run_index.family_leaders,
         run_index_failure_rates=run_index.failure_rates,
-        run_index_design_variance=run_index.design_variance,
+        seed_trial_variance=seed_trial_variance,
         run_index_failure_hotspots=run_index.failure_hotspots,
     )

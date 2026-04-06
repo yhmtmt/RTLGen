@@ -293,7 +293,7 @@ def test_operator_status_summarizes_live_state() -> None:
         assert status.run_index_family_leaders[0]["design"] == "sigmoid_demo"
         assert status.run_index_failure_rates[0]["circuit_type"] == "terminal"
         assert status.run_index_failure_rates[0]["fail_row_count"] == 1
-        assert status.run_index_design_variance == []
+        assert status.seed_trial_variance == []
         assert status.run_index_failure_hotspots[0]["design"] == "tanh_demo"
         assert status.run_index_failure_hotspots[0]["status_breakdown"] == {"route_failed": 1}
 
@@ -456,6 +456,15 @@ def test_operator_status_includes_run_index_analytics() -> None:
         engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
         create_all(engine)
 
+        trial_root = Path(td) / "control_plane" / "shadow_exports" / "l1_trials" / "trial_sigmoid_item"
+        trial_root.mkdir(parents=True)
+        (trial_root / "trial_table.csv").write_text(
+            "run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature\n"
+            "trial_sigmoid_run_1,1,1,7,succeeded,runs/designs/activations/terminal_sigmoid_int8_wrapper/metrics.csv,0.40,12900.0,0.00011,none,,\n"
+            "trial_sigmoid_run_2,1,2,8,succeeded,runs/designs/activations/terminal_sigmoid_int8_wrapper/metrics.csv,0.42,12800.0,0.00012,none,,\n",
+            encoding="utf-8",
+        )
+
         with Session(engine) as session:
             session.add_all([
                 RunIndexRow(
@@ -526,7 +535,8 @@ def test_operator_status_includes_run_index_analytics() -> None:
         assert status.run_index_best_designs[0]["best_critical_path_ns"] == 0.4
         assert status.run_index_best_designs[0]["ok_row_count"] == 2
         assert len(status.run_index_best_designs) == 1
-        assert status.run_index_design_variance[0]["design"] == "terminal_sigmoid_int8_wrapper"
-        assert round(float(status.run_index_design_variance[0]["critical_path_range_ns"]), 2) == 0.02
+        assert status.seed_trial_variance[0]["item_id"] == "trial_sigmoid_item"
+        assert status.seed_trial_variance[0]["design"] == "terminal_sigmoid_int8_wrapper"
+        assert round(float(status.seed_trial_variance[0]["critical_path_range_ns"]), 2) == 0.02
         assert status.run_index_failure_hotspots[0]["design"] == "terminal_tanh_int8_wrapper"
         assert status.run_index_failure_hotspots[0]["status_breakdown"] == {"fail": 1}
