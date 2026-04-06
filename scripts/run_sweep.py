@@ -182,6 +182,18 @@ def make_run_id(params: Dict[str, object]) -> str:
     return hashlib.sha1(payload.encode()).hexdigest()[:8]
 
 
+def apply_flow_random_seed(params: Dict[str, object]) -> Dict[str, object]:
+    seeded = dict(params)
+    raw_seed = str(os.environ.get("FLOW_RANDOM_SEED", "")).strip()
+    if not raw_seed:
+        return seeded
+    try:
+        seeded["FLOW_RANDOM_SEED"] = int(raw_seed)
+    except ValueError:
+        seeded["FLOW_RANDOM_SEED"] = raw_seed
+    return seeded
+
+
 def write_sdc(clock_period: float, path: Path):
     content = f"""set clock_port "clk"
 set clock_period {clock_period}
@@ -269,6 +281,7 @@ def run_single(
     skip_existing: bool,
     dry_run: bool,
 ):
+    flow_params = apply_flow_random_seed(flow_params)
     module_name, wrapper = read_design_names(config_path)
     config_hash = sha1_file(config_path)[:12]
     run_id = make_run_id(flow_params)
@@ -466,6 +479,7 @@ def main():
 
         for params in combos:
             params = {k.upper(): v for k, v in params.items()}
+            params = apply_flow_random_seed(params)
             params.setdefault("TAG", f"{tag_prefix}_{make_run_id(params)}")
             run_single(
                 config_path=config_path,

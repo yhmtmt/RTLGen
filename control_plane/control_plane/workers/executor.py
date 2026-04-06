@@ -234,14 +234,23 @@ def _active_command_manifest(work_item: WorkItem, trial_index: int) -> list[dict
     commands = [dict(row) for row in (work_item.command_manifest or [])]
     trial_out_root = _trial_out_root(work_item, trial_index)
     out_root = str((work_item.input_manifest or {}).get("out_root", "")).strip()
-    if not trial_out_root or not out_root:
-        return commands
+    policy = _trial_policy(work_item)
+    flow_seed = None
+    if str(work_item.task_type) == "l1_sweep" and policy["trial_count"] > 1:
+        flow_seed = policy["seed_start"] + trial_index - 1
     token = f"--out_root {out_root}"
     replacement = f"--out_root {trial_out_root}"
     for command in commands:
         run_text = str(command.get("run", ""))
-        if token in run_text:
+        if trial_out_root and out_root and token in run_text:
             command["run"] = run_text.replace(token, replacement)
+            run_text = str(command.get("run", ""))
+        if flow_seed is not None and "python3 scripts/run_sweep.py" in run_text and "FLOW_RANDOM_SEED=" not in run_text:
+            command["run"] = run_text.replace(
+                "python3 scripts/run_sweep.py",
+                f"FLOW_RANDOM_SEED={flow_seed} python3 scripts/run_sweep.py",
+                1,
+            )
     return commands
 
 

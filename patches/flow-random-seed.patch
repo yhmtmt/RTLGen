@@ -1,0 +1,103 @@
+diff --git a/flow/scripts/detail_place.tcl b/flow/scripts/detail_place.tcl
+index c093b162f..3e31ad202 100644
+--- a/flow/scripts/detail_place.tcl
++++ b/flow/scripts/detail_place.tcl
+@@ -17,11 +17,12 @@ proc do_dpl { } {
+   detailed_placement
+ 
+   if { [env_var_equals ENABLE_DPO 1] } {
++    set improve_placement_args {}
++    append_env_var improve_placement_args FLOW_RANDOM_SEED -random_seed 1
+     if { [env_var_exists_and_non_empty DPO_MAX_DISPLACEMENT] } {
+-      improve_placement -max_displacement $::env(DPO_MAX_DISPLACEMENT)
+-    } else {
+-      improve_placement
++      lappend improve_placement_args -max_displacement $::env(DPO_MAX_DISPLACEMENT)
+     }
++    improve_placement {*}$improve_placement_args
+   }
+   optimize_mirroring
+ 
+diff --git a/flow/scripts/detail_route.tcl b/flow/scripts/detail_route.tcl
+index dbf38ab71..010b16fcc 100644
+--- a/flow/scripts/detail_route.tcl
++++ b/flow/scripts/detail_route.tcl
+@@ -16,7 +16,11 @@ set_propagated_clock [all_clocks]
+ 
+ set additional_args ""
+ append_env_var additional_args dbProcessNode -db_process_node 1
+-append_env_var additional_args OR_SEED -or_seed 1
++if { [env_var_exists_and_non_empty OR_SEED] } {
++  append_env_var additional_args OR_SEED -or_seed 1
++} else {
++  append_env_var additional_args FLOW_RANDOM_SEED -or_seed 1
++}
+ append_env_var additional_args OR_K -or_k 1
+ append_env_var additional_args VIA_IN_PIN_MIN_LAYER -via_in_pin_bottom_layer 1
+ append_env_var additional_args VIA_IN_PIN_MAX_LAYER -via_in_pin_top_layer 1
+diff --git a/flow/scripts/global_route.tcl b/flow/scripts/global_route.tcl
+index 235c39f00..7d048d23a 100644
+--- a/flow/scripts/global_route.tcl
++++ b/flow/scripts/global_route.tcl
+@@ -8,7 +8,19 @@ load_design 4_cts.odb 4_cts.sdc
+ proc global_route_helper { } {
+   source_env_var_if_exists PRE_GLOBAL_ROUTE_TCL
+ 
++  proc configure_seeded_global_route { } {
++    if { [env_var_exists_and_non_empty FLOW_RANDOM_SEED] } {
++      log_cmd set_global_routing_random -seed $::env(FLOW_RANDOM_SEED)
++    }
++  }
++
++  proc seeded_global_route { args } {
++    configure_seeded_global_route
++    log_cmd global_route {*}$args
++  }
++
+   proc do_global_route { } {
++    configure_seeded_global_route
+     set all_args [concat [list \
+       -congestion_report_file $::global_route_congestion_report] \
+       $::env(GLOBAL_ROUTE_ARGS)]
+@@ -53,11 +65,11 @@ proc global_route_helper { } {
+     }
+ 
+     # Running DPL to fix overlapped instances
+-    # Run to get modified net by DPL
+-    log_cmd global_route -start_incremental
++    # Run to get modified net by DPL.
++    seeded_global_route -start_incremental
+     log_cmd detailed_placement
+-    # Route only the modified net by DPL
+-    log_cmd global_route -end_incremental \
++    # Route only the modified net by DPL.
++    seeded_global_route -end_incremental \
+       -congestion_report_file $::env(REPORTS_DIR)/congestion_post_repair_design.rpt
+ 
+     # Repair timing using global route parasitics
+@@ -71,19 +83,19 @@ proc global_route_helper { } {
+     }
+ 
+     # Running DPL to fix overlapped instances
+-    # Run to get modified net by DPL
+-    log_cmd global_route -start_incremental
++    # Run to get modified net by DPL.
++    seeded_global_route -start_incremental
+     log_cmd detailed_placement
+-    # Route only the modified net by DPL
+-    log_cmd global_route -end_incremental \
++    # Route only the modified net by DPL.
++    seeded_global_route -end_incremental \
+       -congestion_report_file $::env(REPORTS_DIR)/congestion_post_repair_timing.rpt
+   }
+ 
+ 
+-  log_cmd global_route -start_incremental
++  seeded_global_route -start_incremental
+   recover_power_helper
+   # Route the modified nets by rsz journal restore
+-  log_cmd global_route -end_incremental \
++  seeded_global_route -end_incremental \
+     -congestion_report_file $::env(REPORTS_DIR)/congestion_post_recover_power.rpt
+ 
+   if {

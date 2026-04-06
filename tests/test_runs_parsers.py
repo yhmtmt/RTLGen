@@ -3,10 +3,12 @@
 
 import importlib.util
 import json
+import os
 import shutil
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -658,6 +660,17 @@ class RunsParserRegressionTest(unittest.TestCase):
                 self.assertEqual(0, self.validate_runs.main(["--skip_eval_queue"]))
             finally:
                 self._restore_validate_runs_paths(old)
+
+    def test_run_sweep_applies_flow_random_seed_to_flow_params_and_run_hash(self):
+        params = {"CLOCK_PERIOD": 5.0, "CORE_UTILIZATION": 45}
+        with patch.dict(os.environ, {"FLOW_RANDOM_SEED": "101"}, clear=False):
+            seeded = self.run_sweep.apply_flow_random_seed(params)
+
+        self.assertEqual(101, seeded["FLOW_RANDOM_SEED"])
+        self.assertNotEqual(
+            self.run_sweep.make_run_id(params),
+            self.run_sweep.make_run_id(seeded),
+        )
 
 
 if __name__ == "__main__":

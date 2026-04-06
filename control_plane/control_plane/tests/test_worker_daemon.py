@@ -23,7 +23,7 @@ from control_plane.services.lease_service import upsert_worker_machine
 from control_plane.services.scheduler import assign_work_item
 from control_plane.services.worker_daemon import WorkerDaemonConfig, run_worker_daemon
 from control_plane.workers.checkout import CheckoutInfo
-from control_plane.workers.executor import WorkerConfig
+from control_plane.workers.executor import WorkerConfig, _active_command_manifest
 
 
 def _seed_ready_work_item(session: Session, *, item_id: str, repo_root: Path, assigned_machine_key: str | None = None) -> None:
@@ -119,6 +119,31 @@ def test_worker_daemon_executes_item_then_stops_on_no_work() -> None:
         assert result.no_work_polls == 1
         assert result.poll_count == 2
         assert [row.status for row in result.results] == ["succeeded", "no_work"]
+
+
+def test_active_command_manifest_injects_flow_random_seed_for_multi_trial_sweep() -> None:
+    work_item = WorkItem(
+        item_id="seeded_item",
+        task_type="l1_sweep",
+        input_manifest={"out_root": "runs/designs/activations/demo_wrapper"},
+        command_manifest=[
+            {
+                "name": "run_sweep",
+                "run": (
+                    "export PATH=/oss-cad-suite/bin:$PATH && "
+                    "python3 scripts/run_sweep.py --configs runs/designs/demo/config.json "
+                    "--platform nangate45 --sweep runs/designs/demo/sweep.json "
+                    "--out_root runs/designs/activations/demo_wrapper --skip_existing"
+                ),
+            }
+        ],
+        trial_policy_json={"trial_count": 3, "seed_start": 100, "stop_after_failures": 3},
+    )
+
+    commands = _active_command_manifest(work_item, 2)
+
+    assert commands[0]["run"].startswith("export PATH=/oss-cad-suite/bin:$PATH && FLOW_RANDOM_SEED=101 python3")
+    assert "--out_root runs/designs/activations/demo_wrapper/trials/trial_002" in commands[0]["run"]
 
 
 def test_worker_daemon_emits_positive_poll_logs() -> None:
