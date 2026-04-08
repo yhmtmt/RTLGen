@@ -1,0 +1,12 @@
+{
+  "proposal_id": "prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1",
+  "candidate_id": "",
+  "decision": "iterate",
+  "reason": "Replace with the actual decision rationale.",
+  "evidence_refs": [
+    "item:example",
+    "run:example"
+  ],
+  "next_action": "Describe the next action.",
+  "requires_human_approval": true
+}

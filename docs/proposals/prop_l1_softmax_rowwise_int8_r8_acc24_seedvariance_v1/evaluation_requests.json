@@ -1,0 +1,14 @@
+{
+  "proposal_id": "prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1",
+  "source_commit": "caefe0715c338e98e7eeb1773c5abf2765f6dd47",
+  "requested_items": [
+    {
+      "item_id": "l1_prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1_nangate45_r1",
+      "task_type": "l1_sweep",
+      "objective": "measure_seed_variance",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "circuit_block",
+      "status": "pending"
+    }
+  ]
+}

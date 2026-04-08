@@ -1,0 +1,50 @@
+{
+  "proposal_id": "prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1",
+  "created_utc": "2026-04-08T01:01:11.654391Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "title": "Example proposal title",
+  "hypothesis": "Replace this with a bounded engineering hypothesis.",
+  "direct_comparison": {
+    "primary_question": "What focused comparison directly tests this proposal?",
+    "include": [
+      "describe the minimum comparison set"
+    ],
+    "exclude": [
+      "describe points intentionally left out of first-stage evaluation"
+    ],
+    "follow_on_broad_sweep": [
+      "optional wider sweep to run only after the focused comparison"
+    ]
+  },
+  "expected_benefit": [
+    "describe expected benefit"
+  ],
+  "risks": [
+    "describe risk"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "paired_comparison",
+      "objective": "balanced",
+      "cost_class": "medium",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": false,
+      "requires_materialized_refs": false,
+      "expected_result": {
+        "direction": "better_than_historical",
+        "reason": "replace this with the expected direction for this item"
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/campaigns/..."
+  ],
+  "knowledge_refs": [
+    "paper:example",
+    "discussion:example"
+  ]
+}
