@@ -1,0 +1,41 @@
+{
+  "item_id": "l1_prop_l1_terminal_tanh_seedvariance_v1_nangate45_r2",
+  "completed_trials": 5,
+  "success_count": 5,
+  "failure_count": 0,
+  "success_rate": 1.0,
+  "metrics": {
+    "critical_path_ns": {
+      "best": 0.1898,
+      "mean": 0.19052,
+      "median": 0.1904,
+      "max": 0.1913,
+      "range": 0.0015000000000000013,
+      "stddev": 0.0005564171097297438
+    },
+    "die_area": {
+      "best": 25600.0,
+      "mean": 25600.0,
+      "median": 25600.0,
+      "max": 25600.0,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "total_power_mw": {
+      "best": 7.74e-05,
+      "mean": 7.764e-05,
+      "median": 7.76e-05,
+      "max": 7.78e-05,
+      "range": 3.9999999999999617e-07,
+      "stddev": 1.496662954709555e-07
+    }
+  },
+  "comparison_mode": "same_non_seed_flow_params",
+  "comparison_params": {
+    "CLOCK_PERIOD": 6.0,
+    "CORE_AREA": "20 20 140 140",
+    "CORE_UTILIZATION": "",
+    "DIE_AREA": "0 0 160 160",
+    "PLACE_DENSITY": 0.45
+  }
+}
