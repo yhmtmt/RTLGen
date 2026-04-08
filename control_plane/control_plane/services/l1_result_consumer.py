@@ -349,14 +349,35 @@ def _metrics_csvs_from_run(run: Run, *, work_item: WorkItem | None = None) -> li
         if rel_path not in result:
             result.append(rel_path)
     if result or work_item is None:
-        return result
+        return _filter_metrics_csvs_for_trial(run, result)
     for rel_path in work_item.expected_outputs or []:
         rel_path = str(rel_path).strip()
         if not rel_path or rel_path == "runs/index.csv" or not rel_path.endswith("metrics.csv"):
             continue
         if rel_path not in result:
             result.append(rel_path)
-    return result
+    return _filter_metrics_csvs_for_trial(run, result)
+
+
+def _run_trial_index(run: Run) -> int | None:
+    if run.trial_index:
+        return int(run.trial_index)
+    payload = dict(run.result_payload or {}) if isinstance(run.result_payload, dict) else {}
+    trial = dict(payload.get("trial") or {})
+    raw_value = trial.get("trial_index")
+    try:
+        return int(raw_value) if raw_value not in ("", None) else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _filter_metrics_csvs_for_trial(run: Run, metrics_csvs: list[str]) -> list[str]:
+    trial_index = _run_trial_index(run)
+    if trial_index is None:
+        return metrics_csvs
+    trial_marker = f"/trials/trial_{trial_index:03d}/"
+    matched = [path for path in metrics_csvs if trial_marker in path]
+    return matched or metrics_csvs
 
 
 def _best_trial_row(repo_root: Path, run: Run) -> tuple[str, dict[str, Any]] | None:

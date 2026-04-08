@@ -785,3 +785,104 @@ def test_consume_l1_result_groups_seed_variance_by_non_seed_params() -> None:
             assert ",101,succeeded," in trial_table
             assert metrics_trial_1 in trial_table
             assert metrics_trial_2 in trial_table
+
+
+def test_consume_l1_result_uses_run_trial_path_when_metrics_rows_are_missing() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        metrics_trial_1 = "runs/designs/activations/terminal_hardswish_int8_pwl_seedvariance_wrapper/trials/trial_001/terminal_hardswish_int8_pwl_seedvariance_wrapper/metrics.csv"
+        metrics_trial_2 = "runs/designs/activations/terminal_hardswish_int8_pwl_seedvariance_wrapper/trials/trial_002/terminal_hardswish_int8_pwl_seedvariance_wrapper/metrics.csv"
+        for metrics_path, seed, cp in ((metrics_trial_1, 101, 0.1940), (metrics_trial_2, 102, 0.1943)):
+            target = repo_root / metrics_path
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(
+                "\n".join([
+                    "design,platform,config_hash,param_hash,tag,status,critical_path_ns,die_area,total_power_mw,params_json,result_path",
+                    f'terminal_hardswish_int8_pwl_seedvariance_wrapper,nangate45,cfgseed,p{seed},tag_{seed},ok,{cp},25600.0,0.000325,"{{""CLOCK_PERIOD"": 4.0, ""FLOW_RANDOM_SEED"": {seed}, ""PLACE_DENSITY"": 0.35, ""TAG"": ""tag_{seed}""}}",runs/result_{seed}.json',
+                ]) + "\n",
+                encoding="utf-8",
+            )
+
+        with Session(engine) as session:
+            task_request = TaskRequest(
+                request_key="l1_sweep:test_run_trial_path_fallback",
+                source="test",
+                requested_by="@tester",
+                title="Layer1 run trial path fallback test",
+                description="measure_seed_variance",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                priority=1,
+                request_payload={
+                    "item_id": "l1_test_run_trial_path_fallback",
+                    "layer": "layer1",
+                    "flow": "openroad",
+                    "objective": "measure_seed_variance",
+                },
+                source_commit="deadbeef",
+            )
+            session.add(task_request)
+            session.flush()
+
+            work_item = WorkItem(
+                work_item_key="l1_sweep:l1_test_run_trial_path_fallback",
+                task_request_id=task_request.id,
+                item_id="l1_test_run_trial_path_fallback",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                platform="nangate45",
+                task_type="l1_sweep",
+                state=WorkItemState.ARTIFACT_SYNC,
+                priority=1,
+                source_mode="config",
+                input_manifest={},
+                command_manifest=[],
+                expected_outputs=[metrics_trial_1, metrics_trial_2],
+                acceptance_rules=[],
+                source_commit="deadbeef",
+                trial_policy_json={"trial_count": 2, "seed_start": 101, "stop_after_failures": 2},
+            )
+            session.add(work_item)
+            session.flush()
+
+            run_1 = Run(
+                run_key="l1_test_run_trial_path_fallback_run_1",
+                work_item_id=work_item.id,
+                attempt=1,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.SUCCEEDED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="deadbeef",
+                trial_index=1,
+                seed=101,
+                result_summary="trial 1 succeeded",
+                result_payload={"trial": {"trial_index": 1, "seed": 101}, "queue_result": {"status": "ok"}},
+            )
+            run_2 = Run(
+                run_key="l1_test_run_trial_path_fallback_run_2",
+                work_item_id=work_item.id,
+                attempt=2,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.SUCCEEDED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="deadbeef",
+                trial_index=2,
+                seed=102,
+                result_summary="trial 2 succeeded",
+                result_payload={"trial": {"trial_index": 2, "seed": 102}, "queue_result": {"status": "ok"}},
+            )
+            session.add_all([run_1, run_2])
+            session.commit()
+
+            consume_l1_result(session, Layer1ConsumeRequest(repo_root=str(repo_root), item_id=work_item.item_id))
+
+            trial_table_path = repo_root / "control_plane" / "shadow_exports" / "l1_trials" / work_item.item_id / "trial_table.csv"
+            trial_table_lines = trial_table_path.read_text(encoding="utf-8").strip().splitlines()
+            assert metrics_trial_1 in trial_table_lines[1]
+            assert metrics_trial_2 in trial_table_lines[2]
