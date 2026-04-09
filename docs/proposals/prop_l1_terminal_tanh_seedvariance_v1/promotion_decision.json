@@ -1,12 +1,15 @@
 {
   "proposal_id": "prop_l1_terminal_tanh_seedvariance_v1",
-  "candidate_id": "",
-  "decision": "iterate",
-  "reason": "Replace with the actual decision rationale.",
+  "candidate_id": "l1_prop_l1_terminal_tanh_seedvariance_v1_nangate45_r2",
+  "decision": "promote",
+  "reason": "Accepted Layer 1 physical metrics were merged in PR #173 for the current candidate.",
   "evidence_refs": [
-    "item:example",
-    "run:example"
+    "item:l1_prop_l1_terminal_tanh_seedvariance_v1_nangate45_r2",
+    "run:l1_prop_l1_terminal_tanh_seedvariance_v1_nangate45_r2_run_990861c1614b96c7",
+    "artifact:control_plane/shadow_exports/l1_promotions/l1_prop_l1_terminal_tanh_seedvariance_v1_nangate45_r2.json",
+    "pr:#173",
+    "https://github.com/yhmtmt/RTLGen/pull/173"
   ],
-  "next_action": "Describe the next action.",
-  "requires_human_approval": true
+  "next_action": "inspect the next dependent item",
+  "requires_human_approval": false
 }

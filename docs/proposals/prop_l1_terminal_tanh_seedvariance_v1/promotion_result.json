@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l1_terminal_tanh_seedvariance_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "promote",
+  "pr_number": 173,
+  "merge_commit": "087aa8bb692c559c2f5e534235d77875df8d8cbc",
+  "merged_utc": "2026-04-09T11:35:15.726035Z"
 }
