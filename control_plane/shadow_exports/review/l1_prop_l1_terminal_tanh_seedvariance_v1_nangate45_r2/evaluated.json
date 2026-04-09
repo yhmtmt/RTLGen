@@ -1,0 +1,136 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/designs/activations/sweeps/nangate45_terminal_tanh_int8_pwl_v1.json"
+      ],
+      "configs": [
+        "runs/designs/activations/terminal_tanh_int8_pwl_seedvariance_wrapper/config_terminal_tanh_int8_pwl_seedvariance.json"
+      ],
+      "out_root": "runs/designs/activations/terminal_tanh_int8_pwl_seedvariance_wrapper",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && cmake -S . -B build && cmake --build build --target rtlgen",
+        "name": "build_generator"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 scripts/run_sweep.py --configs runs/designs/activations/terminal_tanh_int8_pwl_seedvariance_wrapper/config_terminal_tanh_int8_pwl_seedvariance.json --platform nangate45 --sweep runs/designs/activations/sweeps/nangate45_terminal_tanh_int8_pwl_v1.json --out_root runs/designs/activations/terminal_tanh_int8_pwl_seedvariance_wrapper --skip_existing",
+        "name": "run_sweep"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "objective": "measure_seed_variance",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/activations/terminal_tanh_int8_pwl_seedvariance_wrapper/trials/trial_001/terminal_tanh_int8_pwl_seedvariance_wrapper/metrics.csv",
+      "runs/designs/activations/terminal_tanh_int8_pwl_seedvariance_wrapper/trials/trial_002/terminal_tanh_int8_pwl_seedvariance_wrapper/metrics.csv",
+      "runs/designs/activations/terminal_tanh_int8_pwl_seedvariance_wrapper/trials/trial_003/terminal_tanh_int8_pwl_seedvariance_wrapper/metrics.csv",
+      "runs/designs/activations/terminal_tanh_int8_pwl_seedvariance_wrapper/trials/trial_004/terminal_tanh_int8_pwl_seedvariance_wrapper/metrics.csv",
+      "runs/designs/activations/terminal_tanh_int8_pwl_seedvariance_wrapper/trials/trial_005/terminal_tanh_int8_pwl_seedvariance_wrapper/metrics.csv"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Layer1 sweep from nangate45_terminal_tanh_int8_pwl_v1 on nangate45",
+  "result": {
+    "branch": "eval/l1_prop_l1_terminal_tanh_seedvariance_v1_nangate45_r2/s20260408t142735z",
+    "completed_utc": "2026-04-08T14:27:33.957959Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260408t142735z][host:b7c2d9c80c1c][item:l1_prop_l1_terminal_tanh_seedvariance_v1_nangate45_r2]",
+    "metrics_rows": [
+      {
+        "tag": "terminal_tanh_int8_pwl_ng45_v1_d9bdb49c",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "7c653f8c",
+        "metrics_csv": "runs/designs/activations/terminal_tanh_int8_pwl_seedvariance_wrapper/trials/trial_005/terminal_tanh_int8_pwl_seedvariance_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/terminal_tanh_int8_pwl_seedvariance_wrapper/trials/trial_005/terminal_tanh_int8_pwl_seedvariance_wrapper/work/7c653f8c/result.json"
+      },
+      {
+        "tag": "terminal_tanh_int8_pwl_ng45_v1_d9f4558e",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "e9308e66",
+        "metrics_csv": "runs/designs/activations/terminal_tanh_int8_pwl_seedvariance_wrapper/trials/trial_005/terminal_tanh_int8_pwl_seedvariance_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/terminal_tanh_int8_pwl_seedvariance_wrapper/trials/trial_005/terminal_tanh_int8_pwl_seedvariance_wrapper/work/e9308e66/result.json"
+      },
+      {
+        "tag": "terminal_tanh_int8_pwl_ng45_v1_7b724f48",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "947c2130",
+        "metrics_csv": "runs/designs/activations/terminal_tanh_int8_pwl_seedvariance_wrapper/trials/trial_005/terminal_tanh_int8_pwl_seedvariance_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/terminal_tanh_int8_pwl_seedvariance_wrapper/trials/trial_005/terminal_tanh_int8_pwl_seedvariance_wrapper/work/947c2130/result.json"
+      },
+      {
+        "tag": "terminal_tanh_int8_pwl_ng45_v1_bd63cb9d",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "95bfffec",
+        "metrics_csv": "runs/designs/activations/terminal_tanh_int8_pwl_seedvariance_wrapper/trials/trial_005/terminal_tanh_int8_pwl_seedvariance_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/terminal_tanh_int8_pwl_seedvariance_wrapper/trials/trial_005/terminal_tanh_int8_pwl_seedvariance_wrapper/work/95bfffec/result.json"
+      }
+    ],
+    "queue_item_id": "l1_prop_l1_terminal_tanh_seedvariance_v1_nangate45_r2",
+    "session_id": "s20260408t142735z",
+    "status": "ok",
+    "summary": "4/4 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_prop_l1_terminal_tanh_seedvariance_v1_nangate45_r2/s20260408t142735z",
+    "pr_title": "eval: run layer1 sweep from nangate45_terminal_tanh_int8_pwl_v1 on nangate45",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260408t142735z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_prop_l1_terminal_tanh_seedvariance_v1_nangate45_r2"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_prop_l1_terminal_tanh_seedvariance_v1_nangate45_r2",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-04-08T14:16:25.521299Z",
+  "requested_by": "control_plane",
+  "developer_loop": {
+    "evaluation": {
+      "mode": "measurement_only",
+      "trial_policy": {
+        "seed_start": 101,
+        "trial_count": 5,
+        "stop_after_failures": 5
+      }
+    },
+    "abstraction": {
+      "layer": "circuit_block"
+    },
+    "proposal_id": "prop_l1_terminal_tanh_seedvariance_v1",
+    "proposal_path": "docs/proposals/prop_l1_terminal_tanh_seedvariance_v1"
+  }
+}

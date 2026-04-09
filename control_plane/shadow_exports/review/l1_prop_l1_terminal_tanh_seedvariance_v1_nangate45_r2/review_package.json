@@ -1,0 +1,202 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-04-08T14:27:36.138181Z",
+  "item_id": "l1_prop_l1_terminal_tanh_seedvariance_v1_nangate45_r2",
+  "run_key": "l1_prop_l1_terminal_tanh_seedvariance_v1_nangate45_r2_run_990861c1614b96c7",
+  "layer": "layer1",
+  "flow": "openroad",
+  "task_type": "l1_sweep",
+  "source_commit": "17cd2bdd54c547c6d62a90df894d799c251c4e0c",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l1_prop_l1_terminal_tanh_seedvariance_v1_nangate45_r2/evaluated.json",
+    "result": {
+      "branch": "eval/l1_prop_l1_terminal_tanh_seedvariance_v1_nangate45_r2/s20260408t142735z",
+      "completed_utc": "2026-04-08T14:27:33.957959Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "b7c2d9c80c1c",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260408t142735z][host:b7c2d9c80c1c][item:l1_prop_l1_terminal_tanh_seedvariance_v1_nangate45_r2]",
+      "metrics_rows": [
+        {
+          "tag": "terminal_tanh_int8_pwl_ng45_v1_d9bdb49c",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "7c653f8c",
+          "metrics_csv": "runs/designs/activations/terminal_tanh_int8_pwl_seedvariance_wrapper/trials/trial_005/terminal_tanh_int8_pwl_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/terminal_tanh_int8_pwl_seedvariance_wrapper/trials/trial_005/terminal_tanh_int8_pwl_seedvariance_wrapper/work/7c653f8c/result.json"
+        },
+        {
+          "tag": "terminal_tanh_int8_pwl_ng45_v1_d9f4558e",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "e9308e66",
+          "metrics_csv": "runs/designs/activations/terminal_tanh_int8_pwl_seedvariance_wrapper/trials/trial_005/terminal_tanh_int8_pwl_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/terminal_tanh_int8_pwl_seedvariance_wrapper/trials/trial_005/terminal_tanh_int8_pwl_seedvariance_wrapper/work/e9308e66/result.json"
+        },
+        {
+          "tag": "terminal_tanh_int8_pwl_ng45_v1_7b724f48",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "947c2130",
+          "metrics_csv": "runs/designs/activations/terminal_tanh_int8_pwl_seedvariance_wrapper/trials/trial_005/terminal_tanh_int8_pwl_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/terminal_tanh_int8_pwl_seedvariance_wrapper/trials/trial_005/terminal_tanh_int8_pwl_seedvariance_wrapper/work/947c2130/result.json"
+        },
+        {
+          "tag": "terminal_tanh_int8_pwl_ng45_v1_bd63cb9d",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "95bfffec",
+          "metrics_csv": "runs/designs/activations/terminal_tanh_int8_pwl_seedvariance_wrapper/trials/trial_005/terminal_tanh_int8_pwl_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/terminal_tanh_int8_pwl_seedvariance_wrapper/trials/trial_005/terminal_tanh_int8_pwl_seedvariance_wrapper/work/95bfffec/result.json"
+        }
+      ],
+      "queue_item_id": "l1_prop_l1_terminal_tanh_seedvariance_v1_nangate45_r2",
+      "session_id": "s20260408t142735z",
+      "status": "ok",
+      "summary": "4/4 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "promotion_proposal",
+    "path": "control_plane/shadow_exports/l1_promotions/l1_prop_l1_terminal_tanh_seedvariance_v1_nangate45_r2.json",
+    "storage_mode": "repo",
+    "sha256": "6539a6cf905ad660c7fb249ee45cd75487e24d790f482f4efb0c8ff2a760f852",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-04-08T14:27:34.579387Z",
+      "item_id": "l1_prop_l1_terminal_tanh_seedvariance_v1_nangate45_r2",
+      "run_key": "l1_prop_l1_terminal_tanh_seedvariance_v1_nangate45_r2_run_990861c1614b96c7",
+      "layer": "layer1",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l1_sweep",
+      "source_commit": "17cd2bdd54c547c6d62a90df894d799c251c4e0c",
+      "objective": "measure_seed_variance",
+      "input_manifest": {
+        "sweeps": [
+          "runs/designs/activations/sweeps/nangate45_terminal_tanh_int8_pwl_v1.json"
+        ],
+        "configs": [
+          "runs/designs/activations/terminal_tanh_int8_pwl_seedvariance_wrapper/config_terminal_tanh_int8_pwl_seedvariance.json"
+        ],
+        "out_root": "runs/designs/activations/terminal_tanh_int8_pwl_seedvariance_wrapper",
+        "design_dirs": [],
+        "macro_manifests": [],
+        "candidate_manifests": [],
+        "required_submodules": []
+      },
+      "proposal_count": 1,
+      "evaluation_record": {
+        "evaluation_mode": "measurement_only",
+        "abstraction_layer": "circuit_block",
+        "result_kind": "physical_metrics",
+        "physical_metrics_present": true,
+        "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+      },
+      "proposal_assessment": null,
+      "proposals": [
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/activations/terminal_tanh_int8_pwl_seedvariance_wrapper/trials/trial_002/terminal_tanh_int8_pwl_seedvariance_wrapper/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "4147f1d7",
+            "tag": "terminal_tanh_int8_pwl_ng45_v1_14105797",
+            "result_path": "runs/designs/activations/terminal_tanh_int8_pwl_seedvariance_wrapper/trials/trial_002/terminal_tanh_int8_pwl_seedvariance_wrapper/work/4147f1d7/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 0.1898,
+            "die_area": 25600.0,
+            "total_power_mw": 7.74e-05
+          }
+        }
+      ],
+      "trial_summary": {
+        "item_id": "l1_prop_l1_terminal_tanh_seedvariance_v1_nangate45_r2",
+        "completed_trials": 5,
+        "success_count": 5,
+        "failure_count": 0,
+        "success_rate": 1.0,
+        "metrics": {
+          "critical_path_ns": {
+            "best": 0.1898,
+            "mean": 0.19052,
+            "median": 0.1904,
+            "max": 0.1913,
+            "range": 0.0015000000000000013,
+            "stddev": 0.0005564171097297438
+          },
+          "die_area": {
+            "best": 25600.0,
+            "mean": 25600.0,
+            "median": 25600.0,
+            "max": 25600.0,
+            "range": 0.0,
+            "stddev": 0.0
+          },
+          "total_power_mw": {
+            "best": 7.74e-05,
+            "mean": 7.764e-05,
+            "median": 7.76e-05,
+            "max": 7.78e-05,
+            "range": 3.9999999999999617e-07,
+            "stddev": 1.496662954709555e-07
+          }
+        },
+        "comparison_mode": "same_non_seed_flow_params",
+        "comparison_params": {
+          "CLOCK_PERIOD": 6.0,
+          "CORE_AREA": "20 20 140 140",
+          "CORE_UTILIZATION": "",
+          "DIE_AREA": "0 0 160 160",
+          "PLACE_DENSITY": 0.45
+        }
+      },
+      "source_refs": {
+        "trial_metrics_csvs": [
+          "runs/designs/activations/terminal_tanh_int8_pwl_seedvariance_wrapper/trials/trial_001/terminal_tanh_int8_pwl_seedvariance_wrapper/metrics.csv",
+          "runs/designs/activations/terminal_tanh_int8_pwl_seedvariance_wrapper/trials/trial_002/terminal_tanh_int8_pwl_seedvariance_wrapper/metrics.csv",
+          "runs/designs/activations/terminal_tanh_int8_pwl_seedvariance_wrapper/trials/trial_003/terminal_tanh_int8_pwl_seedvariance_wrapper/metrics.csv",
+          "runs/designs/activations/terminal_tanh_int8_pwl_seedvariance_wrapper/trials/trial_004/terminal_tanh_int8_pwl_seedvariance_wrapper/metrics.csv",
+          "runs/designs/activations/terminal_tanh_int8_pwl_seedvariance_wrapper/trials/trial_005/terminal_tanh_int8_pwl_seedvariance_wrapper/metrics.csv"
+        ],
+        "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_prop_l1_terminal_tanh_seedvariance_v1_nangate45_r2/summary_stats.json",
+        "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_prop_l1_terminal_tanh_seedvariance_v1_nangate45_r2/failure_stats.json",
+        "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_prop_l1_terminal_tanh_seedvariance_v1_nangate45_r2/trial_table.csv"
+      }
+    }
+  },
+  "developer_loop": {
+    "evaluation": {
+      "mode": "measurement_only",
+      "trial_policy": {
+        "seed_start": 101,
+        "trial_count": 5,
+        "stop_after_failures": 5
+      }
+    },
+    "abstraction": {
+      "layer": "circuit_block"
+    },
+    "proposal_id": "prop_l1_terminal_tanh_seedvariance_v1",
+    "proposal_path": "docs/proposals/prop_l1_terminal_tanh_seedvariance_v1"
+  },
+  "pr_payload": {
+    "branch": "eval/l1_prop_l1_terminal_tanh_seedvariance_v1_nangate45_r2/s20260408t142735z",
+    "title": "eval: run layer1 sweep from nangate45_terminal_tanh_int8_pwl_v1 on nangate45",
+    "body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260408t142735z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_prop_l1_terminal_tanh_seedvariance_v1_nangate45_r2"
+    },
+    "body_md": "## Summary\n- item_id: `l1_prop_l1_terminal_tanh_seedvariance_v1_nangate45_r2`\n- run_key: `l1_prop_l1_terminal_tanh_seedvariance_v1_nangate45_r2_run_990861c1614b96c7`\n- layer: `layer1`\n- task_type: `l1_sweep`\n- status: `ok`\n- summary: `4/4 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l1_prop_l1_terminal_tanh_seedvariance_v1_nangate45_r2/evaluated.json`\n- metrics_rows_count: `4`\n- review_artifact: `promotion_proposal` at `control_plane/shadow_exports/l1_promotions/l1_prop_l1_terminal_tanh_seedvariance_v1_nangate45_r2.json`\n\n## Developer Context\n- proposal_id: `prop_l1_terminal_tanh_seedvariance_v1`\n- proposal_path: `docs/proposals/prop_l1_terminal_tanh_seedvariance_v1`\n- reviewer_first_read: `docs/proposals/prop_l1_terminal_tanh_seedvariance_v1` plus `docs/developer_agent_review.md`\n\n## Evaluation Mode\n- evaluation_mode: `measurement_only`\n- abstraction_layer: `circuit_block`\n- evaluation_summary: `Physical metrics recorded from an accepted status=ok Layer 1 row.`\n\n## Checklist\n- [ ] Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge\n- [ ] Include metrics row references for each completed design\n- [ ] Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
