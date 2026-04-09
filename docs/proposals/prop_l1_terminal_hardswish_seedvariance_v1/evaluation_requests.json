@@ -1,14 +1,21 @@
 {
   "proposal_id": "prop_l1_terminal_hardswish_seedvariance_v1",
-  "source_commit": "caefe0715c338e98e7eeb1773c5abf2765f6dd47",
+  "source_commit": "17cd2bdd54c547c6d62a90df894d799c251c4e0c",
   "requested_items": [
     {
-      "item_id": "l1_prop_l1_terminal_hardswish_seedvariance_v1_nangate45_r1",
+      "item_id": "l1_prop_l1_terminal_hardswish_seedvariance_v1_nangate45_r2",
       "task_type": "l1_sweep",
       "objective": "measure_seed_variance",
       "evaluation_mode": "measurement_only",
       "abstraction_layer": "circuit_block",
-      "status": "pending"
+      "status": "merged",
+      "prior_item_ids": [
+        "l1_prop_l1_terminal_hardswish_seedvariance_v1_nangate45_r1"
+      ],
+      "merged_pr_number": 174,
+      "merge_commit": "7eb775924b735b34e168a73da311859ee13ce288",
+      "merged_utc": "2026-04-09T09:48:03.914769Z",
+      "notes": "Merged via PR #174 and merge 7eb775924b735b34e168a73da311859ee13ce288 at 2026-04-09T09:48:03.914769Z."
     }
   ]
 }

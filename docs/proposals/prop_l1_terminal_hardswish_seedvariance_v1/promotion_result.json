@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l1_terminal_hardswish_seedvariance_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "promote",
+  "pr_number": 174,
+  "merge_commit": "7eb775924b735b34e168a73da311859ee13ce288",
+  "merged_utc": "2026-04-09T09:48:03.914769Z"
 }
