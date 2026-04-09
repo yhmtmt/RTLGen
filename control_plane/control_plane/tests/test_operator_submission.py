@@ -25,6 +25,7 @@ from control_plane.services.l2_result_consumer import Layer2ConsumeRequest, cons
 from control_plane.services.operator_submission import (
     OperatorSubmissionError,
     OperatorSubmissionRequest,
+    _is_reusable_submission_manifest,
     assess_submission_eligibility,
     operate_submission,
 )
@@ -734,6 +735,52 @@ def test_operate_submission_retry_uses_saved_manifest_even_after_repo_evidence_c
             assert result.pr_number == 655
             assert result.submission_prepared is False
             assert result.submission_prepared_reused is True
+
+
+def test_reusable_submission_manifest_rejects_stale_materialization_commit() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, run_key = _seed_l1_reviewable(session, repo_root)
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            run = session.query(Run).filter_by(run_key=run_key).one()
+
+            review_dir = repo_root / "control_plane" / "shadow_exports" / "review" / item_id
+            review_dir.mkdir(parents=True, exist_ok=True)
+            package_rel = f"control_plane/shadow_exports/review/{item_id}/review_package.json"
+            snapshot_rel = f"control_plane/shadow_exports/review/{item_id}/evaluated.json"
+            pr_body_rel = f"control_plane/shadow_exports/review/{item_id}/pr_body.md"
+            for rel_path, content in ((package_rel, '{}\n'), (snapshot_rel, '{}\n'), (pr_body_rel, 'body\n')):
+                target = repo_root / rel_path
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(content, encoding='utf-8')
+
+            manifest_path = review_dir / 'submission_manifest.json'
+            manifest_path.write_text(json.dumps({
+                'run_key': run.run_key,
+                'branch_name': 'eval/demo/s20260310t090000z',
+                'package_path': package_rel,
+                'snapshot_path': snapshot_rel,
+                'pr_body_path': pr_body_rel,
+                'review_artifact_path': '',
+                'evidence_paths': [],
+                'supporting_paths': [],
+                'frozen_file_map': {},
+                'materialization_source_commit': 'stale-materialization-commit',
+            }, indent=2) + '\n', encoding='utf-8')
+
+            assert _is_reusable_submission_manifest(
+                session,
+                repo_root=repo_root,
+                work_item=work_item,
+                run=run,
+                manifest_path=manifest_path,
+            ) is False
 
 
 def test_operate_submission_rebuilds_manifest_when_latest_run_differs() -> None:

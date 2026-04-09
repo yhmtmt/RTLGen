@@ -403,6 +403,7 @@ def prepare_submission_branch(session: Session, request: SubmissionPrepareReques
     manifest = {
         "version": 0.1,
         "generated_utc": utcnow().isoformat().replace("+00:00", "Z"),
+        "materialization_source_commit": package_payload.get("control_plane_source_commit"),
         "item_id": work_item.item_id,
         "run_key": run.run_key,
         "branch_name": branch_name,

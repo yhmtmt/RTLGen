@@ -308,6 +308,7 @@ def test_publish_review_package_for_l1() -> None:
 
             payload = json.loads(package_path.read_text(encoding="utf-8"))
             assert payload["pr_payload"]["branch"] == "eval/l1_review_demo/s20260310t070000z"
+            assert payload["control_plane_source_commit"] is None
             assert payload["pr_payload"]["body_fields"]["session_id"] == "s20260310t070000z"
             assert payload["pr_payload"]["body_fields"]["host"] == "cp-host"
             assert payload["review_artifact"]["kind"] == "promotion_proposal"

@@ -136,6 +136,29 @@ def _load_existing_submission_manifest(manifest_path: Path) -> dict[str, Any] | 
     return payload if isinstance(payload, dict) else None
 
 
+def _current_control_plane_commit(repo_root: Path) -> str | None:
+    completed = subprocess.run(
+        ["git", "-C", str(repo_root), "rev-parse", "HEAD"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if completed.returncode != 0:
+        return None
+    value = completed.stdout.strip()
+    return value or None
+
+
+def _manifest_matches_current_control_plane(manifest: dict[str, Any], *, repo_root: Path) -> bool:
+    current_commit = _current_control_plane_commit(repo_root)
+    if not current_commit:
+        return True
+    manifest_commit = str(manifest.get("materialization_source_commit", "")).strip()
+    if not manifest_commit:
+        return False
+    return manifest_commit == current_commit
+
+
 def _manifest_supporting_files_exist(*, repo_root: Path, manifest: dict[str, Any]) -> bool:
     required_rel_paths: list[str] = []
     for key in ("package_path", "snapshot_path", "pr_body_path"):
@@ -174,6 +197,8 @@ def _is_reusable_submission_manifest(
 ) -> bool:
     manifest = _load_existing_submission_manifest(manifest_path)
     if manifest is None:
+        return False
+    if not _manifest_matches_current_control_plane(manifest, repo_root=repo_root):
         return False
     if str(manifest.get("run_key", "")).strip() != run.run_key:
         return False

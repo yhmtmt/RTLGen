@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import json
 from pathlib import Path
+import subprocess
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -101,6 +102,19 @@ def _resolve_rel_path(path_text: str, repo_root: Path) -> Path:
 
 def _load_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _repo_head(repo_root: Path) -> str | None:
+    completed = subprocess.run(
+        ["git", "-C", str(repo_root), "rev-parse", "HEAD"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if completed.returncode != 0:
+        return None
+    value = completed.stdout.strip()
+    return value or None
 
 
 def _pr_title(work_item: WorkItem) -> str:
@@ -371,6 +385,7 @@ def publish_review_package(session: Session, request: ReviewPublishRequest) -> R
     payload = {
         "version": 0.1,
         "generated_utc": utcnow().isoformat().replace("+00:00", "Z"),
+        "control_plane_source_commit": _repo_head(repo_root),
         "item_id": work_item.item_id,
         "run_key": run.run_key,
         "layer": work_item.layer.value,

@@ -404,6 +404,7 @@ def test_prepare_submission_branch_creates_commit_and_manifest() -> None:
             assert (Path(result.pr_body_path)).exists()
             manifest = json.loads((repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "submission_manifest.json").read_text())
             assert manifest["branch_name"] == result.branch_name
+            assert manifest["materialization_source_commit"] == _git(repo_root, "rev-parse", "HEAD")
             assert manifest["evidence_paths"] == []
             assert "runs/campaigns/demo_l2/artifacts/mapper/fp16_nm1_demo/demo_model/schedule.yml" in manifest["supporting_paths"]
             assert "runs/campaigns/demo_l2/artifacts/mapper/fp16_nm1_demo/relu_model/schedule.yml" in manifest["supporting_paths"]
