@@ -1,0 +1,13 @@
+{
+  "item_id": "l1_prop_l1_terminal_hardswish_seedvariance_v1_nangate45_r2",
+  "completed_trials": 6,
+  "success_count": 5,
+  "failure_count": 1,
+  "by_category": {
+    "checkout_error": 1
+  },
+  "by_stage": {
+    "checkout": 1
+  },
+  "comparison_mode": "same_non_seed_flow_params"
+}
