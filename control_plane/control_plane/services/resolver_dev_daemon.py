@@ -11,7 +11,11 @@ from control_plane.models.resolver_cases import ResolverCase
 from control_plane.models.resolver_observations import ResolverObservation
 from control_plane.services.lease_service import expire_stale_leases
 from control_plane.services.resolver_case_service import mark_escalated, record_action, upsert_case_from_detection
-from control_plane.services.resolver_detection import ResolverDetection, detect_orphaned_running_items
+from control_plane.services.resolver_detection import (
+    ResolverDetection,
+    detect_blocked_submission_items,
+    detect_orphaned_running_items,
+)
 from control_plane.services.resolver_issue_bridge import build_issue_comment, comment_issue_for_case, open_issue_for_case
 from control_plane.services.resolver_policy import retry_allowed
 
@@ -209,6 +213,12 @@ def _handle_detection(
     return opened_issue_count, updated_issue_count, escalated_count
 
 
+def _collect_detections(session: Session, *, repo_root: str) -> list[ResolverDetection]:
+    detections = detect_orphaned_running_items(session, repo_root=repo_root)
+    detections.extend(detect_blocked_submission_items(session, repo_root=repo_root))
+    return sorted(detections, key=lambda row: (row.failure_class, row.item_id, row.run_key))
+
+
 def run_dev_resolver(
     session_factory: sessionmaker[Session],
     config: ResolverDevDaemonConfig,
@@ -222,7 +232,7 @@ def run_dev_resolver(
     while True:
         poll_count += 1
         with session_factory() as session:
-            detections = detect_orphaned_running_items(session, repo_root=config.repo_root)
+            detections = _collect_detections(session, repo_root=config.repo_root)
             detection_count += len(detections)
             for detection in detections:
                 opened, updated, escalated = _handle_detection(session, repo=config.repo, detection=detection)

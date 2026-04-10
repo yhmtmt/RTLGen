@@ -14,12 +14,12 @@ from control_plane.models.enums import ExecutorType, FlowName, LayerName, LeaseS
 from control_plane.models.resolver_actions import ResolverAction
 from control_plane.models.resolver_cases import ResolverCase
 from control_plane.models.resolver_observations import ResolverObservation
+from control_plane.models.run_events import RunEvent
+from control_plane.models.runs import Run
 from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
 from control_plane.models.worker_leases import WorkerLease
 from control_plane.models.worker_machines import WorkerMachine
-from control_plane.models.runs import Run
-from control_plane.models.run_events import RunEvent
 from control_plane.services.resolver_dev_daemon import ResolverDevDaemonConfig, run_dev_resolver
 from control_plane.services.resolver_issue_bridge import ResolverIssueCreateResult
 
@@ -100,6 +100,58 @@ def _seed_orphaned_running_item(engine) -> None:
         session.commit()
 
 
+def _seed_blocked_submission_item(engine) -> None:
+    now = utcnow()
+    with Session(engine) as session:
+        task = TaskRequest(
+            request_key="queue:test-blocked",
+            source="test",
+            requested_by="tester",
+            title="test blocked",
+            description="detect blocked submission",
+            layer=LayerName.LAYER1,
+            flow=FlowName.OPENROAD,
+            priority=1,
+            request_payload={
+                "item_id": "blocked-item",
+                "developer_loop": {"proposal_id": "prop_missing_seedvariance_v1"},
+            },
+        )
+        session.add(task)
+        session.flush()
+        work_item = WorkItem(
+            work_item_key="queue:test-blocked",
+            task_request_id=task.id,
+            item_id="blocked-item",
+            layer=LayerName.LAYER1,
+            flow=FlowName.OPENROAD,
+            platform="nangate45",
+            task_type="l1_sweep",
+            state=WorkItemState.ARTIFACT_SYNC,
+            priority=1,
+            input_manifest={},
+            command_manifest=[],
+            expected_outputs=[],
+            acceptance_rules=[],
+            source_commit="cafefeed",
+            assigned_machine_key="eval-1",
+        )
+        session.add(work_item)
+        session.flush()
+        run = Run(
+            run_key="run-blocked",
+            work_item_id=work_item.id,
+            attempt=1,
+            executor_type=ExecutorType.INTERNAL_WORKER,
+            status=RunStatus.SUCCEEDED,
+            started_at=now - timedelta(hours=1),
+            completed_at=now - timedelta(minutes=30),
+            result_payload={},
+        )
+        session.add(run)
+        session.commit()
+
+
 def test_dev_resolver_opens_issue_once_for_same_evidence() -> None:
     engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
     create_all(engine)
@@ -136,6 +188,45 @@ def test_dev_resolver_opens_issue_once_for_same_evidence() -> None:
     assert len(cases) == 1
     assert cases[0].issue_number == 175
     assert cases[0].status == "awaiting_remote"
+
+
+def test_dev_resolver_opens_issue_for_blocked_submission() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_all(engine)
+    _seed_blocked_submission_item(engine)
+
+    session_factory = build_session_factory(engine)
+    with patch(
+        "control_plane.services.resolver_dev_daemon.open_issue_for_case",
+        return_value=ResolverIssueCreateResult(issue_number=176, issue_url="https://github.com/yhmtmt/RTLGen/issues/176"),
+    ) as open_issue_mock, patch(
+        "control_plane.services.resolver_dev_daemon.comment_issue_for_case"
+    ) as comment_mock, patch(
+        "control_plane.services.resolver_dev_daemon.time.sleep"
+    ):
+        result = run_dev_resolver(
+            session_factory,
+            ResolverDevDaemonConfig(
+                repo="yhmtmt/RTLGen",
+                repo_root="/repo",
+                poll_seconds=0,
+                max_polls=1,
+            ),
+        )
+
+    with Session(engine) as session:
+        case = session.query(ResolverCase).one()
+
+    assert result.detection_count == 1
+    assert result.opened_issue_count == 1
+    assert result.updated_issue_count == 0
+    assert open_issue_mock.call_count == 1
+    assert comment_mock.call_count == 0
+    assert case.failure_class == "artifact_sync_blocked_submission"
+    assert case.owner == "dev"
+    assert case.fingerprint == "artifact_sync_blocked_submission:proposal_linkage_unresolved"
+    assert case.issue_number == 176
+    assert case.status == "awaiting_remote"
 
 
 def test_dev_resolver_applies_expire_stale_lease_from_diagnosis() -> None:
