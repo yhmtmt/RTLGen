@@ -1,0 +1,489 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-04-10T15:15:04.849269Z",
+  "control_plane_source_commit": "b4825ce48d084fe972d5ed11de6d6f785011a8da",
+  "item_id": "l1_prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1_nangate45_r2",
+  "run_key": "l1_prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1_nangate45_r2_run_2aa0477e5b280824",
+  "layer": "layer1",
+  "flow": "openroad",
+  "task_type": "l1_sweep",
+  "source_commit": "b4825ce48d084fe972d5ed11de6d6f785011a8da",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l1_prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1_nangate45_r2/evaluated.json",
+    "result": {
+      "branch": "eval/l1_prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1_nangate45_r2/s20260410t151502z",
+      "completed_utc": "2026-04-10T15:15:00.328435Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "b7c2d9c80c1c",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260410t151502z][host:b7c2d9c80c1c][item:l1_prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1_nangate45_r2]",
+      "metrics_rows": [
+        {
+          "tag": "softmax_rowwise_ng45_v1_ef3ae2f9",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "8dfac4d6",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_001/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_001/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/8dfac4d6/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_e48f4884",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "3b1e7e71",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_001/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_001/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/3b1e7e71/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_10663467",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "d86ac7dc",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_001/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_001/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/d86ac7dc/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_8e66a538",
+          "status": "failed",
+          "platform": "nangate45",
+          "param_hash": "531b1b8f",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_001/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_001/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/531b1b8f/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_18ca3e55",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "bc6c515c",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_001/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_001/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/bc6c515c/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_30041317",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "2203c1af",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_001/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_001/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/2203c1af/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_98f12100",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "2224916a",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_001/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_001/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/2224916a/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_019fc87d",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "7e9741e3",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_001/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_001/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/7e9741e3/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_09dbae8e",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "174a2f38",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_002/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_002/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/174a2f38/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_498be793",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "f693ab49",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_002/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_002/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/f693ab49/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_816b047d",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "99da50a7",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_002/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_002/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/99da50a7/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_408ca4bf",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "b316845f",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_002/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_002/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/b316845f/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_9c3c4584",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "3c5915f5",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_002/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_002/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/3c5915f5/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_bc679e2c",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "7412edfa",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_002/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_002/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/7412edfa/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_7c85e4d8",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "b2e6d605",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_002/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_002/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/b2e6d605/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_9c45ba6e",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "3470b2eb",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_002/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_002/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/3470b2eb/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_981eee34",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "b5e93b7a",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_003/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_003/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/b5e93b7a/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_6d9e4e9a",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "67ffaf26",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_003/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_003/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/67ffaf26/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_92213b0e",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "e14f23f6",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_003/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_003/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/e14f23f6/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_a5d32a00",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "57b03d81",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_003/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_003/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/57b03d81/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_c9039e47",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "87520571",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_003/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_003/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/87520571/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_56a62de1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "63cb3f47",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_003/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_003/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/63cb3f47/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_df999f69",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "39c720d0",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_003/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_003/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/39c720d0/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_464ebaec",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "6300461b",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_003/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_003/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/6300461b/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_3fdeb544",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "0e4ee98e",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_004/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_004/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/0e4ee98e/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_01d0b869",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "5a404af3",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_004/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_004/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/5a404af3/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_9f275f7c",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "e2f1df1c",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_004/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_004/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/e2f1df1c/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_1c64dade",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "7f543322",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_004/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_004/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/7f543322/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_92e6e8aa",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "488a7d9b",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_004/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_004/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/488a7d9b/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_6e3a6bba",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "9dab6589",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_004/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_004/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/9dab6589/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_b2e30990",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "e9ff3309",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_004/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_004/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/e9ff3309/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_be42fd01",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "527c5d94",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_004/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_004/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/527c5d94/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_19b9e4e3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "913d2803",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_005/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_005/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/913d2803/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_2450c96d",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "f2f35414",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_005/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_005/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/f2f35414/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_c7a90f83",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "ee581fa1",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_005/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_005/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/ee581fa1/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_e43237a1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "4082d8a0",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_005/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_005/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/4082d8a0/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_5d0d11b7",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "c0dc67c4",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_005/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_005/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/c0dc67c4/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_23b68dd1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "83608509",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_005/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_005/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/83608509/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_31583c04",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "75ba5cfa",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_005/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_005/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/75ba5cfa/result.json"
+        },
+        {
+          "tag": "softmax_rowwise_ng45_v1_4d45e4c1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "2e972b3a",
+          "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_005/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_005/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/2e972b3a/result.json"
+        }
+      ],
+      "queue_item_id": "l1_prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1_nangate45_r2",
+      "session_id": "s20260410t151502z",
+      "status": "ok",
+      "summary": "4/4 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "promotion_proposal",
+    "path": "control_plane/shadow_exports/l1_promotions/l1_prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1_nangate45_r2.json",
+    "storage_mode": "repo",
+    "sha256": "34b761686366c2e497b8776bf3e5e2d203527f84b3005e8f29c76ce3475168e6",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-04-10T15:15:01.590687Z",
+      "item_id": "l1_prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1_nangate45_r2",
+      "run_key": "l1_prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1_nangate45_r2_run_2aa0477e5b280824",
+      "layer": "layer1",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l1_sweep",
+      "source_commit": "b4825ce48d084fe972d5ed11de6d6f785011a8da",
+      "objective": "measure_seed_variance",
+      "input_manifest": {
+        "sweeps": [
+          "runs/designs/activations/sweeps/nangate45_softmax_rowwise_v1.json"
+        ],
+        "configs": [
+          "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/config_softmax_rowwise_int8_r8_acc24_seedvariance.json"
+        ],
+        "out_root": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper",
+        "design_dirs": [],
+        "macro_manifests": [],
+        "candidate_manifests": [],
+        "required_submodules": []
+      },
+      "proposal_count": 1,
+      "evaluation_record": {
+        "evaluation_mode": "measurement_only",
+        "abstraction_layer": "circuit_block",
+        "result_kind": "physical_metrics",
+        "physical_metrics_present": true,
+        "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+      },
+      "proposal_assessment": null,
+      "proposals": [
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_004/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "9dab6589",
+            "tag": "softmax_rowwise_ng45_v1_6e3a6bba",
+            "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_004/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/9dab6589/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 20.17,
+            "die_area": 176005.4209,
+            "total_power_mw": 1.12
+          }
+        }
+      ],
+      "trial_summary": {
+        "item_id": "l1_prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1_nangate45_r2",
+        "completed_trials": 6,
+        "success_count": 5,
+        "failure_count": 1,
+        "success_rate": 0.8333333333333334,
+        "metrics": {
+          "critical_path_ns": {
+            "best": 20.17,
+            "mean": 20.282400000000003,
+            "median": 20.2756,
+            "max": 20.3465,
+            "range": 0.17649999999999721,
+            "stddev": 0.06429099470376784
+          },
+          "die_area": {
+            "best": 176005.4209,
+            "mean": 176005.4209,
+            "median": 176005.4209,
+            "max": 176005.4209,
+            "range": 0.0,
+            "stddev": 0.0
+          },
+          "total_power_mw": {
+            "best": 1.1,
+            "mean": 1.108,
+            "median": 1.11,
+            "max": 1.12,
+            "range": 0.020000000000000018,
+            "stddev": 0.007483314773547889
+          }
+        },
+        "comparison_mode": "same_non_seed_flow_params",
+        "comparison_params": {
+          "CLOCK_PERIOD": 6.0,
+          "CORE_UTILIZATION": 30,
+          "PLACE_DENSITY": 0.6
+        }
+      },
+      "source_refs": {
+        "trial_metrics_csvs": [
+          "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_001/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_002/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_003/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_004/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+          "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_005/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv"
+        ],
+        "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1_nangate45_r2/summary_stats.json",
+        "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1_nangate45_r2/failure_stats.json",
+        "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1_nangate45_r2/trial_table.csv"
+      }
+    }
+  },
+  "developer_loop": {
+    "evaluation": {
+      "mode": "measurement_only",
+      "trial_policy": {
+        "seed_start": 101,
+        "trial_count": 5,
+        "stop_after_failures": 5
+      }
+    },
+    "abstraction": {
+      "layer": "circuit_block"
+    },
+    "proposal_id": "prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1",
+    "proposal_path": "docs/proposals/prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1"
+  },
+  "pr_payload": {
+    "branch": "eval/l1_prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1_nangate45_r2/s20260410t151502z",
+    "title": "eval: run layer1 sweep from nangate45_softmax_rowwise_v1 on nangate45",
+    "body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260410t151502z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1_nangate45_r2"
+    },
+    "body_md": "## Summary\n- item_id: `l1_prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1_nangate45_r2`\n- run_key: `l1_prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1_nangate45_r2_run_2aa0477e5b280824`\n- layer: `layer1`\n- task_type: `l1_sweep`\n- status: `ok`\n- summary: `4/4 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l1_prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1_nangate45_r2/evaluated.json`\n- metrics_rows_count: `40`\n- review_artifact: `promotion_proposal` at `control_plane/shadow_exports/l1_promotions/l1_prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1_nangate45_r2.json`\n\n## Developer Context\n- proposal_id: `prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1`\n- proposal_path: `docs/proposals/prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1`\n- reviewer_first_read: `docs/proposals/prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1` plus `docs/developer_agent_review.md`\n\n## Evaluation Mode\n- evaluation_mode: `measurement_only`\n- abstraction_layer: `circuit_block`\n- evaluation_summary: `Physical metrics recorded from an accepted status=ok Layer 1 row.`\n\n## Checklist\n- [ ] Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge\n- [ ] Include metrics row references for each completed design\n- [ ] Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
