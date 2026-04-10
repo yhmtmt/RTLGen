@@ -94,7 +94,12 @@ def run_worker_daemon(
             with session_factory() as session:
                 expire_stale_leases(session)
 
-        batch = _run_parallel_batch(session_factory, config=config)
+        try:
+            batch = _run_parallel_batch(session_factory, config=config)
+        except Exception as exc:
+            logger(f"worker-daemon batch_error error={exc}")
+            batch = [WorkerLoopResult(status="worker_error", summary=str(exc))]
+
         results.extend(batch)
 
         batch_executed = sum(1 for result in batch if result.status != "no_work")
