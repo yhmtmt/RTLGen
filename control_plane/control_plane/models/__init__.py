@@ -4,6 +4,9 @@ from control_plane.models.artifacts import Artifact
 from control_plane.models.base import Base
 from control_plane.models.github_links import GitHubLink
 from control_plane.models.queue_reconciliations import QueueReconciliation
+from control_plane.models.resolver_actions import ResolverAction
+from control_plane.models.resolver_cases import ResolverCase
+from control_plane.models.resolver_observations import ResolverObservation
 from control_plane.models.run_index_rows import RunIndexRow
 from control_plane.models.run_events import RunEvent
 from control_plane.models.runs import Run
@@ -17,6 +20,9 @@ __all__ = [
     "Base",
     "GitHubLink",
     "QueueReconciliation",
+    "ResolverAction",
+    "ResolverCase",
+    "ResolverObservation",
     "RunIndexRow",
     "Run",
     "RunEvent",

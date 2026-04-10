@@ -24,6 +24,7 @@ from control_plane.models.enums import (
     WorkItemState,
 )
 from control_plane.models.github_links import GitHubLink
+from control_plane.models.resolver_cases import ResolverCase
 from control_plane.models.run_index_rows import RunIndexRow
 from control_plane.models.runs import Run
 from control_plane.models.task_requests import TaskRequest
@@ -247,6 +248,24 @@ def test_operator_status_summarizes_live_state() -> None:
             session.add(pending_run)
             pending_item.assigned_machine_key = machine.machine_key
             dispatch_item.assigned_machine_key = machine.machine_key
+            session.add(
+                ResolverCase(
+                    fingerprint="orphaned_running_item:command_progress",
+                    failure_class="orphaned_running_item",
+                    owner="eval",
+                    status="awaiting_remote",
+                    severity="high",
+                    issue_number=175,
+                    first_item_id=running_item.item_id,
+                    latest_item_id=running_item.item_id,
+                    first_run_key=active_run.run_key,
+                    latest_run_key=active_run.run_key,
+                    machine_key=machine.machine_key,
+                    evidence_json={"item_id": running_item.item_id},
+                    resolution_json={},
+                    attempt_count=1,
+                )
+            )
             session.commit()
 
         session_factory = build_session_factory(engine)
@@ -257,6 +276,7 @@ def test_operator_status_summarizes_live_state() -> None:
         assert "stale_leases=1" in str(status.health_summary["message"])
         assert "recent_failures=1" in str(status.health_summary["message"])
         assert "artifact_sync=1" in str(status.health_summary["message"])
+        assert "resolver_cases=1" in str(status.health_summary["message"])
         assert status.state_counts["failed"] == 1
         assert status.state_counts["ready"] == 1
         assert status.state_counts["artifact_sync"] == 1
@@ -285,6 +305,9 @@ def test_operator_status_summarizes_live_state() -> None:
         assert len(status.recent_submissions) == 1
         assert status.recent_submissions[0]["item_id"] == "review_item"
         assert status.recent_submissions[0]["pr_number"] == 99
+        assert len(status.recent_resolver_cases) == 1
+        assert status.recent_resolver_cases[0]["issue_number"] == 175
+        assert status.recent_resolver_cases[0]["owner"] == "eval"
         assert status.run_index_summary["row_count"] == 2
         assert status.run_index_summary["ok_row_count"] == 1
         assert status.run_index_summary["platform_count"] == 2

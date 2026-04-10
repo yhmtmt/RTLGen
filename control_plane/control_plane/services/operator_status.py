@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from control_plane.clock import utcnow
 from control_plane.models.enums import LeaseStatus, RunStatus, WorkItemState
 from control_plane.models.github_links import GitHubLink
+from control_plane.models.resolver_cases import ResolverCase
 from control_plane.models.run_events import RunEvent
 from control_plane.models.runs import Run
 from control_plane.models.worker_leases import WorkerLease
@@ -72,6 +73,7 @@ class OperatorStatusResult:
     dispatch_pending_items: list[dict[str, object]]
     recent_failures: list[dict[str, object]]
     recent_submissions: list[dict[str, object]]
+    recent_resolver_cases: list[dict[str, object]]
     run_index_summary: dict[str, object]
     run_index_families: list[dict[str, object]]
     run_index_best_designs: list[dict[str, object]]
@@ -296,6 +298,32 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
             }
         )
 
+    recent_resolver_cases = []
+    for case in (
+        session.query(ResolverCase)
+        .filter(ResolverCase.status.in_(("open", "diagnosing", "fix_in_progress", "awaiting_remote", "awaiting_retry", "escalated")))
+        .order_by(ResolverCase.updated_at.desc(), ResolverCase.created_at.desc())
+        .limit(request.recent_limit)
+        .all()
+    ):
+        recent_resolver_cases.append(
+            {
+                "case_id": case.id,
+                "fingerprint": case.fingerprint,
+                "failure_class": case.failure_class,
+                "owner": case.owner,
+                "status": case.status,
+                "severity": case.severity,
+                "item_id": case.latest_item_id or case.first_item_id,
+                "run_key": case.latest_run_key or case.first_run_key,
+                "machine_key": case.machine_key,
+                "issue_number": case.issue_number,
+                "attempt_count": case.attempt_count,
+                "escalation_reason": case.escalation_reason,
+                "updated_at": case.updated_at.isoformat() if case.updated_at else None,
+            }
+        )
+
     attention_flags = []
     if stale_leases:
         attention_flags.append(f"stale_leases={len(stale_leases)}")
@@ -315,6 +343,8 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
     ready_items = state_counts.get(WorkItemState.READY.value, 0)
     if ready_items:
         attention_flags.append(f"ready={ready_items}")
+    if recent_resolver_cases:
+        attention_flags.append(f"resolver_cases={len(recent_resolver_cases)}")
 
     if attention_flags:
         health_summary = {
@@ -339,6 +369,7 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
         dispatch_pending_items=dispatch_pending_items,
         recent_failures=recent_failures,
         recent_submissions=recent_submissions,
+        recent_resolver_cases=recent_resolver_cases,
         run_index_summary=run_index.summary,
         run_index_families=run_index.families,
         run_index_best_designs=run_index.best_designs,

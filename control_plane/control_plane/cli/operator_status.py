@@ -83,6 +83,14 @@ def _render_section(payload: dict[str, object], only: str) -> list[str]:
                 ["item_id", "pr_number", "state", "branch_name", "updated_at"],
             )
         )
+    if only in ("all", "resolver-cases"):
+        sections.append(
+            _render_rows(
+                "Resolver Cases",
+                list(payload["recent_resolver_cases"]),
+                ["item_id", "failure_class", "owner", "status", "issue_number", "attempt_count", "updated_at"],
+            )
+        )
     return sections
 
 
@@ -93,7 +101,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--format", choices=["json", "table"], default="table")
     parser.add_argument(
         "--only",
-        choices=["all", "health", "state-counts", "active-runs", "stale-leases", "failures", "submissions"],
+        choices=["all", "health", "state-counts", "active-runs", "stale-leases", "failures", "submissions", "resolver-cases"],
         default="all",
     )
     args = parser.parse_args(argv)
@@ -110,6 +118,7 @@ def main(argv: list[str] | None = None) -> int:
         "stale_leases": status.stale_leases,
         "recent_failures": status.recent_failures,
         "recent_submissions": status.recent_submissions,
+        "recent_resolver_cases": status.recent_resolver_cases,
     }
     if args.format == "json":
         if args.only == "all":
@@ -124,6 +133,8 @@ def main(argv: list[str] | None = None) -> int:
             out = {"stale_leases": payload["stale_leases"]}
         elif args.only == "failures":
             out = {"recent_failures": payload["recent_failures"]}
+        elif args.only == "resolver-cases":
+            out = {"recent_resolver_cases": payload["recent_resolver_cases"]}
         else:
             out = {"recent_submissions": payload["recent_submissions"]}
         print(json.dumps(out, indent=2, sort_keys=True))

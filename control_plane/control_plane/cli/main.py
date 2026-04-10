@@ -12,6 +12,8 @@ from control_plane.cli.cleanup import main as cleanup_main
 from control_plane.cli.consume_l1_result import main as consume_l1_result_main
 from control_plane.cli.consume_l2_result import main as consume_l2_result_main
 from control_plane.cli.execute_submission import main as execute_submission_main
+from control_plane.cli.run_dev_resolver import main as run_dev_resolver_main
+from control_plane.cli.run_eval_resolver import main as run_eval_resolver_main
 from control_plane.cli.finalize_after_merge import main as finalize_after_merge_main
 from control_plane.cli.export_queue import main as export_queue_main
 from control_plane.cli.generate_l1_sweep import main as generate_l1_sweep_main
@@ -143,6 +145,26 @@ def main(argv: list[str] | None = None) -> int:
     failure_issue_parser.add_argument("--database-url", required=True)
     failure_issue_parser.add_argument("--repo", required=True)
     failure_issue_parser.add_argument("--max-items", type=int)
+
+    resolver_parser = subparsers.add_parser(
+        "run-dev-resolver",
+        help="Run the dev-side resolver daemon for orphaned running items",
+    )
+    resolver_parser.add_argument("--database-url", required=True)
+    resolver_parser.add_argument("--repo", required=True)
+    resolver_parser.add_argument("--repo-root", required=True)
+    resolver_parser.add_argument("--poll-seconds", type=int, default=60)
+    resolver_parser.add_argument("--max-polls", type=int)
+
+    eval_resolver_parser = subparsers.add_parser(
+        "run-eval-resolver",
+        help="Run the eval-side resolver daemon in diagnosis-only mode",
+    )
+    eval_resolver_parser.add_argument("--database-url", required=True)
+    eval_resolver_parser.add_argument("--repo", required=True)
+    eval_resolver_parser.add_argument("--machine-key")
+    eval_resolver_parser.add_argument("--poll-seconds", type=int, default=60)
+    eval_resolver_parser.add_argument("--max-polls", type=int)
 
     backfill_review_parser = subparsers.add_parser(
         "backfill-review-states",
@@ -565,6 +587,34 @@ def main(argv: list[str] | None = None) -> int:
                 *(["--max-items", str(args.max_items)] if args.max_items is not None else []),
             ]
         )
+    if args.command == "run-dev-resolver":
+        argv2 = [
+            "--database-url",
+            args.database_url,
+            "--repo",
+            args.repo,
+            "--repo-root",
+            args.repo_root,
+            "--poll-seconds",
+            str(args.poll_seconds),
+        ]
+        if args.max_polls is not None:
+            argv2.extend(["--max-polls", str(args.max_polls)])
+        return run_dev_resolver_main(argv2)
+    if args.command == "run-eval-resolver":
+        argv2 = [
+            "--database-url",
+            args.database_url,
+            "--repo",
+            args.repo,
+            "--poll-seconds",
+            str(args.poll_seconds),
+        ]
+        if args.machine_key is not None:
+            argv2.extend(["--machine-key", str(args.machine_key)])
+        if args.max_polls is not None:
+            argv2.extend(["--max-polls", str(args.max_polls)])
+        return run_eval_resolver_main(argv2)
     if args.command == "backfill-review-states":
         argv2 = ["--database-url", args.database_url]
         if args.item_id is not None:

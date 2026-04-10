@@ -272,6 +272,10 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
           <div class="table-wrap"><table id="dispatch-pending-table"></table></div>
         </div>
         <div class="panel">
+          <h2>Resolver Cases</h2>
+          <div class="table-wrap"><table id="resolver-cases-table"></table></div>
+        </div>
+        <div class="panel">
           <h2>State Counts</h2>
           <div class="table-wrap"><table id="states-table"></table></div>
         </div>
@@ -369,6 +373,7 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
       machines: document.getElementById("machines-table"),
       pendingSubmissions: document.getElementById("pending-submissions-table"),
       dispatchPending: document.getElementById("dispatch-pending-table"),
+      resolverCases: document.getElementById("resolver-cases-table"),
       states: document.getElementById("states-table"),
       runIndexSummary: document.getElementById("run-index-summary-table"),
       runIndexFamilies: document.getElementById("run-index-families-table"),
@@ -692,6 +697,14 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
             <button data-action="supersede" data-item-id="${escapeHtml(row.item_id)}">Supersede</button>
           ` },
       ], payload.dispatch_pending_items || []);
+      renderTable(tables.resolverCases, [
+        { key: "item_id", label: "Item", render: (value) => `<span class='mono'>${escapeHtml(value || "")}</span>` },
+        { key: "failure_class", label: "Class" },
+        { key: "owner", label: "Owner" },
+        { key: "status", label: "Status" },
+        { key: "issue_number", label: "Issue" },
+        { key: "attempt_count", label: "Attempts" },
+      ], payload.recent_resolver_cases || []);
       const stateRows = Object.entries(payload.state_counts || {}).map(([name, count]) => ({ name, count }));
       renderTable(tables.states, [
         { key: "name", label: "State" },
@@ -888,6 +901,7 @@ def _status_payload(database_url: str, recent_limit: int) -> dict[str, object]:
         "dispatch_pending_items": status.dispatch_pending_items,
         "recent_failures": status.recent_failures,
         "recent_submissions": status.recent_submissions,
+        "recent_resolver_cases": status.recent_resolver_cases,
         "run_index_summary": status.run_index_summary,
         "run_index_families": status.run_index_families,
         "run_index_best_designs": status.run_index_best_designs,
