@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import timezone
+from hashlib import sha1
 from typing import Any
 
 from sqlalchemy.exc import IntegrityError
@@ -22,6 +23,20 @@ _TERMINAL_RUN_STATUSES = {
     RunStatus.CANCELED,
     RunStatus.TIMED_OUT,
 }
+
+
+def _bounded_text(value: object, *, max_len: int) -> str | None:
+    text = str(value or "").strip()
+    if not text:
+        return None
+    if len(text) <= max_len:
+        return text
+    digest = sha1(text.encode("utf-8")).hexdigest()[:12]
+    suffix = f"... [sha1:{digest}]"
+    keep = max_len - len(suffix)
+    if keep <= 0:
+        return suffix[:max_len]
+    return text[:keep] + suffix
 
 
 def _coerce_utc(dt):
@@ -282,9 +297,12 @@ def complete_run(
         run.runtime_seconds = max((completed_at - started_at).total_seconds(), 0.0)
     failure = (result_payload or {}).get("failure_classification") if isinstance(result_payload, dict) else {}
     if isinstance(failure, dict):
-        run.failure_stage = str(failure.get("stage", "") or "").strip() or None
-        run.failure_category = str(failure.get("category", "") or "").strip() or None
-        run.failure_signature = str(failure.get("signature", "") or failure.get("detail", "") or "").strip() or None
+        run.failure_stage = _bounded_text(failure.get("stage", ""), max_len=128)
+        run.failure_category = _bounded_text(failure.get("category", ""), max_len=128)
+        run.failure_signature = _bounded_text(
+            failure.get("signature", "") or failure.get("detail", ""),
+            max_len=255,
+        )
 
     work_item = run.work_item
     retry_decision = (result_payload or {}).get("retry_decision", {}) if isinstance(result_payload, dict) else {}
