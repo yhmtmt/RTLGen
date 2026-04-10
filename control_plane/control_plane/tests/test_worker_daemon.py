@@ -173,6 +173,78 @@ def test_active_expected_outputs_keeps_trial_scoped_outputs_for_multi_trial_swee
     ]
 
 
+def test_next_trial_index_reuses_slot_after_stale_lease_cleanup() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_all(engine)
+    with Session(engine) as session:
+        task = TaskRequest(
+            request_key="queue:seedvariance-stale-lease",
+            source="test",
+            requested_by="tester",
+            title="seedvariance stale lease",
+            description="measure_seed_variance",
+            layer=LayerName.LAYER1,
+            flow=FlowName.OPENROAD,
+            priority=1,
+            request_payload={"item_id": "seedvariance-stale-lease", "objective": "measure_seed_variance"},
+        )
+        session.add(task)
+        session.flush()
+        work_item = WorkItem(
+            work_item_key="queue:seedvariance-stale-lease",
+            task_request_id=task.id,
+            item_id="seedvariance-stale-lease",
+            layer=LayerName.LAYER1,
+            flow=FlowName.OPENROAD,
+            platform="nangate45",
+            task_type="l1_sweep",
+            state=WorkItemState.DISPATCH_PENDING,
+            priority=1,
+            input_manifest={"out_root": "runs/designs/activations/demo_wrapper"},
+            command_manifest=[],
+            expected_outputs=[],
+            acceptance_rules=[],
+            trial_policy_json={"trial_count": 5, "seed_start": 101, "stop_after_failures": 5},
+        )
+        session.add(work_item)
+        session.flush()
+        session.add_all(
+            [
+                Run(
+                    run_key="seedvariance_run_1",
+                    work_item_id=work_item.id,
+                    attempt=1,
+                    executor_type=ExecutorType.INTERNAL_WORKER,
+                    status=RunStatus.SUCCEEDED,
+                    trial_index=1,
+                    seed=101,
+                    result_payload={"trial": {"trial_index": 1, "seed": 101}},
+                ),
+                Run(
+                    run_key="seedvariance_run_2",
+                    work_item_id=work_item.id,
+                    attempt=2,
+                    executor_type=ExecutorType.INTERNAL_WORKER,
+                    status=RunStatus.CANCELED,
+                    trial_index=2,
+                    seed=102,
+                    result_payload={
+                        "trial": {"trial_index": 2, "seed": 102},
+                        "stale_lease_cleanup": True,
+                        "failure_classification": {
+                            "category": "lease_expired",
+                            "stage": "control_plane",
+                            "signature": "lease expired before run completion",
+                        },
+                    },
+                ),
+            ]
+        )
+        session.commit()
+
+        assert _next_trial_index(session, work_item) == 2
+
+
 def test_worker_daemon_emits_positive_poll_logs() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

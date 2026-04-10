@@ -191,7 +191,8 @@ def _completed_trial_runs(session: Session, work_item_id: str) -> list[Run]:
             continue
         payload = dict(run.result_payload or {}) if isinstance(run.result_payload, dict) else {}
         retry = bool((payload.get("retry_decision") or {}).get("requeue"))
-        if retry:
+        stale_lease_cleanup = bool(payload.get("stale_lease_cleanup"))
+        if retry or stale_lease_cleanup:
             continue
         completed.append(run)
     return completed

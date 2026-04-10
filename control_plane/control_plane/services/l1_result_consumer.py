@@ -377,7 +377,7 @@ def _filter_metrics_csvs_for_trial(run: Run, metrics_csvs: list[str]) -> list[st
         return metrics_csvs
     trial_marker = f"/trials/trial_{trial_index:03d}/"
     matched = [path for path in metrics_csvs if trial_marker in path]
-    return matched or metrics_csvs
+    return matched
 
 
 def _best_trial_row(repo_root: Path, run: Run) -> tuple[str, dict[str, Any]] | None:
