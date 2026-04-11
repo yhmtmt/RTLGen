@@ -5,6 +5,7 @@ ACTION="${1:-}"
 SERVICE="${2:-}"
 DEFAULT_SERVICE_REPO="/workspaces/rtlgen-eval-clean"
 SERVICE_REPO_ROOT="${RTLGEN_SERVICE_REPO:-${DEFAULT_SERVICE_REPO}}"
+ROLE="${RTLCP_ROLE:-server}"
 
 ENSURE_SERVICE_REPO="${REPO_ROOT:-/workspaces/RTLGen}/control_plane/scripts/ensure_service_repo.sh"
 RUNTIME_DIR="${RTLCP_RUNTIME_DIR:-/tmp/rtlgen-control-plane}"
@@ -20,8 +21,15 @@ case "${SERVICE}" in
   api)
     TARGET_CMD=("${SERVICE_REPO_ROOT}/control_plane/scripts/run_api_service.sh")
     ;;
+  resolver)
+    if [[ "${ROLE}" == "evaluator" ]]; then
+      TARGET_CMD=("${SERVICE_REPO_ROOT}/control_plane/scripts/run_eval_resolver_service.sh")
+    else
+      TARGET_CMD=("${SERVICE_REPO_ROOT}/control_plane/scripts/run_dev_resolver_service.sh")
+    fi
+    ;;
   *)
-    echo "Unknown service '${SERVICE}'. Expected 'worker', 'completions', or 'api'." >&2
+    echo "Unknown service '${SERVICE}'. Expected 'worker', 'completions', 'api', or 'resolver'." >&2
     exit 1
     ;;
 esac
@@ -61,7 +69,7 @@ case "${ACTION}" in
     : >"${LOG_FILE}"
     {
       printf '[%s] service=%s action=start\n' "$(_timestamp)" "${SERVICE}"
-      printf '[%s] service=%s runtime_dir=%s\n' "$(_timestamp)" "${SERVICE}" "${RUNTIME_DIR}"
+      printf '[%s] service=%s runtime_dir=%s role=%s\n' "$(_timestamp)" "${SERVICE}" "${RUNTIME_DIR}" "${ROLE}"
       case "${SERVICE}" in
         worker)
           printf '[%s] service=%s machine_key=%s hostname=%s db=%s\n' \
@@ -74,6 +82,10 @@ case "${ACTION}" in
         api)
           printf '[%s] service=%s host=%s port=%s db=%s\n' \
             "$(_timestamp)" "${SERVICE}" "${RTLCP_HOST:-0.0.0.0}" "${RTLCP_PORT:-8080}" "${RTLCP_DATABASE_URL:-}"
+          ;;
+        resolver)
+          printf '[%s] service=%s repo=%s machine_key=%s db=%s poll=%s\n' \
+            "$(_timestamp)" "${SERVICE}" "${RTLCP_RESOLVER_REPO:-${RTLCP_REPO_SLUG:-}}" "${RTLCP_MACHINE_KEY:-}" "${RTLCP_DATABASE_URL:-}" "${RTLCP_RESOLVER_POLL_SECONDS:-60}"
           ;;
       esac
     } >>"${LOG_FILE}"
@@ -118,7 +130,7 @@ case "${ACTION}" in
     _tail_log "${TAIL_LINES:-40}"
     ;;
   *)
-    echo "Usage: $0 <start|stop|restart|status|logs> <worker|completions|api>" >&2
+    echo "Usage: $0 <start|stop|restart|status|logs> <worker|completions|api|resolver>" >&2
     exit 1
     ;;
 esac

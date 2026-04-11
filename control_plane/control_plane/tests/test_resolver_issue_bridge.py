@@ -44,6 +44,7 @@ def test_build_issue_body_includes_machine_readable_header() -> None:
     assert "fingerprint: orphaned_running_item:command_progress" in body
     assert "- latest_event_type: `command_progress`" in body
     assert "<!-- resolver-diagnosis" in body
+    assert "recommended_action: <expire_stale_leases|retry_submission|none>" in body
 
 
 def test_open_issue_for_case_uses_gh_api() -> None:

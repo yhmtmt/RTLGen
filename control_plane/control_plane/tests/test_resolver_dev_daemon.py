@@ -100,7 +100,7 @@ def _seed_orphaned_running_item(engine) -> None:
         session.commit()
 
 
-def _seed_blocked_submission_item(engine) -> None:
+def _seed_blocked_submission_item(engine, *, submission_failed_reason: str | None = None) -> None:
     now = utcnow()
     with Session(engine) as session:
         task = TaskRequest(
@@ -149,6 +149,16 @@ def _seed_blocked_submission_item(engine) -> None:
             result_payload={},
         )
         session.add(run)
+        session.flush()
+        if submission_failed_reason:
+            session.add(
+                RunEvent(
+                    run_id=run.id,
+                    event_time=now - timedelta(minutes=10),
+                    event_type="submission_failed",
+                    event_payload={"error": submission_failed_reason},
+                )
+            )
         session.commit()
 
 
@@ -305,3 +315,86 @@ def test_dev_resolver_applies_expire_stale_lease_from_diagnosis() -> None:
     assert lease.status == LeaseStatus.EXPIRED
     assert work_item.state == WorkItemState.DISPATCH_PENDING
     assert [action.action_key for action in actions] == ["expire_stale_lease", "comment_issue"]
+
+
+def test_dev_resolver_applies_retry_submission_from_diagnosis() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_all(engine)
+    _seed_blocked_submission_item(engine, submission_failed_reason="gh pr create failed: exit code 4")
+
+    with Session(engine) as session:
+        case = ResolverCase(
+            id="case-2",
+            fingerprint="artifact_sync_blocked_submission:gh_pr_create_failed",
+            failure_class="artifact_sync_blocked_submission",
+            owner="eval",
+            status="awaiting_remote",
+            severity="medium",
+            issue_number=178,
+            first_item_id="blocked-item",
+            latest_item_id="blocked-item",
+            first_run_key="run-blocked",
+            latest_run_key="run-blocked",
+            machine_key="eval-1",
+            source_commit="cafefeed",
+            repo_root="/repo",
+            evidence_json={"item_id": "blocked-item", "eligibility_reason": "gh pr create failed: exit code 4"},
+            resolution_json={},
+        )
+        session.add(case)
+        session.flush()
+        session.add(
+            ResolverObservation(
+                case_id=case.id,
+                source="github",
+                kind="diagnosis",
+                summary="issue #178 diagnosis synced",
+                payload_json={
+                    "issue_number": 178,
+                    "comment_id": 20,
+                    "diagnosis_hash": "diag-2",
+                    "diagnosis": {
+                        "verdict": "gh auth was missing and is now restored",
+                        "failure_point": "gh_pr_create",
+                        "recommended_action": "retry_submission",
+                    },
+                },
+            )
+        )
+        session.commit()
+
+    session_factory = build_session_factory(engine)
+    with patch("control_plane.services.resolver_dev_daemon.open_issue_for_case") as open_issue_mock, patch(
+        "control_plane.services.resolver_dev_daemon.comment_issue_for_case"
+    ) as comment_mock, patch("control_plane.services.resolver_dev_daemon.time.sleep"):
+        result = run_dev_resolver(
+            session_factory,
+            ResolverDevDaemonConfig(
+                repo="yhmtmt/RTLGen",
+                repo_root="/repo",
+                poll_seconds=0,
+                max_polls=1,
+            ),
+        )
+
+    with Session(engine) as session:
+        case = session.query(ResolverCase).filter(ResolverCase.id == "case-2").one()
+        actions = session.query(ResolverAction).filter(ResolverAction.case_id == case.id).order_by(ResolverAction.created_at.asc()).all()
+        run = session.query(Run).filter(Run.run_key == "run-blocked").one()
+        retry_events = (
+            session.query(RunEvent)
+            .filter(RunEvent.run_id == run.id, RunEvent.event_type == "submission_retry_requested")
+            .order_by(RunEvent.event_time.asc())
+            .all()
+        )
+
+    assert result.poll_count == 1
+    assert result.detection_count == 1
+    assert result.opened_issue_count == 0
+    assert result.updated_issue_count == 1
+    assert open_issue_mock.call_count == 0
+    assert comment_mock.call_count == 1
+    assert case.status == "awaiting_retry"
+    assert len(retry_events) == 1
+    assert retry_events[0].event_payload["actor"] == "resolver_dev_daemon"
+    assert [action.action_key for action in actions] == ["retry_submission", "comment_issue"]

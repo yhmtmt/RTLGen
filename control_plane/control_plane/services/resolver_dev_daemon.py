@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from control_plane.models.resolver_cases import ResolverCase
 from control_plane.models.resolver_observations import ResolverObservation
+from control_plane.services.completion_retry_service import CompletionRetryError, request_submission_retry
 from control_plane.services.lease_service import expire_stale_leases
 from control_plane.services.resolver_case_service import mark_escalated, record_action, upsert_case_from_detection
 from control_plane.services.resolver_detection import (
@@ -65,7 +66,27 @@ def _recommended_action(payload: dict[str, object] | None) -> str | None:
     normalized = raw_value.replace("-", "_").replace(" ", "_")
     if normalized in {"expire_stale_lease", "expire_stale_leases"}:
         return "expire_stale_lease"
+    if normalized in {"retry_submission", "request_submission_retry", "resume_submission"}:
+        return "retry_submission"
     return None
+
+
+def _diagnosis_force_flag(payload: dict[str, object] | None) -> bool:
+    if not payload:
+        return False
+    diagnosis = payload.get("diagnosis")
+    if not isinstance(diagnosis, dict):
+        return False
+    raw_value = diagnosis.get("force")
+    if isinstance(raw_value, bool):
+        return raw_value
+    return str(raw_value or "").strip().lower() in {"1", "true", "yes", "force"}
+
+
+def _comment_case_update(repo: str, case: ResolverCase, *, reason: str) -> None:
+    if case.issue_number is None:
+        return
+    comment_issue_for_case(repo, case.issue_number, body=build_issue_comment(case, reason=reason))
 
 
 def _apply_expire_stale_lease(
@@ -81,8 +102,8 @@ def _apply_expire_stale_lease(
     decision = retry_allowed(session, case, action_key="expire_stale_lease", evidence_hash=evidence_hash)
     if not decision.allowed:
         mark_escalated(session, case=case, reason=decision.reason)
+        _comment_case_update(repo, case, reason=f"escalated:{decision.reason}")
         if case.issue_number is not None:
-            comment_issue_for_case(repo, case.issue_number, body=build_issue_comment(case, reason=f"escalated:{decision.reason}"))
             updated_issue_count += 1
         escalated_count += 1
         return updated_issue_count, escalated_count, True
@@ -105,8 +126,8 @@ def _apply_expire_stale_lease(
             "cleaned_run_count": result.cleaned_run_count,
         },
     )
+    _comment_case_update(repo, case, reason="applied:expire_stale_lease")
     if case.issue_number is not None:
-        comment_issue_for_case(repo, case.issue_number, body=build_issue_comment(case, reason="applied:expire_stale_lease"))
         record_action(
             session,
             case=case,
@@ -124,6 +145,102 @@ def _apply_expire_stale_lease(
     return updated_issue_count, escalated_count, True
 
 
+def _apply_retry_submission(
+    session: Session,
+    *,
+    repo: str,
+    case: ResolverCase,
+    payload: dict[str, object],
+) -> tuple[int, int, bool]:
+    updated_issue_count = 0
+    escalated_count = 0
+    evidence_hash = str(payload.get("diagnosis_hash") or case.last_evidence_hash or "") or None
+    decision = retry_allowed(session, case, action_key="retry_submission", evidence_hash=evidence_hash)
+    if not decision.allowed:
+        mark_escalated(session, case=case, reason=decision.reason)
+        _comment_case_update(repo, case, reason=f"escalated:{decision.reason}")
+        if case.issue_number is not None:
+            updated_issue_count += 1
+        escalated_count += 1
+        return updated_issue_count, escalated_count, True
+
+    item_id = case.latest_item_id or case.first_item_id or ""
+    if not item_id:
+        mark_escalated(session, case=case, reason="missing_item_id")
+        _comment_case_update(repo, case, reason="escalated:missing_item_id")
+        if case.issue_number is not None:
+            updated_issue_count += 1
+        escalated_count += 1
+        return updated_issue_count, escalated_count, True
+
+    force = _diagnosis_force_flag(payload)
+    try:
+        result = request_submission_retry(
+            session,
+            item_id=item_id,
+            actor="resolver_dev_daemon",
+            force=force,
+        )
+    except CompletionRetryError as exc:
+        failure_hash = str(exc)
+        record_action(
+            session,
+            case=case,
+            actor="dev",
+            action_type="retry_submission",
+            action_key="retry_submission",
+            status="failed",
+            evidence_hash=evidence_hash,
+            failure_hash=failure_hash,
+            request_json={"repo": repo, "issue_number": case.issue_number, "item_id": item_id, "force": force},
+            result_json={"error": str(exc)},
+        )
+        mark_escalated(session, case=case, reason=f"retry_submission_failed:{exc}")
+        _comment_case_update(repo, case, reason=f"escalated:retry_submission_failed:{exc}")
+        if case.issue_number is not None:
+            updated_issue_count += 1
+        escalated_count += 1
+        return updated_issue_count, escalated_count, True
+
+    case.status = "awaiting_retry"
+    action_status = "skipped" if result.already_requested else "applied"
+    record_action(
+        session,
+        case=case,
+        actor="dev",
+        action_type="retry_submission",
+        action_key="retry_submission",
+        status=action_status,
+        evidence_hash=evidence_hash,
+        failure_hash=None,
+        request_json={"repo": repo, "issue_number": case.issue_number, "item_id": item_id, "force": force},
+        result_json={
+            "request_id": result.request_id,
+            "target_machine_key": result.target_machine_key,
+            "already_requested": result.already_requested,
+        },
+        count_attempt=not result.already_requested,
+    )
+    reason = "already_requested:retry_submission" if result.already_requested else "applied:retry_submission"
+    _comment_case_update(repo, case, reason=reason)
+    if case.issue_number is not None:
+        record_action(
+            session,
+            case=case,
+            actor="dev",
+            action_type="comment_issue",
+            action_key="comment_issue",
+            status="applied",
+            evidence_hash=evidence_hash,
+            failure_hash=None,
+            request_json={"repo": repo, "issue_number": case.issue_number},
+            result_json={"reason": reason},
+            count_attempt=False,
+        )
+        updated_issue_count += 1
+    return updated_issue_count, escalated_count, True
+
+
 def _maybe_apply_diagnosis_action(
     session: Session,
     *,
@@ -134,6 +251,8 @@ def _maybe_apply_diagnosis_action(
     action = _recommended_action(payload)
     if action == "expire_stale_lease":
         return _apply_expire_stale_lease(session, repo=repo, case=case, payload=payload or {})
+    if action == "retry_submission":
+        return _apply_retry_submission(session, repo=repo, case=case, payload=payload or {})
     return 0, 0, False
 
 
@@ -190,7 +309,7 @@ def _handle_detection(
             diagnostic_only=True,
         )
         if decision.allowed:
-            comment_issue_for_case(repo, case.issue_number, body=build_issue_comment(case, reason="evidence_changed"))
+            _comment_case_update(repo, case, reason="evidence_changed")
             record_action(
                 session,
                 case=case,
@@ -207,8 +326,7 @@ def _handle_detection(
             updated_issue_count += 1
         else:
             mark_escalated(session, case=case, reason=decision.reason)
-            if case.issue_number is not None:
-                comment_issue_for_case(repo, case.issue_number, body=build_issue_comment(case, reason=f"escalated:{decision.reason}"))
+            _comment_case_update(repo, case, reason=f"escalated:{decision.reason}")
             escalated_count += 1
     return opened_issue_count, updated_issue_count, escalated_count
 

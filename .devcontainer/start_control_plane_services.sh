@@ -6,6 +6,7 @@ DB_MODE=${RTLCP_DB_MODE:-}
 AUTOSTART_WORKER="${RTLCP_AUTOSTART_WORKER_DAEMON:-}"
 AUTOSTART_COMPLETIONS="${RTLCP_AUTOSTART_COMPLETIONS:-}"
 AUTOSTART_API="${RTLCP_AUTOSTART_API:-}"
+AUTOSTART_RESOLVER="${RTLCP_AUTOSTART_RESOLVER:-}"
 DEFAULT_DB_URL="postgresql+psycopg://rtlgen:rtlgen@localhost:5432/rtlgen_control_plane"
 
 case "${ROLE}" in
@@ -48,8 +49,13 @@ esac
 
 case "${ROLE}" in
   server)
-    echo "Developer/server role is not an execution node; worker/completion/api stay on evaluator unless started explicitly"
+    echo "Developer/server role is not an execution node; worker/completion stay disabled unless started explicitly"
     echo "Skipping completion loop autostart for server role"
+    if [[ "${AUTOSTART_RESOLVER:-1}" == "1" ]]; then
+      /workspaces/RTLGen/.devcontainer/control_plane_service_ctl.sh start resolver
+    else
+      echo "Skipping resolver autostart for server role"
+    fi
     ;;
   evaluator)
     echo "Evaluator role owns worker and periodic maintenance services for the internal lane"
@@ -68,6 +74,11 @@ case "${ROLE}" in
       /workspaces/RTLGen/.devcontainer/control_plane_service_ctl.sh start api
     else
       echo "Skipping control-plane API autostart for evaluator role"
+    fi
+    if [[ "${AUTOSTART_RESOLVER:-1}" == "1" ]]; then
+      /workspaces/RTLGen/.devcontainer/control_plane_service_ctl.sh start resolver
+    else
+      echo "Skipping resolver autostart for evaluator role"
     fi
     ;;
 esac
