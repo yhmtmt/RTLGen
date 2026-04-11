@@ -10,7 +10,13 @@ from control_plane.models import Base
 
 
 def build_engine(database_url: str, echo: bool = False) -> Engine:
-    return create_engine(database_url, echo=echo, future=True)
+    return create_engine(
+        database_url,
+        echo=echo,
+        future=True,
+        pool_pre_ping=True,
+        pool_recycle=1800,
+    )
 
 
 def build_session_factory(engine: Engine) -> sessionmaker[Session]:

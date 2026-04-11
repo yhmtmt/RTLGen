@@ -7,6 +7,7 @@ from dataclasses import dataclass
 import time
 from typing import Callable
 
+from sqlalchemy.exc import DBAPIError, OperationalError
 from sqlalchemy.orm import sessionmaker
 
 from control_plane.clock import utcnow
@@ -36,6 +37,20 @@ class WorkerDaemonResult:
 
 def _default_log(message: str) -> None:
     print(f"[{utcnow().isoformat().replace('+00:00', 'Z')}] {message}", flush=True)
+
+
+def _dispose_session_engine(session_factory: sessionmaker, logger: Callable[[str], None]) -> None:
+    engine = getattr(session_factory, "kw", {}).get("bind")
+    if engine is None:
+        return
+    try:
+        engine.dispose()
+    except Exception as exc:  # pragma: no cover - defensive cleanup
+        logger(f"worker-daemon engine_dispose_error error={exc}")
+
+
+def _is_retryable_db_error(exc: Exception) -> bool:
+    return isinstance(exc, (OperationalError, DBAPIError))
 
 
 def _run_parallel_batch(
@@ -91,12 +106,31 @@ def run_worker_daemon(
     while config.max_polls is None or poll_count < config.max_polls:
         poll_count += 1
         if config.run_scheduler_maintenance:
-            with session_factory() as session:
-                expire_stale_leases(session)
+            try:
+                with session_factory() as session:
+                    expire_stale_leases(session)
+            except Exception as exc:
+                if _is_retryable_db_error(exc):
+                    logger(f"worker-daemon db_unavailable stage=maintenance error={exc}")
+                    _dispose_session_engine(session_factory, logger)
+                    if config.max_polls is not None and poll_count >= config.max_polls:
+                        logger("worker-daemon stop reason=max_polls")
+                        break
+                    time.sleep(config.poll_seconds)
+                    continue
+                raise
 
         try:
             batch = _run_parallel_batch(session_factory, config=config)
         except Exception as exc:
+            if _is_retryable_db_error(exc):
+                logger(f"worker-daemon db_unavailable stage=batch error={exc}")
+                _dispose_session_engine(session_factory, logger)
+                if config.max_polls is not None and poll_count >= config.max_polls:
+                    logger("worker-daemon stop reason=max_polls")
+                    break
+                time.sleep(config.poll_seconds)
+                continue
             logger(f"worker-daemon batch_error error={exc}")
             batch = [WorkerLoopResult(status="worker_error", summary=str(exc))]
 

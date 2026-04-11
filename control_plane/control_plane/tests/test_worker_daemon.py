@@ -9,9 +9,10 @@ import tempfile
 from unittest.mock import patch
 
 from sqlalchemy import create_engine
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
-from control_plane.db import build_session_factory, create_all
+from control_plane.db import build_engine, build_session_factory, create_all
 from control_plane.clock import utcnow
 from control_plane.models.enums import ExecutorType, FlowName, LayerName, RunStatus, WorkItemState
 from control_plane.models.run_events import RunEvent
@@ -23,7 +24,13 @@ from control_plane.services.lease_service import upsert_worker_machine
 from control_plane.services.scheduler import assign_work_item
 from control_plane.services.worker_daemon import WorkerDaemonConfig, run_worker_daemon
 from control_plane.workers.checkout import CheckoutInfo
-from control_plane.workers.executor import WorkerConfig, _active_command_manifest, _active_expected_outputs
+from control_plane.workers.executor import (
+    WorkerConfig,
+    WorkerLoopResult,
+    _active_command_manifest,
+    _active_expected_outputs,
+    _next_trial_index,
+)
 
 
 def _seed_ready_work_item(session: Session, *, item_id: str, repo_root: Path, assigned_machine_key: str | None = None) -> None:
@@ -877,3 +884,97 @@ def test_worker_daemon_processes_requested_submission_retry() -> None:
             processed = session.query(RunEvent).filter(RunEvent.event_type == "submission_retry_processed").count()
             assert started == 1
             assert processed == 1
+
+
+def test_build_engine_enables_connection_recovery() -> None:
+    engine = build_engine("sqlite+pysqlite:///:memory:")
+
+    assert engine.pool._pre_ping is True
+    assert engine.pool._recycle == 1800
+
+
+def test_worker_daemon_retries_after_db_disconnect_in_batch() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_all(engine)
+    session_factory = build_session_factory(engine)
+
+    calls = {"count": 0}
+    messages: list[str] = []
+
+    def fake_batch(*args, **kwargs):
+        calls["count"] += 1
+        if calls["count"] == 1:
+            raise OperationalError("select 1", {}, Exception("db connection lost"))
+        return [WorkerLoopResult(status="no_work", summary="no work available")]
+
+    with patch("control_plane.services.worker_daemon._run_parallel_batch", side_effect=fake_batch), patch.object(
+        engine,
+        "dispose",
+        wraps=engine.dispose,
+    ) as dispose_mock, patch("control_plane.services.worker_daemon.time.sleep"):
+        result = run_worker_daemon(
+            session_factory,
+            config=WorkerDaemonConfig(
+                worker=WorkerConfig(
+                    repo_root="/tmp/repo",
+                    machine_key="daemon-worker-db-retry",
+                ),
+                poll_seconds=0,
+                max_polls=2,
+                stop_on_no_work=True,
+                run_scheduler_maintenance=False,
+            ),
+            log_fn=messages.append,
+        )
+
+    assert result.poll_count == 2
+    assert result.executed_items == 0
+    assert result.no_work_polls == 1
+    assert [row.status for row in result.results] == ["no_work"]
+    assert calls["count"] == 2
+    assert dispose_mock.call_count == 1
+    assert any("worker-daemon db_unavailable stage=batch" in entry for entry in messages)
+
+
+def test_worker_daemon_retries_after_db_disconnect_in_maintenance() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_all(engine)
+    session_factory = build_session_factory(engine)
+
+    calls = {"maintenance": 0}
+    messages: list[str] = []
+
+    def fake_expire(*args, **kwargs):
+        calls["maintenance"] += 1
+        if calls["maintenance"] == 1:
+            raise OperationalError("select 1", {}, Exception("db connection lost"))
+        return None
+
+    with patch("control_plane.services.worker_daemon.expire_stale_leases", side_effect=fake_expire), patch(
+        "control_plane.services.worker_daemon._run_parallel_batch",
+        return_value=[WorkerLoopResult(status="no_work", summary="no work available")],
+    ) as batch_mock, patch.object(engine, "dispose", wraps=engine.dispose) as dispose_mock, patch(
+        "control_plane.services.worker_daemon.time.sleep"
+    ):
+        result = run_worker_daemon(
+            session_factory,
+            config=WorkerDaemonConfig(
+                worker=WorkerConfig(
+                    repo_root="/tmp/repo",
+                    machine_key="daemon-worker-db-maint",
+                ),
+                poll_seconds=0,
+                max_polls=2,
+                stop_on_no_work=True,
+            ),
+            log_fn=messages.append,
+        )
+
+    assert result.poll_count == 2
+    assert result.executed_items == 0
+    assert result.no_work_polls == 1
+    assert [row.status for row in result.results] == ["no_work"]
+    assert calls["maintenance"] == 2
+    assert batch_mock.call_count == 1
+    assert dispose_mock.call_count == 1
+    assert any("worker-daemon db_unavailable stage=maintenance" in entry for entry in messages)
