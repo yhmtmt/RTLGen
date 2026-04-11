@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from datetime import timedelta
+from dataclasses import dataclass, field
+import os
 from pathlib import Path
 from typing import Any
 
@@ -56,10 +58,14 @@ def _submission_finalization_fields(link: GitHubLink) -> dict[str, Any]:
     }
 
 
+def _default_repo_root() -> str:
+    return os.environ.get("RTLGEN_SERVICE_REPO") or os.environ.get("REPO_ROOT") or "/workspaces/rtlgen-eval-clean"
+
+
 @dataclass(frozen=True)
 class OperatorStatusRequest:
     recent_limit: int = 10
-    repo_root: str = "/workspaces/rtlgen-eval-clean"
+    repo_root: str = field(default_factory=_default_repo_root)
 
 
 @dataclass(frozen=True)
@@ -108,6 +114,7 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
     now = utcnow()
 
     evaluator_machines = []
+    stale_machine_cutoff = now - timedelta(hours=24)
     for machine in session.query(WorkerMachine).order_by(WorkerMachine.machine_key.asc()).all():
         active_slots = (
             session.query(WorkerLease)
@@ -119,6 +126,9 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
             .filter(WorkItem.assigned_machine_key == machine.machine_key, WorkItem.state == WorkItemState.READY)
             .count()
         )
+        last_seen_at = _as_comparable_utc(machine.last_seen_at)
+        if active_slots == 0 and assigned_ready == 0 and last_seen_at is not None and last_seen_at < stale_machine_cutoff:
+            continue
         evaluator_machines.append(
             {
                 "machine_key": machine.machine_key,

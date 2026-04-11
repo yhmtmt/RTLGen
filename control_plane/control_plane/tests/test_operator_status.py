@@ -563,3 +563,49 @@ def test_operator_status_includes_run_index_analytics() -> None:
         assert round(float(status.seed_trial_variance[0]["critical_path_range_ns"]), 2) == 0.02
         assert status.run_index_failure_hotspots[0]["design"] == "terminal_tanh_int8_wrapper"
         assert status.run_index_failure_hotspots[0]["status_breakdown"] == {"fail": 1}
+
+
+def test_operator_status_request_uses_env_repo_root(monkeypatch) -> None:
+    monkeypatch.setenv("RTLGEN_SERVICE_REPO", "/tmp/service-repo")
+    request = OperatorStatusRequest()
+    assert request.repo_root == "/tmp/service-repo"
+
+
+def test_operator_status_hides_stale_evaluator_without_work() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_all(engine)
+    now = utcnow()
+    with Session(engine) as session:
+        stale_machine = WorkerMachine(
+            machine_key="eval-stale",
+            hostname="eval-stale-host",
+            executor_kind="local_process",
+            capabilities={},
+            last_seen_at=now - timedelta(days=2),
+        )
+        active_machine = WorkerMachine(
+            machine_key="eval-active",
+            hostname="eval-active-host",
+            executor_kind="local_process",
+            capabilities={},
+            last_seen_at=now,
+        )
+        stale_but_busy = WorkerMachine(
+            machine_key="eval-busy",
+            hostname="eval-busy-host",
+            executor_kind="local_process",
+            capabilities={},
+            last_seen_at=now - timedelta(days=2),
+        )
+        session.add_all([stale_machine, active_machine, stale_but_busy])
+        session.flush()
+        ready_item = _seed_item(session, item_id="busy_ready", state=WorkItemState.READY)
+        ready_item.assigned_machine_key = stale_but_busy.machine_key
+        session.commit()
+
+        status = load_operator_status(session, OperatorStatusRequest(recent_limit=5))
+
+    machine_keys = {row["machine_key"] for row in status.evaluator_machines}
+    assert "eval-stale" not in machine_keys
+    assert "eval-active" in machine_keys
+    assert "eval-busy" in machine_keys
