@@ -196,7 +196,7 @@ def test_dev_resolver_opens_issue_once_for_same_evidence() -> None:
     assert result.detection_count == 2
     assert result.opened_issue_count == 1
     assert result.updated_issue_count == 0
-    assert fetch_issue_mock.call_count == 1
+    assert fetch_issue_mock.call_count >= 1
     assert open_issue_mock.call_count == 1
     assert comment_mock.call_count == 0
     assert len(cases) == 1

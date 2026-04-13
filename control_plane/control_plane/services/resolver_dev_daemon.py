@@ -270,21 +270,6 @@ def _handle_detection(
     upsert = upsert_case_from_detection(session, detection)
     case = upsert.case
 
-    if case.issue_number is not None:
-        remote_issue = fetch_issue(repo, case.issue_number)
-        if str(remote_issue.state or "").lower() != "open":
-            mark_resolved(
-                session,
-                case=case,
-                resolution={
-                    "reason": "remote_issue_closed",
-                    "issue_number": case.issue_number,
-                    "issue_state": remote_issue.state,
-                },
-            )
-            upsert = upsert_case_from_detection(session, detection)
-            case = upsert.case
-
     if case.issue_number is None:
         decision = retry_allowed(session, case, action_key="open_issue", evidence_hash=upsert.evidence_hash)
         if not decision.allowed:
@@ -347,6 +332,28 @@ def _handle_detection(
     return opened_issue_count, updated_issue_count, escalated_count
 
 
+def _reconcile_closed_remote_issues(session: Session, *, repo: str) -> None:
+    cases = (
+        session.query(ResolverCase)
+        .filter(ResolverCase.status.in_(("open", "diagnosing", "fix_in_progress", "awaiting_remote", "awaiting_retry")))
+        .filter(ResolverCase.issue_number.isnot(None))
+        .all()
+    )
+    for case in cases:
+        remote_issue = fetch_issue(repo, int(case.issue_number))
+        if str(remote_issue.state or "").lower() == "open":
+            continue
+        mark_resolved(
+            session,
+            case=case,
+            resolution={
+                "reason": "remote_issue_closed",
+                "issue_number": case.issue_number,
+                "issue_state": remote_issue.state,
+            },
+        )
+
+
 def _collect_detections(
     session: Session,
     *,
@@ -375,6 +382,7 @@ def run_dev_resolver(
     while True:
         poll_count += 1
         with session_factory() as session:
+            _reconcile_closed_remote_issues(session, repo=config.repo)
             detections = _collect_detections(
                 session,
                 repo_root=config.repo_root,
