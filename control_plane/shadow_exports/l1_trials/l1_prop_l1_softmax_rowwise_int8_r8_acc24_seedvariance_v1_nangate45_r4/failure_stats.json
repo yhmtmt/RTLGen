@@ -1,0 +1,13 @@
+{
+  "item_id": "l1_prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1_nangate45_r4",
+  "completed_trials": 6,
+  "success_count": 5,
+  "failure_count": 1,
+  "by_category": {
+    "lease_expired": 1
+  },
+  "by_stage": {
+    "control_plane": 1
+  },
+  "comparison_mode": "same_non_seed_flow_params"
+}
