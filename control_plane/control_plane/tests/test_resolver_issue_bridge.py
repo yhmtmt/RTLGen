@@ -9,6 +9,7 @@ from unittest.mock import patch
 from control_plane.models.resolver_cases import ResolverCase
 from control_plane.services.resolver_issue_bridge import (
     build_issue_body,
+    fetch_issue,
     list_open_resolver_issues,
     open_issue_for_case,
     parse_resolver_case_block,
@@ -92,6 +93,24 @@ recommended_action: expire_stale_leases
     assert payload["verdict"] == "worker died during finalize"
     assert payload["failure_point"] == "complete_run"
     assert payload["recommended_action"] == "expire_stale_leases"
+
+
+def test_fetch_issue_reads_state() -> None:
+    issue_payload = {
+        "number": 184,
+        "title": "Resolver: orphaned_running_item [item-1]",
+        "body": "<!-- resolver-case\ncase_id: case-1\nowner: eval\n-->",
+        "state": "closed",
+        "html_url": "https://github.com/yhmtmt/RTLGen/issues/184",
+        "updated_at": "2026-04-13T12:11:33Z",
+    }
+    with patch("control_plane.services.resolver_issue_bridge.subprocess.run") as run_mock:
+        run_mock.return_value = CompletedProcess(args=[], returncode=0, stdout=json.dumps(issue_payload), stderr="")
+        issue = fetch_issue("yhmtmt/RTLGen", 184)
+
+    assert issue.issue_number == 184
+    assert issue.state == "closed"
+    assert issue.case_metadata["owner"] == "eval"
 
 
 def test_list_open_resolver_issues_filters_owner_and_pull_requests() -> None:

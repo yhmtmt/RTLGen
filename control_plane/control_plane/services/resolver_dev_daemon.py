@@ -11,13 +11,13 @@ from control_plane.models.resolver_cases import ResolverCase
 from control_plane.models.resolver_observations import ResolverObservation
 from control_plane.services.completion_retry_service import CompletionRetryError, request_submission_retry
 from control_plane.services.lease_service import expire_stale_leases
-from control_plane.services.resolver_case_service import mark_escalated, record_action, upsert_case_from_detection
+from control_plane.services.resolver_case_service import mark_escalated, mark_resolved, record_action, upsert_case_from_detection
 from control_plane.services.resolver_detection import (
     ResolverDetection,
     detect_blocked_submission_items,
     detect_orphaned_running_items,
 )
-from control_plane.services.resolver_issue_bridge import build_issue_comment, comment_issue_for_case, open_issue_for_case
+from control_plane.services.resolver_issue_bridge import build_issue_comment, comment_issue_for_case, fetch_issue, open_issue_for_case
 from control_plane.services.resolver_policy import retry_allowed
 
 
@@ -269,6 +269,21 @@ def _handle_detection(
 
     upsert = upsert_case_from_detection(session, detection)
     case = upsert.case
+
+    if case.issue_number is not None:
+        remote_issue = fetch_issue(repo, case.issue_number)
+        if str(remote_issue.state or "").lower() != "open":
+            mark_resolved(
+                session,
+                case=case,
+                resolution={
+                    "reason": "remote_issue_closed",
+                    "issue_number": case.issue_number,
+                    "issue_state": remote_issue.state,
+                },
+            )
+            upsert = upsert_case_from_detection(session, detection)
+            case = upsert.case
 
     if case.issue_number is None:
         decision = retry_allowed(session, case, action_key="open_issue", evidence_hash=upsert.evidence_hash)

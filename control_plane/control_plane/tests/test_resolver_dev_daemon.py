@@ -169,6 +169,9 @@ def test_dev_resolver_opens_issue_once_for_same_evidence() -> None:
 
     session_factory = build_session_factory(engine)
     with patch(
+        "control_plane.services.resolver_dev_daemon.fetch_issue",
+        return_value=type("Issue", (), {"state": "open"})(),
+    ) as fetch_issue_mock, patch(
         "control_plane.services.resolver_dev_daemon.open_issue_for_case",
         return_value=ResolverIssueCreateResult(issue_number=175, issue_url="https://github.com/yhmtmt/RTLGen/issues/175"),
     ) as open_issue_mock, patch(
@@ -193,6 +196,7 @@ def test_dev_resolver_opens_issue_once_for_same_evidence() -> None:
     assert result.detection_count == 2
     assert result.opened_issue_count == 1
     assert result.updated_issue_count == 0
+    assert fetch_issue_mock.call_count == 1
     assert open_issue_mock.call_count == 1
     assert comment_mock.call_count == 0
     assert len(cases) == 1
@@ -239,6 +243,70 @@ def test_dev_resolver_does_not_open_issue_within_orphaned_stale_grace() -> None:
     assert result.opened_issue_count == 0
     assert open_issue_mock.call_count == 0
     assert cases == []
+
+
+def test_dev_resolver_opens_new_issue_when_existing_linked_issue_is_closed() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_all(engine)
+    _seed_orphaned_running_item(engine)
+
+    with Session(engine) as session:
+        case = ResolverCase(
+            id="case-closed",
+            fingerprint="orphaned_running_item:command_progress",
+            failure_class="orphaned_running_item",
+            owner="eval",
+            status="awaiting_remote",
+            severity="high",
+            issue_number=184,
+            first_item_id="old-item",
+            latest_item_id="old-item",
+            first_run_key="old-run",
+            latest_run_key="old-run",
+            machine_key="eval-1",
+            source_commit="deadbeef",
+            repo_root="/repo",
+            evidence_json={"item_id": "old-item", "latest_event_type": "command_progress"},
+            resolution_json={},
+            last_evidence_hash="oldhash",
+        )
+        session.add(case)
+        session.commit()
+
+    session_factory = build_session_factory(engine)
+    with patch(
+        "control_plane.services.resolver_dev_daemon.fetch_issue",
+        return_value=type("Issue", (), {"state": "closed"})(),
+    ) as fetch_issue_mock, patch(
+        "control_plane.services.resolver_dev_daemon.open_issue_for_case",
+        return_value=ResolverIssueCreateResult(issue_number=186, issue_url="https://github.com/yhmtmt/RTLGen/issues/186"),
+    ) as open_issue_mock, patch(
+        "control_plane.services.resolver_dev_daemon.comment_issue_for_case"
+    ) as comment_mock, patch(
+        "control_plane.services.resolver_dev_daemon.time.sleep"
+    ):
+        result = run_dev_resolver(
+            session_factory,
+            ResolverDevDaemonConfig(
+                repo="yhmtmt/RTLGen",
+                repo_root="/repo",
+                poll_seconds=0,
+                max_polls=1,
+                orphaned_stale_grace_seconds=0,
+            ),
+        )
+
+    with Session(engine) as session:
+        cases = session.query(ResolverCase).order_by(ResolverCase.created_at.asc()).all()
+
+    assert result.opened_issue_count == 1
+    assert fetch_issue_mock.call_count == 1
+    assert open_issue_mock.call_count == 1
+    assert comment_mock.call_count == 0
+    assert len(cases) == 2
+    assert cases[0].status == "resolved"
+    assert cases[1].issue_number == 186
+    assert cases[1].latest_item_id == "orphan-item"
 
 
 def test_dev_resolver_opens_issue_for_blocked_submission() -> None:
@@ -327,7 +395,10 @@ def test_dev_resolver_applies_expire_stale_lease_from_diagnosis() -> None:
         session.commit()
 
     session_factory = build_session_factory(engine)
-    with patch("control_plane.services.resolver_dev_daemon.open_issue_for_case") as open_issue_mock, patch(
+    with patch(
+        "control_plane.services.resolver_dev_daemon.fetch_issue",
+        return_value=type("Issue", (), {"state": "open"})(),
+    ) as fetch_issue_mock, patch("control_plane.services.resolver_dev_daemon.open_issue_for_case") as open_issue_mock, patch(
         "control_plane.services.resolver_dev_daemon.comment_issue_for_case"
     ) as comment_mock, patch("control_plane.services.resolver_dev_daemon.time.sleep"):
         result = run_dev_resolver(
@@ -350,6 +421,8 @@ def test_dev_resolver_applies_expire_stale_lease_from_diagnosis() -> None:
     assert result.detection_count == 1
     assert result.opened_issue_count == 0
     assert result.updated_issue_count == 1
+    assert fetch_issue_mock.call_count == 1
+    assert fetch_issue_mock.call_count == 1
     assert open_issue_mock.call_count == 0
     assert comment_mock.call_count == 1
     assert case.status == "awaiting_retry"
@@ -405,7 +478,10 @@ def test_dev_resolver_applies_retry_submission_from_diagnosis() -> None:
         session.commit()
 
     session_factory = build_session_factory(engine)
-    with patch("control_plane.services.resolver_dev_daemon.open_issue_for_case") as open_issue_mock, patch(
+    with patch(
+        "control_plane.services.resolver_dev_daemon.fetch_issue",
+        return_value=type("Issue", (), {"state": "open"})(),
+    ) as fetch_issue_mock, patch("control_plane.services.resolver_dev_daemon.open_issue_for_case") as open_issue_mock, patch(
         "control_plane.services.resolver_dev_daemon.comment_issue_for_case"
     ) as comment_mock, patch("control_plane.services.resolver_dev_daemon.time.sleep"):
         result = run_dev_resolver(

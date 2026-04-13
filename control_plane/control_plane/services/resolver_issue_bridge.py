@@ -164,6 +164,22 @@ def comment_issue_for_case(repo: str, issue_number: int, *, body: str) -> dict[s
     )
 
 
+def fetch_issue(repo: str, issue_number: int) -> ResolverRemoteIssue:
+    payload = _gh_api(f"repos/{repo}/issues/{issue_number}")
+    title = str(payload.get("title") or "")
+    body = str(payload.get("body") or "")
+    return ResolverRemoteIssue(
+        issue_number=int(payload.get("number") or issue_number),
+        title=title,
+        body=body,
+        state=str(payload.get("state") or ""),
+        issue_url=str(payload.get("html_url") or "") or None,
+        updated_at=str(payload.get("updated_at") or "") or None,
+        case_metadata=parse_resolver_case_block(body),
+        comments=(),
+    )
+
+
 def fetch_issue_comments(repo: str, issue_number: int) -> tuple[ResolverIssueComment, ...]:
     payload = _gh_api_json(f"repos/{repo}/issues/{issue_number}/comments")
     if not isinstance(payload, list):
