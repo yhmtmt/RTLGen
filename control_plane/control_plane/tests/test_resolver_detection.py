@@ -183,6 +183,87 @@ def test_detect_orphaned_running_item() -> None:
     assert detection.evidence["repo_root"] == "/repo"
 
 
+def test_skip_orphan_detector_within_stale_grace_window() -> None:
+    now = utcnow()
+    with make_session() as session:
+        task = TaskRequest(
+            request_key="queue:test-grace",
+            source="test",
+            requested_by="tester",
+            title="test grace",
+            description="recent lease expiry should not trigger",
+            layer=LayerName.LAYER1,
+            flow=FlowName.OPENROAD,
+            priority=1,
+            request_payload={"item_id": "grace-item"},
+        )
+        session.add(task)
+        session.flush()
+        work_item = WorkItem(
+            work_item_key="queue:test-grace",
+            task_request_id=task.id,
+            item_id="grace-item",
+            layer=LayerName.LAYER1,
+            flow=FlowName.OPENROAD,
+            platform="nangate45",
+            task_type="l1_sweep",
+            state=WorkItemState.RUNNING,
+            priority=1,
+            input_manifest={},
+            command_manifest=[],
+            expected_outputs=[],
+            acceptance_rules=[],
+            source_commit="deadbeef",
+        )
+        session.add(work_item)
+        machine = WorkerMachine(
+            machine_key="eval-1",
+            hostname="eval-host",
+            executor_kind="local_process",
+            capabilities={},
+            last_seen_at=now - timedelta(minutes=5),
+        )
+        session.add(machine)
+        session.flush()
+        lease = WorkerLease(
+            work_item_id=work_item.id,
+            machine_id=machine.id,
+            lease_token="lease-grace",
+            status=LeaseStatus.ACTIVE,
+            leased_at=now - timedelta(minutes=20),
+            expires_at=now - timedelta(seconds=30),
+            last_heartbeat_at=now - timedelta(minutes=2),
+        )
+        session.add(lease)
+        session.flush()
+        run = Run(
+            run_key="run-grace",
+            work_item_id=work_item.id,
+            lease_id=lease.id,
+            attempt=1,
+            executor_type=ExecutorType.INTERNAL_WORKER,
+            machine_id=machine.id,
+            status=RunStatus.RUNNING,
+            started_at=now - timedelta(minutes=20),
+            result_payload={},
+        )
+        session.add(run)
+        session.flush()
+        session.add(
+            RunEvent(
+                run_id=run.id,
+                event_time=now - timedelta(minutes=1),
+                event_type="command_started",
+                event_payload={"command": "run_sweep"},
+            )
+        )
+        session.commit()
+
+        detections = detect_orphaned_running_items(session, repo_root="/repo", stale_grace_seconds=600)
+
+    assert detections == []
+
+
 def test_skip_orphan_detector_for_terminal_latest_event() -> None:
     now = utcnow()
     with make_session() as session:

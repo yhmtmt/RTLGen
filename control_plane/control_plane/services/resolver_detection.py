@@ -106,6 +106,7 @@ def detect_orphaned_running_items(
     session: Session,
     *,
     repo_root: str | None = None,
+    stale_grace_seconds: int = 600,
 ) -> list[ResolverDetection]:
     now = utcnow()
     rows = (
@@ -119,6 +120,14 @@ def detect_orphaned_running_items(
     )
     detections: list[ResolverDetection] = []
     for lease, work_item, machine in rows:
+        stale_seconds = None
+        if lease.expires_at is not None:
+            expires_at = lease.expires_at
+            if expires_at.tzinfo is None:
+                expires_at = expires_at.replace(tzinfo=now.tzinfo)
+            stale_seconds = max((now - expires_at).total_seconds(), 0.0)
+            if stale_seconds < max(int(stale_grace_seconds), 0):
+                continue
         run = _latest_run(session, work_item.id)
         if run is None:
             continue

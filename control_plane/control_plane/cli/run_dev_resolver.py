@@ -15,6 +15,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--repo-root", required=True)
     parser.add_argument("--poll-seconds", type=int, default=60)
     parser.add_argument("--max-polls", type=int)
+    parser.add_argument("--orphaned-stale-grace-seconds", type=int, default=600)
     args = parser.parse_args(argv)
 
     engine = build_engine(args.database_url)
@@ -26,6 +27,7 @@ def main(argv: list[str] | None = None) -> int:
             repo_root=args.repo_root,
             poll_seconds=args.poll_seconds,
             max_polls=args.max_polls,
+            orphaned_stale_grace_seconds=args.orphaned_stale_grace_seconds,
         ),
     )
     return 0

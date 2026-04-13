@@ -200,6 +200,47 @@ def test_dev_resolver_opens_issue_once_for_same_evidence() -> None:
     assert cases[0].status == "awaiting_remote"
 
 
+def test_dev_resolver_does_not_open_issue_within_orphaned_stale_grace() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_all(engine)
+    _seed_orphaned_running_item(engine)
+
+    with Session(engine) as session:
+        lease = session.query(WorkerLease).one()
+        lease.expires_at = utcnow() - timedelta(seconds=30)
+        lease.last_heartbeat_at = utcnow() - timedelta(minutes=2)
+        event = session.query(RunEvent).one()
+        event.event_type = "command_started"
+        event.event_time = utcnow() - timedelta(minutes=1)
+        session.commit()
+
+    session_factory = build_session_factory(engine)
+    with patch(
+        "control_plane.services.resolver_dev_daemon.open_issue_for_case",
+        return_value=ResolverIssueCreateResult(issue_number=999, issue_url="https://github.com/yhmtmt/RTLGen/issues/999"),
+    ) as open_issue_mock, patch(
+        "control_plane.services.resolver_dev_daemon.time.sleep"
+    ):
+        result = run_dev_resolver(
+            session_factory,
+            ResolverDevDaemonConfig(
+                repo="yhmtmt/RTLGen",
+                repo_root="/repo",
+                poll_seconds=0,
+                max_polls=1,
+                orphaned_stale_grace_seconds=600,
+            ),
+        )
+
+    with Session(engine) as session:
+        cases = session.query(ResolverCase).all()
+
+    assert result.detection_count == 0
+    assert result.opened_issue_count == 0
+    assert open_issue_mock.call_count == 0
+    assert cases == []
+
+
 def test_dev_resolver_opens_issue_for_blocked_submission() -> None:
     engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
     create_all(engine)

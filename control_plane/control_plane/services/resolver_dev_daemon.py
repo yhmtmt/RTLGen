@@ -27,6 +27,7 @@ class ResolverDevDaemonConfig:
     repo_root: str
     poll_seconds: int = 60
     max_polls: int | None = None
+    orphaned_stale_grace_seconds: int = 600
 
 
 @dataclass(frozen=True)
@@ -331,8 +332,17 @@ def _handle_detection(
     return opened_issue_count, updated_issue_count, escalated_count
 
 
-def _collect_detections(session: Session, *, repo_root: str) -> list[ResolverDetection]:
-    detections = detect_orphaned_running_items(session, repo_root=repo_root)
+def _collect_detections(
+    session: Session,
+    *,
+    repo_root: str,
+    orphaned_stale_grace_seconds: int,
+) -> list[ResolverDetection]:
+    detections = detect_orphaned_running_items(
+        session,
+        repo_root=repo_root,
+        stale_grace_seconds=orphaned_stale_grace_seconds,
+    )
     detections.extend(detect_blocked_submission_items(session, repo_root=repo_root))
     return sorted(detections, key=lambda row: (row.failure_class, row.item_id, row.run_key))
 
@@ -350,7 +360,11 @@ def run_dev_resolver(
     while True:
         poll_count += 1
         with session_factory() as session:
-            detections = _collect_detections(session, repo_root=config.repo_root)
+            detections = _collect_detections(
+                session,
+                repo_root=config.repo_root,
+                orphaned_stale_grace_seconds=config.orphaned_stale_grace_seconds,
+            )
             detection_count += len(detections)
             for detection in detections:
                 opened, updated, escalated = _handle_detection(session, repo=config.repo, detection=detection)

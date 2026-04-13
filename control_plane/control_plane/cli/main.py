@@ -155,6 +155,7 @@ def main(argv: list[str] | None = None) -> int:
     resolver_parser.add_argument("--repo-root", required=True)
     resolver_parser.add_argument("--poll-seconds", type=int, default=60)
     resolver_parser.add_argument("--max-polls", type=int)
+    resolver_parser.add_argument("--orphaned-stale-grace-seconds", type=int, default=600)
 
     eval_resolver_parser = subparsers.add_parser(
         "run-eval-resolver",
@@ -600,6 +601,8 @@ def main(argv: list[str] | None = None) -> int:
         ]
         if args.max_polls is not None:
             argv2.extend(["--max-polls", str(args.max_polls)])
+        if args.orphaned_stale_grace_seconds is not None:
+            argv2.extend(["--orphaned-stale-grace-seconds", str(args.orphaned_stale_grace_seconds)])
         return run_dev_resolver_main(argv2)
     if args.command == "run-eval-resolver":
         argv2 = [
