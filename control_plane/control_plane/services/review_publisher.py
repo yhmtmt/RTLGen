@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import csv
 from dataclasses import dataclass
+import hashlib
 import json
 from pathlib import Path
 import subprocess
@@ -164,6 +166,97 @@ def _artifact_summary(*, repo_root: Path, artifact: Artifact | None) -> dict[str
         except Exception:
             pass
     return summary
+
+
+def _upsert_queue_snapshot_artifact(
+    session: Session,
+    *,
+    run: Run,
+    snapshot_path: str,
+    payload: dict[str, Any],
+) -> None:
+    artifact = (
+        session.query(Artifact)
+        .filter(Artifact.run_id == run.id, Artifact.kind == "queue_snapshot")
+        .one_or_none()
+    )
+    sha256 = hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
+    if artifact is None:
+        artifact = Artifact(
+            run_id=run.id,
+            kind="queue_snapshot",
+            storage_mode=ArtifactStorageMode.REPO,
+            path=snapshot_path,
+            sha256=sha256,
+            metadata_={},
+        )
+        session.add(artifact)
+    else:
+        artifact.storage_mode = ArtifactStorageMode.REPO
+        artifact.path = snapshot_path
+        artifact.sha256 = sha256
+
+
+def _review_snapshot_override(
+    *,
+    repo_root: Path,
+    snapshot_payload: dict[str, Any],
+    review_payload: dict[str, Any],
+) -> dict[str, Any]:
+    if str(review_payload.get("objective", "")).strip() != "measure_seed_variance":
+        return snapshot_payload
+    source_refs = review_payload.get("source_refs")
+    if not isinstance(source_refs, dict):
+        return snapshot_payload
+    trial_table_rel = str(source_refs.get("trial_table_csv", "")).strip()
+    if not trial_table_rel:
+        return snapshot_payload
+    trial_table_path = _resolve_rel_path(trial_table_rel, repo_root)
+    if not trial_table_path.exists():
+        return snapshot_payload
+
+    successful_rows: list[dict[str, Any]] = []
+    with trial_table_path.open(encoding="utf-8", newline="") as handle:
+        for row in csv.DictReader(handle):
+            if str(row.get("status", "")).strip() != "succeeded":
+                continue
+            metrics_csv = str(row.get("metrics_csv", "")).strip()
+            if not metrics_csv:
+                continue
+            successful_rows.append(
+                {
+                    "metrics_csv": metrics_csv,
+                    "platform": str(review_payload.get("platform", "")).strip(),
+                    "status": "ok",
+                    "trial_index": int(row["trial_index"]) if str(row.get("trial_index", "")).strip() else None,
+                    "seed": int(row["seed"]) if str(row.get("seed", "")).strip() else None,
+                    "critical_path_ns": float(row["critical_path_ns"]) if str(row.get("critical_path_ns", "")).strip() else None,
+                    "die_area": float(row["die_area"]) if str(row.get("die_area", "")).strip() else None,
+                    "total_power_mw": float(row["total_power_mw"]) if str(row.get("total_power_mw", "")).strip() else None,
+                }
+            )
+    if not successful_rows:
+        return snapshot_payload
+
+    rewritten = json.loads(json.dumps(snapshot_payload))
+    result = dict(rewritten.get("result") or {})
+    final_attempt_rows = result.get("metrics_rows")
+    if isinstance(final_attempt_rows, list):
+        result["final_attempt_metrics_rows"] = final_attempt_rows
+    result["metrics_rows"] = successful_rows
+    result["metrics_rows_scope"] = "successful_seed_trials"
+    trial_summary = review_payload.get("trial_summary")
+    if isinstance(trial_summary, dict):
+        success_count = trial_summary.get("success_count")
+        completed_trials = trial_summary.get("completed_trials")
+        failure_count = trial_summary.get("failure_count")
+        result["summary"] = (
+            f"{success_count}/{completed_trials} seed trials succeeded"
+            + (f"; {failure_count} trial failures recorded" if failure_count not in (None, 0) else "")
+        )
+    result["trial_table_csv"] = trial_table_rel
+    rewritten["result"] = result
+    return rewritten
 
 
 def _build_body_md(
@@ -371,9 +464,27 @@ def publish_review_package(session: Session, request: ReviewPublishRequest) -> R
 
     snapshot_rel = str(Path(sync_result.target_path).resolve().relative_to(repo_root.resolve()))
     snapshot_payload = _load_json(Path(sync_result.target_path))
-    handoff = _materialized_handoff(snapshot_payload=snapshot_payload, work_item=work_item)
     review_kind = _review_artifact_kind(work_item.task_type)
     review_artifact = _find_artifact(session, run_id=run.id, kind=review_kind)
+    review_payload: dict[str, Any] = {}
+    if review_artifact is not None:
+        try:
+            review_payload = _load_json(_resolve_rel_path(review_artifact.path, repo_root))
+        except Exception:
+            review_payload = {}
+    snapshot_payload = _review_snapshot_override(
+        repo_root=repo_root,
+        snapshot_payload=snapshot_payload,
+        review_payload=review_payload,
+    )
+    Path(sync_result.target_path).write_text(json.dumps(snapshot_payload, indent=2) + "\n", encoding="utf-8")
+    _upsert_queue_snapshot_artifact(
+        session,
+        run=run,
+        snapshot_path=snapshot_rel,
+        payload=snapshot_payload,
+    )
+    handoff = _materialized_handoff(snapshot_payload=snapshot_payload, work_item=work_item)
     developer_loop = _developer_loop_payload(work_item)
     branch_name = str((snapshot_payload.get("result") or {}).get("branch", run.branch_name or "")).strip()
     pr_title = _pr_title(work_item)

@@ -325,6 +325,66 @@ def test_publish_review_package_for_l1() -> None:
             assert "abstraction_layer: `circuit_block`" in payload["pr_payload"]["body_md"]
 
 
+def test_publish_review_package_rewrites_seed_variance_snapshot() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, _run_key = _seed_l1_reviewable(session, repo_root)
+            promotion_path = repo_root / "control_plane" / "shadow_exports" / "l1_promotions" / f"{item_id}.json"
+            promotion_payload = json.loads(promotion_path.read_text(encoding="utf-8"))
+            trial_table_rel = f"control_plane/shadow_exports/l1_trials/{item_id}/trial_table.csv"
+            promotion_payload["objective"] = "measure_seed_variance"
+            promotion_payload["platform"] = "nangate45"
+            promotion_payload["trial_summary"] = {
+                "completed_trials": 3,
+                "success_count": 2,
+                "failure_count": 1,
+            }
+            promotion_payload["source_refs"] = {
+                "trial_table_csv": trial_table_rel,
+            }
+            promotion_path.write_text(json.dumps(promotion_payload, indent=2) + "\n", encoding="utf-8")
+
+            _write(
+                repo_root / trial_table_rel,
+                (
+                    "run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature\n"
+                    f"{item_id}_run_1,1,1,101,canceled,,,,,lease_expired,control_plane,lease expired before run completion\n"
+                    f"{item_id}_run_2,2,1,101,succeeded,runs/designs/activations/seedvariance/trials/trial_001/metrics.csv,12.1,30000,0.18,none,,\n"
+                    f"{item_id}_run_3,3,2,102,succeeded,runs/designs/activations/seedvariance/trials/trial_002/metrics.csv,12.3,30000,0.19,none,,\n"
+                ),
+            )
+
+            publish_review_package(
+                session,
+                ReviewPublishRequest(
+                    repo_root=str(repo_root),
+                    item_id=item_id,
+                    evaluator_id="cpbot",
+                    session_id="s20260310t070000z",
+                    host="cp-host",
+                ),
+            )
+
+            package_path = repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "review_package.json"
+            snapshot_path = repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "evaluated.json"
+            package_payload = json.loads(package_path.read_text(encoding="utf-8"))
+            snapshot_payload = json.loads(snapshot_path.read_text(encoding="utf-8"))
+
+            for payload in (package_payload, snapshot_payload):
+                result = payload["queue_snapshot"]["result"] if "queue_snapshot" in payload else payload["result"]
+                assert result["metrics_rows_scope"] == "successful_seed_trials"
+                assert result["summary"] == "2/3 seed trials succeeded; 1 trial failures recorded"
+                assert [row["metrics_csv"] for row in result["metrics_rows"]] == [
+                    "runs/designs/activations/seedvariance/trials/trial_001/metrics.csv",
+                    "runs/designs/activations/seedvariance/trials/trial_002/metrics.csv",
+                ]
+                assert result["final_attempt_metrics_rows"][0]["metrics_csv"] == "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv"
+
+
 def test_publish_review_package_for_l2() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
