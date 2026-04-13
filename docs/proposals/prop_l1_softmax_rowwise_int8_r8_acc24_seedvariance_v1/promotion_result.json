@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "promote",
+  "pr_number": 182,
+  "merge_commit": "cf708b23305680df75f7cbb6fac18612c0c71068",
+  "merged_utc": "2026-04-13T07:19:39.443189Z"
 }

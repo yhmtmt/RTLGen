@@ -1,14 +1,21 @@
 {
   "proposal_id": "prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1",
-  "source_commit": "caefe0715c338e98e7eeb1773c5abf2765f6dd47",
+  "source_commit": "fe1dba276187a8cb6d08f33aeb8ea120193b2c98",
   "requested_items": [
     {
-      "item_id": "l1_prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1_nangate45_r1",
+      "item_id": "l1_prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1_nangate45_r4",
       "task_type": "l1_sweep",
       "objective": "measure_seed_variance",
       "evaluation_mode": "measurement_only",
       "abstraction_layer": "circuit_block",
-      "status": "pending"
+      "status": "merged",
+      "prior_item_ids": [
+        "l1_prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1_nangate45_r1"
+      ],
+      "merged_pr_number": 182,
+      "merge_commit": "cf708b23305680df75f7cbb6fac18612c0c71068",
+      "merged_utc": "2026-04-13T07:19:39.443189Z",
+      "notes": "Merged via PR #182 and merge cf708b23305680df75f7cbb6fac18612c0c71068 at 2026-04-13T07:19:39.443189Z."
     }
   ]
 }
