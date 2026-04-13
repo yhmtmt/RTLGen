@@ -1,0 +1,222 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/designs/activations/sweeps/nangate45_softmax_rowwise_v1.json"
+      ],
+      "configs": [
+        "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/config_softmax_rowwise_int8_r8_acc24_seedvariance.json"
+      ],
+      "out_root": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && cmake -S . -B build && cmake --build build --target rtlgen",
+        "name": "build_generator"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 scripts/run_sweep.py --configs runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/config_softmax_rowwise_int8_r8_acc24_seedvariance.json --platform nangate45 --sweep runs/designs/activations/sweeps/nangate45_softmax_rowwise_v1.json --out_root runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper --skip_existing",
+        "name": "run_sweep"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "objective": "measure_seed_variance",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_001/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+      "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_002/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+      "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_003/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+      "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_004/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+      "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_005/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Layer1 sweep from nangate45_softmax_rowwise_v1 on nangate45",
+  "result": {
+    "branch": "eval/l1_prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1_nangate45_r4/s20260413t071303z",
+    "completed_utc": "2026-04-12T22:54:38.139614Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260413t071303z][host:b7c2d9c80c1c][item:l1_prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1_nangate45_r4]",
+    "metrics_rows": [
+      {
+        "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_001/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "trial_index": 1,
+        "seed": 101,
+        "critical_path_ns": 20.2756,
+        "die_area": 176005.4209,
+        "total_power_mw": 1.11
+      },
+      {
+        "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_002/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "trial_index": 2,
+        "seed": 102,
+        "critical_path_ns": 20.3443,
+        "die_area": 176005.4209,
+        "total_power_mw": 1.1
+      },
+      {
+        "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_003/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "trial_index": 3,
+        "seed": 103,
+        "critical_path_ns": 20.3465,
+        "die_area": 176005.4209,
+        "total_power_mw": 1.1
+      },
+      {
+        "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_004/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "trial_index": 4,
+        "seed": 104,
+        "critical_path_ns": 20.17,
+        "die_area": 176005.4209,
+        "total_power_mw": 1.12
+      },
+      {
+        "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_005/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "trial_index": 5,
+        "seed": 105,
+        "critical_path_ns": 20.4197,
+        "die_area": 176005.4209,
+        "total_power_mw": 1.1
+      }
+    ],
+    "queue_item_id": "l1_prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1_nangate45_r4",
+    "session_id": "s20260413t071303z",
+    "status": "ok",
+    "summary": "5/6 seed trials succeeded; 1 trial failures recorded",
+    "final_attempt_metrics_rows": [
+      {
+        "tag": "softmax_rowwise_ng45_v1_19b9e4e3",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "913d2803",
+        "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_005/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_005/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/913d2803/result.json"
+      },
+      {
+        "tag": "softmax_rowwise_ng45_v1_2450c96d",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "f2f35414",
+        "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_005/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_005/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/f2f35414/result.json"
+      },
+      {
+        "tag": "softmax_rowwise_ng45_v1_c7a90f83",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "ee581fa1",
+        "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_005/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_005/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/ee581fa1/result.json"
+      },
+      {
+        "tag": "softmax_rowwise_ng45_v1_e43237a1",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "4082d8a0",
+        "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_005/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_005/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/4082d8a0/result.json"
+      },
+      {
+        "tag": "softmax_rowwise_ng45_v1_5d0d11b7",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "c0dc67c4",
+        "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_005/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_005/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/c0dc67c4/result.json"
+      },
+      {
+        "tag": "softmax_rowwise_ng45_v1_23b68dd1",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "83608509",
+        "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_005/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_005/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/83608509/result.json"
+      },
+      {
+        "tag": "softmax_rowwise_ng45_v1_31583c04",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "75ba5cfa",
+        "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_005/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_005/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/75ba5cfa/result.json"
+      },
+      {
+        "tag": "softmax_rowwise_ng45_v1_4d45e4c1",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "2e972b3a",
+        "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_005/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/trials/trial_005/softmax_rowwise_int8_r8_acc24_seedvariance_wrapper/work/2e972b3a/result.json"
+      }
+    ],
+    "metrics_rows_scope": "successful_seed_trials",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1_nangate45_r4/trial_table.csv"
+  },
+  "handoff": {
+    "branch": "eval/l1_prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1_nangate45_r4/s20260413t071303z",
+    "pr_title": "eval: run layer1 sweep from nangate45_softmax_rowwise_v1 on nangate45",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260413t071303z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1_nangate45_r4"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1_nangate45_r4",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-04-11T21:45:26.966154Z",
+  "requested_by": "control_plane",
+  "developer_loop": {
+    "evaluation": {
+      "mode": "measurement_only",
+      "trial_policy": {
+        "seed_start": 101,
+        "trial_count": 5,
+        "stop_after_failures": 5
+      }
+    },
+    "abstraction": {
+      "layer": "circuit_block"
+    },
+    "proposal_id": "prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1",
+    "proposal_path": "docs/proposals/prop_l1_softmax_rowwise_int8_r8_acc24_seedvariance_v1"
+  }
+}
