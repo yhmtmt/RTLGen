@@ -1,0 +1,132 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/designs/activations/sweeps/nangate45_terminal_hardsigmoid_int8_pwl_v1.json"
+      ],
+      "configs": [
+        "runs/designs/activations/terminal_hardsigmoid_int8_pwl_retrysubmission_wrapper/config_terminal_hardsigmoid_int8_pwl_retrysubmission.json"
+      ],
+      "out_root": "runs/designs/activations",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && cmake -S . -B build && cmake --build build --target rtlgen",
+        "name": "build_generator"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 scripts/run_sweep.py --configs runs/designs/activations/terminal_hardsigmoid_int8_pwl_retrysubmission_wrapper/config_terminal_hardsigmoid_int8_pwl_retrysubmission.json --platform nangate45 --sweep runs/designs/activations/sweeps/nangate45_terminal_hardsigmoid_int8_pwl_v1.json --out_root runs/designs/activations --skip_existing",
+        "name": "run_sweep"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "objective": "terminal_hardsigmoid_retrysubmission_physical_metrics",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/activations/terminal_hardsigmoid_int8_pwl_retrysubmission_wrapper/metrics.csv"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Terminal hardsigmoid retry-submission proof block",
+  "result": {
+    "branch": "eval/l1_prop_l1_terminal_hardsigmoid_retrysubmission_v1_nangate45_r2/s20260414t020854z",
+    "completed_utc": "2026-04-14T01:46:56.105207Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260414t020854z][host:b7c2d9c80c1c][item:l1_prop_l1_terminal_hardsigmoid_retrysubmission_v1_nangate45_r2]",
+    "metrics_rows": [
+      {
+        "tag": "terminal_hardsigmoid_int8_pwl_ng45_v1_97899059",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "5e202825",
+        "metrics_csv": "runs/designs/activations/terminal_hardsigmoid_int8_pwl_retrysubmission_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/terminal_hardsigmoid_int8_pwl_retrysubmission_wrapper/work/5e202825/result.json"
+      },
+      {
+        "tag": "terminal_hardsigmoid_int8_pwl_ng45_v1_3ba5ddc4",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "35c87b7c",
+        "metrics_csv": "runs/designs/activations/terminal_hardsigmoid_int8_pwl_retrysubmission_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/terminal_hardsigmoid_int8_pwl_retrysubmission_wrapper/work/35c87b7c/result.json"
+      },
+      {
+        "tag": "terminal_hardsigmoid_int8_pwl_ng45_v1_91e30912",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "389e2991",
+        "metrics_csv": "runs/designs/activations/terminal_hardsigmoid_int8_pwl_retrysubmission_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/terminal_hardsigmoid_int8_pwl_retrysubmission_wrapper/work/389e2991/result.json"
+      },
+      {
+        "tag": "terminal_hardsigmoid_int8_pwl_ng45_v1_6b32a08e",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "dd11332c",
+        "metrics_csv": "runs/designs/activations/terminal_hardsigmoid_int8_pwl_retrysubmission_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/terminal_hardsigmoid_int8_pwl_retrysubmission_wrapper/work/dd11332c/result.json"
+      }
+    ],
+    "queue_item_id": "l1_prop_l1_terminal_hardsigmoid_retrysubmission_v1_nangate45_r2",
+    "session_id": "s20260414t020854z",
+    "status": "ok",
+    "summary": "4/4 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_prop_l1_terminal_hardsigmoid_retrysubmission_v1_nangate45_r2/s20260414t020854z",
+    "pr_title": "eval: run terminal hardsigmoid retry-submission proof block",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260414t020854z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_prop_l1_terminal_hardsigmoid_retrysubmission_v1_nangate45_r2"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_prop_l1_terminal_hardsigmoid_retrysubmission_v1_nangate45_r2",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-04-14T01:45:28.568636Z",
+  "requested_by": "control_plane",
+  "developer_loop": {
+    "evaluation": {
+      "mode": "measurement_only",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      }
+    },
+    "abstraction": {
+      "layer": "circuit_block"
+    },
+    "proposal_id": "prop_l1_terminal_hardsigmoid_retrysubmission_v1",
+    "proposal_path": "docs/proposals/prop_l1_terminal_hardsigmoid_retrysubmission_v1/proposal.json"
+  }
+}
