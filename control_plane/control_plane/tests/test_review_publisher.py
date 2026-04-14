@@ -13,6 +13,7 @@ from control_plane.clock import utcnow
 from control_plane.db import create_all
 from control_plane.models.enums import ExecutorType, FlowName, LayerName, RunStatus, WorkItemState
 from control_plane.models.run_events import RunEvent
+from control_plane.models.run_events import RunEvent
 from control_plane.models.runs import Run
 from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem

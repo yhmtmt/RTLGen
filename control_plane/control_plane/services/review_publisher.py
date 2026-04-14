@@ -259,6 +259,17 @@ def _review_snapshot_override(
     return rewritten
 
 
+def _normalize_submission_error(raw: Any) -> str:
+    text = " ".join(str(raw or "").split()).strip()
+    if not text or text.lower() == "none":
+        return ""
+    if "gh pr create failed" in text and "gh auth login" in text:
+        return "gh pr create failed: gh auth login required"
+    if len(text) > 240:
+        return text[:237] + "..."
+    return text
+
+
 def _submission_history_summary(*, session: Session, run: Run) -> dict[str, Any] | None:
     submission_events = (
         session.query(RunEvent)
@@ -303,7 +314,7 @@ def _submission_history_summary(*, session: Session, run: Run) -> dict[str, Any]
         request_id = str(payload.get("request_id", "")).strip()
         if request_id:
             event_summary["request_id"] = request_id
-        error = str(payload.get("error", "")).strip() or str(payload.get("submission_error", "")).strip()
+        error = _normalize_submission_error(payload.get("error") or payload.get("submission_error"))
         if error:
             event_summary["error"] = error
         pr_url = str(payload.get("pr_url", "")).strip()

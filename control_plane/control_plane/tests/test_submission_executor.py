@@ -318,6 +318,8 @@ def _make_partial_create_fake_bin(fake_bin: Path, log_path: Path) -> None:
         "    branch=argv[4]\n"
         "    print(json.dumps({'number':456,'url':'https://github.com/yhmtmt/RTLGen/pull/456','headRefName':branch,'baseRefName':'master'}))\n"
         "    sys.exit(0)\n"
+        "if argv[:4] == ['--repo','yhmtmt/RTLGen','pr','edit']:\n"
+        "    sys.exit(0)\n"
         "sys.exit(1)\n",
     )
     os.chmod(fake_bin / "git", 0o755)
@@ -364,6 +366,8 @@ def _make_fake_bin(fake_bin: Path, log_path: Path) -> None:
         "    if not state.get('created'):\n"
         "        sys.exit(1)\n"
         "    print(json.dumps({'number':123,'url':'https://github.com/yhmtmt/RTLGen/pull/123','headRefName':'eval/l2_exec_demo/s20260310t081500z','baseRefName':'master'}))\n"
+        "    sys.exit(0)\n"
+        "if argv[:4] == ['--repo','yhmtmt/RTLGen','pr','edit']:\n"
         "    sys.exit(0)\n"
         "sys.exit(1)\n",
     )
@@ -581,6 +585,12 @@ def test_execute_submission_recovers_when_pr_create_returns_error_after_pr_exist
             log_entries = [json.loads(line) for line in log_path.read_text(encoding="utf-8").splitlines()]
             assert any(entry["tool"] == "gh" and entry["argv"][:4] == ["--repo", "yhmtmt/RTLGen", "pr", "create"] for entry in log_entries)
             assert sum(1 for entry in log_entries if entry["tool"] == "gh" and entry["argv"][:4] == ["--repo", "yhmtmt/RTLGen", "pr", "view"]) >= 2
+            assert any(entry["tool"] == "gh" and entry["argv"][:4] == ["--repo", "yhmtmt/RTLGen", "pr", "edit"] for entry in log_entries)
+
+            package_path = repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "review_package.json"
+            review_payload = json.loads(package_path.read_text(encoding="utf-8"))
+            assert review_payload["submission_history"]["final_submission"]["pr_url"] == "https://github.com/yhmtmt/RTLGen/pull/456"
+            assert "final_submission_pr: `https://github.com/yhmtmt/RTLGen/pull/456`" in review_payload["pr_payload"]["body_md"]
 
 
 def test_execute_submission_reuses_existing_pr_on_rerun() -> None:

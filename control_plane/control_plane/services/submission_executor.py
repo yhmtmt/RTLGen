@@ -18,6 +18,7 @@ from control_plane.models.run_events import RunEvent
 from control_plane.models.runs import Run
 from control_plane.models.work_items import WorkItem
 from control_plane.services.github_bridge import GitHubReconcileRequest, reconcile_github_link
+from control_plane.services.review_publisher import ReviewPublishRequest, publish_review_package
 from control_plane.services.submission_bridge import (
     SubmissionPrepareRequest,
     _canonical_runs_diff_paths,
@@ -314,6 +315,78 @@ def _refresh_manifest_frozen_file_map(
     manifest["frozen_file_map"] = frozen_file_map
 
 
+def _resolve_pr_body_path(*, worktree_path: Path, manifest: dict[str, Any]) -> Path:
+    pr_body_path = Path(str(manifest.get("pr_body_path", "")).strip())
+    if not pr_body_path.is_absolute():
+        pr_body_path = worktree_path / pr_body_path
+    return pr_body_path
+
+
+def _post_submit_refresh(
+    session: Session,
+    *,
+    repo_root: Path,
+    request: SubmissionExecuteRequest,
+    work_item: WorkItem,
+    run: Run,
+    manifest_path: Path,
+    manifest: dict[str, Any],
+    worktree_path: Path,
+    branch_name: str,
+    pr_base: str,
+    pr_number: int,
+) -> tuple[str, str, dict[str, Any]]:
+    publish_review_package(
+        session,
+        ReviewPublishRequest(
+            repo_root=str(repo_root),
+            item_id=work_item.item_id,
+            run_key=run.run_key,
+            evaluator_id=request.evaluator_id,
+            session_id=request.session_id,
+            host=request.host,
+            executor=request.executor,
+            branch_name=branch_name,
+            snapshot_target_path=request.snapshot_target_path,
+            package_target_path=request.package_target_path,
+        ),
+    )
+    manifest = _load_manifest(manifest_path)
+    commit_sha, submission_base_commit = _refresh_submission_worktree(
+        repo_root=repo_root,
+        worktree_path=worktree_path,
+        manifest=manifest,
+        item_id=work_item.item_id,
+        branch_name=branch_name,
+        pr_base=pr_base,
+    )
+    manifest["commit_sha"] = commit_sha
+    manifest["submission_base_commit"] = submission_base_commit
+    manifest["generated_utc"] = utcnow().isoformat().replace("+00:00", "Z")
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
+    _run_cmd(["git", "push", "--force-with-lease", "-u", "origin", branch_name], cwd=worktree_path)
+    pr_body_path = _resolve_pr_body_path(worktree_path=worktree_path, manifest=manifest)
+    pr_edit_proc = _run_cmd_capture(
+        [
+            "gh",
+            "--repo",
+            request.repo,
+            "pr",
+            "edit",
+            str(pr_number),
+            "--body-file",
+            str(pr_body_path),
+        ],
+        cwd=worktree_path,
+    )
+    if pr_edit_proc.returncode != 0:
+        raise SubmissionExecuteError(
+            f"gh pr edit failed for PR #{pr_number}: {_format_failed_command(pr_edit_proc)}"
+        )
+    return commit_sha, submission_base_commit, manifest
+
+
 def _upsert_execution_artifact(
     session: Session,
     *,
@@ -402,9 +475,7 @@ def execute_submission(session: Session, request: SubmissionExecuteRequest) -> S
     commit_sha = str(manifest.get("commit_sha", "")).strip()
     pr_base = str(manifest.get("base_branch", request.pr_base)).strip() or request.pr_base
     pr_title = str(manifest.get("pr_title", "")).strip()
-    pr_body_path = Path(str(manifest.get("pr_body_path", "")).strip())
-    if not pr_body_path.is_absolute():
-        pr_body_path = worktree_path / pr_body_path
+    pr_body_path = _resolve_pr_body_path(worktree_path=worktree_path, manifest=manifest)
     commit_sha, submission_base_commit = _refresh_submission_worktree(
         repo_root=repo_root,
         worktree_path=worktree_path,
@@ -489,22 +560,6 @@ def execute_submission(session: Session, request: SubmissionExecuteRequest) -> S
             f"gh pr view did not return a valid PR number: {json.dumps(pr_view, sort_keys=True)}"
         ) from exc
 
-    reconcile = reconcile_github_link(
-        session,
-        GitHubReconcileRequest(
-            repo=request.repo,
-            item_id=work_item.item_id,
-            branch_name=str(pr_view.get("headRefName", branch_name)).strip() or branch_name,
-            pr_number=pr_number,
-            pr_url=str(pr_view.get("url", pr_url)).strip() or pr_url,
-            base_branch=str(pr_view.get("baseRefName", pr_base)).strip() or pr_base,
-            head_sha=commit_sha or None,
-            state="pr_open",
-            run_key=run.run_key,
-            metadata={"submission_manifest": str(manifest_path.relative_to(repo_root))},
-        ),
-    )
-
     execution_rel = f"control_plane/shadow_exports/review/{work_item.item_id}/submission_execution.json"
     execution_path = repo_root / execution_rel
     execution_path.parent.mkdir(parents=True, exist_ok=True)
@@ -543,6 +598,47 @@ def execute_submission(session: Session, request: SubmissionExecuteRequest) -> S
                 "manifest_path": execution_payload["manifest_path"],
             },
         )
+    )
+    session.flush()
+
+    commit_sha, submission_base_commit, manifest = _post_submit_refresh(
+        session,
+        repo_root=repo_root,
+        request=request,
+        work_item=work_item,
+        run=run,
+        manifest_path=manifest_path,
+        manifest=manifest,
+        worktree_path=worktree_path,
+        branch_name=branch_name,
+        pr_base=pr_base,
+        pr_number=pr_number,
+    )
+
+    execution_payload["commit_sha"] = commit_sha
+    execution_payload["submission_base_commit"] = submission_base_commit
+    execution_path.write_text(json.dumps(execution_payload, indent=2) + "\n", encoding="utf-8")
+    _upsert_execution_artifact(
+        session,
+        run=run,
+        target_path=execution_rel,
+        payload=execution_payload,
+    )
+
+    reconcile = reconcile_github_link(
+        session,
+        GitHubReconcileRequest(
+            repo=request.repo,
+            item_id=work_item.item_id,
+            branch_name=str(pr_view.get("headRefName", branch_name)).strip() or branch_name,
+            pr_number=pr_number,
+            pr_url=str(pr_view.get("url", pr_url)).strip() or pr_url,
+            base_branch=str(pr_view.get("baseRefName", pr_base)).strip() or pr_base,
+            head_sha=commit_sha or None,
+            state="pr_open",
+            run_key=run.run_key,
+            metadata={"submission_manifest": str(manifest_path.relative_to(repo_root))},
+        ),
     )
     session.commit()
     return SubmissionExecuteResult(
