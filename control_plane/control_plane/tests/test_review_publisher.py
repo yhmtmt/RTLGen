@@ -11,8 +11,8 @@ from sqlalchemy.orm import Session
 
 from control_plane.clock import utcnow
 from control_plane.db import create_all
-from control_plane.models.enums import ExecutorType, FlowName, LayerName, RunStatus, WorkItemState
-from control_plane.models.run_events import RunEvent
+from control_plane.models.artifacts import Artifact
+from control_plane.models.enums import ArtifactStorageMode, ExecutorType, FlowName, LayerName, RunStatus, WorkItemState
 from control_plane.models.run_events import RunEvent
 from control_plane.models.runs import Run
 from control_plane.models.task_requests import TaskRequest
@@ -682,6 +682,29 @@ def test_publish_review_package_includes_submission_recovery_history() -> None:
                     ),
                 ]
             )
+            execution_path = repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "submission_execution.json"
+            execution_path.parent.mkdir(parents=True, exist_ok=True)
+            execution_path.write_text(
+                json.dumps(
+                    {
+                        "generated_utc": utcnow().isoformat().replace("+00:00", "Z"),
+                        "pr_url": "https://github.com/yhmtmt/RTLGen/pull/1000",
+                    },
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            session.add(
+                Artifact(
+                    run_id=run.id,
+                    kind="submission_execution",
+                    storage_mode=ArtifactStorageMode.REPO,
+                    path=str(execution_path),
+                    sha256="test-sha",
+                    metadata_={},
+                )
+            )
             session.commit()
 
             publish_review_package(
@@ -705,9 +728,9 @@ def test_publish_review_package_includes_submission_recovery_history() -> None:
             assert submission_history["retry_request_count"] == 1
             assert submission_history["last_failure"]["error"] == "gh pr create failed"
             assert submission_history["last_retry_request"]["request_id"] == "resume_test_retry"
-            assert submission_history["final_submission"]["pr_url"] == "https://github.com/yhmtmt/RTLGen/pull/999"
+            assert submission_history["final_submission"]["pr_url"] == "https://github.com/yhmtmt/RTLGen/pull/1000"
             assert "## Submission Recovery" in body_md
             assert "resolver_retry_path: `true`" in body_md
             assert "submission_failure_count: `1`" in body_md
             assert "retry_request_id: `resume_test_retry`" in body_md
-            assert "final_submission_pr: `https://github.com/yhmtmt/RTLGen/pull/999`" in body_md
+            assert "final_submission_pr: `https://github.com/yhmtmt/RTLGen/pull/1000`" in body_md

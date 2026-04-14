@@ -322,6 +322,29 @@ def _resolve_pr_body_path(*, worktree_path: Path, manifest: dict[str, Any]) -> P
     return pr_body_path
 
 
+def _materialize_pr_body_from_package(*, repo_root: Path, manifest: dict[str, Any]) -> None:
+    package_rel = str(manifest.get("package_path", "")).strip()
+    pr_body_rel = str(manifest.get("pr_body_path", "")).strip()
+    if not package_rel or not pr_body_rel:
+        return
+    package_path = repo_root / package_rel
+    if not package_path.exists():
+        return
+    try:
+        package_payload = json.loads(package_path.read_text(encoding="utf-8"))
+    except Exception:
+        return
+    pr_payload = package_payload.get("pr_payload")
+    if not isinstance(pr_payload, dict):
+        return
+    body_md = str(pr_payload.get("body_md", "")).strip()
+    if not body_md:
+        return
+    pr_body_path = repo_root / pr_body_rel
+    pr_body_path.parent.mkdir(parents=True, exist_ok=True)
+    pr_body_path.write_text(body_md + "\n", encoding="utf-8")
+
+
 def _post_submit_refresh(
     session: Session,
     *,
@@ -352,6 +375,13 @@ def _post_submit_refresh(
         ),
     )
     manifest = _load_manifest(manifest_path)
+    _materialize_pr_body_from_package(repo_root=repo_root, manifest=manifest)
+    _refresh_manifest_frozen_file_map(
+        repo_root=repo_root,
+        manifest=manifest,
+        item_id=work_item.item_id,
+        run_key=run.run_key,
+    )
     commit_sha, submission_base_commit = _refresh_submission_worktree(
         repo_root=repo_root,
         worktree_path=worktree_path,

@@ -591,6 +591,15 @@ def test_execute_submission_recovers_when_pr_create_returns_error_after_pr_exist
             review_payload = json.loads(package_path.read_text(encoding="utf-8"))
             assert review_payload["submission_history"]["final_submission"]["pr_url"] == "https://github.com/yhmtmt/RTLGen/pull/456"
             assert "final_submission_pr: `https://github.com/yhmtmt/RTLGen/pull/456`" in review_payload["pr_payload"]["body_md"]
+            manifest_path = repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "submission_manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            worktree_path = Path(manifest["worktree_path"])
+            branch_package_path = worktree_path / manifest["package_path"]
+            branch_body_path = worktree_path / manifest["pr_body_path"]
+            branch_review_payload = json.loads(branch_package_path.read_text(encoding="utf-8"))
+            branch_body_md = branch_body_path.read_text(encoding="utf-8")
+            assert branch_review_payload["submission_history"]["final_submission"]["pr_url"] == "https://github.com/yhmtmt/RTLGen/pull/456"
+            assert "final_submission_pr: `https://github.com/yhmtmt/RTLGen/pull/456`" in branch_body_md
 
 
 def test_execute_submission_reuses_existing_pr_on_rerun() -> None:

@@ -347,6 +347,26 @@ def _submission_history_summary(*, session: Session, run: Run) -> dict[str, Any]
         history["last_failure"] = last_failure
     if last_retry_request is not None:
         history["last_retry_request"] = last_retry_request
+    execution_artifact = _find_artifact(session, run_id=run.id, kind="submission_execution")
+    if execution_artifact is not None:
+        try:
+            execution_payload = _load_json(Path(execution_artifact.path))
+        except Exception:
+            execution_payload = {}
+        artifact_pr_url = str(execution_payload.get("pr_url", "")).strip()
+        if artifact_pr_url:
+            artifact_time = str(
+                execution_payload.get("generated_utc")
+                or (execution_artifact.created_at.isoformat().replace("+00:00", "Z") if execution_artifact.created_at else "")
+            ).strip()
+            final_time = str(final_submission.get("event_time", "") if isinstance(final_submission, dict) else "").strip()
+            if not final_time or (artifact_time and artifact_time >= final_time):
+                final_submission = {
+                    "event_type": "submission_execution",
+                    "event_time": artifact_time,
+                    "submitted": True,
+                    "pr_url": artifact_pr_url,
+                }
     if final_submission is not None:
         history["final_submission"] = final_submission
     return history
