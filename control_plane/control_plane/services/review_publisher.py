@@ -259,6 +259,88 @@ def _review_snapshot_override(
     return rewritten
 
 
+def _submission_history_summary(*, session: Session, run: Run) -> dict[str, Any] | None:
+    submission_events = (
+        session.query(RunEvent)
+        .filter(
+            RunEvent.run_id == run.id,
+            RunEvent.event_type.in_(
+                [
+                    "submission_failed",
+                    "submission_retry_requested",
+                    "submission_retry_started",
+                    "submission_retry_processed",
+                    "submission_retry_failed",
+                    "submission_executed",
+                ]
+            ),
+        )
+        .order_by(RunEvent.event_time.asc(), RunEvent.id.asc())
+        .all()
+    )
+    if not submission_events:
+        return None
+
+    history: dict[str, Any] = {
+        "event_count": len(submission_events),
+        "failure_count": 0,
+        "retry_request_count": 0,
+        "retry_processed_count": 0,
+        "retry_failed_count": 0,
+        "had_retry": False,
+        "events": [],
+    }
+    last_failure: dict[str, Any] | None = None
+    last_retry_request: dict[str, Any] | None = None
+    final_submission: dict[str, Any] | None = None
+
+    for event in submission_events:
+        payload = dict(event.event_payload or {})
+        event_summary = {
+            "event_time": event.event_time.isoformat().replace("+00:00", "Z"),
+            "event_type": event.event_type,
+        }
+        request_id = str(payload.get("request_id", "")).strip()
+        if request_id:
+            event_summary["request_id"] = request_id
+        error = str(payload.get("error", "")).strip() or str(payload.get("submission_error", "")).strip()
+        if error:
+            event_summary["error"] = error
+        pr_url = str(payload.get("pr_url", "")).strip()
+        if pr_url:
+            event_summary["pr_url"] = pr_url
+        submitted = payload.get("submitted")
+        if isinstance(submitted, bool):
+            event_summary["submitted"] = submitted
+        history["events"].append(event_summary)
+
+        if event.event_type in {"submission_failed", "submission_retry_failed"}:
+            history["failure_count"] += 1
+            last_failure = event_summary
+        if event.event_type == "submission_retry_requested":
+            history["retry_request_count"] += 1
+            history["had_retry"] = True
+            last_retry_request = event_summary
+        if event.event_type == "submission_retry_processed":
+            history["retry_processed_count"] += 1
+            history["had_retry"] = True
+            if bool(payload.get("submitted")):
+                final_submission = event_summary
+        if event.event_type == "submission_retry_failed":
+            history["retry_failed_count"] += 1
+            history["had_retry"] = True
+        if event.event_type == "submission_executed":
+            final_submission = event_summary
+
+    if last_failure is not None:
+        history["last_failure"] = last_failure
+    if last_retry_request is not None:
+        history["last_retry_request"] = last_retry_request
+    if final_submission is not None:
+        history["final_submission"] = final_submission
+    return history
+
+
 def _build_body_md(
     *,
     repo_root: Path,
@@ -269,6 +351,7 @@ def _build_body_md(
     snapshot_payload: dict[str, Any],
     handoff: dict[str, Any],
     developer_loop: dict[str, Any],
+    submission_history: dict[str, Any] | None,
 ) -> str:
     result = dict(snapshot_payload.get("result") or {})
     review_payload: dict[str, Any] = {}
@@ -368,6 +451,34 @@ def _build_body_md(
                     lines.append(
                         f"- energy_delta {label}: `{energy.get('baseline')}` -> `{energy.get('candidate')}` mJ"
                     )
+    if isinstance(submission_history, dict):
+        lines.extend(["", "## Submission Recovery"])
+        if submission_history.get("had_retry"):
+            lines.append("- resolver_retry_path: `true`")
+        failure_count = submission_history.get("failure_count")
+        if failure_count is not None:
+            lines.append(f"- submission_failure_count: `{failure_count}`")
+        retry_request_count = submission_history.get("retry_request_count")
+        if retry_request_count is not None:
+            lines.append(f"- retry_request_count: `{retry_request_count}`")
+        last_failure = submission_history.get("last_failure")
+        if isinstance(last_failure, dict):
+            error = str(last_failure.get("error", "")).strip()
+            if error:
+                lines.append(f"- last_submission_failure: `{error}`")
+        last_retry_request = submission_history.get("last_retry_request")
+        if isinstance(last_retry_request, dict):
+            request_id = str(last_retry_request.get("request_id", "")).strip()
+            if request_id:
+                lines.append(f"- retry_request_id: `{request_id}`")
+        final_submission = submission_history.get("final_submission")
+        if isinstance(final_submission, dict):
+            submitted = final_submission.get("submitted")
+            if isinstance(submitted, bool):
+                lines.append(f"- final_submission_submitted: `{str(submitted).lower()}`")
+            pr_url = str(final_submission.get("pr_url", "")).strip()
+            if pr_url:
+                lines.append(f"- final_submission_pr: `{pr_url}`")
     checklist = handoff.get("checklist")
     if isinstance(checklist, list) and checklist:
         lines.extend(["", "## Checklist"])
@@ -486,6 +597,7 @@ def publish_review_package(session: Session, request: ReviewPublishRequest) -> R
     )
     handoff = _materialized_handoff(snapshot_payload=snapshot_payload, work_item=work_item)
     developer_loop = _developer_loop_payload(work_item)
+    submission_history = _submission_history_summary(session=session, run=run)
     branch_name = str((snapshot_payload.get("result") or {}).get("branch", run.branch_name or "")).strip()
     pr_title = _pr_title(work_item)
 
@@ -509,6 +621,7 @@ def publish_review_package(session: Session, request: ReviewPublishRequest) -> R
         },
         "review_artifact": _artifact_summary(repo_root=repo_root, artifact=review_artifact),
         "developer_loop": developer_loop or None,
+        "submission_history": submission_history,
         "pr_payload": {
             "branch": branch_name,
             "title": pr_title,
@@ -522,6 +635,7 @@ def publish_review_package(session: Session, request: ReviewPublishRequest) -> R
                 snapshot_payload=snapshot_payload,
                 handoff=handoff,
                 developer_loop=developer_loop,
+                submission_history=submission_history,
             ),
             "checklist": handoff.get("checklist"),
         },

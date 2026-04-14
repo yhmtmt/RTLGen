@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from control_plane.clock import utcnow
 from control_plane.db import create_all
 from control_plane.models.enums import ExecutorType, FlowName, LayerName, RunStatus, WorkItemState
+from control_plane.models.run_events import RunEvent
 from control_plane.models.runs import Run
 from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
@@ -643,3 +644,69 @@ def test_publish_review_package_measurement_only_uses_evaluation_section_without
             assert "abstraction_layer: `full_architecture`" in body_md
             assert "evaluation_summary: `This item records metrics for the requested architecture point and does not emit a proposal judgment.`" in body_md
             assert "## Focused Comparison" not in body_md
+
+
+def test_publish_review_package_includes_submission_recovery_history() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, run_key = _seed_l1_reviewable(session, repo_root)
+            run = session.query(Run).filter(Run.run_key == run_key).one()
+            session.add_all(
+                [
+                    RunEvent(
+                        run_id=run.id,
+                        event_time=utcnow(),
+                        event_type="submission_failed",
+                        event_payload={"error": "gh pr create failed"},
+                    ),
+                    RunEvent(
+                        run_id=run.id,
+                        event_time=utcnow(),
+                        event_type="submission_retry_requested",
+                        event_payload={"request_id": "resume_test_retry"},
+                    ),
+                    RunEvent(
+                        run_id=run.id,
+                        event_time=utcnow(),
+                        event_type="submission_retry_processed",
+                        event_payload={
+                            "request_id": "resume_test_retry",
+                            "submitted": True,
+                            "pr_url": "https://github.com/yhmtmt/RTLGen/pull/999",
+                        },
+                    ),
+                ]
+            )
+            session.commit()
+
+            publish_review_package(
+                session,
+                ReviewPublishRequest(
+                    repo_root=str(repo_root),
+                    item_id=item_id,
+                    evaluator_id="cpbot",
+                    session_id="s20260310t071500z",
+                    host="cp-host",
+                ),
+            )
+
+            package_path = repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "review_package.json"
+            review_payload = json.loads(package_path.read_text(encoding="utf-8"))
+            submission_history = review_payload["submission_history"]
+            body_md = review_payload["pr_payload"]["body_md"]
+
+            assert submission_history["had_retry"] is True
+            assert submission_history["failure_count"] == 1
+            assert submission_history["retry_request_count"] == 1
+            assert submission_history["last_failure"]["error"] == "gh pr create failed"
+            assert submission_history["last_retry_request"]["request_id"] == "resume_test_retry"
+            assert submission_history["final_submission"]["pr_url"] == "https://github.com/yhmtmt/RTLGen/pull/999"
+            assert "## Submission Recovery" in body_md
+            assert "resolver_retry_path: `true`" in body_md
+            assert "submission_failure_count: `1`" in body_md
+            assert "retry_request_id: `resume_test_retry`" in body_md
+            assert "final_submission_pr: `https://github.com/yhmtmt/RTLGen/pull/999`" in body_md
