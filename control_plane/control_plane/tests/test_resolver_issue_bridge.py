@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import json
-from subprocess import CompletedProcess
+from subprocess import CalledProcessError, CompletedProcess
 from unittest.mock import patch
 
 from control_plane.models.resolver_cases import ResolverCase
 from control_plane.services.resolver_issue_bridge import (
+    ResolverIssueBridgeCommandError,
     build_issue_body,
     fetch_issue,
     list_open_resolver_issues,
@@ -154,3 +155,15 @@ def test_list_open_resolver_issues_filters_owner_and_pull_requests() -> None:
     assert issues[0].issue_number == 175
     assert issues[0].case_metadata["owner"] == "eval"
     assert len(issues[0].comments) == 1
+
+
+def test_fetch_issue_wraps_gh_command_failure() -> None:
+    with patch("control_plane.services.resolver_issue_bridge.subprocess.run") as run_mock:
+        run_mock.side_effect = CalledProcessError(1, ["gh", "api"], stderr="network down")
+        try:
+            fetch_issue("yhmtmt/RTLGen", 184)
+        except ResolverIssueBridgeCommandError as exc:
+            assert "gh api failed" in str(exc)
+            assert "network down" in str(exc)
+        else:
+            raise AssertionError("expected ResolverIssueBridgeCommandError")

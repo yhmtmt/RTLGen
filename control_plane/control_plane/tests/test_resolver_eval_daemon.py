@@ -12,7 +12,7 @@ from control_plane.db import build_session_factory, create_all
 from control_plane.models.resolver_cases import ResolverCase
 from control_plane.models.resolver_observations import ResolverObservation
 from control_plane.services.resolver_eval_daemon import ResolverEvalDaemonConfig, run_eval_resolver
-from control_plane.services.resolver_issue_bridge import ResolverIssueComment, ResolverRemoteIssue
+from control_plane.services.resolver_issue_bridge import ResolverIssueBridgeCommandError, ResolverIssueComment, ResolverRemoteIssue
 
 
 def test_eval_resolver_records_issue_snapshot_and_diagnosis_once_for_same_issue_state() -> None:
@@ -151,5 +151,29 @@ machine_key: eval-1
     assert result.issue_count == 2
     assert result.observation_count == 0
     assert snapshot_mock.call_count == 2
+    assert dispose_mock.call_count == 1
+    assert any("resolver-eval db_unavailable" in message for message in log_messages)
+
+
+def test_eval_resolver_continues_after_retryable_github_error() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_all(engine)
+    session_factory = build_session_factory(engine)
+    log_messages: list[str] = []
+
+    with patch(
+        "control_plane.services.resolver_eval_daemon.list_open_resolver_issues",
+        side_effect=[ResolverIssueBridgeCommandError("gh api failed"), ()],
+    ) as list_mock, patch(
+        "control_plane.services.resolver_eval_daemon.time.sleep"
+    ), patch.object(engine, "dispose") as dispose_mock:
+        result = run_eval_resolver(
+            session_factory,
+            ResolverEvalDaemonConfig(repo="yhmtmt/RTLGen", machine_key="eval-1", poll_seconds=0, max_polls=2),
+            log_fn=log_messages.append,
+        )
+
+    assert result.poll_count == 2
+    assert list_mock.call_count == 2
     assert dispose_mock.call_count == 1
     assert any("resolver-eval db_unavailable" in message for message in log_messages)

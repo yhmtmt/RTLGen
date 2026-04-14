@@ -20,7 +20,13 @@ from control_plane.services.resolver_detection import (
     detect_blocked_submission_items,
     detect_orphaned_running_items,
 )
-from control_plane.services.resolver_issue_bridge import build_issue_comment, comment_issue_for_case, fetch_issue, open_issue_for_case
+from control_plane.services.resolver_issue_bridge import (
+    ResolverIssueBridgeCommandError,
+    build_issue_comment,
+    comment_issue_for_case,
+    fetch_issue,
+    open_issue_for_case,
+)
 from control_plane.services.resolver_policy import retry_allowed
 
 
@@ -57,7 +63,7 @@ def _dispose_session_engine(session_factory: sessionmaker, logger: Callable[[str
 
 
 def _is_retryable_db_error(exc: Exception) -> bool:
-    return isinstance(exc, (OperationalError, DBAPIError))
+    return isinstance(exc, (OperationalError, DBAPIError, ResolverIssueBridgeCommandError))
 
 
 def _latest_diagnosis_payload(session: Session, case: ResolverCase) -> dict[str, object] | None:

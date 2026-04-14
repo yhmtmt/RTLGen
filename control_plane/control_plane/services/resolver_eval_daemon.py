@@ -16,6 +16,7 @@ from control_plane.models.resolver_cases import ResolverCase
 from control_plane.models.resolver_observations import ResolverObservation
 from control_plane.services.resolver_case_service import append_observation
 from control_plane.services.resolver_issue_bridge import (
+    ResolverIssueBridgeCommandError,
     ResolverIssueComment,
     ResolverRemoteIssue,
     list_open_resolver_issues,
@@ -53,7 +54,7 @@ def _dispose_session_engine(session_factory: sessionmaker, logger: Callable[[str
 
 
 def _is_retryable_db_error(exc: Exception) -> bool:
-    return isinstance(exc, (OperationalError, DBAPIError))
+    return isinstance(exc, (OperationalError, DBAPIError, ResolverIssueBridgeCommandError))
 
 
 def _snapshot_payload(issue: ResolverRemoteIssue) -> dict[str, object]:

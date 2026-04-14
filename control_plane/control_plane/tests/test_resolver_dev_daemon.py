@@ -7,6 +7,8 @@ from unittest.mock import patch
 
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
+
+from control_plane.services.resolver_issue_bridge import ResolverIssueBridgeCommandError, ResolverIssueCreateResult
 from sqlalchemy.orm import Session
 
 from control_plane.clock import utcnow
@@ -22,7 +24,6 @@ from control_plane.models.work_items import WorkItem
 from control_plane.models.worker_leases import WorkerLease
 from control_plane.models.worker_machines import WorkerMachine
 from control_plane.services.resolver_dev_daemon import ResolverDevDaemonConfig, run_dev_resolver
-from control_plane.services.resolver_issue_bridge import ResolverIssueCreateResult
 
 
 def _seed_orphaned_running_item(engine) -> None:
@@ -544,5 +545,30 @@ def test_dev_resolver_continues_after_retryable_db_error() -> None:
     assert result.poll_count == 2
     assert result.detection_count == 0
     assert collect_mock.call_count == 2
+    assert dispose_mock.call_count == 1
+    assert any("resolver-dev db_unavailable" in message for message in log_messages)
+
+
+def test_dev_resolver_continues_after_retryable_github_error() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_all(engine)
+    _seed_orphaned_running_item(engine)
+    session_factory = build_session_factory(engine)
+    log_messages: list[str] = []
+
+    with patch(
+        "control_plane.services.resolver_dev_daemon.fetch_issue",
+        side_effect=[ResolverIssueBridgeCommandError("gh api failed"), type("Issue", (), {"state": "open"})()],
+    ) as fetch_mock, patch(
+        "control_plane.services.resolver_dev_daemon.time.sleep"
+    ), patch.object(engine, "dispose") as dispose_mock:
+        result = run_dev_resolver(
+            session_factory,
+            ResolverDevDaemonConfig(repo="yhmtmt/RTLGen", repo_root="/repo", poll_seconds=0, max_polls=2),
+            log_fn=log_messages.append,
+        )
+
+    assert result.poll_count == 2
+    assert fetch_mock.call_count >= 1
     assert dispose_mock.call_count == 1
     assert any("resolver-dev db_unavailable" in message for message in log_messages)

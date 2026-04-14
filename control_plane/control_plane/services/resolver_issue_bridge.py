@@ -15,6 +15,10 @@ class ResolverIssueBridgeError(RuntimeError):
     pass
 
 
+class ResolverIssueBridgeCommandError(ResolverIssueBridgeError):
+    pass
+
+
 @dataclass(frozen=True)
 class ResolverIssueCreateResult:
     issue_number: int
@@ -52,7 +56,13 @@ def _gh_api_json(path: str, *, method: str = "GET", fields: dict[str, str] | Non
         command.extend(["--method", method])
     for key, value in (fields or {}).items():
         command.extend(["-f", f"{key}={value}"])
-    result = subprocess.run(command, check=True, capture_output=True, text=True)
+    try:
+        result = subprocess.run(command, check=True, capture_output=True, text=True)
+    except subprocess.CalledProcessError as exc:
+        stderr = str(exc.stderr or "").strip()
+        raise ResolverIssueBridgeCommandError(f"gh api failed for {path}: {stderr or exc}") from exc
+    except OSError as exc:
+        raise ResolverIssueBridgeCommandError(f"gh api unavailable for {path}: {exc}") from exc
     return json.loads(result.stdout)
 
 
