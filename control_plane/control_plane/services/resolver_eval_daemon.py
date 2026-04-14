@@ -6,9 +6,12 @@ from dataclasses import dataclass
 import hashlib
 import json
 import time
+from typing import Callable
 
+from sqlalchemy.exc import DBAPIError, OperationalError
 from sqlalchemy.orm import Session, sessionmaker
 
+from control_plane.clock import utcnow
 from control_plane.models.resolver_cases import ResolverCase
 from control_plane.models.resolver_observations import ResolverObservation
 from control_plane.services.resolver_case_service import append_observation
@@ -33,6 +36,24 @@ class ResolverEvalDaemonResult:
     poll_count: int
     issue_count: int
     observation_count: int
+
+
+def _default_log(message: str) -> None:
+    print(f"[{utcnow().isoformat().replace('+00:00', 'Z')}] {message}", flush=True)
+
+
+def _dispose_session_engine(session_factory: sessionmaker, logger: Callable[[str], None]) -> None:
+    engine = getattr(session_factory, "kw", {}).get("bind")
+    if engine is None:
+        return
+    try:
+        engine.dispose()
+    except Exception as exc:  # pragma: no cover - defensive cleanup
+        logger(f"resolver-eval engine_dispose_error error={exc}")
+
+
+def _is_retryable_db_error(exc: Exception) -> bool:
+    return isinstance(exc, (OperationalError, DBAPIError))
 
 
 def _snapshot_payload(issue: ResolverRemoteIssue) -> dict[str, object]:
@@ -148,23 +169,36 @@ def _sync_diagnosis(session: Session, issue: ResolverRemoteIssue) -> bool:
 def run_eval_resolver(
     session_factory: sessionmaker[Session],
     config: ResolverEvalDaemonConfig,
+    *,
+    log_fn: Callable[[str], None] | None = None,
 ) -> ResolverEvalDaemonResult:
+    logger = log_fn or _default_log
     poll_count = 0
     issue_count = 0
     observation_count = 0
 
     while True:
         poll_count += 1
-        issues = list_open_resolver_issues(config.repo, owner="eval", include_comments=True)
-        issue_count += len(issues)
-        with session_factory() as session:
-            for issue in issues:
-                if not _matches_machine(issue, config.machine_key):
-                    continue
-                if _sync_issue_snapshot(session, issue):
-                    observation_count += 1
-                if _sync_diagnosis(session, issue):
-                    observation_count += 1
+        try:
+            issues = list_open_resolver_issues(config.repo, owner="eval", include_comments=True)
+            issue_count += len(issues)
+            with session_factory() as session:
+                for issue in issues:
+                    if not _matches_machine(issue, config.machine_key):
+                        continue
+                    if _sync_issue_snapshot(session, issue):
+                        observation_count += 1
+                    if _sync_diagnosis(session, issue):
+                        observation_count += 1
+        except Exception as exc:
+            if _is_retryable_db_error(exc):
+                logger(f"resolver-eval db_unavailable poll={poll_count} error={exc}")
+                _dispose_session_engine(session_factory, logger)
+                if config.max_polls is not None and poll_count >= config.max_polls:
+                    break
+                time.sleep(config.poll_seconds)
+                continue
+            raise
         if config.max_polls is not None and poll_count >= config.max_polls:
             break
         time.sleep(config.poll_seconds)

@@ -6,6 +6,7 @@ from datetime import timedelta
 from unittest.mock import patch
 
 from sqlalchemy import create_engine
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
 from control_plane.clock import utcnow
@@ -515,3 +516,33 @@ def test_dev_resolver_applies_retry_submission_from_diagnosis() -> None:
     assert len(retry_events) == 1
     assert retry_events[0].event_payload["actor"] == "resolver_dev_daemon"
     assert [action.action_key for action in actions] == ["retry_submission", "comment_issue"]
+
+
+def test_dev_resolver_continues_after_retryable_db_error() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_all(engine)
+    session_factory = build_session_factory(engine)
+    log_messages: list[str] = []
+
+    with patch(
+        "control_plane.services.resolver_dev_daemon._collect_detections",
+        side_effect=[
+            OperationalError("select 1", {}, Exception("db down")),
+            [],
+        ],
+    ) as collect_mock, patch(
+        "control_plane.services.resolver_dev_daemon._reconcile_closed_remote_issues"
+    ), patch(
+        "control_plane.services.resolver_dev_daemon.time.sleep"
+    ), patch.object(engine, "dispose") as dispose_mock:
+        result = run_dev_resolver(
+            session_factory,
+            ResolverDevDaemonConfig(repo="yhmtmt/RTLGen", repo_root="/repo", poll_seconds=0, max_polls=2),
+            log_fn=log_messages.append,
+        )
+
+    assert result.poll_count == 2
+    assert result.detection_count == 0
+    assert collect_mock.call_count == 2
+    assert dispose_mock.call_count == 1
+    assert any("resolver-dev db_unavailable" in message for message in log_messages)

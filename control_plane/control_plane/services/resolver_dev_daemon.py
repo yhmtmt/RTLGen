@@ -4,9 +4,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import time
+from typing import Callable
 
+from sqlalchemy.exc import DBAPIError, OperationalError
 from sqlalchemy.orm import Session, sessionmaker
 
+from control_plane.clock import utcnow
 from control_plane.models.resolver_cases import ResolverCase
 from control_plane.models.resolver_observations import ResolverObservation
 from control_plane.services.completion_retry_service import CompletionRetryError, request_submission_retry
@@ -37,6 +40,24 @@ class ResolverDevDaemonResult:
     opened_issue_count: int
     updated_issue_count: int
     escalated_count: int
+
+
+def _default_log(message: str) -> None:
+    print(f"[{utcnow().isoformat().replace('+00:00', 'Z')}] {message}", flush=True)
+
+
+def _dispose_session_engine(session_factory: sessionmaker, logger: Callable[[str], None]) -> None:
+    engine = getattr(session_factory, "kw", {}).get("bind")
+    if engine is None:
+        return
+    try:
+        engine.dispose()
+    except Exception as exc:  # pragma: no cover - defensive cleanup
+        logger(f"resolver-dev engine_dispose_error error={exc}")
+
+
+def _is_retryable_db_error(exc: Exception) -> bool:
+    return isinstance(exc, (OperationalError, DBAPIError))
 
 
 def _latest_diagnosis_payload(session: Session, case: ResolverCase) -> dict[str, object] | None:
@@ -372,7 +393,10 @@ def _collect_detections(
 def run_dev_resolver(
     session_factory: sessionmaker[Session],
     config: ResolverDevDaemonConfig,
+    *,
+    log_fn: Callable[[str], None] | None = None,
 ) -> ResolverDevDaemonResult:
+    logger = log_fn or _default_log
     poll_count = 0
     detection_count = 0
     opened_issue_count = 0
@@ -381,19 +405,29 @@ def run_dev_resolver(
 
     while True:
         poll_count += 1
-        with session_factory() as session:
-            _reconcile_closed_remote_issues(session, repo=config.repo)
-            detections = _collect_detections(
-                session,
-                repo_root=config.repo_root,
-                orphaned_stale_grace_seconds=config.orphaned_stale_grace_seconds,
-            )
-            detection_count += len(detections)
-            for detection in detections:
-                opened, updated, escalated = _handle_detection(session, repo=config.repo, detection=detection)
-                opened_issue_count += opened
-                updated_issue_count += updated
-                escalated_count += escalated
+        try:
+            with session_factory() as session:
+                _reconcile_closed_remote_issues(session, repo=config.repo)
+                detections = _collect_detections(
+                    session,
+                    repo_root=config.repo_root,
+                    orphaned_stale_grace_seconds=config.orphaned_stale_grace_seconds,
+                )
+                detection_count += len(detections)
+                for detection in detections:
+                    opened, updated, escalated = _handle_detection(session, repo=config.repo, detection=detection)
+                    opened_issue_count += opened
+                    updated_issue_count += updated
+                    escalated_count += escalated
+        except Exception as exc:
+            if _is_retryable_db_error(exc):
+                logger(f"resolver-dev db_unavailable poll={poll_count} error={exc}")
+                _dispose_session_engine(session_factory, logger)
+                if config.max_polls is not None and poll_count >= config.max_polls:
+                    break
+                time.sleep(config.poll_seconds)
+                continue
+            raise
         if config.max_polls is not None and poll_count >= config.max_polls:
             break
         time.sleep(config.poll_seconds)
