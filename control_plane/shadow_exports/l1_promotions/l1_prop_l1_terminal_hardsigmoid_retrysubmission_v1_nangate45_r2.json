@@ -1,0 +1,94 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-04-14T11:05:09.459548Z",
+  "item_id": "l1_prop_l1_terminal_hardsigmoid_retrysubmission_v1_nangate45_r2",
+  "run_key": "l1_prop_l1_terminal_hardsigmoid_retrysubmission_v1_nangate45_r2_run_4133f9132c217a1f",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "d9e87e75b4201b19642fcdcfe159755a07fe968a",
+  "objective": "terminal_hardsigmoid_retrysubmission_physical_metrics",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/activations/sweeps/nangate45_terminal_hardsigmoid_int8_pwl_v1.json"
+    ],
+    "configs": [
+      "runs/designs/activations/terminal_hardsigmoid_int8_pwl_retrysubmission_wrapper/config_terminal_hardsigmoid_int8_pwl_retrysubmission.json"
+    ],
+    "out_root": "runs/designs/activations",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 1,
+  "evaluation_record": {
+    "evaluation_mode": "measurement_only",
+    "abstraction_layer": "circuit_block",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/terminal_hardsigmoid_int8_pwl_retrysubmission_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "35c87b7c",
+        "tag": "terminal_hardsigmoid_int8_pwl_ng45_v1_3ba5ddc4",
+        "result_path": "runs/designs/activations/terminal_hardsigmoid_int8_pwl_retrysubmission_wrapper/work/35c87b7c/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 0.1908,
+        "die_area": 25600.0,
+        "total_power_mw": 8.76e-05
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_prop_l1_terminal_hardsigmoid_retrysubmission_v1_nangate45_r2",
+    "completed_trials": 1,
+    "success_count": 1,
+    "failure_count": 0,
+    "success_rate": 1.0,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 0.1908,
+        "mean": 0.1908,
+        "median": 0.1908,
+        "max": 0.1908,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "die_area": {
+        "best": 25600.0,
+        "mean": 25600.0,
+        "median": 25600.0,
+        "max": 25600.0,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "total_power_mw": {
+        "best": 8.76e-05,
+        "mean": 8.76e-05,
+        "median": 8.76e-05,
+        "max": 8.76e-05,
+        "range": 0.0,
+        "stddev": 0.0
+      }
+    }
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/activations/terminal_hardsigmoid_int8_pwl_retrysubmission_wrapper/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_prop_l1_terminal_hardsigmoid_retrysubmission_v1_nangate45_r2/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_prop_l1_terminal_hardsigmoid_retrysubmission_v1_nangate45_r2/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_prop_l1_terminal_hardsigmoid_retrysubmission_v1_nangate45_r2/trial_table.csv"
+  }
+}
