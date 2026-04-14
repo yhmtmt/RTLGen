@@ -1,5 +1,28 @@
 {
   "proposal_id": "prop_l1_terminal_hardsigmoid_retrysubmission_v1",
-  "source_commit": "",
-  "requested_items": []
+  "source_commit": "eb7fba3f0fcba7777604f32299cac1f4466ce495",
+  "requested_items": [
+    {
+      "item_id": "l1_prop_l1_terminal_hardsigmoid_retrysubmission_v1_nangate45_r1",
+      "task_type": "l1_sweep",
+      "objective": "terminal_hardsigmoid_retrysubmission_physical_metrics",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "circuit_block",
+      "status": "superseded",
+      "notes": "Initial resolver retry-submission test item. Superseded after completion-processing failed before reaching submission because the proposal request file was malformed for this line.",
+      "config_path": "runs/designs/activations/terminal_hardsigmoid_int8_pwl_retrysubmission_wrapper/config_terminal_hardsigmoid_int8_pwl_retrysubmission.json",
+      "sweep_path": "runs/designs/activations/sweeps/nangate45_terminal_hardsigmoid_int8_pwl_v1.json"
+    },
+    {
+      "item_id": "l1_prop_l1_terminal_hardsigmoid_retrysubmission_v1_nangate45_r2",
+      "task_type": "l1_sweep",
+      "objective": "terminal_hardsigmoid_retrysubmission_physical_metrics",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "circuit_block",
+      "status": "pending",
+      "notes": "Fresh resolver retry-submission test item derived from the accepted hardsigmoid block baseline. Intended to reach PR creation, fail on evaluator-side gh auth, then recover through resolver-driven submission retry without rerunning evaluation.",
+      "config_path": "runs/designs/activations/terminal_hardsigmoid_int8_pwl_retrysubmission_wrapper/config_terminal_hardsigmoid_int8_pwl_retrysubmission.json",
+      "sweep_path": "runs/designs/activations/sweeps/nangate45_terminal_hardsigmoid_int8_pwl_v1.json"
+    }
+  ]
 }
