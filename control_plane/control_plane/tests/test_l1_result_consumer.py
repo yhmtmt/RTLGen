@@ -184,6 +184,105 @@ def test_consume_l1_result_writes_promotion_proposal() -> None:
             assert artifact.path == f"control_plane/shadow_exports/l1_promotions/{item_id}.json"
 
 
+def test_consume_l1_result_keeps_single_trial_metrics_without_trials_subdir() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        metrics_rel = "runs/designs/activations/terminal_hardsigmoid_int8_pwl_retrysubmission_wrapper/metrics.csv"
+        _write_metrics(
+            repo_root / metrics_rel,
+            [
+                {
+                    "platform": "nangate45",
+                    "status": "ok",
+                    "param_hash": "fast0001",
+                    "tag": "tag_fast",
+                    "critical_path_ns": "0.1908",
+                    "die_area": "25600",
+                    "total_power_mw": "8.76e-05",
+                    "result_path": "runs/designs/activations/terminal_hardsigmoid_int8_pwl_retrysubmission_wrapper/work/fast0001/result.json",
+                }
+            ],
+        )
+
+        with Session(engine) as session:
+            task_request = TaskRequest(
+                request_key="l1_sweep:test_single_trial_plain_metrics",
+                source="test",
+                requested_by="@tester",
+                title="single trial plain metrics",
+                description="single-trial metrics without trials subdir",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                priority=1,
+                request_payload={
+                    "item_id": "l1_test_single_trial_plain_metrics",
+                    "layer": "layer1",
+                    "flow": "openroad",
+                    "objective": "terminal_hardsigmoid_retrysubmission_physical_metrics",
+                },
+                source_commit="deadbeef",
+            )
+            session.add(task_request)
+            session.flush()
+
+            work_item = WorkItem(
+                work_item_key="l1_sweep:l1_test_single_trial_plain_metrics",
+                task_request_id=task_request.id,
+                item_id="l1_test_single_trial_plain_metrics",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                platform="nangate45",
+                task_type="l1_sweep",
+                state=WorkItemState.ARTIFACT_SYNC,
+                priority=1,
+                source_mode="config",
+                input_manifest={},
+                command_manifest=[],
+                expected_outputs=[metrics_rel],
+                acceptance_rules=[],
+                source_commit="deadbeef",
+            )
+            session.add(work_item)
+            session.flush()
+
+            run = Run(
+                run_key="l1_test_single_trial_plain_metrics_run_1",
+                work_item_id=work_item.id,
+                attempt=1,
+                trial_index=1,
+                seed=0,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.SUCCEEDED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="deadbeef",
+                result_summary="1/1 commands succeeded",
+                result_payload={
+                    "trial": {"trial_index": 1, "seed": 0},
+                    "queue_result": {"status": "ok", "metrics_rows": [f"{metrics_rel}:2"]},
+                },
+            )
+            session.add(run)
+            session.flush()
+
+            result = consume_l1_result(
+                session,
+                Layer1ConsumeRequest(
+                    repo_root=str(repo_root),
+                    item_id=work_item.item_id,
+                ),
+            )
+
+            assert result.proposal_count == 1
+            proposal_path = repo_root / "control_plane" / "shadow_exports" / "l1_promotions" / f"{work_item.item_id}.json"
+            payload = json.loads(proposal_path.read_text(encoding="utf-8"))
+            assert payload["proposals"][0]["metrics_ref"]["metrics_csv"] == metrics_rel
+
+
 def test_consume_l1_result_allows_explicit_target_path() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
