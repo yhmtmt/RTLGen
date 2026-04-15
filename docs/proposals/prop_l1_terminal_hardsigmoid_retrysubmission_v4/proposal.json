@@ -1,0 +1,58 @@
+{
+  "proposal_id": "prop_l1_terminal_hardsigmoid_retrysubmission_v4",
+  "created_utc": "2026-04-15T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "title": "Terminal int8 hard-sigmoid retry-submission proof block v4",
+  "abstraction_layer": "circuit_block",
+  "hypothesis": "A fourth fresh standalone int8 hard-sigmoid block under a new canonical path can validate duplicate suppression cleanly after the resolver case-episode fixes, under persistent evaluator-side PR creation failure.",
+  "direct_comparison": {
+    "primary_question": "Does the resolver keep exactly one active case and one GitHub issue, with no duplicate comments, when repeated polls observe the same unresolved evaluator-side gh auth submission failure on a fresh bounded hard-sigmoid block?",
+    "include": [
+      "one standalone int8 hard-sigmoid block under a unique design path",
+      "one bounded Nangate45 physical sweep",
+      "one intentional persistent gh auth failure with repeated unchanged resolver polls"
+    ],
+    "exclude": [
+      "integrated nm1 architecture-block evaluation",
+      "layer2 mapper or scheduler ranking",
+      "broad parameter sweeps beyond the single anti-loop candidate"
+    ],
+    "follow_on_broad_sweep": [
+      "none unless duplicate case or duplicate issue creation is observed under unchanged evidence"
+    ]
+  },
+  "expected_benefit": [
+    "proves duplicate suppression for blocked-submission resolver detection under persistent gh auth failure",
+    "adds one more bounded hard-sigmoid circuit_block reference under a unique canonical path"
+  ],
+  "risks": [
+    "this is primarily a resolver-behavior proof item rather than a product-improvement item",
+    "the physical metrics may be redundant relative to accepted hard-sigmoid references"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "task_type": "l1_sweep",
+      "evaluation_mode": "measurement_only",
+      "objective": "terminal_hardsigmoid_retrysubmission_v4_physical_metrics",
+      "cost_class": "high",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": false,
+      "requires_materialized_refs": false,
+      "abstraction_layer": "circuit_block",
+      "expected_result": {
+        "direction": "unknown",
+        "reason": "the first goal is to complete one fresh bounded run and prove that repeated dev-resolver polls create no duplicate cases, issues, or comment churn while gh auth remains unavailable"
+      }
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l1_terminal_hardsigmoid_block_v1/promotion_result.json",
+    "docs/proposals/prop_l1_terminal_hardsigmoid_retrysubmission_v3/proposal.json"
+  ],
+  "knowledge_refs": [
+    "discussion:2026-04-15-resolver-anti-loop-test"
+  ]
+}
