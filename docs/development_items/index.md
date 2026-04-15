@@ -3,7 +3,7 @@
 | item_id | layer | kind | title | status | priority | owner | proposal_id | updated_utc |
 |---|---|---|---|---|---|---|---|---|
 | `item_l2_softmax_tail_fused_output_v1` | `layer2` | `architecture` | `Softmax-tail fused output path` | `promoted_to_proposal` | `high` | `developer_agent` | `prop_l2_softmax_tile_fusion_v1` | `2026-03-17T13:10:00Z` |
-| `item_l2_num_modules_adaptive_v1` | `layer2` | `architecture` | `Adaptive num_modules selection` | `seed` | `high` | `developer_agent` |  | `2026-03-16T06:00:00Z` |
+| `item_l2_num_modules_adaptive_v1` | `layer2` | `architecture` | `Adaptive num_modules selection` | `promoted_to_proposal` | `high` | `developer_agent` | `prop_l2_num_modules_adaptive_v1` | `2026-04-15T00:00:00Z` |
 | `item_l2_softmax_macro_pipeline_balance_v1` | `layer2` | `architecture` | `Integrated softmax pipeline rebalance` | `seed` | `high` | `developer_agent` |  | `2026-03-16T06:00:00Z` |
 | `item_l2_activation_fusion_tail_v1` | `layer2` | `architecture` | `Tail activation fusion path` | `seed` | `medium` | `developer_agent` |  | `2026-03-16T06:00:00Z` |
 | `item_l2_weight_stationary_variant_v1` | `layer2` | `architecture` | `Weight-stationary architecture variant` | `seed` | `medium` | `developer_agent` |  | `2026-03-16T06:00:00Z` |

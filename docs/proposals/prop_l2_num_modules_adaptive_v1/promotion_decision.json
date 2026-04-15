@@ -1,0 +1,13 @@
+{
+  "proposal_id": "prop_l2_num_modules_adaptive_v1",
+  "candidate_id": "cand_l2_num_modules_adaptive_v1_r1",
+  "decision": "iterate",
+  "reason": "The proposal is newly created and needs the first refreshed num-modules campaign before any promote or close decision is defensible.",
+  "evidence_refs": [
+    "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1/report.md",
+    "docs/proposals/prop_l2_mapper_memory_aware_split_v1/analysis_report.md",
+    "control_plane/shadow_exports/l2_decisions/l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2.json"
+  ],
+  "next_action": "Run the refreshed imported softmax-tail num-modules campaign under the current mapper baseline and compare the result against the historical campaign.",
+  "requires_human_approval": true
+}

@@ -1,0 +1,55 @@
+{
+  "proposal_id": "prop_l2_num_modules_adaptive_v1",
+  "created_utc": "2026-04-15T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Adaptive num_modules selection for imported softmax-tail workloads",
+  "hypothesis": "The earlier imported softmax-tail num_modules result that favored nm1 is now stale because it predates the accepted memory-aware split mapper update; rerunning the nm1 versus nm2 comparison under the newer mapper baseline will show whether module-count choice should remain fixed or be selected adaptively per workload family.",
+  "direct_comparison": {
+    "primary_question": "After the accepted mapper update, does the imported softmax-tail benchmark still clearly prefer nm1 over nm2, or has the module-count conclusion become benchmark- or lowering-dependent?",
+    "include": [
+      "the historical num-modules campaign result from runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1",
+      "a fresh rerun of the same num-modules campaign under the current mapper baseline"
+    ],
+    "exclude": [
+      "new benchmark families outside the imported softmax-tail suite",
+      "further mapper-policy experiments beyond the already accepted memory-aware split baseline",
+      "architecture changes unrelated to module count"
+    ],
+    "follow_on_broad_sweep": [
+      "only if the refreshed comparison is ambiguous, extend to broader softmax-tail model coverage or additional objective weightings"
+    ]
+  },
+  "expected_benefit": [
+    "replaces an outdated nm1-versus-nm2 conclusion with evidence generated under the current accepted mapper baseline",
+    "clarifies whether module-count choice should be fixed or adaptive for softmax-tail workloads",
+    "provides a cleaner architecture-level follow-on after the mapper-only memory-aware split proposal"
+  ],
+  "risks": [
+    "the benchmark remains too narrow to justify a general adaptive policy",
+    "the refreshed result may still prefer nm1 strongly, yielding only a closure result rather than a new architecture direction",
+    "reusing the old campaign shape may miss workload features needed to expose a true adaptive crossover"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "objective": "num_modules_revisit",
+      "cost_class": "medium"
+    }
+  ],
+  "baseline_refs": [
+    "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1",
+    "docs/proposals/prop_l2_mapper_memory_aware_split_v1",
+    "control_plane/shadow_exports/l2_decisions/l2_prop_l2_mapper_memory_aware_split_v1_nm2_focus_r2.json"
+  ],
+  "knowledge_refs": [
+    "docs/proposals/prop_l2_softmax_tile_fusion_v1/proposal.json",
+    "docs/proposals/prop_l2_softmax_tile_fusion_v1/promotion_decision.json",
+    "docs/proposals/prop_l2_mapper_memory_aware_split_v1/analysis_report.md",
+    "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1/report.md",
+    "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1/best_point.json",
+    "npu/docs/workflow.md"
+  ]
+}
