@@ -37,6 +37,7 @@ class ResolverDevDaemonConfig:
     poll_seconds: int = 60
     max_polls: int | None = None
     orphaned_stale_grace_seconds: int = 600
+    blocked_submission_stale_grace_seconds: int = 120
 
 
 @dataclass(frozen=True)
@@ -386,13 +387,20 @@ def _collect_detections(
     *,
     repo_root: str,
     orphaned_stale_grace_seconds: int,
+    blocked_submission_stale_grace_seconds: int,
 ) -> list[ResolverDetection]:
     detections = detect_orphaned_running_items(
         session,
         repo_root=repo_root,
         stale_grace_seconds=orphaned_stale_grace_seconds,
     )
-    detections.extend(detect_blocked_submission_items(session, repo_root=repo_root))
+    detections.extend(
+        detect_blocked_submission_items(
+            session,
+            repo_root=repo_root,
+            stale_grace_seconds=blocked_submission_stale_grace_seconds,
+        )
+    )
     return sorted(detections, key=lambda row: (row.failure_class, row.item_id, row.run_key))
 
 
@@ -418,6 +426,7 @@ def run_dev_resolver(
                     session,
                     repo_root=config.repo_root,
                     orphaned_stale_grace_seconds=config.orphaned_stale_grace_seconds,
+                    blocked_submission_stale_grace_seconds=config.blocked_submission_stale_grace_seconds,
                 )
                 detection_count += len(detections)
                 for detection in detections:

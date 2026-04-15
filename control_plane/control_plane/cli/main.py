@@ -156,6 +156,7 @@ def main(argv: list[str] | None = None) -> int:
     resolver_parser.add_argument("--poll-seconds", type=int, default=60)
     resolver_parser.add_argument("--max-polls", type=int)
     resolver_parser.add_argument("--orphaned-stale-grace-seconds", type=int, default=600)
+    resolver_parser.add_argument("--blocked-submission-stale-grace-seconds", type=int, default=120)
 
     eval_resolver_parser = subparsers.add_parser(
         "run-eval-resolver",

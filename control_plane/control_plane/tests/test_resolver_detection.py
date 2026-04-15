@@ -35,6 +35,8 @@ def _seed_artifact_sync_item(
     source_commit: str = "deadbeef",
     request_payload: dict | None = None,
     submission_failed_reason: str | None = None,
+    latest_event_type: str | None = None,
+    latest_event_age_seconds: int = 0,
 ) -> WorkItem:
     now = utcnow()
     task = TaskRequest(
@@ -88,6 +90,15 @@ def _seed_artifact_sync_item(
                 event_time=now - timedelta(minutes=10),
                 event_type="submission_failed",
                 event_payload={"error": submission_failed_reason},
+            )
+        )
+    if latest_event_type:
+        session.add(
+            RunEvent(
+                run_id=run.id,
+                event_time=now - timedelta(seconds=latest_event_age_seconds),
+                event_type=latest_event_type,
+                event_payload={},
             )
         )
     session.commit()
@@ -365,6 +376,22 @@ def test_detect_blocked_submission_proposal_linkage_missing() -> None:
     assert detection.severity == "high"
     assert detection.evidence["eligibility_reason"] == "developer_loop proposal linkage does not resolve to a proposal"
 
+
+
+
+def test_detect_blocked_submission_skips_recent_artifact_sync_without_submission_failure() -> None:
+    with make_session() as session, tempfile.TemporaryDirectory() as repo_root:
+        _seed_artifact_sync_item(
+            session,
+            item_id="blocked-recent-item",
+            run_key="run-recent",
+            latest_event_type="submission_prepared",
+            latest_event_age_seconds=10,
+        )
+
+        detections = detect_blocked_submission_items(session, repo_root=repo_root, stale_grace_seconds=120)
+
+    assert detections == []
 
 def test_detect_blocked_submission_gh_pr_create_failed() -> None:
     with make_session() as session, tempfile.TemporaryDirectory() as repo_root:

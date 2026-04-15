@@ -172,6 +172,7 @@ def detect_blocked_submission_items(
     session: Session,
     *,
     repo_root: str | None = None,
+    stale_grace_seconds: int = 120,
 ) -> list[ResolverDetection]:
     rows = (
         session.query(WorkItem)
@@ -181,10 +182,25 @@ def detect_blocked_submission_items(
     )
     detections: list[ResolverDetection] = []
     repo_path = Path(repo_root).resolve() if repo_root else None
+    now = utcnow()
     for work_item in rows:
         run = _latest_run(session, work_item.id)
         if run is None:
             continue
+        submission_failure_reason = None
+        latest_event = _latest_event(session, run.id)
+        latest_event_time = latest_event.event_time if latest_event is not None else None
+        if latest_event_time is not None and latest_event_time.tzinfo is None:
+            latest_event_time = latest_event_time.replace(tzinfo=now.tzinfo)
+        if latest_event_time is not None and (now - latest_event_time).total_seconds() < stale_grace_seconds:
+            submission_failure_reason = assess_submission_eligibility(
+                session,
+                work_item=work_item,
+                run=run,
+                repo_root=None,
+            ).reason
+            if not (submission_failure_reason and str(submission_failure_reason).strip().lower().startswith("gh pr create failed")):
+                continue
         eligibility = assess_submission_eligibility(
             session,
             work_item=work_item,
