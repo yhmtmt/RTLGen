@@ -1,0 +1,33 @@
+{
+  "item_id": "l1_prop_l1_terminal_hardsigmoid_retrysubmission_v2_nangate45_r1",
+  "completed_trials": 1,
+  "success_count": 1,
+  "failure_count": 0,
+  "success_rate": 1.0,
+  "metrics": {
+    "critical_path_ns": {
+      "best": 0.1908,
+      "mean": 0.1908,
+      "median": 0.1908,
+      "max": 0.1908,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "die_area": {
+      "best": 25600.0,
+      "mean": 25600.0,
+      "median": 25600.0,
+      "max": 25600.0,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "total_power_mw": {
+      "best": 8.76e-05,
+      "mean": 8.76e-05,
+      "median": 8.76e-05,
+      "max": 8.76e-05,
+      "range": 0.0,
+      "stddev": 0.0
+    }
+  }
+}
