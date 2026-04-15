@@ -142,6 +142,7 @@ Primary supporting references:
 - [daily_operations.md](/workspaces/RTLGen/control_plane/daily_operations.md)
 - [remote_operator_workflow.md](/workspaces/RTLGen/control_plane/remote_operator_workflow.md)
 - [systemd_operator_workflow.md](/workspaces/RTLGen/control_plane/systemd_operator_workflow.md)
+- [resolver_daemons.md](/workspaces/RTLGen/docs/operations/resolver_daemons.md)
 
 Archival proof/status notes:
 - [archive/README.md](/workspaces/RTLGen/control_plane/archive/README.md)

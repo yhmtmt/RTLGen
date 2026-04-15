@@ -26,6 +26,8 @@ RTLGen is a hardware-generation and evaluation workspace spanning:
   - `docs/workflows/evaluation_lanes.md`
 - Control-plane operations:
   - `control_plane/operator_runbook.md`
+- Resolver operations:
+  - `docs/operations/resolver_daemons.md`
 - NPU subsystem workflow:
   - `npu/docs/workflow.md`
 
