@@ -14,7 +14,13 @@ from control_plane.models.resolver_cases import ResolverCase
 from control_plane.models.resolver_observations import ResolverObservation
 from control_plane.services.completion_retry_service import CompletionRetryError, request_submission_retry
 from control_plane.services.lease_service import expire_stale_leases
-from control_plane.services.resolver_case_service import mark_escalated, mark_resolved, record_action, upsert_case_from_detection
+from control_plane.services.resolver_case_service import (
+    append_observation,
+    mark_escalated,
+    mark_resolved,
+    record_action,
+    upsert_case_from_detection,
+)
 from control_plane.services.resolver_detection import (
     ResolverDetection,
     detect_blocked_submission_items,
@@ -25,7 +31,9 @@ from control_plane.services.resolver_issue_bridge import (
     build_issue_comment,
     comment_issue_for_case,
     fetch_issue,
+    fetch_issue_comments,
     open_issue_for_case,
+    parse_resolver_diagnosis_block,
 )
 from control_plane.services.resolver_policy import retry_allowed
 
@@ -83,6 +91,47 @@ def _latest_diagnosis_payload(session: Session, case: ResolverCase) -> dict[str,
     if not isinstance(diagnosis, dict):
         return None
     return payload
+
+
+def _sync_issue_diagnosis_comments(session: Session, *, repo: str, case: ResolverCase) -> None:
+    if case.issue_number is None:
+        return
+    comments = fetch_issue_comments(repo, int(case.issue_number))
+    seen_comment_ids = {
+        int(payload.get("comment_id") or 0)
+        for (payload,) in (
+            session.query(ResolverObservation.payload_json)
+            .filter(ResolverObservation.case_id == case.id)
+            .filter(ResolverObservation.source == "github")
+            .filter(ResolverObservation.kind == "diagnosis")
+            .all()
+        )
+        if isinstance(payload, dict) and int(payload.get("comment_id") or 0) > 0
+    }
+    for comment in comments:
+        if comment.comment_id in seen_comment_ids:
+            continue
+        diagnosis = parse_resolver_diagnosis_block(comment.body)
+        if not diagnosis:
+            continue
+        payload = {
+            "issue_number": case.issue_number,
+            "comment_id": comment.comment_id,
+            "comment_author": comment.author,
+            "comment_created_at": comment.created_at,
+            "comment_updated_at": comment.updated_at,
+            "diagnosis_hash": f"issue:{case.issue_number}:comment:{comment.comment_id}",
+            "diagnosis": diagnosis,
+        }
+        append_observation(
+            session,
+            case=case,
+            source="github",
+            kind="diagnosis",
+            summary=f"issue #{case.issue_number} diagnosis comment {comment.comment_id} synced by dev resolver",
+            payload=payload,
+        )
+        seen_comment_ids.add(comment.comment_id)
 
 
 def _recommended_action(payload: dict[str, object] | None) -> str | None:
@@ -323,6 +372,7 @@ def _handle_detection(
         opened_issue_count += 1
         return opened_issue_count, updated_issue_count, escalated_count
 
+    _sync_issue_diagnosis_comments(session, repo=repo, case=case)
     action_updated, action_escalated, action_applied = _maybe_apply_diagnosis_action(session, repo=repo, case=case)
     updated_issue_count += action_updated
     escalated_count += action_escalated

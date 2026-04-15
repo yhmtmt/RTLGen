@@ -8,7 +8,11 @@ from unittest.mock import patch
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 
-from control_plane.services.resolver_issue_bridge import ResolverIssueBridgeCommandError, ResolverIssueCreateResult
+from control_plane.services.resolver_issue_bridge import (
+    ResolverIssueBridgeCommandError,
+    ResolverIssueComment,
+    ResolverIssueCreateResult,
+)
 from sqlalchemy.orm import Session
 
 from control_plane.clock import utcnow
@@ -516,6 +520,86 @@ def test_dev_resolver_applies_retry_submission_from_diagnosis() -> None:
     assert case.status == "awaiting_retry"
     assert len(retry_events) == 1
     assert retry_events[0].event_payload["actor"] == "resolver_dev_daemon"
+    assert [action.action_key for action in actions] == ["retry_submission", "comment_issue"]
+
+
+def test_dev_resolver_syncs_issue_comment_diagnosis_before_retry_submission() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_all(engine)
+    _seed_blocked_submission_item(engine, submission_failed_reason="gh pr create failed: exit code 4")
+
+    with Session(engine) as session:
+        case = ResolverCase(
+            id="case-2b",
+            fingerprint="artifact_sync_blocked_submission:gh_pr_create_failed",
+            failure_class="artifact_sync_blocked_submission",
+            owner="eval",
+            status="awaiting_remote",
+            severity="medium",
+            issue_number=179,
+            first_item_id="blocked-item",
+            latest_item_id="blocked-item",
+            first_run_key="run-blocked",
+            latest_run_key="run-blocked",
+            machine_key="eval-1",
+            source_commit="cafefeed",
+            repo_root="/repo",
+            evidence_json={"item_id": "blocked-item", "eligibility_reason": "gh pr create failed: exit code 4"},
+            resolution_json={},
+        )
+        session.add(case)
+        session.commit()
+
+    session_factory = build_session_factory(engine)
+    with patch(
+        "control_plane.services.resolver_dev_daemon.fetch_issue",
+        return_value=type("Issue", (), {"state": "open"})(),
+    ), patch(
+        "control_plane.services.resolver_dev_daemon.fetch_issue_comments",
+        return_value=(
+            ResolverIssueComment(
+                comment_id=30,
+                body="<!-- resolver-diagnosis\nverdict: confirmed\nfailure_point: submission\nrecommended_action: retry_submission\nforce: true\n-->",
+                author="yhmtmt",
+                created_at="2026-04-15T06:12:37Z",
+                updated_at="2026-04-15T06:12:37Z",
+            ),
+        ),
+    ), patch("control_plane.services.resolver_dev_daemon.open_issue_for_case") as open_issue_mock, patch(
+        "control_plane.services.resolver_dev_daemon.comment_issue_for_case"
+    ) as comment_mock, patch("control_plane.services.resolver_dev_daemon.time.sleep"):
+        result = run_dev_resolver(
+            session_factory,
+            ResolverDevDaemonConfig(
+                repo="yhmtmt/RTLGen",
+                repo_root="/repo",
+                poll_seconds=0,
+                max_polls=1,
+            ),
+        )
+
+    with Session(engine) as session:
+        case = session.query(ResolverCase).filter(ResolverCase.id == "case-2b").one()
+        observations = session.query(ResolverObservation).filter(ResolverObservation.case_id == case.id).order_by(ResolverObservation.created_at.asc()).all()
+        actions = session.query(ResolverAction).filter(ResolverAction.case_id == case.id).order_by(ResolverAction.created_at.asc()).all()
+        run = session.query(Run).filter(Run.run_key == "run-blocked").one()
+        retry_events = (
+            session.query(RunEvent)
+            .filter(RunEvent.run_id == run.id, RunEvent.event_type == "submission_retry_requested")
+            .order_by(RunEvent.event_time.asc())
+            .all()
+        )
+
+    assert result.poll_count == 1
+    assert result.detection_count == 1
+    assert result.opened_issue_count == 0
+    assert result.updated_issue_count == 1
+    assert open_issue_mock.call_count == 0
+    assert comment_mock.call_count == 1
+    assert case.status == "awaiting_retry"
+    assert len(retry_events) == 1
+    assert retry_events[0].event_payload["actor"] == "resolver_dev_daemon"
+    assert any(ob.kind == "diagnosis" and ob.source == "github" for ob in observations)
     assert [action.action_key for action in actions] == ["retry_submission", "comment_issue"]
 
 
