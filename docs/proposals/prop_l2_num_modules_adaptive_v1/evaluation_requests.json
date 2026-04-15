@@ -8,7 +8,9 @@
       "work_item_id": "cc51b2cc-11da-49c6-88dd-c3dce971369f",
       "task_type": "l2_campaign",
       "objective": "num_modules_revisit",
-      "campaign_path": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1/campaign.json"
+      "campaign_path": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1/campaign.json",
+      "evaluation_mode": "broad_ranking",
+      "comparison_role": "ranking"
     }
   ]
 }
