@@ -1,5 +1,14 @@
 {
   "proposal_id": "prop_l2_num_modules_adaptive_v1",
-  "source_commit": "",
-  "requested_items": []
+  "source_commit": "6f6a3231a9abbb80a825beec987b4263d19dcb86",
+  "requested_items": [
+    {
+      "item_id": "l2_prop_l2_num_modules_adaptive_v1_nm1_nm2_r1",
+      "task_request_id": "67bffbb0-1f36-4943-af9e-46857a02fea1",
+      "work_item_id": "cc51b2cc-11da-49c6-88dd-c3dce971369f",
+      "task_type": "l2_campaign",
+      "objective": "num_modules_revisit",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1/campaign.json"
+    }
+  ]
 }
