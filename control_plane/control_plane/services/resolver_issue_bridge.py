@@ -174,6 +174,14 @@ def comment_issue_for_case(repo: str, issue_number: int, *, body: str) -> dict[s
     )
 
 
+def close_issue_for_case(repo: str, issue_number: int) -> dict[str, Any]:
+    return _gh_api(
+        f"repos/{repo}/issues/{issue_number}",
+        method="PATCH",
+        fields={"state": "closed"},
+    )
+
+
 def fetch_issue(repo: str, issue_number: int) -> ResolverRemoteIssue:
     payload = _gh_api(f"repos/{repo}/issues/{issue_number}")
     title = str(payload.get("title") or "")

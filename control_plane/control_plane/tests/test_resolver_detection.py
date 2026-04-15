@@ -411,3 +411,19 @@ def test_detect_blocked_submission_gh_pr_create_failed() -> None:
     assert detection.severity == "medium"
     assert detection.machine_key == "eval-1"
     assert detection.evidence["run_status"] == RunStatus.SUCCEEDED.value
+
+
+def test_detect_blocked_submission_skips_superseded_items() -> None:
+    with make_session() as session:
+        work_item = _seed_artifact_sync_item(
+            session,
+            item_id="blocked-superseded",
+            run_key="run-superseded",
+            submission_failed_reason="gh pr create failed: exit code 4",
+        )
+        work_item.state = WorkItemState.SUPERSEDED
+        session.commit()
+
+        detections = detect_blocked_submission_items(session, repo_root="/repo")
+
+    assert detections == []

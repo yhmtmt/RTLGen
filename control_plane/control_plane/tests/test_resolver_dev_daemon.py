@@ -656,3 +656,97 @@ def test_dev_resolver_continues_after_retryable_github_error() -> None:
     assert fetch_mock.call_count >= 1
     assert dispose_mock.call_count == 1
     assert any("resolver-dev db_unavailable" in message for message in log_messages)
+
+
+def test_dev_resolver_resolves_case_for_superseded_item_and_closes_issue() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_all(engine)
+    _seed_blocked_submission_item(engine, submission_failed_reason="gh pr create failed: exit code 4")
+
+    with Session(engine) as session:
+        work_item = session.query(WorkItem).filter(WorkItem.item_id == "blocked-item").one()
+        work_item.state = WorkItemState.SUPERSEDED
+        case = ResolverCase(
+            id="case-superseded",
+            fingerprint="artifact_sync_blocked_submission:gh_pr_create_failed",
+            failure_class="artifact_sync_blocked_submission",
+            owner="eval",
+            status="awaiting_remote",
+            severity="medium",
+            issue_number=301,
+            first_item_id="blocked-item",
+            latest_item_id="blocked-item",
+            first_run_key="run-blocked",
+            latest_run_key="run-blocked",
+            machine_key="eval-1",
+            source_commit="cafefeed",
+            repo_root="/repo",
+            evidence_json={"item_id": "blocked-item"},
+            resolution_json={},
+        )
+        session.add(case)
+        session.commit()
+
+    session_factory = build_session_factory(engine)
+    with patch(
+        "control_plane.services.resolver_dev_daemon.fetch_issue",
+        return_value=type("Issue", (), {"state": "open"})(),
+    ) as fetch_issue_mock, patch(
+        "control_plane.services.resolver_dev_daemon.close_issue_for_case"
+    ) as close_issue_mock, patch(
+        "control_plane.services.resolver_dev_daemon.time.sleep"
+    ):
+        result = run_dev_resolver(
+            session_factory,
+            ResolverDevDaemonConfig(repo="yhmtmt/RTLGen", repo_root="/repo", poll_seconds=0, max_polls=1),
+        )
+
+    with Session(engine) as session:
+        case = session.query(ResolverCase).filter(ResolverCase.id == "case-superseded").one()
+
+    assert result.poll_count == 1
+    assert result.detection_count == 0
+    assert fetch_issue_mock.call_count == 1
+    assert close_issue_mock.call_count == 1
+    assert case.status == "resolved"
+    assert case.resolution_json["reason"] == "work_item_inactive"
+
+
+def test_dev_resolver_suppresses_duplicate_evidence_changed_comment() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    create_all(engine)
+    _seed_blocked_submission_item(engine, submission_failed_reason="gh pr create failed: exit code 4")
+
+    session_factory = build_session_factory(engine)
+    with patch(
+        "control_plane.services.resolver_dev_daemon.fetch_issue",
+        return_value=type("Issue", (), {"state": "open"})(),
+    ), patch(
+        "control_plane.services.resolver_dev_daemon.fetch_issue_comments",
+        return_value=(),
+    ), patch(
+        "control_plane.services.resolver_dev_daemon.open_issue_for_case",
+        return_value=ResolverIssueCreateResult(issue_number=302, issue_url="https://github.com/yhmtmt/RTLGen/issues/302"),
+    ), patch(
+        "control_plane.services.resolver_dev_daemon.comment_issue_for_case"
+    ) as comment_mock, patch(
+        "control_plane.services.resolver_dev_daemon.time.sleep"
+    ):
+        first = run_dev_resolver(
+            session_factory,
+            ResolverDevDaemonConfig(repo="yhmtmt/RTLGen", repo_root="/repo", poll_seconds=0, max_polls=1),
+        )
+        second = run_dev_resolver(
+            session_factory,
+            ResolverDevDaemonConfig(repo="yhmtmt/RTLGen", repo_root="/repo", poll_seconds=0, max_polls=1),
+        )
+
+    with Session(engine) as session:
+        case = session.query(ResolverCase).one()
+        actions = session.query(ResolverAction).filter(ResolverAction.case_id == case.id).order_by(ResolverAction.created_at.asc()).all()
+
+    assert first.opened_issue_count == 1
+    assert second.opened_issue_count == 0
+    assert second.updated_issue_count == 0
+    assert comment_mock.call_count == 0
+    assert [action.action_key for action in actions] == ["open_issue"]

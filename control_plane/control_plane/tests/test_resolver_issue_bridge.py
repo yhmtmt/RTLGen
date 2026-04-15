@@ -10,6 +10,7 @@ from control_plane.models.resolver_cases import ResolverCase
 from control_plane.services.resolver_issue_bridge import (
     ResolverIssueBridgeCommandError,
     build_issue_body,
+    close_issue_for_case,
     fetch_issue,
     list_open_resolver_issues,
     open_issue_for_case,
@@ -167,3 +168,19 @@ def test_fetch_issue_wraps_gh_command_failure() -> None:
             assert "network down" in str(exc)
         else:
             raise AssertionError("expected ResolverIssueBridgeCommandError")
+
+
+def test_close_issue_for_case_uses_gh_api_patch() -> None:
+    with patch("control_plane.services.resolver_issue_bridge.subprocess.run") as run_mock:
+        run_mock.return_value = CompletedProcess(
+            args=[],
+            returncode=0,
+            stdout=json.dumps({"number": 175, "state": "closed"}),
+            stderr="",
+        )
+        payload = close_issue_for_case("yhmtmt/RTLGen", 175)
+
+    assert payload["state"] == "closed"
+    command = run_mock.call_args.args[0]
+    assert command[:3] == ["gh", "api", "repos/yhmtmt/RTLGen/issues/175"]
+    assert "--method" in command

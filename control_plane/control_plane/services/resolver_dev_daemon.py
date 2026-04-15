@@ -10,7 +10,10 @@ from sqlalchemy.exc import DBAPIError, OperationalError
 from sqlalchemy.orm import Session, sessionmaker
 
 from control_plane.clock import utcnow
+from control_plane.models.enums import WorkItemState
+from control_plane.models.resolver_actions import ResolverAction
 from control_plane.models.resolver_cases import ResolverCase
+from control_plane.models.work_items import WorkItem
 from control_plane.models.resolver_observations import ResolverObservation
 from control_plane.services.completion_retry_service import CompletionRetryError, request_submission_retry
 from control_plane.services.lease_service import expire_stale_leases
@@ -29,6 +32,7 @@ from control_plane.services.resolver_detection import (
 from control_plane.services.resolver_issue_bridge import (
     ResolverIssueBridgeCommandError,
     build_issue_comment,
+    close_issue_for_case,
     comment_issue_for_case,
     fetch_issue,
     fetch_issue_comments,
@@ -165,6 +169,42 @@ def _comment_case_update(repo: str, case: ResolverCase, *, reason: str) -> None:
     if case.issue_number is None:
         return
     comment_issue_for_case(repo, case.issue_number, body=build_issue_comment(case, reason=reason))
+
+
+def _already_reported_comment_reason(session: Session, *, case: ResolverCase, reason: str, evidence_hash: str | None) -> bool:
+    action = (
+        session.query(ResolverAction)
+        .filter(ResolverAction.case_id == case.id)
+        .filter(ResolverAction.action_key == "comment_issue")
+        .filter(ResolverAction.status == "applied")
+        .filter(ResolverAction.evidence_hash == evidence_hash)
+        .order_by(ResolverAction.created_at.desc())
+        .first()
+    )
+    if action is None:
+        return False
+    result = dict(action.result_json or {})
+    return str(result.get("reason") or "") == reason
+
+
+def _resolve_case_if_item_inactive(session: Session, *, repo: str, case: ResolverCase) -> bool:
+    item_id = case.latest_item_id or case.first_item_id or ""
+    if not item_id:
+        return False
+    work_item = session.query(WorkItem).filter(WorkItem.item_id == item_id).first()
+    if work_item is None:
+        resolution = {"reason": "work_item_missing", "item_id": item_id}
+    else:
+        state = work_item.state
+        if state not in {WorkItemState.SUPERSEDED, WorkItemState.MERGED}:
+            return False
+        resolution = {"reason": "work_item_inactive", "item_id": item_id, "work_item_state": state.value}
+    mark_resolved(session, case=case, resolution=resolution)
+    if case.issue_number is not None:
+        remote_issue = fetch_issue(repo, int(case.issue_number))
+        if str(remote_issue.state or "").lower() == "open":
+            close_issue_for_case(repo, int(case.issue_number))
+    return True
 
 
 def _apply_expire_stale_lease(
@@ -388,21 +428,23 @@ def _handle_detection(
             diagnostic_only=True,
         )
         if decision.allowed:
-            _comment_case_update(repo, case, reason="evidence_changed")
-            record_action(
-                session,
-                case=case,
-                actor="dev",
-                action_type="comment_issue",
-                action_key="comment_issue",
-                status="applied",
-                evidence_hash=upsert.evidence_hash,
-                failure_hash=None,
-                request_json={"repo": repo, "issue_number": case.issue_number},
-                result_json={"reason": "evidence_changed"},
-                count_attempt=False,
-            )
-            updated_issue_count += 1
+            reason = "evidence_changed"
+            if not _already_reported_comment_reason(session, case=case, reason=reason, evidence_hash=upsert.evidence_hash):
+                _comment_case_update(repo, case, reason=reason)
+                record_action(
+                    session,
+                    case=case,
+                    actor="dev",
+                    action_type="comment_issue",
+                    action_key="comment_issue",
+                    status="applied",
+                    evidence_hash=upsert.evidence_hash,
+                    failure_hash=None,
+                    request_json={"repo": repo, "issue_number": case.issue_number},
+                    result_json={"reason": reason},
+                    count_attempt=False,
+                )
+                updated_issue_count += 1
         else:
             mark_escalated(session, case=case, reason=decision.reason)
             _comment_case_update(repo, case, reason=f"escalated:{decision.reason}")
@@ -418,6 +460,8 @@ def _reconcile_closed_remote_issues(session: Session, *, repo: str) -> None:
         .all()
     )
     for case in cases:
+        if _resolve_case_if_item_inactive(session, repo=repo, case=case):
+            continue
         remote_issue = fetch_issue(repo, int(case.issue_number))
         if str(remote_issue.state or "").lower() == "open":
             continue
