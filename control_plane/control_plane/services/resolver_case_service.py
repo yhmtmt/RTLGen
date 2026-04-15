@@ -37,6 +37,10 @@ def upsert_case_from_detection(session: Session, detection: ResolverDetection) -
         session.query(ResolverCase)
         .filter(ResolverCase.fingerprint == detection.fingerprint)
         .filter(ResolverCase.status.in_(_ACTIVE_CASE_STATUSES))
+        .filter(
+            (ResolverCase.latest_item_id == detection.item_id)
+            | (ResolverCase.first_item_id == detection.item_id)
+        )
         .order_by(ResolverCase.created_at.desc())
         .first()
     )
