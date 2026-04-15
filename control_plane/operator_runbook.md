@@ -61,6 +61,40 @@ After changing these values:
 4. If `RTLCP_SUBMIT=1`, the notebook opens the submission PR automatically.
 5. Review and merge the PR normally.
 
+## Dispatch Behavior
+
+Newly generated work items are created in `DISPATCH_PENDING`.
+
+Normal operator CLI generation now attempts safe auto-dispatch:
+- if exactly one eligible fresh evaluator is visible, the item is assigned immediately
+- that moves the item to `READY`, which allows the worker to lease it
+
+If an item remains in `DISPATCH_PENDING`, it was not assigned automatically.
+Common reasons:
+- no fresh evaluator heartbeat
+- machine capability mismatch
+- multiple eligible evaluators and no unambiguous choice
+
+Manual dispatch fallback:
+```sh
+source /workspaces/RTLGen/control_plane/.venv/bin/activate
+PYTHONPATH=/workspaces/RTLGen/control_plane \
+python3 -m control_plane.cli.main scheduler \
+  --database-url "$RTLCP_DATABASE_URL" \
+  dispatch-ready-items
+```
+
+Manual explicit assignment:
+```sh
+source /workspaces/RTLGen/control_plane/.venv/bin/activate
+PYTHONPATH=/workspaces/RTLGen/control_plane \
+python3 -m control_plane.cli.main scheduler \
+  --database-url "$RTLCP_DATABASE_URL" \
+  assign-item \
+  --item-id <item_id> \
+  --machine-key <machine_key>
+```
+
 ## Routine Commands
 
 Notebook daily check:

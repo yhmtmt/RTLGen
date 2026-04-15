@@ -9,7 +9,7 @@ from control_plane.db import create_all
 from control_plane.models.enums import WorkItemState
 from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
-from control_plane.services.dispatcher_service import DispatchReadyRequest, dispatch_ready_items
+from control_plane.services.dispatcher_service import AutoDispatchItemResult, DispatchReadyRequest, auto_dispatch_item, dispatch_ready_items
 from control_plane.services.lease_service import upsert_worker_machine
 
 
@@ -105,3 +105,61 @@ def test_dispatch_ready_items_respects_slot_capacity_and_existing_assignment() -
         item_b = session.query(WorkItem).filter_by(item_id="item_b").one()
         assert item_b.assigned_machine_key is None
         assert item_b.state == WorkItemState.DISPATCH_PENDING
+
+
+def test_auto_dispatch_item_assigns_single_matching_machine() -> None:
+    with make_session() as session:
+        upsert_worker_machine(
+            session,
+            machine_key="eval-a",
+            hostname="eval-a",
+            role="evaluator",
+            slot_capacity=1,
+            capabilities={"platform": "nangate45", "flow": "openroad"},
+        )
+        _seed_ready_item(session, item_id="item_a", platform="nangate45", priority=5)
+
+        result = auto_dispatch_item(session, item_id="item_a")
+
+        assert result == AutoDispatchItemResult(
+            item_id="item_a",
+            status="assigned",
+            machine_key="eval-a",
+            reason="ready",
+        )
+        item = session.query(WorkItem).filter_by(item_id="item_a").one()
+        assert item.assigned_machine_key == "eval-a"
+        assert item.state == WorkItemState.READY
+
+
+def test_auto_dispatch_item_skips_when_multiple_eligible_machines() -> None:
+    with make_session() as session:
+        upsert_worker_machine(
+            session,
+            machine_key="eval-a",
+            hostname="eval-a",
+            role="evaluator",
+            slot_capacity=1,
+            capabilities={"platform": "nangate45", "flow": "openroad"},
+        )
+        upsert_worker_machine(
+            session,
+            machine_key="eval-b",
+            hostname="eval-b",
+            role="evaluator",
+            slot_capacity=1,
+            capabilities={"platform": "nangate45", "flow": "openroad"},
+        )
+        _seed_ready_item(session, item_id="item_a", platform="nangate45", priority=5)
+
+        result = auto_dispatch_item(session, item_id="item_a")
+
+        assert result == AutoDispatchItemResult(
+            item_id="item_a",
+            status="skipped",
+            machine_key=None,
+            reason="multiple_eligible_machines",
+        )
+        item = session.query(WorkItem).filter_by(item_id="item_a").one()
+        assert item.assigned_machine_key is None
+        assert item.state == WorkItemState.DISPATCH_PENDING

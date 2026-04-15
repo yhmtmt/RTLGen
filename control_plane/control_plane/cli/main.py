@@ -78,6 +78,9 @@ def main(argv: list[str] | None = None) -> int:
     generate_l1_parser.add_argument("--mode", default="upsert")
     generate_l1_parser.add_argument("--proposal-id")
     generate_l1_parser.add_argument("--proposal-path")
+    generate_l1_parser.add_argument("--no-auto-dispatch", action="store_true")
+    generate_l1_parser.add_argument("--dispatch-machine-key")
+    generate_l1_parser.add_argument("--dispatch-freshness-seconds", type=int, default=120)
 
     consume_l1_parser = subparsers.add_parser(
         "consume-l1-result",
@@ -132,6 +135,9 @@ def main(argv: list[str] | None = None) -> int:
     generate_l2_parser.add_argument("--comparison-role")
     generate_l2_parser.add_argument("--paired-baseline-item-id")
     generate_l2_parser.add_argument("--no-run-physical", action="store_true")
+    generate_l2_parser.add_argument("--no-auto-dispatch", action="store_true")
+    generate_l2_parser.add_argument("--dispatch-machine-key")
+    generate_l2_parser.add_argument("--dispatch-freshness-seconds", type=int, default=120)
 
     github_poll_parser = subparsers.add_parser("poll-github", help="Poll GitHub review PR state and reconcile merged PRs")
     github_poll_parser.add_argument("--database-url", required=True)
@@ -495,9 +501,14 @@ def main(argv: list[str] | None = None) -> int:
             ("--source-commit", args.source_commit),
             ("--proposal-id", args.proposal_id),
             ("--proposal-path", args.proposal_path),
+            ("--dispatch-machine-key", args.dispatch_machine_key),
         ]:
             if value is not None:
                 argv2.extend([key, str(value)])
+        if args.no_auto_dispatch:
+            argv2.append("--no-auto-dispatch")
+        if args.dispatch_freshness_seconds is not None:
+            argv2.extend(["--dispatch-freshness-seconds", str(args.dispatch_freshness_seconds)])
         return generate_l1_sweep_main(argv2)
     if args.command == "consume-l1-result":
         argv2 = [
@@ -571,11 +582,16 @@ def main(argv: list[str] | None = None) -> int:
             ("--expected-reason", args.expected_reason),
             ("--comparison-role", args.comparison_role),
             ("--paired-baseline-item-id", args.paired_baseline_item_id),
+            ("--dispatch-machine-key", args.dispatch_machine_key),
         ]:
             if value is not None:
                 argv2.extend([key, str(value)])
         if args.no_run_physical:
             argv2.append("--no-run-physical")
+        if args.no_auto_dispatch:
+            argv2.append("--no-auto-dispatch")
+        if args.dispatch_freshness_seconds is not None:
+            argv2.extend(["--dispatch-freshness-seconds", str(args.dispatch_freshness_seconds)])
         return generate_l2_campaign_main(argv2)
     if args.command == "poll-github":
         return poll_github_main(["--database-url", args.database_url, "--repo-root", args.repo_root, *(["--repo", args.repo] if args.repo else [])])

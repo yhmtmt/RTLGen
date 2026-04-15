@@ -6,6 +6,7 @@ import argparse
 import json
 
 from control_plane.db import build_engine, build_session_factory, create_all
+from control_plane.services.dispatcher_service import auto_dispatch_item
 from control_plane.services.l2_task_generator import Layer2CampaignGenerateRequest, generate_l2_campaign_task
 
 
@@ -37,6 +38,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--requires-merged-inputs", action="store_true")
     parser.add_argument("--requires-materialized-refs", action="store_true")
     parser.add_argument("--no-run-physical", action="store_true")
+    parser.add_argument("--no-auto-dispatch", action="store_true")
+    parser.add_argument("--dispatch-machine-key")
+    parser.add_argument("--dispatch-freshness-seconds", type=int, default=120)
     args = parser.parse_args(argv)
 
     engine = build_engine(args.database_url)
@@ -73,7 +77,15 @@ def main(argv: list[str] | None = None) -> int:
                 requires_materialized_refs=args.requires_materialized_refs,
             ),
         )
-    print(json.dumps(result.__dict__, indent=2, sort_keys=True))
+        payload = dict(result.__dict__)
+        if not args.no_auto_dispatch:
+            payload["dispatch"] = auto_dispatch_item(
+                session,
+                item_id=result.item_id,
+                machine_key=args.dispatch_machine_key,
+                freshness_seconds=args.dispatch_freshness_seconds,
+            ).__dict__
+    print(json.dumps(payload, indent=2, sort_keys=True))
     return 0
 
 

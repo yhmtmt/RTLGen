@@ -12,7 +12,7 @@ from control_plane.models.enums import LeaseStatus, WorkItemState
 from control_plane.models.worker_leases import WorkerLease
 from control_plane.models.worker_machines import WorkerMachine
 from control_plane.models.work_items import WorkItem
-from control_plane.services.scheduler import assign_work_item
+from control_plane.services.scheduler import NoEligibleWorkItem, assign_work_item
 
 
 @dataclass(frozen=True)
@@ -26,6 +26,14 @@ class DispatchAssignmentResult:
     item_id: str
     machine_key: str
     priority: int
+
+
+@dataclass(frozen=True)
+class AutoDispatchItemResult:
+    item_id: str
+    status: str
+    machine_key: str | None = None
+    reason: str | None = None
 
 
 def _as_comparable_utc(dt):
@@ -82,6 +90,61 @@ def _next_unassigned_item_for_machine(session: Session, machine: WorkerMachine) 
         if _machine_matches_item(machine, item):
             return item
     return None
+
+
+def auto_dispatch_item(
+    session: Session,
+    *,
+    item_id: str,
+    machine_key: str | None = None,
+    freshness_seconds: int = 120,
+) -> AutoDispatchItemResult:
+    work_item = session.query(WorkItem).filter(WorkItem.item_id == item_id).one_or_none()
+    if work_item is None:
+        raise NoEligibleWorkItem(f"work item not found: {item_id}")
+    if work_item.state in {WorkItemState.MERGED, WorkItemState.SUPERSEDED}:
+        return AutoDispatchItemResult(item_id=item_id, status="skipped", reason=f"terminal_state:{work_item.state.value}")
+    if work_item.assigned_machine_key:
+        return AutoDispatchItemResult(
+            item_id=item_id,
+            status="skipped",
+            machine_key=work_item.assigned_machine_key,
+            reason="already_assigned",
+        )
+
+    def _assign(target_machine_key: str) -> AutoDispatchItemResult:
+        assigned = assign_work_item(session, item_id=item_id, machine_key=target_machine_key)
+        return AutoDispatchItemResult(
+            item_id=item_id,
+            status="assigned",
+            machine_key=assigned.assigned_machine_key,
+            reason=assigned.state,
+        )
+
+    if machine_key is not None:
+        machine = session.query(WorkerMachine).filter(WorkerMachine.machine_key == machine_key).one_or_none()
+        if machine is None:
+            raise NoEligibleWorkItem(f"worker machine not found: {machine_key}")
+        if not _is_machine_dispatchable(machine, freshness_seconds=freshness_seconds):
+            return AutoDispatchItemResult(item_id=item_id, status="skipped", reason="machine_not_dispatchable")
+        if _machine_available_slots(session, machine) <= 0:
+            return AutoDispatchItemResult(item_id=item_id, status="skipped", reason="machine_has_no_capacity")
+        if not _machine_matches_item(machine, work_item):
+            return AutoDispatchItemResult(item_id=item_id, status="skipped", reason="machine_capability_mismatch")
+        return _assign(machine.machine_key)
+
+    candidates = [
+        machine
+        for machine in session.query(WorkerMachine).order_by(WorkerMachine.machine_key.asc()).all()
+        if _is_machine_dispatchable(machine, freshness_seconds=freshness_seconds)
+        and _machine_available_slots(session, machine) > 0
+        and _machine_matches_item(machine, work_item)
+    ]
+    if not candidates:
+        return AutoDispatchItemResult(item_id=item_id, status="skipped", reason="no_eligible_machine")
+    if len(candidates) > 1:
+        return AutoDispatchItemResult(item_id=item_id, status="skipped", reason="multiple_eligible_machines")
+    return _assign(candidates[0].machine_key)
 
 
 def dispatch_ready_items(session: Session, request: DispatchReadyRequest) -> list[DispatchAssignmentResult]:
