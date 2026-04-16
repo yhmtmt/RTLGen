@@ -21,9 +21,6 @@ from control_plane.services.github_bridge import GitHubReconcileRequest, reconci
 from control_plane.services.review_publisher import ReviewPublishRequest, publish_review_package
 from control_plane.services.submission_bridge import (
     SubmissionPrepareRequest,
-    _canonical_runs_diff_paths,
-    _freeze_file,
-    _review_linked_supporting_files,
     prepare_submission_branch,
 )
 
@@ -135,30 +132,6 @@ def _format_failed_command(proc: subprocess.CompletedProcess[str]) -> str:
         details.append(f"stdout={stdout}")
     suffix = f": {'; '.join(details)}" if details else ""
     return f"command {proc.args!r} failed with exit code {proc.returncode}{suffix}"
-
-
-def _format_pr_create_failure(
-    *,
-    branch_name: str,
-    pr_base: str,
-    worktree_path: Path,
-    pr_body_path: Path,
-    pr_view_before: subprocess.CompletedProcess[str],
-    pr_create: subprocess.CompletedProcess[str],
-    pr_view_after: subprocess.CompletedProcess[str],
-) -> str:
-    details = {
-        'branch_name': branch_name,
-        'pr_base': pr_base,
-        'worktree_path': str(worktree_path),
-        'body_file': str(pr_body_path),
-        'body_file_exists': pr_body_path.exists(),
-        'body_file_size': pr_body_path.stat().st_size if pr_body_path.exists() else None,
-        'pr_view_before': _format_failed_command(pr_view_before),
-        'pr_create': _format_failed_command(pr_create),
-        'pr_view_after': _format_failed_command(pr_view_after),
-    }
-    return "gh pr create failed: " + json.dumps(details, sort_keys=True)
 
 
 def _repo_diff_paths(*, cwd: Path, base_ref: str) -> list[str]:
@@ -277,44 +250,6 @@ def _refresh_submission_worktree(
     return _run_cmd(["git", "rev-parse", "HEAD"], cwd=worktree_path), submission_base_commit
 
 
-def _refresh_manifest_frozen_file_map(
-    *,
-    repo_root: Path,
-    manifest: dict[str, Any],
-    item_id: str,
-    run_key: str,
-) -> None:
-    package_rel = str(manifest.get("package_path", "")).strip()
-    snapshot_rel = str(manifest.get("snapshot_path", "")).strip()
-    review_rel = str(manifest.get("review_artifact_path") or "").strip()
-    pr_body_rel = str(manifest.get("pr_body_path", "")).strip()
-    evidence_paths = [str(path).strip() for path in (manifest.get("evidence_paths") or []) if str(path).strip()]
-    supporting_paths = [str(path).strip() for path in (manifest.get("supporting_paths") or []) if str(path).strip()]
-
-    previous_frozen_file_map = manifest.get("frozen_file_map") if isinstance(manifest.get("frozen_file_map"), dict) else {}
-    frozen_file_map: dict[str, str] = {}
-    required_paths = [snapshot_rel, package_rel, *([review_rel] if review_rel else []), *evidence_paths, *supporting_paths, pr_body_rel]
-    for rel_path in required_paths:
-        if not rel_path:
-            continue
-        live_path = repo_root / rel_path
-        if live_path.exists():
-            frozen_file_map[rel_path] = _freeze_file(
-                repo_root=repo_root,
-                item_id=item_id,
-                run_key=run_key,
-                rel_path=rel_path,
-            )
-            continue
-        previous_rel = str(previous_frozen_file_map.get(rel_path, "")).strip()
-        previous_path = repo_root / previous_rel if previous_rel else None
-        if previous_rel and previous_path is not None and previous_path.exists():
-            frozen_file_map[rel_path] = previous_rel
-            continue
-        raise SubmissionExecuteError(f"review file missing: {rel_path}")
-    manifest["frozen_file_map"] = frozen_file_map
-
-
 def _resolve_pr_body_path(*, worktree_path: Path, manifest: dict[str, Any]) -> Path:
     pr_body_path = Path(str(manifest.get("pr_body_path", "")).strip())
     if not pr_body_path.is_absolute():
@@ -322,27 +257,30 @@ def _resolve_pr_body_path(*, worktree_path: Path, manifest: dict[str, Any]) -> P
     return pr_body_path
 
 
-def _materialize_pr_body_from_package(*, repo_root: Path, manifest: dict[str, Any]) -> None:
-    package_rel = str(manifest.get("package_path", "")).strip()
-    pr_body_rel = str(manifest.get("pr_body_path", "")).strip()
-    if not package_rel or not pr_body_rel:
-        return
-    package_path = repo_root / package_rel
-    if not package_path.exists():
-        return
-    try:
-        package_payload = json.loads(package_path.read_text(encoding="utf-8"))
-    except Exception:
-        return
-    pr_payload = package_payload.get("pr_payload")
-    if not isinstance(pr_payload, dict):
-        return
-    body_md = str(pr_payload.get("body_md", "")).strip()
-    if not body_md:
-        return
-    pr_body_path = repo_root / pr_body_rel
-    pr_body_path.parent.mkdir(parents=True, exist_ok=True)
-    pr_body_path.write_text(body_md + "\n", encoding="utf-8")
+def _update_pr_body(
+    *,
+    cwd: Path,
+    repo: str,
+    pr_number: int,
+    pr_body_path: Path,
+) -> None:
+    body_text = pr_body_path.read_text(encoding="utf-8")
+    proc = _run_cmd_capture(
+        [
+            "gh",
+            "api",
+            f"repos/{repo}/pulls/{pr_number}",
+            "-X",
+            "PATCH",
+            "-f",
+            f"body={body_text}",
+        ],
+        cwd=cwd,
+    )
+    if proc.returncode != 0:
+        raise SubmissionExecuteError(
+            f"gh api pull PATCH failed for PR #{pr_number}: {_format_failed_command(proc)}"
+        )
 
 
 def _post_submit_refresh(
@@ -375,13 +313,6 @@ def _post_submit_refresh(
         ),
     )
     manifest = _load_manifest(manifest_path)
-    _materialize_pr_body_from_package(repo_root=repo_root, manifest=manifest)
-    _refresh_manifest_frozen_file_map(
-        repo_root=repo_root,
-        manifest=manifest,
-        item_id=work_item.item_id,
-        run_key=run.run_key,
-    )
     commit_sha, submission_base_commit = _refresh_submission_worktree(
         repo_root=repo_root,
         worktree_path=worktree_path,
@@ -397,23 +328,12 @@ def _post_submit_refresh(
 
     _run_cmd(["git", "push", "--force-with-lease", "-u", "origin", branch_name], cwd=worktree_path)
     pr_body_path = _resolve_pr_body_path(worktree_path=worktree_path, manifest=manifest)
-    pr_edit_proc = _run_cmd_capture(
-        [
-            "gh",
-            "--repo",
-            request.repo,
-            "pr",
-            "edit",
-            str(pr_number),
-            "--body-file",
-            str(pr_body_path),
-        ],
+    _update_pr_body(
         cwd=worktree_path,
+        repo=request.repo,
+        pr_number=pr_number,
+        pr_body_path=pr_body_path,
     )
-    if pr_edit_proc.returncode != 0:
-        raise SubmissionExecuteError(
-            f"gh pr edit failed for PR #{pr_number}: {_format_failed_command(pr_edit_proc)}"
-        )
     return commit_sha, submission_base_commit, manifest
 
 
@@ -475,26 +395,8 @@ def execute_submission(session: Session, request: SubmissionExecuteRequest) -> S
         )
         manifest_path = repo_root / "control_plane" / "shadow_exports" / "review" / work_item.item_id / "submission_manifest.json"
     manifest = _load_manifest(manifest_path)
-    package_rel = str(manifest.get("package_path", "")).strip()
-    package_payload = {}
-    if package_rel:
-        package_path = repo_root / package_rel
-        if package_path.exists():
-            try:
-                loaded = json.loads(package_path.read_text(encoding="utf-8"))
-            except Exception:
-                loaded = None
-            if isinstance(loaded, dict):
-                package_payload = loaded
-    manifest["evidence_paths"] = _canonical_evidence_files(repo_root=repo_root, work_item=work_item)
-    manifest["supporting_paths"] = _review_linked_supporting_files(repo_root=repo_root, package_payload=package_payload)
-    manifest["canonical_diff_paths"] = _canonical_runs_diff_paths(*manifest["evidence_paths"], *manifest["supporting_paths"])
-    _refresh_manifest_frozen_file_map(
-        repo_root=repo_root,
-        manifest=manifest,
-        item_id=work_item.item_id,
-        run_key=run.run_key,
-    )
+    if not isinstance(manifest.get("evidence_paths"), list):
+        manifest["evidence_paths"] = _canonical_evidence_files(repo_root=repo_root, work_item=work_item)
 
     branch_name = str(manifest.get("branch_name", "")).strip()
     if not branch_name:
@@ -567,15 +469,7 @@ def execute_submission(session: Session, request: SubmissionExecuteRequest) -> S
                 pr_url = str(pr_view.get("url", "")).strip()
             else:
                 raise SubmissionExecuteError(
-                    _format_pr_create_failure(
-                        branch_name=branch_name,
-                        pr_base=pr_base,
-                        worktree_path=worktree_path,
-                        pr_body_path=pr_body_path,
-                        pr_view_before=pr_view_proc,
-                        pr_create=pr_create_proc,
-                        pr_view_after=pr_view_retry,
-                    )
+                    f"gh pr create failed for branch {branch_name}: {_format_failed_command(pr_create_proc)}"
                 )
         else:
             pr_url = pr_create_proc.stdout.strip().splitlines()[-1].strip()

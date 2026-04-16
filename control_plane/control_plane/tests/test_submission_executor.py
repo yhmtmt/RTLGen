@@ -23,7 +23,7 @@ from control_plane.models.work_items import WorkItem
 from control_plane.services.l1_result_consumer import Layer1ConsumeRequest, consume_l1_result
 from control_plane.services.l2_result_consumer import Layer2ConsumeRequest, consume_l2_result
 from control_plane.services.submission_bridge import prepare_submission_branch, SubmissionPrepareRequest
-from control_plane.services.submission_executor import SubmissionExecuteRequest, execute_submission
+from control_plane.services.submission_executor import SubmissionExecuteError, SubmissionExecuteRequest, execute_submission
 
 
 def _write(path: Path, text: str) -> None:
@@ -116,6 +116,11 @@ def _seed_l2_reviewable(session: Session, repo_root: Path) -> tuple[str, str]:
         "title": "Layer2 exec demo",
         "layer": "layer2",
         "flow": "openroad",
+        "developer_loop": {
+            "evaluation": {"mode": "broad_ranking"},
+            "comparison": {"role": "ranking"},
+            "abstraction": {"layer": "full_architecture"},
+        },
         "handoff": {
             "branch": "eval/l2_exec_demo/<session_id>",
             "pr_title": "eval: run layer2 exec demo",
@@ -318,7 +323,7 @@ def _make_partial_create_fake_bin(fake_bin: Path, log_path: Path) -> None:
         "    branch=argv[4]\n"
         "    print(json.dumps({'number':456,'url':'https://github.com/yhmtmt/RTLGen/pull/456','headRefName':branch,'baseRefName':'master'}))\n"
         "    sys.exit(0)\n"
-        "if argv[:4] == ['--repo','yhmtmt/RTLGen','pr','edit']:\n"
+        "if argv[:2] == ['api','repos/yhmtmt/RTLGen/pulls/456'] and '-X' in argv and 'PATCH' in argv:\n"
         "    sys.exit(0)\n"
         "sys.exit(1)\n",
     )
@@ -367,47 +372,8 @@ def _make_fake_bin(fake_bin: Path, log_path: Path) -> None:
         "        sys.exit(1)\n"
         "    print(json.dumps({'number':123,'url':'https://github.com/yhmtmt/RTLGen/pull/123','headRefName':'eval/l2_exec_demo/s20260310t081500z','baseRefName':'master'}))\n"
         "    sys.exit(0)\n"
-        "if argv[:4] == ['--repo','yhmtmt/RTLGen','pr','edit']:\n"
+        "if argv[:2] == ['api','repos/yhmtmt/RTLGen/pulls/123'] and '-X' in argv and 'PATCH' in argv:\n"
         "    sys.exit(0)\n"
-        "sys.exit(1)\n",
-    )
-    os.chmod(fake_bin / "git", 0o755)
-    os.chmod(fake_bin / "gh", 0o755)
-
-
-def _make_create_failure_fake_bin(fake_bin: Path, log_path: Path) -> None:
-    fake_bin.mkdir(parents=True, exist_ok=True)
-    real_git = shutil.which("git")
-    assert real_git is not None
-    _write(
-        fake_bin / "git",
-        "#!/usr/bin/env python3\n"
-        "import json, subprocess, sys\n"
-        f"log={json.dumps(str(log_path))}\n"
-        f"real_git={json.dumps(real_git)}\n"
-        "argv=sys.argv[1:]\n"
-        "with open(log, 'a', encoding='utf-8') as h:\n"
-        "    h.write(json.dumps({'tool':'git','argv':argv})+'\\n')\n"
-        "if argv[:4] == ['push', '--force-with-lease', '-u', 'origin'] or argv[:3] == ['push', '-u', 'origin']:\n"
-        "    sys.exit(0)\n"
-        "completed = subprocess.run([real_git, *argv])\n"
-        "sys.exit(completed.returncode)\n",
-    )
-    _write(
-        fake_bin / "gh",
-        "#!/usr/bin/env python3\n"
-        "import json, sys\n"
-        f"log={json.dumps(str(log_path))}\n"
-        "argv=sys.argv[1:]\n"
-        "with open(log, 'a', encoding='utf-8') as h:\n"
-        "    h.write(json.dumps({'tool':'gh','argv':argv})+'\\n')\n"
-        "if argv[:4] == ['--repo','yhmtmt/RTLGen','pr','view']:\n"
-        "    print('view failed', file=sys.stderr)\n"
-        "    sys.exit(1)\n"
-        "if argv[:4] == ['--repo','yhmtmt/RTLGen','pr','create']:\n"
-        "    print('transient create stdout')\n"
-        "    print('transient create stderr', file=sys.stderr)\n"
-        "    sys.exit(4)\n"
         "sys.exit(1)\n",
     )
     os.chmod(fake_bin / "git", 0o755)
@@ -475,61 +441,12 @@ def test_execute_submission_pushes_and_reconciles() -> None:
             assert any(entry["tool"] == "git" and entry["argv"][:4] == ["push", "--force-with-lease", "-u", "origin"] for entry in log_entries)
             assert any(entry["tool"] == "gh" and entry["argv"][:4] == ["--repo", "yhmtmt/RTLGen", "pr", "create"] for entry in log_entries)
             assert any(entry["tool"] == "gh" and entry["argv"][:4] == ["--repo", "yhmtmt/RTLGen", "pr", "view"] for entry in log_entries)
+            assert any(entry["tool"] == "gh" and entry["argv"][:2] == ["api", "repos/yhmtmt/RTLGen/pulls/123"] and "PATCH" in entry["argv"] for entry in log_entries)
 
-
-def test_execute_submission_reports_detailed_pr_create_failure_context() -> None:
-    with tempfile.TemporaryDirectory() as td:
-        repo_root = Path(td) / "repo"
-        repo_root.mkdir()
-        _init_repo(repo_root)
-
-        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
-        create_all(engine)
-        with Session(engine) as session:
-            item_id, _run_key = _seed_l1_reviewable(session, repo_root)
-            prepare_submission_branch(
-                session,
-                SubmissionPrepareRequest(
-                    repo_root=str(repo_root),
-                    item_id=item_id,
-                    evaluator_id="cpbot",
-                    session_id="s20260402t120000z",
-                    host="cp-host",
-                    worktree_root=str(repo_root / "tmp_submit"),
-                ),
-            )
-
-            fake_bin = repo_root / "fake_bin"
-            log_path = repo_root / "fake_cmds.log"
-            _make_create_failure_fake_bin(fake_bin, log_path)
-            old_path = os.environ.get("PATH", "")
-            os.environ["PATH"] = f"{fake_bin}:{old_path}"
-            try:
-                try:
-                    execute_submission(
-                        session,
-                        SubmissionExecuteRequest(
-                            repo_root=str(repo_root),
-                            repo="yhmtmt/RTLGen",
-                            item_id=item_id,
-                            evaluator_id="cpbot",
-                            session_id="s20260402t120000z",
-                            host="cp-host",
-                        ),
-                    )
-                except Exception as exc:
-                    message = str(exc)
-                    assert "gh pr create failed:" in message
-                    assert "transient create stderr" in message
-                    assert "transient create stdout" in message
-                    assert "body_file_exists" in message
-                    assert "worktree_path" in message
-                    assert "pr_view_before" in message
-                    assert "pr_view_after" in message
-                else:
-                    raise AssertionError("expected submission failure")
-            finally:
-                os.environ["PATH"] = old_path
+            package_path = repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "review_package.json"
+            review_payload = json.loads(package_path.read_text(encoding="utf-8"))
+            assert review_payload["submission_history"]["final_submission"]["pr_url"] == "https://github.com/yhmtmt/RTLGen/pull/123"
+            assert "final_submission_pr: `https://github.com/yhmtmt/RTLGen/pull/123`" in review_payload["pr_payload"]["body_md"]
 
 
 def test_execute_submission_recovers_when_pr_create_returns_error_after_pr_exists() -> None:
@@ -585,21 +502,13 @@ def test_execute_submission_recovers_when_pr_create_returns_error_after_pr_exist
             log_entries = [json.loads(line) for line in log_path.read_text(encoding="utf-8").splitlines()]
             assert any(entry["tool"] == "gh" and entry["argv"][:4] == ["--repo", "yhmtmt/RTLGen", "pr", "create"] for entry in log_entries)
             assert sum(1 for entry in log_entries if entry["tool"] == "gh" and entry["argv"][:4] == ["--repo", "yhmtmt/RTLGen", "pr", "view"]) >= 2
-            assert any(entry["tool"] == "gh" and entry["argv"][:4] == ["--repo", "yhmtmt/RTLGen", "pr", "edit"] for entry in log_entries)
+            assert any(entry["tool"] == "gh" and entry["argv"][:2] == ["api", "repos/yhmtmt/RTLGen/pulls/456"] and "PATCH" in entry["argv"] for entry in log_entries)
 
             package_path = repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "review_package.json"
             review_payload = json.loads(package_path.read_text(encoding="utf-8"))
             assert review_payload["submission_history"]["final_submission"]["pr_url"] == "https://github.com/yhmtmt/RTLGen/pull/456"
             assert "final_submission_pr: `https://github.com/yhmtmt/RTLGen/pull/456`" in review_payload["pr_payload"]["body_md"]
-            manifest_path = repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "submission_manifest.json"
-            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-            worktree_path = Path(manifest["worktree_path"])
-            branch_package_path = worktree_path / manifest["package_path"]
-            branch_body_path = worktree_path / manifest["pr_body_path"]
-            branch_review_payload = json.loads(branch_package_path.read_text(encoding="utf-8"))
-            branch_body_md = branch_body_path.read_text(encoding="utf-8")
-            assert branch_review_payload["submission_history"]["final_submission"]["pr_url"] == "https://github.com/yhmtmt/RTLGen/pull/456"
-            assert "final_submission_pr: `https://github.com/yhmtmt/RTLGen/pull/456`" in branch_body_md
+            assert any(entry["tool"] == "gh" and entry["argv"][:2] == ["api", "repos/yhmtmt/RTLGen/pulls/456"] and "PATCH" in entry["argv"] for entry in log_entries)
 
 
 def test_execute_submission_reuses_existing_pr_on_rerun() -> None:
@@ -662,127 +571,6 @@ def test_execute_submission_reuses_existing_pr_on_rerun() -> None:
             assert not any(entry["tool"] == "gh" and entry["argv"][:4] == ["--repo", "yhmtmt/RTLGen", "pr", "create"] for entry in log_entries)
             assert any(entry["tool"] == "gh" and entry["argv"][:4] == ["--repo", "yhmtmt/RTLGen", "pr", "view"] for entry in log_entries)
 
-
-
-
-def test_execute_submission_refreshes_supporting_paths_from_current_review_package() -> None:
-    with tempfile.TemporaryDirectory() as td:
-        repo_root = Path(td) / "repo"
-        repo_root.mkdir()
-        _init_repo(repo_root)
-
-        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
-        create_all(engine)
-        with Session(engine) as session:
-            item_id, _run_key = _seed_l1_reviewable(session, repo_root)
-            prepare_submission_branch(
-                session,
-                SubmissionPrepareRequest(
-                    repo_root=str(repo_root),
-                    item_id=item_id,
-                    evaluator_id="cpbot",
-                    session_id="s20260310t082100z",
-                    host="cp-host",
-                    worktree_root=str(repo_root / "tmp_submit"),
-                ),
-            )
-            manifest_path = repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "submission_manifest.json"
-            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-            package_path = repo_root / manifest["package_path"]
-            package = json.loads(package_path.read_text(encoding="utf-8"))
-            extra_rel = "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/trials/trial_001/softmax_rowwise_int8_r4_wrapper/metrics.csv"
-            _write(
-                repo_root / extra_rel,
-                (
-                    "platform,status,param_hash,tag,critical_path_ns,die_area,total_power_mw,params_json,result_path\n"
-                    'nangate45,ok,trial1,tag_trial1,11.5,29000,0.17,{"FLOW_RANDOM_SEED":101},'
-                    "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/trials/trial_001/softmax_rowwise_int8_r4_wrapper/work/trial1/result.json\n"
-                ),
-            )
-            package.setdefault("review_artifact", {}).setdefault("payload", {}).setdefault("source_refs", {})["extra_trial_metrics"] = [extra_rel]
-            package_path.write_text(json.dumps(package, indent=2) + "\n", encoding="utf-8")
-
-            fake_bin = repo_root / "fake_bin"
-            log_path = repo_root / "fake_cmds.log"
-            _make_fake_bin(fake_bin, log_path)
-            old_path = os.environ.get("PATH", "")
-            os.environ["PATH"] = f"{fake_bin}:{old_path}"
-            try:
-                result = execute_submission(
-                    session,
-                    SubmissionExecuteRequest(
-                        repo_root=str(repo_root),
-                        repo="yhmtmt/RTLGen",
-                        item_id=item_id,
-                        evaluator_id="cpbot",
-                        session_id="s20260310t082100z",
-                        host="cp-host",
-                    ),
-                )
-            finally:
-                os.environ["PATH"] = old_path
-
-            assert result.pr_number == 123
-            updated_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-            assert extra_rel in updated_manifest["supporting_paths"]
-            worktree_path = Path(updated_manifest["worktree_path"])
-            assert (worktree_path / extra_rel).exists()
-
-
-
-def test_execute_submission_refreshes_frozen_supporting_files_on_rerun() -> None:
-    with tempfile.TemporaryDirectory() as td:
-        repo_root = Path(td) / "repo"
-        repo_root.mkdir()
-        _init_repo(repo_root)
-
-        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
-        create_all(engine)
-        with Session(engine) as session:
-            item_id, _run_key = _seed_l1_reviewable(session, repo_root)
-            prepare_submission_branch(
-                session,
-                SubmissionPrepareRequest(
-                    repo_root=str(repo_root),
-                    item_id=item_id,
-                    evaluator_id="cpbot",
-                    session_id="s20260310t082300z",
-                    host="cp-host",
-                    worktree_root=str(repo_root / "tmp_submit"),
-                ),
-            )
-            manifest_path = repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "submission_manifest.json"
-            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-            summary_rel = next(path for path in manifest["supporting_paths"] if path.endswith("summary_stats.json"))
-            refreshed_summary = json.dumps({"item_id": item_id, "refreshed": True}, indent=2) + "\n"
-            (repo_root / summary_rel).write_text(refreshed_summary, encoding="utf-8")
-
-            fake_bin = repo_root / "fake_bin"
-            log_path = repo_root / "fake_cmds.log"
-            _make_fake_bin(fake_bin, log_path)
-            old_path = os.environ.get("PATH", "")
-            os.environ["PATH"] = f"{fake_bin}:{old_path}"
-            try:
-                result = execute_submission(
-                    session,
-                    SubmissionExecuteRequest(
-                        repo_root=str(repo_root),
-                        repo="yhmtmt/RTLGen",
-                        item_id=item_id,
-                        evaluator_id="cpbot",
-                        session_id="s20260310t082300z",
-                        host="cp-host",
-                    ),
-                )
-            finally:
-                os.environ["PATH"] = old_path
-
-            assert result.pr_number == 123
-            updated_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-            frozen_rel = updated_manifest["frozen_file_map"][summary_rel]
-            assert (repo_root / frozen_rel).read_text(encoding="utf-8") == refreshed_summary
-            worktree_path = Path(updated_manifest["worktree_path"])
-            assert (worktree_path / summary_rel).read_text(encoding="utf-8") == refreshed_summary
 
 def test_execute_submission_backfills_missing_evidence_paths_on_rerun() -> None:
     with tempfile.TemporaryDirectory() as td:
@@ -934,26 +722,9 @@ def test_execute_submission_rejects_branch_without_canonical_evidence_diff() -> 
             )
             manifest_path = repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "submission_manifest.json"
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-            # Simulate a reused bad branch by making base/master contain the same canonical evidence.
-            _git(
-                repo_root,
-                "add",
-                "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv",
-                "runs/index.csv",
-            )
-            subprocess.run(
-                ["git", "-C", str(repo_root), "commit", "-m", "seed canonical evidence into base"],
-                check=True,
-                capture_output=True,
-                text=True,
-                env={
-                    **os.environ,
-                    "GIT_AUTHOR_NAME": "Test",
-                    "GIT_AUTHOR_EMAIL": "test@example.com",
-                    "GIT_COMMITTER_NAME": "Test",
-                    "GIT_COMMITTER_EMAIL": "test@example.com",
-                },
-            )
+            # Simulate a reused bad branch by pointing canonical evidence at an unchanged tracked file.
+            manifest["evidence_paths"] = ["README.md"]
+            manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
 
             fake_bin = repo_root / "fake_bin"
             log_path = repo_root / "fake_cmds.log"
