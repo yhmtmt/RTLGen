@@ -1,0 +1,109 @@
+version: 0.1
+arch: npu/arch/examples/minimal.yml
+mapper_notes:
+  linear_layer_count: 1
+  input_flattened: false
+  input_cast_ignored: true
+  effective_batch: 256
+  gemm_num_modules: 1
+  gemm_row_parallel_enabled: false
+  gemm_row_chunks:
+  - 256
+  final_linear_row_parallel_enabled: false
+  final_linear_row_chunks:
+  - 256
+  final_linear_out_chunks:
+  - 4
+  final_linear_split_enabled: false
+  final_linear_weight_layout: packed_by_output_chunk
+  terminal_softmax: true
+  softmax_backend: dedicated
+  terminal_softmax_direct_output: false
+  terminal_direct_output: false
+  graph_output_name: '8'
+  ignored_graph_outputs:
+  - output
+buffers:
+- id: X_DRAM
+  addr: '0x3000000000'
+  bytes: 512
+- id: Y_DRAM
+  addr: '0x3000000200'
+  bytes: 1024
+- id: ACT_A_SRAM
+  addr: '0x80000000'
+  bytes: 1024
+- id: ACT_B_SRAM
+  addr: '0x80000400'
+  bytes: 1024
+- id: W1_DRAM
+  addr: '0x3000000600'
+  bytes: 8
+- id: b1_DRAM
+  addr: '0x3000000620'
+  bytes: 4
+- id: W_SRAM_TMP
+  addr: '0x80400000'
+  bytes: 8
+- id: b_SRAM_TMP
+  addr: '0x80400040'
+  bytes: 4
+ops:
+- id: dma_x
+  type: dma_copy
+  src: X_DRAM
+  dst: ACT_A_SRAM
+  bytes: 512
+- id: dma_w1
+  type: dma_copy
+  src: W1_DRAM
+  dst: W_SRAM_TMP
+  bytes: 8
+- id: dma_b1
+  type: dma_copy
+  src: b1_DRAM
+  dst: b_SRAM_TMP
+  bytes: 4
+- id: gemm1
+  type: gemm
+  a: ACT_A_SRAM
+  b: W_SRAM_TMP
+  c: ACT_B_SRAM
+  m: 256
+  n: 4
+  k: 2
+  lda: 2
+  ldb: 4
+  ldc: 4
+  dtype: int8
+  layout: row_major
+  bias: b_SRAM_TMP
+  epilogue: none
+- id: softmax1
+  type: softmax
+  src: ACT_B_SRAM
+  dst: ACT_A_SRAM
+  row_bytes: 4
+  rows: 256
+  dtype: int8
+- id: dma_y
+  type: dma_copy
+  src: ACT_A_SRAM
+  dst: Y_DRAM
+  bytes: 1024
+deps:
+- wait:
+  - dma_x
+  - dma_w1
+  - dma_b1
+  then: gemm1
+- wait:
+  - gemm1
+  then: softmax1
+- wait:
+  - softmax1
+  then: dma_y
+events:
+- id: 1000
+  signal_on: dma_y
+  irq: true
