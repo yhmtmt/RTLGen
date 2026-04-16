@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_num_modules_adaptive_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "iterate",
+  "pr_number": 212,
+  "merge_commit": "37b2f6f95851f4f5723602f9390b88c0da85a00c",
+  "merged_utc": "2026-04-16T13:00:58.351461Z"
 }

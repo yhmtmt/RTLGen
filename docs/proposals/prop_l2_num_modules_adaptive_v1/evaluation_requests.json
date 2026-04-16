@@ -10,7 +10,12 @@
       "objective": "num_modules_revisit",
       "campaign_path": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1/campaign.json",
       "evaluation_mode": "broad_ranking",
-      "comparison_role": "ranking"
+      "comparison_role": "ranking",
+      "status": "merged",
+      "merged_pr_number": 212,
+      "merge_commit": "37b2f6f95851f4f5723602f9390b88c0da85a00c",
+      "merged_utc": "2026-04-16T13:00:58.351461Z",
+      "notes": "Merged via PR #212 and merge 37b2f6f95851f4f5723602f9390b88c0da85a00c at 2026-04-16T13:00:58.351461Z."
     }
   ]
 }
