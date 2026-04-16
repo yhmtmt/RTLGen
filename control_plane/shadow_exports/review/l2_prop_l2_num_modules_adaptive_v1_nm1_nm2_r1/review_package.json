@@ -8,6 +8,7 @@
   "flow": "openroad",
   "task_type": "l2_campaign",
   "source_commit": "6f6a3231a9abbb80a825beec987b4263d19dcb86",
+  "review_metadata_source_commit": "ba899ed0e593e1b8ba56739fca6ada1d9e7ce8de",
   "queue_snapshot": {
     "path": "control_plane/shadow_exports/review/l2_prop_l2_num_modules_adaptive_v1_nm1_nm2_r1/evaluated.json",
     "result": {

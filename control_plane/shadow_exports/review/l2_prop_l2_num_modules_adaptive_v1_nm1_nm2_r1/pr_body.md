@@ -12,6 +12,8 @@
 ## Developer Context
 - proposal_id: `prop_l2_num_modules_adaptive_v1`
 - proposal_path: `docs/proposals/prop_l2_num_modules_adaptive_v1`
+- execution_source_commit: `6f6a3231a9abbb80a825beec987b4263d19dcb86`
+- review_metadata_source_commit: `ba899ed0e593e1b8ba56739fca6ada1d9e7ce8de`
 - reviewer_first_read: `docs/proposals/prop_l2_num_modules_adaptive_v1` plus `docs/developer_agent_review.md`
 
 ## Evaluation Mode
