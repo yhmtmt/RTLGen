@@ -1,0 +1,675 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-04-16T10:42:02.522673Z",
+  "control_plane_source_commit": "ba899ed0e593e1b8ba56739fca6ada1d9e7ce8de",
+  "item_id": "l2_prop_l2_num_modules_adaptive_v1_nm1_nm2_r1",
+  "run_key": "l2_prop_l2_num_modules_adaptive_v1_nm1_nm2_r1_run_31d1b3461690b595",
+  "layer": "layer2",
+  "flow": "openroad",
+  "task_type": "l2_campaign",
+  "source_commit": "6f6a3231a9abbb80a825beec987b4263d19dcb86",
+  "review_metadata_source_commit": "ba899ed0e593e1b8ba56739fca6ada1d9e7ce8de",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l2_prop_l2_num_modules_adaptive_v1_nm1_nm2_r1/evaluated.json",
+    "result": {
+      "branch": "eval/l2_prop_l2_num_modules_adaptive_v1_nm1_nm2_r1/s20260416t104200z",
+      "completed_utc": "2026-04-15T13:46:25.687191Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "b7c2d9c80c1c",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260416t104200z][host:b7c2d9c80c1c][item:l2_prop_l2_num_modules_adaptive_v1_nm1_nm2_r1]",
+      "metrics_rows": [
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "362e11ef",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/362e11ef/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "6f738885",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/6f738885/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "3e84d92b",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3e84d92b/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "13a2c990",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/13a2c990/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "34eeb6e5",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/34eeb6e5/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r4",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "439adb1e",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/439adb1e/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r5",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "936b2a7b",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/936b2a7b/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "54a235ae",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/54a235ae/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "f190a078",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/f190a078/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "b874bef7",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/b874bef7/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r4",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "3a650f98",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3a650f98/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r5",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "3fa4f194",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3fa4f194/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "033cdfdc",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/033cdfdc/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "c4548bca",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/c4548bca/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "258015dc",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/258015dc/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "95526f98",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/95526f98/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "099823db",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/099823db/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r4",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "b276f2e7",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/b276f2e7/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r5",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "f0b4f9e6",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/f0b4f9e6/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "5d0ac971",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/5d0ac971/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "a9ae3c35",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/a9ae3c35/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "c51fa4a2",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/c51fa4a2/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r4",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "98a03366",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/98a03366/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r5",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "41f8b4a8",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/41f8b4a8/result.json"
+        }
+      ],
+      "queue_item_id": "l2_prop_l2_num_modules_adaptive_v1_nm1_nm2_r1",
+      "session_id": "s20260416t104200z",
+      "status": "ok",
+      "summary": "5/5 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "decision_proposal",
+    "path": "control_plane/shadow_exports/l2_decisions/l2_prop_l2_num_modules_adaptive_v1_nm1_nm2_r1.json",
+    "storage_mode": "repo",
+    "sha256": "a81eca02a1c26665fc2f32b0865b5141323180ae1ebce746580ddfdfb0014db0",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-04-16T10:42:00.172946Z",
+      "item_id": "l2_prop_l2_num_modules_adaptive_v1_nm1_nm2_r1",
+      "run_key": "l2_prop_l2_num_modules_adaptive_v1_nm1_nm2_r1_run_31d1b3461690b595",
+      "layer": "layer2",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l2_campaign",
+      "source_commit": "6f6a3231a9abbb80a825beec987b4263d19dcb86",
+      "objective": "num_modules_revisit",
+      "input_manifest": {
+        "sweeps": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+        ],
+        "configs": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+        ],
+        "design_dirs": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+        ],
+        "macro_manifests": [
+          "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+          "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+        ],
+        "generated_campaign": {
+          "path": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1/campaign__l2_prop_l2_num_modules_adaptive_v1_nm1_nm2_r1.json",
+          "outputs": {
+            "report_md": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1__l2_prop_l2_num_modules_adaptive_v1_nm1_nm2_r1/report.md",
+            "results_csv": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1__l2_prop_l2_num_modules_adaptive_v1_nm1_nm2_r1/results.csv",
+            "campaign_dir": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1__l2_prop_l2_num_modules_adaptive_v1_nm1_nm2_r1"
+          },
+          "clean_outputs": true,
+          "base_campaign_path": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1/campaign.json"
+        },
+        "candidate_manifests": [
+          "runs/candidates/nangate45/module_candidates.json"
+        ]
+      },
+      "recommendation": {
+        "arch_id": "fp16_nm1",
+        "macro_mode": "flat_nomacro",
+        "objective_rank": 1,
+        "objective_score": "0.0",
+        "latency_ms_mean": 0.0009677500000000001,
+        "energy_mj_mean": 1.868938155e-07,
+        "critical_path_ns_mean": 5.557037432204143,
+        "die_area_um2_mean": 2250000.0,
+        "total_power_mw_mean": 0.193122,
+        "flow_elapsed_s_mean": 848.418
+      },
+      "objective_profiles": [],
+      "evaluation_record": {
+        "proposal_id": "prop_l2_num_modules_adaptive_v1",
+        "title": "Adaptive num_modules selection for imported softmax-tail workloads",
+        "primary_question": "After the accepted mapper update, does the imported softmax-tail benchmark still clearly prefer nm1 over nm2, or has the module-count conclusion become benchmark- or lowering-dependent?",
+        "evaluation_mode": "broad_ranking",
+        "comparison_role": "ranking",
+        "abstraction_layer": "",
+        "expected_direction": "unknown",
+        "expected_reason": "",
+        "summary": "Focused comparison regressed latency and/or energy versus the matched baseline rows.",
+        "baseline_ref": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1",
+        "outcome": "regressed",
+        "expectation_status": "unspecified"
+      },
+      "proposal_assessment": {
+        "proposal_id": "prop_l2_num_modules_adaptive_v1",
+        "title": "Adaptive num_modules selection for imported softmax-tail workloads",
+        "kind": "architecture",
+        "primary_question": "After the accepted mapper update, does the imported softmax-tail benchmark still clearly prefer nm1 over nm2, or has the module-count conclusion become benchmark- or lowering-dependent?",
+        "evaluation_mode": "broad_ranking",
+        "comparison_role": "ranking",
+        "outcome": "regressed",
+        "summary": "Focused comparison regressed latency and/or energy versus the matched baseline rows.",
+        "baseline_ref": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1",
+        "matched_row_count": 8,
+        "matched_rows": [
+          {
+            "scope": "model",
+            "arch_id": "fp16_nm1",
+            "macro_mode": "flat_nomacro",
+            "model_id": "logistic_regression",
+            "metrics": {
+              "latency_ms_mean": {
+                "baseline": 0.000621,
+                "candidate": 0.0009677500000000001,
+                "delta": 0.00034675000000000005
+              },
+              "energy_mj_mean": {
+                "baseline": 1.19928762e-07,
+                "candidate": 1.868938155e-07,
+                "delta": 6.69650535e-08
+              },
+              "critical_path_ns_mean": {
+                "baseline": 5.557037432204143,
+                "candidate": 5.557037432204143,
+                "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.193122,
+                "candidate": 0.193122,
+                "delta": 0.0
+              },
+              "flow_elapsed_s_mean": {
+                "baseline": 848.418,
+                "candidate": 848.418,
+                "delta": 0.0
+              },
+              "throughput_infer_per_s_mean": {
+                "baseline": 1610305.958132045,
+                "candidate": 1033324.7222939808,
+                "delta": -576981.2358380643
+              }
+            }
+          },
+          {
+            "scope": "model",
+            "arch_id": "fp16_nm1",
+            "macro_mode": "hier_macro",
+            "model_id": "logistic_regression",
+            "metrics": {
+              "latency_ms_mean": {
+                "baseline": 0.000621,
+                "candidate": 0.0009677500000000001,
+                "delta": 0.00034675000000000005
+              },
+              "energy_mj_mean": {
+                "baseline": 1.22610861e-07,
+                "candidate": 1.9107352775000004e-07,
+                "delta": 6.846266675000003e-08
+              },
+              "critical_path_ns_mean": {
+                "baseline": 5.774905724664045,
+                "candidate": 5.774905724664045,
+                "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.197441,
+                "candidate": 0.197441,
+                "delta": 0.0
+              },
+              "flow_elapsed_s_mean": {
+                "baseline": 978.894,
+                "candidate": 978.894,
+                "delta": 0.0
+              },
+              "throughput_infer_per_s_mean": {
+                "baseline": 1610305.958132045,
+                "candidate": 1033324.7222939808,
+                "delta": -576981.2358380643
+              }
+            }
+          },
+          {
+            "scope": "model",
+            "arch_id": "fp16_nm2",
+            "macro_mode": "flat_nomacro",
+            "model_id": "logistic_regression",
+            "metrics": {
+              "latency_ms_mean": {
+                "baseline": 0.0009639999999999999,
+                "candidate": 0.0009677500000000001,
+                "delta": 3.7500000000001725e-06
+              },
+              "energy_mj_mean": {
+                "baseline": 2.0283909599999998e-07,
+                "candidate": 2.0362814849999998e-07,
+                "delta": 7.890524999999998e-10
+              },
+              "critical_path_ns_mean": {
+                "baseline": 5.701286780426342,
+                "candidate": 5.701286780426342,
+                "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.21041400000000002,
+                "candidate": 0.21041400000000002,
+                "delta": 0.0
+              },
+              "flow_elapsed_s_mean": {
+                "baseline": 829.814,
+                "candidate": 829.814,
+                "delta": 0.0
+              },
+              "throughput_infer_per_s_mean": {
+                "baseline": 1037344.3983402491,
+                "candidate": 1033324.7222939808,
+                "delta": -4019.676046268316
+              }
+            }
+          },
+          {
+            "scope": "model",
+            "arch_id": "fp16_nm2",
+            "macro_mode": "hier_macro",
+            "model_id": "logistic_regression",
+            "metrics": {
+              "latency_ms_mean": {
+                "baseline": 0.0009639999999999999,
+                "candidate": 0.0009677500000000001,
+                "delta": 3.7500000000001725e-06
+              },
+              "energy_mj_mean": {
+                "baseline": 2.0515366000000005e-07,
+                "candidate": 2.0595171625000002e-07,
+                "delta": 7.980562499999707e-10
+              },
+              "critical_path_ns_mean": {
+                "baseline": 5.740890641774165,
+                "candidate": 5.740890641774165,
+                "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.21281500000000003,
+                "candidate": 0.21281500000000003,
+                "delta": 0.0
+              },
+              "flow_elapsed_s_mean": {
+                "baseline": 981.7819999999999,
+                "candidate": 981.7819999999999,
+                "delta": 0.0
+              },
+              "throughput_infer_per_s_mean": {
+                "baseline": 1037344.3983402491,
+                "candidate": 1033324.7222939808,
+                "delta": -4019.676046268316
+              }
+            }
+          },
+          {
+            "scope": "aggregate",
+            "arch_id": "fp16_nm1",
+            "macro_mode": "flat_nomacro",
+            "model_id": null,
+            "metrics": {
+              "latency_ms_mean": {
+                "baseline": 0.000621,
+                "candidate": 0.0009677500000000001,
+                "delta": 0.00034675000000000005
+              },
+              "energy_mj_mean": {
+                "baseline": 1.19928762e-07,
+                "candidate": 1.868938155e-07,
+                "delta": 6.69650535e-08
+              },
+              "critical_path_ns_mean": {
+                "baseline": 5.557037432204143,
+                "candidate": 5.557037432204143,
+                "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.193122,
+                "candidate": 0.193122,
+                "delta": 0.0
+              },
+              "flow_elapsed_s_mean": {
+                "baseline": 848.418,
+                "candidate": 848.418,
+                "delta": 0.0
+              },
+              "throughput_infer_per_s_mean": {
+                "baseline": 1610305.958132045,
+                "candidate": 1033324.7222939808,
+                "delta": -576981.2358380643
+              }
+            }
+          },
+          {
+            "scope": "aggregate",
+            "arch_id": "fp16_nm1",
+            "macro_mode": "hier_macro",
+            "model_id": null,
+            "metrics": {
+              "latency_ms_mean": {
+                "baseline": 0.000621,
+                "candidate": 0.0009677500000000001,
+                "delta": 0.00034675000000000005
+              },
+              "energy_mj_mean": {
+                "baseline": 1.22610861e-07,
+                "candidate": 1.9107352775000004e-07,
+                "delta": 6.846266675000003e-08
+              },
+              "critical_path_ns_mean": {
+                "baseline": 5.774905724664045,
+                "candidate": 5.774905724664045,
+                "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.197441,
+                "candidate": 0.197441,
+                "delta": 0.0
+              },
+              "flow_elapsed_s_mean": {
+                "baseline": 978.894,
+                "candidate": 978.894,
+                "delta": 0.0
+              },
+              "throughput_infer_per_s_mean": {
+                "baseline": 1610305.958132045,
+                "candidate": 1033324.7222939808,
+                "delta": -576981.2358380643
+              }
+            }
+          },
+          {
+            "scope": "aggregate",
+            "arch_id": "fp16_nm2",
+            "macro_mode": "flat_nomacro",
+            "model_id": null,
+            "metrics": {
+              "latency_ms_mean": {
+                "baseline": 0.0009639999999999999,
+                "candidate": 0.0009677500000000001,
+                "delta": 3.7500000000001725e-06
+              },
+              "energy_mj_mean": {
+                "baseline": 2.0283909599999998e-07,
+                "candidate": 2.0362814849999998e-07,
+                "delta": 7.890524999999998e-10
+              },
+              "critical_path_ns_mean": {
+                "baseline": 5.701286780426342,
+                "candidate": 5.701286780426342,
+                "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.21041400000000002,
+                "candidate": 0.21041400000000002,
+                "delta": 0.0
+              },
+              "flow_elapsed_s_mean": {
+                "baseline": 829.814,
+                "candidate": 829.814,
+                "delta": 0.0
+              },
+              "throughput_infer_per_s_mean": {
+                "baseline": 1037344.3983402491,
+                "candidate": 1033324.7222939808,
+                "delta": -4019.676046268316
+              }
+            }
+          },
+          {
+            "scope": "aggregate",
+            "arch_id": "fp16_nm2",
+            "macro_mode": "hier_macro",
+            "model_id": null,
+            "metrics": {
+              "latency_ms_mean": {
+                "baseline": 0.0009639999999999999,
+                "candidate": 0.0009677500000000001,
+                "delta": 3.7500000000001725e-06
+              },
+              "energy_mj_mean": {
+                "baseline": 2.0515366000000005e-07,
+                "candidate": 2.0595171625000002e-07,
+                "delta": 7.980562499999707e-10
+              },
+              "critical_path_ns_mean": {
+                "baseline": 5.740890641774165,
+                "candidate": 5.740890641774165,
+                "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.21281500000000003,
+                "candidate": 0.21281500000000003,
+                "delta": 0.0
+              },
+              "flow_elapsed_s_mean": {
+                "baseline": 981.7819999999999,
+                "candidate": 981.7819999999999,
+                "delta": 0.0
+              },
+              "throughput_infer_per_s_mean": {
+                "baseline": 1037344.3983402491,
+                "candidate": 1033324.7222939808,
+                "delta": -4019.676046268316
+              }
+            }
+          }
+        ]
+      },
+      "source_refs": {
+        "best_point_json": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1__l2_prop_l2_num_modules_adaptive_v1_nm1_nm2_r1/best_point.json",
+        "summary_csv": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1__l2_prop_l2_num_modules_adaptive_v1_nm1_nm2_r1/summary.csv",
+        "results_csv": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1__l2_prop_l2_num_modules_adaptive_v1_nm1_nm2_r1/results.csv",
+        "report_md": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1__l2_prop_l2_num_modules_adaptive_v1_nm1_nm2_r1/report.md",
+        "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1__l2_prop_l2_num_modules_adaptive_v1_nm1_nm2_r1/artifacts/mapper/fp16_nm1/logistic_regression/schedule.yml",
+        "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1__l2_prop_l2_num_modules_adaptive_v1_nm1_nm2_r1/artifacts/mapper/fp16_nm1/logistic_regression/descriptors.bin",
+        "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1__l2_prop_l2_num_modules_adaptive_v1_nm1_nm2_r1/artifacts/perf/fp16_nm1/logistic_regression/trace.json",
+        "focused_model_artifacts": [
+          {
+            "model_id": "logistic_regression",
+            "schedule_yml": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1__l2_prop_l2_num_modules_adaptive_v1_nm1_nm2_r1/artifacts/mapper/fp16_nm1/logistic_regression/schedule.yml",
+            "descriptors_bin": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1__l2_prop_l2_num_modules_adaptive_v1_nm1_nm2_r1/artifacts/mapper/fp16_nm1/logistic_regression/descriptors.bin",
+            "perf_trace_json": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1__l2_prop_l2_num_modules_adaptive_v1_nm1_nm2_r1/artifacts/perf/fp16_nm1/logistic_regression/trace.json"
+          }
+        ],
+        "baseline_summary_csv": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1/summary.csv",
+        "baseline_report_md": "runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1/report.md"
+      }
+    }
+  },
+  "developer_loop": {
+    "proposal_id": "prop_l2_num_modules_adaptive_v1",
+    "proposal_path": "docs/proposals/prop_l2_num_modules_adaptive_v1"
+  },
+  "submission_history": {
+    "event_count": 1,
+    "failure_count": 0,
+    "retry_request_count": 0,
+    "retry_processed_count": 0,
+    "retry_failed_count": 0,
+    "had_retry": false,
+    "events": [
+      {
+        "event_time": "2026-04-16T09:55:02.971669Z",
+        "event_type": "submission_executed",
+        "pr_url": "https://github.com/yhmtmt/RTLGen/pull/210"
+      }
+    ],
+    "final_submission": {
+      "event_time": "2026-04-16T09:55:02.971669Z",
+      "event_type": "submission_executed",
+      "pr_url": "https://github.com/yhmtmt/RTLGen/pull/210"
+    }
+  },
+  "pr_payload": {
+    "branch": "eval/l2_prop_l2_num_modules_adaptive_v1_nm1_nm2_r1/s20260416t104200z",
+    "title": "eval: run adaptive num_modules selection refresh under current mapper baseline",
+    "body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260416t104200z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_prop_l2_num_modules_adaptive_v1_nm1_nm2_r1"
+    },
+    "body_md": "## Summary\n- item_id: `l2_prop_l2_num_modules_adaptive_v1_nm1_nm2_r1`\n- run_key: `l2_prop_l2_num_modules_adaptive_v1_nm1_nm2_r1_run_31d1b3461690b595`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `5/5 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_prop_l2_num_modules_adaptive_v1_nm1_nm2_r1/evaluated.json`\n- metrics_rows_count: `24`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_prop_l2_num_modules_adaptive_v1_nm1_nm2_r1.json`\n\n## Developer Context\n- proposal_id: `prop_l2_num_modules_adaptive_v1`\n- proposal_path: `docs/proposals/prop_l2_num_modules_adaptive_v1`\n- reviewer_first_read: `docs/proposals/prop_l2_num_modules_adaptive_v1` plus `docs/developer_agent_review.md`\n\n## Evaluation Mode\n- evaluation_mode: `broad_ranking`\n- comparison_role: `ranking`\n- expected_direction: `unknown`\n- expectation_status: `unspecified`\n- evaluation_summary: `Focused comparison regressed latency and/or energy versus the matched baseline rows.`\n\n## Focused Comparison\n- primary_question: `After the accepted mapper update, does the imported softmax-tail benchmark still clearly prefer nm1 over nm2, or has the module-count conclusion become benchmark- or lowering-dependent?`\n- comparison_role: `ranking`\n- proposal_outcome: `regressed`\n- comparison_summary: `Focused comparison regressed latency and/or energy versus the matched baseline rows.`\n- baseline_ref: `runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1`\n- latency_delta fp16_nm1/flat_nomacro/logistic_regression: `0.000621` -> `0.0009677500000000001` ms\n- energy_delta fp16_nm1/flat_nomacro/logistic_regression: `1.19928762e-07` -> `1.868938155e-07` mJ\n\n## Submission Recovery\n- submission_failure_count: `0`\n- retry_request_count: `0`\n- final_submission_pr: `https://github.com/yhmtmt/RTLGen/pull/210`\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
