@@ -35,6 +35,7 @@ class NpuRtlgenSoftmaxRegressionTest(unittest.TestCase):
                 "module_name": "softmax_rowwise_int8_r4_wrapper",
                 "accum_bits": 16,
                 "max_shift": 7,
+                "pipeline": 3,
             }
             cfg_path.write_text(json.dumps(cfg, indent=2) + "\n", encoding="utf-8")
 
@@ -56,6 +57,9 @@ class NpuRtlgenSoftmaxRegressionTest(unittest.TestCase):
             self.assertIn("u_softmax_engine", top_v)
             self.assertIn("SOFTMAX_DESC_ENABLED = 1", top_v)
             self.assertIn("cq_mem_rdata[7:0] == 8'h12", top_v)
+            self.assertIn("reg [31:0] y_pipe_0;", top_v)
+            self.assertIn("reg [31:0] y_pipe_2;", top_v)
+            self.assertIn("assign Y = y_pipe_2;", top_v)
 
             subprocess.run(
                 [

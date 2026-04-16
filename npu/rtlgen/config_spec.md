@@ -159,6 +159,9 @@ can later be extended without breaking v0.1.
     default `16`).
   - `max_shift` (int, optional): clamp applied to distance-from-max before
     power-of-two weighting (`0..15`, default `7`).
+  - `pipeline` (int, optional): number of registered wrapper output stages (`1..8`,
+    default `1`). This tunes the dedicated SOFTMAX wrapper latency without changing
+    row width or normalization precision.
 
 ## Notes
 - The initial RTL is a stub for **simulation harnessing** only.

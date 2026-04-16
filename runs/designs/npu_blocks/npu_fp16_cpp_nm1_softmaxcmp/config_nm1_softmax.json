@@ -65,7 +65,8 @@
       "row_bytes": 4,
       "module_name": "softmax_rowwise_int8_r4_wrapper",
       "accum_bits": 16,
-      "max_shift": 7
+      "max_shift": 7,
+      "pipeline": 1
     }
   }
 }

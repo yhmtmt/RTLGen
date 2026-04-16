@@ -1052,6 +1052,7 @@ def generate_rowwise_softmax_modules(softmax_cfg: dict) -> tuple[str, str, int]:
     dtype = str(softmax_cfg.get("dtype", "int8")).lower()
     accum_bits = int(softmax_cfg.get("accum_bits", 16))
     max_shift = int(softmax_cfg.get("max_shift", 7))
+    pipeline = int(softmax_cfg.get("pipeline", 1))
 
     if dtype != "int8":
         die("compute.softmax.dtype currently supports only int8")
@@ -1061,6 +1062,8 @@ def generate_rowwise_softmax_modules(softmax_cfg: dict) -> tuple[str, str, int]:
         die("compute.softmax.accum_bits must be in [8, 32]")
     if max_shift < 0 or max_shift > 15:
         die("compute.softmax.max_shift must be in [0, 15]")
+    if pipeline < 1 or pipeline > 8:
+        die("compute.softmax.pipeline must be in [1, 8]")
 
     if not module_name:
         module_name = f"softmax_rowwise_{dtype}_r{row_bytes}_wrapper"
@@ -1074,6 +1077,17 @@ def generate_rowwise_softmax_modules(softmax_cfg: dict) -> tuple[str, str, int]:
 
     data_width = row_bytes * 8
     product_bits = accum_bits + 8
+    pipeline_registers = "\n".join(
+        f"  reg [{data_width - 1}:0] y_pipe_{stage};" for stage in range(pipeline)
+    )
+    pipeline_updates = [
+        "    x_reg <= X;",
+        "    y_pipe_0 <= y_wire;",
+    ]
+    pipeline_updates.extend(
+        f"    y_pipe_{stage} <= y_pipe_{stage - 1};" for stage in range(1, pipeline)
+    )
+    pipeline_update_text = "\n".join(pipeline_updates)
 
     module_text = f"""\
 module {core_module_name}(
@@ -1138,7 +1152,7 @@ module {module_name}(
 );
   reg [{data_width - 1}:0] x_reg;
   wire [{data_width - 1}:0] y_wire;
-  reg [{data_width - 1}:0] y_reg;
+{pipeline_registers}
 
   {core_module_name} u_core (
     .X(x_reg),
@@ -1146,11 +1160,10 @@ module {module_name}(
   );
 
   always @(posedge clk) begin
-    x_reg <= X;
-    y_reg <= y_wire;
+{pipeline_update_text}
   end
 
-  assign Y = y_reg;
+  assign Y = y_pipe_{pipeline - 1};
 endmodule
 """
     return module_name, module_text, data_width
@@ -1283,6 +1296,7 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
     softmax_row_bytes = int(softmax_cfg.get("row_bytes", 4))
     softmax_accum_bits = int(softmax_cfg.get("accum_bits", 16))
     softmax_max_shift = int(softmax_cfg.get("max_shift", 7))
+    softmax_pipeline = int(softmax_cfg.get("pipeline", 1))
     vec_ops_raw = vec_cfg.get("ops", [])
     if vec_ops_raw is None:
         vec_ops_raw = []
@@ -1411,6 +1425,8 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
         die("compute.softmax.accum_bits must be in [8, 32]")
     if softmax_max_shift < 0 or softmax_max_shift > 15:
         die("compute.softmax.max_shift must be in [0, 15]")
+    if softmax_pipeline < 1 or softmax_pipeline > 8:
+        die("compute.softmax.pipeline must be in [1, 8]")
 
     gemm_elem_bits = 16 if gemm_mac_type in ("int16", "fp16") else 8
     gemm_fp16_raw16_placeholder = 1 if (gemm_mac_type == "fp16" and gemm_fp16_semantics == "raw16_placeholder") else 0
