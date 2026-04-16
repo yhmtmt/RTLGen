@@ -493,6 +493,8 @@ def test_consume_l2_result_writes_decision_proposal() -> None:
             assert payload["recommendation"]["arch_id"] == "fp16_nm1_demo"
             assert payload["recommendation"]["macro_mode"] == "flat_nomacro"
             assert len(payload["objective_profiles"]) == 2
+            assert payload["source_commit"] == "deadbeef"
+            assert payload["review_metadata_source_commit"] == "deadbeef"
             assert payload["source_refs"]["focused_candidate_schedule_yml"] == "runs/campaigns/npu/demo_campaign/artifacts/mapper/fp16_nm1_demo/demo_model/schedule.yml"
             assert payload["source_refs"]["focused_candidate_descriptors_bin"] == "runs/campaigns/npu/demo_campaign/artifacts/mapper/fp16_nm1_demo/demo_model/descriptors.bin"
 

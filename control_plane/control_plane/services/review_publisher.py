@@ -383,6 +383,8 @@ def _build_body_md(
     handoff: dict[str, Any],
     developer_loop: dict[str, Any],
     submission_history: dict[str, Any] | None,
+    source_commit: str,
+    review_metadata_source_commit: str,
 ) -> str:
     result = dict(snapshot_payload.get("result") or {})
     review_payload: dict[str, Any] = {}
@@ -410,13 +412,17 @@ def _build_body_md(
         lines.append(f"- review_artifact: `{review_artifact.kind}` at `{review_artifact.path}`")
     proposal_id = str(developer_loop.get("proposal_id", "")).strip()
     proposal_path = str(developer_loop.get("proposal_path", "")).strip()
-    if proposal_id or proposal_path:
+    if proposal_id or proposal_path or source_commit or review_metadata_source_commit:
         lines.extend(["", "## Developer Context"])
         if proposal_id:
             lines.append(f"- proposal_id: `{proposal_id}`")
         if proposal_path:
             lines.append(f"- proposal_path: `{proposal_path}`")
             lines.append(f"- reviewer_first_read: `{proposal_path}` plus `docs/developer_agent_review.md`")
+        if source_commit:
+            lines.append(f"- execution_source_commit: `{source_commit}`")
+        if review_metadata_source_commit:
+            lines.append(f"- review_metadata_source_commit: `{review_metadata_source_commit}`")
     if isinstance(evaluation_record, dict):
         lines.extend(["", "## Evaluation Mode"])
         evaluation_mode = str(evaluation_record.get("evaluation_mode", "")).strip()
@@ -636,16 +642,20 @@ def publish_review_package(session: Session, request: ReviewPublishRequest) -> R
     package_path = _resolve_rel_path(package_rel, repo_root)
     package_path.parent.mkdir(parents=True, exist_ok=True)
 
+    source_commit = str(run.checkout_commit or work_item.source_commit or "").strip()
+    review_metadata_source_commit = str(_repo_head(repo_root) or source_commit)
+
     payload = {
         "version": 0.1,
         "generated_utc": utcnow().isoformat().replace("+00:00", "Z"),
-        "control_plane_source_commit": _repo_head(repo_root),
+        "control_plane_source_commit": review_metadata_source_commit,
+        "review_metadata_source_commit": review_metadata_source_commit,
         "item_id": work_item.item_id,
         "run_key": run.run_key,
         "layer": work_item.layer.value,
         "flow": work_item.flow.value,
         "task_type": work_item.task_type,
-        "source_commit": run.checkout_commit or work_item.source_commit,
+        "source_commit": source_commit,
         "queue_snapshot": {
             "path": snapshot_rel,
             "result": snapshot_payload.get("result"),
@@ -667,6 +677,8 @@ def publish_review_package(session: Session, request: ReviewPublishRequest) -> R
                 handoff=handoff,
                 developer_loop=developer_loop,
                 submission_history=submission_history,
+                source_commit=source_commit,
+                review_metadata_source_commit=review_metadata_source_commit,
             ),
             "checklist": handoff.get("checklist"),
         },

@@ -10,6 +10,7 @@ import hashlib
 import json
 from pathlib import Path
 import math
+import subprocess
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -28,6 +29,19 @@ class Layer2ResultConsumerError(RuntimeError):
 
 
 _RETRY_SUFFIX_RE = re.compile(r"_r\d+$")
+
+
+def _repo_head(repo_root: Path) -> str | None:
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(repo_root), "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return result.stdout.strip() or None
+    except Exception:
+        return None
 
 
 @dataclass(frozen=True)
@@ -789,6 +803,7 @@ def _build_payload(
         "platform": work_item.platform,
         "task_type": work_item.task_type,
         "source_commit": run.checkout_commit or work_item.source_commit,
+        "review_metadata_source_commit": _repo_head(repo_root) or run.checkout_commit or work_item.source_commit,
         "objective": work_item.task_request.description,
         "input_manifest": work_item.input_manifest,
         "recommendation": {

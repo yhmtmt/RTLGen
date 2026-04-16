@@ -412,6 +412,9 @@ def test_publish_review_package_for_l2() -> None:
             package_path = repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "review_package.json"
             payload = json.loads(package_path.read_text(encoding="utf-8"))
             assert payload["pr_payload"]["branch"] == "eval/l2_review_demo/s20260310t071500z"
+            assert payload["source_commit"] == "deadbeef"
+            assert payload["control_plane_source_commit"] == "deadbeef"
+            assert payload["review_metadata_source_commit"] == "deadbeef"
             assert payload["review_artifact"]["kind"] == "decision_proposal"
             assert payload["review_artifact"]["payload"]["recommendation"]["arch_id"] == "fp16_nm1_demo"
             assert payload["review_artifact"]["payload"]["proposal_assessment"]["outcome"] == "no_measurable_change"
@@ -420,6 +423,8 @@ def test_publish_review_package_for_l2() -> None:
             assert payload["developer_loop"]["proposal_path"] == "docs/developer_loop/prop_l2_review_demo_v1"
             assert payload["queue_snapshot"]["result"]["status"] == "ok"
             assert "reviewer_first_read: `docs/developer_loop/prop_l2_review_demo_v1` plus `docs/developer_agent_review.md`" in payload["pr_payload"]["body_md"]
+            assert "execution_source_commit: `deadbeef`" in payload["pr_payload"]["body_md"]
+            assert "review_metadata_source_commit: `deadbeef`" in payload["pr_payload"]["body_md"]
             assert "evaluation_mode: `paired_comparison`" in payload["pr_payload"]["body_md"]
             assert "abstraction_layer: `full_architecture`" in payload["pr_payload"]["body_md"]
             assert "proposal_outcome: `no_measurable_change`" in payload["pr_payload"]["body_md"]
