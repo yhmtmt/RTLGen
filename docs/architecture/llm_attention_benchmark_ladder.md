@@ -80,6 +80,10 @@ Metrics that must be present before running this suite:
 - queue stall cycles by cause
 - overlap/backpressure events
 
+Accuracy requirement after smoke bring-up:
+- later revisions must compare approximate-hardware outputs against a reference path
+- final architecture decisions must include accuracy/precision loss, not only schedule or PPA gains
+
 ### `llm_practical_v1`
 
 Goal:

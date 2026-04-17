@@ -1,0 +1,25 @@
+{
+  "version": 0.1,
+  "model_set_id": "llm_smoke_v1",
+  "description": "Locally generated attention-style ONNX-lite proxy set used to stage the first non-terminal-Softmax LLM smoke benchmarks.",
+  "models": [
+    {
+      "model_id": "attn1_s32_h64",
+      "onnx_path": "runs/models/llm_smoke_v1/attn1_s32_h64.onnx",
+      "onnx_sha256": "84ff8de93cfd4a6dfa3479c6ad634696bcfe0cbedbbaecb0942af2ae2170cf23",
+      "notes": "One tiny attention-style proxy block with a non-terminal Softmax."
+    },
+    {
+      "model_id": "attn1_s64_h64",
+      "onnx_path": "runs/models/llm_smoke_v1/attn1_s64_h64.onnx",
+      "onnx_sha256": "cfd179162988358a44f72bf56584e4c56767b1b0ae58f333bd0b9b73d70b263a",
+      "notes": "Single-block variant with longer sequence pressure and the same hidden width."
+    },
+    {
+      "model_id": "attn2_s32_h64",
+      "onnx_path": "runs/models/llm_smoke_v1/attn2_s32_h64.onnx",
+      "onnx_sha256": "56b2d9426861c622308d06fe71085a78b1b3634a31ef2260fd4011ce2119d133",
+      "notes": "Two repeated attention-style proxy blocks to force more than one softmax-bearing episode in one model path."
+    }
+  ]
+}

@@ -56,4 +56,5 @@
 - benchmark contract doc: `docs/architecture/llm_attention_benchmark_ladder.md`
 - immediate benchmark target: `llm_smoke_v1`
 - current blocker: mapper support is still terminal-`Softmax` only, so `llm_smoke_v1` is specified but not yet runnable as a model-set manifest
-- next implementation step: add a tiny ONNX-lite attention generator and non-terminal `Softmax` lowering support before creating the `runs/models/llm_smoke_v1/` manifest
+- current state: `llm_smoke_v1` now exists as a generated model set and first campaign scaffold
+- next implementation step: extend scheduler/perf reporting for repeated-softmax counters, then add later-stage accuracy evaluation against reference outputs for approximate hardware decisions
