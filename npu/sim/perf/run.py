@@ -883,6 +883,9 @@ def build_trace(descs, cfg, overlap, memory=None):
         "gemm_ops": 0,
         "vec_ops": 0,
         "softmax_ops": 0,
+        "softmax_issue_count": 0,
+        "softmax_completion_count": 0,
+        "softmax_backpressure_events": 0,
         "event_ops": 0,
         "noop_ops": 0,
         "unknown_ops": 0,
@@ -891,6 +894,15 @@ def build_trace(descs, cfg, overlap, memory=None):
         "gemm_time_ns": 0.0,
         "vec_time_ns": 0.0,
         "softmax_time_ns": 0.0,
+        "softmax_busy_time_ns": 0.0,
+        "softmax_backpressure_ns": 0.0,
+        "softmax_wait_on_gemm_ns": 0.0,
+        "softmax_wait_on_misc_compute_ns": 0.0,
+        "dma_backpressure_ns": 0.0,
+        "gemm_backpressure_ns": 0.0,
+        "misc_compute_backpressure_ns": 0.0,
+        "dependency_wait_ns": 0.0,
+        "dependency_wait_events": 0,
         "event_time_ns": 0.0,
         "noop_time_ns": 0.0,
         "unknown_time_ns": 0.0,
@@ -910,22 +922,61 @@ def build_trace(descs, cfg, overlap, memory=None):
         if overlap:
             name = event.get("name")
             if name == "DMA_COPY":
-                start = max(queue_time, dma_engine_time)
+                queue_before = queue_time
+                dma_before = dma_engine_time
+                start = max(queue_before, dma_before)
                 end = start + dur
                 dma_engine_time = end
                 queue_time += issue_overhead
+                if dma_before > queue_before:
+                    delay = start - queue_before
+                    stats["dma_backpressure_ns"] += delay
+                    event["scheduler_blocker"] = "dma"
+                    event["scheduler_delay_ns"] = delay
             elif name == "GEMM":
+                queue_before = queue_time
+                misc_before = misc_compute_time
                 gemm_engine_idx = min(range(gemm_engine_count), key=lambda idx: gemm_engine_times[idx])
-                start = max(queue_time, misc_compute_time, gemm_engine_times[gemm_engine_idx])
+                gemm_before = gemm_engine_times[gemm_engine_idx]
+                start = max(queue_before, misc_before, gemm_before)
                 end = start + dur
                 gemm_engine_times[gemm_engine_idx] = end
                 queue_time += issue_overhead
                 event["gemm_engine_idx"] = gemm_engine_idx
+                if start > queue_before:
+                    delay = start - queue_before
+                    event["scheduler_delay_ns"] = delay
+                    if gemm_before >= misc_before and gemm_before > queue_before:
+                        stats["gemm_backpressure_ns"] += delay
+                        event["scheduler_blocker"] = "gemm"
+                    elif misc_before > queue_before:
+                        stats["misc_compute_backpressure_ns"] += delay
+                        event["scheduler_blocker"] = "misc_compute"
             elif name in ("VEC_OP", "SOFTMAX"):
-                start = max(queue_time, misc_compute_time, max(gemm_engine_times))
+                queue_before = queue_time
+                misc_before = misc_compute_time
+                gemm_before = max(gemm_engine_times)
+                start = max(queue_before, misc_before, gemm_before)
                 end = start + dur
                 misc_compute_time = end
                 queue_time += issue_overhead
+                if start > queue_before:
+                    delay = start - queue_before
+                    event["scheduler_delay_ns"] = delay
+                    if misc_before >= gemm_before and misc_before > queue_before:
+                        stats["misc_compute_backpressure_ns"] += delay
+                        event["scheduler_blocker"] = "misc_compute"
+                        if name == "SOFTMAX":
+                            stats["softmax_backpressure_ns"] += delay
+                            stats["softmax_wait_on_misc_compute_ns"] += delay
+                            stats["softmax_backpressure_events"] += 1
+                    elif gemm_before > queue_before:
+                        stats["gemm_backpressure_ns"] += delay
+                        event["scheduler_blocker"] = "gemm"
+                        if name == "SOFTMAX":
+                            stats["softmax_backpressure_ns"] += delay
+                            stats["softmax_wait_on_gemm_ns"] += delay
+                            stats["softmax_backpressure_events"] += 1
             elif name == "EVENT_SIGNAL":
                 # Signals inserted after a producer op should not become visible
                 # before that producer has completed.
@@ -934,17 +985,26 @@ def build_trace(descs, cfg, overlap, memory=None):
                 queue_time = end
                 event_times[event.get("event_id")] = end
             elif name == "EVENT_WAIT":
+                queue_before = queue_time
                 wait_time = event_times.get(event.get("event_id"))
                 if wait_time is None:
                     wait_time = 0.0
                     warnings.append(f"event_wait missing event_id {event.get('event_id')}")
-                start = max(queue_time, wait_time)
+                start = max(queue_before, wait_time)
                 end = start + dur
                 queue_time = end
+                if wait_time > queue_before:
+                    delay = wait_time - queue_before
+                    stats["dependency_wait_ns"] += delay
+                    stats["dependency_wait_events"] += 1
+                    event["scheduler_blocker"] = "dependency"
+                    event["scheduler_delay_ns"] = delay
             else:
                 start = queue_time
                 end = start + dur
                 queue_time = end
+            event.setdefault("scheduler_blocker", "none")
+            event.setdefault("scheduler_delay_ns", 0.0)
             event["start_ns"] = start
             event["end_ns"] = end
             if name not in ("EVENT_SIGNAL", "EVENT_WAIT"):
@@ -981,8 +1041,11 @@ def build_trace(descs, cfg, overlap, memory=None):
             stats["vec_time_ns"] += dur
         elif name == "SOFTMAX":
             stats["softmax_ops"] += 1
+            stats["softmax_issue_count"] += 1
+            stats["softmax_completion_count"] += 1
             stats["total_bytes"] += int(event.get("bytes", 0))
             stats["softmax_time_ns"] += dur
+            stats["softmax_busy_time_ns"] += dur
             if memory is not None and "expected_result_bytes" in event:
                 _mem_write_bytes(memory, int(event["dst"], 0), event["expected_result_bytes"])
         elif name in ("EVENT_SIGNAL", "EVENT_WAIT"):
@@ -1015,6 +1078,9 @@ def build_trace(descs, cfg, overlap, memory=None):
         stats["gemm_engine_time_ns"] = gemm_engine_time
         stats["gemm_engine_count"] = gemm_engine_count
         stats["misc_compute_time_ns"] = misc_compute_time
+    stats["softmax_engine_occupancy"] = (
+        float(stats["softmax_busy_time_ns"]) / float(total_ns) if total_ns > 0.0 else 0.0
+    )
     return trace, total_ns, stats, warnings
 
 
@@ -1027,6 +1093,18 @@ def format_summary(stats, warnings):
     lines.append(f"  gemm_ops: {stats['gemm_ops']} (time_ns={stats['gemm_time_ns']:.3f})")
     lines.append(f"  vec_ops: {stats['vec_ops']} (time_ns={stats['vec_time_ns']:.3f})")
     lines.append(f"  softmax_ops: {stats['softmax_ops']} (time_ns={stats['softmax_time_ns']:.3f})")
+    lines.append(
+        f"  softmax_busy_time_ns: {stats['softmax_busy_time_ns']:.3f} "
+        f"(occupancy={stats['softmax_engine_occupancy']:.6f})"
+    )
+    lines.append(
+        f"  backpressure_ns: dma={stats['dma_backpressure_ns']:.3f} gemm={stats['gemm_backpressure_ns']:.3f} "
+        f"misc_compute={stats['misc_compute_backpressure_ns']:.3f} dependency={stats['dependency_wait_ns']:.3f}"
+    )
+    lines.append(
+        f"  softmax_backpressure: events={stats['softmax_backpressure_events']} total_ns={stats['softmax_backpressure_ns']:.3f} "
+        f"(gemm={stats['softmax_wait_on_gemm_ns']:.3f} misc_compute={stats['softmax_wait_on_misc_compute_ns']:.3f})"
+    )
     lines.append(f"  event_ops: {stats['event_ops']} (time_ns={stats['event_time_ns']:.3f})")
     lines.append(f"  noop_ops: {stats['noop_ops']} (time_ns={stats['noop_time_ns']:.3f})")
     lines.append(f"  unknown_ops: {stats['unknown_ops']} (time_ns={stats['unknown_time_ns']:.3f})")

@@ -32,6 +32,30 @@ def _build_vec_softmax_bin(path: Path):
     path.write_bytes(bytes(stream))
 
 
+def _build_two_softmax_bin(path: Path):
+    stream = bytearray()
+    for src, dst in ((0x5000, 0x6000), (0x7000, 0x8000)):
+        d = _pack_desc(0x12, flags=0x00)
+        struct.pack_into("<QQHH", d, 8, src, dst, 256, 4)
+        stream.extend(d)
+    path.write_bytes(bytes(stream))
+
+
+def _encode_gemm_tag(m: int, n: int, k: int) -> int:
+    return ((int(m) & 0xFFF) << 20) | ((int(n) & 0x3FF) << 10) | (int(k) & 0x3FF)
+
+
+def _build_gemm_then_softmax_bin(path: Path):
+    stream = bytearray()
+    gemm = _pack_desc(0x10, tag=_encode_gemm_tag(256, 256, 256))
+    struct.pack_into("<QQQ", gemm, 8, 0x1000, 0x2000, 0x3000)
+    stream.extend(gemm)
+    softmax = _pack_desc(0x12, flags=0x00)
+    struct.pack_into("<QQHH", softmax, 8, 0x5000, 0x6000, 256, 4)
+    stream.extend(softmax)
+    path.write_bytes(bytes(stream))
+
+
 def _build_mem_image(path: Path, *, base_addr: int, data_bytes: list[int]) -> None:
     path.write_text(
         json.dumps(
@@ -100,6 +124,10 @@ def test_perf_vec_softmax():
     assert stats["gemm_ops"] == 0
     assert stats["vec_ops"] == 2
     assert stats["softmax_ops"] == 1
+    assert stats["softmax_issue_count"] == 1
+    assert stats["softmax_completion_count"] == 1
+    assert stats["softmax_busy_time_ns"] == stats["softmax_time_ns"]
+    assert stats["softmax_backpressure_events"] == 0
     assert stats["event_ops"] == 0
     assert stats["unknown_ops"] == 0
     assert stats["total_bytes"] == (1024 + 2048 + (256 * 4))
@@ -210,3 +238,98 @@ if __name__ == "__main__":
     test_perf_vec_softmax()
     test_perf_softmax_expected_result_with_mem_image()
     test_perf_softmax_expected_result_fp16_with_mem_image()
+
+
+def test_perf_overlap_softmax_backpressure_serializes_softmax_engine():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp = Path(tmpdir)
+        bin_path = tmp / "two_softmax.bin"
+        out_path = tmp / "trace.json"
+        cfg_path = tmp / "cfg.json"
+        _build_two_softmax_bin(bin_path)
+        cfg_path.write_text(
+            json.dumps(
+                {
+                    "softmax_tops": 0.5,
+                    "softmax_in_bw_gbps": 8.0,
+                    "softmax_out_bw_gbps": 4.0,
+                    "softmax_overhead_ns": 30.0,
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+        subprocess.check_call(
+            [
+                "python3",
+                "npu/sim/perf/run.py",
+                "--bin",
+                str(bin_path),
+                "--out",
+                str(out_path),
+                "--config",
+                str(cfg_path),
+                "--overlap",
+            ]
+        )
+        data = json.loads(out_path.read_text(encoding="utf-8"))
+
+    stats = data["stats"]
+    assert stats["softmax_ops"] == 2
+    assert stats["softmax_issue_count"] == 2
+    assert stats["softmax_completion_count"] == 2
+    assert stats["softmax_backpressure_events"] == 1
+    assert stats["softmax_backpressure_ns"] > 0.0
+    assert stats["softmax_wait_on_misc_compute_ns"] > 0.0
+    assert stats["softmax_wait_on_gemm_ns"] == 0.0
+    assert stats["softmax_engine_occupancy"] > 0.0
+    trace = data["trace"]
+    softmax2 = trace[1]
+    assert softmax2["scheduler_blocker"] == "misc_compute"
+    assert float(softmax2["scheduler_delay_ns"]) > 0.0
+
+
+def test_perf_overlap_softmax_waits_on_gemm_completion():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp = Path(tmpdir)
+        bin_path = tmp / "gemm_softmax.bin"
+        out_path = tmp / "trace.json"
+        cfg_path = tmp / "cfg.json"
+        _build_gemm_then_softmax_bin(bin_path)
+        cfg_path.write_text(
+            json.dumps(
+                {
+                    "gemm_tops": 0.1,
+                    "softmax_tops": 10.0,
+                    "softmax_in_bw_gbps": 8.0,
+                    "softmax_out_bw_gbps": 4.0,
+                    "softmax_overhead_ns": 30.0,
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+        subprocess.check_call(
+            [
+                "python3",
+                "npu/sim/perf/run.py",
+                "--bin",
+                str(bin_path),
+                "--out",
+                str(out_path),
+                "--config",
+                str(cfg_path),
+                "--overlap",
+            ]
+        )
+        data = json.loads(out_path.read_text(encoding="utf-8"))
+
+    stats = data["stats"]
+    assert stats["gemm_ops"] == 1
+    assert stats["softmax_ops"] == 1
+    assert stats["softmax_backpressure_events"] == 1
+    assert stats["softmax_wait_on_gemm_ns"] > 0.0
+    assert stats["softmax_wait_on_misc_compute_ns"] == 0.0
+    softmax = [ev for ev in data["trace"] if ev["name"] == "SOFTMAX"][0]
+    assert softmax["scheduler_blocker"] == "gemm"
+    assert float(softmax["scheduler_delay_ns"]) > 0.0

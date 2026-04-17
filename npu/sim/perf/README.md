@@ -13,6 +13,14 @@ binary descriptor stream and emits a JSON timing trace.
 - JSON trace with per-descriptor start/end timestamps
 - Summary metrics (total time, bytes moved, op counts)
 
+Repeated-softmax scheduler counters now included in `stats` and per-op trace fields:
+- `softmax_issue_count`, `softmax_completion_count`
+- `softmax_busy_time_ns`, `softmax_engine_occupancy`
+- `softmax_backpressure_events`, `softmax_backpressure_ns`
+- `softmax_wait_on_gemm_ns`, `softmax_wait_on_misc_compute_ns`
+- global overlap wait buckets: `dma_backpressure_ns`, `gemm_backpressure_ns`, `misc_compute_backpressure_ns`, `dependency_wait_ns`
+- overlap-mode trace events now carry `scheduler_blocker` and `scheduler_delay_ns`
+
 ## Quick start
 ```sh
 python3 npu/sim/perf/run.py \
