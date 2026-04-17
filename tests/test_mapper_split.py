@@ -249,6 +249,27 @@ class MapperSplitRegressionTest(unittest.TestCase):
             )
         )
 
+    def _write_attention_block_onnx(
+        self,
+        out_path: Path,
+        *,
+        name: str,
+        seq_len: int,
+        hidden_dim: int,
+        num_blocks: int = 1,
+        add_cast: bool = False,
+    ) -> None:
+        out_path.write_bytes(
+            self.onnx_lite.build_attention_block_model_bytes(
+                name=name,
+                seq_len=seq_len,
+                hidden_dim=hidden_dim,
+                num_blocks=num_blocks,
+                dtype=self.onnx_lite.TENSOR_INT8,
+                add_cast=add_cast,
+            )
+        )
+
     def _run_lowering(
         self,
         onnx_path: Path,
@@ -515,6 +536,37 @@ class MapperSplitRegressionTest(unittest.TestCase):
             self.assertEqual(4, int(softmax_ops[0]["row_bytes"]))
             self.assertEqual(64, int(softmax_ops[0]["rows"]))
             self.assertEqual("dma_y", schedule["events"][0]["signal_on"])
+
+    def test_attention_block_generator_emits_nonterminal_softmax(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            onnx_path = tmp / 'attn.onnx'
+
+            self._write_attention_block_onnx(
+                onnx_path,
+                name='attn_proxy',
+                seq_len=32,
+                hidden_dim=64,
+                num_blocks=2,
+                add_cast=False,
+            )
+
+            model = self.onnx_lite.load_onnx_model(onnx_path)
+            self.assertEqual([32, 64], model.graph.inputs['X'])
+            self.assertEqual([32, 64], model.graph.outputs['Y'])
+
+            op_types = [node.op_type for node in model.graph.nodes]
+            self.assertEqual(6, len(op_types))
+            self.assertEqual(['Gemm', 'Softmax', 'Gemm', 'Gemm', 'Softmax', 'Gemm'], op_types)
+            softmax_positions = [idx for idx, op in enumerate(op_types) if op == 'Softmax']
+            self.assertEqual([1, 4], softmax_positions)
+            self.assertLess(max(softmax_positions), len(op_types) - 1)
+
+            for node in model.graph.nodes:
+                if node.op_type == 'Softmax':
+                    self.assertTrue(node.outputs[0].startswith('P'))
+                if node.op_type == 'Gemm':
+                    self.assertTrue(node.name.startswith('ScoreGemm') or node.name.startswith('ValueGemm'))
 
     def test_softmax_classifier_vec_placeholder_backend(self):
         with tempfile.TemporaryDirectory() as td:

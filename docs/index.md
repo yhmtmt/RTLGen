@@ -36,6 +36,8 @@ details.
   - `docs/architecture/layers.md`
 - Layer 1 / Layer 2 contract:
   - `docs/architecture/layer_interaction.md`
+- LLM attention benchmark ladder:
+  - `docs/architecture/llm_attention_benchmark_ladder.md`
 - Layer 1 runbook:
   - `docs/workflows/layer1.md`
 - Developer loop:

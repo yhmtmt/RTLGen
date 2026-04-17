@@ -660,6 +660,108 @@ def build_softmax_classifier_model_bytes(
     return bytes(model)
 
 
+def build_attention_block_model_bytes(
+    *,
+    name: str,
+    seq_len: int,
+    hidden_dim: int,
+    num_blocks: int = 1,
+    score_dim: Optional[int] = None,
+    dtype: int = TENSOR_INT8,
+    add_cast: bool = False,
+    opset_version: int = 13,
+    ir_version: int = 8,
+) -> bytes:
+    """
+    Build a tiny attention-style ONNX proxy graph using repeated:
+      optional Cast -> Gemm(score) -> Softmax -> Gemm(value)
+
+    Notes:
+    - This is intentionally an attention *proxy*, not a numerically faithful
+      transformer block. The purpose is to create a non-terminal `Softmax` in
+      the middle of a small graph so mapper/scheduler bring-up can target the
+      right workload shape.
+    - All tensors are 2D to stay within the current ONNX-lite writer scope.
+    - Initializers contain zero raw_data; this is sufficient for shape-driven
+      lowering and evaluation plumbing.
+    """
+
+    seq_len = int(seq_len)
+    hidden_dim = int(hidden_dim)
+    num_blocks = int(num_blocks)
+    score_dim = seq_len if score_dim is None else int(score_dim)
+
+    if seq_len <= 0:
+        raise ValueError('seq_len must be positive')
+    if hidden_dim <= 0:
+        raise ValueError('hidden_dim must be positive')
+    if num_blocks <= 0:
+        raise ValueError('num_blocks must be positive')
+    if score_dim <= 0:
+        raise ValueError('score_dim must be positive')
+
+    def zeros(n: int) -> bytes:
+        return bytes([0] * n)
+
+    vi_x = _encode_value_info('X', dtype, [seq_len, hidden_dim])
+    vi_y = _encode_value_info('Y', dtype, [seq_len, hidden_dim])
+
+    nodes: List[bytes] = []
+    initializers: List[bytes] = []
+
+    current = 'X'
+    current_dim = hidden_dim
+    if add_cast:
+        current = 'Xc'
+        nodes.append(_encode_node('Cast', ['X'], [current], name='Cast0'))
+
+    for idx in range(num_blocks):
+        block = idx + 1
+        score_w = f'W_score_{block}'
+        score_b = f'b_score_{block}'
+        value_w = f'W_value_{block}'
+        value_b = f'b_value_{block}'
+        score_out = f'S{block}'
+        probs_out = f'P{block}'
+        value_out = 'Y' if block == num_blocks else f'V{block}'
+
+        initializers.extend(
+            [
+                _encode_tensor(score_w, [score_dim, current_dim], dtype, zeros(score_dim * current_dim)),
+                _encode_tensor(score_b, [score_dim], dtype, zeros(score_dim)),
+                _encode_tensor(value_w, [hidden_dim, score_dim], dtype, zeros(hidden_dim * score_dim)),
+                _encode_tensor(value_b, [hidden_dim], dtype, zeros(hidden_dim)),
+            ]
+        )
+
+        nodes.append(
+            _encode_node('Gemm', [current, score_w, score_b], [score_out], name=f'ScoreGemm{block}')
+        )
+        nodes.append(
+            _encode_node('Softmax', [score_out], [probs_out], name=f'Softmax{block}')
+        )
+        nodes.append(
+            _encode_node('Gemm', [probs_out, value_w, value_b], [value_out], name=f'ValueGemm{block}')
+        )
+
+        current = value_out
+        current_dim = hidden_dim
+
+    graph = _encode_graph(
+        name=name,
+        nodes=nodes,
+        inputs=[vi_x],
+        outputs=[vi_y],
+        initializers=initializers,
+    )
+
+    model = bytearray()
+    model += _enc_v(1, int(ir_version))
+    model += _enc_ld(8, _encode_opset_import('', opset_version))
+    model += _enc_ld(7, graph)
+    return bytes(model)
+
+
 def _build_terminal_unary_model_bytes(
     *,
     name: str,

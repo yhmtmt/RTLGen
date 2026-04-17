@@ -57,3 +57,7 @@ Current sets
 - `onnx_imported_softmax_tail_v1`: imported classifier-tail set with a real
   terminal `Softmax` path, paired with
   `runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1/`.
+- `llm_smoke_v1` (planned): benchmark-contract-defined tiny attention set for
+  LLM-oriented evaluation. This set is intentionally not materialized yet
+  because current mapper support is still terminal-`Softmax` only; see
+  `docs/architecture/llm_attention_benchmark_ladder.md`.
