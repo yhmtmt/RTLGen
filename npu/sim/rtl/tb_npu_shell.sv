@@ -785,30 +785,6 @@ module tb_npu_shell;
       end
     end
 
-    // Wait for head to catch up (one descriptor per cycle)
-    begin : wait_loop
-      integer i;
-      for (i = 0; i < 20; i = i + 1) begin
-        mmio_read(OFF_CQ_HEAD, cq_head);
-        if (cq_head == cq_tail)
-          disable wait_loop;
-      end
-    end
-    if (cq_head !== cq_tail) begin
-      $display("ERROR: cq_head %h != cq_tail %h", cq_head, cq_tail);
-      $finish(1);
-    end
-
-    mmio_read(OFF_IRQ_STATUS, irq_status);
-    if (irq_status[0] !== 1'b1) begin
-      $display("ERROR: expected CQ_EMPTY IRQ status");
-      $finish(1);
-    end
-    if (irq_status[1] !== 1'b1) begin
-      $display("ERROR: expected EVENT IRQ status from DMA/event (saw_bvalid=%0d)", saw_bvalid);
-      $finish(1);
-    end
-
     if (event_test || vec_test) begin
       // No data check for GEMM/event stubs
     end else if (contract_gemm_event_dma_test) begin
@@ -887,6 +863,31 @@ module tb_npu_shell;
         $display("ERROR: VEC completion timeout count=%0d expected=%0d", vec_count, vec_desc_count);
         $finish(1);
       end
+    end
+
+    // Queue retirement can lag the first EVENT IRQ when later descriptors depend on
+    // GEMM/VEC completion. Check queue drain only after those engines have finished.
+    begin : wait_loop
+      integer i;
+      for (i = 0; i < 40; i = i + 1) begin
+        mmio_read(OFF_CQ_HEAD, cq_head);
+        if (cq_head == cq_tail)
+          disable wait_loop;
+      end
+    end
+    if (cq_head !== cq_tail) begin
+      $display("ERROR: cq_head %h != cq_tail %h", cq_head, cq_tail);
+      $finish(1);
+    end
+
+    mmio_read(OFF_IRQ_STATUS, irq_status);
+    if (irq_status[0] !== 1'b1) begin
+      $display("ERROR: expected CQ_EMPTY IRQ status");
+      $finish(1);
+    end
+    if (irq_status[1] !== 1'b1) begin
+      $display("ERROR: expected EVENT IRQ status from DMA/event (saw_bvalid=%0d)", saw_bvalid);
+      $finish(1);
     end
 
     // Allow negedge monitor to emit final completion line before finish.

@@ -249,19 +249,27 @@ vec_path.write_bytes(vec_stream)
 PY
 cp "${DESC_BIN}" "${RTL_BIN}"
 
+bin_bytes() {
+  wc -c < "$1" | tr -d "[:space:]"
+}
+
+GEMM_BIN_BYTES=$(bin_bytes "${GEMM_BIN}")
+GEMM2_BIN_BYTES=$(bin_bytes "${GEMM2_BIN}")
+GEMM_OOO_BIN_BYTES=$(bin_bytes "${GEMM_OOO_BIN}")
+
 pushd "${REPO_ROOT}" >/dev/null
 make -f npu/sim/rtl/Makefile run \
   BIN="${RTL_BIN}" \
   BYTES=4096 VVPFLAGS="+gemm_mem_test=256 +gemm_mac_test=1" | tee "${MIXED_RTL_LOG}"
 make -f npu/sim/rtl/Makefile run \
   BIN="${GEMM_BIN}" \
-  BYTES=256 VVPFLAGS="+gemm_mem_test=256 +gemm_mac_test=1" | tee "${GEMM_RTL_LOG}"
+  BYTES="${GEMM_BIN_BYTES}" VVPFLAGS="+gemm_mem_test=256 +gemm_mac_test=1" | tee "${GEMM_RTL_LOG}"
 make -f npu/sim/rtl/Makefile run \
   BIN="${GEMM2_BIN}" \
-  BYTES=256 VVPFLAGS="+gemm_mem_test=256 +gemm_mac_test=1" | tee "${GEMM2_RTL_LOG}"
+  BYTES="${GEMM2_BIN_BYTES}" VVPFLAGS="+gemm_mem_test=256 +gemm_mac_test=1" | tee "${GEMM2_RTL_LOG}"
 make -f npu/sim/rtl/Makefile run \
   BIN="${GEMM_OOO_BIN}" \
-  BYTES=256 VVPFLAGS="+gemm_mem_test=256 +gemm_mac_test=1" | tee "${GEMM_OOO_RTL_LOG}"
+  BYTES="${GEMM_OOO_BIN_BYTES}" VVPFLAGS="+gemm_mem_test=256 +gemm_mac_test=1" | tee "${GEMM_OOO_RTL_LOG}"
 make -f npu/sim/rtl/Makefile run \
   CONFIG="${CPP_RTL_CFG}" \
   BIN="${RTL_BIN}" \
@@ -269,7 +277,7 @@ make -f npu/sim/rtl/Makefile run \
 make -f npu/sim/rtl/Makefile run \
   CONFIG="${CPP_RTL_CFG}" \
   BIN="${GEMM_BIN}" \
-  BYTES=256 VVPFLAGS="+gemm_mem_test=256 +gemm_mac_test=1" | tee "${CPP_GEMM_RTL_LOG}"
+  BYTES="${GEMM_BIN_BYTES}" VVPFLAGS="+gemm_mem_test=256 +gemm_mac_test=1" | tee "${CPP_GEMM_RTL_LOG}"
 make -f npu/sim/rtl/Makefile run \
   CONFIG="${CPP_RTL_CFG}" \
   BIN="${CPP_VEC_ACT_BIN}" \
@@ -289,11 +297,11 @@ vvp build_cpp_vec_act_fp16_smoke.vvp | tee "${CPP_VEC_ACT_FP16_RTL_LOG}"
 make -f npu/sim/rtl/Makefile run \
   CONFIG="${INT16_RTL_CFG}" \
   BIN="${GEMM_BIN}" \
-  BYTES=256 VVPFLAGS="+gemm_mem_test=256 +gemm_mac_test=1" | tee "${INT16_GEMM_RTL_LOG}"
+  BYTES="${GEMM_BIN_BYTES}" VVPFLAGS="+gemm_mem_test=256 +gemm_mac_test=1" | tee "${INT16_GEMM_RTL_LOG}"
 make -f npu/sim/rtl/Makefile run \
   CONFIG="${FP16_RTL_CFG}" \
   BIN="${GEMM_BIN}" \
-  BYTES=256 VVPFLAGS="+gemm_mem_test=256 +gemm_mac_test=1" | tee "${FP16_GEMM_RTL_LOG}"
+  BYTES="${GEMM_BIN_BYTES}" VVPFLAGS="+gemm_mem_test=256 +gemm_mac_test=1" | tee "${FP16_GEMM_RTL_LOG}"
 if [[ "${FP16_CPP_ENABLED}" == "1" ]]; then
   make -f npu/sim/rtl/Makefile run \
     CONFIG="${FP16_CPP_RTL_CFG}" \
