@@ -568,6 +568,47 @@ class MapperSplitRegressionTest(unittest.TestCase):
                 if node.op_type == 'Gemm':
                     self.assertTrue(node.name.startswith('ScoreGemm') or node.name.startswith('ValueGemm'))
 
+    def test_attention_block_lowering_emits_intermediate_softmax(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            onnx_path = tmp / 'attn_lower.onnx'
+            sched_path = tmp / 'attn_lower.yml'
+            bin_path = tmp / 'attn_lower.bin'
+
+            self._write_attention_block_onnx(
+                onnx_path,
+                name='attn_proxy_lower',
+                seq_len=32,
+                hidden_dim=64,
+                num_blocks=2,
+                add_cast=False,
+            )
+            schedule = self._run_lowering(
+                onnx_path,
+                sched_path,
+                softmax_backend='dedicated',
+            )
+            self._validate_and_emit_bin(sched_path, bin_path)
+
+            notes = schedule.get('mapper_notes', {})
+            self.assertEqual('attention_proxy', notes.get('graph_kind'))
+            self.assertEqual(2, int(notes.get('attention_proxy_blocks', 0)))
+            self.assertEqual(2, int(notes.get('nonterminal_softmax_count', 0)))
+            self.assertEqual(4, int(notes.get('linear_layer_count', 0)))
+            self.assertEqual('dedicated', notes.get('softmax_backend'))
+            self.assertEqual('Y', notes.get('graph_output_name'))
+
+            gemm_ops = [op for op in schedule['ops'] if op.get('type') == 'gemm']
+            softmax_ops = [op for op in schedule['ops'] if op.get('type') == 'softmax']
+            dma_y_ops = [op for op in schedule['ops'] if op.get('id') == 'dma_y']
+
+            self.assertEqual(4, len(gemm_ops))
+            self.assertEqual(2, len(softmax_ops))
+            self.assertEqual(1, len(dma_y_ops))
+            self.assertEqual(32, int(softmax_ops[0]['rows']))
+            self.assertEqual(32, int(softmax_ops[0]['row_bytes']))
+            self.assertEqual('dma_y', schedule['events'][0]['signal_on'])
+
     def test_softmax_classifier_vec_placeholder_backend(self):
         with tempfile.TemporaryDirectory() as td:
             tmp = Path(td)
