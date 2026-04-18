@@ -22,6 +22,21 @@ from validate import load_json, validate_campaign
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+SCHEDULER_SUMMARY_FIELDS = [
+    "softmax_ops",
+    "softmax_issue_count",
+    "softmax_completion_count",
+    "softmax_engine_occupancy",
+    "softmax_backpressure_events",
+    "softmax_backpressure_ns",
+    "softmax_wait_on_gemm_ns",
+    "softmax_wait_on_misc_compute_ns",
+    "dma_backpressure_ns",
+    "gemm_backpressure_ns",
+    "misc_compute_backpressure_ns",
+    "dependency_wait_ns",
+    "dependency_wait_events",
+]
 
 
 def log(msg: str) -> None:
@@ -133,6 +148,8 @@ def summarize_group(rows: List[Dict[str, str]]) -> Dict[str, Optional[float]]:
         "flow_elapsed_s": [],
         "place_gp_elapsed_s": [],
     }
+    for key in SCHEDULER_SUMMARY_FIELDS:
+        metrics[key] = []
     for row in rows:
         metrics["latency_ms"].append(safe_float(row.get("performance_latency_ms")))
         metrics["throughput_infer_per_s"].append(safe_float(row.get("performance_throughput_infer_per_s")))
@@ -143,6 +160,8 @@ def summarize_group(rows: List[Dict[str, str]]) -> Dict[str, Optional[float]]:
         metrics["total_power_mw"].append(safe_float(row.get("physical_total_power_mw")))
         metrics["flow_elapsed_s"].append(safe_float(row.get("physical_flow_elapsed_s")))
         metrics["place_gp_elapsed_s"].append(safe_float(row.get("physical_place_gp_elapsed_s")))
+        for key in SCHEDULER_SUMMARY_FIELDS:
+            metrics[key].append(safe_float(row.get(f"performance_{key}")))
 
     def keep(values: List[Optional[float]]) -> List[float]:
         return [v for v in values if v is not None]
@@ -292,6 +311,9 @@ def main() -> int:
             "flow_elapsed_s_mean": s.get("flow_elapsed_s_mean"),
             "place_gp_elapsed_s_mean": s.get("place_gp_elapsed_s_mean"),
         }
+        for key in SCHEDULER_SUMMARY_FIELDS:
+            row[f"{key}_mean"] = s.get(f"{key}_mean")
+            row[f"{key}_std"] = s.get(f"{key}_std")
         per_model.append(row)
 
     by_arch_mode: Dict[Tuple[str, str], List[Dict[str, Any]]] = defaultdict(list)
@@ -335,6 +357,10 @@ def main() -> int:
                 [float(x["place_gp_elapsed_s_mean"]) for x in model_rows if x["place_gp_elapsed_s_mean"] is not None]
             ),
         }
+        for key in SCHEDULER_SUMMARY_FIELDS:
+            agg[f"{key}_mean"] = mean(
+                [float(x[f"{key}_mean"]) for x in model_rows if x.get(f"{key}_mean") is not None]
+            )
         aggregate.append(agg)
 
     # Lexicographic ranking (legacy)
@@ -509,6 +535,34 @@ def main() -> int:
             )
         )
     lines.append("")
+
+    scheduler_rows = [
+        row
+        for row in ranked_obj
+        if any(row.get(f"{key}_mean") is not None for key in SCHEDULER_SUMMARY_FIELDS)
+    ]
+    if scheduler_rows:
+        lines.append("## Scheduler / Softmax Summary")
+        lines.append("")
+        lines.append("| arch_id | macro_mode | softmax_ops_mean | softmax_issue_count_mean | softmax_completion_count_mean | softmax_engine_occupancy_mean | softmax_backpressure_events_mean | softmax_backpressure_ns_mean | softmax_wait_on_gemm_ns_mean | softmax_wait_on_misc_compute_ns_mean | dependency_wait_ns_mean |")
+        lines.append("|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|")
+        for row in scheduler_rows:
+            lines.append(
+                "| {arch} | {mode} | {ops} | {issue} | {completion} | {occ} | {bp_events} | {bp_ns} | {wait_gemm} | {wait_misc} | {dep_wait} |".format(
+                    arch=row["arch_id"],
+                    mode=row["macro_mode"],
+                    ops=fmt(row.get("softmax_ops_mean")),
+                    issue=fmt(row.get("softmax_issue_count_mean")),
+                    completion=fmt(row.get("softmax_completion_count_mean")),
+                    occ=fmt(row.get("softmax_engine_occupancy_mean"), digits=6),
+                    bp_events=fmt(row.get("softmax_backpressure_events_mean")),
+                    bp_ns=fmt(row.get("softmax_backpressure_ns_mean")),
+                    wait_gemm=fmt(row.get("softmax_wait_on_gemm_ns_mean")),
+                    wait_misc=fmt(row.get("softmax_wait_on_misc_compute_ns_mean")),
+                    dep_wait=fmt(row.get("dependency_wait_ns_mean")),
+                )
+            )
+        lines.append("")
 
     lines.append("## Lexicographic Ranking (legacy)")
     lines.append("")

@@ -453,6 +453,130 @@ class EvalCampaignToolsRegressionTest(unittest.TestCase):
             self.assertEqual("2", str(m.get("sample_count", "")).strip())
             self.assertAlmostEqual(4.5, float(m["latency_ms_mean"]), places=6)
 
+    def test_report_campaign_reports_softmax_scheduler_metrics(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            results_csv = tmp / "results.csv"
+            out_md = tmp / "report.md"
+            out_csv = tmp / "summary.csv"
+            best_json = tmp / "best_point.json"
+            pareto_csv = tmp / "pareto.csv"
+
+            header = [
+                "version",
+                "campaign_id",
+                "run_id",
+                "sample_id",
+                "batch_id",
+                "sample_index",
+                "timestamp_utc",
+                "status",
+                "platform",
+                "model_id",
+                "arch_id",
+                "macro_mode",
+                "repeat_index",
+                "physical_critical_path_ns",
+                "physical_die_area_um2",
+                "physical_total_power_mw",
+                "physical_flow_elapsed_s",
+                "physical_place_gp_elapsed_s",
+                "performance_cycles",
+                "performance_latency_ms",
+                "performance_throughput_infer_per_s",
+                "performance_energy_mj",
+                "performance_softmax_ops",
+                "performance_softmax_issue_count",
+                "performance_softmax_completion_count",
+                "performance_softmax_engine_occupancy",
+                "performance_softmax_backpressure_events",
+                "performance_softmax_backpressure_ns",
+                "performance_softmax_wait_on_gemm_ns",
+                "performance_softmax_wait_on_misc_compute_ns",
+                "performance_dependency_wait_ns",
+                "artifact_synth_result_json",
+                "artifact_perf_trace_json",
+                "artifact_schedule_yml",
+                "artifact_descriptors_bin",
+                "notes",
+            ]
+
+            rows = [
+                {
+                    "version": "0.1",
+                    "campaign_id": "npu_e2e_eval_v0",
+                    "run_id": "rid_softmax",
+                    "sample_id": "rid_softmax__bb0__s1",
+                    "batch_id": "b0",
+                    "sample_index": "1",
+                    "timestamp_utc": "2026-04-18T00:00:00Z",
+                    "status": "ok",
+                    "platform": "nangate45",
+                    "model_id": "mlp1",
+                    "arch_id": "fp16_nm1",
+                    "macro_mode": "flat_nomacro",
+                    "repeat_index": "1",
+                    "physical_critical_path_ns": "5.0",
+                    "physical_die_area_um2": "100.0",
+                    "physical_total_power_mw": "1.0",
+                    "physical_flow_elapsed_s": "10.0",
+                    "physical_place_gp_elapsed_s": "5.0",
+                    "performance_cycles": "100.0",
+                    "performance_latency_ms": "1.0",
+                    "performance_throughput_infer_per_s": "1000.0",
+                    "performance_energy_mj": "0.1",
+                    "performance_softmax_ops": "2",
+                    "performance_softmax_issue_count": "2",
+                    "performance_softmax_completion_count": "2",
+                    "performance_softmax_engine_occupancy": "0.25",
+                    "performance_softmax_backpressure_events": "1",
+                    "performance_softmax_backpressure_ns": "12.5",
+                    "performance_softmax_wait_on_gemm_ns": "4.0",
+                    "performance_softmax_wait_on_misc_compute_ns": "8.5",
+                    "performance_dependency_wait_ns": "3.0",
+                    "artifact_synth_result_json": "",
+                    "artifact_perf_trace_json": "",
+                    "artifact_schedule_yml": "",
+                    "artifact_descriptors_bin": "",
+                    "notes": "",
+                }
+            ]
+            with results_csv.open("w", encoding="utf-8", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=header)
+                writer.writeheader()
+                for row in rows:
+                    writer.writerow(row)
+
+            cmd = [
+                sys.executable,
+                str(REPO_ROOT / "npu/eval/report_campaign.py"),
+                "--campaign",
+                str(CAMPAIGN_JSON),
+                "--results_csv",
+                str(results_csv),
+                "--out_md",
+                str(out_md),
+                "--out_csv",
+                str(out_csv),
+                "--best_json",
+                str(best_json),
+                "--pareto_csv",
+                str(pareto_csv),
+            ]
+            subprocess.run(cmd, cwd=str(REPO_ROOT), check=True, capture_output=True, text=True)
+
+            report_text = out_md.read_text(encoding="utf-8")
+            self.assertIn("## Scheduler / Softmax Summary", report_text)
+            self.assertIn("0.250000", report_text)
+            self.assertIn("12.5000", report_text)
+
+            with out_csv.open("r", encoding="utf-8", newline="") as f:
+                rows_out = list(csv.DictReader(f))
+            model_rows = [r for r in rows_out if r.get("scope") == "model"]
+            self.assertEqual(1, len(model_rows))
+            self.assertEqual("0.25", str(model_rows[0].get("softmax_engine_occupancy_mean", "")).strip())
+            self.assertEqual("12.5", str(model_rows[0].get("softmax_backpressure_ns_mean", "")).strip())
+
     def test_run_campaign_dry_run_smoke(self):
         cmd = [
             sys.executable,

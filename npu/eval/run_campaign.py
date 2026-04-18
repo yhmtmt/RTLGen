@@ -30,6 +30,22 @@ from validate import load_json, validate_campaign, validate_result_row
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 VALID_MACRO_MODES = ("flat_nomacro", "hier_macro")
+PERF_EXTRA_STAT_KEYS = (
+    "softmax_ops",
+    "softmax_issue_count",
+    "softmax_completion_count",
+    "softmax_busy_time_ns",
+    "softmax_engine_occupancy",
+    "softmax_backpressure_events",
+    "softmax_backpressure_ns",
+    "softmax_wait_on_gemm_ns",
+    "softmax_wait_on_misc_compute_ns",
+    "dma_backpressure_ns",
+    "gemm_backpressure_ns",
+    "misc_compute_backpressure_ns",
+    "dependency_wait_ns",
+    "dependency_wait_events",
+)
 
 
 def die(msg: str) -> None:
@@ -767,7 +783,7 @@ def flatten_row(row: Dict[str, Any]) -> Dict[str, Any]:
     physical = row.get("physical", {}) or {}
     performance = row.get("performance", {}) or {}
     artifacts = row.get("artifacts", {}) or {}
-    return {
+    flat = {
         "version": row.get("version"),
         "campaign_id": row.get("campaign_id"),
         "run_id": row.get("run_id"),
@@ -802,6 +818,9 @@ def flatten_row(row: Dict[str, Any]) -> Dict[str, Any]:
         "artifact_descriptors_bin": artifacts.get("descriptors_bin", ""),
         "notes": row.get("notes", ""),
     }
+    for key in PERF_EXTRA_STAT_KEYS:
+        flat[f"performance_{key}"] = performance.get(key)
+    return flat
 
 
 def append_results_csv(results_csv: Path, row: Dict[str, Any]) -> None:
@@ -935,6 +954,10 @@ def build_row(
     )
     status = "ok" if (physical_ok and perf_ok) else "fail"
 
+    extra_performance = {
+        key: safe_float(perf_stats.get(key)) for key in PERF_EXTRA_STAT_KEYS
+    }
+
     run_id = make_run_id(
         campaign_id=campaign_id,
         model_id=model_id,
@@ -985,6 +1008,7 @@ def build_row(
             "latency_ms": latency_ms,
             "throughput_infer_per_s": throughput,
             "energy_mj": energy_mj,
+            **extra_performance,
         },
         "artifacts": {
             "synth_result_json": artifacts.get("synth_result_json", ""),
