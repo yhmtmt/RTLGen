@@ -1,0 +1,35 @@
+{
+  "candidate_semantics": "space_prefix_placeholder_last_token_plus_parity_shift",
+  "dataset_id": "llm_decoder_eval_tiny_v1",
+  "model_contract": "runs/models/llm_decoder_tiny_v1/model_contract.json",
+  "samples": [
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate/geo_france_capital.json",
+      "candidate_sha256": "b7c4d2db7a481850985f8ada0716660490ed0343a7f14faf596e5efc114ec9dc",
+      "sample_id": "geo_france_capital"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate/math_two_plus_two.json",
+      "candidate_sha256": "870febff79e21569e625e8d80894bafa4137fa706aeff1498b6166008d9973a4",
+      "sample_id": "math_two_plus_two"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate/quote_complete.json",
+      "candidate_sha256": "5c5aad607af2cb553d20ef12a581846bcf4d396f5001df0e779f04794cdb530e",
+      "sample_id": "quote_complete"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate/weekday_after_monday.json",
+      "candidate_sha256": "badb0ae97fb76ebad515950fc347758dd3e9b5ce6b9aece22a1ab87174e7da61",
+      "sample_id": "weekday_after_monday"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate/color_banana.json",
+      "candidate_sha256": "780ca6f4838d0b8649903d5627c246a5715c82095f8647fe3509f5b3dffcfc6e",
+      "sample_id": "color_banana"
+    }
+  ],
+  "task": "greedy_next_token",
+  "tokenizer_manifest": "runs/tokenizers/llm_decoder_space_prefix_v1/manifest.json",
+  "version": 0.1
+}

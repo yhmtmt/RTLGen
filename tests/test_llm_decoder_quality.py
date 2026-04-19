@@ -77,6 +77,62 @@ class LlmDecoderQualityRegressionTest(unittest.TestCase):
         self.assertEqual(' Paris', doc['reference']['next_token_text'])
         self.assertEqual(5, doc['reference']['next_token_id'])
 
+    def test_build_decoder_candidate_doc_is_deterministic_and_comparable(self):
+        dataset_manifest = {
+            'dataset_id': 'llm_decoder_eval_tiny_v1',
+            'task': 'greedy_next_token',
+        }
+        sample = {
+            'sample_id': 'math_two_plus_two',
+            'prompt': '2 + 2 =',
+            'expected_continuation': ' 4',
+        }
+        tokenizer_manifest = {
+            'tokenizer_id': 'llm_decoder_space_prefix_v1',
+            'kind': 'space_prefix_words',
+        }
+        vocab = {
+            '2': 0,
+            ' +': 1,
+            ' 2': 2,
+            ' =': 3,
+            ' 4': 4,
+        }
+        model_contract = {
+            'model_id': 'llm_decoder_tiny_v1',
+            'status': 'reference_only_placeholder',
+            'execution_backend': 'python_reference_placeholder',
+        }
+        reference = self.decoder.build_decoder_reference_doc(
+            dataset_manifest=dataset_manifest,
+            sample=sample,
+            tokenizer_manifest=tokenizer_manifest,
+            vocab=vocab,
+            model_contract=model_contract,
+            dataset_manifest_path='runs/datasets/llm_decoder_eval_tiny_v1/manifest.json',
+            tokenizer_manifest_path='runs/tokenizers/llm_decoder_space_prefix_v1/manifest.json',
+            model_contract_path='runs/models/llm_decoder_tiny_v1/model_contract.json',
+        )
+        candidate = self.decoder.build_decoder_candidate_doc(
+            dataset_manifest=dataset_manifest,
+            sample=sample,
+            tokenizer_manifest=tokenizer_manifest,
+            vocab=vocab,
+            model_contract=model_contract,
+            dataset_manifest_path='runs/datasets/llm_decoder_eval_tiny_v1/manifest.json',
+            tokenizer_manifest_path='runs/tokenizers/llm_decoder_space_prefix_v1/manifest.json',
+            model_contract_path='runs/models/llm_decoder_tiny_v1/model_contract.json',
+        )
+        self.assertEqual(
+            'space_prefix_placeholder_last_token_plus_parity_shift',
+            candidate['candidate_semantics'],
+        )
+        self.assertEqual(3, candidate['candidate']['next_token_id'])
+        self.assertEqual(' =', candidate['candidate']['next_token_text'])
+        metrics = self.decoder.compare_decoder_reference_docs(reference, candidate)
+        self.assertEqual(0, metrics['aggregate']['next_token_id_match'])
+        self.assertEqual(0, metrics['aggregate']['next_token_text_match'])
+
     def test_decoder_reference_suite_generator_emits_reference_manifest(self):
         with tempfile.TemporaryDirectory() as td:
             td_path = Path(td)
@@ -161,6 +217,95 @@ class LlmDecoderQualityRegressionTest(unittest.TestCase):
             self.assertEqual(1, len(manifest['samples']))
             ref_doc = json.loads((out_dir / 'color_banana.json').read_text(encoding='utf-8'))
             self.assertEqual(' yellow', ref_doc['reference']['next_token_text'])
+
+    def test_decoder_candidate_suite_generator_emits_candidate_manifest(self):
+        with tempfile.TemporaryDirectory() as td:
+            td_path = Path(td)
+            sample_file = td_path / 'samples.jsonl'
+            sample_file.write_text(
+                json.dumps(
+                    {
+                        'sample_id': 'geo_france_capital',
+                        'prompt': 'The capital of France is',
+                        'expected_continuation': ' Paris',
+                    }
+                )
+                + '\n',
+                encoding='utf-8',
+            )
+            vocab_json = td_path / 'vocab.json'
+            vocab_json.write_text(
+                json.dumps(
+                    {
+                        'version': 0.1,
+                        'tokenizer_id': 'llm_decoder_space_prefix_v1',
+                        'tokens': ['The', ' capital', ' of', ' France', ' is', ' Paris'],
+                    }
+                ),
+                encoding='utf-8',
+            )
+            tokenizer_manifest = td_path / 'tokenizer_manifest.json'
+            tokenizer_manifest.write_text(
+                json.dumps(
+                    {
+                        'version': 0.1,
+                        'tokenizer_id': 'llm_decoder_space_prefix_v1',
+                        'kind': 'space_prefix_words',
+                        'vocab_json': str(vocab_json),
+                    }
+                ),
+                encoding='utf-8',
+            )
+            model_contract = td_path / 'model_contract.json'
+            model_contract.write_text(
+                json.dumps(
+                    {
+                        'version': 0.1,
+                        'model_id': 'llm_decoder_tiny_v1',
+                        'status': 'reference_only_placeholder',
+                        'execution_backend': 'python_reference_placeholder',
+                    }
+                ),
+                encoding='utf-8',
+            )
+            dataset_manifest = td_path / 'dataset_manifest.json'
+            dataset_manifest.write_text(
+                json.dumps(
+                    {
+                        'version': 0.1,
+                        'dataset_id': 'llm_decoder_eval_tiny_v1',
+                        'task': 'greedy_next_token',
+                        'sample_file': str(sample_file),
+                        'tokenizer_manifest': str(tokenizer_manifest),
+                        'model_contract': str(model_contract),
+                    }
+                ),
+                encoding='utf-8',
+            )
+            out_dir = td_path / 'candidate'
+            out_manifest = td_path / 'candidate_manifest.json'
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO_ROOT / 'npu/eval/gen_llm_decoder_candidate_suite.py'),
+                    '--dataset-manifest',
+                    str(dataset_manifest),
+                    '--out-dir',
+                    str(out_dir),
+                    '--out-manifest',
+                    str(out_manifest),
+                ],
+                check=True,
+            )
+            manifest = json.loads(out_manifest.read_text(encoding='utf-8'))
+            self.assertEqual('llm_decoder_eval_tiny_v1', manifest['dataset_id'])
+            self.assertEqual(
+                'space_prefix_placeholder_last_token_plus_parity_shift',
+                manifest['candidate_semantics'],
+            )
+            candidate_doc = json.loads((out_dir / 'geo_france_capital.json').read_text(encoding='utf-8'))
+            self.assertIn('candidate', candidate_doc)
+            self.assertIn('candidate_semantics', candidate_doc)
 
 
 if __name__ == '__main__':

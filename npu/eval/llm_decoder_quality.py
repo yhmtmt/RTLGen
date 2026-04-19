@@ -70,7 +70,7 @@ def encode_tokens(tokens: Sequence[str], vocab: Dict[str, int]) -> List[int]:
     return out
 
 
-def build_decoder_reference_doc(
+def _build_prompt_and_reference(
     *,
     dataset_manifest: JsonDict,
     sample: JsonDict,
@@ -129,8 +129,80 @@ def build_decoder_reference_doc(
             'next_token_rank': 1,
             'selected_tensors': [],
         },
-        'notes': 'Reference-only placeholder decoder fixture. No trained model inference yet.',
     }
+
+
+def build_decoder_reference_doc(
+    *,
+    dataset_manifest: JsonDict,
+    sample: JsonDict,
+    tokenizer_manifest: JsonDict,
+    vocab: Dict[str, int],
+    model_contract: JsonDict,
+    dataset_manifest_path: str,
+    tokenizer_manifest_path: str,
+    model_contract_path: str,
+) -> JsonDict:
+    doc = _build_prompt_and_reference(
+        dataset_manifest=dataset_manifest,
+        sample=sample,
+        tokenizer_manifest=tokenizer_manifest,
+        vocab=vocab,
+        model_contract=model_contract,
+        dataset_manifest_path=dataset_manifest_path,
+        tokenizer_manifest_path=tokenizer_manifest_path,
+        model_contract_path=model_contract_path,
+    )
+    doc['notes'] = 'Reference-only placeholder decoder fixture. No trained model inference yet.'
+    return doc
+
+
+def _deterministic_candidate_next_token_id(prompt_token_ids: Sequence[int], vocab_size: int) -> int:
+    if vocab_size <= 0:
+        raise ValueError('vocab size must be positive')
+    if not prompt_token_ids:
+        return 0
+    base = int(prompt_token_ids[-1])
+    shift = 0 if (sum(int(v) for v in prompt_token_ids) % 2 == 0) else 1
+    return (base + shift) % vocab_size
+
+
+def build_decoder_candidate_doc(
+    *,
+    dataset_manifest: JsonDict,
+    sample: JsonDict,
+    tokenizer_manifest: JsonDict,
+    vocab: Dict[str, int],
+    model_contract: JsonDict,
+    dataset_manifest_path: str,
+    tokenizer_manifest_path: str,
+    model_contract_path: str,
+) -> JsonDict:
+    doc = _build_prompt_and_reference(
+        dataset_manifest=dataset_manifest,
+        sample=sample,
+        tokenizer_manifest=tokenizer_manifest,
+        vocab=vocab,
+        model_contract=model_contract,
+        dataset_manifest_path=dataset_manifest_path,
+        tokenizer_manifest_path=tokenizer_manifest_path,
+        model_contract_path=model_contract_path,
+    )
+    inv_vocab = {idx: token for token, idx in vocab.items()}
+    prompt_token_ids = doc['prompt']['token_ids']
+    predicted_id = _deterministic_candidate_next_token_id(prompt_token_ids, len(vocab))
+    predicted_token = inv_vocab[predicted_id]
+    doc['candidate_semantics'] = 'space_prefix_placeholder_last_token_plus_parity_shift'
+    doc['candidate'] = {
+        'next_token_id': predicted_id,
+        'next_token_text': predicted_token,
+        'confidence': 1.0,
+    }
+    doc['notes'] = (
+        'Candidate-only placeholder decoder fixture. No trained model inference yet; '
+        'predictions come from a deterministic synthetic rule.'
+    )
+    return doc
 
 
 def compare_decoder_reference_docs(reference_doc: JsonDict, candidate_doc: JsonDict) -> JsonDict:

@@ -9,5 +9,6 @@
   "tokenizer_manifest": "runs/tokenizers/llm_decoder_space_prefix_v1/manifest.json",
   "model_contract": "runs/models/llm_decoder_tiny_v1/model_contract.json",
   "reference_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/reference_manifest.json",
-  "notes": "Tiny curated decoder-eval prompt set for the first inference-quality gate. Bound to a deterministic placeholder tokenizer and reference-only decoder contract."
+  "notes": "Tiny curated decoder-eval prompt set for the first inference-quality gate. Bound to a deterministic placeholder tokenizer and reference-only decoder contract.",
+  "candidate_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_manifest.json"
 }

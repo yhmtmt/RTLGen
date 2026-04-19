@@ -122,6 +122,7 @@ Not allowed before this stage:
 The repo now has the first explicit decoder-quality binding layer:
 - dataset manifest bound to a tokenizer manifest and model contract,
 - deterministic per-sample reference artifacts for greedy next-token checks,
-- a comparison-ready reference schema.
+- deterministic candidate-only placeholders against the same contract,
+- a comparison-ready reference/candidate schema.
 
 This is still not a real decoder inference stack. It is a contract layer only.

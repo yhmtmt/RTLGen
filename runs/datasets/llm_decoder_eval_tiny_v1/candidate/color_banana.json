@@ -1,0 +1,54 @@
+{
+  "candidate": {
+    "confidence": 1.0,
+    "next_token_id": 27,
+    "next_token_text": " usually"
+  },
+  "candidate_semantics": "space_prefix_placeholder_last_token_plus_parity_shift",
+  "dataset_id": "llm_decoder_eval_tiny_v1",
+  "dataset_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/manifest.json",
+  "decode_policy": {
+    "max_new_tokens": 1,
+    "strategy": "greedy"
+  },
+  "model_binding": {
+    "contract_path": "runs/models/llm_decoder_tiny_v1/model_contract.json",
+    "execution_backend": "python_reference_placeholder",
+    "model_id": "llm_decoder_tiny_v1",
+    "status": "reference_only_placeholder"
+  },
+  "notes": "Candidate-only placeholder decoder fixture. No trained model inference yet; predictions come from a deterministic synthetic rule.",
+  "prompt": {
+    "text": "A ripe banana is usually",
+    "token_count": 5,
+    "token_ids": [
+      24,
+      25,
+      26,
+      4,
+      27
+    ],
+    "tokens": [
+      "A",
+      " ripe",
+      " banana",
+      " is",
+      " usually"
+    ]
+  },
+  "reference": {
+    "expected_continuation": " yellow",
+    "next_token_id": 28,
+    "next_token_rank": 1,
+    "next_token_text": " yellow",
+    "selected_tensors": []
+  },
+  "sample_id": "color_banana",
+  "task": "greedy_next_token",
+  "tokenizer": {
+    "kind": "space_prefix_words",
+    "manifest_path": "runs/tokenizers/llm_decoder_space_prefix_v1/manifest.json",
+    "tokenizer_id": "llm_decoder_space_prefix_v1"
+  },
+  "version": 0.1
+}

@@ -17,6 +17,7 @@ What exists now:
 - `manifest.json`
 - `samples.jsonl`
 - `reference_manifest.json`
+- `candidate_manifest.json`
 - deterministic tokenizer/model binding for reference-only artifacts
 
 What does not exist yet:
