@@ -19,6 +19,13 @@ It is the first step toward a reproducible closed-loop flow:
 - `npu/eval/examples/`: minimal examples.
 - `runs/models/<model_set_id>/manifest.json`: shared benchmark model-set
   manifest with ONNX SHA256 checksums.
+- `npu/eval/gen_llm_decoder_reference_suite.py`: generate reference-only
+  decoder fixtures for the tiny decoder-quality stage.
+
+The decoder-quality scaffold also introduces separate non-ONNX contracts for:
+- datasets: `runs/datasets/...`
+- tokenizers: `runs/tokenizers/...`
+- placeholder decoder model bindings: `runs/models/<model_id>/model_contract.json`
 
 ## Validation
 Validate campaign manifest:

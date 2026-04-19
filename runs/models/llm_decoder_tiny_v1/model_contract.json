@@ -1,0 +1,10 @@
+{
+  "version": 0.1,
+  "model_id": "llm_decoder_tiny_v1",
+  "status": "reference_only_placeholder",
+  "task": "greedy_next_token",
+  "tokenizer_id": "llm_decoder_space_prefix_v1",
+  "tokenizer_manifest": "runs/tokenizers/llm_decoder_space_prefix_v1/manifest.json",
+  "execution_backend": "python_reference_placeholder",
+  "notes": "No trained decoder weights yet. This contract only binds the tiny decoder dataset to a deterministic tokenizer and reference artifact schema."
+}

@@ -65,3 +65,13 @@ Current sets
   treated as scheduler/reference bring-up, not final LLM accuracy evidence;
   see `docs/architecture/llm_attention_benchmark_ladder.md` and
   `docs/architecture/llm_decoder_accuracy_stage_v1.md`.
+
+
+Non-ONNX decoder contracts
+--------------------------
+The first decoder-quality stage also uses a reference-only decoder contract:
+- `runs/models/llm_decoder_tiny_v1/model_contract.json`
+
+This is not an ONNX model-set manifest and is not yet runnable through the NPU
+campaign stack. It exists only to bind the tiny decoder dataset to a concrete
+placeholder model identity and reference schema.

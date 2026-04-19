@@ -1,0 +1,9 @@
+{
+  "version": 0.1,
+  "tokenizer_id": "llm_decoder_space_prefix_v1",
+  "kind": "space_prefix_words",
+  "status": "placeholder",
+  "vocab_json": "runs/tokenizers/llm_decoder_space_prefix_v1/vocab.json",
+  "unk_supported": false,
+  "notes": "Deterministic placeholder tokenizer for early decoder-quality scaffolding. Not model-faithful."
+}

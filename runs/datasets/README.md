@@ -21,3 +21,9 @@ Current sets
 - `llm_decoder_eval_tiny_v1`: tiny curated prompt set for the first decoder
   quality-gate stage. This is a placeholder inference-evaluation dataset, not a
   training corpus.
+
+Related contracts
+-----------------
+- tokenizer manifests live under `runs/tokenizers/<tokenizer_id>/`
+- early decoder model contracts may live under `runs/models/<model_id>/`
+- these bindings are intentionally separate from ONNX model-set manifests

@@ -11,16 +11,17 @@ cheap acceptance slice for approximate-hardware evaluation.
 
 Current status
 --------------
-Placeholder contract only.
+Bound reference-placeholder contract.
 
 What exists now:
 - `manifest.json`
 - `samples.jsonl`
+- `reference_manifest.json`
+- deterministic tokenizer/model binding for reference-only artifacts
 
 What does not exist yet:
-- tokenizer wiring
-- decoder model binding
-- saved reference next-token IDs
+- real tokenizer wiring
+- real decoder model binding
 - continuation/perplexity metrics
 
 Intended use
@@ -28,3 +29,10 @@ Intended use
 - greedy next-token exact-match checks
 - bounded continuation checks later
 - regression gating for approximation work after the decoder model path exists
+
+Current binding
+---------------
+- tokenizer: `runs/tokenizers/llm_decoder_space_prefix_v1/manifest.json`
+- model contract: `runs/models/llm_decoder_tiny_v1/model_contract.json`
+
+These are scaffolding artifacts, not a real decoder deployment path.

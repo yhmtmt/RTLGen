@@ -23,13 +23,17 @@ What exists today:
 - `runs/models/llm_smoke_v1/reference_manifest.json`
 - `runs/models/llm_smoke_v1/candidate_manifest.json`
 - `npu/eval/compare_llm_reference.py`
+- `runs/datasets/llm_decoder_eval_tiny_v1/manifest.json`
+- `runs/datasets/llm_decoder_eval_tiny_v1/reference_manifest.json`
+- `runs/tokenizers/llm_decoder_space_prefix_v1/manifest.json`
+- `runs/models/llm_decoder_tiny_v1/model_contract.json`
+- `npu/eval/gen_llm_decoder_reference_suite.py`
 
 What does not exist yet:
 - a decoder-style model set,
-- a text/prompt dataset contract,
-- tokenizer/reference inference wiring,
-- token-level quality metrics,
-- any dataset-backed acceptance gate for approximate hardware.
+- tokenizer-faithful reference inference wiring,
+- token-level quality metrics in campaign/report outputs,
+- any dataset-backed acceptance gate for approximate hardware beyond reference-only placeholders.
 
 ## Immediate Goal
 
@@ -112,3 +116,12 @@ Not allowed before this stage:
 3. Add one first decoder-model placeholder contract.
 4. Add campaign/report fields for token-level quality metrics.
 5. Only after that, wire real model execution and approximation sweeps.
+
+## Current Scaffold Status
+
+The repo now has the first explicit decoder-quality binding layer:
+- dataset manifest bound to a tokenizer manifest and model contract,
+- deterministic per-sample reference artifacts for greedy next-token checks,
+- a comparison-ready reference schema.
+
+This is still not a real decoder inference stack. It is a contract layer only.
