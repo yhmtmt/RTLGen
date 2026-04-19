@@ -19,4 +19,6 @@ python3 npu/eval/validate.py \
 
 Notes:
 - This campaign is a bring-up stage for scheduler visibility and repeated-softmax flow.
-- It is not yet an LLM-accuracy campaign. Approximation/precision evaluation must be added in a later benchmark stage with numerical reference checking.
+- Deterministic numerical reference fixtures for the same model binaries now live under:
+  - `runs/models/llm_smoke_v1/reference_manifest.json`
+- It is still not yet a full LLM-accuracy campaign: no dataset/training loop or realistic decoder-quality evaluation is wired in yet.

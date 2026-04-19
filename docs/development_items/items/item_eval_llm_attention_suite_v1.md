@@ -55,6 +55,6 @@
 ## Concrete Benchmark Contract
 - benchmark contract doc: `docs/architecture/llm_attention_benchmark_ladder.md`
 - immediate benchmark target: `llm_smoke_v1`
-- current blocker: mapper support is still terminal-`Softmax` only, so `llm_smoke_v1` is specified but not yet runnable as a model-set manifest
-- current state: `llm_smoke_v1` now exists as a generated model set and first campaign scaffold
-- next implementation step: extend scheduler/perf reporting for repeated-softmax counters, then add later-stage accuracy evaluation against reference outputs for approximate hardware decisions
+- current state: `llm_smoke_v1` now exists as a generated model set, first campaign scaffold, and deterministic numerical reference fixture set
+- current boundary: this is still an attention-proxy smoke suite, not a dataset-backed decoder benchmark
+- next implementation step: wire actual candidate outputs into the reference comparison hook, then add later-stage decoder/data/training-backed accuracy evaluation for approximate hardware decisions

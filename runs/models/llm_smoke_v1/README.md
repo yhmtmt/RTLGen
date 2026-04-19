@@ -30,19 +30,32 @@ This set exists to validate:
 
 Boundary
 --------
-This set does **not** yet answer LLM accuracy questions. The long-term goal is
-to evaluate approximation-induced precision loss as well as schedule/PPA. That
-requires a later benchmark stage with real LLM numerical reference checking,
-not only this proxy suite.
+This set does **not** yet answer full LLM accuracy questions. The long-term goal is
+to evaluate approximation-induced precision loss as well as schedule/PPA with a
+more realistic decoder-style benchmark and reference path.
+
+What exists now
+---------------
+Deterministic reference fixtures are now generated for this exact model set:
+- `runs/models/llm_smoke_v1/reference_manifest.json`
+- `runs/models/llm_smoke_v1/reference/<model_id>.json`
+
+These fixtures define:
+- one deterministic input tensor per model
+- exact reference outputs for the emitted ONNX-lite attention-proxy binaries
+- a comparison hook for later candidate-output error metrics
 
 Generate/regenerate
 -------------------
 ```sh
 python3 npu/mapper/examples/gen_llm_smoke_suite_lite.py \
   --out-dir runs/models/llm_smoke_v1
+python3 npu/eval/gen_llm_reference_suite.py \
+  --manifest runs/models/llm_smoke_v1/manifest.json
 ```
 
 Campaign note
 -------------
-The paired campaign should be treated as bring-up only until scheduler metrics
-and accuracy-evaluation hooks are added.
+The paired campaign should still be treated as bring-up until actual candidate
+outputs are compared against these references and a later decoder/data-backed
+accuracy stage is added.

@@ -11,17 +11,19 @@ not sufficient to justify LLM-facing scheduler or buffering choices.
 
 ## Current Boundary
 
-The current mapper only supports terminal `Softmax` lowering. It does not yet
-support repeated non-terminal attention-style `Softmax` nodes inside a longer
-`MatMul -> Softmax -> MatMul` subgraph.
+The current repo now supports the narrow attention-proxy path needed for
+`llm_smoke_v1`: repeated `Gemm -> Softmax -> Gemm` blocks lower through the
+mapper and run through the perf/report flow.
 
 That means:
-- `llm_smoke_v1` is a concrete benchmark specification today,
-- but it is not yet a runnable `runs/models/<id>/manifest.json` campaign input,
-- because a runnable manifest would imply mapper support that does not exist.
+- `llm_smoke_v1` is now a runnable `runs/models/<id>/manifest.json` campaign input,
+- deterministic numerical reference fixtures can also be generated for the same
+  model binaries,
+- but this is still only a smoke-stage proxy suite, not a full decoder-quality
+  benchmark with dataset/training-backed accuracy evaluation.
 
-So the immediate deliverable is the benchmark contract, followed by mapper and
-scheduler enablement.
+So the immediate deliverable after bring-up is the reference-output path,
+followed later by richer decoder benchmarks and true LLM accuracy gating.
 
 ## Benchmark Ladder
 

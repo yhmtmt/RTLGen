@@ -19,6 +19,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import struct
 from typing import Dict, List, Optional, Tuple, Union
 
 
@@ -47,6 +48,7 @@ class OnnxTensor:
     name: str
     dims: List[int]
     data_type: Optional[int] = None
+    raw_data: bytes = b""
 
 
 @dataclass(frozen=True)
@@ -220,6 +222,7 @@ def _parse_tensor_proto(data: bytes) -> OnnxTensor:
     name = ""
     dims: List[int] = []
     data_type: Optional[int] = None
+    raw_data = b""
     while not r.eof():
         field, wt = r.read_tag()
         if field == 1 and wt == 0:  # dims (unpacked)
@@ -230,9 +233,11 @@ def _parse_tensor_proto(data: bytes) -> OnnxTensor:
             data_type = int(r.read_varint())
         elif field == 8 and wt == 2:  # name
             name = r.read_length_delimited().decode("utf-8", errors="replace")
+        elif field == 9 and wt == 2:  # raw_data
+            raw_data = r.read_length_delimited()
         else:
             r.skip_field(wt)
-    return OnnxTensor(name=name, dims=dims, data_type=data_type)
+    return OnnxTensor(name=name, dims=dims, data_type=data_type, raw_data=raw_data)
 
 
 def _parse_node_proto(data: bytes) -> OnnxNode:
@@ -378,6 +383,41 @@ def _encode_tensor(name: str, dims: List[int], data_type: int, raw_data: bytes) 
     out += _enc_str(8, name)
     out += _enc_ld(9, raw_data)
     return bytes(out)
+
+
+def _encode_deterministic_tensor(name: str, dims: List[int], data_type: int, seed: int, magnitude: int = 4) -> bytes:
+    count = 1
+    for d in dims:
+        count *= max(1, int(d))
+    if count <= 0:
+        raise ValueError(f"tensor {name} must have positive element count")
+
+    if data_type == TENSOR_INT8:
+        span = max(3, int(magnitude) * 2 + 1)
+        values = bytearray()
+        for idx in range(count):
+            value = ((seed + idx * 7) % span) - (span // 2)
+            if value == 0:
+                value = 1 if ((seed + idx) & 1) == 0 else -1
+            values.append(value & 0xFF)
+        raw = bytes(values)
+    elif data_type == TENSOR_UINT8:
+        span = max(3, int(magnitude) * 2 + 1)
+        raw = bytes(((seed + idx * 5) % span) for idx in range(count))
+    elif data_type == TENSOR_FLOAT:
+        raw = b''.join(
+            struct.pack('<f', (((seed + idx * 7) % 17) - 8) / 8.0)
+            for idx in range(count)
+        )
+    elif data_type == TENSOR_FLOAT16:
+        raw = b''.join(
+            struct.pack('<e', (((seed + idx * 7) % 17) - 8) / 8.0)
+            for idx in range(count)
+        )
+    else:
+        raise ValueError(f"unsupported deterministic tensor dtype {data_type} for {name}")
+
+    return _encode_tensor(name, dims, data_type, raw)
 
 
 def _encode_node(op_type: str, inputs: List[str], outputs: List[str], name: str = "") -> bytes:
@@ -682,8 +722,9 @@ def build_attention_block_model_bytes(
       the middle of a small graph so mapper/scheduler bring-up can target the
       right workload shape.
     - All tensors are 2D to stay within the current ONNX-lite writer scope.
-    - Initializers contain zero raw_data; this is sufficient for shape-driven
-      lowering and evaluation plumbing.
+    - Initializers use deterministic non-zero raw_data so the same emitted
+      model can also serve as a numerical reference fixture for later
+      approximation/precision evaluation.
     """
 
     seq_len = int(seq_len)
@@ -727,10 +768,10 @@ def build_attention_block_model_bytes(
 
         initializers.extend(
             [
-                _encode_tensor(score_w, [score_dim, current_dim], dtype, zeros(score_dim * current_dim)),
-                _encode_tensor(score_b, [score_dim], dtype, zeros(score_dim)),
-                _encode_tensor(value_w, [hidden_dim, score_dim], dtype, zeros(hidden_dim * score_dim)),
-                _encode_tensor(value_b, [hidden_dim], dtype, zeros(hidden_dim)),
+                _encode_deterministic_tensor(score_w, [score_dim, current_dim], dtype, seed=block * 19 + 1, magnitude=4),
+                _encode_deterministic_tensor(score_b, [score_dim], dtype, seed=block * 19 + 2, magnitude=2),
+                _encode_deterministic_tensor(value_w, [hidden_dim, score_dim], dtype, seed=block * 19 + 3, magnitude=4),
+                _encode_deterministic_tensor(value_b, [hidden_dim], dtype, seed=block * 19 + 4, magnitude=2),
             ]
         )
 

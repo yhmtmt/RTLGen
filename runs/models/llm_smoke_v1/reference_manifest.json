@@ -1,0 +1,55 @@
+{
+  "version": 0.1,
+  "model_set_id": "llm_smoke_v1",
+  "description": "Deterministic numerical reference fixtures for llm_smoke attention-proxy models.",
+  "models": [
+    {
+      "model_id": "attn1_s32_h64",
+      "onnx_path": "runs/models/llm_smoke_v1/attn1_s32_h64.onnx",
+      "fixture_json": "runs/models/llm_smoke_v1/reference/attn1_s32_h64.json",
+      "fixture_sha256": "acdd8b66326ac61ad05c8afa9c6ffdf823b325196bad0432ba75dc0d723b38b5",
+      "input_shape": [
+        32,
+        64
+      ],
+      "output_tensors": [
+        "P1",
+        "S1",
+        "Y"
+      ]
+    },
+    {
+      "model_id": "attn1_s64_h64",
+      "onnx_path": "runs/models/llm_smoke_v1/attn1_s64_h64.onnx",
+      "fixture_json": "runs/models/llm_smoke_v1/reference/attn1_s64_h64.json",
+      "fixture_sha256": "5d80050dd1eb310d46b64bd46b4a236c4cace442f0148a0186dda4b2c78598a1",
+      "input_shape": [
+        64,
+        64
+      ],
+      "output_tensors": [
+        "P1",
+        "S1",
+        "Y"
+      ]
+    },
+    {
+      "model_id": "attn2_s32_h64",
+      "onnx_path": "runs/models/llm_smoke_v1/attn2_s32_h64.onnx",
+      "fixture_json": "runs/models/llm_smoke_v1/reference/attn2_s32_h64.json",
+      "fixture_sha256": "f06bf2b3b361fb1165323c46079fd86cf65453a6b8d2f5747983606fb057b4e1",
+      "input_shape": [
+        32,
+        64
+      ],
+      "output_tensors": [
+        "P1",
+        "P2",
+        "S1",
+        "S2",
+        "V1",
+        "Y"
+      ]
+    }
+  ]
+}

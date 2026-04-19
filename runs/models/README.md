@@ -59,5 +59,7 @@ Current sets
   `runs/campaigns/npu/e2e_eval_onnx_imported_softmax_tail_num_modules_v1/`.
 - `llm_smoke_v1`: benchmark-contract-defined tiny attention proxy set for
   LLM-oriented evaluation. This is the first runnable non-terminal-`Softmax`
-  smoke set and should be treated as scheduler bring-up, not final LLM
-  accuracy evidence; see `docs/architecture/llm_attention_benchmark_ladder.md`.
+  smoke set and now includes deterministic numerical reference fixtures under
+  `runs/models/llm_smoke_v1/reference_manifest.json`; it should still be
+  treated as scheduler/reference bring-up, not final LLM accuracy evidence;
+  see `docs/architecture/llm_attention_benchmark_ladder.md`.
