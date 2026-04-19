@@ -55,6 +55,6 @@
 ## Concrete Benchmark Contract
 - benchmark contract doc: `docs/architecture/llm_attention_benchmark_ladder.md`
 - immediate benchmark target: `llm_smoke_v1`
-- current state: `llm_smoke_v1` now exists as a generated model set, first campaign scaffold, and deterministic numerical reference fixture set
+- current state: `llm_smoke_v1` now exists as a generated model set, first campaign scaffold, deterministic numerical reference fixture set, and first candidate-output fixture path
 - current boundary: this is still an attention-proxy smoke suite, not a dataset-backed decoder benchmark
-- next implementation step: wire actual candidate outputs into the reference comparison hook, then add later-stage decoder/data/training-backed accuracy evaluation for approximate hardware decisions
+- next implementation step: move from proxy candidate/reference comparison to later-stage decoder/data/training-backed accuracy evaluation for approximate hardware decisions

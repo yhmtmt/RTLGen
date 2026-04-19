@@ -75,6 +75,41 @@ class LlmReferenceRegressionTest(unittest.TestCase):
             self.assertGreater(diff_metrics['aggregate']['max_abs_error'], 0.0)
             self.assertGreater(diff_metrics['aggregate']['mean_abs_error'], 0.0)
 
+    def test_llm_candidate_fixture_is_quantized_and_comparable(self):
+        with tempfile.TemporaryDirectory() as td:
+            onnx_path = Path(td) / 'attn.onnx'
+            onnx_path.write_bytes(
+                self.onnx_lite.build_attention_block_model_bytes(
+                    name='attn_candidate',
+                    seq_len=8,
+                    hidden_dim=16,
+                    num_blocks=2,
+                    dtype=self.onnx_lite.TENSOR_INT8,
+                )
+            )
+            reference = self.llm_ref.build_reference_fixture(onnx_path, model_id='attn_candidate')
+            candidate = self.llm_ref.build_candidate_fixture(onnx_path, model_id='attn_candidate')
+
+            self.assertEqual(
+                'int8_gemm_with_q0_7_softmax_dequantized_outputs',
+                candidate['candidate_semantics'],
+            )
+            self.assertEqual('u8_q0_7_dequantized', candidate['outputs']['P1']['quantization'])
+            self.assertEqual('int8_signed', candidate['outputs']['S1']['quantization'])
+            self.assertEqual('int8_signed', candidate['outputs']['Y']['quantization'])
+
+            probs = candidate['outputs']['P1']['values']
+            self.assertTrue(all(0.0 <= value <= 1.0 for row in probs for value in row))
+
+            candidate_self = self.llm_ref.compare_reference_docs(candidate, candidate)
+            self.assertEqual(0.0, candidate_self['aggregate']['max_abs_error'])
+            self.assertEqual(0.0, candidate_self['aggregate']['mean_abs_error'])
+
+            ref_vs_candidate = self.llm_ref.compare_reference_docs(reference, candidate)
+            self.assertGreater(ref_vs_candidate['aggregate']['count'], 0.0)
+            self.assertGreater(ref_vs_candidate['aggregate']['max_abs_error'], 0.0)
+            self.assertGreater(ref_vs_candidate['aggregate']['mean_abs_error'], 0.0)
+
 
 if __name__ == '__main__':
     unittest.main()

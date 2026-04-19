@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deterministic numerical reference utilities for llm_smoke attention proxies."""
+"""Deterministic numerical reference and candidate utilities for llm_smoke attention proxies."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ import math
 import struct
 import sys
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Sequence, Tuple, Union
+from typing import Any, Dict, List, Sequence, Union
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
@@ -130,14 +130,57 @@ def softmax_rows(x: Tensor2D) -> Tensor2D:
     return out
 
 
-def tensor_doc(name: str, values: Tensor2D) -> TensorDoc:
+def _round_half_away_from_zero(value: float) -> int:
+    if value >= 0.0:
+        return int(math.floor(value + 0.5))
+    return int(math.ceil(value - 0.5))
+
+
+def _quantize_signed_int8(value: float) -> int:
+    q = _round_half_away_from_zero(float(value))
+    if q < -128:
+        return -128
+    if q > 127:
+        return 127
+    return q
+
+
+def _quantize_q0_7(prob: float) -> int:
+    q = int(math.floor((float(prob) * 127.0) + 0.5))
+    if q < 0:
+        return 0
+    if q > 127:
+        return 127
+    return q
+
+
+def gemm_rows_candidate_int8(x: Tensor2D, w_out_in: Tensor2D, bias: Sequence[float]) -> Tensor2D:
+    exact = gemm_rows(x, w_out_in, bias)
+    out: Tensor2D = []
+    for row in exact:
+        out.append([float(_quantize_signed_int8(v)) for v in row])
+    return out
+
+
+def softmax_rows_candidate_q0_7(x: Tensor2D) -> Tensor2D:
+    exact = softmax_rows(x)
+    out: Tensor2D = []
+    for row in exact:
+        out.append([float(_quantize_q0_7(v)) / 127.0 for v in row])
+    return out
+
+
+def tensor_doc(name: str, values: Tensor2D, *, quantization: str | None = None) -> TensorDoc:
     rows = len(values)
     cols = len(values[0]) if rows else 0
-    return {
+    doc: TensorDoc = {
         'name': name,
         'shape': [rows, cols],
         'values': values,
     }
+    if quantization is not None:
+        doc['quantization'] = quantization
+    return doc
 
 
 def _load_initializer_2d(model: OnnxModel, name: str) -> Tensor2D:
@@ -186,6 +229,40 @@ def evaluate_attention_proxy_model(model: OnnxModel, x_values: Tensor2D) -> Dict
     return outputs
 
 
+def evaluate_attention_proxy_candidate_model(model: OnnxModel, x_values: Tensor2D) -> Dict[str, TensorDoc]:
+    env: Dict[str, Tensor2D] = {'X': x_values}
+    outputs: Dict[str, TensorDoc] = {}
+
+    for node in model.graph.nodes:
+        op = node.op_type
+        if op == 'Cast':
+            env[node.outputs[0]] = [list(row) for row in env[node.inputs[0]]]
+            continue
+        if op == 'Gemm':
+            inp = env[node.inputs[0]]
+            w = _load_initializer_2d(model, node.inputs[1])
+            b = _load_initializer_1d(model, node.inputs[2])
+            out = gemm_rows_candidate_int8(inp, w, b)
+            env[node.outputs[0]] = out
+            outputs[node.outputs[0]] = tensor_doc(node.outputs[0], out, quantization='int8_signed')
+            continue
+        if op == 'Softmax':
+            inp = env[node.inputs[0]]
+            out = softmax_rows_candidate_q0_7(inp)
+            env[node.outputs[0]] = out
+            outputs[node.outputs[0]] = tensor_doc(node.outputs[0], out, quantization='u8_q0_7_dequantized')
+            continue
+        raise ValueError(f'unsupported op in llm candidate evaluator: {op}')
+
+    for out_name in model.graph.outputs.keys():
+        outputs[out_name] = tensor_doc(
+            out_name,
+            env[out_name],
+            quantization=outputs.get(out_name, {}).get('quantization', 'int8_signed'),
+        )
+    return outputs
+
+
 def build_reference_fixture(model_path: Union[str, Path], *, model_id: str | None = None) -> Dict[str, Any]:
     model = load_onnx_model(model_path)
     input_shape = model.graph.inputs.get('X')
@@ -199,6 +276,22 @@ def build_reference_fixture(model_path: Union[str, Path], *, model_id: str | Non
         'model_id': model_id or Path(model_path).stem,
         'input': tensor_doc('X', x),
         'outputs': fixture_outputs,
+    }
+
+
+def build_candidate_fixture(model_path: Union[str, Path], *, model_id: str | None = None) -> Dict[str, Any]:
+    model = load_onnx_model(model_path)
+    input_shape = model.graph.inputs.get('X')
+    if input_shape is None or len(input_shape) != 2:
+        raise ValueError('llm candidate path expects 2D X input')
+    x = deterministic_input(int(input_shape[0]), int(input_shape[1]))
+    outputs = evaluate_attention_proxy_candidate_model(model, x)
+    return {
+        'version': 0.1,
+        'model_id': model_id or Path(model_path).stem,
+        'candidate_semantics': 'int8_gemm_with_q0_7_softmax_dequantized_outputs',
+        'input': tensor_doc('X', x),
+        'outputs': outputs,
     }
 
 

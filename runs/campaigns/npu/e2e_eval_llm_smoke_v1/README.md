@@ -21,4 +21,6 @@ Notes:
 - This campaign is a bring-up stage for scheduler visibility and repeated-softmax flow.
 - Deterministic numerical reference fixtures for the same model binaries now live under:
   - `runs/models/llm_smoke_v1/reference_manifest.json`
+- First candidate-output fixtures for the same binaries now also live under:
+  - `runs/models/llm_smoke_v1/candidate_manifest.json`
 - It is still not yet a full LLM-accuracy campaign: no dataset/training loop or realistic decoder-quality evaluation is wired in yet.

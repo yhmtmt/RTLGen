@@ -17,13 +17,14 @@ mapper and run through the perf/report flow.
 
 That means:
 - `llm_smoke_v1` is now a runnable `runs/models/<id>/manifest.json` campaign input,
-- deterministic numerical reference fixtures can also be generated for the same
-  model binaries,
+- deterministic numerical reference fixtures exist for the same model binaries,
+- a first candidate-output path also exists with current int8 placeholder semantics,
 - but this is still only a smoke-stage proxy suite, not a full decoder-quality
   benchmark with dataset/training-backed accuracy evaluation.
 
-So the immediate deliverable after bring-up is the reference-output path,
-followed later by richer decoder benchmarks and true LLM accuracy gating.
+So the immediate deliverable after bring-up is no longer just the reference path.
+The repo now supports reference-vs-candidate numerical comparison for the smoke
+suite. The next accuracy step is richer decoder benchmarks and true LLM accuracy gating.
 
 ## Benchmark Ladder
 

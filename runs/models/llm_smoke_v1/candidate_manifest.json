@@ -1,0 +1,58 @@
+{
+  "version": 0.1,
+  "model_set_id": "llm_smoke_v1",
+  "description": "Deterministic candidate fixtures for llm_smoke attention-proxy models using current int8 placeholder semantics.",
+  "models": [
+    {
+      "model_id": "attn1_s32_h64",
+      "onnx_path": "runs/models/llm_smoke_v1/attn1_s32_h64.onnx",
+      "candidate_json": "runs/models/llm_smoke_v1/candidate/attn1_s32_h64.json",
+      "candidate_sha256": "d563de9034dcb3526aadbb765ab20fad50fe3ec2e2c472abe09333aa4fce3456",
+      "candidate_semantics": "int8_gemm_with_q0_7_softmax_dequantized_outputs",
+      "input_shape": [
+        32,
+        64
+      ],
+      "output_tensors": [
+        "P1",
+        "S1",
+        "Y"
+      ]
+    },
+    {
+      "model_id": "attn1_s64_h64",
+      "onnx_path": "runs/models/llm_smoke_v1/attn1_s64_h64.onnx",
+      "candidate_json": "runs/models/llm_smoke_v1/candidate/attn1_s64_h64.json",
+      "candidate_sha256": "6f36da4c627b96c0cab60491a5ba86d0d234eb2f962cd08e88db91ca2ea1b81d",
+      "candidate_semantics": "int8_gemm_with_q0_7_softmax_dequantized_outputs",
+      "input_shape": [
+        64,
+        64
+      ],
+      "output_tensors": [
+        "P1",
+        "S1",
+        "Y"
+      ]
+    },
+    {
+      "model_id": "attn2_s32_h64",
+      "onnx_path": "runs/models/llm_smoke_v1/attn2_s32_h64.onnx",
+      "candidate_json": "runs/models/llm_smoke_v1/candidate/attn2_s32_h64.json",
+      "candidate_sha256": "e628d37d48fe8e0fb7a890f7086fdd972f107dad8ff97973e7aba6fff93e7b8e",
+      "candidate_semantics": "int8_gemm_with_q0_7_softmax_dequantized_outputs",
+      "input_shape": [
+        32,
+        64
+      ],
+      "output_tensors": [
+        "P1",
+        "P2",
+        "S1",
+        "S2",
+        "V1",
+        "Y"
+      ]
+    }
+  ]
+}
