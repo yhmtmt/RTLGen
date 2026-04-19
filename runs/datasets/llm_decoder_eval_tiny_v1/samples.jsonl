@@ -1,0 +1,5 @@
+{"sample_id":"geo_france_capital","prompt":"The capital of France is","expected_continuation":" Paris","category":"factual_short"}
+{"sample_id":"math_two_plus_two","prompt":"2 + 2 =","expected_continuation":" 4","category":"arithmetic_short"}
+{"sample_id":"quote_complete","prompt":"To be or not to be, that is the","expected_continuation":" question","category":"phrase_completion"}
+{"sample_id":"weekday_after_monday","prompt":"The day after Monday is","expected_continuation":" Tuesday","category":"calendar_short"}
+{"sample_id":"color_banana","prompt":"A ripe banana is usually","expected_continuation":" yellow","category":"commonsense_short"}

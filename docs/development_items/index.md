@@ -45,6 +45,8 @@
 | `item_l1_fp16_vec_backend_v1` | `layer1` | `circuit` | `FP16 vector backend cleanup` | `seed` | `medium` | `developer_agent` |  | `2026-03-16T06:00:00Z` |
 | `item_l1_wrapped_io_cleanup_v1` | `layer1` | `circuit` | `Wrapped-IO cleanup` | `seed` | `high` | `developer_agent` |  | `2026-03-16T06:00:00Z` |
 | `item_l1_macro_manifest_enrichment_v1` | `layer1` | `circuit` | `Macro manifest enrichment` | `seed` | `high` | `developer_agent` |  | `2026-03-16T06:00:00Z` |
+| `item_eval_llm_attention_suite_v1` | `cross` | `architecture` | `LLM attention benchmark suite` | `seed` | `high` | `developer_agent` |  | `2026-04-17T00:00:00Z` |
+| `item_eval_llm_decoder_accuracy_stage_v1` | `cross` | `architecture` | `LLM decoder accuracy stage` | `seed` | `high` | `developer_agent` |  | `2026-04-19T00:00:00Z` |
 | `item_eval_model_quality_gate_general_v1` | `cross` | `architecture` | `General model-quality gate framework` | `seed` | `high` | `developer_agent` |  | `2026-03-16T06:00:00Z` |
 | `item_eval_reference_output_pipeline_v1` | `cross` | `architecture` | `Reference output pipeline` | `seed` | `high` | `developer_agent` |  | `2026-03-16T06:00:00Z` |
 | `item_eval_terminal_output_overlap_probe_v1` | `cross` | `architecture` | `Terminal-output overlap probe` | `promoted_to_proposal` | `high` | `developer_agent` | `prop_cross_terminal_output_overlap_probe_v1` | `2026-03-18T07:16:43Z` |

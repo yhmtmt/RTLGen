@@ -5,6 +5,8 @@ Canonical source of truth for new intake work lives under `docs/backlog/`.
 | item_id | layer | kind | title | status | priority | proposal_id | source |
 |---|---|---|---|---|---|---|---|
 | `item_eval_non_mlp_terminal_suite_v1` | `cross` | `architecture` | Terminal-sensitive softmax suite | `merged` | `high` | `prop_cross_non_mlp_terminal_suite_v1` | `docs/backlog/items/item_eval_non_mlp_terminal_suite_v1.md` |
+| `item_eval_llm_attention_suite_v1` | `cross` | `architecture` | LLM attention benchmark suite | `seed` | `high` |  | `docs/backlog/items/item_eval_llm_attention_suite_v1.md` |
+| `item_eval_llm_decoder_accuracy_stage_v1` | `cross` | `architecture` | LLM decoder accuracy stage | `seed` | `high` |  | `docs/backlog/items/item_eval_llm_decoder_accuracy_stage_v1.md` |
 | `item_eval_terminal_output_overlap_probe_v1` | `cross` | `architecture` | Terminal-output overlap probe | `promoted_to_proposal` | `high` | `prop_cross_terminal_output_overlap_probe_v1` | `docs/backlog/items/item_eval_terminal_output_overlap_probe_v1.md` |
 | `item_l1_npu_nm1_hardsigmoid_vec_enable_v1` | `layer1` | `circuit` | NPU nm1 hard-sigmoid vec enable | `promoted_to_proposal` | `high` | `prop_l1_npu_nm1_hardsigmoid_vec_enable_v1` | `docs/backlog/items/item_l1_npu_nm1_hardsigmoid_vec_enable_v1.md` |
 | `item_l1_npu_nm1_hardtanh_vec_enable_v1` | `layer1` | `circuit` | NPU nm1 hard-tanh vec enable | `promoted_to_proposal` | `high` | `prop_l1_npu_nm1_hardtanh_vec_enable_v1` | `docs/backlog/items/item_l1_npu_nm1_hardtanh_vec_enable_v1.md` |

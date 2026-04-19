@@ -1,0 +1,9 @@
+{
+  "version": 0.1,
+  "dataset_id": "llm_decoder_eval_tiny_v1",
+  "task": "greedy_next_token",
+  "status": "placeholder",
+  "sample_file": "runs/datasets/llm_decoder_eval_tiny_v1/samples.jsonl",
+  "sample_count": 5,
+  "notes": "Tiny curated decoder-eval prompt set for the first inference-quality gate. No tokenizer/model binding yet."
+}

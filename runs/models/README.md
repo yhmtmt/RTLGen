@@ -60,6 +60,8 @@ Current sets
 - `llm_smoke_v1`: benchmark-contract-defined tiny attention proxy set for
   LLM-oriented evaluation. This is the first runnable non-terminal-`Softmax`
   smoke set and now includes deterministic numerical reference fixtures under
-  `runs/models/llm_smoke_v1/reference_manifest.json`; it should still be
+  `runs/models/llm_smoke_v1/reference_manifest.json` and candidate fixtures under
+  `runs/models/llm_smoke_v1/candidate_manifest.json`; it should still be
   treated as scheduler/reference bring-up, not final LLM accuracy evidence;
-  see `docs/architecture/llm_attention_benchmark_ladder.md`.
+  see `docs/architecture/llm_attention_benchmark_ladder.md` and
+  `docs/architecture/llm_decoder_accuracy_stage_v1.md`.

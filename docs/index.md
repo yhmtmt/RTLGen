@@ -38,6 +38,8 @@ details.
   - `docs/architecture/layer_interaction.md`
 - LLM attention benchmark ladder:
   - `docs/architecture/llm_attention_benchmark_ladder.md`
+- LLM decoder accuracy stage:
+  - `docs/architecture/llm_decoder_accuracy_stage_v1.md`
 - Layer 1 runbook:
   - `docs/workflows/layer1.md`
 - Developer loop:
