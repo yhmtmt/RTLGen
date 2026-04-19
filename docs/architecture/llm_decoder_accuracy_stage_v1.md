@@ -124,5 +124,6 @@ The repo now has the first explicit decoder-quality binding layer:
 - deterministic per-sample reference artifacts for greedy next-token checks,
 - deterministic candidate-only placeholders against the same contract,
 - a comparison-ready reference/candidate schema.
+- an exact-match summary utility for token-level placeholder evaluation.
 
 This is still not a real decoder inference stack. It is a contract layer only.

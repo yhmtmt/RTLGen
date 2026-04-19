@@ -21,6 +21,10 @@ It is the first step toward a reproducible closed-loop flow:
   manifest with ONNX SHA256 checksums.
 - `npu/eval/gen_llm_decoder_reference_suite.py`: generate reference-only
   decoder fixtures for the tiny decoder-quality stage.
+- `npu/eval/gen_llm_decoder_candidate_suite.py`: generate candidate decoder
+  fixtures for the tiny decoder-quality stage.
+- `npu/eval/compare_llm_decoder_quality.py`: summarize token-level exact-match
+  rates from decoder reference/candidate manifests.
 
 The decoder-quality scaffold also introduces separate non-ONNX contracts for:
 - datasets: `runs/datasets/...`

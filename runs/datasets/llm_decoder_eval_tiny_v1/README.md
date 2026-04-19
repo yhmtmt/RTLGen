@@ -37,3 +37,7 @@ Current binding
 - model contract: `runs/models/llm_decoder_tiny_v1/model_contract.json`
 
 These are scaffolding artifacts, not a real decoder deployment path.
+
+Comparison
+----------
+- reference vs candidate summary: `python3 npu/eval/compare_llm_decoder_quality.py --reference-manifest runs/datasets/llm_decoder_eval_tiny_v1/reference_manifest.json --candidate-manifest runs/datasets/llm_decoder_eval_tiny_v1/candidate_manifest.json`
