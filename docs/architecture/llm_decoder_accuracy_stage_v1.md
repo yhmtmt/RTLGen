@@ -130,4 +130,4 @@ The repo now has the first explicit decoder-quality binding layer:
 - a replay-backed frozen-artifact backend (`replay_v1`) that keeps that interface stable before a real decoder runtime exists,
 - an executable command-backed adapter (`command_json_v1`) that can later bind a real CPU reference, software emulation, or hardware-target runtime without changing the manifests again.
 
-This is still not a complete real decoder inference stack. The command-backed adapter now exists, but the repository still lacks a pinned real decoder runtime to bind behind it.
+This is still not a complete real decoder inference stack. The command-backed adapter now exists, and the repo now carries an opt-in ONNX exact-reference runner scaffold, but there is still no pinned real decoder export plus runtime bundle checked into the evaluation path.

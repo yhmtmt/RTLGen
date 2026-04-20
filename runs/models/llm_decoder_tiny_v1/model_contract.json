@@ -20,5 +20,19 @@
       "candidate_rule": "last_token_plus_parity_shift"
     }
   },
-  "notes": "No trained decoder weights yet. This contract only binds the tiny decoder dataset to a deterministic tokenizer, a backend interface, and reference artifact schema."
+  "notes": "No trained decoder weights yet. This contract binds the tiny decoder dataset to a deterministic tokenizer, a backend interface, and reference artifact schema. The optional reference_onnx template is exact-reference only; it is not the approximation-aware hardware candidate path.",
+  "backend_templates": {
+    "reference_onnx": {
+      "backend_id": "command_json_v1",
+      "runtime_target": "cpu_reference",
+      "equivalence_group": "onnx_reference_v1",
+      "command": [
+        "python3",
+        "npu/eval/run_llm_decoder_onnx_reference.py"
+      ],
+      "onnx_model_path": "",
+      "input_name": "input_ids",
+      "topk": 5
+    }
+  }
 }

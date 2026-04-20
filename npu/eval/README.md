@@ -26,6 +26,8 @@ It is the first step toward a reproducible closed-loop flow:
   fixtures for the tiny decoder-quality stage.
 - `npu/eval/compare_llm_decoder_quality.py`: summarize token-level exact-match
   rates from decoder reference/candidate manifests.
+- `npu/eval/run_llm_decoder_onnx_reference.py`: optional exact-reference runner
+  behind `command_json_v1` for a future pinned decoder ONNX export.
 
 The decoder-quality scaffold also introduces separate non-ONNX contracts for:
 - datasets: `runs/datasets/...`
