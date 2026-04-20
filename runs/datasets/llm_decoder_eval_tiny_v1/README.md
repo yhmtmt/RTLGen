@@ -20,6 +20,7 @@ What exists now:
 - `candidate_manifest.json`
 - deterministic tokenizer/model binding for reference-only artifacts
 - backend-configured reference/candidate generation via `decoder_backend_v1`
+- replay-backed frozen-artifact loading via `replay_v1` for later emulation-vs-hardware equivalence checks
 
 What does not exist yet:
 - real tokenizer wiring
@@ -37,7 +38,7 @@ Current binding
 - tokenizer: `runs/tokenizers/llm_decoder_space_prefix_v1/manifest.json`
 - model contract: `runs/models/llm_decoder_tiny_v1/model_contract.json`
 
-These are scaffolding artifacts, not a real decoder deployment path. The backend config is intentionally explicit so a future hardware-target backend and an emulated software backend can be compared under the same contract.
+These are scaffolding artifacts, not a real decoder deployment path. The backend config is intentionally explicit so a future hardware-target backend and an emulated software backend can be compared under the same contract. `placeholder_v1` remains the default generator path; `replay_v1` is the first frozen-artifact path for equivalence and regression checks.
 
 Comparison
 ----------

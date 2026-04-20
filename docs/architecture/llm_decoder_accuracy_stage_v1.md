@@ -126,6 +126,7 @@ The repo now has the first explicit decoder-quality binding layer:
 - deterministic candidate-only placeholders against the same contract,
 - a comparison-ready reference/candidate schema,
 - an exact-match summary utility for token-level placeholder evaluation,
-- an explicit backend interface that can later compare software emulation and hardware-oriented execution for equivalence.
+- an explicit backend interface that can later compare software emulation and hardware-oriented execution for equivalence,
+- a replay-backed frozen-artifact backend (`replay_v1`) that keeps that interface stable before a real decoder runtime exists.
 
-This is still not a real decoder inference stack. It is a contract layer only.
+This is still not a real decoder inference stack. It is a contract layer plus a replay path only. A true decoder runtime backend is still the next replacement step.

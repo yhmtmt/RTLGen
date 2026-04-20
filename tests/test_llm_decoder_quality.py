@@ -174,6 +174,200 @@ class LlmDecoderQualityRegressionTest(unittest.TestCase):
         self.assertEqual(0, metrics['aggregate']['next_token_id_match'])
         self.assertEqual(0, metrics['aggregate']['next_token_text_match'])
 
+
+    def test_replay_backend_rehydrates_reference_doc_from_manifest(self):
+        with tempfile.TemporaryDirectory() as td:
+            td_path = Path(td)
+            replay_doc = {
+                'version': 0.1,
+                'dataset_id': 'old_dataset',
+                'sample_id': 'geo_france_capital',
+                'task': 'greedy_next_token',
+                'dataset_manifest': 'old/manifest.json',
+                'tokenizer': {
+                    'tokenizer_id': 'llm_decoder_space_prefix_v1',
+                    'kind': 'space_prefix_words',
+                    'manifest_path': 'old/tokenizer_manifest.json',
+                },
+                'model_binding': {
+                    'model_id': 'llm_decoder_tiny_v1',
+                    'status': 'reference_only_placeholder',
+                    'contract_path': 'old/model_contract.json',
+                    'execution_backend': 'decoder_backend_v1',
+                },
+                'backend': {
+                    'backend_id': 'placeholder_v1',
+                    'role': 'reference',
+                },
+                'prompt': {
+                    'text': 'The capital of France is',
+                    'tokens': ['The', ' capital', ' of', ' France', ' is'],
+                    'token_ids': [0, 1, 2, 3, 4],
+                    'token_count': 5,
+                },
+                'reference': {
+                    'expected_continuation': ' Paris',
+                    'next_token_text': ' Paris',
+                    'next_token_id': 5,
+                    'next_token_rank': 1,
+                    'selected_tensors': [],
+                },
+            }
+            replay_doc_path = td_path / 'reference_doc.json'
+            replay_doc_path.write_text(json.dumps(replay_doc), encoding='utf-8')
+            replay_manifest = td_path / 'reference_manifest.json'
+            replay_manifest.write_text(
+                json.dumps(
+                    {
+                        'version': 0.1,
+                        'dataset_id': 'llm_decoder_eval_tiny_v1',
+                        'backend_config': {'backend_id': 'placeholder_v1', 'role': 'reference'},
+                        'samples': [
+                            {
+                                'sample_id': 'geo_france_capital',
+                                'reference_json': str(replay_doc_path),
+                            }
+                        ],
+                    }
+                ),
+                encoding='utf-8',
+            )
+            dataset_manifest = {'dataset_id': 'llm_decoder_eval_tiny_v1', 'task': 'greedy_next_token'}
+            tokenizer_manifest = {'tokenizer_id': 'llm_decoder_space_prefix_v1', 'kind': 'space_prefix_words'}
+            model_contract = {
+                'model_id': 'llm_decoder_tiny_v1',
+                'status': 'reference_only_placeholder',
+                'execution_backend': 'decoder_backend_v1',
+            }
+            vocab = {'The': 0, ' capital': 1, ' of': 2, ' France': 3, ' is': 4, ' Paris': 5}
+            sample = {
+                'sample_id': 'geo_france_capital',
+                'prompt': 'The capital of France is',
+                'expected_continuation': ' Paris',
+            }
+            doc = self.decoder.build_decoder_reference_doc(
+                dataset_manifest=dataset_manifest,
+                sample=sample,
+                tokenizer_manifest=tokenizer_manifest,
+                vocab=vocab,
+                model_contract=model_contract,
+                dataset_manifest_path='runs/datasets/llm_decoder_eval_tiny_v1/manifest.json',
+                tokenizer_manifest_path='runs/tokenizers/llm_decoder_space_prefix_v1/manifest.json',
+                model_contract_path='runs/models/llm_decoder_tiny_v1/model_contract.json',
+                backend_config={
+                    'backend_id': 'replay_v1',
+                    'replay_manifest': str(replay_manifest),
+                    'equivalence_group': 'frozen_reference_v1',
+                },
+            )
+            self.assertEqual('replay_v1', doc['backend']['backend_id'])
+            self.assertEqual('reference', doc['backend']['role'])
+            self.assertEqual('frozen_reference_v1', doc['backend']['equivalence_group'])
+            self.assertEqual(' Paris', doc['reference']['next_token_text'])
+            self.assertEqual(str(replay_manifest), doc['replay_source']['replay_manifest'])
+            self.assertEqual(str(replay_doc_path), doc['replay_source']['sample_entry']['reference_json'])
+            self.assertEqual('placeholder_v1', doc['replay_source']['source_backend']['backend_id'])
+
+    def test_replay_backend_rehydrates_candidate_doc_from_manifest(self):
+        with tempfile.TemporaryDirectory() as td:
+            td_path = Path(td)
+            replay_doc = {
+                'version': 0.1,
+                'dataset_id': 'old_dataset',
+                'sample_id': 'math_two_plus_two',
+                'task': 'greedy_next_token',
+                'dataset_manifest': 'old/manifest.json',
+                'tokenizer': {
+                    'tokenizer_id': 'llm_decoder_space_prefix_v1',
+                    'kind': 'space_prefix_words',
+                    'manifest_path': 'old/tokenizer_manifest.json',
+                },
+                'model_binding': {
+                    'model_id': 'llm_decoder_tiny_v1',
+                    'status': 'reference_only_placeholder',
+                    'contract_path': 'old/model_contract.json',
+                    'execution_backend': 'decoder_backend_v1',
+                },
+                'backend': {
+                    'backend_id': 'placeholder_v1',
+                    'role': 'candidate',
+                },
+                'prompt': {
+                    'text': '2 + 2 =',
+                    'tokens': ['2', ' +', ' 2', ' ='],
+                    'token_ids': [0, 1, 2, 3],
+                    'token_count': 4,
+                },
+                'reference': {
+                    'expected_continuation': ' 4',
+                    'next_token_text': ' 4',
+                    'next_token_id': 4,
+                    'next_token_rank': 1,
+                    'selected_tensors': [],
+                },
+                'candidate_semantics': 'frozen_candidate_replay',
+                'candidate': {
+                    'next_token_id': 3,
+                    'next_token_text': ' =',
+                    'confidence': 1.0,
+                },
+            }
+            replay_doc_path = td_path / 'candidate_doc.json'
+            replay_doc_path.write_text(json.dumps(replay_doc), encoding='utf-8')
+            replay_manifest = td_path / 'candidate_manifest.json'
+            replay_manifest.write_text(
+                json.dumps(
+                    {
+                        'version': 0.1,
+                        'dataset_id': 'llm_decoder_eval_tiny_v1',
+                        'backend_config': {'backend_id': 'placeholder_v1', 'role': 'candidate'},
+                        'samples': [
+                            {
+                                'sample_id': 'math_two_plus_two',
+                                'candidate_json': str(replay_doc_path),
+                            }
+                        ],
+                    }
+                ),
+                encoding='utf-8',
+            )
+            dataset_manifest = {'dataset_id': 'llm_decoder_eval_tiny_v1', 'task': 'greedy_next_token'}
+            tokenizer_manifest = {'tokenizer_id': 'llm_decoder_space_prefix_v1', 'kind': 'space_prefix_words'}
+            model_contract = {
+                'model_id': 'llm_decoder_tiny_v1',
+                'status': 'reference_only_placeholder',
+                'execution_backend': 'decoder_backend_v1',
+            }
+            vocab = {'2': 0, ' +': 1, ' 2': 2, ' =': 3, ' 4': 4}
+            sample = {
+                'sample_id': 'math_two_plus_two',
+                'prompt': '2 + 2 =',
+                'expected_continuation': ' 4',
+            }
+            doc = self.decoder.build_decoder_candidate_doc(
+                dataset_manifest=dataset_manifest,
+                sample=sample,
+                tokenizer_manifest=tokenizer_manifest,
+                vocab=vocab,
+                model_contract=model_contract,
+                dataset_manifest_path='runs/datasets/llm_decoder_eval_tiny_v1/manifest.json',
+                tokenizer_manifest_path='runs/tokenizers/llm_decoder_space_prefix_v1/manifest.json',
+                model_contract_path='runs/models/llm_decoder_tiny_v1/model_contract.json',
+                backend_config={
+                    'backend_id': 'replay_v1',
+                    'replay_manifest': str(replay_manifest),
+                    'equivalence_group': 'frozen_candidate_v1',
+                },
+            )
+            self.assertEqual('replay_v1', doc['backend']['backend_id'])
+            self.assertEqual('candidate', doc['backend']['role'])
+            self.assertEqual('frozen_candidate_v1', doc['backend']['equivalence_group'])
+            self.assertEqual(3, doc['candidate']['next_token_id'])
+            self.assertEqual(' =', doc['candidate']['next_token_text'])
+            self.assertEqual('frozen_candidate_replay', doc['candidate_semantics'])
+            self.assertEqual(str(replay_doc_path), doc['replay_source']['replay_doc'])
+            self.assertIn('Replay-backed decoder fixture loaded from frozen artifacts.', doc['notes'])
+
     def test_decoder_reference_suite_generator_emits_reference_manifest(self):
         with tempfile.TemporaryDirectory() as td:
             td_path = Path(td)

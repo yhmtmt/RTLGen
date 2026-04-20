@@ -3,7 +3,10 @@
 
 from __future__ import annotations
 
+import copy
+import json
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Dict, Protocol, Sequence
 
 from npu.eval.llm_decoder_quality import encode_tokens, tokenize_space_prefix_words
@@ -140,8 +143,94 @@ class PlaceholderV1Backend:
         return doc
 
 
+class ReplayV1Backend:
+    backend_id = 'replay_v1'
+
+    def _normalize_config(self, backend_config: JsonDict, *, role: str) -> JsonDict:
+        normalized = {
+            'backend_id': self.backend_id,
+            'role': role,
+            'runtime_target': 'software_reference_replay' if role == 'reference' else 'software_emulation_replay',
+            'equivalence_group': 'replay_v1',
+            'replay_manifest': '',
+            'interface': 'decoder_backend_v1',
+            'replay_mode': 'frozen_artifact',
+        }
+        normalized.update(dict(backend_config or {}))
+        normalized['backend_id'] = self.backend_id
+        normalized['role'] = role
+        normalized['interface'] = 'decoder_backend_v1'
+        return normalized
+
+    def _resolve_repo_path(self, path: str | Path) -> Path:
+        p = Path(path)
+        if p.is_absolute():
+            return p
+        repo_root = Path(__file__).resolve().parents[2]
+        return repo_root / p
+
+    def _load_json(self, path: Path) -> JsonDict:
+        with path.open('r', encoding='utf-8') as f:
+            return json.load(f)
+
+    def _load_replay_doc(self, *, sample_id: str, backend_config: JsonDict, role: str) -> tuple[JsonDict, JsonDict, JsonDict, str]:
+        replay_manifest_path = str(backend_config.get('replay_manifest', '')).strip()
+        if not replay_manifest_path:
+            raise ValueError(f'{self.backend_id} requires replay_manifest for role={role}')
+        manifest_doc = self._load_json(self._resolve_repo_path(replay_manifest_path))
+        samples = manifest_doc.get('samples', []) or []
+        sample_entry = next((entry for entry in samples if entry.get('sample_id') == sample_id), None)
+        if sample_entry is None:
+            raise ValueError(f'{self.backend_id} manifest {replay_manifest_path} has no sample {sample_id!r}')
+        doc_field = str(backend_config.get('replay_doc_field') or ('reference_json' if role == 'reference' else 'candidate_json'))
+        doc_path = str(sample_entry.get(doc_field, '')).strip()
+        if not doc_path:
+            raise ValueError(f'{self.backend_id} manifest {replay_manifest_path} sample {sample_id!r} has no {doc_field}')
+        replay_doc = self._load_json(self._resolve_repo_path(doc_path))
+        return manifest_doc, sample_entry, replay_doc, doc_path
+
+    def _append_note(self, doc: JsonDict, note: str) -> None:
+        existing = str(doc.get('notes', '')).strip()
+        doc['notes'] = f'{existing} {note}'.strip() if existing else note
+
+    def _rebuild_doc(self, *, context: DecoderBackendContext, sample: JsonDict, backend_config: JsonDict, role: str) -> JsonDict:
+        normalized = self._normalize_config(backend_config, role=role)
+        manifest_doc, sample_entry, replay_doc, replay_doc_path = self._load_replay_doc(
+            sample_id=str(sample['sample_id']),
+            backend_config=normalized,
+            role=role,
+        )
+        doc = copy.deepcopy(replay_doc)
+        source_backend = copy.deepcopy(doc.get('backend', {}))
+        doc['backend'] = normalized
+        doc['replay_source'] = {
+            'replay_manifest': str(normalized['replay_manifest']),
+            'replay_doc': replay_doc_path,
+            'source_backend': source_backend,
+            'source_manifest_backend': copy.deepcopy(manifest_doc.get('backend_config', {})),
+            'sample_entry': copy.deepcopy(sample_entry),
+        }
+        doc['dataset_id'] = context.dataset_manifest['dataset_id']
+        doc['dataset_manifest'] = context.dataset_manifest_path
+        doc['task'] = context.dataset_manifest['task']
+        if 'tokenizer' in doc and isinstance(doc['tokenizer'], dict):
+            doc['tokenizer']['manifest_path'] = context.tokenizer_manifest_path
+        if 'model_binding' in doc and isinstance(doc['model_binding'], dict):
+            doc['model_binding']['contract_path'] = context.model_contract_path
+            doc['model_binding']['execution_backend'] = context.model_contract['execution_backend']
+        self._append_note(doc, 'Replay-backed decoder fixture loaded from frozen artifacts.')
+        return doc
+
+    def build_reference_doc(self, *, context: DecoderBackendContext, sample: JsonDict, backend_config: JsonDict) -> JsonDict:
+        return self._rebuild_doc(context=context, sample=sample, backend_config=backend_config, role='reference')
+
+    def build_candidate_doc(self, *, context: DecoderBackendContext, sample: JsonDict, backend_config: JsonDict) -> JsonDict:
+        return self._rebuild_doc(context=context, sample=sample, backend_config=backend_config, role='candidate')
+
+
 _BACKENDS: Dict[str, DecoderBackend] = {
     'placeholder_v1': PlaceholderV1Backend(),
+    'replay_v1': ReplayV1Backend(),
 }
 
 
