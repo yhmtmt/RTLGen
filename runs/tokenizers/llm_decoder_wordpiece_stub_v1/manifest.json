@@ -1,0 +1,16 @@
+{
+  "version": 0.1,
+  "tokenizer_id": "llm_decoder_wordpiece_stub_v1",
+  "kind": "wordpiece_stub",
+  "status": "stub_bundle_contract",
+  "backend_interface": "decoder_tokenizer_v1",
+  "vocab_json": "vocab.json",
+  "special_tokens": {
+    "bos": "[BOS]",
+    "eos": "[EOS]",
+    "unk": "[UNK]",
+    "pad": "[PAD]"
+  },
+  "unk_supported": true,
+  "notes": "File-backed tokenizer bundle contract for the first real decoder tokenizer path. Assets are still stubbed, but the manifest shape matches a pinned tokenizer bundle rather than the earlier placeholder split rule."
+}

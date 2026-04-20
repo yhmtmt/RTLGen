@@ -42,17 +42,69 @@ def tokenize_space_prefix_words(text: str) -> List[str]:
     return tokens
 
 
-def load_vocab(path: str | Path) -> Dict[str, int]:
-    doc = load_json(path)
+def _extract_vocab_tokens(doc: JsonDict) -> List[str]:
     tokens = doc.get('tokens', [])
     if not isinstance(tokens, list):
         raise ValueError('tokenizer vocab tokens must be a list')
+    out: List[str] = []
+    for token in tokens:
+        out.append(str(token))
+    return out
+
+
+def load_vocab(path: str | Path) -> Dict[str, int]:
+    doc = load_json(path)
+    tokens = _extract_vocab_tokens(doc)
     vocab: Dict[str, int] = {}
     for idx, token in enumerate(tokens):
         if token in vocab:
             raise ValueError(f'duplicate tokenizer token: {token!r}')
-        vocab[str(token)] = idx
+        vocab[token] = idx
     return vocab
+
+
+def load_tokenizer_bundle(tokenizer_manifest: JsonDict, *, manifest_path: str | Path | None = None) -> JsonDict:
+    vocab_path = tokenizer_manifest.get('vocab_json')
+    if not isinstance(vocab_path, str) or not vocab_path.strip():
+        raise ValueError('tokenizer manifest must define non-empty vocab_json')
+    manifest_dir = Path(manifest_path).resolve().parent if manifest_path is not None else None
+    vocab_file = Path(vocab_path)
+    if not vocab_file.is_absolute() and manifest_dir is not None:
+        vocab_file = manifest_dir / vocab_file
+    elif not vocab_file.is_absolute():
+        vocab_file = Path(vocab_path)
+    vocab_doc = load_json(vocab_file)
+    tokens = _extract_vocab_tokens(vocab_doc)
+    vocab: Dict[str, int] = {}
+    for idx, token in enumerate(tokens):
+        if token in vocab:
+            raise ValueError(f'duplicate tokenizer token: {token!r}')
+        vocab[token] = idx
+
+    specials_raw = tokenizer_manifest.get('special_tokens', {}) or {}
+    if not isinstance(specials_raw, dict):
+        raise ValueError('tokenizer manifest special_tokens must be an object')
+    special_tokens: Dict[str, Dict[str, Any]] = {}
+    for name, token in specials_raw.items():
+        token_text = str(token)
+        token_id = vocab.get(token_text)
+        special_tokens[str(name)] = {
+            'token': token_text,
+            'id': token_id,
+            'present_in_vocab': token_id is not None,
+        }
+
+    return {
+        'tokenizer_id': str(tokenizer_manifest['tokenizer_id']),
+        'kind': str(tokenizer_manifest['kind']),
+        'manifest_path': str(manifest_path) if manifest_path is not None else '',
+        'vocab_path': str(vocab_file),
+        'tokens': tokens,
+        'vocab': vocab,
+        'special_tokens': special_tokens,
+        'status': str(tokenizer_manifest.get('status', 'unknown')),
+        'backend_interface': str(tokenizer_manifest.get('backend_interface', 'decoder_tokenizer_v1')),
+    }
 
 
 def encode_tokens(tokens: Sequence[str], vocab: Dict[str, int]) -> List[int]:

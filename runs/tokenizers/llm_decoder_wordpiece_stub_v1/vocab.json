@@ -1,0 +1,20 @@
+{
+  "version": 0.1,
+  "tokenizer_id": "llm_decoder_wordpiece_stub_v1",
+  "tokens": [
+    "[PAD]",
+    "[BOS]",
+    "[EOS]",
+    "[UNK]",
+    "The",
+    "capital",
+    "of",
+    "France",
+    "is",
+    "Paris",
+    "2",
+    "+",
+    "=",
+    "4"
+  ]
+}

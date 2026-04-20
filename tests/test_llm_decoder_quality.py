@@ -34,6 +34,62 @@ class LlmDecoderQualityRegressionTest(unittest.TestCase):
         )
         self.assertEqual([' Paris'], self.decoder.tokenize_space_prefix_words(continuation))
 
+    def test_load_tokenizer_bundle_reads_special_token_metadata(self):
+        with tempfile.TemporaryDirectory() as td:
+            td_path = Path(td)
+            vocab_json = td_path / 'vocab.json'
+            vocab_json.write_text(
+                json.dumps(
+                    {
+                        'version': 0.1,
+                        'tokenizer_id': 'llm_decoder_wordpiece_stub_v1',
+                        'tokens': ['[PAD]', '[BOS]', '[EOS]', '[UNK]', 'The', 'capital'],
+                    }
+                ),
+                encoding='utf-8',
+            )
+            tokenizer_manifest = {
+                'tokenizer_id': 'llm_decoder_wordpiece_stub_v1',
+                'kind': 'wordpiece_stub',
+                'status': 'stub_bundle_contract',
+                'backend_interface': 'decoder_tokenizer_v1',
+                'vocab_json': 'vocab.json',
+                'special_tokens': {
+                    'bos': '[BOS]',
+                    'eos': '[EOS]',
+                    'unk': '[UNK]',
+                    'pad': '[PAD]',
+                },
+            }
+            bundle = self.decoder.load_tokenizer_bundle(tokenizer_manifest, manifest_path=td_path / 'manifest.json')
+            self.assertEqual('llm_decoder_wordpiece_stub_v1', bundle['tokenizer_id'])
+            self.assertEqual('wordpiece_stub', bundle['kind'])
+            self.assertEqual(1, bundle['special_tokens']['bos']['id'])
+            self.assertTrue(bundle['special_tokens']['unk']['present_in_vocab'])
+            self.assertEqual(4, bundle['vocab']['The'])
+
+    def test_load_tokenizer_bundle_rejects_duplicate_tokens(self):
+        with tempfile.TemporaryDirectory() as td:
+            td_path = Path(td)
+            vocab_json = td_path / 'vocab.json'
+            vocab_json.write_text(
+                json.dumps(
+                    {
+                        'version': 0.1,
+                        'tokenizer_id': 'dup_case',
+                        'tokens': ['[PAD]', '[PAD]'],
+                    }
+                ),
+                encoding='utf-8',
+            )
+            tokenizer_manifest = {
+                'tokenizer_id': 'dup_case',
+                'kind': 'wordpiece_stub',
+                'vocab_json': str(vocab_json),
+            }
+            with self.assertRaises(ValueError):
+                self.decoder.load_tokenizer_bundle(tokenizer_manifest, manifest_path=td_path / 'manifest.json')
+
     def test_backend_config_resolution_prefers_dataset_over_model(self):
         dataset_manifest = {
             'decoder_backend_configs': {
