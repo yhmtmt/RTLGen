@@ -31,6 +31,11 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Install eval-tool test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pyyaml
+
       - name: Run eval-tool regression tests
         run: |
           python tests/test_eval_campaign_tools.py
