@@ -681,8 +681,8 @@ class EvalCampaignToolsRegressionTest(unittest.TestCase):
 
             validate_check_cmd = validate_cmd + ["--check_paths"]
             proc = subprocess.run(validate_check_cmd, cwd=str(REPO_ROOT), capture_output=True, text=True)
-            self.assertNotEqual(0, proc.returncode)
-            self.assertIn("path does not exist", proc.stderr)
+            self.assertEqual(0, proc.returncode, msg=proc.stderr)
+            self.assertIn("OK: campaign", proc.stdout)
 
             fetch_cmd = [
                 sys.executable,
