@@ -8,7 +8,21 @@
   "tokenizer_id": "llm_decoder_space_prefix_v1",
   "tokenizer_manifest": "runs/tokenizers/llm_decoder_space_prefix_v1/manifest.json",
   "model_contract": "runs/models/llm_decoder_tiny_v1/model_contract.json",
+  "decoder_backend_interface": "v1",
+  "decoder_backend_configs": {
+    "reference": {
+      "backend_id": "placeholder_v1",
+      "runtime_target": "software_reference",
+      "equivalence_group": "placeholder_v1"
+    },
+    "candidate": {
+      "backend_id": "placeholder_v1",
+      "runtime_target": "software_emulation",
+      "equivalence_group": "placeholder_v1",
+      "candidate_rule": "last_token_plus_parity_shift"
+    }
+  },
   "reference_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/reference_manifest.json",
-  "notes": "Tiny curated decoder-eval prompt set for the first inference-quality gate. Bound to a deterministic placeholder tokenizer and reference-only decoder contract.",
-  "candidate_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_manifest.json"
+  "candidate_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_manifest.json",
+  "notes": "Tiny curated decoder-eval prompt set for the first inference-quality gate. Bound to a deterministic placeholder tokenizer, backend interface, and reference-only decoder contract."
 }

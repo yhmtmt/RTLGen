@@ -4,14 +4,8 @@
 from __future__ import annotations
 
 import json
-import sys
 from pathlib import Path
 from typing import Any, Dict, List, Sequence
-
-REPO_ROOT = Path(__file__).resolve().parents[2]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
-
 
 JsonDict = Dict[str, Any]
 
@@ -70,66 +64,33 @@ def encode_tokens(tokens: Sequence[str], vocab: Dict[str, int]) -> List[int]:
     return out
 
 
-def _build_prompt_and_reference(
+def resolve_decoder_backend_config(dataset_manifest: JsonDict, model_contract: JsonDict, *, role: str) -> JsonDict:
+    from npu.eval.decoder_backend import resolve_decoder_backend_config as _resolve
+
+    return _resolve(dataset_manifest, model_contract, role=role)
+
+
+def _build_backend_context(
     *,
     dataset_manifest: JsonDict,
-    sample: JsonDict,
     tokenizer_manifest: JsonDict,
     vocab: Dict[str, int],
     model_contract: JsonDict,
     dataset_manifest_path: str,
     tokenizer_manifest_path: str,
     model_contract_path: str,
-) -> JsonDict:
-    prompt = str(sample['prompt'])
-    continuation = str(sample['expected_continuation'])
-    prompt_tokens = tokenize_space_prefix_words(prompt)
-    continuation_tokens = tokenize_space_prefix_words(continuation)
-    if len(continuation_tokens) != 1:
-        raise ValueError(
-            f"sample {sample['sample_id']} must tokenize to exactly one next token; "
-            f"got {continuation_tokens!r}"
-        )
+):
+    from npu.eval.decoder_backend import DecoderBackendContext
 
-    prompt_token_ids = encode_tokens(prompt_tokens, vocab)
-    next_token = continuation_tokens[0]
-    next_token_id = encode_tokens([next_token], vocab)[0]
-
-    return {
-        'version': 0.1,
-        'dataset_id': dataset_manifest['dataset_id'],
-        'sample_id': sample['sample_id'],
-        'task': dataset_manifest['task'],
-        'decode_policy': {
-            'strategy': 'greedy',
-            'max_new_tokens': 1,
-        },
-        'dataset_manifest': dataset_manifest_path,
-        'tokenizer': {
-            'tokenizer_id': tokenizer_manifest['tokenizer_id'],
-            'kind': tokenizer_manifest['kind'],
-            'manifest_path': tokenizer_manifest_path,
-        },
-        'model_binding': {
-            'model_id': model_contract['model_id'],
-            'status': model_contract['status'],
-            'contract_path': model_contract_path,
-            'execution_backend': model_contract['execution_backend'],
-        },
-        'prompt': {
-            'text': prompt,
-            'tokens': prompt_tokens,
-            'token_ids': prompt_token_ids,
-            'token_count': len(prompt_tokens),
-        },
-        'reference': {
-            'expected_continuation': continuation,
-            'next_token_text': next_token,
-            'next_token_id': next_token_id,
-            'next_token_rank': 1,
-            'selected_tensors': [],
-        },
-    }
+    return DecoderBackendContext(
+        dataset_manifest=dataset_manifest,
+        tokenizer_manifest=tokenizer_manifest,
+        model_contract=model_contract,
+        vocab=vocab,
+        dataset_manifest_path=dataset_manifest_path,
+        tokenizer_manifest_path=tokenizer_manifest_path,
+        model_contract_path=model_contract_path,
+    )
 
 
 def build_decoder_reference_doc(
@@ -142,10 +103,12 @@ def build_decoder_reference_doc(
     dataset_manifest_path: str,
     tokenizer_manifest_path: str,
     model_contract_path: str,
+    backend_config: JsonDict | None = None,
 ) -> JsonDict:
-    doc = _build_prompt_and_reference(
+    from npu.eval.decoder_backend import load_decoder_backend
+
+    context = _build_backend_context(
         dataset_manifest=dataset_manifest,
-        sample=sample,
         tokenizer_manifest=tokenizer_manifest,
         vocab=vocab,
         model_contract=model_contract,
@@ -153,18 +116,9 @@ def build_decoder_reference_doc(
         tokenizer_manifest_path=tokenizer_manifest_path,
         model_contract_path=model_contract_path,
     )
-    doc['notes'] = 'Reference-only placeholder decoder fixture. No trained model inference yet.'
-    return doc
-
-
-def _deterministic_candidate_next_token_id(prompt_token_ids: Sequence[int], vocab_size: int) -> int:
-    if vocab_size <= 0:
-        raise ValueError('vocab size must be positive')
-    if not prompt_token_ids:
-        return 0
-    base = int(prompt_token_ids[-1])
-    shift = 0 if (sum(int(v) for v in prompt_token_ids) % 2 == 0) else 1
-    return (base + shift) % vocab_size
+    config = dict(backend_config or {'backend_id': 'placeholder_v1'})
+    backend = load_decoder_backend(config)
+    return backend.build_reference_doc(context=context, sample=sample, backend_config=config)
 
 
 def build_decoder_candidate_doc(
@@ -177,10 +131,12 @@ def build_decoder_candidate_doc(
     dataset_manifest_path: str,
     tokenizer_manifest_path: str,
     model_contract_path: str,
+    backend_config: JsonDict | None = None,
 ) -> JsonDict:
-    doc = _build_prompt_and_reference(
+    from npu.eval.decoder_backend import load_decoder_backend
+
+    context = _build_backend_context(
         dataset_manifest=dataset_manifest,
-        sample=sample,
         tokenizer_manifest=tokenizer_manifest,
         vocab=vocab,
         model_contract=model_contract,
@@ -188,21 +144,9 @@ def build_decoder_candidate_doc(
         tokenizer_manifest_path=tokenizer_manifest_path,
         model_contract_path=model_contract_path,
     )
-    inv_vocab = {idx: token for token, idx in vocab.items()}
-    prompt_token_ids = doc['prompt']['token_ids']
-    predicted_id = _deterministic_candidate_next_token_id(prompt_token_ids, len(vocab))
-    predicted_token = inv_vocab[predicted_id]
-    doc['candidate_semantics'] = 'space_prefix_placeholder_last_token_plus_parity_shift'
-    doc['candidate'] = {
-        'next_token_id': predicted_id,
-        'next_token_text': predicted_token,
-        'confidence': 1.0,
-    }
-    doc['notes'] = (
-        'Candidate-only placeholder decoder fixture. No trained model inference yet; '
-        'predictions come from a deterministic synthetic rule.'
-    )
-    return doc
+    config = dict(backend_config or {'backend_id': 'placeholder_v1'})
+    backend = load_decoder_backend(config)
+    return backend.build_candidate_doc(context=context, sample=sample, backend_config=config)
 
 
 def compare_decoder_reference_docs(reference_doc: JsonDict, candidate_doc: JsonDict) -> JsonDict:

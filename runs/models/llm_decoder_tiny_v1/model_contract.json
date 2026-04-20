@@ -5,6 +5,20 @@
   "task": "greedy_next_token",
   "tokenizer_id": "llm_decoder_space_prefix_v1",
   "tokenizer_manifest": "runs/tokenizers/llm_decoder_space_prefix_v1/manifest.json",
-  "execution_backend": "python_reference_placeholder",
-  "notes": "No trained decoder weights yet. This contract only binds the tiny decoder dataset to a deterministic tokenizer and reference artifact schema."
+  "execution_backend": "decoder_backend_v1",
+  "decoder_backend_interface": "v1",
+  "backend_configs": {
+    "reference": {
+      "backend_id": "placeholder_v1",
+      "runtime_target": "software_reference",
+      "equivalence_group": "placeholder_v1"
+    },
+    "candidate": {
+      "backend_id": "placeholder_v1",
+      "runtime_target": "software_emulation",
+      "equivalence_group": "placeholder_v1",
+      "candidate_rule": "last_token_plus_parity_shift"
+    }
+  },
+  "notes": "No trained decoder weights yet. This contract only binds the tiny decoder dataset to a deterministic tokenizer, a backend interface, and reference artifact schema."
 }

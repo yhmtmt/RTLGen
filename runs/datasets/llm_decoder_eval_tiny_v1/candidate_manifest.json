@@ -1,31 +1,39 @@
 {
+  "backend_config": {
+    "backend_id": "placeholder_v1",
+    "candidate_rule": "last_token_plus_parity_shift",
+    "equivalence_group": "placeholder_v1",
+    "interface": "decoder_backend_v1",
+    "role": "candidate",
+    "runtime_target": "software_emulation"
+  },
   "candidate_semantics": "space_prefix_placeholder_last_token_plus_parity_shift",
   "dataset_id": "llm_decoder_eval_tiny_v1",
   "model_contract": "runs/models/llm_decoder_tiny_v1/model_contract.json",
   "samples": [
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate/geo_france_capital.json",
-      "candidate_sha256": "b7c4d2db7a481850985f8ada0716660490ed0343a7f14faf596e5efc114ec9dc",
+      "candidate_sha256": "41a51611e80bfd9452622a8db82991c98f65116cde4957091405bc2c76eb8c74",
       "sample_id": "geo_france_capital"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate/math_two_plus_two.json",
-      "candidate_sha256": "870febff79e21569e625e8d80894bafa4137fa706aeff1498b6166008d9973a4",
+      "candidate_sha256": "b77ee451f35450f04e3990df1ed36931f31897e609641ed181867b2310e3b323",
       "sample_id": "math_two_plus_two"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate/quote_complete.json",
-      "candidate_sha256": "5c5aad607af2cb553d20ef12a581846bcf4d396f5001df0e779f04794cdb530e",
+      "candidate_sha256": "fec00301a4522c6d0a625c0571d2e1ab64fa7857d4829d5ea395748517fe9c32",
       "sample_id": "quote_complete"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate/weekday_after_monday.json",
-      "candidate_sha256": "badb0ae97fb76ebad515950fc347758dd3e9b5ce6b9aece22a1ab87174e7da61",
+      "candidate_sha256": "dd06ff61dee83319027f01cb6856f000a05f02adceb1964ff1b6b5b443996c32",
       "sample_id": "weekday_after_monday"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate/color_banana.json",
-      "candidate_sha256": "780ca6f4838d0b8649903d5627c246a5715c82095f8647fe3509f5b3dffcfc6e",
+      "candidate_sha256": "4b91038a9d5476071e6bc158dd09b0db5a4812acd77584f4dd61d8f8ee208536",
       "sample_id": "color_banana"
     }
   ],

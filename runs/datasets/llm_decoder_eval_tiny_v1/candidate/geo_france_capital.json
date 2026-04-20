@@ -1,4 +1,12 @@
 {
+  "backend": {
+    "backend_id": "placeholder_v1",
+    "candidate_rule": "last_token_plus_parity_shift",
+    "equivalence_group": "placeholder_v1",
+    "interface": "decoder_backend_v1",
+    "role": "candidate",
+    "runtime_target": "software_emulation"
+  },
   "candidate": {
     "confidence": 1.0,
     "next_token_id": 4,
@@ -13,7 +21,7 @@
   },
   "model_binding": {
     "contract_path": "runs/models/llm_decoder_tiny_v1/model_contract.json",
-    "execution_backend": "python_reference_placeholder",
+    "execution_backend": "decoder_backend_v1",
     "model_id": "llm_decoder_tiny_v1",
     "status": "reference_only_placeholder"
   },

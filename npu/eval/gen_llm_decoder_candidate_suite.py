@@ -19,6 +19,7 @@ from npu.eval.llm_decoder_quality import (
     load_json,
     load_jsonl,
     load_vocab,
+    resolve_decoder_backend_config,
 )
 
 
@@ -42,21 +43,9 @@ def _portable_path(path: Path) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        '--dataset-manifest',
-        default='runs/datasets/llm_decoder_eval_tiny_v1/manifest.json',
-        help='Dataset manifest to use.',
-    )
-    parser.add_argument(
-        '--out-dir',
-        default='runs/datasets/llm_decoder_eval_tiny_v1/candidate',
-        help='Directory for per-sample candidate JSON files.',
-    )
-    parser.add_argument(
-        '--out-manifest',
-        default='runs/datasets/llm_decoder_eval_tiny_v1/candidate_manifest.json',
-        help='Path for generated candidate manifest.',
-    )
+    parser.add_argument('--dataset-manifest', default='runs/datasets/llm_decoder_eval_tiny_v1/manifest.json')
+    parser.add_argument('--out-dir', default='runs/datasets/llm_decoder_eval_tiny_v1/candidate')
+    parser.add_argument('--out-manifest', default='runs/datasets/llm_decoder_eval_tiny_v1/candidate_manifest.json')
     args = parser.parse_args()
 
     dataset_manifest_path = _resolve_repo_path(args.dataset_manifest)
@@ -68,11 +57,13 @@ def main() -> int:
     model_contract = load_json(model_contract_path)
     vocab = load_vocab(_resolve_repo_path(tokenizer_manifest['vocab_json']))
     samples = load_jsonl(sample_file)
+    backend_config = resolve_decoder_backend_config(dataset_manifest, model_contract, role='candidate')
 
     out_dir = _resolve_repo_path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     manifest_samples: List[Dict[str, object]] = []
+    candidate_semantics = ''
     for sample in samples:
         doc = build_decoder_candidate_doc(
             dataset_manifest=dataset_manifest,
@@ -83,17 +74,17 @@ def main() -> int:
             dataset_manifest_path=_portable_path(dataset_manifest_path),
             tokenizer_manifest_path=_portable_path(tokenizer_manifest_path),
             model_contract_path=_portable_path(model_contract_path),
+            backend_config=backend_config,
         )
+        candidate_semantics = str(doc.get('candidate_semantics', candidate_semantics))
         out_path = out_dir / f"{sample['sample_id']}.json"
         raw = (json.dumps(doc, indent=2, sort_keys=True) + '\n').encode('utf-8')
         out_path.write_bytes(raw)
-        manifest_samples.append(
-            {
-                'sample_id': sample['sample_id'],
-                'candidate_json': _portable_path(out_path),
-                'candidate_sha256': _sha256_bytes(raw),
-            }
-        )
+        manifest_samples.append({
+            'sample_id': sample['sample_id'],
+            'candidate_json': _portable_path(out_path),
+            'candidate_sha256': _sha256_bytes(raw),
+        })
 
     manifest_doc = {
         'version': 0.1,
@@ -101,7 +92,8 @@ def main() -> int:
         'task': dataset_manifest['task'],
         'tokenizer_manifest': _portable_path(tokenizer_manifest_path),
         'model_contract': _portable_path(model_contract_path),
-        'candidate_semantics': 'space_prefix_placeholder_last_token_plus_parity_shift',
+        'backend_config': backend_config,
+        'candidate_semantics': candidate_semantics,
         'samples': manifest_samples,
     }
     out_manifest = _resolve_repo_path(args.out_manifest)

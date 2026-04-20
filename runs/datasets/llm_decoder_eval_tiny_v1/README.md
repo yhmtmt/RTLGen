@@ -19,6 +19,7 @@ What exists now:
 - `reference_manifest.json`
 - `candidate_manifest.json`
 - deterministic tokenizer/model binding for reference-only artifacts
+- backend-configured reference/candidate generation via `decoder_backend_v1`
 
 What does not exist yet:
 - real tokenizer wiring
@@ -36,7 +37,7 @@ Current binding
 - tokenizer: `runs/tokenizers/llm_decoder_space_prefix_v1/manifest.json`
 - model contract: `runs/models/llm_decoder_tiny_v1/model_contract.json`
 
-These are scaffolding artifacts, not a real decoder deployment path.
+These are scaffolding artifacts, not a real decoder deployment path. The backend config is intentionally explicit so a future hardware-target backend and an emulated software backend can be compared under the same contract.
 
 Comparison
 ----------

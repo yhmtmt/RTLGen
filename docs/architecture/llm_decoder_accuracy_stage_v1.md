@@ -27,6 +27,7 @@ What exists today:
 - `runs/datasets/llm_decoder_eval_tiny_v1/reference_manifest.json`
 - `runs/tokenizers/llm_decoder_space_prefix_v1/manifest.json`
 - `runs/models/llm_decoder_tiny_v1/model_contract.json`
+- `npu/eval/decoder_backend.py`
 - `npu/eval/gen_llm_decoder_reference_suite.py`
 
 What does not exist yet:
@@ -123,7 +124,8 @@ The repo now has the first explicit decoder-quality binding layer:
 - dataset manifest bound to a tokenizer manifest and model contract,
 - deterministic per-sample reference artifacts for greedy next-token checks,
 - deterministic candidate-only placeholders against the same contract,
-- a comparison-ready reference/candidate schema.
-- an exact-match summary utility for token-level placeholder evaluation.
+- a comparison-ready reference/candidate schema,
+- an exact-match summary utility for token-level placeholder evaluation,
+- an explicit backend interface that can later compare software emulation and hardware-oriented execution for equivalence.
 
 This is still not a real decoder inference stack. It is a contract layer only.

@@ -23,6 +23,7 @@ class LlmDecoderQualityRegressionTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.decoder = _load_module('llm_decoder_quality_test', 'npu/eval/llm_decoder_quality.py')
+        cls.backend_mod = _load_module('decoder_backend_test', 'npu/eval/decoder_backend.py')
 
     def test_space_prefix_tokenizer_preserves_single_next_token(self):
         prompt = 'The capital of France is'
@@ -33,7 +34,34 @@ class LlmDecoderQualityRegressionTest(unittest.TestCase):
         )
         self.assertEqual([' Paris'], self.decoder.tokenize_space_prefix_words(continuation))
 
-    def test_build_decoder_reference_doc_binds_dataset_tokenizer_and_model(self):
+    def test_backend_config_resolution_prefers_dataset_over_model(self):
+        dataset_manifest = {
+            'decoder_backend_configs': {
+                'candidate': {
+                    'backend_id': 'placeholder_v1',
+                    'runtime_target': 'dataset_override',
+                    'candidate_rule': 'last_token_plus_parity_shift',
+                    'equivalence_group': 'dataset_group',
+                }
+            }
+        }
+        model_contract = {
+            'backend_configs': {
+                'candidate': {
+                    'backend_id': 'placeholder_v1',
+                    'runtime_target': 'model_default',
+                    'equivalence_group': 'model_group',
+                }
+            }
+        }
+        cfg = self.decoder.resolve_decoder_backend_config(dataset_manifest, model_contract, role='candidate')
+        self.assertEqual('placeholder_v1', cfg['backend_id'])
+        self.assertEqual('candidate', cfg['role'])
+        self.assertEqual('dataset_override', cfg['runtime_target'])
+        self.assertEqual('dataset_group', cfg['equivalence_group'])
+        self.assertEqual('decoder_backend_v1', cfg['interface'])
+
+    def test_build_decoder_reference_doc_binds_backend_metadata(self):
         dataset_manifest = {
             'dataset_id': 'llm_decoder_eval_tiny_v1',
             'task': 'greedy_next_token',
@@ -58,7 +86,12 @@ class LlmDecoderQualityRegressionTest(unittest.TestCase):
         model_contract = {
             'model_id': 'llm_decoder_tiny_v1',
             'status': 'reference_only_placeholder',
-            'execution_backend': 'python_reference_placeholder',
+            'execution_backend': 'decoder_backend_v1',
+        }
+        backend_config = {
+            'backend_id': 'placeholder_v1',
+            'runtime_target': 'software_reference',
+            'equivalence_group': 'placeholder_v1',
         }
         doc = self.decoder.build_decoder_reference_doc(
             dataset_manifest=dataset_manifest,
@@ -69,10 +102,14 @@ class LlmDecoderQualityRegressionTest(unittest.TestCase):
             dataset_manifest_path='runs/datasets/llm_decoder_eval_tiny_v1/manifest.json',
             tokenizer_manifest_path='runs/tokenizers/llm_decoder_space_prefix_v1/manifest.json',
             model_contract_path='runs/models/llm_decoder_tiny_v1/model_contract.json',
+            backend_config=backend_config,
         )
         self.assertEqual('llm_decoder_eval_tiny_v1', doc['dataset_id'])
         self.assertEqual('llm_decoder_space_prefix_v1', doc['tokenizer']['tokenizer_id'])
         self.assertEqual('llm_decoder_tiny_v1', doc['model_binding']['model_id'])
+        self.assertEqual('placeholder_v1', doc['backend']['backend_id'])
+        self.assertEqual('reference', doc['backend']['role'])
+        self.assertEqual('placeholder_v1', doc['backend']['equivalence_group'])
         self.assertEqual(['The', ' capital', ' of', ' France', ' is'], doc['prompt']['tokens'])
         self.assertEqual(' Paris', doc['reference']['next_token_text'])
         self.assertEqual(5, doc['reference']['next_token_id'])
@@ -101,7 +138,7 @@ class LlmDecoderQualityRegressionTest(unittest.TestCase):
         model_contract = {
             'model_id': 'llm_decoder_tiny_v1',
             'status': 'reference_only_placeholder',
-            'execution_backend': 'python_reference_placeholder',
+            'execution_backend': 'decoder_backend_v1',
         }
         reference = self.decoder.build_decoder_reference_doc(
             dataset_manifest=dataset_manifest,
@@ -112,6 +149,7 @@ class LlmDecoderQualityRegressionTest(unittest.TestCase):
             dataset_manifest_path='runs/datasets/llm_decoder_eval_tiny_v1/manifest.json',
             tokenizer_manifest_path='runs/tokenizers/llm_decoder_space_prefix_v1/manifest.json',
             model_contract_path='runs/models/llm_decoder_tiny_v1/model_contract.json',
+            backend_config={'backend_id': 'placeholder_v1'},
         )
         candidate = self.decoder.build_decoder_candidate_doc(
             dataset_manifest=dataset_manifest,
@@ -122,11 +160,14 @@ class LlmDecoderQualityRegressionTest(unittest.TestCase):
             dataset_manifest_path='runs/datasets/llm_decoder_eval_tiny_v1/manifest.json',
             tokenizer_manifest_path='runs/tokenizers/llm_decoder_space_prefix_v1/manifest.json',
             model_contract_path='runs/models/llm_decoder_tiny_v1/model_contract.json',
+            backend_config={'backend_id': 'placeholder_v1'},
         )
         self.assertEqual(
             'space_prefix_placeholder_last_token_plus_parity_shift',
             candidate['candidate_semantics'],
         )
+        self.assertEqual('candidate', candidate['backend']['role'])
+        self.assertEqual('placeholder_v1', candidate['backend']['equivalence_group'])
         self.assertEqual(3, candidate['candidate']['next_token_id'])
         self.assertEqual(' =', candidate['candidate']['next_token_text'])
         metrics = self.decoder.compare_decoder_reference_docs(reference, candidate)
@@ -178,7 +219,10 @@ class LlmDecoderQualityRegressionTest(unittest.TestCase):
                         'version': 0.1,
                         'model_id': 'llm_decoder_tiny_v1',
                         'status': 'reference_only_placeholder',
-                        'execution_backend': 'python_reference_placeholder',
+                        'execution_backend': 'decoder_backend_v1',
+                        'backend_configs': {
+                            'reference': {'backend_id': 'placeholder_v1'}
+                        },
                     }
                 ),
                 encoding='utf-8',
@@ -214,9 +258,11 @@ class LlmDecoderQualityRegressionTest(unittest.TestCase):
             )
             manifest = json.loads(out_manifest.read_text(encoding='utf-8'))
             self.assertEqual('llm_decoder_eval_tiny_v1', manifest['dataset_id'])
+            self.assertEqual('placeholder_v1', manifest['backend_config']['backend_id'])
             self.assertEqual(1, len(manifest['samples']))
             ref_doc = json.loads((out_dir / 'color_banana.json').read_text(encoding='utf-8'))
             self.assertEqual(' yellow', ref_doc['reference']['next_token_text'])
+            self.assertEqual('reference', ref_doc['backend']['role'])
 
     def test_decoder_candidate_suite_generator_emits_candidate_manifest(self):
         with tempfile.TemporaryDirectory() as td:
@@ -263,7 +309,10 @@ class LlmDecoderQualityRegressionTest(unittest.TestCase):
                         'version': 0.1,
                         'model_id': 'llm_decoder_tiny_v1',
                         'status': 'reference_only_placeholder',
-                        'execution_backend': 'python_reference_placeholder',
+                        'execution_backend': 'decoder_backend_v1',
+                        'backend_configs': {
+                            'candidate': {'backend_id': 'placeholder_v1'}
+                        },
                     }
                 ),
                 encoding='utf-8',
@@ -299,13 +348,14 @@ class LlmDecoderQualityRegressionTest(unittest.TestCase):
             )
             manifest = json.loads(out_manifest.read_text(encoding='utf-8'))
             self.assertEqual('llm_decoder_eval_tiny_v1', manifest['dataset_id'])
+            self.assertEqual('placeholder_v1', manifest['backend_config']['backend_id'])
             self.assertEqual(
                 'space_prefix_placeholder_last_token_plus_parity_shift',
                 manifest['candidate_semantics'],
             )
             candidate_doc = json.loads((out_dir / 'geo_france_capital.json').read_text(encoding='utf-8'))
             self.assertIn('candidate', candidate_doc)
-            self.assertIn('candidate_semantics', candidate_doc)
+            self.assertEqual('candidate', candidate_doc['backend']['role'])
 
 
 if __name__ == '__main__':
