@@ -175,6 +175,126 @@ class LlmDecoderQualityRegressionTest(unittest.TestCase):
         self.assertEqual(0, metrics['aggregate']['next_token_text_match'])
 
 
+    def test_command_json_backend_executes_reference_runner(self):
+        with tempfile.TemporaryDirectory() as td:
+            td_path = Path(td)
+            runner = td_path / 'runner.py'
+            runner.write_text(
+                """
+import json
+import sys
+req = json.load(sys.stdin)
+sample = req['sample']
+out = {
+    'reference': {
+        'expected_continuation': sample['expected_continuation'],
+        'next_token_text': sample['expected_continuation'],
+        'next_token_id': 5,
+        'next_token_rank': 1,
+        'selected_tensors': [],
+    },
+    'notes': 'command runner reference ok',
+    'backend_runtime': {'runner': 'unit_test', 'role': req['role']},
+}
+json.dump(out, sys.stdout)
+""".strip(),
+                encoding='utf-8',
+            )
+            dataset_manifest = {'dataset_id': 'llm_decoder_eval_tiny_v1', 'task': 'greedy_next_token'}
+            tokenizer_manifest = {'tokenizer_id': 'llm_decoder_space_prefix_v1', 'kind': 'space_prefix_words'}
+            model_contract = {
+                'model_id': 'llm_decoder_tiny_v1',
+                'status': 'reference_only_placeholder',
+                'execution_backend': 'decoder_backend_v1',
+            }
+            vocab = {'The': 0, ' capital': 1, ' of': 2, ' France': 3, ' is': 4, ' Paris': 5}
+            sample = {
+                'sample_id': 'geo_france_capital',
+                'prompt': 'The capital of France is',
+                'expected_continuation': ' Paris',
+            }
+            doc = self.decoder.build_decoder_reference_doc(
+                dataset_manifest=dataset_manifest,
+                sample=sample,
+                tokenizer_manifest=tokenizer_manifest,
+                vocab=vocab,
+                model_contract=model_contract,
+                dataset_manifest_path='runs/datasets/llm_decoder_eval_tiny_v1/manifest.json',
+                tokenizer_manifest_path='runs/tokenizers/llm_decoder_space_prefix_v1/manifest.json',
+                model_contract_path='runs/models/llm_decoder_tiny_v1/model_contract.json',
+                backend_config={
+                    'backend_id': 'command_json_v1',
+                    'command': [sys.executable, str(runner)],
+                    'equivalence_group': 'cpu_reference_v1',
+                    'runtime_target': 'cpu_reference',
+                },
+            )
+            self.assertEqual('command_json_v1', doc['backend']['backend_id'])
+            self.assertEqual('reference', doc['backend']['role'])
+            self.assertEqual('cpu_reference_v1', doc['backend']['equivalence_group'])
+            self.assertEqual(' Paris', doc['reference']['next_token_text'])
+            self.assertEqual('unit_test', doc['backend_runtime']['runner'])
+            self.assertEqual([sys.executable, str(runner)], doc['backend_invocation']['command'])
+
+    def test_command_json_backend_executes_candidate_runner(self):
+        with tempfile.TemporaryDirectory() as td:
+            td_path = Path(td)
+            runner = td_path / 'runner.py'
+            runner.write_text(
+                """
+import json
+import sys
+req = json.load(sys.stdin)
+out = {
+    'candidate': {
+        'next_token_id': 3,
+        'next_token_text': ' =',
+        'confidence': 0.75,
+    },
+    'candidate_semantics': 'external_command_stub',
+    'notes': 'command runner candidate ok',
+}
+json.dump(out, sys.stdout)
+""".strip(),
+                encoding='utf-8',
+            )
+            dataset_manifest = {'dataset_id': 'llm_decoder_eval_tiny_v1', 'task': 'greedy_next_token'}
+            tokenizer_manifest = {'tokenizer_id': 'llm_decoder_space_prefix_v1', 'kind': 'space_prefix_words'}
+            model_contract = {
+                'model_id': 'llm_decoder_tiny_v1',
+                'status': 'reference_only_placeholder',
+                'execution_backend': 'decoder_backend_v1',
+            }
+            vocab = {'2': 0, ' +': 1, ' 2': 2, ' =': 3, ' 4': 4}
+            sample = {
+                'sample_id': 'math_two_plus_two',
+                'prompt': '2 + 2 =',
+                'expected_continuation': ' 4',
+            }
+            doc = self.decoder.build_decoder_candidate_doc(
+                dataset_manifest=dataset_manifest,
+                sample=sample,
+                tokenizer_manifest=tokenizer_manifest,
+                vocab=vocab,
+                model_contract=model_contract,
+                dataset_manifest_path='runs/datasets/llm_decoder_eval_tiny_v1/manifest.json',
+                tokenizer_manifest_path='runs/tokenizers/llm_decoder_space_prefix_v1/manifest.json',
+                model_contract_path='runs/models/llm_decoder_tiny_v1/model_contract.json',
+                backend_config={
+                    'backend_id': 'command_json_v1',
+                    'command': [sys.executable, str(runner)],
+                    'equivalence_group': 'hardware_emulation_v1',
+                    'runtime_target': 'hardware_emulation',
+                },
+            )
+            self.assertEqual('command_json_v1', doc['backend']['backend_id'])
+            self.assertEqual('candidate', doc['backend']['role'])
+            self.assertEqual('hardware_emulation_v1', doc['backend']['equivalence_group'])
+            self.assertEqual(3, doc['candidate']['next_token_id'])
+            self.assertEqual(' =', doc['candidate']['next_token_text'])
+            self.assertEqual('external_command_stub', doc['candidate_semantics'])
+            self.assertEqual([sys.executable, str(runner)], doc['backend_invocation']['command'])
+
     def test_replay_backend_rehydrates_reference_doc_from_manifest(self):
         with tempfile.TemporaryDirectory() as td:
             td_path = Path(td)

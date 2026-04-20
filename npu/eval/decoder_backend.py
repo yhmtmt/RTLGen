@@ -5,6 +5,9 @@ from __future__ import annotations
 
 import copy
 import json
+import os
+import shlex
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Protocol, Sequence
@@ -228,9 +231,156 @@ class ReplayV1Backend:
         return self._rebuild_doc(context=context, sample=sample, backend_config=backend_config, role='candidate')
 
 
+class CommandJsonV1Backend:
+    backend_id = 'command_json_v1'
+
+    def _normalize_config(self, backend_config: JsonDict, *, role: str) -> JsonDict:
+        normalized = {
+            'backend_id': self.backend_id,
+            'role': role,
+            'runtime_target': 'external_reference' if role == 'reference' else 'external_emulation',
+            'equivalence_group': 'command_json_v1',
+            'command': [],
+            'cwd': '',
+            'timeout_s': 30.0,
+            'request_schema': 'decoder_backend_command_v1',
+            'interface': 'decoder_backend_v1',
+        }
+        normalized.update(dict(backend_config or {}))
+        normalized['backend_id'] = self.backend_id
+        normalized['role'] = role
+        normalized['interface'] = 'decoder_backend_v1'
+        return normalized
+
+    def _default_prompt(self, *, context: DecoderBackendContext, sample: JsonDict) -> JsonDict:
+        prompt = str(sample['prompt'])
+        prompt_tokens = tokenize_space_prefix_words(prompt)
+        prompt_token_ids = encode_tokens(prompt_tokens, context.vocab)
+        return {
+            'text': prompt,
+            'tokens': prompt_tokens,
+            'token_ids': prompt_token_ids,
+            'token_count': len(prompt_tokens),
+        }
+
+    def _default_tokenizer(self, *, context: DecoderBackendContext) -> JsonDict:
+        return {
+            'tokenizer_id': context.tokenizer_manifest['tokenizer_id'],
+            'kind': context.tokenizer_manifest['kind'],
+            'manifest_path': context.tokenizer_manifest_path,
+        }
+
+    def _default_model_binding(self, *, context: DecoderBackendContext) -> JsonDict:
+        return {
+            'model_id': context.model_contract['model_id'],
+            'status': context.model_contract['status'],
+            'contract_path': context.model_contract_path,
+            'execution_backend': context.model_contract['execution_backend'],
+        }
+
+    def _command_argv(self, command: Any) -> list[str]:
+        if isinstance(command, str):
+            argv = shlex.split(command)
+        elif isinstance(command, list):
+            argv = [str(part) for part in command]
+        else:
+            raise ValueError(f'{self.backend_id} command must be string or list')
+        if not argv:
+            raise ValueError(f'{self.backend_id} requires a non-empty command')
+        return argv
+
+    def _run_command(self, *, context: DecoderBackendContext, sample: JsonDict, normalized: JsonDict) -> JsonDict:
+        argv = self._command_argv(normalized.get('command', []))
+        env = os.environ.copy()
+        env_overrides = normalized.get('env', {}) or {}
+        for key, value in dict(env_overrides).items():
+            env[str(key)] = str(value)
+        request = {
+            'schema': str(normalized.get('request_schema', 'decoder_backend_command_v1')),
+            'role': normalized['role'],
+            'dataset_manifest': context.dataset_manifest,
+            'tokenizer_manifest': context.tokenizer_manifest,
+            'model_contract': context.model_contract,
+            'backend_config': normalized,
+            'sample': sample,
+            'paths': {
+                'dataset_manifest_path': context.dataset_manifest_path,
+                'tokenizer_manifest_path': context.tokenizer_manifest_path,
+                'model_contract_path': context.model_contract_path,
+            },
+        }
+        proc = subprocess.run(
+            argv,
+            input=json.dumps(request),
+            text=True,
+            capture_output=True,
+            cwd=str(normalized.get('cwd', '')).strip() or None,
+            env=env,
+            timeout=float(normalized.get('timeout_s', 30.0)),
+            check=False,
+        )
+        if proc.returncode != 0:
+            stderr = proc.stderr.strip()
+            raise ValueError(f'{self.backend_id} command failed rc={proc.returncode}: {stderr}')
+        stdout = proc.stdout.strip()
+        if not stdout:
+            raise ValueError(f'{self.backend_id} command produced empty stdout')
+        try:
+            payload = json.loads(stdout)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f'{self.backend_id} command stdout was not valid JSON') from exc
+        return payload
+
+    def _build_doc(self, *, context: DecoderBackendContext, sample: JsonDict, backend_config: JsonDict, role: str) -> JsonDict:
+        normalized = self._normalize_config(backend_config, role=role)
+        payload = self._run_command(context=context, sample=sample, normalized=normalized)
+        doc = {
+            'version': 0.1,
+            'dataset_id': context.dataset_manifest['dataset_id'],
+            'sample_id': sample['sample_id'],
+            'task': context.dataset_manifest['task'],
+            'decode_policy': payload.get('decode_policy', {'strategy': 'greedy', 'max_new_tokens': 1}),
+            'dataset_manifest': context.dataset_manifest_path,
+            'tokenizer': payload.get('tokenizer', self._default_tokenizer(context=context)),
+            'model_binding': payload.get('model_binding', self._default_model_binding(context=context)),
+            'backend': normalized,
+            'prompt': payload.get('prompt', self._default_prompt(context=context, sample=sample)),
+            'backend_invocation': {
+                'command': self._command_argv(normalized.get('command', [])),
+                'cwd': str(normalized.get('cwd', '')).strip(),
+                'request_schema': str(normalized.get('request_schema', 'decoder_backend_command_v1')),
+                'result_schema': 'decoder_backend_command_result_v1',
+            },
+        }
+        if 'reference' in payload:
+            doc['reference'] = payload['reference']
+        if 'candidate' in payload:
+            doc['candidate'] = payload['candidate']
+        if role == 'reference' and 'reference' not in doc:
+            raise ValueError(f'{self.backend_id} reference role requires reference in command result')
+        if role == 'candidate' and 'candidate' not in doc:
+            raise ValueError(f'{self.backend_id} candidate role requires candidate in command result')
+        if 'candidate_semantics' in payload:
+            doc['candidate_semantics'] = payload['candidate_semantics']
+        if 'backend_runtime' in payload:
+            doc['backend_runtime'] = payload['backend_runtime']
+        if 'replay_source' in payload:
+            doc['replay_source'] = payload['replay_source']
+        if 'notes' in payload:
+            doc['notes'] = str(payload['notes'])
+        return doc
+
+    def build_reference_doc(self, *, context: DecoderBackendContext, sample: JsonDict, backend_config: JsonDict) -> JsonDict:
+        return self._build_doc(context=context, sample=sample, backend_config=backend_config, role='reference')
+
+    def build_candidate_doc(self, *, context: DecoderBackendContext, sample: JsonDict, backend_config: JsonDict) -> JsonDict:
+        return self._build_doc(context=context, sample=sample, backend_config=backend_config, role='candidate')
+
+
 _BACKENDS: Dict[str, DecoderBackend] = {
     'placeholder_v1': PlaceholderV1Backend(),
     'replay_v1': ReplayV1Backend(),
+    'command_json_v1': CommandJsonV1Backend(),
 }
 
 

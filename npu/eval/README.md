@@ -19,7 +19,7 @@ It is the first step toward a reproducible closed-loop flow:
 - `npu/eval/examples/`: minimal examples.
 - `runs/models/<model_set_id>/manifest.json`: shared benchmark model-set
   manifest with ONNX SHA256 checksums.
-- `npu/eval/decoder_backend.py`: pluggable decoder backend interface for decoder-quality evaluation (`placeholder_v1` and frozen-artifact `replay_v1`).
+- `npu/eval/decoder_backend.py`: pluggable decoder backend interface for decoder-quality evaluation (`placeholder_v1`, frozen-artifact `replay_v1`, and external `command_json_v1`).
 - `npu/eval/gen_llm_decoder_reference_suite.py`: generate reference-only
   decoder fixtures for the tiny decoder-quality stage.
 - `npu/eval/gen_llm_decoder_candidate_suite.py`: generate candidate decoder

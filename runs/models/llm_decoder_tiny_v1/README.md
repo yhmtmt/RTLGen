@@ -12,6 +12,7 @@ Placeholder contract only.
 What exists now:
 - `model_contract.json`
 - placeholder backend configs for `reference` and `candidate` roles
+- an executable backend interface that can call an external CPU, emulation, or hardware-target runner via `command_json_v1`
 
 What does not exist yet:
 - trained weights
