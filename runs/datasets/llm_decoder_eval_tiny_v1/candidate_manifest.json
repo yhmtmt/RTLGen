@@ -1,39 +1,50 @@
 {
   "backend_config": {
-    "backend_id": "placeholder_v1",
+    "backend_id": "command_json_v1",
     "candidate_rule": "last_token_plus_parity_shift",
+    "candidate_semantics": "onnx_logits_symmetric_quant_q4",
+    "command": [
+      "/workspaces/RTLGen/control_plane/.venv/bin/python",
+      "/workspaces/RTLGen/npu/eval/run_llm_decoder_onnx_candidate.py"
+    ],
     "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
+    "input_name": "input_ids",
     "interface": "decoder_backend_v1",
+    "logit_quant_bits": 4,
+    "model_config_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/config.json",
+    "onnx_model_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/model.onnx",
+    "output_name": "logits",
     "role": "candidate",
-    "runtime_target": "software_emulation"
+    "runtime_target": "software_emulation",
+    "topk": 5
   },
-  "candidate_semantics": "placeholder_last_token_plus_parity_shift",
+  "candidate_semantics": "onnx_logits_symmetric_quant_q4",
   "dataset_id": "llm_decoder_eval_tiny_v1",
   "model_contract": "runs/models/llm_decoder_tiny_v1/model_contract.json",
   "samples": [
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate/geo_france_capital.json",
-      "candidate_sha256": "2ab5116a696f9ce2bc9f017fac732ea830237c6049b6eb573ccf1aa654d16658",
+      "candidate_sha256": "4072f7920c3d52c191d5d9f92e37c5de1bd15f31f8899c1f673eab1139ddc014",
       "sample_id": "geo_france_capital"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate/math_two_plus_two.json",
-      "candidate_sha256": "b29ce15a990770b27993682422621560eafa62e3f0c54063d34675f76599feb9",
+      "candidate_sha256": "21e823e905481978e2a384b1c224e79b4381bdccdd27e9d715086f6d45906836",
       "sample_id": "math_two_plus_two"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate/quote_complete.json",
-      "candidate_sha256": "9cb02e8c03462994395b0b8197ea1faa897ff0a4638ab2446aab3343c8119fdc",
+      "candidate_sha256": "8b6693663ba3fffcf3ea058c511aeb419143337db3dfd1d83de6aad10cba6900",
       "sample_id": "quote_complete"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate/weekday_after_monday.json",
-      "candidate_sha256": "c58f25f71f9a7f34a251d26d40600fb68b4c9712f64607283ad21529464d9d6b",
+      "candidate_sha256": "31daf541d58aa1b07cf5c19f8fe8e4c204d508aee4485bff52cf1a86c7176517",
       "sample_id": "weekday_after_monday"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate/color_banana.json",
-      "candidate_sha256": "d170b96308b916535356661aa723ed3dbb39f5835f9b05e396497aa3f454f83d",
+      "candidate_sha256": "d42dc18f198f639349afd8ebb63846e83522b891770df2e07389985d95bc07ce",
       "sample_id": "color_banana"
     }
   ],

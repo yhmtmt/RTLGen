@@ -11,7 +11,7 @@ cheap acceptance slice for approximate-hardware evaluation.
 
 Current status
 --------------
-Active ONNX exact-reference dataset binding.
+Active ONNX exact-reference and approximation-aware candidate dataset binding.
 
 What exists now:
 - `manifest.json`
@@ -20,11 +20,11 @@ What exists now:
 - `candidate_manifest.json`
 - fetched GPT-2-family tokenizer/model binding for reference artifacts
 - active ONNX exact-reference generation via `decoder_backend_v1` + `command_json_v1`
-- placeholder candidate generation under the same tokenizer/model contract
+- active ONNX approximation-aware candidate generation via `decoder_backend_v1` + `command_json_v1`
 - replay-backed frozen-artifact loading via `replay_v1` for later emulation-vs-hardware equivalence checks
 
 What does not exist yet:
-- approximation-aware candidate backend
+- hardware-oriented candidate backend
 - continuation/perplexity metrics
 - larger decoder prompt set
 
@@ -33,8 +33,9 @@ Current binding
 - tokenizer: `runs/tokenizers/llm_decoder_gpt2_bpe_stub_v1/manifest.json`
 - model contract: `runs/models/llm_decoder_tiny_v1/model_contract.json`
 - exact reference runner: `npu/eval/run_llm_decoder_onnx_reference.py`
+- active candidate runner: `npu/eval/run_llm_decoder_onnx_candidate.py`
 
-The reference side is now a real ONNX Runtime exact-reference path. The candidate side is still intentionally synthetic so the repo can keep the equivalence/reporting contract stable while the approximation-aware backend is built.
+The reference side is a real ONNX Runtime exact-reference path. The candidate side now uses the same ONNX/tokenizer contract with deterministic symmetric quantization of logits, which is the first approximation-aware decoder backend in the repo.
 
 Comparison
 ----------

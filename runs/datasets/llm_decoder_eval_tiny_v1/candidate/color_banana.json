@@ -1,18 +1,82 @@
 {
   "backend": {
-    "backend_id": "placeholder_v1",
+    "backend_id": "command_json_v1",
     "candidate_rule": "last_token_plus_parity_shift",
+    "candidate_semantics": "onnx_logits_symmetric_quant_q4",
+    "command": [
+      "/workspaces/RTLGen/control_plane/.venv/bin/python",
+      "/workspaces/RTLGen/npu/eval/run_llm_decoder_onnx_candidate.py"
+    ],
+    "cwd": "",
     "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
+    "input_name": "input_ids",
     "interface": "decoder_backend_v1",
+    "logit_quant_bits": 4,
+    "model_config_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/config.json",
+    "onnx_model_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/model.onnx",
+    "output_name": "logits",
+    "request_schema": "decoder_backend_command_v1",
     "role": "candidate",
+    "runtime_target": "software_emulation",
+    "timeout_s": 30.0,
+    "topk": 5
+  },
+  "backend_invocation": {
+    "command": [
+      "/workspaces/RTLGen/control_plane/.venv/bin/python",
+      "/workspaces/RTLGen/npu/eval/run_llm_decoder_onnx_candidate.py"
+    ],
+    "cwd": "",
+    "request_schema": "decoder_backend_command_v1",
+    "result_schema": "decoder_backend_command_result_v1"
+  },
+  "backend_runtime": {
+    "approximation": {
+      "bits": 4,
+      "levels": 7,
+      "max_abs": 1.2921810150146484,
+      "mode": "symmetric_logit_quant",
+      "scale": 0.1845972878592355
+    },
+    "library": "onnxruntime",
+    "logits_rank": 1,
+    "onnxruntime_version": "1.23.1",
+    "runner": "onnx_candidate_v1",
     "runtime_target": "software_emulation"
   },
   "candidate": {
-    "confidence": 1.0,
-    "next_token_id": 3222,
-    "next_token_text": "\u0120demon"
+    "confidence": 1.2921810150146484,
+    "next_token_id": 3221,
+    "next_token_text": " usually",
+    "topk": [
+      {
+        "logit": 1.2921810150146484,
+        "token_id": 3221,
+        "token_text": " usually"
+      },
+      {
+        "logit": 0.738389151436942,
+        "token_id": 2471,
+        "token_text": " ap"
+      },
+      {
+        "logit": 0.738389151436942,
+        "token_id": 3161,
+        "token_text": " prior"
+      },
+      {
+        "logit": 0.738389151436942,
+        "token_id": 3276,
+        "token_text": "irit"
+      },
+      {
+        "logit": 0.738389151436942,
+        "token_id": 4193,
+        "token_text": " helped"
+      }
+    ]
   },
-  "candidate_semantics": "placeholder_last_token_plus_parity_shift",
+  "candidate_semantics": "onnx_logits_symmetric_quant_q4",
   "dataset_id": "llm_decoder_eval_tiny_v1",
   "dataset_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/manifest.json",
   "decode_policy": {
@@ -25,7 +89,7 @@
     "model_id": "llm_decoder_tiny_v1",
     "status": "exact_reference_active"
   },
-  "notes": "Candidate-only placeholder decoder fixture. No trained model inference yet; predictions come from a deterministic synthetic rule.",
+  "notes": "ONNX Runtime decoder candidate runner result using quantized logits.",
   "prompt": {
     "text": "A ripe banana is usually",
     "token_count": 5,
@@ -43,13 +107,6 @@
       "\u0120is",
       "\u0120usually"
     ]
-  },
-  "reference": {
-    "expected_continuation": " yellow",
-    "next_token_id": 7872,
-    "next_token_rank": 1,
-    "next_token_text": "\u0120yellow",
-    "selected_tensors": []
   },
   "sample_id": "color_banana",
   "task": "greedy_next_token",

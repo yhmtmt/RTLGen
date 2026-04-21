@@ -32,7 +32,7 @@ It is the first step toward a reproducible closed-loop flow:
 The repo can now express a future exact-reference pair explicitly even before the
 assets are present: the model contract may point at a `reference_onnx_binding.json`
 that locks the intended ONNX path, tokenizer bundle, runtime, and fetch-plan
-provenance. The current active first exact-reference source is `onnx-community/tiny-random-gpt2-ONNX` at commit `90f61e71d6fa8e571d0ab0f95a637a5d7d8ed52f`, paired with the GPT-2 tokenizer assets fetched from the same source.
+provenance. The current active first exact-reference source is `onnx-community/tiny-random-gpt2-ONNX` at commit `90f61e71d6fa8e571d0ab0f95a637a5d7d8ed52f`, paired with the GPT-2 tokenizer assets fetched from the same source. The active candidate side now uses the same contract with a deterministic symmetric-logit quantization runner (`onnx_logits_symmetric_quant_q4`).
 
 The decoder-quality scaffold also introduces separate non-ONNX contracts for:
 - datasets: `runs/datasets/...`
