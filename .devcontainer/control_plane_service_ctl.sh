@@ -3,11 +3,15 @@ set -euo pipefail
 
 ACTION="${1:-}"
 SERVICE="${2:-}"
-DEFAULT_SERVICE_REPO="/workspaces/rtlgen-eval-clean"
-SERVICE_REPO_ROOT="${RTLGEN_SERVICE_REPO:-${DEFAULT_SERVICE_REPO}}"
+REPO_ROOT="${REPO_ROOT:-/workspaces/RTLGen}"
 ROLE="${RTLCP_ROLE:-server}"
+DEFAULT_SERVICE_REPO="/workspaces/rtlgen-eval-clean"
+if [[ "${ROLE}" != "evaluator" ]]; then
+  DEFAULT_SERVICE_REPO="${REPO_ROOT}"
+fi
+SERVICE_REPO_ROOT="${RTLGEN_SERVICE_REPO:-${DEFAULT_SERVICE_REPO}}"
 
-ENSURE_SERVICE_REPO="${REPO_ROOT:-/workspaces/RTLGen}/control_plane/scripts/ensure_service_repo.sh"
+ENSURE_SERVICE_REPO="${REPO_ROOT}/control_plane/scripts/ensure_service_repo.sh"
 RUNTIME_DIR="${RTLCP_RUNTIME_DIR:-/tmp/rtlgen-control-plane}"
 mkdir -p "${RUNTIME_DIR}"
 
@@ -60,7 +64,9 @@ _tail_log() {
 
 case "${ACTION}" in
   start)
-    "${ENSURE_SERVICE_REPO}"
+    if [[ "${SERVICE_REPO_ROOT}" != "${REPO_ROOT}" ]]; then
+      "${ENSURE_SERVICE_REPO}"
+    fi
     if _is_running; then
       echo "${SERVICE} already running: pid=$(cat "${PID_FILE}") log=${LOG_FILE}"
       exit 0
@@ -90,9 +96,9 @@ case "${ACTION}" in
       esac
     } >>"${LOG_FILE}"
     if command -v setsid >/dev/null 2>&1; then
-      setsid "${TARGET_CMD[@]}" </dev/null >>"${LOG_FILE}" 2>&1 &
+      setsid env RTLGEN_SERVICE_REPO="${SERVICE_REPO_ROOT}" REPO_ROOT="${SERVICE_REPO_ROOT}" "${TARGET_CMD[@]}" </dev/null >>"${LOG_FILE}" 2>&1 &
     else
-      nohup "${TARGET_CMD[@]}" </dev/null >>"${LOG_FILE}" 2>&1 &
+      nohup env RTLGEN_SERVICE_REPO="${SERVICE_REPO_ROOT}" REPO_ROOT="${SERVICE_REPO_ROOT}" "${TARGET_CMD[@]}" </dev/null >>"${LOG_FILE}" 2>&1 &
     fi
     echo "$!" >"${PID_FILE}"
     sleep 0.2
