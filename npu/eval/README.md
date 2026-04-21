@@ -29,6 +29,11 @@ It is the first step toward a reproducible closed-loop flow:
 - `npu/eval/run_llm_decoder_onnx_reference.py`: optional exact-reference runner
   behind `command_json_v1` for a future pinned decoder ONNX export.
 
+The repo can now express a future exact-reference pair explicitly even before the
+assets are present: the model contract may point at a `reference_onnx_binding.json`
+that locks the intended ONNX path, tokenizer bundle, runtime, and fetch-plan
+provenance.
+
 The decoder-quality scaffold also introduces separate non-ONNX contracts for:
 - datasets: `runs/datasets/...`
 - tokenizers: `runs/tokenizers/...`

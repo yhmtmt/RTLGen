@@ -1,0 +1,40 @@
+{
+  "version": 0.1,
+  "binding_id": "llm_decoder_tiny_v1_reference_onnx_v1",
+  "status": "external_assets_unfetched",
+  "purpose": "exact_reference",
+  "runtime": {
+    "backend_id": "command_json_v1",
+    "runner": "python3 npu/eval/run_llm_decoder_onnx_reference.py",
+    "runtime_target": "cpu_reference",
+    "library": "onnxruntime"
+  },
+  "model": {
+    "model_id": "llm_decoder_tiny_v1",
+    "onnx_model_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/model.onnx",
+    "input_name": "input_ids",
+    "output_name": "",
+    "topk": 5,
+    "asset_status": "missing"
+  },
+  "tokenizer": {
+    "tokenizer_id": "llm_decoder_gpt2_bpe_stub_v1",
+    "tokenizer_manifest": "runs/tokenizers/llm_decoder_gpt2_bpe_stub_v1/manifest.json",
+    "asset_status": "stub_bundle_contract"
+  },
+  "provenance": {
+    "equivalence_group": "onnx_reference_v1",
+    "pair_lock_required": true,
+    "notes": "Do not treat this binding as active until the ONNX export and the exact model-native tokenizer assets are fetched or checked in together."
+  },
+  "fetch_plan": {
+    "model_source": "TBD",
+    "tokenizer_source": "TBD",
+    "license": "TBD",
+    "sha256": {
+      "onnx_model": "",
+      "tokenizer_vocab": "",
+      "tokenizer_merges": ""
+    }
+  }
+}

@@ -1,10 +1,10 @@
 {
   "version": 0.1,
   "model_id": "llm_decoder_tiny_v1",
-  "status": "file_backed_tokenizer_stub",
+  "status": "exact_reference_binding_unfetched",
   "task": "greedy_next_token",
-  "tokenizer_id": "llm_decoder_wordpiece_stub_v1",
-  "tokenizer_manifest": "runs/tokenizers/llm_decoder_wordpiece_stub_v1/manifest.json",
+  "tokenizer_id": "llm_decoder_gpt2_bpe_stub_v1",
+  "tokenizer_manifest": "runs/tokenizers/llm_decoder_gpt2_bpe_stub_v1/manifest.json",
   "execution_backend": "decoder_backend_v1",
   "decoder_backend_interface": "v1",
   "backend_configs": {
@@ -20,19 +20,20 @@
       "candidate_rule": "last_token_plus_parity_shift"
     }
   },
-  "notes": "No trained decoder weights yet. This contract now binds the tiny decoder dataset to a file-backed tokenizer bundle scaffold, a backend interface, and reference artifact schema. The optional reference_onnx template is exact-reference only; it is not the approximation-aware hardware candidate path.",
+  "notes": "No trained decoder weights are checked into the repo yet. This contract now points at a GPT-2-style BPE tokenizer scaffold and an explicit unfetched ONNX exact-reference binding. The reference_onnx template is structurally bound, but not active until the external model/tokenizer asset pair is pinned.",
   "backend_templates": {
     "reference_onnx": {
       "backend_id": "command_json_v1",
       "runtime_target": "cpu_reference",
-      "equivalence_group": "onnx_reference_v1",
+      "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
       "command": [
         "python3",
         "npu/eval/run_llm_decoder_onnx_reference.py"
       ],
-      "onnx_model_path": "",
+      "onnx_model_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/model.onnx",
       "input_name": "input_ids",
       "topk": 5
     }
-  }
+  },
+  "exact_reference_binding": "runs/models/llm_decoder_tiny_v1/reference_onnx_binding.json"
 }

@@ -33,6 +33,7 @@ What exists today:
 What does not exist yet:
 - a decoder-style model set,
 - tokenizer-faithful reference inference wiring,
+- a pinned exact-reference binding manifest for the future ONNX/tokenizer pair,
 - token-level quality metrics in campaign/report outputs,
 - any dataset-backed acceptance gate for approximate hardware beyond reference-only placeholders.
 
@@ -130,4 +131,4 @@ The repo now has the first explicit decoder-quality binding layer:
 - a replay-backed frozen-artifact backend (`replay_v1`) that keeps that interface stable before a real decoder runtime exists,
 - an executable command-backed adapter (`command_json_v1`) that can later bind a real CPU reference, software emulation, or hardware-target runtime without changing the manifests again.
 
-This is still not a complete real decoder inference stack. The command-backed adapter now exists, and the repo now carries an opt-in ONNX exact-reference runner scaffold, but there is still no pinned real decoder export plus runtime bundle checked into the evaluation path.
+This is still not a complete real decoder inference stack. The command-backed adapter now exists, the repo now carries an opt-in ONNX exact-reference runner scaffold, and the model contract now carries an explicit unfetched exact-reference binding manifest. But there is still no fetched real decoder export plus model-faithful tokenizer asset pair checked into the evaluation path.
