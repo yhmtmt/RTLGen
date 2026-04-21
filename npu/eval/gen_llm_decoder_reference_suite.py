@@ -18,7 +18,7 @@ from npu.eval.llm_decoder_quality import (
     build_decoder_reference_doc,
     load_json,
     load_jsonl,
-    load_vocab,
+    load_tokenizer_bundle,
     resolve_decoder_backend_config,
 )
 
@@ -55,7 +55,8 @@ def main() -> int:
     model_contract_path = _resolve_repo_path(dataset_manifest['model_contract'])
     tokenizer_manifest = load_json(tokenizer_manifest_path)
     model_contract = load_json(model_contract_path)
-    vocab = load_vocab(_resolve_repo_path(tokenizer_manifest['vocab_json']))
+    tokenizer_bundle = load_tokenizer_bundle(tokenizer_manifest, manifest_path=tokenizer_manifest_path)
+    vocab = dict(tokenizer_bundle['vocab'])
     samples = load_jsonl(sample_file)
     backend_config = resolve_decoder_backend_config(dataset_manifest, model_contract, role='reference')
 
@@ -74,6 +75,7 @@ def main() -> int:
             tokenizer_manifest_path=_portable_path(tokenizer_manifest_path),
             model_contract_path=_portable_path(model_contract_path),
             backend_config=backend_config,
+            tokenizer_bundle=tokenizer_bundle,
         )
         out_path = out_dir / f"{sample['sample_id']}.json"
         raw = (json.dumps(doc, indent=2, sort_keys=True) + '\n').encode('utf-8')

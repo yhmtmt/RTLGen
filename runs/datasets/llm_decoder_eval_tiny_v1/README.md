@@ -11,7 +11,7 @@ cheap acceptance slice for approximate-hardware evaluation.
 
 Current status
 --------------
-Bound reference-placeholder contract.
+Bound file-backed tokenizer stub contract.
 
 What exists now:
 - `manifest.json`
@@ -23,7 +23,7 @@ What exists now:
 - replay-backed frozen-artifact loading via `replay_v1` for later emulation-vs-hardware equivalence checks
 
 What does not exist yet:
-- real tokenizer wiring
+- model-faithful tokenizer behavior
 - real decoder model binding
 - continuation/perplexity metrics
 
@@ -35,10 +35,10 @@ Intended use
 
 Current binding
 ---------------
-- tokenizer: `runs/tokenizers/llm_decoder_space_prefix_v1/manifest.json`
+- tokenizer: `runs/tokenizers/llm_decoder_wordpiece_stub_v1/manifest.json`
 - model contract: `runs/models/llm_decoder_tiny_v1/model_contract.json`
 
-These are scaffolding artifacts, not a real decoder deployment path. The backend config is intentionally explicit so a future hardware-target backend and an emulated software backend can be compared under the same contract. `placeholder_v1` remains the default generator path; `replay_v1` is the first frozen-artifact path for equivalence and regression checks.
+These are still scaffolding artifacts, not a real decoder deployment path. The backend config is intentionally explicit so a future hardware-target backend and an emulated software backend can be compared under the same contract. `placeholder_v1` remains the default generator path; `replay_v1` is the first frozen-artifact path for equivalence and regression checks.
 
 Comparison
 ----------

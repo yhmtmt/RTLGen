@@ -90,6 +90,68 @@ class LlmDecoderQualityRegressionTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 self.decoder.load_tokenizer_bundle(tokenizer_manifest, manifest_path=td_path / 'manifest.json')
 
+    def test_tokenize_decoder_text_supports_wordpiece_stub(self):
+        bundle = {
+            'kind': 'wordpiece_stub',
+            'vocab': {'Paris': 0},
+            'special_tokens': {},
+            'unk_supported': False,
+        }
+        self.assertEqual(['Paris'], self.decoder.tokenize_decoder_text(' Paris', bundle))
+
+    def test_build_decoder_reference_doc_supports_wordpiece_stub_bundle(self):
+        dataset_manifest = {
+            'dataset_id': 'llm_decoder_eval_tiny_v1',
+            'task': 'greedy_next_token',
+        }
+        sample = {
+            'sample_id': 'geo_france_capital',
+            'prompt': 'The capital of France is',
+            'expected_continuation': ' Paris',
+        }
+        tokenizer_manifest = {
+            'tokenizer_id': 'llm_decoder_wordpiece_stub_v1',
+            'kind': 'wordpiece_stub',
+            'status': 'stub_bundle_contract',
+            'backend_interface': 'decoder_tokenizer_v1',
+            'special_tokens': {'unk': '[UNK]'},
+            'unk_supported': True,
+        }
+        vocab = {
+            '[UNK]': 0,
+            'The': 1,
+            'capital': 2,
+            'of': 3,
+            'France': 4,
+            'is': 5,
+            'Paris': 6,
+        }
+        bundle = self.decoder.build_tokenizer_bundle(
+            tokenizer_manifest,
+            vocab=vocab,
+            manifest_path='runs/tokenizers/llm_decoder_wordpiece_stub_v1/manifest.json',
+        )
+        model_contract = {
+            'model_id': 'llm_decoder_tiny_v1',
+            'status': 'file_backed_tokenizer_stub',
+            'execution_backend': 'decoder_backend_v1',
+        }
+        doc = self.decoder.build_decoder_reference_doc(
+            dataset_manifest=dataset_manifest,
+            sample=sample,
+            tokenizer_manifest=tokenizer_manifest,
+            vocab=vocab,
+            tokenizer_bundle=bundle,
+            model_contract=model_contract,
+            dataset_manifest_path='runs/datasets/llm_decoder_eval_tiny_v1/manifest.json',
+            tokenizer_manifest_path='runs/tokenizers/llm_decoder_wordpiece_stub_v1/manifest.json',
+            model_contract_path='runs/models/llm_decoder_tiny_v1/model_contract.json',
+            backend_config={'backend_id': 'placeholder_v1'},
+        )
+        self.assertEqual(['The', 'capital', 'of', 'France', 'is'], doc['prompt']['tokens'])
+        self.assertEqual(6, doc['reference']['next_token_id'])
+        self.assertEqual('stub_bundle_contract', doc['tokenizer']['status'])
+
     def test_backend_config_resolution_prefers_dataset_over_model(self):
         dataset_manifest = {
             'decoder_backend_configs': {

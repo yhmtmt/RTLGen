@@ -42,6 +42,10 @@ def tokenize_space_prefix_words(text: str) -> List[str]:
     return tokens
 
 
+def tokenize_wordpiece_stub(text: str) -> List[str]:
+    return [piece for piece in text.strip().split() if piece]
+
+
 def _extract_vocab_tokens(doc: JsonDict) -> List[str]:
     tokens = doc.get('tokens', [])
     if not isinstance(tokens, list):
@@ -50,6 +54,14 @@ def _extract_vocab_tokens(doc: JsonDict) -> List[str]:
     for token in tokens:
         out.append(str(token))
     return out
+
+
+def _resolve_vocab_file(vocab_path: str | Path, *, manifest_path: str | Path | None = None) -> Path:
+    manifest_dir = Path(manifest_path).resolve().parent if manifest_path is not None else None
+    vocab_file = Path(vocab_path)
+    if not vocab_file.is_absolute() and manifest_dir is not None:
+        vocab_file = manifest_dir / vocab_file
+    return vocab_file
 
 
 def load_vocab(path: str | Path) -> Dict[str, int]:
@@ -63,24 +75,14 @@ def load_vocab(path: str | Path) -> Dict[str, int]:
     return vocab
 
 
-def load_tokenizer_bundle(tokenizer_manifest: JsonDict, *, manifest_path: str | Path | None = None) -> JsonDict:
-    vocab_path = tokenizer_manifest.get('vocab_json')
-    if not isinstance(vocab_path, str) or not vocab_path.strip():
-        raise ValueError('tokenizer manifest must define non-empty vocab_json')
-    manifest_dir = Path(manifest_path).resolve().parent if manifest_path is not None else None
-    vocab_file = Path(vocab_path)
-    if not vocab_file.is_absolute() and manifest_dir is not None:
-        vocab_file = manifest_dir / vocab_file
-    elif not vocab_file.is_absolute():
-        vocab_file = Path(vocab_path)
-    vocab_doc = load_json(vocab_file)
-    tokens = _extract_vocab_tokens(vocab_doc)
-    vocab: Dict[str, int] = {}
-    for idx, token in enumerate(tokens):
-        if token in vocab:
-            raise ValueError(f'duplicate tokenizer token: {token!r}')
-        vocab[token] = idx
-
+def build_tokenizer_bundle(
+    tokenizer_manifest: JsonDict,
+    *,
+    vocab: Dict[str, int],
+    manifest_path: str | Path | None = None,
+    tokens: Sequence[str] | None = None,
+) -> JsonDict:
+    token_list = [str(token) for token in tokens] if tokens is not None else [token for token, _ in sorted(vocab.items(), key=lambda item: item[1])]
     specials_raw = tokenizer_manifest.get('special_tokens', {}) or {}
     if not isinstance(specials_raw, dict):
         raise ValueError('tokenizer manifest special_tokens must be an object')
@@ -93,18 +95,46 @@ def load_tokenizer_bundle(tokenizer_manifest: JsonDict, *, manifest_path: str | 
             'id': token_id,
             'present_in_vocab': token_id is not None,
         }
-
+    vocab_file = ''
+    vocab_path = tokenizer_manifest.get('vocab_json')
+    if isinstance(vocab_path, str) and vocab_path.strip():
+        vocab_file = str(_resolve_vocab_file(vocab_path, manifest_path=manifest_path))
     return {
         'tokenizer_id': str(tokenizer_manifest['tokenizer_id']),
         'kind': str(tokenizer_manifest['kind']),
         'manifest_path': str(manifest_path) if manifest_path is not None else '',
-        'vocab_path': str(vocab_file),
-        'tokens': tokens,
-        'vocab': vocab,
+        'vocab_path': vocab_file,
+        'tokens': token_list,
+        'vocab': dict(vocab),
         'special_tokens': special_tokens,
         'status': str(tokenizer_manifest.get('status', 'unknown')),
         'backend_interface': str(tokenizer_manifest.get('backend_interface', 'decoder_tokenizer_v1')),
+        'unk_supported': bool(tokenizer_manifest.get('unk_supported', False)),
     }
+
+
+def load_tokenizer_bundle(tokenizer_manifest: JsonDict, *, manifest_path: str | Path | None = None) -> JsonDict:
+    vocab_path = tokenizer_manifest.get('vocab_json')
+    if not isinstance(vocab_path, str) or not vocab_path.strip():
+        raise ValueError('tokenizer manifest must define non-empty vocab_json')
+    vocab_file = _resolve_vocab_file(vocab_path, manifest_path=manifest_path)
+    vocab_doc = load_json(vocab_file)
+    tokens = _extract_vocab_tokens(vocab_doc)
+    vocab: Dict[str, int] = {}
+    for idx, token in enumerate(tokens):
+        if token in vocab:
+            raise ValueError(f'duplicate tokenizer token: {token!r}')
+        vocab[token] = idx
+    return build_tokenizer_bundle(tokenizer_manifest, vocab=vocab, manifest_path=manifest_path, tokens=tokens)
+
+
+def tokenize_decoder_text(text: str, tokenizer_bundle: JsonDict) -> List[str]:
+    kind = str(tokenizer_bundle.get('kind', 'space_prefix_words'))
+    if kind == 'space_prefix_words':
+        return tokenize_space_prefix_words(text)
+    if kind == 'wordpiece_stub':
+        return tokenize_wordpiece_stub(text)
+    raise ValueError(f'unsupported tokenizer kind: {kind}')
 
 
 def encode_tokens(tokens: Sequence[str], vocab: Dict[str, int]) -> List[int]:
@@ -113,6 +143,24 @@ def encode_tokens(tokens: Sequence[str], vocab: Dict[str, int]) -> List[int]:
         if token not in vocab:
             raise ValueError(f'token not present in vocab: {token!r}')
         out.append(int(vocab[token]))
+    return out
+
+
+def encode_tokens_for_bundle(tokens: Sequence[str], tokenizer_bundle: JsonDict, *, allow_unk: bool | None = None) -> List[int]:
+    vocab = dict(tokenizer_bundle['vocab'])
+    if allow_unk is None:
+        allow_unk = bool(tokenizer_bundle.get('unk_supported', False))
+    unk_entry = dict((tokenizer_bundle.get('special_tokens') or {}).get('unk', {}))
+    unk_id = unk_entry.get('id')
+    out: List[int] = []
+    for token in tokens:
+        if token in vocab:
+            out.append(int(vocab[token]))
+            continue
+        if allow_unk and unk_id is not None:
+            out.append(int(unk_id))
+            continue
+        raise ValueError(f'token not present in tokenizer bundle: {token!r}')
     return out
 
 
@@ -126,6 +174,7 @@ def _build_backend_context(
     *,
     dataset_manifest: JsonDict,
     tokenizer_manifest: JsonDict,
+    tokenizer_bundle: JsonDict,
     vocab: Dict[str, int],
     model_contract: JsonDict,
     dataset_manifest_path: str,
@@ -137,6 +186,7 @@ def _build_backend_context(
     return DecoderBackendContext(
         dataset_manifest=dataset_manifest,
         tokenizer_manifest=tokenizer_manifest,
+        tokenizer_bundle=tokenizer_bundle,
         model_contract=model_contract,
         vocab=vocab,
         dataset_manifest_path=dataset_manifest_path,
@@ -156,12 +206,19 @@ def build_decoder_reference_doc(
     tokenizer_manifest_path: str,
     model_contract_path: str,
     backend_config: JsonDict | None = None,
+    tokenizer_bundle: JsonDict | None = None,
 ) -> JsonDict:
     from npu.eval.decoder_backend import load_decoder_backend
 
+    bundle = tokenizer_bundle or build_tokenizer_bundle(
+        tokenizer_manifest,
+        vocab=vocab,
+        manifest_path=tokenizer_manifest_path,
+    )
     context = _build_backend_context(
         dataset_manifest=dataset_manifest,
         tokenizer_manifest=tokenizer_manifest,
+        tokenizer_bundle=bundle,
         vocab=vocab,
         model_contract=model_contract,
         dataset_manifest_path=dataset_manifest_path,
@@ -184,12 +241,19 @@ def build_decoder_candidate_doc(
     tokenizer_manifest_path: str,
     model_contract_path: str,
     backend_config: JsonDict | None = None,
+    tokenizer_bundle: JsonDict | None = None,
 ) -> JsonDict:
     from npu.eval.decoder_backend import load_decoder_backend
 
+    bundle = tokenizer_bundle or build_tokenizer_bundle(
+        tokenizer_manifest,
+        vocab=vocab,
+        manifest_path=tokenizer_manifest_path,
+    )
     context = _build_backend_context(
         dataset_manifest=dataset_manifest,
         tokenizer_manifest=tokenizer_manifest,
+        tokenizer_bundle=bundle,
         vocab=vocab,
         model_contract=model_contract,
         dataset_manifest_path=dataset_manifest_path,

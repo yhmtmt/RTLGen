@@ -1,10 +1,10 @@
 {
   "version": 0.1,
   "model_id": "llm_decoder_tiny_v1",
-  "status": "reference_only_placeholder",
+  "status": "file_backed_tokenizer_stub",
   "task": "greedy_next_token",
-  "tokenizer_id": "llm_decoder_space_prefix_v1",
-  "tokenizer_manifest": "runs/tokenizers/llm_decoder_space_prefix_v1/manifest.json",
+  "tokenizer_id": "llm_decoder_wordpiece_stub_v1",
+  "tokenizer_manifest": "runs/tokenizers/llm_decoder_wordpiece_stub_v1/manifest.json",
   "execution_backend": "decoder_backend_v1",
   "decoder_backend_interface": "v1",
   "backend_configs": {
@@ -20,7 +20,7 @@
       "candidate_rule": "last_token_plus_parity_shift"
     }
   },
-  "notes": "No trained decoder weights yet. This contract binds the tiny decoder dataset to a deterministic tokenizer, a backend interface, and reference artifact schema. The optional reference_onnx template is exact-reference only; it is not the approximation-aware hardware candidate path.",
+  "notes": "No trained decoder weights yet. This contract now binds the tiny decoder dataset to a file-backed tokenizer bundle scaffold, a backend interface, and reference artifact schema. The optional reference_onnx template is exact-reference only; it is not the approximation-aware hardware candidate path.",
   "backend_templates": {
     "reference_onnx": {
       "backend_id": "command_json_v1",

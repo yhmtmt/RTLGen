@@ -7,7 +7,7 @@ Reference-only model contract for the first decoder-quality stage.
 
 Current status
 --------------
-Placeholder contract only.
+File-backed tokenizer stub contract.
 
 What exists now:
 - `model_contract.json`
@@ -21,4 +21,4 @@ What does not exist yet:
 - runnable mapper lowering
 - real decoder inference path
 
-This contract exists so dataset artifacts can bind to a specific model identity, backend interface, and reference-output schema without pretending a real small decoder is already integrated into the repository. The ONNX runner template is exact-reference only and should be paired later with a separate approximation-aware candidate backend for hardware evaluation.
+This contract exists so dataset artifacts can bind to a specific model identity, a file-backed tokenizer bundle contract, a backend interface, and a reference-output schema without pretending a real small decoder is already integrated into the repository. The ONNX runner template is exact-reference only and should be paired later with a separate approximation-aware candidate backend for hardware evaluation.

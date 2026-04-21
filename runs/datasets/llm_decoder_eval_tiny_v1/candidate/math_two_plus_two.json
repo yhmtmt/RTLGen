@@ -9,10 +9,10 @@
   },
   "candidate": {
     "confidence": 1.0,
-    "next_token_id": 9,
-    "next_token_text": " ="
+    "next_token_id": 13,
+    "next_token_text": "4"
   },
-  "candidate_semantics": "space_prefix_placeholder_last_token_plus_parity_shift",
+  "candidate_semantics": "wordpiece_stub_placeholder_last_token_plus_parity_shift",
   "dataset_id": "llm_decoder_eval_tiny_v1",
   "dataset_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/manifest.json",
   "decode_policy": {
@@ -23,38 +23,39 @@
     "contract_path": "runs/models/llm_decoder_tiny_v1/model_contract.json",
     "execution_backend": "decoder_backend_v1",
     "model_id": "llm_decoder_tiny_v1",
-    "status": "reference_only_placeholder"
+    "status": "file_backed_tokenizer_stub"
   },
   "notes": "Candidate-only placeholder decoder fixture. No trained model inference yet; predictions come from a deterministic synthetic rule.",
   "prompt": {
     "text": "2 + 2 =",
     "token_count": 4,
     "token_ids": [
-      6,
-      7,
-      8,
-      9
+      10,
+      11,
+      10,
+      12
     ],
     "tokens": [
       "2",
-      " +",
-      " 2",
-      " ="
+      "+",
+      "2",
+      "="
     ]
   },
   "reference": {
     "expected_continuation": " 4",
-    "next_token_id": 10,
+    "next_token_id": 13,
     "next_token_rank": 1,
-    "next_token_text": " 4",
+    "next_token_text": "4",
     "selected_tensors": []
   },
   "sample_id": "math_two_plus_two",
   "task": "greedy_next_token",
   "tokenizer": {
-    "kind": "space_prefix_words",
-    "manifest_path": "runs/tokenizers/llm_decoder_space_prefix_v1/manifest.json",
-    "tokenizer_id": "llm_decoder_space_prefix_v1"
+    "kind": "wordpiece_stub",
+    "manifest_path": "runs/tokenizers/llm_decoder_wordpiece_stub_v1/manifest.json",
+    "status": "stub_bundle_contract",
+    "tokenizer_id": "llm_decoder_wordpiece_stub_v1"
   },
   "version": 0.1
 }

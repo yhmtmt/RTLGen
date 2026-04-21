@@ -2,11 +2,11 @@
   "version": 0.1,
   "dataset_id": "llm_decoder_eval_tiny_v1",
   "task": "greedy_next_token",
-  "status": "bound_reference_placeholder",
+  "status": "bound_file_backed_tokenizer_stub",
   "sample_file": "runs/datasets/llm_decoder_eval_tiny_v1/samples.jsonl",
   "sample_count": 5,
-  "tokenizer_id": "llm_decoder_space_prefix_v1",
-  "tokenizer_manifest": "runs/tokenizers/llm_decoder_space_prefix_v1/manifest.json",
+  "tokenizer_id": "llm_decoder_wordpiece_stub_v1",
+  "tokenizer_manifest": "runs/tokenizers/llm_decoder_wordpiece_stub_v1/manifest.json",
   "model_contract": "runs/models/llm_decoder_tiny_v1/model_contract.json",
   "decoder_backend_interface": "v1",
   "decoder_backend_configs": {
@@ -24,5 +24,5 @@
   },
   "reference_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/reference_manifest.json",
   "candidate_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_manifest.json",
-  "notes": "Tiny curated decoder-eval prompt set for the first inference-quality gate. Bound to a deterministic placeholder tokenizer, backend interface, and reference-only decoder contract."
+  "notes": "Tiny curated decoder-eval prompt set for the first inference-quality gate. Bound to a file-backed tokenizer bundle scaffold, backend interface, and reference-only decoder contract."
 }

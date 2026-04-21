@@ -12,7 +12,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Protocol, Sequence
 
-from npu.eval.llm_decoder_quality import encode_tokens, tokenize_space_prefix_words
+from npu.eval.llm_decoder_quality import (
+    encode_tokens_for_bundle,
+    tokenize_decoder_text,
+)
 
 JsonDict = Dict[str, Any]
 
@@ -21,6 +24,7 @@ JsonDict = Dict[str, Any]
 class DecoderBackendContext:
     dataset_manifest: JsonDict
     tokenizer_manifest: JsonDict
+    tokenizer_bundle: JsonDict
     model_contract: JsonDict
     vocab: Dict[str, int]
     dataset_manifest_path: str
@@ -59,15 +63,15 @@ class PlaceholderV1Backend:
     def _build_prompt_and_reference(self, *, context: DecoderBackendContext, sample: JsonDict, backend_config: JsonDict) -> JsonDict:
         prompt = str(sample['prompt'])
         continuation = str(sample['expected_continuation'])
-        prompt_tokens = tokenize_space_prefix_words(prompt)
-        continuation_tokens = tokenize_space_prefix_words(continuation)
+        prompt_tokens = tokenize_decoder_text(prompt, context.tokenizer_bundle)
+        continuation_tokens = tokenize_decoder_text(continuation, context.tokenizer_bundle)
         if len(continuation_tokens) != 1:
             raise ValueError(
                 f"sample {sample['sample_id']} must tokenize to exactly one next token; got {continuation_tokens!r}"
             )
-        prompt_token_ids = encode_tokens(prompt_tokens, context.vocab)
+        prompt_token_ids = encode_tokens_for_bundle(prompt_tokens, context.tokenizer_bundle, allow_unk=True)
         next_token = continuation_tokens[0]
-        next_token_id = encode_tokens([next_token], context.vocab)[0]
+        next_token_id = encode_tokens_for_bundle([next_token], context.tokenizer_bundle, allow_unk=False)[0]
         return {
             'version': 0.1,
             'dataset_id': context.dataset_manifest['dataset_id'],
@@ -82,6 +86,7 @@ class PlaceholderV1Backend:
                 'tokenizer_id': context.tokenizer_manifest['tokenizer_id'],
                 'kind': context.tokenizer_manifest['kind'],
                 'manifest_path': context.tokenizer_manifest_path,
+                'status': context.tokenizer_bundle.get('status', context.tokenizer_manifest.get('status', 'unknown')),
             },
             'model_binding': {
                 'model_id': context.model_contract['model_id'],
@@ -133,7 +138,13 @@ class PlaceholderV1Backend:
             str(normalized.get('candidate_rule', 'last_token_plus_parity_shift')),
         )
         predicted_token = inv_vocab[predicted_id]
-        doc['candidate_semantics'] = 'space_prefix_placeholder_last_token_plus_parity_shift'
+        tokenizer_kind = str(context.tokenizer_bundle.get('kind', 'space_prefix_words'))
+        if tokenizer_kind == 'space_prefix_words':
+            doc['candidate_semantics'] = 'space_prefix_placeholder_last_token_plus_parity_shift'
+        elif tokenizer_kind == 'wordpiece_stub':
+            doc['candidate_semantics'] = 'wordpiece_stub_placeholder_last_token_plus_parity_shift'
+        else:
+            doc['candidate_semantics'] = 'placeholder_last_token_plus_parity_shift'
         doc['candidate'] = {
             'next_token_id': predicted_id,
             'next_token_text': predicted_token,
@@ -254,8 +265,8 @@ class CommandJsonV1Backend:
 
     def _default_prompt(self, *, context: DecoderBackendContext, sample: JsonDict) -> JsonDict:
         prompt = str(sample['prompt'])
-        prompt_tokens = tokenize_space_prefix_words(prompt)
-        prompt_token_ids = encode_tokens(prompt_tokens, context.vocab)
+        prompt_tokens = tokenize_decoder_text(prompt, context.tokenizer_bundle)
+        prompt_token_ids = encode_tokens_for_bundle(prompt_tokens, context.tokenizer_bundle, allow_unk=True)
         return {
             'text': prompt,
             'tokens': prompt_tokens,
@@ -268,6 +279,7 @@ class CommandJsonV1Backend:
             'tokenizer_id': context.tokenizer_manifest['tokenizer_id'],
             'kind': context.tokenizer_manifest['kind'],
             'manifest_path': context.tokenizer_manifest_path,
+            'status': context.tokenizer_bundle.get('status', context.tokenizer_manifest.get('status', 'unknown')),
         }
 
     def _default_model_binding(self, *, context: DecoderBackendContext) -> JsonDict:

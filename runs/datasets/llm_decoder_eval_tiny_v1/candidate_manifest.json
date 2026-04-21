@@ -7,37 +7,37 @@
     "role": "candidate",
     "runtime_target": "software_emulation"
   },
-  "candidate_semantics": "space_prefix_placeholder_last_token_plus_parity_shift",
+  "candidate_semantics": "wordpiece_stub_placeholder_last_token_plus_parity_shift",
   "dataset_id": "llm_decoder_eval_tiny_v1",
   "model_contract": "runs/models/llm_decoder_tiny_v1/model_contract.json",
   "samples": [
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate/geo_france_capital.json",
-      "candidate_sha256": "41a51611e80bfd9452622a8db82991c98f65116cde4957091405bc2c76eb8c74",
+      "candidate_sha256": "ebff12f320d7778bba402696619b2fa1fd97d777b5aef6c754f7a3786a6c5111",
       "sample_id": "geo_france_capital"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate/math_two_plus_two.json",
-      "candidate_sha256": "b77ee451f35450f04e3990df1ed36931f31897e609641ed181867b2310e3b323",
+      "candidate_sha256": "ea7b617ede07d02c1681e09f3a447d235fd4ec469d84a6108e644d230f0cde65",
       "sample_id": "math_two_plus_two"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate/quote_complete.json",
-      "candidate_sha256": "fec00301a4522c6d0a625c0571d2e1ab64fa7857d4829d5ea395748517fe9c32",
+      "candidate_sha256": "12cc0f8d508629b7f1da2d3dd0b81df7dbe72fd5cb4851a16b4684945da5cb38",
       "sample_id": "quote_complete"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate/weekday_after_monday.json",
-      "candidate_sha256": "dd06ff61dee83319027f01cb6856f000a05f02adceb1964ff1b6b5b443996c32",
+      "candidate_sha256": "37c8b3fa5cd6be8f19b476b2b6ef6e210eb78ed49bf5eddbf566880a1e403a3e",
       "sample_id": "weekday_after_monday"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate/color_banana.json",
-      "candidate_sha256": "4b91038a9d5476071e6bc158dd09b0db5a4812acd77584f4dd61d8f8ee208536",
+      "candidate_sha256": "7a04fa2f4a6a31b7ae67d214cf5281a9ded3d92b1897b72813b1fdd7d2c69123",
       "sample_id": "color_banana"
     }
   ],
   "task": "greedy_next_token",
-  "tokenizer_manifest": "runs/tokenizers/llm_decoder_space_prefix_v1/manifest.json",
+  "tokenizer_manifest": "runs/tokenizers/llm_decoder_wordpiece_stub_v1/manifest.json",
   "version": 0.1
 }

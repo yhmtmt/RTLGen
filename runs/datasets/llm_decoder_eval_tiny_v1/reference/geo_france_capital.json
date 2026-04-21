@@ -17,40 +17,41 @@
     "contract_path": "runs/models/llm_decoder_tiny_v1/model_contract.json",
     "execution_backend": "decoder_backend_v1",
     "model_id": "llm_decoder_tiny_v1",
-    "status": "reference_only_placeholder"
+    "status": "file_backed_tokenizer_stub"
   },
   "notes": "Reference-only placeholder decoder fixture. No trained model inference yet.",
   "prompt": {
     "text": "The capital of France is",
     "token_count": 5,
     "token_ids": [
-      0,
-      1,
-      2,
-      3,
-      4
+      4,
+      5,
+      6,
+      7,
+      8
     ],
     "tokens": [
       "The",
-      " capital",
-      " of",
-      " France",
-      " is"
+      "capital",
+      "of",
+      "France",
+      "is"
     ]
   },
   "reference": {
     "expected_continuation": " Paris",
-    "next_token_id": 5,
+    "next_token_id": 9,
     "next_token_rank": 1,
-    "next_token_text": " Paris",
+    "next_token_text": "Paris",
     "selected_tensors": []
   },
   "sample_id": "geo_france_capital",
   "task": "greedy_next_token",
   "tokenizer": {
-    "kind": "space_prefix_words",
-    "manifest_path": "runs/tokenizers/llm_decoder_space_prefix_v1/manifest.json",
-    "tokenizer_id": "llm_decoder_space_prefix_v1"
+    "kind": "wordpiece_stub",
+    "manifest_path": "runs/tokenizers/llm_decoder_wordpiece_stub_v1/manifest.json",
+    "status": "stub_bundle_contract",
+    "tokenizer_id": "llm_decoder_wordpiece_stub_v1"
   },
   "version": 0.1
 }

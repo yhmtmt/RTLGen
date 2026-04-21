@@ -17,40 +17,41 @@
     "contract_path": "runs/models/llm_decoder_tiny_v1/model_contract.json",
     "execution_backend": "decoder_backend_v1",
     "model_id": "llm_decoder_tiny_v1",
-    "status": "reference_only_placeholder"
+    "status": "file_backed_tokenizer_stub"
   },
   "notes": "Reference-only placeholder decoder fixture. No trained model inference yet.",
   "prompt": {
     "text": "The day after Monday is",
     "token_count": 5,
     "token_ids": [
-      0,
-      20,
-      21,
-      22,
-      4
+      4,
+      23,
+      24,
+      25,
+      8
     ],
     "tokens": [
       "The",
-      " day",
-      " after",
-      " Monday",
-      " is"
+      "day",
+      "after",
+      "Monday",
+      "is"
     ]
   },
   "reference": {
     "expected_continuation": " Tuesday",
-    "next_token_id": 23,
+    "next_token_id": 26,
     "next_token_rank": 1,
-    "next_token_text": " Tuesday",
+    "next_token_text": "Tuesday",
     "selected_tensors": []
   },
   "sample_id": "weekday_after_monday",
   "task": "greedy_next_token",
   "tokenizer": {
-    "kind": "space_prefix_words",
-    "manifest_path": "runs/tokenizers/llm_decoder_space_prefix_v1/manifest.json",
-    "tokenizer_id": "llm_decoder_space_prefix_v1"
+    "kind": "wordpiece_stub",
+    "manifest_path": "runs/tokenizers/llm_decoder_wordpiece_stub_v1/manifest.json",
+    "status": "stub_bundle_contract",
+    "tokenizer_id": "llm_decoder_wordpiece_stub_v1"
   },
   "version": 0.1
 }
