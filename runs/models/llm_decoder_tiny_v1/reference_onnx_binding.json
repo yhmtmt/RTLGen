@@ -1,48 +1,55 @@
 {
   "version": 0.1,
   "binding_id": "llm_decoder_tiny_v1_reference_onnx_v1",
-  "status": "planned_source_selected_unfetched",
+  "status": "exact_reference_runtime_validated",
   "purpose": "exact_reference",
   "runtime": {
     "backend_id": "command_json_v1",
-    "runner": "python3 npu/eval/run_llm_decoder_onnx_reference.py",
+    "runner": "/workspaces/RTLGen/control_plane/.venv/bin/python npu/eval/run_llm_decoder_onnx_reference.py",
     "runtime_target": "cpu_reference",
     "library": "onnxruntime"
   },
   "model": {
     "model_id": "llm_decoder_tiny_v1",
     "onnx_model_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/model.onnx",
+    "model_config_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/config.json",
     "input_name": "input_ids",
-    "output_name": "",
+    "output_name": "logits",
     "topk": 5,
-    "asset_status": "planned_unfetched"
+    "asset_status": "fetched"
   },
   "tokenizer": {
     "tokenizer_id": "llm_decoder_gpt2_bpe_stub_v1",
     "tokenizer_manifest": "runs/tokenizers/llm_decoder_gpt2_bpe_stub_v1/manifest.json",
-    "asset_status": "planned_unfetched"
+    "asset_status": "fetched"
   },
   "provenance": {
     "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
     "pair_lock_required": true,
-    "notes": "Do not treat this binding as active until the ONNX export and the exact model-native tokenizer assets are fetched or checked in together."
+    "notes": "Assets are fetched, hashed, and validated against the local ONNX Runtime exact-reference runner using the paired GPT-2 tokenizer bundle."
   },
   "fetch_plan": {
-    "model_source": "huggingface://sshleifer/tiny-gpt2",
-    "tokenizer_source": "huggingface://gpt2",
-    "license": "verify_upstream_before_fetch",
+    "model_source": "huggingface://onnx-community/tiny-random-gpt2-ONNX@90f61e71d6fa8e571d0ab0f95a637a5d7d8ed52f",
+    "tokenizer_source": "huggingface://onnx-community/tiny-random-gpt2-ONNX@90f61e71d6fa8e571d0ab0f95a637a5d7d8ed52f",
+    "license": "apache-2.0-verify-upstream",
     "sha256": {
-      "onnx_model": "",
-      "tokenizer_vocab": "",
-      "tokenizer_merges": ""
+      "onnx_model": "e18370ba6247c564a4aef7b6a83aa86d5d036f47a73c0935e51bbcfe178141a1",
+      "tokenizer_vocab": "3ba3c3109ff33976c4bd966589c11ee14fcaa1f4c9e5e154c2ed7f99d80709e7",
+      "tokenizer_merges": "1ce1664773c50f3e0cc8842619a93edc4624525b728b188a9e0be33b7726adc5",
+      "tokenizer_json": "1fe93b6152957cf9cfd6d89002467f789ce8b3f3e000b3a2edf27c808ddd0b9e",
+      "tokenizer_config_json": "70049a392a6fd4dd1343d076e1f0e64d98ae821287c80638f603364ae21e64d7",
+      "special_tokens_map_json": "98412137ae43c77f8af52eb51b19c3536d3242cb55339167d841005fa94a23b7",
+      "model_config_json": "935121200917262375ee8a179461219005d4992767823a4f7460dbd4b648023b",
+      "generation_config_json": "e7f6144153c0e1c0ccd6c327134b1bcc8f4e36e164d903935b08753947126636"
     }
   },
   "selection": {
-    "status": "planned_unverified_until_fetch",
+    "status": "runtime_validated",
     "upstream_model_family": "gpt2_decoder",
-    "upstream_model_id": "sshleifer/tiny-gpt2",
+    "upstream_model_id": "onnx-community/tiny-random-gpt2-ONNX",
+    "upstream_commit": "90f61e71d6fa8e571d0ab0f95a637a5d7d8ed52f",
     "planned_tokenizer_family": "gpt2_bpe",
-    "planned_tokenizer_id": "gpt2",
-    "reason": "Small decoder-only model family aligned with the first exact-reference CPU path and the local GPT-2-style BPE tokenizer scaffold."
+    "planned_tokenizer_id": "onnx-community/tiny-random-gpt2-ONNX tokenizer assets",
+    "reason": "Small decoder-only ONNX export with matching GPT-2 tokenizer assets that can be validated locally as the first exact-reference CPU path."
   }
 }

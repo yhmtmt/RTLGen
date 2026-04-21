@@ -37,13 +37,13 @@ class LlmDecoderOnnxRunnerRegressionTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.runner._extract_next_token_logits([[[[0.0]]]])
 
-    def test_runner_rejects_unsupported_tokenizer_family_before_runtime(self):
+    def test_runner_rejects_gpt2_bundle_without_tokenizer_json_path(self):
         with tempfile.TemporaryDirectory() as td:
             td_path = Path(td)
             vocab_json = td_path / 'vocab.json'
             merges_txt = td_path / 'merges.txt'
             vocab_json.write_text(
-                json.dumps({'tokens': ['<|endoftext|>', 'T', 'h', 'e']}),
+                json.dumps({'T': 0, 'h': 1, 'e': 2, '<|endoftext|>': 3}),
                 encoding='utf-8',
             )
             merges_txt.write_text('#version: 0.2\nT h\nTh e\n', encoding='utf-8')
@@ -84,14 +84,19 @@ class LlmDecoderOnnxRunnerRegressionTest(unittest.TestCase):
                 check=False,
             )
             self.assertNotEqual(0, proc.returncode)
-            self.assertIn('unsupported tokenizer for ONNX reference runner', proc.stderr)
+            self.assertIn('gpt2_bpe tokenizer bundle is missing tokenizer_json_path', proc.stderr)
 
-    def test_runner_fails_cleanly_without_onnxruntime(self):
+    def test_runner_fails_cleanly_when_model_path_is_missing(self):
         with tempfile.TemporaryDirectory() as td:
             td_path = Path(td)
             vocab_json = td_path / 'vocab.json'
+            model_config = td_path / 'config.json'
             vocab_json.write_text(
                 json.dumps({'tokens': ['The', ' capital', ' of', ' France', ' is', ' Paris']}),
+                encoding='utf-8',
+            )
+            model_config.write_text(
+                json.dumps({'n_layer': 2, 'n_head': 2, 'n_embd': 128}),
                 encoding='utf-8',
             )
             tokenizer_manifest = td_path / 'tokenizer_manifest.json'
@@ -110,6 +115,7 @@ class LlmDecoderOnnxRunnerRegressionTest(unittest.TestCase):
                 'backend_config': {
                     'backend_id': 'command_json_v1',
                     'onnx_model_path': str(td_path / 'missing.onnx'),
+                    'model_config_path': str(model_config),
                     'input_name': 'input_ids',
                 },
                 'sample': {
@@ -129,7 +135,7 @@ class LlmDecoderOnnxRunnerRegressionTest(unittest.TestCase):
                 check=False,
             )
             self.assertNotEqual(0, proc.returncode)
-            self.assertIn('onnxruntime is not installed', proc.stderr)
+            self.assertIn('NoSuchFile', proc.stderr)
 
 
 if __name__ == '__main__':

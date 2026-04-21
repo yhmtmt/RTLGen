@@ -26,13 +26,13 @@ It is the first step toward a reproducible closed-loop flow:
   fixtures for the tiny decoder-quality stage.
 - `npu/eval/compare_llm_decoder_quality.py`: summarize token-level exact-match
   rates from decoder reference/candidate manifests.
-- `npu/eval/run_llm_decoder_onnx_reference.py`: optional exact-reference runner
-  behind `command_json_v1` for a future pinned decoder ONNX export.
+- `npu/eval/run_llm_decoder_onnx_reference.py`: active exact-reference runner
+  behind `command_json_v1` for the pinned tiny decoder ONNX export.
 
 The repo can now express a future exact-reference pair explicitly even before the
 assets are present: the model contract may point at a `reference_onnx_binding.json`
 that locks the intended ONNX path, tokenizer bundle, runtime, and fetch-plan
-provenance. The current planned first exact-reference source is `sshleifer/tiny-gpt2` with the GPT-2 tokenizer family, but that remains inactive until fetched and hashed.
+provenance. The current active first exact-reference source is `onnx-community/tiny-random-gpt2-ONNX` at commit `90f61e71d6fa8e571d0ab0f95a637a5d7d8ed52f`, paired with the GPT-2 tokenizer assets fetched from the same source.
 
 The decoder-quality scaffold also introduces separate non-ONNX contracts for:
 - datasets: `runs/datasets/...`

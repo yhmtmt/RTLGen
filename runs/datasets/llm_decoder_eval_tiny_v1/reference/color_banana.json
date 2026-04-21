@@ -1,11 +1,39 @@
 {
   "backend": {
-    "backend_id": "placeholder_v1",
+    "backend_id": "command_json_v1",
     "candidate_rule": "last_token_plus_parity_shift",
-    "equivalence_group": "placeholder_v1",
+    "command": [
+      "/workspaces/RTLGen/control_plane/.venv/bin/python",
+      "/workspaces/RTLGen/npu/eval/run_llm_decoder_onnx_reference.py"
+    ],
+    "cwd": "",
+    "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
+    "input_name": "input_ids",
     "interface": "decoder_backend_v1",
+    "model_config_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/config.json",
+    "onnx_model_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/model.onnx",
+    "output_name": "logits",
+    "request_schema": "decoder_backend_command_v1",
     "role": "reference",
-    "runtime_target": "software_reference"
+    "runtime_target": "cpu_reference",
+    "timeout_s": 30.0,
+    "topk": 5
+  },
+  "backend_invocation": {
+    "command": [
+      "/workspaces/RTLGen/control_plane/.venv/bin/python",
+      "/workspaces/RTLGen/npu/eval/run_llm_decoder_onnx_reference.py"
+    ],
+    "cwd": "",
+    "request_schema": "decoder_backend_command_v1",
+    "result_schema": "decoder_backend_command_result_v1"
+  },
+  "backend_runtime": {
+    "library": "onnxruntime",
+    "logits_rank": 1,
+    "onnxruntime_version": "1.23.1",
+    "runner": "onnx_reference_v1",
+    "runtime_target": "cpu_reference"
   },
   "dataset_id": "llm_decoder_eval_tiny_v1",
   "dataset_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/manifest.json",
@@ -17,41 +45,68 @@
     "contract_path": "runs/models/llm_decoder_tiny_v1/model_contract.json",
     "execution_backend": "decoder_backend_v1",
     "model_id": "llm_decoder_tiny_v1",
-    "status": "file_backed_tokenizer_stub"
+    "status": "exact_reference_active"
   },
-  "notes": "Reference-only placeholder decoder fixture. No trained model inference yet.",
+  "notes": "ONNX Runtime decoder reference runner result.",
   "prompt": {
     "text": "A ripe banana is usually",
     "token_count": 5,
     "token_ids": [
-      27,
-      28,
-      29,
-      8,
-      30
+      32,
+      29036,
+      25996,
+      318,
+      3221
     ],
     "tokens": [
       "A",
-      "ripe",
-      "banana",
-      "is",
-      "usually"
+      "\u0120ripe",
+      "\u0120banana",
+      "\u0120is",
+      "\u0120usually"
     ]
   },
   "reference": {
     "expected_continuation": " yellow",
-    "next_token_id": 31,
+    "next_token_id": 3221,
     "next_token_rank": 1,
-    "next_token_text": "yellow",
-    "selected_tensors": []
+    "next_token_text": " usually",
+    "selected_tensors": [],
+    "topk": [
+      {
+        "logit": 1.2921810150146484,
+        "token_id": 3221,
+        "token_text": " usually"
+      },
+      {
+        "logit": 0.8171362280845642,
+        "token_id": 22851,
+        "token_text": "Starting"
+      },
+      {
+        "logit": 0.804939866065979,
+        "token_id": 25339,
+        "token_text": " Grab"
+      },
+      {
+        "logit": 0.8030661940574646,
+        "token_id": 40170,
+        "token_text": " spraying"
+      },
+      {
+        "logit": 0.7992759346961975,
+        "token_id": 49224,
+        "token_text": "hiba"
+      }
+    ]
   },
   "sample_id": "color_banana",
   "task": "greedy_next_token",
   "tokenizer": {
-    "kind": "wordpiece_stub",
-    "manifest_path": "runs/tokenizers/llm_decoder_wordpiece_stub_v1/manifest.json",
-    "status": "stub_bundle_contract",
-    "tokenizer_id": "llm_decoder_wordpiece_stub_v1"
+    "kind": "gpt2_bpe",
+    "manifest_path": "runs/tokenizers/llm_decoder_gpt2_bpe_stub_v1/manifest.json",
+    "status": "exact_reference_tokenizer_active",
+    "tokenizer_id": "llm_decoder_gpt2_bpe_stub_v1"
   },
   "version": 0.1
 }

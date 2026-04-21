@@ -11,34 +11,30 @@ cheap acceptance slice for approximate-hardware evaluation.
 
 Current status
 --------------
-Bound file-backed tokenizer stub contract.
+Active ONNX exact-reference dataset binding.
 
 What exists now:
 - `manifest.json`
 - `samples.jsonl`
 - `reference_manifest.json`
 - `candidate_manifest.json`
-- deterministic tokenizer/model binding for reference-only artifacts
-- backend-configured reference/candidate generation via `decoder_backend_v1`
+- fetched GPT-2-family tokenizer/model binding for reference artifacts
+- active ONNX exact-reference generation via `decoder_backend_v1` + `command_json_v1`
+- placeholder candidate generation under the same tokenizer/model contract
 - replay-backed frozen-artifact loading via `replay_v1` for later emulation-vs-hardware equivalence checks
 
 What does not exist yet:
-- model-faithful tokenizer behavior
-- real decoder model binding
+- approximation-aware candidate backend
 - continuation/perplexity metrics
-
-Intended use
-------------
-- greedy next-token exact-match checks
-- bounded continuation checks later
-- regression gating for approximation work after the decoder model path exists
+- larger decoder prompt set
 
 Current binding
 ---------------
-- tokenizer: `runs/tokenizers/llm_decoder_wordpiece_stub_v1/manifest.json`
+- tokenizer: `runs/tokenizers/llm_decoder_gpt2_bpe_stub_v1/manifest.json`
 - model contract: `runs/models/llm_decoder_tiny_v1/model_contract.json`
+- exact reference runner: `npu/eval/run_llm_decoder_onnx_reference.py`
 
-These are still scaffolding artifacts, not a real decoder deployment path. The backend config is intentionally explicit so a future hardware-target backend and an emulated software backend can be compared under the same contract. `placeholder_v1` remains the default generator path; `replay_v1` is the first frozen-artifact path for equivalence and regression checks.
+The reference side is now a real ONNX Runtime exact-reference path. The candidate side is still intentionally synthetic so the repo can keep the equivalence/reporting contract stable while the approximation-aware backend is built.
 
 Comparison
 ----------

@@ -29,4 +29,4 @@ Current sets
   explicit special-token metadata. This is the first contract shape intended
   for a pinned real decoder tokenizer, even though the current assets are still
   stubbed.
-- `llm_decoder_gpt2_bpe_stub_v1`: GPT-2-style BPE bundle scaffold with local `vocab.json`, `merges.txt`, byte-level pretokenization metadata, and explicit special-token policy. This is the intended first exact-reference tokenizer family, but the assets are still stubbed and are not yet bound to a real decoder export.
+- `llm_decoder_gpt2_bpe_stub_v1`: GPT-2-style BPE bundle with fetched `vocab.json`, `merges.txt`, `tokenizer.json`, and special-token metadata from `onnx-community/tiny-random-gpt2-ONNX`. The historical bundle id is retained for compatibility, but the assets are now real exact-reference files.

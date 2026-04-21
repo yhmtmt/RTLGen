@@ -2,42 +2,42 @@
   "backend_config": {
     "backend_id": "placeholder_v1",
     "candidate_rule": "last_token_plus_parity_shift",
-    "equivalence_group": "placeholder_v1",
+    "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
     "interface": "decoder_backend_v1",
     "role": "candidate",
     "runtime_target": "software_emulation"
   },
-  "candidate_semantics": "wordpiece_stub_placeholder_last_token_plus_parity_shift",
+  "candidate_semantics": "placeholder_last_token_plus_parity_shift",
   "dataset_id": "llm_decoder_eval_tiny_v1",
   "model_contract": "runs/models/llm_decoder_tiny_v1/model_contract.json",
   "samples": [
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate/geo_france_capital.json",
-      "candidate_sha256": "ebff12f320d7778bba402696619b2fa1fd97d777b5aef6c754f7a3786a6c5111",
+      "candidate_sha256": "2ab5116a696f9ce2bc9f017fac732ea830237c6049b6eb573ccf1aa654d16658",
       "sample_id": "geo_france_capital"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate/math_two_plus_two.json",
-      "candidate_sha256": "ea7b617ede07d02c1681e09f3a447d235fd4ec469d84a6108e644d230f0cde65",
+      "candidate_sha256": "b29ce15a990770b27993682422621560eafa62e3f0c54063d34675f76599feb9",
       "sample_id": "math_two_plus_two"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate/quote_complete.json",
-      "candidate_sha256": "12cc0f8d508629b7f1da2d3dd0b81df7dbe72fd5cb4851a16b4684945da5cb38",
+      "candidate_sha256": "9cb02e8c03462994395b0b8197ea1faa897ff0a4638ab2446aab3343c8119fdc",
       "sample_id": "quote_complete"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate/weekday_after_monday.json",
-      "candidate_sha256": "37c8b3fa5cd6be8f19b476b2b6ef6e210eb78ed49bf5eddbf566880a1e403a3e",
+      "candidate_sha256": "c58f25f71f9a7f34a251d26d40600fb68b4c9712f64607283ad21529464d9d6b",
       "sample_id": "weekday_after_monday"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate/color_banana.json",
-      "candidate_sha256": "7a04fa2f4a6a31b7ae67d214cf5281a9ded3d92b1897b72813b1fdd7d2c69123",
+      "candidate_sha256": "d170b96308b916535356661aa723ed3dbb39f5835f9b05e396497aa3f454f83d",
       "sample_id": "color_banana"
     }
   ],
   "task": "greedy_next_token",
-  "tokenizer_manifest": "runs/tokenizers/llm_decoder_wordpiece_stub_v1/manifest.json",
+  "tokenizer_manifest": "runs/tokenizers/llm_decoder_gpt2_bpe_stub_v1/manifest.json",
   "version": 0.1
 }

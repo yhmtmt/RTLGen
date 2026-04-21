@@ -25,17 +25,16 @@ What exists today:
 - `npu/eval/compare_llm_reference.py`
 - `runs/datasets/llm_decoder_eval_tiny_v1/manifest.json`
 - `runs/datasets/llm_decoder_eval_tiny_v1/reference_manifest.json`
-- `runs/tokenizers/llm_decoder_space_prefix_v1/manifest.json`
+- `runs/tokenizers/llm_decoder_gpt2_bpe_stub_v1/manifest.json`
 - `runs/models/llm_decoder_tiny_v1/model_contract.json`
 - `npu/eval/decoder_backend.py`
 - `npu/eval/gen_llm_decoder_reference_suite.py`
 
 What does not exist yet:
 - a decoder-style model set,
-- tokenizer-faithful reference inference wiring,
-- a pinned exact-reference binding manifest for the future ONNX/tokenizer pair,
+- an approximation-aware candidate backend for the same decoder/tokenizer pair,
 - token-level quality metrics in campaign/report outputs,
-- any dataset-backed acceptance gate for approximate hardware beyond reference-only placeholders.
+- any dataset-backed acceptance gate for approximate hardware beyond reference/candidate next-token checks.
 
 ## Immediate Goal
 
@@ -131,4 +130,4 @@ The repo now has the first explicit decoder-quality binding layer:
 - a replay-backed frozen-artifact backend (`replay_v1`) that keeps that interface stable before a real decoder runtime exists,
 - an executable command-backed adapter (`command_json_v1`) that can later bind a real CPU reference, software emulation, or hardware-target runtime without changing the manifests again.
 
-This is still not a complete real decoder inference stack. The command-backed adapter now exists, the repo now carries an opt-in ONNX exact-reference runner scaffold, and the model contract now carries an explicit unfetched exact-reference binding manifest. But there is still no fetched real decoder export plus model-faithful tokenizer asset pair checked into the evaluation path. The current planned first exact-reference family is `sshleifer/tiny-gpt2` with the GPT-2 tokenizer family, but that selection is still unverified until fetch and hash lock.
+This is still not a complete production decoder evaluation stack, but the reference side is now real: the repo carries a fetched `onnx-community/tiny-random-gpt2-ONNX` exact-reference pair, an active ONNX Runtime runner, and paired GPT-2 tokenizer assets. The remaining gap is the candidate side: approximation-aware and hardware-oriented backends still need to target the same tokenizer/model contract so their outputs can be compared against this exact reference.

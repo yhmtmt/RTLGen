@@ -2,17 +2,17 @@
   "backend": {
     "backend_id": "placeholder_v1",
     "candidate_rule": "last_token_plus_parity_shift",
-    "equivalence_group": "placeholder_v1",
+    "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
     "interface": "decoder_backend_v1",
     "role": "candidate",
     "runtime_target": "software_emulation"
   },
   "candidate": {
     "confidence": 1.0,
-    "next_token_id": 21,
-    "next_token_text": "the"
+    "next_token_id": 263,
+    "next_token_text": "er"
   },
-  "candidate_semantics": "wordpiece_stub_placeholder_last_token_plus_parity_shift",
+  "candidate_semantics": "placeholder_last_token_plus_parity_shift",
   "dataset_id": "llm_decoder_eval_tiny_v1",
   "dataset_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/manifest.json",
   "decode_policy": {
@@ -23,49 +23,51 @@
     "contract_path": "runs/models/llm_decoder_tiny_v1/model_contract.json",
     "execution_backend": "decoder_backend_v1",
     "model_id": "llm_decoder_tiny_v1",
-    "status": "file_backed_tokenizer_stub"
+    "status": "exact_reference_active"
   },
   "notes": "Candidate-only placeholder decoder fixture. No trained model inference yet; predictions come from a deterministic synthetic rule.",
   "prompt": {
     "text": "To be or not to be, that is the",
-    "token_count": 9,
+    "token_count": 10,
     "token_ids": [
-      14,
-      15,
-      16,
-      17,
-      18,
-      19,
-      20,
-      8,
-      21
+      2514,
+      307,
+      393,
+      407,
+      284,
+      307,
+      11,
+      326,
+      318,
+      262
     ],
     "tokens": [
       "To",
-      "be",
-      "or",
-      "not",
-      "to",
-      "be,",
-      "that",
-      "is",
-      "the"
+      "\u0120be",
+      "\u0120or",
+      "\u0120not",
+      "\u0120to",
+      "\u0120be",
+      ",",
+      "\u0120that",
+      "\u0120is",
+      "\u0120the"
     ]
   },
   "reference": {
     "expected_continuation": " question",
-    "next_token_id": 22,
+    "next_token_id": 1808,
     "next_token_rank": 1,
-    "next_token_text": "question",
+    "next_token_text": "\u0120question",
     "selected_tensors": []
   },
   "sample_id": "quote_complete",
   "task": "greedy_next_token",
   "tokenizer": {
-    "kind": "wordpiece_stub",
-    "manifest_path": "runs/tokenizers/llm_decoder_wordpiece_stub_v1/manifest.json",
-    "status": "stub_bundle_contract",
-    "tokenizer_id": "llm_decoder_wordpiece_stub_v1"
+    "kind": "gpt2_bpe",
+    "manifest_path": "runs/tokenizers/llm_decoder_gpt2_bpe_stub_v1/manifest.json",
+    "status": "exact_reference_tokenizer_active",
+    "tokenizer_id": "llm_decoder_gpt2_bpe_stub_v1"
   },
   "version": 0.1
 }

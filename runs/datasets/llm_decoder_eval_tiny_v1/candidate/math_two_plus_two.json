@@ -2,17 +2,17 @@
   "backend": {
     "backend_id": "placeholder_v1",
     "candidate_rule": "last_token_plus_parity_shift",
-    "equivalence_group": "placeholder_v1",
+    "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
     "interface": "decoder_backend_v1",
     "role": "candidate",
     "runtime_target": "software_emulation"
   },
   "candidate": {
     "confidence": 1.0,
-    "next_token_id": 13,
-    "next_token_text": "4"
+    "next_token_id": 796,
+    "next_token_text": "\u0120="
   },
-  "candidate_semantics": "wordpiece_stub_placeholder_last_token_plus_parity_shift",
+  "candidate_semantics": "placeholder_last_token_plus_parity_shift",
   "dataset_id": "llm_decoder_eval_tiny_v1",
   "dataset_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/manifest.json",
   "decode_policy": {
@@ -23,39 +23,39 @@
     "contract_path": "runs/models/llm_decoder_tiny_v1/model_contract.json",
     "execution_backend": "decoder_backend_v1",
     "model_id": "llm_decoder_tiny_v1",
-    "status": "file_backed_tokenizer_stub"
+    "status": "exact_reference_active"
   },
   "notes": "Candidate-only placeholder decoder fixture. No trained model inference yet; predictions come from a deterministic synthetic rule.",
   "prompt": {
     "text": "2 + 2 =",
     "token_count": 4,
     "token_ids": [
-      10,
-      11,
-      10,
-      12
+      17,
+      1343,
+      362,
+      796
     ],
     "tokens": [
       "2",
-      "+",
-      "2",
-      "="
+      "\u0120+",
+      "\u01202",
+      "\u0120="
     ]
   },
   "reference": {
     "expected_continuation": " 4",
-    "next_token_id": 13,
+    "next_token_id": 604,
     "next_token_rank": 1,
-    "next_token_text": "4",
+    "next_token_text": "\u01204",
     "selected_tensors": []
   },
   "sample_id": "math_two_plus_two",
   "task": "greedy_next_token",
   "tokenizer": {
-    "kind": "wordpiece_stub",
-    "manifest_path": "runs/tokenizers/llm_decoder_wordpiece_stub_v1/manifest.json",
-    "status": "stub_bundle_contract",
-    "tokenizer_id": "llm_decoder_wordpiece_stub_v1"
+    "kind": "gpt2_bpe",
+    "manifest_path": "runs/tokenizers/llm_decoder_gpt2_bpe_stub_v1/manifest.json",
+    "status": "exact_reference_tokenizer_active",
+    "tokenizer_id": "llm_decoder_gpt2_bpe_stub_v1"
   },
   "version": 0.1
 }

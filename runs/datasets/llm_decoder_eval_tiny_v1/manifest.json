@@ -1,28 +1,37 @@
 {
-  "version": 0.1,
+  "candidate_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_manifest.json",
   "dataset_id": "llm_decoder_eval_tiny_v1",
-  "task": "greedy_next_token",
-  "status": "bound_file_backed_tokenizer_stub",
-  "sample_file": "runs/datasets/llm_decoder_eval_tiny_v1/samples.jsonl",
-  "sample_count": 5,
-  "tokenizer_id": "llm_decoder_wordpiece_stub_v1",
-  "tokenizer_manifest": "runs/tokenizers/llm_decoder_wordpiece_stub_v1/manifest.json",
-  "model_contract": "runs/models/llm_decoder_tiny_v1/model_contract.json",
-  "decoder_backend_interface": "v1",
   "decoder_backend_configs": {
-    "reference": {
-      "backend_id": "placeholder_v1",
-      "runtime_target": "software_reference",
-      "equivalence_group": "placeholder_v1"
-    },
     "candidate": {
       "backend_id": "placeholder_v1",
-      "runtime_target": "software_emulation",
-      "equivalence_group": "placeholder_v1",
-      "candidate_rule": "last_token_plus_parity_shift"
+      "candidate_rule": "last_token_plus_parity_shift",
+      "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
+      "runtime_target": "software_emulation"
+    },
+    "reference": {
+      "backend_id": "command_json_v1",
+      "command": [
+        "/workspaces/RTLGen/control_plane/.venv/bin/python",
+        "/workspaces/RTLGen/npu/eval/run_llm_decoder_onnx_reference.py"
+      ],
+      "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
+      "input_name": "input_ids",
+      "model_config_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/config.json",
+      "onnx_model_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/model.onnx",
+      "output_name": "logits",
+      "runtime_target": "cpu_reference",
+      "topk": 5
     }
   },
+  "decoder_backend_interface": "v1",
+  "model_contract": "runs/models/llm_decoder_tiny_v1/model_contract.json",
+  "notes": "Tiny curated decoder-eval prompt set for the first inference-quality gate. Bound to the fetched GPT-2-family tokenizer assets, an active ONNX exact-reference path, and a placeholder candidate backend under the same decoder backend interface.",
   "reference_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/reference_manifest.json",
-  "candidate_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_manifest.json",
-  "notes": "Tiny curated decoder-eval prompt set for the first inference-quality gate. Bound to a file-backed tokenizer bundle scaffold, backend interface, and reference-only decoder contract."
+  "sample_count": 5,
+  "sample_file": "runs/datasets/llm_decoder_eval_tiny_v1/samples.jsonl",
+  "status": "exact_reference_onnx_active",
+  "task": "greedy_next_token",
+  "tokenizer_id": "llm_decoder_gpt2_bpe_stub_v1",
+  "tokenizer_manifest": "runs/tokenizers/llm_decoder_gpt2_bpe_stub_v1/manifest.json",
+  "version": 0.1
 }

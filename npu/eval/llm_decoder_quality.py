@@ -46,14 +46,39 @@ def tokenize_wordpiece_stub(text: str) -> List[str]:
     return [piece for piece in text.strip().split() if piece]
 
 
+def _load_tokenizers_tokenizer():
+    try:
+        from tokenizers import Tokenizer  # type: ignore
+    except ModuleNotFoundError as exc:
+        raise ValueError('tokenizers is not installed for gpt2_bpe bundle support') from exc
+    return Tokenizer
+
+
+def tokenize_gpt2_bpe(text: str, tokenizer_bundle: JsonDict) -> List[str]:
+    tokenizer_json_path = str(tokenizer_bundle.get('tokenizer_json_path', '')).strip()
+    if not tokenizer_json_path:
+        raise ValueError('gpt2_bpe tokenizer bundle is missing tokenizer_json_path')
+    tokenizer_runtime = _load_tokenizers_tokenizer().from_file(tokenizer_json_path)
+    encoded = tokenizer_runtime.encode(text)
+    return [str(token) for token in encoded.tokens]
+
+
 def _extract_vocab_tokens(doc: JsonDict) -> List[str]:
     tokens = doc.get('tokens', [])
+    if isinstance(tokens, list) and tokens:
+        return [str(token) for token in tokens]
+    if isinstance(tokens, list) and not tokens and all(isinstance(k, str) for k in doc.keys()):
+        pass
+    if all(isinstance(k, str) for k in doc.keys()) and all(isinstance(v, int) for v in doc.values()):
+        ordered = sorted(((str(token), int(idx)) for token, idx in doc.items()), key=lambda item: item[1])
+        expected = list(range(len(ordered)))
+        actual = [idx for _, idx in ordered]
+        if actual != expected:
+            raise ValueError('tokenizer vocab mapping must contain contiguous ids starting at 0')
+        return [token for token, _ in ordered]
     if not isinstance(tokens, list):
-        raise ValueError('tokenizer vocab tokens must be a list')
-    out: List[str] = []
-    for token in tokens:
-        out.append(str(token))
-    return out
+        raise ValueError('tokenizer vocab tokens must be a list or token->id mapping')
+    return [str(token) for token in tokens]
 
 
 def _resolve_asset_file(asset_path: str | Path, *, manifest_path: str | Path | None = None) -> Path:
@@ -115,6 +140,18 @@ def build_tokenizer_bundle(
     merges_path = tokenizer_manifest.get('merges_txt')
     if isinstance(merges_path, str) and merges_path.strip():
         merges_file = str(_resolve_asset_file(merges_path, manifest_path=manifest_path))
+    tokenizer_json_file = ''
+    tokenizer_json_path = tokenizer_manifest.get('tokenizer_json')
+    if isinstance(tokenizer_json_path, str) and tokenizer_json_path.strip():
+        tokenizer_json_file = str(_resolve_asset_file(tokenizer_json_path, manifest_path=manifest_path))
+    tokenizer_config_file = ''
+    tokenizer_config_path = tokenizer_manifest.get('tokenizer_config_json')
+    if isinstance(tokenizer_config_path, str) and tokenizer_config_path.strip():
+        tokenizer_config_file = str(_resolve_asset_file(tokenizer_config_path, manifest_path=manifest_path))
+    special_tokens_map_file = ''
+    special_tokens_map_path = tokenizer_manifest.get('special_tokens_map_json')
+    if isinstance(special_tokens_map_path, str) and special_tokens_map_path.strip():
+        special_tokens_map_file = str(_resolve_asset_file(special_tokens_map_path, manifest_path=manifest_path))
     return {
         'tokenizer_id': str(tokenizer_manifest['tokenizer_id']),
         'kind': str(tokenizer_manifest['kind']),
@@ -122,6 +159,9 @@ def build_tokenizer_bundle(
         'manifest_path': str(manifest_path) if manifest_path is not None else '',
         'vocab_path': vocab_file,
         'merges_path': merges_file,
+        'tokenizer_json_path': tokenizer_json_file,
+        'tokenizer_config_path': tokenizer_config_file,
+        'special_tokens_map_path': special_tokens_map_file,
         'tokens': token_list,
         'vocab': dict(vocab),
         'merge_rules': [str(rule) for rule in (merges or [])],
@@ -167,6 +207,8 @@ def tokenize_decoder_text(text: str, tokenizer_bundle: JsonDict) -> List[str]:
         return tokenize_space_prefix_words(text)
     if kind == 'wordpiece_stub':
         return tokenize_wordpiece_stub(text)
+    if kind == 'gpt2_bpe':
+        return tokenize_gpt2_bpe(text, tokenizer_bundle)
     raise ValueError(f'unsupported tokenizer kind: {kind}')
 
 

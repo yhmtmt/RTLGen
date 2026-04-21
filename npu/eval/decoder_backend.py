@@ -8,9 +8,14 @@ import json
 import os
 import shlex
 import subprocess
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Protocol, Sequence
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 from npu.eval.llm_decoder_quality import (
     encode_tokens_for_bundle,
@@ -346,6 +351,15 @@ class CommandJsonV1Backend:
     def _build_doc(self, *, context: DecoderBackendContext, sample: JsonDict, backend_config: JsonDict, role: str) -> JsonDict:
         normalized = self._normalize_config(backend_config, role=role)
         payload = self._run_command(context=context, sample=sample, normalized=normalized)
+        tokenizer_doc = payload.get('tokenizer')
+        if tokenizer_doc is None:
+            tokenizer_doc = self._default_tokenizer(context=context)
+        model_binding_doc = payload.get('model_binding')
+        if model_binding_doc is None:
+            model_binding_doc = self._default_model_binding(context=context)
+        prompt_doc = payload.get('prompt')
+        if prompt_doc is None:
+            prompt_doc = self._default_prompt(context=context, sample=sample)
         doc = {
             'version': 0.1,
             'dataset_id': context.dataset_manifest['dataset_id'],
@@ -353,10 +367,10 @@ class CommandJsonV1Backend:
             'task': context.dataset_manifest['task'],
             'decode_policy': payload.get('decode_policy', {'strategy': 'greedy', 'max_new_tokens': 1}),
             'dataset_manifest': context.dataset_manifest_path,
-            'tokenizer': payload.get('tokenizer', self._default_tokenizer(context=context)),
-            'model_binding': payload.get('model_binding', self._default_model_binding(context=context)),
+            'tokenizer': tokenizer_doc,
+            'model_binding': model_binding_doc,
             'backend': normalized,
-            'prompt': payload.get('prompt', self._default_prompt(context=context, sample=sample)),
+            'prompt': prompt_doc,
             'backend_invocation': {
                 'command': self._command_argv(normalized.get('command', [])),
                 'cwd': str(normalized.get('cwd', '')).strip(),

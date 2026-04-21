@@ -1,42 +1,51 @@
 {
   "backend_config": {
-    "backend_id": "placeholder_v1",
+    "backend_id": "command_json_v1",
     "candidate_rule": "last_token_plus_parity_shift",
-    "equivalence_group": "placeholder_v1",
+    "command": [
+      "/workspaces/RTLGen/control_plane/.venv/bin/python",
+      "/workspaces/RTLGen/npu/eval/run_llm_decoder_onnx_reference.py"
+    ],
+    "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
+    "input_name": "input_ids",
     "interface": "decoder_backend_v1",
+    "model_config_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/config.json",
+    "onnx_model_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/model.onnx",
+    "output_name": "logits",
     "role": "reference",
-    "runtime_target": "software_reference"
+    "runtime_target": "cpu_reference",
+    "topk": 5
   },
   "dataset_id": "llm_decoder_eval_tiny_v1",
   "model_contract": "runs/models/llm_decoder_tiny_v1/model_contract.json",
   "samples": [
     {
       "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference/geo_france_capital.json",
-      "reference_sha256": "8c3f26a19d9fac721a251fec3fec454fec0ffb5fd06775d6d4b58f4b868a89e3",
+      "reference_sha256": "939e2191ea233f8c8f72cafb4b47533586ecd436cb0a0fcfd474ba9d81d21154",
       "sample_id": "geo_france_capital"
     },
     {
       "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference/math_two_plus_two.json",
-      "reference_sha256": "cba7cc68f64cf3b5642ac3be0ce61f5828ef57648a676455fa5719851da62dea",
+      "reference_sha256": "ff61376a35e75097120a68c6474c9e0d2e14932f4b200b8621cc238bc28b6bed",
       "sample_id": "math_two_plus_two"
     },
     {
       "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference/quote_complete.json",
-      "reference_sha256": "c6ce989394574a1091e5e26fb66570d10e1fbee30addad03e7e2481600269ff6",
+      "reference_sha256": "556a6f11f3e06d4ad42ad124ab707cdc5b117997d147fcc81b12079ab43a1487",
       "sample_id": "quote_complete"
     },
     {
       "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference/weekday_after_monday.json",
-      "reference_sha256": "753093de8510f377e063776b2791d72255a2d987b066d9d8fa15ac32c375fed3",
+      "reference_sha256": "8a8fdf5781b7e55556304fd0a1d2abbc54975117dcca10c57c7183660c2e2719",
       "sample_id": "weekday_after_monday"
     },
     {
       "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference/color_banana.json",
-      "reference_sha256": "6bd691a73adcc992e2f874fd3d38fe1029af6271799f4d5ee4c6db5746dc0142",
+      "reference_sha256": "82d0cfdde5b795641ceaa877e3722f304205ca7b105e429c5e84695f123c60d3",
       "sample_id": "color_banana"
     }
   ],
   "task": "greedy_next_token",
-  "tokenizer_manifest": "runs/tokenizers/llm_decoder_wordpiece_stub_v1/manifest.json",
+  "tokenizer_manifest": "runs/tokenizers/llm_decoder_gpt2_bpe_stub_v1/manifest.json",
   "version": 0.1
 }
