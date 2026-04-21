@@ -424,7 +424,6 @@ def _default_backend_config(*, role: str) -> JsonDict:
         'role': role,
         'runtime_target': 'software_reference' if role == 'reference' else 'software_emulation',
         'equivalence_group': 'placeholder_v1',
-        'candidate_rule': 'last_token_plus_parity_shift',
         'interface': 'decoder_backend_v1',
     }
 

@@ -7,7 +7,7 @@ Reference-side model contract for the first decoder-quality stage.
 
 Current status
 --------------
-Active ONNX exact-reference pair plus approximation-aware candidate backend.
+Active ONNX exact-reference pair plus explicit softmax/normalization candidate backends.
 
 What exists now:
 - `model_contract.json`
@@ -21,16 +21,19 @@ What exists now:
   - `reference_onnx/generation_config.json`
 - fetched GPT-2-family tokenizer assets paired with that path
 - local exact-reference validation through `npu/eval/run_llm_decoder_onnx_reference.py`
-- first approximation-aware candidate runner:
+- candidate runner with both exact and approximate probability paths:
   - `npu/eval/run_llm_decoder_onnx_candidate.py`
 
-Current candidate semantics:
-- symmetric logit quantization after exact ONNX inference
-- default active mode: `onnx_logits_symmetric_quant_q4`
+Prepared candidate modes:
+- exact softmax + exact normalization
+- approximate PWL softmax + quantized reciprocal normalization
+
+Active candidate semantics:
+- `onnx_logits_q4_softmax_approx_pwl_norm_recip_q10_prob_fp`
 
 What does not exist yet:
 - hardware-oriented decoder execution backend
-- approximation hooks beyond post-logit quantization
+- approximation hooks inside the transformer itself beyond post-logit probability shaping
 - larger-model exact-reference binding beyond this tiny seed model
 
-The active reference pair is `onnx-community/tiny-random-gpt2-ONNX` at commit `90f61e71d6fa8e571d0ab0f95a637a5d7d8ed52f`, using the matched GPT-2 tokenizer assets from the same source. The active candidate backend reuses that same contract and applies deterministic symmetric quantization to logits before argmax, giving the repo its first approximation-aware decoder comparison path.
+The active reference pair is `onnx-community/tiny-random-gpt2-ONNX` at commit `90f61e71d6fa8e571d0ab0f95a637a5d7d8ed52f`, using the matched GPT-2 tokenizer assets from the same source. The active candidate backend reuses that same contract and now exposes both normal and approximate softmax/normalization paths, which is the first explicit probability-path emulation backend in the repo.

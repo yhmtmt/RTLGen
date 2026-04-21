@@ -1,7 +1,6 @@
 {
   "backend": {
     "backend_id": "command_json_v1",
-    "candidate_rule": "last_token_plus_parity_shift",
     "command": [
       "/workspaces/RTLGen/control_plane/.venv/bin/python",
       "/workspaces/RTLGen/npu/eval/run_llm_decoder_onnx_reference.py"

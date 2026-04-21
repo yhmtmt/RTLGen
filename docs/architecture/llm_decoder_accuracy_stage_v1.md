@@ -32,7 +32,6 @@ What exists today:
 
 What does not exist yet:
 - a decoder-style model set,
-- an approximation-aware candidate backend for the same decoder/tokenizer pair,
 - token-level quality metrics in campaign/report outputs,
 - any dataset-backed acceptance gate for approximate hardware beyond reference/candidate next-token checks.
 
@@ -130,4 +129,4 @@ The repo now has the first explicit decoder-quality binding layer:
 - a replay-backed frozen-artifact backend (`replay_v1`) that keeps that interface stable before a real decoder runtime exists,
 - an executable command-backed adapter (`command_json_v1`) that can later bind a real CPU reference, software emulation, or hardware-target runtime without changing the manifests again.
 
-This is still not a complete production decoder evaluation stack, but the reference side is now real: the repo carries a fetched `onnx-community/tiny-random-gpt2-ONNX` exact-reference pair, an active ONNX Runtime runner, and paired GPT-2 tokenizer assets. The remaining gap is now narrower: the repo has a first approximation-aware candidate backend, but it is still only a software emulation based on post-logit quantization. Hardware-oriented execution and deeper approximation hooks still need to target the same tokenizer/model contract so their outputs can be compared against this exact reference.
+This is still not a complete production decoder evaluation stack, but the reference side is now real: the repo carries a fetched `onnx-community/tiny-random-gpt2-ONNX` exact-reference pair, an active ONNX Runtime runner, and paired GPT-2 tokenizer assets. The remaining gap is now narrower: the repo has both normal and approximate probability-path emulation in the candidate backend, but it is still a software-only path layered on top of ONNX outputs. Hardware-oriented execution and deeper approximation hooks still need to target the same tokenizer/model contract so their outputs can be compared against this exact reference. The current candidate path now includes an explicit normalization stage in both exact and approximate forms, so later hardware candidates can be checked against the same probability contract rather than skipping normalization entirely.

@@ -1,8 +1,7 @@
 {
   "backend": {
     "backend_id": "command_json_v1",
-    "candidate_rule": "last_token_plus_parity_shift",
-    "candidate_semantics": "onnx_logits_symmetric_quant_q4",
+    "candidate_semantics": "onnx_logits_q4_softmax_approx_pwl_norm_recip_q10_prob_fp",
     "command": [
       "/workspaces/RTLGen/control_plane/.venv/bin/python",
       "/workspaces/RTLGen/npu/eval/run_llm_decoder_onnx_candidate.py"
@@ -13,11 +12,14 @@
     "interface": "decoder_backend_v1",
     "logit_quant_bits": 4,
     "model_config_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/config.json",
+    "normalization_mode": "reciprocal_quantized",
+    "normalization_reciprocal_bits": 10,
     "onnx_model_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/model.onnx",
     "output_name": "logits",
     "request_schema": "decoder_backend_command_v1",
     "role": "candidate",
     "runtime_target": "software_emulation",
+    "softmax_mode": "approx_pwl",
     "timeout_s": 30.0,
     "topk": 5
   },
@@ -32,51 +34,77 @@
   },
   "backend_runtime": {
     "approximation": {
-      "bits": 4,
-      "levels": 7,
-      "max_abs": 1.225936770439148,
-      "mode": "symmetric_logit_quant",
-      "scale": 0.1751338243484497
+      "logits": {
+        "bits": 4,
+        "levels": 7,
+        "max_abs": 1.225936770439148,
+        "mode": "symmetric_logit_quant",
+        "scale": 0.1751338243484497
+      },
+      "normalization": {
+        "exponent": -14,
+        "mantissa": 0.692801311507446,
+        "mantissa_quantized": 0.6930596285434996,
+        "mode": "normalize_reciprocal_quantized",
+        "reciprocal": 4.2285236298061887e-05,
+        "reciprocal_bits": 10,
+        "reciprocal_quantized": 4.2301002718719456e-05,
+        "sum_weights": 23648.915970367518
+      },
+      "probabilities": {
+        "mode": "identity_probabilities"
+      },
+      "softmax": {
+        "anchors": [
+          -8.0,
+          -4.0,
+          -2.0,
+          0.0
+        ],
+        "max_logit": 1.225936770439148,
+        "mode": "softmax_approx_pwl",
+        "shifted_min": -2.1016058921813965
+      }
     },
     "library": "onnxruntime",
-    "logits_rank": 1,
     "onnxruntime_version": "1.23.1",
     "runner": "onnx_candidate_v1",
-    "runtime_target": "software_emulation"
+    "runtime_target": "software_emulation",
+    "score_rank": 1
   },
   "candidate": {
-    "confidence": 1.225936770439148,
+    "confidence": 4.2301002718719456e-05,
     "next_token_id": 318,
     "next_token_text": " is",
     "topk": [
       {
-        "logit": 1.225936770439148,
+        "score": 4.2301002718719456e-05,
         "token_id": 318,
         "token_text": " is"
       },
       {
-        "logit": 0.8756691217422485,
+        "score": 3.589527564110229e-05,
         "token_id": 4813,
         "token_text": " girls"
       },
       {
-        "logit": 0.8756691217422485,
+        "score": 3.589527564110229e-05,
         "token_id": 5127,
         "token_text": " supply"
       },
       {
-        "logit": 0.8756691217422485,
+        "score": 3.589527564110229e-05,
         "token_id": 9226,
         "token_text": "aval"
       },
       {
-        "logit": 0.8756691217422485,
+        "score": 3.589527564110229e-05,
         "token_id": 24265,
         "token_text": " Punch"
       }
     ]
   },
-  "candidate_semantics": "onnx_logits_symmetric_quant_q4",
+  "candidate_semantics": "onnx_logits_q4_softmax_approx_pwl_norm_recip_q10_prob_fp",
   "dataset_id": "llm_decoder_eval_tiny_v1",
   "dataset_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/manifest.json",
   "decode_policy": {
@@ -89,7 +117,7 @@
     "model_id": "llm_decoder_tiny_v1",
     "status": "exact_reference_active"
   },
-  "notes": "ONNX Runtime decoder candidate runner result using quantized logits.",
+  "notes": "ONNX Runtime decoder candidate runner result using explicit softmax and normalization paths.",
   "prompt": {
     "text": "The capital of France is",
     "token_count": 5,

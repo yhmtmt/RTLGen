@@ -1,8 +1,7 @@
 {
   "backend": {
     "backend_id": "command_json_v1",
-    "candidate_rule": "last_token_plus_parity_shift",
-    "candidate_semantics": "onnx_logits_symmetric_quant_q4",
+    "candidate_semantics": "onnx_logits_q4_softmax_approx_pwl_norm_recip_q10_prob_fp",
     "command": [
       "/workspaces/RTLGen/control_plane/.venv/bin/python",
       "/workspaces/RTLGen/npu/eval/run_llm_decoder_onnx_candidate.py"
@@ -13,11 +12,14 @@
     "interface": "decoder_backend_v1",
     "logit_quant_bits": 4,
     "model_config_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/config.json",
+    "normalization_mode": "reciprocal_quantized",
+    "normalization_reciprocal_bits": 10,
     "onnx_model_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/model.onnx",
     "output_name": "logits",
     "request_schema": "decoder_backend_command_v1",
     "role": "candidate",
     "runtime_target": "software_emulation",
+    "softmax_mode": "approx_pwl",
     "timeout_s": 30.0,
     "topk": 5
   },
@@ -32,51 +34,77 @@
   },
   "backend_runtime": {
     "approximation": {
-      "bits": 4,
-      "levels": 7,
-      "max_abs": 0.9188520312309265,
-      "mode": "symmetric_logit_quant",
-      "scale": 0.13126457589013235
+      "logits": {
+        "bits": 4,
+        "levels": 7,
+        "max_abs": 0.9188520312309265,
+        "mode": "symmetric_logit_quant",
+        "scale": 0.13126457589013235
+      },
+      "normalization": {
+        "exponent": -14,
+        "mantissa": 0.5407932550335749,
+        "mantissa_quantized": 0.5405669599217986,
+        "mode": "normalize_reciprocal_quantized",
+        "reciprocal": 3.300740081992034e-05,
+        "reciprocal_bits": 10,
+        "reciprocal_quantized": 3.2993588862414465e-05,
+        "sum_weights": 30296.235848915698
+      },
+      "probabilities": {
+        "mode": "identity_probabilities"
+      },
+      "softmax": {
+        "anchors": [
+          -8.0,
+          -4.0,
+          -2.0,
+          0.0
+        ],
+        "max_logit": 0.9188520312309265,
+        "mode": "softmax_approx_pwl",
+        "shifted_min": -1.837704062461853
+      }
     },
     "library": "onnxruntime",
-    "logits_rank": 1,
     "onnxruntime_version": "1.23.1",
     "runner": "onnx_candidate_v1",
-    "runtime_target": "software_emulation"
+    "runtime_target": "software_emulation",
+    "score_rank": 1
   },
   "candidate": {
-    "confidence": 0.9188520312309265,
+    "confidence": 3.2993588862414465e-05,
     "next_token_id": 5424,
     "next_token_text": " clim",
     "topk": [
       {
-        "logit": 0.9188520312309265,
+        "score": 3.2993588862414465e-05,
         "token_id": 5424,
         "token_text": " clim"
       },
       {
-        "logit": 0.9188520312309265,
+        "score": 3.2993588862414465e-05,
         "token_id": 17673,
         "token_text": " indigenous"
       },
       {
-        "logit": 0.9188520312309265,
+        "score": 3.2993588862414465e-05,
         "token_id": 29570,
         "token_text": " pioneer"
       },
       {
-        "logit": 0.9188520312309265,
+        "score": 3.2993588862414465e-05,
         "token_id": 42919,
         "token_text": " pamphlet"
       },
       {
-        "logit": 0.7875874553407941,
+        "score": 3.112120521298678e-05,
         "token_id": 207,
         "token_text": "\u0013"
       }
     ]
   },
-  "candidate_semantics": "onnx_logits_symmetric_quant_q4",
+  "candidate_semantics": "onnx_logits_q4_softmax_approx_pwl_norm_recip_q10_prob_fp",
   "dataset_id": "llm_decoder_eval_tiny_v1",
   "dataset_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/manifest.json",
   "decode_policy": {
@@ -89,7 +117,7 @@
     "model_id": "llm_decoder_tiny_v1",
     "status": "exact_reference_active"
   },
-  "notes": "ONNX Runtime decoder candidate runner result using quantized logits.",
+  "notes": "ONNX Runtime decoder candidate runner result using explicit softmax and normalization paths.",
   "prompt": {
     "text": "2 + 2 =",
     "token_count": 4,

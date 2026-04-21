@@ -4,7 +4,7 @@
   "decoder_backend_configs": {
     "candidate": {
       "backend_id": "command_json_v1",
-      "candidate_semantics": "onnx_logits_symmetric_quant_q4",
+      "candidate_semantics": "onnx_logits_q4_softmax_approx_pwl_norm_recip_q10_prob_fp",
       "command": [
         "/workspaces/RTLGen/control_plane/.venv/bin/python",
         "/workspaces/RTLGen/npu/eval/run_llm_decoder_onnx_candidate.py"
@@ -13,9 +13,12 @@
       "input_name": "input_ids",
       "logit_quant_bits": 4,
       "model_config_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/config.json",
+      "normalization_mode": "reciprocal_quantized",
+      "normalization_reciprocal_bits": 10,
       "onnx_model_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/model.onnx",
       "output_name": "logits",
       "runtime_target": "software_emulation",
+      "softmax_mode": "approx_pwl",
       "topk": 5
     },
     "reference": {
@@ -35,7 +38,7 @@
   },
   "decoder_backend_interface": "v1",
   "model_contract": "runs/models/llm_decoder_tiny_v1/model_contract.json",
-  "notes": "Tiny curated decoder-eval prompt set for the first inference-quality gate. Bound to the fetched GPT-2-family tokenizer assets, an active ONNX exact-reference path, and an approximation-aware ONNX candidate backend under the same decoder backend interface.",
+  "notes": "Tiny curated decoder-eval prompt set for the first inference-quality gate. Bound to the fetched GPT-2-family tokenizer assets, an active ONNX exact-reference path, and an approximation-aware ONNX candidate backend with explicit softmax and normalization-path controls.",
   "reference_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/reference_manifest.json",
   "sample_count": 5,
   "sample_file": "runs/datasets/llm_decoder_eval_tiny_v1/samples.jsonl",

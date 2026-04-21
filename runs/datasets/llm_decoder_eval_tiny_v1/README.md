@@ -11,7 +11,7 @@ cheap acceptance slice for approximate-hardware evaluation.
 
 Current status
 --------------
-Active ONNX exact-reference and approximation-aware candidate dataset binding.
+Active ONNX exact-reference and explicit softmax/normalization candidate binding.
 
 What exists now:
 - `manifest.json`
@@ -20,7 +20,7 @@ What exists now:
 - `candidate_manifest.json`
 - fetched GPT-2-family tokenizer/model binding for reference artifacts
 - active ONNX exact-reference generation via `decoder_backend_v1` + `command_json_v1`
-- active ONNX approximation-aware candidate generation via `decoder_backend_v1` + `command_json_v1`
+- active ONNX candidate generation with configurable softmax and normalization modes
 - replay-backed frozen-artifact loading via `replay_v1` for later emulation-vs-hardware equivalence checks
 
 What does not exist yet:
@@ -35,7 +35,7 @@ Current binding
 - exact reference runner: `npu/eval/run_llm_decoder_onnx_reference.py`
 - active candidate runner: `npu/eval/run_llm_decoder_onnx_candidate.py`
 
-The reference side is a real ONNX Runtime exact-reference path. The candidate side now uses the same ONNX/tokenizer contract with deterministic symmetric quantization of logits, which is the first approximation-aware decoder backend in the repo.
+The reference side is a real ONNX Runtime exact-reference path. The candidate side now exposes both exact and approximate probability paths; the active mode uses symmetric logit quantization, PWL softmax, and quantized reciprocal normalization.
 
 Comparison
 ----------

@@ -215,6 +215,23 @@ class LlmDecoderQualityRegressionTest(unittest.TestCase):
         self.assertEqual('dataset_group', cfg['equivalence_group'])
         self.assertEqual('decoder_backend_v1', cfg['interface'])
 
+    def test_backend_config_resolution_does_not_leak_placeholder_rule_into_command_backend(self):
+        dataset_manifest = {
+            'decoder_backend_configs': {
+                'candidate': {
+                    'backend_id': 'command_json_v1',
+                    'command': ['python3', 'fake_runner.py'],
+                    'runtime_target': 'software_emulation',
+                    'equivalence_group': 'llm_decoder_tiny_v1_reference_onnx_v1',
+                }
+            }
+        }
+        model_contract = {'backend_configs': {}}
+        cfg = self.decoder.resolve_decoder_backend_config(dataset_manifest, model_contract, role='candidate')
+        self.assertEqual('command_json_v1', cfg['backend_id'])
+        self.assertNotIn('candidate_rule', cfg)
+        self.assertEqual('decoder_backend_v1', cfg['interface'])
+
     def test_build_decoder_reference_doc_binds_backend_metadata(self):
         dataset_manifest = {
             'dataset_id': 'llm_decoder_eval_tiny_v1',
