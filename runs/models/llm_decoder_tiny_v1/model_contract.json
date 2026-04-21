@@ -1,7 +1,7 @@
 {
   "version": 0.1,
   "model_id": "llm_decoder_tiny_v1",
-  "status": "exact_reference_binding_unfetched",
+  "status": "planned_exact_reference_source_selected",
   "task": "greedy_next_token",
   "tokenizer_id": "llm_decoder_gpt2_bpe_stub_v1",
   "tokenizer_manifest": "runs/tokenizers/llm_decoder_gpt2_bpe_stub_v1/manifest.json",
@@ -20,7 +20,7 @@
       "candidate_rule": "last_token_plus_parity_shift"
     }
   },
-  "notes": "No trained decoder weights are checked into the repo yet. This contract now points at a GPT-2-style BPE tokenizer scaffold and an explicit unfetched ONNX exact-reference binding. The reference_onnx template is structurally bound, but not active until the external model/tokenizer asset pair is pinned.",
+  "notes": "No trained decoder weights are checked into the repo yet. This contract now points at a GPT-2-style BPE tokenizer scaffold and an explicit exact-reference ONNX binding with a planned tiny decoder family selection (`sshleifer/tiny-gpt2` model family, GPT-2 tokenizer family). The binding remains inactive until the external model/tokenizer asset pair is fetched and hashed.",
   "backend_templates": {
     "reference_onnx": {
       "backend_id": "command_json_v1",

@@ -32,7 +32,7 @@ It is the first step toward a reproducible closed-loop flow:
 The repo can now express a future exact-reference pair explicitly even before the
 assets are present: the model contract may point at a `reference_onnx_binding.json`
 that locks the intended ONNX path, tokenizer bundle, runtime, and fetch-plan
-provenance.
+provenance. The current planned first exact-reference source is `sshleifer/tiny-gpt2` with the GPT-2 tokenizer family, but that remains inactive until fetched and hashed.
 
 The decoder-quality scaffold also introduces separate non-ONNX contracts for:
 - datasets: `runs/datasets/...`

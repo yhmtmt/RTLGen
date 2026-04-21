@@ -37,6 +37,55 @@ class LlmDecoderOnnxRunnerRegressionTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.runner._extract_next_token_logits([[[[0.0]]]])
 
+    def test_runner_rejects_unsupported_tokenizer_family_before_runtime(self):
+        with tempfile.TemporaryDirectory() as td:
+            td_path = Path(td)
+            vocab_json = td_path / 'vocab.json'
+            merges_txt = td_path / 'merges.txt'
+            vocab_json.write_text(
+                json.dumps({'tokens': ['<|endoftext|>', 'T', 'h', 'e']}),
+                encoding='utf-8',
+            )
+            merges_txt.write_text('#version: 0.2\nT h\nTh e\n', encoding='utf-8')
+            tokenizer_manifest = td_path / 'tokenizer_manifest.json'
+            tokenizer_manifest.write_text(
+                json.dumps(
+                    {
+                        'tokenizer_id': 'llm_decoder_gpt2_bpe_stub_v1',
+                        'kind': 'gpt2_bpe',
+                        'family': 'gpt2_bpe',
+                        'vocab_json': str(vocab_json),
+                        'merges_txt': str(merges_txt),
+                    }
+                ),
+                encoding='utf-8',
+            )
+            request = {
+                'role': 'reference',
+                'backend_config': {
+                    'backend_id': 'command_json_v1',
+                    'onnx_model_path': str(td_path / 'missing.onnx'),
+                    'input_name': 'input_ids',
+                },
+                'sample': {
+                    'sample_id': 'geo_france_capital',
+                    'prompt': 'The capital of France is',
+                    'expected_continuation': ' Paris',
+                },
+                'paths': {
+                    'tokenizer_manifest_path': str(tokenizer_manifest),
+                },
+            }
+            proc = subprocess.run(
+                [sys.executable, str(REPO_ROOT / 'npu/eval/run_llm_decoder_onnx_reference.py')],
+                input=json.dumps(request),
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertNotEqual(0, proc.returncode)
+            self.assertIn('unsupported tokenizer for ONNX reference runner', proc.stderr)
+
     def test_runner_fails_cleanly_without_onnxruntime(self):
         with tempfile.TemporaryDirectory() as td:
             td_path = Path(td)

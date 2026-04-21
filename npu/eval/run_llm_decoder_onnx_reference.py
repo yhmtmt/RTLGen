@@ -18,7 +18,12 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from npu.eval.llm_decoder_quality import load_json, load_vocab, tokenize_space_prefix_words, encode_tokens
+from npu.eval.llm_decoder_quality import (
+    encode_tokens_for_bundle,
+    load_json,
+    load_tokenizer_bundle,
+    tokenize_decoder_text,
+)
 
 JsonDict = Dict[str, Any]
 
@@ -88,10 +93,13 @@ def _decode_token(token_id: int, vocab: Dict[str, int]) -> str:
     return inv_vocab[token_id]
 
 
-def _prepare_input_ids(sample: JsonDict, vocab: Dict[str, int]) -> list[list[int]]:
+def _prepare_input_ids(sample: JsonDict, tokenizer_bundle: JsonDict) -> list[list[int]]:
     prompt = str(sample['prompt'])
-    prompt_tokens = tokenize_space_prefix_words(prompt)
-    prompt_token_ids = encode_tokens(prompt_tokens, vocab)
+    try:
+        prompt_tokens = tokenize_decoder_text(prompt, tokenizer_bundle)
+    except ValueError as exc:
+        raise SystemExit(f'unsupported tokenizer for ONNX reference runner: {exc}') from exc
+    prompt_token_ids = encode_tokens_for_bundle(prompt_tokens, tokenizer_bundle, allow_unk=True)
     return [prompt_token_ids]
 
 
@@ -137,9 +145,10 @@ def main() -> int:
 
     tokenizer_manifest_path = _resolve_repo_path(request['paths']['tokenizer_manifest_path'])
     tokenizer_manifest = load_json(tokenizer_manifest_path)
-    vocab = load_vocab(_resolve_repo_path(tokenizer_manifest['vocab_json']))
+    tokenizer_bundle = load_tokenizer_bundle(tokenizer_manifest, manifest_path=tokenizer_manifest_path)
+    vocab = dict(tokenizer_bundle['vocab'])
 
-    input_ids = _prepare_input_ids(request['sample'], vocab)
+    input_ids = _prepare_input_ids(request['sample'], tokenizer_bundle)
     ort = _load_onnxruntime()
 
     model_path = str(backend_config.get('onnx_model_path', '')).strip()

@@ -1,7 +1,7 @@
 {
   "version": 0.1,
   "binding_id": "llm_decoder_tiny_v1_reference_onnx_v1",
-  "status": "external_assets_unfetched",
+  "status": "planned_source_selected_unfetched",
   "purpose": "exact_reference",
   "runtime": {
     "backend_id": "command_json_v1",
@@ -15,26 +15,34 @@
     "input_name": "input_ids",
     "output_name": "",
     "topk": 5,
-    "asset_status": "missing"
+    "asset_status": "planned_unfetched"
   },
   "tokenizer": {
     "tokenizer_id": "llm_decoder_gpt2_bpe_stub_v1",
     "tokenizer_manifest": "runs/tokenizers/llm_decoder_gpt2_bpe_stub_v1/manifest.json",
-    "asset_status": "stub_bundle_contract"
+    "asset_status": "planned_unfetched"
   },
   "provenance": {
-    "equivalence_group": "onnx_reference_v1",
+    "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
     "pair_lock_required": true,
     "notes": "Do not treat this binding as active until the ONNX export and the exact model-native tokenizer assets are fetched or checked in together."
   },
   "fetch_plan": {
-    "model_source": "TBD",
-    "tokenizer_source": "TBD",
-    "license": "TBD",
+    "model_source": "huggingface://sshleifer/tiny-gpt2",
+    "tokenizer_source": "huggingface://gpt2",
+    "license": "verify_upstream_before_fetch",
     "sha256": {
       "onnx_model": "",
       "tokenizer_vocab": "",
       "tokenizer_merges": ""
     }
+  },
+  "selection": {
+    "status": "planned_unverified_until_fetch",
+    "upstream_model_family": "gpt2_decoder",
+    "upstream_model_id": "sshleifer/tiny-gpt2",
+    "planned_tokenizer_family": "gpt2_bpe",
+    "planned_tokenizer_id": "gpt2",
+    "reason": "Small decoder-only model family aligned with the first exact-reference CPU path and the local GPT-2-style BPE tokenizer scaffold."
   }
 }
