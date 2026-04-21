@@ -10,9 +10,10 @@ Contract
 --------
 Each tokenizer lives under `runs/tokenizers/<tokenizer_id>/` and should provide:
 - `manifest.json`
-- optional assets such as `vocab.json`
+- optional assets such as `vocab.json` and `merges.txt`
 - explicit special-token metadata when the tokenizer is intended to represent a
   real model bundle
+- pretokenization / normalization metadata for model-faithful tokenizer families
 
 These tokenizer contracts are separate from ONNX model-set manifests because
 the first decoder-quality stage is not yet a runnable mapper/physical campaign.
@@ -28,3 +29,4 @@ Current sets
   explicit special-token metadata. This is the first contract shape intended
   for a pinned real decoder tokenizer, even though the current assets are still
   stubbed.
+- `llm_decoder_gpt2_bpe_stub_v1`: GPT-2-style BPE bundle scaffold with local `vocab.json`, `merges.txt`, byte-level pretokenization metadata, and explicit special-token policy. This is the intended first exact-reference tokenizer family, but the assets are still stubbed and are not yet bound to a real decoder export.

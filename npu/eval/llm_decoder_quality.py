@@ -56,12 +56,23 @@ def _extract_vocab_tokens(doc: JsonDict) -> List[str]:
     return out
 
 
-def _resolve_vocab_file(vocab_path: str | Path, *, manifest_path: str | Path | None = None) -> Path:
+def _resolve_asset_file(asset_path: str | Path, *, manifest_path: str | Path | None = None) -> Path:
     manifest_dir = Path(manifest_path).resolve().parent if manifest_path is not None else None
-    vocab_file = Path(vocab_path)
-    if not vocab_file.is_absolute() and manifest_dir is not None:
-        vocab_file = manifest_dir / vocab_file
-    return vocab_file
+    asset_file = Path(asset_path)
+    if not asset_file.is_absolute() and manifest_dir is not None:
+        asset_file = manifest_dir / asset_file
+    return asset_file
+
+
+def _load_merge_rules(path: str | Path) -> List[str]:
+    rules: List[str] = []
+    with Path(path).open('r', encoding='utf-8') as f:
+        for raw in f:
+            line = raw.strip()
+            if not line or line.startswith('#'):
+                continue
+            rules.append(line)
+    return rules
 
 
 def load_vocab(path: str | Path) -> Dict[str, int]:
@@ -81,6 +92,7 @@ def build_tokenizer_bundle(
     vocab: Dict[str, int],
     manifest_path: str | Path | None = None,
     tokens: Sequence[str] | None = None,
+    merges: Sequence[str] | None = None,
 ) -> JsonDict:
     token_list = [str(token) for token in tokens] if tokens is not None else [token for token, _ in sorted(vocab.items(), key=lambda item: item[1])]
     specials_raw = tokenizer_manifest.get('special_tokens', {}) or {}
@@ -98,18 +110,28 @@ def build_tokenizer_bundle(
     vocab_file = ''
     vocab_path = tokenizer_manifest.get('vocab_json')
     if isinstance(vocab_path, str) and vocab_path.strip():
-        vocab_file = str(_resolve_vocab_file(vocab_path, manifest_path=manifest_path))
+        vocab_file = str(_resolve_asset_file(vocab_path, manifest_path=manifest_path))
+    merges_file = ''
+    merges_path = tokenizer_manifest.get('merges_txt')
+    if isinstance(merges_path, str) and merges_path.strip():
+        merges_file = str(_resolve_asset_file(merges_path, manifest_path=manifest_path))
     return {
         'tokenizer_id': str(tokenizer_manifest['tokenizer_id']),
         'kind': str(tokenizer_manifest['kind']),
+        'family': str(tokenizer_manifest.get('family', tokenizer_manifest.get('kind', 'unknown'))),
         'manifest_path': str(manifest_path) if manifest_path is not None else '',
         'vocab_path': vocab_file,
+        'merges_path': merges_file,
         'tokens': token_list,
         'vocab': dict(vocab),
+        'merge_rules': [str(rule) for rule in (merges or [])],
+        'merge_count': len(list(merges or [])),
         'special_tokens': special_tokens,
         'status': str(tokenizer_manifest.get('status', 'unknown')),
         'backend_interface': str(tokenizer_manifest.get('backend_interface', 'decoder_tokenizer_v1')),
         'unk_supported': bool(tokenizer_manifest.get('unk_supported', False)),
+        'pretokenization': dict(tokenizer_manifest.get('pretokenization', {}) or {}),
+        'normalization': dict(tokenizer_manifest.get('normalization', {}) or {}),
     }
 
 
@@ -117,7 +139,7 @@ def load_tokenizer_bundle(tokenizer_manifest: JsonDict, *, manifest_path: str | 
     vocab_path = tokenizer_manifest.get('vocab_json')
     if not isinstance(vocab_path, str) or not vocab_path.strip():
         raise ValueError('tokenizer manifest must define non-empty vocab_json')
-    vocab_file = _resolve_vocab_file(vocab_path, manifest_path=manifest_path)
+    vocab_file = _resolve_asset_file(vocab_path, manifest_path=manifest_path)
     vocab_doc = load_json(vocab_file)
     tokens = _extract_vocab_tokens(vocab_doc)
     vocab: Dict[str, int] = {}
@@ -125,7 +147,18 @@ def load_tokenizer_bundle(tokenizer_manifest: JsonDict, *, manifest_path: str | 
         if token in vocab:
             raise ValueError(f'duplicate tokenizer token: {token!r}')
         vocab[token] = idx
-    return build_tokenizer_bundle(tokenizer_manifest, vocab=vocab, manifest_path=manifest_path, tokens=tokens)
+    merges: List[str] = []
+    merges_path = tokenizer_manifest.get('merges_txt')
+    if isinstance(merges_path, str) and merges_path.strip():
+        merges_file = _resolve_asset_file(merges_path, manifest_path=manifest_path)
+        merges = _load_merge_rules(merges_file)
+    return build_tokenizer_bundle(
+        tokenizer_manifest,
+        vocab=vocab,
+        manifest_path=manifest_path,
+        tokens=tokens,
+        merges=merges,
+    )
 
 
 def tokenize_decoder_text(text: str, tokenizer_bundle: JsonDict) -> List[str]:

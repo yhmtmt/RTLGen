@@ -68,6 +68,42 @@ class LlmDecoderQualityRegressionTest(unittest.TestCase):
             self.assertTrue(bundle['special_tokens']['unk']['present_in_vocab'])
             self.assertEqual(4, bundle['vocab']['The'])
 
+    def test_load_tokenizer_bundle_reads_bpe_merge_metadata(self):
+        with tempfile.TemporaryDirectory() as td:
+            td_path = Path(td)
+            vocab_json = td_path / 'vocab.json'
+            merges_txt = td_path / 'merges.txt'
+            vocab_json.write_text(
+                json.dumps(
+                    {
+                        'version': 0.1,
+                        'tokenizer_id': 'llm_decoder_gpt2_bpe_stub_v1',
+                        'tokens': ['<|endoftext|>', 'T', 'h', 'e'],
+                    }
+                ),
+                encoding='utf-8',
+            )
+            merges_txt.write_text('#version: 0.2\nT h\nTh e\n', encoding='utf-8')
+            tokenizer_manifest = {
+                'tokenizer_id': 'llm_decoder_gpt2_bpe_stub_v1',
+                'kind': 'gpt2_bpe',
+                'family': 'gpt2_bpe',
+                'status': 'stub_bundle_contract',
+                'backend_interface': 'decoder_tokenizer_v1',
+                'vocab_json': 'vocab.json',
+                'merges_txt': 'merges.txt',
+                'pretokenization': {'byte_level': True, 'add_prefix_space': True},
+                'normalization': {'unicode': 'identity', 'lowercase': False},
+                'special_tokens': {'eos': '<|endoftext|>'},
+            }
+            bundle = self.decoder.load_tokenizer_bundle(tokenizer_manifest, manifest_path=td_path / 'manifest.json')
+            self.assertEqual('gpt2_bpe', bundle['kind'])
+            self.assertEqual('gpt2_bpe', bundle['family'])
+            self.assertTrue(bundle['pretokenization']['byte_level'])
+            self.assertEqual(2, bundle['merge_count'])
+            self.assertEqual(['T h', 'Th e'], bundle['merge_rules'])
+            self.assertTrue(bundle['merges_path'].endswith('merges.txt'))
+
     def test_load_tokenizer_bundle_rejects_duplicate_tokens(self):
         with tempfile.TemporaryDirectory() as td:
             td_path = Path(td)

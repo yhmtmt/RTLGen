@@ -1,0 +1,26 @@
+{
+  "version": 0.1,
+  "tokenizer_id": "llm_decoder_gpt2_bpe_stub_v1",
+  "kind": "gpt2_bpe",
+  "family": "gpt2_bpe",
+  "status": "stub_bundle_contract",
+  "backend_interface": "decoder_tokenizer_v1",
+  "vocab_json": "vocab.json",
+  "merges_txt": "merges.txt",
+  "special_tokens": {
+    "bos": "<|endoftext|>",
+    "eos": "<|endoftext|>",
+    "unk": "<|endoftext|>",
+    "pad": "<|endoftext|>"
+  },
+  "unk_supported": true,
+  "pretokenization": {
+    "byte_level": true,
+    "add_prefix_space": true
+  },
+  "normalization": {
+    "unicode": "identity",
+    "lowercase": false
+  },
+  "notes": "GPT-2-style BPE tokenizer bundle scaffold for the first real decoder reference path. Assets are local and file-backed, but still stubbed until a concrete decoder export is pinned with its exact tokenizer pair."
+}

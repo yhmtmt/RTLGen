@@ -1,0 +1,33 @@
+{
+  "version": 0.1,
+  "tokenizer_id": "llm_decoder_gpt2_bpe_stub_v1",
+  "tokens": [
+    "<|endoftext|>",
+    "T",
+    "h",
+    "e",
+    "Ġ",
+    "c",
+    "a",
+    "p",
+    "i",
+    "t",
+    "l",
+    "o",
+    "f",
+    "F",
+    "r",
+    "n",
+    "s",
+    "P",
+    "+",
+    "2",
+    "4",
+    "=",
+    "Ġcapital",
+    "Ġof",
+    "ĠFrance",
+    "Ġis",
+    "ĠParis"
+  ]
+}
