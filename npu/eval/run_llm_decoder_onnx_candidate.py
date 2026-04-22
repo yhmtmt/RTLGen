@@ -20,14 +20,17 @@ if str(REPO_ROOT) not in sys.path:
 
 from npu.eval.run_llm_decoder_onnx_reference import (
     _build_feeds,
+    _build_output_map,
     _decode_token,
     _extract_next_token_logits,
     _load_model_config,
     _load_onnxruntime,
     _load_request,
     _load_tokenizer_runtime,
+    _matches_trace_pattern,
     _prepare_prompt,
     _resolve_repo_path,
+    _tensor_summary,
 )
 from npu.eval.llm_decoder_quality import load_json, load_tokenizer_bundle
 
@@ -264,6 +267,31 @@ def _apply_probability_quantization(probabilities: Sequence[float], backend_conf
     }
 
 
+def _quantize_tensor_trace_symmetric(raw_output: Any, *, bits: int) -> Tuple[Any, JsonDict]:
+    import numpy as np
+
+    if bits < 2:
+        raise SystemExit('backend_config.trace_tensor_quant_bits must be >= 2')
+    array = np.asarray(raw_output, dtype=np.float32)
+    flat = array.reshape(-1)
+    quantized, meta = _quantize_symmetric(flat.tolist(), bits=bits, mode='trace_tensor_quant')
+    return np.asarray(quantized, dtype=np.float32).reshape(array.shape), meta
+
+
+def _trace_selected_outputs_candidate(*, outputs_by_name: JsonDict, trace_patterns: Sequence[str], step: int, trace_tensor_quant_bits: int = 0) -> list[JsonDict]:
+    if not trace_patterns:
+        return []
+    traced: list[JsonDict] = []
+    for name in sorted(outputs_by_name):
+        if _matches_trace_pattern(name, trace_patterns):
+            raw_output = outputs_by_name[name]
+            quantization = None
+            if trace_tensor_quant_bits > 0:
+                raw_output, quantization = _quantize_tensor_trace_symmetric(raw_output, bits=trace_tensor_quant_bits)
+            traced.append(_tensor_summary(raw_output, name=name, step=step, quantization=quantization))
+    return traced
+
+
 def _derive_candidate_semantics(backend_config: JsonDict) -> str:
     if str(backend_config.get('candidate_semantics', '')).strip():
         return str(backend_config['candidate_semantics'])
@@ -289,7 +317,7 @@ def _derive_candidate_semantics(backend_config: JsonDict) -> str:
     return '_'.join(parts)
 
 
-def _build_result(*, request: JsonDict, vocab: Dict[str, int], next_token_id: int, scores: Sequence[float], topk: int, tokenizer_runtime: Any | None = None, prompt_doc: JsonDict, ort_version: str, approximation: JsonDict, candidate_semantics: str) -> JsonDict:
+def _build_result(*, request: JsonDict, vocab: Dict[str, int], next_token_id: int, scores: Sequence[float], topk: int, tokenizer_runtime: Any | None = None, prompt_doc: JsonDict, ort_version: str, approximation: JsonDict, candidate_semantics: str, selected_tensors: Sequence[JsonDict] | None = None) -> JsonDict:
     backend_config = request['backend_config']
     next_token_text = _decode_token(next_token_id, vocab, tokenizer_runtime=tokenizer_runtime)
     topk_pairs = list(_topk_pairs(scores, k=topk))
@@ -308,6 +336,7 @@ def _build_result(*, request: JsonDict, vocab: Dict[str, int], next_token_id: in
             'next_token_text': next_token_text,
             'next_token_id': next_token_id,
             'confidence': top_score,
+            'selected_tensors': list(selected_tensors or []),
             'topk': [
                 {
                     'token_id': token_id,
@@ -342,15 +371,21 @@ def main() -> int:
         raise SystemExit('backend_config.onnx_model_path is required for command_json_v1 ONNX candidate runs')
     output_name = str(backend_config.get('output_name', '')).strip() or None
     topk = int(backend_config.get('topk', 5))
+    trace_patterns = [str(v) for v in (backend_config.get('trace_output_patterns') or []) if str(v).strip()]
+    trace_tensor_quant_bits = int(backend_config.get('trace_tensor_quant_bits', 0) or 0)
     candidate_semantics = _derive_candidate_semantics(backend_config)
     model_config = _load_model_config(model_path=model_path, backend_config=backend_config)
     feeds = _build_feeds(prompt_token_ids=prompt_doc['token_ids'], model_config=model_config)
 
     sess = ort.InferenceSession(str(_resolve_repo_path(model_path)))
-    outputs = sess.run([output_name] if output_name else None, feeds)
+    outputs = sess.run(None, feeds)
     if not outputs:
         raise SystemExit('onnx runtime returned no outputs')
-    logits = _extract_next_token_logits(outputs[0])
+    outputs_by_name = _build_output_map(sess=sess, outputs=outputs)
+    logits_name = output_name or 'logits'
+    if logits_name not in outputs_by_name:
+        raise SystemExit(f'onnx runtime did not return requested logits output: {logits_name}')
+    logits = _extract_next_token_logits(outputs_by_name[logits_name])
     logit_values, logit_meta = _apply_logit_path(logits, backend_config)
     softmax_weights, softmax_meta = _apply_softmax_path(logit_values, backend_config)
     normalized_probs, normalization_meta = _apply_normalization_path(softmax_weights, backend_config)
@@ -372,6 +407,12 @@ def main() -> int:
             'probabilities': probability_meta,
         },
         candidate_semantics=candidate_semantics,
+        selected_tensors=_trace_selected_outputs_candidate(
+            outputs_by_name=outputs_by_name,
+            trace_patterns=trace_patterns,
+            step=0,
+            trace_tensor_quant_bits=trace_tensor_quant_bits,
+        ),
     )
     json.dump(result, sys.stdout)
     return 0

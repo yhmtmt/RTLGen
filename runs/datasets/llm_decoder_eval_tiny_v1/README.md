@@ -35,7 +35,7 @@ Current binding
 - exact reference runner: `npu/eval/run_llm_decoder_onnx_reference.py`
 - active candidate runner: `npu/eval/run_llm_decoder_onnx_candidate.py`
 
-The reference side is a real ONNX Runtime exact-reference path. The candidate side now exposes both exact and approximate probability paths; the active mode uses q4 quantization on shifted logits inside the PWL softmax path, q4 quantization on softmax weights before normalization, and quantized reciprocal normalization.
+The reference side is a real ONNX Runtime exact-reference path. The candidate side now exposes both exact and approximate probability paths; the active mode uses q4 quantization on shifted logits inside the PWL softmax path, q4 quantization on softmax weights before normalization, and quantized reciprocal normalization. Both sides also trace `present.*` KV-cache outputs, with q4 trace quantization active on the candidate side.
 
 Comparison
 ----------

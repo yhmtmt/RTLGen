@@ -18,7 +18,11 @@
       "softmax_mode": "approx_pwl",
       "topk": 5,
       "softmax_input_quant_bits": 4,
-      "softmax_weight_quant_bits": 4
+      "softmax_weight_quant_bits": 4,
+      "trace_output_patterns": [
+        "present.*"
+      ],
+      "trace_tensor_quant_bits": 4
     },
     "reference": {
       "backend_id": "command_json_v1",
@@ -32,7 +36,10 @@
       "onnx_model_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/model.onnx",
       "output_name": "logits",
       "runtime_target": "cpu_reference",
-      "topk": 5
+      "topk": 5,
+      "trace_output_patterns": [
+        "present.*"
+      ]
     }
   },
   "backend_templates": {
@@ -54,7 +61,11 @@
       "softmax_mode": "approx_pwl",
       "topk": 5,
       "softmax_input_quant_bits": 4,
-      "softmax_weight_quant_bits": 4
+      "softmax_weight_quant_bits": 4,
+      "trace_output_patterns": [
+        "present.*"
+      ],
+      "trace_tensor_quant_bits": 4
     },
     "candidate_onnx_softmax_exact": {
       "backend_id": "command_json_v1",
@@ -70,7 +81,11 @@
       "output_name": "logits",
       "runtime_target": "software_emulation",
       "softmax_mode": "exact",
-      "topk": 5
+      "topk": 5,
+      "trace_output_patterns": [
+        "present.*"
+      ],
+      "trace_tensor_quant_bits": 4
     },
     "reference_onnx": {
       "backend_id": "command_json_v1",
@@ -84,7 +99,10 @@
       "onnx_model_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/model.onnx",
       "output_name": "logits",
       "runtime_target": "cpu_reference",
-      "topk": 5
+      "topk": 5,
+      "trace_output_patterns": [
+        "present.*"
+      ]
     }
   },
   "decoder_backend_interface": "v1",

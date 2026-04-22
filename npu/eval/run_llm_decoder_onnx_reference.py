@@ -9,6 +9,7 @@ execution details.
 
 from __future__ import annotations
 
+import fnmatch
 import json
 import sys
 from pathlib import Path
@@ -85,6 +86,47 @@ def _extract_next_token_logits(raw_output: Any) -> list[float]:
     if rank == 3:
         return [float(v) for v in value[0][-1]]
     raise ValueError(f'unsupported logits rank: {rank}')
+
+
+def _build_output_map(*, sess: Any, outputs: Sequence[Any]) -> JsonDict:
+    output_defs = list(sess.get_outputs())
+    output_names = [str(defn.name) for defn in output_defs]
+    if len(output_names) != len(outputs):
+        raise ValueError('onnx output count mismatch')
+    return {name: value for name, value in zip(output_names, outputs)}
+
+
+def _matches_trace_pattern(name: str, patterns: Sequence[str]) -> bool:
+    return any(fnmatch.fnmatch(name, pattern) for pattern in patterns)
+
+
+def _tensor_summary(raw_output: Any, *, name: str, step: int, quantization: JsonDict | None = None) -> JsonDict:
+    import numpy as np
+
+    array = np.asarray(raw_output, dtype=np.float32)
+    summary: JsonDict = {
+        'name': name,
+        'step': int(step),
+        'shape': [int(dim) for dim in array.shape],
+        'dtype': str(array.dtype),
+        'min': float(array.min()) if array.size else 0.0,
+        'max': float(array.max()) if array.size else 0.0,
+        'mean': float(array.mean()) if array.size else 0.0,
+        'std': float(array.std()) if array.size else 0.0,
+    }
+    if quantization is not None:
+        summary['quantization'] = quantization
+    return summary
+
+
+def _trace_selected_outputs(*, outputs_by_name: JsonDict, trace_patterns: Sequence[str], step: int) -> list[JsonDict]:
+    if not trace_patterns:
+        return []
+    traced: list[JsonDict] = []
+    for name in sorted(outputs_by_name):
+        if _matches_trace_pattern(name, trace_patterns):
+            traced.append(_tensor_summary(outputs_by_name[name], name=name, step=step))
+    return traced
 
 
 def _topk_pairs(logits: Sequence[float], *, k: int) -> Iterable[Tuple[int, float]]:
@@ -177,7 +219,7 @@ def _build_feeds(*, prompt_token_ids: Sequence[int], model_config: JsonDict) -> 
     return feeds
 
 
-def _build_result(*, request: JsonDict, vocab: Dict[str, int], next_token_id: int, logits: Sequence[float], topk: int, tokenizer_runtime: Any | None = None, prompt_doc: JsonDict, ort_version: str) -> JsonDict:
+def _build_result(*, request: JsonDict, vocab: Dict[str, int], next_token_id: int, logits: Sequence[float], topk: int, tokenizer_runtime: Any | None = None, prompt_doc: JsonDict, ort_version: str, selected_tensors: Sequence[JsonDict] | None = None) -> JsonDict:
     sample = request['sample']
     backend_config = request['backend_config']
     next_token_text = _decode_token(next_token_id, vocab, tokenizer_runtime=tokenizer_runtime)
@@ -189,7 +231,7 @@ def _build_result(*, request: JsonDict, vocab: Dict[str, int], next_token_id: in
             'next_token_text': next_token_text,
             'next_token_id': next_token_id,
             'next_token_rank': 1,
-            'selected_tensors': [],
+            'selected_tensors': list(selected_tensors or []),
             'topk': [
                 {
                     'token_id': token_id,
@@ -230,14 +272,19 @@ def main() -> int:
         raise SystemExit('backend_config.onnx_model_path is required for command_json_v1 ONNX reference runs')
     output_name = str(backend_config.get('output_name', '')).strip() or None
     topk = int(backend_config.get('topk', 5))
+    trace_patterns = [str(v) for v in (backend_config.get('trace_output_patterns') or []) if str(v).strip()]
     model_config = _load_model_config(model_path=model_path, backend_config=backend_config)
     feeds = _build_feeds(prompt_token_ids=prompt_doc['token_ids'], model_config=model_config)
 
     sess = ort.InferenceSession(str(_resolve_repo_path(model_path)))
-    outputs = sess.run([output_name] if output_name else None, feeds)
+    outputs = sess.run(None, feeds)
     if not outputs:
         raise SystemExit('onnx runtime returned no outputs')
-    logits = _extract_next_token_logits(outputs[0])
+    outputs_by_name = _build_output_map(sess=sess, outputs=outputs)
+    logits_name = output_name or 'logits'
+    if logits_name not in outputs_by_name:
+        raise SystemExit(f'onnx runtime did not return requested logits output: {logits_name}')
+    logits = _extract_next_token_logits(outputs_by_name[logits_name])
     next_token_id = max(range(len(logits)), key=lambda idx: float(logits[idx]))
     result = _build_result(
         request=request,
@@ -248,6 +295,7 @@ def main() -> int:
         tokenizer_runtime=tokenizer_runtime,
         prompt_doc=prompt_doc,
         ort_version=str(ort.__version__),
+        selected_tensors=_trace_selected_outputs(outputs_by_name=outputs_by_name, trace_patterns=trace_patterns, step=0),
     )
     json.dump(result, sys.stdout)
     return 0

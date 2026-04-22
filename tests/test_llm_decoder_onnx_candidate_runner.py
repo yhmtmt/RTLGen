@@ -65,6 +65,12 @@ class LlmDecoderOnnxCandidateRunnerRegressionTest(unittest.TestCase):
         self.assertGreater(quantized[0], quantized[1])
         self.assertGreater(quantized[1], quantized[2])
 
+    def test_trace_tensor_quantization_preserves_shape(self):
+        quantized, meta = self.runner._quantize_tensor_trace_symmetric([[1.0, -0.5]], bits=4)
+        self.assertEqual('trace_tensor_quant', meta['mode'])
+        self.assertEqual((1, 2), tuple(quantized.shape))
+        self.assertGreater(float(quantized[0][0]), float(quantized[0][1]))
+
     def test_candidate_semantics_can_be_derived_from_backend_config(self):
         semantics = self.runner._derive_candidate_semantics({
             'softmax_mode': 'approx_pwl',

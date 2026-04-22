@@ -22,7 +22,11 @@
     "softmax_mode": "approx_pwl",
     "softmax_weight_quant_bits": 4,
     "timeout_s": 30.0,
-    "topk": 5
+    "topk": 5,
+    "trace_output_patterns": [
+      "present.*"
+    ],
+    "trace_tensor_quant_bits": 4
   },
   "backend_invocation": {
     "command": [
@@ -87,6 +91,96 @@
     "confidence": 4.355392381476051e-05,
     "next_token_id": 318,
     "next_token_text": " is",
+    "selected_tensors": [
+      {
+        "dtype": "float32",
+        "max": 0.6970548629760742,
+        "mean": -0.005264217033982277,
+        "min": -0.8132306933403015,
+        "name": "present.0.key",
+        "quantization": {
+          "bits": 4,
+          "levels": 7,
+          "max_abs": 0.8132306933403015,
+          "mode": "trace_tensor_quant",
+          "scale": 0.11617581333432879
+        },
+        "shape": [
+          1,
+          2,
+          5,
+          64
+        ],
+        "std": 0.22486501932144165,
+        "step": 0
+      },
+      {
+        "dtype": "float32",
+        "max": 0.867980420589447,
+        "mean": 0.008331061340868473,
+        "min": -0.6199859976768494,
+        "name": "present.0.value",
+        "quantization": {
+          "bits": 4,
+          "levels": 7,
+          "max_abs": 0.867980420589447,
+          "mode": "trace_tensor_quant",
+          "scale": 0.12399720294134957
+        },
+        "shape": [
+          1,
+          2,
+          5,
+          64
+        ],
+        "std": 0.2314649075269699,
+        "step": 0
+      },
+      {
+        "dtype": "float32",
+        "max": 0.730473518371582,
+        "mean": 0.0011413649190217257,
+        "min": -0.730473518371582,
+        "name": "present.1.key",
+        "quantization": {
+          "bits": 4,
+          "levels": 7,
+          "max_abs": 0.730473518371582,
+          "mode": "trace_tensor_quant",
+          "scale": 0.10435335976736886
+        },
+        "shape": [
+          1,
+          2,
+          5,
+          64
+        ],
+        "std": 0.22323919832706451,
+        "step": 0
+      },
+      {
+        "dtype": "float32",
+        "max": 0.7081871032714844,
+        "mean": -0.0017388522392138839,
+        "min": -0.7081871032714844,
+        "name": "present.1.value",
+        "quantization": {
+          "bits": 4,
+          "levels": 7,
+          "max_abs": 0.7081871032714844,
+          "mode": "trace_tensor_quant",
+          "scale": 0.10116958618164062
+        },
+        "shape": [
+          1,
+          2,
+          5,
+          64
+        ],
+        "std": 0.21738262474536896,
+        "step": 0
+      }
+    ],
     "topk": [
       {
         "score": 4.355392381476051e-05,

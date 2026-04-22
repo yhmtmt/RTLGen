@@ -37,6 +37,17 @@ class LlmDecoderOnnxRunnerRegressionTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.runner._extract_next_token_logits([[[[0.0]]]])
 
+    def test_trace_pattern_matches_present_outputs(self):
+        self.assertTrue(self.runner._matches_trace_pattern('present.0.key', ['present.*']))
+        self.assertFalse(self.runner._matches_trace_pattern('logits', ['present.*']))
+
+    def test_tensor_summary_reports_basic_statistics(self):
+        summary = self.runner._tensor_summary([[1.0, -1.0]], name='present.0.key', step=0)
+        self.assertEqual('present.0.key', summary['name'])
+        self.assertEqual([1, 2], summary['shape'])
+        self.assertEqual(-1.0, summary['min'])
+        self.assertEqual(1.0, summary['max'])
+
     def test_runner_rejects_gpt2_bundle_without_tokenizer_json_path(self):
         with tempfile.TemporaryDirectory() as td:
             td_path = Path(td)

@@ -16,7 +16,10 @@
     "role": "reference",
     "runtime_target": "cpu_reference",
     "timeout_s": 30.0,
-    "topk": 5
+    "topk": 5,
+    "trace_output_patterns": [
+      "present.*"
+    ]
   },
   "backend_invocation": {
     "command": [
@@ -70,7 +73,68 @@
     "next_token_id": 3221,
     "next_token_rank": 1,
     "next_token_text": " usually",
-    "selected_tensors": [],
+    "selected_tensors": [
+      {
+        "dtype": "float32",
+        "max": 0.779531717300415,
+        "mean": -0.009061770513653755,
+        "min": -0.7166780829429626,
+        "name": "present.0.key",
+        "shape": [
+          1,
+          2,
+          5,
+          64
+        ],
+        "std": 0.2284356653690338,
+        "step": 0
+      },
+      {
+        "dtype": "float32",
+        "max": 0.8039252758026123,
+        "mean": 0.00412026047706604,
+        "min": -0.636776864528656,
+        "name": "present.0.value",
+        "shape": [
+          1,
+          2,
+          5,
+          64
+        ],
+        "std": 0.22491002082824707,
+        "step": 0
+      },
+      {
+        "dtype": "float32",
+        "max": 0.5676459670066833,
+        "mean": 0.009654886089265347,
+        "min": -0.5913930535316467,
+        "name": "present.1.key",
+        "shape": [
+          1,
+          2,
+          5,
+          64
+        ],
+        "std": 0.22436967492103577,
+        "step": 0
+      },
+      {
+        "dtype": "float32",
+        "max": 0.733637809753418,
+        "mean": -0.0003390900674276054,
+        "min": -0.7819724082946777,
+        "name": "present.1.value",
+        "shape": [
+          1,
+          2,
+          5,
+          64
+        ],
+        "std": 0.22327952086925507,
+        "step": 0
+      }
+    ],
     "topk": [
       {
         "logit": 1.2921810150146484,
