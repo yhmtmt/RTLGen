@@ -2,14 +2,13 @@
   "backend_configs": {
     "candidate": {
       "backend_id": "command_json_v1",
-      "candidate_semantics": "onnx_logits_q4_softmax_approx_pwl_norm_recip_q10_prob_fp",
+      "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q4_w_q4_norm_recip_q10_prob_fp",
       "command": [
         "/workspaces/RTLGen/control_plane/.venv/bin/python",
         "/workspaces/RTLGen/npu/eval/run_llm_decoder_onnx_candidate.py"
       ],
       "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
       "input_name": "input_ids",
-      "logit_quant_bits": 4,
       "model_config_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/config.json",
       "normalization_mode": "reciprocal_quantized",
       "normalization_reciprocal_bits": 10,
@@ -17,7 +16,9 @@
       "output_name": "logits",
       "runtime_target": "software_emulation",
       "softmax_mode": "approx_pwl",
-      "topk": 5
+      "topk": 5,
+      "softmax_input_quant_bits": 4,
+      "softmax_weight_quant_bits": 4
     },
     "reference": {
       "backend_id": "command_json_v1",
@@ -37,14 +38,13 @@
   "backend_templates": {
     "candidate_onnx_softmax_approx": {
       "backend_id": "command_json_v1",
-      "candidate_semantics": "onnx_logits_q4_softmax_approx_pwl_norm_recip_q10_prob_fp",
+      "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q4_w_q4_norm_recip_q10_prob_fp",
       "command": [
         "/workspaces/RTLGen/control_plane/.venv/bin/python",
         "/workspaces/RTLGen/npu/eval/run_llm_decoder_onnx_candidate.py"
       ],
       "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
       "input_name": "input_ids",
-      "logit_quant_bits": 4,
       "model_config_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/config.json",
       "normalization_mode": "reciprocal_quantized",
       "normalization_reciprocal_bits": 10,
@@ -52,7 +52,9 @@
       "output_name": "logits",
       "runtime_target": "software_emulation",
       "softmax_mode": "approx_pwl",
-      "topk": 5
+      "topk": 5,
+      "softmax_input_quant_bits": 4,
+      "softmax_weight_quant_bits": 4
     },
     "candidate_onnx_softmax_exact": {
       "backend_id": "command_json_v1",

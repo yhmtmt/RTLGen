@@ -29,7 +29,7 @@ Prepared candidate modes:
 - approximate PWL softmax + quantized reciprocal normalization
 
 Active candidate semantics:
-- `onnx_logits_q4_softmax_approx_pwl_norm_recip_q10_prob_fp`
+- `onnx_logits_fp_softmax_approx_pwl_in_q4_w_q4_norm_recip_q10_prob_fp`
 
 What does not exist yet:
 - hardware-oriented decoder execution backend

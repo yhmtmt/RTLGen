@@ -44,10 +44,16 @@ class LlmDecoderOnnxCandidateRunnerRegressionTest(unittest.TestCase):
         self.assertGreater(probs[1], probs[2])
 
     def test_softmax_approx_pwl_and_quantized_reciprocal_normalization_preserve_order(self):
-        weights, softmax_meta = self.runner._softmax_approx_pwl([1.0, 0.0, -1.0])
+        weights, softmax_meta = self.runner._softmax_approx_pwl(
+            [1.0, 0.0, -1.0],
+            input_quant_bits=4,
+            weight_quant_bits=4,
+        )
         probs, norm_meta = self.runner._normalize_reciprocal_quantized(weights, reciprocal_bits=10)
         self.assertEqual('softmax_approx_pwl', softmax_meta['mode'])
         self.assertEqual('normalize_reciprocal_quantized', norm_meta['mode'])
+        self.assertIsNotNone(softmax_meta['input_quant'])
+        self.assertIsNotNone(softmax_meta['weight_quant'])
         self.assertGreater(sum(probs), 0.95)
         self.assertLess(sum(probs), 1.05)
         self.assertGreater(probs[0], probs[1])
@@ -61,14 +67,14 @@ class LlmDecoderOnnxCandidateRunnerRegressionTest(unittest.TestCase):
 
     def test_candidate_semantics_can_be_derived_from_backend_config(self):
         semantics = self.runner._derive_candidate_semantics({
-            'logit_quant_bits': 4,
             'softmax_mode': 'approx_pwl',
+            'softmax_input_quant_bits': 4,
+            'softmax_weight_quant_bits': 4,
             'normalization_mode': 'reciprocal_quantized',
             'normalization_reciprocal_bits': 10,
-            'probability_quant_bits': 8,
         })
         self.assertEqual(
-            'onnx_logits_q4_softmax_approx_pwl_norm_recip_q10_prob_q8',
+            'onnx_logits_fp_softmax_approx_pwl_in_q4_w_q4_norm_recip_q10_prob_fp',
             semantics,
         )
 

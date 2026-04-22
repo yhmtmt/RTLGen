@@ -41,17 +41,17 @@ def _topk_pairs(values: Sequence[float], *, k: int) -> Iterable[Tuple[int, float
     return [(int(idx), float(values[idx])) for idx in order]
 
 
-def _quantize_logits_symmetric(logits: Sequence[float], *, bits: int) -> Tuple[list[float], JsonDict]:
+def _quantize_symmetric(values: Sequence[float], *, bits: int, mode: str) -> Tuple[list[float], JsonDict]:
     if bits < 2:
-        raise SystemExit('backend_config.logit_quant_bits must be >= 2')
-    values = [float(v) for v in logits]
-    if not values:
-        raise SystemExit('candidate runner received empty logits')
-    max_abs = max(abs(v) for v in values)
+        raise SystemExit(f'{mode} bits must be >= 2')
+    quant_values = [float(v) for v in values]
+    if not quant_values:
+        raise SystemExit(f'{mode} received empty values')
+    max_abs = max(abs(v) for v in quant_values)
     levels = (1 << (bits - 1)) - 1
     if max_abs == 0.0 or levels <= 0:
-        return list(values), {
-            'mode': 'symmetric_logit_quant',
+        return list(quant_values), {
+            'mode': mode,
             'bits': bits,
             'levels': levels,
             'scale': 1.0,
@@ -59,16 +59,51 @@ def _quantize_logits_symmetric(logits: Sequence[float], *, bits: int) -> Tuple[l
         }
     scale = max_abs / float(levels)
     quantized = []
-    for value in values:
+    for value in quant_values:
         q = int(round(value / scale))
         q = max(-levels, min(levels, q))
         quantized.append(float(q) * scale)
     return quantized, {
-        'mode': 'symmetric_logit_quant',
+        'mode': mode,
         'bits': bits,
         'levels': levels,
         'scale': scale,
         'max_abs': max_abs,
+    }
+
+
+def _quantize_logits_symmetric(logits: Sequence[float], *, bits: int) -> Tuple[list[float], JsonDict]:
+    return _quantize_symmetric(logits, bits=bits, mode='symmetric_logit_quant')
+
+
+def _quantize_unsigned(values: Sequence[float], *, bits: int, mode: str) -> Tuple[list[float], JsonDict]:
+    if bits < 2:
+        raise SystemExit(f'{mode} bits must be >= 2')
+    quant_values = [max(0.0, float(v)) for v in values]
+    if not quant_values:
+        raise SystemExit(f'{mode} received empty values')
+    max_value = max(quant_values)
+    levels = (1 << bits) - 1
+    if max_value == 0.0 or levels <= 0:
+        return list(quant_values), {
+            'mode': mode,
+            'bits': bits,
+            'levels': levels,
+            'scale': 1.0,
+            'max_value': max_value,
+        }
+    scale = max_value / float(levels)
+    quantized = []
+    for value in quant_values:
+        q = int(round(value / scale))
+        q = max(0, min(levels, q))
+        quantized.append(float(q) * scale)
+    return quantized, {
+        'mode': mode,
+        'bits': bits,
+        'levels': levels,
+        'scale': scale,
+        'max_value': max_value,
     }
 
 
@@ -105,18 +140,36 @@ def _approx_exp_pwl(shifted_logit: float) -> float:
     return 0.0
 
 
-def _softmax_approx_pwl(logits: Sequence[float]) -> Tuple[list[float], JsonDict]:
+def _softmax_approx_pwl(logits: Sequence[float], *, input_quant_bits: int = 0, weight_quant_bits: int = 0) -> Tuple[list[float], JsonDict]:
     values = [float(v) for v in logits]
     if not values:
         raise SystemExit('softmax_approx_pwl received empty logits')
     max_logit = max(values)
     shifted = [value - max_logit for value in values]
-    weights = [_approx_exp_pwl(value) for value in shifted]
-    return weights, {
+    shifted_used = list(shifted)
+    input_quant = None
+    if input_quant_bits > 0:
+        shifted_used, input_quant = _quantize_symmetric(
+            shifted_used,
+            bits=input_quant_bits,
+            mode='softmax_input_quant',
+        )
+    weights = [_approx_exp_pwl(value) for value in shifted_used]
+    weights_used = list(weights)
+    weight_quant = None
+    if weight_quant_bits > 0:
+        weights_used, weight_quant = _quantize_unsigned(
+            weights_used,
+            bits=weight_quant_bits,
+            mode='softmax_weight_quant',
+        )
+    return weights_used, {
         'mode': 'softmax_approx_pwl',
         'max_logit': max_logit,
         'shifted_min': min(shifted),
         'anchors': [-8.0, -4.0, -2.0, 0.0],
+        'input_quant': input_quant,
+        'weight_quant': weight_quant,
     }
 
 
@@ -182,7 +235,13 @@ def _apply_softmax_path(logits: Sequence[float], backend_config: JsonDict) -> Tu
     if mode == 'exact':
         return _softmax_exact(logits)
     if mode == 'approx_pwl':
-        return _softmax_approx_pwl(logits)
+        input_quant_bits = int(backend_config.get('softmax_input_quant_bits', 0) or 0)
+        weight_quant_bits = int(backend_config.get('softmax_weight_quant_bits', 0) or 0)
+        return _softmax_approx_pwl(
+            logits,
+            input_quant_bits=input_quant_bits,
+            weight_quant_bits=weight_quant_bits,
+        )
     raise SystemExit(f'unsupported backend_config.softmax_mode: {mode}')
 
 
@@ -213,6 +272,12 @@ def _derive_candidate_semantics(backend_config: JsonDict) -> str:
     parts.append(f'logits_q{logit_bits}' if logit_bits > 0 else 'logits_fp')
     softmax_mode = str(backend_config.get('softmax_mode', 'exact'))
     parts.append(f'softmax_{softmax_mode}')
+    softmax_input_bits = int(backend_config.get('softmax_input_quant_bits', 0) or 0)
+    if softmax_input_bits > 0:
+        parts.append(f'in_q{softmax_input_bits}')
+    softmax_weight_bits = int(backend_config.get('softmax_weight_quant_bits', 0) or 0)
+    if softmax_weight_bits > 0:
+        parts.append(f'w_q{softmax_weight_bits}')
     norm_mode = str(backend_config.get('normalization_mode', 'exact'))
     if norm_mode == 'reciprocal_quantized':
         norm_bits = int(backend_config.get('normalization_reciprocal_bits', 10))
