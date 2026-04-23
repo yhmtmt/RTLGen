@@ -30,6 +30,39 @@ def _tensor_key(tensor_doc: JsonDict) -> Tuple[str, int]:
     return (str(tensor_doc.get('name', '')), int(tensor_doc.get('step', 0)))
 
 
+def _compute_delta_rollups(compared_tensors: List[JsonDict]) -> JsonDict:
+    if not compared_tensors:
+        return {
+            'mean_of_min_abs_delta': 0.0,
+            'max_of_min_abs_delta': 0.0,
+            'mean_of_max_abs_delta': 0.0,
+            'max_of_max_abs_delta': 0.0,
+            'mean_of_mean_abs_delta': 0.0,
+            'max_of_mean_abs_delta': 0.0,
+            'mean_of_std_abs_delta': 0.0,
+            'max_of_std_abs_delta': 0.0,
+        }
+
+    def _field_stats(field: str) -> Tuple[float, float]:
+        values = [float(entry['deltas'][field]) for entry in compared_tensors]
+        return (sum(values) / float(len(values)), max(values))
+
+    mean_min, max_min = _field_stats('min_abs_delta')
+    mean_max, max_max = _field_stats('max_abs_delta')
+    mean_mean, max_mean = _field_stats('mean_abs_delta')
+    mean_std, max_std = _field_stats('std_abs_delta')
+    return {
+        'mean_of_min_abs_delta': mean_min,
+        'max_of_min_abs_delta': max_min,
+        'mean_of_max_abs_delta': mean_max,
+        'max_of_max_abs_delta': max_max,
+        'mean_of_mean_abs_delta': mean_mean,
+        'max_of_mean_abs_delta': max_mean,
+        'mean_of_std_abs_delta': mean_std,
+        'max_of_std_abs_delta': max_std,
+    }
+
+
 def _compare_selected_tensors(reference_doc: JsonDict, candidate_doc: JsonDict) -> JsonDict:
     ref_tensors = {
         _tensor_key(entry): entry
@@ -87,6 +120,7 @@ def _compare_selected_tensors(reference_doc: JsonDict, candidate_doc: JsonDict) 
             'shape_match_rate': (float(shape_match_count) / float(len(common_keys))) if common_keys else 0.0,
             'missing_in_reference_count': len(missing_in_reference),
             'missing_in_candidate_count': len(missing_in_candidate),
+            'delta_rollups': _compute_delta_rollups(compared),
         },
         'missing_in_reference': missing_in_reference,
         'missing_in_candidate': missing_in_candidate,
@@ -144,6 +178,12 @@ def compare_decoder_manifests(reference_manifest: JsonDict, candidate_manifest: 
         int(sample['selected_tensor_trace']['aggregate']['missing_in_candidate_count'])
         for sample in sample_metrics
     )
+    total_compared_tensors = [
+        tensor
+        for sample in sample_metrics
+        for tensor in sample['selected_tensor_trace']['compared_tensors']
+    ]
+    total_delta_rollups = _compute_delta_rollups(total_compared_tensors)
     return {
         'dataset_id': reference_manifest['dataset_id'],
         'task': reference_manifest['task'],
@@ -161,6 +201,7 @@ def compare_decoder_manifests(reference_manifest: JsonDict, candidate_manifest: 
                 'shape_match_rate': (float(total_shape_match_count) / float(total_matched_tensors)) if total_matched_tensors else 0.0,
                 'missing_in_reference_count': total_missing_in_reference,
                 'missing_in_candidate_count': total_missing_in_candidate,
+                'delta_rollups': total_delta_rollups,
             },
         },
     }

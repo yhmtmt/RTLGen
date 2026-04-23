@@ -106,7 +106,16 @@ class LlmDecoderCompareRegressionTest(unittest.TestCase):
             self.assertEqual(1, trace['aggregate']['missing_in_candidate_count'])
             self.assertEqual(0.1, trace['compared_tensors'][0]['deltas']['mean_abs_delta'])
             self.assertEqual({'bits': 4}, trace['compared_tensors'][0]['candidate_quantization'])
+            self.assertEqual(0.5, trace['aggregate']['delta_rollups']['mean_of_min_abs_delta'])
+            self.assertEqual(0.5, trace['aggregate']['delta_rollups']['max_of_min_abs_delta'])
+            self.assertEqual(0.5, trace['aggregate']['delta_rollups']['mean_of_max_abs_delta'])
+            self.assertEqual(0.5, trace['aggregate']['delta_rollups']['max_of_max_abs_delta'])
+            self.assertEqual(0.1, trace['aggregate']['delta_rollups']['mean_of_mean_abs_delta'])
+            self.assertEqual(0.1, trace['aggregate']['delta_rollups']['max_of_mean_abs_delta'])
+            self.assertAlmostEqual(0.05, trace['aggregate']['delta_rollups']['mean_of_std_abs_delta'])
+            self.assertAlmostEqual(0.05, trace['aggregate']['delta_rollups']['max_of_std_abs_delta'])
             self.assertEqual(1, metrics['aggregate']['selected_tensor_trace']['matched_tensor_count'])
+            self.assertEqual(0.1, metrics['aggregate']['selected_tensor_trace']['delta_rollups']['mean_of_mean_abs_delta'])
 
     def test_compare_decoder_cli_emits_json(self):
         with tempfile.TemporaryDirectory() as td:
