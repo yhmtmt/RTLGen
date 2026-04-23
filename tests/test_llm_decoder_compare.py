@@ -59,6 +59,55 @@ class LlmDecoderCompareRegressionTest(unittest.TestCase):
             self.assertEqual(0.5, metrics['aggregate']['next_token_id_match_rate'])
             self.assertEqual(0.5, metrics['aggregate']['next_token_text_match_rate'])
 
+    def test_compare_decoder_manifests_reports_selected_tensor_trace_drift(self):
+        with tempfile.TemporaryDirectory() as td:
+            td_path = Path(td)
+            ref_doc = td_path / 'ref.json'
+            cand_doc = td_path / 'cand.json'
+            ref_doc.write_text(json.dumps({
+                'sample_id': 'geo',
+                'reference': {
+                    'next_token_id': 5,
+                    'next_token_text': ' Paris',
+                    'selected_tensors': [
+                        {'name': 'present.0.key', 'step': 0, 'shape': [1, 2], 'min': -1.0, 'max': 1.0, 'mean': 0.1, 'std': 0.2},
+                        {'name': 'present.0.value', 'step': 0, 'shape': [1, 2], 'min': -2.0, 'max': 2.0, 'mean': 0.3, 'std': 0.4},
+                    ],
+                },
+            }), encoding='utf-8')
+            cand_doc.write_text(json.dumps({
+                'sample_id': 'geo',
+                'candidate': {
+                    'next_token_id': 5,
+                    'next_token_text': ' Paris',
+                    'selected_tensors': [
+                        {'name': 'present.0.key', 'step': 0, 'shape': [1, 2], 'min': -0.5, 'max': 1.5, 'mean': 0.2, 'std': 0.25, 'quantization': {'bits': 4}},
+                        {'name': 'present.1.key', 'step': 0, 'shape': [1, 3], 'min': -3.0, 'max': 3.0, 'mean': 0.0, 'std': 0.5},
+                    ],
+                },
+            }), encoding='utf-8')
+            ref_manifest = {
+                'dataset_id': 'llm_decoder_eval_tiny_v1',
+                'task': 'greedy_next_token',
+                'samples': [{'sample_id': 'geo', 'reference_json': str(ref_doc)}],
+            }
+            cand_manifest = {
+                'dataset_id': 'llm_decoder_eval_tiny_v1',
+                'task': 'greedy_next_token',
+                'candidate_semantics': 'synthetic',
+                'samples': [{'sample_id': 'geo', 'candidate_json': str(cand_doc)}],
+            }
+            metrics = self.compare_mod.compare_decoder_manifests(ref_manifest, cand_manifest)
+            trace = metrics['samples'][0]['selected_tensor_trace']
+            self.assertEqual(1, trace['aggregate']['matched_tensor_count'])
+            self.assertEqual(1, trace['aggregate']['shape_match_count'])
+            self.assertEqual(1.0, trace['aggregate']['shape_match_rate'])
+            self.assertEqual(1, trace['aggregate']['missing_in_reference_count'])
+            self.assertEqual(1, trace['aggregate']['missing_in_candidate_count'])
+            self.assertEqual(0.1, trace['compared_tensors'][0]['deltas']['mean_abs_delta'])
+            self.assertEqual({'bits': 4}, trace['compared_tensors'][0]['candidate_quantization'])
+            self.assertEqual(1, metrics['aggregate']['selected_tensor_trace']['matched_tensor_count'])
+
     def test_compare_decoder_cli_emits_json(self):
         with tempfile.TemporaryDirectory() as td:
             td_path = Path(td)
