@@ -30,6 +30,7 @@ from npu.eval.run_llm_decoder_onnx_reference import (
     _matches_trace_pattern,
     _prepare_prompt,
     _resolve_repo_path,
+    _selected_tensor_trace_hash,
     _tensor_summary,
 )
 from npu.eval.llm_decoder_quality import load_json, load_tokenizer_bundle
@@ -337,6 +338,7 @@ def _build_result(*, request: JsonDict, vocab: Dict[str, int], next_token_id: in
             'next_token_id': next_token_id,
             'confidence': top_score,
             'selected_tensors': list(selected_tensors or []),
+            'selected_tensors_sha256': _selected_tensor_trace_hash(selected_tensors),
             'topk': [
                 {
                     'token_id': token_id,

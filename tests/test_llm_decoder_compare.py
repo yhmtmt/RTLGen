@@ -100,6 +100,9 @@ class LlmDecoderCompareRegressionTest(unittest.TestCase):
             metrics = self.compare_mod.compare_decoder_manifests(ref_manifest, cand_manifest)
             trace = metrics['samples'][0]['selected_tensor_trace']
             self.assertEqual(1, trace['aggregate']['matched_tensor_count'])
+            self.assertEqual(0, trace['aggregate']['trace_sha256_match'])
+            self.assertTrue(trace['aggregate']['reference_trace_sha256'])
+            self.assertTrue(trace['aggregate']['candidate_trace_sha256'])
             self.assertEqual(1, trace['aggregate']['shape_match_count'])
             self.assertEqual(1.0, trace['aggregate']['shape_match_rate'])
             self.assertEqual(1, trace['aggregate']['missing_in_reference_count'])
@@ -115,6 +118,8 @@ class LlmDecoderCompareRegressionTest(unittest.TestCase):
             self.assertAlmostEqual(0.05, trace['aggregate']['delta_rollups']['mean_of_std_abs_delta'])
             self.assertAlmostEqual(0.05, trace['aggregate']['delta_rollups']['max_of_std_abs_delta'])
             self.assertEqual(1, metrics['aggregate']['selected_tensor_trace']['matched_tensor_count'])
+            self.assertEqual(0, metrics['aggregate']['selected_tensor_trace']['trace_sha256_match_count'])
+            self.assertEqual(0.0, metrics['aggregate']['selected_tensor_trace']['trace_sha256_match_rate'])
             self.assertEqual(0.1, metrics['aggregate']['selected_tensor_trace']['delta_rollups']['mean_of_mean_abs_delta'])
 
     def test_compare_decoder_cli_emits_json(self):

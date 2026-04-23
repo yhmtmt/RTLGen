@@ -135,6 +135,7 @@
         "step": 0
       }
     ],
+    "selected_tensors_sha256": "bf9a188416a1d97b5d54d93128859458678146e84ef1c589d54bbe15620d2774",
     "topk": [
       {
         "logit": 1.2921810150146484,

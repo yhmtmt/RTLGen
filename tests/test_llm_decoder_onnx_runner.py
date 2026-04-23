@@ -41,6 +41,18 @@ class LlmDecoderOnnxRunnerRegressionTest(unittest.TestCase):
         self.assertTrue(self.runner._matches_trace_pattern('present.0.key', ['present.*']))
         self.assertFalse(self.runner._matches_trace_pattern('logits', ['present.*']))
 
+    def test_selected_tensor_trace_hash_is_stable_for_canonical_json(self):
+        tensors_a = [
+            {'name': 'present.0.key', 'step': 0, 'shape': [1, 2], 'dtype': 'float32', 'min': -1.0, 'max': 1.0, 'mean': 0.0, 'std': 0.5},
+        ]
+        tensors_b = [
+            {'std': 0.5, 'mean': 0.0, 'max': 1.0, 'min': -1.0, 'dtype': 'float32', 'shape': [1, 2], 'step': 0, 'name': 'present.0.key'},
+        ]
+        self.assertEqual(
+            self.runner._selected_tensor_trace_hash(tensors_a),
+            self.runner._selected_tensor_trace_hash(tensors_b),
+        )
+
     def test_tensor_summary_reports_basic_statistics(self):
         summary = self.runner._tensor_summary([[1.0, -1.0]], name='present.0.key', step=0)
         self.assertEqual('present.0.key', summary['name'])

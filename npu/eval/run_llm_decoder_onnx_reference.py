@@ -10,6 +10,7 @@ execution details.
 from __future__ import annotations
 
 import fnmatch
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -129,6 +130,15 @@ def _trace_selected_outputs(*, outputs_by_name: JsonDict, trace_patterns: Sequen
     return traced
 
 
+def _canonical_json_sha256(value: Any) -> str:
+    payload = json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=True).encode('utf-8')
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _selected_tensor_trace_hash(selected_tensors: Sequence[JsonDict] | None) -> str:
+    return _canonical_json_sha256(list(selected_tensors or []))
+
+
 def _topk_pairs(logits: Sequence[float], *, k: int) -> Iterable[Tuple[int, float]]:
     if k <= 0:
         return []
@@ -232,6 +242,7 @@ def _build_result(*, request: JsonDict, vocab: Dict[str, int], next_token_id: in
             'next_token_id': next_token_id,
             'next_token_rank': 1,
             'selected_tensors': list(selected_tensors or []),
+            'selected_tensors_sha256': _selected_tensor_trace_hash(selected_tensors),
             'topk': [
                 {
                     'token_id': token_id,

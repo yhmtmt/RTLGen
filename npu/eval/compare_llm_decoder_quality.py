@@ -14,6 +14,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from npu.eval.llm_decoder_quality import compare_decoder_reference_docs, load_json
+from npu.eval.run_llm_decoder_onnx_reference import _selected_tensor_trace_hash
 
 
 JsonDict = Dict[str, Any]
@@ -110,6 +111,11 @@ def _compare_selected_tensors(reference_doc: JsonDict, candidate_doc: JsonDict) 
             'candidate_quantization': cand_tensor.get('quantization'),
         })
 
+    reference_selected_tensors = list(reference_doc.get('reference', {}).get('selected_tensors', []) or [])
+    candidate_selected_tensors = list(candidate_doc.get('candidate', {}).get('selected_tensors', []) or [])
+    reference_hash = str(reference_doc.get('reference', {}).get('selected_tensors_sha256', '')) or _selected_tensor_trace_hash(reference_selected_tensors)
+    candidate_hash = str(candidate_doc.get('candidate', {}).get('selected_tensors_sha256', '')) or _selected_tensor_trace_hash(candidate_selected_tensors)
+    hash_match = int(bool(reference_hash) and reference_hash == candidate_hash)
     return {
         'compared_tensors': compared,
         'aggregate': {
@@ -120,6 +126,9 @@ def _compare_selected_tensors(reference_doc: JsonDict, candidate_doc: JsonDict) 
             'shape_match_rate': (float(shape_match_count) / float(len(common_keys))) if common_keys else 0.0,
             'missing_in_reference_count': len(missing_in_reference),
             'missing_in_candidate_count': len(missing_in_candidate),
+            'reference_trace_sha256': reference_hash,
+            'candidate_trace_sha256': candidate_hash,
+            'trace_sha256_match': hash_match,
             'delta_rollups': _compute_delta_rollups(compared),
         },
         'missing_in_reference': missing_in_reference,
@@ -178,6 +187,10 @@ def compare_decoder_manifests(reference_manifest: JsonDict, candidate_manifest: 
         int(sample['selected_tensor_trace']['aggregate']['missing_in_candidate_count'])
         for sample in sample_metrics
     )
+    total_trace_sha256_match_count = sum(
+        int(sample['selected_tensor_trace']['aggregate']['trace_sha256_match'])
+        for sample in sample_metrics
+    )
     total_compared_tensors = [
         tensor
         for sample in sample_metrics
@@ -201,6 +214,8 @@ def compare_decoder_manifests(reference_manifest: JsonDict, candidate_manifest: 
                 'shape_match_rate': (float(total_shape_match_count) / float(total_matched_tensors)) if total_matched_tensors else 0.0,
                 'missing_in_reference_count': total_missing_in_reference,
                 'missing_in_candidate_count': total_missing_in_candidate,
+                'trace_sha256_match_count': total_trace_sha256_match_count,
+                'trace_sha256_match_rate': (float(total_trace_sha256_match_count) / float(total)) if total else 0.0,
                 'delta_rollups': total_delta_rollups,
             },
         },

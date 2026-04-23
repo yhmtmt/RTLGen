@@ -31,27 +31,27 @@
   "samples": [
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate/geo_france_capital.json",
-      "candidate_sha256": "6b07987e6025e8926370a136af0ee559c55713a897041978c46a7edd1c6bcd36",
+      "candidate_sha256": "a804dc939cfc4d146bcf8a1de310983ae1ff3c2d52cdf5128bf7acfc69760ab8",
       "sample_id": "geo_france_capital"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate/math_two_plus_two.json",
-      "candidate_sha256": "ccca7bacdc89547335d7d5c8ed079004dc88dca2c85d31837a9c7d334afda52d",
+      "candidate_sha256": "7272143d45bbbeedc6d36e2ee4eb6fc7247c12fdd57531d7dd1c7f2fc1200eae",
       "sample_id": "math_two_plus_two"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate/quote_complete.json",
-      "candidate_sha256": "4e5dc1810b7f459249b48fecdc21718e2a4b55cfd9ec440a69fa8ca4913466a6",
+      "candidate_sha256": "43bd88c3a84d7401f35f27505feaf555ab943cdb555f5c7419b2481eec8eac07",
       "sample_id": "quote_complete"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate/weekday_after_monday.json",
-      "candidate_sha256": "fda8861f3597ead2d54fc29bedc63467996d84e90498e9cd001249e616b9802d",
+      "candidate_sha256": "b271dbbfdc3eb935c37e4618dc5f74ef2ad2fc30dca2ad0f698299502a400411",
       "sample_id": "weekday_after_monday"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate/color_banana.json",
-      "candidate_sha256": "915bc80f3e123da4aa0d8bf40f1b3d0fe9e847640d68a6875959b6628132456e",
+      "candidate_sha256": "970a4cbfccf43449e18b177484450226df87d917f74093c90fbb01555ed138de",
       "sample_id": "color_banana"
     }
   ],

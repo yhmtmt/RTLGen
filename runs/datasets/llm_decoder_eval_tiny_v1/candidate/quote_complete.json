@@ -181,6 +181,7 @@
         "step": 0
       }
     ],
+    "selected_tensors_sha256": "efa7cfd398ac84eca7c276f7d352568c6fd5fad8afe46368d0c6933b6e105ea4",
     "topk": [
       {
         "score": 5.3159652217741936e-05,
