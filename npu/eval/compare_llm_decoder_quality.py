@@ -14,7 +14,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from npu.eval.llm_decoder_quality import compare_decoder_reference_docs, load_json
-from npu.eval.run_llm_decoder_onnx_reference import _selected_tensor_trace_hash
+from npu.eval.tensor_trace_summary import selected_tensor_trace_hash as _selected_tensor_trace_hash
 
 
 JsonDict = Dict[str, Any]

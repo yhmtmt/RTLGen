@@ -69,6 +69,7 @@ The tests validate descriptor execution behavior, MMIO/IRQ flow, and AXI memory 
   - GEMM timing consistency (`compare_gemm_timing.py`)
   - GEMM/VEC computation consistency (`compare_compute_results.py`)
   - Canonical RTL/perf compute summaries (`*_compute_summary.json`) with strict SHA-256 equality checks for exact equivalence.
+- Future activation trace emitters should use the shared `TENSOR_TRACE` summary line contract documented by `npu/eval/tensor_trace_summary.py`, so RTL traces can be hashed against software/perf summaries without a schema translation layer.
 
 ## Current coverage boundaries
 

@@ -27,13 +27,15 @@ from npu.eval.run_llm_decoder_onnx_reference import (
     _load_onnxruntime,
     _load_request,
     _load_tokenizer_runtime,
-    _matches_trace_pattern,
     _prepare_prompt,
     _resolve_repo_path,
-    _selected_tensor_trace_hash,
-    _tensor_summary,
 )
 from npu.eval.llm_decoder_quality import load_json, load_tokenizer_bundle
+from npu.eval.tensor_trace_summary import (
+    matches_trace_pattern as _matches_trace_pattern,
+    selected_tensor_trace_hash as _selected_tensor_trace_hash,
+    tensor_summary as _tensor_summary,
+)
 
 JsonDict = Dict[str, Any]
 

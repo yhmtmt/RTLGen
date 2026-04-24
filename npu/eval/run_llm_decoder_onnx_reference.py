@@ -9,8 +9,6 @@ execution details.
 
 from __future__ import annotations
 
-import fnmatch
-import hashlib
 import json
 import sys
 from pathlib import Path
@@ -25,6 +23,12 @@ from npu.eval.llm_decoder_quality import (
     load_json,
     load_tokenizer_bundle,
     tokenize_decoder_text,
+)
+from npu.eval.tensor_trace_summary import (
+    matches_trace_pattern as _matches_trace_pattern,
+    selected_tensor_trace_hash as _selected_tensor_trace_hash,
+    tensor_summary as _tensor_summary,
+    trace_selected_outputs as _trace_selected_outputs,
 )
 
 JsonDict = Dict[str, Any]
@@ -95,48 +99,6 @@ def _build_output_map(*, sess: Any, outputs: Sequence[Any]) -> JsonDict:
     if len(output_names) != len(outputs):
         raise ValueError('onnx output count mismatch')
     return {name: value for name, value in zip(output_names, outputs)}
-
-
-def _matches_trace_pattern(name: str, patterns: Sequence[str]) -> bool:
-    return any(fnmatch.fnmatch(name, pattern) for pattern in patterns)
-
-
-def _tensor_summary(raw_output: Any, *, name: str, step: int, quantization: JsonDict | None = None) -> JsonDict:
-    import numpy as np
-
-    array = np.asarray(raw_output, dtype=np.float32)
-    summary: JsonDict = {
-        'name': name,
-        'step': int(step),
-        'shape': [int(dim) for dim in array.shape],
-        'dtype': str(array.dtype),
-        'min': float(array.min()) if array.size else 0.0,
-        'max': float(array.max()) if array.size else 0.0,
-        'mean': float(array.mean()) if array.size else 0.0,
-        'std': float(array.std()) if array.size else 0.0,
-    }
-    if quantization is not None:
-        summary['quantization'] = quantization
-    return summary
-
-
-def _trace_selected_outputs(*, outputs_by_name: JsonDict, trace_patterns: Sequence[str], step: int) -> list[JsonDict]:
-    if not trace_patterns:
-        return []
-    traced: list[JsonDict] = []
-    for name in sorted(outputs_by_name):
-        if _matches_trace_pattern(name, trace_patterns):
-            traced.append(_tensor_summary(outputs_by_name[name], name=name, step=step))
-    return traced
-
-
-def _canonical_json_sha256(value: Any) -> str:
-    payload = json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=True).encode('utf-8')
-    return hashlib.sha256(payload).hexdigest()
-
-
-def _selected_tensor_trace_hash(selected_tensors: Sequence[JsonDict] | None) -> str:
-    return _canonical_json_sha256(list(selected_tensors or []))
 
 
 def _topk_pairs(logits: Sequence[float], *, k: int) -> Iterable[Tuple[int, float]]:
