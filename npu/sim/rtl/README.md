@@ -68,6 +68,7 @@ The tests validate descriptor execution behavior, MMIO/IRQ flow, and AXI memory 
 - These RTL runs are consumed by perf comparison scripts for:
   - GEMM timing consistency (`compare_gemm_timing.py`)
   - GEMM/VEC computation consistency (`compare_compute_results.py`)
+  - Canonical RTL/perf compute summaries (`*_compute_summary.json`) with strict SHA-256 equality checks for exact equivalence.
 
 ## Current coverage boundaries
 

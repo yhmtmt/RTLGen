@@ -253,6 +253,26 @@ bin_bytes() {
   wc -c < "$1" | tr -d "[:space:]"
 }
 
+compute_summary_path() {
+  local path="$1"
+  local dir
+  local base
+  dir="$(dirname "$path")"
+  base="$(basename "$path")"
+  base="${base%.*}"
+  printf "%s/%s_compute_summary.json" "$dir" "$base"
+}
+
+compare_compute() {
+  local rtl_log="$1"
+  local perf_trace="$2"
+  python3 "${REPO_ROOT}/npu/sim/perf/compare_compute_results.py" \
+    --rtl-log "$rtl_log" \
+    --perf-trace "$perf_trace" \
+    --rtl-summary-out "$(compute_summary_path "$rtl_log")" \
+    --perf-summary-out "$(compute_summary_path "$perf_trace")"
+}
+
 GEMM_BIN_BYTES=$(bin_bytes "${GEMM_BIN}")
 GEMM2_BIN_BYTES=$(bin_bytes "${GEMM2_BIN}")
 GEMM_OOO_BIN_BYTES=$(bin_bytes "${GEMM_OOO_BIN}")
@@ -326,8 +346,7 @@ if [[ "${FP16_CPP_ENABLED}" == "1" ]]; then
 fi
 popd >/dev/null
 python3 "${REPO_ROOT}/npu/sim/perf/run.py" --bin "${DESC_BIN}" --out "${PERF_TRACE}"
-python3 "${REPO_ROOT}/npu/sim/perf/compare_compute_results.py" \
-  --rtl-log "${MIXED_RTL_LOG}" --perf-trace "${PERF_TRACE}"
+compare_compute "${MIXED_RTL_LOG}" "${PERF_TRACE}"
 python3 - "${PERF_TRACE}" <<'PY'
 import json
 import sys
@@ -357,25 +376,21 @@ python3 "${REPO_ROOT}/npu/sim/perf/run.py" --bin "${GEMM_BIN}" \
   --out "${GEMM_TRACE}" --config "${PERF_CFG}"
 python3 "${REPO_ROOT}/npu/sim/perf/compare_gemm_timing.py" --rtl-log "${GEMM_RTL_LOG}" --clk-ns "${CLK_NS}" \
   --perf-trace "${GEMM_TRACE}" --tolerance 0.9
-python3 "${REPO_ROOT}/npu/sim/perf/compare_compute_results.py" \
-  --rtl-log "${GEMM_RTL_LOG}" --perf-trace "${GEMM_TRACE}"
+compare_compute "${GEMM_RTL_LOG}" "${GEMM_TRACE}"
 python3 "${REPO_ROOT}/npu/sim/perf/run.py" --bin "${GEMM2_BIN}" \
   --out "${GEMM2_TRACE}" --config "${PERF_CFG}"
 python3 "${REPO_ROOT}/npu/sim/perf/compare_gemm_timing.py" --rtl-log "${GEMM2_RTL_LOG}" --clk-ns "${CLK_NS}" \
   --perf-trace "${GEMM2_TRACE}" --tolerance 0.9
-python3 "${REPO_ROOT}/npu/sim/perf/compare_compute_results.py" \
-  --rtl-log "${GEMM2_RTL_LOG}" --perf-trace "${GEMM2_TRACE}"
+compare_compute "${GEMM2_RTL_LOG}" "${GEMM2_TRACE}"
 python3 "${REPO_ROOT}/npu/sim/perf/run.py" --bin "${GEMM_OOO_BIN}" \
   --out "${GEMM_OOO_TRACE}" --config "${PERF_CFG}"
 python3 "${REPO_ROOT}/npu/sim/perf/compare_gemm_timing.py" --rtl-log "${GEMM_OOO_RTL_LOG}" --clk-ns "${CLK_NS}" \
   --perf-trace "${GEMM_OOO_TRACE}" --tolerance 0.9 \
   --tolerance-map "${GEMM_OOO_TOL}" --require-order-change
-python3 "${REPO_ROOT}/npu/sim/perf/compare_compute_results.py" \
-  --rtl-log "${GEMM_OOO_RTL_LOG}" --perf-trace "${GEMM_OOO_TRACE}"
+compare_compute "${GEMM_OOO_RTL_LOG}" "${GEMM_OOO_TRACE}"
 python3 "${REPO_ROOT}/npu/sim/perf/run.py" --bin "${DESC_BIN}" \
   --out "${CPP_MIXED_TRACE}" --config "${CPP_PERF_CFG}"
-python3 "${REPO_ROOT}/npu/sim/perf/compare_compute_results.py" \
-  --rtl-log "${CPP_MIXED_RTL_LOG}" --perf-trace "${CPP_MIXED_TRACE}"
+compare_compute "${CPP_MIXED_RTL_LOG}" "${CPP_MIXED_TRACE}"
 python3 - "${CPP_MIXED_TRACE}" <<'PY'
 import json
 import sys
@@ -405,12 +420,10 @@ python3 "${REPO_ROOT}/npu/sim/perf/run.py" --bin "${GEMM_BIN}" \
   --out "${CPP_GEMM_TRACE}" --config "${CPP_PERF_CFG}"
 python3 "${REPO_ROOT}/npu/sim/perf/compare_gemm_timing.py" --rtl-log "${CPP_GEMM_RTL_LOG}" --clk-ns "${CPP_CLK_NS}" \
   --perf-trace "${CPP_GEMM_TRACE}" --tolerance 0.9
-python3 "${REPO_ROOT}/npu/sim/perf/compare_compute_results.py" \
-  --rtl-log "${CPP_GEMM_RTL_LOG}" --perf-trace "${CPP_GEMM_TRACE}"
+compare_compute "${CPP_GEMM_RTL_LOG}" "${CPP_GEMM_TRACE}"
 python3 "${REPO_ROOT}/npu/sim/perf/run.py" --bin "${CPP_VEC_ACT_BIN}" \
   --out "${CPP_VEC_ACT_TRACE}" --config "${CPP_PERF_CFG}"
-python3 "${REPO_ROOT}/npu/sim/perf/compare_compute_results.py" \
-  --rtl-log "${CPP_VEC_ACT_RTL_LOG}" --perf-trace "${CPP_VEC_ACT_TRACE}"
+compare_compute "${CPP_VEC_ACT_RTL_LOG}" "${CPP_VEC_ACT_TRACE}"
 python3 - "${CPP_VEC_ACT_TRACE}" <<'PY'
 import json
 import sys
@@ -438,25 +451,21 @@ python3 "${REPO_ROOT}/npu/sim/perf/run.py" --bin "${GEMM_BIN}" \
   --out "${INT16_GEMM_TRACE}" --config "${INT16_PERF_CFG}"
 python3 "${REPO_ROOT}/npu/sim/perf/compare_gemm_timing.py" --rtl-log "${INT16_GEMM_RTL_LOG}" --clk-ns "${INT16_CLK_NS}" \
   --perf-trace "${INT16_GEMM_TRACE}" --tolerance 0.9
-python3 "${REPO_ROOT}/npu/sim/perf/compare_compute_results.py" \
-  --rtl-log "${INT16_GEMM_RTL_LOG}" --perf-trace "${INT16_GEMM_TRACE}"
+compare_compute "${INT16_GEMM_RTL_LOG}" "${INT16_GEMM_TRACE}"
 python3 "${REPO_ROOT}/npu/sim/perf/run.py" --bin "${GEMM_BIN}" \
   --out "${FP16_GEMM_TRACE}" --config "${FP16_PERF_CFG}"
 python3 "${REPO_ROOT}/npu/sim/perf/compare_gemm_timing.py" --rtl-log "${FP16_GEMM_RTL_LOG}" --clk-ns "${FP16_CLK_NS}" \
   --perf-trace "${FP16_GEMM_TRACE}" --tolerance 0.9
-python3 "${REPO_ROOT}/npu/sim/perf/compare_compute_results.py" \
-  --rtl-log "${FP16_GEMM_RTL_LOG}" --perf-trace "${FP16_GEMM_TRACE}"
+compare_compute "${FP16_GEMM_RTL_LOG}" "${FP16_GEMM_TRACE}"
 if [[ "${FP16_CPP_ENABLED}" == "1" ]]; then
   python3 "${REPO_ROOT}/npu/sim/perf/run.py" --bin "${GEMM_BIN}" \
     --out "${FP16_CPP_GEMM_TRACE}" --config "${FP16_CPP_PERF_CFG}"
   python3 "${REPO_ROOT}/npu/sim/perf/compare_gemm_timing.py" --rtl-log "${FP16_CPP_GEMM_RTL_LOG}" --clk-ns "${FP16_CPP_CLK_NS}" \
     --perf-trace "${FP16_CPP_GEMM_TRACE}" --tolerance 0.9
-  python3 "${REPO_ROOT}/npu/sim/perf/compare_compute_results.py" \
-    --rtl-log "${FP16_CPP_GEMM_RTL_LOG}" --perf-trace "${FP16_CPP_GEMM_TRACE}"
+  compare_compute "${FP16_CPP_GEMM_RTL_LOG}" "${FP16_CPP_GEMM_TRACE}"
   python3 "${REPO_ROOT}/npu/sim/perf/run.py" --bin "${VEC_FP16_BIN}" \
     --out "${VEC_FP16_TRACE}" --config "${VEC_FP16_PERF_CFG}"
-  python3 "${REPO_ROOT}/npu/sim/perf/compare_compute_results.py" \
-    --rtl-log "${VEC_FP16_RTL_LOG}" --perf-trace "${VEC_FP16_TRACE}"
+  compare_compute "${VEC_FP16_RTL_LOG}" "${VEC_FP16_TRACE}"
   python3 - "${VEC_FP16_TRACE}" <<'PY'
 import json
 import sys
@@ -479,8 +488,7 @@ print("golden fp16 vec regression: OK")
 PY
   python3 "${REPO_ROOT}/npu/sim/perf/run.py" --bin "${VEC_FP16_BIN}" \
     --out "${VEC_FP16_ACT_TRACE}" --config "${VEC_FP16_ACT_PERF_CFG}"
-  python3 "${REPO_ROOT}/npu/sim/perf/compare_compute_results.py" \
-    --rtl-log "${VEC_FP16_ACT_RTL_LOG}" --perf-trace "${VEC_FP16_ACT_TRACE}"
+  compare_compute "${VEC_FP16_ACT_RTL_LOG}" "${VEC_FP16_ACT_TRACE}"
   python3 - "${VEC_FP16_ACT_TRACE}" <<'PY'
 import json
 import sys
@@ -503,8 +511,7 @@ print("golden fp16 cpp activation regression: OK")
 PY
   python3 "${REPO_ROOT}/npu/sim/perf/run.py" --bin "${FP16_EDGE_GEMM_BIN}" \
     --out "${FP16_EDGE_GEMM_TRACE}" --config "${FP16_CPP_PERF_CFG}"
-  python3 "${REPO_ROOT}/npu/sim/perf/compare_compute_results.py" \
-    --rtl-log "${FP16_EDGE_GEMM_RTL_LOG}" --perf-trace "${FP16_EDGE_GEMM_TRACE}"
+  compare_compute "${FP16_EDGE_GEMM_RTL_LOG}" "${FP16_EDGE_GEMM_TRACE}"
   python3 - "${FP16_EDGE_GEMM_TRACE}" <<'PY'
 import json
 import sys
@@ -529,8 +536,7 @@ print("golden fp16 edge gemm regression: OK")
 PY
   python3 "${REPO_ROOT}/npu/sim/perf/run.py" --bin "${VEC_FP16_EDGE_BIN}" \
     --out "${VEC_FP16_EDGE_TRACE}" --config "${VEC_FP16_PERF_CFG}"
-  python3 "${REPO_ROOT}/npu/sim/perf/compare_compute_results.py" \
-    --rtl-log "${VEC_FP16_EDGE_RTL_LOG}" --perf-trace "${VEC_FP16_EDGE_TRACE}"
+  compare_compute "${VEC_FP16_EDGE_RTL_LOG}" "${VEC_FP16_EDGE_TRACE}"
   python3 - "${VEC_FP16_EDGE_TRACE}" <<'PY'
 import json
 import sys
