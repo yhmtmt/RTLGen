@@ -101,6 +101,40 @@ def test_compare_compute_results_hash_mismatch():
     assert "FAIL GEMM[offset=32]" in proc.stderr
 
 
+def test_compare_compute_results_uses_tensor_trace_lanes_for_rtl_vec():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp = Path(tmpdir)
+        rtl_log = tmp / "rtl.log"
+        perf_trace = tmp / "perf.json"
+        rtl_log.write_text(
+            """[1] GEMM_TIMING offset=32 cycles=12 accum=123
+[2] VEC_DONE index=1 offset=64 op=0 result=0x0000000000000000
+TENSOR_TRACE name=vec.result step=1 lanes=1 dtype=packed_u8 result=0x0000000000000000
+""",
+            encoding="utf-8",
+        )
+        _write_perf_trace(perf_trace, gemm_accum=123, vec_result="0x00", lanes=1)
+
+        proc = subprocess.run(
+            [
+                "python3",
+                "npu/sim/perf/compare_compute_results.py",
+                "--rtl-log",
+                str(rtl_log),
+                "--perf-trace",
+                str(perf_trace),
+            ],
+            cwd=str(REPO_ROOT),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+    assert proc.returncode == 0, proc.stderr
+    assert "compare-compute: OK" in proc.stdout
+    assert "lanes=1" in proc.stdout
+
+
 def test_compare_tensor_traces_hash_match():
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp = Path(tmpdir)
