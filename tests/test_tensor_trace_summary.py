@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 
 from npu.eval.tensor_trace_summary import (
+    packed_u8_tensor_summary,
     parse_rtl_tensor_trace_log,
     selected_tensor_trace_hash,
     tensor_summary,
@@ -53,6 +54,19 @@ class TensorTraceSummaryRegressionTest(unittest.TestCase):
                     ]
                 )
                 + '\n',
+                encoding='utf-8',
+            )
+            parsed = parse_rtl_tensor_trace_log(path)
+
+        self.assertEqual(expected, parsed)
+        self.assertEqual(selected_tensor_trace_hash(expected), selected_tensor_trace_hash(parsed))
+
+    def test_compact_packed_result_trace_matches_summary_helper(self):
+        expected = [packed_u8_tensor_summary(name='vec.result', step=1, result='0x00000000000000ff', lanes=8)]
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / 'rtl.log'
+            path.write_text(
+                'TENSOR_TRACE name=vec.result step=1 lanes=8 dtype=packed_u8 result=0x00000000000000ff\n',
                 encoding='utf-8',
             )
             parsed = parse_rtl_tensor_trace_log(path)

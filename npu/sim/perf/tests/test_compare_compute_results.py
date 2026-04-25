@@ -4,6 +4,9 @@ import tempfile
 from pathlib import Path
 
 
+REPO_ROOT = Path(__file__).resolve().parents[4]
+
+
 def _write_rtl_log(path: Path, *, gemm_accum: int, vec_result_hex: str) -> None:
     path.write_text(
         """[1] GEMM_TIMING offset=32 cycles=12 accum={gemm_accum}
@@ -55,7 +58,7 @@ def test_compare_compute_results_hash_match():
                 "--perf-summary-out",
                 str(perf_summary),
             ],
-            cwd="/workspaces/RTLGen",
+            cwd=str(REPO_ROOT),
             capture_output=True,
             text=True,
             check=False,
@@ -87,7 +90,7 @@ def test_compare_compute_results_hash_mismatch():
                 "--perf-trace",
                 str(perf_trace),
             ],
-            cwd="/workspaces/RTLGen",
+            cwd=str(REPO_ROOT),
             capture_output=True,
             text=True,
             check=False,
@@ -96,3 +99,74 @@ def test_compare_compute_results_hash_mismatch():
     assert proc.returncode == 1
     assert "FAIL canonical summary hash mismatch" in proc.stderr
     assert "FAIL GEMM[offset=32]" in proc.stderr
+
+
+def test_compare_tensor_traces_hash_match():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp = Path(tmpdir)
+        rtl_log = tmp / "rtl.log"
+        perf_trace = tmp / "perf.json"
+        rtl_summary = tmp / "rtl_tensor.json"
+        perf_summary = tmp / "perf_tensor.json"
+        rtl_log.write_text(
+            "TENSOR_TRACE name=vec.result step=1 lanes=8 dtype=packed_u8 result=0x00000000000000ff\n",
+            encoding="utf-8",
+        )
+        _write_perf_trace(perf_trace, gemm_accum=123, vec_result="0x00000000000000ff")
+
+        proc = subprocess.run(
+            [
+                "python3",
+                "npu/sim/perf/compare_tensor_traces.py",
+                "--rtl-log",
+                str(rtl_log),
+                "--perf-trace",
+                str(perf_trace),
+                "--rtl-summary-out",
+                str(rtl_summary),
+                "--perf-summary-out",
+                str(perf_summary),
+            ],
+            cwd=str(REPO_ROOT),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        rtl_doc = json.loads(rtl_summary.read_text(encoding="utf-8"))
+        perf_doc = json.loads(perf_summary.read_text(encoding="utf-8"))
+
+    assert proc.returncode == 0, proc.stderr
+    assert "compare-tensor-trace: OK" in proc.stdout
+    assert "rtl_tensor_trace_sha256=" in proc.stdout
+    assert "perf_tensor_trace_sha256=" in proc.stdout
+    assert rtl_doc == perf_doc
+
+
+def test_compare_tensor_traces_hash_mismatch():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp = Path(tmpdir)
+        rtl_log = tmp / "rtl.log"
+        perf_trace = tmp / "perf.json"
+        rtl_log.write_text(
+            "TENSOR_TRACE name=vec.result step=1 lanes=8 dtype=packed_u8 result=0x00000000000000ff\n",
+            encoding="utf-8",
+        )
+        _write_perf_trace(perf_trace, gemm_accum=123, vec_result="0x0000000000000001")
+
+        proc = subprocess.run(
+            [
+                "python3",
+                "npu/sim/perf/compare_tensor_traces.py",
+                "--rtl-log",
+                str(rtl_log),
+                "--perf-trace",
+                str(perf_trace),
+            ],
+            cwd=str(REPO_ROOT),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+    assert proc.returncode == 1
+    assert "FAIL canonical tensor trace hash mismatch" in proc.stderr

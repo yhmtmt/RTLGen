@@ -1077,6 +1077,8 @@ module tb_npu_shell;
         vec_count = vec_count + 1;
         $display("VEC_DONE index=%0d offset=%0d op=%0d result=0x%016h",
                  vec_count, vec_desc_offsets[vec_count-1], vec_desc_op[vec_count-1], dut.vec_last_result);
+        $display("TENSOR_TRACE name=vec.result step=%0d lanes=%0d dtype=packed_u8 result=0x%016h",
+                 vec_count, vec_lanes, dut.vec_last_result);
       end
       if (!dma_req_valid_prev && dma_req_valid) begin
         if (contract_trace) begin

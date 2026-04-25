@@ -6,6 +6,7 @@ from __future__ import annotations
 import fnmatch
 import hashlib
 import json
+import math
 import shlex
 from pathlib import Path
 from typing import Any, Dict, Sequence
@@ -55,6 +56,31 @@ def trace_selected_outputs(*, outputs_by_name: JsonDict, trace_patterns: Sequenc
     return traced
 
 
+def _format_packed_hex(value: int, *, lanes: int) -> str:
+    lane_count = max(1, min(8, int(lanes)))
+    mask = (1 << (lane_count * 8)) - 1
+    return f"0x{(int(value) & mask):0{lane_count * 2}x}"
+
+
+def packed_u8_tensor_summary(*, name: str, step: int, result: int | str, lanes: int, dtype: str = 'packed_u8') -> JsonDict:
+    lane_count = max(1, min(8, int(lanes)))
+    value = int(str(result), 0) if isinstance(result, str) else int(result)
+    values = [float((value >> (8 * lane)) & 0xFF) for lane in range(lane_count)]
+    mean = sum(values) / float(lane_count)
+    variance = sum((entry - mean) * (entry - mean) for entry in values) / float(lane_count)
+    return {
+        'name': str(name),
+        'step': int(step),
+        'shape': [1, lane_count],
+        'dtype': str(dtype),
+        'min': float(min(values)),
+        'max': float(max(values)),
+        'mean': float(mean),
+        'std': float(math.sqrt(variance)),
+        'raw_hex': _format_packed_hex(value, lanes=lane_count),
+    }
+
+
 def _parse_shape(value: str) -> list[int]:
     text = value.strip()
     if not text:
@@ -87,6 +113,15 @@ def _parse_tensor_trace_line(line: str) -> JsonDict | None:
         key, value = part.split('=', 1)
         fields[key] = value
 
+    if 'result' in fields and 'lanes' in fields:
+        return packed_u8_tensor_summary(
+            name=fields.get('name', 'tensor'),
+            step=int(fields.get('step', 0)),
+            result=fields['result'],
+            lanes=int(fields['lanes']),
+            dtype=fields.get('dtype', 'packed_u8'),
+        )
+
     required = ('name', 'step', 'shape', 'dtype', 'min', 'max', 'mean', 'std')
     missing = [key for key in required if key not in fields]
     if missing:
@@ -106,6 +141,8 @@ def _parse_tensor_trace_line(line: str) -> JsonDict | None:
         quantization = _parse_quantization(fields['quantization'])
         if quantization:
             summary['quantization'] = quantization
+    if 'raw_hex' in fields:
+        summary['raw_hex'] = fields['raw_hex']
     return summary
 
 

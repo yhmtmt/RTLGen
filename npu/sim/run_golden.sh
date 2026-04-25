@@ -263,6 +263,16 @@ compute_summary_path() {
   printf "%s/%s_compute_summary.json" "$dir" "$base"
 }
 
+tensor_trace_summary_path() {
+  local path="$1"
+  local dir
+  local base
+  dir="$(dirname "$path")"
+  base="$(basename "$path")"
+  base="${base%.*}"
+  printf "%s/%s_tensor_trace_summary.json" "$dir" "$base"
+}
+
 compare_compute() {
   local rtl_log="$1"
   local perf_trace="$2"
@@ -271,6 +281,11 @@ compare_compute() {
     --perf-trace "$perf_trace" \
     --rtl-summary-out "$(compute_summary_path "$rtl_log")" \
     --perf-summary-out "$(compute_summary_path "$perf_trace")"
+  python3 "${REPO_ROOT}/npu/sim/perf/compare_tensor_traces.py" \
+    --rtl-log "$rtl_log" \
+    --perf-trace "$perf_trace" \
+    --rtl-summary-out "$(tensor_trace_summary_path "$rtl_log")" \
+    --perf-summary-out "$(tensor_trace_summary_path "$perf_trace")"
 }
 
 GEMM_BIN_BYTES=$(bin_bytes "${GEMM_BIN}")
