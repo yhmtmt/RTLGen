@@ -991,12 +991,12 @@ module tb_npu_shell;
           gemm_log_tag = gemm_desc_tags[gemm_count];
           gemm_log_offset = gemm_desc_offsets[gemm_count];
         end
+        gemm_done_index = -1;
+        for (gemm_lookup_i = 0; gemm_lookup_i < gemm_desc_count; gemm_lookup_i = gemm_lookup_i + 1) begin
+          if (gemm_desc_offsets[gemm_lookup_i] == gemm_log_offset)
+            gemm_done_index = gemm_lookup_i;
+        end
         if (gemm_mac_test) begin
-          gemm_done_index = -1;
-          for (gemm_lookup_i = 0; gemm_lookup_i < gemm_desc_count; gemm_lookup_i = gemm_lookup_i + 1) begin
-            if (gemm_desc_offsets[gemm_lookup_i] == gemm_log_offset)
-              gemm_done_index = gemm_lookup_i;
-          end
           if (gemm_done_index >= 0) begin
             gemm_accum_slot = dut.gemm_slot_accum0;
             if (gemm_accum_slot != gemm_desc_expected_accum[gemm_done_index]) begin
@@ -1015,7 +1015,8 @@ module tb_npu_shell;
                  gemm_count, gemm_log_uid, gemm_log_tag, gemm_log_offset,
                  gemm_slot_start_cycle0, sim_cycle, (sim_cycle - gemm_slot_start_cycle0), dut.gemm_slot_accum0);
         $display("TENSOR_TRACE name=gemm.accum step=%0d shape=1 dtype=int32 min=%0d max=%0d mean=%0d std=0",
-                 gemm_count, dut.gemm_slot_accum0, dut.gemm_slot_accum0, dut.gemm_slot_accum0);
+                 (gemm_done_index >= 0) ? (gemm_done_index + 1) : gemm_count,
+                 dut.gemm_slot_accum0, dut.gemm_slot_accum0, dut.gemm_slot_accum0);
       end
       if (!gemm_slot_done_prev[1] && dut.gemm_slot_done[1]) begin
         gemm_done_uid = dut.gemm_slot_uid1;
@@ -1036,12 +1037,12 @@ module tb_npu_shell;
           gemm_log_tag = gemm_desc_tags[gemm_count];
           gemm_log_offset = gemm_desc_offsets[gemm_count];
         end
+        gemm_done_index = -1;
+        for (gemm_lookup_i = 0; gemm_lookup_i < gemm_desc_count; gemm_lookup_i = gemm_lookup_i + 1) begin
+          if (gemm_desc_offsets[gemm_lookup_i] == gemm_log_offset)
+            gemm_done_index = gemm_lookup_i;
+        end
         if (gemm_mac_test) begin
-          gemm_done_index = -1;
-          for (gemm_lookup_i = 0; gemm_lookup_i < gemm_desc_count; gemm_lookup_i = gemm_lookup_i + 1) begin
-            if (gemm_desc_offsets[gemm_lookup_i] == gemm_log_offset)
-              gemm_done_index = gemm_lookup_i;
-          end
           if (gemm_done_index >= 0) begin
             gemm_accum_slot = dut.gemm_slot_accum1;
             if (gemm_accum_slot != gemm_desc_expected_accum[gemm_done_index]) begin
@@ -1060,7 +1061,8 @@ module tb_npu_shell;
                  gemm_count, gemm_log_uid, gemm_log_tag, gemm_log_offset,
                  gemm_slot_start_cycle1, sim_cycle, (sim_cycle - gemm_slot_start_cycle1), dut.gemm_slot_accum1);
         $display("TENSOR_TRACE name=gemm.accum step=%0d shape=1 dtype=int32 min=%0d max=%0d mean=%0d std=0",
-                 gemm_count, dut.gemm_slot_accum1, dut.gemm_slot_accum1, dut.gemm_slot_accum1);
+                 (gemm_done_index >= 0) ? (gemm_done_index + 1) : gemm_count,
+                 dut.gemm_slot_accum1, dut.gemm_slot_accum1, dut.gemm_slot_accum1);
       end
       if (!vec_done_pulse_prev && dut.vec_done_pulse) begin
         if (vec_count >= vec_desc_count) begin

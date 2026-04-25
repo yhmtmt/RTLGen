@@ -208,3 +208,46 @@ TENSOR_TRACE name=vec.result step=1 lanes=8 dtype=packed_u8 result=0x00000000000
 
     assert proc.returncode == 1
     assert "FAIL canonical tensor trace hash mismatch" in proc.stderr
+
+
+def test_compare_tensor_traces_matches_ooo_gemm_by_descriptor_step():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp = Path(tmpdir)
+        rtl_log = tmp / "rtl.log"
+        perf_trace = tmp / "perf.json"
+        rtl_log.write_text(
+            """TENSOR_TRACE name=gemm.accum step=2 shape=1 dtype=int32 min=7680 max=7680 mean=7680 std=0
+TENSOR_TRACE name=gemm.accum step=1 shape=1 dtype=int32 min=6656 max=6656 mean=6656 std=0
+""",
+            encoding="utf-8",
+        )
+        perf_trace.write_text(
+            json.dumps(
+                {
+                    "trace": [
+                        {"name": "GEMM", "offset": 128, "expected_accum": 6656},
+                        {"name": "GEMM", "offset": 224, "expected_accum": 7680},
+                    ]
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+
+        proc = subprocess.run(
+            [
+                "python3",
+                "npu/sim/perf/compare_tensor_traces.py",
+                "--rtl-log",
+                str(rtl_log),
+                "--perf-trace",
+                str(perf_trace),
+            ],
+            cwd=str(REPO_ROOT),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+    assert proc.returncode == 0, proc.stderr
+    assert "compare-tensor-trace: OK" in proc.stdout
