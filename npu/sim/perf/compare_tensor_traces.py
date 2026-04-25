@@ -14,33 +14,47 @@ if str(_REPO_ROOT) not in sys.path:
 from npu.eval.tensor_trace_summary import (
     packed_u8_tensor_summary,
     parse_rtl_tensor_trace_log,
+    scalar_tensor_summary,
     selected_tensor_trace_hash,
 )
 
 
-def _build_perf_vec_tensor_trace(path: str | Path) -> list[dict[str, Any]]:
+def _build_perf_tensor_trace(path: str | Path) -> list[dict[str, Any]]:
     with Path(path).open('r', encoding='utf-8') as f:
         trace = json.load(f)
 
     tensors = []
-    step = 0
+    gemm_step = 0
+    vec_step = 0
     for event in trace.get('trace', []):
-        if event.get('name') != 'VEC_OP':
-            continue
-        if 'expected_result' not in event:
-            raise ValueError('perf VEC_OP event missing expected_result')
-        step += 1
-        lanes = int(event.get('lanes', 8))
-        tensors.append(
-            packed_u8_tensor_summary(
-                name='vec.result',
-                step=step,
-                result=str(event['expected_result']),
-                lanes=lanes,
-                dtype='packed_u8',
+        name = event.get('name')
+        if name == 'GEMM':
+            if 'expected_accum' not in event:
+                raise ValueError('perf GEMM event missing expected_accum')
+            gemm_step += 1
+            tensors.append(
+                scalar_tensor_summary(
+                    name='gemm.accum',
+                    step=gemm_step,
+                    value=event['expected_accum'],
+                    dtype='int32',
+                )
             )
-        )
-    return tensors
+        elif name == 'VEC_OP':
+            if 'expected_result' not in event:
+                raise ValueError('perf VEC_OP event missing expected_result')
+            vec_step += 1
+            lanes = int(event.get('lanes', 8))
+            tensors.append(
+                packed_u8_tensor_summary(
+                    name='vec.result',
+                    step=vec_step,
+                    result=str(event['expected_result']),
+                    lanes=lanes,
+                    dtype='packed_u8',
+                )
+            )
+    return sorted(tensors, key=lambda entry: (int(entry.get('step', 0)), str(entry.get('name', ''))))
 
 
 def _write_json(path: str | None, payload: Any) -> None:
@@ -59,7 +73,7 @@ def main() -> int:
 
     try:
         rtl_tensors = parse_rtl_tensor_trace_log(args.rtl_log)
-        perf_tensors = _build_perf_vec_tensor_trace(args.perf_trace)
+        perf_tensors = _build_perf_tensor_trace(args.perf_trace)
     except ValueError as exc:
         print(f'compare-tensor-trace: {exc}', file=sys.stderr)
         return 2

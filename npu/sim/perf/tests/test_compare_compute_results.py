@@ -143,7 +143,9 @@ def test_compare_tensor_traces_hash_match():
         rtl_summary = tmp / "rtl_tensor.json"
         perf_summary = tmp / "perf_tensor.json"
         rtl_log.write_text(
-            "TENSOR_TRACE name=vec.result step=1 lanes=8 dtype=packed_u8 result=0x00000000000000ff\n",
+            """TENSOR_TRACE name=gemm.accum step=1 shape=1 dtype=int32 min=123 max=123 mean=123 std=0
+TENSOR_TRACE name=vec.result step=1 lanes=8 dtype=packed_u8 result=0x00000000000000ff
+""",
             encoding="utf-8",
         )
         _write_perf_trace(perf_trace, gemm_accum=123, vec_result="0x00000000000000ff")
@@ -182,7 +184,9 @@ def test_compare_tensor_traces_hash_mismatch():
         rtl_log = tmp / "rtl.log"
         perf_trace = tmp / "perf.json"
         rtl_log.write_text(
-            "TENSOR_TRACE name=vec.result step=1 lanes=8 dtype=packed_u8 result=0x00000000000000ff\n",
+            """TENSOR_TRACE name=gemm.accum step=1 shape=1 dtype=int32 min=123 max=123 mean=123 std=0
+TENSOR_TRACE name=vec.result step=1 lanes=8 dtype=packed_u8 result=0x00000000000000ff
+""",
             encoding="utf-8",
         )
         _write_perf_trace(perf_trace, gemm_accum=123, vec_result="0x0000000000000001")

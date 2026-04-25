@@ -81,6 +81,26 @@ def packed_u8_tensor_summary(*, name: str, step: int, result: int | str, lanes: 
     }
 
 
+def scalar_tensor_summary(*, name: str, step: int, value: int | float | str, dtype: str) -> JsonDict:
+    if isinstance(value, str):
+        try:
+            scalar = float(value)
+        except ValueError:
+            scalar = float(int(value, 0))
+    else:
+        scalar = float(value)
+    return {
+        'name': str(name),
+        'step': int(step),
+        'shape': [1],
+        'dtype': str(dtype),
+        'min': scalar,
+        'max': scalar,
+        'mean': scalar,
+        'std': 0.0,
+    }
+
+
 def _parse_shape(value: str) -> list[int]:
     text = value.strip()
     if not text:

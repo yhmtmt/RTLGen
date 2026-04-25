@@ -6,6 +6,7 @@ from pathlib import Path
 from npu.eval.tensor_trace_summary import (
     packed_u8_tensor_summary,
     parse_rtl_tensor_trace_log,
+    scalar_tensor_summary,
     selected_tensor_trace_hash,
     tensor_summary,
     trace_selected_outputs,
@@ -67,6 +68,19 @@ class TensorTraceSummaryRegressionTest(unittest.TestCase):
             path = Path(td) / 'rtl.log'
             path.write_text(
                 'TENSOR_TRACE name=vec.result step=1 lanes=8 dtype=packed_u8 result=0x00000000000000ff\n',
+                encoding='utf-8',
+            )
+            parsed = parse_rtl_tensor_trace_log(path)
+
+        self.assertEqual(expected, parsed)
+        self.assertEqual(selected_tensor_trace_hash(expected), selected_tensor_trace_hash(parsed))
+
+    def test_scalar_tensor_trace_matches_summary_helper(self):
+        expected = [scalar_tensor_summary(name='gemm.accum', step=1, value=-7, dtype='int32')]
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / 'rtl.log'
+            path.write_text(
+                'TENSOR_TRACE name=gemm.accum step=1 shape=1 dtype=int32 min=-7 max=-7 mean=-7 std=0\n',
                 encoding='utf-8',
             )
             parsed = parse_rtl_tensor_trace_log(path)
