@@ -101,6 +101,31 @@ def scalar_tensor_summary(*, name: str, step: int, value: int | float | str, dty
     }
 
 
+def byte_vector_tensor_summary(
+    *,
+    name: str,
+    step: int,
+    data_bytes: Sequence[int],
+    dtype: str = 'u8',
+    shape: Sequence[int] | None = None,
+) -> JsonDict:
+    values = [int(value) & 0xFF for value in data_bytes]
+    count = len(values)
+    mean = sum(values) / float(count) if count else 0.0
+    variance = sum((float(entry) - mean) * (float(entry) - mean) for entry in values) / float(count) if count else 0.0
+    return {
+        'name': str(name),
+        'step': int(step),
+        'shape': [int(dim) for dim in (shape if shape is not None else [count])],
+        'dtype': str(dtype),
+        'min': float(min(values)) if values else 0.0,
+        'max': float(max(values)) if values else 0.0,
+        'mean': float(mean),
+        'std': float(math.sqrt(variance)),
+        'raw_hex': '0x' + ''.join(f'{value:02x}' for value in values),
+    }
+
+
 def _parse_shape(value: str) -> list[int]:
     text = value.strip()
     if not text:
@@ -140,6 +165,21 @@ def _parse_tensor_trace_line(line: str) -> JsonDict | None:
             result=fields['result'],
             lanes=int(fields['lanes']),
             dtype=fields.get('dtype', 'packed_u8'),
+        )
+
+    if 'bytes_hex' in fields:
+        text = fields['bytes_hex'].strip().lower()
+        if text.startswith('0x'):
+            text = text[2:]
+        if len(text) % 2 != 0:
+            raise ValueError('TENSOR_TRACE bytes_hex must contain an even number of nybbles')
+        data_bytes = [int(text[idx:idx + 2], 16) for idx in range(0, len(text), 2)]
+        return byte_vector_tensor_summary(
+            name=fields.get('name', 'tensor'),
+            step=int(fields.get('step', 0)),
+            data_bytes=data_bytes,
+            dtype=fields.get('dtype', 'u8'),
+            shape=_parse_shape(fields['shape']) if 'shape' in fields else None,
         )
 
     required = ('name', 'step', 'shape', 'dtype', 'min', 'max', 'mean', 'std')

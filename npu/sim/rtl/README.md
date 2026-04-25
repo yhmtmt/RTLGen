@@ -74,6 +74,7 @@ The tests validate descriptor execution behavior, MMIO/IRQ flow, and AXI memory 
   - Canonical RTL/perf compute summaries (`*_compute_summary.json`) with strict SHA-256 equality checks for exact equivalence.
   - Canonical GEMM/VEC tensor trace summaries (`*_tensor_trace_summary.json`) with strict SHA-256 equality checks.
 - Future activation trace emitters should use the shared `TENSOR_TRACE` summary line contract documented by `npu/eval/tensor_trace_summary.py`, so RTL traces can be hashed against software/perf summaries without a schema translation layer.
+- Dedicated SOFTMAX byte-vector traces use `TENSOR_TRACE name=softmax.result step=<n> shape=<rows,row_bytes> dtype=<encoding> bytes_hex=0x...`; perf emits the matching summary when `--mem-json` provides descriptor source bytes.
 
 ## Current coverage boundaries
 

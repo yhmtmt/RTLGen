@@ -323,3 +323,60 @@ TENSOR_TRACE name=vec.layernorm step=2 lanes=1 dtype=packed_u8 result=0x00000000
         "vec.layernorm",
         "vec.result",
     ]
+
+
+def test_compare_tensor_traces_includes_dedicated_softmax_result_bytes():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp = Path(tmpdir)
+        rtl_log = tmp / "rtl.log"
+        perf_trace = tmp / "perf.json"
+        rtl_summary = tmp / "rtl_tensor.json"
+        perf_summary = tmp / "perf_tensor.json"
+        rtl_log.write_text(
+            "TENSOR_TRACE name=softmax.result step=1 shape=2,2 dtype=u8_q0_7 bytes_hex=0x017f0040\n",
+            encoding="utf-8",
+        )
+        perf_trace.write_text(
+            json.dumps(
+                {
+                    "trace": [
+                        {
+                            "name": "SOFTMAX",
+                            "row_bytes": 2,
+                            "rows": 2,
+                            "expected_result_encoding": "u8_q0_7",
+                            "expected_result_bytes": [0x01, 0x7F, 0x00, 0x40],
+                        }
+                    ]
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+
+        proc = subprocess.run(
+            [
+                "python3",
+                "npu/sim/perf/compare_tensor_traces.py",
+                "--rtl-log",
+                str(rtl_log),
+                "--perf-trace",
+                str(perf_trace),
+                "--rtl-summary-out",
+                str(rtl_summary),
+                "--perf-summary-out",
+                str(perf_summary),
+            ],
+            cwd=str(REPO_ROOT),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        rtl_doc = json.loads(rtl_summary.read_text(encoding="utf-8"))
+        perf_doc = json.loads(perf_summary.read_text(encoding="utf-8"))
+
+    assert proc.returncode == 0, proc.stderr
+    assert "compare-tensor-trace: OK" in proc.stdout
+    assert rtl_doc == perf_doc
+    assert perf_doc[0]["name"] == "softmax.result"
+    assert perf_doc[0]["raw_hex"] == "0x017f0040"

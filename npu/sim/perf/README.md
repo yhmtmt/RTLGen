@@ -77,7 +77,7 @@ make -f npu/sim/perf/Makefile test
   - `compare_compute_results.py` compares RTL `VEC_DONE result=` with perf `expected_result`.
   - `compare_compute_results.py` reduces both sides to the canonical `npu_compute_equivalence_trace_v1` summary, prints the RTL/perf SHA-256 values, and fails strict equivalence on summary hash mismatch.
   - `run_golden.sh` writes durable `*_compute_summary.json` artifacts next to each RTL log and perf trace for post-run inspection.
-  - `compare_tensor_traces.py` compares RTL `TENSOR_TRACE` lines for GEMM accumulations, generic VEC results, and semantic softmax/normalization-family VEC results against perf-derived tensor summaries, then writes durable `*_tensor_trace_summary.json` artifacts.
+  - `compare_tensor_traces.py` compares RTL `TENSOR_TRACE` lines for GEMM accumulations, generic VEC results, semantic softmax/normalization-family VEC results, and dedicated `SOFTMAX` expected output bytes when a perf memory image is supplied. It writes durable `*_tensor_trace_summary.json` artifacts.
 - Runs timing cross-check:
   - `compare_gemm_timing.py` compares RTL GEMM cycles vs perf GEMM latency model.
   - `golden_gemm_v2_ooo` additionally checks out-of-order completion behavior (`--require-order-change`).

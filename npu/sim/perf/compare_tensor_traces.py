@@ -12,6 +12,7 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from npu.eval.tensor_trace_summary import (
+    byte_vector_tensor_summary,
     packed_u8_tensor_summary,
     parse_rtl_tensor_trace_log,
     scalar_tensor_summary,
@@ -32,6 +33,7 @@ def _build_perf_tensor_trace(path: str | Path) -> list[dict[str, Any]]:
 
     tensors = []
     gemm_step = 0
+    softmax_step = 0
     vec_step = 0
     for event in trace.get('trace', []):
         name = event.get('name')
@@ -45,6 +47,21 @@ def _build_perf_tensor_trace(path: str | Path) -> list[dict[str, Any]]:
                     step=gemm_step,
                     value=event['expected_accum'],
                     dtype='int32',
+                )
+            )
+        elif name == 'SOFTMAX':
+            softmax_step += 1
+            if 'expected_result_bytes' not in event:
+                continue
+            row_bytes = int(event.get('row_bytes', len(event['expected_result_bytes'])))
+            rows = int(event.get('rows', 1))
+            tensors.append(
+                byte_vector_tensor_summary(
+                    name='softmax.result',
+                    step=softmax_step,
+                    data_bytes=event['expected_result_bytes'],
+                    dtype=str(event.get('expected_result_encoding', 'u8')),
+                    shape=[rows, row_bytes],
                 )
             )
         elif name == 'VEC_OP':

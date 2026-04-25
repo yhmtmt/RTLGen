@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 
 from npu.eval.tensor_trace_summary import (
+    byte_vector_tensor_summary,
     packed_u8_tensor_summary,
     parse_rtl_tensor_trace_log,
     scalar_tensor_summary,
@@ -81,6 +82,27 @@ class TensorTraceSummaryRegressionTest(unittest.TestCase):
             path = Path(td) / 'rtl.log'
             path.write_text(
                 'TENSOR_TRACE name=gemm.accum step=1 shape=1 dtype=int32 min=-7 max=-7 mean=-7 std=0\n',
+                encoding='utf-8',
+            )
+            parsed = parse_rtl_tensor_trace_log(path)
+
+        self.assertEqual(expected, parsed)
+        self.assertEqual(selected_tensor_trace_hash(expected), selected_tensor_trace_hash(parsed))
+
+    def test_compact_byte_vector_trace_matches_summary_helper(self):
+        expected = [
+            byte_vector_tensor_summary(
+                name='softmax.result',
+                step=1,
+                data_bytes=[0x01, 0x7F, 0x00, 0x40],
+                dtype='u8_q0_7',
+                shape=[1, 4],
+            )
+        ]
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / 'rtl.log'
+            path.write_text(
+                'TENSOR_TRACE name=softmax.result step=1 shape=1,4 dtype=u8_q0_7 bytes_hex=0x017f0040\n',
                 encoding='utf-8',
             )
             parsed = parse_rtl_tensor_trace_log(path)
