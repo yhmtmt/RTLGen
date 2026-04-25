@@ -151,6 +151,15 @@ module tb_npu_shell;
   reg [31:0] gemm_desc_tags [0:127];
   reg [63:0] gemm_desc_uids [0:127];
   integer gemm_desc_expected_accum [0:127];
+  integer softmax_count;
+  integer softmax_desc_count;
+  integer softmax_desc_offsets [0:127];
+  integer softmax_desc_row_bytes [0:127];
+  integer softmax_desc_rows [0:127];
+  integer softmax_capture_count;
+  integer softmax_trace_expected_bytes;
+  integer softmax_trace_index;
+  reg [7:0] softmax_trace_bytes [0:1023];
   integer vec_count;
   integer vec_desc_count;
   integer vec_desc_offsets [0:127];
@@ -185,6 +194,8 @@ module tb_npu_shell;
   reg [63:0] sim_cycle;
   reg [1:0] gemm_slot_valid_prev;
   reg [1:0] gemm_slot_done_prev;
+  reg softmax_pending_prev;
+  reg softmax_done_pulse_prev;
   reg vec_done_pulse_prev;
   reg dma_req_valid_prev;
   reg m_axi_bvalid_prev;
@@ -230,8 +241,13 @@ module tb_npu_shell;
     dma_issue_index = 0;
     dma_desc_count = 0;
     gemm_desc_count = 0;
+    softmax_count = 0;
+    softmax_desc_count = 0;
+    softmax_capture_count = 0;
     vec_count = 0;
     vec_desc_count = 0;
+    softmax_pending_prev = 1'b0;
+    softmax_done_pulse_prev = 1'b0;
     vec_done_pulse_prev = 1'b0;
     second_dma_seen_before_first_bvalid = 1'b0;
     cq_head_prev_mon = 0;
@@ -625,6 +641,11 @@ module tb_npu_shell;
       end else if ((scan_opcode == 8'h01) && (dma_desc_count < 128)) begin
         dma_desc_offsets[dma_desc_count] = scan_off;
         dma_desc_count = dma_desc_count + 1;
+      end else if ((scan_opcode == 8'h12) && (softmax_desc_count < 128)) begin
+        softmax_desc_offsets[softmax_desc_count] = scan_off;
+        softmax_desc_row_bytes[softmax_desc_count] = {bin_data[scan_off + 25], bin_data[scan_off + 24]};
+        softmax_desc_rows[softmax_desc_count] = {bin_data[scan_off + 27], bin_data[scan_off + 26]};
+        softmax_desc_count = softmax_desc_count + 1;
       end else if ((scan_opcode == 8'h11) && (vec_desc_count < 128)) begin
         vec_op_sel = bin_data[scan_off + 1] & 8'hf;
         vec_desc_dtype[vec_desc_count] = (bin_data[scan_off + 1] >> 4) & 4'hf;
@@ -865,6 +886,19 @@ module tb_npu_shell;
       end
     end
 
+    if (softmax_desc_count > 0) begin : wait_softmax_done
+      integer sw;
+      for (sw = 0; sw < 2000; sw = sw + 1) begin
+        @(negedge clk);
+        if (softmax_count >= softmax_desc_count)
+          disable wait_softmax_done;
+      end
+      if (softmax_count < softmax_desc_count) begin
+        $display("ERROR: SOFTMAX completion timeout count=%0d expected=%0d", softmax_count, softmax_desc_count);
+        $finish(1);
+      end
+    end
+
     // Queue retirement can lag the first EVENT IRQ when later descriptors depend on
     // GEMM/VEC completion. Check queue drain only after those engines have finished.
     begin : wait_loop
@@ -955,6 +989,10 @@ module tb_npu_shell;
       dma_req_count <= 0;
       dma_issue_index <= 0;
       vec_count <= 0;
+      softmax_count <= 0;
+      softmax_capture_count <= 0;
+      softmax_pending_prev <= 1'b0;
+      softmax_done_pulse_prev <= 1'b0;
       vec_done_pulse_prev <= 1'b0;
       second_dma_seen_before_first_bvalid <= 1'b0;
       cq_head_prev_mon <= 0;
@@ -964,6 +1002,24 @@ module tb_npu_shell;
         if ((bin_data[cq_head_prev_mon[11:0]] == 8'h20) || (bin_data[cq_head_prev_mon[11:0]] == 8'h21)) begin
           $display("CONTRACT_TRACE kind=retire opcode=0x%02h offset=%0d cycle=%0d",
                    bin_data[cq_head_prev_mon[11:0]], cq_head_prev_mon, sim_cycle);
+        end
+      end
+      if (!softmax_pending_prev && dut.softmax_pending) begin
+        softmax_capture_count = 0;
+      end
+      if (dut.softmax_pending && (softmax_count < softmax_desc_count)) begin
+        if ((softmax_desc_row_bytes[softmax_count] * softmax_desc_rows[softmax_count]) > 1024) begin
+          $display("ERROR: SOFTMAX trace too large index=%0d bytes=%0d",
+                   softmax_count + 1,
+                   softmax_desc_row_bytes[softmax_count] * softmax_desc_rows[softmax_count]);
+          $finish(1);
+        end
+        if (softmax_capture_count < softmax_desc_rows[softmax_count]) begin
+          for (gemm_lane = 0; gemm_lane < softmax_desc_row_bytes[softmax_count]; gemm_lane = gemm_lane + 1) begin
+            softmax_trace_index = (softmax_capture_count * softmax_desc_row_bytes[softmax_count]) + gemm_lane;
+            softmax_trace_bytes[softmax_trace_index] = dut.softmax_result_next[(gemm_lane*8) +: 8];
+          end
+          softmax_capture_count = softmax_capture_count + 1;
         end
       end
       if (!gemm_slot_valid_prev[0] && dut.gemm_slot_valid[0]) begin
@@ -1099,6 +1155,29 @@ module tb_npu_shell;
                    vec_count, vec_lanes, dut.vec_last_result);
         end
       end
+      if (!softmax_done_pulse_prev && dut.softmax_done_pulse) begin
+        if (softmax_count >= softmax_desc_count) begin
+          $display("ERROR: unexpected SOFTMAX completion softmax_count=%0d softmax_desc_count=%0d",
+                   softmax_count, softmax_desc_count);
+          $finish(1);
+        end
+        softmax_trace_expected_bytes = softmax_desc_rows[softmax_count] * softmax_desc_row_bytes[softmax_count];
+        if (softmax_capture_count < softmax_desc_rows[softmax_count]) begin
+          $display("ERROR: SOFTMAX trace capture incomplete index=%0d captured_rows=%0d expected_rows=%0d",
+                   softmax_count + 1, softmax_capture_count, softmax_desc_rows[softmax_count]);
+          $finish(1);
+        end
+        softmax_count = softmax_count + 1;
+        $display("SOFTMAX_DONE index=%0d offset=%0d row_bytes=%0d rows=%0d",
+                 softmax_count, softmax_desc_offsets[softmax_count-1],
+                 softmax_desc_row_bytes[softmax_count-1], softmax_desc_rows[softmax_count-1]);
+        $write("TENSOR_TRACE name=softmax.result step=%0d shape=%0d,%0d dtype=u8_q0_7 bytes_hex=0x",
+               softmax_count, softmax_desc_rows[softmax_count-1], softmax_desc_row_bytes[softmax_count-1]);
+        for (softmax_trace_index = 0; softmax_trace_index < softmax_trace_expected_bytes; softmax_trace_index = softmax_trace_index + 1) begin
+          $write("%02x", softmax_trace_bytes[softmax_trace_index]);
+        end
+        $display("");
+      end
       if (!dma_req_valid_prev && dma_req_valid) begin
         if (contract_trace) begin
           if (dma_issue_index < dma_desc_count) begin
@@ -1126,6 +1205,8 @@ module tb_npu_shell;
       end
       gemm_slot_valid_prev <= dut.gemm_slot_valid;
       gemm_slot_done_prev <= dut.gemm_slot_done;
+      softmax_pending_prev <= dut.softmax_pending;
+      softmax_done_pulse_prev <= dut.softmax_done_pulse;
       vec_done_pulse_prev <= dut.vec_done_pulse;
       dma_req_valid_prev <= dma_req_valid;
       m_axi_bvalid_prev <= m_axi_bvalid;
