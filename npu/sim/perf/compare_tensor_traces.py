@@ -18,6 +18,13 @@ from npu.eval.tensor_trace_summary import (
     selected_tensor_trace_hash,
 )
 
+SEMANTIC_VEC_TRACE_NAMES = {
+    'softmax': 'vec.softmax',
+    'layernorm': 'vec.layernorm',
+    'dsoftmax': 'vec.dsoftmax',
+    'dlayernorm': 'vec.dlayernorm',
+}
+
 
 def _build_perf_tensor_trace(path: str | Path) -> list[dict[str, Any]]:
     with Path(path).open('r', encoding='utf-8') as f:
@@ -54,6 +61,17 @@ def _build_perf_tensor_trace(path: str | Path) -> list[dict[str, Any]]:
                     dtype='packed_u8',
                 )
             )
+            semantic_name = SEMANTIC_VEC_TRACE_NAMES.get(str(event.get('op', '')).lower())
+            if semantic_name is not None:
+                tensors.append(
+                    packed_u8_tensor_summary(
+                        name=semantic_name,
+                        step=vec_step,
+                        result=str(event['expected_result']),
+                        lanes=lanes,
+                        dtype='packed_u8',
+                    )
+                )
     return sorted(tensors, key=lambda entry: (int(entry.get('step', 0)), str(entry.get('name', ''))))
 
 

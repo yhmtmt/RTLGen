@@ -251,3 +251,75 @@ TENSOR_TRACE name=gemm.accum step=1 shape=1 dtype=int32 min=6656 max=6656 mean=6
 
     assert proc.returncode == 0, proc.stderr
     assert "compare-tensor-trace: OK" in proc.stdout
+
+
+def test_compare_tensor_traces_includes_semantic_softmax_vec_summary():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp = Path(tmpdir)
+        rtl_log = tmp / "rtl.log"
+        perf_trace = tmp / "perf.json"
+        rtl_summary = tmp / "rtl_tensor.json"
+        perf_summary = tmp / "perf_tensor.json"
+        rtl_log.write_text(
+            """TENSOR_TRACE name=vec.result step=1 lanes=1 dtype=packed_u8 result=0x000000000000007f
+TENSOR_TRACE name=vec.softmax step=1 lanes=1 dtype=packed_u8 result=0x000000000000007f
+TENSOR_TRACE name=vec.result step=2 lanes=1 dtype=packed_u8 result=0x00000000000000fc
+TENSOR_TRACE name=vec.layernorm step=2 lanes=1 dtype=packed_u8 result=0x00000000000000fc
+""",
+            encoding="utf-8",
+        )
+        perf_trace.write_text(
+            json.dumps(
+                {
+                    "trace": [
+                        {
+                            "name": "VEC_OP",
+                            "op": "softmax",
+                            "offset": 256,
+                            "lanes": 1,
+                            "expected_result": "0x7f",
+                        },
+                        {
+                            "name": "VEC_OP",
+                            "op": "layernorm",
+                            "offset": 512,
+                            "lanes": 1,
+                            "expected_result": "0xfc",
+                        },
+                    ]
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+
+        proc = subprocess.run(
+            [
+                "python3",
+                "npu/sim/perf/compare_tensor_traces.py",
+                "--rtl-log",
+                str(rtl_log),
+                "--perf-trace",
+                str(perf_trace),
+                "--rtl-summary-out",
+                str(rtl_summary),
+                "--perf-summary-out",
+                str(perf_summary),
+            ],
+            cwd=str(REPO_ROOT),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        rtl_doc = json.loads(rtl_summary.read_text(encoding="utf-8"))
+        perf_doc = json.loads(perf_summary.read_text(encoding="utf-8"))
+
+    assert proc.returncode == 0, proc.stderr
+    assert "compare-tensor-trace: OK" in proc.stdout
+    assert rtl_doc == perf_doc
+    assert [entry["name"] for entry in perf_doc] == [
+        "vec.result",
+        "vec.softmax",
+        "vec.layernorm",
+        "vec.result",
+    ]

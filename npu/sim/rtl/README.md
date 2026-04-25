@@ -40,6 +40,7 @@ The tests validate descriptor execution behavior, MMIO/IRQ flow, and AXI memory 
   - Extended vector tests (`+vec_test=1 +vec_ext_test=1`) add `softmax`, `layernorm`, `drelu`, `dgelu`, `dsoftmax`, `dlayernorm`
   - Completion log includes final vector output (`VEC_DONE ... result=0x...`)
   - Completion log also emits compact tensor traces (`TENSOR_TRACE name=vec.result ... result=0x...`) for strict RTL/perf summary hashing.
+  - Softmax/normalization-family VEC completions also emit semantic tensor traces (`vec.softmax`, `vec.layernorm`, `vec.dsoftmax`, `vec.dlayernorm`) so approximation-sensitive activation paths are visible in the durable hash artifacts.
 
 ### AXI-Lite wrapper coverage
 
