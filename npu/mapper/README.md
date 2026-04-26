@@ -55,6 +55,8 @@ Tooling:
   (no external Python deps)
 - `npu/mapper/examples/gen_llm_smoke_suite_lite.py`: generate tiny attention-style
   ONNX-lite proxy models with non-terminal `Softmax` for `llm_smoke_v1`.
+- `npu/mapper/examples/gen_llm_attention_tail_suite_lite.py`: generate repeated
+  attention-tail ONNX-lite proxy models for `llm_attention_tail_v1`.
 
 Example (MLP-1):
 ```sh

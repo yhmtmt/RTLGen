@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate deterministic reference fixtures for llm_smoke model sets."""
+"""Generate deterministic reference fixtures for LLM attention-proxy model sets."""
 
 from __future__ import annotations
 
@@ -26,7 +26,7 @@ def _sha256(path: Path) -> str:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description='Generate deterministic llm_smoke reference fixtures.')
+    ap = argparse.ArgumentParser(description='Generate deterministic LLM attention-proxy reference fixtures.')
     ap.add_argument('--manifest', required=True, help='Model-set manifest.json path')
     ap.add_argument('--out-dir', help='Fixture output directory (default: <manifest_dir>/reference)')
     ap.add_argument('--out-manifest', help='Optional reference_manifest.json path')
@@ -60,7 +60,7 @@ def main() -> int:
     doc = {
         'version': 0.1,
         'model_set_id': model_set_id,
-        'description': 'Deterministic numerical reference fixtures for llm_smoke attention-proxy models.',
+        'description': f'Deterministic numerical reference fixtures for {model_set_id} attention-proxy models.',
         'models': entries,
     }
     out_manifest.write_text(json.dumps(doc, indent=2) + '\n', encoding='utf-8')
