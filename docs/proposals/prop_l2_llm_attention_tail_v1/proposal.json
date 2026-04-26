@@ -1,0 +1,44 @@
+{
+  "proposal_id": "prop_l2_llm_attention_tail_v1",
+  "created_utc": "2026-04-26T12:22:35.027022Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "LLM attention tail measurement gate",
+  "hypothesis": "The merged attention-tail benchmark should collect scheduler evidence across LLM-like softmax tails before selecting any softmax architecture proposal.",
+  "direct_comparison": {
+    "primary_question": "Which current architecture point best supports LLM attention-tail scheduling evidence?",
+    "include": [
+      "llm_attention_tail_v1 campaign on nangate45",
+      "per-token latency and throughput metrics",
+      "softmax occupancy, stall buckets, overlap, and backpressure evidence"
+    ],
+    "exclude": [
+      "new softmax datapath changes in this measurement gate",
+      "promotion of a candidate architecture before evidence review"
+    ]
+  },
+  "expected_benefit": [
+    "rank existing architecture points on attention-tail workloads",
+    "identify whether softmax occupancy or scheduler stalls dominate the next architecture step",
+    "produce reviewable evidence for the LLM architecture ladder"
+  ],
+  "risks": [
+    "measurement-only evidence may not isolate one architectural bottleneck",
+    "broad ranking without a paired baseline can defer proposal judgment"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "objective": "broad_ranking",
+      "cost_class": "medium"
+    }
+  ],
+  "baseline_refs": [],
+  "knowledge_refs": [
+    "runs/campaigns/npu/e2e_eval_llm_attention_tail_v1/campaign.json",
+    "docs/llm_architecture_ladder.md",
+    "npu/mapper/README.md"
+  ]
+}
