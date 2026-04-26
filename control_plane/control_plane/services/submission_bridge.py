@@ -18,6 +18,7 @@ from control_plane.models.enums import ArtifactStorageMode
 from control_plane.models.run_events import RunEvent
 from control_plane.models.runs import Run
 from control_plane.models.work_items import WorkItem
+from control_plane.services.docs_paths import resolve_proposal_dir
 from control_plane.services.review_publisher import ReviewPublishRequest, publish_review_package
 
 
@@ -115,19 +116,39 @@ def _collect_existing_file_refs(*, repo_root: Path, value: Any, files: list[str]
     files.append(rel_path)
 
 
+def _collect_proposal_files(*, repo_root: Path, package_payload: dict[str, Any], files: list[str], seen: set[str]) -> None:
+    developer_loop = package_payload.get("developer_loop")
+    if not isinstance(developer_loop, dict):
+        return
+    proposal_id = str(developer_loop.get("proposal_id", "")).strip() or None
+    proposal_path = str(developer_loop.get("proposal_path", "")).strip() or None
+    proposal_dir = resolve_proposal_dir(repo_root, proposal_path=proposal_path, proposal_id=proposal_id)
+    if proposal_dir is None or not proposal_dir.exists() or not proposal_dir.is_dir():
+        return
+    for candidate in sorted(path for path in proposal_dir.rglob("*") if path.is_file()):
+        try:
+            rel_path = str(candidate.resolve().relative_to(repo_root.resolve()))
+        except ValueError:
+            continue
+        if rel_path in seen:
+            continue
+        seen.add(rel_path)
+        files.append(rel_path)
+
+
 def _review_linked_supporting_files(*, repo_root: Path, package_payload: dict[str, Any]) -> list[str]:
-    review_artifact = package_payload.get("review_artifact")
-    if not isinstance(review_artifact, dict):
-        return []
-    payload = review_artifact.get("payload")
-    if not isinstance(payload, dict):
-        return []
-    source_refs = payload.get("source_refs")
-    if not isinstance(source_refs, dict):
-        return []
     files: list[str] = []
     seen: set[str] = set()
-    _collect_existing_file_refs(repo_root=repo_root, value=source_refs, files=files, seen=seen)
+    review_artifact = package_payload.get("review_artifact")
+    if not isinstance(review_artifact, dict):
+        _collect_proposal_files(repo_root=repo_root, package_payload=package_payload, files=files, seen=seen)
+        return files
+    payload = review_artifact.get("payload")
+    if isinstance(payload, dict):
+        source_refs = payload.get("source_refs")
+        if isinstance(source_refs, dict):
+            _collect_existing_file_refs(repo_root=repo_root, value=source_refs, files=files, seen=seen)
+    _collect_proposal_files(repo_root=repo_root, package_payload=package_payload, files=files, seen=seen)
     return files
 
 
