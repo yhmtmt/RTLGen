@@ -19,6 +19,8 @@ That means:
 - `llm_smoke_v1` is now a runnable `runs/models/<id>/manifest.json` campaign input,
 - deterministic numerical reference fixtures exist for the same model binaries,
 - a first candidate-output path also exists with current int8 placeholder semantics,
+- `llm_attention_tail_v1` now stages the next repeated-tail slice with sequence
+  lengths `32`, `64`, and `128` and 2-4 softmax-bearing blocks per model path,
 - but this is still only a smoke-stage proxy suite, not a full decoder-quality
   benchmark with dataset/training-backed accuracy evaluation.
 
@@ -134,9 +136,13 @@ Order of work:
 - `runs/models/llm_smoke_v1/README.md`
 - `runs/campaigns/npu/e2e_eval_llm_smoke_v1/campaign.json`
 - `runs/campaigns/npu/e2e_eval_llm_smoke_v1/README.md`
+- `runs/models/llm_attention_tail_v1/manifest.json`
+- `runs/models/llm_attention_tail_v1/README.md`
+- `runs/campaigns/npu/e2e_eval_llm_attention_tail_v1/campaign.json`
+- `runs/campaigns/npu/e2e_eval_llm_attention_tail_v1/README.md`
 
 ## Decision Rule
 
 Do not launch `item_l2_softmax_macro_pipeline_balance_v1` as a real proposal
-until `llm_smoke_v1` exists as a runnable benchmark set and the scheduler can
-measure the softmax-related counters listed above.
+until `llm_attention_tail_v1` has validated repeated-tail evidence and the
+scheduler can measure the softmax-related counters listed above.

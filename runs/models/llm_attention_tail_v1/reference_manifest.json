@@ -1,0 +1,112 @@
+{
+  "version": 0.1,
+  "model_set_id": "llm_attention_tail_v1",
+  "description": "Deterministic numerical reference fixtures for llm_attention_tail_v1 attention-proxy models.",
+  "models": [
+    {
+      "model_id": "tail_attn2_s32_h64",
+      "onnx_path": "runs/models/llm_attention_tail_v1/tail_attn2_s32_h64.onnx",
+      "fixture_json": "runs/models/llm_attention_tail_v1/reference/tail_attn2_s32_h64.json",
+      "fixture_sha256": "f0f684a990bc73bcfbd68bb8295b05c5b166fbf3cc0af30180698cf4591f501e",
+      "input_shape": [
+        32,
+        64
+      ],
+      "output_tensors": [
+        "P1",
+        "P2",
+        "S1",
+        "S2",
+        "V1",
+        "Y"
+      ]
+    },
+    {
+      "model_id": "tail_attn2_s64_h64",
+      "onnx_path": "runs/models/llm_attention_tail_v1/tail_attn2_s64_h64.onnx",
+      "fixture_json": "runs/models/llm_attention_tail_v1/reference/tail_attn2_s64_h64.json",
+      "fixture_sha256": "df3e24f438e6dbc531a7648548511d92c3d6f55333204e573a030c7f110612a9",
+      "input_shape": [
+        64,
+        64
+      ],
+      "output_tensors": [
+        "P1",
+        "P2",
+        "S1",
+        "S2",
+        "V1",
+        "Y"
+      ]
+    },
+    {
+      "model_id": "tail_attn3_s64_h64",
+      "onnx_path": "runs/models/llm_attention_tail_v1/tail_attn3_s64_h64.onnx",
+      "fixture_json": "runs/models/llm_attention_tail_v1/reference/tail_attn3_s64_h64.json",
+      "fixture_sha256": "cf9116e133de2d55e89f3017891b499d5c13fd0bfcd941b887b649f4d01bfbe6",
+      "input_shape": [
+        64,
+        64
+      ],
+      "output_tensors": [
+        "P1",
+        "P2",
+        "P3",
+        "S1",
+        "S2",
+        "S3",
+        "V1",
+        "V2",
+        "Y"
+      ]
+    },
+    {
+      "model_id": "tail_attn4_s64_h64",
+      "onnx_path": "runs/models/llm_attention_tail_v1/tail_attn4_s64_h64.onnx",
+      "fixture_json": "runs/models/llm_attention_tail_v1/reference/tail_attn4_s64_h64.json",
+      "fixture_sha256": "b64ccb68e66844627259441a8a73470e9cc2b1472761a96d5613285edee7765b",
+      "input_shape": [
+        64,
+        64
+      ],
+      "output_tensors": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "V1",
+        "V2",
+        "V3",
+        "Y"
+      ]
+    },
+    {
+      "model_id": "tail_attn4_s128_h64",
+      "onnx_path": "runs/models/llm_attention_tail_v1/tail_attn4_s128_h64.onnx",
+      "fixture_json": "runs/models/llm_attention_tail_v1/reference/tail_attn4_s128_h64.json",
+      "fixture_sha256": "6958921cae304358ae5d8376610ef70b372f12a043965f3c869d9bf3dd3794cd",
+      "input_shape": [
+        128,
+        64
+      ],
+      "output_tensors": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "V1",
+        "V2",
+        "V3",
+        "Y"
+      ]
+    }
+  ]
+}

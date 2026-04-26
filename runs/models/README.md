@@ -65,6 +65,12 @@ Current sets
   treated as scheduler/reference bring-up, not final LLM accuracy evidence;
   see `docs/architecture/llm_attention_benchmark_ladder.md` and
   `docs/architecture/llm_decoder_accuracy_stage_v1.md`.
+- `llm_attention_tail_v1`: repeated attention-tail proxy set with sequence
+  lengths `32`, `64`, and `128` and 2-4 non-terminal `Softmax` episodes per
+  model path. It is paired with
+  `runs/campaigns/npu/e2e_eval_llm_attention_tail_v1/` and includes
+  deterministic reference/candidate fixtures under
+  `runs/models/llm_attention_tail_v1/`.
 
 
 Non-ONNX decoder contracts

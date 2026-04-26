@@ -1,0 +1,117 @@
+{
+  "version": 0.1,
+  "model_set_id": "llm_attention_tail_v1",
+  "description": "Deterministic candidate fixtures for llm_attention_tail_v1 attention-proxy models using current int8 placeholder semantics.",
+  "models": [
+    {
+      "model_id": "tail_attn2_s32_h64",
+      "onnx_path": "runs/models/llm_attention_tail_v1/tail_attn2_s32_h64.onnx",
+      "candidate_json": "runs/models/llm_attention_tail_v1/candidate/tail_attn2_s32_h64.json",
+      "candidate_sha256": "3bacfbb1e84b5ccd0f98a03fb00f840e69415e672f1c40280baf474897a64e5a",
+      "candidate_semantics": "int8_gemm_with_q0_7_softmax_dequantized_outputs",
+      "input_shape": [
+        32,
+        64
+      ],
+      "output_tensors": [
+        "P1",
+        "P2",
+        "S1",
+        "S2",
+        "V1",
+        "Y"
+      ]
+    },
+    {
+      "model_id": "tail_attn2_s64_h64",
+      "onnx_path": "runs/models/llm_attention_tail_v1/tail_attn2_s64_h64.onnx",
+      "candidate_json": "runs/models/llm_attention_tail_v1/candidate/tail_attn2_s64_h64.json",
+      "candidate_sha256": "37215d274a76ed8110ba99a94a14f441f83596791568bd1a19e4590985512f6a",
+      "candidate_semantics": "int8_gemm_with_q0_7_softmax_dequantized_outputs",
+      "input_shape": [
+        64,
+        64
+      ],
+      "output_tensors": [
+        "P1",
+        "P2",
+        "S1",
+        "S2",
+        "V1",
+        "Y"
+      ]
+    },
+    {
+      "model_id": "tail_attn3_s64_h64",
+      "onnx_path": "runs/models/llm_attention_tail_v1/tail_attn3_s64_h64.onnx",
+      "candidate_json": "runs/models/llm_attention_tail_v1/candidate/tail_attn3_s64_h64.json",
+      "candidate_sha256": "7be5cc5d1cc9c8dbe8f714726dd4be3809c78ab95c053df3857949391d38b8ec",
+      "candidate_semantics": "int8_gemm_with_q0_7_softmax_dequantized_outputs",
+      "input_shape": [
+        64,
+        64
+      ],
+      "output_tensors": [
+        "P1",
+        "P2",
+        "P3",
+        "S1",
+        "S2",
+        "S3",
+        "V1",
+        "V2",
+        "Y"
+      ]
+    },
+    {
+      "model_id": "tail_attn4_s64_h64",
+      "onnx_path": "runs/models/llm_attention_tail_v1/tail_attn4_s64_h64.onnx",
+      "candidate_json": "runs/models/llm_attention_tail_v1/candidate/tail_attn4_s64_h64.json",
+      "candidate_sha256": "1c03366ce821e44fd4ff39510a6582abe3d825850bf96ae5b466b56c60e52b30",
+      "candidate_semantics": "int8_gemm_with_q0_7_softmax_dequantized_outputs",
+      "input_shape": [
+        64,
+        64
+      ],
+      "output_tensors": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "V1",
+        "V2",
+        "V3",
+        "Y"
+      ]
+    },
+    {
+      "model_id": "tail_attn4_s128_h64",
+      "onnx_path": "runs/models/llm_attention_tail_v1/tail_attn4_s128_h64.onnx",
+      "candidate_json": "runs/models/llm_attention_tail_v1/candidate/tail_attn4_s128_h64.json",
+      "candidate_sha256": "69f6aa4dee243e5b7005a6e58ea6267c675410e9a5167da53efbfa7b559ed8cf",
+      "candidate_semantics": "int8_gemm_with_q0_7_softmax_dequantized_outputs",
+      "input_shape": [
+        128,
+        64
+      ],
+      "output_tensors": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "V1",
+        "V2",
+        "V3",
+        "Y"
+      ]
+    }
+  ]
+}

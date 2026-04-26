@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate deterministic candidate fixtures for llm_smoke model sets."""
+"""Generate deterministic candidate fixtures for LLM attention-proxy model sets."""
 
 from __future__ import annotations
 
@@ -26,7 +26,7 @@ def _sha256(path: Path) -> str:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description='Generate deterministic llm_smoke candidate fixtures.')
+    ap = argparse.ArgumentParser(description='Generate deterministic LLM attention-proxy candidate fixtures.')
     ap.add_argument('--manifest', required=True, help='Model-set manifest.json path')
     ap.add_argument('--out-dir', help='Fixture output directory (default: <manifest_dir>/candidate)')
     ap.add_argument('--out-manifest', help='Optional candidate_manifest.json path')
@@ -61,7 +61,7 @@ def main() -> int:
     doc = {
         'version': 0.1,
         'model_set_id': model_set_id,
-        'description': 'Deterministic candidate fixtures for llm_smoke attention-proxy models using current int8 placeholder semantics.',
+        'description': f'Deterministic candidate fixtures for {model_set_id} attention-proxy models using current int8 placeholder semantics.',
         'models': entries,
     }
     out_manifest.write_text(json.dumps(doc, indent=2) + '\n', encoding='utf-8')
