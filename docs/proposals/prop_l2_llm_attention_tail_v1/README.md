@@ -1,18 +1,13 @@
-# Proposal Template
+# LLM Attention Tail Measurement Gate
 
-Canonical template location for new proposal workspaces.
+Proposal workspace for collecting Layer 2 evidence on the merged LLM
+attention-tail benchmark before choosing a softmax or scheduler architecture
+follow-up.
 
-The template file set mirrors the proposal artifact contract used by the
-current developer loop:
+Primary evaluation item:
 
-- `proposal.json`
-- `design_brief.md`
-- `implementation_summary.md`
-- `evaluation_gate.md`
-- `evaluation_requests.json`
-- `quality_gate.md`
-- `analysis_report.md`
-- `promotion_decision.json`
-- `promotion_result.json`
+- `l2_llm_attention_tail_v1_nangate45_r1`
 
-This is the only supported proposal template for new work. The legacy template path exists only as a compatibility symlink.
+Primary evidence PR:
+
+- `https://github.com/yhmtmt/RTLGen/pull/218`

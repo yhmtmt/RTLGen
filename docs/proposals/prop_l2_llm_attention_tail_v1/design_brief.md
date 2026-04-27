@@ -1,46 +1,47 @@
 # Design Brief
 
 ## Proposal
-- `proposal_id`: `prop_example_v1`
-- `title`: `Example proposal title`
+- `proposal_id`: `prop_l2_llm_attention_tail_v1`
+- `title`: `LLM attention tail measurement gate`
 
 ## Problem
-- what bottleneck or limitation is being targeted
+The merged LLM attention-tail benchmark adds softmax-tail workloads, but the
+current architecture ladder needs concrete scheduler, latency, energy, and
+backpressure evidence before selecting a softmax datapath or mapper follow-up.
 
 ## Hypothesis
-- short explanation of why this change may help
+Running the benchmark across the existing `fp16_nm1` and `fp16_nm2` architecture
+points will expose whether the next useful proposal should target softmax
+occupancy, scheduler stalls, memory overlap, or a different architecture
+dimension.
 
 ## Evaluation Scope
 - direct comparison set:
-  - the smallest set of variants or architecture points needed to test the
-    hypothesis
-- evaluation modes:
-  - note whether each requested item is `measurement_only`,
-    `baseline_refresh`, `paired_comparison`, or `broad_ranking`
-  - record any expected non-win/lose result, such as a refreshed baseline that
-    is expected to look worse than a historical run
-- dependency order:
-  - list any item ids that must merge before a dependent item can be exported
-    or reviewed
-  - note whether the dependent item requires merged inputs, materialized repo
-    refs, or both
+  - `llm_attention_tail_v1` campaign on `nangate45`
+  - `fp16_nm1` and `fp16_nm2`
+  - `flat_nomacro` and `hier_macro`
+  - five attention-tail models, three samples per point
+- evaluation mode:
+  - `broad_ranking`
+- expected result:
+  - collect evidence, not prove a paired win/loss hypothesis
 - excluded first-stage comparisons:
-  - broader points intentionally left out of the first evaluation
-- follow-on broad sweep:
-  - optional wider comparison to run only if the focused result is positive,
-    ambiguous, or interaction-sensitive
+  - new softmax hardware changes
+  - mapper rewrites
+  - promotion of any candidate architecture before this measurement is reviewed
 
 ## Knowledge Inputs
-- papers
-- notes
-- prior runs
-- discussion references
+- `runs/campaigns/npu/e2e_eval_llm_attention_tail_v1/campaign.json`
+- `docs/llm_architecture_ladder.md`
+- `npu/mapper/README.md`
 
 ## Candidate Direction
-- what will change at a high level
+No RTL or mapper candidate is promoted by this proposal. The direction is to use
+the measurement result to choose the next focused LLM/softmax proposal.
 
 ## Direction Gate
-- status: pending
-- approved_by:
-- approved_utc:
-- note:
+- status: approved
+- approved_by: developer_agent
+- approved_utc: 2026-04-26T12:22:35Z
+- note: measurement-only gate approved to collect attention-tail evidence after
+  the benchmark suite merged.
