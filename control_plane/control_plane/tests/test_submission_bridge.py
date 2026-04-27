@@ -62,6 +62,40 @@ def _seed_l2_reviewable(session: Session, repo_root: Path) -> tuple[str, str]:
     design_metrics_rel = "control_plane/shadow_exports/designs/demo_nm1/metrics.csv"
     schedule_rel = "runs/campaigns/demo_l2/artifacts/mapper/fp16_nm1_demo/demo_model/schedule.yml"
     relu_schedule_rel = "runs/campaigns/demo_l2/artifacts/mapper/fp16_nm1_demo/relu_model/schedule.yml"
+    proposal_dir_rel = "docs/proposals/prop_l2_submit_demo"
+    proposal_rel = f"{proposal_dir_rel}/proposal.json"
+    _write(
+        repo_root / proposal_rel,
+        json.dumps(
+            {
+                "proposal_id": "prop_l2_submit_demo",
+                "title": "Layer2 submit demo proposal",
+                "kind": "architecture",
+                "direct_comparison": {
+                    "primary_question": "Does the layer2 submission package include proposal context?",
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+    )
+    _write(
+        repo_root / proposal_dir_rel / "evaluation_requests.json",
+        json.dumps(
+            {
+                "proposal_id": "prop_l2_submit_demo",
+                "requested_items": [
+                    {
+                        "item_id": "l2_submit_demo",
+                        "task_type": "l2_campaign",
+                        "evaluation_mode": "measurement_only",
+                    }
+                ],
+            },
+            indent=2,
+        )
+        + "\n",
+    )
     _write(
         repo_root / design_metrics_rel,
         (
@@ -124,6 +158,8 @@ def _seed_l2_reviewable(session: Session, repo_root: Path) -> tuple[str, str]:
         "layer": "layer2",
         "flow": "openroad",
         "developer_loop": {
+            "proposal_id": "prop_l2_submit_demo",
+            "proposal_path": proposal_rel,
             "evaluation": {"mode": "measurement_only"},
             "comparison": {"role": "baseline"},
         },
@@ -408,6 +444,8 @@ def test_prepare_submission_branch_creates_commit_and_manifest() -> None:
             assert manifest["evidence_paths"] == []
             assert "runs/campaigns/demo_l2/artifacts/mapper/fp16_nm1_demo/demo_model/schedule.yml" in manifest["supporting_paths"]
             assert "runs/campaigns/demo_l2/artifacts/mapper/fp16_nm1_demo/relu_model/schedule.yml" in manifest["supporting_paths"]
+            assert "docs/proposals/prop_l2_submit_demo/proposal.json" in manifest["supporting_paths"]
+            assert "docs/proposals/prop_l2_submit_demo/evaluation_requests.json" in manifest["supporting_paths"]
             assert "gh pr create --draft" in manifest["pr_create_command"]
             assert (
                 Path(result.worktree_path)
@@ -417,11 +455,62 @@ def test_prepare_submission_branch_creates_commit_and_manifest() -> None:
                 Path(result.worktree_path)
                 / "runs/campaigns/demo_l2/artifacts/mapper/fp16_nm1_demo/relu_model/schedule.yml"
             ).exists()
+            assert (
+                Path(result.worktree_path)
+                / "docs/proposals/prop_l2_submit_demo/proposal.json"
+            ).exists()
+            assert (
+                Path(result.worktree_path)
+                / "docs/proposals/prop_l2_submit_demo/evaluation_requests.json"
+            ).exists()
 
             branch_head = _git(repo_root, "rev-parse", result.branch_name)
             assert branch_head == result.commit_sha
             artifact = session.query(Artifact).filter_by(kind="submission_manifest").one()
             assert artifact.path == f"control_plane/shadow_exports/review/{item_id}/submission_manifest.json"
+
+
+def test_prepare_submission_branch_packages_only_resolved_proposal_file_parent() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, _run_key = _seed_l2_reviewable(session, repo_root)
+            _write(
+                repo_root / "docs/proposals/prop_unrelated/proposal.json",
+                json.dumps({"proposal_id": "prop_unrelated", "title": "Unrelated proposal"}, indent=2) + "\n",
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            payload = json.loads(json.dumps(work_item.task_request.request_payload))
+            payload["developer_loop"]["proposal_path"] = "docs/proposals"
+            work_item.task_request.request_payload = payload
+            session.commit()
+
+            result = prepare_submission_branch(
+                session,
+                SubmissionPrepareRequest(
+                    repo_root=str(repo_root),
+                    item_id=item_id,
+                    evaluator_id="cpbot",
+                    session_id="s20260310t080010z",
+                    host="cp-host",
+                    worktree_root=str(repo_root / "tmp_submit"),
+                ),
+            )
+
+            manifest = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "submission_manifest.json").read_text()
+            )
+            assert "docs/proposals/prop_l2_submit_demo/proposal.json" in manifest["supporting_paths"]
+            assert "docs/proposals/prop_l2_submit_demo/evaluation_requests.json" in manifest["supporting_paths"]
+            assert "docs/proposals/prop_unrelated/proposal.json" not in manifest["supporting_paths"]
+            assert (Path(result.worktree_path) / "docs/proposals/prop_l2_submit_demo/proposal.json").exists()
+            assert not (Path(result.worktree_path) / "docs/proposals/prop_unrelated/proposal.json").exists()
 
 
 def test_prepare_submission_branch_includes_canonical_runs_evidence_for_real_item() -> None:

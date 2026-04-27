@@ -783,6 +783,7 @@ def _build_proposal_assessment(
 
 def _build_payload(
     *,
+    repo_root: Path,
     work_item: WorkItem,
     run: Run,
     best_point: dict[str, Any],
@@ -908,6 +909,7 @@ def consume_l2_result(session: Session, request: Layer2ConsumeRequest) -> Layer2
             objective_profiles = _profile_recommendations(_load_csv(objective_sweep_path))
 
     payload = _build_payload(
+        repo_root=repo_root,
         work_item=work_item,
         run=run,
         best_point=best_point,
