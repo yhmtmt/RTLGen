@@ -213,6 +213,13 @@ If approved, notebook developer agent:
 2. records the created item ids in the proposal directory
 3. includes `proposal_id` and `proposal_path` in the queued work item payload
 
+Use a repo-relative `proposal_path` that resolves to the proposal's
+`proposal.json`, preferably
+`docs/proposals/<proposal_id>/proposal.json`. Do not use broad parent
+directories. The generated artifact PR is expected to contain the proposal
+workspace files named by `reviewer_first_read`; at minimum keep
+`proposal.json` and `evaluation_requests.json` materialized before dispatch.
+
 Recommended file:
 ```text
 docs/proposals/<proposal_id>/evaluation_requests.json

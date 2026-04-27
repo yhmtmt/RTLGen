@@ -36,6 +36,11 @@ Every developer-loop evaluation item should carry:
 - `proposal_id`
 - `proposal_path`
 
+`proposal_path` should identify the exact proposal file in repo-relative form,
+normally `docs/proposals/<proposal_id>/proposal.json`. Directory paths are only
+acceptable when the control-plane tooling canonicalizes them to that exact
+file; broad ancestors such as `docs/proposals/` are invalid.
+
 These must be visible in:
 
 - queued payload
@@ -43,8 +48,11 @@ These must be visible in:
 - `review_package.json`
 - PR body
 
-If proposal linkage is missing, the review is incomplete and should be treated
-as lower-confidence.
+The artifact PR must also include the proposal workspace files referenced by
+`reviewer_first_read`, especially `proposal.json` and
+`evaluation_requests.json`. If proposal linkage is missing, does not resolve, or
+points to files absent from the PR branch, the evidence package is incomplete;
+fix packaging before reviewing or merging the PR.
 
 ## Review Questions
 

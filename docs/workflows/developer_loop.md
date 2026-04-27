@@ -79,3 +79,22 @@ Current core proposal files:
 
 These files are repeated across proposals by design, but their schema should be
 kept tight and consistent.
+
+## Evaluation proposal linkage contract
+
+Every developer-loop work item that may enter `artifact_sync` must carry
+`developer_loop.proposal_id` and `developer_loop.proposal_path` in its queued
+payload. `proposal_path` is a repo-relative pointer to the proposal's
+`proposal.json`; use `docs/proposals/<proposal_id>/proposal.json` when writing
+payloads directly. Do not queue a broad ancestor such as `docs/proposals/`.
+
+Before dispatch, the proposal workspace must contain at least:
+
+- `proposal.json`
+- `evaluation_requests.json`
+
+`evaluation_requests.json` should name the item ids being queued. When evidence
+is exported, the artifact PR must be self-contained: the PR body's
+`reviewer_first_read` paths must exist in that PR branch, including the
+proposal scaffold. The submission path resolves `proposal_path` to a single
+`proposal.json` and packages files from that proposal directory.

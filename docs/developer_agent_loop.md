@@ -240,6 +240,12 @@ Required metadata per work item:
   - `requires_merged_inputs`
   - `requires_materialized_refs`
 
+`proposal_path` must resolve to the proposal's `proposal.json`, normally
+`docs/proposals/<proposal_id>/proposal.json`. Keep the proposal workspace
+self-contained before dispatch, including `proposal.json` and
+`evaluation_requests.json` with the queued item ids, so the artifact PR can
+package the exact review context referenced by `reviewer_first_read`.
+
 Ordering rule:
 - `measurement_only` items may usually queue immediately
 - `paired_comparison` items that consume a prior baseline should default to
