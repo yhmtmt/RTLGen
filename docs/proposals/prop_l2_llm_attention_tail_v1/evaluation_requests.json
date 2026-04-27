@@ -1,0 +1,18 @@
+{
+  "proposal_id": "prop_l2_llm_attention_tail_v1",
+  "source_commit": "e0010e569dcbf4f4da47802bfed745545e49e563",
+  "requested_items": [
+    {
+      "item_id": "l2_llm_attention_tail_v1_nangate45_r1",
+      "task_request_id": "78c4af29-1aa5-410b-b11f-d24ac36be051",
+      "work_item_id": "0dcffe94-17ab-42c0-a42d-2384198723f4",
+      "task_type": "l2_campaign",
+      "objective": "broad_ranking",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_llm_attention_tail_v1/campaign.json",
+      "evaluation_mode": "broad_ranking",
+      "comparison_role": "ranking",
+      "paired_baseline_item_id": "",
+      "abstraction_layer": "layer2"
+    }
+  ]
+}
