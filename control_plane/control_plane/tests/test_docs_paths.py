@@ -33,6 +33,36 @@ def test_resolve_proposal_maps_legacy_path_to_canonical_when_legacy_is_missing(t
     assert proposal_file == (canonical_dir / "proposal.json").resolve()
 
 
+def test_resolve_proposal_path_requires_specific_proposal_directory(tmp_path: Path) -> None:
+    repo_root = tmp_path
+    canonical_dir = repo_root / "docs" / "proposals" / "prop_demo_v3"
+    canonical_dir.mkdir(parents=True)
+    (canonical_dir / "proposal.json").write_text('{"proposal_id":"prop_demo_v3"}\n', encoding="utf-8")
+
+    proposal_file = resolve_proposal_file(
+        repo_root,
+        proposal_path="docs/proposals",
+        proposal_id="prop_demo_v3",
+    )
+
+    assert proposal_file is None
+
+
+def test_resolve_proposal_path_does_not_fallback_from_stale_path_to_id(tmp_path: Path) -> None:
+    repo_root = tmp_path
+    canonical_dir = repo_root / "docs" / "proposals" / "prop_demo_v4"
+    canonical_dir.mkdir(parents=True)
+    (canonical_dir / "proposal.json").write_text('{"proposal_id":"prop_demo_v4"}\n', encoding="utf-8")
+
+    proposal_file = resolve_proposal_file(
+        repo_root,
+        proposal_path="docs/proposals/prop_missing",
+        proposal_id="prop_demo_v4",
+    )
+
+    assert proposal_file is None
+
+
 def test_canonicalize_proposal_path_returns_canonical_relative_file(tmp_path: Path) -> None:
     repo_root = tmp_path
     canonical_dir = repo_root / "docs" / "proposals" / "prop_demo_v3"

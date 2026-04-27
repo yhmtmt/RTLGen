@@ -124,6 +124,8 @@ def _collect_proposal_files(*, repo_root: Path, package_payload: dict[str, Any],
     proposal_path = str(developer_loop.get("proposal_path", "")).strip() or None
     proposal_file = resolve_proposal_file(repo_root, proposal_path=proposal_path, proposal_id=proposal_id)
     if proposal_file is None or not proposal_file.exists() or proposal_file.name != "proposal.json":
+        if proposal_id or proposal_path:
+            raise SubmissionPrepareError("developer_loop proposal linkage does not resolve to a proposal")
         return
     proposal_dir = proposal_file.parent
     for candidate in sorted(path for path in proposal_dir.rglob("*") if path.is_file()):
