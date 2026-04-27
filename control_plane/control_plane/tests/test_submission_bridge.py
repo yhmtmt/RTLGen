@@ -470,6 +470,49 @@ def test_prepare_submission_branch_creates_commit_and_manifest() -> None:
             assert artifact.path == f"control_plane/shadow_exports/review/{item_id}/submission_manifest.json"
 
 
+def test_prepare_submission_branch_packages_only_resolved_proposal_file_parent() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, _run_key = _seed_l2_reviewable(session, repo_root)
+            _write(
+                repo_root / "docs/proposals/prop_unrelated/proposal.json",
+                json.dumps({"proposal_id": "prop_unrelated", "title": "Unrelated proposal"}, indent=2) + "\n",
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            payload = json.loads(json.dumps(work_item.task_request.request_payload))
+            payload["developer_loop"]["proposal_path"] = "docs/proposals"
+            work_item.task_request.request_payload = payload
+            session.commit()
+
+            result = prepare_submission_branch(
+                session,
+                SubmissionPrepareRequest(
+                    repo_root=str(repo_root),
+                    item_id=item_id,
+                    evaluator_id="cpbot",
+                    session_id="s20260310t080010z",
+                    host="cp-host",
+                    worktree_root=str(repo_root / "tmp_submit"),
+                ),
+            )
+
+            manifest = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "submission_manifest.json").read_text()
+            )
+            assert "docs/proposals/prop_l2_submit_demo/proposal.json" in manifest["supporting_paths"]
+            assert "docs/proposals/prop_l2_submit_demo/evaluation_requests.json" in manifest["supporting_paths"]
+            assert "docs/proposals/prop_unrelated/proposal.json" not in manifest["supporting_paths"]
+            assert (Path(result.worktree_path) / "docs/proposals/prop_l2_submit_demo/proposal.json").exists()
+            assert not (Path(result.worktree_path) / "docs/proposals/prop_unrelated/proposal.json").exists()
+
+
 def test_prepare_submission_branch_includes_canonical_runs_evidence_for_real_item() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

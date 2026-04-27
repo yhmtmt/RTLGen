@@ -18,7 +18,7 @@ from control_plane.models.enums import ArtifactStorageMode
 from control_plane.models.run_events import RunEvent
 from control_plane.models.runs import Run
 from control_plane.models.work_items import WorkItem
-from control_plane.services.docs_paths import resolve_proposal_dir
+from control_plane.services.docs_paths import resolve_proposal_file
 from control_plane.services.review_publisher import ReviewPublishRequest, publish_review_package
 
 
@@ -122,9 +122,10 @@ def _collect_proposal_files(*, repo_root: Path, package_payload: dict[str, Any],
         return
     proposal_id = str(developer_loop.get("proposal_id", "")).strip() or None
     proposal_path = str(developer_loop.get("proposal_path", "")).strip() or None
-    proposal_dir = resolve_proposal_dir(repo_root, proposal_path=proposal_path, proposal_id=proposal_id)
-    if proposal_dir is None or not proposal_dir.exists() or not proposal_dir.is_dir():
+    proposal_file = resolve_proposal_file(repo_root, proposal_path=proposal_path, proposal_id=proposal_id)
+    if proposal_file is None or not proposal_file.exists() or proposal_file.name != "proposal.json":
         return
+    proposal_dir = proposal_file.parent
     for candidate in sorted(path for path in proposal_dir.rglob("*") if path.is_file()):
         try:
             rel_path = str(candidate.resolve().relative_to(repo_root.resolve()))
