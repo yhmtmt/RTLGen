@@ -12,7 +12,12 @@
       "evaluation_mode": "broad_ranking",
       "comparison_role": "ranking",
       "paired_baseline_item_id": "",
-      "abstraction_layer": "layer2"
+      "abstraction_layer": "layer2",
+      "status": "merged",
+      "merged_pr_number": 218,
+      "merge_commit": "eea2a41bac72900a07abbb9a9d9423e3418b0ac3",
+      "merged_utc": "2026-04-27T22:18:00.485899Z",
+      "notes": "Merged via PR #218 and merge eea2a41bac72900a07abbb9a9d9423e3418b0ac3 at 2026-04-27T22:18:00.485899Z."
     }
   ]
 }
