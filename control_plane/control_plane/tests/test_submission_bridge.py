@@ -470,7 +470,7 @@ def test_prepare_submission_branch_creates_commit_and_manifest() -> None:
             assert artifact.path == f"control_plane/shadow_exports/review/{item_id}/submission_manifest.json"
 
 
-def test_prepare_submission_branch_packages_only_resolved_proposal_file_parent() -> None:
+def test_prepare_submission_branch_packages_only_specific_proposal_file_parent() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
         repo_root.mkdir()
@@ -487,7 +487,7 @@ def test_prepare_submission_branch_packages_only_resolved_proposal_file_parent()
 
             work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
             payload = json.loads(json.dumps(work_item.task_request.request_payload))
-            payload["developer_loop"]["proposal_path"] = "docs/proposals"
+            payload["developer_loop"]["proposal_path"] = "docs/proposals/prop_l2_submit_demo"
             work_item.task_request.request_payload = payload
             session.commit()
 
@@ -511,6 +511,76 @@ def test_prepare_submission_branch_packages_only_resolved_proposal_file_parent()
             assert "docs/proposals/prop_unrelated/proposal.json" not in manifest["supporting_paths"]
             assert (Path(result.worktree_path) / "docs/proposals/prop_l2_submit_demo/proposal.json").exists()
             assert not (Path(result.worktree_path) / "docs/proposals/prop_unrelated/proposal.json").exists()
+
+
+def test_prepare_submission_branch_rejects_broad_proposal_path() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, _run_key = _seed_l2_reviewable(session, repo_root)
+
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            payload = json.loads(json.dumps(work_item.task_request.request_payload))
+            payload["developer_loop"]["proposal_path"] = "docs/proposals"
+            work_item.task_request.request_payload = payload
+            session.commit()
+
+            try:
+                prepare_submission_branch(
+                    session,
+                    SubmissionPrepareRequest(
+                        repo_root=str(repo_root),
+                        item_id=item_id,
+                        evaluator_id="cpbot",
+                        session_id="s20260310t080011z",
+                        host="cp-host",
+                        worktree_root=str(repo_root / "tmp_submit"),
+                    ),
+                )
+            except SubmissionPrepareError as exc:
+                assert "proposal linkage" in str(exc)
+            else:
+                raise AssertionError("expected SubmissionPrepareError")
+
+
+def test_prepare_submission_branch_rejects_stale_proposal_path() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, _run_key = _seed_l2_reviewable(session, repo_root)
+
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            payload = json.loads(json.dumps(work_item.task_request.request_payload))
+            payload["developer_loop"]["proposal_path"] = "docs/proposals/prop_missing"
+            work_item.task_request.request_payload = payload
+            session.commit()
+
+            try:
+                prepare_submission_branch(
+                    session,
+                    SubmissionPrepareRequest(
+                        repo_root=str(repo_root),
+                        item_id=item_id,
+                        evaluator_id="cpbot",
+                        session_id="s20260310t080012z",
+                        host="cp-host",
+                        worktree_root=str(repo_root / "tmp_submit"),
+                    ),
+                )
+            except SubmissionPrepareError as exc:
+                assert "proposal linkage" in str(exc)
+            else:
+                raise AssertionError("expected SubmissionPrepareError")
 
 
 def test_prepare_submission_branch_includes_canonical_runs_evidence_for_real_item() -> None:
