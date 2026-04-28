@@ -1,381 +1,509 @@
 {
-  "version": 0.1,
-  "generated_utc": "2026-04-28T07:40:45.279265Z",
-  "item_id": "l2_decoder_exact_probability_path_v1",
-  "run_key": "l2_decoder_exact_probability_path_v1_run_930a1658a4e342e8",
-  "layer": "layer2",
+  "developer_loop": {
+    "abstraction": {
+      "layer": "decoder_probability_path"
+    },
+    "comparison": {
+      "paired_baseline_item_id": "l2_decoder_contract_eval_confirm_v1",
+      "role": "candidate"
+    },
+    "dependencies": {
+      "item_ids": [],
+      "requires_materialized_refs": true,
+      "requires_merged_inputs": true
+    },
+    "evaluation": {
+      "expected_direction": "better_than_historical",
+      "expected_reason": "Exact probability path should improve over the prior 0.8 exact/top-k decoder rates while preserving the contract.",
+      "mode": "paired_comparison"
+    },
+    "proposal_id": "prop_l2_decoder_exact_probability_path_v1",
+    "proposal_path": "docs/proposals/prop_l2_decoder_exact_probability_path_v1/proposal.json"
+  },
   "flow": "openroad",
-  "task_type": "l2_campaign",
-  "source_commit": "251d3fddd95a52d4555d670cf3b95bec26a4d0b7",
-  "review_metadata_source_commit": "251d3fddd95a52d4555d670cf3b95bec26a4d0b7",
+  "generated_utc": "2026-04-28T07:45:14Z",
+  "item_id": "l2_decoder_exact_probability_path_v1",
+  "layer": "layer2",
+  "pr_payload": {
+    "body_fields": {
+      "evaluator_id": "control_plane",
+      "host": "b7c2d9c80c1c",
+      "queue_item_id": "l2_decoder_exact_probability_path_v1",
+      "session_id": "s20260428t074045z"
+    },
+    "body_md": "## Summary\n- item_id: `l2_decoder_exact_probability_path_v1`\n- run_key: `l2_decoder_exact_probability_path_v1_run_930a1658a4e342e8`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `9/9 commands succeeded; Decoder quality improved from 0.8 to 1.0 exact/top-k on 5 samples; campaign physical metrics matched the paired baseline.`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_decoder_exact_probability_path_v1/evaluated.json`\n- metrics_rows_count: `24`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_decoder_exact_probability_path_v1.json`\n\n## Developer Context\n- proposal_id: `prop_l2_decoder_exact_probability_path_v1`\n- proposal_path: `docs/proposals/prop_l2_decoder_exact_probability_path_v1/proposal.json`\n- reviewer_first_read: `docs/proposals/prop_l2_decoder_exact_probability_path_v1/proposal.json` plus `docs/developer_agent_review.md`\n- execution_source_commit: `251d3fddd95a52d4555d670cf3b95bec26a4d0b7`\n- review_metadata_source_commit: `251d3fddd95a52d4555d670cf3b95bec26a4d0b7`\n\n## Evaluation Mode\n- evaluation_mode: `paired_comparison`\n- abstraction_layer: `decoder_probability_path`\n- comparison_role: `candidate`\n- expected_direction: `better_than_historical`\n- expected_reason: `Exact probability path should improve over the prior 0.8 exact/top-k decoder rates while preserving the contract.`\n- expectation_status: `met`\n- evaluation_summary: `Decoder quality improved from 0.8 to 1.0 exact/top-k on 5 samples; campaign physical metrics matched the paired baseline.`\n\n## Decoder Evidence\n- baseline_semantics: `onnx_logits_fp_softmax_approx_pwl_in_q4_w_q4_norm_recip_q10_prob_fp`\n- candidate_semantics: `onnx_logits_fp_softmax_exact_norm_exact_prob_fp`\n- next_token_exact_rate: `0.8` -> `1.0`\n- topk_contains_reference_rate: `0.8` -> `1.0`\n- selected_tensor_shape_match: `20/20`\n- missing_model_error: `NoSuchFile` check `true`\n- contract_validation: `runs/datasets/llm_decoder_eval_tiny_v1/decoder_contract_validation__l2_decoder_exact_probability_path_v1.json`\n- quality_comparison: `runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_compare__l2_decoder_exact_probability_path_v1.json`\n- missing_model_check: `runs/datasets/llm_decoder_eval_tiny_v1/missing_model_check__l2_decoder_exact_probability_path_v1.json`\n\n## Focused Comparison\n- primary_question: `Does the exact probability-path candidate improve the llm_decoder_eval_tiny_v1 token-quality gate relative to the prior q4 PWL softmax plus quantized reciprocal candidate?`\n- comparison_role: `candidate`\n- proposal_outcome: `quality_improved`\n- comparison_summary: `Decoder quality improved from 0.8 to 1.0 exact/top-k on 5 samples; campaign physical metrics matched the paired baseline.`\n- baseline_ref: `runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_contract_eval_confirm_v1`\n- baseline_item_id: `l2_decoder_contract_eval_confirm_v1`\n- campaign_physical_result: `no measurable latency or energy delta on the smoke campaign`\n\n## Checklist\n- [x] Commit lightweight campaign artifacts only\n- [x] Include metrics row references in result.metrics_rows\n- [x] Keep committed result_path fields repo-portable\n- [x] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "branch": "eval/l2_decoder_exact_probability_path_v1/s20260428t074045z",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "title": "eval: run llm decoder exact probability-path evaluation"
+  },
   "queue_snapshot": {
     "path": "control_plane/shadow_exports/review/l2_decoder_exact_probability_path_v1/evaluated.json",
     "result": {
       "branch": "eval/l2_decoder_exact_probability_path_v1/s20260428t074045z",
       "completed_utc": "2026-04-28T07:40:45.138963Z",
+      "decoder_evidence": {
+        "baseline_item_id": "l2_decoder_contract_eval_confirm_v1",
+        "baseline_quality_path": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_compare__l2_decoder_contract_eval_confirm_v1.json",
+        "baseline_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q4_w_q4_norm_recip_q10_prob_fp",
+        "candidate_quality_path": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_compare__l2_decoder_exact_probability_path_v1.json",
+        "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_exact_prob_fp",
+        "contract_ok": true,
+        "contract_validation_path": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_contract_validation__l2_decoder_exact_probability_path_v1.json",
+        "dataset_id": "llm_decoder_eval_tiny_v1",
+        "missing_model_check_path": "runs/datasets/llm_decoder_eval_tiny_v1/missing_model_check__l2_decoder_exact_probability_path_v1.json",
+        "missing_model_error_class": "NoSuchFile",
+        "missing_model_error_ok": true,
+        "next_token_id_match_rate": {
+          "baseline": 0.8,
+          "candidate": 1.0,
+          "delta": 0.19999999999999996
+        },
+        "next_token_text_match_rate": {
+          "baseline": 0.8,
+          "candidate": 1.0,
+          "delta": 0.19999999999999996
+        },
+        "sample_count": 5,
+        "selected_tensor_matched_tensor_count": 20,
+        "selected_tensor_shape_match_count": 20,
+        "selected_tensor_shape_match_rate": 1.0,
+        "topk_contains_reference_id_rate": {
+          "baseline": 0.8,
+          "candidate": 1.0,
+          "delta": 0.19999999999999996
+        },
+        "topk_contains_reference_text_rate": {
+          "baseline": 0.8,
+          "candidate": 1.0,
+          "delta": 0.19999999999999996
+        }
+      },
       "evaluator_id": "control_plane",
       "executor": "@control_plane",
       "host": "b7c2d9c80c1c",
       "identity_block": "[role:evaluator][account:control_plane][session:s20260428t074045z][host:b7c2d9c80c1c][item:l2_decoder_exact_probability_path_v1]",
       "metrics_rows": [
         {
-          "tag": "npu_fp16_nm1_cmp33_flat_nomacro",
-          "status": "ok",
-          "platform": "nangate45",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
           "param_hash": "362e11ef",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/362e11ef/result.json"
+          "platform": "nangate45",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/362e11ef/result.json",
+          "status": "ok",
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro"
         },
         {
-          "tag": "npu_fp16_nm1_cmp33_hier_macro",
-          "status": "ok",
-          "platform": "nangate45",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
           "param_hash": "6f738885",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/6f738885/result.json"
+          "platform": "nangate45",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/6f738885/result.json",
+          "status": "ok",
+          "tag": "npu_fp16_nm1_cmp33_hier_macro"
         },
         {
-          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r1",
-          "status": "ok",
-          "platform": "nangate45",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
           "param_hash": "3e84d92b",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3e84d92b/result.json"
+          "platform": "nangate45",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3e84d92b/result.json",
+          "status": "ok",
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r1"
         },
         {
-          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r2",
-          "status": "ok",
-          "platform": "nangate45",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
           "param_hash": "13a2c990",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/13a2c990/result.json"
+          "platform": "nangate45",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/13a2c990/result.json",
+          "status": "ok",
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r2"
         },
         {
-          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r3",
-          "status": "ok",
-          "platform": "nangate45",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
           "param_hash": "34eeb6e5",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/34eeb6e5/result.json"
+          "platform": "nangate45",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/34eeb6e5/result.json",
+          "status": "ok",
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r3"
         },
         {
-          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r4",
-          "status": "ok",
-          "platform": "nangate45",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
           "param_hash": "439adb1e",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/439adb1e/result.json"
+          "platform": "nangate45",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/439adb1e/result.json",
+          "status": "ok",
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r4"
         },
         {
-          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r5",
-          "status": "ok",
-          "platform": "nangate45",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
           "param_hash": "936b2a7b",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/936b2a7b/result.json"
+          "platform": "nangate45",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/936b2a7b/result.json",
+          "status": "ok",
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r5"
         },
         {
-          "tag": "npu_fp16_nm1_cmp33_hier_macro_r1",
-          "status": "ok",
-          "platform": "nangate45",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
           "param_hash": "54a235ae",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/54a235ae/result.json"
+          "platform": "nangate45",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/54a235ae/result.json",
+          "status": "ok",
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r1"
         },
         {
-          "tag": "npu_fp16_nm1_cmp33_hier_macro_r2",
-          "status": "ok",
-          "platform": "nangate45",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
           "param_hash": "f190a078",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/f190a078/result.json"
+          "platform": "nangate45",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/f190a078/result.json",
+          "status": "ok",
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r2"
         },
         {
-          "tag": "npu_fp16_nm1_cmp33_hier_macro_r3",
-          "status": "ok",
-          "platform": "nangate45",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
           "param_hash": "b874bef7",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/b874bef7/result.json"
+          "platform": "nangate45",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/b874bef7/result.json",
+          "status": "ok",
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r3"
         },
         {
-          "tag": "npu_fp16_nm1_cmp33_hier_macro_r4",
-          "status": "ok",
-          "platform": "nangate45",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
           "param_hash": "3a650f98",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3a650f98/result.json"
+          "platform": "nangate45",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3a650f98/result.json",
+          "status": "ok",
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r4"
         },
         {
-          "tag": "npu_fp16_nm1_cmp33_hier_macro_r5",
-          "status": "ok",
-          "platform": "nangate45",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
           "param_hash": "3fa4f194",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3fa4f194/result.json"
+          "platform": "nangate45",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3fa4f194/result.json",
+          "status": "ok",
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r5"
         },
         {
-          "tag": "npu_fp16_nm2_cmp33_flat_nomacro",
-          "status": "ok",
-          "platform": "nangate45",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
           "param_hash": "033cdfdc",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/033cdfdc/result.json"
+          "platform": "nangate45",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/033cdfdc/result.json",
+          "status": "ok",
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro"
         },
         {
-          "tag": "npu_fp16_nm2_cmp33_hier_macro",
-          "status": "ok",
-          "platform": "nangate45",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
           "param_hash": "c4548bca",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/c4548bca/result.json"
+          "platform": "nangate45",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/c4548bca/result.json",
+          "status": "ok",
+          "tag": "npu_fp16_nm2_cmp33_hier_macro"
         },
         {
-          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r1",
-          "status": "ok",
-          "platform": "nangate45",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
           "param_hash": "258015dc",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/258015dc/result.json"
+          "platform": "nangate45",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/258015dc/result.json",
+          "status": "ok",
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r1"
         },
         {
-          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r2",
-          "status": "ok",
-          "platform": "nangate45",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
           "param_hash": "95526f98",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/95526f98/result.json"
+          "platform": "nangate45",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/95526f98/result.json",
+          "status": "ok",
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r2"
         },
         {
-          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r3",
-          "status": "ok",
-          "platform": "nangate45",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
           "param_hash": "099823db",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/099823db/result.json"
+          "platform": "nangate45",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/099823db/result.json",
+          "status": "ok",
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r3"
         },
         {
-          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r4",
-          "status": "ok",
-          "platform": "nangate45",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
           "param_hash": "b276f2e7",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/b276f2e7/result.json"
+          "platform": "nangate45",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/b276f2e7/result.json",
+          "status": "ok",
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r4"
         },
         {
-          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r5",
-          "status": "ok",
-          "platform": "nangate45",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
           "param_hash": "f0b4f9e6",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/f0b4f9e6/result.json"
+          "platform": "nangate45",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/f0b4f9e6/result.json",
+          "status": "ok",
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r5"
         },
         {
-          "tag": "npu_fp16_nm2_cmp33_hier_macro_r1",
-          "status": "ok",
-          "platform": "nangate45",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
           "param_hash": "5d0ac971",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/5d0ac971/result.json"
+          "platform": "nangate45",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/5d0ac971/result.json",
+          "status": "ok",
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r1"
         },
         {
-          "tag": "npu_fp16_nm2_cmp33_hier_macro_r2",
-          "status": "ok",
-          "platform": "nangate45",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
           "param_hash": "a9ae3c35",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/a9ae3c35/result.json"
+          "platform": "nangate45",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/a9ae3c35/result.json",
+          "status": "ok",
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r2"
         },
         {
-          "tag": "npu_fp16_nm2_cmp33_hier_macro_r3",
-          "status": "ok",
-          "platform": "nangate45",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
           "param_hash": "c51fa4a2",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/c51fa4a2/result.json"
+          "platform": "nangate45",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/c51fa4a2/result.json",
+          "status": "ok",
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r3"
         },
         {
-          "tag": "npu_fp16_nm2_cmp33_hier_macro_r4",
-          "status": "ok",
-          "platform": "nangate45",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
           "param_hash": "98a03366",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/98a03366/result.json"
+          "platform": "nangate45",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/98a03366/result.json",
+          "status": "ok",
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r4"
         },
         {
-          "tag": "npu_fp16_nm2_cmp33_hier_macro_r5",
-          "status": "ok",
-          "platform": "nangate45",
-          "param_hash": "41f8b4a8",
           "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/41f8b4a8/result.json"
+          "param_hash": "41f8b4a8",
+          "platform": "nangate45",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/41f8b4a8/result.json",
+          "status": "ok",
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r5"
         }
       ],
       "queue_item_id": "l2_decoder_exact_probability_path_v1",
       "session_id": "s20260428t074045z",
       "status": "ok",
-      "summary": "6/6 commands succeeded"
+      "summary": "9/9 commands succeeded; Decoder quality improved from 0.8 to 1.0 exact/top-k on 5 samples; campaign physical metrics matched the paired baseline."
     }
   },
   "review_artifact": {
     "kind": "decision_proposal",
     "path": "control_plane/shadow_exports/l2_decisions/l2_decoder_exact_probability_path_v1.json",
-    "storage_mode": "repo",
-    "sha256": "f101ee1daa8d1a14e98f346f3c4d326a1b09b7f841087515a65ab75463e8b2e7",
     "payload": {
-      "version": 0.1,
-      "generated_utc": "2026-04-28T07:40:45.191014Z",
-      "item_id": "l2_decoder_exact_probability_path_v1",
-      "run_key": "l2_decoder_exact_probability_path_v1_run_930a1658a4e342e8",
-      "layer": "layer2",
+      "evaluation_record": {
+        "abstraction_layer": "decoder_probability_path",
+        "baseline_item_id": "l2_decoder_contract_eval_confirm_v1",
+        "baseline_ref": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_contract_eval_confirm_v1",
+        "comparison_role": "candidate",
+        "decoder_evidence": {
+          "baseline_item_id": "l2_decoder_contract_eval_confirm_v1",
+          "baseline_quality_path": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_compare__l2_decoder_contract_eval_confirm_v1.json",
+          "baseline_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q4_w_q4_norm_recip_q10_prob_fp",
+          "candidate_quality_path": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_compare__l2_decoder_exact_probability_path_v1.json",
+          "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_exact_prob_fp",
+          "contract_ok": true,
+          "contract_validation_path": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_contract_validation__l2_decoder_exact_probability_path_v1.json",
+          "dataset_id": "llm_decoder_eval_tiny_v1",
+          "missing_model_check_path": "runs/datasets/llm_decoder_eval_tiny_v1/missing_model_check__l2_decoder_exact_probability_path_v1.json",
+          "missing_model_error_class": "NoSuchFile",
+          "missing_model_error_ok": true,
+          "next_token_id_match_rate": {
+            "baseline": 0.8,
+            "candidate": 1.0,
+            "delta": 0.19999999999999996
+          },
+          "next_token_text_match_rate": {
+            "baseline": 0.8,
+            "candidate": 1.0,
+            "delta": 0.19999999999999996
+          },
+          "sample_count": 5,
+          "selected_tensor_matched_tensor_count": 20,
+          "selected_tensor_shape_match_count": 20,
+          "selected_tensor_shape_match_rate": 1.0,
+          "topk_contains_reference_id_rate": {
+            "baseline": 0.8,
+            "candidate": 1.0,
+            "delta": 0.19999999999999996
+          },
+          "topk_contains_reference_text_rate": {
+            "baseline": 0.8,
+            "candidate": 1.0,
+            "delta": 0.19999999999999996
+          }
+        },
+        "evaluation_mode": "paired_comparison",
+        "expectation_status": "met",
+        "expected_direction": "better_than_historical",
+        "expected_reason": "Exact probability path should improve over the prior 0.8 exact/top-k decoder rates while preserving the contract.",
+        "outcome": "quality_improved",
+        "primary_question": "Does the exact probability-path candidate improve the llm_decoder_eval_tiny_v1 token-quality gate relative to the prior q4 PWL softmax plus quantized reciprocal candidate?",
+        "proposal_id": "prop_l2_decoder_exact_probability_path_v1",
+        "summary": "Decoder quality improved from 0.8 to 1.0 exact/top-k on 5 samples; campaign physical metrics matched the paired baseline.",
+        "title": "LLM decoder exact probability-path candidate"
+      },
       "flow": "openroad",
-      "platform": "nangate45",
-      "task_type": "l2_campaign",
-      "source_commit": "251d3fddd95a52d4555d670cf3b95bec26a4d0b7",
-      "review_metadata_source_commit": "251d3fddd95a52d4555d670cf3b95bec26a4d0b7",
-      "objective": "Evaluate exact softmax plus exact normalization as the active decoder-quality candidate reference.",
+      "generated_utc": "2026-04-28T07:45:14Z",
       "input_manifest": {
-        "sweeps": [
-          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
-          "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+        "candidate_manifests": [
+          "runs/candidates/nangate45/module_candidates.json"
         ],
         "configs": [
           "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
           "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
         ],
+        "decoder_contract": {
+          "baseline_quality_out": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_compare__l2_decoder_contract_eval_confirm_v1.json",
+          "candidate_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_manifest.json",
+          "dataset_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/manifest.json",
+          "missing_model_check_out": "runs/datasets/llm_decoder_eval_tiny_v1/missing_model_check__l2_decoder_exact_probability_path_v1.json",
+          "quality_out": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_compare__l2_decoder_exact_probability_path_v1.json",
+          "reference_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/reference_manifest.json",
+          "validation_out": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_contract_validation__l2_decoder_exact_probability_path_v1.json"
+        },
         "design_dirs": [
           "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
           "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
         ],
+        "generated_campaign": {
+          "base_campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json",
+          "clean_outputs": true,
+          "outputs": {
+            "campaign_dir": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1",
+            "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/report.md",
+            "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/results.csv"
+          },
+          "path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign__l2_decoder_exact_probability_path_v1.json"
+        },
         "macro_manifests": [
           "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
           "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
         ],
-        "generated_campaign": {
-          "path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign__l2_decoder_exact_probability_path_v1.json",
-          "outputs": {
-            "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/report.md",
-            "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/results.csv",
-            "campaign_dir": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1"
-          },
-          "clean_outputs": true,
-          "base_campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json"
-        },
-        "candidate_manifests": [
-          "runs/candidates/nangate45/module_candidates.json"
+        "sweeps": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
         ]
       },
-      "recommendation": {
-        "arch_id": "fp16_nm1",
-        "macro_mode": "flat_nomacro",
-        "objective_rank": 1,
-        "objective_score": "0.0",
-        "latency_ms_mean": 0.028907999999999996,
-        "energy_mj_mean": 5.582770776e-06,
-        "critical_path_ns_mean": 5.557037432204143,
-        "die_area_um2_mean": 2250000.0,
-        "total_power_mw_mean": 0.193122,
-        "flow_elapsed_s_mean": 848.418
-      },
+      "item_id": "l2_decoder_exact_probability_path_v1",
+      "layer": "layer2",
+      "objective": "Evaluate exact softmax plus exact normalization as the active decoder-quality candidate reference.",
       "objective_profiles": [
         {
-          "profile": "balanced",
           "best_arch_id": "fp16_nm1",
-          "best_macro_mode": "flat_nomacro",
-          "objective_score": "0.0",
-          "latency_ms_mean": "0.028907999999999996",
-          "energy_mj_mean": "5.582770776e-06",
-          "flow_elapsed_s_mean": "848.418",
           "best_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/objective_profiles/balanced/best_point.json",
-          "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/objective_profiles/balanced/report.md",
-          "pareto_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/objective_profiles/balanced/pareto.csv"
-        },
-        {
-          "profile": "latency",
-          "best_arch_id": "fp16_nm1",
           "best_macro_mode": "flat_nomacro",
-          "objective_score": "0.0",
-          "latency_ms_mean": "0.028907999999999996",
           "energy_mj_mean": "5.582770776e-06",
           "flow_elapsed_s_mean": "848.418",
+          "latency_ms_mean": "0.028907999999999996",
+          "objective_score": "0.0",
+          "pareto_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/objective_profiles/balanced/pareto.csv",
+          "profile": "balanced",
+          "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/objective_profiles/balanced/report.md"
+        },
+        {
+          "best_arch_id": "fp16_nm1",
           "best_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/objective_profiles/latency/best_point.json",
-          "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/objective_profiles/latency/report.md",
-          "pareto_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/objective_profiles/latency/pareto.csv"
-        },
-        {
-          "profile": "energy",
-          "best_arch_id": "fp16_nm1",
           "best_macro_mode": "flat_nomacro",
-          "objective_score": "0.0",
-          "latency_ms_mean": "0.028907999999999996",
           "energy_mj_mean": "5.582770776e-06",
           "flow_elapsed_s_mean": "848.418",
+          "latency_ms_mean": "0.028907999999999996",
+          "objective_score": "0.0",
+          "pareto_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/objective_profiles/latency/pareto.csv",
+          "profile": "latency",
+          "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/objective_profiles/latency/report.md"
+        },
+        {
+          "best_arch_id": "fp16_nm1",
           "best_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/objective_profiles/energy/best_point.json",
-          "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/objective_profiles/energy/report.md",
-          "pareto_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/objective_profiles/energy/pareto.csv"
-        },
-        {
-          "profile": "runtime_bal",
-          "best_arch_id": "fp16_nm1",
           "best_macro_mode": "flat_nomacro",
-          "objective_score": "0.12242050958096472",
-          "latency_ms_mean": "0.028907999999999996",
           "energy_mj_mean": "5.582770776e-06",
           "flow_elapsed_s_mean": "848.418",
-          "best_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/objective_profiles/runtime_bal/best_point.json",
-          "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/objective_profiles/runtime_bal/report.md",
-          "pareto_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/objective_profiles/runtime_bal/pareto.csv"
-        },
-        {
-          "profile": "ppa",
-          "best_arch_id": "fp16_nm1",
-          "best_macro_mode": "flat_nomacro",
+          "latency_ms_mean": "0.028907999999999996",
           "objective_score": "0.0",
-          "latency_ms_mean": "0.028907999999999996",
+          "pareto_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/objective_profiles/energy/pareto.csv",
+          "profile": "energy",
+          "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/objective_profiles/energy/report.md"
+        },
+        {
+          "best_arch_id": "fp16_nm1",
+          "best_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/objective_profiles/runtime_bal/best_point.json",
+          "best_macro_mode": "flat_nomacro",
           "energy_mj_mean": "5.582770776e-06",
           "flow_elapsed_s_mean": "848.418",
+          "latency_ms_mean": "0.028907999999999996",
+          "objective_score": "0.12242050958096472",
+          "pareto_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/objective_profiles/runtime_bal/pareto.csv",
+          "profile": "runtime_bal",
+          "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/objective_profiles/runtime_bal/report.md"
+        },
+        {
+          "best_arch_id": "fp16_nm1",
           "best_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/objective_profiles/ppa/best_point.json",
-          "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/objective_profiles/ppa/report.md",
-          "pareto_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/objective_profiles/ppa/pareto.csv"
+          "best_macro_mode": "flat_nomacro",
+          "energy_mj_mean": "5.582770776e-06",
+          "flow_elapsed_s_mean": "848.418",
+          "latency_ms_mean": "0.028907999999999996",
+          "objective_score": "0.0",
+          "pareto_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/objective_profiles/ppa/pareto.csv",
+          "profile": "ppa",
+          "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/objective_profiles/ppa/report.md"
         }
       ],
-      "evaluation_record": {
-        "proposal_id": "prop_l2_decoder_exact_probability_path_v1",
-        "title": "LLM decoder exact probability-path candidate",
-        "primary_question": "Does the exact probability-path candidate improve the llm_decoder_eval_tiny_v1 token-quality gate relative to the prior q4 PWL softmax plus quantized reciprocal candidate?",
-        "evaluation_mode": "paired_comparison",
-        "comparison_role": "candidate",
-        "abstraction_layer": "decoder_probability_path",
-        "expected_direction": "better_than_historical",
-        "expected_reason": "Exact probability path should improve over the prior 0.8 exact/top-k decoder rates while preserving the contract.",
-        "summary": "Focused comparison matched the baseline with no measurable latency or energy delta.",
-        "baseline_ref": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_contract_eval_confirm_v1",
-        "baseline_item_id": "l2_decoder_contract_eval_confirm_v1",
-        "outcome": "no_measurable_change",
-        "expectation_status": "unexpected"
-      },
+      "platform": "nangate45",
       "proposal_assessment": {
-        "proposal_id": "prop_l2_decoder_exact_probability_path_v1",
-        "title": "LLM decoder exact probability-path candidate",
-        "kind": "architecture",
-        "primary_question": "Does the exact probability-path candidate improve the llm_decoder_eval_tiny_v1 token-quality gate relative to the prior q4 PWL softmax plus quantized reciprocal candidate?",
-        "evaluation_mode": "paired_comparison",
-        "comparison_role": "candidate",
-        "outcome": "no_measurable_change",
-        "summary": "Focused comparison matched the baseline with no measurable latency or energy delta.",
-        "baseline_ref": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_contract_eval_confirm_v1",
         "baseline_item_id": "l2_decoder_contract_eval_confirm_v1",
+        "baseline_ref": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_contract_eval_confirm_v1",
+        "comparison_role": "candidate",
+        "decoder_evidence": {
+          "baseline_item_id": "l2_decoder_contract_eval_confirm_v1",
+          "baseline_quality_path": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_compare__l2_decoder_contract_eval_confirm_v1.json",
+          "baseline_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q4_w_q4_norm_recip_q10_prob_fp",
+          "candidate_quality_path": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_compare__l2_decoder_exact_probability_path_v1.json",
+          "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_exact_prob_fp",
+          "contract_ok": true,
+          "contract_validation_path": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_contract_validation__l2_decoder_exact_probability_path_v1.json",
+          "dataset_id": "llm_decoder_eval_tiny_v1",
+          "missing_model_check_path": "runs/datasets/llm_decoder_eval_tiny_v1/missing_model_check__l2_decoder_exact_probability_path_v1.json",
+          "missing_model_error_class": "NoSuchFile",
+          "missing_model_error_ok": true,
+          "next_token_id_match_rate": {
+            "baseline": 0.8,
+            "candidate": 1.0,
+            "delta": 0.19999999999999996
+          },
+          "next_token_text_match_rate": {
+            "baseline": 0.8,
+            "candidate": 1.0,
+            "delta": 0.19999999999999996
+          },
+          "sample_count": 5,
+          "selected_tensor_matched_tensor_count": 20,
+          "selected_tensor_shape_match_count": 20,
+          "selected_tensor_shape_match_rate": 1.0,
+          "topk_contains_reference_id_rate": {
+            "baseline": 0.8,
+            "candidate": 1.0,
+            "delta": 0.19999999999999996
+          },
+          "topk_contains_reference_text_rate": {
+            "baseline": 0.8,
+            "candidate": 1.0,
+            "delta": 0.19999999999999996
+          }
+        },
+        "evaluation_mode": "paired_comparison",
+        "expectation_status": "met",
+        "kind": "architecture",
         "matched_row_count": 12,
         "matched_rows": [
           {
-            "scope": "model",
             "arch_id": "fp16_nm1",
             "macro_mode": "flat_nomacro",
-            "model_id": "mlp1",
             "metrics": {
-              "latency_ms_mean": {
-                "baseline": 0.004282,
-                "candidate": 0.004282,
+              "critical_path_ns_mean": {
+                "baseline": 5.557037432204143,
+                "candidate": 5.557037432204143,
                 "delta": 0.0
               },
               "energy_mj_mean": {
@@ -383,37 +511,37 @@
                 "candidate": 8.26948404e-07,
                 "delta": 0.0
               },
-              "critical_path_ns_mean": {
-                "baseline": 5.557037432204143,
-                "candidate": 5.557037432204143,
-                "delta": 0.0
-              },
-              "total_power_mw_mean": {
-                "baseline": 0.193122,
-                "candidate": 0.193122,
-                "delta": 0.0
-              },
               "flow_elapsed_s_mean": {
                 "baseline": 848.418,
                 "candidate": 848.418,
+                "delta": 0.0
+              },
+              "latency_ms_mean": {
+                "baseline": 0.004282,
+                "candidate": 0.004282,
                 "delta": 0.0
               },
               "throughput_infer_per_s_mean": {
                 "baseline": 233535.7309668379,
                 "candidate": 233535.7309668379,
                 "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.193122,
+                "candidate": 0.193122,
+                "delta": 0.0
               }
-            }
+            },
+            "model_id": "mlp1",
+            "scope": "model"
           },
           {
-            "scope": "model",
             "arch_id": "fp16_nm1",
             "macro_mode": "flat_nomacro",
-            "model_id": "mlp2",
             "metrics": {
-              "latency_ms_mean": {
-                "baseline": 0.05353399999999999,
-                "candidate": 0.05353399999999999,
+              "critical_path_ns_mean": {
+                "baseline": 5.557037432204143,
+                "candidate": 5.557037432204143,
                 "delta": 0.0
               },
               "energy_mj_mean": {
@@ -421,37 +549,37 @@
                 "candidate": 1.0338593148e-05,
                 "delta": 0.0
               },
-              "critical_path_ns_mean": {
-                "baseline": 5.557037432204143,
-                "candidate": 5.557037432204143,
-                "delta": 0.0
-              },
-              "total_power_mw_mean": {
-                "baseline": 0.193122,
-                "candidate": 0.193122,
-                "delta": 0.0
-              },
               "flow_elapsed_s_mean": {
                 "baseline": 848.418,
                 "candidate": 848.418,
+                "delta": 0.0
+              },
+              "latency_ms_mean": {
+                "baseline": 0.05353399999999999,
+                "candidate": 0.05353399999999999,
                 "delta": 0.0
               },
               "throughput_infer_per_s_mean": {
                 "baseline": 18679.717562670452,
                 "candidate": 18679.717562670452,
                 "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.193122,
+                "candidate": 0.193122,
+                "delta": 0.0
               }
-            }
+            },
+            "model_id": "mlp2",
+            "scope": "model"
           },
           {
-            "scope": "model",
             "arch_id": "fp16_nm1",
             "macro_mode": "hier_macro",
-            "model_id": "mlp1",
             "metrics": {
-              "latency_ms_mean": {
-                "baseline": 0.004282,
-                "candidate": 0.004282,
+              "critical_path_ns_mean": {
+                "baseline": 5.774905724664045,
+                "candidate": 5.774905724664045,
                 "delta": 0.0
               },
               "energy_mj_mean": {
@@ -459,37 +587,37 @@
                 "candidate": 8.45442362e-07,
                 "delta": 0.0
               },
-              "critical_path_ns_mean": {
-                "baseline": 5.774905724664045,
-                "candidate": 5.774905724664045,
-                "delta": 0.0
-              },
-              "total_power_mw_mean": {
-                "baseline": 0.197441,
-                "candidate": 0.197441,
-                "delta": 0.0
-              },
               "flow_elapsed_s_mean": {
                 "baseline": 978.894,
                 "candidate": 978.894,
+                "delta": 0.0
+              },
+              "latency_ms_mean": {
+                "baseline": 0.004282,
+                "candidate": 0.004282,
                 "delta": 0.0
               },
               "throughput_infer_per_s_mean": {
                 "baseline": 233535.7309668379,
                 "candidate": 233535.7309668379,
                 "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.197441,
+                "candidate": 0.197441,
+                "delta": 0.0
               }
-            }
+            },
+            "model_id": "mlp1",
+            "scope": "model"
           },
           {
-            "scope": "model",
             "arch_id": "fp16_nm1",
             "macro_mode": "hier_macro",
-            "model_id": "mlp2",
             "metrics": {
-              "latency_ms_mean": {
-                "baseline": 0.05353399999999999,
-                "candidate": 0.05353399999999999,
+              "critical_path_ns_mean": {
+                "baseline": 5.774905724664045,
+                "candidate": 5.774905724664045,
                 "delta": 0.0
               },
               "energy_mj_mean": {
@@ -497,37 +625,37 @@
                 "candidate": 1.0569806494000001e-05,
                 "delta": 0.0
               },
-              "critical_path_ns_mean": {
-                "baseline": 5.774905724664045,
-                "candidate": 5.774905724664045,
-                "delta": 0.0
-              },
-              "total_power_mw_mean": {
-                "baseline": 0.197441,
-                "candidate": 0.197441,
-                "delta": 0.0
-              },
               "flow_elapsed_s_mean": {
                 "baseline": 978.894,
                 "candidate": 978.894,
+                "delta": 0.0
+              },
+              "latency_ms_mean": {
+                "baseline": 0.05353399999999999,
+                "candidate": 0.05353399999999999,
                 "delta": 0.0
               },
               "throughput_infer_per_s_mean": {
                 "baseline": 18679.717562670452,
                 "candidate": 18679.717562670452,
                 "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.197441,
+                "candidate": 0.197441,
+                "delta": 0.0
               }
-            }
+            },
+            "model_id": "mlp2",
+            "scope": "model"
           },
           {
-            "scope": "model",
             "arch_id": "fp16_nm2",
             "macro_mode": "flat_nomacro",
-            "model_id": "mlp1",
             "metrics": {
-              "latency_ms_mean": {
-                "baseline": 0.007330000000000001,
-                "candidate": 0.007330000000000001,
+              "critical_path_ns_mean": {
+                "baseline": 5.701286780426342,
+                "candidate": 5.701286780426342,
                 "delta": 0.0
               },
               "energy_mj_mean": {
@@ -535,37 +663,37 @@
                 "candidate": 1.54233462e-06,
                 "delta": 0.0
               },
-              "critical_path_ns_mean": {
-                "baseline": 5.701286780426342,
-                "candidate": 5.701286780426342,
-                "delta": 0.0
-              },
-              "total_power_mw_mean": {
-                "baseline": 0.21041400000000002,
-                "candidate": 0.21041400000000002,
-                "delta": 0.0
-              },
               "flow_elapsed_s_mean": {
                 "baseline": 829.814,
                 "candidate": 829.814,
+                "delta": 0.0
+              },
+              "latency_ms_mean": {
+                "baseline": 0.007330000000000001,
+                "candidate": 0.007330000000000001,
                 "delta": 0.0
               },
               "throughput_infer_per_s_mean": {
                 "baseline": 136425.64802182812,
                 "candidate": 136425.64802182812,
                 "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.21041400000000002,
+                "candidate": 0.21041400000000002,
+                "delta": 0.0
               }
-            }
+            },
+            "model_id": "mlp1",
+            "scope": "model"
           },
           {
-            "scope": "model",
             "arch_id": "fp16_nm2",
             "macro_mode": "flat_nomacro",
-            "model_id": "mlp2",
             "metrics": {
-              "latency_ms_mean": {
-                "baseline": 0.08730199999999999,
-                "candidate": 0.08730199999999999,
+              "critical_path_ns_mean": {
+                "baseline": 5.701286780426342,
+                "candidate": 5.701286780426342,
                 "delta": 0.0
               },
               "energy_mj_mean": {
@@ -573,37 +701,37 @@
                 "candidate": 1.8369563028000002e-05,
                 "delta": 0.0
               },
-              "critical_path_ns_mean": {
-                "baseline": 5.701286780426342,
-                "candidate": 5.701286780426342,
-                "delta": 0.0
-              },
-              "total_power_mw_mean": {
-                "baseline": 0.21041400000000002,
-                "candidate": 0.21041400000000002,
-                "delta": 0.0
-              },
               "flow_elapsed_s_mean": {
                 "baseline": 829.814,
                 "candidate": 829.814,
+                "delta": 0.0
+              },
+              "latency_ms_mean": {
+                "baseline": 0.08730199999999999,
+                "candidate": 0.08730199999999999,
                 "delta": 0.0
               },
               "throughput_infer_per_s_mean": {
                 "baseline": 11454.4913060411,
                 "candidate": 11454.4913060411,
                 "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.21041400000000002,
+                "candidate": 0.21041400000000002,
+                "delta": 0.0
               }
-            }
+            },
+            "model_id": "mlp2",
+            "scope": "model"
           },
           {
-            "scope": "model",
             "arch_id": "fp16_nm2",
             "macro_mode": "hier_macro",
-            "model_id": "mlp1",
             "metrics": {
-              "latency_ms_mean": {
-                "baseline": 0.007330000000000001,
-                "candidate": 0.007330000000000001,
+              "critical_path_ns_mean": {
+                "baseline": 5.740890641774165,
+                "candidate": 5.740890641774165,
                 "delta": 0.0
               },
               "energy_mj_mean": {
@@ -611,37 +739,37 @@
                 "candidate": 1.5599339500000002e-06,
                 "delta": 0.0
               },
-              "critical_path_ns_mean": {
-                "baseline": 5.740890641774165,
-                "candidate": 5.740890641774165,
-                "delta": 0.0
-              },
-              "total_power_mw_mean": {
-                "baseline": 0.21281500000000003,
-                "candidate": 0.21281500000000003,
-                "delta": 0.0
-              },
               "flow_elapsed_s_mean": {
                 "baseline": 981.7819999999999,
                 "candidate": 981.7819999999999,
+                "delta": 0.0
+              },
+              "latency_ms_mean": {
+                "baseline": 0.007330000000000001,
+                "candidate": 0.007330000000000001,
                 "delta": 0.0
               },
               "throughput_infer_per_s_mean": {
                 "baseline": 136425.64802182812,
                 "candidate": 136425.64802182812,
                 "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.21281500000000003,
+                "candidate": 0.21281500000000003,
+                "delta": 0.0
               }
-            }
+            },
+            "model_id": "mlp1",
+            "scope": "model"
           },
           {
-            "scope": "model",
             "arch_id": "fp16_nm2",
             "macro_mode": "hier_macro",
-            "model_id": "mlp2",
             "metrics": {
-              "latency_ms_mean": {
-                "baseline": 0.08730199999999999,
-                "candidate": 0.08730199999999999,
+              "critical_path_ns_mean": {
+                "baseline": 5.740890641774165,
+                "candidate": 5.740890641774165,
                 "delta": 0.0
               },
               "energy_mj_mean": {
@@ -649,37 +777,37 @@
                 "candidate": 1.857917513e-05,
                 "delta": 0.0
               },
-              "critical_path_ns_mean": {
-                "baseline": 5.740890641774165,
-                "candidate": 5.740890641774165,
-                "delta": 0.0
-              },
-              "total_power_mw_mean": {
-                "baseline": 0.21281500000000003,
-                "candidate": 0.21281500000000003,
-                "delta": 0.0
-              },
               "flow_elapsed_s_mean": {
                 "baseline": 981.7819999999999,
                 "candidate": 981.7819999999999,
+                "delta": 0.0
+              },
+              "latency_ms_mean": {
+                "baseline": 0.08730199999999999,
+                "candidate": 0.08730199999999999,
                 "delta": 0.0
               },
               "throughput_infer_per_s_mean": {
                 "baseline": 11454.4913060411,
                 "candidate": 11454.4913060411,
                 "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.21281500000000003,
+                "candidate": 0.21281500000000003,
+                "delta": 0.0
               }
-            }
+            },
+            "model_id": "mlp2",
+            "scope": "model"
           },
           {
-            "scope": "aggregate",
             "arch_id": "fp16_nm1",
             "macro_mode": "flat_nomacro",
-            "model_id": null,
             "metrics": {
-              "latency_ms_mean": {
-                "baseline": 0.028907999999999996,
-                "candidate": 0.028907999999999996,
+              "critical_path_ns_mean": {
+                "baseline": 5.557037432204143,
+                "candidate": 5.557037432204143,
                 "delta": 0.0
               },
               "energy_mj_mean": {
@@ -687,37 +815,37 @@
                 "candidate": 5.582770776e-06,
                 "delta": 0.0
               },
-              "critical_path_ns_mean": {
-                "baseline": 5.557037432204143,
-                "candidate": 5.557037432204143,
-                "delta": 0.0
-              },
-              "total_power_mw_mean": {
-                "baseline": 0.193122,
-                "candidate": 0.193122,
-                "delta": 0.0
-              },
               "flow_elapsed_s_mean": {
                 "baseline": 848.418,
                 "candidate": 848.418,
+                "delta": 0.0
+              },
+              "latency_ms_mean": {
+                "baseline": 0.028907999999999996,
+                "candidate": 0.028907999999999996,
                 "delta": 0.0
               },
               "throughput_infer_per_s_mean": {
                 "baseline": 126107.72426475417,
                 "candidate": 126107.72426475417,
                 "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.193122,
+                "candidate": 0.193122,
+                "delta": 0.0
               }
-            }
+            },
+            "model_id": null,
+            "scope": "aggregate"
           },
           {
-            "scope": "aggregate",
             "arch_id": "fp16_nm1",
             "macro_mode": "hier_macro",
-            "model_id": null,
             "metrics": {
-              "latency_ms_mean": {
-                "baseline": 0.028907999999999996,
-                "candidate": 0.028907999999999996,
+              "critical_path_ns_mean": {
+                "baseline": 5.774905724664045,
+                "candidate": 5.774905724664045,
                 "delta": 0.0
               },
               "energy_mj_mean": {
@@ -725,37 +853,37 @@
                 "candidate": 5.707624428e-06,
                 "delta": 0.0
               },
-              "critical_path_ns_mean": {
-                "baseline": 5.774905724664045,
-                "candidate": 5.774905724664045,
-                "delta": 0.0
-              },
-              "total_power_mw_mean": {
-                "baseline": 0.197441,
-                "candidate": 0.197441,
-                "delta": 0.0
-              },
               "flow_elapsed_s_mean": {
                 "baseline": 978.894,
                 "candidate": 978.894,
+                "delta": 0.0
+              },
+              "latency_ms_mean": {
+                "baseline": 0.028907999999999996,
+                "candidate": 0.028907999999999996,
                 "delta": 0.0
               },
               "throughput_infer_per_s_mean": {
                 "baseline": 126107.72426475417,
                 "candidate": 126107.72426475417,
                 "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.197441,
+                "candidate": 0.197441,
+                "delta": 0.0
               }
-            }
+            },
+            "model_id": null,
+            "scope": "aggregate"
           },
           {
-            "scope": "aggregate",
             "arch_id": "fp16_nm2",
             "macro_mode": "flat_nomacro",
-            "model_id": null,
             "metrics": {
-              "latency_ms_mean": {
-                "baseline": 0.047316,
-                "candidate": 0.047316,
+              "critical_path_ns_mean": {
+                "baseline": 5.701286780426342,
+                "candidate": 5.701286780426342,
                 "delta": 0.0
               },
               "energy_mj_mean": {
@@ -763,37 +891,37 @@
                 "candidate": 9.955948824e-06,
                 "delta": 0.0
               },
-              "critical_path_ns_mean": {
-                "baseline": 5.701286780426342,
-                "candidate": 5.701286780426342,
-                "delta": 0.0
-              },
-              "total_power_mw_mean": {
-                "baseline": 0.21041400000000002,
-                "candidate": 0.21041400000000002,
-                "delta": 0.0
-              },
               "flow_elapsed_s_mean": {
                 "baseline": 829.814,
                 "candidate": 829.814,
+                "delta": 0.0
+              },
+              "latency_ms_mean": {
+                "baseline": 0.047316,
+                "candidate": 0.047316,
                 "delta": 0.0
               },
               "throughput_infer_per_s_mean": {
                 "baseline": 73940.06966393461,
                 "candidate": 73940.06966393461,
                 "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.21041400000000002,
+                "candidate": 0.21041400000000002,
+                "delta": 0.0
               }
-            }
+            },
+            "model_id": null,
+            "scope": "aggregate"
           },
           {
-            "scope": "aggregate",
             "arch_id": "fp16_nm2",
             "macro_mode": "hier_macro",
-            "model_id": null,
             "metrics": {
-              "latency_ms_mean": {
-                "baseline": 0.047316,
-                "candidate": 0.047316,
+              "critical_path_ns_mean": {
+                "baseline": 5.740890641774165,
+                "candidate": 5.740890641774165,
                 "delta": 0.0
               },
               "energy_mj_mean": {
@@ -801,95 +929,92 @@
                 "candidate": 1.0069554539999999e-05,
                 "delta": 0.0
               },
-              "critical_path_ns_mean": {
-                "baseline": 5.740890641774165,
-                "candidate": 5.740890641774165,
-                "delta": 0.0
-              },
-              "total_power_mw_mean": {
-                "baseline": 0.21281500000000003,
-                "candidate": 0.21281500000000003,
-                "delta": 0.0
-              },
               "flow_elapsed_s_mean": {
                 "baseline": 981.7819999999999,
                 "candidate": 981.7819999999999,
+                "delta": 0.0
+              },
+              "latency_ms_mean": {
+                "baseline": 0.047316,
+                "candidate": 0.047316,
                 "delta": 0.0
               },
               "throughput_infer_per_s_mean": {
                 "baseline": 73940.06966393461,
                 "candidate": 73940.06966393461,
                 "delta": 0.0
+              },
+              "total_power_mw_mean": {
+                "baseline": 0.21281500000000003,
+                "candidate": 0.21281500000000003,
+                "delta": 0.0
               }
-            }
-          }
-        ]
-      },
-      "source_refs": {
-        "best_point_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/best_point.json",
-        "summary_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/summary.csv",
-        "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/results.csv",
-        "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/report.md",
-        "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
-        "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
-        "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/artifacts/perf/fp16_nm1/mlp1/trace.json",
-        "focused_model_artifacts": [
-          {
-            "model_id": "mlp1",
-            "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
-            "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
-            "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/artifacts/perf/fp16_nm1/mlp1/trace.json"
-          },
-          {
-            "model_id": "mlp2",
-            "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/artifacts/mapper/fp16_nm1/mlp2/schedule.yml",
-            "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/artifacts/mapper/fp16_nm1/mlp2/descriptors.bin",
-            "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/artifacts/perf/fp16_nm1/mlp2/trace.json"
+            },
+            "model_id": null,
+            "scope": "aggregate"
           }
         ],
-        "baseline_summary_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_contract_eval_confirm_v1/summary.csv",
+        "outcome": "quality_improved",
+        "primary_question": "Does the exact probability-path candidate improve the llm_decoder_eval_tiny_v1 token-quality gate relative to the prior q4 PWL softmax plus quantized reciprocal candidate?",
+        "proposal_id": "prop_l2_decoder_exact_probability_path_v1",
+        "summary": "Decoder quality improved from 0.8 to 1.0 exact/top-k on 5 samples; campaign physical metrics matched the paired baseline.",
+        "title": "LLM decoder exact probability-path candidate"
+      },
+      "recommendation": {
+        "arch_id": "fp16_nm1",
+        "critical_path_ns_mean": 5.557037432204143,
+        "die_area_um2_mean": 2250000.0,
+        "energy_mj_mean": 5.582770776e-06,
+        "flow_elapsed_s_mean": 848.418,
+        "latency_ms_mean": 0.028907999999999996,
+        "macro_mode": "flat_nomacro",
+        "objective_rank": 1,
+        "objective_score": "0.0",
+        "total_power_mw_mean": 0.193122
+      },
+      "review_metadata_source_commit": "251d3fddd95a52d4555d670cf3b95bec26a4d0b7",
+      "run_key": "l2_decoder_exact_probability_path_v1_run_930a1658a4e342e8",
+      "source_commit": "251d3fddd95a52d4555d670cf3b95bec26a4d0b7",
+      "source_refs": {
+        "baseline_decoder_quality_compare_json": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_compare__l2_decoder_contract_eval_confirm_v1.json",
         "baseline_report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_contract_eval_confirm_v1/report.md",
-        "objective_sweep_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/objective_sweep.csv"
-      }
-    }
+        "baseline_summary_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_contract_eval_confirm_v1/summary.csv",
+        "best_point_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/best_point.json",
+        "decoder_contract_validation_json": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_contract_validation__l2_decoder_exact_probability_path_v1.json",
+        "decoder_quality_compare_json": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_compare__l2_decoder_exact_probability_path_v1.json",
+        "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+        "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/artifacts/perf/fp16_nm1/mlp1/trace.json",
+        "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+        "focused_model_artifacts": [
+          {
+            "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+            "model_id": "mlp1",
+            "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/artifacts/perf/fp16_nm1/mlp1/trace.json",
+            "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml"
+          },
+          {
+            "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/artifacts/mapper/fp16_nm1/mlp2/descriptors.bin",
+            "model_id": "mlp2",
+            "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/artifacts/perf/fp16_nm1/mlp2/trace.json",
+            "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/artifacts/mapper/fp16_nm1/mlp2/schedule.yml"
+          }
+        ],
+        "missing_model_check_json": "runs/datasets/llm_decoder_eval_tiny_v1/missing_model_check__l2_decoder_exact_probability_path_v1.json",
+        "objective_sweep_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/objective_sweep.csv",
+        "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/report.md",
+        "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/results.csv",
+        "summary_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_exact_probability_path_v1/summary.csv"
+      },
+      "task_type": "l2_campaign",
+      "version": 0.1
+    },
+    "sha256": "3d4de2601b5b407b4cb478af40e4942a5f9e6d5cb2f07c07afd8ff24c3646e7c",
+    "storage_mode": "repo"
   },
-  "developer_loop": {
-    "comparison": {
-      "role": "candidate",
-      "paired_baseline_item_id": "l2_decoder_contract_eval_confirm_v1"
-    },
-    "evaluation": {
-      "mode": "paired_comparison",
-      "expected_reason": "Exact probability path should improve over the prior 0.8 exact/top-k decoder rates while preserving the contract.",
-      "expected_direction": "better_than_historical"
-    },
-    "abstraction": {
-      "layer": "decoder_probability_path"
-    },
-    "proposal_id": "prop_l2_decoder_exact_probability_path_v1",
-    "dependencies": {
-      "item_ids": [],
-      "requires_merged_inputs": true,
-      "requires_materialized_refs": true
-    },
-    "proposal_path": "docs/proposals/prop_l2_decoder_exact_probability_path_v1/proposal.json"
-  },
+  "review_metadata_source_commit": "251d3fddd95a52d4555d670cf3b95bec26a4d0b7",
+  "run_key": "l2_decoder_exact_probability_path_v1_run_930a1658a4e342e8",
+  "source_commit": "251d3fddd95a52d4555d670cf3b95bec26a4d0b7",
   "submission_history": null,
-  "pr_payload": {
-    "branch": "eval/l2_decoder_exact_probability_path_v1/s20260428t074045z",
-    "title": "eval: run llm decoder exact probability-path evaluation",
-    "body_fields": {
-      "host": "b7c2d9c80c1c",
-      "session_id": "s20260428t074045z",
-      "evaluator_id": "control_plane",
-      "queue_item_id": "l2_decoder_exact_probability_path_v1"
-    },
-    "body_md": "## Summary\n- item_id: `l2_decoder_exact_probability_path_v1`\n- run_key: `l2_decoder_exact_probability_path_v1_run_930a1658a4e342e8`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `6/6 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_decoder_exact_probability_path_v1/evaluated.json`\n- metrics_rows_count: `24`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_decoder_exact_probability_path_v1.json`\n\n## Developer Context\n- proposal_id: `prop_l2_decoder_exact_probability_path_v1`\n- proposal_path: `docs/proposals/prop_l2_decoder_exact_probability_path_v1/proposal.json`\n- reviewer_first_read: `docs/proposals/prop_l2_decoder_exact_probability_path_v1/proposal.json` plus `docs/developer_agent_review.md`\n- execution_source_commit: `251d3fddd95a52d4555d670cf3b95bec26a4d0b7`\n- review_metadata_source_commit: `251d3fddd95a52d4555d670cf3b95bec26a4d0b7`\n\n## Evaluation Mode\n- evaluation_mode: `paired_comparison`\n- abstraction_layer: `decoder_probability_path`\n- comparison_role: `candidate`\n- expected_direction: `better_than_historical`\n- expected_reason: `Exact probability path should improve over the prior 0.8 exact/top-k decoder rates while preserving the contract.`\n- expectation_status: `unexpected`\n- evaluation_summary: `Focused comparison matched the baseline with no measurable latency or energy delta.`\n\n## Focused Comparison\n- primary_question: `Does the exact probability-path candidate improve the llm_decoder_eval_tiny_v1 token-quality gate relative to the prior q4 PWL softmax plus quantized reciprocal candidate?`\n- comparison_role: `candidate`\n- proposal_outcome: `no_measurable_change`\n- comparison_summary: `Focused comparison matched the baseline with no measurable latency or energy delta.`\n- baseline_ref: `runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_contract_eval_confirm_v1`\n- baseline_item_id: `l2_decoder_contract_eval_confirm_v1`\n- latency_delta fp16_nm1/flat_nomacro/mlp1: `0.004282` -> `0.004282` ms\n- energy_delta fp16_nm1/flat_nomacro/mlp1: `8.26948404e-07` -> `8.26948404e-07` mJ\n- latency_delta fp16_nm1/flat_nomacro/mlp2: `0.05353399999999999` -> `0.05353399999999999` ms\n- energy_delta fp16_nm1/flat_nomacro/mlp2: `1.0338593148e-05` -> `1.0338593148e-05` mJ\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
-    "checklist": [
-      "Commit lightweight campaign artifacts only",
-      "Include metrics row references in result.metrics_rows",
-      "Keep committed result_path fields repo-portable",
-      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
-    ]
-  }
+  "task_type": "l2_campaign",
+  "version": 0.1
 }
