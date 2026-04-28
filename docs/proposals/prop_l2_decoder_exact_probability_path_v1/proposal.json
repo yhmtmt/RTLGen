@@ -1,0 +1,64 @@
+{
+  "proposal_id": "prop_l2_decoder_exact_probability_path_v1",
+  "created_utc": "2026-04-28T07:29:55Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "LLM decoder exact probability-path candidate",
+  "hypothesis": "Using exact softmax and exact normalization for the first active decoder candidate should recover the tiny decoder next-token and top-k containment misses while preserving the same ONNX model, tokenizer, selected-tensor trace contract, and missing-model failure behavior.",
+  "direct_comparison": {
+    "primary_question": "Does the exact probability-path candidate improve the llm_decoder_eval_tiny_v1 token-quality gate relative to the prior q4 PWL softmax plus quantized reciprocal candidate?",
+    "include": [
+      "llm_decoder_eval_tiny_v1 reference and candidate manifests",
+      "next-token exact-match and top-k containment rates",
+      "selected tensor shape/missing-tensor checks",
+      "missing ONNX model path failure check"
+    ],
+    "exclude": [
+      "claiming a hardware approximation is accepted",
+      "changing the tokenizer, prompt set, ONNX model, or selected tensor trace list",
+      "full NPU campaign PPA conclusions"
+    ],
+    "follow_on_broad_sweep": [
+      "reintroduce bounded approximation knobs only after the exact probability path is established as the quality-preserving candidate reference"
+    ]
+  },
+  "expected_benefit": [
+    "raise decoder next-token exact-match and top-k containment above the previous 0.8 rates",
+    "preserve tensor-shape contract coverage for all selected present.* tensors",
+    "keep the active candidate backend suitable as a reference point for later approximation sweeps"
+  ],
+  "risks": [
+    "exact probability math is not itself a hardware approximation win",
+    "the tiny prompt set is too small to prove broader language-model quality",
+    "selected tensor hashes remain intentionally different because candidate traces are still quantized for inspection"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "paired_comparison",
+      "abstraction_layer": "decoder_probability_path",
+      "objective": "decoder_quality",
+      "cost_class": "low",
+      "depends_on_item_ids": [
+        "l2_decoder_contract_eval_confirm_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "better_than_historical",
+        "reason": "The prior evaluator-confirmed q4 PWL/reciprocal candidate recorded 0.8 next-token exact-match and top-k containment; exact softmax plus exact normalization should recover the missed prompt without changing the model or tokenizer contract."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "control_plane/shadow_exports/review/l2_decoder_contract_eval_confirm_v1/review_package.json",
+    "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_compare__l2_decoder_contract_eval_confirm_v1.json"
+  ],
+  "knowledge_refs": [
+    "docs/architecture/llm_decoder_accuracy_stage_v1.md",
+    "npu/eval/README.md",
+    "runs/models/llm_decoder_tiny_v1/model_contract.json"
+  ]
+}

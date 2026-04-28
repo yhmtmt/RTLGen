@@ -1,0 +1,22 @@
+{
+  "proposal_id": "prop_l2_decoder_exact_probability_path_v1",
+  "source_commit": "pending_merge_commit",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_exact_probability_path_v1",
+      "task_type": "l2_campaign",
+      "objective": "decoder_quality",
+      "evaluation_mode": "paired_comparison",
+      "abstraction_layer": "decoder_probability_path",
+      "comparison_role": "candidate",
+      "paired_baseline_item_id": "l2_decoder_contract_eval_confirm_v1",
+      "expected_direction": "better_than_historical",
+      "expected_reason": "Exact softmax plus exact normalization should improve over the prior 0.8 exact/top-k rates without changing the model or tokenizer contract.",
+      "depends_on_item_ids": [
+        "l2_decoder_contract_eval_confirm_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    }
+  ]
+}

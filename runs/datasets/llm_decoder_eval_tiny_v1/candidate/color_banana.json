@@ -1,7 +1,7 @@
 {
   "backend": {
     "backend_id": "command_json_v1",
-    "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q4_w_q4_norm_recip_q10_prob_fp",
+    "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_exact_prob_fp",
     "command": [
       "/workspaces/RTLGen/control_plane/.venv/bin/python",
       "/workspaces/RTLGen/npu/eval/run_llm_decoder_onnx_candidate.py"
@@ -11,16 +11,13 @@
     "input_name": "input_ids",
     "interface": "decoder_backend_v1",
     "model_config_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/config.json",
-    "normalization_mode": "reciprocal_quantized",
-    "normalization_reciprocal_bits": 10,
+    "normalization_mode": "exact",
     "onnx_model_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/model.onnx",
     "output_name": "logits",
     "request_schema": "decoder_backend_command_v1",
     "role": "candidate",
     "runtime_target": "software_emulation",
-    "softmax_input_quant_bits": 4,
-    "softmax_mode": "approx_pwl",
-    "softmax_weight_quant_bits": 4,
+    "softmax_mode": "exact",
     "timeout_s": 30.0,
     "topk": 5,
     "trace_output_patterns": [
@@ -43,42 +40,16 @@
         "mode": "identity_logits"
       },
       "normalization": {
-        "exponent": -14,
-        "mantissa": 0.7293144278192604,
-        "mantissa_quantized": 0.729227761485826,
-        "mode": "normalize_reciprocal_quantized",
-        "reciprocal": 4.4513820057327903e-05,
-        "reciprocal_bits": 10,
-        "reciprocal_quantized": 4.450853036412512e-05,
-        "sum_weights": 22464.93333333631
+        "mode": "normalize_exact",
+        "sum_weights": 14164.30519656722
       },
       "probabilities": {
         "mode": "identity_probabilities"
       },
       "softmax": {
-        "anchors": [
-          -8.0,
-          -4.0,
-          -2.0,
-          0.0
-        ],
-        "input_quant": {
-          "bits": 4,
-          "levels": 7,
-          "max_abs": 2.1805217266082764,
-          "mode": "softmax_input_quant",
-          "scale": 0.31150310380118235
-        },
         "max_logit": 1.2921810150146484,
-        "mode": "softmax_approx_pwl",
-        "shifted_min": -2.1805217266082764,
-        "weight_quant": {
-          "bits": 4,
-          "levels": 15,
-          "max_value": 1.0,
-          "mode": "softmax_weight_quant",
-          "scale": 0.06666666666666667
-        }
+        "mode": "softmax_exact",
+        "shifted_min": -2.1805217266082764
       }
     },
     "library": "onnxruntime",
@@ -88,7 +59,7 @@
     "score_rank": 1
   },
   "candidate": {
-    "confidence": 4.450853036412512e-05,
+    "confidence": 7.06000037504384e-05,
     "next_token_id": 3221,
     "next_token_text": " usually",
     "selected_tensors": [
@@ -184,33 +155,33 @@
     "selected_tensors_sha256": "96ea7ab13e05b2f1aba8a1d39e52f86f6aab3f9cc373c76ae10d4efd2e072c20",
     "topk": [
       {
-        "score": 4.450853036412512e-05,
+        "score": 7.06000037504384e-05,
         "token_id": 3221,
         "token_text": " usually"
       },
       {
-        "score": 3.2639588933691755e-05,
-        "token_id": 25,
-        "token_text": ":"
+        "score": 4.3903120988729204e-05,
+        "token_id": 22851,
+        "token_text": "Starting"
       },
       {
-        "score": 3.2639588933691755e-05,
-        "token_id": 93,
-        "token_text": "~"
+        "score": 4.337091471875266e-05,
+        "token_id": 25339,
+        "token_text": " Grab"
       },
       {
-        "score": 3.2639588933691755e-05,
-        "token_id": 135,
-        "token_text": "\ufffd"
+        "score": 4.328972793231658e-05,
+        "token_id": 40170,
+        "token_text": " spraying"
       },
       {
-        "score": 3.2639588933691755e-05,
-        "token_id": 174,
-        "token_text": "\ufffd"
+        "score": 4.3125959194828916e-05,
+        "token_id": 49224,
+        "token_text": "hiba"
       }
     ]
   },
-  "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q4_w_q4_norm_recip_q10_prob_fp",
+  "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_exact_prob_fp",
   "dataset_id": "llm_decoder_eval_tiny_v1",
   "dataset_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/manifest.json",
   "decode_policy": {
