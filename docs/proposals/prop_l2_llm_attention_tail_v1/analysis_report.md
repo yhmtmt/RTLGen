@@ -2,13 +2,13 @@
 
 ## Candidate
 - `proposal_id`: `prop_l2_llm_attention_tail_v1`
-- `candidate_id`: `l2_artifact_sync_linkage_confirm_v1`
+- `candidate_id`: `l2_decoder_contract_eval_confirm_v1`
 
 ## Evaluations Consumed
-- `l2_artifact_sync_linkage_confirm_v1`
-- `l2_artifact_sync_linkage_confirm_v1_run_f4d69e3b650ad5a0`
-- source commit: `ccc7f79257e4b489b02bb0fb10235a84425c879b`
-- review: PR #229
+- `l2_decoder_contract_eval_confirm_v1`
+- `l2_decoder_contract_eval_confirm_v1_run_532701d69527b741`
+- source commit: `0d6f8ec8e5aadfad4629d74120992c9bcd49bd60`
+- review: PR #230
 
 ## Baseline Comparison
 - baseline_ref: `None`
@@ -29,4 +29,4 @@
 ## Recommendation
 - `iterate`
 - reason: Broad ranking evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.
-- next_action: inspect follow-on work after l2_artifact_sync_linkage_confirm_v1
+- next_action: inspect follow-on work after l2_decoder_contract_eval_confirm_v1

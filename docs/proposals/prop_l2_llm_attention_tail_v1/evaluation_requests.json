@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_llm_attention_tail_v1",
-  "source_commit": "ccc7f79257e4b489b02bb0fb10235a84425c879b",
+  "source_commit": "0d6f8ec8e5aadfad4629d74120992c9bcd49bd60",
   "requested_items": [
     {
       "item_id": "l2_llm_attention_tail_v1_nangate45_r1",
@@ -30,6 +30,18 @@
       "merge_commit": "315391c80ece6e055091f23e3d4a912495abd6a5",
       "merged_utc": "2026-04-28T02:57:45.187364Z",
       "notes": "Merged via PR #229 and merge 315391c80ece6e055091f23e3d4a912495abd6a5 at 2026-04-28T02:57:45.187364Z."
+    },
+    {
+      "item_id": "l2_decoder_contract_eval_confirm_v1",
+      "task_type": "l2_campaign",
+      "objective": "Confirm the LLM decoder contract and quality checks run under the evaluator daemon and package review evidence.",
+      "evaluation_mode": "broad_ranking",
+      "abstraction_layer": "",
+      "status": "merged",
+      "merged_pr_number": 230,
+      "merge_commit": "2db9e64277f5e098142eaf796a4bf01fddb9f958",
+      "merged_utc": "2026-04-28T07:00:56.141016Z",
+      "notes": "Merged via PR #230 and merge 2db9e64277f5e098142eaf796a4bf01fddb9f958 at 2026-04-28T07:00:56.141016Z."
     }
   ]
 }

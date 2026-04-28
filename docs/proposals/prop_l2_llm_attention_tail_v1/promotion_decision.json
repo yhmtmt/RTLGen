@@ -1,15 +1,15 @@
 {
   "proposal_id": "prop_l2_llm_attention_tail_v1",
-  "candidate_id": "l2_artifact_sync_linkage_confirm_v1",
+  "candidate_id": "l2_decoder_contract_eval_confirm_v1",
   "decision": "iterate",
   "reason": "Broad ranking evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
   "evidence_refs": [
-    "item:l2_artifact_sync_linkage_confirm_v1",
-    "run:l2_artifact_sync_linkage_confirm_v1_run_f4d69e3b650ad5a0",
-    "artifact:control_plane/shadow_exports/l2_decisions/l2_artifact_sync_linkage_confirm_v1.json",
-    "pr:#229",
-    "https://github.com/yhmtmt/RTLGen/pull/229"
+    "item:l2_decoder_contract_eval_confirm_v1",
+    "run:l2_decoder_contract_eval_confirm_v1_run_532701d69527b741",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_contract_eval_confirm_v1.json",
+    "pr:#230",
+    "https://github.com/yhmtmt/RTLGen/pull/230"
   ],
-  "next_action": "inspect follow-on work after l2_artifact_sync_linkage_confirm_v1",
+  "next_action": "inspect follow-on work after l2_decoder_contract_eval_confirm_v1",
   "requires_human_approval": false
 }

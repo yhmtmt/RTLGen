@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_llm_attention_tail_v1",
   "decision": "iterate",
-  "pr_number": 229,
-  "merge_commit": "315391c80ece6e055091f23e3d4a912495abd6a5",
-  "merged_utc": "2026-04-28T02:57:45.187364Z"
+  "pr_number": 230,
+  "merge_commit": "2db9e64277f5e098142eaf796a4bf01fddb9f958",
+  "merged_utc": "2026-04-28T07:00:56.141016Z"
 }
