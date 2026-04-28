@@ -1,0 +1,102 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-04-28T09:06:00.394608Z",
+  "item_id": "l2_artifact_sync_submission_progress_confirm_v1",
+  "run_key": "l2_artifact_sync_submission_progress_confirm_v1_run_b6634f6bd4da0721",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "8294a774e8c6145e497946277c4250675d9cf177",
+  "review_metadata_source_commit": "22f5c841552318026d8afe8da3a87c07a0db3a67",
+  "objective": "Confirm PR #240 prevents artifact_sync blocked-submission false positives once review/submission progress exists.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+    ],
+    "design_dirs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+    ],
+    "macro_manifests": [
+      "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+      "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+    ],
+    "decoder_contract": {
+      "quality_out": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_compare__l2_artifact_sync_submission_progress_confirm_v1.json",
+      "validation_out": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_contract_validation__l2_artifact_sync_submission_progress_confirm_v1.json",
+      "dataset_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/manifest.json",
+      "candidate_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_manifest.json",
+      "reference_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/reference_manifest.json",
+      "baseline_quality_out": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_compare__l2_decoder_contract_eval_confirm_v1.json",
+      "missing_model_check_out": "runs/datasets/llm_decoder_eval_tiny_v1/missing_model_check__l2_artifact_sync_submission_progress_confirm_v1.json"
+    },
+    "generated_campaign": {
+      "path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign__l2_artifact_sync_submission_progress_confirm_v1.json",
+      "outputs": {
+        "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_submission_progress_confirm_v1/report.md",
+        "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_submission_progress_confirm_v1/results.csv",
+        "campaign_dir": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_submission_progress_confirm_v1"
+      },
+      "clean_outputs": true,
+      "base_campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json"
+    },
+    "candidate_manifests": [
+      "runs/candidates/nangate45/module_candidates.json"
+    ]
+  },
+  "recommendation": {
+    "arch_id": "fp16_nm1",
+    "macro_mode": "flat_nomacro",
+    "objective_rank": 1,
+    "objective_score": "0.0",
+    "latency_ms_mean": 0.028907999999999996,
+    "energy_mj_mean": 5.582770776e-06,
+    "critical_path_ns_mean": 5.557037432204143,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.193122,
+    "flow_elapsed_s_mean": 848.418
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_cp_artifact_sync_submission_progress_v1",
+    "title": "Confirm artifact-sync resolver ignores submitted runs with PR progress",
+    "primary_question": "Does the resolver remain quiet during the artifact_sync to submitted/awaiting-review transition after PR #240?",
+    "evaluation_mode": "measurement_only",
+    "comparison_role": "workflow_confirmation",
+    "abstraction_layer": "decoder_probability_path",
+    "expected_direction": "iterate",
+    "expected_reason": "Workflow confirmation only; resolver should remain quiet after submission progress events.",
+    "summary": "This item records metrics for the requested architecture point and does not emit a proposal judgment.",
+    "expectation_status": "not_applicable"
+  },
+  "proposal_assessment": null,
+  "source_refs": {
+    "best_point_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_submission_progress_confirm_v1/best_point.json",
+    "summary_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_submission_progress_confirm_v1/summary.csv",
+    "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_submission_progress_confirm_v1/results.csv",
+    "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_submission_progress_confirm_v1/report.md",
+    "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_submission_progress_confirm_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+    "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_submission_progress_confirm_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+    "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_submission_progress_confirm_v1/artifacts/perf/fp16_nm1/mlp1/trace.json",
+    "focused_model_artifacts": [
+      {
+        "model_id": "mlp1",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_submission_progress_confirm_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_submission_progress_confirm_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_submission_progress_confirm_v1/artifacts/perf/fp16_nm1/mlp1/trace.json"
+      },
+      {
+        "model_id": "mlp2",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_submission_progress_confirm_v1/artifacts/mapper/fp16_nm1/mlp2/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_submission_progress_confirm_v1/artifacts/mapper/fp16_nm1/mlp2/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_submission_progress_confirm_v1/artifacts/perf/fp16_nm1/mlp2/trace.json"
+      }
+    ]
+  }
+}
