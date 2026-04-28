@@ -1,7 +1,7 @@
 {
   "backend": {
     "backend_id": "command_json_v1",
-    "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q4_w_q4_norm_recip_q10_prob_fp",
+    "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_exact_prob_fp",
     "command": [
       "/workspaces/RTLGen/control_plane/.venv/bin/python",
       "/workspaces/RTLGen/npu/eval/run_llm_decoder_onnx_candidate.py"
@@ -11,16 +11,13 @@
     "input_name": "input_ids",
     "interface": "decoder_backend_v1",
     "model_config_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/config.json",
-    "normalization_mode": "reciprocal_quantized",
-    "normalization_reciprocal_bits": 10,
+    "normalization_mode": "exact",
     "onnx_model_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/model.onnx",
     "output_name": "logits",
     "request_schema": "decoder_backend_command_v1",
     "role": "candidate",
     "runtime_target": "software_emulation",
-    "softmax_input_quant_bits": 4,
-    "softmax_mode": "approx_pwl",
-    "softmax_weight_quant_bits": 4,
+    "softmax_mode": "exact",
     "timeout_s": 30.0,
     "topk": 5,
     "trace_output_patterns": [
@@ -43,42 +40,16 @@
         "mode": "identity_logits"
       },
       "normalization": {
-        "exponent": -14,
-        "mantissa": 0.8704953917868966,
-        "mantissa_quantized": 0.8709677419354839,
-        "mode": "normalize_reciprocal_quantized",
-        "reciprocal": 5.31308222526182e-05,
-        "reciprocal_bits": 10,
-        "reciprocal_quantized": 5.3159652217741936e-05,
-        "sum_weights": 18821.466666662054
+        "mode": "normalize_exact",
+        "sum_weights": 12628.340811368442
       },
       "probabilities": {
         "mode": "identity_probabilities"
       },
       "softmax": {
-        "anchors": [
-          -8.0,
-          -4.0,
-          -2.0,
-          0.0
-        ],
-        "input_quant": {
-          "bits": 4,
-          "levels": 7,
-          "max_abs": 2.348286986351013,
-          "mode": "softmax_input_quant",
-          "scale": 0.33546956947871615
-        },
         "max_logit": 1.4084631204605103,
-        "mode": "softmax_approx_pwl",
-        "shifted_min": -2.348286986351013,
-        "weight_quant": {
-          "bits": 4,
-          "levels": 15,
-          "max_value": 1.0,
-          "mode": "softmax_weight_quant",
-          "scale": 0.06666666666666667
-        }
+        "mode": "softmax_exact",
+        "shifted_min": -2.348286986351013
       }
     },
     "library": "onnxruntime",
@@ -88,7 +59,7 @@
     "score_rank": 1
   },
   "candidate": {
-    "confidence": 5.3159652217741936e-05,
+    "confidence": 7.918696643820126e-05,
     "next_token_id": 262,
     "next_token_text": " the",
     "selected_tensors": [
@@ -184,33 +155,33 @@
     "selected_tensors_sha256": "efa7cfd398ac84eca7c276f7d352568c6fd5fad8afe46368d0c6933b6e105ea4",
     "topk": [
       {
-        "score": 5.3159652217741936e-05,
+        "score": 7.918696643820126e-05,
         "token_id": 262,
         "token_text": " the"
       },
       {
-        "score": 4.607169858870968e-05,
+        "score": 5.082516510306384e-05,
         "token_id": 17439,
         "token_text": "Frank"
       },
       {
-        "score": 4.607169858870968e-05,
+        "score": 4.969478084822274e-05,
         "token_id": 35393,
         "token_text": "Norm"
       },
       {
-        "score": 3.898374495967742e-05,
-        "token_id": 119,
-        "token_text": "\ufffd"
+        "score": 4.533717059482821e-05,
+        "token_id": 26440,
+        "token_text": "prus"
       },
       {
-        "score": 3.898374495967742e-05,
-        "token_id": 223,
-        "token_text": "\ufffd"
+        "score": 4.471599764284134e-05,
+        "token_id": 8509,
+        "token_text": " bread"
       }
     ]
   },
-  "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q4_w_q4_norm_recip_q10_prob_fp",
+  "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_exact_prob_fp",
   "dataset_id": "llm_decoder_eval_tiny_v1",
   "dataset_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/manifest.json",
   "decode_policy": {

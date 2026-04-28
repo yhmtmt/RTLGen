@@ -2,7 +2,7 @@
   "backend_configs": {
     "candidate": {
       "backend_id": "command_json_v1",
-      "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q4_w_q4_norm_recip_q10_prob_fp",
+      "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_exact_prob_fp",
       "command": [
         "/workspaces/RTLGen/control_plane/.venv/bin/python",
         "/workspaces/RTLGen/npu/eval/run_llm_decoder_onnx_candidate.py"
@@ -10,15 +10,12 @@
       "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
       "input_name": "input_ids",
       "model_config_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/config.json",
-      "normalization_mode": "reciprocal_quantized",
-      "normalization_reciprocal_bits": 10,
+      "normalization_mode": "exact",
       "onnx_model_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/model.onnx",
       "output_name": "logits",
       "runtime_target": "software_emulation",
-      "softmax_mode": "approx_pwl",
+      "softmax_mode": "exact",
       "topk": 5,
-      "softmax_input_quant_bits": 4,
-      "softmax_weight_quant_bits": 4,
       "trace_output_patterns": [
         "present.*"
       ],
@@ -109,7 +106,7 @@
   "exact_reference_binding": "runs/models/llm_decoder_tiny_v1/reference_onnx_binding.json",
   "execution_backend": "decoder_backend_v1",
   "model_id": "llm_decoder_tiny_v1",
-  "notes": "Decoder ONNX and GPT-2-family tokenizer assets are fetched, hashed, and validated against the local ONNX Runtime exact-reference runner. The candidate side now supports both exact softmax/normalization and approximation-aware softmax/normalization paths, with the active backend using PWL softmax plus quantized reciprocal normalization.",
+  "notes": "Decoder ONNX and GPT-2-family tokenizer assets are fetched, hashed, and validated against the local ONNX Runtime exact-reference runner. The candidate side supports both exact softmax/normalization and approximation-aware softmax/normalization paths; the active backend now uses exact softmax plus exact normalization as the quality-preserving reference candidate before narrower approximation sweeps are reintroduced.",
   "status": "exact_reference_active",
   "task": "greedy_next_token",
   "tokenizer_id": "llm_decoder_gpt2_bpe_stub_v1",

@@ -1,0 +1,9 @@
+{
+  "proposal_id": "prop_l2_decoder_exact_probability_path_v1",
+  "candidate_id": "l2_decoder_exact_probability_path_v1",
+  "decision": "pending",
+  "reason": "Awaiting evaluator evidence.",
+  "evidence_refs": [],
+  "next_action": "Run paired decoder-quality evaluation through the control-plane evaluator.",
+  "requires_human_approval": true
+}
