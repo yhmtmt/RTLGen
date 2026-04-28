@@ -1,0 +1,51 @@
+{
+  "proposal_id": "prop_l2_llm_attention_tail_scheduler_visibility_v1",
+  "created_utc": "2026-04-28T11:55:00Z",
+  "created_by": "codex",
+  "layer": "layer2",
+  "kind": "workflow_validation",
+  "title": "LLM attention-tail scheduler visibility decision gate",
+  "hypothesis": "The existing LLM attention-tail campaign can produce a decision-useful scheduler visibility report by deriving per-token scaling and a bottleneck recommendation from softmax occupancy, backpressure, and dependency-wait counters.",
+  "direct_comparison": {
+    "primary_question": "Does the attention-tail benchmark show a softmax datapath bottleneck, scheduler overlap bottleneck, or insufficient evidence for architecture work?",
+    "include": [
+      "llm_attention_tail_v1 campaign on nangate45",
+      "per-token latency derived from model sequence length",
+      "softmax occupancy, backpressure, and dependency wait counters",
+      "a review-package recommendation for the next architecture action"
+    ],
+    "exclude": [
+      "new softmax datapath changes",
+      "new mapper scheduling changes",
+      "decoder token-quality changes"
+    ],
+    "follow_on_broad_sweep": []
+  },
+  "expected_benefit": [
+    "turns attention-tail evidence into an explicit architecture decision gate",
+    "prevents launching softmax buffering or pipeline work when counters do not show pressure",
+    "keeps the next architecture proposal grounded in measured scheduler behavior"
+  ],
+  "risks": [
+    "derived per-token latency depends on model-id naming for this benchmark slice",
+    "zero backpressure in the current simulator may mean either no bottleneck or insufficient stress"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_llm_attention_tail_scheduler_visibility_v1",
+      "task_type": "l2_campaign",
+      "objective": "scheduler_visibility",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_llm_attention_tail_v1/campaign.json"
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_llm_attention_tail_v1/proposal.json",
+    "runs/campaigns/npu/e2e_eval_llm_attention_tail_v1__l2_llm_attention_tail_v1_nangate45_r1/report.md"
+  ],
+  "knowledge_refs": [
+    "docs/backlog/items/item_eval_llm_attention_suite_v1.md",
+    "docs/architecture/llm_attention_benchmark_ladder.md",
+    "npu/eval/report_campaign.py"
+  ]
+}

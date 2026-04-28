@@ -13,6 +13,7 @@ import csv
 import json
 import math
 import os
+import re
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -91,6 +92,25 @@ def fmt(value: Optional[float], digits: int = 4) -> str:
     if value is None:
         return ""
     return f"{value:.{digits}f}"
+
+
+def parse_attention_tail_model_id(model_id: str) -> Dict[str, Optional[int]]:
+    match = re.search(r"tail_attn(?P<blocks>\d+)_s(?P<seq>\d+)_h(?P<hidden>\d+)", str(model_id or ""))
+    if not match:
+        return {"attention_blocks": None, "sequence_length": None, "hidden_size": None}
+    return {
+        "attention_blocks": int(match.group("blocks")),
+        "sequence_length": int(match.group("seq")),
+        "hidden_size": int(match.group("hidden")),
+    }
+
+
+def divide_or_none(value: Any, denom: Any, scale: float = 1.0) -> Optional[float]:
+    num = safe_float(value)
+    den = safe_float(denom)
+    if num is None or den is None or abs(den) < 1e-12:
+        return None
+    return (num / den) * scale
 
 
 def load_results_rows(results_csv: Path) -> List[Dict[str, str]]:
@@ -235,6 +255,70 @@ def pareto_front(rows: List[Dict[str, Any]], keys: List[str]) -> List[Dict[str, 
     return out
 
 
+def build_scheduler_visibility_decision(rows: List[Dict[str, Any]]) -> Dict[str, Any]:
+    if not rows:
+        return {
+            "recommendation": "insufficient_scheduler_visibility",
+            "rationale": "No scheduler rows were available for a decision.",
+            "metrics": {},
+        }
+
+    def max_metric(key: str) -> Optional[float]:
+        vals = [safe_float(row.get(key)) for row in rows]
+        vals = [v for v in vals if v is not None]
+        return max(vals) if vals else None
+
+    def min_metric(key: str) -> Optional[float]:
+        vals = [safe_float(row.get(key)) for row in rows]
+        vals = [v for v in vals if v is not None]
+        return min(vals) if vals else None
+
+    max_occupancy = max_metric("softmax_engine_occupancy_mean")
+    max_backpressure_events = max_metric("softmax_backpressure_events_mean")
+    max_backpressure_ns = max_metric("softmax_backpressure_ns_mean")
+    max_dependency_wait_ns = max_metric("dependency_wait_ns_mean")
+    max_wait_on_gemm_ns = max_metric("softmax_wait_on_gemm_ns_mean")
+    max_wait_on_misc_ns = max_metric("softmax_wait_on_misc_compute_ns_mean")
+    min_us_per_token = min_metric("latency_us_per_token_mean")
+    max_us_per_token = max_metric("latency_us_per_token_mean")
+
+    backpressure_present = any((v or 0.0) > 0.0 for v in (max_backpressure_events, max_backpressure_ns))
+    wait_present = any((v or 0.0) > 0.0 for v in (max_dependency_wait_ns, max_wait_on_gemm_ns, max_wait_on_misc_ns))
+    occupancy_high = max_occupancy is not None and max_occupancy >= 0.70
+    occupancy_medium = max_occupancy is not None and max_occupancy >= 0.35
+
+    if backpressure_present:
+        recommendation = "queue_depth_or_overlap_scheduler_work"
+        rationale = "Softmax backpressure is present, so the next useful change should target queue-depth or overlap policy before datapath changes."
+    elif wait_present:
+        recommendation = "queue_dependency_visibility_or_overlap_work"
+        rationale = "Dependency waits are present without softmax backpressure, pointing first at scheduler overlap and dependency visibility."
+    elif occupancy_high:
+        recommendation = "softmax_pipeline_partitioning"
+        rationale = "Softmax occupancy is high with no explicit queue backpressure, so pipeline partitioning is the next architecture candidate."
+    elif occupancy_medium:
+        recommendation = "softmax_output_buffering_probe"
+        rationale = "Softmax occupancy is material but not saturated, so an output-buffering probe is a bounded next architecture check."
+    else:
+        recommendation = "no_architecture_change_yet"
+        rationale = "Softmax occupancy is low and no wait or backpressure counters are active; the current evidence does not justify a softmax architecture change."
+
+    return {
+        "recommendation": recommendation,
+        "rationale": rationale,
+        "metrics": {
+            "max_softmax_engine_occupancy": max_occupancy,
+            "max_softmax_backpressure_events": max_backpressure_events,
+            "max_softmax_backpressure_ns": max_backpressure_ns,
+            "max_dependency_wait_ns": max_dependency_wait_ns,
+            "max_softmax_wait_on_gemm_ns": max_wait_on_gemm_ns,
+            "max_softmax_wait_on_misc_compute_ns": max_wait_on_misc_ns,
+            "min_latency_us_per_token": min_us_per_token,
+            "max_latency_us_per_token": max_us_per_token,
+        },
+    }
+
+
 def write_summary_csv(path: Path, rows: List[Dict[str, Any]]) -> None:
     if not rows:
         return
@@ -292,15 +376,29 @@ def main() -> int:
     per_model: List[Dict[str, Any]] = []
     for (arch_id, macro_mode, model_id), g_rows in sorted(grouped.items()):
         s = summarize_group(g_rows)
+        model_shape = parse_attention_tail_model_id(model_id)
         row = {
             "scope": "model",
             "arch_id": arch_id,
             "macro_mode": macro_mode,
             "model_id": model_id,
+            "attention_blocks": model_shape["attention_blocks"],
+            "sequence_length": model_shape["sequence_length"],
+            "hidden_size": model_shape["hidden_size"],
             "n": int(s.get("n") or 0),
             "sample_count": int(s.get("n") or 0),
             "latency_ms_mean": s.get("latency_ms_mean"),
             "latency_ms_std": s.get("latency_ms_std"),
+            "latency_us_per_token_mean": divide_or_none(
+                s.get("latency_ms_mean"),
+                model_shape["sequence_length"],
+                scale=1000.0,
+            ),
+            "latency_us_per_softmax_mean": divide_or_none(
+                s.get("latency_ms_mean"),
+                s.get("softmax_ops_mean"),
+                scale=1000.0,
+            ),
             "throughput_infer_per_s_mean": s.get("throughput_infer_per_s_mean"),
             "throughput_infer_per_s_std": s.get("throughput_infer_per_s_std"),
             "energy_mj_mean": s.get("energy_mj_mean"),
@@ -330,6 +428,20 @@ def main() -> int:
             "sample_count": sum(int(x.get("sample_count", 0) or 0) for x in model_rows),
             "latency_ms_mean": mean(
                 [float(x["latency_ms_mean"]) for x in model_rows if x["latency_ms_mean"] is not None]
+            ),
+            "latency_us_per_token_mean": mean(
+                [
+                    float(x["latency_us_per_token_mean"])
+                    for x in model_rows
+                    if x.get("latency_us_per_token_mean") is not None
+                ]
+            ),
+            "latency_us_per_softmax_mean": mean(
+                [
+                    float(x["latency_us_per_softmax_mean"])
+                    for x in model_rows
+                    if x.get("latency_us_per_softmax_mean") is not None
+                ]
             ),
             "throughput_infer_per_s_mean": mean(
                 [
@@ -541,16 +653,44 @@ def main() -> int:
         for row in ranked_obj
         if any(row.get(f"{key}_mean") is not None for key in SCHEDULER_SUMMARY_FIELDS)
     ]
+    scheduler_decision_rows = [
+        row
+        for row in per_model
+        if any(row.get(f"{key}_mean") is not None for key in SCHEDULER_SUMMARY_FIELDS)
+    ] or scheduler_rows
+    scheduler_decision = build_scheduler_visibility_decision(scheduler_decision_rows)
+    if scheduler_rows:
+        if best:
+            best_payload["scheduler_visibility_decision"] = scheduler_decision
+            best_json.write_text(json.dumps(best_payload, indent=2), encoding="utf-8")
+
+        lines.append("## Scheduler Visibility Decision")
+        lines.append("")
+        decision_metrics = scheduler_decision["metrics"]
+        lines.append(f"- recommendation: `{scheduler_decision['recommendation']}`")
+        lines.append(f"- rationale: {scheduler_decision['rationale']}")
+        lines.append(f"- max_softmax_engine_occupancy: `{fmt(decision_metrics.get('max_softmax_engine_occupancy'), digits=6)}`")
+        lines.append(f"- max_softmax_backpressure_events: `{fmt(decision_metrics.get('max_softmax_backpressure_events'))}`")
+        lines.append(f"- max_dependency_wait_ns: `{fmt(decision_metrics.get('max_dependency_wait_ns'))}`")
+        lines.append(
+            "- latency_us_per_token_range: "
+            f"`{fmt(decision_metrics.get('min_latency_us_per_token'), digits=6)}"
+            f"..{fmt(decision_metrics.get('max_latency_us_per_token'), digits=6)}`"
+        )
+        lines.append("")
+
     if scheduler_rows:
         lines.append("## Scheduler / Softmax Summary")
         lines.append("")
-        lines.append("| arch_id | macro_mode | softmax_ops_mean | softmax_issue_count_mean | softmax_completion_count_mean | softmax_engine_occupancy_mean | softmax_backpressure_events_mean | softmax_backpressure_ns_mean | softmax_wait_on_gemm_ns_mean | softmax_wait_on_misc_compute_ns_mean | dependency_wait_ns_mean |")
-        lines.append("|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|")
+        lines.append("| arch_id | macro_mode | latency_us_per_token_mean | latency_us_per_softmax_mean | softmax_ops_mean | softmax_issue_count_mean | softmax_completion_count_mean | softmax_engine_occupancy_mean | softmax_backpressure_events_mean | softmax_backpressure_ns_mean | softmax_wait_on_gemm_ns_mean | softmax_wait_on_misc_compute_ns_mean | dependency_wait_ns_mean |")
+        lines.append("|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|")
         for row in scheduler_rows:
             lines.append(
-                "| {arch} | {mode} | {ops} | {issue} | {completion} | {occ} | {bp_events} | {bp_ns} | {wait_gemm} | {wait_misc} | {dep_wait} |".format(
+                "| {arch} | {mode} | {per_token} | {per_softmax} | {ops} | {issue} | {completion} | {occ} | {bp_events} | {bp_ns} | {wait_gemm} | {wait_misc} | {dep_wait} |".format(
                     arch=row["arch_id"],
                     mode=row["macro_mode"],
+                    per_token=fmt(row.get("latency_us_per_token_mean"), digits=6),
+                    per_softmax=fmt(row.get("latency_us_per_softmax_mean"), digits=6),
                     ops=fmt(row.get("softmax_ops_mean")),
                     issue=fmt(row.get("softmax_issue_count_mean")),
                     completion=fmt(row.get("softmax_completion_count_mean")),
@@ -584,19 +724,22 @@ def main() -> int:
     lines.append("## Per-Model Summary")
     lines.append("")
     lines.append(
-        "| arch_id | macro_mode | model_id | n | latency_mean_ms | latency_std_ms | throughput_mean | energy_mean_mj | cp_mean_ns | area_mean_um2 | power_mean_mw | flow_mean_s | place_gp_mean_s |"
+        "| arch_id | macro_mode | model_id | seq_len | attn_blocks | n | latency_mean_ms | latency_us_per_token | latency_std_ms | throughput_mean | energy_mean_mj | cp_mean_ns | area_mean_um2 | power_mean_mw | flow_mean_s | place_gp_mean_s |"
     )
     lines.append(
-        "|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|"
+        "|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|"
     )
     for row in sorted(per_model, key=lambda x: (x["model_id"], x["arch_id"], x["macro_mode"])):
         lines.append(
-            "| {arch} | {mode} | {model} | {n} | {lat_m} | {lat_s} | {thr} | {eng} | {cp} | {area} | {pwr} | {flow} | {gp} |".format(
+            "| {arch} | {mode} | {model} | {seq} | {blocks} | {n} | {lat_m} | {lat_token} | {lat_s} | {thr} | {eng} | {cp} | {area} | {pwr} | {flow} | {gp} |".format(
                 arch=row["arch_id"],
                 mode=row["macro_mode"],
                 model=row["model_id"],
+                seq=row.get("sequence_length") or "",
+                blocks=row.get("attention_blocks") or "",
                 n=row["n"],
                 lat_m=fmt(row.get("latency_ms_mean")),
+                lat_token=fmt(row.get("latency_us_per_token_mean"), digits=6),
                 lat_s=fmt(row.get("latency_ms_std")),
                 thr=fmt(row.get("throughput_infer_per_s_mean")),
                 eng=fmt(row.get("energy_mj_mean"), digits=8),
