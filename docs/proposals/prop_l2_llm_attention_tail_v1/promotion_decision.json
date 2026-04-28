@@ -2,7 +2,7 @@
   "proposal_id": "prop_l2_llm_attention_tail_v1",
   "candidate_id": "l2_llm_attention_tail_v1_nangate45_r1",
   "decision": "iterate",
-  "reason": "Focused comparison baseline could not be resolved from proposal baseline_refs.",
+  "reason": "Broad ranking evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
   "evidence_refs": [
     "item:l2_llm_attention_tail_v1_nangate45_r1",
     "run:l2_llm_attention_tail_v1_nangate45_r1_run_be2fd33c8cfd917e",

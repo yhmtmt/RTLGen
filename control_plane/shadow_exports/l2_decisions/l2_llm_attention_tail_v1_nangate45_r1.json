@@ -1,6 +1,6 @@
 {
   "version": 0.1,
-  "generated_utc": "2026-04-26T12:27:54.612170Z",
+  "generated_utc": "2026-04-28T00:20:24.982698Z",
   "item_id": "l2_llm_attention_tail_v1_nangate45_r1",
   "run_key": "l2_llm_attention_tail_v1_nangate45_r1_run_be2fd33c8cfd917e",
   "layer": "layer2",
@@ -8,7 +8,7 @@
   "platform": "nangate45",
   "task_type": "l2_campaign",
   "source_commit": "e0010e569dcbf4f4da47802bfed745545e49e563",
-  "review_metadata_source_commit": "813d7a7166e961da4105e4c326b6ab14120356db",
+  "review_metadata_source_commit": "2dab8b8995edea8d62e5c3f49e64c73979398202",
   "objective": "Collect repeated attention-tail scheduler evidence for LLM architecture planning.",
   "input_manifest": {
     "sweeps": [
@@ -63,18 +63,19 @@
     "abstraction_layer": "layer2",
     "expected_direction": "collect_evidence",
     "expected_reason": "Measure per-token latency, throughput, softmax occupancy, stall buckets, and overlap/backpressure before launching softmax architecture proposals.",
-    "summary": "Focused comparison baseline could not be resolved from proposal baseline_refs.",
-    "outcome": "unavailable",
+    "summary": "Broad ranking evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
+    "outcome": "ranking_recorded",
     "expectation_status": "unspecified"
   },
   "proposal_assessment": {
     "proposal_id": "prop_l2_llm_attention_tail_v1",
     "title": "LLM attention tail measurement gate",
+    "kind": "architecture",
     "primary_question": "Which current architecture point best supports LLM attention-tail scheduling evidence?",
     "evaluation_mode": "broad_ranking",
     "comparison_role": "ranking",
-    "outcome": "unavailable",
-    "summary": "Focused comparison baseline could not be resolved from proposal baseline_refs.",
+    "outcome": "ranking_recorded",
+    "summary": "Broad ranking evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
     "baseline_ref": null,
     "baseline_item_id": null,
     "matched_row_count": 0,
