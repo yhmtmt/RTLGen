@@ -1,0 +1,46 @@
+{
+  "proposal_id": "prop_cp_artifact_sync_submission_progress_v1",
+  "created_utc": "2026-04-28T08:50:00Z",
+  "created_by": "codex",
+  "layer": "control_plane",
+  "kind": "workflow_validation",
+  "title": "Confirm artifact-sync resolver ignores submitted runs with PR progress",
+  "hypothesis": "A normal proposal-backed Layer 2 submission that reaches review publication and PR creation should not create an artifact_sync blocked-submission resolver case while work-item state transitions are still settling.",
+  "direct_comparison": {
+    "primary_question": "Does the resolver remain quiet during the artifact_sync to submitted/awaiting-review transition after PR #240?",
+    "include": [
+      "fresh proposal linkage",
+      "normal Layer 2 generator path",
+      "artifact sync, review package publication, submission preparation, PR creation, and resolver polling"
+    ],
+    "exclude": [
+      "new decoder semantics",
+      "new mapper behavior",
+      "new physical-performance claims"
+    ],
+    "follow_on_broad_sweep": []
+  },
+  "expected_benefit": [
+    "proves the artifact-sync false-positive suppression remains active in a real workflow",
+    "keeps the resolver available for real submission failures such as gh pr create failures"
+  ],
+  "risks": [
+    "the confirmation item may still expose an unrelated submission or GitHub integration issue"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_artifact_sync_submission_progress_confirm_v1",
+      "type": "l2_campaign",
+      "purpose": "workflow confirmation after resolver suppression fix"
+    }
+  ],
+  "baseline_refs": [
+    "PR #240",
+    "PR #236"
+  ],
+  "knowledge_refs": [
+    "docs/operations/resolver_daemons.md",
+    "docs/developer_agent_loop.md"
+  ]
+}

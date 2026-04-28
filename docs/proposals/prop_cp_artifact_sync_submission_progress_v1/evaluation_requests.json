@@ -1,0 +1,23 @@
+{
+  "proposal_id": "prop_cp_artifact_sync_submission_progress_v1",
+  "source_commit": "8294a774e8c6145e497946277c4250675d9cf177",
+  "requested_items": [
+    {
+      "item_id": "l2_artifact_sync_submission_progress_confirm_v1",
+      "task_type": "l2_campaign",
+      "objective": "Confirm PR #240 prevents artifact_sync blocked-submission false positives once review/submission progress exists.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "decoder_probability_path",
+      "comparison_role": "workflow_confirmation",
+      "paired_baseline_item_id": "",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": false,
+      "requires_materialized_refs": false,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Workflow confirmation only; resolver should remain quiet after submission progress events."
+      },
+      "status": "pending"
+    }
+  ]
+}
