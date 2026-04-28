@@ -36,6 +36,7 @@ def _seed_artifact_sync_item(
     request_payload: dict | None = None,
     submission_failed_reason: str | None = None,
     latest_event_type: str | None = None,
+    latest_event_payload: dict | None = None,
     latest_event_age_seconds: int = 0,
 ) -> WorkItem:
     now = utcnow()
@@ -98,7 +99,7 @@ def _seed_artifact_sync_item(
                 run_id=run.id,
                 event_time=now - timedelta(seconds=latest_event_age_seconds),
                 event_type=latest_event_type,
-                event_payload={},
+                event_payload=latest_event_payload or {},
             )
         )
     session.commit()
@@ -392,6 +393,60 @@ def test_detect_blocked_submission_skips_recent_artifact_sync_without_submission
         detections = detect_blocked_submission_items(session, repo_root=repo_root, stale_grace_seconds=120)
 
     assert detections == []
+
+
+def test_detect_blocked_submission_skips_completed_submission_even_after_grace() -> None:
+    with make_session() as session, tempfile.TemporaryDirectory() as repo_root:
+        _seed_artifact_sync_item(
+            session,
+            item_id="blocked-submitted-item",
+            run_key="run-submitted",
+            latest_event_type="operator_submission_completed",
+            latest_event_payload={
+                "review_published": True,
+                "submission_executed": True,
+                "pr_number": 236,
+                "pr_url": "https://github.com/yhmtmt/RTLGen/pull/236",
+                "submission_error": None,
+            },
+            latest_event_age_seconds=600,
+        )
+
+        detections = detect_blocked_submission_items(session, repo_root=repo_root, stale_grace_seconds=120)
+
+    assert detections == []
+
+
+def test_detect_blocked_submission_reports_failure_after_submission_progress() -> None:
+    now = utcnow()
+    with make_session() as session, tempfile.TemporaryDirectory() as repo_root:
+        work_item = _seed_artifact_sync_item(
+            session,
+            item_id="blocked-submission-failure-item",
+            run_key="run-submission-failure",
+            latest_event_type="pr_linked",
+            latest_event_payload={
+                "pr_number": 236,
+                "pr_url": "https://github.com/yhmtmt/RTLGen/pull/236",
+            },
+            latest_event_age_seconds=600,
+        )
+        run = session.query(Run).filter(Run.work_item_id == work_item.id).one()
+        session.add(
+            RunEvent(
+                run_id=run.id,
+                event_time=now - timedelta(seconds=30),
+                event_type="submission_failed",
+                event_payload={"error": "gh pr create failed: exit code 4"},
+            )
+        )
+        session.commit()
+
+        detections = detect_blocked_submission_items(session, repo_root=repo_root, stale_grace_seconds=120)
+
+    assert len(detections) == 1
+    assert detections[0].fingerprint == "artifact_sync_blocked_submission:gh_pr_create_failed"
+
 
 def test_detect_blocked_submission_gh_pr_create_failed() -> None:
     with make_session() as session, tempfile.TemporaryDirectory() as repo_root:

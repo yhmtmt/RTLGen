@@ -28,6 +28,24 @@ _TERMINAL_EVENT_TYPES = {
     "run_timed_out",
 }
 
+_SUBMISSION_FAILURE_EVENT_TYPES = {
+    "submission_failed",
+    "submission_retry_failed",
+}
+
+_SUBMISSION_STABLE_SUCCESS_EVENT_TYPES = {
+    "completion_processed",
+    "operator_submission_completed",
+    "pr_linked",
+}
+
+_SUBMISSION_RECENT_PROGRESS_EVENT_TYPES = {
+    "artifact_synced",
+    "review_package_published",
+    "submission_executed",
+    "submission_prepared",
+}
+
 
 def _latest_run(session: Session, work_item_id: str) -> Run | None:
     return (
@@ -100,6 +118,73 @@ def _latest_event(session: Session, run_id: str) -> RunEvent | None:
         .order_by(RunEvent.event_time.desc(), RunEvent.id.desc())
         .first()
     )
+
+
+def _event_time_with_timezone(event: RunEvent, now: Any) -> Any:
+    event_time = event.event_time
+    if event_time is not None and event_time.tzinfo is None:
+        event_time = event_time.replace(tzinfo=now.tzinfo)
+    return event_time
+
+
+def _event_payload_dict(event: RunEvent) -> dict[str, Any]:
+    return event.event_payload if isinstance(event.event_payload, dict) else {}
+
+
+def _payload_has_submission_error(payload: dict[str, Any]) -> bool:
+    error = str(payload.get("submission_error") or payload.get("error") or "").strip()
+    return bool(error and error.lower() != "none")
+
+
+def _event_is_stable_submission_success(event: RunEvent) -> bool:
+    payload = _event_payload_dict(event)
+    if _payload_has_submission_error(payload):
+        return False
+    if event.event_type == "pr_linked":
+        return True
+    if event.event_type == "operator_submission_completed":
+        return bool(
+            payload.get("pr_number")
+            or payload.get("pr_url")
+            or payload.get("submission_executed") is True
+            or payload.get("review_published") is True
+        )
+    if event.event_type == "completion_processed":
+        return bool(
+            payload.get("submitted") is True
+            or payload.get("pr_url")
+            or str(payload.get("work_item_state", "")).strip() == WorkItemState.AWAITING_REVIEW.value
+        )
+    return False
+
+
+def _has_submission_progress_after_latest_failure(
+    session: Session,
+    *,
+    run_id: str,
+    now: Any,
+    stale_grace_seconds: int,
+) -> bool:
+    """Return true when artifact-sync state is lagging behind submission progress."""
+
+    events = (
+        session.query(RunEvent)
+        .filter(RunEvent.run_id == run_id)
+        .order_by(RunEvent.event_time.desc(), RunEvent.id.desc())
+        .all()
+    )
+    recent_threshold = max(int(stale_grace_seconds), 0)
+    for event in events:
+        payload = _event_payload_dict(event)
+        if event.event_type in _SUBMISSION_FAILURE_EVENT_TYPES or _payload_has_submission_error(payload):
+            return False
+        event_time = _event_time_with_timezone(event, now)
+        is_recent = event_time is not None and (now - event_time).total_seconds() < recent_threshold
+        if event.event_type in _SUBMISSION_STABLE_SUCCESS_EVENT_TYPES and _event_is_stable_submission_success(event):
+            return True
+        if is_recent and event.event_type in _SUBMISSION_RECENT_PROGRESS_EVENT_TYPES:
+            return True
+    return False
 
 
 def detect_orphaned_running_items(
@@ -192,6 +277,13 @@ def detect_blocked_submission_items(
         latest_event_time = latest_event.event_time if latest_event is not None else None
         if latest_event_time is not None and latest_event_time.tzinfo is None:
             latest_event_time = latest_event_time.replace(tzinfo=now.tzinfo)
+        if _has_submission_progress_after_latest_failure(
+            session,
+            run_id=run.id,
+            now=now,
+            stale_grace_seconds=stale_grace_seconds,
+        ):
+            continue
         if latest_event_time is not None and (now - latest_event_time).total_seconds() < stale_grace_seconds:
             submission_failure_reason = assess_submission_eligibility(
                 session,

@@ -43,6 +43,8 @@ Implemented detection:
 - blocked submission items
   - `ARTIFACT_SYNC` item
   - concrete submission or eligibility failure evidence
+  - suppressed when run events already show successful submission or PR
+    publication progress and no newer submission failure
 
 Implemented safe automated actions:
 - `expire_stale_lease`
