@@ -204,6 +204,72 @@ def test_generate_l2_campaign_task_creates_ready_work_item() -> None:
             assert "--run_physical" in payload["task"]["commands"][2]["run"]
 
 
+def test_generate_l2_campaign_task_adds_decoder_probability_path_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    item_id="l2_decoder_exact_probability_path_v1",
+                    proposal_id="prop_l2_decoder_exact_probability_path_v1",
+                    proposal_path="docs/proposals/prop_l2_decoder_exact_probability_path_v1/proposal.json",
+                    evaluation_mode="paired_comparison",
+                    abstraction_layer="decoder_probability_path",
+                    expected_direction="better_than_historical",
+                    comparison_role="candidate",
+                    paired_baseline_item_id="l2_decoder_contract_eval_confirm_v1",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            command_names = [command["name"] for command in work_item.command_manifest]
+            assert command_names[:3] == [
+                "validate_decoder_contract",
+                "compare_decoder_quality",
+                "check_decoder_missing_model_error",
+            ]
+            assert command_names == [
+                "validate_decoder_contract",
+                "compare_decoder_quality",
+                "check_decoder_missing_model_error",
+                "fetch_models",
+                "validate_campaign",
+                "run_campaign",
+                "report_campaign",
+                "validate_runs",
+            ]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+            assert decoder_inputs == {
+                "dataset_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/manifest.json",
+                "reference_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/reference_manifest.json",
+                "candidate_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_manifest.json",
+                "baseline_quality_out": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_compare__l2_decoder_contract_eval_confirm_v1.json",
+                "validation_out": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_contract_validation__l2_decoder_exact_probability_path_v1.json",
+                "quality_out": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_compare__l2_decoder_exact_probability_path_v1.json",
+                "missing_model_check_out": "runs/datasets/llm_decoder_eval_tiny_v1/missing_model_check__l2_decoder_exact_probability_path_v1.json",
+            }
+            assert decoder_inputs["validation_out"] in work_item.expected_outputs
+            assert decoder_inputs["quality_out"] in work_item.expected_outputs
+            assert decoder_inputs["missing_model_check_out"] in work_item.expected_outputs
+            assert "NoSuchFile" in work_item.command_manifest[2]["run"]
+            assert work_item.task_request.request_payload["task"]["inputs"]["decoder_contract"] == decoder_inputs
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
+                "layer": "decoder_probability_path",
+            }
+
+
 def test_generate_l2_campaign_task_recovers_metadata_from_evaluation_requests() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

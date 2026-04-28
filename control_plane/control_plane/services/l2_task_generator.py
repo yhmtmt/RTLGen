@@ -415,6 +415,93 @@ def _build_expected_outputs(
     return _uniq(expected)
 
 
+def _decoder_probability_path_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_tiny_v1"
+    validation_out = f"{base}/decoder_contract_validation__{item_id}.json"
+    quality_out = f"{base}/decoder_quality_compare__{item_id}.json"
+    missing_model_check_out = f"{base}/missing_model_check__{item_id}.json"
+    missing_model_check_cmd = f"""python3 - <<'PY2'
+import json
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+out = Path('{missing_model_check_out}')
+out.parent.mkdir(parents=True, exist_ok=True)
+with tempfile.TemporaryDirectory() as td:
+    td_path = Path(td)
+    vocab_json = td_path / 'vocab.json'
+    model_config = td_path / 'config.json'
+    tokenizer_manifest = td_path / 'tokenizer_manifest.json'
+    vocab_json.write_text(json.dumps({{'tokens': ['The', ' capital', ' of', ' France', ' is', ' Paris']}}), encoding='utf-8')
+    model_config.write_text(json.dumps({{'n_layer': 2, 'n_head': 2, 'n_embd': 128}}), encoding='utf-8')
+    tokenizer_manifest.write_text(json.dumps({{
+        'tokenizer_id': 'llm_decoder_space_prefix_v1',
+        'kind': 'space_prefix_words',
+        'vocab_json': str(vocab_json),
+    }}), encoding='utf-8')
+    request = {{
+        'role': 'reference',
+        'backend_config': {{
+            'backend_id': 'command_json_v1',
+            'onnx_model_path': str(td_path / 'missing.onnx'),
+            'model_config_path': str(model_config),
+            'input_name': 'input_ids',
+        }},
+        'sample': {{
+            'sample_id': 'geo_france_capital',
+            'prompt': 'The capital of France is',
+            'expected_continuation': ' Paris',
+        }},
+        'paths': {{'tokenizer_manifest_path': str(tokenizer_manifest)}},
+    }}
+    proc = subprocess.run(
+        [sys.executable, 'npu/eval/run_llm_decoder_onnx_reference.py'],
+        input=json.dumps(request),
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    result = {{
+        'ok': proc.returncode != 0 and 'NoSuchFile' in proc.stderr,
+        'returncode': proc.returncode,
+        'stderr_contains_NoSuchFile': 'NoSuchFile' in proc.stderr,
+        'stderr_tail': proc.stderr[-1000:],
+    }}
+    out.write_text(json.dumps(result, indent=2, sort_keys=True) + '\\n', encoding='utf-8')
+    if not result['ok']:
+        print(json.dumps(result, indent=2, sort_keys=True), file=sys.stderr)
+        raise SystemExit(1)
+PY2"""
+    return {
+        "inputs": {
+            "dataset_manifest": f"{base}/manifest.json",
+            "reference_manifest": f"{base}/reference_manifest.json",
+            "candidate_manifest": f"{base}/candidate_manifest.json",
+            "baseline_quality_out": f"{base}/decoder_quality_compare__l2_decoder_contract_eval_confirm_v1.json",
+            "validation_out": validation_out,
+            "quality_out": quality_out,
+            "missing_model_check_out": missing_model_check_out,
+        },
+        "commands": [
+            {
+                "name": "validate_decoder_contract",
+                "run": f"python3 npu/eval/validate_llm_decoder_contract.py --dataset-manifest {base}/manifest.json --out {validation_out}",
+            },
+            {
+                "name": "compare_decoder_quality",
+                "run": f"python3 npu/eval/compare_llm_decoder_quality.py --reference-manifest {base}/reference_manifest.json --candidate-manifest {base}/candidate_manifest.json --out {quality_out}",
+            },
+            {
+                "name": "check_decoder_missing_model_error",
+                "run": missing_model_check_cmd,
+            },
+        ],
+        "expected_outputs": [validation_out, quality_out, missing_model_check_out],
+    }
+
+
 def _with_fresh_outputs(*, campaign: dict[str, Any], item_id: str) -> dict[str, Any]:
     cloned = json.loads(json.dumps(campaign))
     outputs = dict(cloned.get("outputs") or {})
@@ -501,6 +588,20 @@ def _build_payload(
             "run": "python3 scripts/validate_runs.py --skip_eval_queue",
         }
     )
+    task_inputs: dict[str, Any] = {
+        **inputs,
+        "generated_campaign": {
+            "base_campaign_path": campaign_path,
+            "path": generated_campaign_path,
+            "clean_outputs": True,
+            "outputs": generated_outputs,
+        },
+    }
+    if str(abstraction_layer or "").strip() == "decoder_probability_path":
+        decoder_evidence = _decoder_probability_path_evidence(item_id=item_id)
+        commands = [*decoder_evidence["commands"], *commands]
+        expected_outputs = _uniq([*expected_outputs, *decoder_evidence["expected_outputs"]])
+        task_inputs["decoder_contract"] = decoder_evidence["inputs"]
 
     payload = {
         "version": 0.1,
@@ -516,15 +617,7 @@ def _build_payload(
         "task": {
             "objective": objective,
             "source_mode": "src_verilog",
-            "inputs": {
-                **inputs,
-                "generated_campaign": {
-                    "base_campaign_path": campaign_path,
-                    "path": generated_campaign_path,
-                    "clean_outputs": True,
-                    "outputs": generated_outputs,
-                },
-            },
+            "inputs": task_inputs,
             "commands": commands,
             "expected_outputs": expected_outputs,
             "acceptance": [

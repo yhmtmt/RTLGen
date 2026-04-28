@@ -246,6 +246,12 @@ self-contained before dispatch, including `proposal.json` and
 `evaluation_requests.json` with the queued item ids, so the artifact PR can
 package the exact review context referenced by `reviewer_first_read`.
 
+For decoder-quality proposals, set `abstraction_layer` to
+`decoder_probability_path`. The Layer 2 generator will then attach the decoder
+contract validation, quality comparison, and missing-model negative-path
+commands before the normal campaign commands. Do not rely on an after-dispatch
+DB patch for these evidence files.
+
 Ordering rule:
 - `measurement_only` items may usually queue immediately
 - `paired_comparison` items that consume a prior baseline should default to

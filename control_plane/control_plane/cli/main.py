@@ -130,10 +130,14 @@ def main(argv: list[str] | None = None) -> int:
     generate_l2_parser.add_argument("--proposal-id")
     generate_l2_parser.add_argument("--proposal-path")
     generate_l2_parser.add_argument("--evaluation-mode")
+    generate_l2_parser.add_argument("--abstraction-layer")
     generate_l2_parser.add_argument("--expected-direction")
     generate_l2_parser.add_argument("--expected-reason")
     generate_l2_parser.add_argument("--comparison-role")
     generate_l2_parser.add_argument("--paired-baseline-item-id")
+    generate_l2_parser.add_argument("--depends-on-item-id", action="append", default=[])
+    generate_l2_parser.add_argument("--requires-merged-inputs", action="store_true")
+    generate_l2_parser.add_argument("--requires-materialized-refs", action="store_true")
     generate_l2_parser.add_argument("--no-run-physical", action="store_true")
     generate_l2_parser.add_argument("--no-auto-dispatch", action="store_true")
     generate_l2_parser.add_argument("--dispatch-machine-key")
@@ -578,6 +582,7 @@ def main(argv: list[str] | None = None) -> int:
             ("--proposal-id", args.proposal_id),
             ("--proposal-path", args.proposal_path),
             ("--evaluation-mode", args.evaluation_mode),
+            ("--abstraction-layer", args.abstraction_layer),
             ("--expected-direction", args.expected_direction),
             ("--expected-reason", args.expected_reason),
             ("--comparison-role", args.comparison_role),
@@ -590,6 +595,12 @@ def main(argv: list[str] | None = None) -> int:
             argv2.append("--no-run-physical")
         if args.no_auto_dispatch:
             argv2.append("--no-auto-dispatch")
+        for item_id in args.depends_on_item_id or []:
+            argv2.extend(["--depends-on-item-id", str(item_id)])
+        if args.requires_merged_inputs:
+            argv2.append("--requires-merged-inputs")
+        if args.requires_materialized_refs:
+            argv2.append("--requires-materialized-refs")
         if args.dispatch_freshness_seconds is not None:
             argv2.extend(["--dispatch-freshness-seconds", str(args.dispatch_freshness_seconds)])
         return generate_l2_campaign_main(argv2)
