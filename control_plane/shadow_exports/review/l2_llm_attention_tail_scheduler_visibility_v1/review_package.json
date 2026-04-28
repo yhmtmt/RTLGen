@@ -1,0 +1,384 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-04-28T11:58:55.561263Z",
+  "item_id": "l2_llm_attention_tail_scheduler_visibility_v1",
+  "run_key": "l2_llm_attention_tail_scheduler_visibility_v1_run_764436bf8ed34a67",
+  "layer": "layer2",
+  "flow": "openroad",
+  "task_type": "l2_campaign",
+  "source_commit": "1962453ee7e6303ff42261988172db46027a7891",
+  "review_metadata_source_commit": "1962453ee7e6303ff42261988172db46027a7891",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l2_llm_attention_tail_scheduler_visibility_v1/evaluated.json",
+    "result": {
+      "branch": "eval/l2_llm_attention_tail_scheduler_visibility_v1/s20260428t115855z",
+      "completed_utc": "2026-04-28T11:58:55.016031Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "b7c2d9c80c1c",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260428t115855z][host:b7c2d9c80c1c][item:l2_llm_attention_tail_scheduler_visibility_v1]",
+      "metrics_rows": [
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "362e11ef",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/362e11ef/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "6f738885",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/6f738885/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "3e84d92b",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3e84d92b/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "13a2c990",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/13a2c990/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "34eeb6e5",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/34eeb6e5/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r4",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "439adb1e",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/439adb1e/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r5",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "936b2a7b",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/936b2a7b/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "54a235ae",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/54a235ae/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "f190a078",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/f190a078/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "b874bef7",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/b874bef7/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r4",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "3a650f98",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3a650f98/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r5",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "3fa4f194",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3fa4f194/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "033cdfdc",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/033cdfdc/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "c4548bca",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/c4548bca/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "258015dc",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/258015dc/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "95526f98",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/95526f98/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "099823db",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/099823db/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r4",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "b276f2e7",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/b276f2e7/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r5",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "f0b4f9e6",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/f0b4f9e6/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "5d0ac971",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/5d0ac971/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "a9ae3c35",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/a9ae3c35/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "c51fa4a2",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/c51fa4a2/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r4",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "98a03366",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/98a03366/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r5",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "41f8b4a8",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/41f8b4a8/result.json"
+        }
+      ],
+      "queue_item_id": "l2_llm_attention_tail_scheduler_visibility_v1",
+      "session_id": "s20260428t115855z",
+      "status": "ok",
+      "summary": "5/5 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "decision_proposal",
+    "path": "control_plane/shadow_exports/l2_decisions/l2_llm_attention_tail_scheduler_visibility_v1.json",
+    "storage_mode": "repo",
+    "sha256": "d4a82dcabc16ecdca3f4f35bdd889943faa0fcf067114d1c1a12b3a04c57719e",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-04-28T11:58:55.068383Z",
+      "item_id": "l2_llm_attention_tail_scheduler_visibility_v1",
+      "run_key": "l2_llm_attention_tail_scheduler_visibility_v1_run_764436bf8ed34a67",
+      "layer": "layer2",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l2_campaign",
+      "source_commit": "1962453ee7e6303ff42261988172db46027a7891",
+      "review_metadata_source_commit": "1962453ee7e6303ff42261988172db46027a7891",
+      "objective": "Confirm attention-tail reports expose per-token latency, scheduler visibility counters, and a concrete architecture next-action recommendation.",
+      "input_manifest": {
+        "sweeps": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+        ],
+        "configs": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+        ],
+        "design_dirs": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+        ],
+        "macro_manifests": [
+          "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+          "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+        ],
+        "generated_campaign": {
+          "path": "runs/campaigns/npu/e2e_eval_llm_attention_tail_v1/campaign__l2_llm_attention_tail_scheduler_visibility_v1.json",
+          "outputs": {
+            "report_md": "runs/campaigns/npu/e2e_eval_llm_attention_tail_v1__l2_llm_attention_tail_scheduler_visibility_v1/report.md",
+            "results_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_v1__l2_llm_attention_tail_scheduler_visibility_v1/results.csv",
+            "campaign_dir": "runs/campaigns/npu/e2e_eval_llm_attention_tail_v1__l2_llm_attention_tail_scheduler_visibility_v1"
+          },
+          "clean_outputs": true,
+          "base_campaign_path": "runs/campaigns/npu/e2e_eval_llm_attention_tail_v1/campaign.json"
+        },
+        "candidate_manifests": [
+          "runs/candidates/nangate45/module_candidates.json"
+        ]
+      },
+      "recommendation": {
+        "arch_id": "fp16_nm1",
+        "macro_mode": "flat_nomacro",
+        "objective_rank": 1,
+        "objective_score": "0.0",
+        "latency_ms_mean": 0.019889199999999996,
+        "energy_mj_mean": 3.8410420824000004e-06,
+        "critical_path_ns_mean": 5.557037432204143,
+        "die_area_um2_mean": 2250000.0,
+        "total_power_mw_mean": 0.193122,
+        "flow_elapsed_s_mean": 844.5733333333334
+      },
+      "objective_profiles": [],
+      "evaluation_record": {
+        "proposal_id": "prop_l2_llm_attention_tail_scheduler_visibility_v1",
+        "title": "LLM attention-tail scheduler visibility decision gate",
+        "primary_question": "Does the attention-tail benchmark show a softmax datapath bottleneck, scheduler overlap bottleneck, or insufficient evidence for architecture work?",
+        "evaluation_mode": "broad_ranking",
+        "comparison_role": "ranking",
+        "abstraction_layer": "layer2",
+        "expected_direction": "iterate",
+        "expected_reason": "Measurement gate should recommend whether to pursue softmax buffering, softmax pipeline partitioning, scheduler overlap work, or no architecture change yet.",
+        "summary": "Focused comparison baseline could not be resolved from proposal baseline_refs.",
+        "outcome": "unavailable",
+        "expectation_status": "unspecified"
+      },
+      "proposal_assessment": {
+        "proposal_id": "prop_l2_llm_attention_tail_scheduler_visibility_v1",
+        "title": "LLM attention-tail scheduler visibility decision gate",
+        "primary_question": "Does the attention-tail benchmark show a softmax datapath bottleneck, scheduler overlap bottleneck, or insufficient evidence for architecture work?",
+        "evaluation_mode": "broad_ranking",
+        "comparison_role": "ranking",
+        "outcome": "unavailable",
+        "summary": "Focused comparison baseline could not be resolved from proposal baseline_refs.",
+        "baseline_ref": null,
+        "baseline_item_id": null,
+        "matched_row_count": 0,
+        "matched_rows": []
+      },
+      "source_refs": {
+        "best_point_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_v1__l2_llm_attention_tail_scheduler_visibility_v1/best_point.json",
+        "summary_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_v1__l2_llm_attention_tail_scheduler_visibility_v1/summary.csv",
+        "results_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_v1__l2_llm_attention_tail_scheduler_visibility_v1/results.csv",
+        "report_md": "runs/campaigns/npu/e2e_eval_llm_attention_tail_v1__l2_llm_attention_tail_scheduler_visibility_v1/report.md",
+        "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_v1__l2_llm_attention_tail_scheduler_visibility_v1/artifacts/mapper/fp16_nm1/tail_attn2_s32_h64/schedule.yml",
+        "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_v1__l2_llm_attention_tail_scheduler_visibility_v1/artifacts/mapper/fp16_nm1/tail_attn2_s32_h64/descriptors.bin",
+        "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_v1__l2_llm_attention_tail_scheduler_visibility_v1/artifacts/perf/fp16_nm1/tail_attn2_s32_h64/trace.json",
+        "focused_model_artifacts": [
+          {
+            "model_id": "tail_attn2_s32_h64",
+            "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_v1__l2_llm_attention_tail_scheduler_visibility_v1/artifacts/mapper/fp16_nm1/tail_attn2_s32_h64/schedule.yml",
+            "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_v1__l2_llm_attention_tail_scheduler_visibility_v1/artifacts/mapper/fp16_nm1/tail_attn2_s32_h64/descriptors.bin",
+            "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_v1__l2_llm_attention_tail_scheduler_visibility_v1/artifacts/perf/fp16_nm1/tail_attn2_s32_h64/trace.json"
+          },
+          {
+            "model_id": "tail_attn2_s64_h64",
+            "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_v1__l2_llm_attention_tail_scheduler_visibility_v1/artifacts/mapper/fp16_nm1/tail_attn2_s64_h64/schedule.yml",
+            "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_v1__l2_llm_attention_tail_scheduler_visibility_v1/artifacts/mapper/fp16_nm1/tail_attn2_s64_h64/descriptors.bin",
+            "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_v1__l2_llm_attention_tail_scheduler_visibility_v1/artifacts/perf/fp16_nm1/tail_attn2_s64_h64/trace.json"
+          },
+          {
+            "model_id": "tail_attn3_s64_h64",
+            "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_v1__l2_llm_attention_tail_scheduler_visibility_v1/artifacts/mapper/fp16_nm1/tail_attn3_s64_h64/schedule.yml",
+            "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_v1__l2_llm_attention_tail_scheduler_visibility_v1/artifacts/mapper/fp16_nm1/tail_attn3_s64_h64/descriptors.bin",
+            "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_v1__l2_llm_attention_tail_scheduler_visibility_v1/artifacts/perf/fp16_nm1/tail_attn3_s64_h64/trace.json"
+          },
+          {
+            "model_id": "tail_attn4_s64_h64",
+            "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_v1__l2_llm_attention_tail_scheduler_visibility_v1/artifacts/mapper/fp16_nm1/tail_attn4_s64_h64/schedule.yml",
+            "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_v1__l2_llm_attention_tail_scheduler_visibility_v1/artifacts/mapper/fp16_nm1/tail_attn4_s64_h64/descriptors.bin",
+            "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_v1__l2_llm_attention_tail_scheduler_visibility_v1/artifacts/perf/fp16_nm1/tail_attn4_s64_h64/trace.json"
+          },
+          {
+            "model_id": "tail_attn4_s128_h64",
+            "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_v1__l2_llm_attention_tail_scheduler_visibility_v1/artifacts/mapper/fp16_nm1/tail_attn4_s128_h64/schedule.yml",
+            "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_v1__l2_llm_attention_tail_scheduler_visibility_v1/artifacts/mapper/fp16_nm1/tail_attn4_s128_h64/descriptors.bin",
+            "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_v1__l2_llm_attention_tail_scheduler_visibility_v1/artifacts/perf/fp16_nm1/tail_attn4_s128_h64/trace.json"
+          }
+        ]
+      }
+    }
+  },
+  "developer_loop": {
+    "comparison": {
+      "role": "ranking",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "broad_ranking",
+      "expected_reason": "Measurement gate should recommend whether to pursue softmax buffering, softmax pipeline partitioning, scheduler overlap work, or no architecture change yet.",
+      "expected_direction": "iterate"
+    },
+    "abstraction": {
+      "layer": "layer2"
+    },
+    "proposal_id": "prop_l2_llm_attention_tail_scheduler_visibility_v1",
+    "proposal_path": "docs/proposals/prop_l2_llm_attention_tail_scheduler_visibility_v1/proposal.json"
+  },
+  "submission_history": null,
+  "pr_payload": {
+    "branch": "eval/l2_llm_attention_tail_scheduler_visibility_v1/s20260428t115855z",
+    "title": "eval: run confirm llm attention-tail scheduler visibility reporting",
+    "body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260428t115855z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_llm_attention_tail_scheduler_visibility_v1"
+    },
+    "body_md": "## Summary\n- item_id: `l2_llm_attention_tail_scheduler_visibility_v1`\n- run_key: `l2_llm_attention_tail_scheduler_visibility_v1_run_764436bf8ed34a67`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `5/5 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_llm_attention_tail_scheduler_visibility_v1/evaluated.json`\n- metrics_rows_count: `24`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_llm_attention_tail_scheduler_visibility_v1.json`\n\n## Developer Context\n- proposal_id: `prop_l2_llm_attention_tail_scheduler_visibility_v1`\n- proposal_path: `docs/proposals/prop_l2_llm_attention_tail_scheduler_visibility_v1/proposal.json`\n- reviewer_first_read: `docs/proposals/prop_l2_llm_attention_tail_scheduler_visibility_v1/proposal.json` plus `docs/developer_agent_review.md`\n- execution_source_commit: `1962453ee7e6303ff42261988172db46027a7891`\n- review_metadata_source_commit: `1962453ee7e6303ff42261988172db46027a7891`\n\n## Evaluation Mode\n- evaluation_mode: `broad_ranking`\n- abstraction_layer: `layer2`\n- comparison_role: `ranking`\n- expected_direction: `iterate`\n- expected_reason: `Measurement gate should recommend whether to pursue softmax buffering, softmax pipeline partitioning, scheduler overlap work, or no architecture change yet.`\n- expectation_status: `unspecified`\n- evaluation_summary: `Focused comparison baseline could not be resolved from proposal baseline_refs.`\n\n## Focused Comparison\n- primary_question: `Does the attention-tail benchmark show a softmax datapath bottleneck, scheduler overlap bottleneck, or insufficient evidence for architecture work?`\n- comparison_role: `ranking`\n- proposal_outcome: `unavailable`\n- comparison_summary: `Focused comparison baseline could not be resolved from proposal baseline_refs.`\n- baseline_ref: `None`\n- baseline_item_id: `None`\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
