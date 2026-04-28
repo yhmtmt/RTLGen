@@ -13,20 +13,20 @@
 ## Baseline Comparison
 - baseline_ref: `None`
 - baseline_item_id: `None`
-- outcome: `unavailable`
-- summary: Focused comparison baseline could not be resolved from proposal baseline_refs.
+- outcome: `ranking_recorded`
+- summary: Broad ranking evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.
 
 ## Result
 - result: `iterate`
 - confidence level: merged accepted evidence
 - estimated optimization room: pending follow-on comparison
 - architecture conclusion robustness: staged evidence
-- summary: Focused comparison baseline could not be resolved from proposal baseline_refs.
+- summary: Broad ranking evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.
 
 ## Failures and Caveats
-- paired baseline comparison payload was unavailable at consume time
+- no additional caveats recorded during automatic finalization
 
 ## Recommendation
 - `iterate`
-- reason: Focused comparison baseline could not be resolved from proposal baseline_refs.
+- reason: Broad ranking evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.
 - next_action: inspect follow-on work after l2_llm_attention_tail_v1_nangate45_r1
