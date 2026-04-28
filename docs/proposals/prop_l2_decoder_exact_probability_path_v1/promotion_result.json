@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_decoder_exact_probability_path_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "iterate",
+  "pr_number": 233,
+  "merge_commit": "c27642a2fd938c6a5b43ca67a74ac774799ef4c7",
+  "merged_utc": "2026-04-28T07:48:31.072822Z"
 }
