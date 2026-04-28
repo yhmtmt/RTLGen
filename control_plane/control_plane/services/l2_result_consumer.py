@@ -669,6 +669,41 @@ def _build_proposal_assessment(
             ),
             {},
         )
+    if evaluation_mode == "broad_ranking":
+        summary = (
+            "Broad ranking evidence was recorded for this proposal; focused baseline comparison is not required "
+            "for this evaluation mode."
+        )
+        assessment = {
+            "proposal_id": str(context.get("proposal_id", "")).strip(),
+            "title": str(context.get("title", "")).strip(),
+            "kind": str(context.get("kind", "")).strip(),
+            "primary_question": str(context.get("primary_question", "")).strip(),
+            "evaluation_mode": evaluation_mode,
+            "comparison_role": comparison_role,
+            "outcome": "ranking_recorded",
+            "summary": summary,
+            "baseline_ref": None,
+            "baseline_item_id": None,
+            "matched_row_count": 0,
+            "matched_rows": [],
+        }
+        return (
+            assessment,
+            _build_evaluation_record(
+                work_item=work_item,
+                proposal=proposal,
+                repo_root=repo_root,
+                evaluation_mode=evaluation_mode,
+                comparison_role=comparison_role,
+                baseline_ref=None,
+                baseline_item_id=None,
+                outcome="ranking_recorded",
+                expectation_outcome="ranking_recorded",
+                summary=summary,
+            ),
+            {},
+        )
     comparison = _developer_loop_comparison(repo_root, work_item)
     baseline_ref, baseline_rows, baseline_report, assessment_meta, source_refs = _resolve_baseline_summary(
         session,
