@@ -3,11 +3,11 @@
 - item_id: `item_eval_llm_decoder_accuracy_stage_v1`
 - layer: `cross`
 - kind: `architecture`
-- status: `seed`
+- status: `merged`
 - priority: `high`
 - owner: `developer_agent`
 - created_utc: `2026-04-19T00:00:00Z`
-- updated_utc: `2026-04-19T00:00:00Z`
+- updated_utc: `2026-04-28T00:00:00Z`
 - proposal_id:
 - proposal_path:
 
@@ -39,6 +39,17 @@
 - define the reference inference artifact shape
 - add token-level quality metrics to the evaluation/report path
 - later add model execution and approximation sweeps against that contract
+
+## Implementation Result
+- `runs/datasets/llm_decoder_eval_tiny_v1/` now carries the bounded prompt
+  slice, reference manifest, candidate manifest, and frozen per-sample
+  artifacts.
+- `npu/eval/llm_decoder_contract.schema.json` records the prompt,
+  manifest, reference, candidate, tensor-trace, and metrics contract.
+- `npu/eval/validate_llm_decoder_contract.py` validates the checked-in
+  dataset linkage, SHA256s, artifact shapes, and token-level metrics.
+- `npu/eval/compare_llm_decoder_quality.py` reports next-token exact-match
+  and candidate top-k containment rates, plus selected tensor-trace drift.
 
 ## Evaluation Sketch
 - local:

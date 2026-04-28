@@ -33,8 +33,8 @@ class LlmDecoderCompareRegressionTest(unittest.TestCase):
             cand_b = td_path / 'cand_b.json'
             ref_a.write_text(json.dumps({'sample_id': 'a', 'reference': {'next_token_id': 1, 'next_token_text': ' A'}}), encoding='utf-8')
             ref_b.write_text(json.dumps({'sample_id': 'b', 'reference': {'next_token_id': 2, 'next_token_text': ' B'}}), encoding='utf-8')
-            cand_a.write_text(json.dumps({'sample_id': 'a', 'candidate': {'next_token_id': 1, 'next_token_text': ' A'}}), encoding='utf-8')
-            cand_b.write_text(json.dumps({'sample_id': 'b', 'candidate': {'next_token_id': 3, 'next_token_text': ' C'}}), encoding='utf-8')
+            cand_a.write_text(json.dumps({'sample_id': 'a', 'candidate': {'next_token_id': 1, 'next_token_text': ' A', 'topk': [{'token_id': 1, 'token_text': ' A'}]}}), encoding='utf-8')
+            cand_b.write_text(json.dumps({'sample_id': 'b', 'candidate': {'next_token_id': 3, 'next_token_text': ' C', 'topk': [{'token_id': 2, 'token_text': ' B'}]}}), encoding='utf-8')
             ref_manifest = {
                 'dataset_id': 'llm_decoder_eval_tiny_v1',
                 'task': 'greedy_next_token',
@@ -58,6 +58,10 @@ class LlmDecoderCompareRegressionTest(unittest.TestCase):
             self.assertEqual(1, metrics['aggregate']['next_token_text_match_count'])
             self.assertEqual(0.5, metrics['aggregate']['next_token_id_match_rate'])
             self.assertEqual(0.5, metrics['aggregate']['next_token_text_match_rate'])
+            self.assertEqual(2, metrics['aggregate']['topk_contains_reference_id_count'])
+            self.assertEqual(2, metrics['aggregate']['topk_contains_reference_text_count'])
+            self.assertEqual(1.0, metrics['aggregate']['topk_contains_reference_id_rate'])
+            self.assertEqual(1.0, metrics['aggregate']['topk_contains_reference_text_rate'])
 
     def test_compare_decoder_manifests_reports_selected_tensor_trace_drift(self):
         with tempfile.TemporaryDirectory() as td:

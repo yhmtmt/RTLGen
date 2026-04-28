@@ -161,6 +161,8 @@ def compare_decoder_manifests(reference_manifest: JsonDict, candidate_manifest: 
     sample_metrics: List[JsonDict] = []
     id_match_count = 0
     text_match_count = 0
+    topk_id_contains_count = 0
+    topk_text_contains_count = 0
     for sample_id in sorted(ref_samples):
         ref_doc = load_json(_resolve_repo_path(ref_samples[sample_id]['reference_json']))
         cand_doc = load_json(_resolve_repo_path(cand_samples[sample_id]['candidate_json']))
@@ -169,6 +171,8 @@ def compare_decoder_manifests(reference_manifest: JsonDict, candidate_manifest: 
         sample_metrics.append(metrics)
         id_match_count += int(metrics['aggregate']['next_token_id_match'])
         text_match_count += int(metrics['aggregate']['next_token_text_match'])
+        topk_id_contains_count += int(metrics['aggregate']['topk_contains_reference_id'])
+        topk_text_contains_count += int(metrics['aggregate']['topk_contains_reference_text'])
 
     total = len(sample_metrics)
     total_matched_tensors = sum(
@@ -208,6 +212,10 @@ def compare_decoder_manifests(reference_manifest: JsonDict, candidate_manifest: 
             'next_token_text_match_count': text_match_count,
             'next_token_id_match_rate': (float(id_match_count) / float(total)) if total else 0.0,
             'next_token_text_match_rate': (float(text_match_count) / float(total)) if total else 0.0,
+            'topk_contains_reference_id_count': topk_id_contains_count,
+            'topk_contains_reference_text_count': topk_text_contains_count,
+            'topk_contains_reference_id_rate': (float(topk_id_contains_count) / float(total)) if total else 0.0,
+            'topk_contains_reference_text_rate': (float(topk_text_contains_count) / float(total)) if total else 0.0,
             'selected_tensor_trace': {
                 'matched_tensor_count': total_matched_tensors,
                 'shape_match_count': total_shape_match_count,

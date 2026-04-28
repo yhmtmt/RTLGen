@@ -238,18 +238,20 @@ def main() -> int:
     tokenizer_runtime = _load_tokenizer_runtime(tokenizer_bundle)
     prompt_doc = _prepare_prompt(request['sample'], tokenizer_bundle, tokenizer_runtime=tokenizer_runtime)
 
-    ort = _load_onnxruntime()
-
     model_path = str(backend_config.get('onnx_model_path', '')).strip()
     if not model_path:
         raise SystemExit('backend_config.onnx_model_path is required for command_json_v1 ONNX reference runs')
+    resolved_model_path = _resolve_repo_path(model_path)
+    if not resolved_model_path.is_file():
+        raise SystemExit(f'NoSuchFile: ONNX model path does not exist: {resolved_model_path}')
     output_name = str(backend_config.get('output_name', '')).strip() or None
     topk = int(backend_config.get('topk', 5))
     trace_patterns = [str(v) for v in (backend_config.get('trace_output_patterns') or []) if str(v).strip()]
     model_config = _load_model_config(model_path=model_path, backend_config=backend_config)
     feeds = _build_feeds(prompt_token_ids=prompt_doc['token_ids'], model_config=model_config)
 
-    sess = ort.InferenceSession(str(_resolve_repo_path(model_path)))
+    ort = _load_onnxruntime()
+    sess = ort.InferenceSession(str(resolved_model_path))
     outputs = sess.run(None, feeds)
     if not outputs:
         raise SystemExit('onnx runtime returned no outputs')

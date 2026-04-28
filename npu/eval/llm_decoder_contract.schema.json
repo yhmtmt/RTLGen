@@ -1,0 +1,192 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LLM Decoder Accuracy Stage Contract",
+  "description": "Contract surface for the tiny decoder prompt dataset, frozen reference/candidate artifacts, and token-level comparison metrics.",
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "prompt_sample": {
+      "type": "object",
+      "required": ["sample_id", "prompt", "expected_continuation", "category"],
+      "properties": {
+        "sample_id": { "type": "string", "minLength": 1 },
+        "prompt": { "type": "string", "minLength": 1 },
+        "expected_continuation": { "type": "string", "minLength": 1 },
+        "category": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "dataset_manifest": {
+      "type": "object",
+      "required": [
+        "version",
+        "dataset_id",
+        "task",
+        "sample_count",
+        "sample_file",
+        "reference_manifest",
+        "candidate_manifest",
+        "tokenizer_manifest",
+        "model_contract",
+        "decoder_backend_interface"
+      ],
+      "properties": {
+        "version": { "type": "number" },
+        "dataset_id": { "const": "llm_decoder_eval_tiny_v1" },
+        "task": { "const": "greedy_next_token" },
+        "sample_count": { "type": "integer", "minimum": 1 },
+        "sample_file": { "type": "string", "minLength": 1 },
+        "reference_manifest": { "type": "string", "minLength": 1 },
+        "candidate_manifest": { "type": "string", "minLength": 1 },
+        "tokenizer_manifest": { "type": "string", "minLength": 1 },
+        "model_contract": { "type": "string", "minLength": 1 },
+        "decoder_backend_interface": { "const": "v1" },
+        "decoder_backend_configs": { "type": "object" },
+        "notes": { "type": "string" },
+        "status": { "type": "string" },
+        "tokenizer_id": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "artifact_manifest": {
+      "type": "object",
+      "required": ["version", "dataset_id", "task", "tokenizer_manifest", "model_contract", "samples"],
+      "properties": {
+        "version": { "type": "number" },
+        "dataset_id": { "const": "llm_decoder_eval_tiny_v1" },
+        "task": { "const": "greedy_next_token" },
+        "tokenizer_manifest": { "type": "string", "minLength": 1 },
+        "model_contract": { "type": "string", "minLength": 1 },
+        "candidate_semantics": { "type": "string", "minLength": 1 },
+        "backend_config": { "type": "object" },
+        "samples": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["sample_id"],
+            "properties": {
+              "sample_id": { "type": "string", "minLength": 1 },
+              "reference_json": { "type": "string", "minLength": 1 },
+              "reference_sha256": { "$ref": "#/$defs/sha256" },
+              "candidate_json": { "type": "string", "minLength": 1 },
+              "candidate_sha256": { "$ref": "#/$defs/sha256" }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "selected_tensor_summary": {
+      "type": "object",
+      "required": ["name", "step", "shape", "min", "max", "mean", "std"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "step": { "type": "integer", "minimum": 0 },
+        "shape": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1 }
+        },
+        "dtype": { "type": "string" },
+        "min": { "type": "number" },
+        "max": { "type": "number" },
+        "mean": { "type": "number" },
+        "std": { "type": "number" },
+        "quantization": { "type": "object" }
+      },
+      "additionalProperties": true
+    },
+    "reference_artifact": {
+      "type": "object",
+      "required": ["version", "dataset_id", "task", "sample_id", "prompt", "reference"],
+      "properties": {
+        "version": { "type": "number" },
+        "dataset_id": { "const": "llm_decoder_eval_tiny_v1" },
+        "task": { "const": "greedy_next_token" },
+        "sample_id": { "type": "string", "minLength": 1 },
+        "prompt": { "type": "object" },
+        "reference": {
+          "type": "object",
+          "required": ["next_token_id", "next_token_text", "expected_continuation", "topk"],
+          "properties": {
+            "next_token_id": { "type": "integer", "minimum": 0 },
+            "next_token_text": { "type": "string", "minLength": 1 },
+            "expected_continuation": { "type": "string", "minLength": 1 },
+            "next_token_rank": { "type": "integer", "minimum": 1 },
+            "topk": { "type": "array", "minItems": 1 },
+            "selected_tensors": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/selected_tensor_summary" }
+            },
+            "selected_tensors_sha256": { "$ref": "#/$defs/sha256" }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "candidate_artifact": {
+      "type": "object",
+      "required": ["version", "dataset_id", "task", "sample_id", "prompt", "candidate", "candidate_semantics"],
+      "properties": {
+        "version": { "type": "number" },
+        "dataset_id": { "const": "llm_decoder_eval_tiny_v1" },
+        "task": { "const": "greedy_next_token" },
+        "sample_id": { "type": "string", "minLength": 1 },
+        "candidate_semantics": { "type": "string", "minLength": 1 },
+        "prompt": { "type": "object" },
+        "candidate": {
+          "type": "object",
+          "required": ["next_token_id", "next_token_text", "confidence", "topk"],
+          "properties": {
+            "next_token_id": { "type": "integer", "minimum": 0 },
+            "next_token_text": { "type": "string", "minLength": 1 },
+            "confidence": { "type": "number" },
+            "topk": { "type": "array", "minItems": 1 },
+            "selected_tensors": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/selected_tensor_summary" }
+            },
+            "selected_tensors_sha256": { "$ref": "#/$defs/sha256" }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "metrics_report": {
+      "type": "object",
+      "required": ["dataset_id", "task", "samples", "aggregate"],
+      "properties": {
+        "dataset_id": { "const": "llm_decoder_eval_tiny_v1" },
+        "task": { "const": "greedy_next_token" },
+        "candidate_semantics": { "type": "string" },
+        "samples": { "type": "array" },
+        "aggregate": {
+          "type": "object",
+          "required": [
+            "sample_count",
+            "next_token_id_match_rate",
+            "next_token_text_match_rate",
+            "topk_contains_reference_id_rate",
+            "topk_contains_reference_text_rate",
+            "selected_tensor_trace"
+          ]
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "type": "object",
+  "properties": {
+    "dataset_manifest": { "$ref": "#/$defs/dataset_manifest" },
+    "prompt_sample": { "$ref": "#/$defs/prompt_sample" },
+    "artifact_manifest": { "$ref": "#/$defs/artifact_manifest" },
+    "reference_artifact": { "$ref": "#/$defs/reference_artifact" },
+    "candidate_artifact": { "$ref": "#/$defs/candidate_artifact" },
+    "metrics_report": { "$ref": "#/$defs/metrics_report" }
+  }
+}

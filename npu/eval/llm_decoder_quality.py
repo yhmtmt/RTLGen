@@ -345,10 +345,25 @@ def compare_decoder_reference_docs(reference_doc: JsonDict, candidate_doc: JsonD
     cand = candidate_doc.get('candidate', {})
     next_token_id_match = int(ref['next_token_id'] == cand.get('next_token_id'))
     next_token_text_match = int(ref['next_token_text'] == cand.get('next_token_text'))
+    candidate_topk = cand.get('topk', [])
+    if not isinstance(candidate_topk, list):
+        candidate_topk = []
+    ref_token_id = int(ref['next_token_id'])
+    ref_token_text = str(ref['next_token_text'])
+    topk_contains_reference_id = int(any(
+        isinstance(entry, dict) and entry.get('token_id') == ref_token_id
+        for entry in candidate_topk
+    ))
+    topk_contains_reference_text = int(any(
+        isinstance(entry, dict) and str(entry.get('token_text', '')) == ref_token_text
+        for entry in candidate_topk
+    ))
     return {
         'sample_id': reference_doc['sample_id'],
         'aggregate': {
             'next_token_id_match': next_token_id_match,
             'next_token_text_match': next_token_text_match,
+            'topk_contains_reference_id': topk_contains_reference_id,
+            'topk_contains_reference_text': topk_contains_reference_text,
         },
     }
