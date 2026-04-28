@@ -42,8 +42,14 @@ python3 npu/eval/validate.py --campaign <campaign.json> --check_paths
 Control-plane API:
 
 ```sh
-PYTHONPATH=/workspaces/RTLGen/control_plane python3 -m control_plane.cli.main serve-api --host 127.0.0.1 --port 8080
+PYTHONPATH=/workspaces/rtlgen-eval-clean/control_plane \
+/workspaces/RTLGen/control_plane/.venv/bin/python -m control_plane.cli.main serve-api --host 127.0.0.1 --port 8080
 ```
+
+When the service checkout is `/workspaces/rtlgen-eval-clean`, keep
+`PYTHONPATH` pointed at that checkout even if the venv lives under
+`/workspaces/RTLGen`; otherwise the editable install can import stale control
+plane code from the wrong worktree.
 
 ## Apple Silicon note
 
