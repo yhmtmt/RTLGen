@@ -78,7 +78,7 @@ Common reasons:
 Manual dispatch fallback:
 ```sh
 source /workspaces/RTLGen/control_plane/.venv/bin/activate
-PYTHONPATH=/workspaces/RTLGen/control_plane \
+PYTHONPATH=/workspaces/rtlgen-eval-clean/control_plane \
 python3 -m control_plane.cli.main scheduler \
   --database-url "$RTLCP_DATABASE_URL" \
   dispatch-ready-items
@@ -87,7 +87,7 @@ python3 -m control_plane.cli.main scheduler \
 Manual explicit assignment:
 ```sh
 source /workspaces/RTLGen/control_plane/.venv/bin/activate
-PYTHONPATH=/workspaces/RTLGen/control_plane \
+PYTHONPATH=/workspaces/rtlgen-eval-clean/control_plane \
 python3 -m control_plane.cli.main scheduler \
   --database-url "$RTLCP_DATABASE_URL" \
   assign-item \

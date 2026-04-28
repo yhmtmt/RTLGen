@@ -75,8 +75,26 @@ Notebook:
 - `RTLCP_REPO_SLUG`
 
 Default assumptions:
-- repo root: `/workspaces/RTLGen`
+- service repo root: `/workspaces/rtlgen-eval-clean`
 - venv: `/workspaces/RTLGen/control_plane/.venv`
+
+The venv may have an editable install that points at `/workspaces/RTLGen`.
+Service launchers must therefore set `PYTHONPATH` to the service repo checkout
+they are meant to run:
+
+```sh
+PYTHONPATH=/workspaces/rtlgen-eval-clean/control_plane
+```
+
+For the local evaluator container, prefer the checked-in wrapper:
+
+```sh
+/workspaces/rtlgen-eval-clean/control_plane/scripts/restart_local_control_plane_daemons.sh restart
+```
+
+The wrapper starts the API, dev resolver, worker daemon, and eval resolver from
+the same service checkout and fails fast if `control_plane` imports resolve
+outside that checkout.
 
 ## Service Behavior
 
