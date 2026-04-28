@@ -18,6 +18,8 @@ What exists now:
 - `samples.jsonl`
 - `reference_manifest.json`
 - `candidate_manifest.json`
+- `npu/eval/llm_decoder_contract.schema.json`
+- `npu/eval/validate_llm_decoder_contract.py`
 - fetched GPT-2-family tokenizer/model binding for reference artifacts
 - active ONNX exact-reference generation via `decoder_backend_v1` + `command_json_v1`
 - active ONNX candidate generation with configurable softmax and normalization modes
@@ -40,3 +42,4 @@ The reference side is a real ONNX Runtime exact-reference path. The candidate si
 Comparison
 ----------
 - reference vs candidate summary: `python3 npu/eval/compare_llm_decoder_quality.py --reference-manifest runs/datasets/llm_decoder_eval_tiny_v1/reference_manifest.json --candidate-manifest runs/datasets/llm_decoder_eval_tiny_v1/candidate_manifest.json`
+- contract validation: `python3 npu/eval/validate_llm_decoder_contract.py --dataset-manifest runs/datasets/llm_decoder_eval_tiny_v1/manifest.json`

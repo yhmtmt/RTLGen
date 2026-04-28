@@ -15,7 +15,11 @@ It is the first step toward a reproducible closed-loop flow:
 - `npu/eval/contract.md`: human-readable contract and field definitions.
 - `npu/eval/campaign.schema.json`: JSON schema for campaign manifests.
 - `npu/eval/result_row.schema.json`: JSON schema for merged result rows.
+- `npu/eval/llm_decoder_contract.schema.json`: JSON schema for the tiny
+  decoder prompt/reference/candidate/metrics contract.
 - `npu/eval/validate.py`: lightweight validator for campaign/result JSON.
+- `npu/eval/validate_llm_decoder_contract.py`: lightweight validator for the
+  checked-in decoder dataset, frozen artifacts, SHA256s, and token metrics.
 - `npu/eval/examples/`: minimal examples.
 - `runs/models/<model_set_id>/manifest.json`: shared benchmark model-set
   manifest with ONNX SHA256 checksums.
@@ -25,7 +29,7 @@ It is the first step toward a reproducible closed-loop flow:
 - `npu/eval/gen_llm_decoder_candidate_suite.py`: generate candidate decoder
   fixtures for the tiny decoder-quality stage.
 - `npu/eval/compare_llm_decoder_quality.py`: summarize token-level exact-match
-  rates from decoder reference/candidate manifests.
+  and top-k containment rates from decoder reference/candidate manifests.
 - `npu/eval/run_llm_decoder_onnx_reference.py`: active exact-reference runner
   behind `command_json_v1` for the pinned tiny decoder ONNX export.
 
@@ -48,6 +52,12 @@ python3 npu/eval/validate.py --campaign npu/eval/examples/minimal_campaign.json
 Validate merged result row:
 ```sh
 python3 npu/eval/validate.py --result-row npu/eval/examples/minimal_result_row.json
+```
+
+Validate the tiny decoder accuracy-stage contract:
+```sh
+python3 npu/eval/validate_llm_decoder_contract.py \
+  --dataset-manifest runs/datasets/llm_decoder_eval_tiny_v1/manifest.json
 ```
 
 Optionally verify path-like fields exist:

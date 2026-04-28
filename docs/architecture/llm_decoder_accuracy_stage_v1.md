@@ -32,8 +32,8 @@ What exists today:
 
 What does not exist yet:
 - a decoder-style model set,
-- token-level quality metrics in campaign/report outputs,
 - any dataset-backed acceptance gate for approximate hardware beyond reference/candidate next-token checks.
+- token-level quality metrics in full NPU campaign/report outputs.
 
 ## Immediate Goal
 
@@ -124,7 +124,9 @@ The repo now has the first explicit decoder-quality binding layer:
 - deterministic per-sample reference artifacts for greedy next-token checks,
 - deterministic candidate-only placeholders against the same contract,
 - a comparison-ready reference/candidate schema,
-- an exact-match summary utility for token-level placeholder evaluation,
+- an exact-match and top-k containment summary utility for token-level evaluation,
+- a lightweight contract schema and validator for the checked-in prompt,
+  reference, candidate, SHA256, tensor-trace, and metrics artifacts,
 - an explicit backend interface that can later compare software emulation and hardware-oriented execution for equivalence,
 - a replay-backed frozen-artifact backend (`replay_v1`) that keeps that interface stable before a real decoder runtime exists,
 - an executable command-backed adapter (`command_json_v1`) that can later bind a real CPU reference, software emulation, or hardware-target runtime without changing the manifests again.
