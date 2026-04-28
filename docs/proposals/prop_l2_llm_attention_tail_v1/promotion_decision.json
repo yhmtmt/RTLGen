@@ -1,15 +1,15 @@
 {
   "proposal_id": "prop_l2_llm_attention_tail_v1",
-  "candidate_id": "l2_llm_attention_tail_v1_nangate45_r1",
+  "candidate_id": "l2_artifact_sync_linkage_confirm_v1",
   "decision": "iterate",
   "reason": "Broad ranking evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
   "evidence_refs": [
-    "item:l2_llm_attention_tail_v1_nangate45_r1",
-    "run:l2_llm_attention_tail_v1_nangate45_r1_run_be2fd33c8cfd917e",
-    "artifact:control_plane/shadow_exports/l2_decisions/l2_llm_attention_tail_v1_nangate45_r1.json",
-    "pr:#218",
-    "https://github.com/yhmtmt/RTLGen/pull/218"
+    "item:l2_artifact_sync_linkage_confirm_v1",
+    "run:l2_artifact_sync_linkage_confirm_v1_run_f4d69e3b650ad5a0",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_artifact_sync_linkage_confirm_v1.json",
+    "pr:#229",
+    "https://github.com/yhmtmt/RTLGen/pull/229"
   ],
-  "next_action": "inspect follow-on work after l2_llm_attention_tail_v1_nangate45_r1",
+  "next_action": "inspect follow-on work after l2_artifact_sync_linkage_confirm_v1",
   "requires_human_approval": false
 }

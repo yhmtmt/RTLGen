@@ -2,13 +2,13 @@
 
 ## Candidate
 - `proposal_id`: `prop_l2_llm_attention_tail_v1`
-- `candidate_id`: `l2_llm_attention_tail_v1_nangate45_r1`
+- `candidate_id`: `l2_artifact_sync_linkage_confirm_v1`
 
 ## Evaluations Consumed
-- `l2_llm_attention_tail_v1_nangate45_r1`
-- `l2_llm_attention_tail_v1_nangate45_r1_run_be2fd33c8cfd917e`
-- source commit: `e0010e569dcbf4f4da47802bfed745545e49e563`
-- review: PR #218
+- `l2_artifact_sync_linkage_confirm_v1`
+- `l2_artifact_sync_linkage_confirm_v1_run_f4d69e3b650ad5a0`
+- source commit: `ccc7f79257e4b489b02bb0fb10235a84425c879b`
+- review: PR #229
 
 ## Baseline Comparison
 - baseline_ref: `None`
@@ -29,4 +29,4 @@
 ## Recommendation
 - `iterate`
 - reason: Broad ranking evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.
-- next_action: inspect follow-on work after l2_llm_attention_tail_v1_nangate45_r1
+- next_action: inspect follow-on work after l2_artifact_sync_linkage_confirm_v1
