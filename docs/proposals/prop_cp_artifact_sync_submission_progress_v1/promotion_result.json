@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_cp_artifact_sync_submission_progress_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "iterate",
+  "pr_number": 243,
+  "merge_commit": "8dcc4c6c5209dfb4ece7e289e1a43956bfc24462",
+  "merged_utc": "2026-04-28T09:09:04.631171Z"
 }

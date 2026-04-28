@@ -1,9 +1,15 @@
 {
   "proposal_id": "prop_cp_artifact_sync_submission_progress_v1",
-  "candidate_id": "cp_artifact_sync_submission_progress_v1",
+  "candidate_id": "l2_artifact_sync_submission_progress_confirm_v1",
   "decision": "iterate",
-  "reason": "Awaiting confirmation run evidence.",
-  "evidence_refs": [],
-  "next_action": "run l2_artifact_sync_submission_progress_confirm_v1",
+  "reason": "Accepted measurement-only baseline evidence was merged; proposal judgment remains deferred until the paired comparison is reviewed.",
+  "evidence_refs": [
+    "item:l2_artifact_sync_submission_progress_confirm_v1",
+    "run:l2_artifact_sync_submission_progress_confirm_v1_run_b6634f6bd4da0721",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_artifact_sync_submission_progress_confirm_v1.json",
+    "pr:#243",
+    "https://github.com/yhmtmt/RTLGen/pull/243"
+  ],
+  "next_action": "queue the paired comparison item",
   "requires_human_approval": false
 }

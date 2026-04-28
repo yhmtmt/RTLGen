@@ -17,7 +17,11 @@
         "direction": "iterate",
         "reason": "Workflow confirmation only; resolver should remain quiet after submission progress events."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 243,
+      "merge_commit": "8dcc4c6c5209dfb4ece7e289e1a43956bfc24462",
+      "merged_utc": "2026-04-28T09:09:04.631171Z",
+      "notes": "Merged via PR #243 and merge 8dcc4c6c5209dfb4ece7e289e1a43956bfc24462 at 2026-04-28T09:09:04.631171Z."
     }
   ]
 }
