@@ -1,9 +1,15 @@
 {
   "proposal_id": "prop_l2_llm_attention_tail_scheduler_visibility_v1",
-  "candidate_id": "l2_attention_tail_scheduler_visibility_report_v1",
+  "candidate_id": "l2_llm_attention_tail_scheduler_visibility_v1",
   "decision": "iterate",
-  "reason": "Awaiting evaluator evidence.",
-  "evidence_refs": [],
-  "next_action": "run l2_llm_attention_tail_scheduler_visibility_v1",
+  "reason": "Focused comparison baseline could not be resolved from proposal baseline_refs.",
+  "evidence_refs": [
+    "item:l2_llm_attention_tail_scheduler_visibility_v1",
+    "run:l2_llm_attention_tail_scheduler_visibility_v1_run_764436bf8ed34a67",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_llm_attention_tail_scheduler_visibility_v1.json",
+    "pr:#245",
+    "https://github.com/yhmtmt/RTLGen/pull/245"
+  ],
+  "next_action": "inspect follow-on work after l2_llm_attention_tail_scheduler_visibility_v1",
   "requires_human_approval": false
 }

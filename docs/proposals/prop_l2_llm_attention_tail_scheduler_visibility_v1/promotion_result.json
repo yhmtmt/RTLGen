@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_llm_attention_tail_scheduler_visibility_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "iterate",
+  "pr_number": 245,
+  "merge_commit": "0e46f55a74bd6486d22f965d782c9022aae9fd2d",
+  "merged_utc": "2026-04-28T12:00:54.722958Z"
 }

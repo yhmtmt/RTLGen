@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_llm_attention_tail_scheduler_visibility_v1",
-  "source_commit": "8e207a750a098253675ee88a9e4eb1f16d75d007",
+  "source_commit": "1962453ee7e6303ff42261988172db46027a7891",
   "requested_items": [
     {
       "item_id": "l2_llm_attention_tail_scheduler_visibility_v1",
@@ -18,7 +18,11 @@
         "direction": "iterate",
         "reason": "Measurement gate should recommend whether to pursue softmax buffering, softmax pipeline partitioning, scheduler overlap work, or no architecture change yet."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 245,
+      "merge_commit": "0e46f55a74bd6486d22f965d782c9022aae9fd2d",
+      "merged_utc": "2026-04-28T12:00:54.722958Z",
+      "notes": "Merged via PR #245 and merge 0e46f55a74bd6486d22f965d782c9022aae9fd2d at 2026-04-28T12:00:54.722958Z."
     }
   ]
 }
