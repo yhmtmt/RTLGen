@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_exact_probability_path_v1",
-  "source_commit": "251d3fddd95a52d4555d670cf3b95bec26a4d0b7",
+  "source_commit": "4d7441890679ee9163781c36ca5b2b121a46cc63",
   "requested_items": [
     {
       "item_id": "l2_decoder_exact_probability_path_v1",
@@ -22,6 +22,18 @@
       "merge_commit": "c27642a2fd938c6a5b43ca67a74ac774799ef4c7",
       "merged_utc": "2026-04-28T07:48:31.072822Z",
       "notes": "Merged via PR #233 and merge c27642a2fd938c6a5b43ca67a74ac774799ef4c7 at 2026-04-28T07:48:31.072822Z."
+    },
+    {
+      "item_id": "l2_decoder_generator_auto_evidence_confirm_v1",
+      "task_type": "l2_campaign",
+      "objective": "Confirm the Layer 2 generator automatically attaches decoder evidence commands for decoder_probability_path items.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "decoder_probability_path",
+      "status": "merged",
+      "merged_pr_number": 236,
+      "merge_commit": "22496d26bd3378fb29d5475695bc2a55e3be9a16",
+      "merged_utc": "2026-04-28T08:31:08.927484Z",
+      "notes": "Merged via PR #236 and merge 22496d26bd3378fb29d5475695bc2a55e3be9a16 at 2026-04-28T08:31:08.927484Z."
     }
   ]
 }
