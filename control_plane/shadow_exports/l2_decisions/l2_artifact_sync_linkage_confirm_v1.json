@@ -1,0 +1,169 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-04-28T02:54:17.094314Z",
+  "item_id": "l2_artifact_sync_linkage_confirm_v1",
+  "run_key": "l2_artifact_sync_linkage_confirm_v1_run_f4d69e3b650ad5a0",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "ccc7f79257e4b489b02bb0fb10235a84425c879b",
+  "review_metadata_source_commit": "ccc7f79257e4b489b02bb0fb10235a84425c879b",
+  "objective": "Confirm artifact_sync packaging resolves exact developer_loop proposal linkage after evaluator repo restart.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+    ],
+    "design_dirs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+    ],
+    "macro_manifests": [
+      "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+      "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+    ],
+    "generated_campaign": {
+      "path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign__l2_artifact_sync_linkage_confirm_v1.json",
+      "outputs": {
+        "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_linkage_confirm_v1/report.md",
+        "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_linkage_confirm_v1/results.csv",
+        "campaign_dir": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_linkage_confirm_v1"
+      },
+      "clean_outputs": true,
+      "base_campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json"
+    },
+    "candidate_manifests": [
+      "runs/candidates/nangate45/module_candidates.json"
+    ]
+  },
+  "recommendation": {
+    "arch_id": "fp16_nm1",
+    "macro_mode": "flat_nomacro",
+    "objective_rank": 1,
+    "objective_score": "0.0",
+    "latency_ms_mean": 0.028907999999999996,
+    "energy_mj_mean": 5.582770776e-06,
+    "critical_path_ns_mean": 5.557037432204143,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.193122,
+    "flow_elapsed_s_mean": 848.418
+  },
+  "objective_profiles": [
+    {
+      "profile": "balanced",
+      "best_arch_id": "fp16_nm1",
+      "best_macro_mode": "flat_nomacro",
+      "objective_score": "0.0",
+      "latency_ms_mean": "0.028907999999999996",
+      "energy_mj_mean": "5.582770776e-06",
+      "flow_elapsed_s_mean": "848.418",
+      "best_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_linkage_confirm_v1/objective_profiles/balanced/best_point.json",
+      "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_linkage_confirm_v1/objective_profiles/balanced/report.md",
+      "pareto_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_linkage_confirm_v1/objective_profiles/balanced/pareto.csv"
+    },
+    {
+      "profile": "latency",
+      "best_arch_id": "fp16_nm1",
+      "best_macro_mode": "flat_nomacro",
+      "objective_score": "0.0",
+      "latency_ms_mean": "0.028907999999999996",
+      "energy_mj_mean": "5.582770776e-06",
+      "flow_elapsed_s_mean": "848.418",
+      "best_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_linkage_confirm_v1/objective_profiles/latency/best_point.json",
+      "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_linkage_confirm_v1/objective_profiles/latency/report.md",
+      "pareto_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_linkage_confirm_v1/objective_profiles/latency/pareto.csv"
+    },
+    {
+      "profile": "energy",
+      "best_arch_id": "fp16_nm1",
+      "best_macro_mode": "flat_nomacro",
+      "objective_score": "0.0",
+      "latency_ms_mean": "0.028907999999999996",
+      "energy_mj_mean": "5.582770776e-06",
+      "flow_elapsed_s_mean": "848.418",
+      "best_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_linkage_confirm_v1/objective_profiles/energy/best_point.json",
+      "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_linkage_confirm_v1/objective_profiles/energy/report.md",
+      "pareto_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_linkage_confirm_v1/objective_profiles/energy/pareto.csv"
+    },
+    {
+      "profile": "runtime_bal",
+      "best_arch_id": "fp16_nm1",
+      "best_macro_mode": "flat_nomacro",
+      "objective_score": "0.12242050958096472",
+      "latency_ms_mean": "0.028907999999999996",
+      "energy_mj_mean": "5.582770776e-06",
+      "flow_elapsed_s_mean": "848.418",
+      "best_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_linkage_confirm_v1/objective_profiles/runtime_bal/best_point.json",
+      "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_linkage_confirm_v1/objective_profiles/runtime_bal/report.md",
+      "pareto_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_linkage_confirm_v1/objective_profiles/runtime_bal/pareto.csv"
+    },
+    {
+      "profile": "ppa",
+      "best_arch_id": "fp16_nm1",
+      "best_macro_mode": "flat_nomacro",
+      "objective_score": "0.0",
+      "latency_ms_mean": "0.028907999999999996",
+      "energy_mj_mean": "5.582770776e-06",
+      "flow_elapsed_s_mean": "848.418",
+      "best_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_linkage_confirm_v1/objective_profiles/ppa/best_point.json",
+      "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_linkage_confirm_v1/objective_profiles/ppa/report.md",
+      "pareto_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_linkage_confirm_v1/objective_profiles/ppa/pareto.csv"
+    }
+  ],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_llm_attention_tail_v1",
+    "title": "LLM attention tail measurement gate",
+    "primary_question": "Which current architecture point best supports LLM attention-tail scheduling evidence?",
+    "evaluation_mode": "broad_ranking",
+    "comparison_role": "ranking",
+    "abstraction_layer": "",
+    "expected_direction": "iterate",
+    "expected_reason": "Confirmation job records packaging/linkage health, not architecture improvement.",
+    "summary": "Broad ranking evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
+    "outcome": "ranking_recorded",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_llm_attention_tail_v1",
+    "title": "LLM attention tail measurement gate",
+    "kind": "architecture",
+    "primary_question": "Which current architecture point best supports LLM attention-tail scheduling evidence?",
+    "evaluation_mode": "broad_ranking",
+    "comparison_role": "ranking",
+    "outcome": "ranking_recorded",
+    "summary": "Broad ranking evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": []
+  },
+  "source_refs": {
+    "best_point_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_linkage_confirm_v1/best_point.json",
+    "summary_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_linkage_confirm_v1/summary.csv",
+    "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_linkage_confirm_v1/results.csv",
+    "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_linkage_confirm_v1/report.md",
+    "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_linkage_confirm_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+    "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_linkage_confirm_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+    "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_linkage_confirm_v1/artifacts/perf/fp16_nm1/mlp1/trace.json",
+    "focused_model_artifacts": [
+      {
+        "model_id": "mlp1",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_linkage_confirm_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_linkage_confirm_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_linkage_confirm_v1/artifacts/perf/fp16_nm1/mlp1/trace.json"
+      },
+      {
+        "model_id": "mlp2",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_linkage_confirm_v1/artifacts/mapper/fp16_nm1/mlp2/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_linkage_confirm_v1/artifacts/mapper/fp16_nm1/mlp2/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_linkage_confirm_v1/artifacts/perf/fp16_nm1/mlp2/trace.json"
+      }
+    ],
+    "objective_sweep_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_artifact_sync_linkage_confirm_v1/objective_sweep.csv"
+  }
+}
