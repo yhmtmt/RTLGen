@@ -4,7 +4,7 @@ Canonical source of truth for new intake work lives under `docs/backlog/`.
 
 | item_id | layer | kind | title | status | priority | proposal_id | source |
 |---|---|---|---|---|---|---|---|
-| `item_cp_artifact_sync_proposal_packaging_probe_v1` | `cross` | `architecture` | Artifact-sync proposal packaging probe | `seed` | `high` |  | `docs/backlog/items/item_cp_artifact_sync_proposal_packaging_probe_v1.md` |
+| `item_cp_artifact_sync_proposal_packaging_probe_v1` | `cross` | `architecture` | Artifact-sync proposal packaging probe | `merged` | `high` |  | `docs/backlog/items/item_cp_artifact_sync_proposal_packaging_probe_v1.md` |
 | `item_eval_non_mlp_terminal_suite_v1` | `cross` | `architecture` | Terminal-sensitive softmax suite | `merged` | `high` | `prop_cross_non_mlp_terminal_suite_v1` | `docs/backlog/items/item_eval_non_mlp_terminal_suite_v1.md` |
 | `item_eval_llm_attention_suite_v1` | `cross` | `architecture` | LLM attention benchmark suite | `seed` | `high` |  | `docs/backlog/items/item_eval_llm_attention_suite_v1.md` |
 | `item_eval_llm_decoder_accuracy_stage_v1` | `cross` | `architecture` | LLM decoder accuracy stage | `seed` | `high` |  | `docs/backlog/items/item_eval_llm_decoder_accuracy_stage_v1.md` |

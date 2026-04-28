@@ -3,15 +3,15 @@
 - item_id: `item_cp_artifact_sync_proposal_packaging_probe_v1`
 - layer: `cross`
 - kind: `architecture`
-- status: `seed`
+- status: `merged`
 - priority: `high`
 - owner: `developer_agent`
 - created_utc: `2026-04-27T23:20:00Z`
-- updated_utc: `2026-04-27T23:20:00Z`
+- updated_utc: `2026-04-28T00:10:00Z`
 - proposal_id:
 - proposal_path:
 - triggered_by_proposal: `prop_l2_llm_attention_tail_v1`
-- triggering_evidence: `PR #219`, `PR #218`
+- triggering_evidence: `PR #219`, `PR #218`, `PR #222`
 
 ## Problem
 - PR #219 fixed artifact submission packaging so proposal workspace files are
@@ -84,6 +84,17 @@
   an operator CLI wrapper
 - whether the negative broad-path case should be exposed in dashboard status as
   a distinct resolver reason or kept under the existing proposal-linkage error
+
+## Result
+- implemented by `PR #222`
+- strict `resolve_proposal_file` behavior now rejects broad or stale
+  `developer_loop.proposal_path` values instead of falling back to
+  `developer_loop.proposal_id`
+- submission preparation now fails unresolved proposal linkage before artifact
+  PR export instead of silently omitting proposal artifacts
+- regression coverage:
+  - `control_plane/control_plane/tests/test_docs_paths.py`
+  - `control_plane/control_plane/tests/test_submission_bridge.py`
 
 ## Promotion Rule
 - promote when the probe can fail before PR export for bad proposal linkage and
