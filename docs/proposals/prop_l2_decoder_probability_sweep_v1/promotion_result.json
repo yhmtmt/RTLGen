@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_decoder_probability_sweep_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "iterate",
+  "pr_number": 258,
+  "merge_commit": "324c9bab8f1619bae24e61482df36bf908317a7f",
+  "merged_utc": "2026-04-29T03:13:40.248678Z"
 }
