@@ -1,0 +1,264 @@
+{
+  "backend": {
+    "backend_id": "command_json_v1",
+    "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q4_w_q4_norm_recip_q10_prob_fp",
+    "command": [
+      "/workspaces/RTLGen/control_plane/.venv/bin/python",
+      "/workspaces/RTLGen/npu/eval/run_llm_decoder_onnx_candidate.py"
+    ],
+    "cwd": "",
+    "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
+    "input_name": "input_ids",
+    "interface": "decoder_backend_v1",
+    "model_config_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/config.json",
+    "normalization_mode": "reciprocal_quantized",
+    "normalization_reciprocal_bits": 10,
+    "onnx_model_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/model.onnx",
+    "output_name": "logits",
+    "request_schema": "decoder_backend_command_v1",
+    "role": "candidate",
+    "runtime_target": "software_emulation",
+    "softmax_input_quant_bits": 4,
+    "softmax_mode": "approx_pwl",
+    "softmax_weight_quant_bits": 4,
+    "timeout_s": 30.0,
+    "topk": 5,
+    "trace_output_patterns": [
+      "present.*"
+    ],
+    "trace_tensor_quant_bits": 4
+  },
+  "backend_invocation": {
+    "command": [
+      "/workspaces/RTLGen/control_plane/.venv/bin/python",
+      "/workspaces/RTLGen/npu/eval/run_llm_decoder_onnx_candidate.py"
+    ],
+    "cwd": "",
+    "request_schema": "decoder_backend_command_v1",
+    "result_schema": "decoder_backend_command_result_v1"
+  },
+  "backend_runtime": {
+    "approximation": {
+      "logits": {
+        "mode": "identity_logits"
+      },
+      "normalization": {
+        "exponent": -14,
+        "mantissa": 0.8704953917868966,
+        "mantissa_quantized": 0.8709677419354839,
+        "mode": "normalize_reciprocal_quantized",
+        "reciprocal": 5.31308222526182e-05,
+        "reciprocal_bits": 10,
+        "reciprocal_quantized": 5.3159652217741936e-05,
+        "sum_weights": 18821.466666662054
+      },
+      "probabilities": {
+        "mode": "identity_probabilities"
+      },
+      "softmax": {
+        "anchors": [
+          -8.0,
+          -4.0,
+          -2.0,
+          0.0
+        ],
+        "input_quant": {
+          "bits": 4,
+          "levels": 7,
+          "max_abs": 2.348286986351013,
+          "mode": "softmax_input_quant",
+          "scale": 0.33546956947871615
+        },
+        "max_logit": 1.4084631204605103,
+        "mode": "softmax_approx_pwl",
+        "shifted_min": -2.348286986351013,
+        "weight_quant": {
+          "bits": 4,
+          "levels": 15,
+          "max_value": 1.0,
+          "mode": "softmax_weight_quant",
+          "scale": 0.06666666666666667
+        }
+      }
+    },
+    "library": "onnxruntime",
+    "onnxruntime_version": "1.23.1",
+    "runner": "onnx_candidate_v1",
+    "runtime_target": "software_emulation",
+    "score_rank": 1
+  },
+  "candidate": {
+    "confidence": 5.3159652217741936e-05,
+    "next_token_id": 262,
+    "next_token_text": " the",
+    "selected_tensors": [
+      {
+        "dtype": "float32",
+        "max": 0.6770615577697754,
+        "mean": -0.004382764454931021,
+        "min": -0.6770615577697754,
+        "name": "present.0.key",
+        "quantization": {
+          "bits": 4,
+          "levels": 7,
+          "max_abs": 0.6770615577697754,
+          "mode": "trace_tensor_quant",
+          "scale": 0.09672307968139648
+        },
+        "shape": [
+          1,
+          2,
+          10,
+          64
+        ],
+        "std": 0.22524118423461914,
+        "step": 0
+      },
+      {
+        "dtype": "float32",
+        "max": 0.793407142162323,
+        "mean": 0.0019480965565890074,
+        "min": -0.6800632476806641,
+        "name": "present.0.value",
+        "quantization": {
+          "bits": 4,
+          "levels": 7,
+          "max_abs": 0.793407142162323,
+          "mode": "trace_tensor_quant",
+          "scale": 0.11334387745176043
+        },
+        "shape": [
+          1,
+          2,
+          10,
+          64
+        ],
+        "std": 0.22270391881465912,
+        "step": 0
+      },
+      {
+        "dtype": "float32",
+        "max": 0.7699031233787537,
+        "mean": 0.008506742306053638,
+        "min": -0.6599169373512268,
+        "name": "present.1.key",
+        "quantization": {
+          "bits": 4,
+          "levels": 7,
+          "max_abs": 0.7699031233787537,
+          "mode": "trace_tensor_quant",
+          "scale": 0.10998616048267909
+        },
+        "shape": [
+          1,
+          2,
+          10,
+          64
+        ],
+        "std": 0.21862219274044037,
+        "step": 0
+      },
+      {
+        "dtype": "float32",
+        "max": 0.7335707545280457,
+        "mean": -0.005076047033071518,
+        "min": -0.7335707545280457,
+        "name": "present.1.value",
+        "quantization": {
+          "bits": 4,
+          "levels": 7,
+          "max_abs": 0.7335707545280457,
+          "mode": "trace_tensor_quant",
+          "scale": 0.1047958220754351
+        },
+        "shape": [
+          1,
+          2,
+          10,
+          64
+        ],
+        "std": 0.22217033803462982,
+        "step": 0
+      }
+    ],
+    "selected_tensors_sha256": "efa7cfd398ac84eca7c276f7d352568c6fd5fad8afe46368d0c6933b6e105ea4",
+    "topk": [
+      {
+        "score": 5.3159652217741936e-05,
+        "token_id": 262,
+        "token_text": " the"
+      },
+      {
+        "score": 4.607169858870968e-05,
+        "token_id": 17439,
+        "token_text": "Frank"
+      },
+      {
+        "score": 4.607169858870968e-05,
+        "token_id": 35393,
+        "token_text": "Norm"
+      },
+      {
+        "score": 3.898374495967742e-05,
+        "token_id": 119,
+        "token_text": "\ufffd"
+      },
+      {
+        "score": 3.898374495967742e-05,
+        "token_id": 223,
+        "token_text": "\ufffd"
+      }
+    ]
+  },
+  "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q4_w_q4_norm_recip_q10_prob_fp",
+  "dataset_id": "llm_decoder_eval_tiny_v1",
+  "dataset_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/manifest.json",
+  "decode_policy": {
+    "max_new_tokens": 1,
+    "strategy": "greedy"
+  },
+  "model_binding": {
+    "contract_path": "runs/models/llm_decoder_tiny_v1/model_contract.json",
+    "execution_backend": "decoder_backend_v1",
+    "model_id": "llm_decoder_tiny_v1",
+    "status": "exact_reference_active"
+  },
+  "notes": "ONNX Runtime decoder candidate runner result using explicit softmax and normalization paths.",
+  "prompt": {
+    "text": "To be or not to be, that is the",
+    "token_count": 10,
+    "token_ids": [
+      2514,
+      307,
+      393,
+      407,
+      284,
+      307,
+      11,
+      326,
+      318,
+      262
+    ],
+    "tokens": [
+      "To",
+      "\u0120be",
+      "\u0120or",
+      "\u0120not",
+      "\u0120to",
+      "\u0120be",
+      ",",
+      "\u0120that",
+      "\u0120is",
+      "\u0120the"
+    ]
+  },
+  "sample_id": "quote_complete",
+  "task": "greedy_next_token",
+  "tokenizer": {
+    "kind": "gpt2_bpe",
+    "manifest_path": "runs/tokenizers/llm_decoder_gpt2_bpe_stub_v1/manifest.json",
+    "status": "exact_reference_tokenizer_active",
+    "tokenizer_id": "llm_decoder_gpt2_bpe_stub_v1"
+  },
+  "version": 0.1
+}

@@ -1,0 +1,6 @@
+{
+  "ok": true,
+  "returncode": 1,
+  "stderr_contains_NoSuchFile": true,
+  "stderr_tail": "NoSuchFile: ONNX model path does not exist: /tmp/tmp1p9a0o83/missing.onnx\n"
+}
