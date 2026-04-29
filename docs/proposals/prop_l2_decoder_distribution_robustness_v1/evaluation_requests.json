@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_distribution_robustness_v1",
-  "source_commit": "199c10b74b339a2a95dfeffb636ff4e6b30ddca9",
+  "source_commit": "c9674dafe98bf8a1199a8cbcb5dc06311422f09b",
   "requested_items": [
     {
       "item_id": "l2_decoder_distribution_robustness_v1",
@@ -20,7 +20,11 @@
         "direction": "iterate",
         "reason": "The map should show whether the q/fp approximation cliffs persist across broader prompt/logit entropy and top-1 margin regimes before any narrow approximation parameter tuning."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 267,
+      "merge_commit": "6763969ae8386a3a5fa5a1f20cffaa24d54bf23b",
+      "merged_utc": "2026-04-29T06:46:44.763542Z",
+      "notes": "Merged via PR #267 and merge 6763969ae8386a3a5fa5a1f20cffaa24d54bf23b at 2026-04-29T06:46:44.763542Z."
     }
   ]
 }

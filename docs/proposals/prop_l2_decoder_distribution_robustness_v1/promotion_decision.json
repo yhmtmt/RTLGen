@@ -1,9 +1,15 @@
 {
   "proposal_id": "prop_l2_decoder_distribution_robustness_v1",
-  "candidate_id": "pending",
-  "decision": "pending",
-  "reason": "Awaiting evaluator evidence.",
-  "evidence_refs": [],
-  "next_action": "Queue l2_decoder_distribution_robustness_v1.",
+  "candidate_id": "l2_decoder_distribution_robustness_v1",
+  "decision": "iterate",
+  "reason": "Broad ranking evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
+  "evidence_refs": [
+    "item:l2_decoder_distribution_robustness_v1",
+    "run:l2_decoder_distribution_robustness_v1_run_8cc46e0843306e63",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_distribution_robustness_v1.json",
+    "pr:#267",
+    "https://github.com/yhmtmt/RTLGen/pull/267"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_distribution_robustness_v1",
   "requires_human_approval": false
 }

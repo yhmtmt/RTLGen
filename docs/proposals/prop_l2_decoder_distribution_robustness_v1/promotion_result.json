@@ -3,8 +3,8 @@
   "status": "pending",
   "candidate_id": "l2_decoder_distribution_robustness_v1",
   "notes": "Awaiting evaluator run.",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "iterate",
+  "pr_number": 267,
+  "merge_commit": "6763969ae8386a3a5fa5a1f20cffaa24d54bf23b",
+  "merged_utc": "2026-04-29T06:46:44.763542Z"
 }
