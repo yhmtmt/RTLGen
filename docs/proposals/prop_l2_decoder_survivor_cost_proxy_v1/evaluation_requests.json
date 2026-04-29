@@ -1,0 +1,26 @@
+{
+  "proposal_id": "prop_l2_decoder_survivor_cost_proxy_v1",
+  "source_commit": "26503d2ac8cbcdb8e4e4af130797516ce23e3f44",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_survivor_cost_proxy_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run a rough cost-proxy ranking over exact-safe decoder prompt-stress survivor paths.",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json",
+      "evaluation_mode": "cost_proxy",
+      "abstraction_layer": "decoder_survivor_cost_proxy",
+      "comparison_role": "ranking",
+      "paired_baseline_item_id": "",
+      "depends_on_item_ids": [
+        "l2_decoder_survivor_prompt_stress_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "The proxy should rank exact-safe PWL and probability paths by explicit cost assumptions before committing to a hardware-cost candidate."
+      },
+      "status": "pending"
+    }
+  ]
+}

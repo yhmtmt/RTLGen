@@ -148,6 +148,18 @@ The prompt-stress grid excludes the already-collapsed fixed probability q8 and
 fp8_e4m3 paths. It is intended to confirm survivor robustness before narrower
 hardware-cost work.
 
+Rank prompt-stress survivors with a rough implementation-cost proxy:
+```sh
+python3 npu/eval/estimate_llm_decoder_survivor_cost.py \
+  --sweep runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_sweep__l2_decoder_survivor_prompt_stress_v1.json \
+  --out /tmp/decoder_survivor_cost_proxy.json \
+  --out-md /tmp/decoder_survivor_cost_proxy.md
+```
+
+The cost proxy gates rows on exact prompt-stress quality and then scores rough
+softmax/probability-path terms. Treat it as a planning rank for the next RTL or
+OpenROAD step, not as measured PPA.
+
 Optionally verify path-like fields exist:
 ```sh
 python3 npu/eval/validate.py --campaign <campaign.json> --check_paths

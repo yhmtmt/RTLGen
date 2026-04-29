@@ -774,6 +774,40 @@ def _decoder_survivor_prompt_stress_evidence(*, item_id: str) -> dict[str, Any]:
     }
 
 
+def _decoder_survivor_cost_proxy_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_tiny_v1"
+    sweep_in = f"{base}/decoder_quality_sweep__l2_decoder_survivor_prompt_stress_v1.json"
+    cost_out = f"{base}/decoder_survivor_cost_proxy__{item_id}.json"
+    cost_report = f"{base}/decoder_survivor_cost_proxy__{item_id}.md"
+    commands = [
+        {
+            "name": "estimate_decoder_survivor_cost_proxy",
+            "run": (
+                "python3 npu/eval/estimate_llm_decoder_survivor_cost.py "
+                f"--sweep {sweep_in} "
+                f"--out {cost_out} "
+                f"--out-md {cost_report}"
+            ),
+        },
+    ]
+    return {
+        "inputs": {
+            "source_sweep": sweep_in,
+            "cost_proxy_out": cost_out,
+            "cost_proxy_report": cost_report,
+            "cost_proxy_scope": (
+                "relative planning proxy over prompt-stress survivor rows; not RTL, "
+                "OpenROAD PPA, or final hardware acceptance"
+            ),
+        },
+        "commands": commands,
+        "expected_outputs": [
+            cost_out,
+            cost_report,
+        ],
+    }
+
+
 def _with_fresh_outputs(*, campaign: dict[str, Any], item_id: str) -> dict[str, Any]:
     cloned = json.loads(json.dumps(campaign))
     outputs = dict(cloned.get("outputs") or {})
@@ -877,8 +911,11 @@ def _build_payload(
         "decoder_probability_fp_sensitivity",
         "decoder_distribution_robustness",
         "decoder_survivor_prompt_stress",
+        "decoder_survivor_cost_proxy",
     }:
-        if abstraction_layer_name == "decoder_survivor_prompt_stress":
+        if abstraction_layer_name == "decoder_survivor_cost_proxy":
+            decoder_evidence = _decoder_survivor_cost_proxy_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_survivor_prompt_stress":
             decoder_evidence = _decoder_survivor_prompt_stress_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_distribution_robustness":
             decoder_evidence = _decoder_distribution_robustness_evidence(item_id=item_id)
