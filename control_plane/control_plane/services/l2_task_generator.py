@@ -858,6 +858,7 @@ def _decoder_q8_normalization_frontier_evidence(*, item_id: str) -> dict[str, An
     sweep_out = f"{base}/decoder_quality_sweep__{item_id}.json"
     frontier_out = f"{base}/decoder_q8_norm_frontier__{item_id}.json"
     frontier_report = f"{base}/decoder_q8_norm_frontier__{item_id}.md"
+    q8_recip_ppa = "control_plane/shadow_exports/l1_promotions/l1_decoder_q8_recip_norm_datapath_v1_r3.json"
     rough_grid = "decoder_q8_normalization_frontier_v1"
     commands = [
         {
@@ -906,6 +907,7 @@ def _decoder_q8_normalization_frontier_evidence(*, item_id: str) -> dict[str, An
             "run": (
                 "python3 npu/eval/estimate_llm_decoder_q8_norm_frontier.py "
                 f"--sweep {sweep_out} "
+                f"--q8-recip-ppa {q8_recip_ppa} "
                 f"--out {frontier_out} "
                 f"--out-md {frontier_report}"
             ),
@@ -926,9 +928,11 @@ def _decoder_q8_normalization_frontier_evidence(*, item_id: str) -> dict[str, An
             "candidate_sweep_grid": rough_grid,
             "frontier_out": frontier_out,
             "frontier_report": frontier_report,
+            "q8_reciprocal_datapath_ppa": q8_recip_ppa,
             "candidate_sweep_scope": (
                 "focused q8 PWL normalization frontier over exact normalization and quantized reciprocal "
-                "normalization bit widths on the prompt-stress dataset"
+                "normalization bit widths on the prompt-stress dataset, with q8 reciprocal ranking backed "
+                "by merged integrated datapath PPA when available"
             ),
         },
         "commands": commands,

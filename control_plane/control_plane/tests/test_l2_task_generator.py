@@ -667,6 +667,11 @@ def test_generate_l2_campaign_task_adds_decoder_q8_normalization_frontier_eviden
             assert "quantized reciprocal" in decoder_inputs["candidate_sweep_scope"]
             assert "--rough-grid decoder_q8_normalization_frontier_v1" in work_item.command_manifest[4]["run"]
             assert "estimate_llm_decoder_q8_norm_frontier.py" in work_item.command_manifest[5]["run"]
+            assert "--q8-recip-ppa control_plane/shadow_exports/l1_promotions/l1_decoder_q8_recip_norm_datapath_v1_r3.json" in work_item.command_manifest[5]["run"]
+            assert (
+                decoder_inputs["q8_reciprocal_datapath_ppa"]
+                == "control_plane/shadow_exports/l1_promotions/l1_decoder_q8_recip_norm_datapath_v1_r3.json"
+            )
             assert decoder_inputs["frontier_out"] in work_item.expected_outputs
             assert decoder_inputs["frontier_report"] in work_item.expected_outputs
             assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {

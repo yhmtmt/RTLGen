@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Summarize q8 PWL normalization frontier quality and cost tradeoffs."""
+"""Summarize q8 PWL normalization frontier quality and PPA tradeoffs."""
 
 from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -14,21 +15,25 @@ JsonDict = dict[str, Any]
 BASELINE_Q8_EXACT = "grid_approx_pwl_in_q8_w_q8_norm_exact"
 BF16_ANCHOR = "grid_approx_pwl_bf16_path"
 Q8_PREFIX = "grid_approx_pwl_in_q8_w_q8_norm_recip_q"
+DEFAULT_Q8_RECIP_PPA = Path("control_plane/shadow_exports/l1_promotions/l1_decoder_q8_recip_norm_datapath_v1_r3.json")
+METRIC_KEYS = ("critical_path_ns", "die_area", "total_power_mw")
 
 COST_MODEL = {
-    "name": "decoder_q8_normalization_planning_proxy_v1",
-    "source": "hand_written_planning_proxy_not_literature_backed",
-    "unit": "heuristic_planning_units",
-    "calibration_status": "uncalibrated",
+    "name": "decoder_q8_normalization_ppa_frontier_v2",
+    "source": "rtlgen_openroad_q8_reciprocal_datapath_metrics",
+    "unit": "nangate45_physical_metrics",
+    "calibration_status": "q8_reciprocal_integrated_datapath_measured",
     "ppa_balance": (
-        "The score is a single planning scalar. It does not independently balance timing, "
-        "power, and area, and it must not be read as Nangate45 PPA."
+        "Measured q8 reciprocal candidates are ranked lexicographically by critical path, "
+        "then area, then power. Exact q8 and bf16 reciprocal normalization remain unmeasured "
+        "hardware gaps and are not compared as accepted PPA."
     ),
     "intended_use": (
-        "Choose the next RTLGen/OpenROAD calibration target after quality-gated decoder "
-        "sweeps; do not use it as hardware acceptance evidence."
+        "Replace the q8 reciprocal normalization heuristic with merged RTLGen/OpenROAD "
+        "datapath evidence while preserving quality gates from the decoder sweep."
     ),
-    "rtlgen_calibration_proposal": "prop_l1_decoder_normalization_arithmetic_calibration_v1",
+    "rtlgen_calibration_proposal": "prop_l1_decoder_q8_recip_norm_datapath_v1",
+    "fallback_source": "hand_written_planning_proxy_used_only_when_ppa_artifact_is_absent",
 }
 
 
@@ -52,6 +57,49 @@ def _as_int(value: Any, default: int = 0) -> int:
         return int(value)
     except (TypeError, ValueError):
         return default
+
+
+def _metric_summary(row: JsonDict) -> JsonDict:
+    summary = row.get("metric_summary")
+    if not isinstance(summary, dict):
+        return {key: None for key in METRIC_KEYS}
+    return {key: _as_float(summary.get(key), default=None) for key in METRIC_KEYS}
+
+
+def _recip_bits_from_metrics_ref(metrics_ref: JsonDict) -> int | None:
+    text = " ".join(str(metrics_ref.get(key) or "") for key in ("metrics_csv", "result_path", "tag"))
+    match = re.search(r"recip_q(\d+)", text)
+    return int(match.group(1)) if match else None
+
+
+def _load_q8_recip_ppa(path: Path | None) -> dict[int, JsonDict]:
+    if path is None or not path.exists():
+        return {}
+    payload = _load_json(path)
+    proposals = payload.get("proposals")
+    if not isinstance(proposals, list):
+        raise SystemExit(f"q8 reciprocal PPA artifact must contain proposals list: {path}")
+    rows: dict[int, JsonDict] = {}
+    for proposal in proposals:
+        if not isinstance(proposal, dict):
+            continue
+        metrics_ref = proposal.get("metrics_ref")
+        if not isinstance(metrics_ref, dict):
+            continue
+        bits = _recip_bits_from_metrics_ref(metrics_ref)
+        metrics = _metric_summary(proposal)
+        if bits is None or str(metrics_ref.get("status") or "") != "ok":
+            continue
+        if any(metrics[key] is None for key in METRIC_KEYS):
+            continue
+        rows[bits] = {
+            "reciprocal_bits": bits,
+            "platform": metrics_ref.get("platform"),
+            "metrics_ref": metrics_ref,
+            "metrics": metrics,
+            "selection_reason": proposal.get("selection_reason"),
+        }
+    return rows
 
 
 def _quality(row: JsonDict) -> JsonDict:
@@ -82,7 +130,7 @@ def _quality(row: JsonDict) -> JsonDict:
     }
 
 
-def _normalization_cost(row: JsonDict) -> float:
+def _heuristic_normalization_cost(row: JsonDict) -> float:
     mode = str(row.get("normalization_mode") or "").strip()
     if mode == "exact":
         return 52.0
@@ -95,10 +143,57 @@ def _normalization_cost(row: JsonDict) -> float:
     return 40.0
 
 
-def _row_record(row: JsonDict) -> JsonDict:
+def _normalization_record(row: JsonDict, *, q8_recip_ppa: dict[int, JsonDict]) -> JsonDict:
+    mode = str(row.get("normalization_mode") or "exact").strip()
+    bits = _as_int(row.get("normalization_reciprocal_bits"), 0)
+    heuristic_cost = _heuristic_normalization_cost(row)
+    record: JsonDict = {
+        "mode": mode,
+        "reciprocal_bits": bits,
+        "reciprocal_float_format": row.get("normalization_reciprocal_float_format", ""),
+        "heuristic_fallback_units": round(heuristic_cost, 3),
+        "heuristic_fallback_unit": "heuristic_planning_units",
+        "ppa_metrics": None,
+        "metrics_ref": None,
+        "rank_source": "unmeasured_gap",
+        "rank_key": [2, round(heuristic_cost, 6)],
+        "unit": COST_MODEL["unit"],
+    }
+    if mode == "reciprocal_quantized":
+        ppa = q8_recip_ppa.get(bits)
+        if ppa is not None:
+            metrics = ppa["metrics"]
+            record.update(
+                {
+                    "ppa_metrics": metrics,
+                    "metrics_ref": ppa["metrics_ref"],
+                    "rank_source": "measured_q8_reciprocal_datapath_ppa",
+                    "rank_key": [0] + [float(metrics[key]) for key in METRIC_KEYS],
+                    "calibration_status": "integrated_q8_reciprocal_datapath_measured",
+                }
+            )
+            return record
+        record.update(
+            {
+                "rank_source": "heuristic_fallback_missing_q8_reciprocal_ppa",
+                "rank_key": [1, round(heuristic_cost, 6)],
+                "calibration_status": "missing_integrated_q8_reciprocal_datapath_ppa",
+            }
+        )
+        return record
+    if mode == "exact":
+        record["calibration_status"] = "unmeasured_exact_normalization_datapath"
+    elif mode == "reciprocal_float":
+        record["calibration_status"] = "unmeasured_float_reciprocal_datapath"
+    else:
+        record["calibration_status"] = "unmeasured_normalization_datapath"
+    return record
+
+
+def _row_record(row: JsonDict, *, q8_recip_ppa: dict[int, JsonDict]) -> JsonDict:
     template = str(row.get("template") or "")
     quality = _quality(row)
-    norm_cost = _normalization_cost(row)
+    normalization = _normalization_record(row, q8_recip_ppa=q8_recip_ppa)
     if template == BF16_ANCHOR:
         role = "bf16_primary_anchor"
     elif template == BASELINE_Q8_EXACT:
@@ -112,15 +207,8 @@ def _row_record(row: JsonDict) -> JsonDict:
         "candidate_semantics": row.get("candidate_semantics"),
         "role": role,
         "quality": quality,
-        "normalization": {
-            "mode": row.get("normalization_mode", "exact"),
-            "reciprocal_bits": row.get("normalization_reciprocal_bits", 0),
-            "reciprocal_float_format": row.get("normalization_reciprocal_float_format", ""),
-            "relative_cost_units": round(norm_cost, 3),
-            "unit": COST_MODEL["unit"],
-            "calibration_status": COST_MODEL["calibration_status"],
-        },
-        "frontier_score": round(norm_cost + (0.0 if quality["exact_safe"] else 1000.0), 3),
+        "normalization": normalization,
+        "frontier_rank_key": normalization["rank_key"] if quality["exact_safe"] else [9, *normalization["rank_key"]],
     }
 
 
@@ -142,16 +230,17 @@ def _write_markdown(path: Path, payload: JsonDict) -> None:
         "",
         payload["cost_model"]["intended_use"],
         "",
-        "## Quality And Normalization Cost",
+        "## Quality And Normalization PPA",
         "",
-        "| template | role | gate | next-token | top-k | norm mode | recip bits | norm cost |",
-        "|---|---|---|---:|---:|---|---:|---:|",
+        "| template | role | gate | next-token | top-k | norm mode | recip bits | rank source | critical_path_ns | die_area | total_power_mw |",
+        "|---|---|---|---:|---:|---|---:|---|---:|---:|---:|",
     ]
     for row in payload["ranked_rows"]:
         quality = row["quality"]
         norm = row["normalization"]
+        metrics = norm.get("ppa_metrics") or {}
         lines.append(
-            "| `{template}` | `{role}` | `{gate}` | {next}/{samples} | {topk}/{samples} | `{mode}` | {bits} | {cost:.3f} |".format(
+            "| `{template}` | `{role}` | `{gate}` | {next}/{samples} | {topk}/{samples} | `{mode}` | {bits} | `{rank_source}` | {cp} | {area} | {power} |".format(
                 template=row["template"],
                 role=row["role"],
                 gate=quality["gate"],
@@ -160,7 +249,10 @@ def _write_markdown(path: Path, payload: JsonDict) -> None:
                 samples=quality["sample_count"],
                 mode=norm["mode"],
                 bits=norm["reciprocal_bits"] or "",
-                cost=norm["relative_cost_units"],
+                rank_source=norm["rank_source"],
+                cp=metrics.get("critical_path_ns", ""),
+                area=metrics.get("die_area", ""),
+                power=metrics.get("total_power_mw", ""),
             )
         )
     lines.extend(["", "## Blocked Rows", ""])
@@ -182,12 +274,13 @@ def _write_markdown(path: Path, payload: JsonDict) -> None:
     path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
 
 
-def build_report(*, sweep_path: Path) -> JsonDict:
+def build_report(*, sweep_path: Path, q8_recip_ppa_path: Path | None = DEFAULT_Q8_RECIP_PPA) -> JsonDict:
     sweep = _load_json(sweep_path)
+    q8_recip_ppa = _load_q8_recip_ppa(q8_recip_ppa_path)
     rows = sweep.get("templates")
     if not isinstance(rows, list):
         raise SystemExit("sweep JSON must contain a templates list")
-    records = [_row_record(row) for row in rows if isinstance(row, dict)]
+    records = [_row_record(row, q8_recip_ppa=q8_recip_ppa) for row in rows if isinstance(row, dict)]
     interesting = [
         row
         for row in records
@@ -203,7 +296,7 @@ def build_report(*, sweep_path: Path) -> JsonDict:
     ]
     reciprocal_survivors.sort(
         key=lambda row: (
-            row["normalization"]["relative_cost_units"],
+            row["normalization"]["rank_key"],
             _as_int(row["normalization"]["reciprocal_bits"]),
             row["template"],
         )
@@ -214,8 +307,9 @@ def build_report(*, sweep_path: Path) -> JsonDict:
             "decision": "q8_reciprocal_candidate_survived",
             "selected_candidate": selected["template"],
             "reason": (
-                f"{selected['template']} preserved the exact prompt-stress gate with lower modeled "
-                "normalization cost than q8 exact normalization. It should be costed against the bf16 anchor next."
+                f"{selected['template']} preserved the exact prompt-stress gate and has the best "
+                f"{selected['normalization']['rank_source']} among exact-safe q8 reciprocal candidates. "
+                "q8 exact and bf16 reciprocal normalization remain unmeasured hardware gaps."
             ),
         }
     else:
@@ -231,7 +325,7 @@ def build_report(*, sweep_path: Path) -> JsonDict:
         interesting,
         key=lambda row: (
             not row["quality"]["exact_safe"],
-            row["frontier_score"],
+            row["frontier_rank_key"],
             row["template"],
         ),
     )
@@ -245,27 +339,36 @@ def build_report(*, sweep_path: Path) -> JsonDict:
             "quality_gate": "candidate must match next-token and top-k for every prompt-stress sample",
             "scope_note": (
                 "This is a focused q8 PWL normalization frontier. It tests reciprocal-normalization "
-                "precision as a replacement for q8 exact normalization; it is not RTL or OpenROAD PPA. "
-                "The normalization cost values are uncalibrated heuristic planning units."
+                "precision as a replacement for q8 exact normalization. q8 reciprocal rows use merged "
+                "RTLGen/OpenROAD integrated datapath metrics when the PPA artifact is available; exact "
+                "q8 and bf16 normalization paths remain unmeasured."
             ),
+        },
+        "source_artifacts": {
+            "q8_reciprocal_datapath_ppa": str(q8_recip_ppa_path) if q8_recip_ppa_path is not None else None,
+            "q8_reciprocal_ppa_bits": sorted(q8_recip_ppa),
         },
         "cost_model": COST_MODEL,
         "decision": decision,
         "ranked_rows": ranked,
         "next_step": [
-            "If a q8 reciprocal row survives, compare it against bf16 reciprocal PWL with an RTL/OpenROAD-oriented block estimate.",
-            "If no q8 reciprocal row survives, keep q8 exact normalization only as a quality baseline and move the implementation frontier to bf16 reciprocal PWL.",
+            "Measure bf16 reciprocal/multiply normalization before making a q8-versus-bf16 hardware decision.",
+            "Measure or model q8 exact normalization only if it remains a candidate beyond the reciprocal path.",
         ],
     }
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Summarize q8 PWL normalization frontier quality/cost tradeoffs")
+    ap = argparse.ArgumentParser(description="Summarize q8 PWL normalization frontier quality/PPA tradeoffs")
     ap.add_argument("--sweep", required=True, help="q8 normalization frontier sweep JSON")
+    ap.add_argument("--q8-recip-ppa", default=str(DEFAULT_Q8_RECIP_PPA), help="merged q8 reciprocal datapath promotion JSON")
     ap.add_argument("--out", required=True, help="output JSON path")
     ap.add_argument("--out-md", required=True, help="output Markdown report path")
     args = ap.parse_args()
-    report = build_report(sweep_path=Path(args.sweep))
+    report = build_report(
+        sweep_path=Path(args.sweep),
+        q8_recip_ppa_path=Path(args.q8_recip_ppa) if args.q8_recip_ppa else None,
+    )
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")

@@ -192,6 +192,7 @@ python3 npu/eval/sweep_llm_decoder_candidate_quality.py \
   --out /tmp/decoder_q8_norm_frontier_sweep.json
 python3 npu/eval/estimate_llm_decoder_q8_norm_frontier.py \
   --sweep /tmp/decoder_q8_norm_frontier_sweep.json \
+  --q8-recip-ppa control_plane/shadow_exports/l1_promotions/l1_decoder_q8_recip_norm_datapath_v1_r3.json \
   --out /tmp/decoder_q8_norm_frontier.json \
   --out-md /tmp/decoder_q8_norm_frontier.md
 ```
@@ -199,10 +200,11 @@ python3 npu/eval/estimate_llm_decoder_q8_norm_frontier.py \
 This frontier tests q8 PWL exact normalization against q8 PWL quantized
 reciprocal normalization at q10/q12/q14/q16, with the bf16 reciprocal PWL row
 kept as the current anchor. A reciprocal row is only a candidate if it preserves
-the full prompt-stress next-token and top-k gate. The reported normalization
-cost is an uncalibrated planning unit; follow it with RTLGen/OpenROAD
-calibration of the integer multiplier and accumulator/adder path before treating
-q10 as physically better than wider reciprocal options.
+the full prompt-stress next-token and top-k gate. When the merged q8 reciprocal
+datapath artifact is available, q10/q12/q14/q16 are ranked by measured
+Nangate45 critical path, then area, then power. q8 exact normalization and the
+bf16 reciprocal anchor remain unmeasured hardware gaps until their datapaths are
+costed separately.
 
 After the corresponding Layer 1 multiplier and accumulator/adder calibration
 jobs merge, synthesize the measured primitive evidence into a decoder
