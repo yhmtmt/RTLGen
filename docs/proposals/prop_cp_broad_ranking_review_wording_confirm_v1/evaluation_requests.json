@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_cp_broad_ranking_review_wording_confirm_v1",
-  "source_commit": "21d8757ea3dbac217773d79f262bc5421c47344f",
+  "source_commit": "15a102585320ce669150ded3a2f92263853aa504",
   "requested_items": [
     {
       "item_id": "l2_broad_ranking_review_wording_confirm_v1",
@@ -18,7 +18,11 @@
         "direction": "iterate",
         "reason": "Workflow confirmation should publish ranking_recorded evidence and baseline-not-required wording."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 248,
+      "merge_commit": "1e9752877831c899ae00d1291c6507a495b9cd0a",
+      "merged_utc": "2026-04-29T01:38:19.131962Z",
+      "notes": "Merged via PR #248 and merge 1e9752877831c899ae00d1291c6507a495b9cd0a at 2026-04-29T01:38:19.131962Z."
     }
   ]
 }
