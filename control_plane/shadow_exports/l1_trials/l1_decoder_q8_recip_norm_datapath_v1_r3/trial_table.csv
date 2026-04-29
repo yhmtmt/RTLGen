@@ -1,0 +1,2 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_decoder_q8_recip_norm_datapath_v1_r3_run_a6f20a76b1f8062d,1,1,0,succeeded,runs/designs/activations/softmax_rowwise_int8_r8_acc24_recip_q10_wrapper/metrics.csv,5.6126,39776.3136,0.00463,none,,
