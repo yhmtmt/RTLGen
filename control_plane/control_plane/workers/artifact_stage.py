@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import json
 from dataclasses import dataclass
 from hashlib import sha256
 from pathlib import Path
@@ -114,10 +115,70 @@ def _results_linked_supporting_paths(*, repo_root: Path, expected_outputs: list[
     return paths
 
 
+def _repo_local_file(repo_root: Path, rel_path: str, seen: set[str]) -> str | None:
+    rel_path = str(rel_path or "").strip()
+    if not rel_path or rel_path in seen:
+        return None
+    candidate = (repo_root / rel_path).resolve()
+    try:
+        candidate.relative_to(repo_root)
+    except ValueError:
+        return None
+    if not candidate.exists() or not candidate.is_file():
+        return None
+    seen.add(rel_path)
+    return rel_path
+
+
+def _decoder_sweep_linked_supporting_paths(*, repo_root: Path, expected_outputs: list[str]) -> list[str]:
+    paths: list[str] = []
+    seen: set[str] = set()
+    for output in expected_outputs:
+        sweep_path = (repo_root / output).resolve()
+        if not sweep_path.name.startswith("decoder_quality_sweep__") or sweep_path.suffix.lower() != ".json":
+            continue
+        if not sweep_path.exists() or not sweep_path.is_file():
+            continue
+        try:
+            sweep_doc = json.loads(sweep_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            continue
+        for row in sweep_doc.get("templates", []) or []:
+            if not isinstance(row, dict):
+                continue
+            for field in ("quality_json", "candidate_manifest"):
+                rel_path = _repo_local_file(repo_root, str(row.get(field, "")), seen)
+                if rel_path is not None:
+                    paths.append(rel_path)
+            manifest_rel = str(row.get("candidate_manifest", "")).strip()
+            manifest_path = (repo_root / manifest_rel).resolve()
+            try:
+                manifest_path.relative_to(repo_root)
+            except ValueError:
+                continue
+            if not manifest_path.exists() or not manifest_path.is_file():
+                continue
+            try:
+                manifest_doc = json.loads(manifest_path.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                continue
+            for sample in manifest_doc.get("samples", []) or []:
+                if not isinstance(sample, dict):
+                    continue
+                rel_path = _repo_local_file(repo_root, str(sample.get("candidate_json", "")), seen)
+                if rel_path is not None:
+                    paths.append(rel_path)
+    return paths
+
+
 def collect_linked_results_artifacts(*, repo_root: str, expected_outputs: list[str]) -> list[StagedArtifact]:
     repo_path = Path(repo_root).resolve()
     artifacts: list[StagedArtifact] = []
-    for rel_path in _results_linked_supporting_paths(repo_root=repo_path, expected_outputs=expected_outputs):
+    linked_paths = [
+        *_results_linked_supporting_paths(repo_root=repo_path, expected_outputs=expected_outputs),
+        *_decoder_sweep_linked_supporting_paths(repo_root=repo_path, expected_outputs=expected_outputs),
+    ]
+    for rel_path in linked_paths:
         path = (repo_path / rel_path).resolve()
         metadata = {
             "size_bytes": path.stat().st_size,
