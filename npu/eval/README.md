@@ -123,6 +123,31 @@ The distribution grid records entropy, effective-vocabulary, score-sum, and
 top-1/top-2 margin rollups alongside rank metrics. Use it to select follow-up
 approximation families, not to make a general model-quality claim.
 
+Run the focused survivor prompt-stress grid:
+```sh
+python3 npu/eval/gen_llm_decoder_reference_suite.py \
+  --dataset-manifest runs/datasets/llm_decoder_eval_tiny_v1/manifest_prompt_stress_v1.json \
+  --out-dir /tmp/decoder_prompt_stress_reference_v1 \
+  --out-manifest /tmp/decoder_prompt_stress_reference_v1_manifest.json
+python3 npu/eval/gen_llm_decoder_candidate_suite.py \
+  --dataset-manifest runs/datasets/llm_decoder_eval_tiny_v1/manifest_prompt_stress_v1.json \
+  --out-dir /tmp/decoder_prompt_stress_candidate_v1 \
+  --out-manifest /tmp/decoder_prompt_stress_candidate_v1_manifest.json
+jq '.reference_manifest="/tmp/decoder_prompt_stress_reference_v1_manifest.json" |
+    .candidate_manifest="/tmp/decoder_prompt_stress_candidate_v1_manifest.json"' \
+  runs/datasets/llm_decoder_eval_tiny_v1/manifest_prompt_stress_v1.json \
+  > /tmp/manifest_prompt_stress_v1.json
+python3 npu/eval/sweep_llm_decoder_candidate_quality.py \
+  --dataset-manifest /tmp/manifest_prompt_stress_v1.json \
+  --rough-grid decoder_survivor_prompt_stress_v1 \
+  --out-dir /tmp/decoder_prompt_stress_sweep \
+  --out /tmp/decoder_prompt_stress_sweep.json
+```
+
+The prompt-stress grid excludes the already-collapsed fixed probability q8 and
+fp8_e4m3 paths. It is intended to confirm survivor robustness before narrower
+hardware-cost work.
+
 Optionally verify path-like fields exist:
 ```sh
 python3 npu/eval/validate.py --campaign <campaign.json> --check_paths
