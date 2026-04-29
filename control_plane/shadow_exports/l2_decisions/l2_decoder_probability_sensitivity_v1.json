@@ -1,0 +1,120 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-04-29T04:30:06.470211Z",
+  "item_id": "l2_decoder_probability_sensitivity_v1",
+  "run_key": "l2_decoder_probability_sensitivity_v1_run_b5838c9e8fa35f57",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "267ed9b5a9df93860dd846da6a21e351850d58f6",
+  "review_metadata_source_commit": "267ed9b5a9df93860dd846da6a21e351850d58f6",
+  "objective": "Run a broad rough decoder probability-path sensitivity map over coarse exact, PWL, reciprocal, and probability quantization points.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+    ],
+    "design_dirs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+    ],
+    "macro_manifests": [
+      "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+      "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+    ],
+    "decoder_contract": {
+      "quality_out": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_compare__l2_decoder_probability_sensitivity_v1.json",
+      "validation_out": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_contract_validation__l2_decoder_probability_sensitivity_v1.json",
+      "dataset_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/manifest.json",
+      "candidate_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_manifest.json",
+      "reference_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/reference_manifest.json",
+      "candidate_sweep_dir": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_probability_sensitivity_v1",
+      "candidate_sweep_out": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_sweep__l2_decoder_probability_sensitivity_v1.json",
+      "baseline_quality_out": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_compare__l2_decoder_contract_eval_confirm_v1.json",
+      "candidate_sweep_grid": "decoder_probability_broad_v1",
+      "candidate_sweep_scope": "coarse distribution-dependent sensitivity map for the pinned tiny decoder benchmark; not general approximation acceptance evidence",
+      "missing_model_check_out": "runs/datasets/llm_decoder_eval_tiny_v1/missing_model_check__l2_decoder_probability_sensitivity_v1.json"
+    },
+    "generated_campaign": {
+      "path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign__l2_decoder_probability_sensitivity_v1.json",
+      "outputs": {
+        "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_probability_sensitivity_v1/report.md",
+        "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_probability_sensitivity_v1/results.csv",
+        "campaign_dir": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_probability_sensitivity_v1"
+      },
+      "clean_outputs": true,
+      "base_campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json"
+    },
+    "candidate_manifests": [
+      "runs/candidates/nangate45/module_candidates.json"
+    ]
+  },
+  "recommendation": {
+    "arch_id": "fp16_nm1",
+    "macro_mode": "flat_nomacro",
+    "objective_rank": 1,
+    "objective_score": "0.0",
+    "latency_ms_mean": 0.028907999999999996,
+    "energy_mj_mean": 5.582770776e-06,
+    "critical_path_ns_mean": 5.557037432204143,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.193122,
+    "flow_elapsed_s_mean": 848.418
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_probability_sensitivity_v1",
+    "title": "LLM decoder probability sensitivity map",
+    "primary_question": "Which coarse probability-path approximation families preserve next-token and top-k quality on the pinned tiny decoder benchmark, and where do cliffs appear?",
+    "evaluation_mode": "broad_ranking",
+    "comparison_role": "ranking",
+    "abstraction_layer": "decoder_probability_sensitivity",
+    "expected_direction": "iterate",
+    "expected_reason": "The map is expected to identify rough quality cliffs and candidate-safe regions for the pinned tiny benchmark, while explicitly avoiding general approximation acceptance claims.",
+    "summary": "Broad ranking evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
+    "outcome": "ranking_recorded",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_probability_sensitivity_v1",
+    "title": "LLM decoder probability sensitivity map",
+    "kind": "architecture",
+    "primary_question": "Which coarse probability-path approximation families preserve next-token and top-k quality on the pinned tiny decoder benchmark, and where do cliffs appear?",
+    "evaluation_mode": "broad_ranking",
+    "comparison_role": "ranking",
+    "outcome": "ranking_recorded",
+    "summary": "Broad ranking evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": []
+  },
+  "source_refs": {
+    "best_point_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_probability_sensitivity_v1/best_point.json",
+    "summary_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_probability_sensitivity_v1/summary.csv",
+    "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_probability_sensitivity_v1/results.csv",
+    "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_probability_sensitivity_v1/report.md",
+    "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_probability_sensitivity_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+    "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_probability_sensitivity_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+    "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_probability_sensitivity_v1/artifacts/perf/fp16_nm1/mlp1/trace.json",
+    "focused_model_artifacts": [
+      {
+        "model_id": "mlp1",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_probability_sensitivity_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_probability_sensitivity_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_probability_sensitivity_v1/artifacts/perf/fp16_nm1/mlp1/trace.json"
+      },
+      {
+        "model_id": "mlp2",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_probability_sensitivity_v1/artifacts/mapper/fp16_nm1/mlp2/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_probability_sensitivity_v1/artifacts/mapper/fp16_nm1/mlp2/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_probability_sensitivity_v1/artifacts/perf/fp16_nm1/mlp2/trace.json"
+      }
+    ]
+  }
+}
