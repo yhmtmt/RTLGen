@@ -335,7 +335,7 @@ def _read_config_target(
                         "--platform {platform} "
                         f"--sweep {{sweep_path}} "
                         f"--out_root {out_root} "
-                        "--skip_existing"
+                        "--force_gen --skip_existing"
                         )
                     ),
                 },
@@ -362,7 +362,7 @@ def _read_config_target(
                         "--platform {platform} "
                         f"--sweep {{sweep_path}} "
                         f"--out_root {out_root} "
-                        "--skip_existing"
+                        "--force_gen --skip_existing"
                         )
                     ),
                 },
@@ -389,7 +389,7 @@ def _read_config_target(
                         "--platform {platform} "
                         f"--sweep {{sweep_path}} "
                         f"--out_root {out_root} "
-                        "--skip_existing"
+                        "--force_gen --skip_existing"
                         )
                     ),
                 },
@@ -420,7 +420,7 @@ def _read_config_target(
                         "--platform {platform} "
                         f"--sweep {{sweep_path}} "
                         f"--out_root {out_root} "
-                        "--skip_existing"
+                        "--force_gen --skip_existing"
                         )
                     ),
                 },
