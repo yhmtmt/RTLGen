@@ -1,0 +1,470 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-04-29T09:15:06.385390Z",
+  "control_plane_source_commit": "ea6095808f683c26979575365f9a5c4249470a05",
+  "review_metadata_source_commit": "ea6095808f683c26979575365f9a5c4249470a05",
+  "item_id": "l1_decoder_norm_q8_recip_mult_calibration_v1_r2",
+  "run_key": "l1_decoder_norm_q8_recip_mult_calibration_v1_r2_run_53d6bd5cd13c348b",
+  "layer": "layer1",
+  "flow": "openroad",
+  "task_type": "l1_sweep",
+  "source_commit": "ea6095808f683c26979575365f9a5c4249470a05",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l1_decoder_norm_q8_recip_mult_calibration_v1_r2/evaluated.json",
+    "result": {
+      "branch": "eval/l1_decoder_norm_q8_recip_mult_calibration_v1_r2/s20260429t091506z",
+      "completed_utc": "2026-04-29T09:15:06.252730Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "f59743373362",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260429t091506z][host:f59743373362][item:l1_decoder_norm_q8_recip_mult_calibration_v1_r2]",
+      "metrics_rows": [
+        {
+          "tag": "mult_ppg_cpa_w4_32_nangate45_40523b9d",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "231d5c19",
+          "metrics_csv": "runs/designs/multipliers/mult8u_normal_koggestone_wrapper/metrics.csv"
+        },
+        {
+          "tag": "mult_ppg_cpa_w4_32_sky130_70e18859",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "b1b86ede",
+          "metrics_csv": "runs/designs/multipliers/mult8u_normal_koggestone_wrapper/metrics.csv"
+        },
+        {
+          "tag": "mult_ppg_cpa_w4_32_asap7_3b70c61f",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "b727aa3a",
+          "metrics_csv": "runs/designs/multipliers/mult8u_normal_koggestone_wrapper/metrics.csv"
+        },
+        {
+          "tag": "mult_ppg_cpa_w4_32_nangate45_highutil_da64be35",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "84032167",
+          "metrics_csv": "runs/designs/multipliers/mult8u_normal_koggestone_wrapper/metrics.csv"
+        },
+        {
+          "tag": "mult_ppg_cpa_w4_32_nangate45_highutil_87b48795",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "39ca4667",
+          "metrics_csv": "runs/designs/multipliers/mult8u_normal_koggestone_wrapper/metrics.csv"
+        },
+        {
+          "tag": "mult_ppg_cpa_w4_32_sky130hd_highutil_8c56d3b0",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "ee6c4432",
+          "metrics_csv": "runs/designs/multipliers/mult8u_normal_koggestone_wrapper/metrics.csv"
+        },
+        {
+          "tag": "mult_ppg_cpa_w4_32_sky130hd_highutil_8de86181",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "4c404a8c",
+          "metrics_csv": "runs/designs/multipliers/mult8u_normal_koggestone_wrapper/metrics.csv"
+        },
+        {
+          "tag": "mult_ppg_cpa_w4_32_asap7_highutil_c51f6982",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "a3bdd812",
+          "metrics_csv": "runs/designs/multipliers/mult8u_normal_koggestone_wrapper/metrics.csv"
+        },
+        {
+          "tag": "mult_ppg_cpa_w4_32_asap7_highutil_75828b8c",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "c7de4936",
+          "metrics_csv": "runs/designs/multipliers/mult8u_normal_koggestone_wrapper/metrics.csv"
+        },
+        {
+          "tag": "mult_ppg_cpa_w4_32_nangate45_40523b9d",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "231d5c19",
+          "metrics_csv": "runs/designs/multipliers/mult16u_normal_koggestone_wrapper/metrics.csv"
+        },
+        {
+          "tag": "mult_ppg_cpa_w4_32_sky130_70e18859",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "b1b86ede",
+          "metrics_csv": "runs/designs/multipliers/mult16u_normal_koggestone_wrapper/metrics.csv"
+        },
+        {
+          "tag": "mult_ppg_cpa_w4_32_asap7_3b70c61f",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "b727aa3a",
+          "metrics_csv": "runs/designs/multipliers/mult16u_normal_koggestone_wrapper/metrics.csv"
+        },
+        {
+          "tag": "mult_ppg_cpa_w4_32_nangate45_highutil_da64be35",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "84032167",
+          "metrics_csv": "runs/designs/multipliers/mult16u_normal_koggestone_wrapper/metrics.csv"
+        },
+        {
+          "tag": "mult_ppg_cpa_w4_32_nangate45_highutil_87b48795",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "39ca4667",
+          "metrics_csv": "runs/designs/multipliers/mult16u_normal_koggestone_wrapper/metrics.csv"
+        },
+        {
+          "tag": "mult_ppg_cpa_w4_32_sky130hd_highutil_8c56d3b0",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "ee6c4432",
+          "metrics_csv": "runs/designs/multipliers/mult16u_normal_koggestone_wrapper/metrics.csv"
+        },
+        {
+          "tag": "mult_ppg_cpa_w4_32_sky130hd_highutil_8de86181",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "4c404a8c",
+          "metrics_csv": "runs/designs/multipliers/mult16u_normal_koggestone_wrapper/metrics.csv"
+        },
+        {
+          "tag": "mult_ppg_cpa_w4_32_asap7_highutil_c51f6982",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "a3bdd812",
+          "metrics_csv": "runs/designs/multipliers/mult16u_normal_koggestone_wrapper/metrics.csv"
+        },
+        {
+          "tag": "mult_ppg_cpa_w4_32_asap7_highutil_75828b8c",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "c7de4936",
+          "metrics_csv": "runs/designs/multipliers/mult16u_normal_koggestone_wrapper/metrics.csv"
+        },
+        {
+          "tag": "mult_ppg_cpa_w4_32_nangate45_40523b9d",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "231d5c19",
+          "metrics_csv": "runs/designs/multipliers/mult16u_booth4_koggestone_wrapper/metrics.csv"
+        },
+        {
+          "tag": "mult_ppg_cpa_w4_32_sky130_70e18859",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "b1b86ede",
+          "metrics_csv": "runs/designs/multipliers/mult16u_booth4_koggestone_wrapper/metrics.csv"
+        },
+        {
+          "tag": "mult_ppg_cpa_w4_32_asap7_3b70c61f",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "b727aa3a",
+          "metrics_csv": "runs/designs/multipliers/mult16u_booth4_koggestone_wrapper/metrics.csv"
+        },
+        {
+          "tag": "mult_ppg_cpa_w4_32_nangate45_highutil_da64be35",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "84032167",
+          "metrics_csv": "runs/designs/multipliers/mult16u_booth4_koggestone_wrapper/metrics.csv"
+        },
+        {
+          "tag": "mult_ppg_cpa_w4_32_nangate45_highutil_87b48795",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "39ca4667",
+          "metrics_csv": "runs/designs/multipliers/mult16u_booth4_koggestone_wrapper/metrics.csv"
+        },
+        {
+          "tag": "mult_ppg_cpa_w4_32_sky130hd_highutil_8c56d3b0",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "ee6c4432",
+          "metrics_csv": "runs/designs/multipliers/mult16u_booth4_koggestone_wrapper/metrics.csv"
+        },
+        {
+          "tag": "mult_ppg_cpa_w4_32_sky130hd_highutil_8de86181",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "4c404a8c",
+          "metrics_csv": "runs/designs/multipliers/mult16u_booth4_koggestone_wrapper/metrics.csv"
+        },
+        {
+          "tag": "mult_ppg_cpa_w4_32_asap7_highutil_c51f6982",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "a3bdd812",
+          "metrics_csv": "runs/designs/multipliers/mult16u_booth4_koggestone_wrapper/metrics.csv"
+        },
+        {
+          "tag": "mult_ppg_cpa_w4_32_asap7_highutil_75828b8c",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "c7de4936",
+          "metrics_csv": "runs/designs/multipliers/mult16u_booth4_koggestone_wrapper/metrics.csv"
+        },
+        {
+          "tag": "mult_ppg_cpa_w4_32_nangate45_40523b9d",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "231d5c19",
+          "metrics_csv": "runs/designs/multipliers/mult32u_normal_koggestone_wrapper/metrics.csv"
+        },
+        {
+          "tag": "mult_ppg_cpa_w4_32_sky130_70e18859",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "b1b86ede",
+          "metrics_csv": "runs/designs/multipliers/mult32u_normal_koggestone_wrapper/metrics.csv"
+        },
+        {
+          "tag": "mult_ppg_cpa_w4_32_asap7_3b70c61f",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "b727aa3a",
+          "metrics_csv": "runs/designs/multipliers/mult32u_normal_koggestone_wrapper/metrics.csv"
+        },
+        {
+          "tag": "mult_ppg_cpa_w4_32_nangate45_highutil_da64be35",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "84032167",
+          "metrics_csv": "runs/designs/multipliers/mult32u_normal_koggestone_wrapper/metrics.csv"
+        },
+        {
+          "tag": "mult_ppg_cpa_w4_32_nangate45_highutil_87b48795",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "39ca4667",
+          "metrics_csv": "runs/designs/multipliers/mult32u_normal_koggestone_wrapper/metrics.csv"
+        },
+        {
+          "tag": "mult_ppg_cpa_w4_32_sky130hd_highutil_8c56d3b0",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "ee6c4432",
+          "metrics_csv": "runs/designs/multipliers/mult32u_normal_koggestone_wrapper/metrics.csv"
+        },
+        {
+          "tag": "mult_ppg_cpa_w4_32_sky130hd_highutil_8de86181",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "4c404a8c",
+          "metrics_csv": "runs/designs/multipliers/mult32u_normal_koggestone_wrapper/metrics.csv"
+        },
+        {
+          "tag": "mult_ppg_cpa_w4_32_asap7_highutil_c51f6982",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "a3bdd812",
+          "metrics_csv": "runs/designs/multipliers/mult32u_normal_koggestone_wrapper/metrics.csv"
+        },
+        {
+          "tag": "mult_ppg_cpa_w4_32_asap7_highutil_75828b8c",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "c7de4936",
+          "metrics_csv": "runs/designs/multipliers/mult32u_normal_koggestone_wrapper/metrics.csv"
+        }
+      ],
+      "queue_item_id": "l1_decoder_norm_q8_recip_mult_calibration_v1_r2",
+      "session_id": "s20260429t091506z",
+      "status": "ok",
+      "summary": "4/4 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "promotion_proposal",
+    "path": "control_plane/shadow_exports/l1_promotions/l1_decoder_norm_q8_recip_mult_calibration_v1_r2.json",
+    "storage_mode": "repo",
+    "sha256": "c6f70e343335a40ed7bf89972af313de4a2d6e1b6603af043d412c1d63bb0987",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-04-29T09:15:06.296733Z",
+      "item_id": "l1_decoder_norm_q8_recip_mult_calibration_v1_r2",
+      "run_key": "l1_decoder_norm_q8_recip_mult_calibration_v1_r2_run_53d6bd5cd13c348b",
+      "layer": "layer1",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l1_sweep",
+      "source_commit": "ea6095808f683c26979575365f9a5c4249470a05",
+      "objective": "Measure Nangate45 PPA for unsigned multiplier wrappers that bound q8 reciprocal-normalization multiply paths after multi-config command generation was fixed.",
+      "input_manifest": {
+        "sweeps": [
+          "runs/campaigns/multipliers/ppg_cpa_widths_4_32/sweeps/nangate45_highutil.json"
+        ],
+        "configs": [
+          "runs/designs/multipliers/mult8u_normal_koggestone_wrapper/config_mult8u_normal_koggestone.json",
+          "runs/designs/multipliers/mult16u_normal_koggestone_wrapper/config_mult16u_normal_koggestone.json",
+          "runs/designs/multipliers/mult16u_booth4_koggestone_wrapper/config_mult16u_booth4_koggestone.json",
+          "runs/designs/multipliers/mult32u_normal_koggestone_wrapper/config_mult32u_normal_koggestone.json"
+        ],
+        "out_root": "runs/designs/multipliers",
+        "design_dirs": [],
+        "macro_manifests": [],
+        "candidate_manifests": [],
+        "required_submodules": []
+      },
+      "proposal_count": 4,
+      "evaluation_record": {
+        "evaluation_mode": "measurement_only",
+        "abstraction_layer": "circuit_block",
+        "result_kind": "physical_metrics",
+        "physical_metrics_present": true,
+        "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+      },
+      "proposal_assessment": null,
+      "proposals": [
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/multipliers/mult8u_normal_koggestone_wrapper/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "84032167",
+            "tag": "mult_ppg_cpa_w4_32_nangate45_highutil_da64be35",
+            "result_path": "/workspaces/RTLGen/runs/designs/multipliers/mult8u_normal_koggestone_wrapper/work/84032167/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 0.1756,
+            "die_area": 1063.086025,
+            "total_power_mw": 0.000512
+          }
+        },
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/multipliers/mult16u_normal_koggestone_wrapper/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "84032167",
+            "tag": "mult_ppg_cpa_w4_32_nangate45_highutil_da64be35",
+            "result_path": "/workspaces/RTLGen/runs/designs/multipliers/mult16u_normal_koggestone_wrapper/work/84032167/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 0.1943,
+            "die_area": 3495.765625,
+            "total_power_mw": 0.00382
+          }
+        },
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/multipliers/mult16u_booth4_koggestone_wrapper/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "84032167",
+            "tag": "mult_ppg_cpa_w4_32_nangate45_highutil_da64be35",
+            "result_path": "/workspaces/RTLGen/runs/designs/multipliers/mult16u_booth4_koggestone_wrapper/work/84032167/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 0.1941,
+            "die_area": 3487.493025,
+            "total_power_mw": 0.00364
+          }
+        },
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/multipliers/mult32u_normal_koggestone_wrapper/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "84032167",
+            "tag": "mult_ppg_cpa_w4_32_nangate45_highutil_da64be35",
+            "result_path": "/workspaces/RTLGen/runs/designs/multipliers/mult32u_normal_koggestone_wrapper/work/84032167/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 0.2407,
+            "die_area": 11997.916225,
+            "total_power_mw": 0.0302
+          }
+        }
+      ],
+      "trial_summary": {
+        "item_id": "l1_decoder_norm_q8_recip_mult_calibration_v1_r2",
+        "completed_trials": 1,
+        "success_count": 1,
+        "failure_count": 0,
+        "success_rate": 1.0,
+        "metrics": {
+          "critical_path_ns": {
+            "best": 0.1756,
+            "mean": 0.1756,
+            "median": 0.1756,
+            "max": 0.1756,
+            "range": 0.0,
+            "stddev": 0.0
+          },
+          "die_area": {
+            "best": 1063.086025,
+            "mean": 1063.086025,
+            "median": 1063.086025,
+            "max": 1063.086025,
+            "range": 0.0,
+            "stddev": 0.0
+          },
+          "total_power_mw": {
+            "best": 0.000512,
+            "mean": 0.000512,
+            "median": 0.000512,
+            "max": 0.000512,
+            "range": 0.0,
+            "stddev": 0.0
+          }
+        }
+      },
+      "source_refs": {
+        "trial_metrics_csvs": [
+          "runs/designs/multipliers/mult8u_normal_koggestone_wrapper/metrics.csv",
+          "runs/designs/multipliers/mult16u_normal_koggestone_wrapper/metrics.csv",
+          "runs/designs/multipliers/mult16u_booth4_koggestone_wrapper/metrics.csv",
+          "runs/designs/multipliers/mult32u_normal_koggestone_wrapper/metrics.csv"
+        ],
+        "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_norm_q8_recip_mult_calibration_v1_r2/summary_stats.json",
+        "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_norm_q8_recip_mult_calibration_v1_r2/failure_stats.json",
+        "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_norm_q8_recip_mult_calibration_v1_r2/trial_table.csv"
+      }
+    }
+  },
+  "developer_loop": {
+    "evaluation": {
+      "mode": "measurement_only",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      }
+    },
+    "abstraction": {
+      "layer": "circuit_block"
+    },
+    "proposal_id": "prop_l1_decoder_normalization_arithmetic_calibration_v1",
+    "proposal_path": "docs/proposals/prop_l1_decoder_normalization_arithmetic_calibration_v1/proposal.json"
+  },
+  "submission_history": null,
+  "pr_payload": {
+    "branch": "eval/l1_decoder_norm_q8_recip_mult_calibration_v1_r2/s20260429t091506z",
+    "title": "eval: run layer1 decoder q8 reciprocal multiplier calibration retry",
+    "body_fields": {
+      "host": "f59743373362",
+      "session_id": "s20260429t091506z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_decoder_norm_q8_recip_mult_calibration_v1_r2"
+    },
+    "body_md": "## Summary\n- item_id: `l1_decoder_norm_q8_recip_mult_calibration_v1_r2`\n- run_key: `l1_decoder_norm_q8_recip_mult_calibration_v1_r2_run_53d6bd5cd13c348b`\n- layer: `layer1`\n- task_type: `l1_sweep`\n- status: `ok`\n- summary: `4/4 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l1_decoder_norm_q8_recip_mult_calibration_v1_r2/evaluated.json`\n- metrics_rows_count: `36`\n- review_artifact: `promotion_proposal` at `control_plane/shadow_exports/l1_promotions/l1_decoder_norm_q8_recip_mult_calibration_v1_r2.json`\n\n## Developer Context\n- proposal_id: `prop_l1_decoder_normalization_arithmetic_calibration_v1`\n- proposal_path: `docs/proposals/prop_l1_decoder_normalization_arithmetic_calibration_v1/proposal.json`\n- reviewer_first_read: `docs/proposals/prop_l1_decoder_normalization_arithmetic_calibration_v1/proposal.json` plus `docs/developer_agent_review.md`\n- execution_source_commit: `ea6095808f683c26979575365f9a5c4249470a05`\n- review_metadata_source_commit: `ea6095808f683c26979575365f9a5c4249470a05`\n\n## Evaluation Mode\n- evaluation_mode: `measurement_only`\n- abstraction_layer: `circuit_block`\n- evaluation_summary: `Physical metrics recorded from an accepted status=ok Layer 1 row.`\n\n## Checklist\n- [ ] Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge\n- [ ] Include metrics row references for each completed design\n- [ ] Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
