@@ -1,0 +1,2 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_decoder_norm_accumulator_adder_calibration_v1_r2_run_468c5ccfebeb29c6,1,1,0,succeeded,runs/designs/prefix_adders/adder_koggestone_16u_wrapper/metrics.csv,0.1836,913.2484,0.000243,none,,

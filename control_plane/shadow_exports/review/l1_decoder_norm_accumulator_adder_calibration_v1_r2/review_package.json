@@ -1,0 +1,929 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-04-29T09:15:58.485677Z",
+  "control_plane_source_commit": "ea6095808f683c26979575365f9a5c4249470a05",
+  "review_metadata_source_commit": "ea6095808f683c26979575365f9a5c4249470a05",
+  "item_id": "l1_decoder_norm_accumulator_adder_calibration_v1_r2",
+  "run_key": "l1_decoder_norm_accumulator_adder_calibration_v1_r2_run_468c5ccfebeb29c6",
+  "layer": "layer1",
+  "flow": "openroad",
+  "task_type": "l1_sweep",
+  "source_commit": "ea6095808f683c26979575365f9a5c4249470a05",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l1_decoder_norm_accumulator_adder_calibration_v1_r2/evaluated.json",
+    "result": {
+      "branch": "eval/l1_decoder_norm_accumulator_adder_calibration_v1_r2/s20260429t091558z",
+      "completed_utc": "2026-04-29T09:15:58.361600Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "f59743373362",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260429t091558z][host:f59743373362][item:l1_decoder_norm_accumulator_adder_calibration_v1_r2]",
+      "metrics_rows": [
+        {
+          "tag": "prefix_adders_nangate45_40523b9d",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "ef9c722d",
+          "metrics_csv": "runs/designs/prefix_adders/adder_ripple_16u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_sky130_70e18859",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "85a3ec1f",
+          "metrics_csv": "runs/designs/prefix_adders/adder_ripple_16u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_asap7_3b70c61f",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "03ccccfe",
+          "metrics_csv": "runs/designs/prefix_adders/adder_ripple_16u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_asap7_relaxed_a96d1e8e",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "67898f3f",
+          "metrics_csv": "runs/designs/prefix_adders/adder_ripple_16u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_nangate45_highutil_da64be35",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "1d3bcf3d",
+          "metrics_csv": "runs/designs/prefix_adders/adder_ripple_16u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_nangate45_highutil_87b48795",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "8fb1f207",
+          "metrics_csv": "runs/designs/prefix_adders/adder_ripple_16u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_sky130hd_highutil_8c56d3b0",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "4e4ce5c1",
+          "metrics_csv": "runs/designs/prefix_adders/adder_ripple_16u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_sky130hd_highutil_8de86181",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "76eefb74",
+          "metrics_csv": "runs/designs/prefix_adders/adder_ripple_16u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_asap7_highutil_c51f6982",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "cf19db5a",
+          "metrics_csv": "runs/designs/prefix_adders/adder_ripple_16u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_asap7_highutil_75828b8c",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "9fd82ac0",
+          "metrics_csv": "runs/designs/prefix_adders/adder_ripple_16u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_nangate45_40523b9d",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "ef9c722d",
+          "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_16u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_sky130_70e18859",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "85a3ec1f",
+          "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_16u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_asap7_3b70c61f",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "03ccccfe",
+          "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_16u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_asap7_relaxed_a96d1e8e",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "67898f3f",
+          "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_16u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_nangate45_highutil_da64be35",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "1d3bcf3d",
+          "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_16u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_nangate45_highutil_87b48795",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "8fb1f207",
+          "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_16u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_sky130hd_highutil_8c56d3b0",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "4e4ce5c1",
+          "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_16u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_sky130hd_highutil_8de86181",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "76eefb74",
+          "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_16u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_asap7_highutil_c51f6982",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "cf19db5a",
+          "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_16u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_asap7_highutil_75828b8c",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "9fd82ac0",
+          "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_16u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_nangate45_40523b9d",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "ef9c722d",
+          "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_16u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_sky130_70e18859",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "85a3ec1f",
+          "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_16u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_asap7_3b70c61f",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "03ccccfe",
+          "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_16u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_asap7_relaxed_a96d1e8e",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "67898f3f",
+          "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_16u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_nangate45_highutil_da64be35",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "1d3bcf3d",
+          "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_16u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_nangate45_highutil_87b48795",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "8fb1f207",
+          "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_16u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_sky130hd_highutil_8c56d3b0",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "4e4ce5c1",
+          "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_16u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_sky130hd_highutil_8de86181",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "76eefb74",
+          "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_16u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_asap7_highutil_c51f6982",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "cf19db5a",
+          "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_16u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_asap7_highutil_75828b8c",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "9fd82ac0",
+          "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_16u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_nangate45_40523b9d",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "ef9c722d",
+          "metrics_csv": "runs/designs/prefix_adders/adder_ripple_32u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_sky130_70e18859",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "85a3ec1f",
+          "metrics_csv": "runs/designs/prefix_adders/adder_ripple_32u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_asap7_relaxed_a96d1e8e",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "67898f3f",
+          "metrics_csv": "runs/designs/prefix_adders/adder_ripple_32u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_nangate45_highutil_da64be35",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "1d3bcf3d",
+          "metrics_csv": "runs/designs/prefix_adders/adder_ripple_32u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_nangate45_highutil_87b48795",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "8fb1f207",
+          "metrics_csv": "runs/designs/prefix_adders/adder_ripple_32u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_sky130hd_highutil_8c56d3b0",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "4e4ce5c1",
+          "metrics_csv": "runs/designs/prefix_adders/adder_ripple_32u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_sky130hd_highutil_8de86181",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "76eefb74",
+          "metrics_csv": "runs/designs/prefix_adders/adder_ripple_32u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_asap7_highutil_c51f6982",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "cf19db5a",
+          "metrics_csv": "runs/designs/prefix_adders/adder_ripple_32u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_asap7_highutil_75828b8c",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "9fd82ac0",
+          "metrics_csv": "runs/designs/prefix_adders/adder_ripple_32u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_nangate45_40523b9d",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "ef9c722d",
+          "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_32u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_sky130_70e18859",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "85a3ec1f",
+          "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_32u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_asap7_3b70c61f",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "03ccccfe",
+          "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_32u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_asap7_relaxed_a96d1e8e",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "67898f3f",
+          "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_32u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_nangate45_highutil_da64be35",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "1d3bcf3d",
+          "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_32u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_nangate45_highutil_87b48795",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "8fb1f207",
+          "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_32u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_sky130hd_highutil_8c56d3b0",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "4e4ce5c1",
+          "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_32u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_sky130hd_highutil_8de86181",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "76eefb74",
+          "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_32u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_asap7_highutil_c51f6982",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "cf19db5a",
+          "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_32u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_asap7_highutil_75828b8c",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "9fd82ac0",
+          "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_32u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_nangate45_40523b9d",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "ef9c722d",
+          "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_32u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_sky130_70e18859",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "85a3ec1f",
+          "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_32u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_asap7_3b70c61f",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "03ccccfe",
+          "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_32u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_asap7_relaxed_a96d1e8e",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "67898f3f",
+          "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_32u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_nangate45_highutil_da64be35",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "1d3bcf3d",
+          "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_32u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_nangate45_highutil_87b48795",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "8fb1f207",
+          "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_32u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_sky130hd_highutil_8c56d3b0",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "4e4ce5c1",
+          "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_32u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_sky130hd_highutil_8de86181",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "76eefb74",
+          "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_32u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_asap7_highutil_c51f6982",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "cf19db5a",
+          "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_32u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_asap7_highutil_75828b8c",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "9fd82ac0",
+          "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_32u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_nangate45_40523b9d",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "ef9c722d",
+          "metrics_csv": "runs/designs/prefix_adders/adder_ripple_64u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_sky130_relaxed_d46b4b9c",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "15e27f46",
+          "metrics_csv": "runs/designs/prefix_adders/adder_ripple_64u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_asap7_relaxed_a96d1e8e",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "67898f3f",
+          "metrics_csv": "runs/designs/prefix_adders/adder_ripple_64u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_nangate45_highutil_da64be35",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "1d3bcf3d",
+          "metrics_csv": "runs/designs/prefix_adders/adder_ripple_64u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_nangate45_highutil_87b48795",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "8fb1f207",
+          "metrics_csv": "runs/designs/prefix_adders/adder_ripple_64u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_sky130hd_highutil_8c56d3b0",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "4e4ce5c1",
+          "metrics_csv": "runs/designs/prefix_adders/adder_ripple_64u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_sky130hd_highutil_8de86181",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "76eefb74",
+          "metrics_csv": "runs/designs/prefix_adders/adder_ripple_64u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_asap7_highutil_c51f6982",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "cf19db5a",
+          "metrics_csv": "runs/designs/prefix_adders/adder_ripple_64u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_asap7_highutil_75828b8c",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "9fd82ac0",
+          "metrics_csv": "runs/designs/prefix_adders/adder_ripple_64u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_nangate45_40523b9d",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "ef9c722d",
+          "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_64u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_sky130_70e18859",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "85a3ec1f",
+          "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_64u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_asap7_3b70c61f",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "03ccccfe",
+          "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_64u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_asap7_relaxed_a96d1e8e",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "67898f3f",
+          "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_64u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_nangate45_highutil_da64be35",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "1d3bcf3d",
+          "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_64u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_nangate45_highutil_87b48795",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "8fb1f207",
+          "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_64u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_sky130hd_highutil_8c56d3b0",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "4e4ce5c1",
+          "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_64u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_sky130hd_highutil_8de86181",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "76eefb74",
+          "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_64u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_asap7_highutil_c51f6982",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "cf19db5a",
+          "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_64u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_asap7_highutil_75828b8c",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "9fd82ac0",
+          "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_64u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_nangate45_40523b9d",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "ef9c722d",
+          "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_64u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_sky130_70e18859",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "85a3ec1f",
+          "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_64u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_asap7_3b70c61f",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "03ccccfe",
+          "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_64u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_asap7_relaxed_a96d1e8e",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "67898f3f",
+          "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_64u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_nangate45_highutil_da64be35",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "1d3bcf3d",
+          "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_64u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_nangate45_highutil_87b48795",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "8fb1f207",
+          "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_64u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_sky130hd_highutil_8c56d3b0",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "4e4ce5c1",
+          "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_64u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_sky130hd_highutil_8de86181",
+          "status": "ok",
+          "platform": "sky130hd",
+          "param_hash": "76eefb74",
+          "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_64u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_asap7_highutil_c51f6982",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "cf19db5a",
+          "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_64u_wrapper/metrics.csv"
+        },
+        {
+          "tag": "prefix_adders_asap7_highutil_75828b8c",
+          "status": "ok",
+          "platform": "asap7",
+          "param_hash": "9fd82ac0",
+          "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_64u_wrapper/metrics.csv"
+        }
+      ],
+      "queue_item_id": "l1_decoder_norm_accumulator_adder_calibration_v1_r2",
+      "session_id": "s20260429t091558z",
+      "status": "ok",
+      "summary": "4/4 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "promotion_proposal",
+    "path": "control_plane/shadow_exports/l1_promotions/l1_decoder_norm_accumulator_adder_calibration_v1_r2.json",
+    "storage_mode": "repo",
+    "sha256": "d7d9784e509cad48ba10fb2b65edf30a95c29cfa907cefe1c602f5db903ae5c9",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-04-29T09:15:58.388939Z",
+      "item_id": "l1_decoder_norm_accumulator_adder_calibration_v1_r2",
+      "run_key": "l1_decoder_norm_accumulator_adder_calibration_v1_r2_run_468c5ccfebeb29c6",
+      "layer": "layer1",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l1_sweep",
+      "source_commit": "ea6095808f683c26979575365f9a5c4249470a05",
+      "objective": "Measure Nangate45 PPA for unsigned prefix-adder wrappers that bound q8 normalization-sum and accumulator paths after multi-config command generation was fixed.",
+      "input_manifest": {
+        "sweeps": [
+          "runs/campaigns/prefix_adders/sweeps/nangate45_highutil.json"
+        ],
+        "configs": [
+          "runs/designs/prefix_adders/adder_ripple_16u_wrapper/config_adder_ripple_unsigned_16bit.json",
+          "runs/designs/prefix_adders/adder_brentkung_16u_wrapper/config_adder_brentkung_unsigned_16bit.json",
+          "runs/designs/prefix_adders/adder_koggestone_16u_wrapper/config_adder_koggestone_unsigned_16bit.json",
+          "runs/designs/prefix_adders/adder_ripple_32u_wrapper/config_adder_ripple_unsigned_32bit.json",
+          "runs/designs/prefix_adders/adder_brentkung_32u_wrapper/config_adder_brentkung_unsigned_32bit.json",
+          "runs/designs/prefix_adders/adder_koggestone_32u_wrapper/config_adder_koggestone_unsigned_32bit.json",
+          "runs/designs/prefix_adders/adder_ripple_64u_wrapper/config_adder_ripple_unsigned_64bit.json",
+          "runs/designs/prefix_adders/adder_brentkung_64u_wrapper/config_adder_brentkung_unsigned_64bit.json",
+          "runs/designs/prefix_adders/adder_koggestone_64u_wrapper/config_adder_koggestone_unsigned_64bit.json"
+        ],
+        "out_root": "runs/designs/prefix_adders",
+        "design_dirs": [],
+        "macro_manifests": [],
+        "candidate_manifests": [],
+        "required_submodules": []
+      },
+      "proposal_count": 9,
+      "evaluation_record": {
+        "evaluation_mode": "measurement_only",
+        "abstraction_layer": "circuit_block",
+        "result_kind": "physical_metrics",
+        "physical_metrics_present": true,
+        "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+      },
+      "proposal_assessment": null,
+      "proposals": [
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/prefix_adders/adder_ripple_16u_wrapper/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "8fb1f207",
+            "tag": "prefix_adders_nangate45_highutil_87b48795",
+            "result_path": "/workspaces/RTLGen/runs/designs/prefix_adders/adder_ripple_16u_wrapper/work/8fb1f207/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 0.1844,
+            "die_area": 679.6449,
+            "total_power_mw": 0.000197
+          }
+        },
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_16u_wrapper/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "8fb1f207",
+            "tag": "prefix_adders_nangate45_highutil_87b48795",
+            "result_path": "/workspaces/RTLGen/runs/designs/prefix_adders/adder_brentkung_16u_wrapper/work/8fb1f207/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 0.1861,
+            "die_area": 739.568025,
+            "total_power_mw": 0.000206
+          }
+        },
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_16u_wrapper/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "8fb1f207",
+            "tag": "prefix_adders_nangate45_highutil_87b48795",
+            "result_path": "/workspaces/RTLGen/runs/designs/prefix_adders/adder_koggestone_16u_wrapper/work/8fb1f207/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 0.1836,
+            "die_area": 913.2484,
+            "total_power_mw": 0.000243
+          }
+        },
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/prefix_adders/adder_ripple_32u_wrapper/metrics.csv",
+            "platform": "asap7",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "cf19db5a",
+            "tag": "prefix_adders_asap7_highutil_c51f6982",
+            "result_path": "/workspaces/RTLGen/runs/designs/prefix_adders/adder_ripple_32u_wrapper/work/cf19db5a/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 1.1646604999999999,
+            "die_area": 115.928289,
+            "total_power_mw": 0.00023999999999999998
+          }
+        },
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_32u_wrapper/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "1d3bcf3d",
+            "tag": "prefix_adders_nangate45_highutil_da64be35",
+            "result_path": "/workspaces/RTLGen/runs/designs/prefix_adders/adder_brentkung_32u_wrapper/work/1d3bcf3d/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 0.1938,
+            "die_area": 1195.0849,
+            "total_power_mw": 0.000423
+          }
+        },
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_32u_wrapper/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "1d3bcf3d",
+            "tag": "prefix_adders_nangate45_highutil_da64be35",
+            "result_path": "/workspaces/RTLGen/runs/designs/prefix_adders/adder_koggestone_32u_wrapper/work/1d3bcf3d/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 0.1975,
+            "die_area": 1605.204225,
+            "total_power_mw": 0.000532
+          }
+        },
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/prefix_adders/adder_ripple_64u_wrapper/metrics.csv",
+            "platform": "asap7",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "cf19db5a",
+            "tag": "prefix_adders_asap7_highutil_c51f6982",
+            "result_path": "/workspaces/RTLGen/runs/designs/prefix_adders/adder_ripple_64u_wrapper/work/cf19db5a/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 2.2664414,
+            "die_area": 207.446409,
+            "total_power_mw": 0.000544
+          }
+        },
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_64u_wrapper/metrics.csv",
+            "platform": "asap7",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "cf19db5a",
+            "tag": "prefix_adders_asap7_highutil_c51f6982",
+            "result_path": "/workspaces/RTLGen/runs/designs/prefix_adders/adder_brentkung_64u_wrapper/work/cf19db5a/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 1.2620005,
+            "die_area": 203.975524,
+            "total_power_mw": 0.000602
+          }
+        },
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_64u_wrapper/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "1d3bcf3d",
+            "tag": "prefix_adders_nangate45_highutil_da64be35",
+            "result_path": "/workspaces/RTLGen/runs/designs/prefix_adders/adder_koggestone_64u_wrapper/work/1d3bcf3d/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 0.2225,
+            "die_area": 3074.7025,
+            "total_power_mw": 0.00104
+          }
+        }
+      ],
+      "trial_summary": {
+        "item_id": "l1_decoder_norm_accumulator_adder_calibration_v1_r2",
+        "completed_trials": 1,
+        "success_count": 1,
+        "failure_count": 0,
+        "success_rate": 1.0,
+        "metrics": {
+          "critical_path_ns": {
+            "best": 0.1836,
+            "mean": 0.1836,
+            "median": 0.1836,
+            "max": 0.1836,
+            "range": 0.0,
+            "stddev": 0.0
+          },
+          "die_area": {
+            "best": 913.2484,
+            "mean": 913.2484,
+            "median": 913.2484,
+            "max": 913.2484,
+            "range": 0.0,
+            "stddev": 0.0
+          },
+          "total_power_mw": {
+            "best": 0.000243,
+            "mean": 0.000243,
+            "median": 0.000243,
+            "max": 0.000243,
+            "range": 0.0,
+            "stddev": 0.0
+          }
+        }
+      },
+      "source_refs": {
+        "trial_metrics_csvs": [
+          "runs/designs/prefix_adders/adder_ripple_16u_wrapper/metrics.csv",
+          "runs/designs/prefix_adders/adder_brentkung_16u_wrapper/metrics.csv",
+          "runs/designs/prefix_adders/adder_koggestone_16u_wrapper/metrics.csv",
+          "runs/designs/prefix_adders/adder_ripple_32u_wrapper/metrics.csv",
+          "runs/designs/prefix_adders/adder_brentkung_32u_wrapper/metrics.csv",
+          "runs/designs/prefix_adders/adder_koggestone_32u_wrapper/metrics.csv",
+          "runs/designs/prefix_adders/adder_ripple_64u_wrapper/metrics.csv",
+          "runs/designs/prefix_adders/adder_brentkung_64u_wrapper/metrics.csv",
+          "runs/designs/prefix_adders/adder_koggestone_64u_wrapper/metrics.csv"
+        ],
+        "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_norm_accumulator_adder_calibration_v1_r2/summary_stats.json",
+        "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_norm_accumulator_adder_calibration_v1_r2/failure_stats.json",
+        "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_norm_accumulator_adder_calibration_v1_r2/trial_table.csv"
+      }
+    }
+  },
+  "developer_loop": {
+    "evaluation": {
+      "mode": "measurement_only",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      }
+    },
+    "abstraction": {
+      "layer": "circuit_block"
+    },
+    "proposal_id": "prop_l1_decoder_normalization_arithmetic_calibration_v1",
+    "proposal_path": "docs/proposals/prop_l1_decoder_normalization_arithmetic_calibration_v1/proposal.json"
+  },
+  "submission_history": null,
+  "pr_payload": {
+    "branch": "eval/l1_decoder_norm_accumulator_adder_calibration_v1_r2/s20260429t091558z",
+    "title": "eval: run layer1 decoder normalization adder calibration retry",
+    "body_fields": {
+      "host": "f59743373362",
+      "session_id": "s20260429t091558z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_decoder_norm_accumulator_adder_calibration_v1_r2"
+    },
+    "body_md": "## Summary\n- item_id: `l1_decoder_norm_accumulator_adder_calibration_v1_r2`\n- run_key: `l1_decoder_norm_accumulator_adder_calibration_v1_r2_run_468c5ccfebeb29c6`\n- layer: `layer1`\n- task_type: `l1_sweep`\n- status: `ok`\n- summary: `4/4 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l1_decoder_norm_accumulator_adder_calibration_v1_r2/evaluated.json`\n- metrics_rows_count: `88`\n- review_artifact: `promotion_proposal` at `control_plane/shadow_exports/l1_promotions/l1_decoder_norm_accumulator_adder_calibration_v1_r2.json`\n\n## Developer Context\n- proposal_id: `prop_l1_decoder_normalization_arithmetic_calibration_v1`\n- proposal_path: `docs/proposals/prop_l1_decoder_normalization_arithmetic_calibration_v1/proposal.json`\n- reviewer_first_read: `docs/proposals/prop_l1_decoder_normalization_arithmetic_calibration_v1/proposal.json` plus `docs/developer_agent_review.md`\n- execution_source_commit: `ea6095808f683c26979575365f9a5c4249470a05`\n- review_metadata_source_commit: `ea6095808f683c26979575365f9a5c4249470a05`\n\n## Evaluation Mode\n- evaluation_mode: `measurement_only`\n- abstraction_layer: `circuit_block`\n- evaluation_summary: `Physical metrics recorded from an accepted status=ok Layer 1 row.`\n\n## Checklist\n- [ ] Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge\n- [ ] Include metrics row references for each completed design\n- [ ] Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
