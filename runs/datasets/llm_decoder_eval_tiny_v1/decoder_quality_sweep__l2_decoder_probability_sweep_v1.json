@@ -1,0 +1,78 @@
+{
+  "best_template": {
+    "candidate_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_probability_sweep_v1/candidate_onnx_softmax_exact/candidate_manifest.json",
+    "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_exact_prob_fp",
+    "next_token_id_match_rate": 1.0,
+    "next_token_text_match_rate": 1.0,
+    "quality_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_probability_sweep_v1/candidate_onnx_softmax_exact/quality.json",
+    "sample_count": 5,
+    "selected_tensor_delta_rollups": {
+      "max_of_max_abs_delta": 0.054144322872161865,
+      "max_of_mean_abs_delta": 0.0028789089992642403,
+      "max_of_min_abs_delta": 0.05230194330215454,
+      "max_of_std_abs_delta": 0.004347875714302063,
+      "mean_of_max_abs_delta": 0.01417441964149475,
+      "mean_of_mean_abs_delta": 0.0009116844776144717,
+      "mean_of_min_abs_delta": 0.015262064337730408,
+      "mean_of_std_abs_delta": 0.0024184681475162505
+    },
+    "selected_tensor_shape_match_rate": 1.0,
+    "selected_tensor_trace_sha256_match_rate": 0.0,
+    "template": "candidate_onnx_softmax_exact",
+    "topk_contains_reference_id_rate": 1.0,
+    "topk_contains_reference_text_rate": 1.0
+  },
+  "dataset_id": "llm_decoder_eval_tiny_v1",
+  "reference_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/reference_manifest.json",
+  "task": "greedy_next_token",
+  "template_count": 2,
+  "templates": [
+    {
+      "candidate_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_probability_sweep_v1/candidate_onnx_softmax_exact/candidate_manifest.json",
+      "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_exact_prob_fp",
+      "next_token_id_match_rate": 1.0,
+      "next_token_text_match_rate": 1.0,
+      "quality_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_probability_sweep_v1/candidate_onnx_softmax_exact/quality.json",
+      "sample_count": 5,
+      "selected_tensor_delta_rollups": {
+        "max_of_max_abs_delta": 0.054144322872161865,
+        "max_of_mean_abs_delta": 0.0028789089992642403,
+        "max_of_min_abs_delta": 0.05230194330215454,
+        "max_of_std_abs_delta": 0.004347875714302063,
+        "mean_of_max_abs_delta": 0.01417441964149475,
+        "mean_of_mean_abs_delta": 0.0009116844776144717,
+        "mean_of_min_abs_delta": 0.015262064337730408,
+        "mean_of_std_abs_delta": 0.0024184681475162505
+      },
+      "selected_tensor_shape_match_rate": 1.0,
+      "selected_tensor_trace_sha256_match_rate": 0.0,
+      "template": "candidate_onnx_softmax_exact",
+      "topk_contains_reference_id_rate": 1.0,
+      "topk_contains_reference_text_rate": 1.0
+    },
+    {
+      "candidate_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_probability_sweep_v1/candidate_onnx_softmax_approx/candidate_manifest.json",
+      "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q4_w_q4_norm_recip_q10_prob_fp",
+      "next_token_id_match_rate": 0.8,
+      "next_token_text_match_rate": 0.8,
+      "quality_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_probability_sweep_v1/candidate_onnx_softmax_approx/quality.json",
+      "sample_count": 5,
+      "selected_tensor_delta_rollups": {
+        "max_of_max_abs_delta": 0.054144322872161865,
+        "max_of_mean_abs_delta": 0.0028789089992642403,
+        "max_of_min_abs_delta": 0.05230194330215454,
+        "max_of_std_abs_delta": 0.004347875714302063,
+        "mean_of_max_abs_delta": 0.01417441964149475,
+        "mean_of_mean_abs_delta": 0.0009116844776144717,
+        "mean_of_min_abs_delta": 0.015262064337730408,
+        "mean_of_std_abs_delta": 0.0024184681475162505
+      },
+      "selected_tensor_shape_match_rate": 1.0,
+      "selected_tensor_trace_sha256_match_rate": 0.0,
+      "template": "candidate_onnx_softmax_approx",
+      "topk_contains_reference_id_rate": 0.8,
+      "topk_contains_reference_text_rate": 0.8
+    }
+  ],
+  "version": 0.1
+}
