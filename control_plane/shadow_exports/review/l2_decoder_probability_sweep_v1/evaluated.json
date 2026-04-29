@@ -1,0 +1,364 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+      ],
+      "configs": [
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+      ],
+      "design_dirs": [
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+      ],
+      "macro_manifests": [
+        "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+        "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+      ],
+      "decoder_contract": {
+        "quality_out": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_compare__l2_decoder_probability_sweep_v1.json",
+        "validation_out": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_contract_validation__l2_decoder_probability_sweep_v1.json",
+        "dataset_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/manifest.json",
+        "candidate_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_manifest.json",
+        "reference_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/reference_manifest.json",
+        "candidate_sweep_dir": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_probability_sweep_v1",
+        "candidate_sweep_out": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_sweep__l2_decoder_probability_sweep_v1.json",
+        "baseline_quality_out": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_compare__l2_decoder_contract_eval_confirm_v1.json",
+        "missing_model_check_out": "runs/datasets/llm_decoder_eval_tiny_v1/missing_model_check__l2_decoder_probability_sweep_v1.json",
+        "candidate_sweep_templates": [
+          "candidate_onnx_softmax_exact",
+          "candidate_onnx_softmax_approx"
+        ]
+      },
+      "generated_campaign": {
+        "path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign__l2_decoder_probability_sweep_v1.json",
+        "outputs": {
+          "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_probability_sweep_v1/report.md",
+          "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_probability_sweep_v1/results.csv",
+          "campaign_dir": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_probability_sweep_v1"
+        },
+        "clean_outputs": true,
+        "base_campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json"
+      },
+      "candidate_manifests": [
+        "runs/candidates/nangate45/module_candidates.json"
+      ]
+    },
+    "commands": [
+      {
+        "run": "python3 npu/eval/validate_llm_decoder_contract.py --dataset-manifest runs/datasets/llm_decoder_eval_tiny_v1/manifest.json --out runs/datasets/llm_decoder_eval_tiny_v1/decoder_contract_validation__l2_decoder_probability_sweep_v1.json",
+        "name": "validate_decoder_contract"
+      },
+      {
+        "run": "python3 npu/eval/compare_llm_decoder_quality.py --reference-manifest runs/datasets/llm_decoder_eval_tiny_v1/reference_manifest.json --candidate-manifest runs/datasets/llm_decoder_eval_tiny_v1/candidate_manifest.json --out runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_compare__l2_decoder_probability_sweep_v1.json",
+        "name": "compare_decoder_quality"
+      },
+      {
+        "run": "python3 - <<'PY2'\nimport json\nimport subprocess\nimport sys\nimport tempfile\nfrom pathlib import Path\n\nout = Path('runs/datasets/llm_decoder_eval_tiny_v1/missing_model_check__l2_decoder_probability_sweep_v1.json')\nout.parent.mkdir(parents=True, exist_ok=True)\nwith tempfile.TemporaryDirectory() as td:\n    td_path = Path(td)\n    vocab_json = td_path / 'vocab.json'\n    model_config = td_path / 'config.json'\n    tokenizer_manifest = td_path / 'tokenizer_manifest.json'\n    vocab_json.write_text(json.dumps({'tokens': ['The', ' capital', ' of', ' France', ' is', ' Paris']}), encoding='utf-8')\n    model_config.write_text(json.dumps({'n_layer': 2, 'n_head': 2, 'n_embd': 128}), encoding='utf-8')\n    tokenizer_manifest.write_text(json.dumps({\n        'tokenizer_id': 'llm_decoder_space_prefix_v1',\n        'kind': 'space_prefix_words',\n        'vocab_json': str(vocab_json),\n    }), encoding='utf-8')\n    request = {\n        'role': 'reference',\n        'backend_config': {\n            'backend_id': 'command_json_v1',\n            'onnx_model_path': str(td_path / 'missing.onnx'),\n            'model_config_path': str(model_config),\n            'input_name': 'input_ids',\n        },\n        'sample': {\n            'sample_id': 'geo_france_capital',\n            'prompt': 'The capital of France is',\n            'expected_continuation': ' Paris',\n        },\n        'paths': {'tokenizer_manifest_path': str(tokenizer_manifest)},\n    }\n    proc = subprocess.run(\n        [sys.executable, 'npu/eval/run_llm_decoder_onnx_reference.py'],\n        input=json.dumps(request),\n        text=True,\n        capture_output=True,\n        check=False,\n    )\n    result = {\n        'ok': proc.returncode != 0 and 'NoSuchFile' in proc.stderr,\n        'returncode': proc.returncode,\n        'stderr_contains_NoSuchFile': 'NoSuchFile' in proc.stderr,\n        'stderr_tail': proc.stderr[-1000:],\n    }\n    out.write_text(json.dumps(result, indent=2, sort_keys=True) + '\\n', encoding='utf-8')\n    if not result['ok']:\n        print(json.dumps(result, indent=2, sort_keys=True), file=sys.stderr)\n        raise SystemExit(1)\nPY2",
+        "name": "check_decoder_missing_model_error"
+      },
+      {
+        "run": "python3 npu/eval/sweep_llm_decoder_candidate_quality.py --dataset-manifest runs/datasets/llm_decoder_eval_tiny_v1/manifest.json --template candidate_onnx_softmax_exact --template candidate_onnx_softmax_approx --out-dir runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_probability_sweep_v1 --out runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_sweep__l2_decoder_probability_sweep_v1.json",
+        "name": "sweep_decoder_candidate_quality"
+      },
+      {
+        "run": "python3 npu/eval/fetch_models.py --manifest runs/models/mlp_smoke_v1/manifest.json",
+        "name": "fetch_models"
+      },
+      {
+        "run": "python3 npu/eval/validate.py --campaign runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign__l2_decoder_probability_sweep_v1.json --check_paths",
+        "name": "validate_campaign"
+      },
+      {
+        "run": "python3 npu/eval/run_campaign.py --campaign runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign__l2_decoder_probability_sweep_v1.json --run_physical --jobs 2 --batch_id l2_decoder_probability_sweep_v1_r1",
+        "name": "run_campaign"
+      },
+      {
+        "run": "python3 npu/eval/report_campaign.py --campaign runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign__l2_decoder_probability_sweep_v1.json",
+        "name": "report_campaign"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "Run a dataset-backed decoder probability-template sweep over exact and bounded approximate candidate backends.",
+    "acceptance": [
+      "Populate metrics.csv for all referenced design dirs",
+      "Write campaign summary outputs under the campaign output directory",
+      "Keep result_path/work_result_json fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign__l2_decoder_probability_sweep_v1.json",
+      "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_probability_sweep_v1/results.csv",
+      "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_probability_sweep_v1/report.md",
+      "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_probability_sweep_v1/summary.csv",
+      "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_probability_sweep_v1/pareto.csv",
+      "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_probability_sweep_v1/best_point.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+      "runs/datasets/llm_decoder_eval_tiny_v1/decoder_contract_validation__l2_decoder_probability_sweep_v1.json",
+      "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_compare__l2_decoder_probability_sweep_v1.json",
+      "runs/datasets/llm_decoder_eval_tiny_v1/missing_model_check__l2_decoder_probability_sweep_v1.json",
+      "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_sweep__l2_decoder_probability_sweep_v1.json"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "Evaluate decoder probability-template sweep",
+  "result": {
+    "branch": "eval/l2_decoder_probability_sweep_v1/s20260429t025133z",
+    "completed_utc": "2026-04-29T02:51:33.434410Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260429t025133z][host:b7c2d9c80c1c][item:l2_decoder_probability_sweep_v1]",
+    "metrics_rows": [
+      {
+        "tag": "npu_fp16_nm1_cmp33_flat_nomacro",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "362e11ef",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/362e11ef/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_cmp33_hier_macro",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "6f738885",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/6f738885/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r1",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "3e84d92b",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3e84d92b/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r2",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "13a2c990",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/13a2c990/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r3",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "34eeb6e5",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/34eeb6e5/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r4",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "439adb1e",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/439adb1e/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r5",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "936b2a7b",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/936b2a7b/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_cmp33_hier_macro_r1",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "54a235ae",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/54a235ae/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_cmp33_hier_macro_r2",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "f190a078",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/f190a078/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_cmp33_hier_macro_r3",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "b874bef7",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/b874bef7/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_cmp33_hier_macro_r4",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "3a650f98",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3a650f98/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_cmp33_hier_macro_r5",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "3fa4f194",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3fa4f194/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm2_cmp33_flat_nomacro",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "033cdfdc",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/033cdfdc/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm2_cmp33_hier_macro",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "c4548bca",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/c4548bca/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r1",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "258015dc",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/258015dc/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r2",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "95526f98",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/95526f98/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r3",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "099823db",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/099823db/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r4",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "b276f2e7",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/b276f2e7/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r5",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "f0b4f9e6",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/f0b4f9e6/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm2_cmp33_hier_macro_r1",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "5d0ac971",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/5d0ac971/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm2_cmp33_hier_macro_r2",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "a9ae3c35",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/a9ae3c35/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm2_cmp33_hier_macro_r3",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "c51fa4a2",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/c51fa4a2/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm2_cmp33_hier_macro_r4",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "98a03366",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/98a03366/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm2_cmp33_hier_macro_r5",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "41f8b4a8",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/41f8b4a8/result.json"
+      }
+    ],
+    "queue_item_id": "l2_decoder_probability_sweep_v1",
+    "session_id": "s20260429t025133z",
+    "status": "ok",
+    "summary": "9/9 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_decoder_probability_sweep_v1/s20260429t025133z",
+    "pr_title": "eval: run evaluate decoder probability-template sweep",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260429t025133z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_probability_sweep_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_decoder_probability_sweep_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 75,
+  "created_utc": "2026-04-29T02:51:13.134551Z",
+  "requested_by": "@control_plane",
+  "developer_loop": {
+    "comparison": {
+      "role": "ranking",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "broad_ranking",
+      "expected_reason": "The sweep should identify whether any bounded approximation template preserves decoder quality before approximate probability-path hardware work is reopened.",
+      "expected_direction": "iterate"
+    },
+    "abstraction": {
+      "layer": "decoder_probability_sweep"
+    },
+    "proposal_id": "prop_l2_decoder_probability_sweep_v1",
+    "dependencies": {
+      "item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l2_decoder_probability_sweep_v1/proposal.json"
+  }
+}
