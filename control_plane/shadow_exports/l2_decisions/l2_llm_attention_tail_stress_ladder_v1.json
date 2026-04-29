@@ -1,0 +1,113 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-04-29T02:09:21.624987Z",
+  "item_id": "l2_llm_attention_tail_stress_ladder_v1",
+  "run_key": "l2_llm_attention_tail_stress_ladder_v1_run_3e125213ac4cc37b",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "f93c41901b97d12f313c9f3cdc0fe0132edffd89",
+  "review_metadata_source_commit": "f93c41901b97d12f313c9f3cdc0fe0132edffd89",
+  "objective": "Evaluate larger attention-tail proxy models to determine whether softmax occupancy, waits, or backpressure justify a follow-on architecture proposal.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+    ],
+    "design_dirs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+    ],
+    "macro_manifests": [
+      "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+      "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+    ],
+    "generated_campaign": {
+      "path": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/campaign__l2_llm_attention_tail_stress_ladder_v1.json",
+      "outputs": {
+        "report_md": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_llm_attention_tail_stress_ladder_v1/report.md",
+        "results_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_llm_attention_tail_stress_ladder_v1/results.csv",
+        "campaign_dir": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_llm_attention_tail_stress_ladder_v1"
+      },
+      "clean_outputs": true,
+      "base_campaign_path": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/campaign.json"
+    },
+    "candidate_manifests": [
+      "runs/candidates/nangate45/module_candidates.json"
+    ]
+  },
+  "recommendation": {
+    "arch_id": "fp16_nm1",
+    "macro_mode": "flat_nomacro",
+    "objective_rank": 1,
+    "objective_score": "0.0",
+    "latency_ms_mean": 0.144262,
+    "energy_mj_mean": 2.7860165964e-05,
+    "critical_path_ns_mean": 5.557037432204143,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.193122,
+    "flow_elapsed_s_mean": 844.5733333333334
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_llm_attention_tail_stress_ladder_v1",
+    "title": "LLM attention-tail stress ladder",
+    "primary_question": "Do larger repeated attention-tail proxy models expose softmax occupancy, dependency waits, or backpressure that justify a focused architecture proposal?",
+    "evaluation_mode": "broad_ranking",
+    "comparison_role": "ranking",
+    "abstraction_layer": "layer2",
+    "expected_direction": "iterate",
+    "expected_reason": "Stress evidence should decide whether to pursue softmax buffering, pipeline partitioning, scheduler overlap work, or continue without architecture changes.",
+    "summary": "Broad ranking evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
+    "outcome": "ranking_recorded",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_llm_attention_tail_stress_ladder_v1",
+    "title": "LLM attention-tail stress ladder",
+    "kind": "architecture",
+    "primary_question": "Do larger repeated attention-tail proxy models expose softmax occupancy, dependency waits, or backpressure that justify a focused architecture proposal?",
+    "evaluation_mode": "broad_ranking",
+    "comparison_role": "ranking",
+    "outcome": "ranking_recorded",
+    "summary": "Broad ranking evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": []
+  },
+  "source_refs": {
+    "best_point_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_llm_attention_tail_stress_ladder_v1/best_point.json",
+    "summary_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_llm_attention_tail_stress_ladder_v1/summary.csv",
+    "results_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_llm_attention_tail_stress_ladder_v1/results.csv",
+    "report_md": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_llm_attention_tail_stress_ladder_v1/report.md",
+    "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_llm_attention_tail_stress_ladder_v1/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/schedule.yml",
+    "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_llm_attention_tail_stress_ladder_v1/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/descriptors.bin",
+    "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_llm_attention_tail_stress_ladder_v1/artifacts/perf/fp16_nm1/tail_attn4_s256_h64/trace.json",
+    "focused_model_artifacts": [
+      {
+        "model_id": "tail_attn4_s256_h64",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_llm_attention_tail_stress_ladder_v1/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_llm_attention_tail_stress_ladder_v1/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_llm_attention_tail_stress_ladder_v1/artifacts/perf/fp16_nm1/tail_attn4_s256_h64/trace.json"
+      },
+      {
+        "model_id": "tail_attn6_s128_h64",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_llm_attention_tail_stress_ladder_v1/artifacts/mapper/fp16_nm1/tail_attn6_s128_h64/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_llm_attention_tail_stress_ladder_v1/artifacts/mapper/fp16_nm1/tail_attn6_s128_h64/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_llm_attention_tail_stress_ladder_v1/artifacts/perf/fp16_nm1/tail_attn6_s128_h64/trace.json"
+      },
+      {
+        "model_id": "tail_attn6_s256_h64",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_llm_attention_tail_stress_ladder_v1/artifacts/mapper/fp16_nm1/tail_attn6_s256_h64/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_llm_attention_tail_stress_ladder_v1/artifacts/mapper/fp16_nm1/tail_attn6_s256_h64/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_llm_attention_tail_stress_ladder_v1/artifacts/perf/fp16_nm1/tail_attn6_s256_h64/trace.json"
+      }
+    ]
+  }
+}
