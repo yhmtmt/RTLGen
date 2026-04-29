@@ -7,6 +7,7 @@ from datetime import timezone
 from hashlib import sha256
 import json
 import os
+import shlex
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -330,7 +331,7 @@ def _read_config_target(
                     "run": _with_oss_cad_path(
                         (
                         "python3 scripts/run_sweep.py "
-                        f"--configs {config_rel} "
+                        "--configs {config_paths} "
                         "--platform {platform} "
                         f"--sweep {{sweep_path}} "
                         f"--out_root {out_root} "
@@ -357,7 +358,7 @@ def _read_config_target(
                     "run": _with_oss_cad_path(
                         (
                         "python3 scripts/run_sweep.py "
-                        f"--configs {config_rel} "
+                        "--configs {config_paths} "
                         "--platform {platform} "
                         f"--sweep {{sweep_path}} "
                         f"--out_root {out_root} "
@@ -384,7 +385,7 @@ def _read_config_target(
                     "run": _with_oss_cad_path(
                         (
                         "python3 scripts/run_sweep.py "
-                        f"--configs {config_rel} "
+                        "--configs {config_paths} "
                         "--platform {platform} "
                         f"--sweep {{sweep_path}} "
                         f"--out_root {out_root} "
@@ -415,7 +416,7 @@ def _read_config_target(
                     "run": _with_oss_cad_path(
                         (
                         "python3 scripts/run_sweep.py "
-                        f"--configs {config_rel} "
+                        "--configs {config_paths} "
                         "--platform {platform} "
                         f"--sweep {{sweep_path}} "
                         f"--out_root {out_root} "
@@ -504,6 +505,10 @@ def _effective_trial_policy(*, trial_count: int, seed_start: int, stop_after_fai
         "seed_start": effective_seed_start,
         "stop_after_failures": effective_stop_after_failures,
     }
+
+
+def _config_args(config_paths: list[str]) -> str:
+    return " ".join(shlex.quote(path) for path in config_paths)
 
 
 def _expand_expected_outputs_for_trials(*, expected_outputs: list[str], trial_policy: dict[str, int]) -> list[str]:
@@ -661,8 +666,13 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
             f"mixed Layer1 config kinds are not supported in one sweep item: {sorted(design_kinds)}"
         )
     command_manifest = list(targets[0].commands)
+    config_args = _config_args(config_paths)
     for command in command_manifest:
-        command["run"] = command["run"].format(platform=request.platform, sweep_path=sweep_path)
+        command["run"] = command["run"].format(
+            platform=request.platform,
+            sweep_path=sweep_path,
+            config_paths=config_args,
+        )
     expected_outputs = [target.expected_metrics_path for target in targets]
 
     item_id = request.item_id or _default_item_id(

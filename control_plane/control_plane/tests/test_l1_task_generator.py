@@ -71,6 +71,36 @@ def _write_example_repo(repo_root: Path) -> tuple[str, str]:
     )
 
 
+def _write_second_softmax_config(repo_root: Path) -> str:
+    config_path = repo_root / "examples" / "config_softmax_rowwise_int8_r8.json"
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    config_path.write_text(
+        json.dumps(
+            {
+                "version": "1.1",
+                "operations": [
+                    {
+                        "type": "softmax_rowwise",
+                        "module_name": "softmax_rowwise_int8_r8",
+                        "operand": "logits",
+                        "options": {
+                            "impl": "shift_exp",
+                            "row_elems": 8,
+                            "max_shift": 7,
+                            "accum_bits": 16,
+                            "output_scale": 127,
+                        },
+                    }
+                ],
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return str(config_path.relative_to(repo_root))
+
+
 def _init_git_repo(repo_root: Path) -> str:
     origin_root = repo_root.parent / "origin.git"
     subprocess.run(["git", "init", "--bare", str(origin_root)], check=True, capture_output=True, text=True)
@@ -233,6 +263,41 @@ def test_generate_l1_sweep_task_expands_expected_outputs_for_multi_trial_items()
                 "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/trials/trial_001/softmax_rowwise_int8_r4_wrapper/metrics.csv",
                 "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/trials/trial_002/softmax_rowwise_int8_r4_wrapper/metrics.csv",
                 "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/trials/trial_003/softmax_rowwise_int8_r4_wrapper/metrics.csv",
+            ]
+
+
+def test_generate_l1_sweep_task_run_sweep_command_includes_all_wrapper_configs() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_repo(repo_root)
+        second_config_path = _write_second_softmax_config(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path, second_config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/activations",
+                    item_id="l1_demo_softmax_multi_config",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="circuit_block",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            run_sweep = work_item.command_manifest[1]["run"]
+            assert f"--configs {config_path} {second_config_path} " in run_sweep
+            assert work_item.expected_outputs == [
+                "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv",
+                "runs/designs/activations/softmax_rowwise_int8_r8_wrapper/metrics.csv",
             ]
 
 
