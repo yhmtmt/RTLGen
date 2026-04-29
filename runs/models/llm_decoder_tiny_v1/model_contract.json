@@ -4,8 +4,8 @@
       "backend_id": "command_json_v1",
       "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_exact_prob_fp",
       "command": [
-        "/workspaces/RTLGen/control_plane/.venv/bin/python",
-        "/workspaces/RTLGen/npu/eval/run_llm_decoder_onnx_candidate.py"
+        "python3",
+        "npu/eval/run_llm_decoder_onnx_candidate.py"
       ],
       "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
       "input_name": "input_ids",
@@ -24,8 +24,8 @@
     "reference": {
       "backend_id": "command_json_v1",
       "command": [
-        "/workspaces/RTLGen/control_plane/.venv/bin/python",
-        "/workspaces/RTLGen/npu/eval/run_llm_decoder_onnx_reference.py"
+        "python3",
+        "npu/eval/run_llm_decoder_onnx_reference.py"
       ],
       "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
       "input_name": "input_ids",
@@ -45,7 +45,7 @@
       "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q4_w_q4_norm_recip_q10_prob_fp",
       "command": [
         "/workspaces/RTLGen/control_plane/.venv/bin/python",
-        "/workspaces/RTLGen/npu/eval/run_llm_decoder_onnx_candidate.py"
+        "npu/eval/run_llm_decoder_onnx_candidate.py"
       ],
       "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
       "input_name": "input_ids",
@@ -68,7 +68,7 @@
       "backend_id": "command_json_v1",
       "command": [
         "/workspaces/RTLGen/control_plane/.venv/bin/python",
-        "/workspaces/RTLGen/npu/eval/run_llm_decoder_onnx_candidate.py"
+        "npu/eval/run_llm_decoder_onnx_candidate.py"
       ],
       "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
       "input_name": "input_ids",
@@ -88,7 +88,7 @@
       "backend_id": "command_json_v1",
       "command": [
         "/workspaces/RTLGen/control_plane/.venv/bin/python",
-        "/workspaces/RTLGen/npu/eval/run_llm_decoder_onnx_reference.py"
+        "npu/eval/run_llm_decoder_onnx_reference.py"
       ],
       "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
       "input_name": "input_ids",
