@@ -6,6 +6,7 @@ Canonical source of truth for new proposal workspaces lives under `docs/proposal
 |---|---|---|---|---|---|---|---|
 | `prop_cross_non_mlp_terminal_suite_v1` | `cross` | `architecture` | `` | Terminal-sensitive softmax suite | `promote` | `2026-03-18T11:05:00Z` | `docs/proposals/prop_cross_non_mlp_terminal_suite_v1` |
 | `prop_cross_terminal_output_overlap_probe_v1` | `cross` | `architecture` | `` | Terminal-output overlap probe | `promote` | `2026-03-18T07:17:51Z` | `docs/proposals/prop_cross_terminal_output_overlap_probe_v1` |
+| `prop_l1_decoder_q8_recip_norm_datapath_v1` | `layer1` | `circuit_block` | `circuit_block` | Decoder q8 reciprocal normalization datapath | `iterate` | `2026-04-29T10:47:54Z` | `docs/proposals/prop_l1_decoder_q8_recip_norm_datapath_v1` |
 | `prop_l1_npu_nm1_hardsigmoid_vec_enable_v1` | `l1` | `circuit` | `architecture_block` | NPU nm1 hard-sigmoid vec enable | `promote` | `2026-03-25T03:30:00Z` | `docs/proposals/prop_l1_npu_nm1_hardsigmoid_vec_enable_v1` |
 | `prop_l1_npu_nm1_hardtanh_vec_enable_v1` | `l1` | `circuit` | `architecture_block` | NPU nm1 hard-tanh vec enable | `promote` | `2026-03-25T03:30:00Z` | `docs/proposals/prop_l1_npu_nm1_hardtanh_vec_enable_v1` |
 | `prop_l1_npu_nm1_leakyrelu_vec_enable_v1` | `l1` | `circuit` | `architecture_block` | NPU nm1 LeakyReLU vec enable | `promote` | `2026-03-27T04:00:00Z` | `docs/proposals/prop_l1_npu_nm1_leakyrelu_vec_enable_v1` |

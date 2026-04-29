@@ -13,6 +13,8 @@ def _load_config(path: str) -> dict:
     return {
         "module_name": operations[0]["module_name"],
         "impl": str(opts.get("impl", "shift_exp")),
+        "normalization_mode": str(opts.get("normalization_mode", "exact")),
+        "reciprocal_bits": int(opts.get("reciprocal_bits", 0)),
         "row_elems": int(opts.get("row_elems", 1)),
         "max_shift": int(opts.get("max_shift", 7)),
         "accum_bits": int(opts.get("accum_bits", 16)),
@@ -20,7 +22,14 @@ def _load_config(path: str) -> dict:
     }
 
 
-def compute_shift_exp_row(logits, *, max_shift: int = 7, output_scale: int = 127):
+def compute_shift_exp_row(
+    logits,
+    *,
+    max_shift: int = 7,
+    output_scale: int = 127,
+    normalization_mode: str = "exact",
+    reciprocal_bits: int = 0,
+):
     if not logits:
         return []
     max_val = max(int(v) for v in logits)
@@ -36,8 +45,18 @@ def compute_shift_exp_row(logits, *, max_shift: int = 7, output_scale: int = 127
     if sum_weights <= 0:
         return [0 for _ in logits]
     out = []
+    reciprocal = None
+    if normalization_mode == "reciprocal_quantized":
+        if reciprocal_bits <= 0:
+            raise ValueError("reciprocal_bits must be positive for reciprocal_quantized")
+        reciprocal = ((output_scale << reciprocal_bits) + (sum_weights // 2)) // sum_weights
+    elif normalization_mode != "exact":
+        raise ValueError(f"unsupported normalization_mode: {normalization_mode}")
     for weight in weights:
-        quantized = ((weight * output_scale) + (sum_weights // 2)) // sum_weights
+        if reciprocal is None:
+            quantized = ((weight * output_scale) + (sum_weights // 2)) // sum_weights
+        else:
+            quantized = ((weight * reciprocal) + (1 << (reciprocal_bits - 1))) >> reciprocal_bits
         if quantized < 0:
             quantized = 0
         if quantized > output_scale:
@@ -75,6 +94,8 @@ def main() -> int:
                     values,
                     max_shift=cfg["max_shift"],
                     output_scale=cfg["output_scale"],
+                    normalization_mode=cfg["normalization_mode"],
+                    reciprocal_bits=cfg["reciprocal_bits"],
                 ),
             }
         )
@@ -84,6 +105,8 @@ def main() -> int:
             {
                 "module_name": cfg["module_name"],
                 "impl": cfg["impl"],
+                "normalization_mode": cfg["normalization_mode"],
+                "reciprocal_bits": cfg["reciprocal_bits"],
                 "row_elems": cfg["row_elems"],
                 "max_shift": cfg["max_shift"],
                 "accum_bits": cfg["accum_bits"],

@@ -1,0 +1,11 @@
+{
+  "proposal_id": "prop_l1_decoder_q8_recip_norm_datapath_v1",
+  "candidate_id": "l1_decoder_q8_recip_norm_datapath_v1",
+  "decision": "iterate",
+  "reason": "RTLGen support and evaluation configs are prepared; merge this branch before dispatching the L1 measurement item so the evaluator has reciprocal_quantized softmax support.",
+  "evidence_refs": [
+    "docs/proposals/prop_l1_decoder_q8_recip_norm_datapath_v1/implementation_summary.md"
+  ],
+  "next_action": "Queue l1_decoder_q8_recip_norm_datapath_v1 from the merged commit.",
+  "requires_human_approval": false
+}
