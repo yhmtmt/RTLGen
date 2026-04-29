@@ -1,14 +1,21 @@
 {
   "proposal_id": "prop_l1_decoder_normalization_arithmetic_calibration_v1",
-  "source_commit": "59f95c15052629122aa78fafe9e549367de32cbd",
+  "source_commit": "ea6095808f683c26979575365f9a5c4249470a05",
   "requested_items": [
     {
-      "item_id": "l1_decoder_norm_q8_recip_mult_calibration_v1",
+      "item_id": "l1_decoder_norm_q8_recip_mult_calibration_v1_r2",
       "task_type": "l1_sweep",
       "objective": "Measure Nangate45 PPA for unsigned multiplier wrappers that bound q8 reciprocal-normalization multiply paths.",
       "evaluation_mode": "measurement_only",
       "abstraction_layer": "circuit_block",
-      "status": "pending"
+      "status": "merged",
+      "prior_item_ids": [
+        "l1_decoder_norm_q8_recip_mult_calibration_v1"
+      ],
+      "merged_pr_number": 281,
+      "merge_commit": "25f0eccb724905b149d88ed1bcb34ef24952d0e4",
+      "merged_utc": "2026-04-29T09:16:54.716679Z",
+      "notes": "Merged via PR #281 and merge 25f0eccb724905b149d88ed1bcb34ef24952d0e4 at 2026-04-29T09:16:54.716679Z."
     },
     {
       "item_id": "l1_decoder_norm_accumulator_adder_calibration_v1",
@@ -16,7 +23,8 @@
       "objective": "Measure Nangate45 PPA for unsigned prefix-adder wrappers that bound q8 normalization-sum and accumulator paths.",
       "evaluation_mode": "measurement_only",
       "abstraction_layer": "circuit_block",
-      "status": "pending"
+      "status": "ready_to_queue",
+      "notes": "Prerequisites are merged; item is ready to queue."
     }
   ]
 }
