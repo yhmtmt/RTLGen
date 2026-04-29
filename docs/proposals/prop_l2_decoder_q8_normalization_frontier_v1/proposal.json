@@ -1,0 +1,57 @@
+{
+  "proposal_id": "prop_l2_decoder_q8_normalization_frontier_v1",
+  "created_utc": "2026-04-29T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "LLM decoder q8 normalization frontier",
+  "hypothesis": "The q8 PWL decoder path can replace exact normalization with a cheaper quantized reciprocal normalization while preserving the prompt-stress exact next-token and top-k gate.",
+  "direct_comparison": {
+    "primary_question": "Can q8 PWL reciprocal normalization at q10/q12/q14/q16 preserve the same prompt-stress quality as q8 exact normalization and the bf16 reciprocal anchor?",
+    "include": [
+      "prompt-stress reference and candidate regeneration",
+      "q8 PWL exact-normalization baseline",
+      "q8 PWL reciprocal-normalization bit-width sweep",
+      "bf16 PWL reciprocal anchor",
+      "exact next-token and top-k quality gate"
+    ],
+    "exclude": [
+      "claiming real Nangate45 PPA",
+      "changing decoder RTL or mapper behavior",
+      "broad distribution robustness across new prompt sets"
+    ],
+    "follow_on_broad_sweep": [
+      "cost q8 reciprocal PWL against bf16 reciprocal PWL with a hardware-oriented block estimate",
+      "rerun broader prompt distribution robustness if q8 reciprocal becomes the selected implementation anchor"
+    ]
+  },
+  "expected_benefit": [
+    "tests the exact-normalization blocker isolated by the PWL frontier detail job",
+    "may move the immediate frontier from bf16 reciprocal PWL to a narrower q8 reciprocal PWL path",
+    "keeps the decision quality-gated instead of relying on cost proxy assumptions alone"
+  ],
+  "risks": [
+    "the prompt-stress set is still a pinned tiny decoder setup, not broad model acceptance",
+    "reciprocal precision that survives quality may still need RTL/OpenROAD cost confirmation",
+    "q8 reciprocal quality may be sensitive to prompt/logit distribution"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_q8_normalization_frontier_v1",
+      "task_type": "l2_campaign",
+      "objective": "decoder_q8_normalization_frontier",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json"
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_decoder_pwl_frontier_detail_v1/proposal.json",
+    "runs/datasets/llm_decoder_eval_tiny_v1/decoder_pwl_frontier_detail__l2_decoder_pwl_frontier_detail_v1.json",
+    "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_sweep__l2_decoder_survivor_prompt_stress_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/sweep_llm_decoder_candidate_quality.py",
+    "npu/eval/estimate_llm_decoder_q8_norm_frontier.py",
+    "docs/proposals/prop_l2_decoder_pwl_frontier_detail_v1/analysis_report.md"
+  ]
+}

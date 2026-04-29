@@ -1,0 +1,69 @@
+{
+  "version": 0.1,
+  "dataset_id": "llm_decoder_eval_tiny_v1",
+  "task": "next_token",
+  "rough_grid": "decoder_q8_normalization_frontier_v1",
+  "template_count": 5,
+  "templates": [
+    {
+      "template": "candidate_onnx_softmax_exact",
+      "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_exact_prob_fp",
+      "normalization_mode": "exact",
+      "normalization_reciprocal_bits": 0,
+      "normalization_reciprocal_float_format": "",
+      "sample_count": 24,
+      "next_token_id_match_rate": 1.0,
+      "topk_contains_reference_id_rate": 1.0,
+      "next_token_mismatch_sample_ids": [],
+      "topk_miss_sample_ids": []
+    },
+    {
+      "template": "grid_approx_pwl_bf16_path",
+      "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_bf16_w_bf16_norm_recip_bf16_prob_fp",
+      "normalization_mode": "reciprocal_float",
+      "normalization_reciprocal_bits": 0,
+      "normalization_reciprocal_float_format": "bf16",
+      "sample_count": 24,
+      "next_token_id_match_rate": 1.0,
+      "topk_contains_reference_id_rate": 1.0,
+      "next_token_mismatch_sample_ids": [],
+      "topk_miss_sample_ids": []
+    },
+    {
+      "template": "grid_approx_pwl_in_q8_w_q8_norm_exact",
+      "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q8_w_q8_norm_exact_prob_fp",
+      "normalization_mode": "exact",
+      "normalization_reciprocal_bits": 0,
+      "normalization_reciprocal_float_format": "",
+      "sample_count": 24,
+      "next_token_id_match_rate": 1.0,
+      "topk_contains_reference_id_rate": 1.0,
+      "next_token_mismatch_sample_ids": [],
+      "topk_miss_sample_ids": []
+    },
+    {
+      "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q10",
+      "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q8_w_q8_norm_recip_q10_prob_fp",
+      "normalization_mode": "reciprocal_quantized",
+      "normalization_reciprocal_bits": 10,
+      "normalization_reciprocal_float_format": "",
+      "sample_count": 24,
+      "next_token_id_match_rate": 1.0,
+      "topk_contains_reference_id_rate": 1.0,
+      "next_token_mismatch_sample_ids": [],
+      "topk_miss_sample_ids": []
+    },
+    {
+      "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q12",
+      "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q8_w_q8_norm_recip_q12_prob_fp",
+      "normalization_mode": "reciprocal_quantized",
+      "normalization_reciprocal_bits": 12,
+      "normalization_reciprocal_float_format": "",
+      "sample_count": 24,
+      "next_token_id_match_rate": 1.0,
+      "topk_contains_reference_id_rate": 1.0,
+      "next_token_mismatch_sample_ids": [],
+      "topk_miss_sample_ids": []
+    }
+  ]
+}

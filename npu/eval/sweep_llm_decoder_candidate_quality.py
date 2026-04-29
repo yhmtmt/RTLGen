@@ -91,6 +91,7 @@ def _rough_grid_templates(model_contract: JsonDict, grid_name: str) -> Dict[str,
         "decoder_probability_fp_formats_v1",
         "decoder_distribution_robustness_v1",
         "decoder_survivor_prompt_stress_v1",
+        "decoder_q8_normalization_frontier_v1",
     }:
         raise ValueError(f"unsupported rough grid: {grid_name}")
     exact = _candidate_template(model_contract, "candidate_onnx_softmax_exact")
@@ -221,6 +222,67 @@ def _rough_grid_templates(model_contract: JsonDict, grid_name: str) -> Dict[str,
                 normalization_mode="reciprocal_float",
                 normalization_reciprocal_bits=None,
                 normalization_reciprocal_float_format="bf16",
+            ),
+        ]
+        return {name: cfg for name, cfg in points}
+    if grid_name == "decoder_q8_normalization_frontier_v1":
+        points = [
+            ("candidate_onnx_softmax_exact", exact),
+            _named_grid_point(
+                approx,
+                "grid_approx_pwl_bf16_path",
+                softmax_input_quant_bits=None,
+                softmax_weight_quant_bits=None,
+                softmax_input_float_format="bf16",
+                softmax_weight_float_format="bf16",
+                normalization_mode="reciprocal_float",
+                normalization_reciprocal_bits=None,
+                normalization_reciprocal_float_format="bf16",
+            ),
+            _named_grid_point(
+                approx,
+                "grid_approx_pwl_in_q8_w_q8_norm_exact",
+                softmax_input_quant_bits=8,
+                softmax_weight_quant_bits=8,
+                normalization_mode="exact",
+                normalization_reciprocal_bits=None,
+                normalization_reciprocal_float_format=None,
+            ),
+            _named_grid_point(
+                approx,
+                "grid_approx_pwl_in_q8_w_q8_norm_recip_q10",
+                softmax_input_quant_bits=8,
+                softmax_weight_quant_bits=8,
+                normalization_mode="reciprocal_quantized",
+                normalization_reciprocal_bits=10,
+                normalization_reciprocal_float_format=None,
+            ),
+            _named_grid_point(
+                approx,
+                "grid_approx_pwl_in_q8_w_q8_norm_recip_q12",
+                softmax_input_quant_bits=8,
+                softmax_weight_quant_bits=8,
+                normalization_mode="reciprocal_quantized",
+                normalization_reciprocal_bits=12,
+                normalization_reciprocal_float_format=None,
+            ),
+            _named_grid_point(
+                approx,
+                "grid_approx_pwl_in_q8_w_q8_norm_recip_q14",
+                softmax_input_quant_bits=8,
+                softmax_weight_quant_bits=8,
+                normalization_mode="reciprocal_quantized",
+                normalization_reciprocal_bits=14,
+                normalization_reciprocal_float_format=None,
+            ),
+            _named_grid_point(
+                approx,
+                "grid_approx_pwl_in_q8_w_q8_norm_recip_q16",
+                softmax_input_quant_bits=8,
+                softmax_weight_quant_bits=8,
+                normalization_mode="reciprocal_quantized",
+                normalization_reciprocal_bits=16,
+                normalization_reciprocal_float_format=None,
             ),
         ]
         return {name: cfg for name, cfg in points}
@@ -437,7 +499,7 @@ def main() -> int:
         help=(
             "Generate a built-in rough approximation grid, e.g. decoder_probability_broad_v1, "
             "decoder_probability_fp_formats_v1, decoder_distribution_robustness_v1, or "
-            "decoder_survivor_prompt_stress_v1."
+            "decoder_survivor_prompt_stress_v1, or decoder_q8_normalization_frontier_v1."
         ),
     )
     ap.add_argument("--out-dir", default="runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/local")
