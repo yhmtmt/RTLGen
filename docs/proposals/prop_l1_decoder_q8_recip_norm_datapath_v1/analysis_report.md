@@ -2,24 +2,28 @@
 
 ## Candidate
 - `proposal_id`: `prop_l1_decoder_q8_recip_norm_datapath_v1`
-- `candidate_id`: `l1_decoder_q8_recip_norm_datapath_v1`
+- `candidate_id`: `l1_decoder_q8_recip_norm_datapath_v1_r3`
 
 ## Evaluations Consumed
-- pending L1 measurement
+- `l1_decoder_q8_recip_norm_datapath_v1_r3`
+- `l1_decoder_q8_recip_norm_datapath_v1_r3_run_a6f20a76b1f8062d`
+- source commit: `d2043a9af0a2c4fa7ab7e7cb61719325aacb95c2`
+- review: PR #292
 
 ## Baseline Comparison
-- baseline primitive calibration: `prop_l1_decoder_normalization_arithmetic_calibration_v1`
-- baseline q8 frontier: `prop_l2_decoder_q8_normalization_frontier_v1`
+- not applicable
 
 ## Result
-- result: pending
-- confidence level: implementation prepared, remote physical measurement not yet consumed
-- architecture conclusion robustness: pending q10/q12/q14/q16 integrated PPA rows
+- result: `promote`
+- confidence level: merged accepted evidence
+- estimated optimization room: accepted at current stage
+- architecture conclusion robustness: accepted for the current proposal scope
+- summary: Physical metrics recorded from an accepted status=ok Layer 1 row.
 
 ## Failures and Caveats
-- no remote evaluation evidence has been consumed yet
-- bf16 reciprocal/multiply datapaths remain outside this proposal
+- no additional caveats recorded during automatic finalization
 
 ## Recommendation
-- `iterate`
-- reason: Merge RTLGen support first, then queue the L1 measurement item from the merged commit.
+- `promote`
+- reason: Accepted Layer 1 physical metrics were merged in PR #292 for the current candidate.
+- next_action: inspect the next dependent item
