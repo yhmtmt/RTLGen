@@ -1,0 +1,48 @@
+{
+  "proposal_id": "prop_cp_broad_ranking_review_wording_confirm_v1",
+  "created_utc": "2026-04-29T00:35:00Z",
+  "created_by": "codex",
+  "layer": "layer2",
+  "kind": "workflow_validation",
+  "title": "Broad-ranking review wording confirmation",
+  "hypothesis": "After restarting daemons with the service checkout on PYTHONPATH, broad-ranking L2 review packages should record ranking evidence without reporting a missing focused-comparison baseline.",
+  "direct_comparison": {
+    "primary_question": "Does a broad-ranking confirmation job publish review wording that says focused baseline comparison is not required?",
+    "include": [
+      "broad_ranking evaluation mode",
+      "ranking comparison role",
+      "empty baseline_refs",
+      "operator review package and decision proposal wording"
+    ],
+    "exclude": [
+      "paired baseline comparison",
+      "architecture changes",
+      "new scheduler or mapper behavior"
+    ],
+    "follow_on_broad_sweep": []
+  },
+  "expected_benefit": [
+    "confirms the daemon import-path fix is active for evaluator-generated review artifacts",
+    "prevents future broad-ranking proposals from carrying misleading missing-baseline language",
+    "keeps workflow evidence aligned with the intended evaluation mode"
+  ],
+  "risks": [
+    "the campaign is reused only as a compact review-package generation vehicle",
+    "this does not measure a new architecture improvement"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_broad_ranking_review_wording_confirm_v1",
+      "task_type": "l2_campaign",
+      "objective": "review_wording_confirmation",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_llm_attention_tail_v1/campaign.json"
+    }
+  ],
+  "baseline_refs": [],
+  "knowledge_refs": [
+    "control_plane/control_plane/services/l2_result_consumer.py",
+    "control_plane/control_plane/tests/test_l2_result_consumer.py",
+    "control_plane/scripts/restart_local_control_plane_daemons.sh"
+  ]
+}
