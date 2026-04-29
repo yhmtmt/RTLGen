@@ -1,0 +1,26 @@
+{
+  "proposal_id": "prop_l2_decoder_probability_sweep_v1",
+  "source_commit": "c4b2c6f0cc4c5ede747550d42dc6e126e2653503",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_probability_sweep_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run a dataset-backed decoder probability-template sweep over exact and bounded approximate candidate backends.",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json",
+      "evaluation_mode": "broad_ranking",
+      "abstraction_layer": "decoder_probability_sweep",
+      "comparison_role": "ranking",
+      "paired_baseline_item_id": "",
+      "depends_on_item_ids": [
+        "l2_decoder_exact_probability_path_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "The sweep should identify whether any bounded approximation template preserves decoder quality before approximate probability-path hardware work is reopened."
+      },
+      "status": "proposed"
+    }
+  ]
+}

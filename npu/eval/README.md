@@ -30,6 +30,10 @@ It is the first step toward a reproducible closed-loop flow:
   fixtures for the tiny decoder-quality stage.
 - `npu/eval/compare_llm_decoder_quality.py`: summarize token-level exact-match
   and top-k containment rates from decoder reference/candidate manifests.
+- `npu/eval/sweep_llm_decoder_candidate_quality.py`: generate alternate
+  candidate fixtures from decoder backend templates and summarize each
+  candidate's token-level quality without changing the active candidate
+  manifest.
 - `npu/eval/run_llm_decoder_onnx_reference.py`: active exact-reference runner
   behind `command_json_v1` for the pinned tiny decoder ONNX export.
 
@@ -58,6 +62,16 @@ Validate the tiny decoder accuracy-stage contract:
 ```sh
 python3 npu/eval/validate_llm_decoder_contract.py \
   --dataset-manifest runs/datasets/llm_decoder_eval_tiny_v1/manifest.json
+```
+
+Run a bounded decoder candidate-quality sweep:
+```sh
+python3 npu/eval/sweep_llm_decoder_candidate_quality.py \
+  --dataset-manifest runs/datasets/llm_decoder_eval_tiny_v1/manifest.json \
+  --template candidate_onnx_softmax_exact \
+  --template candidate_onnx_softmax_approx \
+  --out-dir /tmp/decoder_candidate_sweep \
+  --out /tmp/decoder_candidate_sweep.json
 ```
 
 Optionally verify path-like fields exist:

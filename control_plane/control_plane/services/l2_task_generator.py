@@ -502,6 +502,40 @@ PY2"""
     }
 
 
+def _decoder_probability_sweep_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_tiny_v1"
+    path_evidence = _decoder_probability_path_evidence(item_id=item_id)
+    sweep_dir = f"{base}/candidate_sweeps/{item_id}"
+    sweep_out = f"{base}/decoder_quality_sweep__{item_id}.json"
+    sweep_command = {
+        "name": "sweep_decoder_candidate_quality",
+        "run": (
+            "python3 npu/eval/sweep_llm_decoder_candidate_quality.py "
+            f"--dataset-manifest {base}/manifest.json "
+            "--template candidate_onnx_softmax_exact "
+            "--template candidate_onnx_softmax_approx "
+            f"--out-dir {sweep_dir} "
+            f"--out {sweep_out}"
+        ),
+    }
+    inputs = dict(path_evidence["inputs"])
+    inputs.update(
+        {
+            "candidate_sweep_dir": sweep_dir,
+            "candidate_sweep_out": sweep_out,
+            "candidate_sweep_templates": [
+                "candidate_onnx_softmax_exact",
+                "candidate_onnx_softmax_approx",
+            ],
+        }
+    )
+    return {
+        "inputs": inputs,
+        "commands": [*path_evidence["commands"], sweep_command],
+        "expected_outputs": [*path_evidence["expected_outputs"], sweep_out],
+    }
+
+
 def _with_fresh_outputs(*, campaign: dict[str, Any], item_id: str) -> dict[str, Any]:
     cloned = json.loads(json.dumps(campaign))
     outputs = dict(cloned.get("outputs") or {})
@@ -597,8 +631,12 @@ def _build_payload(
             "outputs": generated_outputs,
         },
     }
-    if str(abstraction_layer or "").strip() == "decoder_probability_path":
-        decoder_evidence = _decoder_probability_path_evidence(item_id=item_id)
+    abstraction_layer_name = str(abstraction_layer or "").strip()
+    if abstraction_layer_name in {"decoder_probability_path", "decoder_probability_sweep"}:
+        if abstraction_layer_name == "decoder_probability_sweep":
+            decoder_evidence = _decoder_probability_sweep_evidence(item_id=item_id)
+        else:
+            decoder_evidence = _decoder_probability_path_evidence(item_id=item_id)
         commands = [*decoder_evidence["commands"], *commands]
         expected_outputs = _uniq([*expected_outputs, *decoder_evidence["expected_outputs"]])
         task_inputs["decoder_contract"] = decoder_evidence["inputs"]

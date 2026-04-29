@@ -1,0 +1,12 @@
+{
+  "proposal_id": "prop_l2_decoder_probability_sweep_v1",
+  "candidate_id": "l2_decoder_probability_sweep_v1",
+  "decision": "pending",
+  "reason": "Awaiting proposal-backed decoder probability-template sweep evidence.",
+  "evidence_refs": [
+    "docs/proposals/prop_l2_decoder_probability_sweep_v1/proposal.json",
+    "runs/datasets/llm_decoder_eval_tiny_v1/manifest.json"
+  ],
+  "next_action": "run l2_decoder_probability_sweep_v1 and inspect exact-vs-approx template quality",
+  "requires_human_approval": false
+}

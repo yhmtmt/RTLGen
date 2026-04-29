@@ -1,0 +1,56 @@
+{
+  "proposal_id": "prop_l2_decoder_probability_sweep_v1",
+  "created_utc": "2026-04-29T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "LLM decoder probability-template sweep",
+  "hypothesis": "The decoder-quality gate should compare exact and bounded approximate probability-path templates side by side before any approximate softmax or normalization hardware proposal is reopened.",
+  "direct_comparison": {
+    "primary_question": "Which decoder probability-path backend template preserves next-token and top-k quality on llm_decoder_eval_tiny_v1?",
+    "include": [
+      "llm_decoder_eval_tiny_v1 reference manifest",
+      "candidate_onnx_softmax_exact backend template",
+      "candidate_onnx_softmax_approx backend template",
+      "next-token exact-match and top-k containment rates",
+      "selected present.* tensor shape and drift summaries"
+    ],
+    "exclude": [
+      "changing the active exact candidate manifest",
+      "claiming hardware approximation acceptance",
+      "new RTL or mapper changes"
+    ],
+    "follow_on_broad_sweep": [
+      "only reopen narrower approximation knobs after the sweep output identifies a quality-preserving candidate envelope"
+    ]
+  },
+  "expected_benefit": [
+    "keeps dataset-backed decoder quality ahead of approximate softmax architecture work",
+    "lets exact and approximate candidate templates be evaluated without mutating the active candidate manifest",
+    "records the first reusable decoder probability-template sweep artifact"
+  ],
+  "risks": [
+    "the tiny prompt set is too small to prove broader language-model quality",
+    "the approximate template may remain below exact quality, which means architecture work should stay deferred",
+    "this is still software-emulated probability-path evidence, not RTL-backed decoder execution"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_probability_sweep_v1",
+      "task_type": "l2_campaign",
+      "objective": "decoder_probability_sweep",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json"
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_decoder_exact_probability_path_v1/proposal.json",
+    "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_compare__l2_decoder_exact_probability_path_v1.json"
+  ],
+  "knowledge_refs": [
+    "docs/architecture/llm_decoder_accuracy_stage_v1.md",
+    "npu/eval/sweep_llm_decoder_candidate_quality.py",
+    "runs/models/llm_decoder_tiny_v1/model_contract.json",
+    "runs/datasets/llm_decoder_eval_tiny_v1/manifest.json"
+  ]
+}
