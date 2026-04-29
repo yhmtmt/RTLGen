@@ -1,0 +1,170 @@
+{
+  "decision": {
+    "decision": "q8_reciprocal_candidate_survived",
+    "reason": "grid_approx_pwl_in_q8_w_q8_norm_recip_q10 preserved the exact prompt-stress gate with lower modeled normalization cost than q8 exact normalization. It should be costed against the bf16 anchor next.",
+    "selected_candidate": "grid_approx_pwl_in_q8_w_q8_norm_recip_q10"
+  },
+  "frontier_scope": {
+    "quality_gate": "candidate must match next-token and top-k for every prompt-stress sample",
+    "rough_grid": "decoder_q8_normalization_frontier_v1",
+    "scope_note": "This is a focused q8 PWL normalization frontier. It tests reciprocal-normalization precision as a replacement for q8 exact normalization; it is not RTL or OpenROAD PPA."
+  },
+  "next_step": [
+    "If a q8 reciprocal row survives, compare it against bf16 reciprocal PWL with an RTL/OpenROAD-oriented block estimate.",
+    "If no q8 reciprocal row survives, keep q8 exact normalization only as a quality baseline and move the implementation frontier to bf16 reciprocal PWL."
+  ],
+  "ranked_rows": [
+    {
+      "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q8_w_q8_norm_recip_q10_prob_fp",
+      "frontier_score": 17.5,
+      "normalization": {
+        "mode": "reciprocal_quantized",
+        "reciprocal_bits": 10,
+        "reciprocal_float_format": "",
+        "relative_cost_units": 17.5
+      },
+      "quality": {
+        "exact_safe": true,
+        "gate": "exact_safe_survivor",
+        "next_token_match_rate": 1.0,
+        "next_token_matches": 24,
+        "next_token_mismatch_sample_ids": [],
+        "sample_count": 24,
+        "topk_contains_reference_rate": 1.0,
+        "topk_matches": 24,
+        "topk_miss_sample_ids": [],
+        "topk_safe": true
+      },
+      "rank": 1,
+      "role": "q8_reciprocal_candidate",
+      "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q10"
+    },
+    {
+      "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q8_w_q8_norm_recip_q12_prob_fp",
+      "frontier_score": 19.0,
+      "normalization": {
+        "mode": "reciprocal_quantized",
+        "reciprocal_bits": 12,
+        "reciprocal_float_format": "",
+        "relative_cost_units": 19.0
+      },
+      "quality": {
+        "exact_safe": true,
+        "gate": "exact_safe_survivor",
+        "next_token_match_rate": 1.0,
+        "next_token_matches": 24,
+        "next_token_mismatch_sample_ids": [],
+        "sample_count": 24,
+        "topk_contains_reference_rate": 1.0,
+        "topk_matches": 24,
+        "topk_miss_sample_ids": [],
+        "topk_safe": true
+      },
+      "rank": 2,
+      "role": "q8_reciprocal_candidate",
+      "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q12"
+    },
+    {
+      "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q8_w_q8_norm_recip_q14_prob_fp",
+      "frontier_score": 20.5,
+      "normalization": {
+        "mode": "reciprocal_quantized",
+        "reciprocal_bits": 14,
+        "reciprocal_float_format": "",
+        "relative_cost_units": 20.5
+      },
+      "quality": {
+        "exact_safe": true,
+        "gate": "exact_safe_survivor",
+        "next_token_match_rate": 1.0,
+        "next_token_matches": 24,
+        "next_token_mismatch_sample_ids": [],
+        "sample_count": 24,
+        "topk_contains_reference_rate": 1.0,
+        "topk_matches": 24,
+        "topk_miss_sample_ids": [],
+        "topk_safe": true
+      },
+      "rank": 3,
+      "role": "q8_reciprocal_candidate",
+      "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q14"
+    },
+    {
+      "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_bf16_w_bf16_norm_recip_bf16_prob_fp",
+      "frontier_score": 22.0,
+      "normalization": {
+        "mode": "reciprocal_float",
+        "reciprocal_bits": 0,
+        "reciprocal_float_format": "bf16",
+        "relative_cost_units": 22.0
+      },
+      "quality": {
+        "exact_safe": true,
+        "gate": "exact_safe_survivor",
+        "next_token_match_rate": 1.0,
+        "next_token_matches": 24,
+        "next_token_mismatch_sample_ids": [],
+        "sample_count": 24,
+        "topk_contains_reference_rate": 1.0,
+        "topk_matches": 24,
+        "topk_miss_sample_ids": [],
+        "topk_safe": true
+      },
+      "rank": 4,
+      "role": "bf16_primary_anchor",
+      "template": "grid_approx_pwl_bf16_path"
+    },
+    {
+      "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q8_w_q8_norm_recip_q16_prob_fp",
+      "frontier_score": 22.0,
+      "normalization": {
+        "mode": "reciprocal_quantized",
+        "reciprocal_bits": 16,
+        "reciprocal_float_format": "",
+        "relative_cost_units": 22.0
+      },
+      "quality": {
+        "exact_safe": true,
+        "gate": "exact_safe_survivor",
+        "next_token_match_rate": 1.0,
+        "next_token_matches": 24,
+        "next_token_mismatch_sample_ids": [],
+        "sample_count": 24,
+        "topk_contains_reference_rate": 1.0,
+        "topk_matches": 24,
+        "topk_miss_sample_ids": [],
+        "topk_safe": true
+      },
+      "rank": 5,
+      "role": "q8_reciprocal_candidate",
+      "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q16"
+    },
+    {
+      "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q8_w_q8_norm_exact_prob_fp",
+      "frontier_score": 52.0,
+      "normalization": {
+        "mode": "exact",
+        "reciprocal_bits": 0,
+        "reciprocal_float_format": "",
+        "relative_cost_units": 52.0
+      },
+      "quality": {
+        "exact_safe": true,
+        "gate": "exact_safe_survivor",
+        "next_token_match_rate": 1.0,
+        "next_token_matches": 24,
+        "next_token_mismatch_sample_ids": [],
+        "sample_count": 24,
+        "topk_contains_reference_rate": 1.0,
+        "topk_matches": 24,
+        "topk_miss_sample_ids": [],
+        "topk_safe": true
+      },
+      "rank": 6,
+      "role": "q8_exact_normalization_baseline",
+      "template": "grid_approx_pwl_in_q8_w_q8_norm_exact"
+    }
+  ],
+  "source_sweep": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_sweep__l2_decoder_q8_normalization_frontier_v1.json",
+  "version": 0.1
+}
