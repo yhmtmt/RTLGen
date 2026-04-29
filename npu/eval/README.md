@@ -175,6 +175,24 @@ interpolation datapath width, normalization path, and integration risk so the
 next hardware-cost job can target the blocker instead of sweeping approximation
 parameters blindly.
 
+Run the focused q8 PWL normalization frontier:
+```sh
+python3 npu/eval/sweep_llm_decoder_candidate_quality.py \
+  --dataset-manifest runs/datasets/llm_decoder_eval_tiny_v1/manifest_prompt_stress_v1.json \
+  --rough-grid decoder_q8_normalization_frontier_v1 \
+  --out-dir /tmp/decoder_q8_norm_frontier_sweep \
+  --out /tmp/decoder_q8_norm_frontier_sweep.json
+python3 npu/eval/estimate_llm_decoder_q8_norm_frontier.py \
+  --sweep /tmp/decoder_q8_norm_frontier_sweep.json \
+  --out /tmp/decoder_q8_norm_frontier.json \
+  --out-md /tmp/decoder_q8_norm_frontier.md
+```
+
+This frontier tests q8 PWL exact normalization against q8 PWL quantized
+reciprocal normalization at q10/q12/q14/q16, with the bf16 reciprocal PWL row
+kept as the current anchor. A reciprocal row is only a candidate if it preserves
+the full prompt-stress next-token and top-k gate.
+
 Optionally verify path-like fields exist:
 ```sh
 python3 npu/eval/validate.py --campaign <campaign.json> --check_paths

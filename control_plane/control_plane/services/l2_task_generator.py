@@ -845,6 +845,105 @@ def _decoder_pwl_frontier_detail_evidence(*, item_id: str) -> dict[str, Any]:
     }
 
 
+def _decoder_q8_normalization_frontier_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_tiny_v1"
+    dataset_manifest = f"{base}/manifest_prompt_stress_v1.json"
+    reference_dir = f"{base}/reference_prompt_stress_v1"
+    reference_manifest = f"{base}/reference_prompt_stress_v1_manifest.json"
+    candidate_dir = f"{base}/candidate_prompt_stress_v1"
+    candidate_manifest = f"{base}/candidate_prompt_stress_v1_manifest.json"
+    validation_out = f"{base}/decoder_contract_validation__{item_id}.json"
+    quality_out = f"{base}/decoder_quality_compare__{item_id}.json"
+    sweep_dir = f"{base}/candidate_sweeps/{item_id}"
+    sweep_out = f"{base}/decoder_quality_sweep__{item_id}.json"
+    frontier_out = f"{base}/decoder_q8_norm_frontier__{item_id}.json"
+    frontier_report = f"{base}/decoder_q8_norm_frontier__{item_id}.md"
+    rough_grid = "decoder_q8_normalization_frontier_v1"
+    commands = [
+        {
+            "name": "generate_decoder_q8_norm_reference",
+            "run": (
+                "python3 npu/eval/gen_llm_decoder_reference_suite.py "
+                f"--dataset-manifest {dataset_manifest} "
+                f"--out-dir {reference_dir} "
+                f"--out-manifest {reference_manifest}"
+            ),
+        },
+        {
+            "name": "generate_decoder_q8_norm_candidate",
+            "run": (
+                "python3 npu/eval/gen_llm_decoder_candidate_suite.py "
+                f"--dataset-manifest {dataset_manifest} "
+                f"--out-dir {candidate_dir} "
+                f"--out-manifest {candidate_manifest}"
+            ),
+        },
+        {
+            "name": "validate_decoder_q8_norm_contract",
+            "run": f"python3 npu/eval/validate_llm_decoder_contract.py --dataset-manifest {dataset_manifest} --out {validation_out}",
+        },
+        {
+            "name": "compare_decoder_q8_norm_quality",
+            "run": (
+                "python3 npu/eval/compare_llm_decoder_quality.py "
+                f"--reference-manifest {reference_manifest} "
+                f"--candidate-manifest {candidate_manifest} "
+                f"--out {quality_out}"
+            ),
+        },
+        {
+            "name": "sweep_decoder_q8_norm_frontier",
+            "run": (
+                "python3 npu/eval/sweep_llm_decoder_candidate_quality.py "
+                f"--dataset-manifest {dataset_manifest} "
+                f"--rough-grid {rough_grid} "
+                f"--out-dir {sweep_dir} "
+                f"--out {sweep_out}"
+            ),
+        },
+        {
+            "name": "estimate_decoder_q8_norm_frontier",
+            "run": (
+                "python3 npu/eval/estimate_llm_decoder_q8_norm_frontier.py "
+                f"--sweep {sweep_out} "
+                f"--out {frontier_out} "
+                f"--out-md {frontier_report}"
+            ),
+        },
+    ]
+    return {
+        "inputs": {
+            "dataset_manifest": dataset_manifest,
+            "sample_file": f"{base}/samples_prompt_stress_v1.jsonl",
+            "reference_manifest": reference_manifest,
+            "candidate_manifest": candidate_manifest,
+            "reference_dir": reference_dir,
+            "candidate_dir": candidate_dir,
+            "validation_out": validation_out,
+            "quality_out": quality_out,
+            "candidate_sweep_dir": sweep_dir,
+            "candidate_sweep_out": sweep_out,
+            "candidate_sweep_grid": rough_grid,
+            "frontier_out": frontier_out,
+            "frontier_report": frontier_report,
+            "candidate_sweep_scope": (
+                "focused q8 PWL normalization frontier over exact normalization and quantized reciprocal "
+                "normalization bit widths on the prompt-stress dataset"
+            ),
+        },
+        "commands": commands,
+        "expected_outputs": [
+            reference_manifest,
+            candidate_manifest,
+            validation_out,
+            quality_out,
+            sweep_out,
+            frontier_out,
+            frontier_report,
+        ],
+    }
+
+
 def _with_fresh_outputs(*, campaign: dict[str, Any], item_id: str) -> dict[str, Any]:
     cloned = json.loads(json.dumps(campaign))
     outputs = dict(cloned.get("outputs") or {})
@@ -950,8 +1049,11 @@ def _build_payload(
         "decoder_survivor_prompt_stress",
         "decoder_survivor_cost_proxy",
         "decoder_pwl_frontier_detail",
+        "decoder_q8_normalization_frontier",
     }:
-        if abstraction_layer_name == "decoder_pwl_frontier_detail":
+        if abstraction_layer_name == "decoder_q8_normalization_frontier":
+            decoder_evidence = _decoder_q8_normalization_frontier_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_pwl_frontier_detail":
             decoder_evidence = _decoder_pwl_frontier_detail_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_survivor_cost_proxy":
             decoder_evidence = _decoder_survivor_cost_proxy_evidence(item_id=item_id)
