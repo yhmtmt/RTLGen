@@ -29,9 +29,10 @@ What exists today:
 - `runs/models/llm_decoder_tiny_v1/model_contract.json`
 - `npu/eval/decoder_backend.py`
 - `npu/eval/gen_llm_decoder_reference_suite.py`
+- `runs/models/llm_practical_v1/manifest.json` as the first campaign-runnable
+  decoder-style graph proxy with explicit KV-context pressure metadata
 
 What does not exist yet:
-- a decoder-style model set,
 - any dataset-backed acceptance gate for approximate hardware beyond reference/candidate next-token checks.
 - token-level quality metrics in full NPU campaign/report outputs.
 

@@ -60,6 +60,9 @@ Tooling:
 - `npu/mapper/examples/gen_llm_attention_tail_stress_suite_lite.py`: generate
   the bounded larger-sequence repeated-tail stress set for
   `llm_attention_tail_stress_v1`.
+- `npu/mapper/examples/gen_llm_practical_suite_lite.py`: generate the first
+  decoder-style practical proxy set for `llm_practical_v1`, using active-token
+  batches and larger KV-context score dimensions.
 
 Example (MLP-1):
 ```sh

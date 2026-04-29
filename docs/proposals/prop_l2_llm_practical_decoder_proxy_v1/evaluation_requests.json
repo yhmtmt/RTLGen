@@ -1,0 +1,24 @@
+{
+  "proposal_id": "prop_l2_llm_practical_decoder_proxy_v1",
+  "source_commit": "75e24f8d326ca559f1f2b951ddf70396f7ee6ee6",
+  "requested_items": [
+    {
+      "item_id": "l2_llm_practical_decoder_proxy_v1",
+      "task_type": "l2_campaign",
+      "objective": "Evaluate the first practical decoder-style proxy to determine whether KV-context score pressure changes the scheduler or softmax bottleneck picture.",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_llm_practical_v1/campaign.json",
+      "evaluation_mode": "broad_ranking",
+      "abstraction_layer": "layer2",
+      "comparison_role": "ranking",
+      "paired_baseline_item_id": "",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": false,
+      "requires_materialized_refs": false,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Practical proxy evidence should decide whether to pursue scheduler/KV-context work, continue toward dataset-backed decoder execution, or reconsider softmax datapath proposals."
+      },
+      "status": "proposed"
+    }
+  ]
+}

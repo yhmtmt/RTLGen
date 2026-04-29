@@ -79,6 +79,9 @@
 - `llm_attention_tail_stress_v1` extends the same proxy with sequence lengths
   `128` and `256` and 4-6 softmax-bearing blocks per model path, specifically
   to check whether the earlier low-pressure tail result was too small
+- `llm_practical_v1` adds the next decoder-style proxy: active-token batches
+  attending over `256`/`512` KV-context score dimensions, still using the
+  current ONNX-lite mapper path
 
 ## Architecture Implications
 - no new architecture proposal should be launched first for “softmax pipeline
@@ -112,11 +115,14 @@
 - `runs/models/llm_smoke_v1/manifest.json`
 - `runs/models/llm_attention_tail_v1/manifest.json`
 - `runs/models/llm_attention_tail_stress_v1/manifest.json`
+- `runs/models/llm_practical_v1/manifest.json`
 - `runs/campaigns/npu/e2e_eval_llm_smoke_v1/campaign.json`
 - `runs/campaigns/npu/e2e_eval_llm_attention_tail_v1/campaign.json`
 - `runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/campaign.json`
+- `runs/campaigns/npu/e2e_eval_llm_practical_v1/campaign.json`
 - `npu/mapper/examples/gen_llm_attention_tail_suite_lite.py`
 - `npu/mapper/examples/gen_llm_attention_tail_stress_suite_lite.py`
+- `npu/mapper/examples/gen_llm_practical_suite_lite.py`
 - `docs/architecture/llm_attention_benchmark_ladder.md`
 
 ## Open Questions

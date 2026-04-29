@@ -77,6 +77,11 @@ Current sets
   `runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/` and is intended
   to test whether the lower-pressure tail evidence was too small to expose
   softmax occupancy, wait-cycle, or backpressure limits.
+- `llm_practical_v1`: first practical decoder-style ONNX-lite proxy set with
+  active-token batches attending over larger `256`/`512` KV-context score
+  dimensions. It is paired with `runs/campaigns/npu/e2e_eval_llm_practical_v1/`
+  and bridges scheduler/PPA campaign evidence toward dataset-backed decoder
+  quality gates.
 
 
 Non-ONNX decoder contracts

@@ -1,0 +1,49 @@
+{
+  "version": 0.1,
+  "model_set_id": "llm_practical_v1",
+  "description": "Locally generated decoder-style attention proxy set with active-token batches attending over larger KV-context score dimensions. This bridges the attention-tail stress ladder and later dataset-backed decoder quality evaluation.",
+  "models": [
+    {
+      "model_id": "practical_tail_attn4_s16_h64_kv256",
+      "onnx_path": "runs/models/llm_practical_v1/practical_tail_attn4_s16_h64_kv256.onnx",
+      "onnx_sha256": "c9f44ba65e3f6c91a35cfe297e2fe97d3db71d93c0e106083afc630db9de036f",
+      "active_tokens": 16,
+      "seq_len": 16,
+      "hidden_dim": 64,
+      "num_blocks": 4,
+      "softmax_episode_count": 4,
+      "kv_context_tokens": 256,
+      "score_dim": 256,
+      "kv_cache_proxy_bytes": 32768,
+      "notes": "Small decoder-style proxy: 16 active tokens attending over a 256-token KV context."
+    },
+    {
+      "model_id": "practical_tail_attn4_s32_h64_kv512",
+      "onnx_path": "runs/models/llm_practical_v1/practical_tail_attn4_s32_h64_kv512.onnx",
+      "onnx_sha256": "04dd4aad5e70559f606c824fb3479959281a432a1c0588070cebb9f079c80518",
+      "active_tokens": 32,
+      "seq_len": 32,
+      "hidden_dim": 64,
+      "num_blocks": 4,
+      "softmax_episode_count": 4,
+      "kv_context_tokens": 512,
+      "score_dim": 512,
+      "kv_cache_proxy_bytes": 65536,
+      "notes": "KV-window pressure point: 32 active tokens over a 512-token KV context."
+    },
+    {
+      "model_id": "practical_tail_attn6_s32_h64_kv512",
+      "onnx_path": "runs/models/llm_practical_v1/practical_tail_attn6_s32_h64_kv512.onnx",
+      "onnx_sha256": "ac3c7d2b2d79d20ab32c8598345daed9206ac93c0ab0d72791dbbd495dc0dd1e",
+      "active_tokens": 32,
+      "seq_len": 32,
+      "hidden_dim": 64,
+      "num_blocks": 6,
+      "softmax_episode_count": 6,
+      "kv_context_tokens": 512,
+      "score_dim": 512,
+      "kv_cache_proxy_bytes": 65536,
+      "notes": "Repeated decoder-style proxy with six attention episodes over a 512-token KV context."
+    }
+  ]
+}
