@@ -1,0 +1,246 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-04-29T09:08:24.527341Z",
+  "item_id": "l1_decoder_norm_accumulator_adder_calibration_v1",
+  "run_key": "l1_decoder_norm_accumulator_adder_calibration_v1_run_64aa3bffb7dbce21",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "1ceb41cc59b3a090e906eb58413c6fc7b825f542",
+  "objective": "Measure Nangate45 PPA for unsigned prefix-adder wrappers that bound q8 normalization-sum and accumulator paths.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/prefix_adders/sweeps/nangate45_highutil.json"
+    ],
+    "configs": [
+      "runs/designs/prefix_adders/adder_ripple_16u_wrapper/config_adder_ripple_unsigned_16bit.json",
+      "runs/designs/prefix_adders/adder_brentkung_16u_wrapper/config_adder_brentkung_unsigned_16bit.json",
+      "runs/designs/prefix_adders/adder_koggestone_16u_wrapper/config_adder_koggestone_unsigned_16bit.json",
+      "runs/designs/prefix_adders/adder_ripple_32u_wrapper/config_adder_ripple_unsigned_32bit.json",
+      "runs/designs/prefix_adders/adder_brentkung_32u_wrapper/config_adder_brentkung_unsigned_32bit.json",
+      "runs/designs/prefix_adders/adder_koggestone_32u_wrapper/config_adder_koggestone_unsigned_32bit.json",
+      "runs/designs/prefix_adders/adder_ripple_64u_wrapper/config_adder_ripple_unsigned_64bit.json",
+      "runs/designs/prefix_adders/adder_brentkung_64u_wrapper/config_adder_brentkung_unsigned_64bit.json",
+      "runs/designs/prefix_adders/adder_koggestone_64u_wrapper/config_adder_koggestone_unsigned_64bit.json"
+    ],
+    "out_root": "runs/designs/prefix_adders",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 9,
+  "evaluation_record": {
+    "evaluation_mode": "measurement_only",
+    "abstraction_layer": "circuit_block",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/prefix_adders/adder_ripple_16u_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "8fb1f207",
+        "tag": "prefix_adders_nangate45_highutil_87b48795",
+        "result_path": "/workspaces/RTLGen/runs/designs/prefix_adders/adder_ripple_16u_wrapper/work/8fb1f207/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 0.1844,
+        "die_area": 679.6449,
+        "total_power_mw": 0.000197
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_16u_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "8fb1f207",
+        "tag": "prefix_adders_nangate45_highutil_87b48795",
+        "result_path": "/workspaces/RTLGen/runs/designs/prefix_adders/adder_brentkung_16u_wrapper/work/8fb1f207/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 0.1861,
+        "die_area": 739.568025,
+        "total_power_mw": 0.000206
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_16u_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "8fb1f207",
+        "tag": "prefix_adders_nangate45_highutil_87b48795",
+        "result_path": "/workspaces/RTLGen/runs/designs/prefix_adders/adder_koggestone_16u_wrapper/work/8fb1f207/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 0.1836,
+        "die_area": 913.2484,
+        "total_power_mw": 0.000243
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/prefix_adders/adder_ripple_32u_wrapper/metrics.csv",
+        "platform": "asap7",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "cf19db5a",
+        "tag": "prefix_adders_asap7_highutil_c51f6982",
+        "result_path": "/workspaces/RTLGen/runs/designs/prefix_adders/adder_ripple_32u_wrapper/work/cf19db5a/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 1.1646604999999999,
+        "die_area": 115.928289,
+        "total_power_mw": 0.00023999999999999998
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_32u_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "1d3bcf3d",
+        "tag": "prefix_adders_nangate45_highutil_da64be35",
+        "result_path": "/workspaces/RTLGen/runs/designs/prefix_adders/adder_brentkung_32u_wrapper/work/1d3bcf3d/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 0.1938,
+        "die_area": 1195.0849,
+        "total_power_mw": 0.000423
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_32u_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "1d3bcf3d",
+        "tag": "prefix_adders_nangate45_highutil_da64be35",
+        "result_path": "/workspaces/RTLGen/runs/designs/prefix_adders/adder_koggestone_32u_wrapper/work/1d3bcf3d/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 0.1975,
+        "die_area": 1605.204225,
+        "total_power_mw": 0.000532
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/prefix_adders/adder_ripple_64u_wrapper/metrics.csv",
+        "platform": "asap7",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "cf19db5a",
+        "tag": "prefix_adders_asap7_highutil_c51f6982",
+        "result_path": "/workspaces/RTLGen/runs/designs/prefix_adders/adder_ripple_64u_wrapper/work/cf19db5a/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 2.2664414,
+        "die_area": 207.446409,
+        "total_power_mw": 0.000544
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_64u_wrapper/metrics.csv",
+        "platform": "asap7",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "cf19db5a",
+        "tag": "prefix_adders_asap7_highutil_c51f6982",
+        "result_path": "/workspaces/RTLGen/runs/designs/prefix_adders/adder_brentkung_64u_wrapper/work/cf19db5a/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 1.2620005,
+        "die_area": 203.975524,
+        "total_power_mw": 0.000602
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_64u_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "1d3bcf3d",
+        "tag": "prefix_adders_nangate45_highutil_da64be35",
+        "result_path": "/workspaces/RTLGen/runs/designs/prefix_adders/adder_koggestone_64u_wrapper/work/1d3bcf3d/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 0.2225,
+        "die_area": 3074.7025,
+        "total_power_mw": 0.00104
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_decoder_norm_accumulator_adder_calibration_v1",
+    "completed_trials": 1,
+    "success_count": 1,
+    "failure_count": 0,
+    "success_rate": 1.0,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 0.1836,
+        "mean": 0.1836,
+        "median": 0.1836,
+        "max": 0.1836,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "die_area": {
+        "best": 913.2484,
+        "mean": 913.2484,
+        "median": 913.2484,
+        "max": 913.2484,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "total_power_mw": {
+        "best": 0.000243,
+        "mean": 0.000243,
+        "median": 0.000243,
+        "max": 0.000243,
+        "range": 0.0,
+        "stddev": 0.0
+      }
+    }
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/prefix_adders/adder_ripple_16u_wrapper/metrics.csv",
+      "runs/designs/prefix_adders/adder_brentkung_16u_wrapper/metrics.csv",
+      "runs/designs/prefix_adders/adder_koggestone_16u_wrapper/metrics.csv",
+      "runs/designs/prefix_adders/adder_ripple_32u_wrapper/metrics.csv",
+      "runs/designs/prefix_adders/adder_brentkung_32u_wrapper/metrics.csv",
+      "runs/designs/prefix_adders/adder_koggestone_32u_wrapper/metrics.csv",
+      "runs/designs/prefix_adders/adder_ripple_64u_wrapper/metrics.csv",
+      "runs/designs/prefix_adders/adder_brentkung_64u_wrapper/metrics.csv",
+      "runs/designs/prefix_adders/adder_koggestone_64u_wrapper/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_norm_accumulator_adder_calibration_v1/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_norm_accumulator_adder_calibration_v1/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_norm_accumulator_adder_calibration_v1/trial_table.csv"
+  }
+}
