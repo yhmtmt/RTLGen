@@ -1,0 +1,31 @@
+{
+  "version": 0.1,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_recip_q10_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_recip_q10_wrapper/work/44181f67/result.json"
+      },
+      "metric_summary": {
+        "critical_path_ns": 5.6126,
+        "die_area": 39776.3136,
+        "total_power_mw": 0.00463
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_recip_q12_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_recip_q12_wrapper/work/44181f67/result.json"
+      },
+      "metric_summary": {
+        "critical_path_ns": 5.7554,
+        "die_area": 52118.607025,
+        "total_power_mw": 0.014
+      }
+    }
+  ]
+}

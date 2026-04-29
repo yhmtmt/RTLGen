@@ -25,21 +25,28 @@ def test_q8_normalization_frontier_grid_contains_exact_reciprocal_and_bf16_ancho
 
 
 def test_q8_normalization_frontier_report_selects_lowest_cost_exact_safe_reciprocal() -> None:
-    report = build_report(sweep_path=Path("tests/fixtures/decoder_q8_norm_frontier_sweep.json"))
+    report = build_report(
+        sweep_path=Path("tests/fixtures/decoder_q8_norm_frontier_sweep.json"),
+        q8_recip_ppa_path=Path("tests/fixtures/q8_recip_norm_datapath_ppa.json"),
+    )
 
     assert report["decision"]["decision"] == "q8_reciprocal_candidate_survived"
     assert report["decision"]["selected_candidate"] == "grid_approx_pwl_in_q8_w_q8_norm_recip_q10"
-    assert report["cost_model"]["source"] == "hand_written_planning_proxy_not_literature_backed"
-    assert report["cost_model"]["unit"] == "heuristic_planning_units"
+    assert report["cost_model"]["source"] == "rtlgen_openroad_q8_reciprocal_datapath_metrics"
+    assert report["cost_model"]["unit"] == "nangate45_physical_metrics"
     assert (
         report["cost_model"]["rtlgen_calibration_proposal"]
-        == "prop_l1_decoder_normalization_arithmetic_calibration_v1"
+        == "prop_l1_decoder_q8_recip_norm_datapath_v1"
     )
     by_template = {row["template"]: row for row in report["ranked_rows"]}
     assert by_template["grid_approx_pwl_in_q8_w_q8_norm_recip_q10"]["quality"]["exact_safe"]
-    assert by_template["grid_approx_pwl_in_q8_w_q8_norm_recip_q10"]["normalization"]["calibration_status"] == "uncalibrated"
+    assert (
+        by_template["grid_approx_pwl_in_q8_w_q8_norm_recip_q10"]["normalization"]["calibration_status"]
+        == "integrated_q8_reciprocal_datapath_measured"
+    )
     assert by_template["grid_approx_pwl_in_q8_w_q8_norm_recip_q12"]["quality"]["exact_safe"]
     assert (
-        by_template["grid_approx_pwl_in_q8_w_q8_norm_recip_q10"]["normalization"]["relative_cost_units"]
-        < by_template["grid_approx_pwl_in_q8_w_q8_norm_exact"]["normalization"]["relative_cost_units"]
+        by_template["grid_approx_pwl_in_q8_w_q8_norm_recip_q10"]["normalization"]["ppa_metrics"]["critical_path_ns"]
+        < by_template["grid_approx_pwl_in_q8_w_q8_norm_recip_q12"]["normalization"]["ppa_metrics"]["critical_path_ns"]
     )
+    assert by_template["grid_approx_pwl_in_q8_w_q8_norm_exact"]["normalization"]["ppa_metrics"] is None
