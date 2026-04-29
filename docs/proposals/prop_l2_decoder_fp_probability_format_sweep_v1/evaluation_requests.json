@@ -1,0 +1,25 @@
+{
+  "proposal_id": "prop_l2_decoder_fp_probability_format_sweep_v1",
+  "source_commit": "fa5f24775a701376d06b8fd36e71a83eaa4b04d7",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_fp_probability_format_sweep_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run a broad rough decoder fp-format sensitivity map over logits, softmax intermediates, reciprocal normalization, and final probabilities.",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json",
+      "evaluation_mode": "broad_ranking",
+      "abstraction_layer": "decoder_probability_fp_sensitivity",
+      "comparison_role": "ranking",
+      "paired_baseline_item_id": "",
+      "depends_on_item_ids": [
+        "l2_decoder_probability_sensitivity_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "The map should identify whether fp-like dynamic range avoids the fixed q8 probability collapse and where fp8/bf16/fp16 rank cliffs appear on the pinned tiny benchmark."
+      }
+    }
+  ]
+}

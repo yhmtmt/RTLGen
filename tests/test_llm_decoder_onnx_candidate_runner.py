@@ -65,6 +65,20 @@ class LlmDecoderOnnxCandidateRunnerRegressionTest(unittest.TestCase):
         self.assertGreater(quantized[0], quantized[1])
         self.assertGreater(quantized[1], quantized[2])
 
+    def test_float_like_probability_quantization_preserves_tiny_dynamic_range(self):
+        fixed, fixed_meta = self.runner._quantize_probabilities_unsigned([4.8e-5, 4.0e-5, 3.0e-5], bits=8)
+        fp_like, fp_meta = self.runner._quantize_float_like(
+            [4.8e-5, 4.0e-5, 3.0e-5],
+            format_name='bf16',
+            mode='probability_float_quant',
+        )
+        self.assertEqual('unsigned_probability_quant', fixed_meta['mode'])
+        self.assertEqual([0.0, 0.0, 0.0], fixed)
+        self.assertEqual('bf16', fp_meta['format'])
+        self.assertGreater(fp_like[0], 0.0)
+        self.assertGreater(fp_like[0], fp_like[1])
+        self.assertGreater(fp_like[1], fp_like[2])
+
     def test_trace_tensor_quantization_preserves_shape(self):
         quantized, meta = self.runner._quantize_tensor_trace_symmetric([[1.0, -0.5]], bits=4)
         self.assertEqual('trace_tensor_quant', meta['mode'])
@@ -81,6 +95,21 @@ class LlmDecoderOnnxCandidateRunnerRegressionTest(unittest.TestCase):
         })
         self.assertEqual(
             'onnx_logits_fp_softmax_approx_pwl_in_q4_w_q4_norm_recip_q10_prob_fp',
+            semantics,
+        )
+
+    def test_candidate_semantics_names_fp_like_formats(self):
+        semantics = self.runner._derive_candidate_semantics({
+            'logit_float_format': 'bf16',
+            'softmax_mode': 'exact',
+            'softmax_input_float_format': 'fp16',
+            'softmax_weight_float_format': 'fp8_e5m2',
+            'normalization_mode': 'reciprocal_float',
+            'normalization_reciprocal_float_format': 'fp16',
+            'probability_float_format': 'bf16',
+        })
+        self.assertEqual(
+            'onnx_logits_bf16_softmax_exact_in_fp16_w_fp8_e5m2_norm_recip_fp16_prob_bf16',
             semantics,
         )
 

@@ -1,0 +1,8 @@
+{
+  "proposal_id": "prop_l2_decoder_fp_probability_format_sweep_v1",
+  "decision": "pending",
+  "candidate_id": "l2_decoder_fp_probability_format_sweep_v1",
+  "evidence": [],
+  "rationale": "Awaiting evaluator run.",
+  "next_action": "dispatch l2_decoder_fp_probability_format_sweep_v1"
+}

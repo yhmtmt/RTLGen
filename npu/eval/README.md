@@ -83,6 +83,21 @@ python3 npu/eval/sweep_llm_decoder_candidate_quality.py \
   --out /tmp/decoder_probability_broad_grid.json
 ```
 
+Run a rough decoder floating-point format sensitivity grid:
+```sh
+python3 npu/eval/sweep_llm_decoder_candidate_quality.py \
+  --dataset-manifest runs/datasets/llm_decoder_eval_tiny_v1/manifest.json \
+  --rough-grid decoder_probability_fp_formats_v1 \
+  --out-dir /tmp/decoder_probability_fp_grid \
+  --out /tmp/decoder_probability_fp_grid.json
+```
+
+The fp-format grid is intentionally separate from the integer/fixed-point grid:
+it probes fp16, bf16, and fp8-style dynamic range at logits, softmax
+intermediates, reciprocal normalization, and final probabilities. Treat its
+quality numbers as distribution-dependent evidence for the pinned tiny decoder
+setup, not as final hardware-format acceptance.
+
 Optionally verify path-like fields exist:
 ```sh
 python3 npu/eval/validate.py --campaign <campaign.json> --check_paths
