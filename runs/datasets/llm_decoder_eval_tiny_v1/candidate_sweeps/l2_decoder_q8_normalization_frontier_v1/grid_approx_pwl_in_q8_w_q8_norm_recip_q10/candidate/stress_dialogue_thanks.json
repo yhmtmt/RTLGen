@@ -1,0 +1,274 @@
+{
+  "backend": {
+    "backend_id": "command_json_v1",
+    "command": [
+      "/workspaces/RTLGen/control_plane/.venv/bin/python",
+      "npu/eval/run_llm_decoder_onnx_candidate.py"
+    ],
+    "cwd": "",
+    "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
+    "input_name": "input_ids",
+    "interface": "decoder_backend_v1",
+    "model_config_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/config.json",
+    "normalization_mode": "reciprocal_quantized",
+    "normalization_reciprocal_bits": 10,
+    "onnx_model_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/model.onnx",
+    "output_name": "logits",
+    "request_schema": "decoder_backend_command_v1",
+    "role": "candidate",
+    "runtime_target": "software_emulation",
+    "softmax_input_quant_bits": 8,
+    "softmax_mode": "approx_pwl",
+    "softmax_weight_quant_bits": 8,
+    "timeout_s": 30.0,
+    "topk": 5,
+    "trace_output_patterns": [
+      "present.*"
+    ],
+    "trace_tensor_quant_bits": 4
+  },
+  "backend_invocation": {
+    "command": [
+      "/workspaces/RTLGen/control_plane/.venv/bin/python",
+      "npu/eval/run_llm_decoder_onnx_candidate.py"
+    ],
+    "cwd": "",
+    "request_schema": "decoder_backend_command_v1",
+    "result_schema": "decoder_backend_command_result_v1"
+  },
+  "backend_runtime": {
+    "approximation": {
+      "logits": {
+        "mode": "identity_logits"
+      },
+      "normalization": {
+        "exponent": -14,
+        "mantissa": 0.577163132246125,
+        "mantissa_quantized": 0.5767350928641252,
+        "mode": "normalize_reciprocal_quantized",
+        "reciprocal": 3.5227241958381655e-05,
+        "reciprocal_bits": 10,
+        "reciprocal_quantized": 3.520111650782014e-05,
+        "sum_weights": 28387.12156862649
+      },
+      "probabilities": {
+        "mode": "identity_probabilities"
+      },
+      "softmax": {
+        "anchors": [
+          -8.0,
+          -4.0,
+          -2.0,
+          0.0
+        ],
+        "input_float_quant": null,
+        "input_quant": {
+          "bits": 8,
+          "levels": 127,
+          "max_abs": 1.9589452147483826,
+          "mode": "softmax_input_quant",
+          "scale": 0.015424765470459706
+        },
+        "max_logit": 1.0067322254180908,
+        "mode": "softmax_approx_pwl",
+        "shifted_min": -1.9589452147483826,
+        "weight_float_quant": null,
+        "weight_quant": {
+          "bits": 8,
+          "levels": 255,
+          "max_value": 1.0,
+          "mode": "softmax_weight_quant",
+          "scale": 0.00392156862745098
+        }
+      }
+    },
+    "library": "onnxruntime",
+    "onnxruntime_version": "1.23.1",
+    "runner": "onnx_candidate_v1",
+    "runtime_target": "software_emulation",
+    "score_rank": 1
+  },
+  "candidate": {
+    "confidence": 3.520111650782014e-05,
+    "distribution": {
+      "effective_vocab_size": 49508.31609247661,
+      "entropy_nats": 10.809895936314263,
+      "nonzero_score_count": 50257,
+      "score_sum": 0.9992583736589,
+      "top1_probability": 3.5227241958380774e-05,
+      "top1_score": 3.520111650782014e-05,
+      "top1_top2_score_margin": 2.760871882966304e-07,
+      "top2_probability": 3.4950949864589553e-05,
+      "top2_score": 3.492502931952351e-05,
+      "topk_score_mass": 0.0001702077515848715,
+      "vocab_size": 50257
+    },
+    "next_token_id": 29586,
+    "next_token_text": " rumored",
+    "selected_tensors": [
+      {
+        "dtype": "float32",
+        "max": 0.7737740278244019,
+        "mean": -0.0033463998697698116,
+        "min": -0.5526957511901855,
+        "name": "present.0.key",
+        "quantization": {
+          "bits": 4,
+          "levels": 7,
+          "max_abs": 0.7737740278244019,
+          "mode": "trace_tensor_quant",
+          "scale": 0.11053914683205741
+        },
+        "shape": [
+          1,
+          2,
+          8,
+          64
+        ],
+        "std": 0.22583253681659698,
+        "step": 0
+      },
+      {
+        "dtype": "float32",
+        "max": 0.6940587759017944,
+        "mean": 0.010360531508922577,
+        "min": -0.5949075222015381,
+        "name": "present.0.value",
+        "quantization": {
+          "bits": 4,
+          "levels": 7,
+          "max_abs": 0.6940587759017944,
+          "mode": "trace_tensor_quant",
+          "scale": 0.09915125370025635
+        },
+        "shape": [
+          1,
+          2,
+          8,
+          64
+        ],
+        "std": 0.22048920392990112,
+        "step": 0
+      },
+      {
+        "dtype": "float32",
+        "max": 0.7626180052757263,
+        "mean": 0.00925610400736332,
+        "min": -0.6536725759506226,
+        "name": "present.1.key",
+        "quantization": {
+          "bits": 4,
+          "levels": 7,
+          "max_abs": 0.7626180052757263,
+          "mode": "trace_tensor_quant",
+          "scale": 0.10894542932510376
+        },
+        "shape": [
+          1,
+          2,
+          8,
+          64
+        ],
+        "std": 0.22827233374118805,
+        "step": 0
+      },
+      {
+        "dtype": "float32",
+        "max": 0.7590789794921875,
+        "mean": -0.01832040585577488,
+        "min": -0.7590789794921875,
+        "name": "present.1.value",
+        "quantization": {
+          "bits": 4,
+          "levels": 7,
+          "max_abs": 0.7590789794921875,
+          "mode": "trace_tensor_quant",
+          "scale": 0.10843985421316964
+        },
+        "shape": [
+          1,
+          2,
+          8,
+          64
+        ],
+        "std": 0.22091326117515564,
+        "step": 0
+      }
+    ],
+    "selected_tensors_sha256": "ad05c7fc168a368322a365158715702efc5aee94bb105fd5e0658540cf33d8ba",
+    "topk": [
+      {
+        "score": 3.520111650782014e-05,
+        "token_id": 29586,
+        "token_text": " rumored"
+      },
+      {
+        "score": 3.492502931952351e-05,
+        "token_id": 23715,
+        "token_text": " BA"
+      },
+      {
+        "score": 3.395872416048531e-05,
+        "token_id": 389,
+        "token_text": " are"
+      },
+      {
+        "score": 3.326850618974374e-05,
+        "token_id": 23009,
+        "token_text": " badge"
+      },
+      {
+        "score": 3.2854375407298795e-05,
+        "token_id": 15626,
+        "token_text": " foul"
+      }
+    ]
+  },
+  "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q8_w_q8_norm_recip_q10_prob_fp",
+  "dataset_id": "llm_decoder_eval_tiny_v1",
+  "dataset_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/manifest_prompt_stress_v1.json",
+  "decode_policy": {
+    "max_new_tokens": 1,
+    "strategy": "greedy"
+  },
+  "model_binding": {
+    "contract_path": "runs/models/llm_decoder_tiny_v1/model_contract.json",
+    "execution_backend": "decoder_backend_v1",
+    "model_id": "llm_decoder_tiny_v1",
+    "status": "exact_reference_active"
+  },
+  "notes": "ONNX Runtime decoder candidate runner result using explicit softmax and normalization paths.",
+  "prompt": {
+    "text": "User: thanks\nAssistant: You are",
+    "token_count": 8,
+    "token_ids": [
+      12982,
+      25,
+      5176,
+      198,
+      48902,
+      25,
+      921,
+      389
+    ],
+    "tokens": [
+      "User",
+      ":",
+      "\u0120thanks",
+      "\u010a",
+      "Assistant",
+      ":",
+      "\u0120You",
+      "\u0120are"
+    ]
+  },
+  "sample_id": "stress_dialogue_thanks",
+  "task": "greedy_next_token",
+  "tokenizer": {
+    "kind": "gpt2_bpe",
+    "manifest_path": "runs/tokenizers/llm_decoder_gpt2_bpe_stub_v1/manifest.json",
+    "status": "exact_reference_tokenizer_active",
+    "tokenizer_id": "llm_decoder_gpt2_bpe_stub_v1"
+  },
+  "version": 0.1
+}
