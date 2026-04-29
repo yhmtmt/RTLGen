@@ -648,6 +648,68 @@ def test_prepare_submission_branch_stages_trial_metrics_from_source_refs() -> No
             assert (Path(result.worktree_path) / metrics_rel).exists()
 
 
+def test_prepare_submission_branch_stages_decoder_sweep_sidecars() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, _run_key = _seed_l2_reviewable(session, repo_root)
+            sweep_rel = "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_sweep__l2_submit_demo.json"
+            exact_manifest_rel = (
+                "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_submit_demo/"
+                "candidate_onnx_softmax_exact/candidate_manifest.json"
+            )
+            exact_quality_rel = (
+                "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_submit_demo/"
+                "candidate_onnx_softmax_exact/quality.json"
+            )
+            exact_sample_rel = (
+                "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_submit_demo/"
+                "candidate_onnx_softmax_exact/candidate/sample_001.json"
+            )
+            _write(repo_root / exact_sample_rel, json.dumps({"sample_id": "sample_001"}) + "\n")
+            _write(repo_root / exact_quality_rel, json.dumps({"aggregate": {"next_token_id_match_rate": 1.0}}) + "\n")
+            _write(
+                repo_root / exact_manifest_rel,
+                json.dumps({"samples": [{"sample_id": "sample_001", "candidate_json": exact_sample_rel}]}) + "\n",
+            )
+            _write(
+                repo_root / sweep_rel,
+                json.dumps({"templates": [{"candidate_manifest": exact_manifest_rel, "quality_json": exact_quality_rel}]}) + "\n",
+            )
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            work_item.expected_outputs = [*(work_item.expected_outputs or []), sweep_rel]
+            session.commit()
+
+            result = prepare_submission_branch(
+                session,
+                SubmissionPrepareRequest(
+                    repo_root=str(repo_root),
+                    item_id=item_id,
+                    evaluator_id="cpbot",
+                    session_id="s20260310t080600z",
+                    host="cp-host",
+                    worktree_root=str(repo_root / "tmp_submit"),
+                ),
+            )
+
+            manifest = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "review" / item_id / "submission_manifest.json").read_text()
+            )
+            assert sweep_rel in manifest["evidence_paths"]
+            assert exact_quality_rel in manifest["supporting_paths"]
+            assert exact_manifest_rel in manifest["supporting_paths"]
+            assert exact_sample_rel in manifest["supporting_paths"]
+            assert (Path(result.worktree_path) / sweep_rel).exists()
+            assert (Path(result.worktree_path) / exact_quality_rel).exists()
+            assert (Path(result.worktree_path) / exact_manifest_rel).exists()
+            assert (Path(result.worktree_path) / exact_sample_rel).exists()
+
+
 def test_prepare_submission_branch_uses_current_base_branch_instead_of_head() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
