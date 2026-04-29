@@ -1,0 +1,26 @@
+{
+  "proposal_id": "prop_l2_decoder_distribution_robustness_v1",
+  "source_commit": "199c10b74b339a2a95dfeffb636ff4e6b30ddca9",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_distribution_robustness_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run a broader rough decoder distribution robustness map across prompt categories, entropy/margin regimes, and integer versus fp-like probability formats.",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json",
+      "evaluation_mode": "broad_ranking",
+      "abstraction_layer": "decoder_distribution_robustness",
+      "comparison_role": "ranking",
+      "paired_baseline_item_id": "",
+      "depends_on_item_ids": [
+        "l2_decoder_fp_probability_format_sweep_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "The map should show whether the q/fp approximation cliffs persist across broader prompt/logit entropy and top-1 margin regimes before any narrow approximation parameter tuning."
+      },
+      "status": "pending"
+    }
+  ]
+}

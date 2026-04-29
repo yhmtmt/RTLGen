@@ -43,6 +43,14 @@ class LlmDecoderOnnxCandidateRunnerRegressionTest(unittest.TestCase):
         self.assertGreater(probs[0], probs[1])
         self.assertGreater(probs[1], probs[2])
 
+    def test_score_distribution_stats_reports_score_sum_and_margin(self):
+        stats = self.runner._score_distribution_stats([0.7, 0.2, 0.1, 0.0], topk=2)
+        self.assertEqual(4, stats['vocab_size'])
+        self.assertEqual(3, stats['nonzero_score_count'])
+        self.assertAlmostEqual(1.0, stats['score_sum'])
+        self.assertAlmostEqual(0.5, stats['top1_top2_score_margin'])
+        self.assertGreater(stats['entropy_nats'], 0.0)
+
     def test_softmax_approx_pwl_and_quantized_reciprocal_normalization_preserve_order(self):
         weights, softmax_meta = self.runner._softmax_approx_pwl(
             [1.0, 0.0, -1.0],

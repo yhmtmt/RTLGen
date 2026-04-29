@@ -1,0 +1,61 @@
+{
+  "proposal_id": "prop_l2_decoder_distribution_robustness_v1",
+  "created_utc": "2026-04-29T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "LLM decoder distribution robustness sweep",
+  "hypothesis": "Decoder approximation quality depends strongly on prompt, logit-margin, entropy, and probability dynamic-range distributions, so the next architecture step should broaden the prompt regimes and record distribution rollups before tuning any single approximation parameter.",
+  "direct_comparison": {
+    "primary_question": "Across a broader rough prompt-regime set, which integer and fp-like decoder probability-path approximations preserve next-token and top-k rank as entropy and top-1/top-2 margins vary?",
+    "include": [
+      "12 prompt-regime samples covering factual, arithmetic, phrase, list, code-like, dialogue, punctuation, long-context, repetition, and ambiguous-short prompts",
+      "reference entropy, effective vocabulary size, top-k probability mass, and top-1/top-2 logit margin rollups",
+      "candidate entropy, score-sum, effective vocabulary size, and top-1/top-2 score margin rollups",
+      "integer logit and probability probes",
+      "fp16, bf16, fp8_e5m2, and fp8_e4m3 final probability probes",
+      "approximate PWL softmax probes with integer and bf16-like paths"
+    ],
+    "exclude": [
+      "claiming final LLM accuracy acceptance",
+      "selecting a final hardware probability format",
+      "new RTL or mapper changes"
+    ],
+    "follow_on_broad_sweep": [
+      "add weight/model-family diversity after this prompt/logit-regime map",
+      "use the entropy/margin buckets to choose narrower approximation sweeps"
+    ]
+  },
+  "expected_benefit": [
+    "turns the previous fixed-prompt fp/q evidence into a broader rank robustness map",
+    "makes the distribution dependence visible in committed artifacts",
+    "reduces the risk of overfitting approximation choices to math_two_plus_two or any single prompt"
+  ],
+  "risks": [
+    "the broader prompt set still uses the same tiny ONNX model and tokenizer",
+    "software-emulated quantization remains an approximation of future hardware",
+    "prompt-regime labels are coarse until a larger dataset is added"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_distribution_robustness_v1",
+      "task_type": "l2_campaign",
+      "objective": "decoder_distribution_robustness",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json"
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_decoder_fp_probability_format_sweep_v1/proposal.json",
+    "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_sweep__l2_decoder_fp_probability_format_sweep_v1.json"
+  ],
+  "knowledge_refs": [
+    "docs/architecture/llm_decoder_accuracy_stage_v1.md",
+    "npu/eval/run_llm_decoder_onnx_reference.py",
+    "npu/eval/run_llm_decoder_onnx_candidate.py",
+    "npu/eval/sweep_llm_decoder_candidate_quality.py",
+    "runs/models/llm_decoder_tiny_v1/model_contract.json",
+    "runs/datasets/llm_decoder_eval_tiny_v1/manifest_distribution_v1.json",
+    "runs/datasets/llm_decoder_eval_tiny_v1/samples_distribution_v1.jsonl"
+  ]
+}

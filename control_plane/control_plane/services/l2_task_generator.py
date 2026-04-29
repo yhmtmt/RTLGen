@@ -606,6 +606,90 @@ def _decoder_probability_fp_sensitivity_evidence(*, item_id: str) -> dict[str, A
     }
 
 
+def _decoder_distribution_robustness_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_tiny_v1"
+    dataset_manifest = f"{base}/manifest_distribution_v1.json"
+    reference_dir = f"{base}/reference_distribution_v1"
+    reference_manifest = f"{base}/reference_distribution_v1_manifest.json"
+    candidate_dir = f"{base}/candidate_distribution_v1"
+    candidate_manifest = f"{base}/candidate_distribution_v1_manifest.json"
+    validation_out = f"{base}/decoder_contract_validation__{item_id}.json"
+    quality_out = f"{base}/decoder_quality_compare__{item_id}.json"
+    sweep_dir = f"{base}/candidate_sweeps/{item_id}"
+    sweep_out = f"{base}/decoder_quality_sweep__{item_id}.json"
+    rough_grid = "decoder_distribution_robustness_v1"
+    commands = [
+        {
+            "name": "generate_decoder_distribution_reference",
+            "run": (
+                "python3 npu/eval/gen_llm_decoder_reference_suite.py "
+                f"--dataset-manifest {dataset_manifest} "
+                f"--out-dir {reference_dir} "
+                f"--out-manifest {reference_manifest}"
+            ),
+        },
+        {
+            "name": "generate_decoder_distribution_candidate",
+            "run": (
+                "python3 npu/eval/gen_llm_decoder_candidate_suite.py "
+                f"--dataset-manifest {dataset_manifest} "
+                f"--out-dir {candidate_dir} "
+                f"--out-manifest {candidate_manifest}"
+            ),
+        },
+        {
+            "name": "validate_decoder_distribution_contract",
+            "run": f"python3 npu/eval/validate_llm_decoder_contract.py --dataset-manifest {dataset_manifest} --out {validation_out}",
+        },
+        {
+            "name": "compare_decoder_distribution_quality",
+            "run": (
+                "python3 npu/eval/compare_llm_decoder_quality.py "
+                f"--reference-manifest {reference_manifest} "
+                f"--candidate-manifest {candidate_manifest} "
+                f"--out {quality_out}"
+            ),
+        },
+        {
+            "name": "sweep_decoder_distribution_quality",
+            "run": (
+                "python3 npu/eval/sweep_llm_decoder_candidate_quality.py "
+                f"--dataset-manifest {dataset_manifest} "
+                f"--rough-grid {rough_grid} "
+                f"--out-dir {sweep_dir} "
+                f"--out {sweep_out}"
+            ),
+        },
+    ]
+    return {
+        "inputs": {
+            "dataset_manifest": dataset_manifest,
+            "sample_file": f"{base}/samples_distribution_v1.jsonl",
+            "reference_manifest": reference_manifest,
+            "candidate_manifest": candidate_manifest,
+            "reference_dir": reference_dir,
+            "candidate_dir": candidate_dir,
+            "validation_out": validation_out,
+            "quality_out": quality_out,
+            "candidate_sweep_dir": sweep_dir,
+            "candidate_sweep_out": sweep_out,
+            "candidate_sweep_grid": rough_grid,
+            "candidate_sweep_scope": (
+                "broader rough decoder distribution map across prompt categories, logit "
+                "entropy/margin regimes, and integer versus fp-like probability formats"
+            ),
+        },
+        "commands": commands,
+        "expected_outputs": [
+            reference_manifest,
+            candidate_manifest,
+            validation_out,
+            quality_out,
+            sweep_out,
+        ],
+    }
+
+
 def _with_fresh_outputs(*, campaign: dict[str, Any], item_id: str) -> dict[str, Any]:
     cloned = json.loads(json.dumps(campaign))
     outputs = dict(cloned.get("outputs") or {})
@@ -707,8 +791,11 @@ def _build_payload(
         "decoder_probability_sweep",
         "decoder_probability_sensitivity",
         "decoder_probability_fp_sensitivity",
+        "decoder_distribution_robustness",
     }:
-        if abstraction_layer_name == "decoder_probability_fp_sensitivity":
+        if abstraction_layer_name == "decoder_distribution_robustness":
+            decoder_evidence = _decoder_distribution_robustness_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_probability_fp_sensitivity":
             decoder_evidence = _decoder_probability_fp_sensitivity_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_probability_sensitivity":
             decoder_evidence = _decoder_probability_sensitivity_evidence(item_id=item_id)

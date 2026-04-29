@@ -47,6 +47,34 @@ def _topk_pairs(values: Sequence[float], *, k: int) -> Iterable[Tuple[int, float
     return [(int(idx), float(values[idx])) for idx in order]
 
 
+def _score_distribution_stats(scores: Sequence[float], *, topk: int) -> JsonDict:
+    values = [max(0.0, float(v)) for v in scores]
+    if not values:
+        raise SystemExit('distribution stats received empty scores')
+    order = sorted(range(len(values)), key=lambda idx: values[idx], reverse=True)
+    top1 = values[order[0]]
+    top2 = values[order[1]] if len(order) > 1 else top1
+    total = sum(values)
+    normalized = [value / total for value in values] if total > 0.0 else [0.0 for _ in values]
+    entropy = -sum(prob * math.log(prob) for prob in normalized if prob > 0.0)
+    top_count = max(1, min(int(topk), len(values)))
+    top_indices = order[:top_count]
+    top_scores = [values[idx] for idx in top_indices]
+    return {
+        'vocab_size': len(values),
+        'score_sum': total,
+        'nonzero_score_count': sum(1 for value in values if value > 0.0),
+        'entropy_nats': entropy,
+        'effective_vocab_size': math.exp(entropy),
+        'top1_score': top1,
+        'top2_score': top2,
+        'top1_top2_score_margin': top1 - top2,
+        'top1_probability': normalized[order[0]],
+        'top2_probability': normalized[order[1]] if len(order) > 1 else normalized[order[0]],
+        'topk_score_mass': sum(top_scores),
+    }
+
+
 def _quantize_symmetric(values: Sequence[float], *, bits: int, mode: str) -> Tuple[list[float], JsonDict]:
     if bits < 2:
         raise SystemExit(f'{mode} bits must be >= 2')
@@ -505,6 +533,7 @@ def _build_result(*, request: JsonDict, vocab: Dict[str, int], next_token_id: in
             'next_token_text': next_token_text,
             'next_token_id': next_token_id,
             'confidence': top_score,
+            'distribution': _score_distribution_stats(scores, topk=topk),
             'selected_tensors': list(selected_tensors or []),
             'selected_tensors_sha256': _selected_tensor_trace_hash(selected_tensors),
             'topk': [
