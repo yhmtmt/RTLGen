@@ -119,6 +119,14 @@ Required characteristics:
 - KV-like storage pressure or an explicit proxy for it
 - enough work to expose overlap limits, not only single-op latency
 
+Initial proxy shape:
+- active-token batches: `16`, `32`
+- KV-context score dimensions: `256`, `512`
+- repeated attention blocks: `4` to `6`
+- graph form remains runnable through the current ONNX-lite mapper path:
+  `Gemm(score) -> Softmax -> Gemm(value)`, with `score_dim` representing the
+  KV-context window
+
 ## Inverted Planning Rule
 
 Architecture and scheduler changes must be derived from this ladder, not the
@@ -164,6 +172,10 @@ Order of work:
 - `runs/models/llm_attention_tail_stress_v1/README.md`
 - `runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/campaign.json`
 - `runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/README.md`
+- `runs/models/llm_practical_v1/manifest.json`
+- `runs/models/llm_practical_v1/README.md`
+- `runs/campaigns/npu/e2e_eval_llm_practical_v1/campaign.json`
+- `runs/campaigns/npu/e2e_eval_llm_practical_v1/README.md`
 
 ## Decision Rule
 
@@ -173,3 +185,6 @@ scheduler can measure the softmax-related counters listed above.
 
 If `llm_attention_tail_v1` reports low pressure, run
 `llm_attention_tail_stress_v1` before proposing new softmax datapath work.
+
+If the stress ladder still reports low pressure, run `llm_practical_v1` to add
+KV-context proxy pressure before opening a datapath proposal.

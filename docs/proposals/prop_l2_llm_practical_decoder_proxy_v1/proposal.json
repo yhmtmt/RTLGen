@@ -1,0 +1,54 @@
+{
+  "proposal_id": "prop_l2_llm_practical_decoder_proxy_v1",
+  "created_utc": "2026-04-29T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "LLM practical decoder proxy",
+  "hypothesis": "A decoder-style proxy with active-token batches and larger KV-context score dimensions can determine whether practical KV-context pressure changes scheduler or softmax bottleneck evidence before opening a softmax datapath proposal.",
+  "direct_comparison": {
+    "primary_question": "Does the first practical decoder-style proxy expose scheduler, softmax, or KV-context pressure that was absent from the attention-tail stress ladder?",
+    "include": [
+      "llm_practical_v1 campaign on nangate45",
+      "active-token batches of 16 and 32",
+      "KV-context score dimensions of 256 and 512",
+      "4-6 repeated non-terminal Softmax episodes per model path",
+      "existing fp16_nm1 and fp16_nm2 architecture points"
+    ],
+    "exclude": [
+      "new softmax datapath changes in this proposal",
+      "new mapper scheduling changes",
+      "claiming dataset-backed decoder quality from graph-proxy evidence"
+    ],
+    "follow_on_broad_sweep": []
+  },
+  "expected_benefit": [
+    "adds KV-context pressure to the LLM benchmark ladder without waiting for a full decoder export",
+    "prevents softmax architecture work from being launched on tail-only evidence",
+    "links campaign-level scheduler/PPA evidence to the existing decoder-quality contract"
+  ],
+  "risks": [
+    "KV-context pressure is represented through score dimensions and metadata rather than a true KV-cache memory subsystem",
+    "the campaign can still report no scheduler pressure, which would push the next step toward dataset-backed decoder execution rather than architecture changes"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_llm_practical_decoder_proxy_v1",
+      "task_type": "l2_campaign",
+      "objective": "broad_ranking",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_llm_practical_v1/campaign.json"
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_llm_attention_tail_stress_ladder_v1/proposal.json",
+    "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_llm_attention_tail_stress_ladder_v1/report.md"
+  ],
+  "knowledge_refs": [
+    "docs/architecture/llm_attention_benchmark_ladder.md",
+    "docs/architecture/llm_decoder_accuracy_stage_v1.md",
+    "runs/models/llm_practical_v1/manifest.json",
+    "runs/campaigns/npu/e2e_eval_llm_practical_v1/campaign.json",
+    "npu/mapper/examples/gen_llm_practical_suite_lite.py"
+  ]
+}
