@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l1_decoder_q8_recip_norm_datapath_v1",
+  "source_commit": "git-sha",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_q8_recip_norm_datapath_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for integrated row-wise int8 q8 reciprocal-normalization softmax blocks at q10/q12/q14/q16.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "circuit_block",
+      "status": "pending",
+      "notes": "Queue only after this proposal branch merges so evaluator has reciprocal_quantized RTLGen support."
+    }
+  ]
+}

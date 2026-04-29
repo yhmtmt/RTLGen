@@ -1,0 +1,27 @@
+{
+  "version": "1.1",
+  "operands": [
+    {
+      "name": "logits",
+      "dimensions": 1,
+      "bit_width": 8,
+      "signed": true
+    }
+  ],
+  "operations": [
+    {
+      "type": "softmax_rowwise",
+      "module_name": "softmax_rowwise_int8_r8_acc24_recip_q16",
+      "operand": "logits",
+      "options": {
+        "impl": "shift_exp",
+        "normalization_mode": "reciprocal_quantized",
+        "reciprocal_bits": 16,
+        "row_elems": 8,
+        "max_shift": 7,
+        "accum_bits": 24,
+        "output_scale": 127
+      }
+    }
+  ]
+}

@@ -897,6 +897,12 @@ void emitSoftmaxRowwiseModule(const SoftmaxRowwiseOperationConfig &config, const
     if (config.impl != "shift_exp") {
         throw std::runtime_error("Unsupported softmax_rowwise impl: " + config.impl);
     }
+    if (config.normalization_mode != "exact" && config.normalization_mode != "reciprocal_quantized") {
+        throw std::runtime_error("Unsupported softmax_rowwise normalization_mode: " + config.normalization_mode);
+    }
+    if (config.normalization_mode == "reciprocal_quantized" && (config.reciprocal_bits < 1 || config.reciprocal_bits > 24)) {
+        throw std::runtime_error("softmax_rowwise reciprocal_bits must be in [1, 24]");
+    }
     if (config.row_elems <= 0) {
         throw std::runtime_error("softmax_rowwise row_elems must be positive");
     }
@@ -912,7 +918,11 @@ void emitSoftmaxRowwiseModule(const SoftmaxRowwiseOperationConfig &config, const
 
     const int data_width = operand.bit_width;
     const int row_width = config.row_elems * data_width;
-    const int product_bits = config.accum_bits + data_width;
+    const bool reciprocal_quantized = config.normalization_mode == "reciprocal_quantized";
+    const int reciprocal_value_bits = reciprocal_quantized
+        ? static_cast<int>(std::ceil(std::log2(static_cast<double>(config.output_scale) * std::ldexp(1.0, config.reciprocal_bits) + 1.0)))
+        : data_width;
+    const int product_bits = config.accum_bits + reciprocal_value_bits;
     const int max_sum_bits = static_cast<int>(
         std::ceil(std::log2(static_cast<double>(config.row_elems * (1 << config.max_shift)) + 1.0))
     );
@@ -941,6 +951,26 @@ void emitSoftmaxRowwiseModule(const SoftmaxRowwiseOperationConfig &config, const
     os << "  localparam integer PRODUCT_BITS = " << product_bits << ";\n";
     os << "  localparam integer MAX_SHIFT = " << config.max_shift << ";\n";
     os << "  localparam integer OUTPUT_SCALE = " << config.output_scale << ";\n\n";
+    if (reciprocal_quantized) {
+        const int max_sum = config.row_elems * (1 << config.max_shift);
+        const long long scale = static_cast<long long>(config.output_scale) << config.reciprocal_bits;
+        os << "  localparam integer RECIP_BITS = " << config.reciprocal_bits << ";\n";
+        os << "  localparam integer RECIP_VALUE_BITS = " << reciprocal_value_bits << ";\n\n";
+        os << "  function [RECIP_VALUE_BITS-1:0] recip_lut;\n";
+        os << "    input [ACCUM_BITS-1:0] denom;\n";
+        os << "    begin\n";
+        os << "      case (denom)\n";
+        os << "        " << config.accum_bits << "'d0: recip_lut = {RECIP_VALUE_BITS{1'b0}};\n";
+        for (int denom = 1; denom <= max_sum; ++denom) {
+            const long long recip = (scale + (denom / 2)) / denom;
+            os << "        " << config.accum_bits << "'d" << denom
+               << ": recip_lut = " << reciprocal_value_bits << "'d" << recip << ";\n";
+        }
+        os << "        default: recip_lut = {RECIP_VALUE_BITS{1'b0}};\n";
+        os << "      endcase\n";
+        os << "    end\n";
+        os << "  endfunction\n\n";
+    }
     os << "  integer i;\n";
     os << "  integer signed lane_val;\n";
     os << "  integer signed row_max;\n";
@@ -948,6 +978,10 @@ void emitSoftmaxRowwiseModule(const SoftmaxRowwiseOperationConfig &config, const
     os << "  reg [ACCUM_BITS-1:0] weights [0:ROW_ELEMS-1];\n";
     os << "  reg [ACCUM_BITS-1:0] sum_weights;\n";
     os << "  reg [PRODUCT_BITS-1:0] numer;\n";
+    os << "  reg [PRODUCT_BITS-1:0] scaled_out;\n";
+    if (reciprocal_quantized) {
+        os << "  reg [RECIP_VALUE_BITS-1:0] reciprocal;\n";
+    }
     os << "  reg [DATA_W-1:0] lane_out;\n\n";
     os << "  always @* begin\n";
     os << "    row_max = -(1 << (DATA_W - 1));\n";
@@ -968,14 +1002,24 @@ void emitSoftmaxRowwiseModule(const SoftmaxRowwiseOperationConfig &config, const
     os << "      sum_weights = sum_weights + weights[i];\n";
     os << "    end\n\n";
     os << "    Y = {ROW_ELEMS*DATA_W{1'b0}};\n";
+    if (reciprocal_quantized) {
+        os << "    reciprocal = recip_lut(sum_weights);\n";
+    }
     os << "    for (i = 0; i < ROW_ELEMS; i = i + 1) begin\n";
-    os << "      numer = (weights[i] * OUTPUT_SCALE) + (sum_weights >> 1);\n";
-    os << "      if (sum_weights != 0)\n";
-    os << "        lane_out = numer / sum_weights;\n";
+    if (reciprocal_quantized) {
+        os << "      numer = (weights[i] * reciprocal) + ({{(PRODUCT_BITS-1){1'b0}}, 1'b1} << (RECIP_BITS - 1));\n";
+        os << "      scaled_out = numer >> RECIP_BITS;\n";
+    } else {
+        os << "      numer = (weights[i] * OUTPUT_SCALE) + (sum_weights >> 1);\n";
+        os << "      if (sum_weights != 0)\n";
+        os << "        scaled_out = numer / sum_weights;\n";
+        os << "      else\n";
+        os << "        scaled_out = {PRODUCT_BITS{1'b0}};\n";
+    }
+    os << "      if (scaled_out > OUTPUT_SCALE)\n";
+    os << "        lane_out = " << data_width << "'d" << config.output_scale << ";\n";
     os << "      else\n";
-    os << "        lane_out = {DATA_W{1'b0}};\n";
-    os << "      if (lane_out > OUTPUT_SCALE)\n";
-    os << "        lane_out = OUTPUT_SCALE;\n";
+    os << "        lane_out = scaled_out[DATA_W-1:0];\n";
     os << "      Y[(i*DATA_W) +: DATA_W] = lane_out;\n";
     os << "    end\n";
     os << "  end\n";

@@ -1,0 +1,59 @@
+{
+  "proposal_id": "prop_l1_decoder_q8_recip_norm_datapath_v1",
+  "created_utc": "2026-04-29T10:47:54Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "circuit_block",
+  "title": "Decoder q8 reciprocal normalization datapath",
+  "hypothesis": "A divider-free q8 reciprocal-normalization row-wise softmax datapath can be emitted by RTLGen and measured by OpenROAD so q10/q12/q14/q16 can be compared as integrated blocks instead of primitive-envelope ties.",
+  "direct_comparison": {
+    "primary_question": "What Nangate45 timing, power, and area does the integrated q8 reciprocal-normalization softmax datapath show for q10/q12/q14/q16?",
+    "include": [
+      "row-wise int8 shift-exp softmax with reciprocal_quantized normalization",
+      "reciprocal_bits q10, q12, q14, and q16",
+      "row_elems=8, max_shift=7, accum_bits=24, output_scale=127 held constant",
+      "divider-free RTL emission using reciprocal lookup plus multiply/shift"
+    ],
+    "exclude": [
+      "bf16 reciprocal or multiply/convert datapaths",
+      "full decoder system PPA",
+      "prompt-stress quality threshold changes"
+    ],
+    "follow_on_broad_sweep": [
+      "if one reciprocal precision has a clear integrated PPA advantage, rerank the q8 normalization frontier report with measured datapath axes",
+      "if q10/q12/q14/q16 remain tied or area-heavy, measure bf16 reciprocal/multiply primitives before choosing q8 over bf16"
+    ]
+  },
+  "expected_benefit": [
+    "turns the previous primitive-level tie into an integrated RTLGen/OpenROAD comparison",
+    "removes the Verilog divider from the q8 reciprocal datapath candidate",
+    "keeps performance, power, and area axes separate for architecture discussion"
+  ],
+  "risks": [
+    "reciprocal lookup table area may dominate and make row_elems/max_shift choices interaction-sensitive",
+    "single-row block PPA still excludes decoder control and memory effects",
+    "q8 reciprocal quality remains benchmark-distribution dependent"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_q8_recip_norm_datapath_v1",
+      "task_type": "l1_sweep",
+      "evaluation_mode": "measurement_only",
+      "objective": "Measure Nangate45 PPA for integrated row-wise int8 q8 reciprocal-normalization softmax blocks at q10/q12/q14/q16.",
+      "sweep_path": "runs/campaigns/activations/softmax_rowwise_int8_recip_norm/sweeps/nangate45_highutil.json",
+      "abstraction_layer": "circuit_block"
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l1_decoder_normalization_arithmetic_calibration_v1/analysis_report.md",
+    "runs/datasets/llm_decoder_eval_tiny_v1/decoder_norm_ppa_calibration__prop_l1_decoder_normalization_arithmetic_calibration_v1.json",
+    "runs/datasets/llm_decoder_eval_tiny_v1/decoder_q8_norm_frontier__l2_decoder_q8_normalization_frontier_v1.json"
+  ],
+  "knowledge_refs": [
+    "src/rtlgen/rtl_operations.cpp",
+    "scripts/softmax_rowwise_ref.py",
+    "control_plane/control_plane/services/l1_task_generator.py"
+  ]
+}
