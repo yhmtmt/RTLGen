@@ -18,13 +18,19 @@
       "notes": "Merged via PR #281 and merge 25f0eccb724905b149d88ed1bcb34ef24952d0e4 at 2026-04-29T09:16:54.716679Z."
     },
     {
-      "item_id": "l1_decoder_norm_accumulator_adder_calibration_v1",
+      "item_id": "l1_decoder_norm_accumulator_adder_calibration_v1_r2",
       "task_type": "l1_sweep",
       "objective": "Measure Nangate45 PPA for unsigned prefix-adder wrappers that bound q8 normalization-sum and accumulator paths.",
       "evaluation_mode": "measurement_only",
       "abstraction_layer": "circuit_block",
-      "status": "ready_to_queue",
-      "notes": "Prerequisites are merged; item is ready to queue."
+      "status": "merged",
+      "notes": "Prerequisites are merged; item is ready to queue. Merged via PR #282 and merge 3dca7765d27c3c679d966396fc42b52305a81631 at 2026-04-29T09:18:58.855526Z.",
+      "prior_item_ids": [
+        "l1_decoder_norm_accumulator_adder_calibration_v1"
+      ],
+      "merged_pr_number": 282,
+      "merge_commit": "3dca7765d27c3c679d966396fc42b52305a81631",
+      "merged_utc": "2026-04-29T09:18:58.855526Z"
     }
   ]
 }

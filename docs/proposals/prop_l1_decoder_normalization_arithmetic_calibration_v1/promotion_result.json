@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l1_decoder_normalization_arithmetic_calibration_v1",
   "decision": "promote",
-  "pr_number": 281,
-  "merge_commit": "25f0eccb724905b149d88ed1bcb34ef24952d0e4",
-  "merged_utc": "2026-04-29T09:16:54.716679Z"
+  "pr_number": 282,
+  "merge_commit": "3dca7765d27c3c679d966396fc42b52305a81631",
+  "merged_utc": "2026-04-29T09:18:58.855526Z"
 }

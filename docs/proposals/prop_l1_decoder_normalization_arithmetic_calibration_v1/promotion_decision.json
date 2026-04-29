@@ -1,15 +1,15 @@
 {
   "proposal_id": "prop_l1_decoder_normalization_arithmetic_calibration_v1",
-  "candidate_id": "l1_decoder_norm_q8_recip_mult_calibration_v1_r2",
+  "candidate_id": "l1_decoder_norm_accumulator_adder_calibration_v1_r2",
   "decision": "promote",
-  "reason": "Accepted Layer 1 physical metrics were merged in PR #281 for the current candidate.",
+  "reason": "Accepted Layer 1 physical metrics were merged in PR #282 for the current candidate.",
   "evidence_refs": [
-    "item:l1_decoder_norm_q8_recip_mult_calibration_v1_r2",
-    "run:l1_decoder_norm_q8_recip_mult_calibration_v1_r2_run_53d6bd5cd13c348b",
-    "artifact:control_plane/shadow_exports/l1_promotions/l1_decoder_norm_q8_recip_mult_calibration_v1_r2.json",
-    "pr:#281",
-    "https://github.com/yhmtmt/RTLGen/pull/281"
+    "item:l1_decoder_norm_accumulator_adder_calibration_v1_r2",
+    "run:l1_decoder_norm_accumulator_adder_calibration_v1_r2_run_468c5ccfebeb29c6",
+    "artifact:control_plane/shadow_exports/l1_promotions/l1_decoder_norm_accumulator_adder_calibration_v1_r2.json",
+    "pr:#282",
+    "https://github.com/yhmtmt/RTLGen/pull/282"
   ],
-  "next_action": "queue l1_decoder_norm_accumulator_adder_calibration_v1",
+  "next_action": "inspect the next dependent item",
   "requires_human_approval": false
 }
