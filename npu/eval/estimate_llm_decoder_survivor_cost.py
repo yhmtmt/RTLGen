@@ -11,6 +11,24 @@ from typing import Any
 
 JsonDict = dict[str, Any]
 
+COST_MODEL = {
+    "name": "decoder_survivor_relative_softmax_cost_v1",
+    "source": "hand_written_planning_proxy_not_literature_backed",
+    "unit": "heuristic_planning_units",
+    "calibration_status": "uncalibrated",
+    "ppa_balance": (
+        "The ranking score is a single planning scalar. It is not derived from papers or "
+        "calibrated physical data, and it does not independently optimize timing, power, "
+        "and area."
+    ),
+    "intended_use": (
+        "Rank exact-safe decoder survivors well enough to choose the next RTLGen/OpenROAD "
+        "calibration target; do not use it as hardware acceptance evidence."
+    ),
+    "quality_gate": "eligible rows must match next-token and top-k on every prompt-stress sample",
+    "rtlgen_calibration_proposal": "prop_l1_decoder_normalization_arithmetic_calibration_v1",
+}
+
 
 def _load_json(path: Path) -> JsonDict:
     with path.open("r", encoding="utf-8") as f:
@@ -89,6 +107,8 @@ def _cost_proxy(row: JsonDict) -> JsonDict:
 
     return {
         "relative_cost_units": round(relative_cost_units, 3),
+        "unit": COST_MODEL["unit"],
+        "calibration_status": COST_MODEL["calibration_status"],
         "softmax_path": softmax_path,
         "softmax_eval_cost": round(exp_or_pwl_cost, 3),
         "normalization_cost": round(normalization_cost, 3),
@@ -170,10 +190,17 @@ def _write_markdown(path: Path, payload: JsonDict) -> None:
         f"- source_sweep: `{payload['source_sweep']}`",
         f"- recommendation: `{payload['recommendation']['template']}`",
         f"- reason: {payload['recommendation']['reason']}",
+        f"- cost_model_source: `{payload['cost_model']['source']}`",
+        f"- cost_model_unit: `{payload['cost_model']['unit']}`",
+        f"- rtlgen_calibration_proposal: `{payload['cost_model']['rtlgen_calibration_proposal']}`",
         "",
         "## Cost Model",
         "",
         payload["cost_model"]["scope_note"],
+        "",
+        payload["cost_model"]["ppa_balance"],
+        "",
+        payload["cost_model"]["intended_use"],
         "",
         "| rank | template | gate | next-token | top-k | relative cost | softmax path |",
         "|---:|---|---|---:|---:|---:|---|",
@@ -239,13 +266,13 @@ def build_report(*, sweep_path: Path) -> JsonDict:
         "version": 0.1,
         "source_sweep": str(sweep_path),
         "cost_model": {
-            "name": "decoder_survivor_relative_softmax_cost_v1",
+            **COST_MODEL,
             "scope_note": (
                 "This is a relative planning proxy for decoder softmax/probability-path implementation cost. "
                 "It weights exact exp paths above PWL paths and lower-width datapaths below fp-style datapaths. "
-                "It is not RTL, OpenROAD PPA, or final hardware acceptance."
+                "It is not RTL, OpenROAD PPA, or final hardware acceptance. The cost values are "
+                "uncalibrated heuristic planning units."
             ),
-            "quality_gate": "eligible rows must match next-token and top-k on every prompt-stress sample",
         },
         "recommendation": recommendation,
         "ranked_candidates": ranked,

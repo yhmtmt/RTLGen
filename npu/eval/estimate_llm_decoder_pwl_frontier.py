@@ -16,6 +16,23 @@ FRONTIER_TEMPLATES = (
     "grid_approx_pwl_in_q8_w_q8_norm_exact",
 )
 
+COST_MODEL = {
+    "name": "decoder_pwl_frontier_detail_planning_proxy_v1",
+    "source": "hand_written_planning_proxy_not_literature_backed",
+    "unit": "heuristic_planning_units",
+    "calibration_status": "uncalibrated",
+    "ppa_balance": (
+        "The detail score is a decomposition aid, not an independent timing, power, and "
+        "area model. It folds datapath width, table size, and normalization risk into one "
+        "planning scalar."
+    ),
+    "intended_use": (
+        "Identify which PWL decoder block should receive RTLGen/OpenROAD calibration next; "
+        "do not use the score as hardware acceptance evidence."
+    ),
+    "rtlgen_calibration_proposal": "prop_l1_decoder_normalization_arithmetic_calibration_v1",
+}
+
 
 def _load_json(path: Path) -> JsonDict:
     with path.open("r", encoding="utf-8") as f:
@@ -90,6 +107,8 @@ def _normalization_model(row: JsonDict) -> JsonDict:
             "mode": "exact",
             "implementation": "sum_plus_exact_divide",
             "relative_cost_units": 52.0,
+            "unit": COST_MODEL["unit"],
+            "calibration_status": COST_MODEL["calibration_status"],
             "integration_risk": "high",
             "risk_reason": "Exact normalization preserves quality but carries a divider-like path that can dominate the otherwise smaller q8 PWL datapath.",
         }
@@ -98,6 +117,8 @@ def _normalization_model(row: JsonDict) -> JsonDict:
             "mode": "reciprocal_float",
             "implementation": "bf16_reciprocal_multiply",
             "relative_cost_units": 22.0,
+            "unit": COST_MODEL["unit"],
+            "calibration_status": COST_MODEL["calibration_status"],
             "integration_risk": "medium",
             "risk_reason": "The reciprocal path is cheaper in this planning model, but it requires a bf16-compatible reciprocal/multiply integration point.",
         }
@@ -105,6 +126,8 @@ def _normalization_model(row: JsonDict) -> JsonDict:
         "mode": mode or "unknown",
         "implementation": "unclassified",
         "relative_cost_units": 36.0,
+        "unit": COST_MODEL["unit"],
+        "calibration_status": COST_MODEL["calibration_status"],
         "integration_risk": "unknown",
         "risk_reason": "The normalization path is outside the current two-candidate frontier model.",
     }
@@ -206,6 +229,15 @@ def _write_markdown(path: Path, payload: JsonDict) -> None:
         f"- decision: `{payload['frontier_decision']['decision']}`",
         f"- primary_candidate: `{payload['frontier_decision']['primary_candidate']}`",
         f"- alternate_candidate: `{payload['frontier_decision']['alternate_candidate']}`",
+        f"- cost_model_source: `{payload['cost_model']['source']}`",
+        f"- cost_model_unit: `{payload['cost_model']['unit']}`",
+        f"- rtlgen_calibration_proposal: `{payload['cost_model']['rtlgen_calibration_proposal']}`",
+        "",
+        "## Cost Model Provenance",
+        "",
+        payload["cost_model"]["ppa_balance"],
+        "",
+        payload["cost_model"]["intended_use"],
         "",
         "## Frontier Breakdown",
         "",
@@ -267,9 +299,11 @@ def build_report(*, sweep_path: Path, cost_proxy_path: Path | None = None) -> Js
             "quality_gate": "both candidates must pass exact next-token and top-k on every prompt-stress sample",
             "scope_note": (
                 "This is a focused planning breakdown for the two exact-safe PWL candidates. "
-                "It is not RTL, OpenROAD PPA, or final hardware acceptance."
+                "It is not RTL, OpenROAD PPA, or final hardware acceptance. The detail "
+                "scores are uncalibrated heuristic planning units."
             ),
         },
+        "cost_model": COST_MODEL,
         "frontier_decision": {
             "decision": "deepen_primary_keep_alternate",
             "primary_candidate": primary,
