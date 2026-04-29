@@ -62,6 +62,133 @@ def _candidate_templates(model_contract: JsonDict, requested: List[str]) -> Dict
     return out
 
 
+def _candidate_template(model_contract: JsonDict, name: str) -> JsonDict:
+    templates = model_contract.get("backend_templates", {}) or {}
+    if not isinstance(templates, dict):
+        raise ValueError("model_contract.backend_templates must be an object")
+    if name not in templates:
+        raise ValueError(f"candidate backend template not found: {name}")
+    cfg = dict(templates[name])
+    cfg["role"] = "candidate"
+    cfg["interface"] = "decoder_backend_v1"
+    return cfg
+
+
+def _named_grid_point(base: JsonDict, name: str, **updates: Any) -> tuple[str, JsonDict]:
+    cfg = dict(base)
+    cfg.pop("candidate_semantics", None)
+    for key, value in updates.items():
+        if value is None:
+            cfg.pop(key, None)
+        else:
+            cfg[key] = value
+    return name, cfg
+
+
+def _rough_grid_templates(model_contract: JsonDict, grid_name: str) -> Dict[str, JsonDict]:
+    if grid_name != "decoder_probability_broad_v1":
+        raise ValueError(f"unsupported rough grid: {grid_name}")
+    exact = _candidate_template(model_contract, "candidate_onnx_softmax_exact")
+    approx = _candidate_template(model_contract, "candidate_onnx_softmax_approx")
+    points = [
+        ("candidate_onnx_softmax_exact", exact),
+        _named_grid_point(exact, "grid_exact_logits_q8", logit_quant_bits=8),
+        _named_grid_point(exact, "grid_exact_logits_q6", logit_quant_bits=6),
+        _named_grid_point(exact, "grid_exact_logits_q4", logit_quant_bits=4),
+        _named_grid_point(exact, "grid_exact_prob_q8", probability_quant_bits=8),
+        _named_grid_point(
+            approx,
+            "grid_approx_pwl_float_norm_exact",
+            softmax_input_quant_bits=None,
+            softmax_weight_quant_bits=None,
+            normalization_mode="exact",
+            normalization_reciprocal_bits=None,
+        ),
+        _named_grid_point(
+            approx,
+            "grid_approx_pwl_in_q8_w_fp_norm_exact",
+            softmax_input_quant_bits=8,
+            softmax_weight_quant_bits=None,
+            normalization_mode="exact",
+            normalization_reciprocal_bits=None,
+        ),
+        _named_grid_point(
+            approx,
+            "grid_approx_pwl_in_fp_w_q8_norm_exact",
+            softmax_input_quant_bits=None,
+            softmax_weight_quant_bits=8,
+            normalization_mode="exact",
+            normalization_reciprocal_bits=None,
+        ),
+        _named_grid_point(
+            approx,
+            "grid_approx_pwl_in_q8_w_q8_norm_exact",
+            softmax_input_quant_bits=8,
+            softmax_weight_quant_bits=8,
+            normalization_mode="exact",
+            normalization_reciprocal_bits=None,
+        ),
+        _named_grid_point(
+            approx,
+            "grid_approx_pwl_in_q6_w_q6_norm_exact",
+            softmax_input_quant_bits=6,
+            softmax_weight_quant_bits=6,
+            normalization_mode="exact",
+            normalization_reciprocal_bits=None,
+        ),
+        _named_grid_point(
+            approx,
+            "grid_approx_pwl_in_q4_w_q4_norm_exact",
+            softmax_input_quant_bits=4,
+            softmax_weight_quant_bits=4,
+            normalization_mode="exact",
+            normalization_reciprocal_bits=None,
+        ),
+        _named_grid_point(
+            approx,
+            "grid_approx_pwl_float_norm_recip_q10",
+            softmax_input_quant_bits=None,
+            softmax_weight_quant_bits=None,
+            normalization_mode="reciprocal_quantized",
+            normalization_reciprocal_bits=10,
+        ),
+        _named_grid_point(
+            approx,
+            "grid_approx_pwl_in_q8_w_q8_norm_recip_q12",
+            softmax_input_quant_bits=8,
+            softmax_weight_quant_bits=8,
+            normalization_mode="reciprocal_quantized",
+            normalization_reciprocal_bits=12,
+        ),
+        _named_grid_point(
+            approx,
+            "grid_approx_pwl_in_q6_w_q6_norm_recip_q10",
+            softmax_input_quant_bits=6,
+            softmax_weight_quant_bits=6,
+            normalization_mode="reciprocal_quantized",
+            normalization_reciprocal_bits=10,
+        ),
+        _named_grid_point(
+            approx,
+            "grid_approx_pwl_in_q4_w_q4_norm_recip_q8",
+            softmax_input_quant_bits=4,
+            softmax_weight_quant_bits=4,
+            normalization_mode="reciprocal_quantized",
+            normalization_reciprocal_bits=8,
+        ),
+        _named_grid_point(
+            approx,
+            "grid_approx_pwl_in_q8_w_q8_norm_recip_q12_prob_q8",
+            softmax_input_quant_bits=8,
+            softmax_weight_quant_bits=8,
+            normalization_mode="reciprocal_quantized",
+            normalization_reciprocal_bits=12,
+            probability_quant_bits=8,
+        ),
+    ]
+    return {name: cfg for name, cfg in points}
+
+
 def _generate_candidate_manifest(
     *,
     dataset_manifest: JsonDict,
@@ -116,19 +243,38 @@ def _generate_candidate_manifest(
     }
 
 
-def _aggregate_row(template_name: str, manifest_path: Path, quality_path: Path, metrics: JsonDict) -> JsonDict:
+def _aggregate_row(template_name: str, manifest_path: Path, quality_path: Path, backend_config: JsonDict, metrics: JsonDict) -> JsonDict:
     aggregate = dict(metrics.get("aggregate", {}) or {})
     tensor = dict(aggregate.get("selected_tensor_trace", {}) or {})
+    mismatch_sample_ids = [
+        str(sample.get("sample_id", ""))
+        for sample in metrics.get("samples", []) or []
+        if not int((sample.get("aggregate", {}) or {}).get("next_token_id_match", 0))
+    ]
+    topk_miss_sample_ids = [
+        str(sample.get("sample_id", ""))
+        for sample in metrics.get("samples", []) or []
+        if not int((sample.get("aggregate", {}) or {}).get("topk_contains_reference_id", 0))
+    ]
     return {
         "template": template_name,
         "candidate_semantics": metrics.get("candidate_semantics", ""),
         "candidate_manifest": _portable_path(manifest_path),
         "quality_json": _portable_path(quality_path),
+        "logit_quant_bits": backend_config.get("logit_quant_bits", 0),
+        "softmax_mode": backend_config.get("softmax_mode", "exact"),
+        "softmax_input_quant_bits": backend_config.get("softmax_input_quant_bits", 0),
+        "softmax_weight_quant_bits": backend_config.get("softmax_weight_quant_bits", 0),
+        "normalization_mode": backend_config.get("normalization_mode", "exact"),
+        "normalization_reciprocal_bits": backend_config.get("normalization_reciprocal_bits", 0),
+        "probability_quant_bits": backend_config.get("probability_quant_bits", 0),
         "sample_count": aggregate.get("sample_count"),
         "next_token_id_match_rate": aggregate.get("next_token_id_match_rate"),
         "next_token_text_match_rate": aggregate.get("next_token_text_match_rate"),
         "topk_contains_reference_id_rate": aggregate.get("topk_contains_reference_id_rate"),
         "topk_contains_reference_text_rate": aggregate.get("topk_contains_reference_text_rate"),
+        "next_token_mismatch_sample_ids": mismatch_sample_ids,
+        "topk_miss_sample_ids": topk_miss_sample_ids,
         "selected_tensor_shape_match_rate": tensor.get("shape_match_rate"),
         "selected_tensor_trace_sha256_match_rate": tensor.get("trace_sha256_match_rate"),
         "selected_tensor_delta_rollups": tensor.get("delta_rollups", {}),
@@ -143,6 +289,11 @@ def main() -> int:
         action="append",
         default=[],
         help="Candidate backend template name. Defaults to all model_contract backend_templates starting with candidate_.",
+    )
+    ap.add_argument(
+        "--rough-grid",
+        default="",
+        help="Generate a built-in rough approximation grid, e.g. decoder_probability_broad_v1.",
     )
     ap.add_argument("--out-dir", default="runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/local")
     ap.add_argument("--out", default="")
@@ -159,7 +310,12 @@ def main() -> int:
     reference_manifest = load_json(reference_manifest_path)
     tokenizer_bundle = load_tokenizer_bundle(tokenizer_manifest, manifest_path=tokenizer_manifest_path)
     samples = load_jsonl(sample_file)
-    templates = _candidate_templates(model_contract, [str(v) for v in args.template])
+    if args.rough_grid:
+        if args.template:
+            raise ValueError("--template cannot be combined with --rough-grid")
+        templates = _rough_grid_templates(model_contract, str(args.rough_grid))
+    else:
+        templates = _candidate_templates(model_contract, [str(v) for v in args.template])
 
     out_dir = _resolve_repo_path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -184,7 +340,7 @@ def main() -> int:
         metrics = compare_decoder_manifests(reference_manifest, candidate_manifest)
         quality_path = template_dir / "quality.json"
         quality_path.write_text(json.dumps(metrics, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-        results.append(_aggregate_row(template_name, manifest_path, quality_path, metrics))
+        results.append(_aggregate_row(template_name, manifest_path, quality_path, backend_config, metrics))
 
     best = sorted(
         results,
@@ -199,6 +355,12 @@ def main() -> int:
         "dataset_id": dataset_manifest["dataset_id"],
         "task": dataset_manifest["task"],
         "reference_manifest": _portable_path(reference_manifest_path),
+        "rough_grid": str(args.rough_grid),
+        "scope_note": (
+            "Approximation sensitivity is distribution-dependent. This sweep is a coarse map for the pinned "
+            "llm_decoder_eval_tiny_v1 prompt/model/tokenizer setup and must not be treated as general "
+            "acceptance evidence without broader datasets."
+        ),
         "template_count": len(results),
         "templates": results,
         "best_template": best,
