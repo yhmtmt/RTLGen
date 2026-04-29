@@ -1,0 +1,55 @@
+{
+  "proposal_id": "prop_l2_decoder_survivor_cost_proxy_v1",
+  "created_utc": "2026-04-29T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "LLM decoder survivor cost proxy",
+  "hypothesis": "The prompt-stress survivor paths should be ranked by an explicit rough implementation-cost proxy before selecting one path for RTL/OpenROAD work.",
+  "direct_comparison": {
+    "primary_question": "Among exact-safe decoder survivor rows, which approximation family has the lowest relative softmax/probability-path implementation cost under a stated proxy model?",
+    "include": [
+      "the merged l2_decoder_survivor_prompt_stress_v1 sweep artifact",
+      "exact next-token and top-k quality gate",
+      "relative exp-versus-PWL, normalization, datapath-width, and probability-write proxy terms",
+      "blocked rows for q6/q4/fp8_e5m2 quality caveats"
+    ],
+    "exclude": [
+      "claiming real Nangate45 PPA",
+      "selecting a final decoder probability format",
+      "new RTL or mapper changes"
+    ],
+    "follow_on_broad_sweep": [
+      "implement the selected path as a bounded hardware-cost candidate",
+      "carry q8 PWL and bf16 PWL as the immediate frontier if the proxy is close"
+    ]
+  },
+  "expected_benefit": [
+    "turns quality-only survivor evidence into a concrete implementation-priority list",
+    "keeps the cost assumptions explicit and reviewable",
+    "prevents choosing fp16/bf16 probability storage alone when it preserves quality but leaves exact exp cost mostly intact"
+  ],
+  "risks": [
+    "the cost proxy is heuristic and not a replacement for RTL/OpenROAD evidence",
+    "PWL normalization cost weights may change once the block is physically implemented",
+    "the ranking still depends on the tiny decoder prompt-stress sweep"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_survivor_cost_proxy_v1",
+      "task_type": "l2_campaign",
+      "objective": "decoder_survivor_cost_proxy",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json"
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_decoder_survivor_prompt_stress_v1/proposal.json",
+    "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_sweep__l2_decoder_survivor_prompt_stress_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_survivor_cost.py",
+    "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_sweep__l2_decoder_survivor_prompt_stress_v1.json",
+    "docs/proposals/prop_l2_decoder_survivor_prompt_stress_v1/analysis_report.md"
+  ]
+}
