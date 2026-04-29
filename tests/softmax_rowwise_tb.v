@@ -6,6 +6,14 @@ module softmax_rowwise_tb;
 
   softmax_rowwise_int8_r4 dut (.X(X), .Y(Y));
 
+`ifdef SOFTMAX_RECIP_Q10_BUCKETED
+  localparam [31:0] EXP_ROW1 = {8'd6, 8'd6, 8'd6, 8'd102};
+  localparam [31:0] EXP_ROW2 = {8'd113, 8'd7, 8'd1, 8'd1};
+`else
+  localparam [31:0] EXP_ROW1 = {8'd7, 8'd7, 8'd7, 8'd107};
+  localparam [31:0] EXP_ROW2 = {8'd118, 8'd7, 8'd1, 8'd1};
+`endif
+
   task check_row;
     input [31:0] a;
     input [31:0] exp;
@@ -26,8 +34,8 @@ module softmax_rowwise_tb;
 
   initial begin
     check_row({8'd0, 8'd0, 8'd0, 8'd0}, {8'd32, 8'd32, 8'd32, 8'd32});
-    check_row({8'd0, 8'd0, 8'd0, 8'd4}, {8'd7, 8'd7, 8'd7, 8'd107});
-    check_row({8'd8, 8'd4, 8'd0, 8'hfc}, {8'd118, 8'd7, 8'd1, 8'd1});
+    check_row({8'd0, 8'd0, 8'd0, 8'd4}, EXP_ROW1);
+    check_row({8'd8, 8'd4, 8'd0, 8'hfc}, EXP_ROW2);
     $display("All row-wise softmax tests passed.");
     $finish;
   end

@@ -25,11 +25,13 @@ Add a divider-free `softmax_rowwise` normalization mode:
 
 - `normalization_mode: reciprocal_quantized`
 - `reciprocal_bits: 10/12/14/16`
+- `reciprocal_lut_bucket_shift: 4`
 
 The emitted RTL uses a denominator-indexed reciprocal lookup table and a
 multiply/shift normalization path. This keeps the architecture aligned with the
 decoder q8 reciprocal frontier and gives OpenROAD an integrated block to
-measure.
+measure. The first retry uses a bucketed reciprocal lookup to avoid Yosys
+inferring a memory larger than the OpenROAD synth prefilter allows.
 
 ## Evaluation Scope
 
@@ -41,7 +43,8 @@ Run one L1 measurement-only sweep over four Nangate45 configs:
 - `softmax_rowwise_int8_r8_acc24_recip_q16`
 
 All rows keep `row_elems=8`, `max_shift=7`, `accum_bits=24`, and
-`output_scale=127` so the only intended variable is reciprocal precision.
+`output_scale=127` so the primary variable is reciprocal precision. The
+reciprocal denominator bucket size is held constant across rows.
 
 ## Exclusions
 

@@ -199,6 +199,7 @@ struct SoftmaxRowwiseOperationConfig {
     std::string impl{"shift_exp"};
     std::string normalization_mode{"exact"};
     int reciprocal_bits{0};
+    int reciprocal_lut_bucket_shift{0};
     int row_elems{1};
     int max_shift{7};
     int accum_bits{16};

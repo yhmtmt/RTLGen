@@ -17,6 +17,7 @@
         "impl": "shift_exp",
         "normalization_mode": "reciprocal_quantized",
         "reciprocal_bits": 10,
+        "reciprocal_lut_bucket_shift": 4,
         "row_elems": 8,
         "max_shift": 7,
         "accum_bits": 24,
