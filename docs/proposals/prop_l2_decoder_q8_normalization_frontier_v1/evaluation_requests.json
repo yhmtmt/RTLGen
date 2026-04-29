@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_q8_normalization_frontier_v1",
-  "source_commit": "b6de3da02601042ce6344741228d661b067c2a7f",
+  "source_commit": "4fd31b3adb2926a88e088dee7a3fb6c20135eb2a",
   "requested_items": [
     {
       "item_id": "l2_decoder_q8_normalization_frontier_v1",
@@ -20,7 +20,11 @@
         "direction": "iterate",
         "reason": "The job should determine whether q8 reciprocal normalization can remove the exact-normalization blocker while preserving the prompt-stress quality gate."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 276,
+      "merge_commit": "c60ecd3737045c38ef58c859de7a3b9abcec3627",
+      "merged_utc": "2026-04-29T08:32:58.494515Z",
+      "notes": "Merged via PR #276 and merge c60ecd3737045c38ef58c859de7a3b9abcec3627 at 2026-04-29T08:32:58.494515Z."
     }
   ]
 }

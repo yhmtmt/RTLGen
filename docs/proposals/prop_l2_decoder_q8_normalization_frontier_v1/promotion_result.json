@@ -1,5 +1,9 @@
 {
   "proposal_id": "prop_l2_decoder_q8_normalization_frontier_v1",
   "status": "pending",
-  "promoted_item_ids": []
+  "promoted_item_ids": [],
+  "decision": "iterate",
+  "pr_number": 276,
+  "merge_commit": "c60ecd3737045c38ef58c859de7a3b9abcec3627",
+  "merged_utc": "2026-04-29T08:32:58.494515Z"
 }

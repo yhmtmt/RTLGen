@@ -1,5 +1,15 @@
 {
   "proposal_id": "prop_l2_decoder_q8_normalization_frontier_v1",
-  "decision": "pending",
-  "reason": "Awaiting evaluator artifact for l2_decoder_q8_normalization_frontier_v1."
+  "decision": "iterate",
+  "reason": "Focused comparison baseline could not be resolved from proposal baseline_refs.",
+  "candidate_id": "l2_decoder_q8_normalization_frontier_v1",
+  "evidence_refs": [
+    "item:l2_decoder_q8_normalization_frontier_v1",
+    "run:l2_decoder_q8_normalization_frontier_v1_run_7e648ecf4b504ede",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_q8_normalization_frontier_v1.json",
+    "pr:#276",
+    "https://github.com/yhmtmt/RTLGen/pull/276"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_q8_normalization_frontier_v1",
+  "requires_human_approval": false
 }
