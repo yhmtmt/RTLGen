@@ -1,0 +1,2 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_decoder_norm_q8_recip_mult_calibration_v1_run_02b6611a54eaefc9,1,1,0,succeeded,runs/designs/multipliers/mult8u_normal_koggestone_wrapper/metrics.csv,0.1756,1063.086025,0.000512,none,,

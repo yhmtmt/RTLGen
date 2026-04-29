@@ -1,0 +1,151 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-04-29T09:07:33.394737Z",
+  "item_id": "l1_decoder_norm_q8_recip_mult_calibration_v1",
+  "run_key": "l1_decoder_norm_q8_recip_mult_calibration_v1_run_02b6611a54eaefc9",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "1ceb41cc59b3a090e906eb58413c6fc7b825f542",
+  "objective": "Measure Nangate45 PPA for unsigned multiplier wrappers that bound q8 reciprocal-normalization multiply paths.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/multipliers/ppg_cpa_widths_4_32/sweeps/nangate45_highutil.json"
+    ],
+    "configs": [
+      "runs/designs/multipliers/mult8u_normal_koggestone_wrapper/config_mult8u_normal_koggestone.json",
+      "runs/designs/multipliers/mult16u_normal_koggestone_wrapper/config_mult16u_normal_koggestone.json",
+      "runs/designs/multipliers/mult16u_booth4_koggestone_wrapper/config_mult16u_booth4_koggestone.json",
+      "runs/designs/multipliers/mult32u_normal_koggestone_wrapper/config_mult32u_normal_koggestone.json"
+    ],
+    "out_root": "runs/designs/multipliers",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 4,
+  "evaluation_record": {
+    "evaluation_mode": "measurement_only",
+    "abstraction_layer": "circuit_block",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/multipliers/mult8u_normal_koggestone_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "84032167",
+        "tag": "mult_ppg_cpa_w4_32_nangate45_highutil_da64be35",
+        "result_path": "/workspaces/RTLGen/runs/designs/multipliers/mult8u_normal_koggestone_wrapper/work/84032167/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 0.1756,
+        "die_area": 1063.086025,
+        "total_power_mw": 0.000512
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/multipliers/mult16u_normal_koggestone_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "84032167",
+        "tag": "mult_ppg_cpa_w4_32_nangate45_highutil_da64be35",
+        "result_path": "/workspaces/RTLGen/runs/designs/multipliers/mult16u_normal_koggestone_wrapper/work/84032167/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 0.1943,
+        "die_area": 3495.765625,
+        "total_power_mw": 0.00382
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/multipliers/mult16u_booth4_koggestone_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "84032167",
+        "tag": "mult_ppg_cpa_w4_32_nangate45_highutil_da64be35",
+        "result_path": "/workspaces/RTLGen/runs/designs/multipliers/mult16u_booth4_koggestone_wrapper/work/84032167/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 0.1941,
+        "die_area": 3487.493025,
+        "total_power_mw": 0.00364
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/multipliers/mult32u_normal_koggestone_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "84032167",
+        "tag": "mult_ppg_cpa_w4_32_nangate45_highutil_da64be35",
+        "result_path": "/workspaces/RTLGen/runs/designs/multipliers/mult32u_normal_koggestone_wrapper/work/84032167/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 0.2407,
+        "die_area": 11997.916225,
+        "total_power_mw": 0.0302
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_decoder_norm_q8_recip_mult_calibration_v1",
+    "completed_trials": 1,
+    "success_count": 1,
+    "failure_count": 0,
+    "success_rate": 1.0,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 0.1756,
+        "mean": 0.1756,
+        "median": 0.1756,
+        "max": 0.1756,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "die_area": {
+        "best": 1063.086025,
+        "mean": 1063.086025,
+        "median": 1063.086025,
+        "max": 1063.086025,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "total_power_mw": {
+        "best": 0.000512,
+        "mean": 0.000512,
+        "median": 0.000512,
+        "max": 0.000512,
+        "range": 0.0,
+        "stddev": 0.0
+      }
+    }
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/multipliers/mult8u_normal_koggestone_wrapper/metrics.csv",
+      "runs/designs/multipliers/mult16u_normal_koggestone_wrapper/metrics.csv",
+      "runs/designs/multipliers/mult16u_booth4_koggestone_wrapper/metrics.csv",
+      "runs/designs/multipliers/mult32u_normal_koggestone_wrapper/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_norm_q8_recip_mult_calibration_v1/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_norm_q8_recip_mult_calibration_v1/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_norm_q8_recip_mult_calibration_v1/trial_table.csv"
+  }
+}
