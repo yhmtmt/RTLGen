@@ -1,7 +1,17 @@
 {
   "proposal_id": "prop_l2_decoder_survivor_cost_proxy_v1",
-  "decision": "pending",
+  "decision": "iterate",
   "decided_utc": "",
-  "reason": "Awaiting evaluator evidence for l2_decoder_survivor_cost_proxy_v1.",
-  "evidence": []
+  "reason": "Focused comparison baseline could not be resolved from proposal baseline_refs.",
+  "evidence": [],
+  "candidate_id": "l2_decoder_survivor_cost_proxy_v1",
+  "evidence_refs": [
+    "item:l2_decoder_survivor_cost_proxy_v1",
+    "run:l2_decoder_survivor_cost_proxy_v1_run_b90ca2a069fb29be",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_survivor_cost_proxy_v1.json",
+    "pr:#272",
+    "https://github.com/yhmtmt/RTLGen/pull/272"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_survivor_cost_proxy_v1",
+  "requires_human_approval": false
 }

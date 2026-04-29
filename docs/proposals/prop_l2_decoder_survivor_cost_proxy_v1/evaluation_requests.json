@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_survivor_cost_proxy_v1",
-  "source_commit": "26503d2ac8cbcdb8e4e4af130797516ce23e3f44",
+  "source_commit": "d1a0addc723413f289cf7a92c7a580b9f1e585df",
   "requested_items": [
     {
       "item_id": "l2_decoder_survivor_cost_proxy_v1",
@@ -20,7 +20,11 @@
         "direction": "iterate",
         "reason": "The proxy should rank exact-safe PWL and probability paths by explicit cost assumptions before committing to a hardware-cost candidate."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 272,
+      "merge_commit": "f266080061aac3bbd9a57fc6f9e9bd780dc429d4",
+      "merged_utc": "2026-04-29T07:44:38.369371Z",
+      "notes": "Merged via PR #272 and merge f266080061aac3bbd9a57fc6f9e9bd780dc429d4 at 2026-04-29T07:44:38.369371Z."
     }
   ]
 }
