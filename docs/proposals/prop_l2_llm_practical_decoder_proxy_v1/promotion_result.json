@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_llm_practical_decoder_proxy_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "iterate",
+  "pr_number": 252,
+  "merge_commit": "a07bc31f17fe41330a1d3b6e7170b4030fa687be",
+  "merged_utc": "2026-04-29T02:28:02Z"
 }

@@ -1,12 +1,15 @@
 {
   "proposal_id": "prop_l2_llm_practical_decoder_proxy_v1",
   "candidate_id": "l2_llm_practical_decoder_proxy_v1",
-  "decision": "pending",
-  "reason": "Awaiting proposal-backed broad-ranking campaign evidence.",
+  "decision": "iterate",
+  "reason": "Broad ranking evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
   "evidence_refs": [
-    "docs/proposals/prop_l2_llm_practical_decoder_proxy_v1/proposal.json",
-    "runs/campaigns/npu/e2e_eval_llm_practical_v1/campaign.json"
+    "item:l2_llm_practical_decoder_proxy_v1",
+    "run:l2_llm_practical_decoder_proxy_v1_run_1ca7cdd943f79644",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_llm_practical_decoder_proxy_v1.json",
+    "pr:#252",
+    "https://github.com/yhmtmt/RTLGen/pull/252"
   ],
-  "next_action": "run l2_llm_practical_decoder_proxy_v1 and inspect scheduler and KV-context pressure evidence",
+  "next_action": "inspect follow-on work after l2_llm_practical_decoder_proxy_v1",
   "requires_human_approval": false
 }
