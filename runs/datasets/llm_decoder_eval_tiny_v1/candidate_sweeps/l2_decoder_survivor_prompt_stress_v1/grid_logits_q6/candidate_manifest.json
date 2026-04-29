@@ -1,0 +1,153 @@
+{
+  "backend_config": {
+    "backend_id": "command_json_v1",
+    "command": [
+      "/workspaces/RTLGen/control_plane/.venv/bin/python",
+      "npu/eval/run_llm_decoder_onnx_candidate.py"
+    ],
+    "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
+    "input_name": "input_ids",
+    "interface": "decoder_backend_v1",
+    "logit_quant_bits": 6,
+    "model_config_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/config.json",
+    "normalization_mode": "exact",
+    "onnx_model_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/model.onnx",
+    "output_name": "logits",
+    "role": "candidate",
+    "runtime_target": "software_emulation",
+    "softmax_mode": "exact",
+    "topk": 5,
+    "trace_output_patterns": [
+      "present.*"
+    ],
+    "trace_tensor_quant_bits": 4
+  },
+  "candidate_semantics": "onnx_logits_q6_softmax_exact_norm_exact_prob_fp",
+  "dataset_id": "llm_decoder_eval_tiny_v1",
+  "model_contract": "runs/models/llm_decoder_tiny_v1/model_contract.json",
+  "samples": [
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_survivor_prompt_stress_v1/grid_logits_q6/candidate/stress_factual_capital.json",
+      "candidate_sha256": "7f4466e3848878ea61c161bcf284b18dbf4151a1eab6459bfb4b955d1962306a",
+      "sample_id": "stress_factual_capital"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_survivor_prompt_stress_v1/grid_logits_q6/candidate/stress_factual_science.json",
+      "candidate_sha256": "db644359a5b593c3879774bbd63fd838bba2310ef0b5b0bc4f6c3c21c03628bc",
+      "sample_id": "stress_factual_science"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_survivor_prompt_stress_v1/grid_logits_q6/candidate/stress_arithmetic_add.json",
+      "candidate_sha256": "3e3332578a55afda3f2ddbe985cc2337c0674f60a9d07c1588bf0a3d5b0fa06b",
+      "sample_id": "stress_arithmetic_add"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_survivor_prompt_stress_v1/grid_logits_q6/candidate/stress_arithmetic_subtract.json",
+      "candidate_sha256": "76b3338f3dc56fd9aec56978e991ff32f3c834a3d9ff1bbea2e1f1bc7fe03bda",
+      "sample_id": "stress_arithmetic_subtract"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_survivor_prompt_stress_v1/grid_logits_q6/candidate/stress_list_color.json",
+      "candidate_sha256": "58ac9e4ba7173f37bf088d5e139fb465f82798a4b25e3640676f2f030e2b5199",
+      "sample_id": "stress_list_color"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_survivor_prompt_stress_v1/grid_logits_q6/candidate/stress_list_number.json",
+      "candidate_sha256": "5ab80ec52bb42befdc5e0b8b5cb152d880d802cc99e64abcf0813d08b3c0760f",
+      "sample_id": "stress_list_number"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_survivor_prompt_stress_v1/grid_logits_q6/candidate/stress_code_return.json",
+      "candidate_sha256": "f34d35f497ad17f02589dbd09e9fcb7a0dbefca68c74e3acabd757cac46513c1",
+      "sample_id": "stress_code_return"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_survivor_prompt_stress_v1/grid_logits_q6/candidate/stress_code_json.json",
+      "candidate_sha256": "1d533928c782c3cc6061bb28018363d9d06dfc48a842152006b19e89283efd12",
+      "sample_id": "stress_code_json"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_survivor_prompt_stress_v1/grid_logits_q6/candidate/stress_dialogue_help.json",
+      "candidate_sha256": "57b55e55d3919a04bf9496f22aff0c31a54b2c20f0dcb12805799ca7361051f0",
+      "sample_id": "stress_dialogue_help"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_survivor_prompt_stress_v1/grid_logits_q6/candidate/stress_dialogue_thanks.json",
+      "candidate_sha256": "7843c5590c7d454d1775dc4f6ef9c977bc7513ff6a956c2d58b95b02cc910cc6",
+      "sample_id": "stress_dialogue_thanks"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_survivor_prompt_stress_v1/grid_logits_q6/candidate/stress_punctuation_sentence.json",
+      "candidate_sha256": "54c00b88939eb91d7dc1d456a5659843a71aba6d286c1728ed97351707cb647d",
+      "sample_id": "stress_punctuation_sentence"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_survivor_prompt_stress_v1/grid_logits_q6/candidate/stress_punctuation_question.json",
+      "candidate_sha256": "b5b12d289e147cdd03c8ce99cd3301e3c5cfb923d3d3a60f72ced05bbb719ad4",
+      "sample_id": "stress_punctuation_question"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_survivor_prompt_stress_v1/grid_logits_q6/candidate/stress_negation.json",
+      "candidate_sha256": "1bc9ead47f175887524961dd2256be024892ff34c93f0e74a3a6011bc0ee8c2a",
+      "sample_id": "stress_negation"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_survivor_prompt_stress_v1/grid_logits_q6/candidate/stress_units.json",
+      "candidate_sha256": "6f7c95a2809e64de2f1db3abf4221752e23e56dafa530ae6346a91ada66c3a3a",
+      "sample_id": "stress_units"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_survivor_prompt_stress_v1/grid_logits_q6/candidate/stress_symbolic_math.json",
+      "candidate_sha256": "f295a902b41fe706dee885f1a2e3da54dac1be5c80322d2f1c01371289ed6bd7",
+      "sample_id": "stress_symbolic_math"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_survivor_prompt_stress_v1/grid_logits_q6/candidate/stress_markdown.json",
+      "candidate_sha256": "f77501ee6b9011f08a873e12f78388ae88a5e9b7688824086cdd20b3d2af5be5",
+      "sample_id": "stress_markdown"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_survivor_prompt_stress_v1/grid_logits_q6/candidate/stress_long_latency.json",
+      "candidate_sha256": "05b0810661d08d64a6d3b16ebce5fd3c1f1a0303be6b5bb079cd9a8a82bf8b6a",
+      "sample_id": "stress_long_latency"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_survivor_prompt_stress_v1/grid_logits_q6/candidate/stress_long_quant.json",
+      "candidate_sha256": "9949c8bda4b7d236f8838c25a164e98a90621d9b6f5ded2a9ce011be1d9ef439",
+      "sample_id": "stress_long_quant"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_survivor_prompt_stress_v1/grid_logits_q6/candidate/stress_repetition_ha.json",
+      "candidate_sha256": "ca1ce2fc4f547f6fc15b1e3c4c6ac37e284ea95b711899fc1bca0f536bae8b3a",
+      "sample_id": "stress_repetition_ha"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_survivor_prompt_stress_v1/grid_logits_q6/candidate/stress_repetition_word.json",
+      "candidate_sha256": "243299b5366264b185fd9ec45ac19d1e1570b2af85033999652da83b974f465d",
+      "sample_id": "stress_repetition_word"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_survivor_prompt_stress_v1/grid_logits_q6/candidate/stress_ambiguous_article.json",
+      "candidate_sha256": "4e1d128a22ad40819ef966f12c5a58ab9a5bdfc9da03828686016132d850e970",
+      "sample_id": "stress_ambiguous_article"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_survivor_prompt_stress_v1/grid_logits_q6/candidate/stress_ambiguous_preposition.json",
+      "candidate_sha256": "33aac03a03dfc19e37306a26f5b6d037629bc1cf42b6335876ad2feccacaf269",
+      "sample_id": "stress_ambiguous_preposition"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_survivor_prompt_stress_v1/grid_logits_q6/candidate/stress_enum_alpha.json",
+      "candidate_sha256": "6e21e765c06b59d3532bee6411ff715fe0d53237ef4d324508da3686864cd5ec",
+      "sample_id": "stress_enum_alpha"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_survivor_prompt_stress_v1/grid_logits_q6/candidate/stress_low_context.json",
+      "candidate_sha256": "66250d16b1927a1ef94505f509a67d006ea7c6ca088bfa872c6a3f8032cb73f2",
+      "sample_id": "stress_low_context"
+    }
+  ],
+  "task": "greedy_next_token",
+  "tokenizer_manifest": "runs/tokenizers/llm_decoder_gpt2_bpe_stub_v1/manifest.json",
+  "version": 0.1
+}
