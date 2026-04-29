@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_fp_probability_format_sweep_v1",
-  "source_commit": "fa5f24775a701376d06b8fd36e71a83eaa4b04d7",
+  "source_commit": "22c5247a77612899733b84ab5c2718d98836d9d0",
   "requested_items": [
     {
       "item_id": "l2_decoder_fp_probability_format_sweep_v1",
