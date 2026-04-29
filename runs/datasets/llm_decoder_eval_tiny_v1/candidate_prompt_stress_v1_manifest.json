@@ -1,0 +1,153 @@
+{
+  "backend_config": {
+    "backend_id": "command_json_v1",
+    "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_exact_prob_fp",
+    "command": [
+      "/workspaces/RTLGen/control_plane/.venv/bin/python",
+      "npu/eval/run_llm_decoder_onnx_candidate.py"
+    ],
+    "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
+    "input_name": "input_ids",
+    "interface": "decoder_backend_v1",
+    "model_config_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/config.json",
+    "normalization_mode": "exact",
+    "onnx_model_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/model.onnx",
+    "output_name": "logits",
+    "role": "candidate",
+    "runtime_target": "software_emulation",
+    "softmax_mode": "exact",
+    "topk": 5,
+    "trace_output_patterns": [
+      "present.*"
+    ],
+    "trace_tensor_quant_bits": 4
+  },
+  "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_exact_prob_fp",
+  "dataset_id": "llm_decoder_eval_tiny_v1",
+  "model_contract": "runs/models/llm_decoder_tiny_v1/model_contract.json",
+  "samples": [
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_prompt_stress_v1/stress_factual_capital.json",
+      "candidate_sha256": "85f148331cdd1df581f001046edfc0891e4238969c95b997557edc6ca0791683",
+      "sample_id": "stress_factual_capital"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_prompt_stress_v1/stress_factual_science.json",
+      "candidate_sha256": "cbd9abba67fbdd25ee26beab178574e6e426e16721424ca575973d8ad01c3760",
+      "sample_id": "stress_factual_science"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_prompt_stress_v1/stress_arithmetic_add.json",
+      "candidate_sha256": "24a2bcf560f9771009a0bb18f2f5d6cadc7e6e75f6c6732c750b0326849e6699",
+      "sample_id": "stress_arithmetic_add"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_prompt_stress_v1/stress_arithmetic_subtract.json",
+      "candidate_sha256": "f6bec49a959c3adc937d23e147f2d71bc4e0c94923e673cbef76d3cbfd2d5f06",
+      "sample_id": "stress_arithmetic_subtract"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_prompt_stress_v1/stress_list_color.json",
+      "candidate_sha256": "27bc037207a53f8fb6b2d5c004a2223d72c0b976e19c5126b600bbcf25254b30",
+      "sample_id": "stress_list_color"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_prompt_stress_v1/stress_list_number.json",
+      "candidate_sha256": "f6d1dfadf301a78029e25d806d4462a2ec107ecf19144f3b5cffe6b0ad0c8e63",
+      "sample_id": "stress_list_number"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_prompt_stress_v1/stress_code_return.json",
+      "candidate_sha256": "0984a57e8414e6a6635c163e1e65ce1bcbf642352cdb56f1f2df30e99dd51bcb",
+      "sample_id": "stress_code_return"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_prompt_stress_v1/stress_code_json.json",
+      "candidate_sha256": "e9d3217c00cb8b5aa688dec588093e301fb018de951c383f118881f653ec6897",
+      "sample_id": "stress_code_json"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_prompt_stress_v1/stress_dialogue_help.json",
+      "candidate_sha256": "6ebcd6fc92e851c12e17967a75b235d1c2ce1358c7e7034d5fa30cd4abf1e5e9",
+      "sample_id": "stress_dialogue_help"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_prompt_stress_v1/stress_dialogue_thanks.json",
+      "candidate_sha256": "fc4006ebf4f3bdab06b7bafc0c383015c7cebede7a436815331bdd33c8b1a2e1",
+      "sample_id": "stress_dialogue_thanks"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_prompt_stress_v1/stress_punctuation_sentence.json",
+      "candidate_sha256": "aae7ecec99a73940ee0abc4bef2e19afecc41da480c7170e65141c167467ceb5",
+      "sample_id": "stress_punctuation_sentence"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_prompt_stress_v1/stress_punctuation_question.json",
+      "candidate_sha256": "f0030ee52510ebde14db2d2518a0696d1cda15df7e381b3943e0ceeaa640ef88",
+      "sample_id": "stress_punctuation_question"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_prompt_stress_v1/stress_negation.json",
+      "candidate_sha256": "606364f13483a58e14819befd25d453cbb80cd1dd4272b0fb16d9c2b97e85756",
+      "sample_id": "stress_negation"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_prompt_stress_v1/stress_units.json",
+      "candidate_sha256": "7a204efb58f4da39311c1de133484aa1f13e8ac6d63dc0ce567e8ab163347d43",
+      "sample_id": "stress_units"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_prompt_stress_v1/stress_symbolic_math.json",
+      "candidate_sha256": "2dca4d3d3bd2ddeabbcf0b458c730fda46689215dd29796318087533017af13c",
+      "sample_id": "stress_symbolic_math"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_prompt_stress_v1/stress_markdown.json",
+      "candidate_sha256": "d05c2a3e77cddc36fc905835e958fe49054635dddd35cc9baa58ecdb846be469",
+      "sample_id": "stress_markdown"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_prompt_stress_v1/stress_long_latency.json",
+      "candidate_sha256": "c92124d107b511e4530dee2c3e235f0fae32990dc5f4d00cb3e41aafa30e00bb",
+      "sample_id": "stress_long_latency"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_prompt_stress_v1/stress_long_quant.json",
+      "candidate_sha256": "ef24dc7f17e265186deeaeba2d6e09fb5a5ced56f56481883fd4f162bb347f40",
+      "sample_id": "stress_long_quant"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_prompt_stress_v1/stress_repetition_ha.json",
+      "candidate_sha256": "989511dc28aabd7aa3362f0b068e9aba846845f9ded5f97a80a567828ce53772",
+      "sample_id": "stress_repetition_ha"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_prompt_stress_v1/stress_repetition_word.json",
+      "candidate_sha256": "b4487ce42cb51999169f8fbd1602514e135409a1fc0dd2206b6528da80f0e0cf",
+      "sample_id": "stress_repetition_word"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_prompt_stress_v1/stress_ambiguous_article.json",
+      "candidate_sha256": "1d7a1b5b498cf036dc4719d2b83c6341f32b4a32ffc4927736f474948ed5b302",
+      "sample_id": "stress_ambiguous_article"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_prompt_stress_v1/stress_ambiguous_preposition.json",
+      "candidate_sha256": "fc22c20c279eac6f79c81ef949fb7b5f4058eafebce72b70b6374d78afb07d3b",
+      "sample_id": "stress_ambiguous_preposition"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_prompt_stress_v1/stress_enum_alpha.json",
+      "candidate_sha256": "3c694bdef04f1bead766b99fe7d571bc49dcd6c551974834b254526bc9b2b8c7",
+      "sample_id": "stress_enum_alpha"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_prompt_stress_v1/stress_low_context.json",
+      "candidate_sha256": "450a2e5bc83ad54002b89f01e914848dd43a6f71a861e2dc0ef2252eaf1f2752",
+      "sample_id": "stress_low_context"
+    }
+  ],
+  "task": "greedy_next_token",
+  "tokenizer_manifest": "runs/tokenizers/llm_decoder_gpt2_bpe_stub_v1/manifest.json",
+  "version": 0.1
+}

@@ -1,0 +1,148 @@
+{
+  "backend_config": {
+    "backend_id": "command_json_v1",
+    "command": [
+      "/workspaces/RTLGen/control_plane/.venv/bin/python",
+      "npu/eval/run_llm_decoder_onnx_reference.py"
+    ],
+    "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
+    "input_name": "input_ids",
+    "interface": "decoder_backend_v1",
+    "model_config_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/config.json",
+    "onnx_model_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/model.onnx",
+    "output_name": "logits",
+    "role": "reference",
+    "runtime_target": "cpu_reference",
+    "topk": 5,
+    "trace_output_patterns": [
+      "present.*"
+    ]
+  },
+  "dataset_id": "llm_decoder_eval_tiny_v1",
+  "model_contract": "runs/models/llm_decoder_tiny_v1/model_contract.json",
+  "samples": [
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_prompt_stress_v1/stress_factual_capital.json",
+      "reference_sha256": "3a2a1edc2a112abffb160419af84562a488a8da47d74d9760b4b964c38251923",
+      "sample_id": "stress_factual_capital"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_prompt_stress_v1/stress_factual_science.json",
+      "reference_sha256": "4f344bf7b588a7bdcfee55237d0160d1670c5534777fb5650b74786e6302da8f",
+      "sample_id": "stress_factual_science"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_prompt_stress_v1/stress_arithmetic_add.json",
+      "reference_sha256": "248e4ed4b8b83e226a1941b25ff3bacbecfc9907d03e80e893cf414957981ec0",
+      "sample_id": "stress_arithmetic_add"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_prompt_stress_v1/stress_arithmetic_subtract.json",
+      "reference_sha256": "c066aa2eefe94c14d1c05073a7a028ae0de59b51f212f5c0c728cb3ff84adce6",
+      "sample_id": "stress_arithmetic_subtract"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_prompt_stress_v1/stress_list_color.json",
+      "reference_sha256": "b159f41d7910d5588ca868c5586cccb893d29ea967a68aa7380535b7cbad3f95",
+      "sample_id": "stress_list_color"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_prompt_stress_v1/stress_list_number.json",
+      "reference_sha256": "47aeaa6ed877dba33e1339bd7dcee7c66da3a4d924f9a6c98cc3562c730222ad",
+      "sample_id": "stress_list_number"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_prompt_stress_v1/stress_code_return.json",
+      "reference_sha256": "54de4ae546d8b883e21eebb4dd1d42b17872ae8e253c7b7ae9bab476765b29c4",
+      "sample_id": "stress_code_return"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_prompt_stress_v1/stress_code_json.json",
+      "reference_sha256": "6ffb00c09f94e7e6411834584ff43a7a0feb6339ce6bbc38aeddaaec4bd657cb",
+      "sample_id": "stress_code_json"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_prompt_stress_v1/stress_dialogue_help.json",
+      "reference_sha256": "c9e7da9c399f205e257a59b1982625386a7aa7d424afbac6a5a4ee433c4921b4",
+      "sample_id": "stress_dialogue_help"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_prompt_stress_v1/stress_dialogue_thanks.json",
+      "reference_sha256": "93b62886e22b0fb519eec388bd88594b481945fb672af435985d0efb02434a93",
+      "sample_id": "stress_dialogue_thanks"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_prompt_stress_v1/stress_punctuation_sentence.json",
+      "reference_sha256": "7c751db28e5374b284881c02054431969847a01558cea6e1856989067166f9e0",
+      "sample_id": "stress_punctuation_sentence"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_prompt_stress_v1/stress_punctuation_question.json",
+      "reference_sha256": "22a6fa72c15ccec8e3433209baab3a8fc61838d99052f35abdb7b23cb3d2eba1",
+      "sample_id": "stress_punctuation_question"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_prompt_stress_v1/stress_negation.json",
+      "reference_sha256": "8826a1d6ca4a9fefa16cb51349790fe87e1354f58b90b9dcca2fd90eb9b21266",
+      "sample_id": "stress_negation"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_prompt_stress_v1/stress_units.json",
+      "reference_sha256": "cab0e19c96c38d16db58ecb7b5401d070da7ffb59ce5f7864c80a7bfef2ce20b",
+      "sample_id": "stress_units"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_prompt_stress_v1/stress_symbolic_math.json",
+      "reference_sha256": "2c171b384361c30073419bd165369e6a2bac7444af6a1806184c5e70e34e5929",
+      "sample_id": "stress_symbolic_math"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_prompt_stress_v1/stress_markdown.json",
+      "reference_sha256": "daec22db1a9c2b4f6436c92dc6b52aad6fc39a36813a24902811c36ed1e6c7c9",
+      "sample_id": "stress_markdown"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_prompt_stress_v1/stress_long_latency.json",
+      "reference_sha256": "a0dabc2bf829908b5c2cee5614edfc074d7ce451ce5d28877bb16211f105f62a",
+      "sample_id": "stress_long_latency"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_prompt_stress_v1/stress_long_quant.json",
+      "reference_sha256": "578ef012fd6e91d61796f13142d25f9e4f8546f10d6100852e460fa07642d8cc",
+      "sample_id": "stress_long_quant"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_prompt_stress_v1/stress_repetition_ha.json",
+      "reference_sha256": "81fcf6199da1cc0728b64518985a631f4668d11d1284b04ae58326dd4e2ab04f",
+      "sample_id": "stress_repetition_ha"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_prompt_stress_v1/stress_repetition_word.json",
+      "reference_sha256": "8c5786af2e66240f1d3817acfc46242502a655dfe4c84cc82e0f12f22cf74ce9",
+      "sample_id": "stress_repetition_word"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_prompt_stress_v1/stress_ambiguous_article.json",
+      "reference_sha256": "1642cf34aa1ea761056becffa2441a438ae89b3fc9cd7f174fa0a1e1578dcf8b",
+      "sample_id": "stress_ambiguous_article"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_prompt_stress_v1/stress_ambiguous_preposition.json",
+      "reference_sha256": "1f96420559f260503c4b6e249792b01ff961e7433c8d7605d67dce939ef4563d",
+      "sample_id": "stress_ambiguous_preposition"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_prompt_stress_v1/stress_enum_alpha.json",
+      "reference_sha256": "6f6d9e266581e9e0bdbada5481729fe6ad2c487de5893ec0342affe10e65876a",
+      "sample_id": "stress_enum_alpha"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_prompt_stress_v1/stress_low_context.json",
+      "reference_sha256": "af948e5302cf3993ed3ddcc0250d5a44fa2800982bcb17686e8a3aa3a15b3dfa",
+      "sample_id": "stress_low_context"
+    }
+  ],
+  "task": "greedy_next_token",
+  "tokenizer_manifest": "runs/tokenizers/llm_decoder_gpt2_bpe_stub_v1/manifest.json",
+  "version": 0.1
+}

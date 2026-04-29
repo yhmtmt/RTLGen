@@ -1,0 +1,120 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-04-29T07:15:47.882694Z",
+  "item_id": "l2_decoder_survivor_prompt_stress_v1",
+  "run_key": "l2_decoder_survivor_prompt_stress_v1_run_13396e7948b2b9ae",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "3cf7f0e69ef21d95b1a3dcbfa88b13d0c5d563a7",
+  "review_metadata_source_commit": "3cf7f0e69ef21d95b1a3dcbfa88b13d0c5d563a7",
+  "objective": "Run a focused survivor prompt-stress map over decoder approximation paths that survived or bordered failure in the broader distribution robustness sweep.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+    ],
+    "design_dirs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+    ],
+    "macro_manifests": [
+      "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+      "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+    ],
+    "decoder_contract": {
+      "quality_out": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_compare__l2_decoder_survivor_prompt_stress_v1.json",
+      "sample_file": "runs/datasets/llm_decoder_eval_tiny_v1/samples_prompt_stress_v1.jsonl",
+      "candidate_dir": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_prompt_stress_v1",
+      "reference_dir": "runs/datasets/llm_decoder_eval_tiny_v1/reference_prompt_stress_v1",
+      "validation_out": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_contract_validation__l2_decoder_survivor_prompt_stress_v1.json",
+      "dataset_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/manifest_prompt_stress_v1.json",
+      "candidate_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_prompt_stress_v1_manifest.json",
+      "reference_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/reference_prompt_stress_v1_manifest.json",
+      "candidate_sweep_dir": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_survivor_prompt_stress_v1",
+      "candidate_sweep_out": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_sweep__l2_decoder_survivor_prompt_stress_v1.json",
+      "candidate_sweep_grid": "decoder_survivor_prompt_stress_v1",
+      "candidate_sweep_scope": "focused survivor prompt-stress map across the decoder approximation paths that survived or bordered failure in the broader distribution sweep"
+    },
+    "generated_campaign": {
+      "path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign__l2_decoder_survivor_prompt_stress_v1.json",
+      "outputs": {
+        "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_survivor_prompt_stress_v1/report.md",
+        "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_survivor_prompt_stress_v1/results.csv",
+        "campaign_dir": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_survivor_prompt_stress_v1"
+      },
+      "clean_outputs": true,
+      "base_campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json"
+    },
+    "candidate_manifests": [
+      "runs/candidates/nangate45/module_candidates.json"
+    ]
+  },
+  "recommendation": {
+    "arch_id": "fp16_nm1",
+    "macro_mode": "flat_nomacro",
+    "objective_rank": 1,
+    "objective_score": "0.0",
+    "latency_ms_mean": 0.028907999999999996,
+    "energy_mj_mean": 5.582770776e-06,
+    "critical_path_ns_mean": 5.557037432204143,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.193122,
+    "flow_elapsed_s_mean": 848.418
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_survivor_prompt_stress_v1",
+    "title": "LLM decoder survivor prompt-stress sweep",
+    "primary_question": "Across a larger prompt-stress sample set, do the surviving integer-logit, fp probability, and approximate PWL softmax paths preserve next-token and top-k rank?",
+    "evaluation_mode": "focused_stress",
+    "comparison_role": "ranking",
+    "abstraction_layer": "decoder_survivor_prompt_stress",
+    "expected_direction": "iterate",
+    "expected_reason": "Confirm whether survivor paths remain stable across a larger prompt set before hardware-cost-oriented narrowing.",
+    "summary": "Focused comparison baseline could not be resolved from proposal baseline_refs.",
+    "outcome": "unavailable",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_survivor_prompt_stress_v1",
+    "title": "LLM decoder survivor prompt-stress sweep",
+    "primary_question": "Across a larger prompt-stress sample set, do the surviving integer-logit, fp probability, and approximate PWL softmax paths preserve next-token and top-k rank?",
+    "evaluation_mode": "focused_stress",
+    "comparison_role": "ranking",
+    "outcome": "unavailable",
+    "summary": "Focused comparison baseline could not be resolved from proposal baseline_refs.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": []
+  },
+  "source_refs": {
+    "best_point_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_survivor_prompt_stress_v1/best_point.json",
+    "summary_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_survivor_prompt_stress_v1/summary.csv",
+    "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_survivor_prompt_stress_v1/results.csv",
+    "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_survivor_prompt_stress_v1/report.md",
+    "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_survivor_prompt_stress_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+    "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_survivor_prompt_stress_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+    "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_survivor_prompt_stress_v1/artifacts/perf/fp16_nm1/mlp1/trace.json",
+    "focused_model_artifacts": [
+      {
+        "model_id": "mlp1",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_survivor_prompt_stress_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_survivor_prompt_stress_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_survivor_prompt_stress_v1/artifacts/perf/fp16_nm1/mlp1/trace.json"
+      },
+      {
+        "model_id": "mlp2",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_survivor_prompt_stress_v1/artifacts/mapper/fp16_nm1/mlp2/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_survivor_prompt_stress_v1/artifacts/mapper/fp16_nm1/mlp2/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_survivor_prompt_stress_v1/artifacts/perf/fp16_nm1/mlp2/trace.json"
+      }
+    ]
+  }
+}
