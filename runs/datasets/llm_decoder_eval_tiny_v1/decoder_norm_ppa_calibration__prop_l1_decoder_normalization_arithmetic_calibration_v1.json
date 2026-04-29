@@ -1,0 +1,540 @@
+{
+  "calibration_status": "partial_integer_reciprocal_primitives_calibrated",
+  "candidate_calibration": [
+    {
+      "calibration_status": "unmeasured_gap",
+      "normalization_path": "bf16_reciprocal_pwl_anchor",
+      "quality": {
+        "exact_safe": true,
+        "next_token_matches": 24,
+        "sample_count": 24,
+        "topk_matches": 24
+      },
+      "reciprocal_bits": 0,
+      "selected_primitives": [],
+      "template": "grid_approx_pwl_bf16_path",
+      "unmeasured_gaps": [
+        "bf16 reciprocal path",
+        "bf16 multiply/round/convert datapath",
+        "integrated normalization datapath routing/control"
+      ]
+    },
+    {
+      "calibration_status": "unmeasured_gap",
+      "measured_partial_primitives": [
+        "64-bit accumulator adder"
+      ],
+      "normalization_path": "q8_exact_normalization",
+      "quality": {
+        "exact_safe": true,
+        "next_token_matches": 24,
+        "sample_count": 24,
+        "topk_matches": 24
+      },
+      "reciprocal_bits": 0,
+      "selected_primitives": [
+        "adder_koggestone_64u"
+      ],
+      "template": "grid_approx_pwl_in_q8_w_q8_norm_exact",
+      "unmeasured_gaps": [
+        "integer exact divider/reciprocal datapath"
+      ]
+    },
+    {
+      "calibration_status": "integer_reciprocal_primitives_calibrated_not_integrated_datapath",
+      "normalization_path": "q8_reciprocal_quantized",
+      "primitive_envelope": {
+        "accumulator_adder_bits": 64,
+        "multiplier_operand_envelope_bits": 16,
+        "note": "q10/q12/q14/q16 all map to the same current 16-bit multiplier envelope and the same accumulator primitive. These L1 metrics therefore do not prove a physical PPA advantage for q10 over q12/q14/q16."
+      },
+      "primitive_sum_proxy": {
+        "critical_path_ns": 0.4166,
+        "die_area": 6562.195525,
+        "total_power_mw": 0.00468
+      },
+      "quality": {
+        "exact_safe": true,
+        "next_token_matches": 24,
+        "sample_count": 24,
+        "topk_matches": 24
+      },
+      "reciprocal_bits": 10,
+      "selected_primitives": [
+        "mult16u_booth4_koggestone",
+        "adder_koggestone_64u"
+      ],
+      "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q10",
+      "unmeasured_gaps": [
+        "integrated normalization datapath routing/control",
+        "pipeline/register placement around reciprocal multiply and accumulation"
+      ]
+    },
+    {
+      "calibration_status": "integer_reciprocal_primitives_calibrated_not_integrated_datapath",
+      "normalization_path": "q8_reciprocal_quantized",
+      "primitive_envelope": {
+        "accumulator_adder_bits": 64,
+        "multiplier_operand_envelope_bits": 16,
+        "note": "q10/q12/q14/q16 all map to the same current 16-bit multiplier envelope and the same accumulator primitive. These L1 metrics therefore do not prove a physical PPA advantage for q10 over q12/q14/q16."
+      },
+      "primitive_sum_proxy": {
+        "critical_path_ns": 0.4166,
+        "die_area": 6562.195525,
+        "total_power_mw": 0.00468
+      },
+      "quality": {
+        "exact_safe": true,
+        "next_token_matches": 24,
+        "sample_count": 24,
+        "topk_matches": 24
+      },
+      "reciprocal_bits": 12,
+      "selected_primitives": [
+        "mult16u_booth4_koggestone",
+        "adder_koggestone_64u"
+      ],
+      "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q12",
+      "unmeasured_gaps": [
+        "integrated normalization datapath routing/control",
+        "pipeline/register placement around reciprocal multiply and accumulation"
+      ]
+    },
+    {
+      "calibration_status": "integer_reciprocal_primitives_calibrated_not_integrated_datapath",
+      "normalization_path": "q8_reciprocal_quantized",
+      "primitive_envelope": {
+        "accumulator_adder_bits": 64,
+        "multiplier_operand_envelope_bits": 16,
+        "note": "q10/q12/q14/q16 all map to the same current 16-bit multiplier envelope and the same accumulator primitive. These L1 metrics therefore do not prove a physical PPA advantage for q10 over q12/q14/q16."
+      },
+      "primitive_sum_proxy": {
+        "critical_path_ns": 0.4166,
+        "die_area": 6562.195525,
+        "total_power_mw": 0.00468
+      },
+      "quality": {
+        "exact_safe": true,
+        "next_token_matches": 24,
+        "sample_count": 24,
+        "topk_matches": 24
+      },
+      "reciprocal_bits": 14,
+      "selected_primitives": [
+        "mult16u_booth4_koggestone",
+        "adder_koggestone_64u"
+      ],
+      "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q14",
+      "unmeasured_gaps": [
+        "integrated normalization datapath routing/control",
+        "pipeline/register placement around reciprocal multiply and accumulation"
+      ]
+    },
+    {
+      "calibration_status": "integer_reciprocal_primitives_calibrated_not_integrated_datapath",
+      "normalization_path": "q8_reciprocal_quantized",
+      "primitive_envelope": {
+        "accumulator_adder_bits": 64,
+        "multiplier_operand_envelope_bits": 16,
+        "note": "q10/q12/q14/q16 all map to the same current 16-bit multiplier envelope and the same accumulator primitive. These L1 metrics therefore do not prove a physical PPA advantage for q10 over q12/q14/q16."
+      },
+      "primitive_sum_proxy": {
+        "critical_path_ns": 0.4166,
+        "die_area": 6562.195525,
+        "total_power_mw": 0.00468
+      },
+      "quality": {
+        "exact_safe": true,
+        "next_token_matches": 24,
+        "sample_count": 24,
+        "topk_matches": 24
+      },
+      "reciprocal_bits": 16,
+      "selected_primitives": [
+        "mult16u_booth4_koggestone",
+        "adder_koggestone_64u"
+      ],
+      "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q16",
+      "unmeasured_gaps": [
+        "integrated normalization datapath routing/control",
+        "pipeline/register placement around reciprocal multiply and accumulation"
+      ]
+    }
+  ],
+  "interpretation": [
+    "The q8 reciprocal path now has measured Nangate45 multiplier and accumulator/adder primitive evidence.",
+    "The q8 exact-normalization row is still blocked for hardware acceptance by an unmeasured exact divider/reciprocal datapath.",
+    "The bf16 reciprocal PWL anchor is still blocked for hardware acceptance by unmeasured bf16 reciprocal and multiply/convert datapaths.",
+    "The q8 reciprocal q10/q12/q14/q16 rows share the same measured primitive envelope in this calibration. Under that envelope, physical PPA does not justify preferring q10 over q12/q14/q16; q10 remains a quality/minimum-precision choice from the prompt-stress sweep."
+  ],
+  "next_step": [
+    "Use the calibrated primitive axes to plan an integrated q8 reciprocal-normalization datapath measurement.",
+    "Do not compare q8 reciprocal against bf16 as a hardware decision until bf16 reciprocal/multiply primitives are also measured."
+  ],
+  "platform": "nangate45",
+  "primitive_evidence": {
+    "adders": [
+      {
+        "block_id": "adder_ripple_16u",
+        "family": "adder",
+        "metrics": {
+          "critical_path_ns": 0.1844,
+          "die_area": 679.6449,
+          "total_power_mw": 0.000197
+        },
+        "metrics_ref": {
+          "metrics_csv": "runs/designs/prefix_adders/adder_ripple_16u_wrapper/metrics.csv",
+          "param_hash": "8fb1f207",
+          "platform": "nangate45",
+          "result_kind": "physical_metrics",
+          "result_path": "/workspaces/RTLGen/runs/designs/prefix_adders/adder_ripple_16u_wrapper/work/8fb1f207/result.json",
+          "status": "ok",
+          "tag": "prefix_adders_nangate45_highutil_87b48795"
+        },
+        "platform": "nangate45",
+        "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+        "status": "ok",
+        "topology": "ripple",
+        "width_bits": 16
+      },
+      {
+        "block_id": "adder_brentkung_16u",
+        "family": "adder",
+        "metrics": {
+          "critical_path_ns": 0.1861,
+          "die_area": 739.568025,
+          "total_power_mw": 0.000206
+        },
+        "metrics_ref": {
+          "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_16u_wrapper/metrics.csv",
+          "param_hash": "8fb1f207",
+          "platform": "nangate45",
+          "result_kind": "physical_metrics",
+          "result_path": "/workspaces/RTLGen/runs/designs/prefix_adders/adder_brentkung_16u_wrapper/work/8fb1f207/result.json",
+          "status": "ok",
+          "tag": "prefix_adders_nangate45_highutil_87b48795"
+        },
+        "platform": "nangate45",
+        "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+        "status": "ok",
+        "topology": "brentkung",
+        "width_bits": 16
+      },
+      {
+        "block_id": "adder_koggestone_16u",
+        "family": "adder",
+        "metrics": {
+          "critical_path_ns": 0.1836,
+          "die_area": 913.2484,
+          "total_power_mw": 0.000243
+        },
+        "metrics_ref": {
+          "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_16u_wrapper/metrics.csv",
+          "param_hash": "8fb1f207",
+          "platform": "nangate45",
+          "result_kind": "physical_metrics",
+          "result_path": "/workspaces/RTLGen/runs/designs/prefix_adders/adder_koggestone_16u_wrapper/work/8fb1f207/result.json",
+          "status": "ok",
+          "tag": "prefix_adders_nangate45_highutil_87b48795"
+        },
+        "platform": "nangate45",
+        "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+        "status": "ok",
+        "topology": "koggestone",
+        "width_bits": 16
+      },
+      {
+        "block_id": "adder_ripple_32u",
+        "family": "adder",
+        "metrics": {
+          "critical_path_ns": 1.1646604999999999,
+          "die_area": 115.928289,
+          "total_power_mw": 0.00023999999999999998
+        },
+        "metrics_ref": {
+          "metrics_csv": "runs/designs/prefix_adders/adder_ripple_32u_wrapper/metrics.csv",
+          "param_hash": "cf19db5a",
+          "platform": "asap7",
+          "result_kind": "physical_metrics",
+          "result_path": "/workspaces/RTLGen/runs/designs/prefix_adders/adder_ripple_32u_wrapper/work/cf19db5a/result.json",
+          "status": "ok",
+          "tag": "prefix_adders_asap7_highutil_c51f6982"
+        },
+        "platform": "asap7",
+        "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+        "status": "ok",
+        "topology": "ripple",
+        "width_bits": 32
+      },
+      {
+        "block_id": "adder_brentkung_32u",
+        "family": "adder",
+        "metrics": {
+          "critical_path_ns": 0.1938,
+          "die_area": 1195.0849,
+          "total_power_mw": 0.000423
+        },
+        "metrics_ref": {
+          "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_32u_wrapper/metrics.csv",
+          "param_hash": "1d3bcf3d",
+          "platform": "nangate45",
+          "result_kind": "physical_metrics",
+          "result_path": "/workspaces/RTLGen/runs/designs/prefix_adders/adder_brentkung_32u_wrapper/work/1d3bcf3d/result.json",
+          "status": "ok",
+          "tag": "prefix_adders_nangate45_highutil_da64be35"
+        },
+        "platform": "nangate45",
+        "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+        "status": "ok",
+        "topology": "brentkung",
+        "width_bits": 32
+      },
+      {
+        "block_id": "adder_koggestone_32u",
+        "family": "adder",
+        "metrics": {
+          "critical_path_ns": 0.1975,
+          "die_area": 1605.204225,
+          "total_power_mw": 0.000532
+        },
+        "metrics_ref": {
+          "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_32u_wrapper/metrics.csv",
+          "param_hash": "1d3bcf3d",
+          "platform": "nangate45",
+          "result_kind": "physical_metrics",
+          "result_path": "/workspaces/RTLGen/runs/designs/prefix_adders/adder_koggestone_32u_wrapper/work/1d3bcf3d/result.json",
+          "status": "ok",
+          "tag": "prefix_adders_nangate45_highutil_da64be35"
+        },
+        "platform": "nangate45",
+        "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+        "status": "ok",
+        "topology": "koggestone",
+        "width_bits": 32
+      },
+      {
+        "block_id": "adder_ripple_64u",
+        "family": "adder",
+        "metrics": {
+          "critical_path_ns": 2.2664414,
+          "die_area": 207.446409,
+          "total_power_mw": 0.000544
+        },
+        "metrics_ref": {
+          "metrics_csv": "runs/designs/prefix_adders/adder_ripple_64u_wrapper/metrics.csv",
+          "param_hash": "cf19db5a",
+          "platform": "asap7",
+          "result_kind": "physical_metrics",
+          "result_path": "/workspaces/RTLGen/runs/designs/prefix_adders/adder_ripple_64u_wrapper/work/cf19db5a/result.json",
+          "status": "ok",
+          "tag": "prefix_adders_asap7_highutil_c51f6982"
+        },
+        "platform": "asap7",
+        "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+        "status": "ok",
+        "topology": "ripple",
+        "width_bits": 64
+      },
+      {
+        "block_id": "adder_brentkung_64u",
+        "family": "adder",
+        "metrics": {
+          "critical_path_ns": 1.2620005,
+          "die_area": 203.975524,
+          "total_power_mw": 0.000602
+        },
+        "metrics_ref": {
+          "metrics_csv": "runs/designs/prefix_adders/adder_brentkung_64u_wrapper/metrics.csv",
+          "param_hash": "cf19db5a",
+          "platform": "asap7",
+          "result_kind": "physical_metrics",
+          "result_path": "/workspaces/RTLGen/runs/designs/prefix_adders/adder_brentkung_64u_wrapper/work/cf19db5a/result.json",
+          "status": "ok",
+          "tag": "prefix_adders_asap7_highutil_c51f6982"
+        },
+        "platform": "asap7",
+        "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+        "status": "ok",
+        "topology": "brentkung",
+        "width_bits": 64
+      },
+      {
+        "block_id": "adder_koggestone_64u",
+        "family": "adder",
+        "metrics": {
+          "critical_path_ns": 0.2225,
+          "die_area": 3074.7025,
+          "total_power_mw": 0.00104
+        },
+        "metrics_ref": {
+          "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_64u_wrapper/metrics.csv",
+          "param_hash": "1d3bcf3d",
+          "platform": "nangate45",
+          "result_kind": "physical_metrics",
+          "result_path": "/workspaces/RTLGen/runs/designs/prefix_adders/adder_koggestone_64u_wrapper/work/1d3bcf3d/result.json",
+          "status": "ok",
+          "tag": "prefix_adders_nangate45_highutil_da64be35"
+        },
+        "platform": "nangate45",
+        "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+        "status": "ok",
+        "topology": "koggestone",
+        "width_bits": 64
+      }
+    ],
+    "multipliers": [
+      {
+        "block_id": "mult8u_normal_koggestone",
+        "family": "multiplier",
+        "metrics": {
+          "critical_path_ns": 0.1756,
+          "die_area": 1063.086025,
+          "total_power_mw": 0.000512
+        },
+        "metrics_ref": {
+          "metrics_csv": "runs/designs/multipliers/mult8u_normal_koggestone_wrapper/metrics.csv",
+          "param_hash": "84032167",
+          "platform": "nangate45",
+          "result_kind": "physical_metrics",
+          "result_path": "/workspaces/RTLGen/runs/designs/multipliers/mult8u_normal_koggestone_wrapper/work/84032167/result.json",
+          "status": "ok",
+          "tag": "mult_ppg_cpa_w4_32_nangate45_highutil_da64be35"
+        },
+        "platform": "nangate45",
+        "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+        "status": "ok",
+        "topology": "normal_koggestone",
+        "width_bits": 8
+      },
+      {
+        "block_id": "mult16u_normal_koggestone",
+        "family": "multiplier",
+        "metrics": {
+          "critical_path_ns": 0.1943,
+          "die_area": 3495.765625,
+          "total_power_mw": 0.00382
+        },
+        "metrics_ref": {
+          "metrics_csv": "runs/designs/multipliers/mult16u_normal_koggestone_wrapper/metrics.csv",
+          "param_hash": "84032167",
+          "platform": "nangate45",
+          "result_kind": "physical_metrics",
+          "result_path": "/workspaces/RTLGen/runs/designs/multipliers/mult16u_normal_koggestone_wrapper/work/84032167/result.json",
+          "status": "ok",
+          "tag": "mult_ppg_cpa_w4_32_nangate45_highutil_da64be35"
+        },
+        "platform": "nangate45",
+        "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+        "status": "ok",
+        "topology": "normal_koggestone",
+        "width_bits": 16
+      },
+      {
+        "block_id": "mult16u_booth4_koggestone",
+        "family": "multiplier",
+        "metrics": {
+          "critical_path_ns": 0.1941,
+          "die_area": 3487.493025,
+          "total_power_mw": 0.00364
+        },
+        "metrics_ref": {
+          "metrics_csv": "runs/designs/multipliers/mult16u_booth4_koggestone_wrapper/metrics.csv",
+          "param_hash": "84032167",
+          "platform": "nangate45",
+          "result_kind": "physical_metrics",
+          "result_path": "/workspaces/RTLGen/runs/designs/multipliers/mult16u_booth4_koggestone_wrapper/work/84032167/result.json",
+          "status": "ok",
+          "tag": "mult_ppg_cpa_w4_32_nangate45_highutil_da64be35"
+        },
+        "platform": "nangate45",
+        "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+        "status": "ok",
+        "topology": "booth4_koggestone",
+        "width_bits": 16
+      },
+      {
+        "block_id": "mult32u_normal_koggestone",
+        "family": "multiplier",
+        "metrics": {
+          "critical_path_ns": 0.2407,
+          "die_area": 11997.916225,
+          "total_power_mw": 0.0302
+        },
+        "metrics_ref": {
+          "metrics_csv": "runs/designs/multipliers/mult32u_normal_koggestone_wrapper/metrics.csv",
+          "param_hash": "84032167",
+          "platform": "nangate45",
+          "result_kind": "physical_metrics",
+          "result_path": "/workspaces/RTLGen/runs/designs/multipliers/mult32u_normal_koggestone_wrapper/work/84032167/result.json",
+          "status": "ok",
+          "tag": "mult_ppg_cpa_w4_32_nangate45_highutil_da64be35"
+        },
+        "platform": "nangate45",
+        "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+        "status": "ok",
+        "topology": "normal_koggestone",
+        "width_bits": 32
+      }
+    ]
+  },
+  "proposal_id": "prop_l1_decoder_normalization_arithmetic_calibration_v1",
+  "scope": {
+    "measured": "integer reciprocal multiplier and accumulator/adder primitive PPA from merged L1 rows",
+    "not_measured": "full integrated normalization datapath, exact divider, bf16 reciprocal/multiply datapath",
+    "score_policy": "No weighted PPA score is emitted; delay, area, and power remain separate axes."
+  },
+  "selected_primitives": {
+    "q8_accumulator_adder_64u": {
+      "block_id": "adder_koggestone_64u",
+      "family": "adder",
+      "metrics": {
+        "critical_path_ns": 0.2225,
+        "die_area": 3074.7025,
+        "total_power_mw": 0.00104
+      },
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/prefix_adders/adder_koggestone_64u_wrapper/metrics.csv",
+        "param_hash": "1d3bcf3d",
+        "platform": "nangate45",
+        "result_kind": "physical_metrics",
+        "result_path": "/workspaces/RTLGen/runs/designs/prefix_adders/adder_koggestone_64u_wrapper/work/1d3bcf3d/result.json",
+        "status": "ok",
+        "tag": "prefix_adders_nangate45_highutil_da64be35"
+      },
+      "platform": "nangate45",
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "status": "ok",
+      "topology": "koggestone",
+      "width_bits": 64
+    },
+    "q8_reciprocal_multiplier_16u": {
+      "block_id": "mult16u_booth4_koggestone",
+      "family": "multiplier",
+      "metrics": {
+        "critical_path_ns": 0.1941,
+        "die_area": 3487.493025,
+        "total_power_mw": 0.00364
+      },
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/multipliers/mult16u_booth4_koggestone_wrapper/metrics.csv",
+        "param_hash": "84032167",
+        "platform": "nangate45",
+        "result_kind": "physical_metrics",
+        "result_path": "/workspaces/RTLGen/runs/designs/multipliers/mult16u_booth4_koggestone_wrapper/work/84032167/result.json",
+        "status": "ok",
+        "tag": "mult_ppg_cpa_w4_32_nangate45_highutil_da64be35"
+      },
+      "platform": "nangate45",
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "status": "ok",
+      "topology": "booth4_koggestone",
+      "width_bits": 16
+    }
+  },
+  "source_artifacts": {
+    "adder_promotion": "control_plane/shadow_exports/l1_promotions/l1_decoder_norm_accumulator_adder_calibration_v1_r2.json",
+    "multiplier_promotion": "control_plane/shadow_exports/l1_promotions/l1_decoder_norm_q8_recip_mult_calibration_v1_r2.json"
+  },
+  "source_sweep": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_sweep__l2_decoder_q8_normalization_frontier_v1.json",
+  "version": 0.1
+}
