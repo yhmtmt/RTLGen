@@ -808,6 +808,43 @@ def _decoder_survivor_cost_proxy_evidence(*, item_id: str) -> dict[str, Any]:
     }
 
 
+def _decoder_pwl_frontier_detail_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_tiny_v1"
+    sweep_in = f"{base}/decoder_quality_sweep__l2_decoder_survivor_prompt_stress_v1.json"
+    cost_proxy_in = f"{base}/decoder_survivor_cost_proxy__l2_decoder_survivor_cost_proxy_v1.json"
+    frontier_out = f"{base}/decoder_pwl_frontier_detail__{item_id}.json"
+    frontier_report = f"{base}/decoder_pwl_frontier_detail__{item_id}.md"
+    commands = [
+        {
+            "name": "estimate_decoder_pwl_frontier_detail",
+            "run": (
+                "python3 npu/eval/estimate_llm_decoder_pwl_frontier.py "
+                f"--sweep {sweep_in} "
+                f"--cost-proxy {cost_proxy_in} "
+                f"--out {frontier_out} "
+                f"--out-md {frontier_report}"
+            ),
+        },
+    ]
+    return {
+        "inputs": {
+            "source_sweep": sweep_in,
+            "source_cost_proxy": cost_proxy_in,
+            "frontier_detail_out": frontier_out,
+            "frontier_detail_report": frontier_report,
+            "frontier_detail_scope": (
+                "focused planning breakdown of the two exact-safe decoder PWL survivors; "
+                "separates table footprint, interpolation width, normalization path, and integration risk"
+            ),
+        },
+        "commands": commands,
+        "expected_outputs": [
+            frontier_out,
+            frontier_report,
+        ],
+    }
+
+
 def _with_fresh_outputs(*, campaign: dict[str, Any], item_id: str) -> dict[str, Any]:
     cloned = json.loads(json.dumps(campaign))
     outputs = dict(cloned.get("outputs") or {})
@@ -912,8 +949,11 @@ def _build_payload(
         "decoder_distribution_robustness",
         "decoder_survivor_prompt_stress",
         "decoder_survivor_cost_proxy",
+        "decoder_pwl_frontier_detail",
     }:
-        if abstraction_layer_name == "decoder_survivor_cost_proxy":
+        if abstraction_layer_name == "decoder_pwl_frontier_detail":
+            decoder_evidence = _decoder_pwl_frontier_detail_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_survivor_cost_proxy":
             decoder_evidence = _decoder_survivor_cost_proxy_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_survivor_prompt_stress":
             decoder_evidence = _decoder_survivor_prompt_stress_evidence(item_id=item_id)

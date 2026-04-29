@@ -160,6 +160,21 @@ The cost proxy gates rows on exact prompt-stress quality and then scores rough
 softmax/probability-path terms. Treat it as a planning rank for the next RTL or
 OpenROAD step, not as measured PPA.
 
+Break down the exact-safe PWL frontier after the survivor cost proxy:
+```sh
+python3 npu/eval/estimate_llm_decoder_pwl_frontier.py \
+  --sweep runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_sweep__l2_decoder_survivor_prompt_stress_v1.json \
+  --cost-proxy runs/datasets/llm_decoder_eval_tiny_v1/decoder_survivor_cost_proxy__l2_decoder_survivor_cost_proxy_v1.json \
+  --out /tmp/decoder_pwl_frontier_detail.json \
+  --out-md /tmp/decoder_pwl_frontier_detail.md
+```
+
+The frontier detail report compares only `grid_approx_pwl_bf16_path` and
+`grid_approx_pwl_in_q8_w_q8_norm_exact`. It separates PWL table footprint,
+interpolation datapath width, normalization path, and integration risk so the
+next hardware-cost job can target the blocker instead of sweeping approximation
+parameters blindly.
+
 Optionally verify path-like fields exist:
 ```sh
 python3 npu/eval/validate.py --campaign <campaign.json> --check_paths

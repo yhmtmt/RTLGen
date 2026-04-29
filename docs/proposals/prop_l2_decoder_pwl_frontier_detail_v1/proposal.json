@@ -1,0 +1,58 @@
+{
+  "proposal_id": "prop_l2_decoder_pwl_frontier_detail_v1",
+  "created_utc": "2026-04-29T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "LLM decoder PWL frontier detail",
+  "hypothesis": "The two exact-safe PWL decoder survivors should be broken down by table footprint, interpolation width, normalization path, and integration risk before choosing an RTL/OpenROAD implementation anchor.",
+  "direct_comparison": {
+    "primary_question": "Between grid_approx_pwl_bf16_path and grid_approx_pwl_in_q8_w_q8_norm_exact, which path should be the immediate implementation anchor and what remains the open risk?",
+    "include": [
+      "the merged l2_decoder_survivor_prompt_stress_v1 sweep artifact",
+      "the merged l2_decoder_survivor_cost_proxy_v1 artifact",
+      "exact next-token and top-k quality gate",
+      "separate table, interpolation datapath, normalization, format-bridge, and integration-risk terms"
+    ],
+    "exclude": [
+      "claiming real Nangate45 PPA",
+      "adding new decoder quality sweeps",
+      "new RTL or mapper changes"
+    ],
+    "follow_on_broad_sweep": [
+      "prototype a bf16 reciprocal PWL softmax block estimate",
+      "prototype a q8 PWL exact-normalization block estimate",
+      "only add q8 reciprocal or bounded normalization if quality remains exact-safe"
+    ]
+  },
+  "expected_benefit": [
+    "turns the close PWL frontier into reviewable implementation-risk terms",
+    "prevents the q8 datapath advantage from hiding exact-normalization cost",
+    "keeps the bf16 primary-anchor decision provisional and tied to explicit evidence"
+  ],
+  "risks": [
+    "the detail model is still heuristic and not a replacement for RTL/OpenROAD evidence",
+    "normalization cost may move after a concrete block is implemented",
+    "quality conclusions still depend on the pinned tiny decoder prompt-stress setup"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_pwl_frontier_detail_v1",
+      "task_type": "l2_campaign",
+      "objective": "decoder_pwl_frontier_detail",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json"
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_decoder_survivor_prompt_stress_v1/proposal.json",
+    "docs/proposals/prop_l2_decoder_survivor_cost_proxy_v1/proposal.json",
+    "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_sweep__l2_decoder_survivor_prompt_stress_v1.json",
+    "runs/datasets/llm_decoder_eval_tiny_v1/decoder_survivor_cost_proxy__l2_decoder_survivor_cost_proxy_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_pwl_frontier.py",
+    "npu/eval/estimate_llm_decoder_survivor_cost.py",
+    "docs/proposals/prop_l2_decoder_survivor_cost_proxy_v1/analysis_report.md"
+  ]
+}
