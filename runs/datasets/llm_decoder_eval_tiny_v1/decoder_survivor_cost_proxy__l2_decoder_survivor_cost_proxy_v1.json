@@ -1,0 +1,337 @@
+{
+  "cost_model": {
+    "name": "decoder_survivor_relative_softmax_cost_v1",
+    "quality_gate": "eligible rows must match next-token and top-k on every prompt-stress sample",
+    "scope_note": "This is a relative planning proxy for decoder softmax/probability-path implementation cost. It weights exact exp paths above PWL paths and lower-width datapaths below fp-style datapaths. It is not RTL, OpenROAD PPA, or final hardware acceptance."
+  },
+  "ranked_candidates": [
+    {
+      "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_bf16_w_bf16_norm_recip_bf16_prob_fp",
+      "cost_proxy": {
+        "input_cast_cost": 4.0,
+        "input_width_bits": 16,
+        "normalization_cost": 18.0,
+        "probability_width_bits": 32,
+        "probability_write_cost": 6.0,
+        "relative_cost_units": 52.0,
+        "softmax_eval_cost": 24.0,
+        "softmax_path": "pwl_lut_interpolate",
+        "weight_width_bits": 16
+      },
+      "quality": {
+        "eligible_for_cost_narrowing": true,
+        "gate": "exact_safe_survivor",
+        "next_token_match_rate": 1.0,
+        "next_token_matches": 24,
+        "next_token_mismatch_sample_ids": [],
+        "sample_count": 24,
+        "topk_contains_reference_rate": 1.0,
+        "topk_matches": 24,
+        "topk_miss_sample_ids": [],
+        "topk_safe": true
+      },
+      "rank": 1,
+      "ranking_score": 52.0,
+      "template": "grid_approx_pwl_bf16_path"
+    },
+    {
+      "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q8_w_q8_norm_exact_prob_fp",
+      "cost_proxy": {
+        "input_cast_cost": 2.0,
+        "input_width_bits": 8,
+        "normalization_cost": 30.0,
+        "probability_width_bits": 32,
+        "probability_write_cost": 6.0,
+        "relative_cost_units": 58.0,
+        "softmax_eval_cost": 20.0,
+        "softmax_path": "pwl_lut_interpolate",
+        "weight_width_bits": 8
+      },
+      "quality": {
+        "eligible_for_cost_narrowing": true,
+        "gate": "exact_safe_survivor",
+        "next_token_match_rate": 1.0,
+        "next_token_matches": 24,
+        "next_token_mismatch_sample_ids": [],
+        "sample_count": 24,
+        "topk_contains_reference_rate": 1.0,
+        "topk_matches": 24,
+        "topk_miss_sample_ids": [],
+        "topk_safe": true
+      },
+      "rank": 2,
+      "ranking_score": 58.0,
+      "template": "grid_approx_pwl_in_q8_w_q8_norm_exact"
+    },
+    {
+      "candidate_semantics": "onnx_logits_q8_softmax_exact_norm_exact_prob_fp",
+      "cost_proxy": {
+        "input_cast_cost": 2.0,
+        "input_width_bits": 8,
+        "normalization_cost": 30.0,
+        "probability_width_bits": 32,
+        "probability_write_cost": 6.0,
+        "relative_cost_units": 138.0,
+        "softmax_eval_cost": 100.0,
+        "softmax_path": "exact_exp",
+        "weight_width_bits": 0
+      },
+      "quality": {
+        "eligible_for_cost_narrowing": true,
+        "gate": "exact_safe_survivor",
+        "next_token_match_rate": 1.0,
+        "next_token_matches": 24,
+        "next_token_mismatch_sample_ids": [],
+        "sample_count": 24,
+        "topk_contains_reference_rate": 1.0,
+        "topk_matches": 24,
+        "topk_miss_sample_ids": [],
+        "topk_safe": true
+      },
+      "rank": 3,
+      "ranking_score": 138.0,
+      "template": "grid_logits_q8"
+    },
+    {
+      "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_exact_prob_bf16",
+      "cost_proxy": {
+        "input_cast_cost": 8.0,
+        "input_width_bits": 32,
+        "normalization_cost": 30.0,
+        "probability_width_bits": 16,
+        "probability_write_cost": 4.0,
+        "relative_cost_units": 142.0,
+        "softmax_eval_cost": 100.0,
+        "softmax_path": "exact_exp",
+        "weight_width_bits": 0
+      },
+      "quality": {
+        "eligible_for_cost_narrowing": true,
+        "gate": "exact_safe_survivor",
+        "next_token_match_rate": 1.0,
+        "next_token_matches": 24,
+        "next_token_mismatch_sample_ids": [],
+        "sample_count": 24,
+        "topk_contains_reference_rate": 1.0,
+        "topk_matches": 24,
+        "topk_miss_sample_ids": [],
+        "topk_safe": true
+      },
+      "rank": 4,
+      "ranking_score": 142.0,
+      "template": "grid_prob_bf16"
+    },
+    {
+      "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_exact_prob_fp16",
+      "cost_proxy": {
+        "input_cast_cost": 8.0,
+        "input_width_bits": 32,
+        "normalization_cost": 30.0,
+        "probability_width_bits": 16,
+        "probability_write_cost": 4.0,
+        "relative_cost_units": 142.0,
+        "softmax_eval_cost": 100.0,
+        "softmax_path": "exact_exp",
+        "weight_width_bits": 0
+      },
+      "quality": {
+        "eligible_for_cost_narrowing": true,
+        "gate": "exact_safe_survivor",
+        "next_token_match_rate": 1.0,
+        "next_token_matches": 24,
+        "next_token_mismatch_sample_ids": [],
+        "sample_count": 24,
+        "topk_contains_reference_rate": 1.0,
+        "topk_matches": 24,
+        "topk_miss_sample_ids": [],
+        "topk_safe": true
+      },
+      "rank": 5,
+      "ranking_score": 142.0,
+      "template": "grid_prob_fp16"
+    },
+    {
+      "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_exact_prob_fp",
+      "cost_proxy": {
+        "input_cast_cost": 8.0,
+        "input_width_bits": 32,
+        "normalization_cost": 30.0,
+        "probability_width_bits": 32,
+        "probability_write_cost": 6.0,
+        "relative_cost_units": 144.0,
+        "softmax_eval_cost": 100.0,
+        "softmax_path": "exact_exp",
+        "weight_width_bits": 0
+      },
+      "quality": {
+        "eligible_for_cost_narrowing": true,
+        "gate": "exact_safe_survivor",
+        "next_token_match_rate": 1.0,
+        "next_token_matches": 24,
+        "next_token_mismatch_sample_ids": [],
+        "sample_count": 24,
+        "topk_contains_reference_rate": 1.0,
+        "topk_matches": 24,
+        "topk_miss_sample_ids": [],
+        "topk_safe": true
+      },
+      "rank": 6,
+      "ranking_score": 144.0,
+      "template": "candidate_onnx_softmax_exact"
+    },
+    {
+      "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q6_w_q6_norm_recip_q10_prob_fp",
+      "cost_proxy": {
+        "input_cast_cost": 1.5,
+        "input_width_bits": 6,
+        "normalization_cost": 18.0,
+        "probability_width_bits": 32,
+        "probability_write_cost": 6.0,
+        "relative_cost_units": 44.5,
+        "softmax_eval_cost": 19.0,
+        "softmax_path": "pwl_lut_interpolate",
+        "weight_width_bits": 6
+      },
+      "quality": {
+        "eligible_for_cost_narrowing": false,
+        "gate": "topk_safe_not_exact",
+        "next_token_match_rate": 0.9166666666666666,
+        "next_token_matches": 22,
+        "next_token_mismatch_sample_ids": [
+          "stress_code_json",
+          "stress_dialogue_thanks"
+        ],
+        "sample_count": 24,
+        "topk_contains_reference_rate": 1.0,
+        "topk_matches": 24,
+        "topk_miss_sample_ids": [],
+        "topk_safe": true
+      },
+      "rank": 7,
+      "ranking_score": 1052.833,
+      "template": "grid_approx_pwl_in_q6_w_q6_norm_recip_q10"
+    },
+    {
+      "candidate_semantics": "onnx_logits_q6_softmax_exact_norm_exact_prob_fp",
+      "cost_proxy": {
+        "input_cast_cost": 1.5,
+        "input_width_bits": 6,
+        "normalization_cost": 30.0,
+        "probability_width_bits": 32,
+        "probability_write_cost": 6.0,
+        "relative_cost_units": 137.5,
+        "softmax_eval_cost": 100.0,
+        "softmax_path": "exact_exp",
+        "weight_width_bits": 0
+      },
+      "quality": {
+        "eligible_for_cost_narrowing": false,
+        "gate": "topk_safe_not_exact",
+        "next_token_match_rate": 0.9166666666666666,
+        "next_token_matches": 22,
+        "next_token_mismatch_sample_ids": [
+          "stress_code_json",
+          "stress_dialogue_thanks"
+        ],
+        "sample_count": 24,
+        "topk_contains_reference_rate": 1.0,
+        "topk_matches": 24,
+        "topk_miss_sample_ids": [],
+        "topk_safe": true
+      },
+      "rank": 8,
+      "ranking_score": 1145.833,
+      "template": "grid_logits_q6"
+    },
+    {
+      "candidate_semantics": "onnx_logits_q4_softmax_exact_norm_exact_prob_fp",
+      "cost_proxy": {
+        "input_cast_cost": 1.0,
+        "input_width_bits": 4,
+        "normalization_cost": 30.0,
+        "probability_width_bits": 32,
+        "probability_write_cost": 6.0,
+        "relative_cost_units": 137.0,
+        "softmax_eval_cost": 100.0,
+        "softmax_path": "exact_exp",
+        "weight_width_bits": 0
+      },
+      "quality": {
+        "eligible_for_cost_narrowing": false,
+        "gate": "topk_safe_not_exact",
+        "next_token_match_rate": 0.8333333333333334,
+        "next_token_matches": 20,
+        "next_token_mismatch_sample_ids": [
+          "stress_code_json",
+          "stress_dialogue_thanks",
+          "stress_markdown",
+          "stress_symbolic_math"
+        ],
+        "sample_count": 24,
+        "topk_contains_reference_rate": 1.0,
+        "topk_matches": 24,
+        "topk_miss_sample_ids": [],
+        "topk_safe": true
+      },
+      "rank": 9,
+      "ranking_score": 1153.667,
+      "template": "grid_logits_q4"
+    },
+    {
+      "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_exact_prob_fp8_e5m2",
+      "cost_proxy": {
+        "input_cast_cost": 8.0,
+        "input_width_bits": 32,
+        "normalization_cost": 30.0,
+        "probability_width_bits": 8,
+        "probability_write_cost": 3.0,
+        "relative_cost_units": 141.0,
+        "softmax_eval_cost": 100.0,
+        "softmax_path": "exact_exp",
+        "weight_width_bits": 0
+      },
+      "quality": {
+        "eligible_for_cost_narrowing": false,
+        "gate": "blocked_quality",
+        "next_token_match_rate": 0.5416666666666666,
+        "next_token_matches": 13,
+        "next_token_mismatch_sample_ids": [
+          "stress_ambiguous_preposition",
+          "stress_arithmetic_add",
+          "stress_arithmetic_subtract",
+          "stress_code_json",
+          "stress_dialogue_thanks",
+          "stress_long_latency",
+          "stress_markdown",
+          "stress_punctuation_question",
+          "stress_punctuation_sentence",
+          "stress_symbolic_math",
+          "stress_units"
+        ],
+        "sample_count": 24,
+        "topk_contains_reference_rate": 0.7083333333333334,
+        "topk_matches": 17,
+        "topk_miss_sample_ids": [
+          "stress_arithmetic_add",
+          "stress_arithmetic_subtract",
+          "stress_dialogue_thanks",
+          "stress_markdown",
+          "stress_punctuation_sentence",
+          "stress_symbolic_math",
+          "stress_units"
+        ],
+        "topk_safe": false
+      },
+      "rank": 10,
+      "ranking_score": 1186.833,
+      "template": "grid_prob_fp8_e5m2"
+    }
+  ],
+  "recommendation": {
+    "decision": "promote_to_implementation_costing",
+    "reason": "grid_approx_pwl_bf16_path passed exact prompt-stress quality and has the lowest relative cost among exact-safe survivors in this proxy model.",
+    "template": "grid_approx_pwl_bf16_path"
+  },
+  "source_sweep": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_sweep__l2_decoder_survivor_prompt_stress_v1.json",
+  "version": 0.1
+}
