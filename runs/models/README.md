@@ -71,6 +71,12 @@ Current sets
   `runs/campaigns/npu/e2e_eval_llm_attention_tail_v1/` and includes
   deterministic reference/candidate fixtures under
   `runs/models/llm_attention_tail_v1/`.
+- `llm_attention_tail_stress_v1`: bounded stress extension of the repeated
+  attention-tail proxy set with sequence lengths `128` and `256` and 4-6
+  non-terminal `Softmax` episodes per model path. It is paired with
+  `runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/` and is intended
+  to test whether the lower-pressure tail evidence was too small to expose
+  softmax occupancy, wait-cycle, or backpressure limits.
 
 
 Non-ONNX decoder contracts

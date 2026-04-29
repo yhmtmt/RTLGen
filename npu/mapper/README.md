@@ -57,6 +57,9 @@ Tooling:
   ONNX-lite proxy models with non-terminal `Softmax` for `llm_smoke_v1`.
 - `npu/mapper/examples/gen_llm_attention_tail_suite_lite.py`: generate repeated
   attention-tail ONNX-lite proxy models for `llm_attention_tail_v1`.
+- `npu/mapper/examples/gen_llm_attention_tail_stress_suite_lite.py`: generate
+  the bounded larger-sequence repeated-tail stress set for
+  `llm_attention_tail_stress_v1`.
 
 Example (MLP-1):
 ```sh

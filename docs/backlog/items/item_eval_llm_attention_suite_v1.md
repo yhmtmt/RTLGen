@@ -7,7 +7,7 @@
 - priority: `high`
 - owner: `developer_agent`
 - created_utc: `2026-04-17T00:00:00Z`
-- updated_utc: `2026-04-26T00:00:00Z`
+- updated_utc: `2026-04-29T00:00:00Z`
 - proposal_id:
 - proposal_path:
 
@@ -76,6 +76,9 @@
   fixture path
 - the tail suite covers sequence lengths `32`, `64`, and `128` with 2-4
   softmax-bearing blocks per model path
+- `llm_attention_tail_stress_v1` extends the same proxy with sequence lengths
+  `128` and `256` and 4-6 softmax-bearing blocks per model path, specifically
+  to check whether the earlier low-pressure tail result was too small
 
 ## Architecture Implications
 - no new architecture proposal should be launched first for “softmax pipeline
@@ -108,9 +111,12 @@
 - `runs/models/README.md`
 - `runs/models/llm_smoke_v1/manifest.json`
 - `runs/models/llm_attention_tail_v1/manifest.json`
+- `runs/models/llm_attention_tail_stress_v1/manifest.json`
 - `runs/campaigns/npu/e2e_eval_llm_smoke_v1/campaign.json`
 - `runs/campaigns/npu/e2e_eval_llm_attention_tail_v1/campaign.json`
+- `runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/campaign.json`
 - `npu/mapper/examples/gen_llm_attention_tail_suite_lite.py`
+- `npu/mapper/examples/gen_llm_attention_tail_stress_suite_lite.py`
 - `docs/architecture/llm_attention_benchmark_ladder.md`
 
 ## Open Questions

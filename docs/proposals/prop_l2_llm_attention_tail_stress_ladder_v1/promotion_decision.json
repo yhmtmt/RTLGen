@@ -1,0 +1,12 @@
+{
+  "proposal_id": "prop_l2_llm_attention_tail_stress_ladder_v1",
+  "candidate_id": "l2_llm_attention_tail_stress_ladder_v1",
+  "decision": "pending",
+  "reason": "Awaiting proposal-backed broad-ranking campaign evidence.",
+  "evidence_refs": [
+    "docs/proposals/prop_l2_llm_attention_tail_stress_ladder_v1/proposal.json",
+    "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/campaign.json"
+  ],
+  "next_action": "run l2_llm_attention_tail_stress_ladder_v1 and inspect scheduler pressure evidence",
+  "requires_human_approval": false
+}
