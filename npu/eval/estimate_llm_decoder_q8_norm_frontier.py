@@ -15,6 +15,22 @@ BASELINE_Q8_EXACT = "grid_approx_pwl_in_q8_w_q8_norm_exact"
 BF16_ANCHOR = "grid_approx_pwl_bf16_path"
 Q8_PREFIX = "grid_approx_pwl_in_q8_w_q8_norm_recip_q"
 
+COST_MODEL = {
+    "name": "decoder_q8_normalization_planning_proxy_v1",
+    "source": "hand_written_planning_proxy_not_literature_backed",
+    "unit": "heuristic_planning_units",
+    "calibration_status": "uncalibrated",
+    "ppa_balance": (
+        "The score is a single planning scalar. It does not independently balance timing, "
+        "power, and area, and it must not be read as Nangate45 PPA."
+    ),
+    "intended_use": (
+        "Choose the next RTLGen/OpenROAD calibration target after quality-gated decoder "
+        "sweeps; do not use it as hardware acceptance evidence."
+    ),
+    "rtlgen_calibration_proposal": "prop_l1_decoder_normalization_arithmetic_calibration_v1",
+}
+
 
 def _load_json(path: Path) -> JsonDict:
     with path.open("r", encoding="utf-8") as f:
@@ -101,6 +117,8 @@ def _row_record(row: JsonDict) -> JsonDict:
             "reciprocal_bits": row.get("normalization_reciprocal_bits", 0),
             "reciprocal_float_format": row.get("normalization_reciprocal_float_format", ""),
             "relative_cost_units": round(norm_cost, 3),
+            "unit": COST_MODEL["unit"],
+            "calibration_status": COST_MODEL["calibration_status"],
         },
         "frontier_score": round(norm_cost + (0.0 if quality["exact_safe"] else 1000.0), 3),
     }
@@ -114,6 +132,15 @@ def _write_markdown(path: Path, payload: JsonDict) -> None:
         f"- decision: `{payload['decision']['decision']}`",
         f"- selected_candidate: `{payload['decision']['selected_candidate'] or ''}`",
         f"- reason: {payload['decision']['reason']}",
+        f"- cost_model_source: `{payload['cost_model']['source']}`",
+        f"- cost_model_unit: `{payload['cost_model']['unit']}`",
+        f"- rtlgen_calibration_proposal: `{payload['cost_model']['rtlgen_calibration_proposal']}`",
+        "",
+        "## Cost Model Provenance",
+        "",
+        payload["cost_model"]["ppa_balance"],
+        "",
+        payload["cost_model"]["intended_use"],
         "",
         "## Quality And Normalization Cost",
         "",
@@ -218,9 +245,11 @@ def build_report(*, sweep_path: Path) -> JsonDict:
             "quality_gate": "candidate must match next-token and top-k for every prompt-stress sample",
             "scope_note": (
                 "This is a focused q8 PWL normalization frontier. It tests reciprocal-normalization "
-                "precision as a replacement for q8 exact normalization; it is not RTL or OpenROAD PPA."
+                "precision as a replacement for q8 exact normalization; it is not RTL or OpenROAD PPA. "
+                "The normalization cost values are uncalibrated heuristic planning units."
             ),
         },
+        "cost_model": COST_MODEL,
         "decision": decision,
         "ranked_rows": ranked,
         "next_step": [

@@ -29,8 +29,15 @@ def test_q8_normalization_frontier_report_selects_lowest_cost_exact_safe_recipro
 
     assert report["decision"]["decision"] == "q8_reciprocal_candidate_survived"
     assert report["decision"]["selected_candidate"] == "grid_approx_pwl_in_q8_w_q8_norm_recip_q10"
+    assert report["cost_model"]["source"] == "hand_written_planning_proxy_not_literature_backed"
+    assert report["cost_model"]["unit"] == "heuristic_planning_units"
+    assert (
+        report["cost_model"]["rtlgen_calibration_proposal"]
+        == "prop_l1_decoder_normalization_arithmetic_calibration_v1"
+    )
     by_template = {row["template"]: row for row in report["ranked_rows"]}
     assert by_template["grid_approx_pwl_in_q8_w_q8_norm_recip_q10"]["quality"]["exact_safe"]
+    assert by_template["grid_approx_pwl_in_q8_w_q8_norm_recip_q10"]["normalization"]["calibration_status"] == "uncalibrated"
     assert by_template["grid_approx_pwl_in_q8_w_q8_norm_recip_q12"]["quality"]["exact_safe"]
     assert (
         by_template["grid_approx_pwl_in_q8_w_q8_norm_recip_q10"]["normalization"]["relative_cost_units"]

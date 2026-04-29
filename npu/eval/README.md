@@ -160,6 +160,14 @@ The cost proxy gates rows on exact prompt-stress quality and then scores rough
 softmax/probability-path terms. Treat it as a planning rank for the next RTL or
 OpenROAD step, not as measured PPA.
 
+The decoder cost proxy and the later PWL/q8-normalization detail scores are
+hand-written planning heuristics. They are not derived from a paper and they do
+not independently balance performance, power, and area. Their role is to choose
+which exact-safe architecture point should be physically calibrated next. Use
+RTLGen/OpenROAD Layer 1 evidence, such as
+`prop_l1_decoder_normalization_arithmetic_calibration_v1`, before making a
+hardware acceptance claim.
+
 Break down the exact-safe PWL frontier after the survivor cost proxy:
 ```sh
 python3 npu/eval/estimate_llm_decoder_pwl_frontier.py \
@@ -191,7 +199,10 @@ python3 npu/eval/estimate_llm_decoder_q8_norm_frontier.py \
 This frontier tests q8 PWL exact normalization against q8 PWL quantized
 reciprocal normalization at q10/q12/q14/q16, with the bf16 reciprocal PWL row
 kept as the current anchor. A reciprocal row is only a candidate if it preserves
-the full prompt-stress next-token and top-k gate.
+the full prompt-stress next-token and top-k gate. The reported normalization
+cost is an uncalibrated planning unit; follow it with RTLGen/OpenROAD
+calibration of the integer multiplier and accumulator/adder path before treating
+q10 as physically better than wider reciprocal options.
 
 Optionally verify path-like fields exist:
 ```sh

@@ -1,0 +1,70 @@
+{
+  "proposal_id": "prop_l1_decoder_normalization_arithmetic_calibration_v1",
+  "created_utc": "2026-04-29T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "l1",
+  "kind": "circuit",
+  "title": "Decoder normalization arithmetic calibration",
+  "hypothesis": "The q8 reciprocal-normalization frontier should be grounded by RTLGen/OpenROAD measurements of the integer multiplier and accumulator/adder primitives before the heuristic normalization score is used for architecture selection.",
+  "direct_comparison": {
+    "primary_question": "What Nangate45 timing, power, and area trends do RTLGen-generated multiplier and adder primitives show for the arithmetic that underlies q8 reciprocal normalization?",
+    "include": [
+      "unsigned 8/16/32-bit multiplier wrappers that bound q8 reciprocal multiply datapaths",
+      "unsigned 16/32/64-bit prefix-adder wrappers that bound q8 weight accumulation and normalization-sum datapaths",
+      "Nangate45 OpenROAD measurements with lightweight metrics.csv outputs",
+      "explicit separation of measured primitive PPA from the current decoder heuristic planning units"
+    ],
+    "exclude": [
+      "claiming full decoder-softmax PPA",
+      "claiming exact divide or bf16 reciprocal PPA before those RTL blocks exist",
+      "changing decoder quality thresholds or mapper behavior"
+    ],
+    "follow_on_broad_sweep": [
+      "add a bounded reciprocal/divider RTL block if exact normalization remains a candidate",
+      "fit a calibrated decoder normalization cost model only after primitive measurements are merged",
+      "rerun q8 normalization frontier ranking using the calibrated terms"
+    ]
+  },
+  "expected_benefit": [
+    "turns the q8 q10 reciprocal choice into a measurable hardware hypothesis instead of a hand-written scalar assumption",
+    "starts the performance, power, and area decomposition with blocks RTLGen can synthesize today",
+    "keeps unsupported exact-divide and bf16 reciprocal costs visible as gaps"
+  ],
+  "risks": [
+    "primitive arithmetic measurements do not include control, table lookup, rounding, or full softmax integration overhead",
+    "the current RTLGen generator has multiplier and adder support but no standalone reciprocal/divider block",
+    "single-sweep Nangate45 points may need utilization or seed sensitivity follow-up before model fitting"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_norm_q8_recip_mult_calibration_v1",
+      "task_type": "l1_sweep",
+      "evaluation_mode": "measurement_only",
+      "objective": "Measure Nangate45 PPA for unsigned multiplier wrappers that bound q8 reciprocal-normalization multiply paths.",
+      "sweep_path": "runs/campaigns/multipliers/ppg_cpa_widths_4_32/sweeps/nangate45_highutil.json",
+      "abstraction_layer": "circuit_block"
+    },
+    {
+      "item_id": "l1_decoder_norm_accumulator_adder_calibration_v1",
+      "task_type": "l1_sweep",
+      "evaluation_mode": "measurement_only",
+      "objective": "Measure Nangate45 PPA for unsigned prefix-adder wrappers that bound q8 normalization-sum and accumulator paths.",
+      "sweep_path": "runs/campaigns/prefix_adders/sweeps/nangate45_highutil.json",
+      "abstraction_layer": "circuit_block"
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_decoder_q8_normalization_frontier_v1/proposal.json",
+    "runs/datasets/llm_decoder_eval_tiny_v1/decoder_q8_norm_frontier__l2_decoder_q8_normalization_frontier_v1.json",
+    "runs/designs/multipliers/mult16u_normal_koggestone_wrapper/metrics.csv",
+    "runs/designs/prefix_adders/adder_koggestone_16u_wrapper/metrics.csv"
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_survivor_cost.py",
+    "npu/eval/estimate_llm_decoder_pwl_frontier.py",
+    "npu/eval/estimate_llm_decoder_q8_norm_frontier.py",
+    "control_plane/control_plane/services/l1_task_generator.py"
+  ],
+  "abstraction_layer": "circuit_block"
+}

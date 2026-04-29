@@ -18,6 +18,12 @@ def test_decoder_pwl_frontier_detail_keeps_bf16_primary_and_q8_alternate() -> No
     assert report["frontier_decision"]["primary_candidate"] == "grid_approx_pwl_bf16_path"
     assert report["frontier_decision"]["alternate_candidate"] == "grid_approx_pwl_in_q8_w_q8_norm_exact"
     assert report["frontier_decision"]["decision"] == "deepen_primary_keep_alternate"
+    assert report["cost_model"]["source"] == "hand_written_planning_proxy_not_literature_backed"
+    assert report["cost_model"]["unit"] == "heuristic_planning_units"
+    assert (
+        report["cost_model"]["rtlgen_calibration_proposal"]
+        == "prop_l1_decoder_normalization_arithmetic_calibration_v1"
+    )
 
     candidates = report["frontier_candidates"]
     assert {row["template"] for row in candidates} == {
@@ -39,6 +45,7 @@ def test_decoder_pwl_frontier_detail_keeps_bf16_primary_and_q8_alternate() -> No
     )
     assert q8["normalization_path"]["integration_risk"] == "high"
     assert bf16["normalization_path"]["integration_risk"] == "medium"
+    assert q8["normalization_path"]["calibration_status"] == "uncalibrated"
     assert q8["normalization_path"]["relative_cost_units"] > bf16["normalization_path"]["relative_cost_units"]
     assert bf16["previous_survivor_cost_proxy"]["rank"] == 1
     assert q8["previous_survivor_cost_proxy"]["rank"] == 2
