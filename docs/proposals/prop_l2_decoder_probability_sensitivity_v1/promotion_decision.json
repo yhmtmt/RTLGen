@@ -1,5 +1,15 @@
 {
   "proposal_id": "prop_l2_decoder_probability_sensitivity_v1",
-  "decision": "pending_evaluation",
-  "reason": "Await evaluator broad-ranking evidence for the rough decoder probability sensitivity map."
+  "decision": "iterate",
+  "reason": "Broad ranking evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
+  "candidate_id": "l2_decoder_probability_sensitivity_v1",
+  "evidence_refs": [
+    "item:l2_decoder_probability_sensitivity_v1",
+    "run:l2_decoder_probability_sensitivity_v1_run_b5838c9e8fa35f57",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_probability_sensitivity_v1.json",
+    "pr:#260",
+    "https://github.com/yhmtmt/RTLGen/pull/260"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_probability_sensitivity_v1",
+  "requires_human_approval": false
 }

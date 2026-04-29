@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_probability_sensitivity_v1",
-  "source_commit": "d3231acda1b9f0bb403bb2c381c300421b179965",
+  "source_commit": "267ed9b5a9df93860dd846da6a21e351850d58f6",
   "requested_items": [
     {
       "item_id": "l2_decoder_probability_sensitivity_v1",
@@ -20,7 +20,11 @@
         "direction": "iterate",
         "reason": "The map is expected to identify rough quality cliffs and candidate-safe regions for the pinned tiny benchmark, while explicitly avoiding general approximation acceptance claims."
       },
-      "status": "proposed"
+      "status": "merged",
+      "merged_pr_number": 260,
+      "merge_commit": "694c20ca7bbf4b89f2cc2a3ce5f70a8337481efd",
+      "merged_utc": "2026-04-29T04:32:04.646253Z",
+      "notes": "Merged via PR #260 and merge 694c20ca7bbf4b89f2cc2a3ce5f70a8337481efd at 2026-04-29T04:32:04.646253Z."
     }
   ]
 }
