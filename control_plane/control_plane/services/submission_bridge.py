@@ -20,6 +20,7 @@ from control_plane.models.runs import Run
 from control_plane.models.work_items import WorkItem
 from control_plane.services.docs_paths import resolve_proposal_file
 from control_plane.services.review_publisher import ReviewPublishRequest, publish_review_package
+from control_plane.workers.artifact_stage import collect_linked_results_artifacts
 
 
 class SubmissionPrepareError(RuntimeError):
@@ -152,6 +153,21 @@ def _review_linked_supporting_files(*, repo_root: Path, package_payload: dict[st
         if isinstance(source_refs, dict):
             _collect_existing_file_refs(repo_root=repo_root, value=source_refs, files=files, seen=seen)
     _collect_proposal_files(repo_root=repo_root, package_payload=package_payload, files=files, seen=seen)
+    return files
+
+
+def _expected_output_supporting_files(*, repo_root: Path, work_item: WorkItem, existing: list[str]) -> list[str]:
+    seen = set(existing)
+    files: list[str] = []
+    for artifact in collect_linked_results_artifacts(
+        repo_root=str(repo_root),
+        expected_outputs=[str(path) for path in (work_item.expected_outputs or [])],
+    ):
+        rel_path = str(artifact.path).strip()
+        if not rel_path or rel_path in seen:
+            continue
+        seen.add(rel_path)
+        files.append(rel_path)
     return files
 
 
@@ -344,6 +360,13 @@ def prepare_submission_branch(session: Session, request: SubmissionPrepareReques
     review_rel = str(review_artifact.get("path", "")).strip() if isinstance(review_artifact, dict) else ""
     evidence_files = _canonical_evidence_files(repo_root=repo_root, work_item=work_item)
     supporting_files = _review_linked_supporting_files(repo_root=repo_root, package_payload=package_payload)
+    supporting_files.extend(
+        _expected_output_supporting_files(
+            repo_root=repo_root,
+            work_item=work_item,
+            existing=[*evidence_files, *supporting_files],
+        )
+    )
     files_to_copy = [snapshot_rel, package_rel]
     if review_rel:
         files_to_copy.append(review_rel)
