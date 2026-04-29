@@ -78,6 +78,12 @@ def main(argv: list[str] | None = None) -> int:
     generate_l1_parser.add_argument("--mode", default="upsert")
     generate_l1_parser.add_argument("--proposal-id")
     generate_l1_parser.add_argument("--proposal-path")
+    generate_l1_parser.add_argument("--make-target")
+    generate_l1_parser.add_argument("--evaluation-mode")
+    generate_l1_parser.add_argument("--abstraction-layer")
+    generate_l1_parser.add_argument("--trial-count", type=int, default=1)
+    generate_l1_parser.add_argument("--seed-start", type=int, default=0)
+    generate_l1_parser.add_argument("--stop-after-failures", type=int)
     generate_l1_parser.add_argument("--no-auto-dispatch", action="store_true")
     generate_l1_parser.add_argument("--dispatch-machine-key")
     generate_l1_parser.add_argument("--dispatch-freshness-seconds", type=int, default=120)
@@ -495,6 +501,10 @@ def main(argv: list[str] | None = None) -> int:
             str(args.priority),
             "--mode",
             args.mode,
+            "--trial-count",
+            str(args.trial_count),
+            "--seed-start",
+            str(args.seed_start),
             "--configs",
             *args.configs,
         ]
@@ -505,6 +515,10 @@ def main(argv: list[str] | None = None) -> int:
             ("--source-commit", args.source_commit),
             ("--proposal-id", args.proposal_id),
             ("--proposal-path", args.proposal_path),
+            ("--make-target", args.make_target),
+            ("--evaluation-mode", args.evaluation_mode),
+            ("--abstraction-layer", args.abstraction_layer),
+            ("--stop-after-failures", args.stop_after_failures),
             ("--dispatch-machine-key", args.dispatch_machine_key),
         ]:
             if value is not None:
