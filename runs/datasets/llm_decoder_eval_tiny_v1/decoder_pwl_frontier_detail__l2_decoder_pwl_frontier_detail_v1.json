@@ -1,0 +1,146 @@
+{
+  "frontier_candidates": [
+    {
+      "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_bf16_w_bf16_norm_recip_bf16_prob_fp",
+      "data_format": {
+        "probability_output": "fp32_contract_output",
+        "softmax_input_width_bits": 16,
+        "softmax_weight_width_bits": 16
+      },
+      "frontier_detail_score": 67.5,
+      "frontier_rank": 1,
+      "integration_risk": {
+        "level": "medium",
+        "reason": "The reciprocal path is cheaper in this planning model, but it requires a bf16-compatible reciprocal/multiply integration point."
+      },
+      "interpolate_datapath": {
+        "accumulator_width_bits": 22,
+        "multiplier_input_width_bits": [
+          16,
+          16
+        ],
+        "multiplier_output_width_bits": 32,
+        "relative_cost_units": 13.5
+      },
+      "lut_table": {
+        "coefficient_width_bits": 16,
+        "coefficients_per_segment": 2,
+        "relative_cost_units": 16.0,
+        "segment_count": 16,
+        "table_bits": 512
+      },
+      "normalization_path": {
+        "implementation": "bf16_reciprocal_multiply",
+        "integration_risk": "medium",
+        "mode": "reciprocal_float",
+        "relative_cost_units": 22.0,
+        "risk_reason": "The reciprocal path is cheaper in this planning model, but it requires a bf16-compatible reciprocal/multiply integration point."
+      },
+      "previous_survivor_cost_proxy": {
+        "rank": 1,
+        "relative_cost_units": 52.0
+      },
+      "quality": {
+        "exact_safe": true,
+        "gate": "exact_safe_survivor",
+        "next_token_match_rate": 1.0,
+        "next_token_matches": 24,
+        "sample_count": 24,
+        "topk_contains_reference_rate": 1.0,
+        "topk_matches": 24
+      },
+      "role": "primary_candidate",
+      "score_terms": {
+        "format_bridge_units": 12.0,
+        "interpolate_units": 13.5,
+        "normalization_units": 22.0,
+        "probability_write_units": 4.0,
+        "quality_penalty": 0.0,
+        "table_units": 16.0
+      },
+      "template": "grid_approx_pwl_bf16_path"
+    },
+    {
+      "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q8_w_q8_norm_exact_prob_fp",
+      "data_format": {
+        "probability_output": "fp32_contract_output",
+        "softmax_input_width_bits": 8,
+        "softmax_weight_width_bits": 8
+      },
+      "frontier_detail_score": 76.5,
+      "frontier_rank": 2,
+      "integration_risk": {
+        "level": "high",
+        "reason": "Exact normalization preserves quality but carries a divider-like path that can dominate the otherwise smaller q8 PWL datapath."
+      },
+      "interpolate_datapath": {
+        "accumulator_width_bits": 14,
+        "multiplier_input_width_bits": [
+          8,
+          8
+        ],
+        "multiplier_output_width_bits": 16,
+        "relative_cost_units": 7.5
+      },
+      "lut_table": {
+        "coefficient_width_bits": 8,
+        "coefficients_per_segment": 2,
+        "relative_cost_units": 8.0,
+        "segment_count": 16,
+        "table_bits": 256
+      },
+      "normalization_path": {
+        "implementation": "sum_plus_exact_divide",
+        "integration_risk": "high",
+        "mode": "exact",
+        "relative_cost_units": 52.0,
+        "risk_reason": "Exact normalization preserves quality but carries a divider-like path that can dominate the otherwise smaller q8 PWL datapath."
+      },
+      "previous_survivor_cost_proxy": {
+        "rank": 2,
+        "relative_cost_units": 58.0
+      },
+      "quality": {
+        "exact_safe": true,
+        "gate": "exact_safe_survivor",
+        "next_token_match_rate": 1.0,
+        "next_token_matches": 24,
+        "sample_count": 24,
+        "topk_contains_reference_rate": 1.0,
+        "topk_matches": 24
+      },
+      "role": "alternate_frontier",
+      "score_terms": {
+        "format_bridge_units": 5.0,
+        "interpolate_units": 7.5,
+        "normalization_units": 52.0,
+        "probability_write_units": 4.0,
+        "quality_penalty": 0.0,
+        "table_units": 8.0
+      },
+      "template": "grid_approx_pwl_in_q8_w_q8_norm_exact"
+    }
+  ],
+  "frontier_decision": {
+    "alternate_candidate": "grid_approx_pwl_in_q8_w_q8_norm_exact",
+    "decision": "deepen_primary_keep_alternate",
+    "primary_candidate": "grid_approx_pwl_bf16_path",
+    "reason": "The q8 PWL row has the smaller table and interpolation datapath, but its exact normalization path is the dominant open implementation cost. The bf16 PWL row remains the primary immediate anchor because the prior survivor cost proxy ranked it first and this detailed model isolates normalization as the main reason to keep q8 as a close alternate rather than discard it."
+  },
+  "frontier_scope": {
+    "included_templates": [
+      "grid_approx_pwl_bf16_path",
+      "grid_approx_pwl_in_q8_w_q8_norm_exact"
+    ],
+    "quality_gate": "both candidates must pass exact next-token and top-k on every prompt-stress sample",
+    "scope_note": "This is a focused planning breakdown for the two exact-safe PWL candidates. It is not RTL, OpenROAD PPA, or final hardware acceptance."
+  },
+  "next_experiment": [
+    "Prototype cost estimates for a bf16 reciprocal PWL decoder softmax block and a q8 PWL exact-normalization block with the same row/token contract.",
+    "Add a q8 PWL reciprocal or bounded-normalization variant only if the quality sweep can keep 24/24 next-token and top-k on the prompt-stress set.",
+    "Escalate the primary candidate to RTL/OpenROAD only after the normalization path is represented explicitly rather than folded into a scalar proxy."
+  ],
+  "source_cost_proxy": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_survivor_cost_proxy__l2_decoder_survivor_cost_proxy_v1.json",
+  "source_sweep": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_sweep__l2_decoder_survivor_prompt_stress_v1.json",
+  "version": 0.1
+}
