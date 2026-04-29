@@ -195,6 +195,10 @@ def test_finalize_accepts_directory_style_proposal_path() -> None:
         assert promotion_result["merge_commit"] == "facefeed"
 
 
+def test_iterate_decision_is_terminal_for_idempotent_finalize() -> None:
+    assert proposal_finalizer._is_terminal_decision("iterate")
+
+
 
 def test_finalize_after_merge_refreshes_central_runs_index() -> None:
     with tempfile.TemporaryDirectory() as td:

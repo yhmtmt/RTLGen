@@ -376,7 +376,7 @@ def _is_merged_status(status: str) -> bool:
 
 def _is_terminal_decision(decision: str) -> bool:
     normalized = str(decision or "").strip().lower()
-    return normalized in {"promote", "promoted", "reject", "rejected", "close", "closed", "superseded"}
+    return normalized in {"promote", "promoted", "iterate", "reject", "rejected", "close", "closed", "superseded"}
 
 
 def _mark_merged_requested_item(
