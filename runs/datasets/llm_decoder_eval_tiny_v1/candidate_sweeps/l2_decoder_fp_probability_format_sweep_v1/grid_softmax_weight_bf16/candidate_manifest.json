@@ -1,0 +1,58 @@
+{
+  "backend_config": {
+    "backend_id": "command_json_v1",
+    "command": [
+      "/workspaces/RTLGen/control_plane/.venv/bin/python",
+      "npu/eval/run_llm_decoder_onnx_candidate.py"
+    ],
+    "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
+    "input_name": "input_ids",
+    "interface": "decoder_backend_v1",
+    "model_config_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/config.json",
+    "normalization_mode": "exact",
+    "onnx_model_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/model.onnx",
+    "output_name": "logits",
+    "role": "candidate",
+    "runtime_target": "software_emulation",
+    "softmax_mode": "exact",
+    "softmax_weight_float_format": "bf16",
+    "topk": 5,
+    "trace_output_patterns": [
+      "present.*"
+    ],
+    "trace_tensor_quant_bits": 4
+  },
+  "candidate_semantics": "onnx_logits_fp_softmax_exact_w_bf16_norm_exact_prob_fp",
+  "dataset_id": "llm_decoder_eval_tiny_v1",
+  "model_contract": "runs/models/llm_decoder_tiny_v1/model_contract.json",
+  "samples": [
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_fp_probability_format_sweep_v1/grid_softmax_weight_bf16/candidate/geo_france_capital.json",
+      "candidate_sha256": "3b1bed33ba9996fd301bc6a50a8ceb857f356d5d74d53debf30d1f447d327803",
+      "sample_id": "geo_france_capital"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_fp_probability_format_sweep_v1/grid_softmax_weight_bf16/candidate/math_two_plus_two.json",
+      "candidate_sha256": "174b35611990a5777f3757de7cf5fba0dbe60262ce5e102c111ba821e5f4fb80",
+      "sample_id": "math_two_plus_two"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_fp_probability_format_sweep_v1/grid_softmax_weight_bf16/candidate/quote_complete.json",
+      "candidate_sha256": "689cfa704cb0ccb2cca59f7a299dfd23a05e6ff2302a13caa436fb7f8eae4f44",
+      "sample_id": "quote_complete"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_fp_probability_format_sweep_v1/grid_softmax_weight_bf16/candidate/weekday_after_monday.json",
+      "candidate_sha256": "dc9b6ad645e19e73c906b6fd71e2a9ea624ce3b2c5e9c03946a7d3eb016b402d",
+      "sample_id": "weekday_after_monday"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_fp_probability_format_sweep_v1/grid_softmax_weight_bf16/candidate/color_banana.json",
+      "candidate_sha256": "7cf94491161c1623ba977866c3b30090e716a19df8d0e5c6a61954fd53ae8a75",
+      "sample_id": "color_banana"
+    }
+  ],
+  "task": "greedy_next_token",
+  "tokenizer_manifest": "runs/tokenizers/llm_decoder_gpt2_bpe_stub_v1/manifest.json",
+  "version": 0.1
+}
