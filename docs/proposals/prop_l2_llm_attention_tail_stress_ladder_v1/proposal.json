@@ -1,0 +1,54 @@
+{
+  "proposal_id": "prop_l2_llm_attention_tail_stress_ladder_v1",
+  "created_utc": "2026-04-29T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "LLM attention-tail stress ladder",
+  "hypothesis": "A bounded larger-sequence attention-tail stress campaign can determine whether the previous low softmax occupancy and zero wait/backpressure evidence was caused by insufficient benchmark pressure or by a true lack of softmax scheduler bottleneck.",
+  "direct_comparison": {
+    "primary_question": "Do larger repeated attention-tail proxy models expose softmax occupancy, dependency waits, or backpressure that justify a focused architecture proposal?",
+    "include": [
+      "llm_attention_tail_stress_v1 campaign on nangate45",
+      "sequence lengths 128 and 256",
+      "4-6 non-terminal Softmax episodes per model path",
+      "existing fp16_nm1 and fp16_nm2 architecture points",
+      "per-token latency, throughput, softmax occupancy, wait, and backpressure evidence"
+    ],
+    "exclude": [
+      "new softmax datapath changes in this proposal",
+      "new mapper scheduling changes",
+      "decoder-quality or KV-cache claims"
+    ],
+    "follow_on_broad_sweep": []
+  },
+  "expected_benefit": [
+    "checks whether attention-tail pressure was previously too small before launching datapath work",
+    "keeps softmax buffering, pipeline partitioning, and scheduler-overlap proposals evidence-gated",
+    "records the next benchmark-ladder step between attention-tail smoke evidence and practical decoder-style workloads"
+  ],
+  "risks": [
+    "the stress suite is still an ONNX-lite proxy and may not expose KV-cache or decoder-quality bottlenecks",
+    "larger shapes may increase runtime without changing the current bottleneck classification"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_llm_attention_tail_stress_ladder_v1",
+      "task_type": "l2_campaign",
+      "objective": "broad_ranking",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/campaign.json"
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_llm_attention_tail_scheduler_visibility_v1/proposal.json",
+    "runs/campaigns/npu/e2e_eval_llm_attention_tail_v1__l2_llm_attention_tail_scheduler_visibility_v1/report.md"
+  ],
+  "knowledge_refs": [
+    "docs/backlog/items/item_eval_llm_attention_suite_v1.md",
+    "docs/architecture/llm_attention_benchmark_ladder.md",
+    "runs/models/llm_attention_tail_stress_v1/manifest.json",
+    "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/campaign.json",
+    "npu/mapper/examples/gen_llm_attention_tail_stress_suite_lite.py"
+  ]
+}

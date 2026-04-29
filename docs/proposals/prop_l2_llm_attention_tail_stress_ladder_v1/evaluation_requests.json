@@ -1,0 +1,24 @@
+{
+  "proposal_id": "prop_l2_llm_attention_tail_stress_ladder_v1",
+  "source_commit": "e25d7601df136a1a9b5d3e2bd000e2c9e0809a77",
+  "requested_items": [
+    {
+      "item_id": "l2_llm_attention_tail_stress_ladder_v1",
+      "task_type": "l2_campaign",
+      "objective": "Evaluate larger attention-tail proxy models to determine whether softmax occupancy, waits, or backpressure justify a follow-on architecture proposal.",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/campaign.json",
+      "evaluation_mode": "broad_ranking",
+      "abstraction_layer": "layer2",
+      "comparison_role": "ranking",
+      "paired_baseline_item_id": "",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": false,
+      "requires_materialized_refs": false,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Stress evidence should decide whether to pursue softmax buffering, pipeline partitioning, scheduler overlap work, or continue toward richer decoder benchmarks without architecture changes."
+      },
+      "status": "proposed"
+    }
+  ]
+}

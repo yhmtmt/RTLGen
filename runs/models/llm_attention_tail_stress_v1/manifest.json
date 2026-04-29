@@ -1,0 +1,37 @@
+{
+  "version": 0.1,
+  "model_set_id": "llm_attention_tail_stress_v1",
+  "description": "Locally generated repeated attention-tail stress set used to test whether larger sequence lengths and more softmax episodes expose softmax occupancy, wait cycles, or backpressure.",
+  "models": [
+    {
+      "model_id": "tail_attn4_s256_h64",
+      "onnx_path": "runs/models/llm_attention_tail_stress_v1/tail_attn4_s256_h64.onnx",
+      "onnx_sha256": "909943f78708492ae77ff9d2caa7b7ec52eeb1412f39dd72b375871103590853",
+      "seq_len": 256,
+      "hidden_dim": 64,
+      "num_blocks": 4,
+      "softmax_episode_count": 4,
+      "notes": "Four repeated attention-tail proxy blocks at sequence length 256."
+    },
+    {
+      "model_id": "tail_attn6_s128_h64",
+      "onnx_path": "runs/models/llm_attention_tail_stress_v1/tail_attn6_s128_h64.onnx",
+      "onnx_sha256": "df2d24284cec641ffda9914eb371b0df548e9d483c1aff284701d634b804dcd2",
+      "seq_len": 128,
+      "hidden_dim": 64,
+      "num_blocks": 6,
+      "softmax_episode_count": 6,
+      "notes": "Six repeated blocks at the previous largest sequence length."
+    },
+    {
+      "model_id": "tail_attn6_s256_h64",
+      "onnx_path": "runs/models/llm_attention_tail_stress_v1/tail_attn6_s256_h64.onnx",
+      "onnx_sha256": "d4505f67cd319e42a2d265535ba975f4d04396c9c34c7901a54184fd072c94e5",
+      "seq_len": 256,
+      "hidden_dim": 64,
+      "num_blocks": 6,
+      "softmax_episode_count": 6,
+      "notes": "Largest bounded stress point with six softmax episodes at sequence length 256."
+    }
+  ]
+}

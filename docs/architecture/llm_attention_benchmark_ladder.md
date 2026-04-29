@@ -89,6 +89,26 @@ Accuracy requirement after smoke bring-up:
 - later revisions must compare approximate-hardware outputs against a reference path
 - final architecture decisions must include accuracy/precision loss, not only schedule or PPA gains
 
+### `llm_attention_tail_stress_v1`
+
+Goal:
+- test whether the low softmax occupancy and zero wait/backpressure evidence
+  from `llm_attention_tail_v1` was a benchmark-size artifact
+
+Required expansion:
+- sequence sweep: `128`, `256`
+- repeated attention blocks: `4` to `6`
+- enough repeated non-terminal `Softmax` episodes to make a scheduler or
+  buffering bottleneck visible if the current tail proxy was under-stressed
+
+Decision use:
+- if softmax occupancy, dependency wait, or backpressure remains low, continue
+  toward richer decoder-style benchmarks before proposing a softmax datapath
+  change
+- if any of those counters becomes material, use this campaign to choose the
+  next focused architecture proposal: softmax buffering, pipeline partitioning,
+  or scheduler overlap policy
+
 ### `llm_practical_v1`
 
 Goal:
@@ -140,9 +160,16 @@ Order of work:
 - `runs/models/llm_attention_tail_v1/README.md`
 - `runs/campaigns/npu/e2e_eval_llm_attention_tail_v1/campaign.json`
 - `runs/campaigns/npu/e2e_eval_llm_attention_tail_v1/README.md`
+- `runs/models/llm_attention_tail_stress_v1/manifest.json`
+- `runs/models/llm_attention_tail_stress_v1/README.md`
+- `runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/campaign.json`
+- `runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/README.md`
 
 ## Decision Rule
 
 Do not launch `item_l2_softmax_macro_pipeline_balance_v1` as a real proposal
 until `llm_attention_tail_v1` has validated repeated-tail evidence and the
 scheduler can measure the softmax-related counters listed above.
+
+If `llm_attention_tail_v1` reports low pressure, run
+`llm_attention_tail_stress_v1` before proposing new softmax datapath work.
