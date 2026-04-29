@@ -74,6 +74,15 @@ python3 npu/eval/sweep_llm_decoder_candidate_quality.py \
   --out /tmp/decoder_candidate_sweep.json
 ```
 
+Run a rough decoder probability sensitivity grid:
+```sh
+python3 npu/eval/sweep_llm_decoder_candidate_quality.py \
+  --dataset-manifest runs/datasets/llm_decoder_eval_tiny_v1/manifest.json \
+  --rough-grid decoder_probability_broad_v1 \
+  --out-dir /tmp/decoder_probability_broad_grid \
+  --out /tmp/decoder_probability_broad_grid.json
+```
+
 Optionally verify path-like fields exist:
 ```sh
 python3 npu/eval/validate.py --campaign <campaign.json> --check_paths

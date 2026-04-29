@@ -1,0 +1,57 @@
+{
+  "proposal_id": "prop_l2_decoder_probability_sensitivity_v1",
+  "created_utc": "2026-04-29T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "LLM decoder probability sensitivity map",
+  "hypothesis": "A broad, rough decoder probability-path sensitivity map should be recorded before optimizing a specific approximation knob, because approximation quality depends strongly on model weights, prompts, logits, and input distribution.",
+  "direct_comparison": {
+    "primary_question": "Which coarse probability-path approximation families preserve next-token and top-k quality on the pinned tiny decoder benchmark, and where do cliffs appear?",
+    "include": [
+      "exact softmax and normalization reference candidate",
+      "coarse logit quantization points",
+      "coarse PWL softmax quantization points",
+      "reciprocal-normalization precision points",
+      "final probability quantization stress points",
+      "per-sample next-token and top-k miss lists"
+    ],
+    "exclude": [
+      "claiming general LLM accuracy acceptance",
+      "tuning a narrow approximation optimum for this benchmark only",
+      "new RTL or mapper changes"
+    ],
+    "follow_on_broad_sweep": [
+      "expand prompts, model families, and logit-margin regimes before any hardware approximation is promoted"
+    ]
+  },
+  "expected_benefit": [
+    "maps the coarse outline of the decoder probability approximation space",
+    "separates obvious quality cliffs from potentially safe approximation families",
+    "keeps the distribution-dependence caveat explicit in the evaluation artifact"
+  ],
+  "risks": [
+    "the tiny prompt/model setup is too narrow to predict broader LLM behavior",
+    "points that pass this benchmark may fail on different weight or prompt distributions",
+    "the sweep is software-emulated probability-path evidence, not RTL-backed decoder execution"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_probability_sensitivity_v1",
+      "task_type": "l2_campaign",
+      "objective": "decoder_probability_sensitivity",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json"
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_decoder_probability_sweep_v1/proposal.json",
+    "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_sweep__l2_decoder_probability_sweep_v1.json"
+  ],
+  "knowledge_refs": [
+    "docs/architecture/llm_decoder_accuracy_stage_v1.md",
+    "npu/eval/sweep_llm_decoder_candidate_quality.py",
+    "runs/models/llm_decoder_tiny_v1/model_contract.json",
+    "runs/datasets/llm_decoder_eval_tiny_v1/manifest.json"
+  ]
+}
