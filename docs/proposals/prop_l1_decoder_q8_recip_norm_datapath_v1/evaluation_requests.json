@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_decoder_q8_recip_norm_datapath_v1",
-  "source_commit": "d2043a9af0a2c4fa7ab7e7cb61719325aacb95c2",
+  "source_commit": "c654b44f099764973ad2b63998cbc25d46e1d4e5",
   "requested_items": [
     {
       "item_id": "l1_decoder_q8_recip_norm_datapath_v1",
@@ -17,23 +17,8 @@
       "objective": "Retry Nangate45 PPA measurement for bucketed integrated row-wise int8 q8 reciprocal-normalization softmax blocks at q10/q12/q14/q16.",
       "evaluation_mode": "measurement_only",
       "abstraction_layer": "circuit_block",
-      "status": "closed_stale_collateral",
-      "notes": "Queued from merged commit c654b44f099764973ad2b63998cbc25d46e1d4e5 after PR #287. PR #289 was closed because evaluator reused stale /orfs generated RTL and only q10 produced status=ok rows.",
-      "prior_item_ids": [
-        "l1_decoder_q8_recip_norm_datapath_v1"
-      ]
-    },
-    {
-      "item_id": "l1_decoder_q8_recip_norm_datapath_v1_r3",
-      "task_type": "l1_sweep",
-      "objective": "Retry Nangate45 PPA measurement for bucketed integrated row-wise int8 q8 reciprocal-normalization softmax blocks at q10/q12/q14/q16 after forcing fresh generated RTL collateral.",
-      "evaluation_mode": "measurement_only",
-      "abstraction_layer": "circuit_block",
       "status": "assigned",
-      "notes": "Queued from merged commit d2043a9af0a2c4fa7ab7e7cb61719325aacb95c2 after PR #290 added forced RTL regeneration; assigned to eval-daemon-f59743373362.",
-      "prior_item_ids": [
-        "l1_decoder_q8_recip_norm_datapath_v1_r2"
-      ]
+      "notes": "Queued from merged commit c654b44f099764973ad2b63998cbc25d46e1d4e5 after PR #287; assigned to eval-daemon-f59743373362."
     }
   ]
 }
