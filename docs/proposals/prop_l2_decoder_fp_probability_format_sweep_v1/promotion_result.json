@@ -2,5 +2,9 @@
   "proposal_id": "prop_l2_decoder_fp_probability_format_sweep_v1",
   "status": "pending",
   "candidate_id": "l2_decoder_fp_probability_format_sweep_v1",
-  "notes": "Awaiting evaluator run."
+  "notes": "Awaiting evaluator run.",
+  "decision": "iterate",
+  "pr_number": 264,
+  "merge_commit": "8c7ed15a23431933e876a59ca6ba9be2f6594889",
+  "merged_utc": "2026-04-29T05:27:39Z"
 }

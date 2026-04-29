@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_fp_probability_format_sweep_v1",
-  "source_commit": "22c5247a77612899733b84ab5c2718d98836d9d0",
+  "source_commit": "f1eb8ee7d06f012c3ed3098f9d480335f66bacf2",
   "requested_items": [
     {
       "item_id": "l2_decoder_fp_probability_format_sweep_v1",
@@ -19,7 +19,12 @@
       "expected_result": {
         "direction": "iterate",
         "reason": "The map should identify whether fp-like dynamic range avoids the fixed q8 probability collapse and where fp8/bf16/fp16 rank cliffs appear on the pinned tiny benchmark."
-      }
+      },
+      "status": "merged",
+      "merged_pr_number": 264,
+      "merge_commit": "8c7ed15a23431933e876a59ca6ba9be2f6594889",
+      "merged_utc": "2026-04-29T05:27:39Z",
+      "notes": "Merged via PR #264 and merge 8c7ed15a23431933e876a59ca6ba9be2f6594889 at 2026-04-29T05:27:39Z."
     }
   ]
 }
