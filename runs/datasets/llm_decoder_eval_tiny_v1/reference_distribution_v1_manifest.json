@@ -1,0 +1,88 @@
+{
+  "backend_config": {
+    "backend_id": "command_json_v1",
+    "command": [
+      "/workspaces/RTLGen/control_plane/.venv/bin/python",
+      "npu/eval/run_llm_decoder_onnx_reference.py"
+    ],
+    "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
+    "input_name": "input_ids",
+    "interface": "decoder_backend_v1",
+    "model_config_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/config.json",
+    "onnx_model_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/model.onnx",
+    "output_name": "logits",
+    "role": "reference",
+    "runtime_target": "cpu_reference",
+    "topk": 5,
+    "trace_output_patterns": [
+      "present.*"
+    ]
+  },
+  "dataset_id": "llm_decoder_eval_tiny_v1",
+  "model_contract": "runs/models/llm_decoder_tiny_v1/model_contract.json",
+  "samples": [
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v1/dist_geo_capital_short.json",
+      "reference_sha256": "537e7d92772cf47b54b7d9946c7753ab8f77d395ffc8758ce820e9d49c4b8051",
+      "sample_id": "dist_geo_capital_short"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v1/dist_math_symbolic.json",
+      "reference_sha256": "ac5b1bfebb087993590cd0994018e7710097ac153f2a982e5acf80ce47d6d1a5",
+      "sample_id": "dist_math_symbolic"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v1/dist_quote_midphrase.json",
+      "reference_sha256": "b3831e647e83aa4b41c90eacd2429d93b2ba41251695ef0069a86dcdeda5903d",
+      "sample_id": "dist_quote_midphrase"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v1/dist_weekday_calendar.json",
+      "reference_sha256": "70a242d76531f318e5fb89fd6d234f7f68f07ddebbfce6765e0ca0b76a438470",
+      "sample_id": "dist_weekday_calendar"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v1/dist_commonsense_color.json",
+      "reference_sha256": "dcda56720646579e29b5b16eab07cdb2ca6671864cd4e83d03bb486e28ef1236",
+      "sample_id": "dist_commonsense_color"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v1/dist_list_continuation.json",
+      "reference_sha256": "8a637698e8ed3c272e52ffd15fc474f6a976fe9f92a621c87c60677be184f9fd",
+      "sample_id": "dist_list_continuation"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v1/dist_code_like.json",
+      "reference_sha256": "951d9136aaa0a5ddfa88c9242f38303571c31863811c71fe28b7285fab8002c7",
+      "sample_id": "dist_code_like"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v1/dist_dialogue.json",
+      "reference_sha256": "727f412675966ea2b14ee899a0d18c8319d7dd0a3818423213483fed39bcedb3",
+      "sample_id": "dist_dialogue"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v1/dist_punctuation.json",
+      "reference_sha256": "002dd86a1fa68971d540210fd117e86ef0c96598b85af4daa732d5bd55708ce8",
+      "sample_id": "dist_punctuation"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v1/dist_long_context.json",
+      "reference_sha256": "d0eeded285d41e3bf6c7b40cf05520938f302a44d8407064f04e905d65645028",
+      "sample_id": "dist_long_context"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v1/dist_repetition.json",
+      "reference_sha256": "c9eafc869f69dc1be1637a0a7367261d7281ffec1df8edef1a306b945795c903",
+      "sample_id": "dist_repetition"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v1/dist_ambiguous_article.json",
+      "reference_sha256": "dbd95c9d8e48ac32c0ea484f6d39c63c8dc5c646ef66daf68d8ae341c0dda487",
+      "sample_id": "dist_ambiguous_article"
+    }
+  ],
+  "task": "greedy_next_token",
+  "tokenizer_manifest": "runs/tokenizers/llm_decoder_gpt2_bpe_stub_v1/manifest.json",
+  "version": 0.1
+}
