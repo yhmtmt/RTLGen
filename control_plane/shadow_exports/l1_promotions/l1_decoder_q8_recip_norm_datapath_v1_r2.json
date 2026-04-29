@@ -1,0 +1,100 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-04-29T11:33:05.428360Z",
+  "item_id": "l1_decoder_q8_recip_norm_datapath_v1_r2",
+  "run_key": "l1_decoder_q8_recip_norm_datapath_v1_r2_run_f151a12c9c6727fe",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "c654b44f099764973ad2b63998cbc25d46e1d4e5",
+  "objective": "Retry Nangate45 PPA measurement for bucketed integrated row-wise int8 q8 reciprocal-normalization softmax blocks at q10/q12/q14/q16.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/activations/softmax_rowwise_int8_recip_norm/sweeps/nangate45_highutil.json"
+    ],
+    "configs": [
+      "runs/designs/activations/softmax_rowwise_int8_r8_acc24_recip_q10_wrapper/config_softmax_rowwise_int8_r8_acc24_recip_q10.json",
+      "runs/designs/activations/softmax_rowwise_int8_r8_acc24_recip_q12_wrapper/config_softmax_rowwise_int8_r8_acc24_recip_q12.json",
+      "runs/designs/activations/softmax_rowwise_int8_r8_acc24_recip_q14_wrapper/config_softmax_rowwise_int8_r8_acc24_recip_q14.json",
+      "runs/designs/activations/softmax_rowwise_int8_r8_acc24_recip_q16_wrapper/config_softmax_rowwise_int8_r8_acc24_recip_q16.json"
+    ],
+    "out_root": "runs/designs/activations",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 1,
+  "evaluation_record": {
+    "evaluation_mode": "measurement_only",
+    "abstraction_layer": "circuit_block",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_recip_q10_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "44181f67",
+        "tag": "softmax_rowwise_int8_recip_norm_nangate45_highutil_87b48795",
+        "result_path": "runs/designs/activations/softmax_rowwise_int8_r8_acc24_recip_q10_wrapper/work/44181f67/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 5.6126,
+        "die_area": 39776.3136,
+        "total_power_mw": 0.00463
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_decoder_q8_recip_norm_datapath_v1_r2",
+    "completed_trials": 1,
+    "success_count": 1,
+    "failure_count": 0,
+    "success_rate": 1.0,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 5.6126,
+        "mean": 5.6126,
+        "median": 5.6126,
+        "max": 5.6126,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "die_area": {
+        "best": 39776.3136,
+        "mean": 39776.3136,
+        "median": 39776.3136,
+        "max": 39776.3136,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "total_power_mw": {
+        "best": 0.00463,
+        "mean": 0.00463,
+        "median": 0.00463,
+        "max": 0.00463,
+        "range": 0.0,
+        "stddev": 0.0
+      }
+    }
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/activations/softmax_rowwise_int8_r8_acc24_recip_q10_wrapper/metrics.csv",
+      "runs/designs/activations/softmax_rowwise_int8_r8_acc24_recip_q12_wrapper/metrics.csv",
+      "runs/designs/activations/softmax_rowwise_int8_r8_acc24_recip_q14_wrapper/metrics.csv",
+      "runs/designs/activations/softmax_rowwise_int8_r8_acc24_recip_q16_wrapper/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_q8_recip_norm_datapath_v1_r2/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_q8_recip_norm_datapath_v1_r2/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_q8_recip_norm_datapath_v1_r2/trial_table.csv"
+  }
+}
