@@ -211,6 +211,7 @@ def test_generate_l1_sweep_task_creates_ready_work_item() -> None:
                 "export PATH=/oss-cad-suite/bin:$PATH && "
                 "cmake -S . -B build && cmake --build build --target rtlgen"
             )
+            assert "--force_gen" in work_item.command_manifest[1]["run"]
             assert "--skip_existing" in work_item.command_manifest[1]["run"]
             assert work_item.command_manifest[1]["run"].startswith(
                 "export PATH=/oss-cad-suite/bin:$PATH && python3 scripts/run_sweep.py "
