@@ -1,0 +1,58 @@
+{
+  "proposal_id": "prop_l2_decoder_fp_probability_format_sweep_v1",
+  "created_utc": "2026-04-29T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "LLM decoder floating-point probability format sweep",
+  "hypothesis": "Floating-point-like decoder formats should preserve large-vocab probability dynamic range differently from fixed integer probability quantization, so a rough fp-format map should be evaluated before optimizing one approximation knob.",
+  "direct_comparison": {
+    "primary_question": "Which fp-like formats preserve next-token and top-k quality when applied to logits, softmax intermediates, reciprocal normalization, and final probabilities on the pinned tiny decoder benchmark?",
+    "include": [
+      "exact softmax and normalization reference candidate",
+      "fp16, bf16, fp8_e5m2, and fp8_e4m3 logit probes",
+      "fp16 and bf16 softmax input/weight probes",
+      "fp16 and bf16 reciprocal-normalization probes",
+      "fp16, bf16, fp8_e5m2, and fp8_e4m3 final probability probes",
+      "per-sample next-token and top-k miss lists"
+    ],
+    "exclude": [
+      "claiming general LLM accuracy acceptance",
+      "selecting a final hardware floating-point format",
+      "new RTL or mapper changes"
+    ],
+    "follow_on_broad_sweep": [
+      "expand prompt/model/logit-margin distributions before promoting any fp approximation format"
+    ]
+  },
+  "expected_benefit": [
+    "separates fixed-point probability underflow from fp-like dynamic-range behavior",
+    "maps whether fp-like final probability storage preserves rank where unsigned q8 collapses",
+    "keeps the distribution-dependence caveat explicit before later hardware work"
+  ],
+  "risks": [
+    "the tiny prompt/model setup is too narrow to predict broader LLM behavior",
+    "software-emulated fp-like quantization may not exactly match a later hardware implementation",
+    "points that preserve rank here may fail on different weight or input distributions"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_fp_probability_format_sweep_v1",
+      "task_type": "l2_campaign",
+      "objective": "decoder_probability_fp_sensitivity",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json"
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_decoder_probability_sensitivity_v1/proposal.json",
+    "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_sweep__l2_decoder_probability_sensitivity_v1.json"
+  ],
+  "knowledge_refs": [
+    "docs/architecture/llm_decoder_accuracy_stage_v1.md",
+    "npu/eval/run_llm_decoder_onnx_candidate.py",
+    "npu/eval/sweep_llm_decoder_candidate_quality.py",
+    "runs/models/llm_decoder_tiny_v1/model_contract.json",
+    "runs/datasets/llm_decoder_eval_tiny_v1/manifest.json"
+  ]
+}

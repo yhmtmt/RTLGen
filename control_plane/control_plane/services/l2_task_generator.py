@@ -571,6 +571,41 @@ def _decoder_probability_sensitivity_evidence(*, item_id: str) -> dict[str, Any]
     }
 
 
+def _decoder_probability_fp_sensitivity_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_tiny_v1"
+    path_evidence = _decoder_probability_path_evidence(item_id=item_id)
+    sweep_dir = f"{base}/candidate_sweeps/{item_id}"
+    sweep_out = f"{base}/decoder_quality_sweep__{item_id}.json"
+    rough_grid = "decoder_probability_fp_formats_v1"
+    sweep_command = {
+        "name": "sweep_decoder_candidate_quality",
+        "run": (
+            "python3 npu/eval/sweep_llm_decoder_candidate_quality.py "
+            f"--dataset-manifest {base}/manifest.json "
+            f"--rough-grid {rough_grid} "
+            f"--out-dir {sweep_dir} "
+            f"--out {sweep_out}"
+        ),
+    }
+    inputs = dict(path_evidence["inputs"])
+    inputs.update(
+        {
+            "candidate_sweep_dir": sweep_dir,
+            "candidate_sweep_out": sweep_out,
+            "candidate_sweep_grid": rough_grid,
+            "candidate_sweep_scope": (
+                "coarse distribution-dependent fp-like format sensitivity map for logits, "
+                "softmax intermediates, reciprocal normalization, and final probabilities"
+            ),
+        }
+    )
+    return {
+        "inputs": inputs,
+        "commands": [*path_evidence["commands"], sweep_command],
+        "expected_outputs": [*path_evidence["expected_outputs"], sweep_out],
+    }
+
+
 def _with_fresh_outputs(*, campaign: dict[str, Any], item_id: str) -> dict[str, Any]:
     cloned = json.loads(json.dumps(campaign))
     outputs = dict(cloned.get("outputs") or {})
@@ -671,8 +706,11 @@ def _build_payload(
         "decoder_probability_path",
         "decoder_probability_sweep",
         "decoder_probability_sensitivity",
+        "decoder_probability_fp_sensitivity",
     }:
-        if abstraction_layer_name == "decoder_probability_sensitivity":
+        if abstraction_layer_name == "decoder_probability_fp_sensitivity":
+            decoder_evidence = _decoder_probability_fp_sensitivity_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_probability_sensitivity":
             decoder_evidence = _decoder_probability_sensitivity_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_probability_sweep":
             decoder_evidence = _decoder_probability_sweep_evidence(item_id=item_id)
