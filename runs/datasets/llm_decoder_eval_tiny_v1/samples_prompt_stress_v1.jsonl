@@ -1,0 +1,24 @@
+{"sample_id":"stress_factual_capital","prompt":"The capital city of France is","expected_continuation":" Paris","category":"factual_short"}
+{"sample_id":"stress_factual_science","prompt":"Water freezes at zero degrees","expected_continuation":" Celsius","category":"factual_science"}
+{"sample_id":"stress_arithmetic_add","prompt":"7 + 5 =","expected_continuation":" 12","category":"arithmetic_short"}
+{"sample_id":"stress_arithmetic_subtract","prompt":"10 - 3 =","expected_continuation":" 7","category":"arithmetic_short"}
+{"sample_id":"stress_list_color","prompt":"red, orange, yellow, green, blue,","expected_continuation":" indigo","category":"list_continuation"}
+{"sample_id":"stress_list_number","prompt":"one, two, three, four,","expected_continuation":" five","category":"list_continuation"}
+{"sample_id":"stress_code_return","prompt":"def add(a, b):\n    return a","expected_continuation":" +","category":"code_like"}
+{"sample_id":"stress_code_json","prompt":"{\"status\": \"ok\", \"count\":","expected_continuation":" 1","category":"json_like"}
+{"sample_id":"stress_dialogue_help","prompt":"User: Can you help me?\nAssistant:","expected_continuation":" Yes","category":"dialogue_short"}
+{"sample_id":"stress_dialogue_thanks","prompt":"User: thanks\nAssistant: You are","expected_continuation":" welcome","category":"dialogue_short"}
+{"sample_id":"stress_punctuation_sentence","prompt":"The answer is yes","expected_continuation":".","category":"punctuation"}
+{"sample_id":"stress_punctuation_question","prompt":"Where are you going","expected_continuation":"?","category":"punctuation"}
+{"sample_id":"stress_negation","prompt":"The switch is not on; it is","expected_continuation":" off","category":"negation"}
+{"sample_id":"stress_units","prompt":"A distance of 1000 meters is one","expected_continuation":" kilometer","category":"units"}
+{"sample_id":"stress_symbolic_math","prompt":"x = 2; y = 3; x + y =","expected_continuation":" 5","category":"symbolic"}
+{"sample_id":"stress_markdown","prompt":"# Title\n\nThis section describes","expected_continuation":" the","category":"markup_like"}
+{"sample_id":"stress_long_latency","prompt":"In a small laboratory notebook, the engineer wrote down the measured latency for each decoder approximation and then checked whether the next token rank was","expected_continuation":" stable","category":"long_context"}
+{"sample_id":"stress_long_quant","prompt":"During the architecture review, the team compared integer logits, floating point probabilities, and approximate softmax tables before choosing the format that looked","expected_continuation":" robust","category":"long_context"}
+{"sample_id":"stress_repetition_ha","prompt":"ha ha ha ha ha","expected_continuation":" ha","category":"repetition"}
+{"sample_id":"stress_repetition_word","prompt":"test test test","expected_continuation":" test","category":"repetition"}
+{"sample_id":"stress_ambiguous_article","prompt":"The old book was on","expected_continuation":" the","category":"ambiguous_short"}
+{"sample_id":"stress_ambiguous_preposition","prompt":"She looked at the map and pointed","expected_continuation":" to","category":"ambiguous_short"}
+{"sample_id":"stress_enum_alpha","prompt":"A) start B) stop C)","expected_continuation":" continue","category":"enum_like"}
+{"sample_id":"stress_low_context","prompt":"because","expected_continuation":" it","category":"low_context"}

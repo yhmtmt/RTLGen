@@ -1,0 +1,57 @@
+{
+  "proposal_id": "prop_l2_decoder_survivor_prompt_stress_v1",
+  "created_utc": "2026-04-29T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "LLM decoder survivor prompt-stress sweep",
+  "hypothesis": "The decoder approximation paths that survived the broader distribution robustness sweep should be stress-tested across a larger prompt set before choosing a narrower hardware-oriented probability path.",
+  "direct_comparison": {
+    "primary_question": "Across a larger prompt-stress sample set, do the surviving integer-logit, fp probability, and approximate PWL softmax paths preserve next-token and top-k rank?",
+    "include": [
+      "24 prompt-stress samples covering factual, arithmetic, list, code-like, dialogue, punctuation, negation, units, symbolic, markup, long-context, repetition, ambiguous, enum-like, and low-context prompts",
+      "survivor grid points from decoder_distribution_robustness_v1",
+      "boundary points for q4 logits and fp8_e5m2 final probability",
+      "reference and candidate distribution rollups"
+    ],
+    "exclude": [
+      "already-collapsed fixed probability q8 and fp8_e4m3 paths",
+      "weight/model-family diversity",
+      "new RTL or mapper changes"
+    ],
+    "follow_on_broad_sweep": [
+      "add model/weight distribution diversity once more decoder artifacts exist",
+      "carry the surviving PWL and probability paths into hardware cost estimation"
+    ]
+  },
+  "expected_benefit": [
+    "checks that the previously surviving paths were not artifacts of the 12-row distribution set",
+    "keeps the next evaluator job bounded while broadening prompt coverage",
+    "identifies which survivor family should move toward implementation-cost work"
+  ],
+  "risks": [
+    "the prompt-stress set still uses the same tiny ONNX model and tokenizer",
+    "expected continuations are labels only; rank comparison is based on model reference output",
+    "software-emulated quantization remains an approximation of future hardware"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_survivor_prompt_stress_v1",
+      "task_type": "l2_campaign",
+      "objective": "decoder_survivor_prompt_stress",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json"
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_decoder_distribution_robustness_v1/proposal.json",
+    "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_sweep__l2_decoder_distribution_robustness_v1.json"
+  ],
+  "knowledge_refs": [
+    "docs/architecture/llm_decoder_accuracy_stage_v1.md",
+    "npu/eval/sweep_llm_decoder_candidate_quality.py",
+    "runs/models/llm_decoder_tiny_v1/model_contract.json",
+    "runs/datasets/llm_decoder_eval_tiny_v1/manifest_prompt_stress_v1.json",
+    "runs/datasets/llm_decoder_eval_tiny_v1/samples_prompt_stress_v1.jsonl"
+  ]
+}
