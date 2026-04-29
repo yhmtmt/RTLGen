@@ -204,6 +204,24 @@ cost is an uncalibrated planning unit; follow it with RTLGen/OpenROAD
 calibration of the integer multiplier and accumulator/adder path before treating
 q10 as physically better than wider reciprocal options.
 
+After the corresponding Layer 1 multiplier and accumulator/adder calibration
+jobs merge, synthesize the measured primitive evidence into a decoder
+normalization report:
+```sh
+python3 npu/eval/calibrate_llm_decoder_normalization_cost.py \
+  --out /tmp/decoder_norm_ppa_calibration.json \
+  --out-md /tmp/decoder_norm_ppa_calibration.md
+```
+
+The calibration report keeps `critical_path_ns`, `die_area`, and
+`total_power_mw` as separate Nangate45 axes. It filters out rows from other
+platforms before composing decoder-normalization evidence, marks the q8 exact
+divider and bf16 reciprocal/multiply paths as unmeasured gaps, and records that
+q10/q12/q14/q16 share the same current 16-bit multiplier plus accumulator
+primitive envelope. Under that envelope, the physical primitive metrics do not
+make q10 cheaper than q12/q14/q16; q10 remains a quality/minimum-precision
+choice until an integrated datapath measurement says otherwise.
+
 Optionally verify path-like fields exist:
 ```sh
 python3 npu/eval/validate.py --campaign <campaign.json> --check_paths
