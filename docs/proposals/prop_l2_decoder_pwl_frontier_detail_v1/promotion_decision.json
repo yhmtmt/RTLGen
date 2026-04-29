@@ -1,5 +1,15 @@
 {
   "proposal_id": "prop_l2_decoder_pwl_frontier_detail_v1",
-  "decision": "pending",
-  "reason": "Awaiting evaluator artifact for l2_decoder_pwl_frontier_detail_v1."
+  "decision": "iterate",
+  "reason": "Focused comparison baseline could not be resolved from proposal baseline_refs.",
+  "candidate_id": "l2_decoder_pwl_frontier_detail_v1",
+  "evidence_refs": [
+    "item:l2_decoder_pwl_frontier_detail_v1",
+    "run:l2_decoder_pwl_frontier_detail_v1_run_127cfe1326f30a3c",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_pwl_frontier_detail_v1.json",
+    "pr:#274",
+    "https://github.com/yhmtmt/RTLGen/pull/274"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_pwl_frontier_detail_v1",
+  "requires_human_approval": false
 }

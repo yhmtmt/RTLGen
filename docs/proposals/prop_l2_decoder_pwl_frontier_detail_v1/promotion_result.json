@@ -1,5 +1,9 @@
 {
   "proposal_id": "prop_l2_decoder_pwl_frontier_detail_v1",
   "status": "pending",
-  "promoted_item_ids": []
+  "promoted_item_ids": [],
+  "decision": "iterate",
+  "pr_number": 274,
+  "merge_commit": "73e9294507faf59abb9d6b3a508b9df5375f86f9",
+  "merged_utc": "2026-04-29T08:04:41.853271Z"
 }

@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_pwl_frontier_detail_v1",
-  "source_commit": "3f268d18bdc134a230c3793b06acc887c4616cfe",
+  "source_commit": "5d190fce1ad1b3931620cd7b3db5271cb3e8ded0",
   "requested_items": [
     {
       "item_id": "l2_decoder_pwl_frontier_detail_v1",
@@ -21,7 +21,11 @@
         "direction": "iterate",
         "reason": "The job should explain whether bf16 PWL remains the immediate anchor and whether q8 PWL is blocked mainly by exact normalization cost."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 274,
+      "merge_commit": "73e9294507faf59abb9d6b3a508b9df5375f86f9",
+      "merged_utc": "2026-04-29T08:04:41.853271Z",
+      "notes": "Merged via PR #274 and merge 73e9294507faf59abb9d6b3a508b9df5375f86f9 at 2026-04-29T08:04:41.853271Z."
     }
   ]
 }
