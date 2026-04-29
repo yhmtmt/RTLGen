@@ -64,6 +64,48 @@ def _compute_delta_rollups(compared_tensors: List[JsonDict]) -> JsonDict:
     }
 
 
+def _distribution_rollup(samples: List[JsonDict]) -> JsonDict:
+    def _numbers(path: tuple[str, ...]) -> List[float]:
+        values: List[float] = []
+        for sample in samples:
+            cur: Any = sample
+            for key in path:
+                if not isinstance(cur, dict):
+                    cur = None
+                    break
+                cur = cur.get(key)
+            if isinstance(cur, (int, float)):
+                values.append(float(cur))
+        return values
+
+    def _mean(path: tuple[str, ...]) -> float | None:
+        values = _numbers(path)
+        return (sum(values) / float(len(values))) if values else None
+
+    def _minimum(path: tuple[str, ...]) -> float | None:
+        values = _numbers(path)
+        return min(values) if values else None
+
+    def _maximum(path: tuple[str, ...]) -> float | None:
+        values = _numbers(path)
+        return max(values) if values else None
+
+    return {
+        'reference_entropy_nats_mean': _mean(('reference_distribution', 'entropy_nats')),
+        'reference_effective_vocab_size_mean': _mean(('reference_distribution', 'effective_vocab_size')),
+        'reference_top1_top2_logit_margin_mean': _mean(('reference_distribution', 'top1_top2_logit_margin')),
+        'reference_top1_top2_logit_margin_min': _minimum(('reference_distribution', 'top1_top2_logit_margin')),
+        'reference_topk_probability_mass_mean': _mean(('reference_distribution', 'topk_probability_mass')),
+        'candidate_entropy_nats_mean': _mean(('candidate_distribution', 'entropy_nats')),
+        'candidate_effective_vocab_size_mean': _mean(('candidate_distribution', 'effective_vocab_size')),
+        'candidate_top1_top2_score_margin_mean': _mean(('candidate_distribution', 'top1_top2_score_margin')),
+        'candidate_top1_top2_score_margin_min': _minimum(('candidate_distribution', 'top1_top2_score_margin')),
+        'candidate_score_sum_mean': _mean(('candidate_distribution', 'score_sum')),
+        'candidate_score_sum_min': _minimum(('candidate_distribution', 'score_sum')),
+        'candidate_score_sum_max': _maximum(('candidate_distribution', 'score_sum')),
+    }
+
+
 def _compare_selected_tensors(reference_doc: JsonDict, candidate_doc: JsonDict) -> JsonDict:
     ref_tensors = {
         _tensor_key(entry): entry
@@ -167,6 +209,8 @@ def compare_decoder_manifests(reference_manifest: JsonDict, candidate_manifest: 
         ref_doc = load_json(_resolve_repo_path(ref_samples[sample_id]['reference_json']))
         cand_doc = load_json(_resolve_repo_path(cand_samples[sample_id]['candidate_json']))
         metrics = compare_decoder_reference_docs(ref_doc, cand_doc)
+        metrics['reference_distribution'] = dict(ref_doc.get('reference', {}).get('distribution', {}) or {})
+        metrics['candidate_distribution'] = dict(cand_doc.get('candidate', {}).get('distribution', {}) or {})
         metrics['selected_tensor_trace'] = _compare_selected_tensors(ref_doc, cand_doc)
         sample_metrics.append(metrics)
         id_match_count += int(metrics['aggregate']['next_token_id_match'])
@@ -226,6 +270,7 @@ def compare_decoder_manifests(reference_manifest: JsonDict, candidate_manifest: 
                 'trace_sha256_match_rate': (float(total_trace_sha256_match_count) / float(total)) if total else 0.0,
                 'delta_rollups': total_delta_rollups,
             },
+            'distribution': _distribution_rollup(sample_metrics),
         },
     }
 

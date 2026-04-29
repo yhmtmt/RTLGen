@@ -1,0 +1,12 @@
+{"sample_id":"dist_geo_capital_short","prompt":"The capital of France is","expected_continuation":" Paris","category":"factual_short"}
+{"sample_id":"dist_math_symbolic","prompt":"2 + 2 =","expected_continuation":" 4","category":"arithmetic_short"}
+{"sample_id":"dist_quote_midphrase","prompt":"To be or not to be, that is the","expected_continuation":" question","category":"phrase_completion"}
+{"sample_id":"dist_weekday_calendar","prompt":"The day after Monday is","expected_continuation":" Tuesday","category":"calendar_short"}
+{"sample_id":"dist_commonsense_color","prompt":"A ripe banana is usually","expected_continuation":" yellow","category":"commonsense_short"}
+{"sample_id":"dist_list_continuation","prompt":"red, orange, yellow, green,","expected_continuation":" blue","category":"list_continuation"}
+{"sample_id":"dist_code_like","prompt":"def add(a, b): return a","expected_continuation":" +","category":"code_like"}
+{"sample_id":"dist_dialogue","prompt":"User: hello\nAssistant:","expected_continuation":" Hi","category":"dialogue_short"}
+{"sample_id":"dist_punctuation","prompt":"The answer is yes","expected_continuation":".","category":"punctuation"}
+{"sample_id":"dist_long_context","prompt":"In a small laboratory notebook, the engineer wrote down the measured latency and then checked whether the output token was","expected_continuation":" correct","category":"long_context"}
+{"sample_id":"dist_repetition","prompt":"ha ha ha ha","expected_continuation":" ha","category":"repetition"}
+{"sample_id":"dist_ambiguous_article","prompt":"The old book was on","expected_continuation":" the","category":"ambiguous_short"}

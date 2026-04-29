@@ -60,6 +60,13 @@ class LlmDecoderOnnxRunnerRegressionTest(unittest.TestCase):
         self.assertEqual(-1.0, summary['min'])
         self.assertEqual(1.0, summary['max'])
 
+    def test_logit_distribution_stats_reports_margin_and_entropy(self):
+        stats = self.runner._logit_distribution_stats([2.0, 1.0, -1.0], topk=2)
+        self.assertEqual(3, stats['vocab_size'])
+        self.assertAlmostEqual(1.0, stats['top1_top2_logit_margin'])
+        self.assertGreater(stats['entropy_nats'], 0.0)
+        self.assertLess(stats['topk_probability_mass'], 1.0)
+
     def test_runner_rejects_gpt2_bundle_without_tokenizer_json_path(self):
         with tempfile.TemporaryDirectory() as td:
             td_path = Path(td)

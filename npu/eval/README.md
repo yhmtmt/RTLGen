@@ -98,6 +98,31 @@ intermediates, reciprocal normalization, and final probabilities. Treat its
 quality numbers as distribution-dependent evidence for the pinned tiny decoder
 setup, not as final hardware-format acceptance.
 
+Run the broader prompt-regime distribution robustness grid:
+```sh
+python3 npu/eval/gen_llm_decoder_reference_suite.py \
+  --dataset-manifest runs/datasets/llm_decoder_eval_tiny_v1/manifest_distribution_v1.json \
+  --out-dir /tmp/decoder_distribution_reference_v1 \
+  --out-manifest /tmp/decoder_distribution_reference_v1_manifest.json
+python3 npu/eval/gen_llm_decoder_candidate_suite.py \
+  --dataset-manifest runs/datasets/llm_decoder_eval_tiny_v1/manifest_distribution_v1.json \
+  --out-dir /tmp/decoder_distribution_candidate_v1 \
+  --out-manifest /tmp/decoder_distribution_candidate_v1_manifest.json
+jq '.reference_manifest="/tmp/decoder_distribution_reference_v1_manifest.json" |
+    .candidate_manifest="/tmp/decoder_distribution_candidate_v1_manifest.json"' \
+  runs/datasets/llm_decoder_eval_tiny_v1/manifest_distribution_v1.json \
+  > /tmp/manifest_distribution_v1.json
+python3 npu/eval/sweep_llm_decoder_candidate_quality.py \
+  --dataset-manifest /tmp/manifest_distribution_v1.json \
+  --rough-grid decoder_distribution_robustness_v1 \
+  --out-dir /tmp/decoder_distribution_sweep \
+  --out /tmp/decoder_distribution_sweep.json
+```
+
+The distribution grid records entropy, effective-vocabulary, score-sum, and
+top-1/top-2 margin rollups alongside rank metrics. Use it to select follow-up
+approximation families, not to make a general model-quality claim.
+
 Optionally verify path-like fields exist:
 ```sh
 python3 npu/eval/validate.py --campaign <campaign.json> --check_paths

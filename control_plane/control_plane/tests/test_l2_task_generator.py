@@ -434,6 +434,54 @@ def test_generate_l2_campaign_task_adds_decoder_probability_fp_sensitivity_evide
             }
 
 
+def test_generate_l2_campaign_task_adds_decoder_distribution_robustness_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    item_id="l2_decoder_distribution_robustness_v1",
+                    proposal_id="prop_l2_decoder_distribution_robustness_v1",
+                    proposal_path="docs/proposals/prop_l2_decoder_distribution_robustness_v1/proposal.json",
+                    evaluation_mode="broad_ranking",
+                    abstraction_layer="decoder_distribution_robustness",
+                    expected_direction="iterate",
+                    comparison_role="ranking",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            command_names = [command["name"] for command in work_item.command_manifest]
+            assert command_names[:5] == [
+                "generate_decoder_distribution_reference",
+                "generate_decoder_distribution_candidate",
+                "validate_decoder_distribution_contract",
+                "compare_decoder_distribution_quality",
+                "sweep_decoder_distribution_quality",
+            ]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+            assert decoder_inputs["dataset_manifest"] == "runs/datasets/llm_decoder_eval_tiny_v1/manifest_distribution_v1.json"
+            assert decoder_inputs["candidate_sweep_grid"] == "decoder_distribution_robustness_v1"
+            assert "entropy/margin regimes" in decoder_inputs["candidate_sweep_scope"]
+            assert "--rough-grid decoder_distribution_robustness_v1" in work_item.command_manifest[4]["run"]
+            assert decoder_inputs["candidate_sweep_out"] in work_item.expected_outputs
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
+                "layer": "decoder_distribution_robustness",
+            }
+
+
 def test_generate_l2_campaign_task_recovers_metadata_from_evaluation_requests() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

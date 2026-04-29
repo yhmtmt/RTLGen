@@ -86,7 +86,7 @@ def _named_grid_point(base: JsonDict, name: str, **updates: Any) -> tuple[str, J
 
 
 def _rough_grid_templates(model_contract: JsonDict, grid_name: str) -> Dict[str, JsonDict]:
-    if grid_name not in {"decoder_probability_broad_v1", "decoder_probability_fp_formats_v1"}:
+    if grid_name not in {"decoder_probability_broad_v1", "decoder_probability_fp_formats_v1", "decoder_distribution_robustness_v1"}:
         raise ValueError(f"unsupported rough grid: {grid_name}")
     exact = _candidate_template(model_contract, "candidate_onnx_softmax_exact")
     approx = _candidate_template(model_contract, "candidate_onnx_softmax_approx")
@@ -127,6 +127,46 @@ def _rough_grid_templates(model_contract: JsonDict, grid_name: str) -> Dict[str,
                 normalization_mode="reciprocal_float",
                 normalization_reciprocal_bits=None,
                 normalization_reciprocal_float_format="fp16",
+            ),
+            _named_grid_point(
+                approx,
+                "grid_approx_pwl_bf16_path",
+                softmax_input_quant_bits=None,
+                softmax_weight_quant_bits=None,
+                softmax_input_float_format="bf16",
+                softmax_weight_float_format="bf16",
+                normalization_mode="reciprocal_float",
+                normalization_reciprocal_bits=None,
+                normalization_reciprocal_float_format="bf16",
+            ),
+        ]
+        return {name: cfg for name, cfg in points}
+    if grid_name == "decoder_distribution_robustness_v1":
+        points = [
+            ("candidate_onnx_softmax_exact", exact),
+            _named_grid_point(exact, "grid_logits_q8", logit_quant_bits=8),
+            _named_grid_point(exact, "grid_logits_q6", logit_quant_bits=6),
+            _named_grid_point(exact, "grid_logits_q4", logit_quant_bits=4),
+            _named_grid_point(exact, "grid_prob_q8", probability_quant_bits=8),
+            _named_grid_point(exact, "grid_prob_bf16", probability_float_format="bf16"),
+            _named_grid_point(exact, "grid_prob_fp16", probability_float_format="fp16"),
+            _named_grid_point(exact, "grid_prob_fp8_e5m2", probability_float_format="fp8_e5m2"),
+            _named_grid_point(exact, "grid_prob_fp8_e4m3", probability_float_format="fp8_e4m3"),
+            _named_grid_point(
+                approx,
+                "grid_approx_pwl_in_q8_w_q8_norm_exact",
+                softmax_input_quant_bits=8,
+                softmax_weight_quant_bits=8,
+                normalization_mode="exact",
+                normalization_reciprocal_bits=None,
+            ),
+            _named_grid_point(
+                approx,
+                "grid_approx_pwl_in_q6_w_q6_norm_recip_q10",
+                softmax_input_quant_bits=6,
+                softmax_weight_quant_bits=6,
+                normalization_mode="reciprocal_quantized",
+                normalization_reciprocal_bits=10,
             ),
             _named_grid_point(
                 approx,
@@ -297,6 +337,7 @@ def _generate_candidate_manifest(
 def _aggregate_row(template_name: str, manifest_path: Path, quality_path: Path, backend_config: JsonDict, metrics: JsonDict) -> JsonDict:
     aggregate = dict(metrics.get("aggregate", {}) or {})
     tensor = dict(aggregate.get("selected_tensor_trace", {}) or {})
+    distribution = dict(aggregate.get("distribution", {}) or {})
     mismatch_sample_ids = [
         str(sample.get("sample_id", ""))
         for sample in metrics.get("samples", []) or []
@@ -334,6 +375,7 @@ def _aggregate_row(template_name: str, manifest_path: Path, quality_path: Path, 
         "selected_tensor_shape_match_rate": tensor.get("shape_match_rate"),
         "selected_tensor_trace_sha256_match_rate": tensor.get("trace_sha256_match_rate"),
         "selected_tensor_delta_rollups": tensor.get("delta_rollups", {}),
+        "distribution": distribution,
     }
 
 
@@ -349,7 +391,10 @@ def main() -> int:
     ap.add_argument(
         "--rough-grid",
         default="",
-        help="Generate a built-in rough approximation grid, e.g. decoder_probability_broad_v1 or decoder_probability_fp_formats_v1.",
+        help=(
+            "Generate a built-in rough approximation grid, e.g. decoder_probability_broad_v1, "
+            "decoder_probability_fp_formats_v1, or decoder_distribution_robustness_v1."
+        ),
     )
     ap.add_argument("--out-dir", default="runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/local")
     ap.add_argument("--out", default="")
@@ -417,7 +462,8 @@ def main() -> int:
             "llm_decoder_eval_tiny_v1 prompt/model/tokenizer setup and must not be treated as general "
             "acceptance evidence without broader datasets. Floating-point-like formats preserve dynamic "
             "range differently from fixed integer probability quantization, so compare rank/top-k behavior "
-            "rather than only final probability values."
+            "rather than only final probability values. Distribution rollups include entropy, top-1/top-2 "
+            "margin, and score-sum statistics to expose prompt/logit regime dependence."
         ),
         "template_count": len(results),
         "templates": results,

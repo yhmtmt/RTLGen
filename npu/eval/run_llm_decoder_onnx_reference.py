@@ -10,6 +10,7 @@ execution details.
 from __future__ import annotations
 
 import json
+import math
 import sys
 from pathlib import Path
 from typing import Any, Dict, Iterable, Sequence, Tuple
@@ -108,6 +109,36 @@ def _topk_pairs(logits: Sequence[float], *, k: int) -> Iterable[Tuple[int, float
     return [(int(idx), float(logits[idx])) for idx in order]
 
 
+def _logit_distribution_stats(logits: Sequence[float], *, topk: int) -> JsonDict:
+    values = [float(v) for v in logits]
+    if not values:
+        raise SystemExit('distribution stats received empty logits')
+    order = sorted(range(len(values)), key=lambda idx: values[idx], reverse=True)
+    top1 = values[order[0]]
+    top2 = values[order[1]] if len(order) > 1 else top1
+    max_logit = top1
+    exp_values = [math.exp(value - max_logit) for value in values]
+    total = sum(exp_values)
+    probabilities = [value / total for value in exp_values] if total > 0.0 else [0.0 for _ in exp_values]
+    entropy = -sum(prob * math.log(prob) for prob in probabilities if prob > 0.0)
+    top_count = max(1, min(int(topk), len(values)))
+    top_indices = order[:top_count]
+    top_probs = [probabilities[idx] for idx in top_indices]
+    top_logits = [values[idx] for idx in top_indices]
+    return {
+        'vocab_size': len(values),
+        'entropy_nats': entropy,
+        'effective_vocab_size': math.exp(entropy),
+        'top1_logit': top1,
+        'top2_logit': top2,
+        'top1_top2_logit_margin': top1 - top2,
+        'top1_probability': probabilities[order[0]],
+        'top2_probability': probabilities[order[1]] if len(order) > 1 else probabilities[order[0]],
+        'topk_probability_mass': sum(top_probs),
+        'topk_logit_span': (max(top_logits) - min(top_logits)) if top_logits else 0.0,
+    }
+
+
 def _decode_token(token_id: int, vocab: Dict[str, int], *, tokenizer_runtime: Any | None = None) -> str:
     if tokenizer_runtime is not None:
         return str(tokenizer_runtime.decode([int(token_id)]))
@@ -203,6 +234,7 @@ def _build_result(*, request: JsonDict, vocab: Dict[str, int], next_token_id: in
             'next_token_text': next_token_text,
             'next_token_id': next_token_id,
             'next_token_rank': 1,
+            'distribution': _logit_distribution_stats(logits, topk=topk),
             'selected_tensors': list(selected_tensors or []),
             'selected_tensors_sha256': _selected_tensor_trace_hash(selected_tensors),
             'topk': [
