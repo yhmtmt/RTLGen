@@ -12,6 +12,7 @@
     "include": [
       "row-wise int8 shift-exp softmax with reciprocal_quantized normalization",
       "reciprocal_bits q10, q12, q14, and q16",
+      "reciprocal_lut_bucket_shift fixed at 4 to keep the LUT under synth prefilter memory limits",
       "row_elems=8, max_shift=7, accum_bits=24, output_scale=127 held constant",
       "divider-free RTL emission using reciprocal lookup plus multiply/shift"
     ],
@@ -31,6 +32,7 @@
     "keeps performance, power, and area axes separate for architecture discussion"
   ],
   "risks": [
+    "bucketed reciprocal lookup adds approximation error beyond the software q10/q12/q14/q16 quality rows",
     "reciprocal lookup table area may dominate and make row_elems/max_shift choices interaction-sensitive",
     "single-row block PPA still excludes decoder control and memory effects",
     "q8 reciprocal quality remains benchmark-distribution dependent"

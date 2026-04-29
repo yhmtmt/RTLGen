@@ -15,6 +15,7 @@ def _load_config(path: str) -> dict:
         "impl": str(opts.get("impl", "shift_exp")),
         "normalization_mode": str(opts.get("normalization_mode", "exact")),
         "reciprocal_bits": int(opts.get("reciprocal_bits", 0)),
+        "reciprocal_lut_bucket_shift": int(opts.get("reciprocal_lut_bucket_shift", 0)),
         "row_elems": int(opts.get("row_elems", 1)),
         "max_shift": int(opts.get("max_shift", 7)),
         "accum_bits": int(opts.get("accum_bits", 16)),
@@ -29,6 +30,7 @@ def compute_shift_exp_row(
     output_scale: int = 127,
     normalization_mode: str = "exact",
     reciprocal_bits: int = 0,
+    reciprocal_lut_bucket_shift: int = 0,
 ):
     if not logits:
         return []
@@ -49,7 +51,12 @@ def compute_shift_exp_row(
     if normalization_mode == "reciprocal_quantized":
         if reciprocal_bits <= 0:
             raise ValueError("reciprocal_bits must be positive for reciprocal_quantized")
-        reciprocal = ((output_scale << reciprocal_bits) + (sum_weights // 2)) // sum_weights
+        if reciprocal_lut_bucket_shift > 0:
+            bucket = (sum_weights + ((1 << reciprocal_lut_bucket_shift) - 1)) >> reciprocal_lut_bucket_shift
+            approx_sum = max(1, bucket << reciprocal_lut_bucket_shift)
+        else:
+            approx_sum = sum_weights
+        reciprocal = ((output_scale << reciprocal_bits) + (approx_sum // 2)) // approx_sum
     elif normalization_mode != "exact":
         raise ValueError(f"unsupported normalization_mode: {normalization_mode}")
     for weight in weights:
@@ -96,6 +103,7 @@ def main() -> int:
                     output_scale=cfg["output_scale"],
                     normalization_mode=cfg["normalization_mode"],
                     reciprocal_bits=cfg["reciprocal_bits"],
+                    reciprocal_lut_bucket_shift=cfg["reciprocal_lut_bucket_shift"],
                 ),
             }
         )
@@ -107,6 +115,7 @@ def main() -> int:
                 "impl": cfg["impl"],
                 "normalization_mode": cfg["normalization_mode"],
                 "reciprocal_bits": cfg["reciprocal_bits"],
+                "reciprocal_lut_bucket_shift": cfg["reciprocal_lut_bucket_shift"],
                 "row_elems": cfg["row_elems"],
                 "max_shift": cfg["max_shift"],
                 "accum_bits": cfg["accum_bits"],

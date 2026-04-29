@@ -8,8 +8,8 @@
 - Added `normalization_mode` and `reciprocal_bits` options to RTLGen
   `softmax_rowwise`.
 - Preserved the existing exact divider mode as the default.
-- Added `reciprocal_quantized` emission using a denominator-indexed reciprocal
-  lookup and multiply/shift normalization path.
+- Added `reciprocal_quantized` emission using a bucketed denominator-indexed
+  reciprocal lookup and multiply/shift normalization path.
 - Added q10/q12/q14/q16 row-wise int8 r8 acc24 configs for L1 measurement.
 
 ## Files Changed
@@ -36,5 +36,7 @@
 
 ## Risks
 - The reciprocal lookup table may dominate area for this row envelope.
+- The bucketed denominator lookup changes numerical behavior relative to the
+  earlier exact reciprocal software quality rows.
 - This remains a row-wise block measurement, not full decoder-system PPA.
 - bf16 reciprocal/multiply datapaths remain unmeasured.

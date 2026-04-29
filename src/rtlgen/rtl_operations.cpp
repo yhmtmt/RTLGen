@@ -903,6 +903,9 @@ void emitSoftmaxRowwiseModule(const SoftmaxRowwiseOperationConfig &config, const
     if (config.normalization_mode == "reciprocal_quantized" && (config.reciprocal_bits < 1 || config.reciprocal_bits > 24)) {
         throw std::runtime_error("softmax_rowwise reciprocal_bits must be in [1, 24]");
     }
+    if (config.reciprocal_lut_bucket_shift < 0 || config.reciprocal_lut_bucket_shift > 12) {
+        throw std::runtime_error("softmax_rowwise reciprocal_lut_bucket_shift must be in [0, 12]");
+    }
     if (config.row_elems <= 0) {
         throw std::runtime_error("softmax_rowwise row_elems must be positive");
     }
@@ -919,6 +922,7 @@ void emitSoftmaxRowwiseModule(const SoftmaxRowwiseOperationConfig &config, const
     const int data_width = operand.bit_width;
     const int row_width = config.row_elems * data_width;
     const bool reciprocal_quantized = config.normalization_mode == "reciprocal_quantized";
+    const int reciprocal_bucket_step = reciprocal_quantized ? (1 << config.reciprocal_lut_bucket_shift) : 1;
     const int reciprocal_value_bits = reciprocal_quantized
         ? static_cast<int>(std::ceil(std::log2(static_cast<double>(config.output_scale) * std::ldexp(1.0, config.reciprocal_bits) + 1.0)))
         : data_width;
@@ -953,17 +957,21 @@ void emitSoftmaxRowwiseModule(const SoftmaxRowwiseOperationConfig &config, const
     os << "  localparam integer OUTPUT_SCALE = " << config.output_scale << ";\n\n";
     if (reciprocal_quantized) {
         const int max_sum = config.row_elems * (1 << config.max_shift);
+        const int bucket_shift = config.reciprocal_lut_bucket_shift;
+        const int max_bucket = (max_sum + reciprocal_bucket_step - 1) >> bucket_shift;
         const long long scale = static_cast<long long>(config.output_scale) << config.reciprocal_bits;
         os << "  localparam integer RECIP_BITS = " << config.reciprocal_bits << ";\n";
         os << "  localparam integer RECIP_VALUE_BITS = " << reciprocal_value_bits << ";\n\n";
+        os << "  localparam integer RECIP_BUCKET_SHIFT = " << bucket_shift << ";\n\n";
         os << "  function [RECIP_VALUE_BITS-1:0] recip_lut;\n";
-        os << "    input [ACCUM_BITS-1:0] denom;\n";
+        os << "    input [ACCUM_BITS-1:0] bucket;\n";
         os << "    begin\n";
-        os << "      case (denom)\n";
+        os << "      case (bucket)\n";
         os << "        " << config.accum_bits << "'d0: recip_lut = {RECIP_VALUE_BITS{1'b0}};\n";
-        for (int denom = 1; denom <= max_sum; ++denom) {
+        for (int bucket = 1; bucket <= max_bucket; ++bucket) {
+            const int denom = bucket << bucket_shift;
             const long long recip = (scale + (denom / 2)) / denom;
-            os << "        " << config.accum_bits << "'d" << denom
+            os << "        " << config.accum_bits << "'d" << bucket
                << ": recip_lut = " << reciprocal_value_bits << "'d" << recip << ";\n";
         }
         os << "        default: recip_lut = {RECIP_VALUE_BITS{1'b0}};\n";
@@ -981,6 +989,7 @@ void emitSoftmaxRowwiseModule(const SoftmaxRowwiseOperationConfig &config, const
     os << "  reg [PRODUCT_BITS-1:0] scaled_out;\n";
     if (reciprocal_quantized) {
         os << "  reg [RECIP_VALUE_BITS-1:0] reciprocal;\n";
+        os << "  reg [ACCUM_BITS-1:0] reciprocal_bucket;\n";
     }
     os << "  reg [DATA_W-1:0] lane_out;\n\n";
     os << "  always @* begin\n";
@@ -1003,7 +1012,13 @@ void emitSoftmaxRowwiseModule(const SoftmaxRowwiseOperationConfig &config, const
     os << "    end\n\n";
     os << "    Y = {ROW_ELEMS*DATA_W{1'b0}};\n";
     if (reciprocal_quantized) {
-        os << "    reciprocal = recip_lut(sum_weights);\n";
+        if (config.reciprocal_lut_bucket_shift > 0) {
+            os << "    reciprocal_bucket = (sum_weights + " << config.accum_bits << "'d" << (reciprocal_bucket_step - 1)
+               << ") >> RECIP_BUCKET_SHIFT;\n";
+        } else {
+            os << "    reciprocal_bucket = sum_weights;\n";
+        }
+        os << "    reciprocal = recip_lut(reciprocal_bucket);\n";
     }
     os << "    for (i = 0; i < ROW_ELEMS; i = i + 1) begin\n";
     if (reciprocal_quantized) {

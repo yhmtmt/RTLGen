@@ -353,6 +353,7 @@ bool readConfig(const std::string& filename, CircuitConfig& config) {
                     softmax.impl = options.value("impl", "shift_exp");
                     softmax.normalization_mode = options.value("normalization_mode", "exact");
                     softmax.reciprocal_bits = options.value("reciprocal_bits", 0);
+                    softmax.reciprocal_lut_bucket_shift = options.value("reciprocal_lut_bucket_shift", 0);
                     softmax.row_elems = options.value("row_elems", 1);
                     softmax.max_shift = options.value("max_shift", 7);
                     softmax.accum_bits = options.value("accum_bits", 16);
@@ -362,6 +363,9 @@ bool readConfig(const std::string& filename, CircuitConfig& config) {
                     }
                     if (softmax.normalization_mode == "reciprocal_quantized" && (softmax.reciprocal_bits < 1 || softmax.reciprocal_bits > 24)) {
                         throw std::runtime_error("softmax_rowwise reciprocal_bits must be in [1, 24] for " + softmax.module_name);
+                    }
+                    if (softmax.reciprocal_lut_bucket_shift < 0 || softmax.reciprocal_lut_bucket_shift > 12) {
+                        throw std::runtime_error("softmax_rowwise reciprocal_lut_bucket_shift must be in [0, 12] for " + softmax.module_name);
                     }
                     if (softmax.row_elems <= 0) {
                         throw std::runtime_error("softmax_rowwise row_elems must be positive for " + softmax.module_name);
