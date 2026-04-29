@@ -1,5 +1,9 @@
 {
   "proposal_id": "prop_l2_decoder_survivor_prompt_stress_v1",
   "status": "pending",
-  "result": "Awaiting evaluator run."
+  "result": "Awaiting evaluator run.",
+  "decision": "iterate",
+  "pr_number": 269,
+  "merge_commit": "311895b8a49c851d6dcba0301bae6b8f725745b6",
+  "merged_utc": "2026-04-29T07:18:46.325613Z"
 }

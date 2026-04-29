@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_survivor_prompt_stress_v1",
-  "source_commit": "0d381853f3732e9874874f5a6a8c874d357e39c3",
+  "source_commit": "3cf7f0e69ef21d95b1a3dcbfa88b13d0c5d563a7",
   "requested_items": [
     {
       "item_id": "l2_decoder_survivor_prompt_stress_v1",
@@ -20,7 +20,11 @@
         "direction": "iterate",
         "reason": "The job should confirm whether the distribution-sweep survivor paths remain stable across a larger prompt set before hardware-cost-oriented narrowing."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 269,
+      "merge_commit": "311895b8a49c851d6dcba0301bae6b8f725745b6",
+      "merged_utc": "2026-04-29T07:18:46.325613Z",
+      "notes": "Merged via PR #269 and merge 311895b8a49c851d6dcba0301bae6b8f725745b6 at 2026-04-29T07:18:46.325613Z."
     }
   ]
 }
