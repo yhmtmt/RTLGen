@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_llm_attention_tail_stress_ladder_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "iterate",
+  "pr_number": 250,
+  "merge_commit": "98b7f8f60075aaa0e1b544d09535f333cfacbc59",
+  "merged_utc": "2026-04-29T02:10:43Z"
 }

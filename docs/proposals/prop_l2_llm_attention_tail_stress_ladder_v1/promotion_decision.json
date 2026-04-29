@@ -1,12 +1,15 @@
 {
   "proposal_id": "prop_l2_llm_attention_tail_stress_ladder_v1",
   "candidate_id": "l2_llm_attention_tail_stress_ladder_v1",
-  "decision": "pending",
-  "reason": "Awaiting proposal-backed broad-ranking campaign evidence.",
+  "decision": "iterate",
+  "reason": "Broad ranking evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
   "evidence_refs": [
-    "docs/proposals/prop_l2_llm_attention_tail_stress_ladder_v1/proposal.json",
-    "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/campaign.json"
+    "item:l2_llm_attention_tail_stress_ladder_v1",
+    "run:l2_llm_attention_tail_stress_ladder_v1_run_3e125213ac4cc37b",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_llm_attention_tail_stress_ladder_v1.json",
+    "pr:#250",
+    "https://github.com/yhmtmt/RTLGen/pull/250"
   ],
-  "next_action": "run l2_llm_attention_tail_stress_ladder_v1 and inspect scheduler pressure evidence",
+  "next_action": "inspect follow-on work after l2_llm_attention_tail_stress_ladder_v1",
   "requires_human_approval": false
 }
