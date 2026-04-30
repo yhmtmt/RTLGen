@@ -84,6 +84,7 @@ class OperatorStatusResult:
     run_index_families: list[dict[str, object]]
     run_index_best_designs: list[dict[str, object]]
     run_index_family_leaders: list[dict[str, object]]
+    run_index_comparable_rankings: list[dict[str, object]]
     run_index_failure_rates: list[dict[str, object]]
     seed_trial_variance: list[dict[str, object]]
     run_index_failure_hotspots: list[dict[str, object]]
@@ -384,6 +385,7 @@ def load_operator_status(session: Session, request: OperatorStatusRequest) -> Op
         run_index_families=run_index.families,
         run_index_best_designs=run_index.best_designs,
         run_index_family_leaders=run_index.family_leaders,
+        run_index_comparable_rankings=run_index.comparable_rankings,
         run_index_failure_rates=run_index.failure_rates,
         seed_trial_variance=seed_trial_variance,
         run_index_failure_hotspots=run_index.failure_hotspots,

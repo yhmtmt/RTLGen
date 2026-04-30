@@ -127,6 +127,13 @@ def test_comparative_run_index_reports_leaders_and_failure_rates() -> None:
     assert all(row["design"] != "comb_only_macro" for row in result.family_leaders)
     assert result.best_designs[0]["design"] == "sigmoid_fast"
     assert any(row["circuit_type"] == "terminal" and row["design"] == "sigmoid_fast" for row in result.family_leaders)
+    terminal_rankings = next(row for row in result.comparable_rankings if row["circuit_type"] == "terminal")
+    assert terminal_rankings["comparison_scope"] == "within_family_only"
+    assert terminal_rankings["speed_leader"]["design"] == "sigmoid_fast"
+    assert terminal_rankings["area_leader"]["design"] == "sigmoid_fast"
+    assert terminal_rankings["power_leader"]["design"] == "sigmoid_fast"
+    reduction_rankings = next(row for row in result.comparable_rankings if row["circuit_type"] == "reduction")
+    assert reduction_rankings["speed_leader"]["design"] == "softmax_rowwise"
     terminal_failure = next(row for row in result.failure_rates if row["circuit_type"] == "terminal")
     assert terminal_failure["fail_row_count"] == 1
     assert terminal_failure["row_count"] == 3
