@@ -193,7 +193,7 @@ def _q8_norm_summary(path: Path | None) -> JsonDict | None:
         for row in rows
         if isinstance(row, dict)
         and isinstance(row.get("normalization"), dict)
-        and str(row["normalization"].get("rank_source") or "").startswith("measured_q8_")
+        and str(row["normalization"].get("rank_source") or "").startswith("measured_")
     ]
     return {
         "source": str(path),
@@ -306,13 +306,12 @@ def build_report(
             "bf16/fp16 probability and reciprocal software paths preserve next-token and top-k on the current fp-format and distribution sweeps.",
             "fixed q8 probability output storage is blocked on the distribution robustness sweep, while q8/q6 logit quantization remains exact-safe there.",
             "fp8 probability storage is not a current frontier candidate: e5m2 drops samples and e4m3 is blocked in both sweeps.",
-            "q8 reciprocal normalization now has measured integrated PPA; bf16 reciprocal normalization still needs a measurable datapath before PPA comparison.",
+            "q8 reciprocal and bf16 reciprocal normalization now have measured integrated PPA for the current row-8 Nangate45 datapath framing.",
         ],
         "dimensions": _group_dimensions(records),
         "q8_norm_frontier": q8_norm,
         "next_step": [
-            "Keep q8 reciprocal as the immediate measured hardware frontier.",
-            "Use issue #297 to add and measure a bf16 reciprocal normalization datapath before claiming q8-versus-bf16 PPA superiority.",
+            "Use the measured q8 reciprocal and bf16 reciprocal datapaths as the immediate hardware frontier.",
             "Broaden distribution coverage before treating these exact-safe rows as generally robust across weights and prompts.",
         ],
     }

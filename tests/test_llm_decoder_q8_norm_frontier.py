@@ -29,17 +29,30 @@ def test_q8_normalization_frontier_report_selects_lowest_cost_exact_safe_recipro
         sweep_path=Path("tests/fixtures/decoder_q8_norm_frontier_sweep.json"),
         q8_recip_ppa_path=Path("tests/fixtures/q8_recip_norm_datapath_ppa.json"),
         q8_exact_ppa_path=Path("tests/fixtures/q8_exact_norm_datapath_ppa.json"),
+        bf16_recip_ppa_path=Path("tests/fixtures/bf16_recip_norm_datapath_ppa.json"),
     )
 
-    assert report["decision"]["decision"] == "q8_reciprocal_candidate_survived"
-    assert report["decision"]["selected_candidate"] == "grid_approx_pwl_in_q8_w_q8_norm_recip_q10"
-    assert report["cost_model"]["source"] == "rtlgen_openroad_q8_exact_and_reciprocal_datapath_metrics"
+    assert report["decision"]["decision"] == "measured_frontier_candidate_selected"
+    assert report["decision"]["selected_candidate"] == "grid_approx_pwl_bf16_path"
+    assert (
+        report["cost_model"]["source"]
+        == "rtlgen_openroad_q8_exact_q8_reciprocal_and_bf16_reciprocal_datapath_metrics"
+    )
     assert report["cost_model"]["unit"] == "nangate45_physical_metrics"
     assert (
         report["cost_model"]["rtlgen_calibration_proposal"]
-        == "prop_l1_decoder_q8_recip_norm_datapath_v1_and_prop_l1_softmax_rowwise_int8_r8_acc24_block_v1"
+        == "prop_l1_decoder_q8_recip_norm_datapath_v1_and_prop_l1_softmax_rowwise_int8_r8_acc24_block_v1_and_prop_l1_decoder_bf16_recip_norm_datapath_v1"
     )
     by_template = {row["template"]: row for row in report["ranked_rows"]}
+    assert by_template["grid_approx_pwl_bf16_path"]["rank"] == 1
+    assert (
+        by_template["grid_approx_pwl_bf16_path"]["normalization"]["calibration_status"]
+        == "integrated_bf16_reciprocal_datapath_measured"
+    )
+    assert (
+        by_template["grid_approx_pwl_bf16_path"]["normalization"]["ppa_metrics"]["critical_path_ns"]
+        == 4.2869
+    )
     assert by_template["grid_approx_pwl_in_q8_w_q8_norm_recip_q10"]["quality"]["exact_safe"]
     assert (
         by_template["grid_approx_pwl_in_q8_w_q8_norm_recip_q10"]["normalization"]["calibration_status"]

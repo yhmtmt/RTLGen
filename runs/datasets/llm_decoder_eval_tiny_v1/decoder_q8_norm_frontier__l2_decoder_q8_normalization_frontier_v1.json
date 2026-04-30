@@ -1,29 +1,83 @@
 {
   "cost_model": {
-    "calibration_status": "q8_exact_and_reciprocal_integrated_datapaths_measured",
+    "calibration_status": "q8_exact_q8_reciprocal_and_bf16_reciprocal_integrated_datapaths_measured",
     "fallback_source": "hand_written_planning_proxy_used_only_when_ppa_artifact_is_absent",
-    "intended_use": "Replace the q8 normalization heuristic with merged RTLGen/OpenROAD datapath evidence while preserving quality gates from the decoder sweep.",
-    "name": "decoder_q8_normalization_ppa_frontier_v3",
-    "ppa_balance": "Measured q8 exact and q8 reciprocal candidates are ranked lexicographically by critical path, then area, then power. The bf16 reciprocal normalization path remains an unmeasured hardware gap and is not compared as accepted PPA.",
-    "rtlgen_calibration_proposal": "prop_l1_decoder_q8_recip_norm_datapath_v1_and_prop_l1_softmax_rowwise_int8_r8_acc24_block_v1",
-    "source": "rtlgen_openroad_q8_exact_and_reciprocal_datapath_metrics",
+    "intended_use": "Replace the q8 normalization heuristic with merged RTLGen/OpenROAD datapath evidence and compare it with the measured bf16 reciprocal anchor while preserving quality gates from the decoder sweep.",
+    "name": "decoder_q8_normalization_ppa_frontier_v4",
+    "ppa_balance": "Measured q8 exact, q8 reciprocal, and bf16 reciprocal candidates are ranked lexicographically by critical path, then area, then power. These physical metrics are comparable only within the current Nangate45 row-8 normalization datapath framing.",
+    "rtlgen_calibration_proposal": "prop_l1_decoder_q8_recip_norm_datapath_v1_and_prop_l1_softmax_rowwise_int8_r8_acc24_block_v1_and_prop_l1_decoder_bf16_recip_norm_datapath_v1",
+    "source": "rtlgen_openroad_q8_exact_q8_reciprocal_and_bf16_reciprocal_datapath_metrics",
     "unit": "nangate45_physical_metrics"
   },
   "decision": {
-    "decision": "q8_reciprocal_candidate_survived",
-    "reason": "grid_approx_pwl_in_q8_w_q8_norm_recip_q10 preserved the exact prompt-stress gate and has the best measured_q8_reciprocal_datapath_ppa among exact-safe q8 reciprocal candidates. q8 exact is included as measured baseline PPA; bf16 reciprocal normalization remains an unmeasured hardware gap.",
-    "selected_candidate": "grid_approx_pwl_in_q8_w_q8_norm_recip_q10"
+    "decision": "measured_frontier_candidate_selected",
+    "reason": "grid_approx_pwl_bf16_path preserved the exact prompt-stress gate and has the best measured_bf16_reciprocal_datapath_ppa among exact-safe measured normalization candidates. The best exact-safe q8 reciprocal row remains grid_approx_pwl_in_q8_w_q8_norm_recip_q10.",
+    "selected_candidate": "grid_approx_pwl_bf16_path"
   },
   "frontier_scope": {
     "quality_gate": "candidate must match next-token and top-k for every prompt-stress sample",
     "rough_grid": "decoder_q8_normalization_frontier_v1",
-    "scope_note": "This is a focused q8 PWL normalization frontier. It tests reciprocal-normalization precision as a replacement for q8 exact normalization. q8 reciprocal rows use merged RTLGen/OpenROAD integrated datapath metrics when the PPA artifact is available; q8 exact uses the measured row-wise int8 softmax baseline when available; bf16 normalization remains unmeasured."
+    "scope_note": "This is a focused q8 PWL normalization frontier. It tests reciprocal-normalization precision as a replacement for q8 exact normalization. q8 reciprocal rows use merged RTLGen/OpenROAD integrated datapath metrics when the PPA artifact is available; q8 exact uses the measured row-wise int8 softmax baseline when available; bf16 reciprocal normalization uses the measured row-8 bf16 reciprocal datapath when available."
   },
   "next_step": [
-    "Implement and measure bf16 reciprocal/multiply normalization before making a q8-versus-bf16 hardware decision.",
-    "Use the measured q8 exact baseline as the current reference point for q8 reciprocal normalization tradeoffs."
+    "Treat the bf16 and q8 reciprocal measurements as current row-8 Nangate45 datapath evidence, not distribution-robust architecture proof.",
+    "Broaden weight/input distribution coverage before making a final q8-versus-bf16 normalization decision."
   ],
   "ranked_rows": [
+    {
+      "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_bf16_w_bf16_norm_recip_bf16_prob_fp",
+      "frontier_rank_key": [
+        0,
+        4.2869,
+        50690.271025,
+        0.00479
+      ],
+      "normalization": {
+        "calibration_status": "integrated_bf16_reciprocal_datapath_measured",
+        "heuristic_fallback_unit": "heuristic_planning_units",
+        "heuristic_fallback_units": 22.0,
+        "metrics_ref": {
+          "metrics_csv": "runs/designs/activations/bf16_recip_norm_r8_wrapper/metrics.csv",
+          "param_hash": "707ea19f",
+          "platform": "nangate45",
+          "result_kind": "physical_metrics",
+          "result_path": "runs/designs/activations/bf16_recip_norm_r8_wrapper/work/707ea19f/result.json",
+          "status": "ok",
+          "tag": "bf16_recip_norm_nangate45_highutil_2ae5d3c9"
+        },
+        "mode": "reciprocal_float",
+        "ppa_metrics": {
+          "critical_path_ns": 4.2869,
+          "die_area": 50690.271025,
+          "total_power_mw": 0.00479
+        },
+        "rank_key": [
+          0,
+          4.2869,
+          50690.271025,
+          0.00479
+        ],
+        "rank_source": "measured_bf16_reciprocal_datapath_ppa",
+        "reciprocal_bits": 0,
+        "reciprocal_float_format": "bf16",
+        "unit": "nangate45_physical_metrics"
+      },
+      "quality": {
+        "exact_safe": true,
+        "gate": "exact_safe_survivor",
+        "next_token_match_rate": 1.0,
+        "next_token_matches": 24,
+        "next_token_mismatch_sample_ids": [],
+        "sample_count": 24,
+        "topk_contains_reference_rate": 1.0,
+        "topk_matches": 24,
+        "topk_miss_sample_ids": [],
+        "topk_safe": true
+      },
+      "rank": 1,
+      "role": "bf16_primary_anchor",
+      "template": "grid_approx_pwl_bf16_path"
+    },
     {
       "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q8_w_q8_norm_recip_q10_prob_fp",
       "frontier_rank_key": [
@@ -74,7 +128,7 @@
         "topk_miss_sample_ids": [],
         "topk_safe": true
       },
-      "rank": 1,
+      "rank": 2,
       "role": "q8_reciprocal_candidate",
       "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q10"
     },
@@ -128,7 +182,7 @@
         "topk_miss_sample_ids": [],
         "topk_safe": true
       },
-      "rank": 2,
+      "rank": 3,
       "role": "q8_reciprocal_candidate",
       "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q12"
     },
@@ -182,7 +236,7 @@
         "topk_miss_sample_ids": [],
         "topk_safe": true
       },
-      "rank": 3,
+      "rank": 4,
       "role": "q8_reciprocal_candidate",
       "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q14"
     },
@@ -236,7 +290,7 @@
         "topk_miss_sample_ids": [],
         "topk_safe": true
       },
-      "rank": 4,
+      "rank": 5,
       "role": "q8_reciprocal_candidate",
       "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q16"
     },
@@ -290,50 +344,14 @@
         "topk_miss_sample_ids": [],
         "topk_safe": true
       },
-      "rank": 5,
+      "rank": 6,
       "role": "q8_exact_normalization_baseline",
       "template": "grid_approx_pwl_in_q8_w_q8_norm_exact"
-    },
-    {
-      "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_bf16_w_bf16_norm_recip_bf16_prob_fp",
-      "frontier_rank_key": [
-        2,
-        22.0
-      ],
-      "normalization": {
-        "calibration_status": "unmeasured_float_reciprocal_datapath",
-        "heuristic_fallback_unit": "heuristic_planning_units",
-        "heuristic_fallback_units": 22.0,
-        "metrics_ref": null,
-        "mode": "reciprocal_float",
-        "ppa_metrics": null,
-        "rank_key": [
-          2,
-          22.0
-        ],
-        "rank_source": "unmeasured_gap",
-        "reciprocal_bits": 0,
-        "reciprocal_float_format": "bf16",
-        "unit": "nangate45_physical_metrics"
-      },
-      "quality": {
-        "exact_safe": true,
-        "gate": "exact_safe_survivor",
-        "next_token_match_rate": 1.0,
-        "next_token_matches": 24,
-        "next_token_mismatch_sample_ids": [],
-        "sample_count": 24,
-        "topk_contains_reference_rate": 1.0,
-        "topk_matches": 24,
-        "topk_miss_sample_ids": [],
-        "topk_safe": true
-      },
-      "rank": 6,
-      "role": "bf16_primary_anchor",
-      "template": "grid_approx_pwl_bf16_path"
     }
   ],
   "source_artifacts": {
+    "bf16_reciprocal_datapath_ppa": "control_plane/shadow_exports/l1_promotions/l1_decoder_bf16_recip_norm_datapath_v1_r2.json",
+    "bf16_reciprocal_ppa_available": true,
     "q8_exact_datapath_ppa": "control_plane/shadow_exports/l1_promotions/l1_prop_l1_softmax_rowwise_int8_r8_acc24_block_v1_nangate45_r1.json",
     "q8_exact_ppa_available": true,
     "q8_reciprocal_datapath_ppa": "control_plane/shadow_exports/l1_promotions/l1_decoder_q8_recip_norm_datapath_v1_r3.json",

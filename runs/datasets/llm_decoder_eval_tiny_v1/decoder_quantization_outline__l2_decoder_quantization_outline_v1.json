@@ -784,27 +784,36 @@
     "bf16/fp16 probability and reciprocal software paths preserve next-token and top-k on the current fp-format and distribution sweeps.",
     "fixed q8 probability output storage is blocked on the distribution robustness sweep, while q8/q6 logit quantization remains exact-safe there.",
     "fp8 probability storage is not a current frontier candidate: e5m2 drops samples and e4m3 is blocked in both sweeps.",
-    "q8 reciprocal normalization now has measured integrated PPA; bf16 reciprocal normalization still needs a measurable datapath before PPA comparison."
+    "q8 reciprocal and bf16 reciprocal normalization now have measured integrated PPA for the current row-8 Nangate45 datapath framing."
   ],
   "next_step": [
-    "Keep q8 reciprocal as the immediate measured hardware frontier.",
-    "Use issue #297 to add and measure a bf16 reciprocal normalization datapath before claiming q8-versus-bf16 PPA superiority.",
+    "Use the measured q8 reciprocal and bf16 reciprocal datapaths as the immediate hardware frontier.",
     "Broaden distribution coverage before treating these exact-safe rows as generally robust across weights and prompts."
   ],
   "q8_norm_frontier": {
     "decision": {
-      "decision": "q8_reciprocal_candidate_survived",
-      "reason": "grid_approx_pwl_in_q8_w_q8_norm_recip_q10 preserved the exact prompt-stress gate and has the best measured_q8_reciprocal_datapath_ppa among exact-safe q8 reciprocal candidates. q8 exact is included as measured baseline PPA; bf16 reciprocal normalization remains an unmeasured hardware gap.",
-      "selected_candidate": "grid_approx_pwl_in_q8_w_q8_norm_recip_q10"
+      "decision": "measured_frontier_candidate_selected",
+      "reason": "grid_approx_pwl_bf16_path preserved the exact prompt-stress gate and has the best measured_bf16_reciprocal_datapath_ppa among exact-safe measured normalization candidates. The best exact-safe q8 reciprocal row remains grid_approx_pwl_in_q8_w_q8_norm_recip_q10.",
+      "selected_candidate": "grid_approx_pwl_bf16_path"
     },
     "measured_rows": [
+      {
+        "ppa_metrics": {
+          "critical_path_ns": 4.2869,
+          "die_area": 50690.271025,
+          "total_power_mw": 0.00479
+        },
+        "rank": 1,
+        "rank_source": "measured_bf16_reciprocal_datapath_ppa",
+        "template": "grid_approx_pwl_bf16_path"
+      },
       {
         "ppa_metrics": {
           "critical_path_ns": 5.6126,
           "die_area": 39776.3136,
           "total_power_mw": 0.00463
         },
-        "rank": 1,
+        "rank": 2,
         "rank_source": "measured_q8_reciprocal_datapath_ppa",
         "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q10"
       },
@@ -814,7 +823,7 @@
           "die_area": 52118.607025,
           "total_power_mw": 0.014
         },
-        "rank": 2,
+        "rank": 3,
         "rank_source": "measured_q8_reciprocal_datapath_ppa",
         "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q12"
       },
@@ -824,7 +833,7 @@
           "die_area": 52360.880625,
           "total_power_mw": 0.00637
         },
-        "rank": 3,
+        "rank": 4,
         "rank_source": "measured_q8_reciprocal_datapath_ppa",
         "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q14"
       },
@@ -834,7 +843,7 @@
           "die_area": 45315.765625,
           "total_power_mw": 0.0321
         },
-        "rank": 4,
+        "rank": 5,
         "rank_source": "measured_q8_reciprocal_datapath_ppa",
         "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q16"
       },
@@ -844,7 +853,7 @@
           "die_area": 105898.1764,
           "total_power_mw": 1.11
         },
-        "rank": 5,
+        "rank": 6,
         "rank_source": "measured_q8_exact_datapath_ppa",
         "template": "grid_approx_pwl_in_q8_w_q8_norm_exact"
       }
