@@ -1,0 +1,26 @@
+{
+  "proposal_id": "prop_l2_decoder_q8_norm_distribution_robustness_v1",
+  "source_commit": "38f3558a17412144bc0437b898fad691b1c2f94b",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_q8_norm_distribution_robustness_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run the q8 reciprocal-normalization frontier grid on the broader distribution dataset, compare the measured bf16 reciprocal anchor against q8 exact and q8 reciprocal q10/q12/q14/q16 under distribution shift, and keep PPA ranking grounded in merged Nangate45 datapath metrics.",
+      "evaluation_mode": "broad_ranking",
+      "abstraction_layer": "decoder_q8_normalization_distribution",
+      "comparison_role": "ranking",
+      "paired_baseline_item_id": "",
+      "depends_on_item_ids": [
+        "l2_decoder_q8_normalization_frontier_v1",
+        "l2_decoder_distribution_robustness_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Broader distribution evidence should validate whether the measured bf16 timing advantage and q8 reciprocal tradeoff remain quality-safe beyond the prompt-stress setup."
+      },
+      "status": "pending"
+    }
+  ]
+}
