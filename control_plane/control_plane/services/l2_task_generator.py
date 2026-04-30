@@ -954,6 +954,47 @@ def _decoder_q8_normalization_frontier_evidence(*, item_id: str) -> dict[str, An
     }
 
 
+def _decoder_quantization_outline_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_tiny_v1"
+    fp_sweep = f"{base}/decoder_quality_sweep__l2_decoder_fp_probability_format_sweep_v1.json"
+    distribution_sweep = f"{base}/decoder_quality_sweep__l2_decoder_distribution_robustness_v1.json"
+    q8_norm_frontier = f"{base}/decoder_q8_norm_frontier__l2_decoder_q8_normalization_frontier_v1.json"
+    outline_out = f"{base}/decoder_quantization_outline__{item_id}.json"
+    outline_report = f"{base}/decoder_quantization_outline__{item_id}.md"
+    commands = [
+        {
+            "name": "estimate_decoder_quantization_outline",
+            "run": (
+                "python3 npu/eval/estimate_llm_decoder_quantization_outline.py "
+                f"--fp-sweep {fp_sweep} "
+                f"--distribution-sweep {distribution_sweep} "
+                f"--q8-norm-frontier {q8_norm_frontier} "
+                f"--out {outline_out} "
+                f"--out-md {outline_report}"
+            ),
+        },
+    ]
+    return {
+        "inputs": {
+            "fp_format_sweep": fp_sweep,
+            "distribution_robustness_sweep": distribution_sweep,
+            "q8_normalization_frontier": q8_norm_frontier,
+            "quantization_outline_out": outline_out,
+            "quantization_outline_report": outline_report,
+            "quantization_outline_scope": (
+                "multi-dimensional decoder quantization interpretation over existing fp-format, "
+                "distribution robustness, and measured q8 normalization frontier evidence; dimensions "
+                "are grouped to avoid cross-category ranking"
+            ),
+        },
+        "commands": commands,
+        "expected_outputs": [
+            outline_out,
+            outline_report,
+        ],
+    }
+
+
 def _with_fresh_outputs(*, campaign: dict[str, Any], item_id: str) -> dict[str, Any]:
     cloned = json.loads(json.dumps(campaign))
     outputs = dict(cloned.get("outputs") or {})
@@ -1060,8 +1101,11 @@ def _build_payload(
         "decoder_survivor_cost_proxy",
         "decoder_pwl_frontier_detail",
         "decoder_q8_normalization_frontier",
+        "decoder_quantization_outline",
     }:
-        if abstraction_layer_name == "decoder_q8_normalization_frontier":
+        if abstraction_layer_name == "decoder_quantization_outline":
+            decoder_evidence = _decoder_quantization_outline_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_q8_normalization_frontier":
             decoder_evidence = _decoder_q8_normalization_frontier_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_pwl_frontier_detail":
             decoder_evidence = _decoder_pwl_frontier_detail_evidence(item_id=item_id)
