@@ -8,7 +8,11 @@
       "objective": "Measure Nangate45 PPA for the row-8 bf16 reciprocal-normalization datapath with the reciprocal LUT memory-size gate enabled, so the decoder q8-vs-bf16 normalization frontier can replace the remaining bf16 heuristic gap.",
       "evaluation_mode": "measurement_only",
       "abstraction_layer": "circuit_block",
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 305,
+      "merge_commit": "13aaac5a0b0d1fbbef7ada57f253ad85e09d7c7a",
+      "merged_utc": "2026-04-30T14:04:37.499035Z",
+      "notes": "Merged via PR #305 and merge 13aaac5a0b0d1fbbef7ada57f253ad85e09d7c7a at 2026-04-30T14:04:37.499035Z."
     }
   ]
 }
