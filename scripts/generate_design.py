@@ -87,6 +87,9 @@ def identify_design(config):
     operand = _resolve_operand(config, entry.get("operand", ""))
     bit_width = int(_operand_signal_width(operand))
     op_type = entry["type"]
+    if op_type == "bf16_recip_norm":
+        fp_format = operand.get("fp_format", {})
+        bit_width = int(fp_format.get("total_width", operand.get("bit_width", 0)))
     if op_type == "activation":
         return {
             "kind": "scalar_unary",
@@ -96,11 +99,11 @@ def identify_design(config):
             "output_width": bit_width,
             "include_mg_cpa": False,
         }
-    if op_type == "softmax_rowwise":
+    if op_type in {"softmax_rowwise", "bf16_recip_norm"}:
         options = entry.get("options", {})
         row_elems = int(options.get("row_elems", 1))
         if row_elems <= 0:
-            raise ValueError("softmax_rowwise row_elems must be positive")
+            raise ValueError(f"{op_type} row_elems must be positive")
         row_width = bit_width * row_elems
         return {
             "kind": "vector_unary",

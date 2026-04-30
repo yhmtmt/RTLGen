@@ -101,6 +101,45 @@ def _write_second_softmax_config(repo_root: Path) -> str:
     return str(config_path.relative_to(repo_root))
 
 
+def _write_bf16_recip_norm_config(repo_root: Path) -> str:
+    config_path = repo_root / "examples" / "config_bf16_recip_norm.json"
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    config_path.write_text(
+        json.dumps(
+            {
+                "version": "1.1",
+                "operands": [
+                    {
+                        "name": "weights",
+                        "dimensions": 1,
+                        "bit_width": 16,
+                        "signed": False,
+                        "kind": "int",
+                    }
+                ],
+                "operations": [
+                    {
+                        "type": "bf16_recip_norm",
+                        "module_name": "bf16_recip_norm_r4",
+                        "operand": "weights",
+                        "options": {
+                            "row_elems": 4,
+                            "q_frac_bits": 10,
+                            "sum_bits": 24,
+                            "reciprocal_bits": 12,
+                            "reciprocal_lut_bucket_shift": 4,
+                        },
+                    }
+                ],
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return str(config_path.relative_to(repo_root))
+
+
 def _init_git_repo(repo_root: Path) -> str:
     origin_root = repo_root.parent / "origin.git"
     subprocess.run(["git", "init", "--bare", str(origin_root)], check=True, capture_output=True, text=True)
@@ -299,6 +338,39 @@ def test_generate_l1_sweep_task_run_sweep_command_includes_all_wrapper_configs()
             assert work_item.expected_outputs == [
                 "runs/designs/activations/softmax_rowwise_int8_r4_wrapper/metrics.csv",
                 "runs/designs/activations/softmax_rowwise_int8_r8_wrapper/metrics.csv",
+            ]
+
+
+def test_generate_l1_sweep_task_supports_bf16_recip_norm_wrapper_config() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _, sweep_path = _write_example_repo(repo_root)
+        config_path = _write_bf16_recip_norm_config(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/activations",
+                    item_id="l1_demo_bf16_recip_norm",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="circuit_block",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert result.status == "applied"
+            assert work_item.expected_outputs == [
+                "runs/designs/activations/bf16_recip_norm_r4_wrapper/metrics.csv",
             ]
 
 

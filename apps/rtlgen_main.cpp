@@ -192,7 +192,8 @@ int main(int argc, char** argv) {
               << config.cmvm_operations.size() << " CMVM block(s), "
               << config.fp_operations.size() << " FP op(s), "
               << config.activation_operations.size() << " activation(s), "
-              << config.softmax_rowwise_operations.size() << " row-wise softmax block(s)\n";
+              << config.softmax_rowwise_operations.size() << " row-wise softmax block(s), "
+              << config.bf16_recip_norm_operations.size() << " bf16 reciprocal-normalization block(s)\n";
 
     try {
         std::filesystem::path flopocoPath;
@@ -304,6 +305,15 @@ int main(int argc, char** argv) {
             std::cout << "[INFO] Generating row-wise softmax " << softmax.module_name << " ("
                       << softmax.impl << ", row_elems=" << softmax.row_elems << ")\n";
             emitSoftmaxRowwiseModule(softmax, operandDef);
+        }
+
+        for (const auto &norm : config.bf16_recip_norm_operations) {
+            OperandDefinition operandDef = resolveOperand(config, norm.operand);
+            std::cout << "[INFO] Generating bf16 reciprocal normalization " << norm.module_name
+                      << " (row_elems=" << norm.row_elems
+                      << ", q_frac_bits=" << norm.q_frac_bits
+                      << ", reciprocal_bits=" << norm.reciprocal_bits << ")\n";
+            emitBf16RecipNormModule(norm, operandDef);
         }
 
         for (const auto &fp : config.fp_operations) {
