@@ -59,6 +59,7 @@ bool readConfig(const std::string& filename, CircuitConfig& config) {
         config.fp_operations.clear();
         config.activation_operations.clear();
         config.softmax_rowwise_operations.clear();
+        config.bf16_recip_norm_operations.clear();
         config.onnx_model.reset();
 
         if (j.contains("operand")) {
@@ -380,6 +381,32 @@ bool readConfig(const std::string& filename, CircuitConfig& config) {
                         throw std::runtime_error("softmax_rowwise output_scale must be in [1, 255] for " + softmax.module_name);
                     }
                     config.softmax_rowwise_operations.push_back(softmax);
+                } else if (type == "bf16_recip_norm") {
+                    const json &options = entry.contains("options") ? entry["options"] : entry;
+                    Bf16RecipNormOperationConfig norm;
+                    norm.module_name = module_name;
+                    norm.operand = operand_name;
+                    norm.row_elems = options.value("row_elems", 1);
+                    norm.q_frac_bits = options.value("q_frac_bits", 10);
+                    norm.sum_bits = options.value("sum_bits", 24);
+                    norm.reciprocal_bits = options.value("reciprocal_bits", 12);
+                    norm.reciprocal_lut_bucket_shift = options.value("reciprocal_lut_bucket_shift", 4);
+                    if (norm.row_elems <= 0 || norm.row_elems > 1024) {
+                        throw std::runtime_error("bf16_recip_norm row_elems must be in [1, 1024] for " + norm.module_name);
+                    }
+                    if (norm.q_frac_bits < 4 || norm.q_frac_bits > 20) {
+                        throw std::runtime_error("bf16_recip_norm q_frac_bits must be in [4, 20] for " + norm.module_name);
+                    }
+                    if (norm.sum_bits < 8 || norm.sum_bits > 64) {
+                        throw std::runtime_error("bf16_recip_norm sum_bits must be in [8, 64] for " + norm.module_name);
+                    }
+                    if (norm.reciprocal_bits < 4 || norm.reciprocal_bits > 24) {
+                        throw std::runtime_error("bf16_recip_norm reciprocal_bits must be in [4, 24] for " + norm.module_name);
+                    }
+                    if (norm.reciprocal_lut_bucket_shift < 0 || norm.reciprocal_lut_bucket_shift > 12) {
+                        throw std::runtime_error("bf16_recip_norm reciprocal_lut_bucket_shift must be in [0, 12] for " + norm.module_name);
+                    }
+                    config.bf16_recip_norm_operations.push_back(norm);
                 } else {
                     throw std::runtime_error("Unknown operation type: " + type);
                 }

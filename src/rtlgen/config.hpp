@@ -206,6 +206,16 @@ struct SoftmaxRowwiseOperationConfig {
     int output_scale{127};
 };
 
+struct Bf16RecipNormOperationConfig {
+    std::string module_name;
+    std::string operand;
+    int row_elems{1};
+    int q_frac_bits{10};
+    int sum_bits{24};
+    int reciprocal_bits{12};
+    int reciprocal_lut_bucket_shift{4};
+};
+
 struct CircuitConfig {
     OperandConfig operand;
     std::vector<OperandDefinition> operands;
@@ -218,6 +228,7 @@ struct CircuitConfig {
     std::vector<FpOperationConfig> fp_operations;
     std::vector<ActivationOperationConfig> activation_operations;
     std::vector<SoftmaxRowwiseOperationConfig> softmax_rowwise_operations;
+    std::vector<Bf16RecipNormOperationConfig> bf16_recip_norm_operations;
     std::optional<std::string> onnx_model; // Added ONNX model path
 };
 

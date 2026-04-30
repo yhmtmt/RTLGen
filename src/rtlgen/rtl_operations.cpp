@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <cmath>
+#include <iomanip>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -1036,6 +1037,185 @@ void emitSoftmaxRowwiseModule(const SoftmaxRowwiseOperationConfig &config, const
     os << "      else\n";
     os << "        lane_out = scaled_out[DATA_W-1:0];\n";
     os << "      Y[(i*DATA_W) +: DATA_W] = lane_out;\n";
+    os << "    end\n";
+    os << "  end\n";
+    os << "endmodule\n";
+}
+
+void emitBf16RecipNormModule(const Bf16RecipNormOperationConfig &config, const OperandDefinition &operand) {
+    if (operand.bit_width != 16) {
+        throw std::runtime_error("bf16_recip_norm expects a 16-bit packed bf16 operand");
+    }
+    if (operand.kind == "fp" && (!operand.fp_format.has_value() ||
+                                 operand.fp_format->total_width != 16 ||
+                                 operand.fp_format->mantissa_width != 7)) {
+        throw std::runtime_error("bf16_recip_norm fp operands must use bf16 {total_width=16, mantissa_width=7}");
+    }
+    if (config.row_elems <= 0 || config.row_elems > 1024) {
+        throw std::runtime_error("bf16_recip_norm row_elems must be in [1, 1024]");
+    }
+    if (config.q_frac_bits < 4 || config.q_frac_bits > 20) {
+        throw std::runtime_error("bf16_recip_norm q_frac_bits must be in [4, 20]");
+    }
+    if (config.sum_bits < 8 || config.sum_bits > 64) {
+        throw std::runtime_error("bf16_recip_norm sum_bits must be in [8, 64]");
+    }
+    if (config.reciprocal_bits < 4 || config.reciprocal_bits > 24) {
+        throw std::runtime_error("bf16_recip_norm reciprocal_bits must be in [4, 24]");
+    }
+    if (config.reciprocal_lut_bucket_shift < 0 || config.reciprocal_lut_bucket_shift > 12) {
+        throw std::runtime_error("bf16_recip_norm reciprocal_lut_bucket_shift must be in [0, 12]");
+    }
+
+    const int data_width = 16;
+    const int row_width = config.row_elems * data_width;
+    const unsigned long long q_one = 1ULL << config.q_frac_bits;
+    const unsigned long long max_sum = static_cast<unsigned long long>(config.row_elems) * q_one;
+    const unsigned long long bucket_step = 1ULL << config.reciprocal_lut_bucket_shift;
+    const unsigned long long max_bucket = (max_sum + bucket_step - 1ULL) / bucket_step;
+    if (max_sum >= (1ULL << std::min(config.sum_bits, 63))) {
+        throw std::runtime_error("bf16_recip_norm sum_bits is too small for row_elems/q_frac_bits envelope");
+    }
+    if (max_bucket > 16384ULL) {
+        throw std::runtime_error("bf16_recip_norm reciprocal LUT exceeds 16384 entries; increase reciprocal_lut_bucket_shift");
+    }
+    const int reciprocal_value_bits = config.reciprocal_bits + config.q_frac_bits + 1;
+    const int product_bits = config.sum_bits + reciprocal_value_bits;
+    const unsigned long long reciprocal_scale = 1ULL << (config.reciprocal_bits + config.q_frac_bits);
+
+    std::string filename = config.module_name + ".v";
+    std::ofstream os(filename);
+    if (!os) {
+        throw std::runtime_error("Failed to open " + filename + " for writing");
+    }
+
+    os << "`timescale 1ns/1ps\n\n";
+    os << "module " << config.module_name << "(\n";
+    os << "  input  [" << (row_width - 1) << ":0] X,\n";
+    os << "  output reg [" << (row_width - 1) << ":0] Y\n";
+    os << ");\n\n";
+    os << "  // Packed-bf16 row normalization proxy.\n";
+    os << "  // Positive bf16 lanes are converted to fixed-point, summed, multiplied by\n";
+    os << "  // a bucketed reciprocal, and converted back to bf16. Subnormals, negative\n";
+    os << "  // inputs, NaNs, and infinities are clamped for an L1 datapath cost proxy.\n";
+    os << "  localparam integer ROW_ELEMS = " << config.row_elems << ";\n";
+    os << "  localparam integer DATA_W = 16;\n";
+    os << "  localparam integer Q_FRAC_BITS = " << config.q_frac_bits << ";\n";
+    os << "  localparam integer SUM_BITS = " << config.sum_bits << ";\n";
+    os << "  localparam integer RECIP_BITS = " << config.reciprocal_bits << ";\n";
+    os << "  localparam integer RECIP_VALUE_BITS = " << reciprocal_value_bits << ";\n";
+    os << "  localparam integer RECIP_BUCKET_SHIFT = " << config.reciprocal_lut_bucket_shift << ";\n";
+    os << "  localparam integer PRODUCT_BITS = " << product_bits << ";\n";
+    os << "  localparam [SUM_BITS-1:0] Q_ONE = " << config.sum_bits << "'d" << q_one << ";\n\n";
+
+    os << "  function [SUM_BITS-1:0] bf16_to_q;\n";
+    os << "    input [15:0] x;\n";
+    os << "    integer exp_unbiased;\n";
+    os << "    integer shift;\n";
+    os << "    reg [7:0] mant;\n";
+    os << "    reg [SUM_BITS+8:0] raw;\n";
+    os << "    begin\n";
+    os << "      raw = {SUM_BITS+9{1'b0}};\n";
+    os << "      if (x[15] || x[14:7] == 8'd0) begin\n";
+    os << "        bf16_to_q = {SUM_BITS{1'b0}};\n";
+    os << "      end else if (x[14:7] > 8'd127) begin\n";
+    os << "        bf16_to_q = Q_ONE;\n";
+    os << "      end else begin\n";
+    os << "        mant = {1'b1, x[6:0]};\n";
+    os << "        exp_unbiased = x[14:7] - 127;\n";
+    os << "        shift = Q_FRAC_BITS + exp_unbiased - 7;\n";
+    os << "        if (shift >= 0)\n";
+    os << "          raw = {{(SUM_BITS+1){1'b0}}, mant} << shift;\n";
+    os << "        else\n";
+    os << "          raw = {{(SUM_BITS+1){1'b0}}, mant} >> (-shift);\n";
+    os << "        if (raw > Q_ONE)\n";
+    os << "          bf16_to_q = Q_ONE;\n";
+    os << "        else\n";
+    os << "          bf16_to_q = raw[SUM_BITS-1:0];\n";
+    os << "      end\n";
+    os << "    end\n";
+    os << "  endfunction\n\n";
+
+    os << "  function [15:0] q_to_bf16;\n";
+    os << "    input [SUM_BITS-1:0] q;\n";
+    os << "    integer msb;\n";
+    os << "    integer k;\n";
+    os << "    integer exp_val;\n";
+    os << "    reg [7:0] exp_bits;\n";
+    os << "    reg [7:0] sig;\n";
+    os << "    reg [SUM_BITS-1:0] norm;\n";
+    os << "    begin\n";
+    os << "      if (q == {SUM_BITS{1'b0}}) begin\n";
+    os << "        q_to_bf16 = 16'h0000;\n";
+    os << "      end else begin\n";
+    os << "        msb = 0;\n";
+    os << "        for (k = 0; k < SUM_BITS; k = k + 1) begin\n";
+    os << "          if (q[k]) msb = k;\n";
+    os << "        end\n";
+    os << "        exp_val = 127 + msb - Q_FRAC_BITS;\n";
+    os << "        if (exp_val <= 0) begin\n";
+    os << "          q_to_bf16 = 16'h0000;\n";
+    os << "        end else if (exp_val >= 255) begin\n";
+    os << "          q_to_bf16 = 16'h7f7f;\n";
+    os << "        end else begin\n";
+    os << "          if (msb >= 7)\n";
+    os << "            norm = q >> (msb - 7);\n";
+    os << "          else\n";
+    os << "            norm = q << (7 - msb);\n";
+    os << "          exp_bits = exp_val;\n";
+    os << "          sig = norm[7:0];\n";
+    os << "          q_to_bf16 = {1'b0, exp_bits, sig[6:0]};\n";
+    os << "        end\n";
+    os << "      end\n";
+    os << "    end\n";
+    os << "  endfunction\n\n";
+
+    os << "  function [RECIP_VALUE_BITS-1:0] recip_lut;\n";
+    os << "    input [SUM_BITS-1:0] bucket;\n";
+    os << "    begin\n";
+    os << "      case (bucket)\n";
+    os << "        " << config.sum_bits << "'d0: recip_lut = {RECIP_VALUE_BITS{1'b0}};\n";
+    for (unsigned long long bucket = 1; bucket <= max_bucket; ++bucket) {
+        const unsigned long long denom = bucket * bucket_step;
+        const unsigned long long recip = (reciprocal_scale + (denom / 2ULL)) / denom;
+        os << "        " << config.sum_bits << "'d" << bucket
+           << ": recip_lut = " << reciprocal_value_bits << "'d" << recip << ";\n";
+    }
+    os << "        default: recip_lut = {RECIP_VALUE_BITS{1'b0}};\n";
+    os << "      endcase\n";
+    os << "    end\n";
+    os << "  endfunction\n\n";
+
+    os << "  integer i;\n";
+    os << "  reg [SUM_BITS-1:0] q_values [0:ROW_ELEMS-1];\n";
+    os << "  reg [SUM_BITS-1:0] sum_values;\n";
+    os << "  reg [SUM_BITS-1:0] reciprocal_bucket;\n";
+    os << "  reg [RECIP_VALUE_BITS-1:0] reciprocal;\n";
+    os << "  reg [PRODUCT_BITS-1:0] product;\n";
+    os << "  reg [PRODUCT_BITS-1:0] rounded_product;\n";
+    os << "  reg [SUM_BITS-1:0] norm_q;\n\n";
+
+    os << "  always @* begin\n";
+    os << "    sum_values = {SUM_BITS{1'b0}};\n";
+    os << "    for (i = 0; i < ROW_ELEMS; i = i + 1) begin\n";
+    os << "      q_values[i] = bf16_to_q(X[(i*DATA_W) +: DATA_W]);\n";
+    os << "      sum_values = sum_values + q_values[i];\n";
+    os << "    end\n\n";
+    os << "    Y = {ROW_ELEMS*DATA_W{1'b0}};\n";
+    if (config.reciprocal_lut_bucket_shift > 0) {
+        os << "    reciprocal_bucket = (sum_values + " << config.sum_bits << "'d" << (bucket_step - 1ULL)
+           << ") >> RECIP_BUCKET_SHIFT;\n";
+    } else {
+        os << "    reciprocal_bucket = sum_values;\n";
+    }
+    os << "    reciprocal = recip_lut(reciprocal_bucket);\n\n";
+    os << "    for (i = 0; i < ROW_ELEMS; i = i + 1) begin\n";
+    os << "      product = q_values[i] * reciprocal;\n";
+    os << "      rounded_product = product + ({{(PRODUCT_BITS-1){1'b0}}, 1'b1} << (RECIP_BITS - 1));\n";
+    os << "      norm_q = rounded_product >> RECIP_BITS;\n";
+    os << "      if (norm_q > Q_ONE)\n";
+    os << "        norm_q = Q_ONE;\n";
+    os << "      Y[(i*DATA_W) +: DATA_W] = q_to_bf16(norm_q);\n";
     os << "    end\n";
     os << "  end\n";
     os << "endmodule\n";

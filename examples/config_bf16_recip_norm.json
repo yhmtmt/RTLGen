@@ -1,0 +1,26 @@
+{
+  "version": "1.1",
+  "operands": [
+    {
+      "name": "weights",
+      "dimensions": 1,
+      "bit_width": 16,
+      "signed": false,
+      "kind": "int"
+    }
+  ],
+  "operations": [
+    {
+      "type": "bf16_recip_norm",
+      "module_name": "bf16_recip_norm_r4",
+      "operand": "weights",
+      "options": {
+        "row_elems": 4,
+        "q_frac_bits": 10,
+        "sum_bits": 24,
+        "reciprocal_bits": 12,
+        "reciprocal_lut_bucket_shift": 4
+      }
+    }
+  ]
+}
