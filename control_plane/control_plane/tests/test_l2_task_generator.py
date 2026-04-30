@@ -674,6 +674,11 @@ def test_generate_l2_campaign_task_adds_decoder_q8_normalization_frontier_eviden
                 in work_item.command_manifest[5]["run"]
             )
             assert (
+                "--bf16-recip-ppa control_plane/shadow_exports/l1_promotions/"
+                "l1_decoder_bf16_recip_norm_datapath_v1_r2.json"
+                in work_item.command_manifest[5]["run"]
+            )
+            assert (
                 decoder_inputs["q8_reciprocal_datapath_ppa"]
                 == "control_plane/shadow_exports/l1_promotions/l1_decoder_q8_recip_norm_datapath_v1_r3.json"
             )
@@ -682,10 +687,75 @@ def test_generate_l2_campaign_task_adds_decoder_q8_normalization_frontier_eviden
                 == "control_plane/shadow_exports/l1_promotions/"
                 "l1_prop_l1_softmax_rowwise_int8_r8_acc24_block_v1_nangate45_r1.json"
             )
+            assert (
+                decoder_inputs["bf16_reciprocal_datapath_ppa"]
+                == "control_plane/shadow_exports/l1_promotions/l1_decoder_bf16_recip_norm_datapath_v1_r2.json"
+            )
             assert decoder_inputs["frontier_out"] in work_item.expected_outputs
             assert decoder_inputs["frontier_report"] in work_item.expected_outputs
             assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
                 "layer": "decoder_q8_normalization_frontier",
+            }
+
+
+def test_generate_l2_campaign_task_adds_decoder_q8_normalization_distribution_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    item_id="l2_decoder_q8_norm_distribution_robustness_v1",
+                    proposal_id="prop_l2_decoder_q8_norm_distribution_robustness_v1",
+                    proposal_path="docs/proposals/prop_l2_decoder_q8_norm_distribution_robustness_v1/proposal.json",
+                    evaluation_mode="broad_ranking",
+                    abstraction_layer="decoder_q8_normalization_distribution",
+                    expected_direction="iterate",
+                    comparison_role="ranking",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            command_names = [command["name"] for command in work_item.command_manifest]
+            assert command_names[:6] == [
+                "generate_decoder_q8_norm_distribution_reference",
+                "generate_decoder_q8_norm_distribution_candidate",
+                "validate_decoder_q8_norm_distribution_contract",
+                "compare_decoder_q8_norm_distribution_quality",
+                "sweep_decoder_q8_norm_distribution_frontier",
+                "estimate_decoder_q8_norm_distribution_frontier",
+            ]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+            assert decoder_inputs["dataset_manifest"] == "runs/datasets/llm_decoder_eval_tiny_v1/manifest_distribution_v1.json"
+            assert decoder_inputs["sample_file"] == "runs/datasets/llm_decoder_eval_tiny_v1/samples_distribution_v1.jsonl"
+            assert decoder_inputs["candidate_sweep_grid"] == "decoder_q8_normalization_frontier_v1"
+            assert "broader distribution robustness" in decoder_inputs["candidate_sweep_scope"]
+            assert "--rough-grid decoder_q8_normalization_frontier_v1" in work_item.command_manifest[4]["run"]
+            assert "estimate_llm_decoder_q8_norm_frontier.py" in work_item.command_manifest[5]["run"]
+            assert (
+                "--bf16-recip-ppa control_plane/shadow_exports/l1_promotions/"
+                "l1_decoder_bf16_recip_norm_datapath_v1_r2.json"
+                in work_item.command_manifest[5]["run"]
+            )
+            assert decoder_inputs["frontier_out"] == (
+                "runs/datasets/llm_decoder_eval_tiny_v1/"
+                "decoder_q8_norm_frontier__l2_decoder_q8_norm_distribution_robustness_v1.json"
+            )
+            assert decoder_inputs["frontier_out"] in work_item.expected_outputs
+            assert decoder_inputs["frontier_report"] in work_item.expected_outputs
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
+                "layer": "decoder_q8_normalization_distribution",
             }
 
 
