@@ -1,25 +1,8 @@
 # Quality Gate
 
-## Proposal
-- `proposal_id`:
-- `title`:
+This is a measurement-only Layer 1 proposal. It does not rerun decoder quality.
 
-## Why This Gate Is Required
-- describe the output or numerical behavior that may change
-
-## Reference
-- baseline_ref:
-- reference_ref:
-
-## Checks
-- metric:
-  - threshold:
-- metric:
-  - threshold:
-
-## Local Commands
-- command:
-
-## Result
-- status: pending
-- note:
+The result may be consumed by decoder frontier reports only alongside the
+existing prompt-stress quality gates for the corresponding quantization
+candidate. Any future ranking must keep approximation-quality sensitivity
+separate from hardware PPA.

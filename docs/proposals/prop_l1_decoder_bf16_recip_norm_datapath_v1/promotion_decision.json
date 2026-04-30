@@ -1,12 +1,13 @@
 {
   "proposal_id": "prop_l1_decoder_bf16_recip_norm_datapath_v1",
-  "candidate_id": "",
-  "decision": "iterate",
-  "reason": "Replace with the actual decision rationale.",
+  "candidate_id": "l1_decoder_bf16_recip_norm_datapath_v1_r2",
+  "decision": "promote",
+  "reason": "Accepted Layer 1 physical metrics were produced for the row-8 bf16 reciprocal-normalization datapath.",
   "evidence_refs": [
-    "item:example",
-    "run:example"
+    "item:l1_decoder_bf16_recip_norm_datapath_v1_r2",
+    "run:l1_decoder_bf16_recip_norm_datapath_v1_r2_run_78aed7d4bbe695a5",
+    "artifact:control_plane/shadow_exports/l1_promotions/l1_decoder_bf16_recip_norm_datapath_v1_r2.json"
   ],
-  "next_action": "Describe the next action.",
-  "requires_human_approval": true
+  "next_action": "Update the decoder normalization frontier estimator to consume the bf16 PPA artifact.",
+  "requires_human_approval": false
 }

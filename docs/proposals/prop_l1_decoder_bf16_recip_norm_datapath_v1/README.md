@@ -1,18 +1,12 @@
-# Proposal Template
+# Decoder bf16 Reciprocal Normalization Datapath
 
-Canonical template location for new proposal workspaces.
+This proposal records the Layer 1 measurement for the standalone row-wise bf16
+reciprocal-normalization datapath added to RTLGen in PR #300.
 
-The template file set mirrors the proposal artifact contract used by the
-current developer loop:
+The measurement closes the remaining bf16 normalization hardware gap called out
+by the decoder quantization outline. It is intentionally a circuit-block PPA
+measurement, not a full decoder promotion: it measures the packed-bf16
+conversion, sum, reciprocal LUT, multiply, clamp, and bf16 output-conversion
+path for `row_elems=8` on Nangate45.
 
-- `proposal.json`
-- `design_brief.md`
-- `implementation_summary.md`
-- `evaluation_gate.md`
-- `evaluation_requests.json`
-- `quality_gate.md`
-- `analysis_report.md`
-- `promotion_decision.json`
-- `promotion_result.json`
-
-This is the only supported proposal template for new work. The legacy template path exists only as a compatibility symlink.
+The key accepted result is `l1_decoder_bf16_recip_norm_datapath_v1_r2`.

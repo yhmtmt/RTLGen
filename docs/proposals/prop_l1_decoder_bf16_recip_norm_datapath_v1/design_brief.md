@@ -1,46 +1,35 @@
 # Design Brief
 
 ## Proposal
-- `proposal_id`: `prop_example_v1`
-- `title`: `Example proposal title`
+- `proposal_id`: `prop_l1_decoder_bf16_recip_norm_datapath_v1`
+- `title`: `Decoder bf16 reciprocal normalization datapath`
 
 ## Problem
-- what bottleneck or limitation is being targeted
+The decoder quantization outline still treated bf16 reciprocal normalization as
+an unmeasured hardware gap. The q8 reciprocal-normalization datapath already
+has integrated L1 PPA, so comparing q8 and bf16 without a bf16 measurement
+would mix measured and heuristic costs.
 
 ## Hypothesis
-- short explanation of why this change may help
+A row-wise packed-bf16 reciprocal-normalization block can be measured as a
+standalone circuit block, providing enough PPA evidence to replace the bf16
+normalization placeholder in the next frontier report.
 
 ## Evaluation Scope
-- direct comparison set:
-  - the smallest set of variants or architecture points needed to test the
-    hypothesis
-- evaluation modes:
-  - note whether each requested item is `measurement_only`,
-    `baseline_refresh`, `paired_comparison`, or `broad_ranking`
-  - record any expected non-win/lose result, such as a refreshed baseline that
-    is expected to look worse than a historical run
-- dependency order:
-  - list any item ids that must merge before a dependent item can be exported
-    or reviewed
-  - note whether the dependent item requires merged inputs, materialized repo
-    refs, or both
-- excluded first-stage comparisons:
-  - broader points intentionally left out of the first evaluation
-- follow-on broad sweep:
-  - optional wider comparison to run only if the focused result is positive,
-    ambiguous, or interaction-sensitive
+- `l1_decoder_bf16_recip_norm_datapath_v1_r2`
+- platform: Nangate45
+- mode: `measurement_only`
+- abstraction: `circuit_block`
+- config: `runs/designs/activations/bf16_recip_norm_r8_wrapper/config_bf16_recip_norm_r8.json`
+- sweep: `runs/campaigns/activations/bf16_recip_norm/sweeps/nangate45_highutil.json`
 
-## Knowledge Inputs
-- papers
-- notes
-- prior runs
-- discussion references
-
-## Candidate Direction
-- what will change at a high level
+## Exclusions
+- No model-quality rerun is part of this L1 item.
+- No full decoder integration PPA is claimed.
+- No exact IEEE bf16 exception support is claimed; the RTL clamps unsupported
+  cases for measurement.
 
 ## Direction Gate
-- status: pending
-- approved_by:
-- approved_utc:
-- note:
+- status: satisfied
+- note: PR #300 added the datapath and PR #303 enabled the reciprocal LUT
+  synthesis envelope required for the accepted r2 run.
