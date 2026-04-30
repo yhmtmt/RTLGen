@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_decoder_normalization_arithmetic_calibration_v1",
-  "source_commit": "beb0ca3cb6f0129820f3d7617787fec12e1e8a78",
+  "source_commit": "604d30b4165ef8b79b16997782979e7313735615",
   "requested_items": [
     {
       "item_id": "l1_decoder_norm_q8_recip_mult_calibration_v1_r2",
@@ -33,12 +33,15 @@
       "merged_utc": "2026-04-29T09:18:58.855526Z"
     },
     {
-      "item_id": "l1_decoder_bf16_recip_norm_datapath_v1_r1",
+      "item_id": "l1_decoder_bf16_recip_norm_datapath_v1_r2",
       "task_type": "l1_sweep",
-      "objective": "Measure Nangate45 PPA for the row-8 bf16 reciprocal-normalization datapath added in PR #300, so the decoder q8-vs-bf16 normalization frontier can replace the remaining bf16 heuristic gap.",
+      "objective": "Measure Nangate45 PPA for the row-8 bf16 reciprocal-normalization datapath with the reciprocal LUT memory-size gate enabled, so the decoder q8-vs-bf16 normalization frontier can replace the remaining bf16 heuristic gap.",
       "evaluation_mode": "measurement_only",
       "abstraction_layer": "circuit_block",
-      "status": "pending"
+      "status": "pending",
+      "prior_item_ids": [
+        "l1_decoder_bf16_recip_norm_datapath_v1_r1"
+      ]
     }
   ]
 }
