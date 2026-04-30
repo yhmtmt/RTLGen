@@ -16,23 +16,26 @@ BASELINE_Q8_EXACT = "grid_approx_pwl_in_q8_w_q8_norm_exact"
 BF16_ANCHOR = "grid_approx_pwl_bf16_path"
 Q8_PREFIX = "grid_approx_pwl_in_q8_w_q8_norm_recip_q"
 DEFAULT_Q8_RECIP_PPA = Path("control_plane/shadow_exports/l1_promotions/l1_decoder_q8_recip_norm_datapath_v1_r3.json")
+DEFAULT_Q8_EXACT_PPA = Path(
+    "control_plane/shadow_exports/l1_promotions/l1_prop_l1_softmax_rowwise_int8_r8_acc24_block_v1_nangate45_r1.json"
+)
 METRIC_KEYS = ("critical_path_ns", "die_area", "total_power_mw")
 
 COST_MODEL = {
-    "name": "decoder_q8_normalization_ppa_frontier_v2",
-    "source": "rtlgen_openroad_q8_reciprocal_datapath_metrics",
+    "name": "decoder_q8_normalization_ppa_frontier_v3",
+    "source": "rtlgen_openroad_q8_exact_and_reciprocal_datapath_metrics",
     "unit": "nangate45_physical_metrics",
-    "calibration_status": "q8_reciprocal_integrated_datapath_measured",
+    "calibration_status": "q8_exact_and_reciprocal_integrated_datapaths_measured",
     "ppa_balance": (
-        "Measured q8 reciprocal candidates are ranked lexicographically by critical path, "
-        "then area, then power. Exact q8 and bf16 reciprocal normalization remain unmeasured "
-        "hardware gaps and are not compared as accepted PPA."
+        "Measured q8 exact and q8 reciprocal candidates are ranked lexicographically by critical path, "
+        "then area, then power. The bf16 reciprocal normalization path remains an unmeasured "
+        "hardware gap and is not compared as accepted PPA."
     ),
     "intended_use": (
-        "Replace the q8 reciprocal normalization heuristic with merged RTLGen/OpenROAD "
-        "datapath evidence while preserving quality gates from the decoder sweep."
+        "Replace the q8 normalization heuristic with merged RTLGen/OpenROAD datapath "
+        "evidence while preserving quality gates from the decoder sweep."
     ),
-    "rtlgen_calibration_proposal": "prop_l1_decoder_q8_recip_norm_datapath_v1",
+    "rtlgen_calibration_proposal": "prop_l1_decoder_q8_recip_norm_datapath_v1_and_prop_l1_softmax_rowwise_int8_r8_acc24_block_v1",
     "fallback_source": "hand_written_planning_proxy_used_only_when_ppa_artifact_is_absent",
 }
 
@@ -102,6 +105,33 @@ def _load_q8_recip_ppa(path: Path | None) -> dict[int, JsonDict]:
     return rows
 
 
+def _load_q8_exact_ppa(path: Path | None) -> JsonDict | None:
+    if path is None or not path.exists():
+        return None
+    payload = _load_json(path)
+    proposals = payload.get("proposals")
+    if not isinstance(proposals, list):
+        raise SystemExit(f"q8 exact PPA artifact must contain proposals list: {path}")
+    for proposal in proposals:
+        if not isinstance(proposal, dict):
+            continue
+        metrics_ref = proposal.get("metrics_ref")
+        if not isinstance(metrics_ref, dict):
+            continue
+        metrics = _metric_summary(proposal)
+        if str(metrics_ref.get("status") or "") != "ok":
+            continue
+        if any(metrics[key] is None for key in METRIC_KEYS):
+            continue
+        return {
+            "platform": metrics_ref.get("platform"),
+            "metrics_ref": metrics_ref,
+            "metrics": metrics,
+            "selection_reason": proposal.get("selection_reason"),
+        }
+    return None
+
+
 def _quality(row: JsonDict) -> JsonDict:
     sample_count = _as_int(row.get("sample_count"))
     next_rate = _as_float(row.get("next_token_id_match_rate"))
@@ -143,7 +173,7 @@ def _heuristic_normalization_cost(row: JsonDict) -> float:
     return 40.0
 
 
-def _normalization_record(row: JsonDict, *, q8_recip_ppa: dict[int, JsonDict]) -> JsonDict:
+def _normalization_record(row: JsonDict, *, q8_recip_ppa: dict[int, JsonDict], q8_exact_ppa: JsonDict | None) -> JsonDict:
     mode = str(row.get("normalization_mode") or "exact").strip()
     bits = _as_int(row.get("normalization_reciprocal_bits"), 0)
     heuristic_cost = _heuristic_normalization_cost(row)
@@ -182,7 +212,22 @@ def _normalization_record(row: JsonDict, *, q8_recip_ppa: dict[int, JsonDict]) -
         )
         return record
     if mode == "exact":
-        record["calibration_status"] = "unmeasured_exact_normalization_datapath"
+        template = str(row.get("template") or "")
+        if template == BASELINE_Q8_EXACT and q8_exact_ppa is not None:
+            metrics = q8_exact_ppa["metrics"]
+            record.update(
+                {
+                    "ppa_metrics": metrics,
+                    "metrics_ref": q8_exact_ppa["metrics_ref"],
+                    "rank_source": "measured_q8_exact_datapath_ppa",
+                    "rank_key": [0] + [float(metrics[key]) for key in METRIC_KEYS],
+                    "calibration_status": "integrated_q8_exact_datapath_measured",
+                }
+            )
+            return record
+        record["calibration_status"] = "missing_integrated_q8_exact_datapath_ppa"
+        record["rank_source"] = "heuristic_fallback_missing_q8_exact_ppa"
+        record["rank_key"] = [1, round(heuristic_cost, 6)]
     elif mode == "reciprocal_float":
         record["calibration_status"] = "unmeasured_float_reciprocal_datapath"
     else:
@@ -190,10 +235,10 @@ def _normalization_record(row: JsonDict, *, q8_recip_ppa: dict[int, JsonDict]) -
     return record
 
 
-def _row_record(row: JsonDict, *, q8_recip_ppa: dict[int, JsonDict]) -> JsonDict:
+def _row_record(row: JsonDict, *, q8_recip_ppa: dict[int, JsonDict], q8_exact_ppa: JsonDict | None) -> JsonDict:
     template = str(row.get("template") or "")
     quality = _quality(row)
-    normalization = _normalization_record(row, q8_recip_ppa=q8_recip_ppa)
+    normalization = _normalization_record(row, q8_recip_ppa=q8_recip_ppa, q8_exact_ppa=q8_exact_ppa)
     if template == BF16_ANCHOR:
         role = "bf16_primary_anchor"
     elif template == BASELINE_Q8_EXACT:
@@ -274,13 +319,23 @@ def _write_markdown(path: Path, payload: JsonDict) -> None:
     path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
 
 
-def build_report(*, sweep_path: Path, q8_recip_ppa_path: Path | None = DEFAULT_Q8_RECIP_PPA) -> JsonDict:
+def build_report(
+    *,
+    sweep_path: Path,
+    q8_recip_ppa_path: Path | None = DEFAULT_Q8_RECIP_PPA,
+    q8_exact_ppa_path: Path | None = DEFAULT_Q8_EXACT_PPA,
+) -> JsonDict:
     sweep = _load_json(sweep_path)
     q8_recip_ppa = _load_q8_recip_ppa(q8_recip_ppa_path)
+    q8_exact_ppa = _load_q8_exact_ppa(q8_exact_ppa_path)
     rows = sweep.get("templates")
     if not isinstance(rows, list):
         raise SystemExit("sweep JSON must contain a templates list")
-    records = [_row_record(row, q8_recip_ppa=q8_recip_ppa) for row in rows if isinstance(row, dict)]
+    records = [
+        _row_record(row, q8_recip_ppa=q8_recip_ppa, q8_exact_ppa=q8_exact_ppa)
+        for row in rows
+        if isinstance(row, dict)
+    ]
     interesting = [
         row
         for row in records
@@ -309,7 +364,7 @@ def build_report(*, sweep_path: Path, q8_recip_ppa_path: Path | None = DEFAULT_Q
             "reason": (
                 f"{selected['template']} preserved the exact prompt-stress gate and has the best "
                 f"{selected['normalization']['rank_source']} among exact-safe q8 reciprocal candidates. "
-                "q8 exact and bf16 reciprocal normalization remain unmeasured hardware gaps."
+                "q8 exact is included as measured baseline PPA; bf16 reciprocal normalization remains an unmeasured hardware gap."
             ),
         }
     else:
@@ -340,20 +395,22 @@ def build_report(*, sweep_path: Path, q8_recip_ppa_path: Path | None = DEFAULT_Q
             "scope_note": (
                 "This is a focused q8 PWL normalization frontier. It tests reciprocal-normalization "
                 "precision as a replacement for q8 exact normalization. q8 reciprocal rows use merged "
-                "RTLGen/OpenROAD integrated datapath metrics when the PPA artifact is available; exact "
-                "q8 and bf16 normalization paths remain unmeasured."
+                "RTLGen/OpenROAD integrated datapath metrics when the PPA artifact is available; q8 exact "
+                "uses the measured row-wise int8 softmax baseline when available; bf16 normalization remains unmeasured."
             ),
         },
         "source_artifacts": {
             "q8_reciprocal_datapath_ppa": str(q8_recip_ppa_path) if q8_recip_ppa_path is not None else None,
             "q8_reciprocal_ppa_bits": sorted(q8_recip_ppa),
+            "q8_exact_datapath_ppa": str(q8_exact_ppa_path) if q8_exact_ppa_path is not None else None,
+            "q8_exact_ppa_available": q8_exact_ppa is not None,
         },
         "cost_model": COST_MODEL,
         "decision": decision,
         "ranked_rows": ranked,
         "next_step": [
-            "Measure bf16 reciprocal/multiply normalization before making a q8-versus-bf16 hardware decision.",
-            "Measure or model q8 exact normalization only if it remains a candidate beyond the reciprocal path.",
+            "Implement and measure bf16 reciprocal/multiply normalization before making a q8-versus-bf16 hardware decision.",
+            "Use the measured q8 exact baseline as the current reference point for q8 reciprocal normalization tradeoffs.",
         ],
     }
 
@@ -362,12 +419,14 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Summarize q8 PWL normalization frontier quality/PPA tradeoffs")
     ap.add_argument("--sweep", required=True, help="q8 normalization frontier sweep JSON")
     ap.add_argument("--q8-recip-ppa", default=str(DEFAULT_Q8_RECIP_PPA), help="merged q8 reciprocal datapath promotion JSON")
+    ap.add_argument("--q8-exact-ppa", default=str(DEFAULT_Q8_EXACT_PPA), help="merged q8 exact datapath promotion JSON")
     ap.add_argument("--out", required=True, help="output JSON path")
     ap.add_argument("--out-md", required=True, help="output Markdown report path")
     args = ap.parse_args()
     report = build_report(
         sweep_path=Path(args.sweep),
         q8_recip_ppa_path=Path(args.q8_recip_ppa) if args.q8_recip_ppa else None,
+        q8_exact_ppa_path=Path(args.q8_exact_ppa) if args.q8_exact_ppa else None,
     )
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
