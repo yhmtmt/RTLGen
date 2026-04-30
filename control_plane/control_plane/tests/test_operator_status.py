@@ -270,7 +270,7 @@ def test_operator_status_summarizes_live_state() -> None:
 
         session_factory = build_session_factory(engine)
         with session_factory() as session:
-            status = load_operator_status(session, OperatorStatusRequest(recent_limit=5))
+            status = load_operator_status(session, OperatorStatusRequest(recent_limit=5, repo_root=td))
 
         assert status.health_summary["status"] == "attention"
         assert "stale_leases=1" in str(status.health_summary["message"])
@@ -314,6 +314,9 @@ def test_operator_status_summarizes_live_state() -> None:
         assert status.run_index_families[0]["circuit_type"] == "terminal"
         assert status.run_index_best_designs[0]["design"] == "sigmoid_demo"
         assert status.run_index_family_leaders[0]["design"] == "sigmoid_demo"
+        assert status.run_index_comparable_rankings[0]["circuit_type"] == "terminal"
+        assert status.run_index_comparable_rankings[0]["comparison_scope"] == "within_family_only"
+        assert status.run_index_comparable_rankings[0]["speed_leader"]["design"] == "sigmoid_demo"
         assert status.run_index_failure_rates[0]["circuit_type"] == "terminal"
         assert status.run_index_failure_rates[0]["fail_row_count"] == 1
         assert status.seed_trial_variance == []

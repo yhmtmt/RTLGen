@@ -37,8 +37,7 @@ def test_dashboard_route() -> None:
     assert b'Pending Submission' in body
     assert b'Dispatch Pending' in body
     assert b'Run Index Summary' in body
-    assert b'Best Indexed Designs' in body
-    assert b'Family Leaders' in body
+    assert b'Comparable Ranking Dimensions' in body
     assert b'Failure Rates' in body
     assert b'Seed Trial Variance' in body
     assert b'Failure Hotspots' in body
@@ -77,6 +76,7 @@ def test_operator_status_route() -> None:
     assert isinstance(payload["run_index_families"], list)
     assert isinstance(payload["run_index_best_designs"], list)
     assert isinstance(payload["run_index_family_leaders"], list)
+    assert isinstance(payload["run_index_comparable_rankings"], list)
     assert isinstance(payload["run_index_failure_rates"], list)
     assert isinstance(payload["seed_trial_variance"], list)
     assert isinstance(payload["run_index_failure_hotspots"], list)

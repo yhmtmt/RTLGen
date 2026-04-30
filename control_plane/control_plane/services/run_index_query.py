@@ -71,6 +71,7 @@ class RunIndexComparativeResult:
     families: list[dict[str, object]]
     best_designs: list[dict[str, object]]
     family_leaders: list[dict[str, object]]
+    comparable_rankings: list[dict[str, object]]
     failure_rates: list[dict[str, object]]
     design_variance: list[dict[str, object]]
     failure_hotspots: list[dict[str, object]]
@@ -166,6 +167,7 @@ def comparative_run_index(session: Session, *, limit: int) -> RunIndexComparativ
             families=[],
             best_designs=[],
             family_leaders=[],
+            comparable_rankings=[],
             failure_rates=[],
             design_variance=[],
             failure_hotspots=[],
@@ -331,6 +333,57 @@ def comparative_run_index(session: Session, *, limit: int) -> RunIndexComparativ
         )
     failure_rates.sort(key=lambda row: (-float(row["failure_rate"]), -int(row["row_count"]), str(row["circuit_type"])))
 
+    def best_family_metric(circuit_type: str, metric: str) -> dict[str, object] | None:
+        best: dict[str, object] | None = None
+        best_score: tuple[float, float, float, float, str] | None = None
+        for row in rows:
+            if str(row.circuit_type or "").strip() != circuit_type:
+                continue
+            if str(row.status or "").strip() != "ok":
+                continue
+            value = _comparable_critical_path(row.critical_path_ns) if metric == "critical_path_ns" else _safe_float_text(getattr(row, metric))
+            if value is None or value < 0:
+                continue
+            cp = _comparable_critical_path(row.critical_path_ns)
+            area = _safe_float_text(row.die_area)
+            power = _safe_float_text(row.total_power_mw)
+            tie_break = (
+                cp if cp is not None else float("inf"),
+                area if area is not None else float("inf"),
+                power if power is not None else float("inf"),
+                str(row.design or ""),
+            )
+            score = (float(value), *tie_break)
+            if best_score is None or score < best_score:
+                best_score = score
+                best = {
+                    "design": str(row.design or "").strip() or "unknown",
+                    "platform": str(row.platform or "").strip() or "unknown",
+                    "value": value,
+                    "critical_path_ns": cp,
+                    "die_area": area,
+                    "total_power_mw": power,
+                    "metrics_path": str(row.metrics_path or "").strip(),
+                }
+        return best
+
+    comparable_rankings = []
+    for bucket in family_buckets.values():
+        circuit_type = str(bucket["circuit_type"])
+        comparable_rankings.append(
+            {
+                "circuit_type": circuit_type,
+                "comparison_scope": "within_family_only",
+                "row_count": int(bucket["row_count"]),
+                "ok_row_count": int(bucket["ok_row_count"]),
+                "design_count": len(bucket["designs"]),
+                "speed_leader": best_family_metric(circuit_type, "critical_path_ns"),
+                "area_leader": best_family_metric(circuit_type, "die_area"),
+                "power_leader": best_family_metric(circuit_type, "total_power_mw"),
+            }
+        )
+    comparable_rankings.sort(key=lambda row: (-int(row["ok_row_count"]), -int(row["row_count"]), str(row["circuit_type"])))
+
     design_variance = []
     failure_hotspots = []
     for bucket in design_buckets.values():
@@ -395,6 +448,7 @@ def comparative_run_index(session: Session, *, limit: int) -> RunIndexComparativ
         families=families[:limit],
         best_designs=best_designs[:limit],
         family_leaders=family_leaders[:limit],
+        comparable_rankings=comparable_rankings[:limit],
         failure_rates=failure_rates[:limit],
         design_variance=design_variance[:limit],
         failure_hotspots=failure_hotspots[:limit],

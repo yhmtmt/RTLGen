@@ -288,12 +288,9 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
           <div class="table-wrap"><table id="run-index-families-table"></table></div>
         </div>
         <div class="panel">
-          <h2>Best Indexed Designs</h2>
-          <div class="table-wrap"><table id="run-index-best-designs-table"></table></div>
-        </div>
-        <div class="panel">
-          <h2>Family Leaders</h2>
-          <div class="table-wrap"><table id="run-index-family-leaders-table"></table></div>
+          <h2>Comparable Ranking Dimensions</h2>
+          <p class="meta">Each row is scoped to one family; speed, area, and power leaders are not cross-family ranks.</p>
+          <div class="table-wrap"><table id="run-index-comparable-rankings-table"></table></div>
         </div>
         <div class="panel">
           <h2>Failure Rates</h2>
@@ -377,8 +374,7 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
       states: document.getElementById("states-table"),
       runIndexSummary: document.getElementById("run-index-summary-table"),
       runIndexFamilies: document.getElementById("run-index-families-table"),
-      runIndexBestDesigns: document.getElementById("run-index-best-designs-table"),
-      runIndexFamilyLeaders: document.getElementById("run-index-family-leaders-table"),
+      runIndexComparableRankings: document.getElementById("run-index-comparable-rankings-table"),
       runIndexFailureRates: document.getElementById("run-index-failure-rates-table"),
       seedTrialVariance: document.getElementById("seed-trial-variance-table"),
       runIndexFailureHotspots: document.getElementById("run-index-failure-hotspots-table"),
@@ -403,6 +399,13 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
         .replace(/</g, \"&lt;\")
         .replace(/>/g, \"&gt;\")
         .replace(/\"/g, \"&quot;\");
+    }
+
+    function renderLeaderCell(leader, metricKey) {
+      if (!leader) return "";
+      const metric = leader[metricKey];
+      const metricText = metric === null || metric === undefined ? "" : ` <span class="meta">${escapeHtml(metric)}</span>`;
+      return `<span class='mono'>${escapeHtml(leader.design || "")}</span>${metricText}`;
     }
 
     function renderTable(target, columns, rows) {
@@ -727,20 +730,14 @@ _DASHBOARD_HTML = """<!DOCTYPE html>
         { key: "design_count", label: "Designs" },
         { key: "ok_row_count", label: "OK" },
       ], payload.run_index_families || []);
-      renderTable(tables.runIndexBestDesigns, [
-        { key: "design", label: "Design", render: (value) => `<span class='mono'>${escapeHtml(value)}</span>` },
-        { key: "platform", label: "Platform" },
-        { key: "ok_row_count", label: "OK" },
-        { key: "best_critical_path_ns", label: "Best CP" },
-        { key: "best_die_area", label: "Best Area" },
-        { key: "best_total_power_mw", label: "Best Power" },
-      ], payload.run_index_best_designs || []);
-      renderTable(tables.runIndexFamilyLeaders, [
+      renderTable(tables.runIndexComparableRankings, [
         { key: "circuit_type", label: "Family" },
-        { key: "design", label: "Leader", render: (value) => `<span class='mono'>${escapeHtml(value)}</span>` },
-        { key: "platform", label: "Platform" },
-        { key: "best_critical_path_ns", label: "Best CP" },
-      ], payload.run_index_family_leaders || []);
+        { key: "design_count", label: "Designs" },
+        { key: "ok_row_count", label: "OK" },
+        { key: "speed_leader", label: "Speed Leader", render: (value) => renderLeaderCell(value, "critical_path_ns") },
+        { key: "area_leader", label: "Area Leader", render: (value) => renderLeaderCell(value, "die_area") },
+        { key: "power_leader", label: "Power Leader", render: (value) => renderLeaderCell(value, "total_power_mw") },
+      ], payload.run_index_comparable_rankings || []);
       renderTable(tables.runIndexFailureRates, [
         { key: "circuit_type", label: "Family" },
         { key: "fail_row_count", label: "Fails" },
@@ -906,6 +903,7 @@ def _status_payload(database_url: str, recent_limit: int) -> dict[str, object]:
         "run_index_families": status.run_index_families,
         "run_index_best_designs": status.run_index_best_designs,
         "run_index_family_leaders": status.run_index_family_leaders,
+        "run_index_comparable_rankings": status.run_index_comparable_rankings,
         "run_index_failure_rates": status.run_index_failure_rates,
         "seed_trial_variance": status.seed_trial_variance,
         "run_index_failure_hotspots": status.run_index_failure_hotspots,
