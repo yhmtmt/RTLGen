@@ -5,7 +5,7 @@
   "purpose": "exact_reference",
   "runtime": {
     "backend_id": "command_json_v1",
-    "runner": "/workspaces/RTLGen/control_plane/.venv/bin/python npu/eval/run_llm_decoder_onnx_reference.py",
+    "runner": "python3 npu/eval/run_llm_decoder_onnx_reference.py",
     "runtime_target": "cpu_reference",
     "library": "onnxruntime"
   },

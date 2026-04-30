@@ -232,6 +232,45 @@ class LlmDecoderQualityRegressionTest(unittest.TestCase):
         self.assertNotIn('candidate_rule', cfg)
         self.assertEqual('decoder_backend_v1', cfg['interface'])
 
+    def test_backend_config_resolution_localizes_stale_repo_command_paths(self):
+        dataset_manifest = {
+            'decoder_backend_configs': {
+                'reference': {
+                    'backend_id': 'command_json_v1',
+                    'command': [
+                        '/workspaces/RTLGen/control_plane/.venv/bin/python',
+                        '/workspaces/RTLGen/npu/eval/run_llm_decoder_onnx_reference.py',
+                    ],
+                    'runtime_target': 'cpu_reference',
+                }
+            }
+        }
+        model_contract = {'backend_configs': {}}
+        cfg = self.decoder.resolve_decoder_backend_config(dataset_manifest, model_contract, role='reference')
+        self.assertEqual(['python3', 'npu/eval/run_llm_decoder_onnx_reference.py'], cfg['command'])
+
+    def test_backend_config_resolution_keeps_portable_command_paths(self):
+        dataset_manifest = {
+            'decoder_backend_configs': {
+                'reference': {
+                    'backend_id': 'command_json_v1',
+                    'command': ['python3', 'npu/eval/run_llm_decoder_onnx_reference.py'],
+                    'runtime_target': 'cpu_reference',
+                }
+            }
+        }
+        model_contract = {'backend_configs': {}}
+        cfg = self.decoder.resolve_decoder_backend_config(dataset_manifest, model_contract, role='reference')
+        self.assertEqual(['python3', 'npu/eval/run_llm_decoder_onnx_reference.py'], cfg['command'])
+
+    def test_command_backend_executes_portable_runner_with_checkout_python(self):
+        argv = self.backend_mod._execution_command_argv(
+            ['python3', 'npu/eval/run_llm_decoder_onnx_reference.py']
+        )
+        expected_python = REPO_ROOT / 'control_plane/.venv/bin/python3'
+        self.assertEqual(str(expected_python if expected_python.exists() else Path(sys.executable)), argv[0])
+        self.assertEqual(str(REPO_ROOT / 'npu/eval/run_llm_decoder_onnx_reference.py'), argv[1])
+
     def test_build_decoder_reference_doc_binds_backend_metadata(self):
         dataset_manifest = {
             'dataset_id': 'llm_decoder_eval_tiny_v1',
@@ -405,7 +444,7 @@ json.dump(out, sys.stdout)
             self.assertEqual('cpu_reference_v1', doc['backend']['equivalence_group'])
             self.assertEqual(' Paris', doc['reference']['next_token_text'])
             self.assertEqual('unit_test', doc['backend_runtime']['runner'])
-            self.assertEqual([sys.executable, str(runner)], doc['backend_invocation']['command'])
+            self.assertEqual(['python3', str(runner)], doc['backend_invocation']['command'])
 
     def test_command_json_backend_executes_candidate_runner(self):
         with tempfile.TemporaryDirectory() as td:
@@ -464,7 +503,7 @@ json.dump(out, sys.stdout)
             self.assertEqual(3, doc['candidate']['next_token_id'])
             self.assertEqual(' =', doc['candidate']['next_token_text'])
             self.assertEqual('external_command_stub', doc['candidate_semantics'])
-            self.assertEqual([sys.executable, str(runner)], doc['backend_invocation']['command'])
+            self.assertEqual(['python3', str(runner)], doc['backend_invocation']['command'])
 
     def test_replay_backend_rehydrates_reference_doc_from_manifest(self):
         with tempfile.TemporaryDirectory() as td:

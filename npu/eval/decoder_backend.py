@@ -24,6 +24,88 @@ from npu.eval.llm_decoder_quality import (
 
 JsonDict = Dict[str, Any]
 
+_REPO_PATH_MARKERS = frozenset({'control_plane', 'docs', 'examples', 'npu', 'runs', 'scripts', 'tests'})
+
+
+def _path_has_tail(path: Path, tail: Sequence[str]) -> bool:
+    parts = path.parts
+    tail_tuple = tuple(tail)
+    return len(parts) >= len(tail_tuple) and tuple(parts[-len(tail_tuple):]) == tail_tuple
+
+
+def _repo_relative_path(path: Path) -> Path | None:
+    parts = path.parts
+    for idx, part in enumerate(parts):
+        if part in _REPO_PATH_MARKERS:
+            return Path(*parts[idx:])
+    return None
+
+
+def _preferred_python_executable() -> str:
+    for rel in (Path('control_plane/.venv/bin/python3'), Path('control_plane/.venv/bin/python')):
+        candidate = REPO_ROOT / rel
+        if candidate.exists():
+            return str(candidate)
+    return sys.executable
+
+
+def _is_decoder_runner_path(path_text: str) -> bool:
+    path = Path(path_text)
+    rel = _repo_relative_path(path) if path.is_absolute() else path
+    if rel is None:
+        return False
+    rel_text = rel.as_posix()
+    return rel_text in {
+        'npu/eval/run_llm_decoder_onnx_candidate.py',
+        'npu/eval/run_llm_decoder_onnx_reference.py',
+    }
+
+
+def _normalize_decoder_command(command: Any) -> Any:
+    if isinstance(command, str):
+        argv = shlex.split(command)
+    elif isinstance(command, list):
+        argv = [str(part) for part in command]
+    else:
+        return command
+    if not argv:
+        return command
+
+    normalized: list[str] = []
+    for idx, part in enumerate(argv):
+        path = Path(part)
+        if idx == 0 and path.is_absolute() and (
+            _path_has_tail(path, ('control_plane', '.venv', 'bin', 'python'))
+            or _path_has_tail(path, ('control_plane', '.venv', 'bin', 'python3'))
+        ):
+            normalized.append('python3')
+            continue
+        if path.is_absolute():
+            repo_rel = _repo_relative_path(path)
+            if repo_rel is not None:
+                normalized.append(repo_rel.as_posix())
+                continue
+        normalized.append(part)
+
+    if normalized == argv:
+        return command
+    return normalized
+
+
+def _execution_command_argv(argv: Sequence[str]) -> list[str]:
+    out = [str(part) for part in argv]
+    if len(out) >= 2 and out[0] in {'python', 'python3'} and _is_decoder_runner_path(out[1]):
+        out[0] = _preferred_python_executable()
+    for idx, part in enumerate(out):
+        path = Path(part)
+        if path.is_absolute():
+            repo_rel = _repo_relative_path(path)
+            if repo_rel is not None:
+                out[idx] = str(REPO_ROOT / repo_rel)
+        elif path.parts and path.parts[0] in _REPO_PATH_MARKERS:
+            out[idx] = str(REPO_ROOT / path)
+    return out
+
 
 @dataclass(frozen=True)
 class DecoderBackendContext:
@@ -266,6 +348,7 @@ class CommandJsonV1Backend:
         normalized['backend_id'] = self.backend_id
         normalized['role'] = role
         normalized['interface'] = 'decoder_backend_v1'
+        normalized['command'] = _normalize_decoder_command(normalized.get('command', []))
         return normalized
 
     def _default_prompt(self, *, context: DecoderBackendContext, sample: JsonDict) -> JsonDict:
@@ -308,6 +391,7 @@ class CommandJsonV1Backend:
 
     def _run_command(self, *, context: DecoderBackendContext, sample: JsonDict, normalized: JsonDict) -> JsonDict:
         argv = self._command_argv(normalized.get('command', []))
+        exec_argv = _execution_command_argv(argv)
         env = os.environ.copy()
         env_overrides = normalized.get('env', {}) or {}
         for key, value in dict(env_overrides).items():
@@ -327,7 +411,7 @@ class CommandJsonV1Backend:
             },
         }
         proc = subprocess.run(
-            argv,
+            exec_argv,
             input=json.dumps(request),
             text=True,
             capture_output=True,
@@ -438,4 +522,6 @@ def resolve_decoder_backend_config(dataset_manifest: JsonDict, model_contract: J
         config.update(dict(dataset_cfgs[role]))
     config['role'] = role
     config['interface'] = 'decoder_backend_v1'
+    if str(config.get('backend_id', '')) == 'command_json_v1':
+        config['command'] = _normalize_decoder_command(config.get('command', []))
     return config
