@@ -6,7 +6,7 @@
       "backend_id": "command_json_v1",
       "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_exact_prob_fp",
       "command": [
-        "/workspaces/RTLGen/control_plane/.venv/bin/python",
+        "python3",
         "npu/eval/run_llm_decoder_onnx_candidate.py"
       ],
       "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
@@ -26,7 +26,7 @@
     "reference": {
       "backend_id": "command_json_v1",
       "command": [
-        "/workspaces/RTLGen/control_plane/.venv/bin/python",
+        "python3",
         "npu/eval/run_llm_decoder_onnx_reference.py"
       ],
       "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
