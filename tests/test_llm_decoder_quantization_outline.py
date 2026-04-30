@@ -17,7 +17,12 @@ def test_decoder_quantization_outline_groups_comparable_dimensions() -> None:
     assert "grid_prob_q8" in by_dimension["probability_output_format"]["summary"]["blocked_templates"]
     assert "grid_prob_bf16" in by_dimension["probability_output_format"]["summary"]["exact_safe_templates"]
     assert "grid_approx_pwl_bf16_path" in by_dimension["approximate_pwl_probability_path"]["summary"]["exact_safe_templates"]
-    assert report["q8_norm_frontier"]["decision"]["selected_candidate"] == "grid_approx_pwl_in_q8_w_q8_norm_recip_q10"
+    assert report["q8_norm_frontier"]["decision"]["selected_candidate"] == "grid_approx_pwl_bf16_path"
+    assert any(
+        row["template"] == "grid_approx_pwl_bf16_path"
+        and row["rank_source"] == "measured_bf16_reciprocal_datapath_ppa"
+        for row in report["q8_norm_frontier"]["measured_rows"]
+    )
     assert any(
         row["template"] == "grid_approx_pwl_in_q8_w_q8_norm_exact"
         for row in report["q8_norm_frontier"]["measured_rows"]

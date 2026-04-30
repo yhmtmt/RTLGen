@@ -1,0 +1,18 @@
+{
+  "version": 0.1,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/bf16_recip_norm_r8_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_path": "runs/designs/activations/bf16_recip_norm_r8_wrapper/work/707ea19f/result.json"
+      },
+      "metric_summary": {
+        "critical_path_ns": 4.2869,
+        "die_area": 50690.271025,
+        "total_power_mw": 0.00479
+      }
+    }
+  ]
+}

@@ -9,7 +9,7 @@
 - bf16/fp16 probability and reciprocal software paths preserve next-token and top-k on the current fp-format and distribution sweeps.
 - fixed q8 probability output storage is blocked on the distribution robustness sweep, while q8/q6 logit quantization remains exact-safe there.
 - fp8 probability storage is not a current frontier candidate: e5m2 drops samples and e4m3 is blocked in both sweeps.
-- q8 reciprocal normalization now has measured integrated PPA; bf16 reciprocal normalization still needs a measurable datapath before PPA comparison.
+- q8 reciprocal and bf16 reciprocal normalization now have measured integrated PPA for the current row-8 Nangate45 datapath framing.
 
 ## Comparable Dimensions
 
@@ -93,14 +93,14 @@
 
 ## Measured Q8 Normalization PPA
 
-- `grid_approx_pwl_in_q8_w_q8_norm_recip_q10` rank 1 via `measured_q8_reciprocal_datapath_ppa`: critical_path_ns=5.6126, die_area=39776.3136, total_power_mw=0.00463
-- `grid_approx_pwl_in_q8_w_q8_norm_recip_q12` rank 2 via `measured_q8_reciprocal_datapath_ppa`: critical_path_ns=5.7554, die_area=52118.607025, total_power_mw=0.014
-- `grid_approx_pwl_in_q8_w_q8_norm_recip_q14` rank 3 via `measured_q8_reciprocal_datapath_ppa`: critical_path_ns=5.7617, die_area=52360.880625, total_power_mw=0.00637
-- `grid_approx_pwl_in_q8_w_q8_norm_recip_q16` rank 4 via `measured_q8_reciprocal_datapath_ppa`: critical_path_ns=5.814, die_area=45315.765625, total_power_mw=0.0321
-- `grid_approx_pwl_in_q8_w_q8_norm_exact` rank 5 via `measured_q8_exact_datapath_ppa`: critical_path_ns=20.2712, die_area=105898.1764, total_power_mw=1.11
+- `grid_approx_pwl_bf16_path` rank 1 via `measured_bf16_reciprocal_datapath_ppa`: critical_path_ns=4.2869, die_area=50690.271025, total_power_mw=0.00479
+- `grid_approx_pwl_in_q8_w_q8_norm_recip_q10` rank 2 via `measured_q8_reciprocal_datapath_ppa`: critical_path_ns=5.6126, die_area=39776.3136, total_power_mw=0.00463
+- `grid_approx_pwl_in_q8_w_q8_norm_recip_q12` rank 3 via `measured_q8_reciprocal_datapath_ppa`: critical_path_ns=5.7554, die_area=52118.607025, total_power_mw=0.014
+- `grid_approx_pwl_in_q8_w_q8_norm_recip_q14` rank 4 via `measured_q8_reciprocal_datapath_ppa`: critical_path_ns=5.7617, die_area=52360.880625, total_power_mw=0.00637
+- `grid_approx_pwl_in_q8_w_q8_norm_recip_q16` rank 5 via `measured_q8_reciprocal_datapath_ppa`: critical_path_ns=5.814, die_area=45315.765625, total_power_mw=0.0321
+- `grid_approx_pwl_in_q8_w_q8_norm_exact` rank 6 via `measured_q8_exact_datapath_ppa`: critical_path_ns=20.2712, die_area=105898.1764, total_power_mw=1.11
 
 ## Next Step
 
-- Keep q8 reciprocal as the immediate measured hardware frontier.
-- Use issue #297 to add and measure a bf16 reciprocal normalization datapath before claiming q8-versus-bf16 PPA superiority.
+- Use the measured q8 reciprocal and bf16 reciprocal datapaths as the immediate hardware frontier.
 - Broaden distribution coverage before treating these exact-safe rows as generally robust across weights and prompts.
