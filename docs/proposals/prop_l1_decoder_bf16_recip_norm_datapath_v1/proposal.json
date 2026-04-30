@@ -1,0 +1,62 @@
+{
+  "proposal_id": "prop_l1_decoder_bf16_recip_norm_datapath_v1",
+  "created_utc": "2026-04-30T13:58:26.956571Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "circuit_block",
+  "title": "Decoder bf16 reciprocal normalization datapath",
+  "hypothesis": "A standalone packed-bf16 reciprocal-normalization datapath can be emitted and measured by RTLGen/OpenROAD so the decoder q8-vs-bf16 normalization frontier can replace the remaining bf16 heuristic gap with physical metrics.",
+  "direct_comparison": {
+    "primary_question": "What Nangate45 timing, power, and area does the row-8 bf16 reciprocal-normalization datapath show?",
+    "include": [
+      "packed IEEE bf16 input and output lanes carried as 16-bit vectors",
+      "row_elems=8",
+      "fixed-point positive-lane conversion with q_frac_bits=10",
+      "bucketed reciprocal LUT with reciprocal_bits=12 and bucket_shift=4",
+      "multiply, rounding, clamp, and bf16 output conversion logic"
+    ],
+    "exclude": [
+      "full decoder system PPA",
+      "full IEEE exception behavior for NaN, infinity, subnormal, or negative inputs",
+      "model-quality reruns or distribution robustness claims",
+      "choosing q8 over bf16 before the frontier estimator consumes this metric"
+    ],
+    "follow_on_broad_sweep": [
+      "update the decoder q8 normalization frontier estimator to load this bf16 PPA artifact",
+      "rerun the quantization outline with q8 reciprocal, q8 exact, and bf16 reciprocal datapath costs separated by comparable dimension",
+      "consider a smaller reciprocal LUT or staged datapath if this block is too area-heavy for the target decoder envelope"
+    ]
+  },
+  "expected_benefit": [
+    "replaces the bf16 reciprocal-normalization placeholder with measured PPA",
+    "keeps timing, power, and area visible as separate axes for the quantization decision",
+    "documents the cost of the reciprocal LUT and conversion path instead of hiding it in a scalar heuristic"
+  ],
+  "risks": [
+    "the block is a measurement proxy and clamps unsupported IEEE cases",
+    "single-row L1 PPA excludes decoder control, SRAM, and full softmax integration effects",
+    "the 2.5 ns sweep target is aggressive; the accepted row is best-effort physical PPA, not a timing-closed product macro"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_bf16_recip_norm_datapath_v1_r2",
+      "task_type": "l1_sweep",
+      "evaluation_mode": "measurement_only",
+      "objective": "Measure Nangate45 PPA for the row-8 bf16 reciprocal-normalization datapath with the reciprocal LUT memory-size gate enabled.",
+      "sweep_path": "runs/campaigns/activations/bf16_recip_norm/sweeps/nangate45_highutil.json",
+      "abstraction_layer": "circuit_block"
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l1_decoder_q8_recip_norm_datapath_v1/analysis_report.md",
+    "docs/proposals/prop_l1_decoder_normalization_arithmetic_calibration_v1/analysis_report.md",
+    "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quantization_outline__l2_decoder_quantization_outline_v1.json"
+  ],
+  "knowledge_refs": [
+    "src/rtlgen/rtl_operations.cpp",
+    "runs/designs/activations/bf16_recip_norm_r8_wrapper/config_bf16_recip_norm_r8.json",
+    "control_plane/shadow_exports/l1_promotions/l1_decoder_bf16_recip_norm_datapath_v1_r2.json"
+  ]
+}
