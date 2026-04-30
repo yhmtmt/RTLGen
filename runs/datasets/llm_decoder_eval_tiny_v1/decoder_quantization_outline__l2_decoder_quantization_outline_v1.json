@@ -1,0 +1,861 @@
+{
+  "dimensions": [
+    {
+      "comparison_scope": "within_dimension_only",
+      "dimension": "approximate_pwl_probability_path",
+      "label": "Approximate PWL Probability Path",
+      "rows": [
+        {
+          "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_bf16_w_bf16_norm_recip_bf16_prob_fp",
+          "dimension": "approximate_pwl_probability_path",
+          "format_descriptor": "input=bf16, weight=bf16, recip=bf16, norm=reciprocal_float",
+          "quality": {
+            "exact_safe": true,
+            "gate": "exact_safe",
+            "next_token_match_rate": 1.0,
+            "next_token_matches": 12,
+            "next_token_mismatch_sample_ids": [],
+            "sample_count": 12,
+            "topk_contains_reference_rate": 1.0,
+            "topk_matches": 12,
+            "topk_miss_sample_ids": [],
+            "topk_safe": true
+          },
+          "source": "distribution",
+          "template": "grid_approx_pwl_bf16_path"
+        },
+        {
+          "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q6_w_q6_norm_recip_q10_prob_fp",
+          "dimension": "approximate_pwl_probability_path",
+          "format_descriptor": "input_q6, weight_q6, recip_q10, norm=reciprocal_quantized",
+          "quality": {
+            "exact_safe": true,
+            "gate": "exact_safe",
+            "next_token_match_rate": 1.0,
+            "next_token_matches": 12,
+            "next_token_mismatch_sample_ids": [],
+            "sample_count": 12,
+            "topk_contains_reference_rate": 1.0,
+            "topk_matches": 12,
+            "topk_miss_sample_ids": [],
+            "topk_safe": true
+          },
+          "source": "distribution",
+          "template": "grid_approx_pwl_in_q6_w_q6_norm_recip_q10"
+        },
+        {
+          "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q8_w_q8_norm_exact_prob_fp",
+          "dimension": "approximate_pwl_probability_path",
+          "format_descriptor": "input_q8, weight_q8",
+          "quality": {
+            "exact_safe": true,
+            "gate": "exact_safe",
+            "next_token_match_rate": 1.0,
+            "next_token_matches": 12,
+            "next_token_mismatch_sample_ids": [],
+            "sample_count": 12,
+            "topk_contains_reference_rate": 1.0,
+            "topk_matches": 12,
+            "topk_miss_sample_ids": [],
+            "topk_safe": true
+          },
+          "source": "distribution",
+          "template": "grid_approx_pwl_in_q8_w_q8_norm_exact"
+        },
+        {
+          "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_bf16_w_bf16_norm_recip_bf16_prob_fp",
+          "dimension": "approximate_pwl_probability_path",
+          "format_descriptor": "input=bf16, weight=bf16, recip=bf16, norm=reciprocal_float",
+          "quality": {
+            "exact_safe": true,
+            "gate": "exact_safe",
+            "next_token_match_rate": 1.0,
+            "next_token_matches": 5,
+            "next_token_mismatch_sample_ids": [],
+            "sample_count": 5,
+            "topk_contains_reference_rate": 1.0,
+            "topk_matches": 5,
+            "topk_miss_sample_ids": [],
+            "topk_safe": true
+          },
+          "source": "fp_format",
+          "template": "grid_approx_pwl_bf16_path"
+        },
+        {
+          "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_fp16_w_fp16_norm_recip_fp16_prob_fp",
+          "dimension": "approximate_pwl_probability_path",
+          "format_descriptor": "input=fp16, weight=fp16, recip=fp16, norm=reciprocal_float",
+          "quality": {
+            "exact_safe": true,
+            "gate": "exact_safe",
+            "next_token_match_rate": 1.0,
+            "next_token_matches": 5,
+            "next_token_mismatch_sample_ids": [],
+            "sample_count": 5,
+            "topk_contains_reference_rate": 1.0,
+            "topk_matches": 5,
+            "topk_miss_sample_ids": [],
+            "topk_safe": true
+          },
+          "source": "fp_format",
+          "template": "grid_approx_pwl_fp16_path"
+        }
+      ],
+      "summary": {
+        "blocked_count": 0,
+        "blocked_templates": [],
+        "exact_safe_count": 5,
+        "exact_safe_templates": [
+          "grid_approx_pwl_bf16_path",
+          "grid_approx_pwl_in_q6_w_q6_norm_recip_q10",
+          "grid_approx_pwl_in_q8_w_q8_norm_exact",
+          "grid_approx_pwl_bf16_path",
+          "grid_approx_pwl_fp16_path"
+        ],
+        "row_count": 5,
+        "topk_safe_only_count": 0,
+        "topk_safe_only_templates": []
+      }
+    },
+    {
+      "comparison_scope": "within_dimension_only",
+      "dimension": "logit_format",
+      "label": "Logit Format",
+      "rows": [
+        {
+          "candidate_semantics": "onnx_logits_q6_softmax_exact_norm_exact_prob_fp",
+          "dimension": "logit_format",
+          "format_descriptor": "logit_q6",
+          "quality": {
+            "exact_safe": true,
+            "gate": "exact_safe",
+            "next_token_match_rate": 1.0,
+            "next_token_matches": 12,
+            "next_token_mismatch_sample_ids": [],
+            "sample_count": 12,
+            "topk_contains_reference_rate": 1.0,
+            "topk_matches": 12,
+            "topk_miss_sample_ids": [],
+            "topk_safe": true
+          },
+          "source": "distribution",
+          "template": "grid_logits_q6"
+        },
+        {
+          "candidate_semantics": "onnx_logits_q8_softmax_exact_norm_exact_prob_fp",
+          "dimension": "logit_format",
+          "format_descriptor": "logit_q8",
+          "quality": {
+            "exact_safe": true,
+            "gate": "exact_safe",
+            "next_token_match_rate": 1.0,
+            "next_token_matches": 12,
+            "next_token_mismatch_sample_ids": [],
+            "sample_count": 12,
+            "topk_contains_reference_rate": 1.0,
+            "topk_matches": 12,
+            "topk_miss_sample_ids": [],
+            "topk_safe": true
+          },
+          "source": "distribution",
+          "template": "grid_logits_q8"
+        },
+        {
+          "candidate_semantics": "onnx_logits_bf16_softmax_exact_norm_exact_prob_fp",
+          "dimension": "logit_format",
+          "format_descriptor": "logit=bf16",
+          "quality": {
+            "exact_safe": true,
+            "gate": "exact_safe",
+            "next_token_match_rate": 1.0,
+            "next_token_matches": 5,
+            "next_token_mismatch_sample_ids": [],
+            "sample_count": 5,
+            "topk_contains_reference_rate": 1.0,
+            "topk_matches": 5,
+            "topk_miss_sample_ids": [],
+            "topk_safe": true
+          },
+          "source": "fp_format",
+          "template": "grid_logits_bf16"
+        },
+        {
+          "candidate_semantics": "onnx_logits_fp16_softmax_exact_norm_exact_prob_fp",
+          "dimension": "logit_format",
+          "format_descriptor": "logit=fp16",
+          "quality": {
+            "exact_safe": true,
+            "gate": "exact_safe",
+            "next_token_match_rate": 1.0,
+            "next_token_matches": 5,
+            "next_token_mismatch_sample_ids": [],
+            "sample_count": 5,
+            "topk_contains_reference_rate": 1.0,
+            "topk_matches": 5,
+            "topk_miss_sample_ids": [],
+            "topk_safe": true
+          },
+          "source": "fp_format",
+          "template": "grid_logits_fp16"
+        },
+        {
+          "candidate_semantics": "onnx_logits_fp8_e4m3_softmax_exact_norm_exact_prob_fp",
+          "dimension": "logit_format",
+          "format_descriptor": "logit=fp8_e4m3",
+          "quality": {
+            "exact_safe": true,
+            "gate": "exact_safe",
+            "next_token_match_rate": 1.0,
+            "next_token_matches": 5,
+            "next_token_mismatch_sample_ids": [],
+            "sample_count": 5,
+            "topk_contains_reference_rate": 1.0,
+            "topk_matches": 5,
+            "topk_miss_sample_ids": [],
+            "topk_safe": true
+          },
+          "source": "fp_format",
+          "template": "grid_logits_fp8_e4m3"
+        },
+        {
+          "candidate_semantics": "onnx_logits_q4_softmax_exact_norm_exact_prob_fp",
+          "dimension": "logit_format",
+          "format_descriptor": "logit_q4",
+          "quality": {
+            "exact_safe": false,
+            "gate": "topk_safe_only",
+            "next_token_match_rate": 0.9166666666666666,
+            "next_token_matches": 11,
+            "next_token_mismatch_sample_ids": [
+              "dist_math_symbolic"
+            ],
+            "sample_count": 12,
+            "topk_contains_reference_rate": 1.0,
+            "topk_matches": 12,
+            "topk_miss_sample_ids": [],
+            "topk_safe": true
+          },
+          "source": "distribution",
+          "template": "grid_logits_q4"
+        },
+        {
+          "candidate_semantics": "onnx_logits_fp8_e5m2_softmax_exact_norm_exact_prob_fp",
+          "dimension": "logit_format",
+          "format_descriptor": "logit=fp8_e5m2",
+          "quality": {
+            "exact_safe": false,
+            "gate": "topk_safe_only",
+            "next_token_match_rate": 0.8,
+            "next_token_matches": 4,
+            "next_token_mismatch_sample_ids": [
+              "math_two_plus_two"
+            ],
+            "sample_count": 5,
+            "topk_contains_reference_rate": 1.0,
+            "topk_matches": 5,
+            "topk_miss_sample_ids": [],
+            "topk_safe": true
+          },
+          "source": "fp_format",
+          "template": "grid_logits_fp8_e5m2"
+        }
+      ],
+      "summary": {
+        "blocked_count": 0,
+        "blocked_templates": [],
+        "exact_safe_count": 5,
+        "exact_safe_templates": [
+          "grid_logits_q6",
+          "grid_logits_q8",
+          "grid_logits_bf16",
+          "grid_logits_fp16",
+          "grid_logits_fp8_e4m3"
+        ],
+        "row_count": 7,
+        "topk_safe_only_count": 2,
+        "topk_safe_only_templates": [
+          "grid_logits_q4",
+          "grid_logits_fp8_e5m2"
+        ]
+      }
+    },
+    {
+      "comparison_scope": "within_dimension_only",
+      "dimension": "normalization_reciprocal_format",
+      "label": "Normalization Reciprocal Format",
+      "rows": [
+        {
+          "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_recip_bf16_prob_fp",
+          "dimension": "normalization_reciprocal_format",
+          "format_descriptor": "recip=bf16, norm=reciprocal_float",
+          "quality": {
+            "exact_safe": true,
+            "gate": "exact_safe",
+            "next_token_match_rate": 1.0,
+            "next_token_matches": 5,
+            "next_token_mismatch_sample_ids": [],
+            "sample_count": 5,
+            "topk_contains_reference_rate": 1.0,
+            "topk_matches": 5,
+            "topk_miss_sample_ids": [],
+            "topk_safe": true
+          },
+          "source": "fp_format",
+          "template": "grid_norm_recip_bf16"
+        },
+        {
+          "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_recip_fp16_prob_fp",
+          "dimension": "normalization_reciprocal_format",
+          "format_descriptor": "recip=fp16, norm=reciprocal_float",
+          "quality": {
+            "exact_safe": true,
+            "gate": "exact_safe",
+            "next_token_match_rate": 1.0,
+            "next_token_matches": 5,
+            "next_token_mismatch_sample_ids": [],
+            "sample_count": 5,
+            "topk_contains_reference_rate": 1.0,
+            "topk_matches": 5,
+            "topk_miss_sample_ids": [],
+            "topk_safe": true
+          },
+          "source": "fp_format",
+          "template": "grid_norm_recip_fp16"
+        }
+      ],
+      "summary": {
+        "blocked_count": 0,
+        "blocked_templates": [],
+        "exact_safe_count": 2,
+        "exact_safe_templates": [
+          "grid_norm_recip_bf16",
+          "grid_norm_recip_fp16"
+        ],
+        "row_count": 2,
+        "topk_safe_only_count": 0,
+        "topk_safe_only_templates": []
+      }
+    },
+    {
+      "comparison_scope": "within_dimension_only",
+      "dimension": "probability_output_format",
+      "label": "Probability Output Format",
+      "rows": [
+        {
+          "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_exact_prob_bf16",
+          "dimension": "probability_output_format",
+          "format_descriptor": "prob=bf16",
+          "quality": {
+            "exact_safe": true,
+            "gate": "exact_safe",
+            "next_token_match_rate": 1.0,
+            "next_token_matches": 12,
+            "next_token_mismatch_sample_ids": [],
+            "sample_count": 12,
+            "topk_contains_reference_rate": 1.0,
+            "topk_matches": 12,
+            "topk_miss_sample_ids": [],
+            "topk_safe": true
+          },
+          "source": "distribution",
+          "template": "grid_prob_bf16"
+        },
+        {
+          "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_exact_prob_fp16",
+          "dimension": "probability_output_format",
+          "format_descriptor": "prob=fp16",
+          "quality": {
+            "exact_safe": true,
+            "gate": "exact_safe",
+            "next_token_match_rate": 1.0,
+            "next_token_matches": 12,
+            "next_token_mismatch_sample_ids": [],
+            "sample_count": 12,
+            "topk_contains_reference_rate": 1.0,
+            "topk_matches": 12,
+            "topk_miss_sample_ids": [],
+            "topk_safe": true
+          },
+          "source": "distribution",
+          "template": "grid_prob_fp16"
+        },
+        {
+          "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_exact_prob_bf16",
+          "dimension": "probability_output_format",
+          "format_descriptor": "prob=bf16",
+          "quality": {
+            "exact_safe": true,
+            "gate": "exact_safe",
+            "next_token_match_rate": 1.0,
+            "next_token_matches": 5,
+            "next_token_mismatch_sample_ids": [],
+            "sample_count": 5,
+            "topk_contains_reference_rate": 1.0,
+            "topk_matches": 5,
+            "topk_miss_sample_ids": [],
+            "topk_safe": true
+          },
+          "source": "fp_format",
+          "template": "grid_prob_bf16"
+        },
+        {
+          "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_exact_prob_fp16",
+          "dimension": "probability_output_format",
+          "format_descriptor": "prob=fp16",
+          "quality": {
+            "exact_safe": true,
+            "gate": "exact_safe",
+            "next_token_match_rate": 1.0,
+            "next_token_matches": 5,
+            "next_token_mismatch_sample_ids": [],
+            "sample_count": 5,
+            "topk_contains_reference_rate": 1.0,
+            "topk_matches": 5,
+            "topk_miss_sample_ids": [],
+            "topk_safe": true
+          },
+          "source": "fp_format",
+          "template": "grid_prob_fp16"
+        },
+        {
+          "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_exact_prob_fp8_e4m3",
+          "dimension": "probability_output_format",
+          "format_descriptor": "prob=fp8_e4m3",
+          "quality": {
+            "exact_safe": false,
+            "gate": "blocked",
+            "next_token_match_rate": 0.0,
+            "next_token_matches": 0,
+            "next_token_mismatch_sample_ids": [
+              "dist_ambiguous_article",
+              "dist_code_like",
+              "dist_commonsense_color",
+              "dist_dialogue",
+              "dist_geo_capital_short",
+              "dist_list_continuation",
+              "dist_long_context",
+              "dist_math_symbolic",
+              "dist_punctuation",
+              "dist_quote_midphrase",
+              "dist_repetition",
+              "dist_weekday_calendar"
+            ],
+            "sample_count": 12,
+            "topk_contains_reference_rate": 0.0,
+            "topk_matches": 0,
+            "topk_miss_sample_ids": [
+              "dist_ambiguous_article",
+              "dist_code_like",
+              "dist_commonsense_color",
+              "dist_dialogue",
+              "dist_geo_capital_short",
+              "dist_list_continuation",
+              "dist_long_context",
+              "dist_math_symbolic",
+              "dist_punctuation",
+              "dist_quote_midphrase",
+              "dist_repetition",
+              "dist_weekday_calendar"
+            ],
+            "topk_safe": false
+          },
+          "source": "distribution",
+          "template": "grid_prob_fp8_e4m3"
+        },
+        {
+          "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_exact_prob_fp8_e5m2",
+          "dimension": "probability_output_format",
+          "format_descriptor": "prob=fp8_e5m2",
+          "quality": {
+            "exact_safe": false,
+            "gate": "blocked",
+            "next_token_match_rate": 0.8333333333333334,
+            "next_token_matches": 10,
+            "next_token_mismatch_sample_ids": [
+              "dist_math_symbolic",
+              "dist_punctuation"
+            ],
+            "sample_count": 12,
+            "topk_contains_reference_rate": 0.8333333333333334,
+            "topk_matches": 10,
+            "topk_miss_sample_ids": [
+              "dist_math_symbolic",
+              "dist_punctuation"
+            ],
+            "topk_safe": false
+          },
+          "source": "distribution",
+          "template": "grid_prob_fp8_e5m2"
+        },
+        {
+          "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_exact_prob_q8",
+          "dimension": "probability_output_format",
+          "format_descriptor": "prob_q8",
+          "quality": {
+            "exact_safe": false,
+            "gate": "blocked",
+            "next_token_match_rate": 0.0,
+            "next_token_matches": 0,
+            "next_token_mismatch_sample_ids": [
+              "dist_ambiguous_article",
+              "dist_code_like",
+              "dist_commonsense_color",
+              "dist_dialogue",
+              "dist_geo_capital_short",
+              "dist_list_continuation",
+              "dist_long_context",
+              "dist_math_symbolic",
+              "dist_punctuation",
+              "dist_quote_midphrase",
+              "dist_repetition",
+              "dist_weekday_calendar"
+            ],
+            "sample_count": 12,
+            "topk_contains_reference_rate": 0.0,
+            "topk_matches": 0,
+            "topk_miss_sample_ids": [
+              "dist_ambiguous_article",
+              "dist_code_like",
+              "dist_commonsense_color",
+              "dist_dialogue",
+              "dist_geo_capital_short",
+              "dist_list_continuation",
+              "dist_long_context",
+              "dist_math_symbolic",
+              "dist_punctuation",
+              "dist_quote_midphrase",
+              "dist_repetition",
+              "dist_weekday_calendar"
+            ],
+            "topk_safe": false
+          },
+          "source": "distribution",
+          "template": "grid_prob_q8"
+        },
+        {
+          "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_exact_prob_fp8_e4m3",
+          "dimension": "probability_output_format",
+          "format_descriptor": "prob=fp8_e4m3",
+          "quality": {
+            "exact_safe": false,
+            "gate": "blocked",
+            "next_token_match_rate": 0.0,
+            "next_token_matches": 0,
+            "next_token_mismatch_sample_ids": [
+              "color_banana",
+              "geo_france_capital",
+              "math_two_plus_two",
+              "quote_complete",
+              "weekday_after_monday"
+            ],
+            "sample_count": 5,
+            "topk_contains_reference_rate": 0.0,
+            "topk_matches": 0,
+            "topk_miss_sample_ids": [
+              "color_banana",
+              "geo_france_capital",
+              "math_two_plus_two",
+              "quote_complete",
+              "weekday_after_monday"
+            ],
+            "topk_safe": false
+          },
+          "source": "fp_format",
+          "template": "grid_prob_fp8_e4m3"
+        },
+        {
+          "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_exact_prob_fp8_e5m2",
+          "dimension": "probability_output_format",
+          "format_descriptor": "prob=fp8_e5m2",
+          "quality": {
+            "exact_safe": false,
+            "gate": "blocked",
+            "next_token_match_rate": 0.8,
+            "next_token_matches": 4,
+            "next_token_mismatch_sample_ids": [
+              "math_two_plus_two"
+            ],
+            "sample_count": 5,
+            "topk_contains_reference_rate": 0.8,
+            "topk_matches": 4,
+            "topk_miss_sample_ids": [
+              "math_two_plus_two"
+            ],
+            "topk_safe": false
+          },
+          "source": "fp_format",
+          "template": "grid_prob_fp8_e5m2"
+        }
+      ],
+      "summary": {
+        "blocked_count": 5,
+        "blocked_templates": [
+          "grid_prob_fp8_e4m3",
+          "grid_prob_fp8_e5m2",
+          "grid_prob_q8",
+          "grid_prob_fp8_e4m3",
+          "grid_prob_fp8_e5m2"
+        ],
+        "exact_safe_count": 4,
+        "exact_safe_templates": [
+          "grid_prob_bf16",
+          "grid_prob_fp16",
+          "grid_prob_bf16",
+          "grid_prob_fp16"
+        ],
+        "row_count": 9,
+        "topk_safe_only_count": 0,
+        "topk_safe_only_templates": []
+      }
+    },
+    {
+      "comparison_scope": "within_dimension_only",
+      "dimension": "softmax_input_format",
+      "label": "Softmax Input Format",
+      "rows": [
+        {
+          "candidate_semantics": "onnx_logits_fp_softmax_exact_in_bf16_norm_exact_prob_fp",
+          "dimension": "softmax_input_format",
+          "format_descriptor": "input=bf16",
+          "quality": {
+            "exact_safe": true,
+            "gate": "exact_safe",
+            "next_token_match_rate": 1.0,
+            "next_token_matches": 5,
+            "next_token_mismatch_sample_ids": [],
+            "sample_count": 5,
+            "topk_contains_reference_rate": 1.0,
+            "topk_matches": 5,
+            "topk_miss_sample_ids": [],
+            "topk_safe": true
+          },
+          "source": "fp_format",
+          "template": "grid_softmax_input_bf16"
+        },
+        {
+          "candidate_semantics": "onnx_logits_fp_softmax_exact_in_fp16_norm_exact_prob_fp",
+          "dimension": "softmax_input_format",
+          "format_descriptor": "input=fp16",
+          "quality": {
+            "exact_safe": true,
+            "gate": "exact_safe",
+            "next_token_match_rate": 1.0,
+            "next_token_matches": 5,
+            "next_token_mismatch_sample_ids": [],
+            "sample_count": 5,
+            "topk_contains_reference_rate": 1.0,
+            "topk_matches": 5,
+            "topk_miss_sample_ids": [],
+            "topk_safe": true
+          },
+          "source": "fp_format",
+          "template": "grid_softmax_input_fp16"
+        }
+      ],
+      "summary": {
+        "blocked_count": 0,
+        "blocked_templates": [],
+        "exact_safe_count": 2,
+        "exact_safe_templates": [
+          "grid_softmax_input_bf16",
+          "grid_softmax_input_fp16"
+        ],
+        "row_count": 2,
+        "topk_safe_only_count": 0,
+        "topk_safe_only_templates": []
+      }
+    },
+    {
+      "comparison_scope": "within_dimension_only",
+      "dimension": "softmax_weight_format",
+      "label": "Softmax Weight Format",
+      "rows": [
+        {
+          "candidate_semantics": "onnx_logits_fp_softmax_exact_w_bf16_norm_exact_prob_fp",
+          "dimension": "softmax_weight_format",
+          "format_descriptor": "weight=bf16",
+          "quality": {
+            "exact_safe": true,
+            "gate": "exact_safe",
+            "next_token_match_rate": 1.0,
+            "next_token_matches": 5,
+            "next_token_mismatch_sample_ids": [],
+            "sample_count": 5,
+            "topk_contains_reference_rate": 1.0,
+            "topk_matches": 5,
+            "topk_miss_sample_ids": [],
+            "topk_safe": true
+          },
+          "source": "fp_format",
+          "template": "grid_softmax_weight_bf16"
+        },
+        {
+          "candidate_semantics": "onnx_logits_fp_softmax_exact_w_fp16_norm_exact_prob_fp",
+          "dimension": "softmax_weight_format",
+          "format_descriptor": "weight=fp16",
+          "quality": {
+            "exact_safe": true,
+            "gate": "exact_safe",
+            "next_token_match_rate": 1.0,
+            "next_token_matches": 5,
+            "next_token_mismatch_sample_ids": [],
+            "sample_count": 5,
+            "topk_contains_reference_rate": 1.0,
+            "topk_matches": 5,
+            "topk_miss_sample_ids": [],
+            "topk_safe": true
+          },
+          "source": "fp_format",
+          "template": "grid_softmax_weight_fp16"
+        }
+      ],
+      "summary": {
+        "blocked_count": 0,
+        "blocked_templates": [],
+        "exact_safe_count": 2,
+        "exact_safe_templates": [
+          "grid_softmax_weight_bf16",
+          "grid_softmax_weight_fp16"
+        ],
+        "row_count": 2,
+        "topk_safe_only_count": 0,
+        "topk_safe_only_templates": []
+      }
+    },
+    {
+      "comparison_scope": "within_dimension_only",
+      "dimension": "reference",
+      "label": "Reference",
+      "rows": [
+        {
+          "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_exact_prob_fp",
+          "dimension": "reference",
+          "format_descriptor": "reference",
+          "quality": {
+            "exact_safe": true,
+            "gate": "exact_safe",
+            "next_token_match_rate": 1.0,
+            "next_token_matches": 12,
+            "next_token_mismatch_sample_ids": [],
+            "sample_count": 12,
+            "topk_contains_reference_rate": 1.0,
+            "topk_matches": 12,
+            "topk_miss_sample_ids": [],
+            "topk_safe": true
+          },
+          "source": "distribution",
+          "template": "candidate_onnx_softmax_exact"
+        },
+        {
+          "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_exact_prob_fp",
+          "dimension": "reference",
+          "format_descriptor": "reference",
+          "quality": {
+            "exact_safe": true,
+            "gate": "exact_safe",
+            "next_token_match_rate": 1.0,
+            "next_token_matches": 5,
+            "next_token_mismatch_sample_ids": [],
+            "sample_count": 5,
+            "topk_contains_reference_rate": 1.0,
+            "topk_matches": 5,
+            "topk_miss_sample_ids": [],
+            "topk_safe": true
+          },
+          "source": "fp_format",
+          "template": "candidate_onnx_softmax_exact"
+        }
+      ],
+      "summary": {
+        "blocked_count": 0,
+        "blocked_templates": [],
+        "exact_safe_count": 2,
+        "exact_safe_templates": [
+          "candidate_onnx_softmax_exact",
+          "candidate_onnx_softmax_exact"
+        ],
+        "row_count": 2,
+        "topk_safe_only_count": 0,
+        "topk_safe_only_templates": []
+      }
+    }
+  ],
+  "interpretation": [
+    "bf16/fp16 probability and reciprocal software paths preserve next-token and top-k on the current fp-format and distribution sweeps.",
+    "fixed q8 probability output storage is blocked on the distribution robustness sweep, while q8/q6 logit quantization remains exact-safe there.",
+    "fp8 probability storage is not a current frontier candidate: e5m2 drops samples and e4m3 is blocked in both sweeps.",
+    "q8 reciprocal normalization now has measured integrated PPA; bf16 reciprocal normalization still needs a measurable datapath before PPA comparison."
+  ],
+  "next_step": [
+    "Keep q8 reciprocal as the immediate measured hardware frontier.",
+    "Use issue #297 to add and measure a bf16 reciprocal normalization datapath before claiming q8-versus-bf16 PPA superiority.",
+    "Broaden distribution coverage before treating these exact-safe rows as generally robust across weights and prompts."
+  ],
+  "q8_norm_frontier": {
+    "decision": {
+      "decision": "q8_reciprocal_candidate_survived",
+      "reason": "grid_approx_pwl_in_q8_w_q8_norm_recip_q10 preserved the exact prompt-stress gate and has the best measured_q8_reciprocal_datapath_ppa among exact-safe q8 reciprocal candidates. q8 exact is included as measured baseline PPA; bf16 reciprocal normalization remains an unmeasured hardware gap.",
+      "selected_candidate": "grid_approx_pwl_in_q8_w_q8_norm_recip_q10"
+    },
+    "measured_rows": [
+      {
+        "ppa_metrics": {
+          "critical_path_ns": 5.6126,
+          "die_area": 39776.3136,
+          "total_power_mw": 0.00463
+        },
+        "rank": 1,
+        "rank_source": "measured_q8_reciprocal_datapath_ppa",
+        "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q10"
+      },
+      {
+        "ppa_metrics": {
+          "critical_path_ns": 5.7554,
+          "die_area": 52118.607025,
+          "total_power_mw": 0.014
+        },
+        "rank": 2,
+        "rank_source": "measured_q8_reciprocal_datapath_ppa",
+        "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q12"
+      },
+      {
+        "ppa_metrics": {
+          "critical_path_ns": 5.7617,
+          "die_area": 52360.880625,
+          "total_power_mw": 0.00637
+        },
+        "rank": 3,
+        "rank_source": "measured_q8_reciprocal_datapath_ppa",
+        "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q14"
+      },
+      {
+        "ppa_metrics": {
+          "critical_path_ns": 5.814,
+          "die_area": 45315.765625,
+          "total_power_mw": 0.0321
+        },
+        "rank": 4,
+        "rank_source": "measured_q8_reciprocal_datapath_ppa",
+        "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q16"
+      },
+      {
+        "ppa_metrics": {
+          "critical_path_ns": 20.2712,
+          "die_area": 105898.1764,
+          "total_power_mw": 1.11
+        },
+        "rank": 5,
+        "rank_source": "measured_q8_exact_datapath_ppa",
+        "template": "grid_approx_pwl_in_q8_w_q8_norm_exact"
+      }
+    ],
+    "source": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_q8_norm_frontier__l2_decoder_q8_normalization_frontier_v1.json"
+  },
+  "scope_note": "This report groups decoder quantization evidence by comparable dimension. It must not be read as one global ranking across logits, normalization, probability storage, and approximate PWL paths.",
+  "source_artifacts": {
+    "distribution_robustness_sweep": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_sweep__l2_decoder_distribution_robustness_v1.json",
+    "fp_format_sweep": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_sweep__l2_decoder_fp_probability_format_sweep_v1.json",
+    "q8_norm_frontier": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_q8_norm_frontier__l2_decoder_q8_normalization_frontier_v1.json"
+  },
+  "version": 0.1
+}
