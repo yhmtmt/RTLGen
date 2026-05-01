@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_q8_norm_distribution_broad_v2",
-  "source_commit": "8a7d004b41de3f4d45f1d714a668fa03543469d4",
+  "source_commit": "b77bf8f43863ea656cfb6369a8c8fc60853e63ab",
   "requested_items": [
     {
       "item_id": "l2_decoder_q8_norm_distribution_broad_v2",
@@ -19,7 +19,11 @@
         "direction": "iterate",
         "reason": "Broaden the distribution screen before choosing q8 reciprocal versus bf16 reciprocal normalization."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 323,
+      "merge_commit": "39c83da2264f70ae3316ddb4bea3acbb02a07478",
+      "merged_utc": "2026-05-01T13:55:51Z",
+      "notes": "Merged via PR #323 and merge 39c83da2264f70ae3316ddb4bea3acbb02a07478 at 2026-05-01T13:55:51Z."
     }
   ]
 }

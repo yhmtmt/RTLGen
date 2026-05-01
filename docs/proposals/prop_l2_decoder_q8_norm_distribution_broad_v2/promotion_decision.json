@@ -1,11 +1,15 @@
 {
   "proposal_id": "prop_l2_decoder_q8_norm_distribution_broad_v2",
   "candidate_id": "l2_decoder_q8_norm_distribution_broad_v2",
-  "decision": "pending",
-  "reason": "Await the expanded 48-sample q8/bf16 normalization distribution result.",
+  "decision": "iterate",
+  "reason": "Broad ranking evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
   "evidence_refs": [
-    "item:l2_decoder_q8_norm_distribution_broad_v2"
+    "item:l2_decoder_q8_norm_distribution_broad_v2",
+    "run:l2_decoder_q8_norm_distribution_broad_v2_run_f9ecee864b4dcca6",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_q8_norm_distribution_broad_v2.json",
+    "pr:#323",
+    "https://github.com/yhmtmt/RTLGen/pull/323"
   ],
-  "next_action": "Review the v2 frontier artifact and decide whether to broaden model/input coverage again or focus on the first distribution-sensitive normalization row.",
-  "requires_human_approval": true
+  "next_action": "inspect follow-on work after l2_decoder_q8_norm_distribution_broad_v2",
+  "requires_human_approval": false
 }

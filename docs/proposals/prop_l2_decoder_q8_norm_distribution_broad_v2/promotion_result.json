@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_decoder_q8_norm_distribution_broad_v2",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "iterate",
+  "pr_number": 323,
+  "merge_commit": "39c83da2264f70ae3316ddb4bea3acbb02a07478",
+  "merged_utc": "2026-05-01T13:55:51Z"
 }

@@ -5,22 +5,28 @@
 - `candidate_id`: `l2_decoder_q8_norm_distribution_broad_v2`
 
 ## Evaluations Consumed
-- pending: `l2_decoder_q8_norm_distribution_broad_v2`
-- baseline: `l2_decoder_q8_norm_distribution_robustness_v1_r4`
+- `l2_decoder_q8_norm_distribution_broad_v2`
+- `l2_decoder_q8_norm_distribution_broad_v2_run_f9ecee864b4dcca6`
+- source commit: `b77bf8f43863ea656cfb6369a8c8fc60853e63ab`
+- review: PR #323
 
 ## Baseline Comparison
-The baseline r4 result used the 12-sample distribution v1 set and found no
-blocked q8 reciprocal or bf16 reciprocal rows. This follow-on job expands the
-rough distribution set to 48 samples before treating the measured PPA ranking as
-architecture guidance.
+- baseline_ref: `None`
+- baseline_item_id: `None`
+- outcome: `ranking_recorded`
+- summary: Broad ranking evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.
 
 ## Result
-Pending evaluator result.
+- result: `iterate`
+- confidence level: merged accepted evidence
+- estimated optimization room: pending follow-on comparison
+- architecture conclusion robustness: staged evidence
+- summary: Broad ranking evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.
 
-## Failures And Caveats
-- The expanded dataset is still tied to the tiny decoder model.
-- The result should identify distribution-sensitive rows and sample categories,
-  not claim model-family robustness.
+## Failures and Caveats
+- no additional caveats recorded during automatic finalization
 
 ## Recommendation
-Pending evaluator result.
+- `iterate`
+- reason: Broad ranking evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.
+- next_action: inspect follow-on work after l2_decoder_q8_norm_distribution_broad_v2
