@@ -1,0 +1,2143 @@
+{
+  "control_sample_ids": [
+    "dist2_arith_two_plus_two",
+    "dist2_arith_six_times_two",
+    "dist2_sequence_numbers",
+    "dist2_sequence_weekdays"
+  ],
+  "control_samples": [
+    {
+      "category": "arithmetic_short",
+      "exact_next": {
+        "token_id": 17673,
+        "token_text": " indigenous"
+      },
+      "exact_topk": [
+        {
+          "score": 4.8162907507177056e-05,
+          "token_id": 17673,
+          "token_text": " indigenous"
+        },
+        {
+          "score": 4.7337269463737156e-05,
+          "token_id": 42919,
+          "token_text": " pamphlet"
+        },
+        {
+          "score": 4.664407421670924e-05,
+          "token_id": 29570,
+          "token_text": " pioneer"
+        },
+        {
+          "score": 4.603049012387999e-05,
+          "token_id": 5424,
+          "token_text": " clim"
+        },
+        {
+          "score": 4.5233059387412494e-05,
+          "token_id": 796,
+          "token_text": " ="
+        }
+      ],
+      "expected_continuation": " 4",
+      "prompt": "2 + 2 =",
+      "sample_id": "dist2_arith_two_plus_two",
+      "templates": [
+        {
+          "aggregate": {
+            "next_token_id_match": 1,
+            "next_token_text_match": 1,
+            "topk_contains_reference_id": 1,
+            "topk_contains_reference_text": 1
+          },
+          "candidate_margin": {
+            "score_sum": 1.0033439816907048,
+            "top1_top2_score_margin": 2.5704503059387207e-07,
+            "topk_score_mass": 0.00016219541430473328
+          },
+          "candidate_next": {
+            "token_id": 17673,
+            "token_text": " indigenous"
+          },
+          "candidate_rank_in_exact_topk": 1,
+          "candidate_score_minus_exact_token_score": 0.0,
+          "candidate_topk": [
+            {
+              "score": 3.2901763916015625e-05,
+              "token_id": 17673,
+              "token_text": " indigenous"
+            },
+            {
+              "score": 3.264471888542175e-05,
+              "token_id": 42919,
+              "token_text": " pamphlet"
+            },
+            {
+              "score": 3.238767385482788e-05,
+              "token_id": 29570,
+              "token_text": " pioneer"
+            },
+            {
+              "score": 3.2259151339530945e-05,
+              "token_id": 5424,
+              "token_text": " clim"
+            },
+            {
+              "score": 3.200210630893707e-05,
+              "token_id": 796,
+              "token_text": " ="
+            }
+          ],
+          "category": "arithmetic_short",
+          "exact_next": {
+            "token_id": 17673,
+            "token_text": " indigenous"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "exact_topk": [
+            {
+              "score": 4.8162907507177056e-05,
+              "token_id": 17673,
+              "token_text": " indigenous"
+            },
+            {
+              "score": 4.7337269463737156e-05,
+              "token_id": 42919,
+              "token_text": " pamphlet"
+            },
+            {
+              "score": 4.664407421670924e-05,
+              "token_id": 29570,
+              "token_text": " pioneer"
+            },
+            {
+              "score": 4.603049012387999e-05,
+              "token_id": 5424,
+              "token_text": " clim"
+            },
+            {
+              "score": 4.5233059387412494e-05,
+              "token_id": 796,
+              "token_text": " ="
+            }
+          ],
+          "expected_continuation": " 4",
+          "prompt": "2 + 2 =",
+          "reference_margin": {
+            "top1_top2_logit_margin": 0.017291247844696045,
+            "topk_probability_mass": 0.00023340780069891593
+          },
+          "sample_id": "dist2_arith_two_plus_two",
+          "stage_settings": {
+            "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_bf16_w_bf16_norm_recip_bf16_prob_fp",
+            "normalization_mode": "reciprocal_float",
+            "normalization_reciprocal_bits": 0,
+            "normalization_reciprocal_float_format": "bf16",
+            "probability_float_format": "",
+            "probability_quant_bits": 0,
+            "softmax_input_float_format": "bf16",
+            "softmax_input_quant_bits": 0,
+            "softmax_mode": "approx_pwl",
+            "softmax_weight_float_format": "bf16",
+            "softmax_weight_quant_bits": 0,
+            "template": "grid_approx_pwl_bf16_path"
+          },
+          "template": "grid_approx_pwl_bf16_path"
+        },
+        {
+          "aggregate": {
+            "next_token_id_match": 1,
+            "next_token_text_match": 1,
+            "topk_contains_reference_id": 1,
+            "topk_contains_reference_text": 1
+          },
+          "candidate_margin": {
+            "score_sum": 1.0000000000003482,
+            "top1_top2_score_margin": 2.571945679478749e-07,
+            "topk_score_mass": 0.000161903980523188
+          },
+          "candidate_next": {
+            "token_id": 17673,
+            "token_text": " indigenous"
+          },
+          "candidate_rank_in_exact_topk": 1,
+          "candidate_score_minus_exact_token_score": 0.0,
+          "candidate_topk": [
+            {
+              "score": 3.2792307413354206e-05,
+              "token_id": 17673,
+              "token_text": " indigenous"
+            },
+            {
+              "score": 3.253511284540633e-05,
+              "token_id": 42919,
+              "token_text": " pamphlet"
+            },
+            {
+              "score": 3.2406515561432394e-05,
+              "token_id": 29570,
+              "token_text": " pioneer"
+            },
+            {
+              "score": 3.214932099348452e-05,
+              "token_id": 5424,
+              "token_text": " clim"
+            },
+            {
+              "score": 3.202072370951058e-05,
+              "token_id": 796,
+              "token_text": " ="
+            }
+          ],
+          "category": "arithmetic_short",
+          "exact_next": {
+            "token_id": 17673,
+            "token_text": " indigenous"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "exact_topk": [
+            {
+              "score": 4.8162907507177056e-05,
+              "token_id": 17673,
+              "token_text": " indigenous"
+            },
+            {
+              "score": 4.7337269463737156e-05,
+              "token_id": 42919,
+              "token_text": " pamphlet"
+            },
+            {
+              "score": 4.664407421670924e-05,
+              "token_id": 29570,
+              "token_text": " pioneer"
+            },
+            {
+              "score": 4.603049012387999e-05,
+              "token_id": 5424,
+              "token_text": " clim"
+            },
+            {
+              "score": 4.5233059387412494e-05,
+              "token_id": 796,
+              "token_text": " ="
+            }
+          ],
+          "expected_continuation": " 4",
+          "prompt": "2 + 2 =",
+          "reference_margin": {
+            "top1_top2_logit_margin": 0.017291247844696045,
+            "topk_probability_mass": 0.00023340780069891593
+          },
+          "sample_id": "dist2_arith_two_plus_two",
+          "stage_settings": {
+            "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q8_w_q8_norm_exact_prob_fp",
+            "normalization_mode": "exact",
+            "normalization_reciprocal_bits": 0,
+            "normalization_reciprocal_float_format": "",
+            "probability_float_format": "",
+            "probability_quant_bits": 0,
+            "softmax_input_float_format": "",
+            "softmax_input_quant_bits": 8,
+            "softmax_mode": "approx_pwl",
+            "softmax_weight_float_format": "",
+            "softmax_weight_quant_bits": 8,
+            "template": "grid_approx_pwl_in_q8_w_q8_norm_exact"
+          },
+          "template": "grid_approx_pwl_in_q8_w_q8_norm_exact"
+        },
+        {
+          "aggregate": {
+            "next_token_id_match": 1,
+            "next_token_text_match": 1,
+            "topk_contains_reference_id": 1,
+            "topk_contains_reference_text": 1
+          },
+          "candidate_margin": {
+            "score_sum": 1.0006798155669214,
+            "top1_top2_score_margin": 2.5736941281889183e-07,
+            "topk_score_mass": 0.00016201404536949187
+          },
+          "candidate_next": {
+            "token_id": 17673,
+            "token_text": " indigenous"
+          },
+          "candidate_rank_in_exact_topk": 1,
+          "candidate_score_minus_exact_token_score": 0.0,
+          "candidate_topk": [
+            {
+              "score": 3.28146001344086e-05,
+              "token_id": 17673,
+              "token_text": " indigenous"
+            },
+            {
+              "score": 3.255723072158971e-05,
+              "token_id": 42919,
+              "token_text": " pamphlet"
+            },
+            {
+              "score": 3.242854601518026e-05,
+              "token_id": 29570,
+              "token_text": " pioneer"
+            },
+            {
+              "score": 3.217117660236137e-05,
+              "token_id": 5424,
+              "token_text": " clim"
+            },
+            {
+              "score": 3.2042491895951925e-05,
+              "token_id": 796,
+              "token_text": " ="
+            }
+          ],
+          "category": "arithmetic_short",
+          "exact_next": {
+            "token_id": 17673,
+            "token_text": " indigenous"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "exact_topk": [
+            {
+              "score": 4.8162907507177056e-05,
+              "token_id": 17673,
+              "token_text": " indigenous"
+            },
+            {
+              "score": 4.7337269463737156e-05,
+              "token_id": 42919,
+              "token_text": " pamphlet"
+            },
+            {
+              "score": 4.664407421670924e-05,
+              "token_id": 29570,
+              "token_text": " pioneer"
+            },
+            {
+              "score": 4.603049012387999e-05,
+              "token_id": 5424,
+              "token_text": " clim"
+            },
+            {
+              "score": 4.5233059387412494e-05,
+              "token_id": 796,
+              "token_text": " ="
+            }
+          ],
+          "expected_continuation": " 4",
+          "prompt": "2 + 2 =",
+          "reference_margin": {
+            "top1_top2_logit_margin": 0.017291247844696045,
+            "topk_probability_mass": 0.00023340780069891593
+          },
+          "sample_id": "dist2_arith_two_plus_two",
+          "stage_settings": {
+            "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q8_w_q8_norm_recip_q10_prob_fp",
+            "normalization_mode": "reciprocal_quantized",
+            "normalization_reciprocal_bits": 10,
+            "normalization_reciprocal_float_format": "",
+            "probability_float_format": "",
+            "probability_quant_bits": 0,
+            "softmax_input_float_format": "",
+            "softmax_input_quant_bits": 8,
+            "softmax_mode": "approx_pwl",
+            "softmax_weight_float_format": "",
+            "softmax_weight_quant_bits": 8,
+            "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q10"
+          },
+          "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q10"
+        }
+      ]
+    },
+    {
+      "category": "arithmetic_short",
+      "exact_next": {
+        "token_id": 796,
+        "token_text": " ="
+      },
+      "exact_topk": [
+        {
+          "score": 4.750737505643141e-05,
+          "token_id": 796,
+          "token_text": " ="
+        },
+        {
+          "score": 4.707753440328189e-05,
+          "token_id": 1391,
+          "token_text": " {"
+        },
+        {
+          "score": 4.5184231201823663e-05,
+          "token_id": 26020,
+          "token_text": " stimulate"
+        },
+        {
+          "score": 4.399074084105889e-05,
+          "token_id": 32898,
+          "token_text": " Anthrop"
+        },
+        {
+          "score": 4.340250030182696e-05,
+          "token_id": 6150,
+          "token_text": " remained"
+        }
+      ],
+      "expected_continuation": " 12",
+      "prompt": "6 * 2 =",
+      "sample_id": "dist2_arith_six_times_two",
+      "templates": [
+        {
+          "aggregate": {
+            "next_token_id_match": 1,
+            "next_token_text_match": 1,
+            "topk_contains_reference_id": 1,
+            "topk_contains_reference_text": 1
+          },
+          "candidate_margin": {
+            "score_sum": 0.9984867982566357,
+            "top1_top2_score_margin": 1.2665987014770508e-07,
+            "topk_score_mass": 0.00015883147716522217
+          },
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "candidate_rank_in_exact_topk": 1,
+          "candidate_score_minus_exact_token_score": 0.0,
+          "candidate_topk": [
+            {
+              "score": 3.24249267578125e-05,
+              "token_id": 796,
+              "token_text": " ="
+            },
+            {
+              "score": 3.2298266887664795e-05,
+              "token_id": 1391,
+              "token_text": " {"
+            },
+            {
+              "score": 3.166496753692627e-05,
+              "token_id": 26020,
+              "token_text": " stimulate"
+            },
+            {
+              "score": 3.1284987926483154e-05,
+              "token_id": 32898,
+              "token_text": " Anthrop"
+            },
+            {
+              "score": 3.115832805633545e-05,
+              "token_id": 6150,
+              "token_text": " remained"
+            }
+          ],
+          "category": "arithmetic_short",
+          "exact_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "exact_topk": [
+            {
+              "score": 4.750737505643141e-05,
+              "token_id": 796,
+              "token_text": " ="
+            },
+            {
+              "score": 4.707753440328189e-05,
+              "token_id": 1391,
+              "token_text": " {"
+            },
+            {
+              "score": 4.5184231201823663e-05,
+              "token_id": 26020,
+              "token_text": " stimulate"
+            },
+            {
+              "score": 4.399074084105889e-05,
+              "token_id": 32898,
+              "token_text": " Anthrop"
+            },
+            {
+              "score": 4.340250030182696e-05,
+              "token_id": 6150,
+              "token_text": " remained"
+            }
+          ],
+          "expected_continuation": " 12",
+          "prompt": "6 * 2 =",
+          "reference_margin": {
+            "top1_top2_logit_margin": 0.009089052677154541,
+            "topk_probability_mass": 0.00022716238180442284
+          },
+          "sample_id": "dist2_arith_six_times_two",
+          "stage_settings": {
+            "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_bf16_w_bf16_norm_recip_bf16_prob_fp",
+            "normalization_mode": "reciprocal_float",
+            "normalization_reciprocal_bits": 0,
+            "normalization_reciprocal_float_format": "bf16",
+            "probability_float_format": "",
+            "probability_quant_bits": 0,
+            "softmax_input_float_format": "bf16",
+            "softmax_input_quant_bits": 0,
+            "softmax_mode": "approx_pwl",
+            "softmax_weight_float_format": "bf16",
+            "softmax_weight_quant_bits": 0,
+            "template": "grid_approx_pwl_bf16_path"
+          },
+          "template": "grid_approx_pwl_bf16_path"
+        },
+        {
+          "aggregate": {
+            "next_token_id_match": 1,
+            "next_token_text_match": 1,
+            "topk_contains_reference_id": 1,
+            "topk_contains_reference_text": 1
+          },
+          "candidate_margin": {
+            "score_sum": 1.0000000000002123,
+            "top1_top2_score_margin": 2.546069212855281e-07,
+            "topk_score_mass": 0.00015912932580345576
+          },
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "candidate_rank_in_exact_topk": 1,
+          "candidate_score_minus_exact_token_score": 0.0,
+          "candidate_topk": [
+            {
+              "score": 3.246238246390498e-05,
+              "token_id": 796,
+              "token_text": " ="
+            },
+            {
+              "score": 3.220777554261945e-05,
+              "token_id": 1391,
+              "token_text": " {"
+            },
+            {
+              "score": 3.182586516069115e-05,
+              "token_id": 26020,
+              "token_text": " stimulate"
+            },
+            {
+              "score": 3.144395477876286e-05,
+              "token_id": 32898,
+              "token_text": " Anthrop"
+            },
+            {
+              "score": 3.118934785747733e-05,
+              "token_id": 6150,
+              "token_text": " remained"
+            }
+          ],
+          "category": "arithmetic_short",
+          "exact_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "exact_topk": [
+            {
+              "score": 4.750737505643141e-05,
+              "token_id": 796,
+              "token_text": " ="
+            },
+            {
+              "score": 4.707753440328189e-05,
+              "token_id": 1391,
+              "token_text": " {"
+            },
+            {
+              "score": 4.5184231201823663e-05,
+              "token_id": 26020,
+              "token_text": " stimulate"
+            },
+            {
+              "score": 4.399074084105889e-05,
+              "token_id": 32898,
+              "token_text": " Anthrop"
+            },
+            {
+              "score": 4.340250030182696e-05,
+              "token_id": 6150,
+              "token_text": " remained"
+            }
+          ],
+          "expected_continuation": " 12",
+          "prompt": "6 * 2 =",
+          "reference_margin": {
+            "top1_top2_logit_margin": 0.009089052677154541,
+            "topk_probability_mass": 0.00022716238180442284
+          },
+          "sample_id": "dist2_arith_six_times_two",
+          "stage_settings": {
+            "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q8_w_q8_norm_exact_prob_fp",
+            "normalization_mode": "exact",
+            "normalization_reciprocal_bits": 0,
+            "normalization_reciprocal_float_format": "",
+            "probability_float_format": "",
+            "probability_quant_bits": 0,
+            "softmax_input_float_format": "",
+            "softmax_input_quant_bits": 8,
+            "softmax_mode": "approx_pwl",
+            "softmax_weight_float_format": "",
+            "softmax_weight_quant_bits": 8,
+            "template": "grid_approx_pwl_in_q8_w_q8_norm_exact"
+          },
+          "template": "grid_approx_pwl_in_q8_w_q8_norm_exact"
+        },
+        {
+          "aggregate": {
+            "next_token_id_match": 1,
+            "next_token_text_match": 1,
+            "topk_contains_reference_id": 1,
+            "topk_contains_reference_text": 1
+          },
+          "candidate_margin": {
+            "score_sum": 0.9998225704627306,
+            "top1_top2_score_margin": 2.54561746497227e-07,
+            "topk_score_mass": 0.00015910109156076898
+          },
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "candidate_rank_in_exact_topk": 1,
+          "candidate_score_minus_exact_token_score": 0.0,
+          "candidate_topk": [
+            {
+              "score": 3.245662267839687e-05,
+              "token_id": 796,
+              "token_text": " ="
+            },
+            {
+              "score": 3.220206093189964e-05,
+              "token_id": 1391,
+              "token_text": " {"
+            },
+            {
+              "score": 3.182021831215379e-05,
+              "token_id": 26020,
+              "token_text": " stimulate"
+            },
+            {
+              "score": 3.143837569240795e-05,
+              "token_id": 32898,
+              "token_text": " Anthrop"
+            },
+            {
+              "score": 3.118381394591072e-05,
+              "token_id": 6150,
+              "token_text": " remained"
+            }
+          ],
+          "category": "arithmetic_short",
+          "exact_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "exact_topk": [
+            {
+              "score": 4.750737505643141e-05,
+              "token_id": 796,
+              "token_text": " ="
+            },
+            {
+              "score": 4.707753440328189e-05,
+              "token_id": 1391,
+              "token_text": " {"
+            },
+            {
+              "score": 4.5184231201823663e-05,
+              "token_id": 26020,
+              "token_text": " stimulate"
+            },
+            {
+              "score": 4.399074084105889e-05,
+              "token_id": 32898,
+              "token_text": " Anthrop"
+            },
+            {
+              "score": 4.340250030182696e-05,
+              "token_id": 6150,
+              "token_text": " remained"
+            }
+          ],
+          "expected_continuation": " 12",
+          "prompt": "6 * 2 =",
+          "reference_margin": {
+            "top1_top2_logit_margin": 0.009089052677154541,
+            "topk_probability_mass": 0.00022716238180442284
+          },
+          "sample_id": "dist2_arith_six_times_two",
+          "stage_settings": {
+            "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q8_w_q8_norm_recip_q10_prob_fp",
+            "normalization_mode": "reciprocal_quantized",
+            "normalization_reciprocal_bits": 10,
+            "normalization_reciprocal_float_format": "",
+            "probability_float_format": "",
+            "probability_quant_bits": 0,
+            "softmax_input_float_format": "",
+            "softmax_input_quant_bits": 8,
+            "softmax_mode": "approx_pwl",
+            "softmax_weight_float_format": "",
+            "softmax_weight_quant_bits": 8,
+            "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q10"
+          },
+          "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q10"
+        }
+      ]
+    },
+    {
+      "category": "list_continuation",
+      "exact_next": {
+        "token_id": 11,
+        "token_text": ","
+      },
+      "exact_topk": [
+        {
+          "score": 5.8550593249506195e-05,
+          "token_id": 11,
+          "token_text": ","
+        },
+        {
+          "score": 5.82559391437178e-05,
+          "token_id": 43963,
+          "token_text": " Drinking"
+        },
+        {
+          "score": 5.006411658840785e-05,
+          "token_id": 25436,
+          "token_text": " punched"
+        },
+        {
+          "score": 4.799418559324131e-05,
+          "token_id": 28172,
+          "token_text": "Everybody"
+        },
+        {
+          "score": 4.669197306514837e-05,
+          "token_id": 35536,
+          "token_text": " Cases"
+        }
+      ],
+      "expected_continuation": " four",
+      "prompt": "one, two, three,",
+      "sample_id": "dist2_sequence_numbers",
+      "templates": [
+        {
+          "aggregate": {
+            "next_token_id_match": 1,
+            "next_token_text_match": 1,
+            "topk_contains_reference_id": 1,
+            "topk_contains_reference_text": 1
+          },
+          "candidate_margin": {
+            "score_sum": 1.0014282166957855,
+            "top1_top2_score_margin": 1.4901161193847656e-07,
+            "topk_score_mass": 0.00018104910850524902
+          },
+          "candidate_next": {
+            "token_id": 11,
+            "token_text": ","
+          },
+          "candidate_rank_in_exact_topk": 1,
+          "candidate_score_minus_exact_token_score": 0.0,
+          "candidate_topk": [
+            {
+              "score": 3.814697265625e-05,
+              "token_id": 11,
+              "token_text": ","
+            },
+            {
+              "score": 3.7997961044311523e-05,
+              "token_id": 43963,
+              "token_text": " Drinking"
+            },
+            {
+              "score": 3.56137752532959e-05,
+              "token_id": 25436,
+              "token_text": " punched"
+            },
+            {
+              "score": 3.4868717193603516e-05,
+              "token_id": 28172,
+              "token_text": "Everybody"
+            },
+            {
+              "score": 3.4421682357788086e-05,
+              "token_id": 35536,
+              "token_text": " Cases"
+            }
+          ],
+          "category": "list_continuation",
+          "exact_next": {
+            "token_id": 11,
+            "token_text": ","
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "exact_topk": [
+            {
+              "score": 5.8550593249506195e-05,
+              "token_id": 11,
+              "token_text": ","
+            },
+            {
+              "score": 5.82559391437178e-05,
+              "token_id": 43963,
+              "token_text": " Drinking"
+            },
+            {
+              "score": 5.006411658840785e-05,
+              "token_id": 25436,
+              "token_text": " punched"
+            },
+            {
+              "score": 4.799418559324131e-05,
+              "token_id": 28172,
+              "token_text": "Everybody"
+            },
+            {
+              "score": 4.669197306514837e-05,
+              "token_id": 35536,
+              "token_text": " Cases"
+            }
+          ],
+          "expected_continuation": " four",
+          "prompt": "one, two, three,",
+          "reference_margin": {
+            "top1_top2_logit_margin": 0.005045175552368164,
+            "topk_probability_mass": 0.0002615568076400215
+          },
+          "sample_id": "dist2_sequence_numbers",
+          "stage_settings": {
+            "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_bf16_w_bf16_norm_recip_bf16_prob_fp",
+            "normalization_mode": "reciprocal_float",
+            "normalization_reciprocal_bits": 0,
+            "normalization_reciprocal_float_format": "bf16",
+            "probability_float_format": "",
+            "probability_quant_bits": 0,
+            "softmax_input_float_format": "bf16",
+            "softmax_input_quant_bits": 0,
+            "softmax_mode": "approx_pwl",
+            "softmax_weight_float_format": "bf16",
+            "softmax_weight_quant_bits": 0,
+            "template": "grid_approx_pwl_bf16_path"
+          },
+          "template": "grid_approx_pwl_bf16_path"
+        },
+        {
+          "aggregate": {
+            "next_token_id_match": 1,
+            "next_token_text_match": 1,
+            "topk_contains_reference_id": 1,
+            "topk_contains_reference_text": 1
+          },
+          "candidate_margin": {
+            "score_sum": 1.0000000000000038,
+            "top1_top2_score_margin": 0.0,
+            "topk_score_mass": 0.00018088849561117697
+          },
+          "candidate_next": {
+            "token_id": 11,
+            "token_text": ","
+          },
+          "candidate_rank_in_exact_topk": 1,
+          "candidate_score_minus_exact_token_score": 0.0,
+          "candidate_topk": [
+            {
+              "score": 3.808965019062769e-05,
+              "token_id": 11,
+              "token_text": ","
+            },
+            {
+              "score": 3.808965019062769e-05,
+              "token_id": 43963,
+              "token_text": " Drinking"
+            },
+            {
+              "score": 3.5550340177919176e-05,
+              "token_id": 25436,
+              "token_text": " punched"
+            },
+            {
+              "score": 3.4654113114610286e-05,
+              "token_id": 28172,
+              "token_text": "Everybody"
+            },
+            {
+              "score": 3.450474193739214e-05,
+              "token_id": 35536,
+              "token_text": " Cases"
+            }
+          ],
+          "category": "list_continuation",
+          "exact_next": {
+            "token_id": 11,
+            "token_text": ","
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "exact_topk": [
+            {
+              "score": 5.8550593249506195e-05,
+              "token_id": 11,
+              "token_text": ","
+            },
+            {
+              "score": 5.82559391437178e-05,
+              "token_id": 43963,
+              "token_text": " Drinking"
+            },
+            {
+              "score": 5.006411658840785e-05,
+              "token_id": 25436,
+              "token_text": " punched"
+            },
+            {
+              "score": 4.799418559324131e-05,
+              "token_id": 28172,
+              "token_text": "Everybody"
+            },
+            {
+              "score": 4.669197306514837e-05,
+              "token_id": 35536,
+              "token_text": " Cases"
+            }
+          ],
+          "expected_continuation": " four",
+          "prompt": "one, two, three,",
+          "reference_margin": {
+            "top1_top2_logit_margin": 0.005045175552368164,
+            "topk_probability_mass": 0.0002615568076400215
+          },
+          "sample_id": "dist2_sequence_numbers",
+          "stage_settings": {
+            "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q8_w_q8_norm_exact_prob_fp",
+            "normalization_mode": "exact",
+            "normalization_reciprocal_bits": 0,
+            "normalization_reciprocal_float_format": "",
+            "probability_float_format": "",
+            "probability_quant_bits": 0,
+            "softmax_input_float_format": "",
+            "softmax_input_quant_bits": 8,
+            "softmax_mode": "approx_pwl",
+            "softmax_weight_float_format": "",
+            "softmax_weight_quant_bits": 8,
+            "template": "grid_approx_pwl_in_q8_w_q8_norm_exact"
+          },
+          "template": "grid_approx_pwl_in_q8_w_q8_norm_exact"
+        },
+        {
+          "aggregate": {
+            "next_token_id_match": 1,
+            "next_token_text_match": 1,
+            "topk_contains_reference_id": 1,
+            "topk_contains_reference_text": 1
+          },
+          "candidate_margin": {
+            "score_sum": 0.9993511614155365,
+            "top1_top2_score_margin": 0.0,
+            "topk_score_mass": 0.00018077112817573265
+          },
+          "candidate_next": {
+            "token_id": 11,
+            "token_text": ","
+          },
+          "candidate_rank_in_exact_topk": 1,
+          "candidate_score_minus_exact_token_score": 0.0,
+          "candidate_topk": [
+            {
+              "score": 3.806493615591398e-05,
+              "token_id": 11,
+              "token_text": ","
+            },
+            {
+              "score": 3.806493615591398e-05,
+              "token_id": 43963,
+              "token_text": " Drinking"
+            },
+            {
+              "score": 3.5527273745519715e-05,
+              "token_id": 25436,
+              "token_text": " punched"
+            },
+            {
+              "score": 3.463162818890997e-05,
+              "token_id": 28172,
+              "token_text": "Everybody"
+            },
+            {
+              "score": 3.4482353929475015e-05,
+              "token_id": 35536,
+              "token_text": " Cases"
+            }
+          ],
+          "category": "list_continuation",
+          "exact_next": {
+            "token_id": 11,
+            "token_text": ","
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "exact_topk": [
+            {
+              "score": 5.8550593249506195e-05,
+              "token_id": 11,
+              "token_text": ","
+            },
+            {
+              "score": 5.82559391437178e-05,
+              "token_id": 43963,
+              "token_text": " Drinking"
+            },
+            {
+              "score": 5.006411658840785e-05,
+              "token_id": 25436,
+              "token_text": " punched"
+            },
+            {
+              "score": 4.799418559324131e-05,
+              "token_id": 28172,
+              "token_text": "Everybody"
+            },
+            {
+              "score": 4.669197306514837e-05,
+              "token_id": 35536,
+              "token_text": " Cases"
+            }
+          ],
+          "expected_continuation": " four",
+          "prompt": "one, two, three,",
+          "reference_margin": {
+            "top1_top2_logit_margin": 0.005045175552368164,
+            "topk_probability_mass": 0.0002615568076400215
+          },
+          "sample_id": "dist2_sequence_numbers",
+          "stage_settings": {
+            "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q8_w_q8_norm_recip_q10_prob_fp",
+            "normalization_mode": "reciprocal_quantized",
+            "normalization_reciprocal_bits": 10,
+            "normalization_reciprocal_float_format": "",
+            "probability_float_format": "",
+            "probability_quant_bits": 0,
+            "softmax_input_float_format": "",
+            "softmax_input_quant_bits": 8,
+            "softmax_mode": "approx_pwl",
+            "softmax_weight_float_format": "",
+            "softmax_weight_quant_bits": 8,
+            "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q10"
+          },
+          "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q10"
+        }
+      ]
+    },
+    {
+      "category": "list_continuation",
+      "exact_next": {
+        "token_id": 43963,
+        "token_text": " Drinking"
+      },
+      "exact_topk": [
+        {
+          "score": 5.6122218767996295e-05,
+          "token_id": 43963,
+          "token_text": " Drinking"
+        },
+        {
+          "score": 5.4969790537131486e-05,
+          "token_id": 28172,
+          "token_text": "Everybody"
+        },
+        {
+          "score": 5.4145000876601794e-05,
+          "token_id": 11,
+          "token_text": ","
+        },
+        {
+          "score": 4.8793320871144445e-05,
+          "token_id": 25436,
+          "token_text": " punched"
+        },
+        {
+          "score": 4.709369383800674e-05,
+          "token_id": 17210,
+          "token_text": " Lex"
+        }
+      ],
+      "expected_continuation": " Thursday",
+      "prompt": "Monday, Tuesday, Wednesday,",
+      "sample_id": "dist2_sequence_weekdays",
+      "templates": [
+        {
+          "aggregate": {
+            "next_token_id_match": 1,
+            "next_token_text_match": 1,
+            "topk_contains_reference_id": 1,
+            "topk_contains_reference_text": 1
+          },
+          "candidate_margin": {
+            "score_sum": 0.9976632329635322,
+            "top1_top2_score_margin": 2.868473529815674e-07,
+            "topk_score_mass": 0.00017784535884857178
+          },
+          "candidate_next": {
+            "token_id": 43963,
+            "token_text": " Drinking"
+          },
+          "candidate_rank_in_exact_topk": 1,
+          "candidate_score_minus_exact_token_score": 0.0,
+          "candidate_topk": [
+            {
+              "score": 3.6716461181640625e-05,
+              "token_id": 43963,
+              "token_text": " Drinking"
+            },
+            {
+              "score": 3.642961382865906e-05,
+              "token_id": 28172,
+              "token_text": "Everybody"
+            },
+            {
+              "score": 3.614276647567749e-05,
+              "token_id": 11,
+              "token_text": ","
+            },
+            {
+              "score": 3.456510603427887e-05,
+              "token_id": 25436,
+              "token_text": " punched"
+            },
+            {
+              "score": 3.3991411328315735e-05,
+              "token_id": 17210,
+              "token_text": " Lex"
+            }
+          ],
+          "category": "list_continuation",
+          "exact_next": {
+            "token_id": 43963,
+            "token_text": " Drinking"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "exact_topk": [
+            {
+              "score": 5.6122218767996295e-05,
+              "token_id": 43963,
+              "token_text": " Drinking"
+            },
+            {
+              "score": 5.4969790537131486e-05,
+              "token_id": 28172,
+              "token_text": "Everybody"
+            },
+            {
+              "score": 5.4145000876601794e-05,
+              "token_id": 11,
+              "token_text": ","
+            },
+            {
+              "score": 4.8793320871144445e-05,
+              "token_id": 25436,
+              "token_text": " punched"
+            },
+            {
+              "score": 4.709369383800674e-05,
+              "token_id": 17210,
+              "token_text": " Lex"
+            }
+          ],
+          "expected_continuation": " Thursday",
+          "prompt": "Monday, Tuesday, Wednesday,",
+          "reference_margin": {
+            "top1_top2_logit_margin": 0.020748019218444824,
+            "topk_probability_mass": 0.00026112402489088075
+          },
+          "sample_id": "dist2_sequence_weekdays",
+          "stage_settings": {
+            "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_bf16_w_bf16_norm_recip_bf16_prob_fp",
+            "normalization_mode": "reciprocal_float",
+            "normalization_reciprocal_bits": 0,
+            "normalization_reciprocal_float_format": "bf16",
+            "probability_float_format": "",
+            "probability_quant_bits": 0,
+            "softmax_input_float_format": "bf16",
+            "softmax_input_quant_bits": 0,
+            "softmax_mode": "approx_pwl",
+            "softmax_weight_float_format": "bf16",
+            "softmax_weight_quant_bits": 0,
+            "template": "grid_approx_pwl_bf16_path"
+          },
+          "template": "grid_approx_pwl_bf16_path"
+        },
+        {
+          "aggregate": {
+            "next_token_id_match": 1,
+            "next_token_text_match": 1,
+            "topk_contains_reference_id": 1,
+            "topk_contains_reference_text": 1
+          },
+          "candidate_margin": {
+            "score_sum": 0.9999999999999857,
+            "top1_top2_score_margin": 2.8872790383398396e-07,
+            "topk_score_mass": 0.00017828948061748392
+          },
+          "candidate_next": {
+            "token_id": 43963,
+            "token_text": " Drinking"
+          },
+          "candidate_rank_in_exact_topk": 1,
+          "candidate_score_minus_exact_token_score": 0.0,
+          "candidate_topk": [
+            {
+              "score": 3.6812807738832715e-05,
+              "token_id": 43963,
+              "token_text": " Drinking"
+            },
+            {
+              "score": 3.652407983499873e-05,
+              "token_id": 28172,
+              "token_text": "Everybody"
+            },
+            {
+              "score": 3.637971588308174e-05,
+              "token_id": 11,
+              "token_text": ","
+            },
+            {
+              "score": 3.4502984508160857e-05,
+              "token_id": 25436,
+              "token_text": " punched"
+            },
+            {
+              "score": 3.4069892652409884e-05,
+              "token_id": 17210,
+              "token_text": " Lex"
+            }
+          ],
+          "category": "list_continuation",
+          "exact_next": {
+            "token_id": 43963,
+            "token_text": " Drinking"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "exact_topk": [
+            {
+              "score": 5.6122218767996295e-05,
+              "token_id": 43963,
+              "token_text": " Drinking"
+            },
+            {
+              "score": 5.4969790537131486e-05,
+              "token_id": 28172,
+              "token_text": "Everybody"
+            },
+            {
+              "score": 5.4145000876601794e-05,
+              "token_id": 11,
+              "token_text": ","
+            },
+            {
+              "score": 4.8793320871144445e-05,
+              "token_id": 25436,
+              "token_text": " punched"
+            },
+            {
+              "score": 4.709369383800674e-05,
+              "token_id": 17210,
+              "token_text": " Lex"
+            }
+          ],
+          "expected_continuation": " Thursday",
+          "prompt": "Monday, Tuesday, Wednesday,",
+          "reference_margin": {
+            "top1_top2_logit_margin": 0.020748019218444824,
+            "topk_probability_mass": 0.00026112402489088075
+          },
+          "sample_id": "dist2_sequence_weekdays",
+          "stage_settings": {
+            "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q8_w_q8_norm_exact_prob_fp",
+            "normalization_mode": "exact",
+            "normalization_reciprocal_bits": 0,
+            "normalization_reciprocal_float_format": "",
+            "probability_float_format": "",
+            "probability_quant_bits": 0,
+            "softmax_input_float_format": "",
+            "softmax_input_quant_bits": 8,
+            "softmax_mode": "approx_pwl",
+            "softmax_weight_float_format": "",
+            "softmax_weight_quant_bits": 8,
+            "template": "grid_approx_pwl_in_q8_w_q8_norm_exact"
+          },
+          "template": "grid_approx_pwl_in_q8_w_q8_norm_exact"
+        },
+        {
+          "aggregate": {
+            "next_token_id_match": 1,
+            "next_token_text_match": 1,
+            "topk_contains_reference_id": 1,
+            "topk_contains_reference_text": 1
+          },
+          "candidate_margin": {
+            "score_sum": 0.9999784673050355,
+            "top1_top2_score_margin": 2.887216867440985e-07,
+            "topk_score_mass": 0.00017828564156448262
+          },
+          "candidate_next": {
+            "token_id": 43963,
+            "token_text": " Drinking"
+          },
+          "candidate_rank_in_exact_topk": 1,
+          "candidate_score_minus_exact_token_score": 0.0,
+          "candidate_topk": [
+            {
+              "score": 3.6812015059872924e-05,
+              "token_id": 43963,
+              "token_text": " Drinking"
+            },
+            {
+              "score": 3.6523293373128825e-05,
+              "token_id": 28172,
+              "token_text": "Everybody"
+            },
+            {
+              "score": 3.637893252975677e-05,
+              "token_id": 11,
+              "token_text": ","
+            },
+            {
+              "score": 3.4502241565920115e-05,
+              "token_id": 25436,
+              "token_text": " punched"
+            },
+            {
+              "score": 3.4069159035803964e-05,
+              "token_id": 17210,
+              "token_text": " Lex"
+            }
+          ],
+          "category": "list_continuation",
+          "exact_next": {
+            "token_id": 43963,
+            "token_text": " Drinking"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "exact_topk": [
+            {
+              "score": 5.6122218767996295e-05,
+              "token_id": 43963,
+              "token_text": " Drinking"
+            },
+            {
+              "score": 5.4969790537131486e-05,
+              "token_id": 28172,
+              "token_text": "Everybody"
+            },
+            {
+              "score": 5.4145000876601794e-05,
+              "token_id": 11,
+              "token_text": ","
+            },
+            {
+              "score": 4.8793320871144445e-05,
+              "token_id": 25436,
+              "token_text": " punched"
+            },
+            {
+              "score": 4.709369383800674e-05,
+              "token_id": 17210,
+              "token_text": " Lex"
+            }
+          ],
+          "expected_continuation": " Thursday",
+          "prompt": "Monday, Tuesday, Wednesday,",
+          "reference_margin": {
+            "top1_top2_logit_margin": 0.020748019218444824,
+            "topk_probability_mass": 0.00026112402489088075
+          },
+          "sample_id": "dist2_sequence_weekdays",
+          "stage_settings": {
+            "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q8_w_q8_norm_recip_q10_prob_fp",
+            "normalization_mode": "reciprocal_quantized",
+            "normalization_reciprocal_bits": 10,
+            "normalization_reciprocal_float_format": "",
+            "probability_float_format": "",
+            "probability_quant_bits": 0,
+            "softmax_input_float_format": "",
+            "softmax_input_quant_bits": 8,
+            "softmax_mode": "approx_pwl",
+            "softmax_weight_float_format": "",
+            "softmax_weight_quant_bits": 8,
+            "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q10"
+          },
+          "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q10"
+        }
+      ]
+    }
+  ],
+  "diagnosis": {
+    "all_topk_safe": true,
+    "cause": "shared_pwl_softmax_or_logit_margin_sensitivity",
+    "common_next_token_misses": [
+      "dist2_arith_three_plus_five",
+      "dist2_sequence_months"
+    ],
+    "recommended_next_step": "Run a focused PWL/logit sensitivity ladder on the failing arithmetic and sequence samples, with exact top-k retained as the broad gate and exact next-token treated as a margin stress signal.",
+    "same_miss_pattern": true,
+    "summary": "The same exact-token misses appear across bf16 reciprocal, q8 exact normalization, and q8 reciprocal q10. Normalization precision is unlikely to be the root cause."
+  },
+  "focus_sample_ids": [
+    "dist2_arith_three_plus_five",
+    "dist2_sequence_months"
+  ],
+  "focus_samples": [
+    {
+      "category": "arithmetic_short",
+      "exact_next": {
+        "token_id": 27146,
+        "token_text": " footsteps"
+      },
+      "exact_topk": [
+        {
+          "score": 4.8986247517740504e-05,
+          "token_id": 27146,
+          "token_text": " footsteps"
+        },
+        {
+          "score": 4.896332655035402e-05,
+          "token_id": 796,
+          "token_text": " ="
+        },
+        {
+          "score": 4.547368497454095e-05,
+          "token_id": 29570,
+          "token_text": " pioneer"
+        },
+        {
+          "score": 4.474632238088286e-05,
+          "token_id": 22061,
+          "token_text": "ITED"
+        },
+        {
+          "score": 4.4741847229925705e-05,
+          "token_id": 16866,
+          "token_text": " ruin"
+        }
+      ],
+      "expected_continuation": " 8",
+      "prompt": "3 + 5 =",
+      "sample_id": "dist2_arith_three_plus_five",
+      "templates": [
+        {
+          "aggregate": {
+            "next_token_id_match": 0,
+            "next_token_text_match": 0,
+            "topk_contains_reference_id": 1,
+            "topk_contains_reference_text": 1
+          },
+          "candidate_margin": {
+            "score_sum": 0.99842738523148,
+            "top1_top2_score_margin": 0.0,
+            "topk_score_mass": 0.0001620762050151825
+          },
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "candidate_rank_in_exact_topk": 2,
+          "candidate_score_minus_exact_token_score": 0.0,
+          "candidate_topk": [
+            {
+              "score": 3.314018249511719e-05,
+              "token_id": 796,
+              "token_text": " ="
+            },
+            {
+              "score": 3.314018249511719e-05,
+              "token_id": 27146,
+              "token_text": " footsteps"
+            },
+            {
+              "score": 3.2104551792144775e-05,
+              "token_id": 29570,
+              "token_text": " pioneer"
+            },
+            {
+              "score": 3.184564411640167e-05,
+              "token_id": 16866,
+              "token_text": " ruin"
+            },
+            {
+              "score": 3.184564411640167e-05,
+              "token_id": 22061,
+              "token_text": "ITED"
+            }
+          ],
+          "category": "arithmetic_short",
+          "exact_next": {
+            "token_id": 27146,
+            "token_text": " footsteps"
+          },
+          "exact_rank_in_candidate_topk": 2,
+          "exact_topk": [
+            {
+              "score": 4.8986247517740504e-05,
+              "token_id": 27146,
+              "token_text": " footsteps"
+            },
+            {
+              "score": 4.896332655035402e-05,
+              "token_id": 796,
+              "token_text": " ="
+            },
+            {
+              "score": 4.547368497454095e-05,
+              "token_id": 29570,
+              "token_text": " pioneer"
+            },
+            {
+              "score": 4.474632238088286e-05,
+              "token_id": 22061,
+              "token_text": "ITED"
+            },
+            {
+              "score": 4.4741847229925705e-05,
+              "token_id": 16866,
+              "token_text": " ruin"
+            }
+          ],
+          "expected_continuation": " 8",
+          "prompt": "3 + 5 =",
+          "reference_margin": {
+            "top1_top2_logit_margin": 0.0004680156707763672,
+            "topk_probability_mass": 0.00023291142865344405
+          },
+          "sample_id": "dist2_arith_three_plus_five",
+          "stage_settings": {
+            "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_bf16_w_bf16_norm_recip_bf16_prob_fp",
+            "normalization_mode": "reciprocal_float",
+            "normalization_reciprocal_bits": 0,
+            "normalization_reciprocal_float_format": "bf16",
+            "probability_float_format": "",
+            "probability_quant_bits": 0,
+            "softmax_input_float_format": "bf16",
+            "softmax_input_quant_bits": 0,
+            "softmax_mode": "approx_pwl",
+            "softmax_weight_float_format": "bf16",
+            "softmax_weight_quant_bits": 0,
+            "template": "grid_approx_pwl_bf16_path"
+          },
+          "template": "grid_approx_pwl_bf16_path"
+        },
+        {
+          "aggregate": {
+            "next_token_id_match": 0,
+            "next_token_text_match": 0,
+            "topk_contains_reference_id": 1,
+            "topk_contains_reference_text": 1
+          },
+          "candidate_margin": {
+            "score_sum": 0.9999999999996334,
+            "top1_top2_score_margin": 0.0,
+            "topk_score_mass": 0.00016232263778582782
+          },
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "candidate_rank_in_exact_topk": 2,
+          "candidate_score_minus_exact_token_score": 0.0,
+          "candidate_topk": [
+            {
+              "score": 3.319348246622782e-05,
+              "token_id": 796,
+              "token_text": " ="
+            },
+            {
+              "score": 3.319348246622782e-05,
+              "token_id": 27146,
+              "token_text": " footsteps"
+            },
+            {
+              "score": 3.2152118310424594e-05,
+              "token_id": 29570,
+              "token_text": " pioneer"
+            },
+            {
+              "score": 3.189177727147379e-05,
+              "token_id": 16866,
+              "token_text": " ruin"
+            },
+            {
+              "score": 3.189177727147379e-05,
+              "token_id": 22061,
+              "token_text": "ITED"
+            }
+          ],
+          "category": "arithmetic_short",
+          "exact_next": {
+            "token_id": 27146,
+            "token_text": " footsteps"
+          },
+          "exact_rank_in_candidate_topk": 2,
+          "exact_topk": [
+            {
+              "score": 4.8986247517740504e-05,
+              "token_id": 27146,
+              "token_text": " footsteps"
+            },
+            {
+              "score": 4.896332655035402e-05,
+              "token_id": 796,
+              "token_text": " ="
+            },
+            {
+              "score": 4.547368497454095e-05,
+              "token_id": 29570,
+              "token_text": " pioneer"
+            },
+            {
+              "score": 4.474632238088286e-05,
+              "token_id": 22061,
+              "token_text": "ITED"
+            },
+            {
+              "score": 4.4741847229925705e-05,
+              "token_id": 16866,
+              "token_text": " ruin"
+            }
+          ],
+          "expected_continuation": " 8",
+          "prompt": "3 + 5 =",
+          "reference_margin": {
+            "top1_top2_logit_margin": 0.0004680156707763672,
+            "topk_probability_mass": 0.00023291142865344405
+          },
+          "sample_id": "dist2_arith_three_plus_five",
+          "stage_settings": {
+            "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q8_w_q8_norm_exact_prob_fp",
+            "normalization_mode": "exact",
+            "normalization_reciprocal_bits": 0,
+            "normalization_reciprocal_float_format": "",
+            "probability_float_format": "",
+            "probability_quant_bits": 0,
+            "softmax_input_float_format": "",
+            "softmax_input_quant_bits": 8,
+            "softmax_mode": "approx_pwl",
+            "softmax_weight_float_format": "",
+            "softmax_weight_quant_bits": 8,
+            "template": "grid_approx_pwl_in_q8_w_q8_norm_exact"
+          },
+          "template": "grid_approx_pwl_in_q8_w_q8_norm_exact"
+        },
+        {
+          "aggregate": {
+            "next_token_id_match": 0,
+            "next_token_text_match": 0,
+            "topk_contains_reference_id": 1,
+            "topk_contains_reference_text": 1
+          },
+          "candidate_margin": {
+            "score_sum": 0.9993702114314402,
+            "top1_top2_score_margin": 0.0,
+            "topk_score_mass": 0.00016222040884413395
+          },
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "candidate_rank_in_exact_topk": 2,
+          "candidate_score_minus_exact_token_score": 0.0,
+          "candidate_topk": [
+            {
+              "score": 3.317257759042033e-05,
+              "token_id": 796,
+              "token_text": " ="
+            },
+            {
+              "score": 3.317257759042033e-05,
+              "token_id": 27146,
+              "token_text": " footsteps"
+            },
+            {
+              "score": 3.2131869273858124e-05,
+              "token_id": 29570,
+              "token_text": " pioneer"
+            },
+            {
+              "score": 3.1871692194717574e-05,
+              "token_id": 16866,
+              "token_text": " ruin"
+            },
+            {
+              "score": 3.1871692194717574e-05,
+              "token_id": 22061,
+              "token_text": "ITED"
+            }
+          ],
+          "category": "arithmetic_short",
+          "exact_next": {
+            "token_id": 27146,
+            "token_text": " footsteps"
+          },
+          "exact_rank_in_candidate_topk": 2,
+          "exact_topk": [
+            {
+              "score": 4.8986247517740504e-05,
+              "token_id": 27146,
+              "token_text": " footsteps"
+            },
+            {
+              "score": 4.896332655035402e-05,
+              "token_id": 796,
+              "token_text": " ="
+            },
+            {
+              "score": 4.547368497454095e-05,
+              "token_id": 29570,
+              "token_text": " pioneer"
+            },
+            {
+              "score": 4.474632238088286e-05,
+              "token_id": 22061,
+              "token_text": "ITED"
+            },
+            {
+              "score": 4.4741847229925705e-05,
+              "token_id": 16866,
+              "token_text": " ruin"
+            }
+          ],
+          "expected_continuation": " 8",
+          "prompt": "3 + 5 =",
+          "reference_margin": {
+            "top1_top2_logit_margin": 0.0004680156707763672,
+            "topk_probability_mass": 0.00023291142865344405
+          },
+          "sample_id": "dist2_arith_three_plus_five",
+          "stage_settings": {
+            "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q8_w_q8_norm_recip_q10_prob_fp",
+            "normalization_mode": "reciprocal_quantized",
+            "normalization_reciprocal_bits": 10,
+            "normalization_reciprocal_float_format": "",
+            "probability_float_format": "",
+            "probability_quant_bits": 0,
+            "softmax_input_float_format": "",
+            "softmax_input_quant_bits": 8,
+            "softmax_mode": "approx_pwl",
+            "softmax_weight_float_format": "",
+            "softmax_weight_quant_bits": 8,
+            "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q10"
+          },
+          "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q10"
+        }
+      ]
+    },
+    {
+      "category": "list_continuation",
+      "exact_next": {
+        "token_id": 43963,
+        "token_text": " Drinking"
+      },
+      "exact_topk": [
+        {
+          "score": 5.743377314024594e-05,
+          "token_id": 43963,
+          "token_text": " Drinking"
+        },
+        {
+          "score": 5.7228324653850524e-05,
+          "token_id": 11,
+          "token_text": ","
+        },
+        {
+          "score": 4.717986279740103e-05,
+          "token_id": 37889,
+          "token_text": " STATS"
+        },
+        {
+          "score": 4.501588622668472e-05,
+          "token_id": 34328,
+          "token_text": " astounding"
+        },
+        {
+          "score": 4.4937579430488135e-05,
+          "token_id": 28172,
+          "token_text": "Everybody"
+        }
+      ],
+      "expected_continuation": " April",
+      "prompt": "January, February, March,",
+      "sample_id": "dist2_sequence_months",
+      "templates": [
+        {
+          "aggregate": {
+            "next_token_id_match": 0,
+            "next_token_text_match": 0,
+            "topk_contains_reference_id": 1,
+            "topk_contains_reference_text": 1
+          },
+          "candidate_margin": {
+            "score_sum": 0.9982818844728172,
+            "top1_top2_score_margin": 0.0,
+            "topk_score_mass": 0.00017604604363441467
+          },
+          "candidate_next": {
+            "token_id": 11,
+            "token_text": ","
+          },
+          "candidate_rank_in_exact_topk": 2,
+          "candidate_score_minus_exact_token_score": 0.0,
+          "candidate_topk": [
+            {
+              "score": 3.743171691894531e-05,
+              "token_id": 11,
+              "token_text": ","
+            },
+            {
+              "score": 3.743171691894531e-05,
+              "token_id": 43963,
+              "token_text": " Drinking"
+            },
+            {
+              "score": 3.421492874622345e-05,
+              "token_id": 37889,
+              "token_text": " STATS"
+            },
+            {
+              "score": 3.34838405251503e-05,
+              "token_id": 28172,
+              "token_text": "Everybody"
+            },
+            {
+              "score": 3.34838405251503e-05,
+              "token_id": 34328,
+              "token_text": " astounding"
+            }
+          ],
+          "category": "list_continuation",
+          "exact_next": {
+            "token_id": 43963,
+            "token_text": " Drinking"
+          },
+          "exact_rank_in_candidate_topk": 2,
+          "exact_topk": [
+            {
+              "score": 5.743377314024594e-05,
+              "token_id": 43963,
+              "token_text": " Drinking"
+            },
+            {
+              "score": 5.7228324653850524e-05,
+              "token_id": 11,
+              "token_text": ","
+            },
+            {
+              "score": 4.717986279740103e-05,
+              "token_id": 37889,
+              "token_text": " STATS"
+            },
+            {
+              "score": 4.501588622668472e-05,
+              "token_id": 34328,
+              "token_text": " astounding"
+            },
+            {
+              "score": 4.4937579430488135e-05,
+              "token_id": 28172,
+              "token_text": "Everybody"
+            }
+          ],
+          "expected_continuation": " April",
+          "prompt": "January, February, March,",
+          "reference_margin": {
+            "top1_top2_logit_margin": 0.003583550453186035,
+            "topk_probability_mass": 0.00025179542624867034
+          },
+          "sample_id": "dist2_sequence_months",
+          "stage_settings": {
+            "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_bf16_w_bf16_norm_recip_bf16_prob_fp",
+            "normalization_mode": "reciprocal_float",
+            "normalization_reciprocal_bits": 0,
+            "normalization_reciprocal_float_format": "bf16",
+            "probability_float_format": "",
+            "probability_quant_bits": 0,
+            "softmax_input_float_format": "bf16",
+            "softmax_input_quant_bits": 0,
+            "softmax_mode": "approx_pwl",
+            "softmax_weight_float_format": "bf16",
+            "softmax_weight_quant_bits": 0,
+            "template": "grid_approx_pwl_bf16_path"
+          },
+          "template": "grid_approx_pwl_bf16_path"
+        },
+        {
+          "aggregate": {
+            "next_token_id_match": 0,
+            "next_token_text_match": 0,
+            "topk_contains_reference_id": 1,
+            "topk_contains_reference_text": 1
+          },
+          "candidate_margin": {
+            "score_sum": 1.0000000000000902,
+            "top1_top2_score_margin": 0.0,
+            "topk_score_mass": 0.00017602829864458733
+          },
+          "candidate_next": {
+            "token_id": 11,
+            "token_text": ","
+          },
+          "candidate_rank_in_exact_topk": 2,
+          "candidate_score_minus_exact_token_score": 0.0,
+          "candidate_topk": [
+            {
+              "score": 3.749976286914768e-05,
+              "token_id": 11,
+              "token_text": ","
+            },
+            {
+              "score": 3.749976286914768e-05,
+              "token_id": 43963,
+              "token_text": " Drinking"
+            },
+            {
+              "score": 3.4264489209848666e-05,
+              "token_id": 37889,
+              "token_text": " STATS"
+            },
+            {
+              "score": 3.338214184822166e-05,
+              "token_id": 28172,
+              "token_text": "Everybody"
+            },
+            {
+              "score": 3.338214184822166e-05,
+              "token_id": 34328,
+              "token_text": " astounding"
+            }
+          ],
+          "category": "list_continuation",
+          "exact_next": {
+            "token_id": 43963,
+            "token_text": " Drinking"
+          },
+          "exact_rank_in_candidate_topk": 2,
+          "exact_topk": [
+            {
+              "score": 5.743377314024594e-05,
+              "token_id": 43963,
+              "token_text": " Drinking"
+            },
+            {
+              "score": 5.7228324653850524e-05,
+              "token_id": 11,
+              "token_text": ","
+            },
+            {
+              "score": 4.717986279740103e-05,
+              "token_id": 37889,
+              "token_text": " STATS"
+            },
+            {
+              "score": 4.501588622668472e-05,
+              "token_id": 34328,
+              "token_text": " astounding"
+            },
+            {
+              "score": 4.4937579430488135e-05,
+              "token_id": 28172,
+              "token_text": "Everybody"
+            }
+          ],
+          "expected_continuation": " April",
+          "prompt": "January, February, March,",
+          "reference_margin": {
+            "top1_top2_logit_margin": 0.003583550453186035,
+            "topk_probability_mass": 0.00025179542624867034
+          },
+          "sample_id": "dist2_sequence_months",
+          "stage_settings": {
+            "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q8_w_q8_norm_exact_prob_fp",
+            "normalization_mode": "exact",
+            "normalization_reciprocal_bits": 0,
+            "normalization_reciprocal_float_format": "",
+            "probability_float_format": "",
+            "probability_quant_bits": 0,
+            "softmax_input_float_format": "",
+            "softmax_input_quant_bits": 8,
+            "softmax_mode": "approx_pwl",
+            "softmax_weight_float_format": "",
+            "softmax_weight_quant_bits": 8,
+            "template": "grid_approx_pwl_in_q8_w_q8_norm_exact"
+          },
+          "template": "grid_approx_pwl_in_q8_w_q8_norm_exact"
+        },
+        {
+          "aggregate": {
+            "next_token_id_match": 0,
+            "next_token_text_match": 0,
+            "topk_contains_reference_id": 1,
+            "topk_contains_reference_text": 1
+          },
+          "candidate_margin": {
+            "score_sum": 1.0007521941630535,
+            "top1_top2_score_margin": 0.0,
+            "topk_score_mass": 0.00017616070610337246
+          },
+          "candidate_next": {
+            "token_id": 11,
+            "token_text": ","
+          },
+          "candidate_rank_in_exact_topk": 2,
+          "candidate_score_minus_exact_token_score": 0.0,
+          "candidate_topk": [
+            {
+              "score": 3.7527969971896384e-05,
+              "token_id": 11,
+              "token_text": ","
+            },
+            {
+              "score": 3.7527969971896384e-05,
+              "token_id": 43963,
+              "token_text": " Drinking"
+            },
+            {
+              "score": 3.4290262758634734e-05,
+              "token_id": 37889,
+              "token_text": " STATS"
+            },
+            {
+              "score": 3.340725170047246e-05,
+              "token_id": 28172,
+              "token_text": "Everybody"
+            },
+            {
+              "score": 3.340725170047246e-05,
+              "token_id": 34328,
+              "token_text": " astounding"
+            }
+          ],
+          "category": "list_continuation",
+          "exact_next": {
+            "token_id": 43963,
+            "token_text": " Drinking"
+          },
+          "exact_rank_in_candidate_topk": 2,
+          "exact_topk": [
+            {
+              "score": 5.743377314024594e-05,
+              "token_id": 43963,
+              "token_text": " Drinking"
+            },
+            {
+              "score": 5.7228324653850524e-05,
+              "token_id": 11,
+              "token_text": ","
+            },
+            {
+              "score": 4.717986279740103e-05,
+              "token_id": 37889,
+              "token_text": " STATS"
+            },
+            {
+              "score": 4.501588622668472e-05,
+              "token_id": 34328,
+              "token_text": " astounding"
+            },
+            {
+              "score": 4.4937579430488135e-05,
+              "token_id": 28172,
+              "token_text": "Everybody"
+            }
+          ],
+          "expected_continuation": " April",
+          "prompt": "January, February, March,",
+          "reference_margin": {
+            "top1_top2_logit_margin": 0.003583550453186035,
+            "topk_probability_mass": 0.00025179542624867034
+          },
+          "sample_id": "dist2_sequence_months",
+          "stage_settings": {
+            "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q8_w_q8_norm_recip_q10_prob_fp",
+            "normalization_mode": "reciprocal_quantized",
+            "normalization_reciprocal_bits": 10,
+            "normalization_reciprocal_float_format": "",
+            "probability_float_format": "",
+            "probability_quant_bits": 0,
+            "softmax_input_float_format": "",
+            "softmax_input_quant_bits": 8,
+            "softmax_mode": "approx_pwl",
+            "softmax_weight_float_format": "",
+            "softmax_weight_quant_bits": 8,
+            "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q10"
+          },
+          "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q10"
+        }
+      ]
+    }
+  ],
+  "sample_file": "runs/datasets/llm_decoder_eval_tiny_v1/samples_distribution_v2.jsonl",
+  "source_sweep": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_sweep__l2_decoder_q8_norm_distribution_broad_v2.json",
+  "template_summaries": [
+    {
+      "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_exact_prob_fp",
+      "next_token_match_rate": 1.0,
+      "next_token_matches": 48,
+      "next_token_mismatch_sample_ids": [],
+      "sample_count": 48,
+      "template": "candidate_onnx_softmax_exact",
+      "topk_contains_reference_id_rate": 1.0,
+      "topk_matches": 48,
+      "topk_miss_sample_ids": []
+    },
+    {
+      "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_bf16_w_bf16_norm_recip_bf16_prob_fp",
+      "next_token_match_rate": 0.9583333333333334,
+      "next_token_matches": 46,
+      "next_token_mismatch_sample_ids": [
+        "dist2_arith_three_plus_five",
+        "dist2_sequence_months"
+      ],
+      "sample_count": 48,
+      "template": "grid_approx_pwl_bf16_path",
+      "topk_contains_reference_id_rate": 1.0,
+      "topk_matches": 48,
+      "topk_miss_sample_ids": []
+    },
+    {
+      "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q8_w_q8_norm_exact_prob_fp",
+      "next_token_match_rate": 0.9583333333333334,
+      "next_token_matches": 46,
+      "next_token_mismatch_sample_ids": [
+        "dist2_arith_three_plus_five",
+        "dist2_sequence_months"
+      ],
+      "sample_count": 48,
+      "template": "grid_approx_pwl_in_q8_w_q8_norm_exact",
+      "topk_contains_reference_id_rate": 1.0,
+      "topk_matches": 48,
+      "topk_miss_sample_ids": []
+    },
+    {
+      "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q8_w_q8_norm_recip_q10_prob_fp",
+      "next_token_match_rate": 0.9583333333333334,
+      "next_token_matches": 46,
+      "next_token_mismatch_sample_ids": [
+        "dist2_arith_three_plus_five",
+        "dist2_sequence_months"
+      ],
+      "sample_count": 48,
+      "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q10",
+      "topk_contains_reference_id_rate": 1.0,
+      "topk_matches": 48,
+      "topk_miss_sample_ids": []
+    }
+  ],
+  "templates": [
+    "candidate_onnx_softmax_exact",
+    "grid_approx_pwl_bf16_path",
+    "grid_approx_pwl_in_q8_w_q8_norm_exact",
+    "grid_approx_pwl_in_q8_w_q8_norm_recip_q10"
+  ],
+  "version": 0.1
+}
