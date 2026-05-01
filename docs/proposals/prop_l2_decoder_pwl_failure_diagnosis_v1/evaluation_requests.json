@@ -1,0 +1,25 @@
+{
+  "proposal_id": "prop_l2_decoder_pwl_failure_diagnosis_v1",
+  "source_commit": "ff068d902c1b0c05b709dee1aff8c8bead0f52c6",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_pwl_failure_diagnosis_v1",
+      "task_type": "l2_campaign",
+      "objective": "Diagnose whether the broad v2 exact-token misses are PWL/logit-margin sensitivity or normalization precision.",
+      "evaluation_mode": "broad_ranking",
+      "abstraction_layer": "decoder_pwl_failure_diagnosis",
+      "comparison_role": "ranking",
+      "paired_baseline_item_id": "",
+      "depends_on_item_ids": [
+        "l2_decoder_q8_norm_distribution_broad_v2"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Choose the next decoder frontier job from failure mechanism evidence instead of sweeping reciprocal precision blindly."
+      },
+      "status": "proposed"
+    }
+  ]
+}

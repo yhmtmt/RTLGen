@@ -864,6 +864,58 @@ def test_generate_l2_campaign_task_adds_decoder_quantization_outline_evidence() 
             }
 
 
+def test_generate_l2_campaign_task_adds_decoder_pwl_failure_diagnosis_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    item_id="l2_decoder_pwl_failure_diagnosis_v1",
+                    proposal_id="prop_l2_decoder_pwl_failure_diagnosis_v1",
+                    proposal_path="docs/proposals/prop_l2_decoder_pwl_failure_diagnosis_v1/proposal.json",
+                    evaluation_mode="broad_ranking",
+                    abstraction_layer="decoder_pwl_failure_diagnosis",
+                    expected_direction="iterate",
+                    comparison_role="ranking",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert work_item.command_manifest[0]["name"] == "diagnose_decoder_pwl_failures"
+            assert "diagnose_llm_decoder_pwl_failures.py" in work_item.command_manifest[0]["run"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+            assert decoder_inputs["source_sweep"] == (
+                "runs/datasets/llm_decoder_eval_tiny_v1/"
+                "decoder_quality_sweep__l2_decoder_q8_norm_distribution_broad_v2.json"
+            )
+            assert decoder_inputs["sample_file"] == "runs/datasets/llm_decoder_eval_tiny_v1/samples_distribution_v2.jsonl"
+            assert decoder_inputs["focus_samples"] == [
+                "dist2_arith_three_plus_five",
+                "dist2_sequence_months",
+            ]
+            assert decoder_inputs["diagnosis_out"] == (
+                "runs/datasets/llm_decoder_eval_tiny_v1/"
+                "decoder_pwl_failure_diagnosis__l2_decoder_pwl_failure_diagnosis_v1.json"
+            )
+            assert decoder_inputs["diagnosis_out"] in work_item.expected_outputs
+            assert decoder_inputs["diagnosis_report"] in work_item.expected_outputs
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
+                "layer": "decoder_pwl_failure_diagnosis",
+            }
+
+
 def test_generate_l2_campaign_task_recovers_metadata_from_evaluation_requests() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

@@ -1116,6 +1116,53 @@ def _decoder_quantization_outline_evidence(*, item_id: str) -> dict[str, Any]:
     }
 
 
+def _decoder_pwl_failure_diagnosis_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_tiny_v1"
+    sweep = f"{base}/decoder_quality_sweep__l2_decoder_q8_norm_distribution_broad_v2.json"
+    sample_file = f"{base}/samples_distribution_v2.jsonl"
+    diagnosis_out = f"{base}/decoder_pwl_failure_diagnosis__{item_id}.json"
+    diagnosis_report = f"{base}/decoder_pwl_failure_diagnosis__{item_id}.md"
+    commands = [
+        {
+            "name": "diagnose_decoder_pwl_failures",
+            "run": (
+                "python3 npu/eval/diagnose_llm_decoder_pwl_failures.py "
+                f"--sweep {sweep} "
+                f"--sample-file {sample_file} "
+                f"--out {diagnosis_out} "
+                f"--out-md {diagnosis_report}"
+            ),
+        },
+    ]
+    return {
+        "inputs": {
+            "source_sweep": sweep,
+            "sample_file": sample_file,
+            "diagnosis_out": diagnosis_out,
+            "diagnosis_report": diagnosis_report,
+            "focus_samples": [
+                "dist2_arith_three_plus_five",
+                "dist2_sequence_months",
+            ],
+            "control_samples": [
+                "dist2_arith_two_plus_two",
+                "dist2_arith_six_times_two",
+                "dist2_sequence_numbers",
+                "dist2_sequence_weekdays",
+            ],
+            "diagnosis_scope": (
+                "focused per-sample diagnosis for the shared PWL exact-token misses found "
+                "in the broad v2 q8/bf16 normalization distribution result"
+            ),
+        },
+        "commands": commands,
+        "expected_outputs": [
+            diagnosis_out,
+            diagnosis_report,
+        ],
+    }
+
+
 def _with_fresh_outputs(*, campaign: dict[str, Any], item_id: str) -> dict[str, Any]:
     cloned = json.loads(json.dumps(campaign))
     outputs = dict(cloned.get("outputs") or {})
@@ -1224,10 +1271,13 @@ def _build_payload(
         "decoder_q8_normalization_frontier",
         "decoder_q8_normalization_distribution",
         "decoder_q8_normalization_distribution_broad_v2",
+        "decoder_pwl_failure_diagnosis",
         "decoder_quantization_outline",
     }:
         if abstraction_layer_name == "decoder_quantization_outline":
             decoder_evidence = _decoder_quantization_outline_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_pwl_failure_diagnosis":
+            decoder_evidence = _decoder_pwl_failure_diagnosis_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_q8_normalization_distribution_broad_v2":
             decoder_evidence = _decoder_q8_normalization_distribution_evidence(item_id=item_id, distribution_version="v2")
         elif abstraction_layer_name == "decoder_q8_normalization_distribution":
