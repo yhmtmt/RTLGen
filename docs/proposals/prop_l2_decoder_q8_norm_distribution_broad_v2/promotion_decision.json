@@ -1,0 +1,11 @@
+{
+  "proposal_id": "prop_l2_decoder_q8_norm_distribution_broad_v2",
+  "candidate_id": "l2_decoder_q8_norm_distribution_broad_v2",
+  "decision": "pending",
+  "reason": "Await the expanded 48-sample q8/bf16 normalization distribution result.",
+  "evidence_refs": [
+    "item:l2_decoder_q8_norm_distribution_broad_v2"
+  ],
+  "next_action": "Review the v2 frontier artifact and decide whether to broaden model/input coverage again or focus on the first distribution-sensitive normalization row.",
+  "requires_human_approval": true
+}
