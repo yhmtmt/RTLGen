@@ -1,0 +1,95 @@
+{
+  "backend_config": {
+    "backend_id": "command_json_v1",
+    "command": [
+      "python3",
+      "npu/eval/run_llm_decoder_onnx_candidate.py"
+    ],
+    "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
+    "input_name": "input_ids",
+    "interface": "decoder_backend_v1",
+    "model_config_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/config.json",
+    "normalization_mode": "reciprocal_quantized",
+    "normalization_reciprocal_bits": 12,
+    "onnx_model_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/model.onnx",
+    "output_name": "logits",
+    "role": "candidate",
+    "runtime_target": "software_emulation",
+    "softmax_input_quant_bits": 8,
+    "softmax_mode": "approx_pwl",
+    "softmax_weight_quant_bits": 8,
+    "topk": 5,
+    "trace_output_patterns": [
+      "present.*"
+    ],
+    "trace_tensor_quant_bits": 4
+  },
+  "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q8_w_q8_norm_recip_q12_prob_fp",
+  "dataset_id": "llm_decoder_eval_tiny_v1",
+  "model_contract": "runs/models/llm_decoder_tiny_v1/model_contract.json",
+  "samples": [
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_q8_norm_distribution_robustness_v1_r4/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/dist_geo_capital_short.json",
+      "candidate_sha256": "c89990a396aa631aad198caa16eadebfe5f20b104d419d5b351e660270361730",
+      "sample_id": "dist_geo_capital_short"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_q8_norm_distribution_robustness_v1_r4/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/dist_math_symbolic.json",
+      "candidate_sha256": "b56745886d62c695eafb996e50aff0d61e96566020ccff749b1b36f053af7504",
+      "sample_id": "dist_math_symbolic"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_q8_norm_distribution_robustness_v1_r4/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/dist_quote_midphrase.json",
+      "candidate_sha256": "3a46ada80a5425bc0372dd9c8c5e6c139128ff3e26d61a4156080fe170bc5191",
+      "sample_id": "dist_quote_midphrase"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_q8_norm_distribution_robustness_v1_r4/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/dist_weekday_calendar.json",
+      "candidate_sha256": "742ca985c0a50e2a0842594ccb67335a82e577fdb686a358b4b0f25f3065a2d4",
+      "sample_id": "dist_weekday_calendar"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_q8_norm_distribution_robustness_v1_r4/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/dist_commonsense_color.json",
+      "candidate_sha256": "e86ab95404d8f086a19524677ce19dc4d10d5ba25faf7fe99611f6a679a90961",
+      "sample_id": "dist_commonsense_color"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_q8_norm_distribution_robustness_v1_r4/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/dist_list_continuation.json",
+      "candidate_sha256": "dddbe0ab1f72c31c20001bd9f5d31bb80f49c51ce3ef5cbd67b69f5e3b591800",
+      "sample_id": "dist_list_continuation"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_q8_norm_distribution_robustness_v1_r4/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/dist_code_like.json",
+      "candidate_sha256": "24313fe97ad257f463bf91eed73770ab04ced46719f9967b438899ca454aa3d9",
+      "sample_id": "dist_code_like"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_q8_norm_distribution_robustness_v1_r4/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/dist_dialogue.json",
+      "candidate_sha256": "586de315e34ee8641c3c7eaf6a18a22ce4badab86386e8fdb927c4f0fca782a8",
+      "sample_id": "dist_dialogue"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_q8_norm_distribution_robustness_v1_r4/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/dist_punctuation.json",
+      "candidate_sha256": "a44527fa55cf0a0637cfe6f5532d9cf487295c20d211c08d6978790d3de7eaf1",
+      "sample_id": "dist_punctuation"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_q8_norm_distribution_robustness_v1_r4/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/dist_long_context.json",
+      "candidate_sha256": "b79e96a1c4d16fca918c7e77a92a742893066752a186d46944621cd8ffe75e2f",
+      "sample_id": "dist_long_context"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_q8_norm_distribution_robustness_v1_r4/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/dist_repetition.json",
+      "candidate_sha256": "2271f09580069d232fd7c604ee7ac9e44d556e2d0391185af9f678061be97ab1",
+      "sample_id": "dist_repetition"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_q8_norm_distribution_robustness_v1_r4/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/dist_ambiguous_article.json",
+      "candidate_sha256": "fa9136abc901b4d90ce15dcb14dfada207861e3b962421cf842b8684144849d8",
+      "sample_id": "dist_ambiguous_article"
+    }
+  ],
+  "task": "greedy_next_token",
+  "tokenizer_manifest": "runs/tokenizers/llm_decoder_gpt2_bpe_stub_v1/manifest.json",
+  "version": 0.1
+}

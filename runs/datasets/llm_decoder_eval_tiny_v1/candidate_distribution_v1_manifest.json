@@ -3,7 +3,7 @@
     "backend_id": "command_json_v1",
     "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_exact_prob_fp",
     "command": [
-      "/workspaces/RTLGen/control_plane/.venv/bin/python",
+      "python3",
       "npu/eval/run_llm_decoder_onnx_candidate.py"
     ],
     "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
@@ -28,62 +28,62 @@
   "samples": [
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v1/dist_geo_capital_short.json",
-      "candidate_sha256": "41d5256bcf30fcbb6a700d9a279675313432bbd55ab80beef8c12bd4d6c246e9",
+      "candidate_sha256": "35008f2daa567f8191b24b434991cd81c6df8cfab78d9db84c0baa20350f73b5",
       "sample_id": "dist_geo_capital_short"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v1/dist_math_symbolic.json",
-      "candidate_sha256": "5f5e3663604cbde206ef69d85f2929d6c950c64b687a888420c119760a3cafb2",
+      "candidate_sha256": "0c1fd28af35b06ca94d040471aca9deb02b014cf76e8dee74755efc9cadd6c8e",
       "sample_id": "dist_math_symbolic"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v1/dist_quote_midphrase.json",
-      "candidate_sha256": "840988f9d7012e8e4339f71a805e61e266d586e0fb25d3d73b20ff6964e81288",
+      "candidate_sha256": "9529d2c7b6c45f112d96a77705e7bdd4d4e5214fa55803d849a9c90a250210b0",
       "sample_id": "dist_quote_midphrase"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v1/dist_weekday_calendar.json",
-      "candidate_sha256": "889f783c2a2d8c74bc76e423a109092bb6e5288db5a50dada1b1dedaeb503d00",
+      "candidate_sha256": "ed21391cde4951d709500bec442071826b7fb88cadf9a2e9405b3d19822934f5",
       "sample_id": "dist_weekday_calendar"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v1/dist_commonsense_color.json",
-      "candidate_sha256": "e9b26eabb82328615d93da9ffb430d4c4b659c1e1319515f55060702f4a89c0a",
+      "candidate_sha256": "7708f6a208a4b30f7bffc240ce8878739be18b80d9566883eb625e420557db6f",
       "sample_id": "dist_commonsense_color"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v1/dist_list_continuation.json",
-      "candidate_sha256": "77590ffd036bb2a128e3a13396606817f65670797853e0872afe430551d8dc0b",
+      "candidate_sha256": "92e6a3c1ecf6a42538f57f50f2edadf46f54d16a58f5de6f71b5ff639b488a20",
       "sample_id": "dist_list_continuation"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v1/dist_code_like.json",
-      "candidate_sha256": "40ff639e9985aad3413064ba40d2b8d109540d2778313b73312d1f525e135840",
+      "candidate_sha256": "a9d076cecd72b6fd53e5d4b2addd6989c32af4f1c797f5605c6e6f4d4bc53525",
       "sample_id": "dist_code_like"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v1/dist_dialogue.json",
-      "candidate_sha256": "94879e9fe365fa0b05875e3819964f61e22f4009df491f7ccaa4cece7b82326d",
+      "candidate_sha256": "a51e33d3568441a7929fb9dd293469f959068cea667ccbf526992a5ea459029a",
       "sample_id": "dist_dialogue"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v1/dist_punctuation.json",
-      "candidate_sha256": "f628c11609a43129c1584910cd9d2adda4faf0160d9f459bf0725054d00fa66f",
+      "candidate_sha256": "4b1c5bc17d6b8922a80b46baf8d343d3f49cda309b0fab7133dffc50a0875b03",
       "sample_id": "dist_punctuation"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v1/dist_long_context.json",
-      "candidate_sha256": "229219333a422663e2af996b7f362cdb0cfb830fe91e1c15d529129c03eb899e",
+      "candidate_sha256": "20598f13d37b1bd63b3228d29983a37c0aa910e6fa2f7312bade1659724a9083",
       "sample_id": "dist_long_context"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v1/dist_repetition.json",
-      "candidate_sha256": "c27d532680f5bb7c3a0df6ebefa7b02e36ff25afe5ad506d54388125de95ffaa",
+      "candidate_sha256": "a1c58ae94219200309ca3f1cf418fa89630a8ae2c25edb480ae6a430443c1fbb",
       "sample_id": "dist_repetition"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v1/dist_ambiguous_article.json",
-      "candidate_sha256": "1f57775a6012c51c5c808e21e4878bf4c6fcfbde612f60c04f1c15c8f75c687d",
+      "candidate_sha256": "712b9318b7ee9a40c1ff801dd6ea1e69b9236d02d865ddc684fc77bee2785424",
       "sample_id": "dist_ambiguous_article"
     }
   ],

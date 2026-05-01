@@ -2,7 +2,7 @@
   "backend_config": {
     "backend_id": "command_json_v1",
     "command": [
-      "/workspaces/RTLGen/control_plane/.venv/bin/python",
+      "python3",
       "npu/eval/run_llm_decoder_onnx_reference.py"
     ],
     "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
@@ -23,62 +23,62 @@
   "samples": [
     {
       "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v1/dist_geo_capital_short.json",
-      "reference_sha256": "537e7d92772cf47b54b7d9946c7753ab8f77d395ffc8758ce820e9d49c4b8051",
+      "reference_sha256": "24c9f764b2398640bf0cc30645ae0c1767622fbbc778f4d8fc7f9386cb3631b9",
       "sample_id": "dist_geo_capital_short"
     },
     {
       "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v1/dist_math_symbolic.json",
-      "reference_sha256": "ac5b1bfebb087993590cd0994018e7710097ac153f2a982e5acf80ce47d6d1a5",
+      "reference_sha256": "893022a708341c0743f32056b6713e17d6877ccbc885d887ee969aac1f77b6b5",
       "sample_id": "dist_math_symbolic"
     },
     {
       "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v1/dist_quote_midphrase.json",
-      "reference_sha256": "b3831e647e83aa4b41c90eacd2429d93b2ba41251695ef0069a86dcdeda5903d",
+      "reference_sha256": "9ae1cc0b489f3bed7ccd015909fb58e525966928d84e513b6f6a4fa97cfe12ba",
       "sample_id": "dist_quote_midphrase"
     },
     {
       "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v1/dist_weekday_calendar.json",
-      "reference_sha256": "70a242d76531f318e5fb89fd6d234f7f68f07ddebbfce6765e0ca0b76a438470",
+      "reference_sha256": "0f520fa736297c38a1b3fdfd69254f109d5b087e3c15c0806bbcb0f9ec7cdba4",
       "sample_id": "dist_weekday_calendar"
     },
     {
       "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v1/dist_commonsense_color.json",
-      "reference_sha256": "dcda56720646579e29b5b16eab07cdb2ca6671864cd4e83d03bb486e28ef1236",
+      "reference_sha256": "3bfa79d44929036fa14e4881369a3885607aa6551589927b3b0927b518f00258",
       "sample_id": "dist_commonsense_color"
     },
     {
       "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v1/dist_list_continuation.json",
-      "reference_sha256": "8a637698e8ed3c272e52ffd15fc474f6a976fe9f92a621c87c60677be184f9fd",
+      "reference_sha256": "2a0b69c7e2248c40c0ef8111a2f5679ee5d4719013f4875a7f6799a8f23b1001",
       "sample_id": "dist_list_continuation"
     },
     {
       "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v1/dist_code_like.json",
-      "reference_sha256": "951d9136aaa0a5ddfa88c9242f38303571c31863811c71fe28b7285fab8002c7",
+      "reference_sha256": "10497e7e6729e44a3b7d7cf749616bb78d8b062924062423e745605dff088655",
       "sample_id": "dist_code_like"
     },
     {
       "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v1/dist_dialogue.json",
-      "reference_sha256": "727f412675966ea2b14ee899a0d18c8319d7dd0a3818423213483fed39bcedb3",
+      "reference_sha256": "65b4b98eab040030d1ce1f611459eb0a1e798ec4c8bdda0fd23499b23208220e",
       "sample_id": "dist_dialogue"
     },
     {
       "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v1/dist_punctuation.json",
-      "reference_sha256": "002dd86a1fa68971d540210fd117e86ef0c96598b85af4daa732d5bd55708ce8",
+      "reference_sha256": "380f99689e2118bf7aeca069c803563375d765b30974a2357ea01b4266153fe9",
       "sample_id": "dist_punctuation"
     },
     {
       "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v1/dist_long_context.json",
-      "reference_sha256": "d0eeded285d41e3bf6c7b40cf05520938f302a44d8407064f04e905d65645028",
+      "reference_sha256": "6fc9bf2a6650f8108654a3e25cb71308941eaa100719573414bf57bd9c61a7bf",
       "sample_id": "dist_long_context"
     },
     {
       "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v1/dist_repetition.json",
-      "reference_sha256": "c9eafc869f69dc1be1637a0a7367261d7281ffec1df8edef1a306b945795c903",
+      "reference_sha256": "df5eb26b959e0c1e838e84fa07264bd16a5dfa428839cb410c027adee619ef7e",
       "sample_id": "dist_repetition"
     },
     {
       "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v1/dist_ambiguous_article.json",
-      "reference_sha256": "dbd95c9d8e48ac32c0ea484f6d39c63c8dc5c646ef66daf68d8ae341c0dda487",
+      "reference_sha256": "19ac69c0bbb0dd9fdfc7c659da5e9dbbcd0be1d36b878ee49d4134f0a1ae9232",
       "sample_id": "dist_ambiguous_article"
     }
   ],
