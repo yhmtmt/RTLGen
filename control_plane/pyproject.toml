@@ -22,6 +22,11 @@ api = [
 test = [
   "pytest>=8.0",
 ]
+eval = [
+  "numpy>=1.24",
+  "onnxruntime>=1.17",
+  "tokenizers>=0.15",
+]
 
 [project.scripts]
 rtlgen-control-plane = "control_plane.cli.main:main"
