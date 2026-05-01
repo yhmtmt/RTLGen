@@ -98,6 +98,11 @@ def _execution_command_argv(argv: Sequence[str]) -> list[str]:
         out[0] = _preferred_python_executable()
     for idx, part in enumerate(out):
         path = Path(part)
+        if idx == 0 and path.is_absolute() and (
+            _path_has_tail(path, ('control_plane', '.venv', 'bin', 'python'))
+            or _path_has_tail(path, ('control_plane', '.venv', 'bin', 'python3'))
+        ):
+            continue
         if path.is_absolute():
             repo_rel = _repo_relative_path(path)
             if repo_rel is not None:

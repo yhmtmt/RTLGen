@@ -271,6 +271,27 @@ class LlmDecoderQualityRegressionTest(unittest.TestCase):
         self.assertEqual(str(expected_python if expected_python.exists() else Path(sys.executable)), argv[0])
         self.assertEqual(str(REPO_ROOT / 'npu/eval/run_llm_decoder_onnx_reference.py'), argv[1])
 
+    def test_command_backend_preserves_external_venv_python_for_temp_worktree(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            old_repo_root = self.backend_mod.REPO_ROOT
+            old_executable = self.backend_mod.sys.executable
+            external_python = '/workspaces/rtlgen-eval-clean/control_plane/.venv/bin/python3'
+            try:
+                self.backend_mod.REPO_ROOT = Path(tmpdir) / 'repo'
+                self.backend_mod.sys.executable = external_python
+                argv = self.backend_mod._execution_command_argv(
+                    ['python3', 'npu/eval/run_llm_decoder_onnx_reference.py']
+                )
+            finally:
+                self.backend_mod.REPO_ROOT = old_repo_root
+                self.backend_mod.sys.executable = old_executable
+
+        self.assertEqual(external_python, argv[0])
+        self.assertEqual(
+            str(Path(tmpdir) / 'repo/npu/eval/run_llm_decoder_onnx_reference.py'),
+            argv[1],
+        )
+
     def test_build_decoder_reference_doc_binds_backend_metadata(self):
         dataset_manifest = {
             'dataset_id': 'llm_decoder_eval_tiny_v1',
