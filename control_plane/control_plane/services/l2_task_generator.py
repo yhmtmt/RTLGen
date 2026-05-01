@@ -957,13 +957,17 @@ def _decoder_q8_normalization_frontier_evidence(*, item_id: str) -> dict[str, An
     }
 
 
-def _decoder_q8_normalization_distribution_evidence(*, item_id: str) -> dict[str, Any]:
+def _decoder_q8_normalization_distribution_evidence(*, item_id: str, distribution_version: str = "v1") -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_tiny_v1"
-    dataset_manifest = f"{base}/manifest_distribution_v1.json"
-    reference_dir = f"{base}/reference_distribution_v1"
-    reference_manifest = f"{base}/reference_distribution_v1_manifest.json"
-    candidate_dir = f"{base}/candidate_distribution_v1"
-    candidate_manifest = f"{base}/candidate_distribution_v1_manifest.json"
+    version = str(distribution_version or "v1").strip()
+    if version not in {"v1", "v2"}:
+        raise Layer2TaskGenerationError(f"unsupported q8 normalization distribution version: {version}")
+    dataset_manifest = f"{base}/manifest_distribution_{version}.json"
+    sample_file = f"{base}/samples_distribution_{version}.jsonl"
+    reference_dir = f"{base}/reference_distribution_{version}"
+    reference_manifest = f"{base}/reference_distribution_{version}_manifest.json"
+    candidate_dir = f"{base}/candidate_distribution_{version}"
+    candidate_manifest = f"{base}/candidate_distribution_{version}_manifest.json"
     validation_out = f"{base}/decoder_contract_validation__{item_id}.json"
     quality_out = f"{base}/decoder_quality_compare__{item_id}.json"
     sweep_dir = f"{base}/candidate_sweeps/{item_id}"
@@ -977,9 +981,11 @@ def _decoder_q8_normalization_distribution_evidence(*, item_id: str) -> dict[str
     )
     bf16_recip_ppa = "control_plane/shadow_exports/l1_promotions/l1_decoder_bf16_recip_norm_datapath_v1_r2.json"
     rough_grid = "decoder_q8_normalization_frontier_v1"
+    command_suffix = "" if version == "v1" else f"_{version}"
+    scope_note = "broader distribution" if version == "v1" else "expanded v2 broad distribution"
     commands = [
         {
-            "name": "generate_decoder_q8_norm_distribution_reference",
+            "name": f"generate_decoder_q8_norm_distribution{command_suffix}_reference",
             "run": (
                 "python3 npu/eval/gen_llm_decoder_reference_suite.py "
                 f"--dataset-manifest {dataset_manifest} "
@@ -988,7 +994,7 @@ def _decoder_q8_normalization_distribution_evidence(*, item_id: str) -> dict[str
             ),
         },
         {
-            "name": "generate_decoder_q8_norm_distribution_candidate",
+            "name": f"generate_decoder_q8_norm_distribution{command_suffix}_candidate",
             "run": (
                 "python3 npu/eval/gen_llm_decoder_candidate_suite.py "
                 f"--dataset-manifest {dataset_manifest} "
@@ -997,11 +1003,11 @@ def _decoder_q8_normalization_distribution_evidence(*, item_id: str) -> dict[str
             ),
         },
         {
-            "name": "validate_decoder_q8_norm_distribution_contract",
+            "name": f"validate_decoder_q8_norm_distribution{command_suffix}_contract",
             "run": f"python3 npu/eval/validate_llm_decoder_contract.py --dataset-manifest {dataset_manifest} --out {validation_out}",
         },
         {
-            "name": "compare_decoder_q8_norm_distribution_quality",
+            "name": f"compare_decoder_q8_norm_distribution{command_suffix}_quality",
             "run": (
                 "python3 npu/eval/compare_llm_decoder_quality.py "
                 f"--reference-manifest {reference_manifest} "
@@ -1010,7 +1016,7 @@ def _decoder_q8_normalization_distribution_evidence(*, item_id: str) -> dict[str
             ),
         },
         {
-            "name": "sweep_decoder_q8_norm_distribution_frontier",
+            "name": f"sweep_decoder_q8_norm_distribution{command_suffix}_frontier",
             "run": (
                 "python3 npu/eval/sweep_llm_decoder_candidate_quality.py "
                 f"--dataset-manifest {dataset_manifest} "
@@ -1020,7 +1026,7 @@ def _decoder_q8_normalization_distribution_evidence(*, item_id: str) -> dict[str
             ),
         },
         {
-            "name": "estimate_decoder_q8_norm_distribution_frontier",
+            "name": f"estimate_decoder_q8_norm_distribution{command_suffix}_frontier",
             "run": (
                 "python3 npu/eval/estimate_llm_decoder_q8_norm_frontier.py "
                 f"--sweep {sweep_out} "
@@ -1035,7 +1041,7 @@ def _decoder_q8_normalization_distribution_evidence(*, item_id: str) -> dict[str
     return {
         "inputs": {
             "dataset_manifest": dataset_manifest,
-            "sample_file": f"{base}/samples_distribution_v1.jsonl",
+            "sample_file": sample_file,
             "reference_manifest": reference_manifest,
             "candidate_manifest": candidate_manifest,
             "reference_dir": reference_dir,
@@ -1051,8 +1057,8 @@ def _decoder_q8_normalization_distribution_evidence(*, item_id: str) -> dict[str
             "q8_exact_datapath_ppa": q8_exact_ppa,
             "bf16_reciprocal_datapath_ppa": bf16_recip_ppa,
             "candidate_sweep_scope": (
-                "broader distribution robustness check for the q8-vs-bf16 normalization frontier "
-                "over the distribution dataset, using the same q8 reciprocal bit-width grid and "
+                f"{scope_note} robustness check for the q8-vs-bf16 normalization frontier "
+                "using the same q8 reciprocal bit-width grid and "
                 "measured q8/bf16 normalization datapath PPA artifacts"
             ),
         },
@@ -1217,10 +1223,13 @@ def _build_payload(
         "decoder_pwl_frontier_detail",
         "decoder_q8_normalization_frontier",
         "decoder_q8_normalization_distribution",
+        "decoder_q8_normalization_distribution_broad_v2",
         "decoder_quantization_outline",
     }:
         if abstraction_layer_name == "decoder_quantization_outline":
             decoder_evidence = _decoder_quantization_outline_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_q8_normalization_distribution_broad_v2":
+            decoder_evidence = _decoder_q8_normalization_distribution_evidence(item_id=item_id, distribution_version="v2")
         elif abstraction_layer_name == "decoder_q8_normalization_distribution":
             decoder_evidence = _decoder_q8_normalization_distribution_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_q8_normalization_frontier":

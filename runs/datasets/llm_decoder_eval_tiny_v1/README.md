@@ -30,6 +30,15 @@ What does not exist yet:
 - continuation/perplexity metrics
 - larger decoder prompt set
 
+Distribution variants
+---------------------
+- `manifest_distribution_v1.json` / `samples_distribution_v1.jsonl`: first
+  12-sample rough prompt-regime check.
+- `manifest_distribution_v2.json` / `samples_distribution_v2.jsonl`: expanded
+  48-sample rough prompt-regime check for q8/bf16 normalization robustness. It
+  still uses the same tiny decoder model and should be treated as exploration
+  guidance, not model-family proof.
+
 Current binding
 ---------------
 - tokenizer: `runs/tokenizers/llm_decoder_gpt2_bpe_stub_v1/manifest.json`
