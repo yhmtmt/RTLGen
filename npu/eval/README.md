@@ -143,6 +143,20 @@ This v2 check broadens the rough prompt categories before making a q8 reciprocal
 versus bf16 reciprocal normalization decision. It remains tied to the pinned
 tiny decoder model.
 
+Diagnose the shared broad-v2 PWL exact-token misses:
+```sh
+python3 npu/eval/diagnose_llm_decoder_pwl_failures.py \
+  --sweep runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_sweep__l2_decoder_q8_norm_distribution_broad_v2.json \
+  --sample-file runs/datasets/llm_decoder_eval_tiny_v1/samples_distribution_v2.jsonl \
+  --out /tmp/decoder_pwl_failure_diagnosis.json \
+  --out-md /tmp/decoder_pwl_failure_diagnosis.md
+```
+
+The diagnosis compares the exact softmax row against bf16 PWL, q8 PWL exact
+normalization, and q8 PWL reciprocal q10 rows. Use it to decide whether the next
+frontier job should target shared PWL/logit-margin sensitivity or normalization
+precision.
+
 Run the focused survivor prompt-stress grid:
 ```sh
 python3 npu/eval/gen_llm_decoder_reference_suite.py \

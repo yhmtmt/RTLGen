@@ -1,0 +1,61 @@
+{
+  "proposal_id": "prop_l2_decoder_pwl_failure_diagnosis_v1",
+  "created_utc": "2026-05-01T14:20:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Decoder PWL broad-v2 failure diagnosis",
+  "hypothesis": "The broad v2 q8/bf16 normalization result shows the same two exact-token misses across bf16 reciprocal, q8 exact-normalization, and q8 reciprocal rows while preserving top-k. A focused per-sample diagnosis should distinguish shared PWL/logit-margin sensitivity from normalization precision before the next architectural sweep.",
+  "direct_comparison": {
+    "primary_question": "For the two broad-v2 shared PWL misses, are exact-token changes explained by the common PWL probability path and narrow margins, or by q8 reciprocal normalization precision?",
+    "include": [
+      "candidate_onnx_softmax_exact broad-v2 row as the exact reference proxy",
+      "grid_approx_pwl_bf16_path",
+      "grid_approx_pwl_in_q8_w_q8_norm_exact",
+      "grid_approx_pwl_in_q8_w_q8_norm_recip_q10",
+      "per-sample next-token, top-k rank, score-delta, and distribution summaries"
+    ],
+    "exclude": [
+      "new reference or candidate generation",
+      "new RTL generation or OpenROAD measurements",
+      "claiming model-family-wide robustness"
+    ]
+  },
+  "expected_benefit": [
+    "prevents over-attributing broad-v2 exact-token misses to reciprocal bit width",
+    "identifies whether the next frontier job should stress PWL/logit margins",
+    "keeps the architecture loop grounded in already-merged broad-v2 artifacts"
+  ],
+  "risks": [
+    "the diagnosis is limited to the pinned tiny decoder and broad-v2 samples",
+    "exact next-token changes may be acceptable if top-k is preserved, depending on the final product gate",
+    "software-emulated PWL behavior still needs later hardware trace equivalence"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_pwl_failure_diagnosis_v1",
+      "task_type": "l2_campaign",
+      "objective": "decoder_pwl_failure_diagnosis",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json",
+      "evaluation_mode": "broad_ranking",
+      "abstraction_layer": "decoder_pwl_failure_diagnosis",
+      "depends_on_item_ids": [
+        "l2_decoder_q8_norm_distribution_broad_v2"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_decoder_q8_norm_distribution_broad_v2/proposal.json",
+    "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_sweep__l2_decoder_q8_norm_distribution_broad_v2.json",
+    "runs/datasets/llm_decoder_eval_tiny_v1/decoder_q8_norm_frontier__l2_decoder_q8_norm_distribution_broad_v2.json"
+  ],
+  "knowledge_refs": [
+    "runs/datasets/llm_decoder_eval_tiny_v1/samples_distribution_v2.jsonl",
+    "npu/eval/diagnose_llm_decoder_pwl_failures.py",
+    "npu/eval/sweep_llm_decoder_candidate_quality.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}
