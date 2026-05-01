@@ -2,13 +2,12 @@
 set -euo pipefail
 
 DEFAULT_SERVICE_REPO="/workspaces/rtlgen-eval-clean"
-DEFAULT_VENV_PATH="/workspaces/RTLGen/control_plane/.venv"
 DEFAULT_DATABASE_URL="postgresql+psycopg://rtlgen:rtlgen@localhost:5432/rtlgen_control_plane"
 DEFAULT_REPO_SLUG="yhmtmt/RTLGen"
 
 ACTION="${1:-restart}"
 REPO_ROOT="${RTLGEN_SERVICE_REPO:-${REPO_ROOT:-${DEFAULT_SERVICE_REPO}}}"
-VENV_PATH="${VENV_PATH:-${DEFAULT_VENV_PATH}}"
+VENV_PATH="${VENV_PATH:-${REPO_ROOT}/control_plane/.venv}"
 RUNTIME_DIR="${RTLCP_RUNTIME_DIR:-${REPO_ROOT}/control_plane/runtime_logs/daemons}"
 WORKER_LOG_ROOT="${RTLCP_LOG_ROOT:-${REPO_ROOT}/control_plane/runtime_logs/worker_jobs}"
 
