@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_pwl_failure_diagnosis_v1",
-  "source_commit": "ff068d902c1b0c05b709dee1aff8c8bead0f52c6",
+  "source_commit": "1391cc6c354f31336d174afaaaf59e146bd316f7",
   "requested_items": [
     {
       "item_id": "l2_decoder_pwl_failure_diagnosis_v1",
@@ -19,7 +19,7 @@
         "direction": "iterate",
         "reason": "Choose the next decoder frontier job from failure mechanism evidence instead of sweeping reciprocal precision blindly."
       },
-      "status": "proposed"
+      "status": "pending"
     }
   ]
 }
