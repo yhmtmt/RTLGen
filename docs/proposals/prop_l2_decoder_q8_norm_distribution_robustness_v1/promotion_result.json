@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_decoder_q8_norm_distribution_robustness_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "iterate",
+  "pr_number": 320,
+  "merge_commit": "20cbb10a0226e60d1751a48970976bfc3fd8e09b",
+  "merged_utc": "2026-05-01T13:42:00.275804Z"
 }
