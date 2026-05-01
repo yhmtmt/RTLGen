@@ -123,6 +123,26 @@ The distribution grid records entropy, effective-vocabulary, score-sum, and
 top-1/top-2 margin rollups alongside rank metrics. Use it to select follow-up
 approximation families, not to make a general model-quality claim.
 
+Run the expanded q8/bf16 normalization broad distribution check:
+```sh
+python3 npu/eval/sweep_llm_decoder_candidate_quality.py \
+  --dataset-manifest runs/datasets/llm_decoder_eval_tiny_v1/manifest_distribution_v2.json \
+  --rough-grid decoder_q8_normalization_frontier_v1 \
+  --out-dir /tmp/decoder_q8_norm_distribution_v2 \
+  --out /tmp/decoder_q8_norm_distribution_v2.json
+python3 npu/eval/estimate_llm_decoder_q8_norm_frontier.py \
+  --sweep /tmp/decoder_q8_norm_distribution_v2.json \
+  --q8-recip-ppa control_plane/shadow_exports/l1_promotions/l1_decoder_q8_recip_norm_datapath_v1_r3.json \
+  --q8-exact-ppa control_plane/shadow_exports/l1_promotions/l1_prop_l1_softmax_rowwise_int8_r8_acc24_block_v1_nangate45_r1.json \
+  --bf16-recip-ppa control_plane/shadow_exports/l1_promotions/l1_decoder_bf16_recip_norm_datapath_v1_r2.json \
+  --out /tmp/decoder_q8_norm_frontier_v2.json \
+  --out-md /tmp/decoder_q8_norm_frontier_v2.md
+```
+
+This v2 check broadens the rough prompt categories before making a q8 reciprocal
+versus bf16 reciprocal normalization decision. It remains tied to the pinned
+tiny decoder model.
+
 Run the focused survivor prompt-stress grid:
 ```sh
 python3 npu/eval/gen_llm_decoder_reference_suite.py \

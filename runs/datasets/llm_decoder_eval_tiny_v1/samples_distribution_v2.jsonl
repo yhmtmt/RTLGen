@@ -1,0 +1,48 @@
+{"sample_id":"dist2_geo_capital_france","prompt":"The capital of France is","expected_continuation":" Paris","category":"factual_geo"}
+{"sample_id":"dist2_geo_capital_japan","prompt":"The capital of Japan is","expected_continuation":" Tokyo","category":"factual_geo"}
+{"sample_id":"dist2_geo_capital_germany","prompt":"The capital of Germany is","expected_continuation":" Berlin","category":"factual_geo"}
+{"sample_id":"dist2_geo_capital_italy","prompt":"The capital of Italy is","expected_continuation":" Rome","category":"factual_geo"}
+{"sample_id":"dist2_color_banana","prompt":"A ripe banana is usually","expected_continuation":" yellow","category":"commonsense_color"}
+{"sample_id":"dist2_color_sky","prompt":"On a clear day, the sky is","expected_continuation":" blue","category":"commonsense_color"}
+{"sample_id":"dist2_color_grass","prompt":"Fresh grass is often","expected_continuation":" green","category":"commonsense_color"}
+{"sample_id":"dist2_color_snow","prompt":"Fresh snow is usually","expected_continuation":" white","category":"commonsense_color"}
+{"sample_id":"dist2_arith_two_plus_two","prompt":"2 + 2 =","expected_continuation":" 4","category":"arithmetic_short"}
+{"sample_id":"dist2_arith_three_plus_five","prompt":"3 + 5 =","expected_continuation":" 8","category":"arithmetic_short"}
+{"sample_id":"dist2_arith_ten_minus_one","prompt":"10 - 1 =","expected_continuation":" 9","category":"arithmetic_short"}
+{"sample_id":"dist2_arith_six_times_two","prompt":"6 * 2 =","expected_continuation":" 12","category":"arithmetic_short"}
+{"sample_id":"dist2_sequence_numbers","prompt":"one, two, three,","expected_continuation":" four","category":"list_continuation"}
+{"sample_id":"dist2_sequence_letters","prompt":"A, B, C,","expected_continuation":" D","category":"list_continuation"}
+{"sample_id":"dist2_sequence_weekdays","prompt":"Monday, Tuesday, Wednesday,","expected_continuation":" Thursday","category":"list_continuation"}
+{"sample_id":"dist2_sequence_months","prompt":"January, February, March,","expected_continuation":" April","category":"list_continuation"}
+{"sample_id":"dist2_code_python_return","prompt":"def add(a, b): return a","expected_continuation":" +","category":"code_like"}
+{"sample_id":"dist2_code_python_if","prompt":"if value > 0: print","expected_continuation":"(","category":"code_like"}
+{"sample_id":"dist2_code_json_key","prompt":"{\"enabled\":","expected_continuation":" true","category":"code_like"}
+{"sample_id":"dist2_code_comment","prompt":"// TODO: update the","expected_continuation":" test","category":"code_like"}
+{"sample_id":"dist2_dialogue_greeting","prompt":"User: hello\nAssistant:","expected_continuation":" Hi","category":"dialogue_short"}
+{"sample_id":"dist2_dialogue_thanks","prompt":"User: thanks\nAssistant:","expected_continuation":" You","category":"dialogue_short"}
+{"sample_id":"dist2_dialogue_question","prompt":"User: what time is it?\nAssistant:","expected_continuation":" It","category":"dialogue_short"}
+{"sample_id":"dist2_dialogue_yesno","prompt":"User: can you help?\nAssistant:","expected_continuation":" Yes","category":"dialogue_short"}
+{"sample_id":"dist2_punctuation_period","prompt":"The answer is yes","expected_continuation":".","category":"punctuation"}
+{"sample_id":"dist2_punctuation_comma","prompt":"First we measure latency","expected_continuation":",","category":"punctuation"}
+{"sample_id":"dist2_punctuation_colon","prompt":"The result was clear","expected_continuation":":","category":"punctuation"}
+{"sample_id":"dist2_punctuation_quote","prompt":"She said","expected_continuation":" \"","category":"punctuation"}
+{"sample_id":"dist2_long_lab","prompt":"In a small laboratory notebook, the engineer wrote down the measured latency and then checked whether the output token was","expected_continuation":" correct","category":"long_context"}
+{"sample_id":"dist2_long_story","prompt":"After walking through the old station for nearly an hour, Mira finally found the platform where the train would","expected_continuation":" arrive","category":"long_context"}
+{"sample_id":"dist2_long_design","prompt":"The hardware team compared area, timing, and power before deciding that the next experiment should","expected_continuation":" focus","category":"long_context"}
+{"sample_id":"dist2_long_report","prompt":"The report listed the failing samples first and then summarized the reason each approximation had","expected_continuation":" failed","category":"long_context"}
+{"sample_id":"dist2_repetition_ha","prompt":"ha ha ha ha","expected_continuation":" ha","category":"repetition"}
+{"sample_id":"dist2_repetition_test","prompt":"test test test","expected_continuation":" test","category":"repetition"}
+{"sample_id":"dist2_repetition_go","prompt":"go go go","expected_continuation":" go","category":"repetition"}
+{"sample_id":"dist2_repetition_tick","prompt":"tick tock tick","expected_continuation":" tock","category":"repetition"}
+{"sample_id":"dist2_ambiguous_article","prompt":"The old book was on","expected_continuation":" the","category":"ambiguous_short"}
+{"sample_id":"dist2_ambiguous_preposition","prompt":"The meeting starts at","expected_continuation":" noon","category":"ambiguous_short"}
+{"sample_id":"dist2_ambiguous_object","prompt":"Please put it in","expected_continuation":" the","category":"ambiguous_short"}
+{"sample_id":"dist2_ambiguous_common","prompt":"This is a test of","expected_continuation":" the","category":"ambiguous_short"}
+{"sample_id":"dist2_instruction_short","prompt":"Translate yes to Spanish:","expected_continuation":" si","category":"instruction_short"}
+{"sample_id":"dist2_instruction_label","prompt":"Sentiment: I love this.\nLabel:","expected_continuation":" positive","category":"instruction_short"}
+{"sample_id":"dist2_instruction_classify","prompt":"Animal: cat\nType:","expected_continuation":" mammal","category":"instruction_short"}
+{"sample_id":"dist2_instruction_complete","prompt":"Complete the phrase: bread and","expected_continuation":" butter","category":"instruction_short"}
+{"sample_id":"dist2_symbol_paren","prompt":"The expression (a + b","expected_continuation":")","category":"symbolic"}
+{"sample_id":"dist2_symbol_bracket","prompt":"items[0","expected_continuation":"]","category":"symbolic"}
+{"sample_id":"dist2_symbol_arrow","prompt":"input -> hidden","expected_continuation":" ->","category":"symbolic"}
+{"sample_id":"dist2_symbol_equals","prompt":"x = y","expected_continuation":" +","category":"symbolic"}

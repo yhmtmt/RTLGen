@@ -1,0 +1,25 @@
+{
+  "proposal_id": "prop_l2_decoder_q8_norm_distribution_broad_v2",
+  "source_commit": "20cbb10a0226e60d1751a48970976bfc3fd8e09b",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_q8_norm_distribution_broad_v2",
+      "task_type": "l2_campaign",
+      "objective": "Run the q8/bf16 reciprocal-normalization frontier on the expanded 48-sample distribution v2 dataset.",
+      "evaluation_mode": "broad_ranking",
+      "abstraction_layer": "decoder_q8_normalization_distribution_broad_v2",
+      "comparison_role": "ranking",
+      "paired_baseline_item_id": "",
+      "depends_on_item_ids": [
+        "l2_decoder_q8_norm_distribution_robustness_v1_r4"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "The current 12-sample result should be broadened before choosing q8 reciprocal versus bf16 reciprocal normalization."
+      },
+      "status": "pending"
+    }
+  ]
+}
