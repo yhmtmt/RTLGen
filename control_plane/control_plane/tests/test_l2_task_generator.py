@@ -916,6 +916,65 @@ def test_generate_l2_campaign_task_adds_decoder_pwl_failure_diagnosis_evidence()
             }
 
 
+def test_generate_l2_campaign_task_adds_decoder_pwl_logit_sensitivity_ladder_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    item_id="l2_decoder_pwl_logit_ladder_v1",
+                    proposal_id="prop_l2_decoder_pwl_logit_ladder_v1",
+                    proposal_path="docs/proposals/prop_l2_decoder_pwl_logit_ladder_v1/proposal.json",
+                    evaluation_mode="frontier_detail",
+                    abstraction_layer="decoder_pwl_logit_sensitivity_ladder",
+                    expected_direction="iterate",
+                    comparison_role="ranking",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert work_item.command_manifest[0]["name"] == "generate_decoder_pwl_logit_focus_reference"
+            assert work_item.command_manifest[2]["name"] == "validate_decoder_pwl_logit_focus_contract"
+            assert work_item.command_manifest[4]["name"] == "sweep_decoder_pwl_logit_ladder"
+            assert "decoder_pwl_logit_sensitivity_ladder_v1" in work_item.command_manifest[4]["run"]
+            assert work_item.command_manifest[5]["name"] == "summarize_decoder_pwl_logit_ladder"
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+            assert decoder_inputs["dataset_manifest"] == (
+                "runs/datasets/llm_decoder_eval_tiny_v1/manifest_pwl_failure_focus_v1.json"
+            )
+            assert decoder_inputs["sample_file"] == (
+                "runs/datasets/llm_decoder_eval_tiny_v1/samples_pwl_failure_focus_v1.jsonl"
+            )
+            assert decoder_inputs["reference_dir"] == "runs/datasets/llm_decoder_eval_tiny_v1/reference_pwl_failure_focus_v1"
+            assert decoder_inputs["candidate_dir"] == "runs/datasets/llm_decoder_eval_tiny_v1/candidate_pwl_failure_focus_v1"
+            assert decoder_inputs["candidate_sweep_grid"] == "decoder_pwl_logit_sensitivity_ladder_v1"
+            assert decoder_inputs["focus_samples"] == [
+                "dist2_arith_three_plus_five",
+                "dist2_sequence_months",
+            ]
+            assert decoder_inputs["ladder_out"] == (
+                "runs/datasets/llm_decoder_eval_tiny_v1/"
+                "decoder_pwl_logit_ladder__l2_decoder_pwl_logit_ladder_v1.json"
+            )
+            assert decoder_inputs["ladder_out"] in work_item.expected_outputs
+            assert decoder_inputs["ladder_report"] in work_item.expected_outputs
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
+                "layer": "decoder_pwl_logit_sensitivity_ladder",
+            }
+
+
 def test_generate_l2_campaign_task_recovers_metadata_from_evaluation_requests() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

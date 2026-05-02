@@ -1,0 +1,58 @@
+{
+  "backend_config": {
+    "backend_id": "command_json_v1",
+    "command": [
+      "python3",
+      "npu/eval/run_llm_decoder_onnx_reference.py"
+    ],
+    "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
+    "input_name": "input_ids",
+    "interface": "decoder_backend_v1",
+    "model_config_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/config.json",
+    "onnx_model_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/model.onnx",
+    "output_name": "logits",
+    "role": "reference",
+    "runtime_target": "cpu_reference",
+    "topk": 5,
+    "trace_output_patterns": [
+      "present.*"
+    ]
+  },
+  "dataset_id": "llm_decoder_eval_tiny_v1",
+  "model_contract": "runs/models/llm_decoder_tiny_v1/model_contract.json",
+  "samples": [
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v2/dist2_arith_two_plus_two.json",
+      "reference_sha256": "1673bfeca007b424fafde5ffb26880f9262f8c405e592c20ecd2ef72ce4b49d7",
+      "sample_id": "dist2_arith_two_plus_two"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v2/dist2_arith_three_plus_five.json",
+      "reference_sha256": "c79b96c962c6c5a748bbda8496f978d1edec6842ab910b6a7d8cb89f32aba734",
+      "sample_id": "dist2_arith_three_plus_five"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v2/dist2_arith_six_times_two.json",
+      "reference_sha256": "d0ed67255057aefcdadb2fad724a3ffe659aff828644ffa61695456e166eac73",
+      "sample_id": "dist2_arith_six_times_two"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v2/dist2_sequence_numbers.json",
+      "reference_sha256": "0191584c834d9fc9842e54ccda57b249d99c6823976f12f9f6eeef2ffeddda84",
+      "sample_id": "dist2_sequence_numbers"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v2/dist2_sequence_weekdays.json",
+      "reference_sha256": "3b09335918b3e639073080e4d65571728529b3830f212d2f77d2ce2755c1ea6a",
+      "sample_id": "dist2_sequence_weekdays"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v2/dist2_sequence_months.json",
+      "reference_sha256": "b309228dde160071aa1b8d166e8e74f96c573f84f0f22d8449668d1b7a6648f5",
+      "sample_id": "dist2_sequence_months"
+    }
+  ],
+  "task": "greedy_next_token",
+  "tokenizer_manifest": "runs/tokenizers/llm_decoder_gpt2_bpe_stub_v1/manifest.json",
+  "version": 0.1
+}
