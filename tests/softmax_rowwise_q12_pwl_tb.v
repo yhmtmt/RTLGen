@@ -6,6 +6,14 @@ module softmax_rowwise_q12_pwl_tb;
 
   softmax_rowwise_q12_pwl_r4 dut (.X(X), .Y(Y));
 
+`ifdef SOFTMAX_Q12_PWL_RECIP_Q12_BUCKET8
+  localparam [47:0] EXP_EQUAL = {12'd1024, 12'd1024, 12'd1024, 12'd1024};
+  localparam [47:0] EXP_LADDER = {12'd1, 12'd63, 12'd466, 12'd3447};
+`else
+  localparam [47:0] EXP_EQUAL = {12'd1024, 12'd1024, 12'd1024, 12'd1024};
+  localparam [47:0] EXP_LADDER = {12'd1, 12'd65, 12'd480, 12'd3549};
+`endif
+
   task check_row;
     input [47:0] a;
     input [47:0] exp;
@@ -24,8 +32,8 @@ module softmax_rowwise_q12_pwl_tb;
   endtask
 
   initial begin
-    check_row({12'd0, 12'd0, 12'd0, 12'd0}, {12'd1024, 12'd1024, 12'd1024, 12'd1024});
-    check_row({12'h800, 12'hc00, 12'he00, 12'd0}, {12'd1, 12'd65, 12'd480, 12'd3549});
+    check_row({12'd0, 12'd0, 12'd0, 12'd0}, EXP_EQUAL);
+    check_row({12'h800, 12'hc00, 12'he00, 12'd0}, EXP_LADDER);
     $display("All q12 PWL row-wise softmax tests passed.");
     $finish;
   end

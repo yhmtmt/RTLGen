@@ -1,0 +1,72 @@
+{
+  "proposal_id": "prop_l1_decoder_q12_pwl_recip_norm_datapath_v1",
+  "created_utc": "2026-05-02T10:50:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "circuit_block",
+  "title": "Decoder q12 PWL reciprocal-normalization datapath",
+  "hypothesis": "The q12 PWL exact-normalization datapath was dominated by the exact divider, so a bucketed reciprocal-normalization sweep can expose the hardware cost of the PWL-exp path separately from divider cost.",
+  "direct_comparison": {
+    "primary_question": "What Nangate45 timing, power, and area does q12 PWL softmax show when exact normalization is replaced with a bucketed reciprocal lookup plus multiply/shift?",
+    "include": [
+      "row-wise signed q12 logits",
+      "PWL exp anchors matching the decoder software approximation at shifted logits 0, -2, -4, and -8",
+      "q12 PWL weights and q12 unsigned outputs",
+      "reciprocal_bits q10, q12, q14, and q16",
+      "reciprocal_lut_bucket_shift=8 to keep the q12 sum-range lookup hardware bounded",
+      "row_elems=8, input_frac_bits=8, weight_bits=12, accum_bits=28, output_scale=4095 held constant"
+    ],
+    "exclude": [
+      "full-vocabulary dynamic quantizer hardware",
+      "full decoder system PPA",
+      "new prompt-stress quality thresholds",
+      "claiming reciprocal-normalization quality equivalence before a software quality check"
+    ],
+    "follow_on_broad_sweep": [
+      "if one reciprocal precision is physically viable, run an L2 quality check for q12 PWL reciprocal normalization on the decoder distribution",
+      "if q10/q12/q14/q16 remain much heavier than q8 reciprocal and bf16 normalization, deprioritize q12 PWL hardware despite its exact-normalization quality",
+      "if reciprocal PPA is competitive, add dynamic-quantizer or scale-metadata cost before claiming end-to-end decoder hardware benefit"
+    ]
+  },
+  "expected_benefit": [
+    "separates PWL-exp datapath cost from exact divider cost",
+    "provides a direct hardware comparison against q8 reciprocal-normalization datapaths",
+    "keeps timing, power, and area axes separate for dashboard review"
+  ],
+  "risks": [
+    "bucketed reciprocal normalization changes numerical behavior relative to the exact q12 PWL survivor",
+    "reciprocal_lut_bucket_shift=8 is a hardware feasibility choice and needs later quality validation",
+    "single-row block PPA still excludes memory, control, and full decoder integration effects",
+    "quality remains benchmark-distribution dependent until prompt and weight/input distribution stress is broadened"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_q12_pwl_recip_norm_datapath_v1",
+      "task_type": "l1_sweep",
+      "evaluation_mode": "measurement_only",
+      "objective": "Measure Nangate45 PPA for q12 PWL-exp row-wise softmax blocks with q10/q12/q14/q16 bucketed reciprocal normalization.",
+      "sweep_path": "runs/campaigns/activations/softmax_rowwise_q12_pwl_recip_norm/sweeps/nangate45_highutil.json",
+      "config_paths": [
+        "runs/designs/activations/softmax_rowwise_q12_pwl_r8_acc28_recip_q10_bucket8_wrapper/config_softmax_rowwise_q12_pwl_r8_acc28_recip_q10_bucket8.json",
+        "runs/designs/activations/softmax_rowwise_q12_pwl_r8_acc28_recip_q12_bucket8_wrapper/config_softmax_rowwise_q12_pwl_r8_acc28_recip_q12_bucket8.json",
+        "runs/designs/activations/softmax_rowwise_q12_pwl_r8_acc28_recip_q14_bucket8_wrapper/config_softmax_rowwise_q12_pwl_r8_acc28_recip_q14_bucket8.json",
+        "runs/designs/activations/softmax_rowwise_q12_pwl_r8_acc28_recip_q16_bucket8_wrapper/config_softmax_rowwise_q12_pwl_r8_acc28_recip_q16_bucket8.json"
+      ],
+      "abstraction_layer": "circuit_block"
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l1_decoder_q12_pwl_softmax_datapath_v1/analysis_report.md",
+    "runs/designs/activations/softmax_rowwise_q12_pwl_r8_acc28_wrapper/metrics.csv",
+    "docs/proposals/prop_l1_decoder_q8_recip_norm_datapath_v1/analysis_report.md",
+    "docs/proposals/prop_l1_decoder_bf16_recip_norm_datapath_v1/analysis_report.md"
+  ],
+  "knowledge_refs": [
+    "src/rtlgen/rtl_operations.cpp",
+    "scripts/softmax_rowwise_ref.py",
+    "tests/test_softmax_rowwise.sh",
+    "runs/campaigns/activations/softmax_rowwise_q12_pwl_recip_norm/sweeps/nangate45_highutil.json"
+  ]
+}
