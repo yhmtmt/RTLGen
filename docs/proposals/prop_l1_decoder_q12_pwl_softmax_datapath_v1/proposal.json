@@ -1,0 +1,66 @@
+{
+  "proposal_id": "prop_l1_decoder_q12_pwl_softmax_datapath_v1",
+  "created_utc": "2026-05-02T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "circuit_block",
+  "title": "Decoder q12 PWL softmax datapath calibration",
+  "hypothesis": "The q12 PWL decoder softmax survivor needs an integrated RTLGen/OpenROAD datapath measurement before its quality result can be compared against q8 exact, q8 reciprocal, or bf16 normalization hardware points.",
+  "direct_comparison": {
+    "primary_question": "What Nangate45 timing, power, and area does the q12 PWL-exp row-wise softmax datapath show for the decoder survivor candidate?",
+    "include": [
+      "row-wise signed q12 logits",
+      "PWL exp anchors matching the decoder software approximation at shifted logits 0, -2, -4, and -8",
+      "q12 PWL weights and q12 unsigned outputs",
+      "row_elems=8, input_frac_bits=8, weight_bits=12, accum_bits=28, output_scale=4095",
+      "exact normalization so the first measurement isolates PWL exp datapath cost from reciprocal approximation cost"
+    ],
+    "exclude": [
+      "full-vocabulary dynamic quantizer hardware",
+      "reciprocal-normalization approximation for the q12 PWL candidate",
+      "full decoder system PPA",
+      "new prompt-stress quality thresholds"
+    ],
+    "follow_on_broad_sweep": [
+      "compare measured q12 PWL datapath PPA against q8 exact/reciprocal and bf16 normalization datapath results on separate performance, power, and area axes",
+      "if exact normalization dominates area or timing, queue a q12 PWL reciprocal-normalization variant",
+      "if the datapath is competitive, add dynamic-quantizer or scale-metadata cost before claiming end-to-end decoder hardware benefit"
+    ]
+  },
+  "expected_benefit": [
+    "replaces the q12 PWL cost proxy with direct RTL/OpenROAD measurement",
+    "keeps the broad quality survivor connected to an emitted hardware datapath",
+    "makes performance, power, and area tradeoffs visible as separate dashboard dimensions"
+  ],
+  "risks": [
+    "this is a fixed-point datapath proxy and does not include the full dynamic symmetric quantization step used by the software sweep",
+    "the exact divider may dominate the first measurement and hide PWL-exp datapath differences",
+    "single-row block PPA still excludes memory, control, and full decoder integration effects",
+    "quality remains benchmark-distribution dependent until prompt and weight/input distribution stress is broadened"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_q12_pwl_softmax_datapath_v1",
+      "task_type": "l1_sweep",
+      "evaluation_mode": "measurement_only",
+      "objective": "Measure Nangate45 PPA for the integrated q12 PWL-exp row-wise softmax block with exact normalization.",
+      "sweep_path": "runs/campaigns/activations/softmax_rowwise_q12_pwl/sweeps/nangate45_highutil.json",
+      "config_paths": [
+        "runs/designs/activations/softmax_rowwise_q12_pwl_r8_acc28_wrapper/config_softmax_rowwise_q12_pwl_r8_acc28.json"
+      ],
+      "abstraction_layer": "circuit_block"
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_tiny_v1/decoder_pwl_survivor_distribution__l2_decoder_pwl_survivor_distribution_v1.md",
+    "runs/datasets/llm_decoder_eval_tiny_v1/decoder_q8_norm_frontier__l2_decoder_q8_normalization_frontier_v1.json",
+    "docs/proposals/prop_l1_decoder_q8_recip_norm_datapath_v1/analysis_report.md"
+  ],
+  "knowledge_refs": [
+    "src/rtlgen/rtl_operations.cpp",
+    "scripts/softmax_rowwise_ref.py",
+    "runs/designs/activations/softmax_rowwise_q12_pwl_r8_acc28_wrapper/config_softmax_rowwise_q12_pwl_r8_acc28.json"
+  ]
+}

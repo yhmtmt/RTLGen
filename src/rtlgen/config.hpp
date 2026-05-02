@@ -202,6 +202,8 @@ struct SoftmaxRowwiseOperationConfig {
     int reciprocal_lut_bucket_shift{0};
     int row_elems{1};
     int max_shift{7};
+    int input_frac_bits{0};
+    int weight_bits{0};
     int accum_bits{16};
     int output_scale{127};
 };
