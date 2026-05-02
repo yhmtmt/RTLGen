@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l1_decoder_q12_pwl_softmax_datapath_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "promote",
+  "pr_number": 335,
+  "merge_commit": "697641efd61c2a15bf56d6a52bf13db816cd6275",
+  "merged_utc": "2026-05-02T10:43:05Z"
 }

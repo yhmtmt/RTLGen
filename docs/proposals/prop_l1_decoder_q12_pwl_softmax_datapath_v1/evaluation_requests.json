@@ -8,7 +8,11 @@
       "objective": "Measure Nangate45 PPA for the integrated q12 PWL-exp row-wise softmax block with exact normalization.",
       "evaluation_mode": "measurement_only",
       "abstraction_layer": "circuit_block",
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 335,
+      "merge_commit": "697641efd61c2a15bf56d6a52bf13db816cd6275",
+      "merged_utc": "2026-05-02T10:43:05Z",
+      "notes": "Merged via PR #335 and merge 697641efd61c2a15bf56d6a52bf13db816cd6275 at 2026-05-02T10:43:05Z."
     }
   ]
 }
