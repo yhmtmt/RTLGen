@@ -1,31 +1,32 @@
 # Analysis Report
 
 ## Candidate
-- `proposal_id`: `prop_example_v1`
-- `candidate_id`: `cand_example_v1_r1`
+- `proposal_id`: `prop_l2_decoder_pwl_logit_ladder_v1`
+- `candidate_id`: `l2_decoder_pwl_logit_ladder_v1`
 
 ## Evaluations Consumed
-- work item ids
-- run keys
-- source commit
+- `l2_decoder_pwl_logit_ladder_v1`
+- `l2_decoder_pwl_logit_ladder_v1_run_ff6ff5fe98dc4293`
+- source commit: `75cda3daf1705e0ed7abe196649431103beef386`
+- review: PR #329
 
 ## Baseline Comparison
-- baseline used
-- key deltas
+- baseline_ref: `None`
+- baseline_item_id: `None`
+- outcome: `unavailable`
+- summary: Focused comparison baseline could not be resolved from proposal baseline_refs.
 
 ## Result
-- win / loss / mixed
-- confidence level
-- estimated mapper optimization room
-- whether the architecture conclusion is robust to plausible schedule changes
+- result: `iterate`
+- confidence level: merged accepted evidence
+- estimated optimization room: pending follow-on comparison
+- architecture conclusion robustness: staged evidence
+- summary: Focused comparison baseline could not be resolved from proposal baseline_refs.
 
 ## Failures and Caveats
-- flow failures
-- validation anomalies
-- mapper limitations
+- paired baseline comparison payload was unavailable at consume time
 
 ## Recommendation
-- reject / iterate / promote
-- short reason
-- follow-on mapper item or proposal when mapper limitations are the main reason
-  to iterate
+- `iterate`
+- reason: Focused comparison baseline could not be resolved from proposal baseline_refs.
+- next_action: inspect follow-on work after l2_decoder_pwl_logit_ladder_v1
