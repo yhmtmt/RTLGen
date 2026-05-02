@@ -1,0 +1,63 @@
+{
+  "backend_config": {
+    "backend_id": "command_json_v1",
+    "command": [
+      "python3",
+      "npu/eval/run_llm_decoder_onnx_candidate.py"
+    ],
+    "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
+    "input_name": "input_ids",
+    "interface": "decoder_backend_v1",
+    "logit_quant_bits": 8,
+    "model_config_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/config.json",
+    "normalization_mode": "exact",
+    "onnx_model_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/model.onnx",
+    "output_name": "logits",
+    "role": "candidate",
+    "runtime_target": "software_emulation",
+    "softmax_mode": "exact",
+    "topk": 5,
+    "trace_output_patterns": [
+      "present.*"
+    ],
+    "trace_tensor_quant_bits": 4
+  },
+  "candidate_semantics": "onnx_logits_q8_softmax_exact_norm_exact_prob_fp",
+  "dataset_id": "llm_decoder_eval_tiny_v1",
+  "model_contract": "runs/models/llm_decoder_tiny_v1/model_contract.json",
+  "samples": [
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_logit_ladder_v1/grid_exact_logits_q8/candidate/dist2_arith_two_plus_two.json",
+      "candidate_sha256": "32f79ab469037779cfb78c7a999de68da93887c51d64036fd307f1cd099f3d2d",
+      "sample_id": "dist2_arith_two_plus_two"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_logit_ladder_v1/grid_exact_logits_q8/candidate/dist2_arith_three_plus_five.json",
+      "candidate_sha256": "af7eb3667d722488249451c49247207df23f3215acee66e7b866b017e23916a5",
+      "sample_id": "dist2_arith_three_plus_five"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_logit_ladder_v1/grid_exact_logits_q8/candidate/dist2_arith_six_times_two.json",
+      "candidate_sha256": "35eddd9f9b60c357283c68ff73ecb9eaf745ad1dd91e07ac67acc641442643de",
+      "sample_id": "dist2_arith_six_times_two"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_logit_ladder_v1/grid_exact_logits_q8/candidate/dist2_sequence_numbers.json",
+      "candidate_sha256": "9294149728b2a58f3d9fa4de46f9d16c4a10f51203d4fa3c518b2fcfd1e6f6a3",
+      "sample_id": "dist2_sequence_numbers"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_logit_ladder_v1/grid_exact_logits_q8/candidate/dist2_sequence_weekdays.json",
+      "candidate_sha256": "72e419837094366ed9764f582b69680b76890c2ba9a628ece0cde798b5da3839",
+      "sample_id": "dist2_sequence_weekdays"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_logit_ladder_v1/grid_exact_logits_q8/candidate/dist2_sequence_months.json",
+      "candidate_sha256": "23bc96f47f159771504b56a4d16135bcbe90a86c4420e8752c9fb4a9322814ac",
+      "sample_id": "dist2_sequence_months"
+    }
+  ],
+  "task": "greedy_next_token",
+  "tokenizer_manifest": "runs/tokenizers/llm_decoder_gpt2_bpe_stub_v1/manifest.json",
+  "version": 0.1
+}
