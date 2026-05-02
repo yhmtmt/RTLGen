@@ -1,0 +1,6 @@
+{"sample_id":"dist2_arith_two_plus_two","prompt":"2 + 2 =","expected_continuation":" 4","category":"arithmetic_short"}
+{"sample_id":"dist2_arith_three_plus_five","prompt":"3 + 5 =","expected_continuation":" 8","category":"arithmetic_short"}
+{"sample_id":"dist2_arith_six_times_two","prompt":"6 * 2 =","expected_continuation":" 12","category":"arithmetic_short"}
+{"sample_id":"dist2_sequence_numbers","prompt":"one, two, three,","expected_continuation":" four","category":"list_continuation"}
+{"sample_id":"dist2_sequence_weekdays","prompt":"Monday, Tuesday, Wednesday,","expected_continuation":" Thursday","category":"list_continuation"}
+{"sample_id":"dist2_sequence_months","prompt":"January, February, March,","expected_continuation":" April","category":"list_continuation"}

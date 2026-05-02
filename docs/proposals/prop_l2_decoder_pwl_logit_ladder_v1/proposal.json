@@ -1,0 +1,63 @@
+{
+  "proposal_id": "prop_l2_decoder_pwl_logit_ladder_v1",
+  "created_utc": "2026-05-02T00:20:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Decoder PWL/logit sensitivity ladder",
+  "hypothesis": "The broad-v2 shared PWL misses preserve top-k and are not caused by q8 reciprocal precision. A focused ladder over exact logit precision, unquantized PWL, PWL input/weight precision, and normalization precision should identify whether q8/bf16 precision is the immediate blocker or whether the PWL curve itself needs redesign.",
+  "direct_comparison": {
+    "primary_question": "On the two broad-v2 shared exact-token misses and nearby controls, which precision boundary first recovers exact next-token behavior while retaining top-k?",
+    "include": [
+      "six-sample arithmetic/list focus set",
+      "exact-softmax logit q12/q10/q8/q6 variants",
+      "exact-softmax fp16/bf16 softmax input and weight variants",
+      "unquantized PWL exact-normalization variant",
+      "PWL q12/q10/q8/q6 input and weight variants",
+      "q8 PWL exact and reciprocal-normalization variants"
+    ],
+    "exclude": [
+      "new RTL or OpenROAD measurements",
+      "claiming broad distribution robustness for any recovered row",
+      "changing tokenizer or model binding"
+    ]
+  },
+  "expected_benefit": [
+    "separates PWL curve error from precision and normalization error",
+    "identifies whether q12 or fp16-style PWL should be promoted to the next broad check",
+    "keeps exact next-token misses tied to concrete focus samples before broader reruns"
+  ],
+  "risks": [
+    "the focus set is intentionally small and cannot prove broad robustness",
+    "exact next-token behavior is highly margin-sensitive for the pinned tiny decoder",
+    "q12 or fp16-style recovery may raise hardware cost enough to change the frontier"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_pwl_logit_ladder_v1",
+      "task_type": "l2_campaign",
+      "objective": "decoder_pwl_logit_sensitivity_ladder",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_pwl_logit_sensitivity_ladder",
+      "depends_on_item_ids": [
+        "l2_decoder_pwl_failure_diagnosis_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_decoder_pwl_failure_diagnosis_v1/proposal.json",
+    "runs/datasets/llm_decoder_eval_tiny_v1/decoder_pwl_failure_diagnosis__l2_decoder_pwl_failure_diagnosis_v1.json",
+    "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_sweep__l2_decoder_q8_norm_distribution_broad_v2.json"
+  ],
+  "knowledge_refs": [
+    "runs/datasets/llm_decoder_eval_tiny_v1/manifest_pwl_failure_focus_v1.json",
+    "runs/datasets/llm_decoder_eval_tiny_v1/samples_pwl_failure_focus_v1.jsonl",
+    "npu/eval/sweep_llm_decoder_candidate_quality.py",
+    "npu/eval/summarize_llm_decoder_pwl_logit_ladder.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}

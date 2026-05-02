@@ -157,6 +157,36 @@ normalization, and q8 PWL reciprocal q10 rows. Use it to decide whether the next
 frontier job should target shared PWL/logit-margin sensitivity or normalization
 precision.
 
+Run the focused PWL/logit sensitivity ladder on the broad-v2 shared misses:
+```sh
+python3 npu/eval/gen_llm_decoder_reference_suite.py \
+  --dataset-manifest runs/datasets/llm_decoder_eval_tiny_v1/manifest_pwl_failure_focus_v1.json \
+  --out-dir /tmp/reference_pwl_failure_focus_v1 \
+  --out-manifest /tmp/reference_pwl_failure_focus_v1_manifest.json
+python3 npu/eval/gen_llm_decoder_candidate_suite.py \
+  --dataset-manifest runs/datasets/llm_decoder_eval_tiny_v1/manifest_pwl_failure_focus_v1.json \
+  --out-dir /tmp/candidate_pwl_failure_focus_v1 \
+  --out-manifest /tmp/candidate_pwl_failure_focus_v1_manifest.json
+jq '.reference_manifest="/tmp/reference_pwl_failure_focus_v1_manifest.json" |
+    .candidate_manifest="/tmp/candidate_pwl_failure_focus_v1_manifest.json"' \
+  runs/datasets/llm_decoder_eval_tiny_v1/manifest_pwl_failure_focus_v1.json \
+  > /tmp/manifest_pwl_failure_focus_v1.json
+python3 npu/eval/sweep_llm_decoder_candidate_quality.py \
+  --dataset-manifest /tmp/manifest_pwl_failure_focus_v1.json \
+  --rough-grid decoder_pwl_logit_sensitivity_ladder_v1 \
+  --out-dir /tmp/decoder_pwl_logit_ladder_sweep \
+  --out /tmp/decoder_pwl_logit_ladder_sweep.json
+python3 npu/eval/summarize_llm_decoder_pwl_logit_ladder.py \
+  --sweep /tmp/decoder_pwl_logit_ladder_sweep.json \
+  --sample-file runs/datasets/llm_decoder_eval_tiny_v1/samples_pwl_failure_focus_v1.jsonl \
+  --out /tmp/decoder_pwl_logit_ladder.json \
+  --out-md /tmp/decoder_pwl_logit_ladder.md
+```
+
+This ladder keeps the two failing broad-v2 samples and nearby arithmetic/list
+controls together. It separates exact-softmax logit quantization, unquantized
+PWL, PWL input/weight precision, and normalization precision.
+
 Run the focused survivor prompt-stress grid:
 ```sh
 python3 npu/eval/gen_llm_decoder_reference_suite.py \

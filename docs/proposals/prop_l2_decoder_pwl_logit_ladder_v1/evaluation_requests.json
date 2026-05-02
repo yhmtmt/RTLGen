@@ -1,0 +1,25 @@
+{
+  "proposal_id": "prop_l2_decoder_pwl_logit_ladder_v1",
+  "source_commit": "4f279d5b1d37e64d1cb1e8541f05b8dbeec0954e",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_pwl_logit_ladder_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run a focused PWL/logit sensitivity ladder on the broad-v2 shared exact-token misses.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_pwl_logit_sensitivity_ladder",
+      "comparison_role": "ranking",
+      "paired_baseline_item_id": "",
+      "depends_on_item_ids": [
+        "l2_decoder_pwl_failure_diagnosis_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Identify whether q8/bf16 precision, unquantized PWL approximation, or normalization precision explains the focused exact-token flips."
+      },
+      "status": "proposed"
+    }
+  ]
+}

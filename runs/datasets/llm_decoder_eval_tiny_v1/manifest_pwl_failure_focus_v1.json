@@ -1,0 +1,55 @@
+{
+  "candidate_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_pwl_failure_focus_v1_manifest.json",
+  "dataset_id": "llm_decoder_eval_tiny_v1",
+  "decoder_backend_configs": {
+    "candidate": {
+      "backend_id": "command_json_v1",
+      "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_exact_prob_fp",
+      "command": [
+        "python3",
+        "npu/eval/run_llm_decoder_onnx_candidate.py"
+      ],
+      "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
+      "input_name": "input_ids",
+      "model_config_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/config.json",
+      "normalization_mode": "exact",
+      "onnx_model_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/model.onnx",
+      "output_name": "logits",
+      "runtime_target": "software_emulation",
+      "softmax_mode": "exact",
+      "topk": 5,
+      "trace_output_patterns": [
+        "present.*"
+      ],
+      "trace_tensor_quant_bits": 4
+    },
+    "reference": {
+      "backend_id": "command_json_v1",
+      "command": [
+        "python3",
+        "npu/eval/run_llm_decoder_onnx_reference.py"
+      ],
+      "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
+      "input_name": "input_ids",
+      "model_config_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/config.json",
+      "onnx_model_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/model.onnx",
+      "output_name": "logits",
+      "runtime_target": "cpu_reference",
+      "topk": 5,
+      "trace_output_patterns": [
+        "present.*"
+      ]
+    }
+  },
+  "decoder_backend_interface": "v1",
+  "model_contract": "runs/models/llm_decoder_tiny_v1/model_contract.json",
+  "notes": "Six-sample focus set for PWL/logit sensitivity around the broad-v2 shared exact-token misses. Contains the two failing samples and nearby arithmetic/list controls.",
+  "reference_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/reference_pwl_failure_focus_v1_manifest.json",
+  "sample_count": 6,
+  "sample_file": "runs/datasets/llm_decoder_eval_tiny_v1/samples_pwl_failure_focus_v1.jsonl",
+  "status": "pwl_failure_focus_manifest_v1",
+  "task": "greedy_next_token",
+  "tokenizer_id": "llm_decoder_gpt2_bpe_stub_v1",
+  "tokenizer_manifest": "runs/tokenizers/llm_decoder_gpt2_bpe_stub_v1/manifest.json",
+  "version": 0.1
+}
