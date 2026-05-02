@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_pwl_logit_ladder_v1",
-  "source_commit": "4f279d5b1d37e64d1cb1e8541f05b8dbeec0954e",
+  "source_commit": "2d6bd69b417db07269957407159b005ff42b7a15",
   "requested_items": [
     {
       "item_id": "l2_decoder_pwl_logit_ladder_v1",
@@ -19,7 +19,7 @@
         "direction": "iterate",
         "reason": "Identify whether q8/bf16 precision, unquantized PWL approximation, or normalization precision explains the focused exact-token flips."
       },
-      "status": "proposed"
+      "status": "pending"
     }
   ]
 }
