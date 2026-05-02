@@ -1,0 +1,1143 @@
+{
+  "aggregate": {
+    "distribution": {
+      "candidate_effective_vocab_size_mean": 49500.32566607185,
+      "candidate_entropy_nats_mean": 10.809732421821025,
+      "candidate_score_sum_max": 1.0000000000000788,
+      "candidate_score_sum_mean": 1.000000000000045,
+      "candidate_score_sum_min": 1.0000000000000089,
+      "candidate_top1_top2_score_margin_mean": 1.477862462329154e-07,
+      "candidate_top1_top2_score_margin_min": 0.0,
+      "reference_effective_vocab_size_mean": 48989.2855335852,
+      "reference_entropy_nats_mean": 10.79935689025947,
+      "reference_top1_top2_logit_margin_mean": 0.009370843569437662,
+      "reference_top1_top2_logit_margin_min": 0.0004680156707763672,
+      "reference_topk_probability_mass_mean": 0.00024465964498939256
+    },
+    "next_token_id_match_count": 5,
+    "next_token_id_match_rate": 0.8333333333333334,
+    "next_token_text_match_count": 5,
+    "next_token_text_match_rate": 0.8333333333333334,
+    "sample_count": 6,
+    "selected_tensor_trace": {
+      "delta_rollups": {
+        "max_of_max_abs_delta": 0.04571479558944702,
+        "max_of_mean_abs_delta": 0.002458258531987667,
+        "max_of_min_abs_delta": 0.04487442970275879,
+        "max_of_std_abs_delta": 0.005076095461845398,
+        "mean_of_max_abs_delta": 0.008054479956626892,
+        "mean_of_mean_abs_delta": 0.000655633315545856,
+        "mean_of_min_abs_delta": 0.01130556066830953,
+        "mean_of_std_abs_delta": 0.0021383066972096763
+      },
+      "matched_tensor_count": 24,
+      "missing_in_candidate_count": 0,
+      "missing_in_reference_count": 0,
+      "shape_match_count": 24,
+      "shape_match_rate": 1.0,
+      "trace_sha256_match_count": 0,
+      "trace_sha256_match_rate": 0.0
+    },
+    "topk_contains_reference_id_count": 6,
+    "topk_contains_reference_id_rate": 1.0,
+    "topk_contains_reference_text_count": 6,
+    "topk_contains_reference_text_rate": 1.0
+  },
+  "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q10_w_q10_norm_exact_prob_fp",
+  "dataset_id": "llm_decoder_eval_tiny_v1",
+  "samples": [
+    {
+      "aggregate": {
+        "next_token_id_match": 1,
+        "next_token_text_match": 1,
+        "topk_contains_reference_id": 1,
+        "topk_contains_reference_text": 1
+      },
+      "candidate_distribution": {
+        "effective_vocab_size": 49614.19366399887,
+        "entropy_nats": 10.81203223435694,
+        "nonzero_score_count": 50257,
+        "score_sum": 1.0000000000000642,
+        "top1_probability": 3.2474643033676736e-05,
+        "top1_score": 3.247464303367882e-05,
+        "top1_top2_score_margin": 1.587225954725264e-07,
+        "top2_probability": 3.231592043820422e-05,
+        "top2_score": 3.2315920438206296e-05,
+        "topk_score_mass": 0.0001591670187398491,
+        "vocab_size": 50257
+      },
+      "reference_distribution": {
+        "effective_vocab_size": 48990.495621205766,
+        "entropy_nats": 10.79938159136458,
+        "top1_logit": 0.8960149884223938,
+        "top1_probability": 4.750737505643141e-05,
+        "top1_top2_logit_margin": 0.009089052677154541,
+        "top2_logit": 0.8869259357452393,
+        "top2_probability": 4.707753440328189e-05,
+        "topk_logit_span": 0.09036791324615479,
+        "topk_probability_mass": 0.00022716238180442284,
+        "vocab_size": 50257
+      },
+      "sample_id": "dist2_arith_six_times_two",
+      "selected_tensor_trace": {
+        "aggregate": {
+          "candidate_tensor_count": 4,
+          "candidate_trace_sha256": "2e0552ff1a2952644856137d7024669a94252e437dc600498daa4231a0c3d27a",
+          "delta_rollups": {
+            "max_of_max_abs_delta": 0.026132524013519287,
+            "max_of_mean_abs_delta": 0.0009353512432426214,
+            "max_of_min_abs_delta": 0.02556467056274414,
+            "max_of_std_abs_delta": 0.0023676902055740356,
+            "mean_of_max_abs_delta": 0.006533131003379822,
+            "mean_of_mean_abs_delta": 0.0006997893215157092,
+            "mean_of_min_abs_delta": 0.014519885182380676,
+            "mean_of_std_abs_delta": 0.002047695219516754
+          },
+          "matched_tensor_count": 4,
+          "missing_in_candidate_count": 0,
+          "missing_in_reference_count": 0,
+          "reference_tensor_count": 4,
+          "reference_trace_sha256": "32d414a2cee36e906a8f157a9083545050355918dddcb589aef189af64747c3c",
+          "shape_match_count": 4,
+          "shape_match_rate": 1.0,
+          "trace_sha256_match": 0
+        },
+        "compared_tensors": [
+          {
+            "candidate_quantization": {
+              "bits": 4,
+              "levels": 7,
+              "max_abs": 0.6806543469429016,
+              "mode": "trace_tensor_quant",
+              "scale": 0.09723633527755737
+            },
+            "candidate_shape": [
+              1,
+              2,
+              4,
+              64
+            ],
+            "deltas": {
+              "max_abs_delta": 0.0,
+              "mean_abs_delta": 0.0004024077206850052,
+              "min_abs_delta": 0.02556467056274414,
+              "std_abs_delta": 0.002052813768386841
+            },
+            "name": "present.0.key",
+            "reference_shape": [
+              1,
+              2,
+              4,
+              64
+            ],
+            "shape_match": 1,
+            "step": 0
+          },
+          {
+            "candidate_quantization": {
+              "bits": 4,
+              "levels": 7,
+              "max_abs": 0.7299759387969971,
+              "mode": "trace_tensor_quant",
+              "scale": 0.10428227697099958
+            },
+            "candidate_shape": [
+              1,
+              2,
+              4,
+              64
+            ],
+            "deltas": {
+              "max_abs_delta": 0.0,
+              "mean_abs_delta": 0.0009353512432426214,
+              "min_abs_delta": 0.020831644535064697,
+              "std_abs_delta": 0.0018025189638137817
+            },
+            "name": "present.0.value",
+            "reference_shape": [
+              1,
+              2,
+              4,
+              64
+            ],
+            "shape_match": 1,
+            "step": 0
+          },
+          {
+            "candidate_quantization": {
+              "bits": 4,
+              "levels": 7,
+              "max_abs": 0.6811239123344421,
+              "mode": "trace_tensor_quant",
+              "scale": 0.09730341604777745
+            },
+            "candidate_shape": [
+              1,
+              2,
+              4,
+              64
+            ],
+            "deltas": {
+              "max_abs_delta": 0.026132524013519287,
+              "mean_abs_delta": 0.0006723217666149139,
+              "min_abs_delta": 0.0,
+              "std_abs_delta": 0.0023676902055740356
+            },
+            "name": "present.1.key",
+            "reference_shape": [
+              1,
+              2,
+              4,
+              64
+            ],
+            "shape_match": 1,
+            "step": 0
+          },
+          {
+            "candidate_quantization": {
+              "bits": 4,
+              "levels": 7,
+              "max_abs": 0.7368277311325073,
+              "mode": "trace_tensor_quant",
+              "scale": 0.10526110444750104
+            },
+            "candidate_shape": [
+              1,
+              2,
+              4,
+              64
+            ],
+            "deltas": {
+              "max_abs_delta": 0.0,
+              "mean_abs_delta": 0.0007890765555202961,
+              "min_abs_delta": 0.011683225631713867,
+              "std_abs_delta": 0.0019677579402923584
+            },
+            "name": "present.1.value",
+            "reference_shape": [
+              1,
+              2,
+              4,
+              64
+            ],
+            "shape_match": 1,
+            "step": 0
+          }
+        ],
+        "missing_in_candidate": [],
+        "missing_in_reference": []
+      }
+    },
+    {
+      "aggregate": {
+        "next_token_id_match": 0,
+        "next_token_text_match": 0,
+        "topk_contains_reference_id": 1,
+        "topk_contains_reference_text": 1
+      },
+      "candidate_distribution": {
+        "effective_vocab_size": 49584.64260722135,
+        "entropy_nats": 10.811436439914939,
+        "nonzero_score_count": 50257,
+        "score_sum": 1.0000000000000564,
+        "top1_probability": 3.319284830719093e-05,
+        "top1_score": 3.31928483071928e-05,
+        "top1_top2_score_margin": 0.0,
+        "top2_probability": 3.319284830719093e-05,
+        "top2_score": 3.31928483071928e-05,
+        "topk_score_mass": 0.0001622653317539308,
+        "vocab_size": 50257
+      },
+      "reference_distribution": {
+        "effective_vocab_size": 48990.566260299194,
+        "entropy_nats": 10.799383033257373,
+        "top1_logit": 0.9264568090438843,
+        "top1_probability": 4.8986247517740504e-05,
+        "top1_top2_logit_margin": 0.0004680156707763672,
+        "top2_logit": 0.9259887933731079,
+        "top2_probability": 4.896332655035402e-05,
+        "topk_logit_span": 0.09063035249710083,
+        "topk_probability_mass": 0.00023291142865344405,
+        "vocab_size": 50257
+      },
+      "sample_id": "dist2_arith_three_plus_five",
+      "selected_tensor_trace": {
+        "aggregate": {
+          "candidate_tensor_count": 4,
+          "candidate_trace_sha256": "0c723505ae42b7fdab05e4b2589758a319a48f101a71886c4ec9742c5c7feaa6",
+          "delta_rollups": {
+            "max_of_max_abs_delta": 0.005832791328430176,
+            "max_of_mean_abs_delta": 0.0007656330708414316,
+            "max_of_min_abs_delta": 0.005724549293518066,
+            "max_of_std_abs_delta": 0.003054901957511902,
+            "mean_of_max_abs_delta": 0.0025732070207595825,
+            "mean_of_mean_abs_delta": 0.00036166998324915767,
+            "mean_of_min_abs_delta": 0.0019038021564483643,
+            "mean_of_std_abs_delta": 0.0019006021320819855
+          },
+          "matched_tensor_count": 4,
+          "missing_in_candidate_count": 0,
+          "missing_in_reference_count": 0,
+          "reference_tensor_count": 4,
+          "reference_trace_sha256": "6ec7bb70e0aa5cad0e1f121336911d42c644a4a44e5eb9d7429aebb71a558e14",
+          "shape_match_count": 4,
+          "shape_match_rate": 1.0,
+          "trace_sha256_match": 0
+        },
+        "compared_tensors": [
+          {
+            "candidate_quantization": {
+              "bits": 4,
+              "levels": 7,
+              "max_abs": 0.7709499001502991,
+              "mode": "trace_tensor_quant",
+              "scale": 0.1101357000214713
+            },
+            "candidate_shape": [
+              1,
+              2,
+              4,
+              64
+            ],
+            "deltas": {
+              "max_abs_delta": 0.0,
+              "mean_abs_delta": 0.0002774256281554699,
+              "min_abs_delta": 0.005724549293518066,
+              "std_abs_delta": 0.001713782548904419
+            },
+            "name": "present.0.key",
+            "reference_shape": [
+              1,
+              2,
+              4,
+              64
+            ],
+            "shape_match": 1,
+            "step": 0
+          },
+          {
+            "candidate_quantization": {
+              "bits": 4,
+              "levels": 7,
+              "max_abs": 0.8412472605705261,
+              "mode": "trace_tensor_quant",
+              "scale": 0.12017818008150373
+            },
+            "candidate_shape": [
+              1,
+              2,
+              4,
+              64
+            ],
+            "deltas": {
+              "max_abs_delta": 0.005832791328430176,
+              "mean_abs_delta": 0.0007656330708414316,
+              "min_abs_delta": 0.0,
+              "std_abs_delta": 0.0028014332056045532
+            },
+            "name": "present.0.value",
+            "reference_shape": [
+              1,
+              2,
+              4,
+              64
+            ],
+            "shape_match": 1,
+            "step": 0
+          },
+          {
+            "candidate_quantization": {
+              "bits": 4,
+              "levels": 7,
+              "max_abs": 0.5800014138221741,
+              "mode": "trace_tensor_quant",
+              "scale": 0.08285734483173915
+            },
+            "candidate_shape": [
+              1,
+              2,
+              4,
+              64
+            ],
+            "deltas": {
+              "max_abs_delta": 0.0,
+              "mean_abs_delta": 5.103647708892822e-06,
+              "min_abs_delta": 0.0018906593322753906,
+              "std_abs_delta": 3.229081630706787e-05
+            },
+            "name": "present.1.key",
+            "reference_shape": [
+              1,
+              2,
+              4,
+              64
+            ],
+            "shape_match": 1,
+            "step": 0
+          },
+          {
+            "candidate_quantization": {
+              "bits": 4,
+              "levels": 7,
+              "max_abs": 0.7038626670837402,
+              "mode": "trace_tensor_quant",
+              "scale": 0.10055180958339147
+            },
+            "candidate_shape": [
+              1,
+              2,
+              4,
+              64
+            ],
+            "deltas": {
+              "max_abs_delta": 0.004460036754608154,
+              "mean_abs_delta": 0.00039851758629083633,
+              "min_abs_delta": 0.0,
+              "std_abs_delta": 0.003054901957511902
+            },
+            "name": "present.1.value",
+            "reference_shape": [
+              1,
+              2,
+              4,
+              64
+            ],
+            "shape_match": 1,
+            "step": 0
+          }
+        ],
+        "missing_in_candidate": [],
+        "missing_in_reference": []
+      }
+    },
+    {
+      "aggregate": {
+        "next_token_id_match": 1,
+        "next_token_text_match": 1,
+        "topk_contains_reference_id": 1,
+        "topk_contains_reference_text": 1
+      },
+      "candidate_distribution": {
+        "effective_vocab_size": 49601.323856512725,
+        "entropy_nats": 10.811772803012328,
+        "nonzero_score_count": 50257,
+        "score_sum": 1.0000000000000788,
+        "top1_probability": 3.279253117566371e-05,
+        "top1_score": 3.279253117566629e-05,
+        "top1_top2_score_margin": 2.564420815301345e-07,
+        "top2_probability": 3.2536089094133595e-05,
+        "top2_score": 3.253608909413616e-05,
+        "topk_score_mass": 0.00016168673240475148,
+        "vocab_size": 50257
+      },
+      "reference_distribution": {
+        "effective_vocab_size": 48988.90234432033,
+        "entropy_nats": 10.799349068672695,
+        "top1_logit": 0.9097363948822021,
+        "top1_probability": 4.8162907507177056e-05,
+        "top1_top2_logit_margin": 0.017291247844696045,
+        "top2_logit": 0.8924451470375061,
+        "top2_probability": 4.7337269463737156e-05,
+        "topk_logit_span": 0.06276094913482666,
+        "topk_probability_mass": 0.00023340780069891593,
+        "vocab_size": 50257
+      },
+      "sample_id": "dist2_arith_two_plus_two",
+      "selected_tensor_trace": {
+        "aggregate": {
+          "candidate_tensor_count": 4,
+          "candidate_trace_sha256": "af626710544fcf9e11b150ff4202a9603a6ba4d15f73c68497c144611bf7490c",
+          "delta_rollups": {
+            "max_of_max_abs_delta": 0.001495063304901123,
+            "max_of_mean_abs_delta": 0.002458258531987667,
+            "max_of_min_abs_delta": 0.03365415334701538,
+            "max_of_std_abs_delta": 0.004347875714302063,
+            "mean_of_max_abs_delta": 0.00037376582622528076,
+            "mean_of_mean_abs_delta": 0.0011286430526524782,
+            "mean_of_min_abs_delta": 0.01595894992351532,
+            "mean_of_std_abs_delta": 0.0028299428522586823
+          },
+          "matched_tensor_count": 4,
+          "missing_in_candidate_count": 0,
+          "missing_in_reference_count": 0,
+          "reference_tensor_count": 4,
+          "reference_trace_sha256": "25c5f7da7cbb90f7425db65d8f317a4501046ac2050b50d9999b18f9d9104462",
+          "shape_match_count": 4,
+          "shape_match_rate": 1.0,
+          "trace_sha256_match": 0
+        },
+        "compared_tensors": [
+          {
+            "candidate_quantization": {
+              "bits": 4,
+              "levels": 7,
+              "max_abs": 0.6806543469429016,
+              "mode": "trace_tensor_quant",
+              "scale": 0.09723633527755737
+            },
+            "candidate_shape": [
+              1,
+              2,
+              4,
+              64
+            ],
+            "deltas": {
+              "max_abs_delta": 0.0,
+              "mean_abs_delta": 0.001117343083024025,
+              "min_abs_delta": 0.02411717176437378,
+              "std_abs_delta": 0.0028852373361587524
+            },
+            "name": "present.0.key",
+            "reference_shape": [
+              1,
+              2,
+              4,
+              64
+            ],
+            "shape_match": 1,
+            "step": 0
+          },
+          {
+            "candidate_quantization": {
+              "bits": 4,
+              "levels": 7,
+              "max_abs": 0.6934817433357239,
+              "mode": "trace_tensor_quant",
+              "scale": 0.09906882047653198
+            },
+            "candidate_shape": [
+              1,
+              2,
+              4,
+              64
+            ],
+            "deltas": {
+              "max_abs_delta": 0.001495063304901123,
+              "mean_abs_delta": 0.0005240365862846375,
+              "min_abs_delta": 0.0,
+              "std_abs_delta": 0.000378340482711792
+            },
+            "name": "present.0.value",
+            "reference_shape": [
+              1,
+              2,
+              4,
+              64
+            ],
+            "shape_match": 1,
+            "step": 0
+          },
+          {
+            "candidate_quantization": {
+              "bits": 4,
+              "levels": 7,
+              "max_abs": 0.6920408606529236,
+              "mode": "trace_tensor_quant",
+              "scale": 0.0988629800932748
+            },
+            "candidate_shape": [
+              1,
+              2,
+              4,
+              64
+            ],
+            "deltas": {
+              "max_abs_delta": 0.0,
+              "mean_abs_delta": 0.002458258531987667,
+              "min_abs_delta": 0.03365415334701538,
+              "std_abs_delta": 0.0037083178758621216
+            },
+            "name": "present.1.key",
+            "reference_shape": [
+              1,
+              2,
+              4,
+              64
+            ],
+            "shape_match": 1,
+            "step": 0
+          },
+          {
+            "candidate_quantization": {
+              "bits": 4,
+              "levels": 7,
+              "max_abs": 0.768372118473053,
+              "mode": "trace_tensor_quant",
+              "scale": 0.10976744549615043
+            },
+            "candidate_shape": [
+              1,
+              2,
+              4,
+              64
+            ],
+            "deltas": {
+              "max_abs_delta": 0.0,
+              "mean_abs_delta": 0.0004149340093135834,
+              "min_abs_delta": 0.006064474582672119,
+              "std_abs_delta": 0.004347875714302063
+            },
+            "name": "present.1.value",
+            "reference_shape": [
+              1,
+              2,
+              4,
+              64
+            ],
+            "shape_match": 1,
+            "step": 0
+          }
+        ],
+        "missing_in_candidate": [],
+        "missing_in_reference": []
+      }
+    },
+    {
+      "aggregate": {
+        "next_token_id_match": 1,
+        "next_token_text_match": 1,
+        "topk_contains_reference_id": 1,
+        "topk_contains_reference_text": 1
+      },
+      "candidate_distribution": {
+        "effective_vocab_size": 49398.684410091126,
+        "entropy_nats": 10.807679071446719,
+        "nonzero_score_count": 50257,
+        "score_sum": 1.0000000000000089,
+        "top1_probability": 3.749653349496069e-05,
+        "top1_score": 3.749653349496102e-05,
+        "top1_top2_score_margin": 7.330700585525139e-08,
+        "top2_probability": 3.7423226489105435e-05,
+        "top2_score": 3.742322648910577e-05,
+        "topk_score_mass": 0.00017626669557895162,
+        "vocab_size": 50257
+      },
+      "reference_distribution": {
+        "effective_vocab_size": 48986.758947152775,
+        "entropy_nats": 10.799305315006945,
+        "top1_logit": 1.0865309238433838,
+        "top1_probability": 5.743377314024594e-05,
+        "top1_top2_logit_margin": 0.003583550453186035,
+        "top2_logit": 1.0829473733901978,
+        "top2_probability": 5.7228324653850524e-05,
+        "topk_logit_span": 0.24535810947418213,
+        "topk_probability_mass": 0.00025179542624867034,
+        "vocab_size": 50257
+      },
+      "sample_id": "dist2_sequence_months",
+      "selected_tensor_trace": {
+        "aggregate": {
+          "candidate_tensor_count": 4,
+          "candidate_trace_sha256": "196cb85de1c06061f0b8679efff4a7f51498596c2ad61472bbb02ca65f8ddd65",
+          "delta_rollups": {
+            "max_of_max_abs_delta": 0.03862398862838745,
+            "max_of_mean_abs_delta": 0.000728065162547864,
+            "max_of_min_abs_delta": 0.015414535999298096,
+            "max_of_std_abs_delta": 0.002947196364402771,
+            "mean_of_max_abs_delta": 0.015871688723564148,
+            "mean_of_mean_abs_delta": 0.0002733063338382635,
+            "mean_of_min_abs_delta": 0.005315661430358887,
+            "mean_of_std_abs_delta": 0.0017251558601856232
+          },
+          "matched_tensor_count": 4,
+          "missing_in_candidate_count": 0,
+          "missing_in_reference_count": 0,
+          "reference_tensor_count": 4,
+          "reference_trace_sha256": "6a9eb20f78b4e2fe3c420198bb3c219532fa34079e1096d4f5d06abfc5602c3d",
+          "shape_match_count": 4,
+          "shape_match_rate": 1.0,
+          "trace_sha256_match": 0
+        },
+        "compared_tensors": [
+          {
+            "candidate_quantization": {
+              "bits": 4,
+              "levels": 7,
+              "max_abs": 0.6666536927223206,
+              "mode": "trace_tensor_quant",
+              "scale": 0.09523624181747437
+            },
+            "candidate_shape": [
+              1,
+              2,
+              6,
+              64
+            ],
+            "deltas": {
+              "max_abs_delta": 0.03862398862838745,
+              "mean_abs_delta": 3.478815779089928e-05,
+              "min_abs_delta": 0.0,
+              "std_abs_delta": 7.94529914855957e-05
+            },
+            "name": "present.0.key",
+            "reference_shape": [
+              1,
+              2,
+              6,
+              64
+            ],
+            "shape_match": 1,
+            "step": 0
+          },
+          {
+            "candidate_quantization": {
+              "bits": 4,
+              "levels": 7,
+              "max_abs": 0.7000000476837158,
+              "mode": "trace_tensor_quant",
+              "scale": 0.1000000068119594
+            },
+            "candidate_shape": [
+              1,
+              2,
+              6,
+              64
+            ],
+            "deltas": {
+              "max_abs_delta": 0.02486276626586914,
+              "mean_abs_delta": 0.00028036534786224365,
+              "min_abs_delta": 0.0,
+              "std_abs_delta": 0.001905784010887146
+            },
+            "name": "present.0.value",
+            "reference_shape": [
+              1,
+              2,
+              6,
+              64
+            ],
+            "shape_match": 1,
+            "step": 0
+          },
+          {
+            "candidate_quantization": {
+              "bits": 4,
+              "levels": 7,
+              "max_abs": 0.7091373801231384,
+              "mode": "trace_tensor_quant",
+              "scale": 0.1013053400175912
+            },
+            "candidate_shape": [
+              1,
+              2,
+              6,
+              64
+            ],
+            "deltas": {
+              "max_abs_delta": 0.0,
+              "mean_abs_delta": 0.000728065162547864,
+              "min_abs_delta": 0.005848109722137451,
+              "std_abs_delta": 0.002947196364402771
+            },
+            "name": "present.1.key",
+            "reference_shape": [
+              1,
+              2,
+              6,
+              64
+            ],
+            "shape_match": 1,
+            "step": 0
+          },
+          {
+            "candidate_quantization": {
+              "bits": 4,
+              "levels": 7,
+              "max_abs": 0.8759149312973022,
+              "mode": "trace_tensor_quant",
+              "scale": 0.12513070447104319
+            },
+            "candidate_shape": [
+              1,
+              2,
+              6,
+              64
+            ],
+            "deltas": {
+              "max_abs_delta": 0.0,
+              "mean_abs_delta": 5.000666715204716e-05,
+              "min_abs_delta": 0.015414535999298096,
+              "std_abs_delta": 0.00196819007396698
+            },
+            "name": "present.1.value",
+            "reference_shape": [
+              1,
+              2,
+              6,
+              64
+            ],
+            "shape_match": 1,
+            "step": 0
+          }
+        ],
+        "missing_in_candidate": [],
+        "missing_in_reference": []
+      }
+    },
+    {
+      "aggregate": {
+        "next_token_id_match": 1,
+        "next_token_text_match": 1,
+        "topk_contains_reference_id": 1,
+        "topk_contains_reference_text": 1
+      },
+      "candidate_distribution": {
+        "effective_vocab_size": 49371.599601836744,
+        "entropy_nats": 10.807130631008297,
+        "nonzero_score_count": 50257,
+        "score_sum": 1.0000000000000389,
+        "top1_probability": 3.8091988316519944e-05,
+        "top1_score": 3.809198831652142e-05,
+        "top1_top2_score_margin": 7.447114040375584e-08,
+        "top2_probability": 3.801751717611619e-05,
+        "top2_score": 3.8017517176117665e-05,
+        "topk_score_mass": 0.00018081592890032062,
+        "vocab_size": 50257
+      },
+      "reference_distribution": {
+        "effective_vocab_size": 48989.780038176796,
+        "entropy_nats": 10.799366984689428,
+        "top1_logit": 1.1056221723556519,
+        "top1_probability": 5.8550593249506195e-05,
+        "top1_top2_logit_margin": 0.005045175552368164,
+        "top2_logit": 1.1005769968032837,
+        "top2_probability": 5.82559391437178e-05,
+        "topk_logit_span": 0.22631895542144775,
+        "topk_probability_mass": 0.0002615568076400215,
+        "vocab_size": 50257
+      },
+      "sample_id": "dist2_sequence_numbers",
+      "selected_tensor_trace": {
+        "aggregate": {
+          "candidate_tensor_count": 4,
+          "candidate_trace_sha256": "f5f46ad56d7543c1f1f31ad889437433d12d8f48f1eba6e7e70b006e64ff32d1",
+          "delta_rollups": {
+            "max_of_max_abs_delta": 0.04571479558944702,
+            "max_of_mean_abs_delta": 0.0019850736716762185,
+            "max_of_min_abs_delta": 0.040495872497558594,
+            "max_of_std_abs_delta": 0.005076095461845398,
+            "mean_of_max_abs_delta": 0.011428698897361755,
+            "mean_of_mean_abs_delta": 0.000725792400771752,
+            "mean_of_min_abs_delta": 0.017698541283607483,
+            "mean_of_std_abs_delta": 0.0023094452917575836
+          },
+          "matched_tensor_count": 4,
+          "missing_in_candidate_count": 0,
+          "missing_in_reference_count": 0,
+          "reference_tensor_count": 4,
+          "reference_trace_sha256": "ee53fcf7bc6ee6309bd8e12932e48f5854ed371ab3b4999758e8bf721ced0d6c",
+          "shape_match_count": 4,
+          "shape_match_rate": 1.0,
+          "trace_sha256_match": 0
+        },
+        "compared_tensors": [
+          {
+            "candidate_quantization": {
+              "bits": 4,
+              "levels": 7,
+              "max_abs": 0.7134722471237183,
+              "mode": "trace_tensor_quant",
+              "scale": 0.10192460673195976
+            },
+            "candidate_shape": [
+              1,
+              2,
+              6,
+              64
+            ],
+            "deltas": {
+              "max_abs_delta": 0.0,
+              "mean_abs_delta": 0.00032324716448783875,
+              "min_abs_delta": 0.0008922815322875977,
+              "std_abs_delta": 0.000682532787322998
+            },
+            "name": "present.0.key",
+            "reference_shape": [
+              1,
+              2,
+              6,
+              64
+            ],
+            "shape_match": 1,
+            "step": 0
+          },
+          {
+            "candidate_quantization": {
+              "bits": 4,
+              "levels": 7,
+              "max_abs": 0.7162210941314697,
+              "mode": "trace_tensor_quant",
+              "scale": 0.10231729916163854
+            },
+            "candidate_shape": [
+              1,
+              2,
+              6,
+              64
+            ],
+            "deltas": {
+              "max_abs_delta": 0.0,
+              "mean_abs_delta": 0.0019850736716762185,
+              "min_abs_delta": 0.040495872497558594,
+              "std_abs_delta": 0.002161875367164612
+            },
+            "name": "present.0.value",
+            "reference_shape": [
+              1,
+              2,
+              6,
+              64
+            ],
+            "shape_match": 1,
+            "step": 0
+          },
+          {
+            "candidate_quantization": {
+              "bits": 4,
+              "levels": 7,
+              "max_abs": 0.7116196155548096,
+              "mode": "trace_tensor_quant",
+              "scale": 0.1016599450792585
+            },
+            "candidate_shape": [
+              1,
+              2,
+              6,
+              64
+            ],
+            "deltas": {
+              "max_abs_delta": 0.04571479558944702,
+              "mean_abs_delta": 0.000248664990067482,
+              "min_abs_delta": 0.0,
+              "std_abs_delta": 0.0013172775506973267
+            },
+            "name": "present.1.key",
+            "reference_shape": [
+              1,
+              2,
+              6,
+              64
+            ],
+            "shape_match": 1,
+            "step": 0
+          },
+          {
+            "candidate_quantization": {
+              "bits": 4,
+              "levels": 7,
+              "max_abs": 0.8660436272621155,
+              "mode": "trace_tensor_quant",
+              "scale": 0.1237205181803022
+            },
+            "candidate_shape": [
+              1,
+              2,
+              6,
+              64
+            ],
+            "deltas": {
+              "max_abs_delta": 0.0,
+              "mean_abs_delta": 0.00034618377685546875,
+              "min_abs_delta": 0.02940601110458374,
+              "std_abs_delta": 0.005076095461845398
+            },
+            "name": "present.1.value",
+            "reference_shape": [
+              1,
+              2,
+              6,
+              64
+            ],
+            "shape_match": 1,
+            "step": 0
+          }
+        ],
+        "missing_in_candidate": [],
+        "missing_in_reference": []
+      }
+    },
+    {
+      "aggregate": {
+        "next_token_id_match": 1,
+        "next_token_text_match": 1,
+        "topk_contains_reference_id": 1,
+        "topk_contains_reference_text": 1
+      },
+      "candidate_distribution": {
+        "effective_vocab_size": 49431.50985677023,
+        "entropy_nats": 10.808343351186927,
+        "nonzero_score_count": 50257,
+        "score_sum": 1.000000000000023,
+        "top1_probability": 3.680238568677161e-05,
+        "top1_score": 3.6802385686772454e-05,
+        "top1_top2_score_margin": 3.237746541358242e-07,
+        "top2_probability": 3.647861103263579e-05,
+        "top2_score": 3.647861103263663e-05,
+        "topk_score_mass": 0.00017804008481313478,
+        "vocab_size": 50257
+      },
+      "reference_distribution": {
+        "effective_vocab_size": 48989.20999035638,
+        "entropy_nats": 10.7993553485658,
+        "top1_logit": 1.0638989210128784,
+        "top1_probability": 5.6122218767996295e-05,
+        "top1_top2_logit_margin": 0.020748019218444824,
+        "top2_logit": 1.0431509017944336,
+        "top2_probability": 5.4969790537131486e-05,
+        "topk_logit_span": 0.17539268732070923,
+        "topk_probability_mass": 0.00026112402489088075,
+        "vocab_size": 50257
+      },
+      "sample_id": "dist2_sequence_weekdays",
+      "selected_tensor_trace": {
+        "aggregate": {
+          "candidate_tensor_count": 4,
+          "candidate_trace_sha256": "4b48ad853b27ca42e0d5156aa184886a5aab471efeb05f0027ab0ca66879a314",
+          "delta_rollups": {
+            "max_of_max_abs_delta": 0.03516107797622681,
+            "max_of_mean_abs_delta": 0.0016604145057499409,
+            "max_of_min_abs_delta": 0.04487442970275879,
+            "max_of_std_abs_delta": 0.002958744764328003,
+            "mean_of_max_abs_delta": 0.011546388268470764,
+            "mean_of_mean_abs_delta": 0.0007445988012477756,
+            "mean_of_min_abs_delta": 0.012436524033546448,
+            "mean_of_std_abs_delta": 0.002016998827457428
+          },
+          "matched_tensor_count": 4,
+          "missing_in_candidate_count": 0,
+          "missing_in_reference_count": 0,
+          "reference_tensor_count": 4,
+          "reference_trace_sha256": "0de18db8d9d87a6caf78034cb47d7bc499913545975e1ba5798584b0a82a7329",
+          "shape_match_count": 4,
+          "shape_match_rate": 1.0,
+          "trace_sha256_match": 0
+        },
+        "compared_tensors": [
+          {
+            "candidate_quantization": {
+              "bits": 4,
+              "levels": 7,
+              "max_abs": 0.7067476511001587,
+              "mode": "trace_tensor_quant",
+              "scale": 0.10096395015716553
+            },
+            "candidate_shape": [
+              1,
+              2,
+              6,
+              64
+            ],
+            "deltas": {
+              "max_abs_delta": 0.0,
+              "mean_abs_delta": 0.00016898848116397858,
+              "min_abs_delta": 0.004871666431427002,
+              "std_abs_delta": 0.00030340254306793213
+            },
+            "name": "present.0.key",
+            "reference_shape": [
+              1,
+              2,
+              6,
+              64
+            ],
+            "shape_match": 1,
+            "step": 0
+          },
+          {
+            "candidate_quantization": {
+              "bits": 4,
+              "levels": 7,
+              "max_abs": 0.6470860838890076,
+              "mode": "trace_tensor_quant",
+              "scale": 0.09244086912700109
+            },
+            "candidate_shape": [
+              1,
+              2,
+              6,
+              64
+            ],
+            "deltas": {
+              "max_abs_delta": 0.01102447509765625,
+              "mean_abs_delta": 0.0016604145057499409,
+              "min_abs_delta": 0.0,
+              "std_abs_delta": 0.0021169930696487427
+            },
+            "name": "present.0.value",
+            "reference_shape": [
+              1,
+              2,
+              6,
+              64
+            ],
+            "shape_match": 1,
+            "step": 0
+          },
+          {
+            "candidate_quantization": {
+              "bits": 4,
+              "levels": 7,
+              "max_abs": 0.8470175266265869,
+              "mode": "trace_tensor_quant",
+              "scale": 0.12100250380379814
+            },
+            "candidate_shape": [
+              1,
+              2,
+              6,
+              64
+            ],
+            "deltas": {
+              "max_abs_delta": 0.03516107797622681,
+              "mean_abs_delta": 0.001031767576932907,
+              "min_abs_delta": 0.0,
+              "std_abs_delta": 0.002958744764328003
+            },
+            "name": "present.1.key",
+            "reference_shape": [
+              1,
+              2,
+              6,
+              64
+            ],
+            "shape_match": 1,
+            "step": 0
+          },
+          {
+            "candidate_quantization": {
+              "bits": 4,
+              "levels": 7,
+              "max_abs": 0.7946979999542236,
+              "mode": "trace_tensor_quant",
+              "scale": 0.11352828570774623
+            },
+            "candidate_shape": [
+              1,
+              2,
+              6,
+              64
+            ],
+            "deltas": {
+              "max_abs_delta": 0.0,
+              "mean_abs_delta": 0.00011722464114427567,
+              "min_abs_delta": 0.04487442970275879,
+              "std_abs_delta": 0.002688854932785034
+            },
+            "name": "present.1.value",
+            "reference_shape": [
+              1,
+              2,
+              6,
+              64
+            ],
+            "shape_match": 1,
+            "step": 0
+          }
+        ],
+        "missing_in_candidate": [],
+        "missing_in_reference": []
+      }
+    }
+  ],
+  "task": "greedy_next_token"
+}

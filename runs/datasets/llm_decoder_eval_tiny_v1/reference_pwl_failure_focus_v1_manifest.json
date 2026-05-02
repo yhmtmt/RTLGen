@@ -22,33 +22,33 @@
   "model_contract": "runs/models/llm_decoder_tiny_v1/model_contract.json",
   "samples": [
     {
-      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v2/dist2_arith_two_plus_two.json",
-      "reference_sha256": "1673bfeca007b424fafde5ffb26880f9262f8c405e592c20ecd2ef72ce4b49d7",
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_pwl_failure_focus_v1/dist2_arith_two_plus_two.json",
+      "reference_sha256": "fba40eb9f5362bef07d316617df5f6161d6341c29c015a8de78d91865b1403a0",
       "sample_id": "dist2_arith_two_plus_two"
     },
     {
-      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v2/dist2_arith_three_plus_five.json",
-      "reference_sha256": "c79b96c962c6c5a748bbda8496f978d1edec6842ab910b6a7d8cb89f32aba734",
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_pwl_failure_focus_v1/dist2_arith_three_plus_five.json",
+      "reference_sha256": "40b864ee076162eceb34ab9a44988389289528f1c0e560e56b4eb0e0ced00e88",
       "sample_id": "dist2_arith_three_plus_five"
     },
     {
-      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v2/dist2_arith_six_times_two.json",
-      "reference_sha256": "d0ed67255057aefcdadb2fad724a3ffe659aff828644ffa61695456e166eac73",
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_pwl_failure_focus_v1/dist2_arith_six_times_two.json",
+      "reference_sha256": "a7608c005e3e3de8eeb2710fc0a32d07e7d6996654e51c82927ea313a4fff16c",
       "sample_id": "dist2_arith_six_times_two"
     },
     {
-      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v2/dist2_sequence_numbers.json",
-      "reference_sha256": "0191584c834d9fc9842e54ccda57b249d99c6823976f12f9f6eeef2ffeddda84",
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_pwl_failure_focus_v1/dist2_sequence_numbers.json",
+      "reference_sha256": "45b07c76bd96b9581d11b88a43ba7a1ed17d1b66f4a6c60138df7adceeb62dcb",
       "sample_id": "dist2_sequence_numbers"
     },
     {
-      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v2/dist2_sequence_weekdays.json",
-      "reference_sha256": "3b09335918b3e639073080e4d65571728529b3830f212d2f77d2ce2755c1ea6a",
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_pwl_failure_focus_v1/dist2_sequence_weekdays.json",
+      "reference_sha256": "d9b5f3fbe8895b29dfadef2afe84c001db4d735fced8d776b8df4571476cc0e2",
       "sample_id": "dist2_sequence_weekdays"
     },
     {
-      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v2/dist2_sequence_months.json",
-      "reference_sha256": "b309228dde160071aa1b8d166e8e74f96c573f84f0f22d8449668d1b7a6648f5",
+      "reference_json": "runs/datasets/llm_decoder_eval_tiny_v1/reference_pwl_failure_focus_v1/dist2_sequence_months.json",
+      "reference_sha256": "8a5deafa9554c11a36d1edb0cace8c4524ba8852d156220e360da9fb25e3f71b",
       "sample_id": "dist2_sequence_months"
     }
   ],

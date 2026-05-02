@@ -1,0 +1,1771 @@
+{
+  "control_sample_ids": [
+    "dist2_arith_two_plus_two",
+    "dist2_arith_six_times_two",
+    "dist2_sequence_numbers",
+    "dist2_sequence_weekdays"
+  ],
+  "control_samples": [
+    {
+      "category": "arithmetic_short",
+      "exact_next": {
+        "token_id": 17673,
+        "token_text": " indigenous"
+      },
+      "expected_continuation": " 4",
+      "prompt": "2 + 2 =",
+      "sample_id": "dist2_arith_two_plus_two",
+      "templates": [
+        {
+          "candidate_next": {
+            "token_id": 17673,
+            "token_text": " indigenous"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "exact_softmax_variant",
+          "next_token_id_match": 1,
+          "template": "grid_exact_logits_q12",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 17673,
+            "token_text": " indigenous"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "exact_softmax_variant",
+          "next_token_id_match": 1,
+          "template": "grid_exact_logits_q10",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 17673,
+            "token_text": " indigenous"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "exact_softmax_variant",
+          "next_token_id_match": 1,
+          "template": "grid_exact_logits_q8",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 17673,
+            "token_text": " indigenous"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "exact_softmax_variant",
+          "next_token_id_match": 1,
+          "template": "grid_exact_logits_q6",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 17673,
+            "token_text": " indigenous"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "exact_softmax_variant",
+          "next_token_id_match": 1,
+          "template": "grid_exact_softmax_fp16_path",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 17673,
+            "token_text": " indigenous"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "exact_softmax_variant",
+          "next_token_id_match": 1,
+          "template": "grid_exact_softmax_bf16_path",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 17673,
+            "token_text": " indigenous"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_float_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 17673,
+            "token_text": " indigenous"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_fp16_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 17673,
+            "token_text": " indigenous"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_bf16_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 17673,
+            "token_text": " indigenous"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_bf16_path",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 17673,
+            "token_text": " indigenous"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_in_q12_w_q12_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 17673,
+            "token_text": " indigenous"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_in_q10_w_q10_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 17673,
+            "token_text": " indigenous"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_in_q8_w_q8_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 17673,
+            "token_text": " indigenous"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_in_q6_w_q6_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 17673,
+            "token_text": " indigenous"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_in_q8_w_fp_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 17673,
+            "token_text": " indigenous"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_in_fp_w_q8_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 17673,
+            "token_text": " indigenous"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q10",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 17673,
+            "token_text": " indigenous"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q12",
+          "topk_contains_reference_id": 1
+        }
+      ]
+    },
+    {
+      "category": "arithmetic_short",
+      "exact_next": {
+        "token_id": 796,
+        "token_text": " ="
+      },
+      "expected_continuation": " 12",
+      "prompt": "6 * 2 =",
+      "sample_id": "dist2_arith_six_times_two",
+      "templates": [
+        {
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "exact_softmax_variant",
+          "next_token_id_match": 1,
+          "template": "grid_exact_logits_q12",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "exact_softmax_variant",
+          "next_token_id_match": 1,
+          "template": "grid_exact_logits_q10",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "exact_softmax_variant",
+          "next_token_id_match": 1,
+          "template": "grid_exact_logits_q8",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "exact_softmax_variant",
+          "next_token_id_match": 1,
+          "template": "grid_exact_logits_q6",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "exact_softmax_variant",
+          "next_token_id_match": 1,
+          "template": "grid_exact_softmax_fp16_path",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "exact_softmax_variant",
+          "next_token_id_match": 1,
+          "template": "grid_exact_softmax_bf16_path",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_float_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_fp16_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_bf16_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_bf16_path",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_in_q12_w_q12_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_in_q10_w_q10_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_in_q8_w_q8_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_in_q6_w_q6_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_in_q8_w_fp_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_in_fp_w_q8_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q10",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q12",
+          "topk_contains_reference_id": 1
+        }
+      ]
+    },
+    {
+      "category": "list_continuation",
+      "exact_next": {
+        "token_id": 11,
+        "token_text": ","
+      },
+      "expected_continuation": " four",
+      "prompt": "one, two, three,",
+      "sample_id": "dist2_sequence_numbers",
+      "templates": [
+        {
+          "candidate_next": {
+            "token_id": 11,
+            "token_text": ","
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "exact_softmax_variant",
+          "next_token_id_match": 1,
+          "template": "grid_exact_logits_q12",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 11,
+            "token_text": ","
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "exact_softmax_variant",
+          "next_token_id_match": 1,
+          "template": "grid_exact_logits_q10",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 11,
+            "token_text": ","
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "exact_softmax_variant",
+          "next_token_id_match": 1,
+          "template": "grid_exact_logits_q8",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 11,
+            "token_text": ","
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "exact_softmax_variant",
+          "next_token_id_match": 1,
+          "template": "grid_exact_logits_q6",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 11,
+            "token_text": ","
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "exact_softmax_variant",
+          "next_token_id_match": 1,
+          "template": "grid_exact_softmax_fp16_path",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 11,
+            "token_text": ","
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "exact_softmax_variant",
+          "next_token_id_match": 1,
+          "template": "grid_exact_softmax_bf16_path",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 11,
+            "token_text": ","
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_float_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 11,
+            "token_text": ","
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_fp16_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 11,
+            "token_text": ","
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_bf16_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 11,
+            "token_text": ","
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_bf16_path",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 11,
+            "token_text": ","
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_in_q12_w_q12_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 11,
+            "token_text": ","
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_in_q10_w_q10_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 11,
+            "token_text": ","
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_in_q8_w_q8_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 11,
+            "token_text": ","
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_in_q6_w_q6_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 11,
+            "token_text": ","
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_in_q8_w_fp_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 11,
+            "token_text": ","
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_in_fp_w_q8_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 11,
+            "token_text": ","
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q10",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 11,
+            "token_text": ","
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q12",
+          "topk_contains_reference_id": 1
+        }
+      ]
+    },
+    {
+      "category": "list_continuation",
+      "exact_next": {
+        "token_id": 43963,
+        "token_text": " Drinking"
+      },
+      "expected_continuation": " Thursday",
+      "prompt": "Monday, Tuesday, Wednesday,",
+      "sample_id": "dist2_sequence_weekdays",
+      "templates": [
+        {
+          "candidate_next": {
+            "token_id": 43963,
+            "token_text": " Drinking"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "exact_softmax_variant",
+          "next_token_id_match": 1,
+          "template": "grid_exact_logits_q12",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 43963,
+            "token_text": " Drinking"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "exact_softmax_variant",
+          "next_token_id_match": 1,
+          "template": "grid_exact_logits_q10",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 43963,
+            "token_text": " Drinking"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "exact_softmax_variant",
+          "next_token_id_match": 1,
+          "template": "grid_exact_logits_q8",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 43963,
+            "token_text": " Drinking"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "exact_softmax_variant",
+          "next_token_id_match": 1,
+          "template": "grid_exact_logits_q6",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 43963,
+            "token_text": " Drinking"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "exact_softmax_variant",
+          "next_token_id_match": 1,
+          "template": "grid_exact_softmax_fp16_path",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 43963,
+            "token_text": " Drinking"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "exact_softmax_variant",
+          "next_token_id_match": 1,
+          "template": "grid_exact_softmax_bf16_path",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 43963,
+            "token_text": " Drinking"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_float_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 43963,
+            "token_text": " Drinking"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_fp16_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 43963,
+            "token_text": " Drinking"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_bf16_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 43963,
+            "token_text": " Drinking"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_bf16_path",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 43963,
+            "token_text": " Drinking"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_in_q12_w_q12_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 43963,
+            "token_text": " Drinking"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_in_q10_w_q10_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 43963,
+            "token_text": " Drinking"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_in_q8_w_q8_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 28172,
+            "token_text": "Everybody"
+          },
+          "exact_rank_in_candidate_topk": 2,
+          "family": "pwl",
+          "next_token_id_match": 0,
+          "template": "grid_approx_pwl_in_q6_w_q6_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 43963,
+            "token_text": " Drinking"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_in_q8_w_fp_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 43963,
+            "token_text": " Drinking"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_in_fp_w_q8_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 43963,
+            "token_text": " Drinking"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q10",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 43963,
+            "token_text": " Drinking"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q12",
+          "topk_contains_reference_id": 1
+        }
+      ]
+    }
+  ],
+  "diagnosis": {
+    "all_topk_safe": true,
+    "cause": "softmax_input_weight_precision_margin_sensitivity",
+    "exact_q12_focus_safe": true,
+    "exact_variants_focus_safe": false,
+    "pwl_float_focus_safe": true,
+    "pwl_float_misses_focus": false,
+    "pwl_q12_focus_safe": true,
+    "pwl_q8_misses_focus": true,
+    "recommended_next_step": "Promote q12 or fp16-style PWL rows to the next broad distribution check and estimate their hardware cost before accepting q8/bf16 exact-next behavior.",
+    "summary": "The unquantized PWL row and q12 PWL row preserve both focus samples, while q8 PWL flips both. Exact-softmax q10/q8 and bf16 variants also flip margin-sensitive focus samples. The immediate blocker is low-precision softmax input/weight or logit representation under tiny margins, not the PWL curve itself or reciprocal normalization."
+  },
+  "focus_sample_ids": [
+    "dist2_arith_three_plus_five",
+    "dist2_sequence_months"
+  ],
+  "focus_samples": [
+    {
+      "category": "arithmetic_short",
+      "exact_next": {
+        "token_id": 27146,
+        "token_text": " footsteps"
+      },
+      "expected_continuation": " 8",
+      "prompt": "3 + 5 =",
+      "sample_id": "dist2_arith_three_plus_five",
+      "templates": [
+        {
+          "candidate_next": {
+            "token_id": 27146,
+            "token_text": " footsteps"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "exact_softmax_variant",
+          "next_token_id_match": 1,
+          "template": "grid_exact_logits_q12",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "exact_rank_in_candidate_topk": 2,
+          "family": "exact_softmax_variant",
+          "next_token_id_match": 0,
+          "template": "grid_exact_logits_q10",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "exact_rank_in_candidate_topk": 2,
+          "family": "exact_softmax_variant",
+          "next_token_id_match": 0,
+          "template": "grid_exact_logits_q8",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "exact_rank_in_candidate_topk": 2,
+          "family": "exact_softmax_variant",
+          "next_token_id_match": 0,
+          "template": "grid_exact_logits_q6",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 27146,
+            "token_text": " footsteps"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "exact_softmax_variant",
+          "next_token_id_match": 1,
+          "template": "grid_exact_softmax_fp16_path",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "exact_rank_in_candidate_topk": 2,
+          "family": "exact_softmax_variant",
+          "next_token_id_match": 0,
+          "template": "grid_exact_softmax_bf16_path",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 27146,
+            "token_text": " footsteps"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_float_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "exact_rank_in_candidate_topk": 2,
+          "family": "pwl",
+          "next_token_id_match": 0,
+          "template": "grid_approx_pwl_fp16_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "exact_rank_in_candidate_topk": 2,
+          "family": "pwl",
+          "next_token_id_match": 0,
+          "template": "grid_approx_pwl_bf16_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "exact_rank_in_candidate_topk": 2,
+          "family": "pwl",
+          "next_token_id_match": 0,
+          "template": "grid_approx_pwl_bf16_path",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 27146,
+            "token_text": " footsteps"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_in_q12_w_q12_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "exact_rank_in_candidate_topk": 2,
+          "family": "pwl",
+          "next_token_id_match": 0,
+          "template": "grid_approx_pwl_in_q10_w_q10_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "exact_rank_in_candidate_topk": 2,
+          "family": "pwl",
+          "next_token_id_match": 0,
+          "template": "grid_approx_pwl_in_q8_w_q8_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "exact_rank_in_candidate_topk": 2,
+          "family": "pwl",
+          "next_token_id_match": 0,
+          "template": "grid_approx_pwl_in_q6_w_q6_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "exact_rank_in_candidate_topk": 2,
+          "family": "pwl",
+          "next_token_id_match": 0,
+          "template": "grid_approx_pwl_in_q8_w_fp_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "exact_rank_in_candidate_topk": 2,
+          "family": "pwl",
+          "next_token_id_match": 0,
+          "template": "grid_approx_pwl_in_fp_w_q8_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "exact_rank_in_candidate_topk": 2,
+          "family": "pwl",
+          "next_token_id_match": 0,
+          "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q10",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 796,
+            "token_text": " ="
+          },
+          "exact_rank_in_candidate_topk": 2,
+          "family": "pwl",
+          "next_token_id_match": 0,
+          "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q12",
+          "topk_contains_reference_id": 1
+        }
+      ]
+    },
+    {
+      "category": "list_continuation",
+      "exact_next": {
+        "token_id": 43963,
+        "token_text": " Drinking"
+      },
+      "expected_continuation": " April",
+      "prompt": "January, February, March,",
+      "sample_id": "dist2_sequence_months",
+      "templates": [
+        {
+          "candidate_next": {
+            "token_id": 43963,
+            "token_text": " Drinking"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "exact_softmax_variant",
+          "next_token_id_match": 1,
+          "template": "grid_exact_logits_q12",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 43963,
+            "token_text": " Drinking"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "exact_softmax_variant",
+          "next_token_id_match": 1,
+          "template": "grid_exact_logits_q10",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 11,
+            "token_text": ","
+          },
+          "exact_rank_in_candidate_topk": 2,
+          "family": "exact_softmax_variant",
+          "next_token_id_match": 0,
+          "template": "grid_exact_logits_q8",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 11,
+            "token_text": ","
+          },
+          "exact_rank_in_candidate_topk": 2,
+          "family": "exact_softmax_variant",
+          "next_token_id_match": 0,
+          "template": "grid_exact_logits_q6",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 43963,
+            "token_text": " Drinking"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "exact_softmax_variant",
+          "next_token_id_match": 1,
+          "template": "grid_exact_softmax_fp16_path",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 43963,
+            "token_text": " Drinking"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "exact_softmax_variant",
+          "next_token_id_match": 1,
+          "template": "grid_exact_softmax_bf16_path",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 43963,
+            "token_text": " Drinking"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_float_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 43963,
+            "token_text": " Drinking"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_fp16_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 11,
+            "token_text": ","
+          },
+          "exact_rank_in_candidate_topk": 2,
+          "family": "pwl",
+          "next_token_id_match": 0,
+          "template": "grid_approx_pwl_bf16_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 11,
+            "token_text": ","
+          },
+          "exact_rank_in_candidate_topk": 2,
+          "family": "pwl",
+          "next_token_id_match": 0,
+          "template": "grid_approx_pwl_bf16_path",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 43963,
+            "token_text": " Drinking"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_in_q12_w_q12_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 43963,
+            "token_text": " Drinking"
+          },
+          "exact_rank_in_candidate_topk": 1,
+          "family": "pwl",
+          "next_token_id_match": 1,
+          "template": "grid_approx_pwl_in_q10_w_q10_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 11,
+            "token_text": ","
+          },
+          "exact_rank_in_candidate_topk": 2,
+          "family": "pwl",
+          "next_token_id_match": 0,
+          "template": "grid_approx_pwl_in_q8_w_q8_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 11,
+            "token_text": ","
+          },
+          "exact_rank_in_candidate_topk": 2,
+          "family": "pwl",
+          "next_token_id_match": 0,
+          "template": "grid_approx_pwl_in_q6_w_q6_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 11,
+            "token_text": ","
+          },
+          "exact_rank_in_candidate_topk": 2,
+          "family": "pwl",
+          "next_token_id_match": 0,
+          "template": "grid_approx_pwl_in_q8_w_fp_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 11,
+            "token_text": ","
+          },
+          "exact_rank_in_candidate_topk": 2,
+          "family": "pwl",
+          "next_token_id_match": 0,
+          "template": "grid_approx_pwl_in_fp_w_q8_norm_exact",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 11,
+            "token_text": ","
+          },
+          "exact_rank_in_candidate_topk": 2,
+          "family": "pwl",
+          "next_token_id_match": 0,
+          "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q10",
+          "topk_contains_reference_id": 1
+        },
+        {
+          "candidate_next": {
+            "token_id": 11,
+            "token_text": ","
+          },
+          "exact_rank_in_candidate_topk": 2,
+          "family": "pwl",
+          "next_token_id_match": 0,
+          "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q12",
+          "topk_contains_reference_id": 1
+        }
+      ]
+    }
+  ],
+  "rough_grid": "decoder_pwl_logit_sensitivity_ladder_v1",
+  "sample_file": "runs/datasets/llm_decoder_eval_tiny_v1/samples_pwl_failure_focus_v1.jsonl",
+  "source_sweep": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_sweep__l2_decoder_pwl_logit_ladder_v1.json",
+  "template_summaries": [
+    {
+      "candidate_score_sum_min": 0.9999999999999898,
+      "candidate_top1_top2_score_margin_min": 2.2920967386487327e-08,
+      "control_misses": [],
+      "family": "exact_reference_proxy",
+      "focus_misses": [],
+      "logit_quant_bits": 0,
+      "next_token_match_rate": 1.0,
+      "next_token_matches": 6,
+      "normalization_mode": "exact",
+      "normalization_reciprocal_bits": 0,
+      "normalization_reciprocal_float_format": "",
+      "sample_count": 6,
+      "softmax_input_float_format": "",
+      "softmax_input_quant_bits": 0,
+      "softmax_mode": "exact",
+      "softmax_weight_float_format": "",
+      "softmax_weight_quant_bits": 0,
+      "template": "candidate_onnx_softmax_exact",
+      "topk_contains_reference_id_rate": 1.0,
+      "topk_matches": 6,
+      "topk_misses": []
+    },
+    {
+      "candidate_score_sum_min": 0.9999999999999922,
+      "candidate_top1_top2_score_margin_min": 2.2731548251155747e-08,
+      "control_misses": [],
+      "family": "exact_softmax_variant",
+      "focus_misses": [],
+      "logit_quant_bits": 12,
+      "next_token_match_rate": 1.0,
+      "next_token_matches": 6,
+      "normalization_mode": "exact",
+      "normalization_reciprocal_bits": 0,
+      "normalization_reciprocal_float_format": "",
+      "sample_count": 6,
+      "softmax_input_float_format": "",
+      "softmax_input_quant_bits": 0,
+      "softmax_mode": "exact",
+      "softmax_weight_float_format": "",
+      "softmax_weight_quant_bits": 0,
+      "template": "grid_exact_logits_q12",
+      "topk_contains_reference_id_rate": 1.0,
+      "topk_matches": 6,
+      "topk_misses": []
+    },
+    {
+      "candidate_score_sum_min": 0.999999999999931,
+      "candidate_top1_top2_score_margin_min": 0.0,
+      "control_misses": [],
+      "family": "exact_softmax_variant",
+      "focus_misses": [
+        "dist2_arith_three_plus_five"
+      ],
+      "logit_quant_bits": 10,
+      "next_token_match_rate": 0.8333333333333334,
+      "next_token_matches": 5,
+      "normalization_mode": "exact",
+      "normalization_reciprocal_bits": 0,
+      "normalization_reciprocal_float_format": "",
+      "sample_count": 6,
+      "softmax_input_float_format": "",
+      "softmax_input_quant_bits": 0,
+      "softmax_mode": "exact",
+      "softmax_weight_float_format": "",
+      "softmax_weight_quant_bits": 0,
+      "template": "grid_exact_logits_q10",
+      "topk_contains_reference_id_rate": 1.0,
+      "topk_matches": 6,
+      "topk_misses": []
+    },
+    {
+      "candidate_score_sum_min": 0.9999999999998183,
+      "candidate_top1_top2_score_margin_min": 0.0,
+      "control_misses": [],
+      "family": "exact_softmax_variant",
+      "focus_misses": [
+        "dist2_arith_three_plus_five",
+        "dist2_sequence_months"
+      ],
+      "logit_quant_bits": 8,
+      "next_token_match_rate": 0.6666666666666666,
+      "next_token_matches": 4,
+      "normalization_mode": "exact",
+      "normalization_reciprocal_bits": 0,
+      "normalization_reciprocal_float_format": "",
+      "sample_count": 6,
+      "softmax_input_float_format": "",
+      "softmax_input_quant_bits": 0,
+      "softmax_mode": "exact",
+      "softmax_weight_float_format": "",
+      "softmax_weight_quant_bits": 0,
+      "template": "grid_exact_logits_q8",
+      "topk_contains_reference_id_rate": 1.0,
+      "topk_matches": 6,
+      "topk_misses": []
+    },
+    {
+      "candidate_score_sum_min": 0.999999999999332,
+      "candidate_top1_top2_score_margin_min": 0.0,
+      "control_misses": [],
+      "family": "exact_softmax_variant",
+      "focus_misses": [
+        "dist2_arith_three_plus_five",
+        "dist2_sequence_months"
+      ],
+      "logit_quant_bits": 6,
+      "next_token_match_rate": 0.6666666666666666,
+      "next_token_matches": 4,
+      "normalization_mode": "exact",
+      "normalization_reciprocal_bits": 0,
+      "normalization_reciprocal_float_format": "",
+      "sample_count": 6,
+      "softmax_input_float_format": "",
+      "softmax_input_quant_bits": 0,
+      "softmax_mode": "exact",
+      "softmax_weight_float_format": "",
+      "softmax_weight_quant_bits": 0,
+      "template": "grid_exact_logits_q6",
+      "topk_contains_reference_id_rate": 1.0,
+      "topk_matches": 6,
+      "topk_misses": []
+    },
+    {
+      "candidate_score_sum_min": 0.9999999999999627,
+      "candidate_top1_top2_score_margin_min": 2.391892026597334e-08,
+      "control_misses": [],
+      "family": "exact_softmax_variant",
+      "focus_misses": [],
+      "logit_quant_bits": 0,
+      "next_token_match_rate": 1.0,
+      "next_token_matches": 6,
+      "normalization_mode": "exact",
+      "normalization_reciprocal_bits": 0,
+      "normalization_reciprocal_float_format": "",
+      "sample_count": 6,
+      "softmax_input_float_format": "fp16",
+      "softmax_input_quant_bits": 0,
+      "softmax_mode": "exact",
+      "softmax_weight_float_format": "fp16",
+      "softmax_weight_quant_bits": 0,
+      "template": "grid_exact_softmax_fp16_path",
+      "topk_contains_reference_id_rate": 1.0,
+      "topk_matches": 6,
+      "topk_misses": []
+    },
+    {
+      "candidate_score_sum_min": 0.9999999999998994,
+      "candidate_top1_top2_score_margin_min": 0.0,
+      "control_misses": [],
+      "family": "exact_softmax_variant",
+      "focus_misses": [
+        "dist2_arith_three_plus_five"
+      ],
+      "logit_quant_bits": 0,
+      "next_token_match_rate": 0.8333333333333334,
+      "next_token_matches": 5,
+      "normalization_mode": "exact",
+      "normalization_reciprocal_bits": 0,
+      "normalization_reciprocal_float_format": "",
+      "sample_count": 6,
+      "softmax_input_float_format": "bf16",
+      "softmax_input_quant_bits": 0,
+      "softmax_mode": "exact",
+      "softmax_weight_float_format": "bf16",
+      "softmax_weight_quant_bits": 0,
+      "template": "grid_exact_softmax_bf16_path",
+      "topk_contains_reference_id_rate": 1.0,
+      "topk_matches": 6,
+      "topk_misses": []
+    },
+    {
+      "candidate_score_sum_min": 0.9999999999999929,
+      "candidate_top1_top2_score_margin_min": 6.716157011520845e-09,
+      "control_misses": [],
+      "family": "pwl",
+      "focus_misses": [],
+      "logit_quant_bits": 0,
+      "next_token_match_rate": 1.0,
+      "next_token_matches": 6,
+      "normalization_mode": "exact",
+      "normalization_reciprocal_bits": 0,
+      "normalization_reciprocal_float_format": "",
+      "sample_count": 6,
+      "softmax_input_float_format": "",
+      "softmax_input_quant_bits": 0,
+      "softmax_mode": "approx_pwl",
+      "softmax_weight_float_format": "",
+      "softmax_weight_quant_bits": 0,
+      "template": "grid_approx_pwl_float_norm_exact",
+      "topk_contains_reference_id_rate": 1.0,
+      "topk_matches": 6,
+      "topk_misses": []
+    },
+    {
+      "candidate_score_sum_min": 0.9999999999999927,
+      "candidate_top1_top2_score_margin_min": 0.0,
+      "control_misses": [],
+      "family": "pwl",
+      "focus_misses": [
+        "dist2_arith_three_plus_five"
+      ],
+      "logit_quant_bits": 0,
+      "next_token_match_rate": 0.8333333333333334,
+      "next_token_matches": 5,
+      "normalization_mode": "exact",
+      "normalization_reciprocal_bits": 0,
+      "normalization_reciprocal_float_format": "",
+      "sample_count": 6,
+      "softmax_input_float_format": "fp16",
+      "softmax_input_quant_bits": 0,
+      "softmax_mode": "approx_pwl",
+      "softmax_weight_float_format": "fp16",
+      "softmax_weight_quant_bits": 0,
+      "template": "grid_approx_pwl_fp16_norm_exact",
+      "topk_contains_reference_id_rate": 1.0,
+      "topk_matches": 6,
+      "topk_misses": []
+    },
+    {
+      "candidate_score_sum_min": 0.9999999999999221,
+      "candidate_top1_top2_score_margin_min": 0.0,
+      "control_misses": [],
+      "family": "pwl",
+      "focus_misses": [
+        "dist2_arith_three_plus_five",
+        "dist2_sequence_months"
+      ],
+      "logit_quant_bits": 0,
+      "next_token_match_rate": 0.6666666666666666,
+      "next_token_matches": 4,
+      "normalization_mode": "exact",
+      "normalization_reciprocal_bits": 0,
+      "normalization_reciprocal_float_format": "",
+      "sample_count": 6,
+      "softmax_input_float_format": "bf16",
+      "softmax_input_quant_bits": 0,
+      "softmax_mode": "approx_pwl",
+      "softmax_weight_float_format": "bf16",
+      "softmax_weight_quant_bits": 0,
+      "template": "grid_approx_pwl_bf16_norm_exact",
+      "topk_contains_reference_id_rate": 1.0,
+      "topk_matches": 6,
+      "topk_misses": []
+    },
+    {
+      "candidate_score_sum_min": 0.9976632329635322,
+      "candidate_top1_top2_score_margin_min": 0.0,
+      "control_misses": [],
+      "family": "pwl",
+      "focus_misses": [
+        "dist2_arith_three_plus_five",
+        "dist2_sequence_months"
+      ],
+      "logit_quant_bits": 0,
+      "next_token_match_rate": 0.6666666666666666,
+      "next_token_matches": 4,
+      "normalization_mode": "reciprocal_float",
+      "normalization_reciprocal_bits": 0,
+      "normalization_reciprocal_float_format": "bf16",
+      "sample_count": 6,
+      "softmax_input_float_format": "bf16",
+      "softmax_input_quant_bits": 0,
+      "softmax_mode": "approx_pwl",
+      "softmax_weight_float_format": "bf16",
+      "softmax_weight_quant_bits": 0,
+      "template": "grid_approx_pwl_bf16_path",
+      "topk_contains_reference_id_rate": 1.0,
+      "topk_matches": 6,
+      "topk_misses": []
+    },
+    {
+      "candidate_score_sum_min": 1.0000000000000013,
+      "candidate_top1_top2_score_margin_min": 1.621133248658652e-08,
+      "control_misses": [],
+      "family": "pwl",
+      "focus_misses": [],
+      "logit_quant_bits": 0,
+      "next_token_match_rate": 1.0,
+      "next_token_matches": 6,
+      "normalization_mode": "exact",
+      "normalization_reciprocal_bits": 0,
+      "normalization_reciprocal_float_format": "",
+      "sample_count": 6,
+      "softmax_input_float_format": "",
+      "softmax_input_quant_bits": 12,
+      "softmax_mode": "approx_pwl",
+      "softmax_weight_float_format": "",
+      "softmax_weight_quant_bits": 12,
+      "template": "grid_approx_pwl_in_q12_w_q12_norm_exact",
+      "topk_contains_reference_id_rate": 1.0,
+      "topk_matches": 6,
+      "topk_misses": []
+    },
+    {
+      "candidate_score_sum_min": 1.0000000000000089,
+      "candidate_top1_top2_score_margin_min": 0.0,
+      "control_misses": [],
+      "family": "pwl",
+      "focus_misses": [
+        "dist2_arith_three_plus_five"
+      ],
+      "logit_quant_bits": 0,
+      "next_token_match_rate": 0.8333333333333334,
+      "next_token_matches": 5,
+      "normalization_mode": "exact",
+      "normalization_reciprocal_bits": 0,
+      "normalization_reciprocal_float_format": "",
+      "sample_count": 6,
+      "softmax_input_float_format": "",
+      "softmax_input_quant_bits": 10,
+      "softmax_mode": "approx_pwl",
+      "softmax_weight_float_format": "",
+      "softmax_weight_quant_bits": 10,
+      "template": "grid_approx_pwl_in_q10_w_q10_norm_exact",
+      "topk_contains_reference_id_rate": 1.0,
+      "topk_matches": 6,
+      "topk_misses": []
+    },
+    {
+      "candidate_score_sum_min": 0.9999999999996334,
+      "candidate_top1_top2_score_margin_min": 0.0,
+      "control_misses": [],
+      "family": "pwl",
+      "focus_misses": [
+        "dist2_arith_three_plus_five",
+        "dist2_sequence_months"
+      ],
+      "logit_quant_bits": 0,
+      "next_token_match_rate": 0.6666666666666666,
+      "next_token_matches": 4,
+      "normalization_mode": "exact",
+      "normalization_reciprocal_bits": 0,
+      "normalization_reciprocal_float_format": "",
+      "sample_count": 6,
+      "softmax_input_float_format": "",
+      "softmax_input_quant_bits": 8,
+      "softmax_mode": "approx_pwl",
+      "softmax_weight_float_format": "",
+      "softmax_weight_quant_bits": 8,
+      "template": "grid_approx_pwl_in_q8_w_q8_norm_exact",
+      "topk_contains_reference_id_rate": 1.0,
+      "topk_matches": 6,
+      "topk_misses": []
+    },
+    {
+      "candidate_score_sum_min": 0.9999999999997687,
+      "candidate_top1_top2_score_margin_min": 0.0,
+      "control_misses": [
+        "dist2_sequence_weekdays"
+      ],
+      "family": "pwl",
+      "focus_misses": [
+        "dist2_arith_three_plus_five",
+        "dist2_sequence_months"
+      ],
+      "logit_quant_bits": 0,
+      "next_token_match_rate": 0.5,
+      "next_token_matches": 3,
+      "normalization_mode": "exact",
+      "normalization_reciprocal_bits": 0,
+      "normalization_reciprocal_float_format": "",
+      "sample_count": 6,
+      "softmax_input_float_format": "",
+      "softmax_input_quant_bits": 6,
+      "softmax_mode": "approx_pwl",
+      "softmax_weight_float_format": "",
+      "softmax_weight_quant_bits": 6,
+      "template": "grid_approx_pwl_in_q6_w_q6_norm_exact",
+      "topk_contains_reference_id_rate": 1.0,
+      "topk_matches": 6,
+      "topk_misses": []
+    },
+    {
+      "candidate_score_sum_min": 0.999999999999794,
+      "candidate_top1_top2_score_margin_min": 0.0,
+      "control_misses": [],
+      "family": "pwl",
+      "focus_misses": [
+        "dist2_arith_three_plus_five",
+        "dist2_sequence_months"
+      ],
+      "logit_quant_bits": 0,
+      "next_token_match_rate": 0.6666666666666666,
+      "next_token_matches": 4,
+      "normalization_mode": "exact",
+      "normalization_reciprocal_bits": 0,
+      "normalization_reciprocal_float_format": "",
+      "sample_count": 6,
+      "softmax_input_float_format": "",
+      "softmax_input_quant_bits": 8,
+      "softmax_mode": "approx_pwl",
+      "softmax_weight_float_format": "",
+      "softmax_weight_quant_bits": 0,
+      "template": "grid_approx_pwl_in_q8_w_fp_norm_exact",
+      "topk_contains_reference_id_rate": 1.0,
+      "topk_matches": 6,
+      "topk_misses": []
+    },
+    {
+      "candidate_score_sum_min": 0.999999999999954,
+      "candidate_top1_top2_score_margin_min": 0.0,
+      "control_misses": [],
+      "family": "pwl",
+      "focus_misses": [
+        "dist2_arith_three_plus_five",
+        "dist2_sequence_months"
+      ],
+      "logit_quant_bits": 0,
+      "next_token_match_rate": 0.6666666666666666,
+      "next_token_matches": 4,
+      "normalization_mode": "exact",
+      "normalization_reciprocal_bits": 0,
+      "normalization_reciprocal_float_format": "",
+      "sample_count": 6,
+      "softmax_input_float_format": "",
+      "softmax_input_quant_bits": 0,
+      "softmax_mode": "approx_pwl",
+      "softmax_weight_float_format": "",
+      "softmax_weight_quant_bits": 8,
+      "template": "grid_approx_pwl_in_fp_w_q8_norm_exact",
+      "topk_contains_reference_id_rate": 1.0,
+      "topk_matches": 6,
+      "topk_misses": []
+    },
+    {
+      "candidate_score_sum_min": 0.9993511614155365,
+      "candidate_top1_top2_score_margin_min": 0.0,
+      "control_misses": [],
+      "family": "pwl",
+      "focus_misses": [
+        "dist2_arith_three_plus_five",
+        "dist2_sequence_months"
+      ],
+      "logit_quant_bits": 0,
+      "next_token_match_rate": 0.6666666666666666,
+      "next_token_matches": 4,
+      "normalization_mode": "reciprocal_quantized",
+      "normalization_reciprocal_bits": 10,
+      "normalization_reciprocal_float_format": "",
+      "sample_count": 6,
+      "softmax_input_float_format": "",
+      "softmax_input_quant_bits": 8,
+      "softmax_mode": "approx_pwl",
+      "softmax_weight_float_format": "",
+      "softmax_weight_quant_bits": 8,
+      "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q10",
+      "topk_contains_reference_id_rate": 1.0,
+      "topk_matches": 6,
+      "topk_misses": []
+    },
+    {
+      "candidate_score_sum_min": 0.9999467168007046,
+      "candidate_top1_top2_score_margin_min": 0.0,
+      "control_misses": [],
+      "family": "pwl",
+      "focus_misses": [
+        "dist2_arith_three_plus_five",
+        "dist2_sequence_months"
+      ],
+      "logit_quant_bits": 0,
+      "next_token_match_rate": 0.6666666666666666,
+      "next_token_matches": 4,
+      "normalization_mode": "reciprocal_quantized",
+      "normalization_reciprocal_bits": 12,
+      "normalization_reciprocal_float_format": "",
+      "sample_count": 6,
+      "softmax_input_float_format": "",
+      "softmax_input_quant_bits": 8,
+      "softmax_mode": "approx_pwl",
+      "softmax_weight_float_format": "",
+      "softmax_weight_quant_bits": 8,
+      "template": "grid_approx_pwl_in_q8_w_q8_norm_recip_q12",
+      "topk_contains_reference_id_rate": 1.0,
+      "topk_matches": 6,
+      "topk_misses": []
+    }
+  ],
+  "version": 0.1
+}
