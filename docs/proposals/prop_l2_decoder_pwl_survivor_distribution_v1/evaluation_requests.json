@@ -1,0 +1,25 @@
+{
+  "proposal_id": "prop_l2_decoder_pwl_survivor_distribution_v1",
+  "source_commit": "24c640512fd80d206a1cc585a36645c00d87664f",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_pwl_survivor_distribution_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run a broad distribution check for q12 and fp16-style PWL survivor candidates.",
+      "evaluation_mode": "broad_ranking",
+      "abstraction_layer": "decoder_pwl_survivor_distribution",
+      "comparison_role": "ranking",
+      "paired_baseline_item_id": "",
+      "depends_on_item_ids": [
+        "l2_decoder_pwl_logit_ladder_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Determine whether focused q12/unquantized PWL recovery survives the expanded v2 prompt distribution before RTL/PPA calibration."
+      },
+      "status": "draft"
+    }
+  ]
+}
