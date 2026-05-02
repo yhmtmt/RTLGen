@@ -1,0 +1,11 @@
+{
+  "proposal_id": "prop_l1_decoder_q12_pwl_softmax_datapath_v1",
+  "candidate_id": "softmax_rowwise_q12_pwl_r8_acc28",
+  "decision": "pending",
+  "reason": "Awaiting L1 PPA measurement for l1_decoder_q12_pwl_softmax_datapath_v1.",
+  "evidence_refs": [
+    "item:l1_decoder_q12_pwl_softmax_datapath_v1"
+  ],
+  "next_action": "Consume evaluator result, compare q12 PWL PPA against q8 reciprocal and bf16 normalization datapath results, then decide whether to queue reciprocal q12 PWL or dynamic-quantizer calibration.",
+  "requires_human_approval": true
+}

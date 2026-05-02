@@ -1,0 +1,14 @@
+{
+  "proposal_id": "prop_l1_decoder_q12_pwl_softmax_datapath_v1",
+  "source_commit": "180842b289eacc28b747bd5c58c959bec9b9d0e8",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_q12_pwl_softmax_datapath_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for the integrated q12 PWL-exp row-wise softmax block with exact normalization.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "circuit_block",
+      "status": "pending"
+    }
+  ]
+}
