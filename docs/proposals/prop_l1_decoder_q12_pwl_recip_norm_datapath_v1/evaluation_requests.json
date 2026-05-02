@@ -1,0 +1,14 @@
+{
+  "proposal_id": "prop_l1_decoder_q12_pwl_recip_norm_datapath_v1",
+  "source_commit": "859e5fddd225b9a81e6b491a50267482c5020535",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_q12_pwl_recip_norm_datapath_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for q12 PWL-exp row-wise softmax blocks with q10/q12/q14/q16 bucketed reciprocal normalization.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "circuit_block",
+      "status": "pending"
+    }
+  ]
+}
