@@ -93,6 +93,7 @@ def _rough_grid_templates(model_contract: JsonDict, grid_name: str) -> Dict[str,
         "decoder_survivor_prompt_stress_v1",
         "decoder_q8_normalization_frontier_v1",
         "decoder_pwl_logit_sensitivity_ladder_v1",
+        "decoder_pwl_survivor_distribution_v1",
     }:
         raise ValueError(f"unsupported rough grid: {grid_name}")
     exact = _candidate_template(model_contract, "candidate_onnx_softmax_exact")
@@ -422,6 +423,84 @@ def _rough_grid_templates(model_contract: JsonDict, grid_name: str) -> Dict[str,
             ),
         ]
         return {name: cfg for name, cfg in points}
+    if grid_name == "decoder_pwl_survivor_distribution_v1":
+        points = [
+            ("candidate_onnx_softmax_exact", exact),
+            _named_grid_point(exact, "grid_exact_logits_q12", logit_quant_bits=12),
+            _named_grid_point(exact, "grid_exact_logits_q10", logit_quant_bits=10),
+            _named_grid_point(exact, "grid_exact_logits_q8", logit_quant_bits=8),
+            _named_grid_point(
+                exact,
+                "grid_exact_softmax_fp16_path",
+                softmax_input_float_format="fp16",
+                softmax_weight_float_format="fp16",
+            ),
+            _named_grid_point(
+                exact,
+                "grid_exact_softmax_bf16_path",
+                softmax_input_float_format="bf16",
+                softmax_weight_float_format="bf16",
+            ),
+            _named_grid_point(
+                approx,
+                "grid_approx_pwl_float_norm_exact",
+                softmax_input_quant_bits=None,
+                softmax_weight_quant_bits=None,
+                normalization_mode="exact",
+                normalization_reciprocal_bits=None,
+                normalization_reciprocal_float_format=None,
+            ),
+            _named_grid_point(
+                approx,
+                "grid_approx_pwl_fp16_norm_exact",
+                softmax_input_quant_bits=None,
+                softmax_weight_quant_bits=None,
+                softmax_input_float_format="fp16",
+                softmax_weight_float_format="fp16",
+                normalization_mode="exact",
+                normalization_reciprocal_bits=None,
+                normalization_reciprocal_float_format=None,
+            ),
+            _named_grid_point(
+                approx,
+                "grid_approx_pwl_bf16_norm_exact",
+                softmax_input_quant_bits=None,
+                softmax_weight_quant_bits=None,
+                softmax_input_float_format="bf16",
+                softmax_weight_float_format="bf16",
+                normalization_mode="exact",
+                normalization_reciprocal_bits=None,
+                normalization_reciprocal_float_format=None,
+            ),
+            _named_grid_point(
+                approx,
+                "grid_approx_pwl_in_q12_w_q12_norm_exact",
+                softmax_input_quant_bits=12,
+                softmax_weight_quant_bits=12,
+                normalization_mode="exact",
+                normalization_reciprocal_bits=None,
+                normalization_reciprocal_float_format=None,
+            ),
+            _named_grid_point(
+                approx,
+                "grid_approx_pwl_in_q10_w_q10_norm_exact",
+                softmax_input_quant_bits=10,
+                softmax_weight_quant_bits=10,
+                normalization_mode="exact",
+                normalization_reciprocal_bits=None,
+                normalization_reciprocal_float_format=None,
+            ),
+            _named_grid_point(
+                approx,
+                "grid_approx_pwl_in_q8_w_q8_norm_exact",
+                softmax_input_quant_bits=8,
+                softmax_weight_quant_bits=8,
+                normalization_mode="exact",
+                normalization_reciprocal_bits=None,
+                normalization_reciprocal_float_format=None,
+            ),
+        ]
+        return {name: cfg for name, cfg in points}
     points = [
         ("candidate_onnx_softmax_exact", exact),
         _named_grid_point(exact, "grid_exact_logits_q8", logit_quant_bits=8),
@@ -636,7 +715,7 @@ def main() -> int:
             "Generate a built-in rough approximation grid, e.g. decoder_probability_broad_v1, "
             "decoder_probability_fp_formats_v1, decoder_distribution_robustness_v1, or "
             "decoder_survivor_prompt_stress_v1, decoder_q8_normalization_frontier_v1, "
-            "or decoder_pwl_logit_sensitivity_ladder_v1."
+            "decoder_pwl_logit_sensitivity_ladder_v1, or decoder_pwl_survivor_distribution_v1."
         ),
     )
     ap.add_argument("--out-dir", default="runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/local")

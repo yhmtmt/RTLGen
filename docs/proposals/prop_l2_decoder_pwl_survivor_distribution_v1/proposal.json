@@ -1,0 +1,61 @@
+{
+  "proposal_id": "prop_l2_decoder_pwl_survivor_distribution_v1",
+  "created_utc": "2026-05-02T02:10:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Decoder PWL survivor broad distribution check",
+  "hypothesis": "The focused ladder showed q12 and unquantized PWL can recover the margin-sensitive failures that q8/bf16 PWL lose. Reusing the expanded v2 prompt distribution should show whether q12/fp16-style PWL behavior is broadly stable enough to justify RTL/PPA calibration.",
+  "direct_comparison": {
+    "primary_question": "Across the expanded v2 prompt-regime dataset, do q12/unquantized PWL survivor rows preserve exact next-token and top-k behavior while q10/q8/bf16 controls expose the precision boundary?",
+    "include": [
+      "expanded distribution v2 prompt set",
+      "exact-softmax q12/q10/q8 logit controls",
+      "exact-softmax fp16/bf16 input and weight controls",
+      "unquantized PWL exact-normalization row",
+      "PWL fp16/bf16 exact-normalization rows",
+      "PWL q12/q10/q8 input and weight rows"
+    ],
+    "exclude": [
+      "new RTL or OpenROAD measurements",
+      "new model or tokenizer bindings",
+      "accepting q12/fp16 PWL for hardware without a follow-up PPA calibration"
+    ]
+  },
+  "expected_benefit": [
+    "tests the focused q12 PWL recovery across a broader prompt distribution",
+    "keeps q10/q8/bf16 rows as lower-precision negative controls",
+    "separates broad quality risk from later hardware cost calibration"
+  ],
+  "risks": [
+    "the expanded v2 set is still a tiny-model exploratory dataset",
+    "exact next-token behavior remains margin-sensitive and should be interpreted with top-k context",
+    "a broad quality survivor may still be too expensive after RTL/PPA calibration"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_pwl_survivor_distribution_v1",
+      "task_type": "l2_campaign",
+      "objective": "decoder_pwl_survivor_distribution",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json",
+      "evaluation_mode": "broad_ranking",
+      "abstraction_layer": "decoder_pwl_survivor_distribution",
+      "depends_on_item_ids": [
+        "l2_decoder_pwl_logit_ladder_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_decoder_pwl_logit_ladder_v1/proposal.json",
+    "runs/datasets/llm_decoder_eval_tiny_v1/decoder_pwl_logit_ladder__l2_decoder_pwl_logit_ladder_v1.json",
+    "runs/datasets/llm_decoder_eval_tiny_v1/manifest_distribution_v2.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/sweep_llm_decoder_candidate_quality.py",
+    "npu/eval/summarize_llm_decoder_pwl_survivor_distribution.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}

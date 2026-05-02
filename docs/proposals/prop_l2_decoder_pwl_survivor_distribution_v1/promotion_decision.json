@@ -1,0 +1,5 @@
+{
+  "proposal_id": "prop_l2_decoder_pwl_survivor_distribution_v1",
+  "status": "pending_evaluation",
+  "next_action": "Wait for l2_decoder_pwl_survivor_distribution_v1 evaluator artifacts, then decide whether q12 or fp16-style PWL should receive RTL/PPA calibration."
+}

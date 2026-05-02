@@ -187,6 +187,37 @@ This ladder keeps the two failing broad-v2 samples and nearby arithmetic/list
 controls together. It separates exact-softmax logit quantization, unquantized
 PWL, PWL input/weight precision, and normalization precision.
 
+Run the broad distribution check for the PWL survivor rows:
+```sh
+python3 npu/eval/gen_llm_decoder_reference_suite.py \
+  --dataset-manifest runs/datasets/llm_decoder_eval_tiny_v1/manifest_distribution_v2.json \
+  --out-dir /tmp/reference_distribution_v2 \
+  --out-manifest /tmp/reference_distribution_v2_manifest.json
+python3 npu/eval/gen_llm_decoder_candidate_suite.py \
+  --dataset-manifest runs/datasets/llm_decoder_eval_tiny_v1/manifest_distribution_v2.json \
+  --out-dir /tmp/candidate_distribution_v2 \
+  --out-manifest /tmp/candidate_distribution_v2_manifest.json
+jq '.reference_manifest="/tmp/reference_distribution_v2_manifest.json" |
+    .candidate_manifest="/tmp/candidate_distribution_v2_manifest.json"' \
+  runs/datasets/llm_decoder_eval_tiny_v1/manifest_distribution_v2.json \
+  > /tmp/manifest_distribution_v2.json
+python3 npu/eval/sweep_llm_decoder_candidate_quality.py \
+  --dataset-manifest /tmp/manifest_distribution_v2.json \
+  --rough-grid decoder_pwl_survivor_distribution_v1 \
+  --out-dir /tmp/decoder_pwl_survivor_distribution_sweep \
+  --out /tmp/decoder_pwl_survivor_distribution_sweep.json
+python3 npu/eval/summarize_llm_decoder_pwl_survivor_distribution.py \
+  --sweep /tmp/decoder_pwl_survivor_distribution_sweep.json \
+  --sample-file runs/datasets/llm_decoder_eval_tiny_v1/samples_distribution_v2.jsonl \
+  --out /tmp/decoder_pwl_survivor_distribution.json \
+  --out-md /tmp/decoder_pwl_survivor_distribution.md
+```
+
+This grid promotes the focused q12/unquantized PWL recovery to the expanded v2
+prompt distribution and keeps q10/q8/bf16 rows as precision controls. Passing
+this check is quality evidence for a later RTL/PPA calibration, not hardware
+acceptance by itself.
+
 Run the focused survivor prompt-stress grid:
 ```sh
 python3 npu/eval/gen_llm_decoder_reference_suite.py \

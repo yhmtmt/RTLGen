@@ -1275,6 +1275,107 @@ def _decoder_pwl_logit_sensitivity_ladder_evidence(*, item_id: str) -> dict[str,
     }
 
 
+def _decoder_pwl_survivor_distribution_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_tiny_v1"
+    dataset_manifest = f"{base}/manifest_distribution_v2.json"
+    sample_file = f"{base}/samples_distribution_v2.jsonl"
+    reference_dir = f"{base}/reference_distribution_v2"
+    reference_manifest = f"{base}/reference_distribution_v2_manifest.json"
+    candidate_dir = f"{base}/candidate_distribution_v2"
+    candidate_manifest = f"{base}/candidate_distribution_v2_manifest.json"
+    validation_out = f"{base}/decoder_contract_validation__{item_id}.json"
+    quality_out = f"{base}/decoder_quality_compare__{item_id}.json"
+    sweep_dir = f"{base}/candidate_sweeps/{item_id}"
+    sweep_out = f"{base}/decoder_quality_sweep__{item_id}.json"
+    summary_out = f"{base}/decoder_pwl_survivor_distribution__{item_id}.json"
+    summary_report = f"{base}/decoder_pwl_survivor_distribution__{item_id}.md"
+    rough_grid = "decoder_pwl_survivor_distribution_v1"
+    commands = [
+        {
+            "name": "generate_decoder_pwl_survivor_distribution_reference",
+            "run": (
+                "python3 npu/eval/gen_llm_decoder_reference_suite.py "
+                f"--dataset-manifest {dataset_manifest} "
+                f"--out-dir {reference_dir} "
+                f"--out-manifest {reference_manifest}"
+            ),
+        },
+        {
+            "name": "generate_decoder_pwl_survivor_distribution_candidate",
+            "run": (
+                "python3 npu/eval/gen_llm_decoder_candidate_suite.py "
+                f"--dataset-manifest {dataset_manifest} "
+                f"--out-dir {candidate_dir} "
+                f"--out-manifest {candidate_manifest}"
+            ),
+        },
+        {
+            "name": "validate_decoder_pwl_survivor_distribution_contract",
+            "run": f"python3 npu/eval/validate_llm_decoder_contract.py --dataset-manifest {dataset_manifest} --out {validation_out}",
+        },
+        {
+            "name": "compare_decoder_pwl_survivor_distribution_quality",
+            "run": (
+                "python3 npu/eval/compare_llm_decoder_quality.py "
+                f"--reference-manifest {reference_manifest} "
+                f"--candidate-manifest {candidate_manifest} "
+                f"--out {quality_out}"
+            ),
+        },
+        {
+            "name": "sweep_decoder_pwl_survivor_distribution",
+            "run": (
+                "python3 npu/eval/sweep_llm_decoder_candidate_quality.py "
+                f"--dataset-manifest {dataset_manifest} "
+                f"--rough-grid {rough_grid} "
+                f"--out-dir {sweep_dir} "
+                f"--out {sweep_out}"
+            ),
+        },
+        {
+            "name": "summarize_decoder_pwl_survivor_distribution",
+            "run": (
+                "python3 npu/eval/summarize_llm_decoder_pwl_survivor_distribution.py "
+                f"--sweep {sweep_out} "
+                f"--sample-file {sample_file} "
+                f"--out {summary_out} "
+                f"--out-md {summary_report}"
+            ),
+        },
+    ]
+    return {
+        "inputs": {
+            "dataset_manifest": dataset_manifest,
+            "sample_file": sample_file,
+            "reference_dir": reference_dir,
+            "reference_manifest": reference_manifest,
+            "candidate_dir": candidate_dir,
+            "candidate_manifest": candidate_manifest,
+            "validation_out": validation_out,
+            "quality_out": quality_out,
+            "candidate_sweep_dir": sweep_dir,
+            "candidate_sweep_out": sweep_out,
+            "candidate_sweep_grid": rough_grid,
+            "survivor_distribution_out": summary_out,
+            "survivor_distribution_report": summary_report,
+            "survivor_distribution_scope": (
+                "expanded v2 broad prompt-regime check for q12/unquantized PWL survivors, "
+                "with fp16/bf16, q10, and q8 rows kept as precision controls before RTL/PPA promotion"
+            ),
+        },
+        "commands": commands,
+        "expected_outputs": [
+            reference_manifest,
+            candidate_manifest,
+            validation_out,
+            quality_out,
+            sweep_out,
+            summary_out,
+            summary_report,
+        ],
+    }
+
+
 def _with_fresh_outputs(*, campaign: dict[str, Any], item_id: str) -> dict[str, Any]:
     cloned = json.loads(json.dumps(campaign))
     outputs = dict(cloned.get("outputs") or {})
@@ -1385,10 +1486,13 @@ def _build_payload(
         "decoder_q8_normalization_distribution_broad_v2",
         "decoder_pwl_failure_diagnosis",
         "decoder_pwl_logit_sensitivity_ladder",
+        "decoder_pwl_survivor_distribution",
         "decoder_quantization_outline",
     }:
         if abstraction_layer_name == "decoder_quantization_outline":
             decoder_evidence = _decoder_quantization_outline_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_pwl_survivor_distribution":
+            decoder_evidence = _decoder_pwl_survivor_distribution_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_pwl_logit_sensitivity_ladder":
             decoder_evidence = _decoder_pwl_logit_sensitivity_ladder_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_pwl_failure_diagnosis":
