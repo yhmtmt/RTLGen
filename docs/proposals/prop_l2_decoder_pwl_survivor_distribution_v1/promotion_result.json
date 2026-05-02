@@ -2,8 +2,8 @@
   "proposal_id": "prop_l2_decoder_pwl_survivor_distribution_v1",
   "status": "pending_evaluation",
   "result": null,
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "iterate",
+  "pr_number": 332,
+  "merge_commit": "dc4d49c5d4e1dc8d8935c1c62cd8381b09b06790",
+  "merged_utc": "2026-05-02T05:20:48.007717Z"
 }

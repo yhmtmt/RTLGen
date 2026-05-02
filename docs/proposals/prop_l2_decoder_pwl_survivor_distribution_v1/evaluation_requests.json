@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_pwl_survivor_distribution_v1",
-  "source_commit": "c68828bf7cefeca120168c3685a7a5eb82fc20bc",
+  "source_commit": "c0687285c736ab63c0ad05b97dc2915721a941e7",
   "requested_items": [
     {
       "item_id": "l2_decoder_pwl_survivor_distribution_v1",
@@ -19,9 +19,13 @@
         "direction": "iterate",
         "reason": "Determine whether focused q12/unquantized PWL recovery survives the expanded v2 prompt distribution before RTL/PPA calibration."
       },
-      "status": "queued",
+      "status": "merged",
       "task_request_id": "59254f82-122c-421c-858d-d2d003ad4862",
-      "work_item_id": "6438b112-fd73-4890-a559-475e4fed4c7e"
+      "work_item_id": "6438b112-fd73-4890-a559-475e4fed4c7e",
+      "merged_pr_number": 332,
+      "merge_commit": "dc4d49c5d4e1dc8d8935c1c62cd8381b09b06790",
+      "merged_utc": "2026-05-02T05:20:48.007717Z",
+      "notes": "Merged via PR #332 and merge dc4d49c5d4e1dc8d8935c1c62cd8381b09b06790 at 2026-05-02T05:20:48.007717Z."
     }
   ]
 }

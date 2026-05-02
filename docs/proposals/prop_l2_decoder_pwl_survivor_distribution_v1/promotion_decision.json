@@ -1,6 +1,16 @@
 {
   "proposal_id": "prop_l2_decoder_pwl_survivor_distribution_v1",
   "status": "pending_evaluation",
-  "next_action": "Wait for l2_decoder_pwl_survivor_distribution_v1 evaluator artifacts, then decide whether q12 or fp16-style PWL should receive RTL/PPA calibration.",
-  "decision": "iterate"
+  "next_action": "inspect follow-on work after l2_decoder_pwl_survivor_distribution_v1",
+  "decision": "iterate",
+  "candidate_id": "l2_decoder_pwl_survivor_distribution_v1",
+  "reason": "Broad ranking evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
+  "evidence_refs": [
+    "item:l2_decoder_pwl_survivor_distribution_v1",
+    "run:l2_decoder_pwl_survivor_distribution_v1_run_d739ed82f5f932c3",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_pwl_survivor_distribution_v1.json",
+    "pr:#332",
+    "https://github.com/yhmtmt/RTLGen/pull/332"
+  ],
+  "requires_human_approval": false
 }

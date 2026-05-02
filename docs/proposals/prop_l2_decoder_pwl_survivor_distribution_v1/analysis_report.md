@@ -1,9 +1,32 @@
 # Analysis Report
 
-Pending evaluator results for `l2_decoder_pwl_survivor_distribution_v1`.
+## Candidate
+- `proposal_id`: `prop_l2_decoder_pwl_survivor_distribution_v1`
+- `candidate_id`: `l2_decoder_pwl_survivor_distribution_v1`
 
-The expected interpretation is:
+## Evaluations Consumed
+- `l2_decoder_pwl_survivor_distribution_v1`
+- `l2_decoder_pwl_survivor_distribution_v1_run_d739ed82f5f932c3`
+- source commit: `c0687285c736ab63c0ad05b97dc2915721a941e7`
+- review: PR #332
 
-- exact-safe q12/unquantized PWL: promote survivor rows to RTL/PPA calibration
-- top-k-safe but not exact-safe q12 PWL: inspect category misses and margins
-- q12 PWL broad failure: return to PWL curve or precision design before hardware
+## Baseline Comparison
+- baseline_ref: `None`
+- baseline_item_id: `None`
+- outcome: `ranking_recorded`
+- summary: Broad ranking evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.
+
+## Result
+- result: `iterate`
+- confidence level: merged accepted evidence
+- estimated optimization room: pending follow-on comparison
+- architecture conclusion robustness: staged evidence
+- summary: Broad ranking evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.
+
+## Failures and Caveats
+- no additional caveats recorded during automatic finalization
+
+## Recommendation
+- `iterate`
+- reason: Broad ranking evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.
+- next_action: inspect follow-on work after l2_decoder_pwl_survivor_distribution_v1
