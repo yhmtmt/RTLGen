@@ -1,0 +1,11 @@
+{
+  "proposal_id": "prop_l1_decoder_q12_pwl_recip_norm_datapath_v1",
+  "candidate_id": "l1_decoder_q12_pwl_recip_norm_datapath_v1",
+  "decision": "pending",
+  "reason": "Awaiting L1 PPA measurement for q12 PWL reciprocal normalization.",
+  "evidence_refs": [
+    "item:l1_decoder_q12_pwl_recip_norm_datapath_v1"
+  ],
+  "next_action": "Consume evaluator result, compare against q12 PWL exact normalization and q8/bf16 reciprocal baselines, then decide whether to run Layer-2 quality validation.",
+  "requires_human_approval": true
+}
