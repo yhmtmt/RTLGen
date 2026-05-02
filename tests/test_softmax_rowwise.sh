@@ -62,4 +62,45 @@ if got != expected:
 PY
 iverilog -g2012 -DSOFTMAX_RECIP_Q10_BUCKETED -s softmax_rowwise_tb -o sim_recip softmax_rowwise_int8_r4.v "$ROOT/tests/softmax_rowwise_tb.v"
 vvp sim_recip
+
+python3 - <<'PY'
+import json
+from pathlib import Path
+
+cfg = {
+    "version": "1.1",
+    "operands": [{"name": "logits", "dimensions": 1, "bit_width": 12, "signed": True}],
+    "operations": [
+        {
+            "type": "softmax_rowwise",
+            "module_name": "softmax_rowwise_q12_pwl_r4",
+            "operand": "logits",
+            "options": {
+                "impl": "pwl_exp",
+                "row_elems": 4,
+                "input_frac_bits": 8,
+                "weight_bits": 12,
+                "accum_bits": 28,
+                "output_scale": 4095,
+                "normalization_mode": "exact",
+            },
+        }
+    ],
+}
+Path("config_q12_pwl.json").write_text(json.dumps(cfg, indent=2) + "\n", encoding="utf-8")
+PY
+"$ROOT/build/rtlgen" config_q12_pwl.json
+python3 "$ROOT/scripts/softmax_rowwise_ref.py" --config config_q12_pwl.json --row 0,0,0,0 --row 0,-512,-1024,-2048 > ref_q12_pwl.json
+python3 - <<'PY'
+import json
+from pathlib import Path
+
+payload = json.loads(Path("ref_q12_pwl.json").read_text(encoding="utf-8"))
+expected = [[1024, 1024, 1024, 1024], [3549, 480, 65, 1]]
+got = [row["output"] for row in payload["rows"]]
+if got != expected:
+    raise SystemExit(f"q12 PWL reference mismatch got={got} expected={expected}")
+PY
+iverilog -g2012 -s softmax_rowwise_q12_pwl_tb -o sim_q12_pwl softmax_rowwise_q12_pwl_r4.v "$ROOT/tests/softmax_rowwise_q12_pwl_tb.v"
+vvp sim_q12_pwl
 popd >/dev/null

@@ -892,10 +892,10 @@ void emitSoftmaxRowwiseModule(const SoftmaxRowwiseOperationConfig &config, const
     if (operand.kind != "int") {
         throw std::runtime_error("softmax_rowwise currently supports only integer operands");
     }
-    if (operand.bit_width != 8) {
-        throw std::runtime_error("softmax_rowwise currently supports only 8-bit operands");
+    if (operand.bit_width < 2 || operand.bit_width > 24) {
+        throw std::runtime_error("softmax_rowwise operand bit_width must be in [2, 24]");
     }
-    if (config.impl != "shift_exp") {
+    if (config.impl != "shift_exp" && config.impl != "pwl_exp") {
         throw std::runtime_error("Unsupported softmax_rowwise impl: " + config.impl);
     }
     if (config.normalization_mode != "exact" && config.normalization_mode != "reciprocal_quantized") {
@@ -913,11 +913,19 @@ void emitSoftmaxRowwiseModule(const SoftmaxRowwiseOperationConfig &config, const
     if (config.max_shift < 0 || config.max_shift > 15) {
         throw std::runtime_error("softmax_rowwise max_shift must be in [0, 15]");
     }
+    if (config.input_frac_bits < 0 || config.input_frac_bits > 16) {
+        throw std::runtime_error("softmax_rowwise input_frac_bits must be in [0, 16]");
+    }
+    const int weight_bits = (config.weight_bits == 0) ? operand.bit_width : config.weight_bits;
+    if (weight_bits < 2 || weight_bits > 24) {
+        throw std::runtime_error("softmax_rowwise weight_bits must be in [2, 24]");
+    }
     if (config.accum_bits < 4 || config.accum_bits > 64) {
         throw std::runtime_error("softmax_rowwise accum_bits must be in [4, 64]");
     }
-    if (config.output_scale <= 0 || config.output_scale > 255) {
-        throw std::runtime_error("softmax_rowwise output_scale must be in [1, 255]");
+    const long long output_max = (1LL << operand.bit_width) - 1;
+    if (config.output_scale <= 0 || config.output_scale > output_max) {
+        throw std::runtime_error("softmax_rowwise output_scale exceeds the operand output range");
     }
 
     const int data_width = operand.bit_width;
@@ -928,11 +936,12 @@ void emitSoftmaxRowwiseModule(const SoftmaxRowwiseOperationConfig &config, const
         ? static_cast<int>(std::ceil(std::log2(static_cast<double>(config.output_scale) * std::ldexp(1.0, config.reciprocal_bits) + 1.0)))
         : data_width;
     const int product_bits = config.accum_bits + reciprocal_value_bits;
+    const long long max_weight = (config.impl == "shift_exp") ? (1LL << config.max_shift) : ((1LL << weight_bits) - 1);
     const int max_sum_bits = static_cast<int>(
-        std::ceil(std::log2(static_cast<double>(config.row_elems * (1 << config.max_shift)) + 1.0))
+        std::ceil(std::log2(static_cast<double>(config.row_elems) * static_cast<double>(max_weight) + 1.0))
     );
     if (config.accum_bits < std::max(1, max_sum_bits)) {
-        throw std::runtime_error("softmax_rowwise accum_bits is too small for row_elems/max_shift envelope");
+        throw std::runtime_error("softmax_rowwise accum_bits is too small for the row_elems/weight envelope");
     }
 
     std::string filename = config.module_name + ".v";
@@ -946,18 +955,81 @@ void emitSoftmaxRowwiseModule(const SoftmaxRowwiseOperationConfig &config, const
     os << "  input  [" << (row_width - 1) << ":0] X,\n";
     os << "  output reg [" << (row_width - 1) << ":0] Y\n";
     os << ");\n\n";
-    os << "  // Row-wise normalized int8 softmax approximation.\n";
+    os << "  // Row-wise normalized integer softmax approximation.\n";
     os << "  // 1) find row max\n";
-    os << "  // 2) assign power-of-two weights from clamped distance to max\n";
-    os << "  // 3) normalize weights into Q0.7-style outputs\n";
+    os << "  // 2) assign approximation weights from distance to max\n";
+    os << "  // 3) normalize weights into unsigned integer outputs\n";
     os << "  localparam integer ROW_ELEMS = " << config.row_elems << ";\n";
     os << "  localparam integer DATA_W = " << data_width << ";\n";
     os << "  localparam integer ACCUM_BITS = " << config.accum_bits << ";\n";
     os << "  localparam integer PRODUCT_BITS = " << product_bits << ";\n";
     os << "  localparam integer MAX_SHIFT = " << config.max_shift << ";\n";
     os << "  localparam integer OUTPUT_SCALE = " << config.output_scale << ";\n\n";
+    if (config.impl == "pwl_exp") {
+        const int input_scale = 1 << config.input_frac_bits;
+        const int x2 = 2 * input_scale;
+        const int x4 = 4 * input_scale;
+        const int x8 = 8 * input_scale;
+        const int weight_scale = (1 << weight_bits) - 1;
+        auto scaled_exp = [&](double x) {
+            return static_cast<int>(std::llround(std::exp(x) * static_cast<double>(weight_scale)));
+        };
+        const int y0 = weight_scale;
+        const int y2 = scaled_exp(-2.0);
+        const int y4 = scaled_exp(-4.0);
+        const int y8 = scaled_exp(-8.0);
+        os << "  localparam integer INPUT_FRAC_BITS = " << config.input_frac_bits << ";\n";
+        os << "  localparam integer WEIGHT_BITS = " << weight_bits << ";\n";
+        os << "  localparam integer PWL_X2 = " << x2 << ";\n";
+        os << "  localparam integer PWL_X4 = " << x4 << ";\n";
+        os << "  localparam integer PWL_X8 = " << x8 << ";\n";
+        os << "  localparam integer PWL_Y0 = " << y0 << ";\n";
+        os << "  localparam integer PWL_Y2 = " << y2 << ";\n";
+        os << "  localparam integer PWL_Y4 = " << y4 << ";\n";
+        os << "  localparam integer PWL_Y8 = " << y8 << ";\n\n";
+        os << "  function [ACCUM_BITS-1:0] pwl_weight;\n";
+        os << "    input integer delta_in;\n";
+        os << "    integer clamped_delta;\n";
+        os << "    integer seg_x0;\n";
+        os << "    integer seg_width;\n";
+        os << "    integer y0;\n";
+        os << "    integer y1;\n";
+        os << "    integer ydiff;\n";
+        os << "    reg [63:0] interp_num;\n";
+        os << "    begin\n";
+        os << "      clamped_delta = delta_in;\n";
+        os << "      if (clamped_delta < 0)\n";
+        os << "        clamped_delta = 0;\n";
+        os << "      if (clamped_delta > PWL_X8) begin\n";
+        os << "        pwl_weight = {ACCUM_BITS{1'b0}};\n";
+        os << "      end else if (clamped_delta == PWL_X8) begin\n";
+        os << "        pwl_weight = PWL_Y8;\n";
+        os << "      end else begin\n";
+        os << "        if (clamped_delta <= PWL_X2) begin\n";
+        os << "          seg_x0 = 0;\n";
+        os << "          seg_width = PWL_X2;\n";
+        os << "          y0 = PWL_Y0;\n";
+        os << "          y1 = PWL_Y2;\n";
+        os << "        end else if (clamped_delta <= PWL_X4) begin\n";
+        os << "          seg_x0 = PWL_X2;\n";
+        os << "          seg_width = PWL_X4 - PWL_X2;\n";
+        os << "          y0 = PWL_Y2;\n";
+        os << "          y1 = PWL_Y4;\n";
+        os << "        end else begin\n";
+        os << "          seg_x0 = PWL_X4;\n";
+        os << "          seg_width = PWL_X8 - PWL_X4;\n";
+        os << "          y0 = PWL_Y4;\n";
+        os << "          y1 = PWL_Y8;\n";
+        os << "        end\n";
+        os << "        ydiff = y0 - y1;\n";
+        os << "        interp_num = ((clamped_delta - seg_x0) * ydiff) + (seg_width >> 1);\n";
+        os << "        pwl_weight = y0 - (interp_num / seg_width);\n";
+        os << "      end\n";
+        os << "    end\n";
+        os << "  endfunction\n\n";
+    }
     if (reciprocal_quantized) {
-        const int max_sum = config.row_elems * (1 << config.max_shift);
+        const int max_sum = static_cast<int>(config.row_elems * max_weight);
         const int bucket_shift = config.reciprocal_lut_bucket_shift;
         const int max_bucket = (max_sum + reciprocal_bucket_step - 1) >> bucket_shift;
         const long long scale = static_cast<long long>(config.output_scale) << config.reciprocal_bits;
@@ -1006,9 +1078,13 @@ void emitSoftmaxRowwiseModule(const SoftmaxRowwiseOperationConfig &config, const
     os << "      delta = row_max - lane_val;\n";
     os << "      if (delta < 0)\n";
     os << "        delta = 0;\n";
-    os << "      if (delta > MAX_SHIFT)\n";
-    os << "        delta = MAX_SHIFT;\n";
-    os << "      weights[i] = ({{(ACCUM_BITS-1){1'b0}}, 1'b1} << (MAX_SHIFT - delta));\n";
+    if (config.impl == "shift_exp") {
+        os << "      if (delta > MAX_SHIFT)\n";
+        os << "        delta = MAX_SHIFT;\n";
+        os << "      weights[i] = ({{(ACCUM_BITS-1){1'b0}}, 1'b1} << (MAX_SHIFT - delta));\n";
+    } else {
+        os << "      weights[i] = pwl_weight(delta);\n";
+    }
     os << "      sum_weights = sum_weights + weights[i];\n";
     os << "    end\n\n";
     os << "    Y = {ROW_ELEMS*DATA_W{1'b0}};\n";

@@ -357,8 +357,13 @@ bool readConfig(const std::string& filename, CircuitConfig& config) {
                     softmax.reciprocal_lut_bucket_shift = options.value("reciprocal_lut_bucket_shift", 0);
                     softmax.row_elems = options.value("row_elems", 1);
                     softmax.max_shift = options.value("max_shift", 7);
+                    softmax.input_frac_bits = options.value("input_frac_bits", 0);
+                    softmax.weight_bits = options.value("weight_bits", 0);
                     softmax.accum_bits = options.value("accum_bits", 16);
                     softmax.output_scale = options.value("output_scale", 127);
+                    if (softmax.impl != "shift_exp" && softmax.impl != "pwl_exp") {
+                        throw std::runtime_error("softmax_rowwise impl must be shift_exp or pwl_exp for " + softmax.module_name);
+                    }
                     if (softmax.normalization_mode != "exact" && softmax.normalization_mode != "reciprocal_quantized") {
                         throw std::runtime_error("softmax_rowwise normalization_mode must be exact or reciprocal_quantized for " + softmax.module_name);
                     }
@@ -374,11 +379,17 @@ bool readConfig(const std::string& filename, CircuitConfig& config) {
                     if (softmax.max_shift < 0 || softmax.max_shift > 15) {
                         throw std::runtime_error("softmax_rowwise max_shift must be in [0, 15] for " + softmax.module_name);
                     }
+                    if (softmax.input_frac_bits < 0 || softmax.input_frac_bits > 16) {
+                        throw std::runtime_error("softmax_rowwise input_frac_bits must be in [0, 16] for " + softmax.module_name);
+                    }
+                    if (softmax.weight_bits < 0 || softmax.weight_bits > 24) {
+                        throw std::runtime_error("softmax_rowwise weight_bits must be in [0, 24] for " + softmax.module_name);
+                    }
                     if (softmax.accum_bits < 4 || softmax.accum_bits > 64) {
                         throw std::runtime_error("softmax_rowwise accum_bits must be in [4, 64] for " + softmax.module_name);
                     }
-                    if (softmax.output_scale <= 0 || softmax.output_scale > 255) {
-                        throw std::runtime_error("softmax_rowwise output_scale must be in [1, 255] for " + softmax.module_name);
+                    if (softmax.output_scale <= 0 || softmax.output_scale > 16777215) {
+                        throw std::runtime_error("softmax_rowwise output_scale must be in [1, 16777215] for " + softmax.module_name);
                     }
                     config.softmax_rowwise_operations.push_back(softmax);
                 } else if (type == "bf16_recip_norm") {
