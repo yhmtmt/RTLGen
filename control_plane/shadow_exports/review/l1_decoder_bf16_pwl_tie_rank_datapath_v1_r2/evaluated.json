@@ -1,0 +1,116 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/activations/score_tie_rank/sweeps/nangate45_highutil.json"
+      ],
+      "configs": [
+        "runs/designs/activations/score_tie_rank_r8_s16_l16_wrapper/config_score_tie_rank_r8_s16_l16.json"
+      ],
+      "out_root": "runs/designs/activations",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && cmake -S . -B build && cmake --build build --target rtlgen",
+        "name": "build_generator"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 scripts/run_sweep.py --configs runs/designs/activations/score_tie_rank_r8_s16_l16_wrapper/config_score_tie_rank_r8_s16_l16.json --platform nangate45 --sweep runs/campaigns/activations/score_tie_rank/sweeps/nangate45_highutil.json --out_root runs/designs/activations --force_gen --skip_existing",
+        "name": "run_sweep"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "objective": "Measure the isolated 8-lane score/logit tie-rank datapath used to price the bf16/PWL recovery path after sweep-script support was fixed.",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/activations/score_tie_rank_r8_s16_l16_wrapper/metrics.csv"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Layer1 decoder bf16/PWL tie-rank datapath r2",
+  "result": {
+    "branch": "eval/l1_decoder_bf16_pwl_tie_rank_datapath_v1_r2/s20260503t132545z",
+    "completed_utc": "2026-05-03T13:25:43.246899Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260503t132545z][host:b7c2d9c80c1c][item:l1_decoder_bf16_pwl_tie_rank_datapath_v1_r2]",
+    "metrics_rows": [
+      {
+        "tag": "score_tie_rank_nangate45_highutil_2ae5d3c9",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "6084dcab",
+        "metrics_csv": "runs/designs/activations/score_tie_rank_r8_s16_l16_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/score_tie_rank_r8_s16_l16_wrapper/work/6084dcab/result.json"
+      },
+      {
+        "tag": "score_tie_rank_nangate45_highutil_4c4fe1ea",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "aa83599c",
+        "metrics_csv": "runs/designs/activations/score_tie_rank_r8_s16_l16_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/score_tie_rank_r8_s16_l16_wrapper/work/aa83599c/result.json"
+      }
+    ],
+    "queue_item_id": "l1_decoder_bf16_pwl_tie_rank_datapath_v1_r2",
+    "session_id": "s20260503t132545z",
+    "status": "ok",
+    "summary": "4/4 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_decoder_bf16_pwl_tie_rank_datapath_v1_r2/s20260503t132545z",
+    "pr_title": "eval: run layer1 decoder bf16/pwl tie-rank datapath r2",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260503t132545z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_decoder_bf16_pwl_tie_rank_datapath_v1_r2"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_decoder_bf16_pwl_tie_rank_datapath_v1_r2",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 5,
+  "created_utc": "2026-05-03T13:22:38.016984Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "evaluation": {
+      "mode": "measurement_only",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      }
+    },
+    "abstraction": {
+      "layer": "circuit_block"
+    },
+    "proposal_id": "prop_l1_decoder_bf16_pwl_tie_rank_datapath_v1",
+    "proposal_path": "docs/proposals/prop_l1_decoder_bf16_pwl_tie_rank_datapath_v1"
+  }
+}
