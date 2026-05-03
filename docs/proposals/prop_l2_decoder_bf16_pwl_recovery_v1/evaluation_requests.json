@@ -20,7 +20,11 @@
         "direction": "iterate",
         "reason": "If logit tie-breaking recovers the zero-gap bf16/PWL misses without regressions, keep bf16/PWL as the low-cost frontier before full QAT or q12 fallback."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 347,
+      "merge_commit": "74d8ff1fff2e3b131a33162a8a836a478ae09d51",
+      "merged_utc": "2026-05-03T12:59:23.193309Z",
+      "notes": "Merged via PR #347 and merge 74d8ff1fff2e3b131a33162a8a836a478ae09d51 at 2026-05-03T12:59:23.193309Z."
     }
   ]
 }

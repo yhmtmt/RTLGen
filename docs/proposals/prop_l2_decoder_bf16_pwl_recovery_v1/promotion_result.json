@@ -1,4 +1,8 @@
 {
   "proposal_id": "prop_l2_decoder_bf16_pwl_recovery_v1",
-  "status": "pending"
+  "status": "pending",
+  "decision": "iterate",
+  "pr_number": 347,
+  "merge_commit": "74d8ff1fff2e3b131a33162a8a836a478ae09d51",
+  "merged_utc": "2026-05-03T12:59:23.193309Z"
 }

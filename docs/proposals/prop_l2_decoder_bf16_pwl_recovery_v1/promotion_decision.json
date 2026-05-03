@@ -1,4 +1,16 @@
 {
   "proposal_id": "prop_l2_decoder_bf16_pwl_recovery_v1",
-  "status": "pending"
+  "status": "pending",
+  "decision": "iterate",
+  "candidate_id": "l2_decoder_bf16_pwl_recovery_v1",
+  "reason": "Focused comparison baseline could not be resolved from proposal baseline_refs.",
+  "evidence_refs": [
+    "item:l2_decoder_bf16_pwl_recovery_v1",
+    "run:l2_decoder_bf16_pwl_recovery_v1_run_62684540654fde9a",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_bf16_pwl_recovery_v1.json",
+    "pr:#347",
+    "https://github.com/yhmtmt/RTLGen/pull/347"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_bf16_pwl_recovery_v1",
+  "requires_human_approval": false
 }
