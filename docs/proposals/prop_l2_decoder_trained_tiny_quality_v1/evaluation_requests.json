@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_trained_tiny_quality_v1",
-  "source_commit": "c85db5432a88549f68cef6623be3695455fe62e1",
+  "source_commit": "4b3085f0866e3940d56722d190f8630d06b5e3a5",
   "requested_items": [
     {
       "item_id": "l2_decoder_trained_tiny_quality_v1",
@@ -19,7 +19,7 @@
         "direction": "iterate",
         "reason": "Use the trained-weight tiny result to decide whether bf16/PWL recovery should move to distilgpt2/GPT-2 confirmation or return to logit-margin diagnosis."
       },
-      "status": "not_requested",
+      "status": "pending",
       "notes": "Prepared with trained tiny GPT-2-family model assets and the decoder_trained_tiny_quality task-generator hook."
     }
   ]
