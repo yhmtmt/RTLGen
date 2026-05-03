@@ -218,6 +218,15 @@ struct Bf16RecipNormOperationConfig {
     int reciprocal_lut_bucket_shift{4};
 };
 
+struct ScoreTieRankOperationConfig {
+    std::string module_name;
+    std::string operand;
+    int row_elems{1};
+    int score_bits{0};
+    int logit_bits{16};
+    bool logit_signed{true};
+};
+
 struct CircuitConfig {
     OperandConfig operand;
     std::vector<OperandDefinition> operands;
@@ -231,6 +240,7 @@ struct CircuitConfig {
     std::vector<ActivationOperationConfig> activation_operations;
     std::vector<SoftmaxRowwiseOperationConfig> softmax_rowwise_operations;
     std::vector<Bf16RecipNormOperationConfig> bf16_recip_norm_operations;
+    std::vector<ScoreTieRankOperationConfig> score_tie_rank_operations;
     std::optional<std::string> onnx_model; // Added ONNX model path
 };
 

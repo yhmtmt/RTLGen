@@ -1296,3 +1296,69 @@ void emitBf16RecipNormModule(const Bf16RecipNormOperationConfig &config, const O
     os << "  end\n";
     os << "endmodule\n";
 }
+
+void emitScoreTieRankModule(const ScoreTieRankOperationConfig &config, const OperandDefinition &operand) {
+    const int score_bits = config.score_bits > 0 ? config.score_bits : operand.bit_width;
+    if (score_bits <= 0 || score_bits > 64) {
+        throw std::runtime_error("score_tie_rank score_bits must be in [1, 64]");
+    }
+    if (config.row_elems <= 0 || config.row_elems > 1024) {
+        throw std::runtime_error("score_tie_rank row_elems must be in [1, 1024]");
+    }
+    if (config.logit_bits <= 0 || config.logit_bits > 64) {
+        throw std::runtime_error("score_tie_rank logit_bits must be in [1, 64]");
+    }
+
+    const int index_bits = std::max(1, ceilLog2U64(static_cast<unsigned long long>(config.row_elems)));
+    const int score_row_width = config.row_elems * score_bits;
+    const int logit_row_width = config.row_elems * config.logit_bits;
+    const std::string signed_kw = config.logit_signed ? "signed " : "";
+
+    std::string filename = config.module_name + ".v";
+    std::ofstream os(filename);
+    if (!os) {
+        throw std::runtime_error("Failed to open " + filename + " for writing");
+    }
+
+    os << "`timescale 1ns/1ps\n\n";
+    os << "module " << config.module_name << "(\n";
+    os << "  input  [" << (score_row_width - 1) << ":0] scores,\n";
+    os << "  input  " << signed_kw << "[" << (logit_row_width - 1) << ":0] logits,\n";
+    os << "  output reg [" << (index_bits - 1) << ":0] best_index,\n";
+    os << "  output reg [" << (score_bits - 1) << ":0] best_score,\n";
+    os << "  output reg " << signed_kw << "[" << (config.logit_bits - 1) << ":0] best_logit\n";
+    os << ");\n\n";
+    os << "  // Row-wise rank selection for quantized decoder scores.\n";
+    os << "  // Primary key: larger score. Tie-break key: larger pre-quantized logit.\n";
+    os << "  // Exact ties retain the lowest lane index for deterministic ranking.\n";
+    os << "  localparam integer ROW_ELEMS = " << config.row_elems << ";\n";
+    os << "  localparam integer SCORE_W = " << score_bits << ";\n";
+    os << "  localparam integer LOGIT_W = " << config.logit_bits << ";\n";
+    os << "  localparam integer INDEX_W = " << index_bits << ";\n\n";
+    os << "  integer i;\n";
+    os << "  reg [SCORE_W-1:0] score_i;\n";
+    os << "  reg " << signed_kw << "[LOGIT_W-1:0] logit_i;\n\n";
+    os << "  always @* begin\n";
+    os << "    best_index = {INDEX_W{1'b0}};\n";
+    os << "    best_score = scores[0 +: SCORE_W];\n";
+    if (config.logit_signed) {
+        os << "    best_logit = $signed(logits[0 +: LOGIT_W]);\n";
+    } else {
+        os << "    best_logit = logits[0 +: LOGIT_W];\n";
+    }
+    os << "    for (i = 1; i < ROW_ELEMS; i = i + 1) begin\n";
+    os << "      score_i = scores[(i*SCORE_W) +: SCORE_W];\n";
+    if (config.logit_signed) {
+        os << "      logit_i = $signed(logits[(i*LOGIT_W) +: LOGIT_W]);\n";
+    } else {
+        os << "      logit_i = logits[(i*LOGIT_W) +: LOGIT_W];\n";
+    }
+    os << "      if ((score_i > best_score) || ((score_i == best_score) && (logit_i > best_logit))) begin\n";
+    os << "        best_index = i;\n";
+    os << "        best_score = score_i;\n";
+    os << "        best_logit = logit_i;\n";
+    os << "      end\n";
+    os << "    end\n";
+    os << "  end\n";
+    os << "endmodule\n";
+}

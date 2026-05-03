@@ -398,7 +398,7 @@ def _read_config_target(
     elif "operations" in cfg and len(cfg["operations"]) == 1:
         entry = cfg["operations"][0]
         op_type = entry.get("type")
-        if op_type not in {"activation", "softmax_rowwise", "bf16_recip_norm"}:
+        if op_type not in {"activation", "softmax_rowwise", "bf16_recip_norm", "score_tie_rank"}:
             raise Layer1TaskGenerationError(f"unsupported single-operation design type in {config_path}: {op_type}")
         module_name = entry["module_name"]
         wrapper = f"{module_name}_wrapper"

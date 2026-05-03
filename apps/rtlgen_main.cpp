@@ -193,7 +193,8 @@ int main(int argc, char** argv) {
               << config.fp_operations.size() << " FP op(s), "
               << config.activation_operations.size() << " activation(s), "
               << config.softmax_rowwise_operations.size() << " row-wise softmax block(s), "
-              << config.bf16_recip_norm_operations.size() << " bf16 reciprocal-normalization block(s)\n";
+              << config.bf16_recip_norm_operations.size() << " bf16 reciprocal-normalization block(s), "
+              << config.score_tie_rank_operations.size() << " score tie-rank block(s)\n";
 
     try {
         std::filesystem::path flopocoPath;
@@ -314,6 +315,14 @@ int main(int argc, char** argv) {
                       << ", q_frac_bits=" << norm.q_frac_bits
                       << ", reciprocal_bits=" << norm.reciprocal_bits << ")\n";
             emitBf16RecipNormModule(norm, operandDef);
+        }
+
+        for (const auto &rank : config.score_tie_rank_operations) {
+            OperandDefinition operandDef = resolveOperand(config, rank.operand);
+            std::cout << "[INFO] Generating score tie-rank " << rank.module_name
+                      << " (row_elems=" << rank.row_elems
+                      << ", logit_bits=" << rank.logit_bits << ")\n";
+            emitScoreTieRankModule(rank, operandDef);
         }
 
         for (const auto &fp : config.fp_operations) {

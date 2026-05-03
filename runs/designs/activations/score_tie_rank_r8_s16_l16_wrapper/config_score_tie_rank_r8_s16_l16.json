@@ -1,0 +1,25 @@
+{
+  "version": "1.1",
+  "operands": [
+    {
+      "name": "scores",
+      "dimensions": 1,
+      "bit_width": 16,
+      "signed": false,
+      "kind": "int"
+    }
+  ],
+  "operations": [
+    {
+      "type": "score_tie_rank",
+      "module_name": "score_tie_rank_r8_s16_l16",
+      "operand": "scores",
+      "options": {
+        "row_elems": 8,
+        "score_bits": 16,
+        "logit_bits": 16,
+        "logit_signed": true
+      }
+    }
+  ]
+}

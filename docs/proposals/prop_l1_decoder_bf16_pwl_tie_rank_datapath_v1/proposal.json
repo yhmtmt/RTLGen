@@ -1,0 +1,63 @@
+{
+  "proposal_id": "prop_l1_decoder_bf16_pwl_tie_rank_datapath_v1",
+  "created_utc": "2026-05-03T13:11:42Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "circuit_block",
+  "title": "Decoder bf16/PWL score tie-rank datapath",
+  "hypothesis": "The recovered bf16/PWL decoder path needs only a small score-equality logit tie-break ranking block, so its PPA overhead should be measured directly before adding it to the bf16/PWL frontier cost model.",
+  "direct_comparison": {
+    "primary_question": "What is the Nangate45 PPA overhead of an 8-lane 16-bit score ranker with a signed 16-bit logit tie-break key?",
+    "include": [
+      "score_tie_rank_r8_s16_l16 wrapper",
+      "Nangate45 high-utilization Layer 1 sweep",
+      "area, timing, and power metrics for the isolated rank datapath"
+    ],
+    "exclude": [
+      "decoder quality rerun",
+      "full bf16 total-order comparator",
+      "training or QAT recovery"
+    ]
+  },
+  "expected_benefit": [
+    "replaces an unpriced recovery assumption with a measured PPA term",
+    "lets the bf16/PWL frontier be compared against q12 fallback using a concrete rank overhead",
+    "keeps the quality recovery result separate from physical cost measurement"
+  ],
+  "risks": [
+    "16-bit signed logit compare is a fixed-point proxy and not a full bf16 comparator",
+    "isolated ranker PPA may differ after integration with decoder output buffering",
+    "row_elems=8 matches the current tiny decoder frontier and may need scaling later"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_bf16_pwl_tie_rank_datapath_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure the isolated 8-lane score/logit tie-rank datapath used to price the bf16/PWL recovery path.",
+      "config_paths": [
+        "runs/designs/activations/score_tie_rank_r8_s16_l16_wrapper/config_score_tie_rank_r8_s16_l16.json"
+      ],
+      "sweep_path": "runs/campaigns/activations/score_tie_rank/sweeps/nangate45_highutil.json",
+      "platform": "nangate45",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "circuit_block",
+      "depends_on_item_ids": [
+        "l2_decoder_bf16_pwl_recovery_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_tiny_v1/decoder_bf16_pwl_recovery__l2_decoder_bf16_pwl_recovery_v1.json",
+    "runs/designs/activations/bf16_recip_norm_r8_wrapper/metrics.csv",
+    "runs/campaigns/activations/softmax_rowwise_q12_pwl_recip_norm/sweeps/nangate45_highutil.json"
+  ],
+  "knowledge_refs": [
+    "src/rtlgen/rtl_operations.cpp",
+    "examples/config_score_tie_rank.json",
+    "control_plane/control_plane/services/l1_task_generator.py"
+  ]
+}
