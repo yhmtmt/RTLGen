@@ -1,0 +1,49 @@
+{
+  "version": 0.1,
+  "binding_id": "llm_decoder_tiny_gpt2_trained_v1_reference_onnx_v1",
+  "status": "exact_reference_runtime_validated",
+  "purpose": "trained_weight_exact_reference",
+  "runtime": {
+    "backend_id": "command_json_v1",
+    "runner": "python3 npu/eval/run_llm_decoder_onnx_reference.py",
+    "runtime_target": "cpu_reference",
+    "library": "onnxruntime"
+  },
+  "model": {
+    "model_id": "llm_decoder_tiny_gpt2_trained_v1",
+    "onnx_model_path": "runs/models/llm_decoder_tiny_gpt2_trained_v1/reference_onnx/model.onnx",
+    "model_config_path": "runs/models/llm_decoder_tiny_gpt2_trained_v1/reference_onnx/config.json",
+    "input_name": "input_ids",
+    "output_name": "logits",
+    "topk": 16,
+    "asset_status": "checked_in"
+  },
+  "tokenizer": {
+    "tokenizer_id": "llm_decoder_tiny_gpt2_trained_v1",
+    "tokenizer_manifest": "runs/tokenizers/llm_decoder_tiny_gpt2_trained_v1/manifest.json",
+    "asset_status": "checked_in"
+  },
+  "provenance": {
+    "equivalence_group": "llm_decoder_tiny_gpt2_trained_v1_reference_onnx_v1",
+    "source_model": "huggingface://sshleifer/tiny-gpt2",
+    "export_tooling": "transformers 4.46.3, torch 2.11.0, onnx 1.17.0",
+    "export_opset": 17,
+    "notes": "Exported locally as a GPT-2 LM-head ONNX graph with empty-past inputs and present.* KV-cache outputs to match the existing decoder runner contract."
+  },
+  "sha256": {
+    "onnx_model": "a4e92b3e8106a10af82421282b53278e1ffa9601fa0ebf0d19fe81b99a3589e3",
+    "model_config_json": "04f25053d4bcb1286215da40beb1ef966ccab2086236ae5a7370d830731f9961",
+    "generation_config_json": "eabb16a6a137c90b1f3a66138e578b483161fc91b8f253be22cd3d33e6460dc9",
+    "tokenizer_vocab": "3ba3c3109ff33976c4bd966589c11ee14fcaa1f4c9e5e154c2ed7f99d80709e7",
+    "tokenizer_merges": "1ce1664773c50f3e0cc8842619a93edc4624525b728b188a9e0be33b7726adc5",
+    "tokenizer_json": "1fe93b6152957cf9cfd6d89002467f789ce8b3f3e000b3a2edf27c808ddd0b9e",
+    "tokenizer_config_json": "121ceef763437c047b272f242438a29e3979355c7c7080c3adb693bd9230ba3f",
+    "special_tokens_map_json": "98412137ae43c77f8af52eb51b19c3536d3242cb55339167d841005fa94a23b7"
+  },
+  "selection": {
+    "status": "runtime_validated",
+    "upstream_model_family": "gpt2_decoder",
+    "upstream_model_id": "sshleifer/tiny-gpt2",
+    "reason": "Small enough to check into the repository while using a trained GPT-2-family checkpoint and the real GPT-2 BPE tokenizer."
+  }
+}

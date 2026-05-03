@@ -1,0 +1,29 @@
+{
+  "version": 0.1,
+  "tokenizer_id": "llm_decoder_tiny_gpt2_trained_v1",
+  "kind": "gpt2_bpe",
+  "family": "gpt2_bpe",
+  "status": "trained_tiny_reference_tokenizer_active",
+  "backend_interface": "decoder_tokenizer_v1",
+  "vocab_json": "vocab.json",
+  "merges_txt": "merges.txt",
+  "tokenizer_json": "tokenizer.json",
+  "tokenizer_config_json": "tokenizer_config.json",
+  "special_tokens_map_json": "special_tokens_map.json",
+  "special_tokens": {
+    "bos": "<|endoftext|>",
+    "eos": "<|endoftext|>",
+    "unk": "<|endoftext|>",
+    "pad": "<|endoftext|>"
+  },
+  "unk_supported": true,
+  "pretokenization": {
+    "byte_level": true,
+    "add_prefix_space": true
+  },
+  "normalization": {
+    "unicode": "identity",
+    "lowercase": false
+  },
+  "notes": "GPT-2 BPE tokenizer assets exported from sshleifer/tiny-gpt2 for the first trained-weight decoder quality smoke."
+}

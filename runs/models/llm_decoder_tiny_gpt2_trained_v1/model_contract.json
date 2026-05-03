@@ -1,0 +1,115 @@
+{
+  "version": 0.1,
+  "model_id": "llm_decoder_tiny_gpt2_trained_v1",
+  "status": "trained_tiny_exact_reference_active",
+  "task": "greedy_next_token",
+  "execution_backend": "decoder_backend_v1",
+  "decoder_backend_interface": "v1",
+  "tokenizer_id": "llm_decoder_tiny_gpt2_trained_v1",
+  "tokenizer_manifest": "runs/tokenizers/llm_decoder_tiny_gpt2_trained_v1/manifest.json",
+  "exact_reference_binding": "runs/models/llm_decoder_tiny_gpt2_trained_v1/reference_onnx_binding.json",
+  "backend_configs": {
+    "reference": {
+      "backend_id": "command_json_v1",
+      "command": [
+        "python3",
+        "npu/eval/run_llm_decoder_onnx_reference.py"
+      ],
+      "equivalence_group": "llm_decoder_tiny_gpt2_trained_v1_reference_onnx_v1",
+      "input_name": "input_ids",
+      "model_config_path": "runs/models/llm_decoder_tiny_gpt2_trained_v1/reference_onnx/config.json",
+      "onnx_model_path": "runs/models/llm_decoder_tiny_gpt2_trained_v1/reference_onnx/model.onnx",
+      "output_name": "logits",
+      "runtime_target": "cpu_reference",
+      "topk": 16,
+      "trace_output_patterns": [
+        "present.*"
+      ]
+    },
+    "candidate": {
+      "backend_id": "command_json_v1",
+      "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_exact_prob_fp",
+      "command": [
+        "python3",
+        "npu/eval/run_llm_decoder_onnx_candidate.py"
+      ],
+      "equivalence_group": "llm_decoder_tiny_gpt2_trained_v1_reference_onnx_v1",
+      "input_name": "input_ids",
+      "model_config_path": "runs/models/llm_decoder_tiny_gpt2_trained_v1/reference_onnx/config.json",
+      "normalization_mode": "exact",
+      "onnx_model_path": "runs/models/llm_decoder_tiny_gpt2_trained_v1/reference_onnx/model.onnx",
+      "output_name": "logits",
+      "runtime_target": "software_emulation",
+      "softmax_mode": "exact",
+      "topk": 16,
+      "trace_output_patterns": [
+        "present.*"
+      ],
+      "trace_tensor_quant_bits": 4
+    }
+  },
+  "backend_templates": {
+    "reference_onnx": {
+      "backend_id": "command_json_v1",
+      "command": [
+        "python3",
+        "npu/eval/run_llm_decoder_onnx_reference.py"
+      ],
+      "equivalence_group": "llm_decoder_tiny_gpt2_trained_v1_reference_onnx_v1",
+      "input_name": "input_ids",
+      "model_config_path": "runs/models/llm_decoder_tiny_gpt2_trained_v1/reference_onnx/config.json",
+      "onnx_model_path": "runs/models/llm_decoder_tiny_gpt2_trained_v1/reference_onnx/model.onnx",
+      "output_name": "logits",
+      "runtime_target": "cpu_reference",
+      "topk": 16,
+      "trace_output_patterns": [
+        "present.*"
+      ]
+    },
+    "candidate_onnx_softmax_exact": {
+      "backend_id": "command_json_v1",
+      "command": [
+        "python3",
+        "npu/eval/run_llm_decoder_onnx_candidate.py"
+      ],
+      "equivalence_group": "llm_decoder_tiny_gpt2_trained_v1_reference_onnx_v1",
+      "input_name": "input_ids",
+      "model_config_path": "runs/models/llm_decoder_tiny_gpt2_trained_v1/reference_onnx/config.json",
+      "normalization_mode": "exact",
+      "onnx_model_path": "runs/models/llm_decoder_tiny_gpt2_trained_v1/reference_onnx/model.onnx",
+      "output_name": "logits",
+      "runtime_target": "software_emulation",
+      "softmax_mode": "exact",
+      "topk": 16,
+      "trace_output_patterns": [
+        "present.*"
+      ],
+      "trace_tensor_quant_bits": 4
+    },
+    "candidate_onnx_softmax_approx": {
+      "backend_id": "command_json_v1",
+      "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q4_w_q4_norm_recip_q10_prob_fp",
+      "command": [
+        "python3",
+        "npu/eval/run_llm_decoder_onnx_candidate.py"
+      ],
+      "equivalence_group": "llm_decoder_tiny_gpt2_trained_v1_reference_onnx_v1",
+      "input_name": "input_ids",
+      "model_config_path": "runs/models/llm_decoder_tiny_gpt2_trained_v1/reference_onnx/config.json",
+      "normalization_mode": "reciprocal_quantized",
+      "normalization_reciprocal_bits": 10,
+      "onnx_model_path": "runs/models/llm_decoder_tiny_gpt2_trained_v1/reference_onnx/model.onnx",
+      "output_name": "logits",
+      "runtime_target": "software_emulation",
+      "softmax_mode": "approx_pwl",
+      "softmax_input_quant_bits": 4,
+      "softmax_weight_quant_bits": 4,
+      "topk": 16,
+      "trace_output_patterns": [
+        "present.*"
+      ],
+      "trace_tensor_quant_bits": 4
+    }
+  },
+  "notes": "Small trained-weight GPT-2-family ONNX contract exported from sshleifer/tiny-gpt2. This is a smoke step for real checkpoint weights and GPT-2 BPE prompts, not a substitute for larger distilgpt2/GPT-2 quality coverage."
+}
