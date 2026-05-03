@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l1_decoder_bf16_pwl_tie_rank_datapath_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "promote",
+  "pr_number": 352,
+  "merge_commit": "6c7e565beaf308752c8d2be9985254a3f13e0a3b",
+  "merged_utc": "2026-05-03T13:26:51Z"
 }

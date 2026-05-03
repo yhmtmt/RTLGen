@@ -27,7 +27,11 @@
       "objective": "Measure the isolated 8-lane score/logit tie-rank datapath used to price the bf16/PWL recovery path after sweep-script support was fixed.",
       "evaluation_mode": "measurement_only",
       "abstraction_layer": "circuit_block",
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 352,
+      "merge_commit": "6c7e565beaf308752c8d2be9985254a3f13e0a3b",
+      "merged_utc": "2026-05-03T13:26:51Z",
+      "notes": "Merged via PR #352 and merge 6c7e565beaf308752c8d2be9985254a3f13e0a3b at 2026-05-03T13:26:51Z."
     }
   ]
 }
