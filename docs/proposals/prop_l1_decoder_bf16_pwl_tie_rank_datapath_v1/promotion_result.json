@@ -1,4 +1,7 @@
 {
   "proposal_id": "prop_l1_decoder_bf16_pwl_tie_rank_datapath_v1",
-  "decision": "pending"
+  "decision": "pending",
+  "pr_number": null,
+  "merge_commit": "",
+  "merged_utc": ""
 }

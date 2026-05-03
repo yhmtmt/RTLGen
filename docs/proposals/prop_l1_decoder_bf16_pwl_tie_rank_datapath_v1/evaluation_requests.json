@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_decoder_bf16_pwl_tie_rank_datapath_v1",
-  "source_commit": "",
+  "source_commit": "f3f8d7fe4ef06477edd36827c90169621182defa",
   "requested_items": [
     {
       "item_id": "l1_decoder_bf16_pwl_tie_rank_datapath_v1",
