@@ -41,6 +41,18 @@ def _operand_signal_width(operand):
     return int(operand["bit_width"])
 
 
+def _ceil_log2_at_least_one(value):
+    value = int(value)
+    if value <= 1:
+        return 1
+    bits = 0
+    span = 1
+    while span < value:
+        span <<= 1
+        bits += 1
+    return max(bits, 1)
+
+
 def identify_design(config):
     if "multiplier" in config:
         operand = _resolve_operand(config, config["multiplier"].get("operand", ""))
@@ -111,6 +123,29 @@ def identify_design(config):
             "wrapper_name": f"{module_name}_wrapper",
             "input_width": row_width,
             "output_width": row_width,
+            "include_mg_cpa": False,
+        }
+    if op_type == "score_tie_rank":
+        options = entry.get("options", {})
+        row_elems = int(options.get("row_elems", 1))
+        score_bits = int(options.get("score_bits", bit_width) or bit_width)
+        logit_bits = int(options.get("logit_bits", 16))
+        if row_elems <= 0:
+            raise ValueError("score_tie_rank row_elems must be positive")
+        if score_bits <= 0:
+            raise ValueError("score_tie_rank score_bits must be positive")
+        if logit_bits <= 0:
+            raise ValueError("score_tie_rank logit_bits must be positive")
+        return {
+            "kind": "score_tie_rank",
+            "module_name": module_name,
+            "wrapper_name": f"{module_name}_wrapper",
+            "score_width": score_bits * row_elems,
+            "logit_width": logit_bits * row_elems,
+            "index_width": _ceil_log2_at_least_one(row_elems),
+            "score_bits": score_bits,
+            "logit_bits": logit_bits,
+            "logit_signed": bool(options.get("logit_signed", True)),
             "include_mg_cpa": False,
         }
     raise ValueError(f"generate_design.py does not support operation type: {op_type}")
@@ -216,8 +251,8 @@ def main():
 def generate_wrapper(config, src_dir, design):
     module_name = design["module_name"]
     wrapper_name = design["wrapper_name"]
-    input_width = int(design["input_width"])
-    output_width = int(design["output_width"])
+    input_width = int(design.get("input_width", 0))
+    output_width = int(design.get("output_width", 0))
 
     if design["kind"] in ("multiplier", "multiplier_yosys"):
         wrapper_content = f"""
@@ -308,6 +343,54 @@ module {wrapper_name}(
   end
 
   assign Y = y_reg;
+
+endmodule
+"""
+    elif design["kind"] == "score_tie_rank":
+        score_width = int(design["score_width"])
+        logit_width = int(design["logit_width"])
+        index_width = int(design["index_width"])
+        score_bits = int(design["score_bits"])
+        logit_bits = int(design["logit_bits"])
+        signed_kw = "signed " if design.get("logit_signed", True) else ""
+        wrapper_content = f"""
+module {wrapper_name}(
+  input clk,
+  input [{score_width-1}:0] scores,
+  input {signed_kw}[{logit_width-1}:0] logits,
+  output [{index_width-1}:0] best_index,
+  output [{score_bits-1}:0] best_score,
+  output {signed_kw}[{logit_bits-1}:0] best_logit
+);
+
+  reg [{score_width-1}:0] scores_reg;
+  reg {signed_kw}[{logit_width-1}:0] logits_reg;
+  wire [{index_width-1}:0] best_index_wire;
+  wire [{score_bits-1}:0] best_score_wire;
+  wire {signed_kw}[{logit_bits-1}:0] best_logit_wire;
+  reg [{index_width-1}:0] best_index_reg;
+  reg [{score_bits-1}:0] best_score_reg;
+  reg {signed_kw}[{logit_bits-1}:0] best_logit_reg;
+
+  {module_name} dut (
+    .scores(scores_reg),
+    .logits(logits_reg),
+    .best_index(best_index_wire),
+    .best_score(best_score_wire),
+    .best_logit(best_logit_wire)
+  );
+
+  always @(posedge clk) begin
+    scores_reg <= scores;
+    logits_reg <= logits;
+    best_index_reg <= best_index_wire;
+    best_score_reg <= best_score_wire;
+    best_logit_reg <= best_logit_wire;
+  end
+
+  assign best_index = best_index_reg;
+  assign best_score = best_score_reg;
+  assign best_logit = best_logit_reg;
 
 endmodule
 """

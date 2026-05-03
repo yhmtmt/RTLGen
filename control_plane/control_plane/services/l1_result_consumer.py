@@ -209,7 +209,7 @@ def _inferred_l1_abstraction_layer(repo_root: Path, work_item: WorkItem) -> str:
             operations = cfg.get("operations")
             if isinstance(operations, list) and len(operations) == 1:
                 op_type = str((operations[0] or {}).get("type", "")).strip()
-                if op_type in {"activation", "softmax_rowwise"}:
+                if op_type in {"activation", "softmax_rowwise", "bf16_recip_norm", "score_tie_rank"}:
                     return "circuit_block"
     expected_outputs = [str(path_text) for path_text in (work_item.expected_outputs or [])]
     joined = "\n".join(expected_outputs)
