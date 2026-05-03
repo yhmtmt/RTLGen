@@ -417,6 +417,145 @@ def _is_ranking_or_frontier_mode(*, evaluation_mode: str, comparison_role: str) 
     return comparison_role == "ranking" or evaluation_mode in {"broad_ranking", "frontier_detail"}
 
 
+def _decoder_contract_inputs(work_item: WorkItem) -> dict[str, Any]:
+    input_manifest = work_item.input_manifest if isinstance(work_item.input_manifest, dict) else {}
+    decoder_contract = input_manifest.get("decoder_contract")
+    return dict(decoder_contract) if isinstance(decoder_contract, dict) else {}
+
+
+_DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
+    ("trained_quality_out", "trained_quality_report"),
+    ("scale_probe_out", "scale_probe_report"),
+    ("recovery_out", "recovery_report"),
+    ("recoverability_out", "recoverability_report"),
+    ("frontier_out", "frontier_report"),
+    ("frontier_detail_out", "frontier_detail_report"),
+    ("diagnosis_out", "diagnosis_report"),
+    ("ladder_out", "ladder_report"),
+    ("survivor_distribution_out", "survivor_distribution_report"),
+    ("bitwidth_boundary_out", "bitwidth_boundary_report"),
+    ("quantization_outline_out", "quantization_outline_report"),
+    ("cost_proxy_out", "cost_proxy_report"),
+)
+
+
+def _decoder_evidence_paths(
+    *,
+    repo_root: Path,
+    work_item: WorkItem,
+) -> tuple[str, dict[str, str]] | tuple[None, dict[str, str]]:
+    decoder_contract = _decoder_contract_inputs(work_item)
+    if not decoder_contract:
+        return None, {}
+    source_refs: dict[str, str] = {}
+    for ref_key in ("dataset_manifest", "sample_file", "validation_out", "quality_out", "candidate_sweep_out"):
+        value = str(decoder_contract.get(ref_key, "")).strip()
+        if value:
+            source_refs[f"decoder_{ref_key}"] = value
+    for out_key, report_key in _DECODER_EVIDENCE_OUTPUT_KEYS:
+        out_rel = str(decoder_contract.get(out_key, "")).strip()
+        if not out_rel:
+            continue
+        out_path = _resolve_path(repo_root=repo_root, path_text=out_rel)
+        if not out_path.exists():
+            continue
+        source_refs[f"decoder_{out_key}"] = out_rel
+        report_rel = str(decoder_contract.get(report_key, "")).strip()
+        if report_rel and _resolve_path(repo_root=repo_root, path_text=report_rel).exists():
+            source_refs[f"decoder_{report_key}"] = report_rel
+        return out_rel, source_refs
+    return None, source_refs
+
+
+def _decoder_quality_brief(evidence_payload: dict[str, Any]) -> dict[str, Any]:
+    diagnosis = evidence_payload.get("diagnosis")
+    diagnosis_dict = dict(diagnosis) if isinstance(diagnosis, dict) else {}
+    brief: dict[str, Any] = {
+        "diagnosis": diagnosis_dict,
+    }
+    for key in (
+        "baseline",
+        "recovery",
+        "recovered_sample_ids",
+        "regression_sample_ids",
+        "template_summaries",
+        "sample_count",
+        "source_sweep",
+    ):
+        if key in evidence_payload:
+            brief[key] = evidence_payload[key]
+    return brief
+
+
+def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, Any]) -> tuple[str, str]:
+    diagnosis = evidence_payload.get("diagnosis")
+    diagnosis_dict = dict(diagnosis) if isinstance(diagnosis, dict) else {}
+    decision = str(diagnosis_dict.get("decision", "")).strip() or "decoder_evidence_recorded"
+    parts = [f"Decoder quality evidence recorded from {evidence_ref}: decision={decision}"]
+    if "exact_safe_after_recovery" in diagnosis_dict:
+        parts.append(f"exact_safe_after_recovery={bool(diagnosis_dict.get('exact_safe_after_recovery'))}")
+    if "recovered_count" in diagnosis_dict:
+        parts.append(f"recovered_count={diagnosis_dict.get('recovered_count')}")
+    if "regression_count" in diagnosis_dict:
+        parts.append(f"regression_count={diagnosis_dict.get('regression_count')}")
+    recommended_next = str(diagnosis_dict.get("recommended_next_step", "")).strip()
+    if recommended_next:
+        parts.append(f"recommended_next_step={recommended_next}")
+    return decision, "; ".join(parts) + "."
+
+
+def _build_decoder_evidence_assessment(
+    *,
+    work_item: WorkItem,
+    proposal: dict[str, Any] | None,
+    repo_root: Path,
+    evaluation_mode: str,
+    comparison_role: str,
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None, dict[str, str]]:
+    evidence_ref, source_refs = _decoder_evidence_paths(repo_root=repo_root, work_item=work_item)
+    if not evidence_ref:
+        return None, None, source_refs
+    evidence_path = _resolve_path(repo_root=repo_root, path_text=evidence_ref)
+    try:
+        evidence_payload = _load_json(evidence_path)
+    except Exception:
+        return None, None, source_refs
+    context = _proposal_context(work_item, proposal)
+    outcome, summary = _decoder_evidence_summary(evidence_ref=evidence_ref, evidence_payload=evidence_payload)
+    assessment = {
+        "proposal_id": str(context.get("proposal_id", "")).strip(),
+        "title": str(context.get("title", "")).strip(),
+        "kind": str(context.get("kind", "")).strip(),
+        "primary_question": str(context.get("primary_question", "")).strip(),
+        "evaluation_mode": evaluation_mode,
+        "comparison_role": comparison_role,
+        "outcome": outcome,
+        "summary": summary,
+        "baseline_ref": None,
+        "baseline_item_id": None,
+        "matched_row_count": 0,
+        "matched_rows": [],
+        "decoder_evidence_ref": evidence_ref,
+        "decoder_quality": _decoder_quality_brief(evidence_payload),
+    }
+    return (
+        assessment,
+        _build_evaluation_record(
+            work_item=work_item,
+            proposal=proposal,
+            repo_root=repo_root,
+            evaluation_mode=evaluation_mode,
+            comparison_role=comparison_role,
+            baseline_ref=None,
+            baseline_item_id=None,
+            outcome=outcome,
+            expectation_outcome=outcome,
+            summary=summary,
+        ),
+        source_refs,
+    )
+
+
 def _resolve_baseline_summary_from_decision_payload(
     *,
     repo_root: Path,
@@ -740,6 +879,15 @@ def _build_proposal_assessment(
             ),
             {},
         )
+    decoder_assessment, decoder_evaluation_record, decoder_source_refs = _build_decoder_evidence_assessment(
+        work_item=work_item,
+        proposal=proposal,
+        repo_root=repo_root,
+        evaluation_mode=evaluation_mode,
+        comparison_role=comparison_role,
+    )
+    if decoder_assessment is not None or decoder_evaluation_record is not None:
+        return decoder_assessment, decoder_evaluation_record, decoder_source_refs
     if _is_ranking_or_frontier_mode(evaluation_mode=evaluation_mode, comparison_role=comparison_role):
         summary = (
             "Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required "

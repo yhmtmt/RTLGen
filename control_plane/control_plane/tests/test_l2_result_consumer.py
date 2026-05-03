@@ -775,6 +775,124 @@ def test_consume_l2_result_frontier_ranking_does_not_require_baseline_refs() -> 
             assert "baseline comparison is not required" in assessment["summary"]
 
 
+def test_consume_l2_result_frontier_decoder_quality_uses_decoder_json_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            proposal_dir = repo_root / "docs" / "developer_loop" / "prop_l2_decoder_quality_v1"
+            _write(
+                proposal_dir / "proposal.json",
+                json.dumps(
+                    {
+                        "proposal_id": "prop_l2_decoder_quality_v1",
+                        "kind": "architecture",
+                        "title": "Decoder trained quality",
+                        "direct_comparison": {
+                            "primary_question": "Does the decoder recovery remain exact-safe?"
+                        },
+                        "baseline_refs": [
+                            "runs/datasets/llm_decoder_eval_tiny_v1/decoder_bf16_pwl_recovery.json"
+                        ],
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            evidence_rel = "runs/datasets/llm_decoder_eval_trained_tiny_v1/decoder_trained_tiny_quality__l2_decoder_quality.json"
+            report_rel = "runs/datasets/llm_decoder_eval_trained_tiny_v1/decoder_trained_tiny_quality__l2_decoder_quality.md"
+            _write(
+                repo_root / evidence_rel,
+                json.dumps(
+                    {
+                        "version": 0.1,
+                        "baseline": {
+                            "template": "grid_approx_pwl_bf16_path",
+                            "next_token_matches": 23,
+                            "sample_count": 24,
+                            "next_token_mismatch_sample_ids": ["trained_color_sky"],
+                        },
+                        "recovery": {
+                            "template": "grid_approx_pwl_bf16_path_logit_tiebreak",
+                            "next_token_matches": 24,
+                            "sample_count": 24,
+                            "next_token_mismatch_sample_ids": [],
+                        },
+                        "diagnosis": {
+                            "decision": "tie_break_recovery_sufficient",
+                            "exact_safe_after_recovery": True,
+                            "recovered_count": 1,
+                            "regression_count": 0,
+                            "recommended_next_step": "scale to a larger trained checkpoint",
+                        },
+                        "recovered_sample_ids": ["trained_color_sky"],
+                        "regression_sample_ids": [],
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            _write(repo_root / report_rel, "# decoder quality\n")
+            item_id = _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id="l2_decoder_quality",
+                campaign_dir_rel="runs/campaigns/npu/decoder_quality_campaign",
+                summary_rows=(
+                    "scope,arch_id,macro_mode,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,throughput_infer_per_s_mean\n"
+                    "aggregate,fp16_nm1_demo,flat_nomacro,1,0.4,0.15,5.5,0.18,1000,1.0\n"
+                ),
+                proposal_path="docs/developer_loop/prop_l2_decoder_quality_v1",
+                comparison={"role": "ranking"},
+            )
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            payload = copy.deepcopy(work_item.task_request.request_payload or {})
+            payload["developer_loop"]["evaluation"] = {
+                "mode": "frontier_detail",
+                "expected_direction": "iterate",
+                "expected_reason": "Use decoder quality before a larger trained checkpoint.",
+            }
+            payload["developer_loop"]["abstraction"] = {
+                "layer": "decoder_trained_tiny_quality",
+            }
+            work_item.task_request.request_payload = payload
+            work_item.input_manifest = {
+                "decoder_contract": {
+                    "dataset_manifest": "runs/datasets/llm_decoder_eval_trained_tiny_v1/manifest.json",
+                    "quality_out": "runs/datasets/llm_decoder_eval_trained_tiny_v1/decoder_quality_compare__l2_decoder_quality.json",
+                    "candidate_sweep_out": "runs/datasets/llm_decoder_eval_trained_tiny_v1/decoder_quality_sweep__l2_decoder_quality.json",
+                    "trained_quality_out": evidence_rel,
+                    "trained_quality_report": report_rel,
+                }
+            }
+            session.commit()
+
+            consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=item_id))
+
+            decision_payload = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{item_id}.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            assessment = decision_payload["proposal_assessment"]
+            evaluation_record = decision_payload["evaluation_record"]
+            assert assessment["evaluation_mode"] == "frontier_detail"
+            assert assessment["comparison_role"] == "ranking"
+            assert assessment["outcome"] == "tie_break_recovery_sufficient"
+            assert assessment["decoder_evidence_ref"] == evidence_rel
+            assert assessment["decoder_quality"]["diagnosis"]["exact_safe_after_recovery"] is True
+            assert assessment["decoder_quality"]["recovery"]["next_token_matches"] == 24
+            assert assessment["baseline_ref"] is None
+            assert "Focused comparison baseline" not in assessment["summary"]
+            assert evaluation_record["outcome"] == "tie_break_recovery_sufficient"
+            assert decision_payload["source_refs"]["decoder_trained_quality_out"] == evidence_rel
+            assert decision_payload["source_refs"]["decoder_trained_quality_report"] == report_rel
+            assert "baseline_summary_csv" not in decision_payload["source_refs"]
+
+
 def test_consume_l2_result_resolves_prior_art_report_as_baseline() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
