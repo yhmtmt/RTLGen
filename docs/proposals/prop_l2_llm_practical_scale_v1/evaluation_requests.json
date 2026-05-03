@@ -1,0 +1,16 @@
+{
+  "proposal_id": "prop_l2_llm_practical_scale_v1",
+  "requests": [
+    {
+      "item_id": "l2_llm_practical_scale_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run the larger practical decoder-style proxy to see whether active-token/KV scale changes nm1 vs nm2 PPA and scheduler pressure.",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_llm_practical_scale_v1/campaign.json",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "llm_practical_scale",
+      "expected_direction": "iterate",
+      "comparison_role": "ranking",
+      "depends_on_item_id": "l2_decoder_bf16_pwl_scale_probe_v1"
+    }
+  ]
+}
