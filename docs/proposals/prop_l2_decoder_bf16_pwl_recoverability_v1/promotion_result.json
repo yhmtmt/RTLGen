@@ -1,0 +1,5 @@
+{
+  "proposal_id": "prop_l2_decoder_bf16_pwl_recoverability_v1",
+  "decision": "iterate",
+  "status": "pending_evaluation"
+}

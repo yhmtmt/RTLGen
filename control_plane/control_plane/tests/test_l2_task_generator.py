@@ -916,6 +916,55 @@ def test_generate_l2_campaign_task_adds_decoder_pwl_failure_diagnosis_evidence()
             }
 
 
+def test_generate_l2_campaign_task_adds_decoder_bf16_pwl_recoverability_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    item_id="l2_decoder_bf16_pwl_recoverability_v1",
+                    proposal_id="prop_l2_decoder_bf16_pwl_recoverability_v1",
+                    proposal_path="docs/proposals/prop_l2_decoder_bf16_pwl_recoverability_v1/proposal.json",
+                    evaluation_mode="frontier_detail",
+                    abstraction_layer="decoder_bf16_pwl_recoverability",
+                    expected_direction="iterate",
+                    comparison_role="ranking",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert work_item.command_manifest[0]["name"] == "estimate_decoder_bf16_pwl_recoverability"
+            assert "estimate_llm_decoder_bf16_recoverability.py" in work_item.command_manifest[0]["run"]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+            assert decoder_inputs["source_sweep"] == (
+                "runs/datasets/llm_decoder_eval_tiny_v1/"
+                "decoder_quality_sweep__l2_decoder_q8_norm_distribution_broad_v2.json"
+            )
+            assert decoder_inputs["target_template"] == "grid_approx_pwl_bf16_path"
+            assert "score-gap screen" in decoder_inputs["recoverability_scope"]
+            assert decoder_inputs["recoverability_out"] == (
+                "runs/datasets/llm_decoder_eval_tiny_v1/"
+                "decoder_bf16_pwl_recoverability__l2_decoder_bf16_pwl_recoverability_v1.json"
+            )
+            assert decoder_inputs["recoverability_out"] in work_item.expected_outputs
+            assert decoder_inputs["recoverability_report"] in work_item.expected_outputs
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
+                "layer": "decoder_bf16_pwl_recoverability",
+            }
+
+
 def test_generate_l2_campaign_task_adds_decoder_pwl_logit_sensitivity_ladder_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
