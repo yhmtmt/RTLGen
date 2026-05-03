@@ -1,5 +1,5 @@
 {
   "proposal_id": "prop_l2_decoder_bf16_pwl_scale_probe_v1",
   "status": "pending",
-  "decision": "iterate"
+  "decision": "awaiting_evaluation"
 }
