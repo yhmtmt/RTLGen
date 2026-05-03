@@ -1,0 +1,2 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_decoder_bf16_pwl_tie_rank_datapath_v1_r2_run_cb92c6e2f2dc394c,1,1,0,succeeded,runs/designs/activations/score_tie_rank_r8_s16_l16_wrapper/metrics.csv,3.2925,6786.4644,0.00526,none,,

@@ -1,0 +1,94 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-05-03T13:25:44.327034Z",
+  "item_id": "l1_decoder_bf16_pwl_tie_rank_datapath_v1_r2",
+  "run_key": "l1_decoder_bf16_pwl_tie_rank_datapath_v1_r2_run_cb92c6e2f2dc394c",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "f20792b7148976c2e8fbaa6b86e0964447a5eab1",
+  "objective": "Measure the isolated 8-lane score/logit tie-rank datapath used to price the bf16/PWL recovery path after sweep-script support was fixed.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/activations/score_tie_rank/sweeps/nangate45_highutil.json"
+    ],
+    "configs": [
+      "runs/designs/activations/score_tie_rank_r8_s16_l16_wrapper/config_score_tie_rank_r8_s16_l16.json"
+    ],
+    "out_root": "runs/designs/activations",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 1,
+  "evaluation_record": {
+    "evaluation_mode": "measurement_only",
+    "abstraction_layer": "circuit_block",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/score_tie_rank_r8_s16_l16_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "aa83599c",
+        "tag": "score_tie_rank_nangate45_highutil_4c4fe1ea",
+        "result_path": "runs/designs/activations/score_tie_rank_r8_s16_l16_wrapper/work/aa83599c/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 3.2925,
+        "die_area": 6786.4644,
+        "total_power_mw": 0.00526
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_decoder_bf16_pwl_tie_rank_datapath_v1_r2",
+    "completed_trials": 1,
+    "success_count": 1,
+    "failure_count": 0,
+    "success_rate": 1.0,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 3.2925,
+        "mean": 3.2925,
+        "median": 3.2925,
+        "max": 3.2925,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "die_area": {
+        "best": 6786.4644,
+        "mean": 6786.4644,
+        "median": 6786.4644,
+        "max": 6786.4644,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "total_power_mw": {
+        "best": 0.00526,
+        "mean": 0.00526,
+        "median": 0.00526,
+        "max": 0.00526,
+        "range": 0.0,
+        "stddev": 0.0
+      }
+    }
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/activations/score_tie_rank_r8_s16_l16_wrapper/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_bf16_pwl_tie_rank_datapath_v1_r2/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_bf16_pwl_tie_rank_datapath_v1_r2/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_bf16_pwl_tie_rank_datapath_v1_r2/trial_table.csv"
+  }
+}
