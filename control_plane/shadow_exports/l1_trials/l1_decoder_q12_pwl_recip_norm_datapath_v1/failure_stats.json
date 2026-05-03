@@ -1,0 +1,12 @@
+{
+  "item_id": "l1_decoder_q12_pwl_recip_norm_datapath_v1",
+  "completed_trials": 2,
+  "success_count": 1,
+  "failure_count": 1,
+  "by_category": {
+    "lease_expired": 1
+  },
+  "by_stage": {
+    "control_plane": 1
+  }
+}
