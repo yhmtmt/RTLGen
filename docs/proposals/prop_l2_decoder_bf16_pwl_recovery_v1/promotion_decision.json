@@ -1,4 +1,5 @@
 {
   "proposal_id": "prop_l2_decoder_bf16_pwl_recovery_v1",
-  "status": "pending"
+  "status": "pending",
+  "decision": "iterate"
 }
