@@ -19,8 +19,11 @@
         "direction": "iterate",
         "reason": "Use the trained-weight tiny result to decide whether bf16/PWL recovery should move to distilgpt2/GPT-2 confirmation or return to logit-margin diagnosis."
       },
-      "status": "pending",
-      "notes": "Prepared with trained tiny GPT-2-family model assets and the decoder_trained_tiny_quality task-generator hook."
+      "status": "merged",
+      "notes": "Prepared with trained tiny GPT-2-family model assets and the decoder_trained_tiny_quality task-generator hook. Merged via PR #363 and merge 34d9b800af5334864e787032b1934e3eb581f158 at 2026-05-03T21:02:23.684489Z.",
+      "merged_pr_number": 363,
+      "merge_commit": "34d9b800af5334864e787032b1934e3eb581f158",
+      "merged_utc": "2026-05-03T21:02:23.684489Z"
     }
   ]
 }

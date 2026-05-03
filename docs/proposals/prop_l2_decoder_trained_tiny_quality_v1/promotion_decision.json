@@ -1,11 +1,15 @@
 {
   "proposal_id": "prop_l2_decoder_trained_tiny_quality_v1",
-  "candidate_id": "decoder_trained_tiny_quality",
-  "decision": "pending",
-  "reason": "Await evaluator result for l2_decoder_trained_tiny_quality_v1.",
+  "candidate_id": "l2_decoder_trained_tiny_quality_v1",
+  "decision": "iterate",
+  "reason": "Focused comparison baseline could not be resolved from proposal baseline_refs.",
   "evidence_refs": [
-    "item:l2_decoder_trained_tiny_quality_v1"
+    "item:l2_decoder_trained_tiny_quality_v1",
+    "run:l2_decoder_trained_tiny_quality_v1_run_61435f2f5c602eb9",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_trained_tiny_quality_v1.json",
+    "pr:#363",
+    "https://github.com/yhmtmt/RTLGen/pull/363"
   ],
-  "next_action": "Review the trained tiny quality result and decide whether to scale to a larger trained checkpoint.",
-  "requires_human_approval": true
+  "next_action": "inspect follow-on work after l2_decoder_trained_tiny_quality_v1",
+  "requires_human_approval": false
 }

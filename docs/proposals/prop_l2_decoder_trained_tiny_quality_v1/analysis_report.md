@@ -1,30 +1,32 @@
 # Analysis Report
 
 ## Candidate
-
 - `proposal_id`: `prop_l2_decoder_trained_tiny_quality_v1`
-- `item_id`: `l2_decoder_trained_tiny_quality_v1`
-- abstraction: `decoder_trained_tiny_quality`
+- `candidate_id`: `l2_decoder_trained_tiny_quality_v1`
 
 ## Evaluations Consumed
-
-Pending evaluator completion.
+- `l2_decoder_trained_tiny_quality_v1`
+- `l2_decoder_trained_tiny_quality_v1_run_61435f2f5c602eb9`
+- source commit: `4b3085f0866e3940d56722d190f8630d06b5e3a5`
+- review: PR #363
 
 ## Baseline Comparison
-
-Pending. The evaluator should compare the bf16/PWL baseline row against the
-bf16/PWL logit tie-break row on the trained tiny decoder dataset.
+- baseline_ref: `None`
+- baseline_item_id: `None`
+- outcome: `unavailable`
+- summary: Focused comparison baseline could not be resolved from proposal baseline_refs.
 
 ## Result
-
-Pending.
+- result: `iterate`
+- confidence level: merged accepted evidence
+- estimated optimization room: pending follow-on comparison
+- architecture conclusion robustness: staged evidence
+- summary: Focused comparison baseline could not be resolved from proposal baseline_refs.
 
 ## Failures and Caveats
-
-This is a trained tiny checkpoint smoke, not a larger-model proof. Any pass must
-be followed by a larger imported-model check before treating the result as
-distribution-robust.
+- paired baseline comparison payload was unavailable at consume time
 
 ## Recommendation
-
-Pending evaluator result.
+- `iterate`
+- reason: Focused comparison baseline could not be resolved from proposal baseline_refs.
+- next_action: inspect follow-on work after l2_decoder_trained_tiny_quality_v1

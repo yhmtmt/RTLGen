@@ -1,8 +1,8 @@
 {
   "proposal_id": "prop_l2_decoder_trained_tiny_quality_v1",
-  "decision": "pending",
+  "decision": "iterate",
   "item_id": "l2_decoder_trained_tiny_quality_v1",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "pr_number": 363,
+  "merge_commit": "34d9b800af5334864e787032b1934e3eb581f158",
+  "merged_utc": "2026-05-03T21:02:23.684489Z"
 }
