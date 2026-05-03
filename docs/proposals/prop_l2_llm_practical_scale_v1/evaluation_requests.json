@@ -12,5 +12,27 @@
       "comparison_role": "ranking",
       "depends_on_item_id": "l2_decoder_bf16_pwl_scale_probe_v1"
     }
+  ],
+  "source_commit": "f8465990cb830dc9ac6fc6094b18e2659aae6450",
+  "requested_items": [
+    {
+      "item_id": "l2_llm_practical_scale_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run larger decoder-style proxy cases to see whether 64 active tokens and 1024-2048 KV-context score widths change nm1 vs nm2 PPA or scheduler pressure.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "llm_practical_scale",
+      "comparison_role": "ranking",
+      "paired_baseline_item_id": "",
+      "depends_on_item_ids": [
+        "l2_decoder_bf16_pwl_scale_probe_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use the larger practical proxy result to decide whether wider compute-array work is justified or whether precision/quality exploration should remain the frontier."
+      },
+      "status": "pending"
+    }
   ]
 }
