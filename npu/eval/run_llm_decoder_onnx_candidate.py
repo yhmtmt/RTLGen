@@ -40,10 +40,19 @@ from npu.eval.tensor_trace_summary import (
 JsonDict = Dict[str, Any]
 
 
-def _topk_pairs(values: Sequence[float], *, k: int) -> Iterable[Tuple[int, float]]:
+def _topk_pairs(values: Sequence[float], *, k: int, tie_break_values: Sequence[float] | None = None) -> Iterable[Tuple[int, float]]:
     if k <= 0:
         return []
-    order = sorted(range(len(values)), key=lambda idx: float(values[idx]), reverse=True)[:k]
+    if tie_break_values is not None and len(tie_break_values) != len(values):
+        raise SystemExit('tie_break_values length must match score length')
+    if tie_break_values is None:
+        order = sorted(range(len(values)), key=lambda idx: float(values[idx]), reverse=True)[:k]
+    else:
+        order = sorted(
+            range(len(values)),
+            key=lambda idx: (float(values[idx]), float(tie_break_values[idx])),
+            reverse=True,
+        )[:k]
     return [(int(idx), float(values[idx])) for idx in order]
 
 
@@ -511,13 +520,39 @@ def _derive_candidate_semantics(backend_config: JsonDict) -> str:
         parts.append(f'prob_{prob_float}')
     else:
         parts.append('prob_fp')
+    score_tie_breaker = str(backend_config.get('score_tie_breaker', '') or '').strip()
+    if score_tie_breaker:
+        parts.append(f'tiebreak_{score_tie_breaker}')
     return '_'.join(parts)
 
 
-def _build_result(*, request: JsonDict, vocab: Dict[str, int], next_token_id: int, scores: Sequence[float], topk: int, tokenizer_runtime: Any | None = None, prompt_doc: JsonDict, ort_version: str, approximation: JsonDict, candidate_semantics: str, selected_tensors: Sequence[JsonDict] | None = None) -> JsonDict:
+def _tie_break_values(*, score_values: Sequence[float], logit_values: Sequence[float], backend_config: JsonDict) -> tuple[list[float] | None, JsonDict]:
+    mode = str(backend_config.get('score_tie_breaker', '') or '').strip()
+    if not mode:
+        return None, {'mode': 'score_only'}
+    if mode == 'logit':
+        return [float(v) for v in logit_values], {
+            'mode': 'score_then_logit',
+            'scope': 'ranking_only',
+            'note': 'Scores remain unchanged; logits only break exact score ties.',
+        }
+    raise SystemExit(f'unsupported backend_config.score_tie_breaker: {mode}')
+
+
+def _select_next_token_id(scores: Sequence[float], *, tie_break_values: Sequence[float] | None = None) -> int:
+    if not scores:
+        raise SystemExit('cannot select next token from empty scores')
+    if tie_break_values is None:
+        return max(range(len(scores)), key=lambda idx: float(scores[idx]))
+    if len(tie_break_values) != len(scores):
+        raise SystemExit('tie_break_values length must match score length')
+    return max(range(len(scores)), key=lambda idx: (float(scores[idx]), float(tie_break_values[idx])))
+
+
+def _build_result(*, request: JsonDict, vocab: Dict[str, int], next_token_id: int, scores: Sequence[float], topk: int, tokenizer_runtime: Any | None = None, prompt_doc: JsonDict, ort_version: str, approximation: JsonDict, candidate_semantics: str, selected_tensors: Sequence[JsonDict] | None = None, tie_break_values: Sequence[float] | None = None, ranking_meta: JsonDict | None = None) -> JsonDict:
     backend_config = request['backend_config']
     next_token_text = _decode_token(next_token_id, vocab, tokenizer_runtime=tokenizer_runtime)
-    topk_pairs = list(_topk_pairs(scores, k=topk))
+    topk_pairs = list(_topk_pairs(scores, k=topk, tie_break_values=tie_break_values))
     top_score = float(topk_pairs[0][1]) if topk_pairs else float(scores[next_token_id])
     runner = {
         'runner': 'onnx_candidate_v1',
@@ -534,6 +569,7 @@ def _build_result(*, request: JsonDict, vocab: Dict[str, int], next_token_id: in
             'next_token_id': next_token_id,
             'confidence': top_score,
             'distribution': _score_distribution_stats(scores, topk=topk),
+            'ranking': dict(ranking_meta or {'mode': 'score_only'}),
             'selected_tensors': list(selected_tensors or []),
             'selected_tensors_sha256': _selected_tensor_trace_hash(selected_tensors),
             'topk': [
@@ -592,7 +628,12 @@ def main() -> int:
     softmax_weights, softmax_meta = _apply_softmax_path(logit_values, backend_config)
     normalized_probs, normalization_meta = _apply_normalization_path(softmax_weights, backend_config)
     score_values, probability_meta = _apply_probability_quantization(normalized_probs, backend_config)
-    next_token_id = max(range(len(score_values)), key=lambda idx: float(score_values[idx]))
+    ranking_values, ranking_meta = _tie_break_values(
+        score_values=score_values,
+        logit_values=logit_values,
+        backend_config=backend_config,
+    )
+    next_token_id = _select_next_token_id(score_values, tie_break_values=ranking_values)
     result = _build_result(
         request=request,
         vocab=vocab,
@@ -609,6 +650,8 @@ def main() -> int:
             'probabilities': probability_meta,
         },
         candidate_semantics=candidate_semantics,
+        tie_break_values=ranking_values,
+        ranking_meta=ranking_meta,
         selected_tensors=_trace_selected_outputs_candidate(
             outputs_by_name=outputs_by_name,
             trace_patterns=trace_patterns,
