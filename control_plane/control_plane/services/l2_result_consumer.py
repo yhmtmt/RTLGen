@@ -501,7 +501,8 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
     recommended_next = str(diagnosis_dict.get("recommended_next_step", "")).strip()
     if recommended_next:
         parts.append(f"recommended_next_step={recommended_next}")
-    return decision, "; ".join(parts) + "."
+    summary = "; ".join(parts)
+    return decision, summary if summary.endswith(".") else summary + "."
 
 
 def _build_decoder_evidence_assessment(
