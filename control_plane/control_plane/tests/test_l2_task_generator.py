@@ -1188,6 +1188,8 @@ def test_generate_l2_campaign_task_adds_decoder_distilgpt2_quality_evidence() ->
                 "runs/models/llm_decoder_distilgpt2_trained_v1/model_contract.json"
             )
             assert "evaluator-local generated" in decoder_inputs["materialized_model_scope"]
+            assert "RTLGEN_HF_MATERIALIZER_PYTHON" in work_item.command_manifest[0]["run"]
+            assert "/orfs/tools/AutoTuner/autotuner_env/bin/python3" in work_item.command_manifest[0]["run"]
             assert "--model-id distilgpt2" in work_item.command_manifest[0]["run"]
             assert "--rough-grid decoder_bf16_pwl_scale_probe_v1" in work_item.command_manifest[5]["run"]
             assert "summarize_llm_decoder_bf16_pwl_recovery.py" in work_item.command_manifest[6]["run"]
