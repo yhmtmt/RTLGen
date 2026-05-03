@@ -1,0 +1,68 @@
+{
+  "candidate_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_scale_proxy_v1_manifest.json",
+  "dataset_id": "llm_decoder_eval_tiny_v1",
+  "decoder_backend_configs": {
+    "candidate": {
+      "backend_id": "command_json_v1",
+      "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_exact_prob_fp",
+      "command": [
+        "python3",
+        "npu/eval/run_llm_decoder_onnx_candidate.py"
+      ],
+      "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
+      "input_name": "input_ids",
+      "model_config_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/config.json",
+      "normalization_mode": "exact",
+      "onnx_model_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/model.onnx",
+      "output_name": "logits",
+      "runtime_target": "software_emulation",
+      "softmax_mode": "exact",
+      "topk": 16,
+      "trace_output_patterns": [
+        "present.*"
+      ],
+      "trace_tensor_quant_bits": 4
+    },
+    "reference": {
+      "backend_id": "command_json_v1",
+      "command": [
+        "python3",
+        "npu/eval/run_llm_decoder_onnx_reference.py"
+      ],
+      "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
+      "input_name": "input_ids",
+      "model_config_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/config.json",
+      "onnx_model_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/model.onnx",
+      "output_name": "logits",
+      "runtime_target": "cpu_reference",
+      "topk": 16,
+      "trace_output_patterns": [
+        "present.*"
+      ]
+    }
+  },
+  "decoder_backend_interface": "v1",
+  "model_contract": "runs/models/llm_decoder_tiny_v1/model_contract.json",
+  "notes": "Scale-proxy prompt and rank-pressure set for checking whether the bf16/PWL plus logit tie-break result holds as decoder use cases grow. This is still the tiny ONNX model, so it is a scale-sensitivity screen, not evidence from a larger trained LLM.",
+  "reference_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/reference_scale_proxy_v1_manifest.json",
+  "sample_count": 80,
+  "sample_file": "runs/datasets/llm_decoder_eval_tiny_v1/samples_scale_proxy_v1.jsonl",
+  "scale_proxy_axes": {
+    "compute_array_pressure": [
+      "topk_increased_from_5_to_16",
+      "full_vocab_argmax_and_topk_ordering_over_50257_logits",
+      "more opportunities for equal-score and near-score rank inversions"
+    ],
+    "llm_workload_pressure": [
+      "longer prompts",
+      "instruction and dialogue variants",
+      "code, list, arithmetic, punctuation, and ambiguous continuation regimes",
+      "repeated categories to expose distribution dependence"
+    ]
+  },
+  "status": "scale_proxy_manifest_v1",
+  "task": "greedy_next_token",
+  "tokenizer_id": "llm_decoder_gpt2_bpe_stub_v1",
+  "tokenizer_manifest": "runs/tokenizers/llm_decoder_gpt2_bpe_stub_v1/manifest.json",
+  "version": 0.3
+}
