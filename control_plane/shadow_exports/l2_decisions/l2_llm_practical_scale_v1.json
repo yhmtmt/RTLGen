@@ -1,0 +1,112 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-05-03T14:15:17.326925Z",
+  "item_id": "l2_llm_practical_scale_v1",
+  "run_key": "l2_llm_practical_scale_v1_run_222ec317f138e8ce",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "f8465990cb830dc9ac6fc6094b18e2659aae6450",
+  "review_metadata_source_commit": "f8465990cb830dc9ac6fc6094b18e2659aae6450",
+  "objective": "Run larger decoder-style proxy cases to see whether 64 active tokens and 1024-2048 KV-context score widths change nm1 vs nm2 PPA or scheduler pressure.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+    ],
+    "design_dirs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+    ],
+    "macro_manifests": [
+      "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+      "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+    ],
+    "generated_campaign": {
+      "path": "runs/campaigns/npu/e2e_eval_llm_practical_scale_v1/campaign__l2_llm_practical_scale_v1.json",
+      "outputs": {
+        "report_md": "runs/campaigns/npu/e2e_eval_llm_practical_scale_v1__l2_llm_practical_scale_v1/report.md",
+        "results_csv": "runs/campaigns/npu/e2e_eval_llm_practical_scale_v1__l2_llm_practical_scale_v1/results.csv",
+        "campaign_dir": "runs/campaigns/npu/e2e_eval_llm_practical_scale_v1__l2_llm_practical_scale_v1"
+      },
+      "clean_outputs": true,
+      "base_campaign_path": "runs/campaigns/npu/e2e_eval_llm_practical_scale_v1/campaign.json"
+    },
+    "candidate_manifests": [
+      "runs/candidates/nangate45/module_candidates.json"
+    ]
+  },
+  "recommendation": {
+    "arch_id": "fp16_nm1",
+    "macro_mode": "flat_nomacro",
+    "objective_rank": 1,
+    "objective_score": "0.0",
+    "latency_ms_mean": 0.4387206666666666,
+    "energy_mj_mean": 8.4726612588e-05,
+    "critical_path_ns_mean": 5.557037432204143,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.193122,
+    "flow_elapsed_s_mean": 840.3449999999999
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_llm_practical_scale_v1",
+    "title": "LLM practical scale proxy",
+    "primary_question": "",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "ranking",
+    "abstraction_layer": "llm_practical_scale",
+    "expected_direction": "iterate",
+    "expected_reason": "Use the larger practical proxy result to decide whether wider compute-array work is justified or whether precision/quality exploration should remain the frontier.",
+    "summary": "Focused comparison baseline could not be resolved from proposal baseline_refs.",
+    "outcome": "unavailable",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_llm_practical_scale_v1",
+    "title": "LLM practical scale proxy",
+    "primary_question": "",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "ranking",
+    "outcome": "unavailable",
+    "summary": "Focused comparison baseline could not be resolved from proposal baseline_refs.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": []
+  },
+  "source_refs": {
+    "best_point_json": "runs/campaigns/npu/e2e_eval_llm_practical_scale_v1__l2_llm_practical_scale_v1/best_point.json",
+    "summary_csv": "runs/campaigns/npu/e2e_eval_llm_practical_scale_v1__l2_llm_practical_scale_v1/summary.csv",
+    "results_csv": "runs/campaigns/npu/e2e_eval_llm_practical_scale_v1__l2_llm_practical_scale_v1/results.csv",
+    "report_md": "runs/campaigns/npu/e2e_eval_llm_practical_scale_v1__l2_llm_practical_scale_v1/report.md",
+    "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_llm_practical_scale_v1__l2_llm_practical_scale_v1/artifacts/mapper/fp16_nm1/practical_scale_attn6_s64_h64_kv1024/schedule.yml",
+    "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_practical_scale_v1__l2_llm_practical_scale_v1/artifacts/mapper/fp16_nm1/practical_scale_attn6_s64_h64_kv1024/descriptors.bin",
+    "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_practical_scale_v1__l2_llm_practical_scale_v1/artifacts/perf/fp16_nm1/practical_scale_attn6_s64_h64_kv1024/trace.json",
+    "focused_model_artifacts": [
+      {
+        "model_id": "practical_scale_attn6_s64_h64_kv1024",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_practical_scale_v1__l2_llm_practical_scale_v1/artifacts/mapper/fp16_nm1/practical_scale_attn6_s64_h64_kv1024/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_practical_scale_v1__l2_llm_practical_scale_v1/artifacts/mapper/fp16_nm1/practical_scale_attn6_s64_h64_kv1024/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_practical_scale_v1__l2_llm_practical_scale_v1/artifacts/perf/fp16_nm1/practical_scale_attn6_s64_h64_kv1024/trace.json"
+      },
+      {
+        "model_id": "practical_scale_attn8_s64_h64_kv1024",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_practical_scale_v1__l2_llm_practical_scale_v1/artifacts/mapper/fp16_nm1/practical_scale_attn8_s64_h64_kv1024/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_practical_scale_v1__l2_llm_practical_scale_v1/artifacts/mapper/fp16_nm1/practical_scale_attn8_s64_h64_kv1024/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_practical_scale_v1__l2_llm_practical_scale_v1/artifacts/perf/fp16_nm1/practical_scale_attn8_s64_h64_kv1024/trace.json"
+      },
+      {
+        "model_id": "practical_scale_attn6_s64_h64_kv2048",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_practical_scale_v1__l2_llm_practical_scale_v1/artifacts/mapper/fp16_nm1/practical_scale_attn6_s64_h64_kv2048/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_practical_scale_v1__l2_llm_practical_scale_v1/artifacts/mapper/fp16_nm1/practical_scale_attn6_s64_h64_kv2048/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_practical_scale_v1__l2_llm_practical_scale_v1/artifacts/perf/fp16_nm1/practical_scale_attn6_s64_h64_kv2048/trace.json"
+      }
+    ]
+  }
+}
