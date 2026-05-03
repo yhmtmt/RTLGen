@@ -1,0 +1,26 @@
+{
+  "proposal_id": "prop_l2_decoder_bf16_pwl_recovery_v1",
+  "source_commit": "7f626ef14576dfe41bfad363d6b24602dae52935",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_bf16_pwl_recovery_v1",
+      "task_type": "l2_campaign",
+      "objective": "Test whether bf16/PWL exact-next losses are equal-score ranking losses recoverable by logit tie-breaking.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_bf16_pwl_recovery",
+      "comparison_role": "ranking",
+      "paired_baseline_item_id": "",
+      "depends_on_item_ids": [
+        "l2_decoder_q8_norm_distribution_broad_v2",
+        "l2_decoder_bf16_pwl_recoverability_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "If logit tie-breaking recovers the zero-gap bf16/PWL misses without regressions, keep bf16/PWL as the low-cost frontier before full QAT or q12 fallback."
+      },
+      "status": "pending"
+    }
+  ]
+}
