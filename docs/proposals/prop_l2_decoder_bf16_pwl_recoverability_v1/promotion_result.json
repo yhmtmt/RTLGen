@@ -2,7 +2,7 @@
   "proposal_id": "prop_l2_decoder_bf16_pwl_recoverability_v1",
   "decision": "iterate",
   "status": "pending_evaluation",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "pr_number": 343,
+  "merge_commit": "c0d18325c36458cd323b6b7550fd1261c7954098",
+  "merged_utc": "2026-05-03T12:38:10.701692Z"
 }

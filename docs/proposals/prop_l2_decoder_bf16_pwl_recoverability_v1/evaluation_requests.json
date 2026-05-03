@@ -20,7 +20,11 @@
         "direction": "iterate",
         "reason": "Use score-gap evidence to decide whether to prototype bf16/PWL-aware fine-tuning before more exact-safe integer hardware."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 343,
+      "merge_commit": "c0d18325c36458cd323b6b7550fd1261c7954098",
+      "merged_utc": "2026-05-03T12:38:10.701692Z",
+      "notes": "Merged via PR #343 and merge c0d18325c36458cd323b6b7550fd1261c7954098 at 2026-05-03T12:38:10.701692Z."
     }
   ]
 }

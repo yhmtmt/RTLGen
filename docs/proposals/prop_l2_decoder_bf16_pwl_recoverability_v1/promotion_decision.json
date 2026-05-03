@@ -3,8 +3,14 @@
   "status": "pending_evaluation",
   "decision": "iterate",
   "candidate_id": "l2_decoder_bf16_pwl_recoverability_v1",
-  "reason": "Awaiting bf16/PWL score-gap recoverability evidence.",
-  "evidence_refs": [],
-  "next_action": "run l2_decoder_bf16_pwl_recoverability_v1",
+  "reason": "Focused comparison baseline could not be resolved from proposal baseline_refs.",
+  "evidence_refs": [
+    "item:l2_decoder_bf16_pwl_recoverability_v1",
+    "run:l2_decoder_bf16_pwl_recoverability_v1_run_9dfe86cde2b1cb34",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_bf16_pwl_recoverability_v1.json",
+    "pr:#343",
+    "https://github.com/yhmtmt/RTLGen/pull/343"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_bf16_pwl_recoverability_v1",
   "requires_human_approval": false
 }
