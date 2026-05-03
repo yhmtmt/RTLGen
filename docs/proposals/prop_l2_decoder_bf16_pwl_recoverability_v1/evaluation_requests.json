@@ -1,0 +1,26 @@
+{
+  "proposal_id": "prop_l2_decoder_bf16_pwl_recoverability_v1",
+  "source_commit": "8470bd3962219e1a101bc5df97642ce90b27f42f",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_bf16_pwl_recoverability_v1",
+      "task_type": "l2_campaign",
+      "objective": "Estimate whether bf16/PWL exact-next misses are rank-2 small-margin shifts worth testing with training or QAT.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_bf16_pwl_recoverability",
+      "comparison_role": "ranking",
+      "paired_baseline_item_id": "",
+      "depends_on_item_ids": [
+        "l2_decoder_q8_norm_distribution_broad_v2",
+        "l2_decoder_pwl_bitwidth_boundary_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use score-gap evidence to decide whether to prototype bf16/PWL-aware fine-tuning before more exact-safe integer hardware."
+      },
+      "status": "pending"
+    }
+  ]
+}
