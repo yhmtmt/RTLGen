@@ -1,0 +1,21 @@
+{
+  "version": 0.1,
+  "baseline_template": "grid_approx_pwl_bf16_path",
+  "recovery_template": "grid_approx_pwl_bf16_path_logit_tiebreak",
+  "diagnosis": {
+    "decision": "tie_break_recovery_sufficient",
+    "exact_safe_after_recovery": true
+  },
+  "recovery": {
+    "template": "grid_approx_pwl_bf16_path_logit_tiebreak",
+    "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_bf16_w_bf16_norm_recip_bf16_prob_fp_tiebreak_logit",
+    "normalization_mode": "reciprocal_float",
+    "normalization_reciprocal_float_format": "bf16",
+    "score_tie_breaker": "logit",
+    "sample_count": 24,
+    "next_token_matches": 24,
+    "topk_matches": 24,
+    "next_token_mismatch_sample_ids": [],
+    "topk_miss_sample_ids": []
+  }
+}
