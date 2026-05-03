@@ -158,6 +158,8 @@ Concrete artifact schema:
 - `risk_level`
 - `required_evaluations`
 - `needs_mapper_change`
+- `baseline_refs` when the proposal needs a row-matched focused comparison
+- `prior_art` or `knowledge_refs` for contextual reports that are not baselines
 
 ### Stage 2. Direction Gate
 

@@ -254,6 +254,17 @@ def _developer_loop_payload(work_item: WorkItem) -> dict[str, Any]:
     return dict(developer_loop) if isinstance(developer_loop, dict) else {}
 
 
+def _developer_loop_proposal_id(work_item: WorkItem) -> str:
+    developer_loop = _developer_loop_payload(work_item)
+    proposal_path_text = str(developer_loop.get("proposal_path", "")).strip()
+    if proposal_path_text:
+        path = Path(proposal_path_text)
+        proposal_id = path.parent.name if path.name == "proposal.json" else path.name
+        if proposal_id:
+            return proposal_id
+    return str(developer_loop.get("proposal_id", "")).strip()
+
+
 def _proposal_file(repo_root: Path, work_item: WorkItem) -> Path | None:
     developer_loop = _developer_loop_payload(work_item)
     if not isinstance(developer_loop, dict):
@@ -347,7 +358,11 @@ def _developer_loop_abstraction_layer(repo_root: Path, work_item: WorkItem) -> s
         return fallback_layer
     proposal = _load_proposal(repo_root, work_item)
     if isinstance(proposal, dict):
-        return str(proposal.get("abstraction_layer", "")).strip()
+        layer = str(proposal.get("abstraction_layer", "")).strip()
+        if layer:
+            return layer
+        if str(proposal.get("kind", "")).strip() == "architecture":
+            return "full_architecture"
     return ""
 
 
@@ -357,7 +372,7 @@ def _proposal_context(work_item: WorkItem, proposal: dict[str, Any] | None) -> d
     if not isinstance(direct_comparison, dict):
         direct_comparison = {}
     return {
-        "proposal_id": str((proposal or {}).get("proposal_id", "")).strip() or str(developer_loop.get("proposal_id", "")).strip(),
+        "proposal_id": str((proposal or {}).get("proposal_id", "")).strip() or _developer_loop_proposal_id(work_item),
         "title": str((proposal or {}).get("title", "")).strip(),
         "kind": str((proposal or {}).get("kind", "")).strip(),
         "primary_question": str(direct_comparison.get("primary_question", "")).strip(),
@@ -392,6 +407,14 @@ def _effective_comparison_role(repo_root: Path, work_item: WorkItem) -> str:
         "broad_ranking": "ranking",
         "measurement_only": "measurement_only",
     }.get(_effective_evaluation_mode(repo_root, work_item), "standalone")
+
+
+def _explicit_comparison_role(repo_root: Path, work_item: WorkItem) -> str:
+    return str(_developer_loop_comparison(repo_root, work_item).get("role", "")).strip()
+
+
+def _is_ranking_or_frontier_mode(*, evaluation_mode: str, comparison_role: str) -> bool:
+    return comparison_role == "ranking" or evaluation_mode in {"broad_ranking", "frontier_detail"}
 
 
 def _resolve_baseline_summary_from_decision_payload(
@@ -462,6 +485,56 @@ def _resolve_baseline_summary_from_work_item(
     return baseline_ref, _load_csv(summary_path), report_rel_value, assessment_meta, source_refs
 
 
+def _proposal_baseline_candidate_refs(proposal: dict[str, Any] | None) -> list[str]:
+    if not isinstance(proposal, dict):
+        return []
+    refs: list[str] = []
+    for key in ("baseline_refs", "prior_art"):
+        values = proposal.get(key)
+        if not isinstance(values, list):
+            continue
+        for value in values:
+            ref_text = str(value).strip()
+            if ref_text and ref_text not in refs:
+                refs.append(ref_text)
+    return refs
+
+
+def _resolve_baseline_summary_from_path_ref(
+    *,
+    repo_root: Path,
+    ref_text: str,
+) -> tuple[str, list[dict[str, str]], str | None, dict[str, Any], dict[str, str]] | tuple[None, None, None, None, None]:
+    candidate = _resolve_path(repo_root=repo_root, path_text=ref_text)
+    if candidate.is_dir():
+        summary_path = candidate / "summary.csv"
+        report_path = candidate / "report.md"
+        baseline_ref = ref_text
+    elif candidate.is_file():
+        if candidate.name == "summary.csv":
+            summary_path = candidate
+            report_path = candidate.with_name("report.md")
+        elif candidate.name == "report.md":
+            summary_path = candidate.with_name("summary.csv")
+            report_path = candidate
+        else:
+            summary_path = candidate.parent / "summary.csv"
+            report_path = candidate.parent / "report.md"
+        baseline_ref = str(candidate.parent.relative_to(repo_root))
+    else:
+        return None, None, None, None, None
+    if not summary_path.exists():
+        return None, None, None, None, None
+    source_refs = {
+        "baseline_summary_csv": str(summary_path.relative_to(repo_root)),
+    }
+    report_rel: str | None = None
+    if report_path.exists():
+        report_rel = str(report_path.relative_to(repo_root))
+        source_refs["baseline_report_md"] = report_rel
+    return baseline_ref, _load_csv(summary_path), report_rel, {}, source_refs
+
+
 def _resolve_baseline_summary(
     session: Session,
     *,
@@ -480,22 +553,20 @@ def _resolve_baseline_summary(
         if resolved[0] is not None:
             return resolved
         return None, None, None, None, None
-    for ref in (proposal or {}).get("baseline_refs") or []:
+    for ref in _proposal_baseline_candidate_refs(proposal):
         ref_text = str(ref).strip()
         if not ref_text:
             continue
-        candidate = _resolve_path(repo_root=repo_root, path_text=ref_text)
-        if candidate.is_dir():
-            summary_path = candidate / "summary.csv"
-            if summary_path.exists():
-                report_path = candidate / "report.md"
-                report_rel = str(report_path.relative_to(repo_root)) if report_path.exists() else None
-                source_refs = {
-                    "baseline_summary_csv": f"{ref_text}/summary.csv",
-                }
-                if report_rel:
-                    source_refs["baseline_report_md"] = report_rel
-                return ref_text, _load_csv(summary_path), report_rel, {}, source_refs
+        resolved = _resolve_baseline_summary_from_work_item(
+            session,
+            repo_root=repo_root,
+            item_id=ref_text,
+        )
+        if resolved[0] is not None:
+            return resolved
+        resolved = _resolve_baseline_summary_from_path_ref(repo_root=repo_root, ref_text=ref_text)
+        if resolved[0] is not None:
+            return resolved
     return None, None, None, None, None
 
 
@@ -669,9 +740,9 @@ def _build_proposal_assessment(
             ),
             {},
         )
-    if evaluation_mode == "broad_ranking":
+    if _is_ranking_or_frontier_mode(evaluation_mode=evaluation_mode, comparison_role=comparison_role):
         summary = (
-            "Broad ranking evidence was recorded for this proposal; focused baseline comparison is not required "
+            "Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required "
             "for this evaluation mode."
         )
         assessment = {
@@ -718,7 +789,7 @@ def _build_proposal_assessment(
         if comparison_role == "candidate" and str(comparison.get("paired_baseline_item_id", "")).strip():
             missing_summary = "Paired baseline item could not be resolved for focused candidate comparison."
         else:
-            missing_summary = "Focused comparison baseline could not be resolved from proposal baseline_refs."
+            missing_summary = "Focused comparison baseline could not be resolved from proposal baseline_refs or prior_art."
         assessment = {
                 "proposal_id": str(context.get("proposal_id", "")).strip(),
                 "title": str(context.get("title", "")).strip(),
@@ -906,6 +977,7 @@ def consume_l2_result(session: Session, request: Layer2ConsumeRequest) -> Layer2
     proposal = _load_proposal(repo_root, work_item)
     evaluation_mode = _effective_evaluation_mode(repo_root, work_item)
     comparison_role = _effective_comparison_role(repo_root, work_item)
+    explicit_comparison_role = _explicit_comparison_role(repo_root, work_item)
     proposal_assessment, evaluation_record, proposal_source_refs = _build_proposal_assessment(
         session=session,
         work_item=work_item,
@@ -913,7 +985,11 @@ def consume_l2_result(session: Session, request: Layer2ConsumeRequest) -> Layer2
         proposal=proposal,
         summary_rows=summary_rows,
     )
-    if evaluation_mode == "paired_comparison" and comparison_role == "candidate":
+    if (
+        evaluation_mode == "paired_comparison"
+        and comparison_role == "candidate"
+        and explicit_comparison_role == "candidate"
+    ):
         if proposal_assessment is None or evaluation_record is None:
             raise Layer2ResultConsumerError(
                 "paired comparison candidate did not serialize proposal assessment/evaluation record"

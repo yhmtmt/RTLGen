@@ -714,6 +714,126 @@ def test_consume_l2_result_broad_ranking_does_not_require_baseline_refs() -> Non
             assert "baseline comparison is not required" in evaluation_record["summary"]
 
 
+def test_consume_l2_result_frontier_ranking_does_not_require_baseline_refs() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            proposal_dir = repo_root / "docs" / "developer_loop" / "prop_l2_demo_v1"
+            _write(
+                proposal_dir / "proposal.json",
+                json.dumps(
+                    {
+                        "proposal_id": "prop_l2_demo_v1",
+                        "kind": "architecture",
+                        "title": "Demo frontier ranking",
+                        "prior_art": ["docs/proposals/older/analysis_report.md"],
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            item_id = _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id="l2_frontier_ranking",
+                campaign_dir_rel="runs/campaigns/npu/frontier_ranking_campaign",
+                summary_rows=(
+                    "scope,arch_id,macro_mode,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,throughput_infer_per_s_mean\n"
+                    "aggregate,fp16_nm1_demo,flat_nomacro,1,0.4,0.15,5.5,0.18,1000,1.0\n"
+                ),
+                proposal_path="docs/developer_loop/prop_l2_demo_v1",
+                comparison={"role": "ranking"},
+            )
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            payload = copy.deepcopy(work_item.task_request.request_payload or {})
+            payload["developer_loop"]["evaluation"] = {
+                "mode": "frontier_detail",
+                "expected_direction": "iterate",
+                "expected_reason": "This item records frontier details without a paired baseline.",
+            }
+            payload["developer_loop"]["abstraction"] = {
+                "layer": "llm_practical_scale",
+            }
+            work_item.task_request.request_payload = payload
+            session.commit()
+
+            consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=item_id))
+
+            decision_payload = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{item_id}.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            assessment = decision_payload["proposal_assessment"]
+            assert assessment["evaluation_mode"] == "frontier_detail"
+            assert assessment["comparison_role"] == "ranking"
+            assert assessment["outcome"] == "ranking_recorded"
+            assert "baseline comparison is not required" in assessment["summary"]
+
+
+def test_consume_l2_result_resolves_prior_art_report_as_baseline() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            baseline_dir = repo_root / "runs" / "campaigns" / "npu" / "prior_art_baseline"
+            _write(
+                baseline_dir / "summary.csv",
+                (
+                    "scope,arch_id,macro_mode,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,throughput_infer_per_s_mean\n"
+                    "aggregate,fp16_nm1_demo,flat_nomacro,1,0.50,0.20,5.5,0.18,1000,1.0\n"
+                ),
+            )
+            _write(baseline_dir / "report.md", "# prior-art baseline\n")
+            proposal_dir = repo_root / "docs" / "developer_loop" / "prop_l2_demo_v1"
+            _write(
+                proposal_dir / "proposal.json",
+                json.dumps(
+                    {
+                        "proposal_id": "prop_l2_demo_v1",
+                        "kind": "architecture",
+                        "title": "Demo focused comparison",
+                        "direct_comparison": {
+                            "primary_question": "Does the candidate improve the prior-art baseline?"
+                        },
+                        "prior_art": ["runs/campaigns/npu/prior_art_baseline/report.md"],
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            item_id = _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id="l2_prior_art_candidate",
+                campaign_dir_rel="runs/campaigns/npu/prior_art_candidate",
+                summary_rows=(
+                    "scope,arch_id,macro_mode,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,throughput_infer_per_s_mean\n"
+                    "aggregate,fp16_nm1_demo,flat_nomacro,1,0.40,0.15,5.5,0.18,1000,1.0\n"
+                ),
+                proposal_path="docs/developer_loop/prop_l2_demo_v1",
+            )
+
+            consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=item_id))
+
+            payload = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{item_id}.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            assessment = payload["proposal_assessment"]
+            assert assessment["baseline_ref"] == "runs/campaigns/npu/prior_art_baseline"
+            assert assessment["outcome"] == "improved"
+            assert payload["source_refs"]["baseline_summary_csv"] == "runs/campaigns/npu/prior_art_baseline/summary.csv"
+
+
 def test_consume_l2_result_multimodel_measurement_exports_model_artifacts() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
@@ -1052,6 +1172,7 @@ def test_consume_l2_result_paired_comparison_recovers_baseline_and_abstraction_f
             baseline_work_item.state = WorkItemState.MERGED
             session.commit()
             consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=baseline_item_id))
+            session.query(Run).filter(Run.work_item_id == baseline_work_item.id).delete()
             session.delete(baseline_work_item)
             session.commit()
 

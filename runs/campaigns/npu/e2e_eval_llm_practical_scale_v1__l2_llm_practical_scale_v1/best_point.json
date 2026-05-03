@@ -1,6 +1,6 @@
 {
   "campaign_id": "npu_e2e_eval_llm_practical_scale_v1",
-  "generated_utc": "2026-05-03T14:15:11+00:00",
+  "generated_utc": "2026-05-03T20:17:45+00:00",
   "objective_weights": {
     "latency": 1.0,
     "energy": 1.0,
@@ -33,8 +33,8 @@
       "max_dependency_wait_ns": 0.0,
       "max_softmax_wait_on_gemm_ns": 0.0,
       "max_softmax_wait_on_misc_compute_ns": 0.0,
-      "min_latency_us_per_token": null,
-      "max_latency_us_per_token": null
+      "min_latency_us_per_token": 4.7863437499999995,
+      "max_latency_us_per_token": 9.40034375
     }
   }
 }
