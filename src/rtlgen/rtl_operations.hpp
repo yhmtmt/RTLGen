@@ -7,3 +7,4 @@ void emitCmvmModule(const CmvmOperationConfig &config, const OperandDefinition &
 void emitActivationModule(const ActivationOperationConfig &config, const OperandDefinition &operand);
 void emitSoftmaxRowwiseModule(const SoftmaxRowwiseOperationConfig &config, const OperandDefinition &operand);
 void emitBf16RecipNormModule(const Bf16RecipNormOperationConfig &config, const OperandDefinition &operand);
+void emitScoreTieRankModule(const ScoreTieRankOperationConfig &config, const OperandDefinition &operand);

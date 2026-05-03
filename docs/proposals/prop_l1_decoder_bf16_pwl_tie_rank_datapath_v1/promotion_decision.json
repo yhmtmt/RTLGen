@@ -1,0 +1,9 @@
+{
+  "proposal_id": "prop_l1_decoder_bf16_pwl_tie_rank_datapath_v1",
+  "candidate_id": "l1_decoder_bf16_pwl_tie_rank_datapath_v1",
+  "decision": "pending",
+  "reason": "Awaiting Layer 1 PPA result for the score/logit tie-rank datapath.",
+  "evidence_refs": [],
+  "next_action": "dispatch Layer 1 sweep after setup PR merges",
+  "requires_human_approval": false
+}
