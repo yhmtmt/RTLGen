@@ -1163,6 +1163,44 @@ def _decoder_pwl_failure_diagnosis_evidence(*, item_id: str) -> dict[str, Any]:
     }
 
 
+def _decoder_bf16_pwl_recoverability_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_tiny_v1"
+    sweep = f"{base}/decoder_quality_sweep__l2_decoder_q8_norm_distribution_broad_v2.json"
+    sample_file = f"{base}/samples_distribution_v2.jsonl"
+    recoverability_out = f"{base}/decoder_bf16_pwl_recoverability__{item_id}.json"
+    recoverability_report = f"{base}/decoder_bf16_pwl_recoverability__{item_id}.md"
+    commands = [
+        {
+            "name": "estimate_decoder_bf16_pwl_recoverability",
+            "run": (
+                "python3 npu/eval/estimate_llm_decoder_bf16_recoverability.py "
+                f"--sweep {sweep} "
+                f"--sample-file {sample_file} "
+                f"--out {recoverability_out} "
+                f"--out-md {recoverability_report}"
+            ),
+        },
+    ]
+    return {
+        "inputs": {
+            "source_sweep": sweep,
+            "sample_file": sample_file,
+            "recoverability_out": recoverability_out,
+            "recoverability_report": recoverability_report,
+            "target_template": "grid_approx_pwl_bf16_path",
+            "recoverability_scope": (
+                "score-gap screen for whether bf16/PWL exact-next misses are small-margin "
+                "top-k-contained cases that are worth testing with QAT or fine-tuning"
+            ),
+        },
+        "commands": commands,
+        "expected_outputs": [
+            recoverability_out,
+            recoverability_report,
+        ],
+    }
+
+
 def _decoder_pwl_logit_sensitivity_ladder_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_tiny_v1"
     dataset_manifest = f"{base}/manifest_pwl_failure_focus_v1.json"
@@ -1585,6 +1623,7 @@ def _build_payload(
         "decoder_q8_normalization_frontier",
         "decoder_q8_normalization_distribution",
         "decoder_q8_normalization_distribution_broad_v2",
+        "decoder_bf16_pwl_recoverability",
         "decoder_pwl_failure_diagnosis",
         "decoder_pwl_logit_sensitivity_ladder",
         "decoder_pwl_survivor_distribution",
@@ -1593,6 +1632,8 @@ def _build_payload(
     }:
         if abstraction_layer_name == "decoder_quantization_outline":
             decoder_evidence = _decoder_quantization_outline_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_bf16_pwl_recoverability":
+            decoder_evidence = _decoder_bf16_pwl_recoverability_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_pwl_bitwidth_boundary":
             decoder_evidence = _decoder_pwl_bitwidth_boundary_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_pwl_survivor_distribution":

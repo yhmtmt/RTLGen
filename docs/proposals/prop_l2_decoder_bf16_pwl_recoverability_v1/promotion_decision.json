@@ -1,0 +1,10 @@
+{
+  "proposal_id": "prop_l2_decoder_bf16_pwl_recoverability_v1",
+  "status": "pending_evaluation",
+  "decision": "iterate",
+  "candidate_id": "l2_decoder_bf16_pwl_recoverability_v1",
+  "reason": "Awaiting bf16/PWL score-gap recoverability evidence.",
+  "evidence_refs": [],
+  "next_action": "run l2_decoder_bf16_pwl_recoverability_v1",
+  "requires_human_approval": false
+}

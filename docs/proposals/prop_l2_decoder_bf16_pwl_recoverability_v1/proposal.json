@@ -1,0 +1,62 @@
+{
+  "proposal_id": "prop_l2_decoder_bf16_pwl_recoverability_v1",
+  "created_utc": "2026-05-03T12:20:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_bf16_pwl_recoverability",
+  "title": "Decoder bf16/PWL exact-next recoverability",
+  "hypothesis": "The bf16 reciprocal PWL path preserves top-k on the expanded v2 decoder distribution but misses exact top-1 on two small-margin samples. Measuring the score gap required to flip those samples back to the reference token can determine whether a bf16/PWL-aware training experiment is justified before spending more area on exact-safe integer hardware.",
+  "direct_comparison": {
+    "primary_question": "For bf16/PWL exact-next misses, is the reference token still rank-2 with a small candidate score gap relative to normal correct-sample margins?",
+    "include": [
+      "bf16/PWL broad-v2 next-token misses",
+      "reference token rank in bf16/PWL top-k",
+      "candidate score gap needed to restore reference top-1",
+      "comparison against correct-sample top1/top2 margin distribution"
+    ],
+    "exclude": [
+      "running training or QAT",
+      "new RTL/OpenROAD measurement",
+      "claiming that training will definitely recover exact top-1"
+    ]
+  },
+  "expected_benefit": [
+    "separates easy rank-2 margin shifts from hard top-k loss",
+    "decides whether a bf16/PWL-aware training job is worth adding",
+    "keeps q12 exact-safe hardware as a fallback rather than the immediate next spend"
+  ],
+  "risks": [
+    "score-gap analysis is only a proxy for training recoverability",
+    "the sample set remains tied to one tiny decoder model",
+    "training dynamics may differ from a static top-k margin screen"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_bf16_pwl_recoverability_v1",
+      "task_type": "l2_campaign",
+      "objective": "decoder_bf16_pwl_recoverability",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_bf16_pwl_recoverability",
+      "depends_on_item_ids": [
+        "l2_decoder_q8_norm_distribution_broad_v2",
+        "l2_decoder_pwl_bitwidth_boundary_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_decoder_q8_norm_distribution_broad_v2/proposal.json",
+    "runs/datasets/llm_decoder_eval_tiny_v1/decoder_q8_norm_frontier__l2_decoder_q8_norm_distribution_broad_v2.json",
+    "runs/datasets/llm_decoder_eval_tiny_v1/decoder_pwl_bitwidth_boundary__l2_decoder_pwl_bitwidth_boundary_v1.json"
+  ],
+  "knowledge_refs": [
+    "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_sweep__l2_decoder_q8_norm_distribution_broad_v2.json",
+    "runs/datasets/llm_decoder_eval_tiny_v1/samples_distribution_v2.jsonl",
+    "npu/eval/estimate_llm_decoder_bf16_recoverability.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}
