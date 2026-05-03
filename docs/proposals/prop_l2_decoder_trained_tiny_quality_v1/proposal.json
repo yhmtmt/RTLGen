@@ -1,0 +1,63 @@
+{
+  "proposal_id": "prop_l2_decoder_trained_tiny_quality_v1",
+  "created_utc": "2026-05-03T20:49:49Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_trained_tiny_quality",
+  "title": "Decoder trained-weight tiny quality gate",
+  "hypothesis": "The bf16 reciprocal PWL path plus logit score tie-break recovered exact-next behavior on the synthetic tiny decoder harness, but trained model weights may change logit margins and rank sensitivity. A small trained GPT-2-family ONNX model should be the next gate before scaling the same approximation path to distilgpt2, GPT-2, or larger array studies.",
+  "direct_comparison": {
+    "primary_question": "Does the current decoder bf16/PWL plus logit tie-break recovery remain exact-safe on a trained tiny GPT-2-family decoder workload?",
+    "include": [
+      "reference ONNX generation from a trained tiny GPT-2-family checkpoint",
+      "exact reference and approximated candidate next-token traces",
+      "q12 exact-normalization and q8 reciprocal controls",
+      "bf16/PWL baseline and bf16/PWL logit tie-break recovery rows"
+    ],
+    "exclude": [
+      "larger-model proof",
+      "new RTL/OpenROAD PPA measurement",
+      "training, fine tuning, or quantization-aware training"
+    ]
+  },
+  "expected_benefit": [
+    "separates trained-weight distribution risk from the previous random-model and prompt-proxy screens",
+    "provides a cheap pass/fail gate before importing larger decoder checkpoints",
+    "keeps the evaluator workflow on the existing decoder quality harness"
+  ],
+  "risks": [
+    "the model is intentionally tiny and may still have weak language quality",
+    "a pass here does not prove behavior on larger hidden sizes, deeper layer stacks, or real production distributions",
+    "the test remains next-token quality evidence rather than a full task-accuracy benchmark"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_trained_tiny_quality_v1",
+      "task_type": "l2_campaign",
+      "objective": "Check whether bf16/PWL plus logit tie-break recovery remains exact-safe on a trained tiny GPT-2-family decoder workload.",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_trained_tiny_quality",
+      "depends_on_item_ids": [
+        "l2_decoder_bf16_pwl_scale_probe_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_decoder_bf16_pwl_scale_probe_v1/proposal.json",
+    "runs/datasets/llm_decoder_eval_tiny_v1/decoder_bf16_pwl_scale_probe__l2_decoder_bf16_pwl_scale_probe_v1.json",
+    "control_plane/shadow_exports/l1_promotions/l1_decoder_bf16_pwl_tie_rank_datapath_v1_r2.json"
+  ],
+  "knowledge_refs": [
+    "runs/models/llm_decoder_tiny_gpt2_trained_v1/model_contract.json",
+    "runs/datasets/llm_decoder_eval_trained_tiny_v1/manifest.json",
+    "runs/datasets/llm_decoder_eval_trained_tiny_v1/samples.jsonl",
+    "npu/eval/sweep_llm_decoder_candidate_quality.py",
+    "npu/eval/summarize_llm_decoder_bf16_pwl_recovery.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}

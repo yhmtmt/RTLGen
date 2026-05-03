@@ -1,0 +1,24 @@
+{"sample_id":"trained_geo_france","prompt":"The capital of France is","expected_continuation":" Paris","category":"factual_geo"}
+{"sample_id":"trained_geo_japan","prompt":"The capital of Japan is","expected_continuation":" Tokyo","category":"factual_geo"}
+{"sample_id":"trained_color_banana","prompt":"A ripe banana is usually","expected_continuation":" yellow","category":"commonsense_color"}
+{"sample_id":"trained_color_sky","prompt":"On a clear day, the sky is","expected_continuation":" blue","category":"commonsense_color"}
+{"sample_id":"trained_math_two_plus_two","prompt":"2 + 2 =","expected_continuation":" 4","category":"arithmetic_short"}
+{"sample_id":"trained_math_ten_minus_one","prompt":"10 - 1 =","expected_continuation":" 9","category":"arithmetic_short"}
+{"sample_id":"trained_weekday","prompt":"The day after Monday is","expected_continuation":" Tuesday","category":"calendar"}
+{"sample_id":"trained_quote","prompt":"To be or not to be, that is the","expected_continuation":" question","category":"quote_completion"}
+{"sample_id":"trained_code_python","prompt":"def add(a, b): return","expected_continuation":" a","category":"code_python"}
+{"sample_id":"trained_code_loop","prompt":"for i in range(3): print","expected_continuation":"(i)","category":"code_python"}
+{"sample_id":"trained_list_numbers","prompt":"One, two, three,","expected_continuation":" four","category":"sequence"}
+{"sample_id":"trained_list_letters","prompt":"A, B, C,","expected_continuation":" D","category":"sequence"}
+{"sample_id":"trained_dialogue","prompt":"User: Hello\\nAssistant:","expected_continuation":" Hello","category":"dialogue"}
+{"sample_id":"trained_instruction","prompt":"Summarize this sentence in one word: The experiment passed.","expected_continuation":" success","category":"instruction"}
+{"sample_id":"trained_repetition","prompt":"ha ha ha ha","expected_continuation":" ha","category":"repetition"}
+{"sample_id":"trained_punctuation","prompt":"Wait, what happens next?","expected_continuation":" The","category":"punctuation"}
+{"sample_id":"trained_news","prompt":"In today's meeting, the team decided to","expected_continuation":" continue","category":"narrative"}
+{"sample_id":"trained_story","prompt":"Once upon a time, there was a small","expected_continuation":" village","category":"narrative"}
+{"sample_id":"trained_science","prompt":"Water freezes at","expected_continuation":" zero","category":"science_fact"}
+{"sample_id":"trained_history","prompt":"The first president of the United States was","expected_continuation":" George","category":"history_fact"}
+{"sample_id":"trained_low_margin_a","prompt":"The answer could be yes or","expected_continuation":" no","category":"ambiguous_low_margin"}
+{"sample_id":"trained_low_margin_b","prompt":"The next token might be one of many","expected_continuation":" possible","category":"ambiguous_low_margin"}
+{"sample_id":"trained_long_context","prompt":"In a compact language model evaluation, we compare exact and approximate probability paths because","expected_continuation":" small","category":"long_context"}
+{"sample_id":"trained_symbolic","prompt":"if x > 0 and y > 0 then","expected_continuation":" x","category":"symbolic_logic"}

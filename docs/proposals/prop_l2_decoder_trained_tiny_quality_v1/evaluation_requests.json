@@ -1,0 +1,26 @@
+{
+  "proposal_id": "prop_l2_decoder_trained_tiny_quality_v1",
+  "source_commit": "c85db5432a88549f68cef6623be3695455fe62e1",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_trained_tiny_quality_v1",
+      "task_type": "l2_campaign",
+      "objective": "Check whether bf16/PWL plus logit tie-break recovery remains exact-safe on a trained tiny GPT-2-family decoder workload.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_trained_tiny_quality",
+      "comparison_role": "ranking",
+      "paired_baseline_item_id": "",
+      "depends_on_item_ids": [
+        "l2_decoder_bf16_pwl_scale_probe_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use the trained-weight tiny result to decide whether bf16/PWL recovery should move to distilgpt2/GPT-2 confirmation or return to logit-margin diagnosis."
+      },
+      "status": "not_requested",
+      "notes": "Prepared with trained tiny GPT-2-family model assets and the decoder_trained_tiny_quality task-generator hook."
+    }
+  ]
+}

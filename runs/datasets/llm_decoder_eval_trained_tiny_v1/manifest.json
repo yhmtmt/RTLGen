@@ -1,0 +1,23 @@
+{
+  "version": 0.1,
+  "dataset_id": "llm_decoder_eval_tiny_v1",
+  "task": "greedy_next_token",
+  "sample_count": 24,
+  "sample_file": "runs/datasets/llm_decoder_eval_trained_tiny_v1/samples.jsonl",
+  "reference_manifest": "runs/datasets/llm_decoder_eval_trained_tiny_v1/reference_manifest.json",
+  "candidate_manifest": "runs/datasets/llm_decoder_eval_trained_tiny_v1/candidate_manifest.json",
+  "tokenizer_id": "llm_decoder_tiny_gpt2_trained_v1",
+  "tokenizer_manifest": "runs/tokenizers/llm_decoder_tiny_gpt2_trained_v1/manifest.json",
+  "model_contract": "runs/models/llm_decoder_tiny_gpt2_trained_v1/model_contract.json",
+  "decoder_backend_interface": "v1",
+  "status": "trained_tiny_quality_manifest_v1",
+  "notes": "Trained-weight smoke dataset for checking whether the bf16/PWL candidate behavior seen on random/proxy decoder distributions survives a real GPT-2-family checkpoint. The dataset keeps prompts compact and diverse; expected_continuation is metadata and quality is judged against the exact-reference next-token result.",
+  "decoder_backend_configs": {
+    "reference": {
+      "topk": 16
+    },
+    "candidate": {
+      "topk": 16
+    }
+  }
+}
