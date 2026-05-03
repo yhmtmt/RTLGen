@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_bf16_pwl_scale_probe_v1",
-  "source_commit": "3e1537796e6e183d81eddd9a004d88cdb5885387",
+  "source_commit": "8042fa99f01be718c091672c1f18e52a49400575",
   "requested_items": [
     {
       "item_id": "l2_decoder_bf16_pwl_scale_probe_v1",
