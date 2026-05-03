@@ -1,0 +1,64 @@
+{
+  "proposal_id": "prop_l2_decoder_pwl_bitwidth_boundary_v1",
+  "created_utc": "2026-05-03T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_pwl_bitwidth_boundary",
+  "title": "Decoder PWL integer bit-width boundary",
+  "hypothesis": "q12 PWL is exact-safe on the expanded v2 distribution but its measured Nangate45 datapath cost is much higher than the bf16/q8 reciprocal frontier. A narrow q10/q11/q12/q13 distribution check can identify whether q11 is an exact-safe integer floor before spending another Layer 1 PPA run.",
+  "direct_comparison": {
+    "primary_question": "Across the expanded v2 prompt distribution, is q11 PWL exact-normalization enough to preserve exact next-token and top-k behavior, or does q12 remain the lowest exact-safe integer PWL bit width?",
+    "include": [
+      "q10, q11, q12, and q13 exact-logit controls",
+      "q10, q11, q12, and q13 PWL exact-normalization rows",
+      "unquantized PWL exact-normalization control",
+      "bf16 reciprocal PWL hardware-frontier anchor"
+    ],
+    "exclude": [
+      "new RTL/OpenROAD measurement",
+      "choosing a final q8-versus-bf16 architecture point",
+      "claiming robustness beyond the tiny decoder model and expanded v2 prompt set"
+    ]
+  },
+  "expected_benefit": [
+    "narrows the integer precision floor between the q10 miss and q12 exact-safe survivor",
+    "avoids spending remote PPA time on q12 if q11 already recovers exact behavior",
+    "keeps the bf16 reciprocal anchor visible as the current measured hardware frontier"
+  ],
+  "risks": [
+    "the expanded v2 set is still tied to one tiny decoder model and tokenizer binding",
+    "exact next-token behavior can be dominated by very small logit margins",
+    "software-emulated q11 behavior still needs RTL confirmation before hardware conclusions"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_pwl_bitwidth_boundary_v1",
+      "task_type": "l2_campaign",
+      "objective": "decoder_pwl_bitwidth_boundary",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_pwl_bitwidth_boundary",
+      "depends_on_item_ids": [
+        "l2_decoder_pwl_survivor_distribution_v1",
+        "l1_decoder_q12_pwl_recip_norm_datapath_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_decoder_pwl_survivor_distribution_v1/proposal.json",
+    "runs/datasets/llm_decoder_eval_tiny_v1/decoder_pwl_survivor_distribution__l2_decoder_pwl_survivor_distribution_v1.json",
+    "docs/proposals/prop_l1_decoder_q12_pwl_recip_norm_datapath_v1/analysis_report.md",
+    "runs/datasets/llm_decoder_eval_tiny_v1/decoder_q8_norm_frontier__l2_decoder_q8_norm_distribution_broad_v2.json"
+  ],
+  "knowledge_refs": [
+    "runs/datasets/llm_decoder_eval_tiny_v1/manifest_distribution_v2.json",
+    "runs/datasets/llm_decoder_eval_tiny_v1/samples_distribution_v2.jsonl",
+    "npu/eval/sweep_llm_decoder_candidate_quality.py",
+    "npu/eval/summarize_llm_decoder_pwl_bitwidth_boundary.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}

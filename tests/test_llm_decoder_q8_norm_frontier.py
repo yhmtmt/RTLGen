@@ -24,6 +24,29 @@ def test_q8_normalization_frontier_grid_contains_exact_reciprocal_and_bf16_ancho
     assert grid["grid_approx_pwl_bf16_path"]["normalization_reciprocal_float_format"] == "bf16"
 
 
+def test_pwl_bitwidth_boundary_grid_narrows_integer_precision_floor() -> None:
+    model_contract = load_json(Path("runs/models/llm_decoder_tiny_v1/model_contract.json"))
+    grid = _rough_grid_templates(model_contract, "decoder_pwl_bitwidth_boundary_v1")
+
+    assert set(grid) == {
+        "candidate_onnx_softmax_exact",
+        "grid_exact_logits_q13",
+        "grid_exact_logits_q12",
+        "grid_exact_logits_q11",
+        "grid_exact_logits_q10",
+        "grid_approx_pwl_float_norm_exact",
+        "grid_approx_pwl_in_q13_w_q13_norm_exact",
+        "grid_approx_pwl_in_q12_w_q12_norm_exact",
+        "grid_approx_pwl_in_q11_w_q11_norm_exact",
+        "grid_approx_pwl_in_q10_w_q10_norm_exact",
+        "grid_approx_pwl_bf16_path",
+    }
+    assert grid["grid_approx_pwl_in_q11_w_q11_norm_exact"]["softmax_input_quant_bits"] == 11
+    assert grid["grid_approx_pwl_in_q11_w_q11_norm_exact"]["softmax_weight_quant_bits"] == 11
+    assert grid["grid_approx_pwl_in_q11_w_q11_norm_exact"]["normalization_mode"] == "exact"
+    assert grid["grid_approx_pwl_bf16_path"]["normalization_reciprocal_float_format"] == "bf16"
+
+
 def test_q8_normalization_frontier_report_selects_lowest_cost_exact_safe_reciprocal() -> None:
     report = build_report(
         sweep_path=Path("tests/fixtures/decoder_q8_norm_frontier_sweep.json"),
