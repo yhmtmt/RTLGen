@@ -36,6 +36,10 @@ It is the first step toward a reproducible closed-loop flow:
   manifest.
 - `npu/eval/run_llm_decoder_onnx_reference.py`: active exact-reference runner
   behind `command_json_v1` for the pinned tiny decoder ONNX export.
+- `npu/eval/materialize_hf_decoder_contract.py`: evaluator-side materializer
+  for larger Hugging Face causal decoders such as `distilgpt2`. It writes the
+  decoder model/tokenizer contracts expected by the existing harness while
+  leaving large generated artifacts under gitignored paths.
 
 The repo can now express a future exact-reference pair explicitly even before the
 assets are present: the model contract may point at a `reference_onnx_binding.json`
@@ -46,6 +50,23 @@ The decoder-quality scaffold also introduces separate non-ONNX contracts for:
 - datasets: `runs/datasets/...`
 - tokenizers: `runs/tokenizers/...`
 - placeholder decoder model bindings: `runs/models/<model_id>/model_contract.json`
+
+For larger trained-checkpoint confirmation, run the materializer before any
+reference/candidate generation:
+
+```sh
+python3 npu/eval/materialize_hf_decoder_contract.py \
+  --model-id distilgpt2 \
+  --contract-id llm_decoder_distilgpt2_trained_v1 \
+  --dataset-dir runs/datasets/llm_decoder_eval_distilgpt2_trained_v1 \
+  --sample-file runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/samples.jsonl
+```
+
+The materializer requires `torch`, `transformers`, and `onnx` in the evaluator
+Python environment. Generated files under
+`runs/models/llm_decoder_distilgpt2_trained_v1/` and
+`runs/tokenizers/llm_decoder_distilgpt2_trained_v1/` are intentionally ignored
+and should not be committed by evaluator PRs.
 
 ## Validation
 Validate campaign manifest:
