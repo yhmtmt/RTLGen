@@ -28,242 +28,242 @@
   "samples": [
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_geo_capital_france.json",
-      "candidate_sha256": "7aba330381e82e5d16f172eba5ddd7b6645614deca2beb93a89e93286bbfac58",
+      "candidate_sha256": "832f26a13fbe13a4665fd9c2a39a94ec7f7cc68b8517ed75df37c46cb7051793",
       "sample_id": "dist2_geo_capital_france"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_geo_capital_japan.json",
-      "candidate_sha256": "3617fa5fffc6cd9789126e428ebe40a382ff382e3cf2149453c47e943578fb64",
+      "candidate_sha256": "af06109993529bda1371f5dcb07dd0167216537777597c1afea868f612aa2166",
       "sample_id": "dist2_geo_capital_japan"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_geo_capital_germany.json",
-      "candidate_sha256": "6900341518927aedb8e122032bcae00f4c15a7813b81263666af899c44bbb6b6",
+      "candidate_sha256": "bf38f9b8ad4d4d6f2b3e4794f7c3d678028defca9670382ce8fca299b5dc2458",
       "sample_id": "dist2_geo_capital_germany"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_geo_capital_italy.json",
-      "candidate_sha256": "4401ee2b755f880c6f8ef93180a01c5129e9f216e74a36534e75849a79b8cbe3",
+      "candidate_sha256": "1d687a8b757c5c9034a835849a379e5ffa71115072b67d37599e2ca23fc25d42",
       "sample_id": "dist2_geo_capital_italy"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_color_banana.json",
-      "candidate_sha256": "ccaa140a062171c1383add37a542d8cd6afcc10067b260bc9d41635cf86ed796",
+      "candidate_sha256": "8f41a8e5d94e745304440cb9724e5a0a6d516a854617b3f9b809ebdc403bb101",
       "sample_id": "dist2_color_banana"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_color_sky.json",
-      "candidate_sha256": "47a719aece38de4de79bdbbcbb5189f62b124db5302d98f2e423f309e37ae3bf",
+      "candidate_sha256": "1f08ca7ddeace17ecad97ae370058d5d5a5500373c2513f74d1792ccb2474be5",
       "sample_id": "dist2_color_sky"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_color_grass.json",
-      "candidate_sha256": "11d25ca49a48f7a89c8804e6cc228f516cb7482c261d83b5ac73c3d670fffd6c",
+      "candidate_sha256": "8e8d3663a13f061d6c7842d41211974d6db8609093b36fc5a436ee992d50897f",
       "sample_id": "dist2_color_grass"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_color_snow.json",
-      "candidate_sha256": "1af1cb5e8f361a27b9723e7c63452fd083217d8e11430d3d6414b6f0ef614867",
+      "candidate_sha256": "6740052eaf130768df14cddf66e9b1d78656975e39e48eacc9a97f43c8a6402c",
       "sample_id": "dist2_color_snow"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_arith_two_plus_two.json",
-      "candidate_sha256": "1f455a47cf1a7f8377da320b11d442169232ac32d9dd1da5247f015b2b50210b",
+      "candidate_sha256": "676722890ecb00496db2e8599ea6143d2f7572e8e2fd86044617ca8dde1e0161",
       "sample_id": "dist2_arith_two_plus_two"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_arith_three_plus_five.json",
-      "candidate_sha256": "983b1fa06e299df029f34bf7800e59ac8a199585cbb6aadfdba640141ecbd2d6",
+      "candidate_sha256": "f100a077d520e7e78134f34c88954a38e695e761d4393d0469eebceeacc012d6",
       "sample_id": "dist2_arith_three_plus_five"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_arith_ten_minus_one.json",
-      "candidate_sha256": "c163063a871ec076d3de454eb6faabc979e44bc2a9b8988107c16d313ee970d0",
+      "candidate_sha256": "2eff168abb4b9570b213cd1894dfd9fcdaedb090abfb21ea49ccf698db89037c",
       "sample_id": "dist2_arith_ten_minus_one"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_arith_six_times_two.json",
-      "candidate_sha256": "1e6d873fc26ada7f659b71b3109c3cc2bf2e790d5c6438d146ae2994dd790fcc",
+      "candidate_sha256": "02cafcd90ac8fc856fe090d5911694b9069e63e8288d20e39ab2f5da238a5931",
       "sample_id": "dist2_arith_six_times_two"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_sequence_numbers.json",
-      "candidate_sha256": "ef5cac7cbeba3c94e331caee2acb8c4cbf0ba67ba78990e34b9d8e5891935f6f",
+      "candidate_sha256": "58b0932a6b72194106250b4de17380d16d10c30f5acd64fa4c0d3b32ad5d53fe",
       "sample_id": "dist2_sequence_numbers"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_sequence_letters.json",
-      "candidate_sha256": "61415ec1314277b1e4ca363cf2e9458b64a3f1720006abf6262e3256eafdacca",
+      "candidate_sha256": "551662195a5ffb1f7d65cfc7bce1e7504b189f39b9fb0f22d6d9543c53aaa994",
       "sample_id": "dist2_sequence_letters"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_sequence_weekdays.json",
-      "candidate_sha256": "413658e27a9405da8573439e683b540e6e297a4add994a8ec867693caa3fe94b",
+      "candidate_sha256": "03fc11081022905fc426864cfbfeeb988088d25d71d51b1962a09a03c7bf9dae",
       "sample_id": "dist2_sequence_weekdays"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_sequence_months.json",
-      "candidate_sha256": "b34e1c83861316d513c75e03dc40477befd911674f0a8852676bddf83d389f6a",
+      "candidate_sha256": "324a6e3f94ac215b4d65d02d1b948c9a9ce1ff4cad99e184235ca0d3d27e2495",
       "sample_id": "dist2_sequence_months"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_code_python_return.json",
-      "candidate_sha256": "56250503fdaf1f17156bfe3c174a61656ea8bd122ad36b7cedd30db876dd36dd",
+      "candidate_sha256": "31759dce77460bb0f61586325317071cb14a6a037f5b2a75440288529138f372",
       "sample_id": "dist2_code_python_return"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_code_python_if.json",
-      "candidate_sha256": "32984a39983f155b100119b216e0762880ac5684addf7fdca929f6f1bfcfae94",
+      "candidate_sha256": "2d1b62b398d4b1c69dfeb2ebac1045bf5aa7128b776cc17535e59e1d98cc21e0",
       "sample_id": "dist2_code_python_if"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_code_json_key.json",
-      "candidate_sha256": "284c5d3f7aa68d8c8865a8af7a380e86ceb5037670799ceb24b4c4dcfcb20efa",
+      "candidate_sha256": "8bea655d9d8bae7b757d1082da56ea809bed0da60b0d2ea8a7fec24236738dc5",
       "sample_id": "dist2_code_json_key"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_code_comment.json",
-      "candidate_sha256": "0d19aa17d590e6b6bb2df9df32f1eaa44ab50feb625c22175387fed50eed7043",
+      "candidate_sha256": "555adb3adf35ca76dce7d34f6ee5605abcb81991cd70e3e559d5675874a265aa",
       "sample_id": "dist2_code_comment"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_dialogue_greeting.json",
-      "candidate_sha256": "5cedb31f3cdf89f14ab5f674f9f4445147a73e7da840d9ab1a6cd68095b01ca4",
+      "candidate_sha256": "101bdeabd854bd71b7ebcc275c6f07734672a84351fc8c0485220f19eca43733",
       "sample_id": "dist2_dialogue_greeting"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_dialogue_thanks.json",
-      "candidate_sha256": "699d7093dc6a0b3d9728c62ed81691be4e08a70dc1dc6f22d25b6996bc6c12e0",
+      "candidate_sha256": "80934dbeefc65c89d2bc5e0fce4580e2a6a164d3b6cf5ab585f7212e588716fc",
       "sample_id": "dist2_dialogue_thanks"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_dialogue_question.json",
-      "candidate_sha256": "af57d46fc943b58a7b9f78bbfef37d4240ad426576d44a31d645e3aaec614869",
+      "candidate_sha256": "8822193d979037788ef505fd120d228545b1c2a300e411219911514f09f92ce0",
       "sample_id": "dist2_dialogue_question"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_dialogue_yesno.json",
-      "candidate_sha256": "ed46080d40191c6c3a389cc476ce839689f4ed5b2dccfbf649c739c69f47a0db",
+      "candidate_sha256": "78bc4d2ed1cbd30eeb74a7baf9f0460092c69b61a5a003e4984d92c7b1a43328",
       "sample_id": "dist2_dialogue_yesno"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_punctuation_period.json",
-      "candidate_sha256": "0041f6d70386b2fb96aea2257b025f1aa24f5df954301f71e0140746b6c483b3",
+      "candidate_sha256": "0e7983065eeeb4f99eb47189a861e4efe68093a08e2c429087b7c0321a1bca24",
       "sample_id": "dist2_punctuation_period"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_punctuation_comma.json",
-      "candidate_sha256": "603d28134370f7d504fb04ddfa678ae006a6cb247ba714d41d863866c4fe6706",
+      "candidate_sha256": "447260dc428ba7932e5185ec9540af0ff85f2bb59851847233fd9a142faff754",
       "sample_id": "dist2_punctuation_comma"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_punctuation_colon.json",
-      "candidate_sha256": "463981fc2d6707e40cbc42bb36218d6df07796c5009d60d47c12ceb3064bc5c9",
+      "candidate_sha256": "3e2f31b2c35da6d85f5371be71c26b0f5444e7dd59925908b1b5a838959a4216",
       "sample_id": "dist2_punctuation_colon"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_punctuation_quote.json",
-      "candidate_sha256": "617554094c621e801de44f31e2ca25fcff3b1a51bb218d91de1aeaea69978a57",
+      "candidate_sha256": "6eb88634d1dfd12c30e6652cf6bb652fc6719dd3a96569cda66c6f8a43184607",
       "sample_id": "dist2_punctuation_quote"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_long_lab.json",
-      "candidate_sha256": "73ba1f94a755e535d3fd32c96113fed057b2e6c3ed78eb4c7d80280fbf0aa0d1",
+      "candidate_sha256": "3eb7950798191dafcc0f80db1676dbf902c1f2bc5f461e2344528c50baa57492",
       "sample_id": "dist2_long_lab"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_long_story.json",
-      "candidate_sha256": "8197bbd08f16801fdcb89c4e8fcea45bfd638c4eee0bd7a8f544dad2d46ce955",
+      "candidate_sha256": "4c94b62334b9907491b598257ba5b1e27f5ecdac4a59697fc4965483b7707fb8",
       "sample_id": "dist2_long_story"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_long_design.json",
-      "candidate_sha256": "0e14a35add1245c7d7e003a09832e7909af45e711b0d6051bbd2b005c2a10407",
+      "candidate_sha256": "0bdfeacb2147d605cd624889cb396fc3b6d2bb70b8895460fb692f9d4543e3dd",
       "sample_id": "dist2_long_design"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_long_report.json",
-      "candidate_sha256": "9b287589bd843bf25d4dcd6efa7af543237665158d49a063b2127adb027095e0",
+      "candidate_sha256": "e168eeadbdab71f11503dbf70b86e5ae35255d0f0803c88d39539146e7b87f65",
       "sample_id": "dist2_long_report"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_repetition_ha.json",
-      "candidate_sha256": "ec50dd51c5c4f3d8c1037bad59a242283764d1b8c45cf5a3d7213a217f3dd2c3",
+      "candidate_sha256": "87758bf486ba575a3507683c995d521bbf74d73982921019d41cc06ac2394917",
       "sample_id": "dist2_repetition_ha"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_repetition_test.json",
-      "candidate_sha256": "b1f0dd053a016475bf48868817cdf3059164f0e802ae6d2abea664cb6e003d29",
+      "candidate_sha256": "0f0032bd3ebbb7b115b7ffc28bb9e4e7e1cbb9b61acae79d48c2ca65e3137559",
       "sample_id": "dist2_repetition_test"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_repetition_go.json",
-      "candidate_sha256": "fd0eeb05a9737ffbfae74dc9473e97f16565843b29adc9a673cd03f4fc7d3766",
+      "candidate_sha256": "067e9dff48e5e846b049c2a8d7eb25c73be0266ec8af01e03a1bec5b6be423f6",
       "sample_id": "dist2_repetition_go"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_repetition_tick.json",
-      "candidate_sha256": "6829dbac76472242409b9f08ce0a6f5d950b8107b109e33f7539d47acb5b8d86",
+      "candidate_sha256": "58fbcd0982250c5a221e32845033714915baea58e382cd4f9b22184ff96c68d7",
       "sample_id": "dist2_repetition_tick"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_ambiguous_article.json",
-      "candidate_sha256": "b842d19db2da8eeb4198fa47f4b70991a6b60f42d6af9383e26e48feffc3f5c0",
+      "candidate_sha256": "fa803f9043ab58b7f2e53b230c67b74284cf13979d81616bb75761cf0761e6b2",
       "sample_id": "dist2_ambiguous_article"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_ambiguous_preposition.json",
-      "candidate_sha256": "e46331c57ec44faed1a2b5133f109f00303593483d05b7848a06f862595fc472",
+      "candidate_sha256": "7e71e187bed098bdac0109fd8229c76f3e68c5f1f58fd1a183e948be4dbc837c",
       "sample_id": "dist2_ambiguous_preposition"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_ambiguous_object.json",
-      "candidate_sha256": "4abf9548af3b7da2b0d43dbf3638bded1ec0ccb68467c9b298c80d2b36d97ca5",
+      "candidate_sha256": "223fc2d630c36ec171512ae0cf3711a15791d4ccc9dddae7e0a1709888d4e04d",
       "sample_id": "dist2_ambiguous_object"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_ambiguous_common.json",
-      "candidate_sha256": "900dc1ca6fbddfcad15920b8343b283ca2979121bb1c64ae622eb87fbbe4c728",
+      "candidate_sha256": "e1b0c48c4bb27dc17143d9ee5bf1f8c07da2e5ca83db212aa580a7f3ece92e59",
       "sample_id": "dist2_ambiguous_common"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_instruction_short.json",
-      "candidate_sha256": "324920d02da064590846c80408ddf1074901774f3b2cf6ddec131319840273f6",
+      "candidate_sha256": "235446e58f934ff8485ae8d6e240414f64bd6c0ffdeaf14f525f4a4c48a7dc8c",
       "sample_id": "dist2_instruction_short"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_instruction_label.json",
-      "candidate_sha256": "0a0f7878cab07a63de1f0d946ac7e6fd6d35279f4a2f5262818a9f042295a576",
+      "candidate_sha256": "aa34fb3039ef06b5e0b7af521fa9c0f55ef3033348aa5ef71369ed5bd1d994a5",
       "sample_id": "dist2_instruction_label"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_instruction_classify.json",
-      "candidate_sha256": "2729e99d63b8c642d16ad847cdfb71cb9b46711f1ebf093e0b8d49696be8118e",
+      "candidate_sha256": "2663d500e44d8a5746b74d5f0701460115b573d7285cf275f47eab3858fe0854",
       "sample_id": "dist2_instruction_classify"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_instruction_complete.json",
-      "candidate_sha256": "d1811b9913e1125726344a7c7308a7e30a6b2aeb4e07e3395d8fdb6aad096422",
+      "candidate_sha256": "df252338deae2cc9c893b90a86e24d6b0ae3284a2a94ff648ac57ac42c9c3241",
       "sample_id": "dist2_instruction_complete"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_symbol_paren.json",
-      "candidate_sha256": "18bb42081d138913c03fddad08c6f49929fea1340f4feeeab5fe8cfb9d620241",
+      "candidate_sha256": "d0ffd4e00f99255a66eebfa40320edbded295eea1f5471b40995e33d64b241ac",
       "sample_id": "dist2_symbol_paren"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_symbol_bracket.json",
-      "candidate_sha256": "6aa4f5a812793de95a7c5e278acf48305924569d7bccbf3699c119e3f4762212",
+      "candidate_sha256": "c3f348bd276ae6c22f572eed627132b736e3666fe101a7ceab700cd17463605c",
       "sample_id": "dist2_symbol_bracket"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_symbol_arrow.json",
-      "candidate_sha256": "0bba943a3222560752d3eb3dae15f70652e304c3f913297d6ffd75db80e00f09",
+      "candidate_sha256": "12163e443bf6e5dcc1c0a9e1dfe46e8b25dd090c396b88c34d49d2c3a2b24cc3",
       "sample_id": "dist2_symbol_arrow"
     },
     {
       "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2/dist2_symbol_equals.json",
-      "candidate_sha256": "97108a6155a0703f7e053928a723edde02d5c7bdf042b098e57cf3baba98ad81",
+      "candidate_sha256": "209dd4fe2be4d6175f5c35853376d119a51276efe35f121b0bc824d2d9e283f0",
       "sample_id": "dist2_symbol_equals"
     }
   ],
