@@ -1,0 +1,11 @@
+{
+  "proposal_id": "prop_l2_decoder_trained_tiny_quality_v1",
+  "candidate_id": "decoder_trained_tiny_quality",
+  "decision": "pending",
+  "reason": "Await evaluator result for l2_decoder_trained_tiny_quality_v1.",
+  "evidence_refs": [
+    "item:l2_decoder_trained_tiny_quality_v1"
+  ],
+  "next_action": "Review the trained tiny quality result and decide whether to scale to a larger trained checkpoint.",
+  "requires_human_approval": true
+}
