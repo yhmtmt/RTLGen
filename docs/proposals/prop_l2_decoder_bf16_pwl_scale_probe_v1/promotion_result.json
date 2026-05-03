@@ -1,5 +1,9 @@
 {
   "proposal_id": "prop_l2_decoder_bf16_pwl_scale_probe_v1",
   "status": "pending",
-  "promoted_item_id": ""
+  "promoted_item_id": "",
+  "decision": "pending",
+  "pr_number": null,
+  "merge_commit": "",
+  "merged_utc": ""
 }
