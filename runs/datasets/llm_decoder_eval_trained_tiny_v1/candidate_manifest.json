@@ -1,0 +1,153 @@
+{
+  "backend_config": {
+    "backend_id": "command_json_v1",
+    "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_exact_prob_fp",
+    "command": [
+      "python3",
+      "npu/eval/run_llm_decoder_onnx_candidate.py"
+    ],
+    "equivalence_group": "llm_decoder_tiny_gpt2_trained_v1_reference_onnx_v1",
+    "input_name": "input_ids",
+    "interface": "decoder_backend_v1",
+    "model_config_path": "runs/models/llm_decoder_tiny_gpt2_trained_v1/reference_onnx/config.json",
+    "normalization_mode": "exact",
+    "onnx_model_path": "runs/models/llm_decoder_tiny_gpt2_trained_v1/reference_onnx/model.onnx",
+    "output_name": "logits",
+    "role": "candidate",
+    "runtime_target": "software_emulation",
+    "softmax_mode": "exact",
+    "topk": 16,
+    "trace_output_patterns": [
+      "present.*"
+    ],
+    "trace_tensor_quant_bits": 4
+  },
+  "candidate_semantics": "onnx_logits_fp_softmax_exact_norm_exact_prob_fp",
+  "dataset_id": "llm_decoder_eval_tiny_v1",
+  "model_contract": "runs/models/llm_decoder_tiny_gpt2_trained_v1/model_contract.json",
+  "samples": [
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_trained_tiny_v1/candidate/trained_geo_france.json",
+      "candidate_sha256": "a7abf6efa95cb6f542a00d9267f7b1c8e385167260009f2796f8c21853246e1b",
+      "sample_id": "trained_geo_france"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_trained_tiny_v1/candidate/trained_geo_japan.json",
+      "candidate_sha256": "5afc4f91edc09d80d16733345fa12850af2582d6d19806bbf018ebbeec4ce01d",
+      "sample_id": "trained_geo_japan"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_trained_tiny_v1/candidate/trained_color_banana.json",
+      "candidate_sha256": "a7655f9027060981d74b89f52d238587512a712441a26279cd0d1853e1fd0657",
+      "sample_id": "trained_color_banana"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_trained_tiny_v1/candidate/trained_color_sky.json",
+      "candidate_sha256": "1bd22dfc9f1d53d3cac87d05ba0a2fd81cd516c3e5e29224ad306dc703727f33",
+      "sample_id": "trained_color_sky"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_trained_tiny_v1/candidate/trained_math_two_plus_two.json",
+      "candidate_sha256": "ceea427ee29ffd403df76ab6ada0e4d882e225d10856626b99058ba3c8006fbc",
+      "sample_id": "trained_math_two_plus_two"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_trained_tiny_v1/candidate/trained_math_ten_minus_one.json",
+      "candidate_sha256": "24e64f4b47bde855d8ce231247c17f5f779b2bc70c2e30bf4671f7369131a290",
+      "sample_id": "trained_math_ten_minus_one"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_trained_tiny_v1/candidate/trained_weekday.json",
+      "candidate_sha256": "441d1b273643c486175217f1212f37b110b7babca95a692a1326d03874c14579",
+      "sample_id": "trained_weekday"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_trained_tiny_v1/candidate/trained_quote.json",
+      "candidate_sha256": "3c2d57aadf08f776bea2d94dc24eac457567f0f9806d690c21d65c6de49446a1",
+      "sample_id": "trained_quote"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_trained_tiny_v1/candidate/trained_code_python.json",
+      "candidate_sha256": "ddfca2ad2576984f3c732111870e1bb540e1ef60b6d8477485f551b3ff886dec",
+      "sample_id": "trained_code_python"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_trained_tiny_v1/candidate/trained_code_loop.json",
+      "candidate_sha256": "4fadf7ba5fcdc2ad7d25edcbbbe8a6c04545fb890d7580e8a83499b6851a918a",
+      "sample_id": "trained_code_loop"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_trained_tiny_v1/candidate/trained_list_numbers.json",
+      "candidate_sha256": "79a0f7e5551ad69a6b7e0dd5db34bd149ccc7c35bfbe04a0f5d24febf547bfb1",
+      "sample_id": "trained_list_numbers"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_trained_tiny_v1/candidate/trained_list_letters.json",
+      "candidate_sha256": "cee34f78d7f5b30d5513e0dc64dca8184cfd4e373640b709b9d2f63cd2150917",
+      "sample_id": "trained_list_letters"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_trained_tiny_v1/candidate/trained_dialogue.json",
+      "candidate_sha256": "9370cf3bc31336331576428cacbb1c902b3d3aed390caa2391eb13b57767de24",
+      "sample_id": "trained_dialogue"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_trained_tiny_v1/candidate/trained_instruction.json",
+      "candidate_sha256": "df29ee6df4368dde456116a1ce608aa44b232511ca926d78b1145d867968fe03",
+      "sample_id": "trained_instruction"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_trained_tiny_v1/candidate/trained_repetition.json",
+      "candidate_sha256": "847a72cb716d73cb3834e3c960835f6d3faf9eecf8c5fbcdfd6d93fc75091736",
+      "sample_id": "trained_repetition"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_trained_tiny_v1/candidate/trained_punctuation.json",
+      "candidate_sha256": "836805bc0bc18dc4adad4922d1279d5df65f8ddcfad29f5eab755682f3e5ab81",
+      "sample_id": "trained_punctuation"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_trained_tiny_v1/candidate/trained_news.json",
+      "candidate_sha256": "e92e3e4b8e45726c3f303cf9e26fef385c9c55a5caf4f0b76e21a4b4a6566de5",
+      "sample_id": "trained_news"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_trained_tiny_v1/candidate/trained_story.json",
+      "candidate_sha256": "b057973608ef407998c823c520a4235c976289f484d4e344b8d0b24466b05594",
+      "sample_id": "trained_story"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_trained_tiny_v1/candidate/trained_science.json",
+      "candidate_sha256": "56c522133b2bd73931cce50e556a2bae5c3ba05e16b9b36e0ed052e2c4d49fda",
+      "sample_id": "trained_science"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_trained_tiny_v1/candidate/trained_history.json",
+      "candidate_sha256": "14a65b77451e23af84777911f9a4ce5eb37c445c50b92463fe55524b2b9f6669",
+      "sample_id": "trained_history"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_trained_tiny_v1/candidate/trained_low_margin_a.json",
+      "candidate_sha256": "bedb1ad76e36b9d4ee7f6a773d07037088a0e83ef9bdeab006dadcc30a4448bd",
+      "sample_id": "trained_low_margin_a"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_trained_tiny_v1/candidate/trained_low_margin_b.json",
+      "candidate_sha256": "11978e5c36c7ebd02cb7b9384f02d68212813dde8c293cf505946850c8da649b",
+      "sample_id": "trained_low_margin_b"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_trained_tiny_v1/candidate/trained_long_context.json",
+      "candidate_sha256": "c4ef6157ed621d41c2416569265e5a258af4a539cce62a30316218c873bc183e",
+      "sample_id": "trained_long_context"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_trained_tiny_v1/candidate/trained_symbolic.json",
+      "candidate_sha256": "4548f3c1d337a56772e5c34853d19fba13784783918292ac941fe7bd1e42932b",
+      "sample_id": "trained_symbolic"
+    }
+  ],
+  "task": "greedy_next_token",
+  "tokenizer_manifest": "runs/tokenizers/llm_decoder_tiny_gpt2_trained_v1/manifest.json",
+  "version": 0.1
+}
