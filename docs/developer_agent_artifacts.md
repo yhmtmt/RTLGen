@@ -100,6 +100,9 @@ The proposal should force the agent to answer:
   "baseline_refs": [
     "repo path or item id"
   ],
+  "prior_art": [
+    "optional repo paths used as context but not necessarily as matched baselines"
+  ],
   "knowledge_refs": [
     "paper/doc/note/discussion reference"
   ]
@@ -183,6 +186,13 @@ The proposal should force the agent to answer:
 proposal's causal question. For new proposals:
 - use the smallest comparison set that can validate the mechanism
 - exclude architecture points that only add ranking noise to the first-stage
+- reserve `baseline_refs` for actual matched comparison inputs, such as a prior
+  campaign directory, `summary.csv`, `report.md`, or completed item id
+- use `prior_art` or `knowledge_refs` for background reports that should inform
+  review but should not be treated as a row-matched baseline
+- set the developer-loop comparison role to `ranking` for broad ranking or
+  frontier/proxy-detail jobs; those jobs should record ranking evidence without
+  requiring a focused baseline comparison
   decision
 - record broader sweeps as follow-on work instead of mixing them into the
   primary proof by default

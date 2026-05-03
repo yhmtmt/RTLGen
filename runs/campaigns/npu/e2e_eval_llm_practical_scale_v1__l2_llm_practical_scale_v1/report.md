@@ -1,6 +1,6 @@
 # Campaign Report: npu_e2e_eval_llm_practical_scale_v1
 
-- generated_utc: `2026-05-03T14:15:11+00:00`
+- generated_utc: `2026-05-03T20:17:45+00:00`
 - model_set_id: `llm_practical_scale_v1`
 - model_manifest: `runs/models/llm_practical_scale_v1/manifest.json`
 - physical_source_campaign: `runs/campaigns/npu/e2e_eval_v0/campaign.json`
@@ -38,16 +38,16 @@
 - max_softmax_engine_occupancy: `0.163398`
 - max_softmax_backpressure_events: `0.0000`
 - max_dependency_wait_ns: `0.0000`
-- latency_us_per_token_range: `..`
+- latency_us_per_token_range: `4.786344..9.400344`
 
 ## Scheduler / Softmax Summary
 
 | arch_id | macro_mode | latency_us_per_token_mean | latency_us_per_softmax_mean | softmax_ops_mean | softmax_issue_count_mean | softmax_completion_count_mean | softmax_engine_occupancy_mean | softmax_backpressure_events_mean | softmax_backpressure_ns_mean | softmax_wait_on_gemm_ns_mean | softmax_wait_on_misc_compute_ns_mean | dependency_wait_ns_mean |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| fp16_nm1 | flat_nomacro |  | 67.450472 | 6.6667 | 6.6667 | 6.6667 | 0.161466 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
-| fp16_nm1 | hier_macro |  | 67.450472 | 6.6667 | 6.6667 | 6.6667 | 0.161466 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
-| fp16_nm2 | flat_nomacro |  | 67.450472 | 6.6667 | 6.6667 | 6.6667 | 0.161466 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
-| fp16_nm2 | hier_macro |  | 67.450472 | 6.6667 | 6.6667 | 6.6667 | 0.161466 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
+| fp16_nm1 | flat_nomacro | 6.855010 | 67.450472 | 6.6667 | 6.6667 | 6.6667 | 0.161466 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
+| fp16_nm1 | hier_macro | 6.855010 | 67.450472 | 6.6667 | 6.6667 | 6.6667 | 0.161466 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
+| fp16_nm2 | flat_nomacro | 6.855010 | 67.450472 | 6.6667 | 6.6667 | 6.6667 | 0.161466 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
+| fp16_nm2 | hier_macro | 6.855010 | 67.450472 | 6.6667 | 6.6667 | 6.6667 | 0.161466 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
 
 ## Lexicographic Ranking (legacy)
 
@@ -62,15 +62,15 @@
 
 | arch_id | macro_mode | model_id | seq_len | attn_blocks | n | latency_mean_ms | latency_us_per_token | latency_std_ms | throughput_mean | energy_mean_mj | cp_mean_ns | area_mean_um2 | power_mean_mw | flow_mean_s | place_gp_mean_s |
 |---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| fp16_nm1 | flat_nomacro | practical_scale_attn6_s64_h64_kv1024 |  |  | 2 | 0.3063 |  | 0.0000 | 3264.4960 | 0.00005916 | 5.5570 | 2250000.0000 | 0.193122 | 840.3450 | 419.4400 |
-| fp16_nm1 | hier_macro | practical_scale_attn6_s64_h64_kv1024 |  |  | 2 | 0.3063 |  | 0.0000 | 3264.4960 | 0.00006048 | 5.7749 | 2250000.0000 | 0.197441 | 975.8300 | 477.8150 |
-| fp16_nm2 | flat_nomacro | practical_scale_attn6_s64_h64_kv1024 |  |  | 2 | 0.3063 |  | 0.0000 | 3264.4960 | 0.00006446 | 5.7013 | 2250000.0000 | 0.210414 | 825.2900 | 414.2100 |
-| fp16_nm2 | hier_macro | practical_scale_attn6_s64_h64_kv1024 |  |  | 2 | 0.3063 |  | 0.0000 | 3264.4960 | 0.00006519 | 5.7409 | 2250000.0000 | 0.212815 | 988.1350 | 459.8700 |
-| fp16_nm1 | flat_nomacro | practical_scale_attn6_s64_h64_kv2048 |  |  | 2 | 0.6016 |  | 0.0000 | 1662.1733 | 0.00011619 | 5.5570 | 2250000.0000 | 0.193122 | 840.3450 | 419.4400 |
-| fp16_nm1 | hier_macro | practical_scale_attn6_s64_h64_kv2048 |  |  | 2 | 0.6016 |  | 0.0000 | 1662.1733 | 0.00011878 | 5.7749 | 2250000.0000 | 0.197441 | 975.8300 | 477.8150 |
-| fp16_nm2 | flat_nomacro | practical_scale_attn6_s64_h64_kv2048 |  |  | 2 | 0.6016 |  | 0.0000 | 1662.1733 | 0.00012659 | 5.7013 | 2250000.0000 | 0.210414 | 825.2900 | 414.2100 |
-| fp16_nm2 | hier_macro | practical_scale_attn6_s64_h64_kv2048 |  |  | 2 | 0.6016 |  | 0.0000 | 1662.1733 | 0.00012803 | 5.7409 | 2250000.0000 | 0.212815 | 988.1350 | 459.8700 |
-| fp16_nm1 | flat_nomacro | practical_scale_attn8_s64_h64_kv1024 |  |  | 2 | 0.4082 |  | 0.0000 | 2449.6955 | 0.00007884 | 5.5570 | 2250000.0000 | 0.193122 | 840.3450 | 419.4400 |
-| fp16_nm1 | hier_macro | practical_scale_attn8_s64_h64_kv1024 |  |  | 2 | 0.4082 |  | 0.0000 | 2449.6955 | 0.00008060 | 5.7749 | 2250000.0000 | 0.197441 | 975.8300 | 477.8150 |
-| fp16_nm2 | flat_nomacro | practical_scale_attn8_s64_h64_kv1024 |  |  | 2 | 0.4082 |  | 0.0000 | 2449.6955 | 0.00008589 | 5.7013 | 2250000.0000 | 0.210414 | 825.2900 | 414.2100 |
-| fp16_nm2 | hier_macro | practical_scale_attn8_s64_h64_kv1024 |  |  | 2 | 0.4082 |  | 0.0000 | 2449.6955 | 0.00008687 | 5.7409 | 2250000.0000 | 0.212815 | 988.1350 | 459.8700 |
+| fp16_nm1 | flat_nomacro | practical_scale_attn6_s64_h64_kv1024 | 64 | 6 | 2 | 0.3063 | 4.786344 | 0.0000 | 3264.4960 | 0.00005916 | 5.5570 | 2250000.0000 | 0.193122 | 840.3450 | 419.4400 |
+| fp16_nm1 | hier_macro | practical_scale_attn6_s64_h64_kv1024 | 64 | 6 | 2 | 0.3063 | 4.786344 | 0.0000 | 3264.4960 | 0.00006048 | 5.7749 | 2250000.0000 | 0.197441 | 975.8300 | 477.8150 |
+| fp16_nm2 | flat_nomacro | practical_scale_attn6_s64_h64_kv1024 | 64 | 6 | 2 | 0.3063 | 4.786344 | 0.0000 | 3264.4960 | 0.00006446 | 5.7013 | 2250000.0000 | 0.210414 | 825.2900 | 414.2100 |
+| fp16_nm2 | hier_macro | practical_scale_attn6_s64_h64_kv1024 | 64 | 6 | 2 | 0.3063 | 4.786344 | 0.0000 | 3264.4960 | 0.00006519 | 5.7409 | 2250000.0000 | 0.212815 | 988.1350 | 459.8700 |
+| fp16_nm1 | flat_nomacro | practical_scale_attn6_s64_h64_kv2048 | 64 | 6 | 2 | 0.6016 | 9.400344 | 0.0000 | 1662.1733 | 0.00011619 | 5.5570 | 2250000.0000 | 0.193122 | 840.3450 | 419.4400 |
+| fp16_nm1 | hier_macro | practical_scale_attn6_s64_h64_kv2048 | 64 | 6 | 2 | 0.6016 | 9.400344 | 0.0000 | 1662.1733 | 0.00011878 | 5.7749 | 2250000.0000 | 0.197441 | 975.8300 | 477.8150 |
+| fp16_nm2 | flat_nomacro | practical_scale_attn6_s64_h64_kv2048 | 64 | 6 | 2 | 0.6016 | 9.400344 | 0.0000 | 1662.1733 | 0.00012659 | 5.7013 | 2250000.0000 | 0.210414 | 825.2900 | 414.2100 |
+| fp16_nm2 | hier_macro | practical_scale_attn6_s64_h64_kv2048 | 64 | 6 | 2 | 0.6016 | 9.400344 | 0.0000 | 1662.1733 | 0.00012803 | 5.7409 | 2250000.0000 | 0.212815 | 988.1350 | 459.8700 |
+| fp16_nm1 | flat_nomacro | practical_scale_attn8_s64_h64_kv1024 | 64 | 8 | 2 | 0.4082 | 6.378344 | 0.0000 | 2449.6955 | 0.00007884 | 5.5570 | 2250000.0000 | 0.193122 | 840.3450 | 419.4400 |
+| fp16_nm1 | hier_macro | practical_scale_attn8_s64_h64_kv1024 | 64 | 8 | 2 | 0.4082 | 6.378344 | 0.0000 | 2449.6955 | 0.00008060 | 5.7749 | 2250000.0000 | 0.197441 | 975.8300 | 477.8150 |
+| fp16_nm2 | flat_nomacro | practical_scale_attn8_s64_h64_kv1024 | 64 | 8 | 2 | 0.4082 | 6.378344 | 0.0000 | 2449.6955 | 0.00008589 | 5.7013 | 2250000.0000 | 0.210414 | 825.2900 | 414.2100 |
+| fp16_nm2 | hier_macro | practical_scale_attn8_s64_h64_kv1024 | 64 | 8 | 2 | 0.4082 | 6.378344 | 0.0000 | 2449.6955 | 0.00008687 | 5.7409 | 2250000.0000 | 0.212815 | 988.1350 | 459.8700 |

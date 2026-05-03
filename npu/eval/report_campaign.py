@@ -95,13 +95,81 @@ def fmt(value: Optional[float], digits: int = 4) -> str:
 
 
 def parse_attention_tail_model_id(model_id: str) -> Dict[str, Optional[int]]:
-    match = re.search(r"tail_attn(?P<blocks>\d+)_s(?P<seq>\d+)_h(?P<hidden>\d+)", str(model_id or ""))
+    match = re.search(r"(?:^|_)attn(?P<blocks>\d+)_s(?P<seq>\d+)_h(?P<hidden>\d+)", str(model_id or ""))
     if not match:
         return {"attention_blocks": None, "sequence_length": None, "hidden_size": None}
     return {
         "attention_blocks": int(match.group("blocks")),
         "sequence_length": int(match.group("seq")),
         "hidden_size": int(match.group("hidden")),
+    }
+
+
+def optional_int(value: Any) -> Optional[int]:
+    try:
+        if value is None:
+            return None
+        text = str(value).strip()
+        if not text:
+            return None
+        return int(float(text))
+    except Exception:
+        return None
+
+
+def first_int(mapping: Dict[str, Any], keys: Iterable[str]) -> Optional[int]:
+    for key in keys:
+        value = optional_int(mapping.get(key))
+        if value is not None:
+            return value
+    return None
+
+
+def load_manifest_model_metadata(campaign: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+    manifest_text = str(campaign.get("model_manifest", "")).strip()
+    if not manifest_text:
+        return {}
+    manifest_path = abs_path(manifest_text)
+    if not manifest_path.exists():
+        return {}
+    try:
+        manifest = load_json(manifest_path)
+    except Exception:
+        return {}
+    models = manifest.get("models") if isinstance(manifest, dict) else None
+    if not isinstance(models, list):
+        return {}
+    out: Dict[str, Dict[str, Any]] = {}
+    for model in models:
+        if not isinstance(model, dict):
+            continue
+        model_id = str(model.get("model_id", "")).strip()
+        if model_id:
+            out[model_id] = model
+    return out
+
+
+def model_shape_for_id(model_id: str, model_metadata: Dict[str, Dict[str, Any]]) -> Dict[str, Optional[int]]:
+    parsed = parse_attention_tail_model_id(model_id)
+    metadata = model_metadata.get(str(model_id or "").strip(), {})
+    if not metadata:
+        return parsed
+    return {
+        "attention_blocks": first_int(
+            metadata,
+            ("attention_blocks", "num_blocks", "softmax_episode_count"),
+        )
+        or parsed["attention_blocks"],
+        "sequence_length": first_int(
+            metadata,
+            ("seq_len", "sequence_length", "active_tokens"),
+        )
+        or parsed["sequence_length"],
+        "hidden_size": first_int(
+            metadata,
+            ("hidden_size", "hidden_dim"),
+        )
+        or parsed["hidden_size"],
     }
 
 
@@ -367,6 +435,7 @@ def main() -> int:
     if not rows:
         raise SystemExit(f"report_campaign: no rows found: {results_csv}")
     rows, duplicate_sample_rows = dedupe_rows_by_sample_id(rows)
+    model_metadata = load_manifest_model_metadata(campaign)
 
     grouped = group_ok_rows(rows)
     total_rows = len(rows)
@@ -376,7 +445,7 @@ def main() -> int:
     per_model: List[Dict[str, Any]] = []
     for (arch_id, macro_mode, model_id), g_rows in sorted(grouped.items()):
         s = summarize_group(g_rows)
-        model_shape = parse_attention_tail_model_id(model_id)
+        model_shape = model_shape_for_id(model_id, model_metadata)
         row = {
             "scope": "model",
             "arch_id": arch_id,
