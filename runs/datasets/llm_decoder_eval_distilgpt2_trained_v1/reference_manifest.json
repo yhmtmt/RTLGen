@@ -1,0 +1,148 @@
+{
+  "backend_config": {
+    "backend_id": "command_json_v1",
+    "command": [
+      "python3",
+      "npu/eval/run_llm_decoder_onnx_reference.py"
+    ],
+    "equivalence_group": "llm_decoder_distilgpt2_trained_v1_reference_onnx_v1",
+    "input_name": "input_ids",
+    "interface": "decoder_backend_v1",
+    "model_config_path": "runs/models/llm_decoder_distilgpt2_trained_v1/reference_onnx/config.json",
+    "onnx_model_path": "runs/models/llm_decoder_distilgpt2_trained_v1/reference_onnx/model.onnx",
+    "output_name": "logits",
+    "role": "reference",
+    "runtime_target": "cpu_reference",
+    "topk": 16,
+    "trace_output_patterns": [
+      "present.*"
+    ]
+  },
+  "dataset_id": "llm_decoder_eval_distilgpt2_trained_v1",
+  "model_contract": "runs/models/llm_decoder_distilgpt2_trained_v1/model_contract.json",
+  "samples": [
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/reference/distilgpt2_geo_france.json",
+      "reference_sha256": "596a4d794bbaa4ff5aef74f05cafcecc289797ff484b3f811709257bfe1d86ae",
+      "sample_id": "distilgpt2_geo_france"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/reference/distilgpt2_geo_japan.json",
+      "reference_sha256": "2ae26be125fdb388f8ea10fc440a93ac9a3b3dea8b3954b5e7b9da3ea2706f66",
+      "sample_id": "distilgpt2_geo_japan"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/reference/distilgpt2_color_banana.json",
+      "reference_sha256": "874de1dff087f03741ef9cf91f19d81d57881f7c0c5b1688959e7e9b3a482a83",
+      "sample_id": "distilgpt2_color_banana"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/reference/distilgpt2_color_sky.json",
+      "reference_sha256": "f05724aec0281ab6d11d545da84731bcf041c1ebe0de124445b82580e0d7072a",
+      "sample_id": "distilgpt2_color_sky"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/reference/distilgpt2_math_two_plus_two.json",
+      "reference_sha256": "142189b01dfceaa85d970cac24f99e3c1d3e8722906a86ba1b960ac66a346fd5",
+      "sample_id": "distilgpt2_math_two_plus_two"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/reference/distilgpt2_math_ten_minus_one.json",
+      "reference_sha256": "61874ca3172d0360ae5d6bb2618ac7dafc5ced6eba177b96bdad9143116b9bef",
+      "sample_id": "distilgpt2_math_ten_minus_one"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/reference/distilgpt2_weekday.json",
+      "reference_sha256": "45b868ff89d288053b95bf73910bad70026ca1756ead424f021658fb1b9ca6eb",
+      "sample_id": "distilgpt2_weekday"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/reference/distilgpt2_quote.json",
+      "reference_sha256": "abf412e838e318070e306d24c56796e89817df4b3f402283262bda828727c043",
+      "sample_id": "distilgpt2_quote"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/reference/distilgpt2_code_python.json",
+      "reference_sha256": "a1f2d96f8a646eaeb6154c414072cc7d95a10505be89e6bcf90e3a4b4b51fe40",
+      "sample_id": "distilgpt2_code_python"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/reference/distilgpt2_code_loop.json",
+      "reference_sha256": "bd7dcf9d4e9488456439c4dc7e07d61c3b513fbf2e585c91c0082c6b7be66c8c",
+      "sample_id": "distilgpt2_code_loop"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/reference/distilgpt2_list_numbers.json",
+      "reference_sha256": "9f306c98d023c2015c5fcfc59ed8b493706128b7b94313da42e93518dd15154c",
+      "sample_id": "distilgpt2_list_numbers"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/reference/distilgpt2_list_letters.json",
+      "reference_sha256": "1a04c21c2f63b280daa5c9853d78b9d9c6d15a93e2d8f322554b9b28769b4c39",
+      "sample_id": "distilgpt2_list_letters"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/reference/distilgpt2_dialogue.json",
+      "reference_sha256": "46cc8be597fce5dea1d7f1302a38f71e274109a6dd9e4b7237e35336fbb5b5e0",
+      "sample_id": "distilgpt2_dialogue"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/reference/distilgpt2_instruction.json",
+      "reference_sha256": "57c4ef183e6590dbcabfe61f31b19e5e913e26f2025c7962116e63ac2d6b178a",
+      "sample_id": "distilgpt2_instruction"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/reference/distilgpt2_repetition.json",
+      "reference_sha256": "fa2b9ac41ced0c3ff68469b7cca7e2b8dbbbe3581c1c3bf4ce7f2dc408d366ca",
+      "sample_id": "distilgpt2_repetition"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/reference/distilgpt2_punctuation.json",
+      "reference_sha256": "0c2103b7377c6ee5ccb4cd9f745fc5c7c9718cc5737d90f9261d9f8b01e0fb4f",
+      "sample_id": "distilgpt2_punctuation"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/reference/distilgpt2_news.json",
+      "reference_sha256": "f49c013ffb2a0e4e60f769fbb6942b2774d42bb77ff43cce26e4f3b114aeab0e",
+      "sample_id": "distilgpt2_news"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/reference/distilgpt2_story.json",
+      "reference_sha256": "68edf822dace9deec7d1aa1f3caf537a14a19e73b689ba6bafb647f6e860c99e",
+      "sample_id": "distilgpt2_story"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/reference/distilgpt2_science.json",
+      "reference_sha256": "1e5473c321e70b590a0dd4c7f1ddc1e592bf7e0070ea4c26acaa7855a5f37a93",
+      "sample_id": "distilgpt2_science"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/reference/distilgpt2_history.json",
+      "reference_sha256": "600297a5acface2634f1f6750e6fcd79801ef10086ed60f569fe7b50dc448a57",
+      "sample_id": "distilgpt2_history"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/reference/distilgpt2_low_margin_a.json",
+      "reference_sha256": "a5277e83ccb340df16e80e2947729d88e6cc1764885c66c3d57a528d2638a41c",
+      "sample_id": "distilgpt2_low_margin_a"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/reference/distilgpt2_low_margin_b.json",
+      "reference_sha256": "ada681f10296355105e4163859e330ad0dd7eaa5c0cf50de871c27488e9a9fcb",
+      "sample_id": "distilgpt2_low_margin_b"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/reference/distilgpt2_long_context.json",
+      "reference_sha256": "d1f40d618a172417605481ade5d5e378d2e9f87e997b412d27c8ed9b2e21f579",
+      "sample_id": "distilgpt2_long_context"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/reference/distilgpt2_symbolic.json",
+      "reference_sha256": "844b454946fdf3c3e8106d9af4b86a1cb6d7d87facf086d3c9cc026781a8fa2d",
+      "sample_id": "distilgpt2_symbolic"
+    }
+  ],
+  "task": "greedy_next_token",
+  "tokenizer_manifest": "runs/tokenizers/llm_decoder_distilgpt2_trained_v1/manifest.json",
+  "version": 0.1
+}

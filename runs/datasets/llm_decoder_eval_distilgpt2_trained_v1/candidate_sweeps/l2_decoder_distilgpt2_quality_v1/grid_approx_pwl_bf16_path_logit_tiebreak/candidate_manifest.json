@@ -1,0 +1,156 @@
+{
+  "backend_config": {
+    "backend_id": "command_json_v1",
+    "command": [
+      "python3",
+      "npu/eval/run_llm_decoder_onnx_candidate.py"
+    ],
+    "equivalence_group": "llm_decoder_distilgpt2_trained_v1_reference_onnx_v1",
+    "input_name": "input_ids",
+    "interface": "decoder_backend_v1",
+    "model_config_path": "runs/models/llm_decoder_distilgpt2_trained_v1/reference_onnx/config.json",
+    "normalization_mode": "reciprocal_float",
+    "normalization_reciprocal_float_format": "bf16",
+    "onnx_model_path": "runs/models/llm_decoder_distilgpt2_trained_v1/reference_onnx/model.onnx",
+    "output_name": "logits",
+    "role": "candidate",
+    "runtime_target": "software_emulation",
+    "score_tie_breaker": "logit",
+    "softmax_input_float_format": "bf16",
+    "softmax_mode": "approx_pwl",
+    "softmax_weight_float_format": "bf16",
+    "topk": 16,
+    "trace_output_patterns": [
+      "present.*"
+    ],
+    "trace_tensor_quant_bits": 4
+  },
+  "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_bf16_w_bf16_norm_recip_bf16_prob_fp_tiebreak_logit",
+  "dataset_id": "llm_decoder_eval_distilgpt2_trained_v1",
+  "model_contract": "runs/models/llm_decoder_distilgpt2_trained_v1/model_contract.json",
+  "samples": [
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/candidate_sweeps/l2_decoder_distilgpt2_quality_v1/grid_approx_pwl_bf16_path_logit_tiebreak/candidate/distilgpt2_geo_france.json",
+      "candidate_sha256": "3f1ec6b5a911f499f1f7a1515ae8002773453f17dc90dde2491a5572c8c23d5a",
+      "sample_id": "distilgpt2_geo_france"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/candidate_sweeps/l2_decoder_distilgpt2_quality_v1/grid_approx_pwl_bf16_path_logit_tiebreak/candidate/distilgpt2_geo_japan.json",
+      "candidate_sha256": "41d1085de224a943ff562874faa2adf05541dd1b215bba86248ba165baaa983d",
+      "sample_id": "distilgpt2_geo_japan"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/candidate_sweeps/l2_decoder_distilgpt2_quality_v1/grid_approx_pwl_bf16_path_logit_tiebreak/candidate/distilgpt2_color_banana.json",
+      "candidate_sha256": "baa2cd9e4a9ffc64203744166b8c2cbc3dd2d1e8c12e5b0ed77285abf9301fb4",
+      "sample_id": "distilgpt2_color_banana"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/candidate_sweeps/l2_decoder_distilgpt2_quality_v1/grid_approx_pwl_bf16_path_logit_tiebreak/candidate/distilgpt2_color_sky.json",
+      "candidate_sha256": "d308a8f9070acb9d889a61fcd0710b2393f0d0ebe893d02cba7351322ce593fd",
+      "sample_id": "distilgpt2_color_sky"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/candidate_sweeps/l2_decoder_distilgpt2_quality_v1/grid_approx_pwl_bf16_path_logit_tiebreak/candidate/distilgpt2_math_two_plus_two.json",
+      "candidate_sha256": "25c1f7b53166698d87771bed64fa984fa17114bbb4f5a685dda1d850fc43a757",
+      "sample_id": "distilgpt2_math_two_plus_two"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/candidate_sweeps/l2_decoder_distilgpt2_quality_v1/grid_approx_pwl_bf16_path_logit_tiebreak/candidate/distilgpt2_math_ten_minus_one.json",
+      "candidate_sha256": "5c248d0cf1f5d72a1efc0d6c032d0e98319464c2ef434b74af28733c21b8162f",
+      "sample_id": "distilgpt2_math_ten_minus_one"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/candidate_sweeps/l2_decoder_distilgpt2_quality_v1/grid_approx_pwl_bf16_path_logit_tiebreak/candidate/distilgpt2_weekday.json",
+      "candidate_sha256": "d0ee80eb932394fa022865d1fadfe6fbd0a76a4cb6b0e5170e4aec8f280dedce",
+      "sample_id": "distilgpt2_weekday"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/candidate_sweeps/l2_decoder_distilgpt2_quality_v1/grid_approx_pwl_bf16_path_logit_tiebreak/candidate/distilgpt2_quote.json",
+      "candidate_sha256": "bc6bdb9ea7fd7decc6d753fa4a60427c26f480f9f6ced3e7d849221d908da488",
+      "sample_id": "distilgpt2_quote"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/candidate_sweeps/l2_decoder_distilgpt2_quality_v1/grid_approx_pwl_bf16_path_logit_tiebreak/candidate/distilgpt2_code_python.json",
+      "candidate_sha256": "73241182d18b821f431cff34b301d3864961375988b6345d9c5195aea7aec60a",
+      "sample_id": "distilgpt2_code_python"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/candidate_sweeps/l2_decoder_distilgpt2_quality_v1/grid_approx_pwl_bf16_path_logit_tiebreak/candidate/distilgpt2_code_loop.json",
+      "candidate_sha256": "2060cf42a3df08f03d47da4ac321227f8ad266302e01a2daf36ca28a85bb8d9b",
+      "sample_id": "distilgpt2_code_loop"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/candidate_sweeps/l2_decoder_distilgpt2_quality_v1/grid_approx_pwl_bf16_path_logit_tiebreak/candidate/distilgpt2_list_numbers.json",
+      "candidate_sha256": "c41f285e4b54fe415000e9ea35552c2473e407c9e3d7c3a23eea288ca377d216",
+      "sample_id": "distilgpt2_list_numbers"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/candidate_sweeps/l2_decoder_distilgpt2_quality_v1/grid_approx_pwl_bf16_path_logit_tiebreak/candidate/distilgpt2_list_letters.json",
+      "candidate_sha256": "1f613492087c70e5232437a67cb68cbf4d743c7bdf51241faebc2f90a227d6c9",
+      "sample_id": "distilgpt2_list_letters"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/candidate_sweeps/l2_decoder_distilgpt2_quality_v1/grid_approx_pwl_bf16_path_logit_tiebreak/candidate/distilgpt2_dialogue.json",
+      "candidate_sha256": "5a67424ec45f65e31ff2d231922cd0328be935009e7b15a46ed5f212a9099ac8",
+      "sample_id": "distilgpt2_dialogue"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/candidate_sweeps/l2_decoder_distilgpt2_quality_v1/grid_approx_pwl_bf16_path_logit_tiebreak/candidate/distilgpt2_instruction.json",
+      "candidate_sha256": "18bbabb2b5ffe2f3f63f0b3c29f8ec98fa8cefb566660007abe3640036029894",
+      "sample_id": "distilgpt2_instruction"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/candidate_sweeps/l2_decoder_distilgpt2_quality_v1/grid_approx_pwl_bf16_path_logit_tiebreak/candidate/distilgpt2_repetition.json",
+      "candidate_sha256": "b5fd68dd6b612febb20691385e76d7f357fbf3705d8ff1eec289cb03c24662bf",
+      "sample_id": "distilgpt2_repetition"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/candidate_sweeps/l2_decoder_distilgpt2_quality_v1/grid_approx_pwl_bf16_path_logit_tiebreak/candidate/distilgpt2_punctuation.json",
+      "candidate_sha256": "d571bec8dbea585819666b7f1f1674f6188dccd3a5380d229811a3f2cc6b7183",
+      "sample_id": "distilgpt2_punctuation"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/candidate_sweeps/l2_decoder_distilgpt2_quality_v1/grid_approx_pwl_bf16_path_logit_tiebreak/candidate/distilgpt2_news.json",
+      "candidate_sha256": "3ba6b1df7d2fd70924d97ddfd3d7e34fd55b5ea7e516642ae237e896146833c3",
+      "sample_id": "distilgpt2_news"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/candidate_sweeps/l2_decoder_distilgpt2_quality_v1/grid_approx_pwl_bf16_path_logit_tiebreak/candidate/distilgpt2_story.json",
+      "candidate_sha256": "6901f754942ab1de1a0c6b038c09f8119628ae6095830f44a954b181e820e728",
+      "sample_id": "distilgpt2_story"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/candidate_sweeps/l2_decoder_distilgpt2_quality_v1/grid_approx_pwl_bf16_path_logit_tiebreak/candidate/distilgpt2_science.json",
+      "candidate_sha256": "b9054064f8367280f9083718250fc7707ba43a4222aba3d05e4c55c53941f762",
+      "sample_id": "distilgpt2_science"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/candidate_sweeps/l2_decoder_distilgpt2_quality_v1/grid_approx_pwl_bf16_path_logit_tiebreak/candidate/distilgpt2_history.json",
+      "candidate_sha256": "c34e5136ffe06a7bd19a56867a3769fc1d080b6a265e14f08c48d515934eb830",
+      "sample_id": "distilgpt2_history"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/candidate_sweeps/l2_decoder_distilgpt2_quality_v1/grid_approx_pwl_bf16_path_logit_tiebreak/candidate/distilgpt2_low_margin_a.json",
+      "candidate_sha256": "2eccd3fbf48d84d7f329f41d34a595bfe12780e486ef703dcd1331c72f244f34",
+      "sample_id": "distilgpt2_low_margin_a"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/candidate_sweeps/l2_decoder_distilgpt2_quality_v1/grid_approx_pwl_bf16_path_logit_tiebreak/candidate/distilgpt2_low_margin_b.json",
+      "candidate_sha256": "573e48542901d8c6bbbab3708dc697c50fcf3ae7ceff270dc2f7851514f19dd7",
+      "sample_id": "distilgpt2_low_margin_b"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/candidate_sweeps/l2_decoder_distilgpt2_quality_v1/grid_approx_pwl_bf16_path_logit_tiebreak/candidate/distilgpt2_long_context.json",
+      "candidate_sha256": "abbd1c0d670cbb8c64d89b7d50d27fc0736d498f399d642994df7e8d33cd408b",
+      "sample_id": "distilgpt2_long_context"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/candidate_sweeps/l2_decoder_distilgpt2_quality_v1/grid_approx_pwl_bf16_path_logit_tiebreak/candidate/distilgpt2_symbolic.json",
+      "candidate_sha256": "83b124979617c1579c6567ed75ab0d40cc968cc64e60182518b30c4a3870fbb2",
+      "sample_id": "distilgpt2_symbolic"
+    }
+  ],
+  "task": "greedy_next_token",
+  "tokenizer_manifest": "runs/tokenizers/llm_decoder_distilgpt2_trained_v1/manifest.json",
+  "version": 0.1
+}
