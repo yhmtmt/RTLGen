@@ -3,8 +3,14 @@
   "status": "pending_evaluation",
   "decision": "iterate",
   "candidate_id": "l2_decoder_pwl_bitwidth_boundary_v1",
-  "reason": "Awaiting Layer 2 bit-width boundary evidence.",
-  "evidence_refs": [],
-  "next_action": "run l2_decoder_pwl_bitwidth_boundary_v1",
+  "reason": "Focused comparison baseline could not be resolved from proposal baseline_refs.",
+  "evidence_refs": [
+    "item:l2_decoder_pwl_bitwidth_boundary_v1",
+    "run:l2_decoder_pwl_bitwidth_boundary_v1_run_5f8b6f46e6c2fe4b",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_pwl_bitwidth_boundary_v1.json",
+    "pr:#341",
+    "https://github.com/yhmtmt/RTLGen/pull/341"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_pwl_bitwidth_boundary_v1",
   "requires_human_approval": false
 }

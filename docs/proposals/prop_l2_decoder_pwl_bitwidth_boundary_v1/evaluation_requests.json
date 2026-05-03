@@ -20,7 +20,11 @@
         "direction": "iterate",
         "reason": "Determine whether q11 is exact-safe before spending another Layer 1 PPA run, or keep q12 as the integer exact-safe floor."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 341,
+      "merge_commit": "fadc8f92d8acd43b12ba6bae901011ab68a6895f",
+      "merged_utc": "2026-05-03T12:04:28.256271Z",
+      "notes": "Merged via PR #341 and merge fadc8f92d8acd43b12ba6bae901011ab68a6895f at 2026-05-03T12:04:28.256271Z."
     }
   ]
 }
