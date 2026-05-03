@@ -1517,11 +1517,16 @@ def _decoder_distilgpt2_quality_evidence(*, item_id: str) -> dict[str, Any]:
     trained_out = f"{base}/decoder_distilgpt2_quality__{item_id}.json"
     trained_report = f"{base}/decoder_distilgpt2_quality__{item_id}.md"
     rough_grid = "decoder_bf16_pwl_scale_probe_v1"
+    materializer_python = (
+        "RTLGEN_HF_MATERIALIZER_PYTHON=${RTLGEN_HF_MATERIALIZER_PYTHON:-/orfs/tools/AutoTuner/autotuner_env/bin/python3}; "
+        'if [ ! -x "$RTLGEN_HF_MATERIALIZER_PYTHON" ]; then RTLGEN_HF_MATERIALIZER_PYTHON=python3; fi; '
+        '"$RTLGEN_HF_MATERIALIZER_PYTHON"'
+    )
     commands = [
         {
             "name": "materialize_decoder_distilgpt2_contract",
             "run": (
-                "python3 npu/eval/materialize_hf_decoder_contract.py "
+                f"{materializer_python} npu/eval/materialize_hf_decoder_contract.py "
                 "--model-id distilgpt2 "
                 "--contract-id llm_decoder_distilgpt2_trained_v1 "
                 f"--dataset-dir {base} "

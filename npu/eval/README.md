@@ -68,6 +68,13 @@ Python environment. Generated files under
 `runs/tokenizers/llm_decoder_distilgpt2_trained_v1/` are intentionally ignored
 and should not be committed by evaluator PRs.
 
+Control-plane workers usually run commands from the control-plane venv, which
+has `onnxruntime` for decoder inference but may not have the Hugging Face export
+stack. L2 distilgpt2 jobs therefore invoke the materializer with
+`RTLGEN_HF_MATERIALIZER_PYTHON` when set, otherwise with
+`/orfs/tools/AutoTuner/autotuner_env/bin/python3` when present, and then return
+to normal `python3` commands for ONNX Runtime inference.
+
 ## Validation
 Validate campaign manifest:
 ```sh
