@@ -1,0 +1,50 @@
+{
+  "baseline": {
+    "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_bf16_w_bf16_norm_recip_bf16_prob_fp",
+    "next_token_matches": 23,
+    "next_token_mismatch_sample_ids": [
+      "trained_color_sky"
+    ],
+    "normalization_mode": "reciprocal_float",
+    "normalization_reciprocal_float_format": "bf16",
+    "sample_count": 24,
+    "score_tie_breaker": "",
+    "template": "grid_approx_pwl_bf16_path",
+    "topk_matches": 23,
+    "topk_miss_sample_ids": [
+      "trained_color_sky"
+    ]
+  },
+  "baseline_template": "grid_approx_pwl_bf16_path",
+  "diagnosis": {
+    "decision": "tie_break_recovery_sufficient",
+    "exact_safe_after_recovery": true,
+    "recommended_next_step": "Treat bf16/PWL as the immediate low-cost frontier and follow with a hardware-friendly score-tie ranking check before full QAT infrastructure.",
+    "recovered_count": 1,
+    "regression_count": 0
+  },
+  "mechanism": {
+    "tie_breaker": "logit",
+    "training_interpretation": "This is a narrow QAT/calibration proxy. It does not update weights; it checks whether the bf16/PWL exact-next losses are pure equal-score ranking losses that a tiny logit-preserving calibration could recover.",
+    "type": "score_tie_breaker"
+  },
+  "recovered_sample_ids": [
+    "trained_color_sky"
+  ],
+  "recovery": {
+    "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_bf16_w_bf16_norm_recip_bf16_prob_fp_tiebreak_logit",
+    "next_token_matches": 24,
+    "next_token_mismatch_sample_ids": [],
+    "normalization_mode": "reciprocal_float",
+    "normalization_reciprocal_float_format": "bf16",
+    "sample_count": 24,
+    "score_tie_breaker": "logit",
+    "template": "grid_approx_pwl_bf16_path_logit_tiebreak",
+    "topk_matches": 24,
+    "topk_miss_sample_ids": []
+  },
+  "recovery_template": "grid_approx_pwl_bf16_path_logit_tiebreak",
+  "regression_sample_ids": [],
+  "source_sweep": "runs/datasets/llm_decoder_eval_trained_tiny_v1/decoder_quality_sweep__l2_decoder_trained_tiny_quality_v1.json",
+  "version": 0.1
+}
