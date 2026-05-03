@@ -1,0 +1,71 @@
+{
+  "correct_sample_margin_stats": {
+    "count": 46,
+    "max": 1.2207776308059692e-05,
+    "median": 3.3155083656311035e-06,
+    "min": 1.2665987014770508e-07,
+    "p25": 7.655471563339233e-07,
+    "p90": 7.3928385972976685e-06
+  },
+  "diagnosis": {
+    "decision": "recoverable_margin_shift",
+    "easy_count": 2,
+    "hard_count": 0,
+    "miss_count": 2,
+    "moderate_count": 0,
+    "recommended_next_step": "Prototype bf16/PWL-aware fine-tuning or QAT before spending more exact-safe integer PPA effort.",
+    "summary": "Recoverability is estimated from the score gap required to move the exact-reference token back to top-1 in the bf16/PWL candidate output. This is not training proof; it is a margin screen for whether a QAT/fine-tuning experiment is worth running.",
+    "topk_safe": true
+  },
+  "misses": [
+    {
+      "candidate_next": {
+        "token_id": 796,
+        "token_text": " ="
+      },
+      "candidate_score": 3.314018249511719e-05,
+      "candidate_top1_top2_margin": 0.0,
+      "category": "arithmetic_short",
+      "exact_next": {
+        "token_id": 27146,
+        "token_text": " footsteps"
+      },
+      "expected_continuation": " 8",
+      "prompt": "3 + 5 =",
+      "recovery_class": "easy_rank2_below_median_margin",
+      "reference_rank_in_candidate_topk": 2,
+      "reference_token_candidate_score": 3.314018249511719e-05,
+      "sample_id": "dist2_arith_three_plus_five",
+      "score_gap_to_flip_top1": 0.0,
+      "topk_contains_reference": true
+    },
+    {
+      "candidate_next": {
+        "token_id": 11,
+        "token_text": ","
+      },
+      "candidate_score": 3.743171691894531e-05,
+      "candidate_top1_top2_margin": 0.0,
+      "category": "list_continuation",
+      "exact_next": {
+        "token_id": 43963,
+        "token_text": " Drinking"
+      },
+      "expected_continuation": " April",
+      "prompt": "January, February, March,",
+      "recovery_class": "easy_rank2_below_median_margin",
+      "reference_rank_in_candidate_topk": 2,
+      "reference_token_candidate_score": 3.743171691894531e-05,
+      "sample_id": "dist2_sequence_months",
+      "score_gap_to_flip_top1": 0.0,
+      "topk_contains_reference": true
+    }
+  ],
+  "next_token_matches": 46,
+  "sample_count": 48,
+  "sample_file": "runs/datasets/llm_decoder_eval_tiny_v1/samples_distribution_v2.jsonl",
+  "source_sweep": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_sweep__l2_decoder_q8_norm_distribution_broad_v2.json",
+  "template": "grid_approx_pwl_bf16_path",
+  "topk_matches": 48,
+  "version": 0.1
+}
