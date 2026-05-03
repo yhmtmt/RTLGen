@@ -1,0 +1,62 @@
+{
+  "proposal_id": "prop_l2_decoder_bf16_pwl_scale_probe_v1",
+  "created_utc": "2026-05-03T14:05:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_bf16_pwl_scale_probe",
+  "title": "Decoder bf16/PWL scale-proxy recovery probe",
+  "hypothesis": "The bf16 reciprocal PWL path plus logit score tie-break may be exact-safe on the current broad-v2 tiny decoder set, but rank-inversion risk should grow with larger LLM use cases and wider output/ranking pressure. A scale-proxy dataset with longer prompts, broader regimes, and top-16 ranking can check whether the recovery still holds before moving to a larger imported model.",
+  "direct_comparison": {
+    "primary_question": "Does bf16/PWL plus logit tie-break remain exact-safe when prompt diversity and ranking pressure are increased in the tiny decoder harness?",
+    "include": [
+      "bf16/PWL baseline and logit tie-break recovery",
+      "q12 exact-normalization and q8 reciprocal controls",
+      "top-16 rank containment over the full vocabulary",
+      "long-context, code, symbolic, repetition, low-margin, and instruction prompt regimes"
+    ],
+    "exclude": [
+      "claiming proof for a larger trained LLM",
+      "new RTL/OpenROAD measurement",
+      "training or QAT"
+    ]
+  },
+  "expected_benefit": [
+    "catches whether the tie-break fix only fits the current 48-sample setup",
+    "separates scale/rank-pressure risk from datapath PPA risk",
+    "provides the gate for either larger imported-model evaluation or integrated decoder datapath measurement"
+  ],
+  "risks": [
+    "still uses the tiny decoder model and cannot represent hidden-size or layer-count scaling directly",
+    "top-k and prompt diversity are only proxies for larger arrays and larger LLM output distributions",
+    "a pass here does not remove the need for larger-model confirmation"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_bf16_pwl_scale_probe_v1",
+      "task_type": "l2_campaign",
+      "objective": "Check whether bf16/PWL plus logit tie-break recovery holds under a scale-proxy decoder prompt/rank-pressure screen.",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_bf16_pwl_scale_probe",
+      "depends_on_item_ids": [
+        "l2_decoder_bf16_pwl_recovery_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_decoder_bf16_pwl_recovery_v1/proposal.json",
+    "runs/datasets/llm_decoder_eval_tiny_v1/decoder_bf16_pwl_recovery__l2_decoder_bf16_pwl_recovery_v1.json",
+    "control_plane/shadow_exports/l1_promotions/l1_decoder_bf16_pwl_tie_rank_datapath_v1_r2.json"
+  ],
+  "knowledge_refs": [
+    "runs/datasets/llm_decoder_eval_tiny_v1/manifest_scale_proxy_v1.json",
+    "runs/datasets/llm_decoder_eval_tiny_v1/samples_scale_proxy_v1.jsonl",
+    "npu/eval/sweep_llm_decoder_candidate_quality.py",
+    "npu/eval/summarize_llm_decoder_bf16_pwl_recovery.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}

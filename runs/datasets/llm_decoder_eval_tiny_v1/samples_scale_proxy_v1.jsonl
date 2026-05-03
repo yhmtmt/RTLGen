@@ -1,0 +1,80 @@
+{"sample_id":"scale_geo_capital_france","prompt":"The capital of France is","expected_continuation":" Paris","category":"factual_geo"}
+{"sample_id":"scale_geo_capital_japan","prompt":"The capital of Japan is","expected_continuation":" Tokyo","category":"factual_geo"}
+{"sample_id":"scale_geo_capital_germany","prompt":"The capital of Germany is","expected_continuation":" Berlin","category":"factual_geo"}
+{"sample_id":"scale_geo_capital_italy","prompt":"The capital of Italy is","expected_continuation":" Rome","category":"factual_geo"}
+{"sample_id":"scale_color_banana","prompt":"A ripe banana is usually","expected_continuation":" yellow","category":"commonsense_color"}
+{"sample_id":"scale_color_sky","prompt":"On a clear day, the sky is","expected_continuation":" blue","category":"commonsense_color"}
+{"sample_id":"scale_color_grass","prompt":"Fresh grass is often","expected_continuation":" green","category":"commonsense_color"}
+{"sample_id":"scale_color_snow","prompt":"Fresh snow is usually","expected_continuation":" white","category":"commonsense_color"}
+{"sample_id":"scale_arith_two_plus_two","prompt":"2 + 2 =","expected_continuation":" 4","category":"arithmetic_short"}
+{"sample_id":"scale_arith_three_plus_five","prompt":"3 + 5 =","expected_continuation":" 8","category":"arithmetic_short"}
+{"sample_id":"scale_arith_ten_minus_one","prompt":"10 - 1 =","expected_continuation":" 9","category":"arithmetic_short"}
+{"sample_id":"scale_arith_six_times_two","prompt":"6 * 2 =","expected_continuation":" 12","category":"arithmetic_short"}
+{"sample_id":"scale_sequence_numbers","prompt":"one, two, three,","expected_continuation":" four","category":"list_continuation"}
+{"sample_id":"scale_sequence_letters","prompt":"A, B, C,","expected_continuation":" D","category":"list_continuation"}
+{"sample_id":"scale_sequence_weekdays","prompt":"Monday, Tuesday, Wednesday,","expected_continuation":" Thursday","category":"list_continuation"}
+{"sample_id":"scale_sequence_months","prompt":"January, February, March,","expected_continuation":" April","category":"list_continuation"}
+{"sample_id":"scale_code_python_return","prompt":"def add(a, b): return a","expected_continuation":" +","category":"code_like"}
+{"sample_id":"scale_code_python_if","prompt":"if value > 0: print","expected_continuation":"(","category":"code_like"}
+{"sample_id":"scale_code_json_key","prompt":"{\"enabled\":","expected_continuation":" true","category":"code_like"}
+{"sample_id":"scale_code_comment","prompt":"// TODO: update the","expected_continuation":" test","category":"code_like"}
+{"sample_id":"scale_dialogue_greeting","prompt":"User: hello\nAssistant:","expected_continuation":" Hi","category":"dialogue_short"}
+{"sample_id":"scale_dialogue_thanks","prompt":"User: thanks\nAssistant:","expected_continuation":" You","category":"dialogue_short"}
+{"sample_id":"scale_dialogue_question","prompt":"User: what time is it?\nAssistant:","expected_continuation":" It","category":"dialogue_short"}
+{"sample_id":"scale_dialogue_yesno","prompt":"User: can you help?\nAssistant:","expected_continuation":" Yes","category":"dialogue_short"}
+{"sample_id":"scale_punctuation_period","prompt":"The answer is yes","expected_continuation":".","category":"punctuation"}
+{"sample_id":"scale_punctuation_comma","prompt":"First we measure latency","expected_continuation":",","category":"punctuation"}
+{"sample_id":"scale_punctuation_colon","prompt":"The result was clear","expected_continuation":":","category":"punctuation"}
+{"sample_id":"scale_punctuation_quote","prompt":"She said","expected_continuation":" \"","category":"punctuation"}
+{"sample_id":"scale_long_lab","prompt":"In a small laboratory notebook, the engineer wrote down the measured latency and then checked whether the output token was","expected_continuation":" correct","category":"long_context"}
+{"sample_id":"scale_long_story","prompt":"After walking through the old station for nearly an hour, Mira finally found the platform where the train would","expected_continuation":" arrive","category":"long_context"}
+{"sample_id":"scale_long_design","prompt":"The hardware team compared area, timing, and power before deciding that the next experiment should","expected_continuation":" focus","category":"long_context"}
+{"sample_id":"scale_long_report","prompt":"The report listed the failing samples first and then summarized the reason each approximation had","expected_continuation":" failed","category":"long_context"}
+{"sample_id":"scale_repetition_ha","prompt":"ha ha ha ha","expected_continuation":" ha","category":"repetition"}
+{"sample_id":"scale_repetition_test","prompt":"test test test","expected_continuation":" test","category":"repetition"}
+{"sample_id":"scale_repetition_go","prompt":"go go go","expected_continuation":" go","category":"repetition"}
+{"sample_id":"scale_repetition_tick","prompt":"tick tock tick","expected_continuation":" tock","category":"repetition"}
+{"sample_id":"scale_ambiguous_article","prompt":"The old book was on","expected_continuation":" the","category":"ambiguous_short"}
+{"sample_id":"scale_ambiguous_preposition","prompt":"The meeting starts at","expected_continuation":" noon","category":"ambiguous_short"}
+{"sample_id":"scale_ambiguous_object","prompt":"Please put it in","expected_continuation":" the","category":"ambiguous_short"}
+{"sample_id":"scale_ambiguous_common","prompt":"This is a test of","expected_continuation":" the","category":"ambiguous_short"}
+{"sample_id":"scale_instruction_short","prompt":"Translate yes to Spanish:","expected_continuation":" si","category":"instruction_short"}
+{"sample_id":"scale_instruction_label","prompt":"Sentiment: I love this.\nLabel:","expected_continuation":" positive","category":"instruction_short"}
+{"sample_id":"scale_instruction_classify","prompt":"Animal: cat\nType:","expected_continuation":" mammal","category":"instruction_short"}
+{"sample_id":"scale_instruction_complete","prompt":"Complete the phrase: bread and","expected_continuation":" butter","category":"instruction_short"}
+{"sample_id":"scale_symbol_paren","prompt":"The expression (a + b","expected_continuation":")","category":"symbolic"}
+{"sample_id":"scale_symbol_bracket","prompt":"items[0","expected_continuation":"]","category":"symbolic"}
+{"sample_id":"scale_symbol_arrow","prompt":"input -> hidden","expected_continuation":" ->","category":"symbolic"}
+{"sample_id":"scale_symbol_equals","prompt":"x = y","expected_continuation":" +","category":"symbolic"}
+{"sample_id":"scale_long_instruction_json","prompt":"Read the record and choose the next field name. Record: {\"user\":\"alpha\",\"status\":\"active\",\"score\":17,\"next\"","expected_continuation":":","category":"long_instruction"}
+{"sample_id":"scale_long_instruction_markdown","prompt":"Summarize the checklist item in one word:\n- build rtl\n- run synthesis\n- compare ppa\nAnswer:","expected_continuation":" compare","category":"long_instruction"}
+{"sample_id":"scale_long_instruction_table","prompt":"Column A is latency, column B is area, column C is power. The metric that measures timing is","expected_continuation":" latency","category":"long_instruction"}
+{"sample_id":"scale_long_instruction_translation","prompt":"Translate the short answer only. English: yes. Spanish:","expected_continuation":" si","category":"long_instruction"}
+{"sample_id":"scale_long_dialogue_multi","prompt":"User: I need the status.\nAssistant: The build passed.\nUser: What should I check next?\nAssistant:","expected_continuation":" The","category":"long_dialogue"}
+{"sample_id":"scale_long_dialogue_correction","prompt":"User: The result failed.\nAssistant: Which sample failed?\nUser: The arithmetic sample.\nAssistant:","expected_continuation":" The","category":"long_dialogue"}
+{"sample_id":"scale_long_dialogue_compare","prompt":"User: Compare q8 and bf16.\nAssistant: q8 is integer, bf16 is floating-like.\nUser: Which keeps range?\nAssistant:","expected_continuation":" bf","category":"long_dialogue"}
+{"sample_id":"scale_long_dialogue_plan","prompt":"User: Start broad, then go deep.\nAssistant: I will map the rough frontier first.\nUser: Next?\nAssistant:","expected_continuation":" Run","category":"long_dialogue"}
+{"sample_id":"scale_code_nested_if","prompt":"if (ready && valid) {\n  result = input","expected_continuation":";","category":"code_long"}
+{"sample_id":"scale_code_function_doc","prompt":"def normalize(x):\n    \"\"\"Return x divided by the","expected_continuation":" sum","category":"code_long"}
+{"sample_id":"scale_code_sql_select","prompt":"SELECT latency, area, power FROM runs WHERE platform =","expected_continuation":" '","category":"code_long"}
+{"sample_id":"scale_code_verilog_assign","prompt":"assign best_index = score_a > score_b ? index_a","expected_continuation":" :","category":"code_long"}
+{"sample_id":"scale_array_pressure_numbers_a","prompt":"Scores: 0.91, 0.90, 0.90, 0.89. The highest score is","expected_continuation":" 0","category":"rank_pressure"}
+{"sample_id":"scale_array_pressure_numbers_b","prompt":"Scores: 12, 12, 11, 10. The tie should use the larger","expected_continuation":" log","category":"rank_pressure"}
+{"sample_id":"scale_array_pressure_letters_a","prompt":"Candidates A B C D E F G H I J K L M N O P. Choose candidate","expected_continuation":" A","category":"rank_pressure"}
+{"sample_id":"scale_array_pressure_letters_b","prompt":"The ordered labels are first, second, third, fourth, fifth. The next label is","expected_continuation":" sixth","category":"rank_pressure"}
+{"sample_id":"scale_margin_close_word_a","prompt":"The phrase could end with the or a, but the expected article is","expected_continuation":" the","category":"low_margin_language"}
+{"sample_id":"scale_margin_close_word_b","prompt":"The sentence starts with There and usually continues with","expected_continuation":" is","category":"low_margin_language"}
+{"sample_id":"scale_margin_close_word_c","prompt":"In this context the answer may be yes or no. The selected answer is","expected_continuation":" yes","category":"low_margin_language"}
+{"sample_id":"scale_margin_close_word_d","prompt":"A common continuation after because is often","expected_continuation":" of","category":"low_margin_language"}
+{"sample_id":"scale_long_context_repeated_a","prompt":"alpha beta gamma alpha beta gamma alpha beta gamma alpha beta","expected_continuation":" gamma","category":"long_repetition"}
+{"sample_id":"scale_long_context_repeated_b","prompt":"red blue green red blue green red blue","expected_continuation":" green","category":"long_repetition"}
+{"sample_id":"scale_long_context_repeated_c","prompt":"tick tick tock tick tick tock tick tick","expected_continuation":" tock","category":"long_repetition"}
+{"sample_id":"scale_long_context_repeated_d","prompt":"zero one zero one zero one zero","expected_continuation":" one","category":"long_repetition"}
+{"sample_id":"scale_symbolic_dense_a","prompt":"((((a+b)*c)-d)/e","expected_continuation":")","category":"symbolic_dense"}
+{"sample_id":"scale_symbolic_dense_b","prompt":"path/to/module/src/rtlgen","expected_continuation":"/","category":"symbolic_dense"}
+{"sample_id":"scale_symbolic_dense_c","prompt":"key=value; next_key","expected_continuation":"=","category":"symbolic_dense"}
+{"sample_id":"scale_symbolic_dense_d","prompt":"[INFO] build complete [WARN] timing","expected_continuation":" margin","category":"symbolic_dense"}
+{"sample_id":"scale_report_dense_a","prompt":"The measured datapath had lower area but higher latency, so the ranking depended on the objective","expected_continuation":" weight","category":"report_dense"}
+{"sample_id":"scale_report_dense_b","prompt":"The candidate recovered exact top one on all samples, but the result still needed a broader","expected_continuation":" distribution","category":"report_dense"}
+{"sample_id":"scale_report_dense_c","prompt":"When the array width grows, equal score collisions become more likely, so the tie breaker should use","expected_continuation":" logits","category":"report_dense"}
+{"sample_id":"scale_report_dense_d","prompt":"If the larger model changes the activation distribution, the approximation frontier may","expected_continuation":" shift","category":"report_dense"}

@@ -64,6 +64,22 @@ def test_bf16_pwl_recovery_grid_adds_logit_tiebreak_variant() -> None:
     assert recovery["score_tie_breaker"] == "logit"
 
 
+def test_bf16_pwl_scale_probe_grid_keeps_integer_controls() -> None:
+    model_contract = load_json(Path("runs/models/llm_decoder_tiny_v1/model_contract.json"))
+    grid = _rough_grid_templates(model_contract, "decoder_bf16_pwl_scale_probe_v1")
+
+    assert set(grid) == {
+        "candidate_onnx_softmax_exact",
+        "grid_approx_pwl_bf16_path",
+        "grid_approx_pwl_bf16_path_logit_tiebreak",
+        "grid_approx_pwl_in_q12_w_q12_norm_exact",
+        "grid_approx_pwl_in_q8_w_q8_norm_recip_q12",
+    }
+    assert grid["grid_approx_pwl_bf16_path_logit_tiebreak"]["score_tie_breaker"] == "logit"
+    assert grid["grid_approx_pwl_in_q12_w_q12_norm_exact"]["normalization_mode"] == "exact"
+    assert grid["grid_approx_pwl_in_q8_w_q8_norm_recip_q12"]["normalization_reciprocal_bits"] == 12
+
+
 def test_q8_normalization_frontier_report_selects_lowest_cost_exact_safe_reciprocal() -> None:
     report = build_report(
         sweep_path=Path("tests/fixtures/decoder_q8_norm_frontier_sweep.json"),

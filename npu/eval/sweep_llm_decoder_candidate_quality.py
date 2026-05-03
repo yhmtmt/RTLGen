@@ -96,6 +96,7 @@ def _rough_grid_templates(model_contract: JsonDict, grid_name: str) -> Dict[str,
         "decoder_pwl_survivor_distribution_v1",
         "decoder_pwl_bitwidth_boundary_v1",
         "decoder_bf16_pwl_recovery_v1",
+        "decoder_bf16_pwl_scale_probe_v1",
     }:
         raise ValueError(f"unsupported rough grid: {grid_name}")
     exact = _candidate_template(model_contract, "candidate_onnx_softmax_exact")
@@ -568,7 +569,7 @@ def _rough_grid_templates(model_contract: JsonDict, grid_name: str) -> Dict[str,
             ),
         ]
         return {name: cfg for name, cfg in points}
-    if grid_name == "decoder_bf16_pwl_recovery_v1":
+    if grid_name in {"decoder_bf16_pwl_recovery_v1", "decoder_bf16_pwl_scale_probe_v1"}:
         points = [
             ("candidate_onnx_softmax_exact", exact),
             _named_grid_point(
@@ -596,6 +597,31 @@ def _rough_grid_templates(model_contract: JsonDict, grid_name: str) -> Dict[str,
                 score_tie_breaker="logit",
             ),
         ]
+        if grid_name == "decoder_bf16_pwl_scale_probe_v1":
+            points.extend(
+                [
+                    _named_grid_point(
+                        approx,
+                        "grid_approx_pwl_in_q12_w_q12_norm_exact",
+                        softmax_input_quant_bits=12,
+                        softmax_weight_quant_bits=12,
+                        normalization_mode="exact",
+                        normalization_reciprocal_bits=None,
+                        normalization_reciprocal_float_format=None,
+                        score_tie_breaker=None,
+                    ),
+                    _named_grid_point(
+                        approx,
+                        "grid_approx_pwl_in_q8_w_q8_norm_recip_q12",
+                        softmax_input_quant_bits=8,
+                        softmax_weight_quant_bits=8,
+                        normalization_mode="reciprocal_quantized",
+                        normalization_reciprocal_bits=12,
+                        normalization_reciprocal_float_format=None,
+                        score_tie_breaker=None,
+                    ),
+                ]
+            )
         return {name: cfg for name, cfg in points}
     points = [
         ("candidate_onnx_softmax_exact", exact),
@@ -813,7 +839,8 @@ def main() -> int:
             "decoder_probability_fp_formats_v1, decoder_distribution_robustness_v1, or "
             "decoder_survivor_prompt_stress_v1, decoder_q8_normalization_frontier_v1, "
             "decoder_pwl_logit_sensitivity_ladder_v1, decoder_pwl_survivor_distribution_v1, "
-            "decoder_pwl_bitwidth_boundary_v1, or decoder_bf16_pwl_recovery_v1."
+            "decoder_pwl_bitwidth_boundary_v1, decoder_bf16_pwl_recovery_v1, or "
+            "decoder_bf16_pwl_scale_probe_v1."
         ),
     )
     ap.add_argument("--out-dir", default="runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/local")

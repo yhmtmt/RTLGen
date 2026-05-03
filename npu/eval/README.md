@@ -308,6 +308,26 @@ additive component model: bf16 reciprocal normalization plus score tie-rank.
 q8 exact normalization uses the measured row-wise int8 softmax baseline when
 that artifact is available.
 
+Run the bf16/PWL scale-proxy recovery screen:
+```sh
+python3 npu/eval/sweep_llm_decoder_candidate_quality.py \
+  --dataset-manifest runs/datasets/llm_decoder_eval_tiny_v1/manifest_scale_proxy_v1.json \
+  --rough-grid decoder_bf16_pwl_scale_probe_v1 \
+  --out-dir /tmp/decoder_bf16_pwl_scale_probe \
+  --out /tmp/decoder_bf16_pwl_scale_probe.json
+python3 npu/eval/summarize_llm_decoder_bf16_pwl_recovery.py \
+  --sweep /tmp/decoder_bf16_pwl_scale_probe.json \
+  --out /tmp/decoder_bf16_pwl_scale_probe_summary.json \
+  --out-md /tmp/decoder_bf16_pwl_scale_probe_summary.md
+```
+
+This screen keeps the same tiny ONNX decoder but raises rank pressure by
+requesting top-16 over the full 50k-token vocabulary and broadens prompt
+categories to include longer contexts, denser code/symbolic prompts, repeated
+patterns, and low-margin continuations. It answers whether the bf16/PWL plus
+logit tie-break behavior survives a rough scale proxy before spending evaluator
+time on a larger imported model or an integrated decoder datapath.
+
 After the corresponding Layer 1 multiplier and accumulator/adder calibration
 jobs merge, synthesize the measured primitive evidence into a decoder
 normalization report:
