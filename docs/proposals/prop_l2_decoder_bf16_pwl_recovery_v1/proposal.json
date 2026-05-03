@@ -1,0 +1,61 @@
+{
+  "proposal_id": "prop_l2_decoder_bf16_pwl_recovery_v1",
+  "created_utc": "2026-05-03T13:05:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_bf16_pwl_recovery",
+  "title": "Decoder bf16/PWL tie-break recovery",
+  "hypothesis": "The bf16/PWL exact-next losses are equal-score rank-2 cases, so a hardware-friendly ranking calibration that uses logits only to break exact score ties may recover exact-next behavior without changing the bf16/PWL arithmetic path.",
+  "direct_comparison": {
+    "primary_question": "Does bf16/PWL with logit tie-breaking recover the two broad-v2 exact-next misses while preserving top-k containment and avoiding regressions?",
+    "include": [
+      "candidate_onnx_softmax_exact reference path",
+      "grid_approx_pwl_bf16_path baseline",
+      "grid_approx_pwl_bf16_path_logit_tiebreak recovery proxy",
+      "next-token and top-k match counts on distribution v2"
+    ],
+    "exclude": [
+      "weight updates",
+      "full QAT training",
+      "new RTL/OpenROAD implementation of the ranking comparator"
+    ]
+  },
+  "expected_benefit": [
+    "distinguishes pure equal-score ranking loss from true arithmetic quality loss",
+    "tests a cheaper recovery path before building a full bf16 QAT harness",
+    "keeps q12 exact-safe hardware as the fallback if ranking recovery regresses"
+  ],
+  "risks": [
+    "logit tie-breaking is a calibration proxy, not proof that QAT will recover a larger model",
+    "the test remains tied to the tiny decoder distribution v2 set",
+    "hardware needs a clean contract for score equality and logit availability if this wins"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_bf16_pwl_recovery_v1",
+      "task_type": "l2_campaign",
+      "objective": "decoder_bf16_pwl_recovery",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_bf16_pwl_recovery",
+      "depends_on_item_ids": [
+        "l2_decoder_q8_norm_distribution_broad_v2",
+        "l2_decoder_bf16_pwl_recoverability_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_sweep__l2_decoder_q8_norm_distribution_broad_v2.json",
+    "runs/datasets/llm_decoder_eval_tiny_v1/decoder_bf16_pwl_recoverability__l2_decoder_bf16_pwl_recoverability_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/run_llm_decoder_onnx_candidate.py",
+    "npu/eval/sweep_llm_decoder_candidate_quality.py",
+    "npu/eval/summarize_llm_decoder_bf16_pwl_recovery.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}

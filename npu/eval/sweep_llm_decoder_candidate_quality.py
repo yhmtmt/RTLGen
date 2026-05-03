@@ -95,6 +95,7 @@ def _rough_grid_templates(model_contract: JsonDict, grid_name: str) -> Dict[str,
         "decoder_pwl_logit_sensitivity_ladder_v1",
         "decoder_pwl_survivor_distribution_v1",
         "decoder_pwl_bitwidth_boundary_v1",
+        "decoder_bf16_pwl_recovery_v1",
     }:
         raise ValueError(f"unsupported rough grid: {grid_name}")
     exact = _candidate_template(model_contract, "candidate_onnx_softmax_exact")
@@ -567,6 +568,35 @@ def _rough_grid_templates(model_contract: JsonDict, grid_name: str) -> Dict[str,
             ),
         ]
         return {name: cfg for name, cfg in points}
+    if grid_name == "decoder_bf16_pwl_recovery_v1":
+        points = [
+            ("candidate_onnx_softmax_exact", exact),
+            _named_grid_point(
+                approx,
+                "grid_approx_pwl_bf16_path",
+                softmax_input_quant_bits=None,
+                softmax_weight_quant_bits=None,
+                softmax_input_float_format="bf16",
+                softmax_weight_float_format="bf16",
+                normalization_mode="reciprocal_float",
+                normalization_reciprocal_bits=None,
+                normalization_reciprocal_float_format="bf16",
+                score_tie_breaker=None,
+            ),
+            _named_grid_point(
+                approx,
+                "grid_approx_pwl_bf16_path_logit_tiebreak",
+                softmax_input_quant_bits=None,
+                softmax_weight_quant_bits=None,
+                softmax_input_float_format="bf16",
+                softmax_weight_float_format="bf16",
+                normalization_mode="reciprocal_float",
+                normalization_reciprocal_bits=None,
+                normalization_reciprocal_float_format="bf16",
+                score_tie_breaker="logit",
+            ),
+        ]
+        return {name: cfg for name, cfg in points}
     points = [
         ("candidate_onnx_softmax_exact", exact),
         _named_grid_point(exact, "grid_exact_logits_q8", logit_quant_bits=8),
@@ -751,6 +781,7 @@ def _aggregate_row(template_name: str, manifest_path: Path, quality_path: Path, 
         "normalization_reciprocal_float_format": backend_config.get("normalization_reciprocal_float_format", ""),
         "probability_quant_bits": backend_config.get("probability_quant_bits", 0),
         "probability_float_format": backend_config.get("probability_float_format", ""),
+        "score_tie_breaker": backend_config.get("score_tie_breaker", ""),
         "sample_count": aggregate.get("sample_count"),
         "next_token_id_match_rate": aggregate.get("next_token_id_match_rate"),
         "next_token_text_match_rate": aggregate.get("next_token_text_match_rate"),
@@ -782,7 +813,7 @@ def main() -> int:
             "decoder_probability_fp_formats_v1, decoder_distribution_robustness_v1, or "
             "decoder_survivor_prompt_stress_v1, decoder_q8_normalization_frontier_v1, "
             "decoder_pwl_logit_sensitivity_ladder_v1, decoder_pwl_survivor_distribution_v1, "
-            "or decoder_pwl_bitwidth_boundary_v1."
+            "decoder_pwl_bitwidth_boundary_v1, or decoder_bf16_pwl_recovery_v1."
         ),
     )
     ap.add_argument("--out-dir", default="runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/local")

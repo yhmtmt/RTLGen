@@ -47,6 +47,23 @@ def test_pwl_bitwidth_boundary_grid_narrows_integer_precision_floor() -> None:
     assert grid["grid_approx_pwl_bf16_path"]["normalization_reciprocal_float_format"] == "bf16"
 
 
+def test_bf16_pwl_recovery_grid_adds_logit_tiebreak_variant() -> None:
+    model_contract = load_json(Path("runs/models/llm_decoder_tiny_v1/model_contract.json"))
+    grid = _rough_grid_templates(model_contract, "decoder_bf16_pwl_recovery_v1")
+
+    assert set(grid) == {
+        "candidate_onnx_softmax_exact",
+        "grid_approx_pwl_bf16_path",
+        "grid_approx_pwl_bf16_path_logit_tiebreak",
+    }
+    baseline = grid["grid_approx_pwl_bf16_path"]
+    recovery = grid["grid_approx_pwl_bf16_path_logit_tiebreak"]
+    assert baseline["normalization_reciprocal_float_format"] == "bf16"
+    assert "score_tie_breaker" not in baseline
+    assert recovery["normalization_reciprocal_float_format"] == "bf16"
+    assert recovery["score_tie_breaker"] == "logit"
+
+
 def test_q8_normalization_frontier_report_selects_lowest_cost_exact_safe_reciprocal() -> None:
     report = build_report(
         sweep_path=Path("tests/fixtures/decoder_q8_norm_frontier_sweep.json"),

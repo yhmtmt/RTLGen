@@ -1201,6 +1201,106 @@ def _decoder_bf16_pwl_recoverability_evidence(*, item_id: str) -> dict[str, Any]
     }
 
 
+def _decoder_bf16_pwl_recovery_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_tiny_v1"
+    dataset_manifest = f"{base}/manifest_distribution_v2.json"
+    sample_file = f"{base}/samples_distribution_v2.jsonl"
+    reference_dir = f"{base}/reference_distribution_v2"
+    reference_manifest = f"{base}/reference_distribution_v2_manifest.json"
+    candidate_dir = f"{base}/candidate_distribution_v2"
+    candidate_manifest = f"{base}/candidate_distribution_v2_manifest.json"
+    validation_out = f"{base}/decoder_contract_validation__{item_id}.json"
+    quality_out = f"{base}/decoder_quality_compare__{item_id}.json"
+    sweep_dir = f"{base}/candidate_sweeps/{item_id}"
+    sweep_out = f"{base}/decoder_quality_sweep__{item_id}.json"
+    recovery_out = f"{base}/decoder_bf16_pwl_recovery__{item_id}.json"
+    recovery_report = f"{base}/decoder_bf16_pwl_recovery__{item_id}.md"
+    rough_grid = "decoder_bf16_pwl_recovery_v1"
+    commands = [
+        {
+            "name": "generate_decoder_bf16_pwl_recovery_reference",
+            "run": (
+                "python3 npu/eval/gen_llm_decoder_reference_suite.py "
+                f"--dataset-manifest {dataset_manifest} "
+                f"--out-dir {reference_dir} "
+                f"--out-manifest {reference_manifest}"
+            ),
+        },
+        {
+            "name": "generate_decoder_bf16_pwl_recovery_candidate",
+            "run": (
+                "python3 npu/eval/gen_llm_decoder_candidate_suite.py "
+                f"--dataset-manifest {dataset_manifest} "
+                f"--out-dir {candidate_dir} "
+                f"--out-manifest {candidate_manifest}"
+            ),
+        },
+        {
+            "name": "validate_decoder_bf16_pwl_recovery_contract",
+            "run": f"python3 npu/eval/validate_llm_decoder_contract.py --dataset-manifest {dataset_manifest} --out {validation_out}",
+        },
+        {
+            "name": "compare_decoder_bf16_pwl_recovery_quality",
+            "run": (
+                "python3 npu/eval/compare_llm_decoder_quality.py "
+                f"--reference-manifest {reference_manifest} "
+                f"--candidate-manifest {candidate_manifest} "
+                f"--out {quality_out}"
+            ),
+        },
+        {
+            "name": "sweep_decoder_bf16_pwl_recovery",
+            "run": (
+                "python3 npu/eval/sweep_llm_decoder_candidate_quality.py "
+                f"--dataset-manifest {dataset_manifest} "
+                f"--rough-grid {rough_grid} "
+                f"--out-dir {sweep_dir} "
+                f"--out {sweep_out}"
+            ),
+        },
+        {
+            "name": "summarize_decoder_bf16_pwl_recovery",
+            "run": (
+                "python3 npu/eval/summarize_llm_decoder_bf16_pwl_recovery.py "
+                f"--sweep {sweep_out} "
+                f"--out {recovery_out} "
+                f"--out-md {recovery_report}"
+            ),
+        },
+    ]
+    return {
+        "inputs": {
+            "dataset_manifest": dataset_manifest,
+            "sample_file": sample_file,
+            "reference_dir": reference_dir,
+            "reference_manifest": reference_manifest,
+            "candidate_dir": candidate_dir,
+            "candidate_manifest": candidate_manifest,
+            "validation_out": validation_out,
+            "quality_out": quality_out,
+            "candidate_sweep_dir": sweep_dir,
+            "candidate_sweep_out": sweep_out,
+            "candidate_sweep_grid": rough_grid,
+            "recovery_out": recovery_out,
+            "recovery_report": recovery_report,
+            "recovery_scope": (
+                "narrow bf16/PWL calibration proxy that preserves the same score arithmetic and "
+                "tests whether logit tie-breaking recovers equal-score exact-next losses"
+            ),
+        },
+        "commands": commands,
+        "expected_outputs": [
+            reference_manifest,
+            candidate_manifest,
+            validation_out,
+            quality_out,
+            sweep_out,
+            recovery_out,
+            recovery_report,
+        ],
+    }
+
+
 def _decoder_pwl_logit_sensitivity_ladder_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_tiny_v1"
     dataset_manifest = f"{base}/manifest_pwl_failure_focus_v1.json"
@@ -1623,6 +1723,7 @@ def _build_payload(
         "decoder_q8_normalization_frontier",
         "decoder_q8_normalization_distribution",
         "decoder_q8_normalization_distribution_broad_v2",
+        "decoder_bf16_pwl_recovery",
         "decoder_bf16_pwl_recoverability",
         "decoder_pwl_failure_diagnosis",
         "decoder_pwl_logit_sensitivity_ladder",
@@ -1632,6 +1733,8 @@ def _build_payload(
     }:
         if abstraction_layer_name == "decoder_quantization_outline":
             decoder_evidence = _decoder_quantization_outline_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_bf16_pwl_recovery":
+            decoder_evidence = _decoder_bf16_pwl_recovery_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_bf16_pwl_recoverability":
             decoder_evidence = _decoder_bf16_pwl_recoverability_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_pwl_bitwidth_boundary":
