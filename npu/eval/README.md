@@ -289,6 +289,8 @@ python3 npu/eval/estimate_llm_decoder_q8_norm_frontier.py \
   --sweep /tmp/decoder_q8_norm_frontier_sweep.json \
   --q8-recip-ppa control_plane/shadow_exports/l1_promotions/l1_decoder_q8_recip_norm_datapath_v1_r3.json \
   --bf16-recip-ppa control_plane/shadow_exports/l1_promotions/l1_decoder_bf16_recip_norm_datapath_v1_r2.json \
+  --bf16-tie-rank-ppa control_plane/shadow_exports/l1_promotions/l1_decoder_bf16_pwl_tie_rank_datapath_v1_r2.json \
+  --bf16-recovery runs/datasets/llm_decoder_eval_tiny_v1/decoder_bf16_pwl_recovery__l2_decoder_bf16_pwl_recovery_v1.json \
   --out /tmp/decoder_q8_norm_frontier.json \
   --out-md /tmp/decoder_q8_norm_frontier.md
 ```
@@ -300,8 +302,11 @@ the full prompt-stress next-token and top-k gate. When the merged q8 reciprocal
 datapath artifact is available, q10/q12/q14/q16 are ranked by measured
 Nangate45 critical path, then area, then power. When the merged bf16 reciprocal
 datapath artifact is available, the bf16 anchor is ranked with the same measured
-metric ordering. q8 exact normalization uses the measured row-wise int8 softmax
-baseline when that artifact is available.
+metric ordering. When a bf16 tie-break recovery artifact and score tie-rank PPA
+artifact are both available, the recovered bf16 row is ranked with an explicit
+additive component model: bf16 reciprocal normalization plus score tie-rank.
+q8 exact normalization uses the measured row-wise int8 softmax baseline when
+that artifact is available.
 
 After the corresponding Layer 1 multiplier and accumulator/adder calibration
 jobs merge, synthesize the measured primitive evidence into a decoder

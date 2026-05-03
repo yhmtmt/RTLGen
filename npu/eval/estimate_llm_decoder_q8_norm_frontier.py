@@ -14,33 +14,42 @@ JsonDict = dict[str, Any]
 
 BASELINE_Q8_EXACT = "grid_approx_pwl_in_q8_w_q8_norm_exact"
 BF16_ANCHOR = "grid_approx_pwl_bf16_path"
+BF16_TIEBREAK = "grid_approx_pwl_bf16_path_logit_tiebreak"
 Q8_PREFIX = "grid_approx_pwl_in_q8_w_q8_norm_recip_q"
 DEFAULT_Q8_RECIP_PPA = Path("control_plane/shadow_exports/l1_promotions/l1_decoder_q8_recip_norm_datapath_v1_r3.json")
 DEFAULT_Q8_EXACT_PPA = Path(
     "control_plane/shadow_exports/l1_promotions/l1_prop_l1_softmax_rowwise_int8_r8_acc24_block_v1_nangate45_r1.json"
 )
 DEFAULT_BF16_RECIP_PPA = Path("control_plane/shadow_exports/l1_promotions/l1_decoder_bf16_recip_norm_datapath_v1_r2.json")
+DEFAULT_BF16_TIE_RANK_PPA = Path(
+    "control_plane/shadow_exports/l1_promotions/l1_decoder_bf16_pwl_tie_rank_datapath_v1_r2.json"
+)
+DEFAULT_BF16_RECOVERY = Path(
+    "runs/datasets/llm_decoder_eval_tiny_v1/decoder_bf16_pwl_recovery__l2_decoder_bf16_pwl_recovery_v1.json"
+)
 METRIC_KEYS = ("critical_path_ns", "die_area", "total_power_mw")
 
 COST_MODEL = {
-    "name": "decoder_q8_normalization_ppa_frontier_v4",
-    "source": "rtlgen_openroad_q8_exact_q8_reciprocal_and_bf16_reciprocal_datapath_metrics",
+    "name": "decoder_q8_normalization_ppa_frontier_v5",
+    "source": "rtlgen_openroad_q8_exact_q8_reciprocal_bf16_reciprocal_and_bf16_tie_rank_datapath_metrics",
     "unit": "nangate45_physical_metrics",
-    "calibration_status": "q8_exact_q8_reciprocal_and_bf16_reciprocal_integrated_datapaths_measured",
+    "calibration_status": "q8_exact_q8_reciprocal_bf16_reciprocal_and_bf16_tie_rank_datapaths_measured",
     "ppa_balance": (
-        "Measured q8 exact, q8 reciprocal, and bf16 reciprocal candidates are ranked lexicographically "
-        "by critical path, then area, then power. These physical metrics are comparable only within "
-        "the current Nangate45 row-8 normalization datapath framing."
+        "Measured q8 exact, q8 reciprocal, bf16 reciprocal, and bf16 score tie-rank datapaths are ranked "
+        "lexicographically by critical path, then area, then power. The recovered bf16 tie-break row uses "
+        "a conservative additive component model: reciprocal-normalization PPA plus score tie-rank PPA. "
+        "These physical metrics are comparable only within the current Nangate45 row-8 datapath framing."
     ),
     "intended_use": (
         "Replace the q8 normalization heuristic with merged RTLGen/OpenROAD datapath "
-        "evidence and compare it with the measured bf16 reciprocal anchor while preserving "
-        "quality gates from the decoder sweep."
+        "evidence and compare it with the measured bf16 reciprocal-plus-tie-rank recovery path "
+        "while preserving quality gates from the decoder sweep."
     ),
     "rtlgen_calibration_proposal": (
         "prop_l1_decoder_q8_recip_norm_datapath_v1_and_"
         "prop_l1_softmax_rowwise_int8_r8_acc24_block_v1_and_"
-        "prop_l1_decoder_bf16_recip_norm_datapath_v1"
+        "prop_l1_decoder_bf16_recip_norm_datapath_v1_and_"
+        "prop_l1_decoder_bf16_pwl_tie_rank_datapath_v1"
     ),
     "fallback_source": "hand_written_planning_proxy_used_only_when_ppa_artifact_is_absent",
 }
@@ -165,6 +174,39 @@ def _load_bf16_recip_ppa(path: Path | None) -> JsonDict | None:
     return None
 
 
+def _load_bf16_tie_rank_ppa(path: Path | None) -> JsonDict | None:
+    return _load_bf16_recip_ppa(path)
+
+
+def _combine_metric_components(*components: JsonDict) -> JsonDict:
+    combined = {}
+    for key in METRIC_KEYS:
+        combined[key] = round(sum(_as_float(component.get(key)) for component in components), 6)
+    return combined
+
+
+def _recovery_rows(path: Path | None) -> list[JsonDict]:
+    if path is None or not path.exists():
+        return []
+    payload = _load_json(path)
+    recovery = payload.get("recovery")
+    if not isinstance(recovery, dict):
+        return []
+    sample_count = _as_int(recovery.get("sample_count"))
+    if sample_count <= 0:
+        return []
+    next_matches = _as_int(recovery.get("next_token_matches"))
+    topk_matches = _as_int(recovery.get("topk_matches"))
+    row = dict(recovery)
+    row["next_token_id_match_rate"] = next_matches / sample_count
+    row["topk_contains_reference_id_rate"] = topk_matches / sample_count
+    row.setdefault("next_token_mismatch_sample_ids", [])
+    row.setdefault("topk_miss_sample_ids", [])
+    row.setdefault("normalization_reciprocal_bits", 0)
+    row.setdefault("normalization_reciprocal_float_format", "bf16")
+    return [row]
+
+
 def _quality(row: JsonDict) -> JsonDict:
     sample_count = _as_int(row.get("sample_count"))
     next_rate = _as_float(row.get("next_token_id_match_rate"))
@@ -212,6 +254,7 @@ def _normalization_record(
     q8_recip_ppa: dict[int, JsonDict],
     q8_exact_ppa: JsonDict | None,
     bf16_recip_ppa: JsonDict | None,
+    bf16_tie_rank_ppa: JsonDict | None,
 ) -> JsonDict:
     mode = str(row.get("normalization_mode") or "exact").strip()
     bits = _as_int(row.get("normalization_reciprocal_bits"), 0)
@@ -270,15 +313,36 @@ def _normalization_record(
     elif mode == "reciprocal_float":
         fmt = str(row.get("normalization_reciprocal_float_format") or "").strip()
         template = str(row.get("template") or "")
-        if template == BF16_ANCHOR and fmt == "bf16" and bf16_recip_ppa is not None:
+        if template in {BF16_ANCHOR, BF16_TIEBREAK} and fmt == "bf16" and bf16_recip_ppa is not None:
             metrics = bf16_recip_ppa["metrics"]
+            rank_source = "measured_bf16_reciprocal_datapath_ppa"
+            calibration_status = "integrated_bf16_reciprocal_datapath_measured"
+            metrics_ref = bf16_recip_ppa["metrics_ref"]
+            component_metrics = {"bf16_reciprocal": metrics}
+            metrics_refs = {"bf16_reciprocal": metrics_ref}
+            if template == BF16_TIEBREAK:
+                if bf16_tie_rank_ppa is None:
+                    record["calibration_status"] = "missing_bf16_score_tie_rank_ppa"
+                    record["rank_source"] = "heuristic_fallback_missing_bf16_score_tie_rank_ppa"
+                    record["rank_key"] = [1, round(heuristic_cost, 6)]
+                    return record
+                tie_metrics = bf16_tie_rank_ppa["metrics"]
+                metrics = _combine_metric_components(metrics, tie_metrics)
+                metrics_ref = bf16_recip_ppa["metrics_ref"]
+                component_metrics["score_tie_rank"] = tie_metrics
+                metrics_refs["score_tie_rank"] = bf16_tie_rank_ppa["metrics_ref"]
+                rank_source = "measured_bf16_reciprocal_plus_score_tie_rank_ppa"
+                calibration_status = "integrated_bf16_reciprocal_and_score_tie_rank_datapaths_measured"
             record.update(
                 {
                     "ppa_metrics": metrics,
-                    "metrics_ref": bf16_recip_ppa["metrics_ref"],
-                    "rank_source": "measured_bf16_reciprocal_datapath_ppa",
+                    "metrics_ref": metrics_ref,
+                    "metrics_refs": metrics_refs,
+                    "component_ppa_metrics": component_metrics,
+                    "component_model": "additive_datapath_components" if template == BF16_TIEBREAK else "single_datapath",
+                    "rank_source": rank_source,
                     "rank_key": [0] + [float(metrics[key]) for key in METRIC_KEYS],
-                    "calibration_status": "integrated_bf16_reciprocal_datapath_measured",
+                    "calibration_status": calibration_status,
                 }
             )
             return record
@@ -299,6 +363,7 @@ def _row_record(
     q8_recip_ppa: dict[int, JsonDict],
     q8_exact_ppa: JsonDict | None,
     bf16_recip_ppa: JsonDict | None,
+    bf16_tie_rank_ppa: JsonDict | None,
 ) -> JsonDict:
     template = str(row.get("template") or "")
     quality = _quality(row)
@@ -307,8 +372,11 @@ def _row_record(
         q8_recip_ppa=q8_recip_ppa,
         q8_exact_ppa=q8_exact_ppa,
         bf16_recip_ppa=bf16_recip_ppa,
+        bf16_tie_rank_ppa=bf16_tie_rank_ppa,
     )
-    if template == BF16_ANCHOR:
+    if template == BF16_TIEBREAK:
+        role = "bf16_recovered_tie_rank_candidate"
+    elif template == BF16_ANCHOR:
         role = "bf16_primary_anchor"
     elif template == BASELINE_Q8_EXACT:
         role = "q8_exact_normalization_baseline"
@@ -394,28 +462,36 @@ def build_report(
     q8_recip_ppa_path: Path | None = DEFAULT_Q8_RECIP_PPA,
     q8_exact_ppa_path: Path | None = DEFAULT_Q8_EXACT_PPA,
     bf16_recip_ppa_path: Path | None = DEFAULT_BF16_RECIP_PPA,
+    bf16_tie_rank_ppa_path: Path | None = None,
+    bf16_recovery_path: Path | None = None,
 ) -> JsonDict:
     sweep = _load_json(sweep_path)
     q8_recip_ppa = _load_q8_recip_ppa(q8_recip_ppa_path)
     q8_exact_ppa = _load_q8_exact_ppa(q8_exact_ppa_path)
     bf16_recip_ppa = _load_bf16_recip_ppa(bf16_recip_ppa_path)
+    bf16_tie_rank_ppa = _load_bf16_tie_rank_ppa(bf16_tie_rank_ppa_path)
     rows = sweep.get("templates")
     if not isinstance(rows, list):
         raise SystemExit("sweep JSON must contain a templates list")
+    source_rows = [row for row in rows if isinstance(row, dict)]
+    existing_templates = {str(row.get("template") or "") for row in source_rows}
+    for recovery_row in _recovery_rows(bf16_recovery_path):
+        if str(recovery_row.get("template") or "") not in existing_templates:
+            source_rows.append(recovery_row)
     records = [
         _row_record(
             row,
             q8_recip_ppa=q8_recip_ppa,
             q8_exact_ppa=q8_exact_ppa,
             bf16_recip_ppa=bf16_recip_ppa,
+            bf16_tie_rank_ppa=bf16_tie_rank_ppa,
         )
-        for row in rows
-        if isinstance(row, dict)
+        for row in source_rows
     ]
     interesting = [
         row
         for row in records
-        if row["template"] in {BF16_ANCHOR, BASELINE_Q8_EXACT} or row["template"].startswith(Q8_PREFIX)
+        if row["template"] in {BF16_ANCHOR, BF16_TIEBREAK, BASELINE_Q8_EXACT} or row["template"].startswith(Q8_PREFIX)
     ]
     missing = [template for template in (BF16_ANCHOR, BASELINE_Q8_EXACT) if template not in {row["template"] for row in interesting}]
     if missing:
@@ -488,7 +564,8 @@ def build_report(
                 "precision as a replacement for q8 exact normalization. q8 reciprocal rows use merged "
                 "RTLGen/OpenROAD integrated datapath metrics when the PPA artifact is available; q8 exact "
                 "uses the measured row-wise int8 softmax baseline when available; bf16 reciprocal normalization "
-                "uses the measured row-8 bf16 reciprocal datapath when available."
+                "uses the measured row-8 bf16 reciprocal datapath when available. The recovered bf16 "
+                "tie-break row adds the measured score tie-rank datapath as an explicit additive component."
             ),
         },
         "source_artifacts": {
@@ -498,6 +575,9 @@ def build_report(
             "q8_exact_ppa_available": q8_exact_ppa is not None,
             "bf16_reciprocal_datapath_ppa": str(bf16_recip_ppa_path) if bf16_recip_ppa_path is not None else None,
             "bf16_reciprocal_ppa_available": bf16_recip_ppa is not None,
+            "bf16_score_tie_rank_datapath_ppa": str(bf16_tie_rank_ppa_path) if bf16_tie_rank_ppa_path is not None else None,
+            "bf16_score_tie_rank_ppa_available": bf16_tie_rank_ppa is not None,
+            "bf16_recovery": str(bf16_recovery_path) if bf16_recovery_path is not None else None,
         },
         "cost_model": COST_MODEL,
         "decision": decision,
@@ -515,6 +595,8 @@ def main() -> int:
     ap.add_argument("--q8-recip-ppa", default=str(DEFAULT_Q8_RECIP_PPA), help="merged q8 reciprocal datapath promotion JSON")
     ap.add_argument("--q8-exact-ppa", default=str(DEFAULT_Q8_EXACT_PPA), help="merged q8 exact datapath promotion JSON")
     ap.add_argument("--bf16-recip-ppa", default=str(DEFAULT_BF16_RECIP_PPA), help="merged bf16 reciprocal datapath promotion JSON")
+    ap.add_argument("--bf16-tie-rank-ppa", default=str(DEFAULT_BF16_TIE_RANK_PPA), help="merged bf16 score tie-rank datapath promotion JSON")
+    ap.add_argument("--bf16-recovery", default=str(DEFAULT_BF16_RECOVERY), help="bf16/PWL tie-break recovery summary JSON")
     ap.add_argument("--out", required=True, help="output JSON path")
     ap.add_argument("--out-md", required=True, help="output Markdown report path")
     args = ap.parse_args()
@@ -523,6 +605,8 @@ def main() -> int:
         q8_recip_ppa_path=Path(args.q8_recip_ppa) if args.q8_recip_ppa else None,
         q8_exact_ppa_path=Path(args.q8_exact_ppa) if args.q8_exact_ppa else None,
         bf16_recip_ppa_path=Path(args.bf16_recip_ppa) if args.bf16_recip_ppa else None,
+        bf16_tie_rank_ppa_path=Path(args.bf16_tie_rank_ppa) if args.bf16_tie_rank_ppa else None,
+        bf16_recovery_path=Path(args.bf16_recovery) if args.bf16_recovery else None,
     )
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)

@@ -1,0 +1,18 @@
+{
+  "version": 0.1,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/score_tie_rank_r8_s16_l16_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_path": "runs/designs/activations/score_tie_rank_r8_s16_l16_wrapper/work/aa83599c/result.json"
+      },
+      "metric_summary": {
+        "critical_path_ns": 3.2925,
+        "die_area": 6786.4644,
+        "total_power_mw": 0.00526
+      }
+    }
+  ]
+}
