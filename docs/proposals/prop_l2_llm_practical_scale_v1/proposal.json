@@ -1,0 +1,60 @@
+{
+  "proposal_id": "prop_l2_llm_practical_scale_v1",
+  "title": "LLM practical scale proxy",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "category": "architecture",
+  "abstraction_layer": "llm_practical_scale",
+  "status": "pending",
+  "created_utc": "2026-05-03T14:12:00Z",
+  "hypothesis": "The current practical LLM proxy shows no nm2 latency benefit up to 32 active tokens and 512 KV-context tokens. A bounded larger proxy with 64 active tokens and 1024-2048 KV-context score dimensions should check whether that conclusion holds as LLM-like attention pressure grows.",
+  "evaluation": {
+    "primary_question": "Does the larger practical decoder proxy change scheduler visibility, softmax occupancy, or the fp16_nm1 vs fp16_nm2 PPA ranking?",
+    "scope": [
+      "llm_practical_scale_v1 campaign on Nangate45",
+      "existing fp16_nm1 and fp16_nm2 physical points",
+      "64 active-token proxy cases with 1024 and 2048 KV-context score widths"
+    ],
+    "out_of_scope": [
+      "trained-LLM accuracy confirmation",
+      "new wider-than-nm2 compute-array RTL",
+      "changing the bf16/PWL decoder quality path"
+    ]
+  },
+  "expected_signal": {
+    "promote_if": [
+      "larger scale exposes a clear nm2 latency or balanced-PPA benefit",
+      "softmax occupancy, waits, or backpressure materially increase versus llm_practical_v1"
+    ],
+    "iterate_if": [
+      "fp16_nm1 remains best and no scheduler pressure appears",
+      "scale increases latency/energy proportionally without changing the architecture bottleneck"
+    ]
+  },
+  "risks": [
+    "still an ONNX-lite proxy rather than a trained decoder model",
+    "larger generated models may increase evaluator runtime",
+    "only compares currently materialized nm1 and nm2 array points"
+  ],
+  "evaluation_requests": [
+    {
+      "item_id": "l2_llm_practical_scale_v1",
+      "task_type": "l2_campaign",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_llm_practical_scale_v1/campaign.json",
+      "evaluation_mode": "frontier_detail",
+      "expected_direction": "iterate",
+      "comparison_role": "ranking"
+    }
+  ],
+  "prior_art": [
+    "docs/proposals/prop_l2_llm_practical_decoder_proxy_v1/analysis_report.md",
+    "runs/campaigns/npu/e2e_eval_llm_practical_v1__l2_llm_practical_decoder_proxy_v1/report.md",
+    "docs/proposals/prop_l2_decoder_bf16_pwl_scale_probe_v1/analysis_report.md"
+  ],
+  "implementation_refs": [
+    "npu/mapper/examples/gen_llm_practical_scale_suite_lite.py",
+    "runs/models/llm_practical_scale_v1/manifest.json",
+    "runs/campaigns/npu/e2e_eval_llm_practical_scale_v1/campaign.json"
+  ]
+}
