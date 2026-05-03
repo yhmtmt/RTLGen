@@ -102,7 +102,18 @@ def build_report(
         and int(recovery["next_token_matches"]) == sample_count
         and int(recovery["topk_matches"]) == sample_count
     )
-    if exact_safe and baseline_misses and not recovery_misses:
+    baseline_exact_safe = (
+        sample_count > 0
+        and int(baseline["next_token_matches"]) == sample_count
+        and int(baseline["topk_matches"]) == sample_count
+    )
+    if baseline_exact_safe and exact_safe and not baseline_misses and not recovery_misses:
+        decision = "baseline_exact_safe"
+        recommended = (
+            "Treat bf16/PWL as exact-safe on this screen without relying on the logit tie-breaker; "
+            "keep the tie-break row as a ranking-stability guard for broader prompts or larger checkpoints."
+        )
+    elif exact_safe and baseline_misses and not recovery_misses:
         decision = "tie_break_recovery_sufficient"
         recommended = (
             "Treat bf16/PWL as the immediate low-cost frontier and follow with a hardware-friendly "

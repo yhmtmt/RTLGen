@@ -65,6 +65,10 @@ def _require_non_empty_string(doc: JsonDict, key: str, errors: List[str], where:
     _require(isinstance(doc.get(key), str) and bool(str(doc.get(key)).strip()), errors, f'{where}.{key} must be a non-empty string')
 
 
+def _require_string(doc: JsonDict, key: str, errors: List[str], where: str) -> None:
+    _require(isinstance(doc.get(key), str), errors, f'{where}.{key} must be a string')
+
+
 def _require_file(doc: JsonDict, key: str, errors: List[str], where: str) -> None:
     _require_non_empty_string(doc, key, errors, where)
     value = doc.get(key)
@@ -95,7 +99,7 @@ def _validate_topk(entries: Any, errors: List[str], where: str, *, score_key: st
         if not isinstance(entry, dict):
             continue
         _require(isinstance(entry.get('token_id'), int), errors, f'{ewhere}.token_id must be an integer')
-        _require_non_empty_string(entry, 'token_text', errors, ewhere)
+        _require_string(entry, 'token_text', errors, ewhere)
         _require(isinstance(entry.get(score_key), (int, float)), errors, f'{ewhere}.{score_key} must be numeric')
 
 
@@ -116,10 +120,18 @@ def _validate_selected_tensors(entries: Any, errors: List[str], where: str) -> N
             _require(isinstance(entry.get(key), (int, float)), errors, f'{ewhere}.{key} must be numeric')
 
 
-def _validate_decoder_doc(doc: JsonDict, sample: JsonDict, errors: List[str], where: str, *, role: str) -> None:
+def _validate_decoder_doc(
+    doc: JsonDict,
+    sample: JsonDict,
+    errors: List[str],
+    where: str,
+    *,
+    role: str,
+    dataset_id: str,
+) -> None:
     role_key = 'reference' if role == 'reference' else 'candidate'
     _require(doc.get('sample_id') == sample.get('sample_id'), errors, f'{where}.sample_id must match prompt sample_id')
-    _require(doc.get('dataset_id') == 'llm_decoder_eval_tiny_v1', errors, f'{where}.dataset_id must be llm_decoder_eval_tiny_v1')
+    _require(doc.get('dataset_id') == dataset_id, errors, f'{where}.dataset_id must match dataset manifest')
     _require(doc.get('task') == 'greedy_next_token', errors, f'{where}.task must be greedy_next_token')
     _require(isinstance(doc.get('prompt'), dict), errors, f'{where}.prompt must be an object')
     if isinstance(doc.get('prompt'), dict):
@@ -133,7 +145,7 @@ def _validate_decoder_doc(doc: JsonDict, sample: JsonDict, errors: List[str], wh
         return
     result = doc[role_key]
     _require(isinstance(result.get('next_token_id'), int), errors, f'{where}.{role_key}.next_token_id must be an integer')
-    _require_non_empty_string(result, 'next_token_text', errors, f'{where}.{role_key}')
+    _require_string(result, 'next_token_text', errors, f'{where}.{role_key}')
     if role == 'reference':
         _require(result.get('expected_continuation') == sample.get('expected_continuation'), errors, f'{where}.reference.expected_continuation must match prompt sample')
         _require(isinstance(result.get('next_token_rank'), int), errors, f'{where}.reference.next_token_rank must be an integer')
@@ -161,7 +173,6 @@ def validate_decoder_contract(dataset_manifest_path: str | Path) -> JsonDict:
         'model_contract',
     ):
         _require_non_empty_string(manifest, key, errors, where)
-    _require(manifest.get('dataset_id') == 'llm_decoder_eval_tiny_v1', errors, f'{where}.dataset_id must be llm_decoder_eval_tiny_v1')
     _require(manifest.get('task') == 'greedy_next_token', errors, f'{where}.task must be greedy_next_token')
     for key in ('sample_file', 'reference_manifest', 'candidate_manifest', 'tokenizer_manifest', 'model_contract'):
         _require_file(manifest, key, errors, where)
@@ -198,13 +209,27 @@ def validate_decoder_contract(dataset_manifest_path: str | Path) -> JsonDict:
         if isinstance(entry.get('reference_json'), str):
             actual = _sha256(entry['reference_json'])
             _require(entry.get('reference_sha256') == actual, errors, f"{entry['reference_json']} sha256 mismatch")
-            _validate_decoder_doc(_load_json(entry['reference_json']), samples_by_id.get(str(entry.get('sample_id')), {}), errors, str(entry['reference_json']), role='reference')
+            _validate_decoder_doc(
+                _load_json(entry['reference_json']),
+                samples_by_id.get(str(entry.get('sample_id')), {}),
+                errors,
+                str(entry['reference_json']),
+                role='reference',
+                dataset_id=str(manifest.get('dataset_id', '')),
+            )
     for entry in cand_entries:
         _require_file(entry, 'candidate_json', errors, f"candidate_manifest.samples[{entry.get('sample_id', '?')}]")
         if isinstance(entry.get('candidate_json'), str):
             actual = _sha256(entry['candidate_json'])
             _require(entry.get('candidate_sha256') == actual, errors, f"{entry['candidate_json']} sha256 mismatch")
-            _validate_decoder_doc(_load_json(entry['candidate_json']), samples_by_id.get(str(entry.get('sample_id')), {}), errors, str(entry['candidate_json']), role='candidate')
+            _validate_decoder_doc(
+                _load_json(entry['candidate_json']),
+                samples_by_id.get(str(entry.get('sample_id')), {}),
+                errors,
+                str(entry['candidate_json']),
+                role='candidate',
+                dataset_id=str(manifest.get('dataset_id', '')),
+            )
 
     metrics = compare_decoder_manifests(reference_manifest, candidate_manifest)
     aggregate = metrics.get('aggregate', {})

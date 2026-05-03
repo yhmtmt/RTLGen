@@ -1,0 +1,64 @@
+{
+  "proposal_id": "prop_l2_decoder_distilgpt2_quality_v1",
+  "created_utc": "2026-05-03T21:51:27Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_distilgpt2_quality",
+  "title": "Decoder distilgpt2 trained-checkpoint quality gate",
+  "hypothesis": "The trained tiny GPT-2-family gate recovered exact-next behavior for the bf16 reciprocal PWL path plus logit score tie-break, but the result may not hold when hidden size, layer count, and trained logit distributions grow. A distilgpt2 checkpoint should be the immediate frontier confirmation before moving to GPT-2 scale, QAT, or larger hardware-array claims.",
+  "direct_comparison": {
+    "primary_question": "Does the current bf16/PWL plus logit tie-break recovery remain exact-safe on a distilgpt2 next-token workload?",
+    "include": [
+      "runtime materialization of distilgpt2 into the decoder ONNX contract",
+      "exact reference and approximated candidate next-token traces",
+      "q12 exact-normalization and q8 reciprocal controls",
+      "bf16/PWL baseline and bf16/PWL logit tie-break recovery rows"
+    ],
+    "exclude": [
+      "committing large ONNX or tokenizer artifacts",
+      "full task-accuracy benchmarking",
+      "new RTL/OpenROAD PPA measurement",
+      "training, fine tuning, or quantization-aware training"
+    ]
+  },
+  "expected_benefit": [
+    "tests whether the trained-tiny recovery survives a larger trained checkpoint",
+    "keeps the next job on the existing decoder quality harness before adding QAT infrastructure",
+    "prevents large generated model artifacts from entering evaluator PRs"
+  ],
+  "risks": [
+    "distilgpt2 is still much smaller than current production LLMs",
+    "the prompt set is still a 24-sample next-token screen, not a broad application benchmark",
+    "export requires torch, transformers, and onnx in the evaluator Python environment",
+    "a failure may reflect logit distribution sensitivity rather than hardware infeasibility"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_distilgpt2_quality_v1",
+      "task_type": "l2_campaign",
+      "objective": "Check whether bf16/PWL plus logit tie-break recovery remains exact-safe on a materialized distilgpt2 decoder workload.",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_distilgpt2_quality",
+      "depends_on_item_ids": [
+        "l2_decoder_trained_tiny_quality_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_decoder_trained_tiny_quality_v1/proposal.json",
+    "control_plane/shadow_exports/l2_decisions/l2_decoder_trained_tiny_quality_v1.json",
+    "runs/datasets/llm_decoder_eval_trained_tiny_v1/decoder_trained_tiny_quality__l2_decoder_trained_tiny_quality_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/materialize_hf_decoder_contract.py",
+    "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/samples.jsonl",
+    "npu/eval/sweep_llm_decoder_candidate_quality.py",
+    "npu/eval/summarize_llm_decoder_bf16_pwl_recovery.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}

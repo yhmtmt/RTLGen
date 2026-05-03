@@ -29,6 +29,8 @@ runs/**/*.def
 runs/**/*.gds
 runs/model_cache/**
 !runs/model_cache/README.md
+runs/models/llm_decoder_distilgpt2_trained_v1/**
+runs/tokenizers/llm_decoder_distilgpt2_trained_v1/**
 runs/**/artifacts/
 runs/**/work/
 runs/**/comparisons/
