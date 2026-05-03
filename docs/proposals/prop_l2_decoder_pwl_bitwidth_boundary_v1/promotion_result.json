@@ -1,8 +1,5 @@
 {
   "proposal_id": "prop_l2_decoder_pwl_bitwidth_boundary_v1",
   "decision": "iterate",
-  "status": "pending_evaluation",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "status": "pending_evaluation"
 }

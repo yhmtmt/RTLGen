@@ -1,0 +1,122 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-05-03T12:02:47.688935Z",
+  "item_id": "l2_decoder_pwl_bitwidth_boundary_v1",
+  "run_key": "l2_decoder_pwl_bitwidth_boundary_v1_run_5f8b6f46e6c2fe4b",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "735732d900d085082382db7777763b1afd1aad56",
+  "review_metadata_source_commit": "735732d900d085082382db7777763b1afd1aad56",
+  "objective": "Run a q10/q11/q12/q13 PWL bit-width boundary check on the expanded v2 decoder distribution.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+    ],
+    "design_dirs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+    ],
+    "macro_manifests": [
+      "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+      "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+    ],
+    "decoder_contract": {
+      "quality_out": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_compare__l2_decoder_pwl_bitwidth_boundary_v1.json",
+      "sample_file": "runs/datasets/llm_decoder_eval_tiny_v1/samples_distribution_v2.jsonl",
+      "candidate_dir": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2",
+      "reference_dir": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v2",
+      "validation_out": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_contract_validation__l2_decoder_pwl_bitwidth_boundary_v1.json",
+      "dataset_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/manifest_distribution_v2.json",
+      "candidate_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_distribution_v2_manifest.json",
+      "reference_manifest": "runs/datasets/llm_decoder_eval_tiny_v1/reference_distribution_v2_manifest.json",
+      "candidate_sweep_dir": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1",
+      "candidate_sweep_out": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_quality_sweep__l2_decoder_pwl_bitwidth_boundary_v1.json",
+      "candidate_sweep_grid": "decoder_pwl_bitwidth_boundary_v1",
+      "bitwidth_boundary_out": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_pwl_bitwidth_boundary__l2_decoder_pwl_bitwidth_boundary_v1.json",
+      "bitwidth_boundary_scope": "expanded v2 prompt-distribution check for the lowest exact-safe integer PWL softmax input/weight bit width after q12 proved broad-safe but expensive in PPA",
+      "bitwidth_boundary_report": "runs/datasets/llm_decoder_eval_tiny_v1/decoder_pwl_bitwidth_boundary__l2_decoder_pwl_bitwidth_boundary_v1.md"
+    },
+    "generated_campaign": {
+      "path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign__l2_decoder_pwl_bitwidth_boundary_v1.json",
+      "outputs": {
+        "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_pwl_bitwidth_boundary_v1/report.md",
+        "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_pwl_bitwidth_boundary_v1/results.csv",
+        "campaign_dir": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_pwl_bitwidth_boundary_v1"
+      },
+      "clean_outputs": true,
+      "base_campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json"
+    },
+    "candidate_manifests": [
+      "runs/candidates/nangate45/module_candidates.json"
+    ]
+  },
+  "recommendation": {
+    "arch_id": "fp16_nm1",
+    "macro_mode": "flat_nomacro",
+    "objective_rank": 1,
+    "objective_score": "0.0",
+    "latency_ms_mean": 0.028907999999999996,
+    "energy_mj_mean": 5.582770776e-06,
+    "critical_path_ns_mean": 5.557037432204143,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.193122,
+    "flow_elapsed_s_mean": 848.418
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_pwl_bitwidth_boundary_v1",
+    "title": "Decoder PWL integer bit-width boundary",
+    "primary_question": "Across the expanded v2 prompt distribution, is q11 PWL exact-normalization enough to preserve exact next-token and top-k behavior, or does q12 remain the lowest exact-safe integer PWL bit width?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "ranking",
+    "abstraction_layer": "decoder_pwl_bitwidth_boundary",
+    "expected_direction": "iterate",
+    "expected_reason": "Determine whether q11 is exact-safe before spending another Layer 1 PPA run, or keep q12 as the integer exact-safe floor.",
+    "summary": "Focused comparison baseline could not be resolved from proposal baseline_refs.",
+    "outcome": "unavailable",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_pwl_bitwidth_boundary_v1",
+    "title": "Decoder PWL integer bit-width boundary",
+    "primary_question": "Across the expanded v2 prompt distribution, is q11 PWL exact-normalization enough to preserve exact next-token and top-k behavior, or does q12 remain the lowest exact-safe integer PWL bit width?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "ranking",
+    "outcome": "unavailable",
+    "summary": "Focused comparison baseline could not be resolved from proposal baseline_refs.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": []
+  },
+  "source_refs": {
+    "best_point_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_pwl_bitwidth_boundary_v1/best_point.json",
+    "summary_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_pwl_bitwidth_boundary_v1/summary.csv",
+    "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_pwl_bitwidth_boundary_v1/results.csv",
+    "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_pwl_bitwidth_boundary_v1/report.md",
+    "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_pwl_bitwidth_boundary_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+    "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_pwl_bitwidth_boundary_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+    "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_pwl_bitwidth_boundary_v1/artifacts/perf/fp16_nm1/mlp1/trace.json",
+    "focused_model_artifacts": [
+      {
+        "model_id": "mlp1",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_pwl_bitwidth_boundary_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_pwl_bitwidth_boundary_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_pwl_bitwidth_boundary_v1/artifacts/perf/fp16_nm1/mlp1/trace.json"
+      },
+      {
+        "model_id": "mlp2",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_pwl_bitwidth_boundary_v1/artifacts/mapper/fp16_nm1/mlp2/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_pwl_bitwidth_boundary_v1/artifacts/mapper/fp16_nm1/mlp2/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_pwl_bitwidth_boundary_v1/artifacts/perf/fp16_nm1/mlp2/trace.json"
+      }
+    ]
+  }
+}

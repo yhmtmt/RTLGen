@@ -1,0 +1,274 @@
+{
+  "backend_config": {
+    "backend_id": "command_json_v1",
+    "command": [
+      "python3",
+      "npu/eval/run_llm_decoder_onnx_candidate.py"
+    ],
+    "equivalence_group": "llm_decoder_tiny_v1_reference_onnx_v1",
+    "input_name": "input_ids",
+    "interface": "decoder_backend_v1",
+    "model_config_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/config.json",
+    "normalization_mode": "exact",
+    "onnx_model_path": "runs/models/llm_decoder_tiny_v1/reference_onnx/model.onnx",
+    "output_name": "logits",
+    "role": "candidate",
+    "runtime_target": "software_emulation",
+    "softmax_input_quant_bits": 11,
+    "softmax_mode": "approx_pwl",
+    "softmax_weight_quant_bits": 11,
+    "topk": 5,
+    "trace_output_patterns": [
+      "present.*"
+    ],
+    "trace_tensor_quant_bits": 4
+  },
+  "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q11_w_q11_norm_exact_prob_fp",
+  "dataset_id": "llm_decoder_eval_tiny_v1",
+  "model_contract": "runs/models/llm_decoder_tiny_v1/model_contract.json",
+  "samples": [
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_geo_capital_france.json",
+      "candidate_sha256": "b0760c033f65e4223956f893191622066670dec81424edc05a1bf23875e64b18",
+      "sample_id": "dist2_geo_capital_france"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_geo_capital_japan.json",
+      "candidate_sha256": "c206a0885adb743690fdff84a6fdca3a40dd2f03e7723df94ebfaea34d256b98",
+      "sample_id": "dist2_geo_capital_japan"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_geo_capital_germany.json",
+      "candidate_sha256": "c4e20c09b8e15add60cc2eacfdd97a9a912d3ad66859638222e78f2afda17e13",
+      "sample_id": "dist2_geo_capital_germany"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_geo_capital_italy.json",
+      "candidate_sha256": "2a41d07a0f844278e991427e4e9b8f3075d8884dbe20ae41f82b5e02caf2cda4",
+      "sample_id": "dist2_geo_capital_italy"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_color_banana.json",
+      "candidate_sha256": "cf99cd0ef82a8afbd40f50b867e94942c050b47665a67c040faf95f577e00120",
+      "sample_id": "dist2_color_banana"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_color_sky.json",
+      "candidate_sha256": "60bd2c52b0bc970bd5526dd026f0a22d67c8114b1097fbd9600405cec86b93b1",
+      "sample_id": "dist2_color_sky"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_color_grass.json",
+      "candidate_sha256": "3bd5a8da6ac1b3ed2c6bf031baf1787dbe70c1c9f688d4d26298acf11d781952",
+      "sample_id": "dist2_color_grass"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_color_snow.json",
+      "candidate_sha256": "b8596529054d12644f0a17e30bb9e12969c3da7352fed4abae8b43c151a38a1f",
+      "sample_id": "dist2_color_snow"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_arith_two_plus_two.json",
+      "candidate_sha256": "d5b50f9bfaf3b9ae9369c61b462ecdac55a419bf8da518a38cbc1039c65597c4",
+      "sample_id": "dist2_arith_two_plus_two"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_arith_three_plus_five.json",
+      "candidate_sha256": "503b7be0c94e4d83fa3700504fa4aba5730559da723552c03c6bb2efa660afca",
+      "sample_id": "dist2_arith_three_plus_five"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_arith_ten_minus_one.json",
+      "candidate_sha256": "45dbadfba6ccae8508f21dc566c47fcf3a764ba864000431de1ff485164e083d",
+      "sample_id": "dist2_arith_ten_minus_one"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_arith_six_times_two.json",
+      "candidate_sha256": "7b7258ea61dc8e8578f6f1f5b8a1fe91f92ec9a3d5450100488dbd14451efbb7",
+      "sample_id": "dist2_arith_six_times_two"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_sequence_numbers.json",
+      "candidate_sha256": "8e3dc61953ddd7441d14c31f65b60a3fc46c0b9b100b0b71437370433d93dc33",
+      "sample_id": "dist2_sequence_numbers"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_sequence_letters.json",
+      "candidate_sha256": "76ab8e966b15b623d06ce7e7420acc9cbff1f2c75021c043d1b6a935112de236",
+      "sample_id": "dist2_sequence_letters"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_sequence_weekdays.json",
+      "candidate_sha256": "11f2e2355d98d52469f121a3d4234ecf0a68227622f5ff5d0526474f6200e78b",
+      "sample_id": "dist2_sequence_weekdays"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_sequence_months.json",
+      "candidate_sha256": "33e8fef61dea0bd22da20fc2dab6e486013ce2906e94c160726d431eeac53ac2",
+      "sample_id": "dist2_sequence_months"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_code_python_return.json",
+      "candidate_sha256": "e290508e44ddbb8f3e4c162b02e30e8405db93357ea64a3cbc7172570b9b8716",
+      "sample_id": "dist2_code_python_return"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_code_python_if.json",
+      "candidate_sha256": "793e33ca0bb6c23e02c0db5c5b422402c294f673941ce7966116601df3bc84cc",
+      "sample_id": "dist2_code_python_if"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_code_json_key.json",
+      "candidate_sha256": "1e149b55fe6f2ab40f58fc56ea1c26b778ed5ef81eb61def021aaddc7fb55c83",
+      "sample_id": "dist2_code_json_key"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_code_comment.json",
+      "candidate_sha256": "294307ff5789c001c734967127074d7d383caa504e0b2c8e05df2a4742369135",
+      "sample_id": "dist2_code_comment"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_dialogue_greeting.json",
+      "candidate_sha256": "af1e5183702e520fec96046ba2189c1eeeebeac39bc85df91b5b04aea9c79e96",
+      "sample_id": "dist2_dialogue_greeting"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_dialogue_thanks.json",
+      "candidate_sha256": "2c84a24a6a2e50baea5d70beec6972a7fe021bda08fb4f85c3d0cd1176192698",
+      "sample_id": "dist2_dialogue_thanks"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_dialogue_question.json",
+      "candidate_sha256": "984157eacdfe19c19eb63a49d8451edc4a32c2ecfdaa3a513530cf4ffdb4d8a5",
+      "sample_id": "dist2_dialogue_question"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_dialogue_yesno.json",
+      "candidate_sha256": "dd923fd5255fca41efa0911f116cb139306164a865d652ef032e18d67a50b498",
+      "sample_id": "dist2_dialogue_yesno"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_punctuation_period.json",
+      "candidate_sha256": "2d0ff989ef3e0c48fa452236e6ceaf6f2548f8728610ba292a4a125681dd83d1",
+      "sample_id": "dist2_punctuation_period"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_punctuation_comma.json",
+      "candidate_sha256": "86a71770fe07994ac75f28c09862f18d517a723591f48123cded6bd5602f7c42",
+      "sample_id": "dist2_punctuation_comma"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_punctuation_colon.json",
+      "candidate_sha256": "ef61890ba21a1ad21dc8dbe0006b581e02eccab0b4c98d4ee850d58ab2b29e22",
+      "sample_id": "dist2_punctuation_colon"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_punctuation_quote.json",
+      "candidate_sha256": "98a8f1f95ebcce69e049bf5f6db7ec9e1769f984c0b7ba946a4b3020cb713ae9",
+      "sample_id": "dist2_punctuation_quote"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_long_lab.json",
+      "candidate_sha256": "151c158bb7aa3b965495db2db579d1a84e28dfba941f69c6734c4ea091c7d679",
+      "sample_id": "dist2_long_lab"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_long_story.json",
+      "candidate_sha256": "ed2340603436074653b976be0b3df3c93b6c9735f7e0aca727490a254ac39169",
+      "sample_id": "dist2_long_story"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_long_design.json",
+      "candidate_sha256": "39631d59bdd46f7f3b16ce640db8c19057971ccbe48ad4181bbeb5787b0edd94",
+      "sample_id": "dist2_long_design"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_long_report.json",
+      "candidate_sha256": "01fa09b005fcb8f3f67bec9b4bd8cbfff8d01bd3a7fc6f188b5e0834326846f6",
+      "sample_id": "dist2_long_report"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_repetition_ha.json",
+      "candidate_sha256": "c870fff538f3434bbc103afd0527f08683209d3ad2caab78494841ce7c8acdeb",
+      "sample_id": "dist2_repetition_ha"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_repetition_test.json",
+      "candidate_sha256": "fe39aa915fb3085d3bbd8a22ac5f0af79323634974a15f1b0d270f4ad67ab500",
+      "sample_id": "dist2_repetition_test"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_repetition_go.json",
+      "candidate_sha256": "5020db85aab92cacca879e8a72a27915455f206790d37cb2fd1aa211604a3d21",
+      "sample_id": "dist2_repetition_go"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_repetition_tick.json",
+      "candidate_sha256": "2dfa175a7102425b4e0b22441362773e5ef73be711eb6356879fc6126ad32bab",
+      "sample_id": "dist2_repetition_tick"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_ambiguous_article.json",
+      "candidate_sha256": "0eeb24de0fd32601a41881982c075953a59339d10470a16d1b5ac2a1ec497bc7",
+      "sample_id": "dist2_ambiguous_article"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_ambiguous_preposition.json",
+      "candidate_sha256": "e102402af353d76963affb0256803ffd2ce8174d2fd5decf4faa17d3c1dd286f",
+      "sample_id": "dist2_ambiguous_preposition"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_ambiguous_object.json",
+      "candidate_sha256": "4fc9ab9d5d97542b6d22f3f6ade66d5f0b5fc83760900f67dec6f6febec37c7e",
+      "sample_id": "dist2_ambiguous_object"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_ambiguous_common.json",
+      "candidate_sha256": "a9aae1dd9a19d32007fa5f3d423600eaca39e789adddbe2b7d6b68d539fd18b6",
+      "sample_id": "dist2_ambiguous_common"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_instruction_short.json",
+      "candidate_sha256": "d20359079e36bd4f283d3a1cfe9e59b383f67f5ad98000127c4d53682861661f",
+      "sample_id": "dist2_instruction_short"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_instruction_label.json",
+      "candidate_sha256": "18da55f1fb81ce0eda6afd9af4ab0ceee207d74611d3eb38c32e3f88d1fc41cc",
+      "sample_id": "dist2_instruction_label"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_instruction_classify.json",
+      "candidate_sha256": "8411a08b659adbf31e074e80b1fee594b8798b9509e8676eda671a7160ef4f78",
+      "sample_id": "dist2_instruction_classify"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_instruction_complete.json",
+      "candidate_sha256": "345ca228eeaf2dc1e03a4f49b57886730e7d2c58abe892ade007890c7b54d442",
+      "sample_id": "dist2_instruction_complete"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_symbol_paren.json",
+      "candidate_sha256": "dbad988c1c5a679c4159c4d3eee1ebd9e77f7e583418d2edcdc4c2a59f234165",
+      "sample_id": "dist2_symbol_paren"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_symbol_bracket.json",
+      "candidate_sha256": "7053ab3df54671b549d781e7bc49dc0d377fe5153af48c14f92387d982da5382",
+      "sample_id": "dist2_symbol_bracket"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_symbol_arrow.json",
+      "candidate_sha256": "4db78f6083755b89bda196a9b1d5bc0b1f312eb80baf62f93c2a4ef65ca37dc5",
+      "sample_id": "dist2_symbol_arrow"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_tiny_v1/candidate_sweeps/l2_decoder_pwl_bitwidth_boundary_v1/grid_approx_pwl_in_q11_w_q11_norm_exact/candidate/dist2_symbol_equals.json",
+      "candidate_sha256": "d7ed6ca2db4fbdc554992ffadce167534ffb93efcfca09b5d19b5d7541bdf689",
+      "sample_id": "dist2_symbol_equals"
+    }
+  ],
+  "task": "greedy_next_token",
+  "tokenizer_manifest": "runs/tokenizers/llm_decoder_gpt2_bpe_stub_v1/manifest.json",
+  "version": 0.1
+}
