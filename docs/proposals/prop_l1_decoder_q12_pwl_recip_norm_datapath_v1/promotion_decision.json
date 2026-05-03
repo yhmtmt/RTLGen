@@ -1,11 +1,15 @@
 {
   "proposal_id": "prop_l1_decoder_q12_pwl_recip_norm_datapath_v1",
   "candidate_id": "l1_decoder_q12_pwl_recip_norm_datapath_v1",
-  "decision": "pending",
-  "reason": "Awaiting L1 PPA measurement for q12 PWL reciprocal normalization.",
+  "decision": "promote",
+  "reason": "Accepted Layer 1 physical metrics were merged in PR #338 for the current candidate.",
   "evidence_refs": [
-    "item:l1_decoder_q12_pwl_recip_norm_datapath_v1"
+    "item:l1_decoder_q12_pwl_recip_norm_datapath_v1",
+    "run:l1_decoder_q12_pwl_recip_norm_datapath_v1_run_2f8b597f3d69a406",
+    "artifact:control_plane/shadow_exports/l1_promotions/l1_decoder_q12_pwl_recip_norm_datapath_v1.json",
+    "pr:#338",
+    "https://github.com/yhmtmt/RTLGen/pull/338"
   ],
-  "next_action": "Consume evaluator result, compare against q12 PWL exact normalization and q8/bf16 reciprocal baselines, then decide whether to run Layer-2 quality validation.",
-  "requires_human_approval": true
+  "next_action": "inspect the next dependent item",
+  "requires_human_approval": false
 }

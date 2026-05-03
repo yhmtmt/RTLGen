@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l1_decoder_q12_pwl_recip_norm_datapath_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "promote",
+  "pr_number": 338,
+  "merge_commit": "97f71a2ad194f0b72fc91e12774bd9d2f4be88a1",
+  "merged_utc": "2026-05-03T05:54:26Z"
 }

@@ -8,7 +8,11 @@
       "objective": "Measure Nangate45 PPA for q12 PWL-exp row-wise softmax blocks with q10/q12/q14/q16 bucketed reciprocal normalization.",
       "evaluation_mode": "measurement_only",
       "abstraction_layer": "circuit_block",
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 338,
+      "merge_commit": "97f71a2ad194f0b72fc91e12774bd9d2f4be88a1",
+      "merged_utc": "2026-05-03T05:54:26Z",
+      "notes": "Merged via PR #338 and merge 97f71a2ad194f0b72fc91e12774bd9d2f4be88a1 at 2026-05-03T05:54:26Z."
     }
   ]
 }
