@@ -1,0 +1,26 @@
+{
+  "proposal_id": "prop_l2_decoder_pwl_bitwidth_boundary_v1",
+  "source_commit": "735732d900d085082382db7777763b1afd1aad56",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_pwl_bitwidth_boundary_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run a q10/q11/q12/q13 PWL bit-width boundary check on the expanded v2 decoder distribution.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_pwl_bitwidth_boundary",
+      "comparison_role": "ranking",
+      "paired_baseline_item_id": "",
+      "depends_on_item_ids": [
+        "l2_decoder_pwl_survivor_distribution_v1",
+        "l1_decoder_q12_pwl_recip_norm_datapath_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Determine whether q11 is exact-safe before spending another Layer 1 PPA run, or keep q12 as the integer exact-safe floor."
+      },
+      "status": "pending"
+    }
+  ]
+}
