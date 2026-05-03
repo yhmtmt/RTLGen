@@ -32,7 +32,11 @@
         "direction": "iterate",
         "reason": "Use the larger practical proxy result to decide whether wider compute-array work is justified or whether precision/quality exploration should remain the frontier."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 359,
+      "merge_commit": "d4adab331b6706c665b711a191bdd65b3678cb97",
+      "merged_utc": "2026-05-03T14:17:19Z",
+      "notes": "Merged via PR #359 and merge d4adab331b6706c665b711a191bdd65b3678cb97 at 2026-05-03T14:17:19Z."
     }
   ]
 }
