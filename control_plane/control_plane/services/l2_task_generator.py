@@ -1514,6 +1514,11 @@ def _decoder_distilgpt2_quality_evidence_for_dataset(
     trained_quality_scope: str,
     dataset_status: str,
     dataset_notes: str,
+    command_family: str = "distilgpt2",
+    hf_model_id: str = "distilgpt2",
+    contract_id: str = "llm_decoder_distilgpt2_trained_v1",
+    model_dir: str = "runs/models/llm_decoder_distilgpt2_trained_v1",
+    tokenizer_dir: str = "runs/tokenizers/llm_decoder_distilgpt2_trained_v1",
 ) -> dict[str, Any]:
     dataset_manifest = f"{base}/manifest.json"
     sample_file = f"{base}/samples.jsonl"
@@ -1531,11 +1536,13 @@ def _decoder_distilgpt2_quality_evidence_for_dataset(
     name_mid = f"_{command_suffix}" if command_suffix else ""
     commands = [
         {
-            "name": f"materialize_decoder_distilgpt2{name_mid}_contract",
+            "name": f"materialize_decoder_{command_family}{name_mid}_contract",
             "run": (
                 "bash npu/eval/run_hf_decoder_materializer.sh "
-                "--model-id distilgpt2 "
-                "--contract-id llm_decoder_distilgpt2_trained_v1 "
+                f"--model-id {shlex.quote(hf_model_id)} "
+                f"--contract-id {contract_id} "
+                f"--model-dir {model_dir} "
+                f"--tokenizer-dir {tokenizer_dir} "
                 f"--dataset-id {dataset_id} "
                 f"--dataset-dir {base} "
                 f"--sample-file {sample_file} "
@@ -1544,7 +1551,7 @@ def _decoder_distilgpt2_quality_evidence_for_dataset(
             ),
         },
         {
-            "name": f"generate_decoder_distilgpt2{name_mid}_reference",
+            "name": f"generate_decoder_{command_family}{name_mid}_reference",
             "run": (
                 "python3 npu/eval/gen_llm_decoder_reference_suite.py "
                 f"--dataset-manifest {dataset_manifest} "
@@ -1553,7 +1560,7 @@ def _decoder_distilgpt2_quality_evidence_for_dataset(
             ),
         },
         {
-            "name": f"generate_decoder_distilgpt2{name_mid}_candidate",
+            "name": f"generate_decoder_{command_family}{name_mid}_candidate",
             "run": (
                 "python3 npu/eval/gen_llm_decoder_candidate_suite.py "
                 f"--dataset-manifest {dataset_manifest} "
@@ -1562,11 +1569,11 @@ def _decoder_distilgpt2_quality_evidence_for_dataset(
             ),
         },
         {
-            "name": f"validate_decoder_distilgpt2{name_mid}_contract",
+            "name": f"validate_decoder_{command_family}{name_mid}_contract",
             "run": f"python3 npu/eval/validate_llm_decoder_contract.py --dataset-manifest {dataset_manifest} --out {validation_out}",
         },
         {
-            "name": f"compare_decoder_distilgpt2{name_mid}_quality",
+            "name": f"compare_decoder_{command_family}{name_mid}_quality",
             "run": (
                 "python3 npu/eval/compare_llm_decoder_quality.py "
                 f"--reference-manifest {reference_manifest} "
@@ -1575,7 +1582,7 @@ def _decoder_distilgpt2_quality_evidence_for_dataset(
             ),
         },
         {
-            "name": f"sweep_decoder_distilgpt2{name_mid}_quality",
+            "name": f"sweep_decoder_{command_family}{name_mid}_quality",
             "run": (
                 "python3 npu/eval/sweep_llm_decoder_candidate_quality.py "
                 f"--dataset-manifest {dataset_manifest} "
@@ -1585,7 +1592,7 @@ def _decoder_distilgpt2_quality_evidence_for_dataset(
             ),
         },
         {
-            "name": f"summarize_decoder_distilgpt2{name_mid}_quality",
+            "name": f"summarize_decoder_{command_family}{name_mid}_quality",
             "run": (
                 "python3 npu/eval/summarize_llm_decoder_bf16_pwl_recovery.py "
                 f"--sweep {sweep_out} "
@@ -1609,8 +1616,8 @@ def _decoder_distilgpt2_quality_evidence_for_dataset(
             "candidate_sweep_grid": rough_grid,
             "trained_quality_out": trained_out,
             "trained_quality_report": trained_report,
-            "materialized_model_contract": "runs/models/llm_decoder_distilgpt2_trained_v1/model_contract.json",
-            "materialized_tokenizer_manifest": "runs/tokenizers/llm_decoder_distilgpt2_trained_v1/manifest.json",
+            "materialized_model_contract": f"{model_dir}/model_contract.json",
+            "materialized_tokenizer_manifest": f"{tokenizer_dir}/manifest.json",
             "materialized_model_scope": materialized_model_scope,
             "trained_quality_scope": trained_quality_scope,
         },
@@ -1646,6 +1653,34 @@ def _decoder_distilgpt2_quality_evidence(*, item_id: str) -> dict[str, Any]:
         dataset_status="materialized_distilgpt2_quality_manifest_v1",
         dataset_notes=(
             "distilgpt2 trained-checkpoint confirmation dataset. Run materialize_hf_decoder_contract.py "
+            "before generating reference/candidate manifests because the model/tokenizer artifacts are gitignored."
+        ),
+    )
+
+
+def _decoder_gpt2_quality_evidence(*, item_id: str) -> dict[str, Any]:
+    return _decoder_distilgpt2_quality_evidence_for_dataset(
+        item_id=item_id,
+        base="runs/datasets/llm_decoder_eval_gpt2_trained_v1",
+        dataset_id="llm_decoder_eval_gpt2_trained_v1",
+        output_prefix="decoder_gpt2_quality",
+        command_suffix="",
+        command_family="gpt2",
+        hf_model_id="gpt2",
+        contract_id="llm_decoder_gpt2_trained_v1",
+        model_dir="runs/models/llm_decoder_gpt2_trained_v1",
+        tokenizer_dir="runs/tokenizers/llm_decoder_gpt2_trained_v1",
+        materialized_model_scope=(
+            "GPT-2 trained-checkpoint confirmation using evaluator-local generated "
+            "ONNX/tokenizer artifacts; generated model files are intentionally gitignored"
+        ),
+        trained_quality_scope=(
+            "larger 12-layer GPT-2 checkpoint confirmation for the bf16/PWL frontier after "
+            "distilgpt2 prompt-stress stayed exact-safe"
+        ),
+        dataset_status="materialized_gpt2_quality_manifest_v1",
+        dataset_notes=(
+            "GPT-2 trained-checkpoint confirmation dataset. Run materialize_hf_decoder_contract.py "
             "before generating reference/candidate manifests because the model/tokenizer artifacts are gitignored."
         ),
     )
@@ -2107,10 +2142,13 @@ def _build_payload(
         "decoder_trained_tiny_quality",
         "decoder_distilgpt2_quality",
         "decoder_distilgpt2_prompt_stress",
+        "decoder_gpt2_quality",
         "decoder_quantization_outline",
     }:
         if abstraction_layer_name == "decoder_quantization_outline":
             decoder_evidence = _decoder_quantization_outline_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_gpt2_quality":
+            decoder_evidence = _decoder_gpt2_quality_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_distilgpt2_prompt_stress":
             decoder_evidence = _decoder_distilgpt2_prompt_stress_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_distilgpt2_quality":
