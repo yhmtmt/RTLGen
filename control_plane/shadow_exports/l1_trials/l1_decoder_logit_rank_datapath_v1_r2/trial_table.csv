@@ -1,0 +1,2 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_decoder_logit_rank_datapath_v1_r2_run_d380e786ef7d5111,1,1,0,succeeded,runs/designs/activations/logit_rank_r8_l16_k1_wrapper/metrics.csv,3.1833,3738.711025,0.00348,none,,
