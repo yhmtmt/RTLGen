@@ -1,0 +1,66 @@
+{
+  "proposal_id": "prop_l2_decoder_gpt2_quality_v1",
+  "created_utc": "2026-05-04T03:20:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_gpt2_quality",
+  "title": "Decoder GPT-2 trained-checkpoint quality gate",
+  "hypothesis": "The distilgpt2 prompt-stress gate found the bf16/PWL path exact-safe across 96 prompts, but that may not hold when the trained checkpoint grows from a 6-layer distilled model to the 12-layer GPT-2 small checkpoint. A GPT-2 quality gate should isolate checkpoint scale before moving to broader GPT-2 prompt stress, QAT, or larger-array claims.",
+  "direct_comparison": {
+    "primary_question": "Does the current bf16/PWL path remain exact-safe on a GPT-2 small next-token workload?",
+    "include": [
+      "runtime materialization of gpt2 into the decoder ONNX contract",
+      "24-prompt checkpoint-scale screen aligned with the earlier distilgpt2 quality gate",
+      "exact reference and approximated candidate next-token traces",
+      "q12 exact-normalization and q8 reciprocal controls",
+      "bf16/PWL baseline and bf16/PWL logit tie-break rows"
+    ],
+    "exclude": [
+      "committing large ONNX or tokenizer artifacts",
+      "full task-accuracy benchmarking",
+      "new RTL/OpenROAD PPA measurement",
+      "training, fine tuning, or quantization-aware training",
+      "claiming robustness for larger production LLM families"
+    ]
+  },
+  "expected_benefit": [
+    "tests whether the distilgpt2 exact-safe result survives a larger trained GPT-2-family checkpoint",
+    "keeps model-scale exploration on the existing decoder quality harness",
+    "separates checkpoint-size sensitivity from prompt-distribution sensitivity before spending evaluator time on both at once"
+  ],
+  "risks": [
+    "GPT-2 small is still much smaller than current production LLMs",
+    "the prompt set is a next-token screen, not a full application benchmark",
+    "export requires torch, transformers, and onnx in the evaluator Python environment",
+    "a failure may reflect distribution or checkpoint sensitivity rather than hardware infeasibility"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_gpt2_quality_v1",
+      "task_type": "l2_campaign",
+      "objective": "Check whether bf16/PWL remains exact-safe on a materialized GPT-2 small decoder workload before moving to broader GPT-2 stress or QAT.",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_gpt2_quality",
+      "depends_on_item_ids": [
+        "l2_decoder_distilgpt2_prompt_stress_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_decoder_distilgpt2_prompt_stress_v1/proposal.json",
+    "control_plane/shadow_exports/l2_decisions/l2_decoder_distilgpt2_prompt_stress_v1.json",
+    "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/decoder_distilgpt2_prompt_stress__l2_decoder_distilgpt2_prompt_stress_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/materialize_hf_decoder_contract.py",
+    "runs/datasets/llm_decoder_eval_gpt2_trained_v1/samples.jsonl",
+    "npu/eval/sweep_llm_decoder_candidate_quality.py",
+    "npu/eval/summarize_llm_decoder_bf16_pwl_recovery.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}
