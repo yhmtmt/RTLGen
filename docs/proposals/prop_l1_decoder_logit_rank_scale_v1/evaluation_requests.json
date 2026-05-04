@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_decoder_logit_rank_scale_v1",
-  "source_commit": "",
+  "source_commit": "73c3c00ac05e9b09d0fedd26caff7e5fbc3e2fa0",
   "requested_items": [
     {
       "item_id": "l1_decoder_logit_rank_scale_v1",
@@ -20,7 +20,11 @@
         "direction": "measure",
         "reason": "Use measured row-16 and row-32 logit-rank PPA to decide whether wider rank tiles or hierarchical row-8 composition should be the next decoder-output architecture path."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 398,
+      "merge_commit": "106d77e84d175443496ac5ca62b7c08289171c90",
+      "merged_utc": "2026-05-04T13:44:30.599733Z",
+      "notes": "Merged via PR #398 and merge 106d77e84d175443496ac5ca62b7c08289171c90 at 2026-05-04T13:44:30.599733Z."
     }
   ]
 }
