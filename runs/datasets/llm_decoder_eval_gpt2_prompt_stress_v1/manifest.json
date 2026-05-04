@@ -1,0 +1,23 @@
+{
+  "candidate_manifest": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/candidate_manifest.json",
+  "dataset_id": "llm_decoder_eval_gpt2_prompt_stress_v1",
+  "decoder_backend_configs": {
+    "candidate": {
+      "topk": 16
+    },
+    "reference": {
+      "topk": 16
+    }
+  },
+  "decoder_backend_interface": "v1",
+  "model_contract": "runs/models/llm_decoder_gpt2_trained_v1/model_contract.json",
+  "notes": "GPT-2 prompt-stress dataset. Run materialize_hf_decoder_contract.py before generating reference/candidate manifests because the model/tokenizer artifacts are gitignored.",
+  "reference_manifest": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference_manifest.json",
+  "sample_count": 96,
+  "sample_file": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/samples.jsonl",
+  "status": "materialized_gpt2_prompt_stress_manifest_v1",
+  "task": "greedy_next_token",
+  "tokenizer_id": "llm_decoder_gpt2_trained_v1",
+  "tokenizer_manifest": "runs/tokenizers/llm_decoder_gpt2_trained_v1/manifest.json",
+  "version": 0.1
+}

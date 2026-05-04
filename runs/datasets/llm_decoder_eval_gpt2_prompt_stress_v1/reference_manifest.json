@@ -1,0 +1,508 @@
+{
+  "backend_config": {
+    "backend_id": "command_json_v1",
+    "command": [
+      "python3",
+      "npu/eval/run_llm_decoder_onnx_reference.py"
+    ],
+    "equivalence_group": "llm_decoder_gpt2_trained_v1_reference_onnx_v1",
+    "input_name": "input_ids",
+    "interface": "decoder_backend_v1",
+    "model_config_path": "runs/models/llm_decoder_gpt2_trained_v1/reference_onnx/config.json",
+    "onnx_model_path": "runs/models/llm_decoder_gpt2_trained_v1/reference_onnx/model.onnx",
+    "output_name": "logits",
+    "role": "reference",
+    "runtime_target": "cpu_reference",
+    "topk": 16,
+    "trace_output_patterns": [
+      "present.*"
+    ]
+  },
+  "dataset_id": "llm_decoder_eval_gpt2_prompt_stress_v1",
+  "model_contract": "runs/models/llm_decoder_gpt2_trained_v1/model_contract.json",
+  "samples": [
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_geo_france_capital.json",
+      "reference_sha256": "d63c5f4cb45c74bfe95547f6f6d4a12c2658475b5b5c146e85dcf598a0103fb1",
+      "sample_id": "gpt2_stress_geo_france_capital"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_geo_japan_capital.json",
+      "reference_sha256": "dd24b36595d0495fce144128ed9b6218f5be5cc6679a74136a82498156d0ac20",
+      "sample_id": "gpt2_stress_geo_japan_capital"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_geo_germany_capital.json",
+      "reference_sha256": "6e2f613619bbc7a2fe76ab7c9050acdc62cbe768904ec2f140e2e4325a53f348",
+      "sample_id": "gpt2_stress_geo_germany_capital"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_geo_italy_capital.json",
+      "reference_sha256": "540025f82071b7d44b47a8a6c937a8f4ddf3fef1d6bebf1fdba6eebc6038a5eb",
+      "sample_id": "gpt2_stress_geo_italy_capital"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_geo_spain_capital.json",
+      "reference_sha256": "4ef8138efe9f43965be5cd5e59e642ccf6a6ce19000b1c5afeb27465b68218b5",
+      "sample_id": "gpt2_stress_geo_spain_capital"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_geo_canada_capital.json",
+      "reference_sha256": "be8053b793d78dfa1b0bf52cd99bf631ca60866a41e1c2ec35091b765724d66c",
+      "sample_id": "gpt2_stress_geo_canada_capital"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_geo_australia_capital.json",
+      "reference_sha256": "147ec74a5ae1ba68003fce777900866112d4bbabff71728cecd98937f690f133",
+      "sample_id": "gpt2_stress_geo_australia_capital"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_geo_brazil_capital.json",
+      "reference_sha256": "41675448a26afd83c09c236343dc92ec0fbd5594118e7953e64b0b119d14f75a",
+      "sample_id": "gpt2_stress_geo_brazil_capital"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_science_water_freezes.json",
+      "reference_sha256": "8354deb535510e80b7dfe318ebe468a08890522da5b4d4c36905dd601f418a15",
+      "sample_id": "gpt2_stress_science_water_freezes"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_science_water_boils.json",
+      "reference_sha256": "22f6106ead8a8aa072941c721eb9bf032b95580850fb5fd9e56f399b68d77d3d",
+      "sample_id": "gpt2_stress_science_water_boils"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_science_earth_orbits.json",
+      "reference_sha256": "1cd647d12d50d759cd5ad1d883af305dc52be2c25fe64e1b517af8a5d6b96f2d",
+      "sample_id": "gpt2_stress_science_earth_orbits"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_science_moon_orbits.json",
+      "reference_sha256": "e323c64f29f4181c9079bcead624d529715371005e51cc5d42bc577c4b27b191",
+      "sample_id": "gpt2_stress_science_moon_orbits"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_science_humans_breathe.json",
+      "reference_sha256": "aeb6e5bf91e616812450369bf9728736fc9078121245f28e05e537b9208b45c6",
+      "sample_id": "gpt2_stress_science_humans_breathe"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_science_plants_need.json",
+      "reference_sha256": "677ba63aef6f261922559b72b81c5093ec956564c943a37ccdb095879f24bbcb",
+      "sample_id": "gpt2_stress_science_plants_need"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_science_ice_is.json",
+      "reference_sha256": "b0b1d73b27bcee8db8913c3989c15f471b19ee99b611acd1ba24afd8b779a902",
+      "sample_id": "gpt2_stress_science_ice_is"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_science_fire_is.json",
+      "reference_sha256": "377cc28305675088373c322fdc2a3b446c462a7cf8b7554d260b7e80152dd2b4",
+      "sample_id": "gpt2_stress_science_fire_is"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_color_banana.json",
+      "reference_sha256": "1a7b73df999cbcaee443538e03079da0e66953256f29d9fb2605333bb50d89ac",
+      "sample_id": "gpt2_stress_color_banana"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_color_sky.json",
+      "reference_sha256": "5727fb272e36f49c679be4e123e2ea66d566b7d467df022660bac37621ee5c42",
+      "sample_id": "gpt2_stress_color_sky"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_color_grass.json",
+      "reference_sha256": "e9e61e49e6418d8e3ef6e578480d21790780812c695364319786a635df83f08a",
+      "sample_id": "gpt2_stress_color_grass"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_color_snow.json",
+      "reference_sha256": "08e283b1e70ec62cefb688a1bd0542a5c8c62114492ab022cb750e750d1f1486",
+      "sample_id": "gpt2_stress_color_snow"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_color_coal.json",
+      "reference_sha256": "34ce5b1548752dc6346d26245435d6646d3e94e5df9f2b33709b66bfa0ec7420",
+      "sample_id": "gpt2_stress_color_coal"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_color_lime.json",
+      "reference_sha256": "f039c800799c5608d2778c8435a1e592391b7830fcb5f3c0a403f325c62a7c06",
+      "sample_id": "gpt2_stress_color_lime"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_color_strawberry.json",
+      "reference_sha256": "6402c9894b1fc53552ef968b7b5db0bf33a2f8c5f4818c2cc75c806b25ee1216",
+      "sample_id": "gpt2_stress_color_strawberry"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_color_ocean.json",
+      "reference_sha256": "a74b1ffdc79b357fead078cdfcd35c5b7c8dbe837f3eb518d35d35849eea5a87",
+      "sample_id": "gpt2_stress_color_ocean"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_math_two_plus_two.json",
+      "reference_sha256": "4139b81a2324c5f55bfea12d664c2999ea4dc54921bf5a83f1638e6dfd8e977d",
+      "sample_id": "gpt2_stress_math_two_plus_two"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_math_seven_plus_five.json",
+      "reference_sha256": "85ef2391f600f348d9cd5f7300fb70dbb1a6446b90824101f1298f230eb3aace",
+      "sample_id": "gpt2_stress_math_seven_plus_five"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_math_ten_minus_three.json",
+      "reference_sha256": "79471615684b50cc658e2fb09086cc762e0ecd59f14fd8c0f8da9fac15f80e7b",
+      "sample_id": "gpt2_stress_math_ten_minus_three"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_math_nine_minus_four.json",
+      "reference_sha256": "beb8a6af5316770b616c139b5624b15366f75ccfec9c862a37594aeaad664b79",
+      "sample_id": "gpt2_stress_math_nine_minus_four"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_math_three_times_three.json",
+      "reference_sha256": "48be70196dc75d87da477e14da644610f5a276760af5367de8378c90febf8d5c",
+      "sample_id": "gpt2_stress_math_three_times_three"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_math_four_times_five.json",
+      "reference_sha256": "f5c66f06f4cf69823db5500438b3a38e720dc4c58eb19c6987975b5c3f0bc1cd",
+      "sample_id": "gpt2_stress_math_four_times_five"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_math_eight_div_two.json",
+      "reference_sha256": "e55327cbe7ba58d7b0a333ac00b12ca2b647cf7a97d1ba9fa7e20e8a09b7bcfd",
+      "sample_id": "gpt2_stress_math_eight_div_two"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_math_half_of_ten.json",
+      "reference_sha256": "7aa764363f82e20e7711d3d29aee685d5a8c4878b1d44e1823df7a548ea509a2",
+      "sample_id": "gpt2_stress_math_half_of_ten"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_sequence_numbers.json",
+      "reference_sha256": "4a133dc6b3438815bdaafb032dc02b28dd0b4d435e3994a1eb599b71e941c81f",
+      "sample_id": "gpt2_stress_sequence_numbers"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_sequence_letters.json",
+      "reference_sha256": "58958fb7b3415d593cf4998bc8ee979390cef04a0d53eb9cdd6c73b6361027ce",
+      "sample_id": "gpt2_stress_sequence_letters"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_sequence_weekdays.json",
+      "reference_sha256": "a1888b4d95e1acb3fe12c44c68cb4d52991dfecb07781fb95e4705a2fda4d2af",
+      "sample_id": "gpt2_stress_sequence_weekdays"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_sequence_months.json",
+      "reference_sha256": "d51773b2503e63acc3f10ec266ec259edf24abb0c177d1473dad40b0bb785b28",
+      "sample_id": "gpt2_stress_sequence_months"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_sequence_countdown.json",
+      "reference_sha256": "82e10641d4843f0be9d116f982ea71c32f2e3cb782deb2db7e7e571120964bd8",
+      "sample_id": "gpt2_stress_sequence_countdown"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_sequence_planets.json",
+      "reference_sha256": "8ab77a1580ae39807f26f7b169b85d56806574d40164850b283da842050c067f",
+      "sample_id": "gpt2_stress_sequence_planets"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_sequence_directions.json",
+      "reference_sha256": "bb04aee7eb5ef61999cc5dcaf79fca0f3d126f720775719e5962b1619405e4b5",
+      "sample_id": "gpt2_stress_sequence_directions"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_sequence_alphabet_end.json",
+      "reference_sha256": "a0d5efeb80c902eddae1b377c1095a90bcf18307038058ccf990f640382ac74f",
+      "sample_id": "gpt2_stress_sequence_alphabet_end"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_code_python_return_sum.json",
+      "reference_sha256": "d98a9c79b843a2150f2556d908763ef68cfd7f8d38118f6b6ea4d73606be0624",
+      "sample_id": "gpt2_stress_code_python_return_sum"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_code_python_loop_print.json",
+      "reference_sha256": "3e31878bef9bd54ff924c903bd58e0e3219b480363bf7bcd603015301843fe1d",
+      "sample_id": "gpt2_stress_code_python_loop_print"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_code_python_if_positive.json",
+      "reference_sha256": "840ce5a8a7f3fe568417ec88c0efb408ac0c2893fd6314afbaec3a54b580350f",
+      "sample_id": "gpt2_stress_code_python_if_positive"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_code_python_list_append.json",
+      "reference_sha256": "a7aa96a42320f54c21765aa8e0409e54657bd5e8831ababa5df52f3095211eab",
+      "sample_id": "gpt2_stress_code_python_list_append"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_code_js_function.json",
+      "reference_sha256": "a163c42f06a5601877fd644b326258309f1607b31135dcdaf63e419449cc96f6",
+      "sample_id": "gpt2_stress_code_js_function"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_code_js_console.json",
+      "reference_sha256": "ddd19e1ecd430c7140a7f000282d5de5d2065e2ef2bd72d3aa502bc40f38b93b",
+      "sample_id": "gpt2_stress_code_js_console"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_code_json_key.json",
+      "reference_sha256": "34b2277ff1aa4b2067b1ca32570a6ae09ac5c68c9e2a80b5cb996892f71e2908",
+      "sample_id": "gpt2_stress_code_json_key"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_code_sql_select.json",
+      "reference_sha256": "b12d755c58135914514354a687e0000296efd453ec70c93f9fdf6b00b7579d4f",
+      "sample_id": "gpt2_stress_code_sql_select"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_dialogue_greeting.json",
+      "reference_sha256": "760dc388d5fcbb4df4b0b421eb05c990eb420f423f0f5023081e812400c385cd",
+      "sample_id": "gpt2_stress_dialogue_greeting"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_dialogue_help.json",
+      "reference_sha256": "ec1fb8e7109eef6fc0c85dda8fdb8cb00a2c749e82031c7a964eb081ffff4507",
+      "sample_id": "gpt2_stress_dialogue_help"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_dialogue_thanks.json",
+      "reference_sha256": "5519971f1c5d340f367b91d9837d2cc0e927e6daa0a73a9fcfc9ac0a76b5693b",
+      "sample_id": "gpt2_stress_dialogue_thanks"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_dialogue_question.json",
+      "reference_sha256": "ae2ceec3bfcb223b4b02e2e58a58925965dbddc4c7253a832006f9fc965db78f",
+      "sample_id": "gpt2_stress_dialogue_question"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_dialogue_weather.json",
+      "reference_sha256": "e6530f870b3acac0350b803088015e9d96424f45494d131b1666863da34f0f61",
+      "sample_id": "gpt2_stress_dialogue_weather"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_dialogue_name.json",
+      "reference_sha256": "049b04e965c0a1039ef29d9c2bf6eddfc792e69a56d9ded3760313e19b1e0f90",
+      "sample_id": "gpt2_stress_dialogue_name"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_dialogue_goodbye.json",
+      "reference_sha256": "36809f8021d8d8d77f92f70b9e4a324b861ef1688a2d3e6734ed674dc29d2a11",
+      "sample_id": "gpt2_stress_dialogue_goodbye"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_dialogue_summary.json",
+      "reference_sha256": "44ffa1d0fe8b597d1594c4c189249d504814dbdc7f64716128f5c2c52eab60f8",
+      "sample_id": "gpt2_stress_dialogue_summary"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_quote_shakespeare.json",
+      "reference_sha256": "be750fff26b466205056a06e448d46f5aa519a02ffb3259da13ca1059bac5797",
+      "sample_id": "gpt2_stress_quote_shakespeare"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_quote_kennedy.json",
+      "reference_sha256": "db2c3f8bd64a4e4b0027b7a8662337c28471fc8775460c97332a88333f529c9e",
+      "sample_id": "gpt2_stress_quote_kennedy"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_quote_lorem.json",
+      "reference_sha256": "00e56bee12333a06237a9d945d921f32335babe2c487d20c0838ffc8ea435079",
+      "sample_id": "gpt2_stress_quote_lorem"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_quote_once_time.json",
+      "reference_sha256": "211cb6a228446272c7b07ccc06dba9ec05bb3bdbd7245929b6377265668c2698",
+      "sample_id": "gpt2_stress_quote_once_time"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_quote_call_me.json",
+      "reference_sha256": "3e1fd2eddfcc9df391d2258b5b9db9cd0e146f0a9bfdfb03980beba897b5dbac",
+      "sample_id": "gpt2_stress_quote_call_me"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_quote_best_times.json",
+      "reference_sha256": "804741f25f26fd81e85ea7e76aaa2b3f378446836b2f18c4db6b6dc6baaebc04",
+      "sample_id": "gpt2_stress_quote_best_times"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_quote_dark_stormy.json",
+      "reference_sha256": "d1ef756b6ef6c17c05d10fbf45637b9794c80e40e04165f3c13d385f87a50db3",
+      "sample_id": "gpt2_stress_quote_dark_stormy"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_quote_four_score.json",
+      "reference_sha256": "eb2201bccc4fcddfff152fd5e001fa9a784e4ee868fd17be99ef3a8d9e045f74",
+      "sample_id": "gpt2_stress_quote_four_score"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_narrative_meeting.json",
+      "reference_sha256": "ab233bfc358ec7fa09f5f47c1cb107922495ec9718d5edf3985d623d9bc72bf9",
+      "sample_id": "gpt2_stress_narrative_meeting"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_narrative_story.json",
+      "reference_sha256": "d3c03fe2b8c79ab5ac22dac3109f40e40860a8b0bd8bc1e0fb10ad9b5419ef68",
+      "sample_id": "gpt2_stress_narrative_story"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_narrative_robot.json",
+      "reference_sha256": "3991993b5210dca9e33c78a624c6e4546ff75e7f68c5504608647252d566193c",
+      "sample_id": "gpt2_stress_narrative_robot"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_narrative_lab.json",
+      "reference_sha256": "94261bbad554c0df553c4f0da892886c3f793a1da29da8998edb224bdc0b0918",
+      "sample_id": "gpt2_stress_narrative_lab"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_narrative_train.json",
+      "reference_sha256": "3e04cf7b868c341ac7f02bb2632e5bd6b5d5c3203cfdc6daf96e6542f55ba0fc",
+      "sample_id": "gpt2_stress_narrative_train"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_narrative_market.json",
+      "reference_sha256": "50c21c24f60b1a010e5afce6c693ac209e541c516e62e8445b2998d0e18da4da",
+      "sample_id": "gpt2_stress_narrative_market"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_narrative_letter.json",
+      "reference_sha256": "e387b024ea60565207d344dd573e5184fc6c7f812b6a33ed7e7d813bc952bc37",
+      "sample_id": "gpt2_stress_narrative_letter"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_narrative_map.json",
+      "reference_sha256": "33b8029d8aa8ecfa89b1dd3dec47e2b02e520e604259904b7d4dea46edb5fa34",
+      "sample_id": "gpt2_stress_narrative_map"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_long_decoder.json",
+      "reference_sha256": "dd63804b7777d642a329d039b2c1add13bbd4b3b6451e0ecfff3fcf1bcd04664",
+      "sample_id": "gpt2_stress_long_decoder"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_long_quant.json",
+      "reference_sha256": "3e8d5b72d65c938a0b4e32dbfd2e40be50d23ecf3bfcef5ab2908981eada205d",
+      "sample_id": "gpt2_stress_long_quant"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_long_hardware.json",
+      "reference_sha256": "34a747b953f2e713c5f6ba83a3bb1743a6f8fae394953db00f8029a8bc58a740",
+      "sample_id": "gpt2_stress_long_hardware"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_long_margin.json",
+      "reference_sha256": "eb89247f79f9d0b4cb9694a4da740f87fef7bda8d9ebb45faad91ed5c973c705",
+      "sample_id": "gpt2_stress_long_margin"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_long_training.json",
+      "reference_sha256": "c490d45febf45f4eee0f890f1973f68d8403f880b70bd51a0396c5687f85dd51",
+      "sample_id": "gpt2_stress_long_training"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_long_model.json",
+      "reference_sha256": "03294196f1f8861403c226aa6712a5523ef5e2112d741d0fd198ca02b41216d8",
+      "sample_id": "gpt2_stress_long_model"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_long_cache.json",
+      "reference_sha256": "ade0d9a8bef3511138b532791d1e0cf71c407cd34a5a5c1dceb1793ac562ab5d",
+      "sample_id": "gpt2_stress_long_cache"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_long_frontier.json",
+      "reference_sha256": "31c56eb9b727f1fce11ec4548064a594e17d8a272c252dbf48969ab57c431178",
+      "sample_id": "gpt2_stress_long_frontier"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_ambiguous_yes_no.json",
+      "reference_sha256": "d757300f3577d432592b4ff92901b3dcdffd72121457bbb9562401d49d0ad691",
+      "sample_id": "gpt2_stress_ambiguous_yes_no"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_ambiguous_many_options.json",
+      "reference_sha256": "d26f52cc12f1b6911fd4f2a0755637b01a414d0899df4062671dc9bccb538ccd",
+      "sample_id": "gpt2_stress_ambiguous_many_options"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_ambiguous_left_right.json",
+      "reference_sha256": "bbc6f6237f5d9e5a96cd5c2911f7123c1c73b97c497bf9fb3cae8138c35a4ff0",
+      "sample_id": "gpt2_stress_ambiguous_left_right"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_ambiguous_hot_cold.json",
+      "reference_sha256": "e65ef6c7f3128be59db6c56e7d60112ec4ad4d5605681feebd1683a93789803e",
+      "sample_id": "gpt2_stress_ambiguous_hot_cold"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_ambiguous_up_down.json",
+      "reference_sha256": "641329382cce18ee453ca569927cf47b79cda12c327d89c0391eb2102ba491cd",
+      "sample_id": "gpt2_stress_ambiguous_up_down"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_ambiguous_true_false.json",
+      "reference_sha256": "d921e5ecbe61bf4b14f4812ba036f9cdc7b934aced1cea0cc0083b0eb47a6bee",
+      "sample_id": "gpt2_stress_ambiguous_true_false"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_ambiguous_start_stop.json",
+      "reference_sha256": "7d795b5d94f6270ec8bf0a1db64cc0ca73626a65c4a02485a48822f127a1bf8a",
+      "sample_id": "gpt2_stress_ambiguous_start_stop"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_ambiguous_more_less.json",
+      "reference_sha256": "3aa7aa15c7410764243d57c1db3a9d23405618a9099b2400b675fb81804f369e",
+      "sample_id": "gpt2_stress_ambiguous_more_less"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_symbolic_if_positive.json",
+      "reference_sha256": "deb23a2f110dc58405de44c936a7bfae9a0d6873d23b7a84b481b781434f3914",
+      "sample_id": "gpt2_stress_symbolic_if_positive"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_symbolic_boolean.json",
+      "reference_sha256": "37fe1a4ffeedd22ca88fce1af95921b53689b40879841a425e12238c3f389f86",
+      "sample_id": "gpt2_stress_symbolic_boolean"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_symbolic_compare.json",
+      "reference_sha256": "e95d182f782fd9e0d35569a37e2eb076a961b582d4b50717d95d158e216fe450",
+      "sample_id": "gpt2_stress_symbolic_compare"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_symbolic_set.json",
+      "reference_sha256": "27608c336af356e8c62b3da86326ebde4cd630646c08716d014721ca914529f2",
+      "sample_id": "gpt2_stress_symbolic_set"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_symbolic_parentheses.json",
+      "reference_sha256": "f74bce5576d4b390f0eea83e7e0e811c041acc17674b4c633c6d454ba5217f67",
+      "sample_id": "gpt2_stress_symbolic_parentheses"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_symbolic_negation.json",
+      "reference_sha256": "9923933a1593d83c70495d74f951bd2c4757b7e9483c5e9f7fd911fdf3e36f56",
+      "sample_id": "gpt2_stress_symbolic_negation"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_symbolic_either.json",
+      "reference_sha256": "4b3cf105fe934fc264103ac380fcef5549d9051a5f48ec31a1fd5a20e546eed7",
+      "sample_id": "gpt2_stress_symbolic_either"
+    },
+    {
+      "reference_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference/gpt2_stress_symbolic_all_some.json",
+      "reference_sha256": "6228871689ddae9889c517e85132bbcffdd9c3af19127aeb4720fa7f2008461d",
+      "sample_id": "gpt2_stress_symbolic_all_some"
+    }
+  ],
+  "task": "greedy_next_token",
+  "tokenizer_manifest": "runs/tokenizers/llm_decoder_gpt2_trained_v1/manifest.json",
+  "version": 0.1
+}
