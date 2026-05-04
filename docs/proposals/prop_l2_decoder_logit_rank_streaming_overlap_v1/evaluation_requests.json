@@ -20,7 +20,12 @@
         "direction": "iterate",
         "reason": "Use the model output to define the first candidate-stream merge RTL measurement, with equivalence checked on ready/valid stream observables."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 402,
+      "merge_commit": "f9926a488f07e4e51f5c4ac7d81de4e80668dbac",
+      "merged_utc": "2026-05-04T22:21:18.608246Z",
+      "notes": "Merged via PR #402 and merge f9926a488f07e4e51f5c4ac7d81de4e80668dbac at 2026-05-04T22:21:18.608246Z."
     }
-  ]
+  ],
+  "source_commit": "90276bfa2719c9d8318ab565187a6a4d74874c57"
 }

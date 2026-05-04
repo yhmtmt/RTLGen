@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_logit_rank_streaming_overlap_v1",
+  "decision": "iterate",
+  "pr_number": 402,
+  "merge_commit": "f9926a488f07e4e51f5c4ac7d81de4e80668dbac",
+  "merged_utc": "2026-05-04T22:21:18.608246Z"
+}
