@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l2_decoder_gpt2_quality_v1",
+  "candidate_id": "l2_decoder_gpt2_quality_v1",
+  "decision": "iterate",
+  "reason": "Decoder quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_trained_v1/decoder_gpt2_quality__l2_decoder_gpt2_quality_v1.json: decision=baseline_exact_safe; exact_safe_after_recovery=True; recovered_count=0; regression_count=0; recommended_next_step=Treat bf16/PWL as exact-safe on this screen without relying on the logit tie-breaker; keep the tie-break row as a ranking-stability guard for broader prompts or larger checkpoints.",
+  "evidence_refs": [
+    "item:l2_decoder_gpt2_quality_v1",
+    "run:l2_decoder_gpt2_quality_v1_run_8ba8c7fe3ad8cf83",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_gpt2_quality_v1.json",
+    "pr:#382",
+    "https://github.com/yhmtmt/RTLGen/pull/382"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_gpt2_quality_v1",
+  "requires_human_approval": false
+}

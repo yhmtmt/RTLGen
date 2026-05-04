@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_gpt2_quality_v1",
+  "decision": "iterate",
+  "pr_number": 382,
+  "merge_commit": "ab87550901d6d1cd0ba183b277ff0a37d956a20e",
+  "merged_utc": "2026-05-04T03:25:49.045912Z"
+}

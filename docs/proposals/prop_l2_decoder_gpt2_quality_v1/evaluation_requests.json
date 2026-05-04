@@ -12,7 +12,13 @@
         "l2_decoder_distilgpt2_prompt_stress_v1"
       ],
       "requires_merged_inputs": true,
-      "requires_materialized_refs": true
+      "requires_materialized_refs": true,
+      "status": "merged",
+      "merged_pr_number": 382,
+      "merge_commit": "ab87550901d6d1cd0ba183b277ff0a37d956a20e",
+      "merged_utc": "2026-05-04T03:25:49.045912Z",
+      "notes": "Merged via PR #382 and merge ab87550901d6d1cd0ba183b277ff0a37d956a20e at 2026-05-04T03:25:49.045912Z."
     }
-  ]
+  ],
+  "source_commit": "ef58e573b0ddd2059e4d37eaacf40059676e0d8a"
 }
