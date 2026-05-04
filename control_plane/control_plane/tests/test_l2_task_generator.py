@@ -1489,14 +1489,15 @@ def test_generate_l2_campaign_task_adds_decoder_gpt2_logit_rank_bypass_evidence(
             ]
             decoder_inputs = work_item.input_manifest["decoder_contract"]
             assert decoder_inputs["candidate_sweep_grid"] == "decoder_logit_rank_bypass_v1"
-            assert decoder_inputs["rank_datapath_proxy_ppa"] == (
-                "control_plane/shadow_exports/l1_promotions/l1_decoder_bf16_pwl_tie_rank_datapath_v1_r2.json"
+            assert decoder_inputs["rank_datapath_ppa"] == (
+                "control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_datapath_v1_r2.json"
             )
             assert decoder_inputs["logit_rank_bypass_out"] == (
                 "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
                 "decoder_gpt2_logit_rank_bypass__l2_decoder_gpt2_logit_rank_bypass_v1.json"
             )
             assert "sampling modes remain out of scope" in decoder_inputs["logit_rank_bypass_scope"]
+            assert "measured logit-only" in decoder_inputs["logit_rank_bypass_scope"]
             assert "--rough-grid decoder_logit_rank_bypass_v1" in work_item.command_manifest[5]["run"]
             assert "summarize_llm_decoder_logit_rank_bypass.py" in work_item.command_manifest[6]["run"]
             assert decoder_inputs["logit_rank_bypass_out"] in work_item.expected_outputs
