@@ -14,6 +14,18 @@ pushd "$TMP" >/dev/null
 grep -q "module logit_rank_r4_l16_k2" logit_rank_r4_l16_k2.v
 grep -q "logit_i > top_logit_k" logit_rank_r4_l16_k2.v
 
+YOSYS_BIN="${YOSYS_BIN:-}"
+if [[ -z "$YOSYS_BIN" ]]; then
+  if command -v yosys >/dev/null 2>&1; then
+    YOSYS_BIN="$(command -v yosys)"
+  elif [[ -x /oss-cad-suite/bin/yosys ]]; then
+    YOSYS_BIN=/oss-cad-suite/bin/yosys
+  fi
+fi
+if [[ -n "$YOSYS_BIN" ]]; then
+  "$YOSYS_BIN" -q -p "read_verilog logit_rank_r4_l16_k2.v; hierarchy -top logit_rank_r4_l16_k2; proc"
+fi
+
 iverilog -g2012 -s logit_rank_tb -o sim logit_rank_r4_l16_k2.v "$ROOT/tests/logit_rank_tb.v"
 vvp sim
 

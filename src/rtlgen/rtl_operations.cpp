@@ -1430,10 +1430,12 @@ void emitLogitRankModule(const LogitRankOperationConfig &config, const OperandDe
     os << "          insert_pos = k;\n";
     os << "      end\n\n";
     os << "      if (insert_pos < TOP_K) begin\n";
-    os << "        for (k = TOP_K - 1; k > insert_pos; k = k - 1) begin\n";
-    os << "          top_indices[(k*INDEX_W) +: INDEX_W] = top_indices[((k-1)*INDEX_W) +: INDEX_W];\n";
-    os << "          top_logits[(k*LOGIT_W) +: LOGIT_W] = top_logits[((k-1)*LOGIT_W) +: LOGIT_W];\n";
-    os << "          top_valid[k] = top_valid[k-1];\n";
+    os << "        for (k = TOP_K - 1; k > 0; k = k - 1) begin\n";
+    os << "          if (k > insert_pos) begin\n";
+    os << "            top_indices[(k*INDEX_W) +: INDEX_W] = top_indices[((k-1)*INDEX_W) +: INDEX_W];\n";
+    os << "            top_logits[(k*LOGIT_W) +: LOGIT_W] = top_logits[((k-1)*LOGIT_W) +: LOGIT_W];\n";
+    os << "            top_valid[k] = top_valid[k-1];\n";
+    os << "          end\n";
     os << "        end\n";
     os << "        top_indices[(insert_pos*INDEX_W) +: INDEX_W] = lane_index;\n";
     os << "        top_logits[(insert_pos*LOGIT_W) +: LOGIT_W] = logit_i;\n";
