@@ -40,6 +40,10 @@ It is the first step toward a reproducible closed-loop flow:
   for larger Hugging Face causal decoders such as `distilgpt2`. It writes the
   decoder model/tokenizer contracts expected by the existing harness while
   leaving large generated artifacts under gitignored paths.
+- `npu/eval/run_hf_decoder_materializer.sh`: control-plane entry point for the
+  materializer. It selects an evaluator Python with `torch`, `transformers`, and
+  `onnx`, preferring `RTLGEN_HF_MATERIALIZER_PYTHON`, then the AutoTuner env,
+  then `python3`, and reports dependency failures before running the export.
 
 The repo can now express a future exact-reference pair explicitly even before the
 assets are present: the model contract may point at a `reference_onnx_binding.json`
@@ -82,10 +86,12 @@ and should not be committed by evaluator PRs.
 
 Control-plane workers usually run commands from the control-plane venv, which
 has `onnxruntime` for decoder inference but may not have the Hugging Face export
-stack. L2 distilgpt2 jobs therefore invoke the materializer with
-`RTLGEN_HF_MATERIALIZER_PYTHON` when set, otherwise with
-`/orfs/tools/AutoTuner/autotuner_env/bin/python3` when present, and then return
-to normal `python3` commands for ONNX Runtime inference.
+stack. L2 distilgpt2 jobs therefore invoke `run_hf_decoder_materializer.sh` for
+the materialization step. Set `RTLGEN_HF_MATERIALIZER_PYTHON` in the evaluator
+daemon environment when a host uses a non-default export environment; otherwise
+the wrapper tries `/orfs/tools/AutoTuner/autotuner_env/bin/python3` and then
+`python3`. Later reference/candidate commands still use normal `python3` for
+ONNX Runtime inference.
 
 ## Validation
 Validate campaign manifest:
