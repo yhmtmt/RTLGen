@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_gpt2_prompt_stress_v1",
+  "decision": "iterate",
+  "pr_number": 384,
+  "merge_commit": "fd99674686a6d176d6efef0cd1f72fe766ce4f73",
+  "merged_utc": "2026-05-04T06:03:27.962991Z"
+}

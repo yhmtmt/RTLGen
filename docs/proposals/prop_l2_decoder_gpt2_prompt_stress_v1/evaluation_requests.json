@@ -12,7 +12,13 @@
         "l2_decoder_gpt2_quality_v1"
       ],
       "requires_merged_inputs": true,
-      "requires_materialized_refs": true
+      "requires_materialized_refs": true,
+      "status": "merged",
+      "merged_pr_number": 384,
+      "merge_commit": "fd99674686a6d176d6efef0cd1f72fe766ce4f73",
+      "merged_utc": "2026-05-04T06:03:27.962991Z",
+      "notes": "Merged via PR #384 and merge fd99674686a6d176d6efef0cd1f72fe766ce4f73 at 2026-05-04T06:03:27.962991Z."
     }
-  ]
+  ],
+  "source_commit": "3b247257c2074fb6650da86032a2feb7305e176f"
 }
