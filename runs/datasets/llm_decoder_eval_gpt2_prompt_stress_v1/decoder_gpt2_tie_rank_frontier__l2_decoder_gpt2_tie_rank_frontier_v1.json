@@ -1,0 +1,124 @@
+{
+  "components": {
+    "bf16_reciprocal": {
+      "metrics": {
+        "critical_path_ns": 4.2869,
+        "die_area": 50690.271025,
+        "total_power_mw": 0.00479
+      },
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/bf16_recip_norm_r8_wrapper/metrics.csv",
+        "param_hash": "707ea19f",
+        "platform": "nangate45",
+        "result_kind": "physical_metrics",
+        "result_path": "runs/designs/activations/bf16_recip_norm_r8_wrapper/work/707ea19f/result.json",
+        "status": "ok",
+        "tag": "bf16_recip_norm_nangate45_highutil_2ae5d3c9"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows"
+    },
+    "recovered_path": {
+      "component_model": "conservative_additive_datapath_components",
+      "incremental_vs_bf16_reciprocal": {
+        "critical_path_ns": {
+          "absolute": 3.2925,
+          "relative": 0.768038,
+          "relative_percent": 76.804
+        },
+        "die_area": {
+          "absolute": 6786.4644,
+          "relative": 0.133881,
+          "relative_percent": 13.388
+        },
+        "total_power_mw": {
+          "absolute": 0.00526,
+          "relative": 1.098121,
+          "relative_percent": 109.812
+        }
+      },
+      "metrics": {
+        "critical_path_ns": 7.5794,
+        "die_area": 57476.735425,
+        "total_power_mw": 0.01005
+      },
+      "rank_key": [
+        7.5794,
+        57476.735425,
+        0.01005
+      ]
+    },
+    "score_tie_rank": {
+      "metrics": {
+        "critical_path_ns": 3.2925,
+        "die_area": 6786.4644,
+        "total_power_mw": 0.00526
+      },
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/score_tie_rank_r8_s16_l16_wrapper/metrics.csv",
+        "param_hash": "aa83599c",
+        "platform": "nangate45",
+        "result_kind": "physical_metrics",
+        "result_path": "runs/designs/activations/score_tie_rank_r8_s16_l16_wrapper/work/aa83599c/result.json",
+        "status": "ok",
+        "tag": "score_tie_rank_nangate45_highutil_4c4fe1ea"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows"
+    }
+  },
+  "cost_model": {
+    "component_model": "conservative_additive_datapath_components",
+    "name": "decoder_bf16_pwl_score_tie_rank_frontier_v1",
+    "ppa_balance": "The recovered bf16/PWL row is priced as the measured row-8 bf16 reciprocal-normalization datapath plus the measured row-8 score/logit tie-rank datapath. The rank key is critical path, then area, then power. This is comparable only within the current Nangate45 row-8 datapath framing; it is not a full-array routed macro or application-level throughput model.",
+    "source": "merged_rtlgen_openroad_bf16_reciprocal_and_score_tie_rank_datapath_metrics",
+    "unit": "nangate45_row8_component_metrics"
+  },
+  "decision": {
+    "baseline_candidate": "grid_approx_pwl_bf16_path",
+    "decision": "hardware_recovery_plausible",
+    "exact_safe_after_recovery": true,
+    "no_regressions": true,
+    "reason": "The GPT-2 prompt-stress misses are recovered by logit tie-rank, no regressions are present, and both bf16 reciprocal normalization and score tie-rank have merged Nangate45 physical metrics.",
+    "selected_candidate": "grid_approx_pwl_bf16_path_logit_tiebreak"
+  },
+  "next_step": [
+    "Use this as a hardware-plausibility gate for bf16/PWL score-tie recovery, not as full-array proof.",
+    "If larger-model or larger-array prompt stress breaks this gate, move to QAT or richer calibration."
+  ],
+  "quality": {
+    "baseline": {
+      "exact_safe": false,
+      "next_token_match_rate": 0.9791666666666666,
+      "next_token_matches": 94,
+      "next_token_mismatch_sample_ids": [
+        "gpt2_stress_geo_australia_capital",
+        "gpt2_stress_math_four_times_five"
+      ],
+      "sample_count": 96,
+      "topk_match_rate": 1.0,
+      "topk_matches": 96,
+      "topk_miss_sample_ids": []
+    },
+    "recovered_sample_ids": [
+      "gpt2_stress_geo_australia_capital",
+      "gpt2_stress_math_four_times_five"
+    ],
+    "recovery": {
+      "exact_safe": true,
+      "next_token_match_rate": 1.0,
+      "next_token_matches": 96,
+      "next_token_mismatch_sample_ids": [],
+      "sample_count": 96,
+      "topk_match_rate": 1.0,
+      "topk_matches": 96,
+      "topk_miss_sample_ids": []
+    },
+    "regression_sample_ids": []
+  },
+  "source_artifacts": {
+    "bf16_reciprocal_datapath_ppa": "control_plane/shadow_exports/l1_promotions/l1_decoder_bf16_recip_norm_datapath_v1_r2.json",
+    "bf16_score_tie_rank_datapath_ppa": "control_plane/shadow_exports/l1_promotions/l1_decoder_bf16_pwl_tie_rank_datapath_v1_r2.json"
+  },
+  "source_recovery": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_gpt2_prompt_stress__l2_decoder_gpt2_prompt_stress_v1.json",
+  "source_sweep": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_quality_sweep__l2_decoder_gpt2_prompt_stress_v1.json",
+  "version": 0.1
+}
