@@ -1,0 +1,134 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/activations/logit_rank/sweeps/nangate45_highutil.json"
+      ],
+      "configs": [
+        "runs/designs/activations/logit_rank_r8_l16_k1_wrapper/config_logit_rank_r8_l16_k1.json",
+        "runs/designs/activations/logit_rank_r8_l16_k4_wrapper/config_logit_rank_r8_l16_k4.json"
+      ],
+      "out_root": "runs/designs/activations",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && cmake -S . -B build && cmake --build build --target rtlgen",
+        "name": "build_generator"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 scripts/run_sweep.py --configs runs/designs/activations/logit_rank_r8_l16_k1_wrapper/config_logit_rank_r8_l16_k1.json runs/designs/activations/logit_rank_r8_l16_k4_wrapper/config_logit_rank_r8_l16_k4.json --platform nangate45 --sweep runs/campaigns/activations/logit_rank/sweeps/nangate45_highutil.json --out_root runs/designs/activations --force_gen --skip_existing",
+        "name": "run_sweep"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "objective": "Measure Nangate45 PPA for row-8 signed 16-bit logit-only rank datapaths (argmax k=1 and top-k k=4) after fixing the generated Yosys loop bound.",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/activations/logit_rank_r8_l16_k1_wrapper/metrics.csv",
+      "runs/designs/activations/logit_rank_r8_l16_k4_wrapper/metrics.csv"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Decoder logit-only rank datapath PPA rerun",
+  "result": {
+    "branch": "eval/l1_decoder_logit_rank_datapath_v1_r2/s20260504t105638z",
+    "completed_utc": "2026-05-04T10:56:37.228822Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260504t105638z][host:b7c2d9c80c1c][item:l1_decoder_logit_rank_datapath_v1_r2]",
+    "metrics_rows": [
+      {
+        "tag": "logit_rank_nangate45_highutil_2ae5d3c9",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "3c5f4376",
+        "metrics_csv": "runs/designs/activations/logit_rank_r8_l16_k1_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/logit_rank_r8_l16_k1_wrapper/work/3c5f4376/result.json"
+      },
+      {
+        "tag": "logit_rank_nangate45_highutil_4c4fe1ea",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "692e429d",
+        "metrics_csv": "runs/designs/activations/logit_rank_r8_l16_k1_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/logit_rank_r8_l16_k1_wrapper/work/692e429d/result.json"
+      },
+      {
+        "tag": "logit_rank_nangate45_highutil_2ae5d3c9",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "3c5f4376",
+        "metrics_csv": "runs/designs/activations/logit_rank_r8_l16_k4_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/logit_rank_r8_l16_k4_wrapper/work/3c5f4376/result.json"
+      },
+      {
+        "tag": "logit_rank_nangate45_highutil_4c4fe1ea",
+        "status": "failed",
+        "platform": "nangate45",
+        "param_hash": "692e429d",
+        "metrics_csv": "runs/designs/activations/logit_rank_r8_l16_k4_wrapper/metrics.csv",
+        "result_path": "runs/designs/activations/logit_rank_r8_l16_k4_wrapper/work/692e429d/result.json"
+      }
+    ],
+    "queue_item_id": "l1_decoder_logit_rank_datapath_v1_r2",
+    "session_id": "s20260504t105638z",
+    "status": "ok",
+    "summary": "4/4 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_decoder_logit_rank_datapath_v1_r2/s20260504t105638z",
+    "pr_title": "eval: run decoder logit-only rank datapath ppa rerun",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260504t105638z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_decoder_logit_rank_datapath_v1_r2"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_decoder_logit_rank_datapath_v1_r2",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 5,
+  "created_utc": "2026-05-04T10:48:09.225067Z",
+  "requested_by": "@developer",
+  "developer_loop": {
+    "evaluation": {
+      "mode": "measurement_only",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      }
+    },
+    "abstraction": {
+      "layer": "circuit_block"
+    },
+    "proposal_id": "prop_l1_decoder_logit_rank_datapath_v1",
+    "proposal_path": "docs/proposals/prop_l1_decoder_logit_rank_datapath_v1/proposal.json"
+  }
+}
