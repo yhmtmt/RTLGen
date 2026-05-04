@@ -1715,6 +1715,42 @@ def _decoder_gpt2_prompt_stress_evidence(*, item_id: str) -> dict[str, Any]:
     )
 
 
+def _decoder_gpt2_tie_rank_frontier_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    recovery = f"{base}/decoder_gpt2_prompt_stress__l2_decoder_gpt2_prompt_stress_v1.json"
+    frontier_out = f"{base}/decoder_gpt2_tie_rank_frontier__{item_id}.json"
+    frontier_report = f"{base}/decoder_gpt2_tie_rank_frontier__{item_id}.md"
+    bf16_recip_ppa = "control_plane/shadow_exports/l1_promotions/l1_decoder_bf16_recip_norm_datapath_v1_r2.json"
+    bf16_tie_rank_ppa = "control_plane/shadow_exports/l1_promotions/l1_decoder_bf16_pwl_tie_rank_datapath_v1_r2.json"
+    return {
+        "inputs": {
+            "source_recovery": recovery,
+            "bf16_reciprocal_datapath_ppa": bf16_recip_ppa,
+            "bf16_score_tie_rank_datapath_ppa": bf16_tie_rank_ppa,
+            "frontier_out": frontier_out,
+            "frontier_report": frontier_report,
+            "frontier_scope": (
+                "hardware-plausibility gate for GPT-2 prompt-stress bf16/PWL logit tie-rank recovery "
+                "using merged row-8 Nangate45 bf16 reciprocal and score-tie-rank component PPA"
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_gpt2_tie_rank_frontier",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_tie_rank_frontier.py "
+                    f"--recovery {recovery} "
+                    f"--bf16-recip-ppa {bf16_recip_ppa} "
+                    f"--bf16-tie-rank-ppa {bf16_tie_rank_ppa} "
+                    f"--out {frontier_out} "
+                    f"--out-md {frontier_report}"
+                ),
+            },
+        ],
+        "expected_outputs": [frontier_out, frontier_report],
+    }
+
+
 def _decoder_distilgpt2_prompt_stress_evidence(*, item_id: str) -> dict[str, Any]:
     return _decoder_distilgpt2_quality_evidence_for_dataset(
         item_id=item_id,
@@ -2173,10 +2209,13 @@ def _build_payload(
         "decoder_distilgpt2_prompt_stress",
         "decoder_gpt2_quality",
         "decoder_gpt2_prompt_stress",
+        "decoder_gpt2_tie_rank_frontier",
         "decoder_quantization_outline",
     }:
         if abstraction_layer_name == "decoder_quantization_outline":
             decoder_evidence = _decoder_quantization_outline_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_gpt2_tie_rank_frontier":
+            decoder_evidence = _decoder_gpt2_tie_rank_frontier_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_gpt2_prompt_stress":
             decoder_evidence = _decoder_gpt2_prompt_stress_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_gpt2_quality":

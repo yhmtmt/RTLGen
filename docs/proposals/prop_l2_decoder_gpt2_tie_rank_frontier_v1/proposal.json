@@ -1,0 +1,65 @@
+{
+  "proposal_id": "prop_l2_decoder_gpt2_tie_rank_frontier_v1",
+  "created_utc": "2026-05-04T06:20:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_gpt2_tie_rank_frontier",
+  "title": "Decoder GPT-2 bf16/PWL tie-rank hardware frontier",
+  "hypothesis": "The GPT-2 96-prompt stress run showed bf16/PWL misses are recoverable with logit tie-rank. Before starting QAT, consume the merged score-tie-rank datapath PPA and check whether that recovery path is hardware-plausible under the current Nangate45 row-8 component model.",
+  "direct_comparison": {
+    "primary_question": "Is the GPT-2 bf16/PWL logit tie-rank recovery path backed by measured hardware component PPA rather than only software post-processing?",
+    "include": [
+      "merged GPT-2 prompt-stress bf16/PWL recovery summary",
+      "merged row-8 bf16 reciprocal-normalization PPA",
+      "merged row-8 score/logit tie-rank PPA",
+      "conservative additive recovered-path component model",
+      "quality gate that requires recovered next-token and top-k exactness with zero regressions"
+    ],
+    "exclude": [
+      "new OpenROAD physical synthesis",
+      "training or quantization-aware training",
+      "larger-model or larger-array proof",
+      "full-array macro timing closure",
+      "application-level throughput modeling"
+    ]
+  },
+  "expected_benefit": [
+    "separates hardware-plausible recovery from software-only tie-break recovery",
+    "decides whether QAT is the immediate next step or can wait for larger-scale stress",
+    "keeps the next job small by reusing merged evidence"
+  ],
+  "risks": [
+    "the additive component model is conservative and not a full integrated macro",
+    "the measured datapaths are row-8 Nangate45 blocks, not production-scale array evidence",
+    "the GPT-2 prompt-stress set is still a next-token screen rather than full application evaluation"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_gpt2_tie_rank_frontier_v1",
+      "task_type": "l2_campaign",
+      "objective": "Check whether GPT-2 bf16/PWL logit tie-rank recovery is hardware-plausible using merged reciprocal-normalization and score-tie-rank PPA before starting QAT.",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_gpt2_tie_rank_frontier",
+      "depends_on_item_ids": [
+        "l2_decoder_gpt2_prompt_stress_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_decoder_gpt2_prompt_stress_v1/proposal.json",
+    "control_plane/shadow_exports/l2_decisions/l2_decoder_gpt2_prompt_stress_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_gpt2_prompt_stress__l2_decoder_gpt2_prompt_stress_v1.json",
+    "control_plane/shadow_exports/l1_promotions/l1_decoder_bf16_recip_norm_datapath_v1_r2.json",
+    "control_plane/shadow_exports/l1_promotions/l1_decoder_bf16_pwl_tie_rank_datapath_v1_r2.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_tie_rank_frontier.py",
+    "npu/eval/summarize_llm_decoder_bf16_pwl_recovery.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}
