@@ -12,7 +12,13 @@
         "l2_decoder_gpt2_prompt_stress_v1"
       ],
       "requires_merged_inputs": true,
-      "requires_materialized_refs": true
+      "requires_materialized_refs": true,
+      "status": "merged",
+      "merged_pr_number": 386,
+      "merge_commit": "63bde5fa9ada03a0c79be1ed8aaa1750404a8d39",
+      "merged_utc": "2026-05-04T06:23:31.321890Z",
+      "notes": "Merged via PR #386 and merge 63bde5fa9ada03a0c79be1ed8aaa1750404a8d39 at 2026-05-04T06:23:31.321890Z."
     }
-  ]
+  ],
+  "source_commit": "c82d3fcbf7fb9863403f1e18453e6aaa8f4ea685"
 }

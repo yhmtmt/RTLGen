@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_gpt2_tie_rank_frontier_v1",
+  "decision": "iterate",
+  "pr_number": 386,
+  "merge_commit": "63bde5fa9ada03a0c79be1ed8aaa1750404a8d39",
+  "merged_utc": "2026-05-04T06:23:31.321890Z"
+}
