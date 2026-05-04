@@ -1,0 +1,26 @@
+{
+  "proposal_id": "prop_l2_decoder_logit_rank_streaming_overlap_v1",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_logit_rank_streaming_overlap_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run the refined decoder logit-rank streaming overlap and traffic model with explicit perf-sim/RTL equivalence observables.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_logit_rank_streaming_overlap",
+      "cost_class": "low",
+      "depends_on_item_ids": [
+        "l2_decoder_logit_rank_streaming_hierarchy_v1",
+        "l2_decoder_gpt2_logit_rank_bypass_v1_r2",
+        "l1_decoder_logit_rank_datapath_v1_r2",
+        "l1_decoder_logit_rank_scale_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use the model output to define the first candidate-stream merge RTL measurement, with equivalence checked on ready/valid stream observables."
+      },
+      "status": "pending"
+    }
+  ]
+}

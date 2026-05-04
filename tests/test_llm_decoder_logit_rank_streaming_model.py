@@ -81,7 +81,65 @@ def test_logit_rank_streaming_report_compares_flat_and_hierarchy(tmp_path: Path)
     assert fast["merge_variant"] == "merge_ii_1"
     assert fast["fifo_capacity_ok"]
     assert fast["timing"]["latency_us_per_token"] == 0.044
+    assert fast["buffered_baseline"]["rank_after_materialization_cycles"] == 14
+    assert fast["buffered_baseline"]["overlap_recovered_cycles"] == 3
+    assert fast["traffic"]["traffic_reduction_vs_materialized"] == -0.125
+    assert fast["equivalence_contract"]["stream_contract"] == "LogitTileStream/CandidateStream ready-valid v1"
     assert report["recommendation"]["architecture"] in {
         "flat_measured_ranker_scan",
         "hierarchical_streaming_local_rank_global_merge",
     }
+    assert len(report["overlap_traffic_sweep"]) == 2
+    assert report["overlap_recommendation"]["sweep_key"] == "w8_k4_prodii1_mergeii1_fifo8"
+
+
+def test_logit_rank_streaming_overlap_sweep_varies_producer_and_fifo(tmp_path: Path) -> None:
+    ppa = tmp_path / "rank_ppa.json"
+    ppa.write_text(
+        json.dumps(
+            {
+                "proposals": [
+                    {
+                        "metrics_ref": {
+                            "metrics_csv": "runs/designs/activations/logit_rank_r8_l16_k1_wrapper/metrics.csv",
+                            "status": "ok",
+                        },
+                        "metric_summary": {
+                            "critical_path_ns": 3.0,
+                            "die_area": 10.0,
+                            "total_power_mw": 0.1,
+                        },
+                    },
+                    {
+                        "metrics_ref": {
+                            "metrics_csv": "runs/designs/activations/logit_rank_r16_l16_k1_wrapper/metrics.csv",
+                            "status": "ok",
+                        },
+                        "metric_summary": {
+                            "critical_path_ns": 5.0,
+                            "die_area": 16.0,
+                            "total_power_mw": 0.2,
+                        },
+                    },
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    report = build_report(
+        rank_ppa_path=ppa,
+        scale_ppa_path=None,
+        vocab_size=64,
+        producer_lanes=8,
+        top_k=1,
+        global_merge_ii_cycles_list=[1, 2],
+        producer_lanes_list=[8, 16],
+        producer_ii_cycles_list=[1, 2],
+        candidate_fifo_depth_groups_list=[1, 16],
+    )
+
+    assert len(report["overlap_traffic_sweep"]) == 16
+    assert {row["producer_lanes"] for row in report["overlap_traffic_sweep"]} == {8, 16}
+    assert any(not row["fifo_capacity_ok"] for row in report["overlap_traffic_sweep"])
+    assert report["overlap_recommendation"]["traffic_reduction_vs_materialized"] > 0

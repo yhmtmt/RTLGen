@@ -1570,6 +1570,62 @@ def test_generate_l2_campaign_task_adds_decoder_logit_rank_streaming_hierarchy_e
             }
 
 
+def test_generate_l2_campaign_task_adds_decoder_logit_rank_streaming_overlap_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    item_id="l2_decoder_logit_rank_streaming_overlap_v1",
+                    proposal_id="prop_l2_decoder_logit_rank_streaming_overlap_v1",
+                    proposal_path="docs/proposals/prop_l2_decoder_logit_rank_streaming_overlap_v1/proposal.json",
+                    evaluation_mode="frontier_detail",
+                    abstraction_layer="decoder_logit_rank_streaming_overlap",
+                    expected_direction="iterate",
+                    comparison_role="ranking",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            command_names = [command["name"] for command in work_item.command_manifest]
+            assert command_names[0] == "estimate_decoder_logit_rank_streaming_overlap"
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+            assert decoder_inputs["rank_datapath_ppa"] == (
+                "control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_datapath_v1_r2.json"
+            )
+            assert decoder_inputs["rank_scale_ppa"] == (
+                "control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_scale_v1.json"
+            )
+            assert decoder_inputs["streaming_overlap_out"] == (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_logit_rank_streaming_overlap__l2_decoder_logit_rank_streaming_overlap_v1.json"
+            )
+            assert "perf-sim/RTL equivalence observables" in decoder_inputs["streaming_overlap_scope"]
+            run = work_item.command_manifest[0]["run"]
+            assert "estimate_llm_decoder_logit_rank_streaming_hierarchy.py" in run
+            assert "--producer-lanes-list 8,16,32" in run
+            assert "--top-k-list 1,4" in run
+            assert "--producer-ii-cycles-list 1,2,4" in run
+            assert "--candidate-fifo-depth-groups-list 16,256,4096" in run
+            assert decoder_inputs["streaming_overlap_out"] in work_item.expected_outputs
+            assert decoder_inputs["streaming_overlap_report"] in work_item.expected_outputs
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
+                "layer": "decoder_logit_rank_streaming_overlap",
+            }
+
+
 def test_generate_l2_campaign_task_adds_decoder_pwl_logit_sensitivity_ladder_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
