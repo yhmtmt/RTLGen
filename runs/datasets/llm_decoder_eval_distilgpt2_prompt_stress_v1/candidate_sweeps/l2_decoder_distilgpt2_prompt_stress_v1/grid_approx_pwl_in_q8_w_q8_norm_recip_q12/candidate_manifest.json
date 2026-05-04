@@ -1,0 +1,515 @@
+{
+  "backend_config": {
+    "backend_id": "command_json_v1",
+    "command": [
+      "python3",
+      "npu/eval/run_llm_decoder_onnx_candidate.py"
+    ],
+    "equivalence_group": "llm_decoder_distilgpt2_trained_v1_reference_onnx_v1",
+    "input_name": "input_ids",
+    "interface": "decoder_backend_v1",
+    "model_config_path": "runs/models/llm_decoder_distilgpt2_trained_v1/reference_onnx/config.json",
+    "normalization_mode": "reciprocal_quantized",
+    "normalization_reciprocal_bits": 12,
+    "onnx_model_path": "runs/models/llm_decoder_distilgpt2_trained_v1/reference_onnx/model.onnx",
+    "output_name": "logits",
+    "role": "candidate",
+    "runtime_target": "software_emulation",
+    "softmax_input_quant_bits": 8,
+    "softmax_mode": "approx_pwl",
+    "softmax_weight_quant_bits": 8,
+    "topk": 16,
+    "trace_output_patterns": [
+      "present.*"
+    ],
+    "trace_tensor_quant_bits": 4
+  },
+  "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q8_w_q8_norm_recip_q12_prob_fp",
+  "dataset_id": "llm_decoder_eval_distilgpt2_prompt_stress_v1",
+  "model_contract": "runs/models/llm_decoder_distilgpt2_trained_v1/model_contract.json",
+  "samples": [
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_geo_france_capital.json",
+      "candidate_sha256": "69070145e525ca0b3257d75c2397fd2fbb3b671213e97f18f2fe1b8f46f9a9fb",
+      "sample_id": "distilgpt2_stress_geo_france_capital"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_geo_japan_capital.json",
+      "candidate_sha256": "f82533197e8d0f1aa4ef60d2615fee7b249ad6e353ca1a79a5fbf53a2183838b",
+      "sample_id": "distilgpt2_stress_geo_japan_capital"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_geo_germany_capital.json",
+      "candidate_sha256": "f99d2877abd4b1a9882a467a4d15f7addb80a29c2f67bfb64d65874bc66b7312",
+      "sample_id": "distilgpt2_stress_geo_germany_capital"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_geo_italy_capital.json",
+      "candidate_sha256": "eefa46b32b61da1bb9e3e7c932a43bf7a6a53229175ab82e13f4980700da6a2e",
+      "sample_id": "distilgpt2_stress_geo_italy_capital"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_geo_spain_capital.json",
+      "candidate_sha256": "6c85a2e3ef2d822ce1dff072f4ac391621f41619359e58474c8728f8f1e4432f",
+      "sample_id": "distilgpt2_stress_geo_spain_capital"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_geo_canada_capital.json",
+      "candidate_sha256": "6818bf9e30e3686d5b6baa1c6e0b6472bdaa9d99ab068d3ab03124eb3dcc778e",
+      "sample_id": "distilgpt2_stress_geo_canada_capital"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_geo_australia_capital.json",
+      "candidate_sha256": "b9e6d8e505adf6f2fe2c5f6a24c79e69161ae94cd057ab79d4d6774ed023e575",
+      "sample_id": "distilgpt2_stress_geo_australia_capital"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_geo_brazil_capital.json",
+      "candidate_sha256": "a908574bd534c29746b86ab3d48a5ce4a4e939521f2ffd67a82aad5aff610fde",
+      "sample_id": "distilgpt2_stress_geo_brazil_capital"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_science_water_freezes.json",
+      "candidate_sha256": "e063c7a89f243c9d860d26fbb4616238bc3e382b1b8348260b30ba22fde89506",
+      "sample_id": "distilgpt2_stress_science_water_freezes"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_science_water_boils.json",
+      "candidate_sha256": "28718e908a58239a4b25eae9a278b589974dc403856deeae843f8d2891b8ea64",
+      "sample_id": "distilgpt2_stress_science_water_boils"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_science_earth_orbits.json",
+      "candidate_sha256": "110790b9334ab931435c76caf9eba4d2ae91c1d23ed5433b7b935c41267aaa4e",
+      "sample_id": "distilgpt2_stress_science_earth_orbits"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_science_moon_orbits.json",
+      "candidate_sha256": "7df086d57b9b374e7915c40d16d665ddb658c978625fd8ab64bb919cd9030aae",
+      "sample_id": "distilgpt2_stress_science_moon_orbits"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_science_humans_breathe.json",
+      "candidate_sha256": "d10d9d86fa84efe957a387808b47b5a20d9b3fdde608b766c422dcdb41d8b587",
+      "sample_id": "distilgpt2_stress_science_humans_breathe"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_science_plants_need.json",
+      "candidate_sha256": "a0de0cb7f5af9ad18b2cfe760fb8a1d6fed4ec6bcaeb16a099c2c75078f7145d",
+      "sample_id": "distilgpt2_stress_science_plants_need"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_science_ice_is.json",
+      "candidate_sha256": "f62afcd504076da162a3279f3b6718aa57feeef2383f933df8eb1b41c77ed486",
+      "sample_id": "distilgpt2_stress_science_ice_is"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_science_fire_is.json",
+      "candidate_sha256": "b1b268b7ab912caa0e4b66e1eb803c4bfcf46e71c453c58faa52ad3e7a1f1b46",
+      "sample_id": "distilgpt2_stress_science_fire_is"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_color_banana.json",
+      "candidate_sha256": "ecb23f8298fe6a938c5e6e5e70fb37bfc5f5e28d9bb9d07f7ac47182e8fa30c8",
+      "sample_id": "distilgpt2_stress_color_banana"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_color_sky.json",
+      "candidate_sha256": "7b78464b3d941ace44dfddd17494c366c977c7ab6f6c8a19c8cd504fe1b0dc33",
+      "sample_id": "distilgpt2_stress_color_sky"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_color_grass.json",
+      "candidate_sha256": "10d2d0ef2131c7a9347afc033dcbf03376db8d17b66fa14fa2c46c76e023332d",
+      "sample_id": "distilgpt2_stress_color_grass"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_color_snow.json",
+      "candidate_sha256": "2a8bc6f559d69db5c6823fd58dd0a67a88ec7913d720acb57097bbfcc3283392",
+      "sample_id": "distilgpt2_stress_color_snow"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_color_coal.json",
+      "candidate_sha256": "22852b6d57ea2fdd5419860501596894ffd2d7c505c05f4f7503a95bc7d6a319",
+      "sample_id": "distilgpt2_stress_color_coal"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_color_lime.json",
+      "candidate_sha256": "67d8fbf2439e6f1f1abcc3a1b95f3190cf2b54261552de480249f6002ac18b7e",
+      "sample_id": "distilgpt2_stress_color_lime"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_color_strawberry.json",
+      "candidate_sha256": "2c982d7e343923e8359a553ba7085f2c6dbdc2690e6cbd8e2914672597e5ca51",
+      "sample_id": "distilgpt2_stress_color_strawberry"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_color_ocean.json",
+      "candidate_sha256": "542ec65ca95fa75e50cdb5f8dd9cf49c1b2222795f5b272bc65a065fe222f8ce",
+      "sample_id": "distilgpt2_stress_color_ocean"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_math_two_plus_two.json",
+      "candidate_sha256": "3626e8336ef613dc932f0a1bba803ff3fae98902f836bef65e91bfaf002beb67",
+      "sample_id": "distilgpt2_stress_math_two_plus_two"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_math_seven_plus_five.json",
+      "candidate_sha256": "42c6c1f16b5226ccbcbf0b9f2d80c4a28c66ba6ba3815e9406bcd096676cb664",
+      "sample_id": "distilgpt2_stress_math_seven_plus_five"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_math_ten_minus_three.json",
+      "candidate_sha256": "b422078accec436d0aa8003a6faf7e1847ceb1b38b747a4d707c8df86268d3cf",
+      "sample_id": "distilgpt2_stress_math_ten_minus_three"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_math_nine_minus_four.json",
+      "candidate_sha256": "d048087789d7b4b0cfaca145aaa2e62cbaeb75bb88916153278753caa176e28a",
+      "sample_id": "distilgpt2_stress_math_nine_minus_four"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_math_three_times_three.json",
+      "candidate_sha256": "1d53782cd046ffa7ba8ba89c3cdfb9abcb00b4900820bf35c7d297c16cf292ac",
+      "sample_id": "distilgpt2_stress_math_three_times_three"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_math_four_times_five.json",
+      "candidate_sha256": "3d96f1087e7b1cc31713b26b8167672618533ed11ed16cd6b5fbff4c2a0e6bbc",
+      "sample_id": "distilgpt2_stress_math_four_times_five"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_math_eight_div_two.json",
+      "candidate_sha256": "2a82f2548573e7efc240e5694ef34bd009dd9dcf07d25e987da2263c2c8fd675",
+      "sample_id": "distilgpt2_stress_math_eight_div_two"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_math_half_of_ten.json",
+      "candidate_sha256": "7f31008dfd833a83213b1865ff8942a115509954bac84afe07b72d9b4964b968",
+      "sample_id": "distilgpt2_stress_math_half_of_ten"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_sequence_numbers.json",
+      "candidate_sha256": "a9a64ae78a25e41ba2dddc8dcffbd55c64c343663cd0919d67b867bdf311cbc7",
+      "sample_id": "distilgpt2_stress_sequence_numbers"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_sequence_letters.json",
+      "candidate_sha256": "5dd2c0c9350f86173ec1d65448d1817b94b439702e2847f902b9dafa3cb1c469",
+      "sample_id": "distilgpt2_stress_sequence_letters"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_sequence_weekdays.json",
+      "candidate_sha256": "e11bc8813e4ddfb9d88d0c268605fd9fcd9005666eebfe813f99ba45e3327d36",
+      "sample_id": "distilgpt2_stress_sequence_weekdays"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_sequence_months.json",
+      "candidate_sha256": "f738bc20e94fb16bfab32dcd5b7222b29fc5d5b04f6cbc7453be3564c1dfae0c",
+      "sample_id": "distilgpt2_stress_sequence_months"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_sequence_countdown.json",
+      "candidate_sha256": "eb9528b521bbcb43fb931b107abf151be4a3842f3640d390ef51b98e26774a41",
+      "sample_id": "distilgpt2_stress_sequence_countdown"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_sequence_planets.json",
+      "candidate_sha256": "97b446c40dc9c6b8e71fd67025554132f7662d2fdc1a0068c4b97cb474e6351e",
+      "sample_id": "distilgpt2_stress_sequence_planets"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_sequence_directions.json",
+      "candidate_sha256": "d4c074f80c8139d16d70af00f587970da52b762b6ff7af2fbed344ba475401e7",
+      "sample_id": "distilgpt2_stress_sequence_directions"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_sequence_alphabet_end.json",
+      "candidate_sha256": "461713c7dbfb7fa9db08cd625a62deb2f5bdc198237a61dc72bb1b0d9a5877e1",
+      "sample_id": "distilgpt2_stress_sequence_alphabet_end"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_code_python_return_sum.json",
+      "candidate_sha256": "6dedc176628068ee8d39aa1895c1d407318d861cc30722bb8b7259b138ed6e1c",
+      "sample_id": "distilgpt2_stress_code_python_return_sum"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_code_python_loop_print.json",
+      "candidate_sha256": "370fb0c90d3ffab5e25bb3f1abcf580985fc20d0421f66ca9577fb4254f0f467",
+      "sample_id": "distilgpt2_stress_code_python_loop_print"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_code_python_if_positive.json",
+      "candidate_sha256": "fbfb97529abe71ba555922b5ac16602b750a463e4b415bcf99cb2509618d3fd9",
+      "sample_id": "distilgpt2_stress_code_python_if_positive"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_code_python_list_append.json",
+      "candidate_sha256": "dce271ae661c349290d5f05f92a469f7141e97a969077df2a4d19a2b56997975",
+      "sample_id": "distilgpt2_stress_code_python_list_append"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_code_js_function.json",
+      "candidate_sha256": "22eae18c042bf3d2140df190d6b95f5dc5858fe20605f7df8d43be0c9c567ccc",
+      "sample_id": "distilgpt2_stress_code_js_function"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_code_js_console.json",
+      "candidate_sha256": "6f8218f8735b6d0e42457415613d8c54aaebaefd4ee6063133017a9d020a45ed",
+      "sample_id": "distilgpt2_stress_code_js_console"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_code_json_key.json",
+      "candidate_sha256": "5fcb033bf83882ee00e54aab08e6baeaa37221af46287e49ae08a7cb28fd505d",
+      "sample_id": "distilgpt2_stress_code_json_key"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_code_sql_select.json",
+      "candidate_sha256": "9fcb3707e0cabada59ffc236cad4a0258122525f7b890dbb364c70ee198336b1",
+      "sample_id": "distilgpt2_stress_code_sql_select"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_dialogue_greeting.json",
+      "candidate_sha256": "22c2343cf4aaeebb2e3728f431fa61bb46e073b86ac7ba97236f0956cb54b045",
+      "sample_id": "distilgpt2_stress_dialogue_greeting"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_dialogue_help.json",
+      "candidate_sha256": "58b1f6f0b797b8a034571a6d423aa8817a987cfffa2ec333601ea94ddc94db8b",
+      "sample_id": "distilgpt2_stress_dialogue_help"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_dialogue_thanks.json",
+      "candidate_sha256": "91757f01568f192366f17c386ae6d3ad2e1ab1ce5ac9978955d992c6d96f9c46",
+      "sample_id": "distilgpt2_stress_dialogue_thanks"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_dialogue_question.json",
+      "candidate_sha256": "e2ea2479a5fff17505258531e4bcb9affaf67d928e8839412741696b40d652dd",
+      "sample_id": "distilgpt2_stress_dialogue_question"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_dialogue_weather.json",
+      "candidate_sha256": "bd7162b71a6412aceacbe7e8f4257ca76cb9404bb0b09c2aed3e51e02d45fab9",
+      "sample_id": "distilgpt2_stress_dialogue_weather"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_dialogue_name.json",
+      "candidate_sha256": "50481be9f9855d537fa99497c40b19907dcb74be2e58849797f2498c5f0b7a01",
+      "sample_id": "distilgpt2_stress_dialogue_name"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_dialogue_goodbye.json",
+      "candidate_sha256": "ea21f407b69c95371e09d925fcb736ab32d90510882166b44c8af29db8ccda3d",
+      "sample_id": "distilgpt2_stress_dialogue_goodbye"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_dialogue_summary.json",
+      "candidate_sha256": "276cbedb7ac7c074d307bc287e21c4e48cde19b4bf7a65e01749b91378027d61",
+      "sample_id": "distilgpt2_stress_dialogue_summary"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_quote_shakespeare.json",
+      "candidate_sha256": "4316c50198045805c0003856a7337b373b585fd61595185d7910db9358e4552f",
+      "sample_id": "distilgpt2_stress_quote_shakespeare"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_quote_kennedy.json",
+      "candidate_sha256": "52c964d32a7d03e79eacc58f72e51d3f0306e6710b1282bfe6620f3f4d31b132",
+      "sample_id": "distilgpt2_stress_quote_kennedy"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_quote_lorem.json",
+      "candidate_sha256": "37161f51af5d00799bcbdd15ccf56eb20e8fd4f084f70d79f74a699f3a46aaa0",
+      "sample_id": "distilgpt2_stress_quote_lorem"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_quote_once_time.json",
+      "candidate_sha256": "6813c48aed1c139289a234d9967648b4943c3d63d717f02bbd9a2ee23690d896",
+      "sample_id": "distilgpt2_stress_quote_once_time"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_quote_call_me.json",
+      "candidate_sha256": "fa4a52ac498853c93ca2717a00ec65fb1d61ad12c4c7ebfdf9fafcebfa943e2c",
+      "sample_id": "distilgpt2_stress_quote_call_me"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_quote_best_times.json",
+      "candidate_sha256": "b1214ea305c98c2810b55d510b086f616415a88d0da16f9e5a20c9201948fcbb",
+      "sample_id": "distilgpt2_stress_quote_best_times"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_quote_dark_stormy.json",
+      "candidate_sha256": "facc957789162a66568fad7c353838259c8a306176694fd2deef1dfa0f94a833",
+      "sample_id": "distilgpt2_stress_quote_dark_stormy"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_quote_four_score.json",
+      "candidate_sha256": "12bf968b6a226afdbdab9b6ded4e3ae78403e82dee959bc73b33cf0e711b1cd7",
+      "sample_id": "distilgpt2_stress_quote_four_score"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_narrative_meeting.json",
+      "candidate_sha256": "50d90b605f7f224242cb6d78b703471782a2a404ddb2882dba279cd6b7c70d78",
+      "sample_id": "distilgpt2_stress_narrative_meeting"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_narrative_story.json",
+      "candidate_sha256": "9af18703c7cc91c7b2b8831a39a9cdbbc965a4da0200a2792549db11ca72db50",
+      "sample_id": "distilgpt2_stress_narrative_story"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_narrative_robot.json",
+      "candidate_sha256": "717f3d54b2ff1e8bb6fadfbc4f67f0248f45a7bec2a61d616c62689342f441d2",
+      "sample_id": "distilgpt2_stress_narrative_robot"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_narrative_lab.json",
+      "candidate_sha256": "8b610ac3d481c386e9a715b69fdf4e83952cfe754cdd46870838930ad316fa5f",
+      "sample_id": "distilgpt2_stress_narrative_lab"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_narrative_train.json",
+      "candidate_sha256": "224ec8fb97cc3a7d519f5a433c0d196a38378530744aae6f62d17e8d53a65527",
+      "sample_id": "distilgpt2_stress_narrative_train"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_narrative_market.json",
+      "candidate_sha256": "a6ed836cc59afbf337f4981401b3776aa55d8a9e1cf5771344ad75760dfd9e6d",
+      "sample_id": "distilgpt2_stress_narrative_market"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_narrative_letter.json",
+      "candidate_sha256": "1a4f319b0e924cfdc0fc1d92c9d6726fe10c8520cb6e5d284b6129ef7b0804f8",
+      "sample_id": "distilgpt2_stress_narrative_letter"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_narrative_map.json",
+      "candidate_sha256": "37030243f8531f991abc35348230dc8ae1761e714d1e9e4a9bd9c67bba74c15b",
+      "sample_id": "distilgpt2_stress_narrative_map"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_long_decoder.json",
+      "candidate_sha256": "507dcb217fba98cc65cb99c4c4474d9a2a1cae29351fe151a306d2ca892e473f",
+      "sample_id": "distilgpt2_stress_long_decoder"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_long_quant.json",
+      "candidate_sha256": "5a4bb6e4f5ac28f24857175c9eee4ef5a18e2aad74c362057d530e64af5d2c0e",
+      "sample_id": "distilgpt2_stress_long_quant"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_long_hardware.json",
+      "candidate_sha256": "8e82e2118140db847f7355f8c462d76d5c3f01d0c7ecb1f356578ef61fc7ff4d",
+      "sample_id": "distilgpt2_stress_long_hardware"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_long_margin.json",
+      "candidate_sha256": "df3721c30e33f1c88d9df184db60f76d4d99a477c8086ad9e84df7e8e30046ff",
+      "sample_id": "distilgpt2_stress_long_margin"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_long_training.json",
+      "candidate_sha256": "3a1d9d6b7d444ab67a94f98774c37b06ab8804be6fe455cd57d1a184f61a92a2",
+      "sample_id": "distilgpt2_stress_long_training"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_long_model.json",
+      "candidate_sha256": "a91e9993e07b01404ad01cc24890c18236619a1214fb4f2cd6f10ddbdc3dad16",
+      "sample_id": "distilgpt2_stress_long_model"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_long_cache.json",
+      "candidate_sha256": "e3c6529b9d672e658726e568c1fdec279ba9f25a66ee548b637ed730cbb8d385",
+      "sample_id": "distilgpt2_stress_long_cache"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_long_frontier.json",
+      "candidate_sha256": "79cc86791d69969d79ba86a0ca8e3c8cbdf9fb3e8484ff3f9298f07f6da2008e",
+      "sample_id": "distilgpt2_stress_long_frontier"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_ambiguous_yes_no.json",
+      "candidate_sha256": "211d731fd0b6a2e071839d8219efcbdf031db6cc635b80ea573396aa214f887c",
+      "sample_id": "distilgpt2_stress_ambiguous_yes_no"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_ambiguous_many_options.json",
+      "candidate_sha256": "267ec0e009bb73f3f7f572bd593d40adb51352c2fa894499b6236f4911661fcc",
+      "sample_id": "distilgpt2_stress_ambiguous_many_options"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_ambiguous_left_right.json",
+      "candidate_sha256": "cc0288e783cc5375377d790ec642056b0fcf4098d16510099ee6d8298d522ffc",
+      "sample_id": "distilgpt2_stress_ambiguous_left_right"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_ambiguous_hot_cold.json",
+      "candidate_sha256": "8f00b3d29ee525526bb328b1b71eb760a16c9a22a85b13492700b363f1cdd8bb",
+      "sample_id": "distilgpt2_stress_ambiguous_hot_cold"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_ambiguous_up_down.json",
+      "candidate_sha256": "79fc00981d8e43536076112244527a998413483eaabb70084b085506a91b085d",
+      "sample_id": "distilgpt2_stress_ambiguous_up_down"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_ambiguous_true_false.json",
+      "candidate_sha256": "4ee801b5a2e9068f1dd446ca8f7172d276a9262087e1bb59a19a03f663cf4548",
+      "sample_id": "distilgpt2_stress_ambiguous_true_false"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_ambiguous_start_stop.json",
+      "candidate_sha256": "d902efb9436d22048ab966f395533af14aecfa00dd0dfbb1ffde7a2acbf01444",
+      "sample_id": "distilgpt2_stress_ambiguous_start_stop"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_ambiguous_more_less.json",
+      "candidate_sha256": "b15976cd2401b8343c7e3a835ba055fd52d6e575248aa5d552bfd4757a428bf8",
+      "sample_id": "distilgpt2_stress_ambiguous_more_less"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_symbolic_if_positive.json",
+      "candidate_sha256": "a741e2daf24e2203c50050c2bf0ec468521f58b534ef96cdcae417762dd2b955",
+      "sample_id": "distilgpt2_stress_symbolic_if_positive"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_symbolic_boolean.json",
+      "candidate_sha256": "c07ff6adb883e0cd7be242f798d535c4e19a8211c79b507907adaa1d93641547",
+      "sample_id": "distilgpt2_stress_symbolic_boolean"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_symbolic_compare.json",
+      "candidate_sha256": "bf259eca71294d49ce831323a7cf68f252cf1a60332ad8f583750e0940f0dc80",
+      "sample_id": "distilgpt2_stress_symbolic_compare"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_symbolic_set.json",
+      "candidate_sha256": "8b7890cd2279a23b3942dbfbb1f03cf84f9a55304206003f69b0a1dff36a9b5c",
+      "sample_id": "distilgpt2_stress_symbolic_set"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_symbolic_parentheses.json",
+      "candidate_sha256": "cd2484b080b25be0b33d7b04e93f2e758e67892950ea4b21b96e7c3e66873229",
+      "sample_id": "distilgpt2_stress_symbolic_parentheses"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_symbolic_negation.json",
+      "candidate_sha256": "560f40d4f6bc2fcd359774250b814e045ed340d4dbb087d643f03c96a82a6e2f",
+      "sample_id": "distilgpt2_stress_symbolic_negation"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_symbolic_either.json",
+      "candidate_sha256": "a9c3ebda5b54229ee1a882d17d19849db0219238f1c8aa6a777d2ffcfb4e04a2",
+      "sample_id": "distilgpt2_stress_symbolic_either"
+    },
+    {
+      "candidate_json": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_distilgpt2_prompt_stress_v1/grid_approx_pwl_in_q8_w_q8_norm_recip_q12/candidate/distilgpt2_stress_symbolic_all_some.json",
+      "candidate_sha256": "178b74703af7c0af30cac24db925add16c90fb0d7f9ac96f092942dd15e756e7",
+      "sample_id": "distilgpt2_stress_symbolic_all_some"
+    }
+  ],
+  "task": "greedy_next_token",
+  "tokenizer_manifest": "runs/tokenizers/llm_decoder_distilgpt2_trained_v1/manifest.json",
+  "version": 0.1
+}
