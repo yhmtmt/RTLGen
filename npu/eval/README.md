@@ -374,6 +374,21 @@ patterns, and low-margin continuations. It answers whether the bf16/PWL plus
 logit tie-break behavior survives a rough scale proxy before spending evaluator
 time on a larger imported model or an integrated decoder datapath.
 
+Run the GPT-2 raw-logit rank-bypass summary with measured rank PPA:
+```sh
+python3 npu/eval/summarize_llm_decoder_logit_rank_bypass.py \
+  --sweep runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_quality_sweep__l2_decoder_gpt2_logit_rank_bypass_v1.json \
+  --rank-ppa control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_datapath_v1_r2.json \
+  --out /tmp/decoder_gpt2_logit_rank_bypass.json \
+  --out-md /tmp/decoder_gpt2_logit_rank_bypass.md
+```
+
+This summary uses the merged row-8 Nangate45 logit-only rank datapath instead
+of the older bf16 score/tie-rank proxy. The k=1 row is the current greedy
+argmax cost anchor, while the k=4 row is the current top-k/beam ranking anchor.
+Sampling and probability-reporting modes remain outside this bypass because
+they need calibrated probabilities, not only rank order.
+
 After the corresponding Layer 1 multiplier and accumulator/adder calibration
 jobs merge, synthesize the measured primitive evidence into a decoder
 normalization report:

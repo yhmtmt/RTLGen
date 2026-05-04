@@ -1767,7 +1767,7 @@ def _decoder_gpt2_logit_rank_bypass_evidence(*, item_id: str) -> dict[str, Any]:
     bypass_out = f"{base}/decoder_gpt2_logit_rank_bypass__{item_id}.json"
     bypass_report = f"{base}/decoder_gpt2_logit_rank_bypass__{item_id}.md"
     rough_grid = "decoder_logit_rank_bypass_v1"
-    rank_ppa = "control_plane/shadow_exports/l1_promotions/l1_decoder_bf16_pwl_tie_rank_datapath_v1_r2.json"
+    rank_ppa = "control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_datapath_v1_r2.json"
     commands = [
         {
             "name": "materialize_decoder_gpt2_logit_rank_bypass_contract",
@@ -1851,10 +1851,11 @@ def _decoder_gpt2_logit_rank_bypass_evidence(*, item_id: str) -> dict[str, Any]:
             "candidate_sweep_grid": rough_grid,
             "logit_rank_bypass_out": bypass_out,
             "logit_rank_bypass_report": bypass_report,
-            "rank_datapath_proxy_ppa": rank_ppa,
+            "rank_datapath_ppa": rank_ppa,
             "logit_rank_bypass_scope": (
                 "greedy/top-k GPT-2 prompt-stress check that bypasses softmax and ranks transformed logits "
-                "directly; sampling modes remain out of scope because they require probabilities"
+                "directly; sampling modes remain out of scope because they require probabilities; "
+                "rank cost is anchored to the measured logit-only argmax/top-k Layer 1 datapath"
             ),
         },
         "commands": commands,

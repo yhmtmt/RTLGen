@@ -15,7 +15,7 @@
       "raw-logit rank-bypass candidate",
       "next-token and top-k exactness checks",
       "explicit scope split between rank-only decoding and sampling/probability consumers",
-      "rank datapath PPA proxy from the merged bf16 score/logit tie-rank block"
+      "rank datapath PPA from the merged logit-only argmax/top-k block"
     ],
     "exclude": [
       "temperature sampling",
@@ -33,7 +33,7 @@
   ],
   "risks": [
     "the claim only applies to monotonic rank consumers and does not cover sampling modes",
-    "the PPA row is a conservative rank-datapath proxy until a dedicated logit-only top-k/rank block is measured",
+    "the PPA rows are row-8 Nangate45 circuit-block measurements and still need larger-row/full-array scaling evidence",
     "the GPT-2 prompt-stress set is still a bounded next-token screen, not a larger-model conclusion"
   ],
   "needs_mapper_change": false,
@@ -47,7 +47,8 @@
       "abstraction_layer": "decoder_gpt2_logit_rank_bypass",
       "depends_on_item_ids": [
         "l2_decoder_gpt2_prompt_stress_v1",
-        "l2_decoder_gpt2_tie_rank_frontier_v1"
+        "l2_decoder_gpt2_tie_rank_frontier_v1",
+        "l1_decoder_logit_rank_datapath_v1_r2"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true
@@ -58,7 +59,7 @@
     "docs/proposals/prop_l2_decoder_gpt2_tie_rank_frontier_v1/proposal.json",
     "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_gpt2_prompt_stress__l2_decoder_gpt2_prompt_stress_v1.json",
     "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_gpt2_tie_rank_frontier__l2_decoder_gpt2_tie_rank_frontier_v1.json",
-    "control_plane/shadow_exports/l1_promotions/l1_decoder_bf16_pwl_tie_rank_datapath_v1_r2.json"
+    "control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_datapath_v1_r2.json"
   ],
   "knowledge_refs": [
     "npu/eval/run_llm_decoder_onnx_candidate.py",
