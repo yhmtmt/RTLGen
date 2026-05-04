@@ -1872,6 +1872,45 @@ def _decoder_gpt2_logit_rank_bypass_evidence(*, item_id: str) -> dict[str, Any]:
     }
 
 
+def _decoder_logit_rank_streaming_hierarchy_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    prompt_stress = f"{base}/decoder_gpt2_prompt_stress__l2_decoder_gpt2_prompt_stress_v1.json"
+    logit_rank_bypass = f"{base}/decoder_gpt2_logit_rank_bypass__l2_decoder_gpt2_logit_rank_bypass_v1.json"
+    hierarchy_out = f"{base}/decoder_logit_rank_streaming_hierarchy__{item_id}.json"
+    hierarchy_report = f"{base}/decoder_logit_rank_streaming_hierarchy__{item_id}.md"
+    rank_ppa = "control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_datapath_v1_r2.json"
+    scale_ppa = "control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_scale_v1.json"
+    return {
+        "inputs": {
+            "source_prompt_stress": prompt_stress,
+            "source_logit_rank_bypass": logit_rank_bypass,
+            "rank_datapath_ppa": rank_ppa,
+            "rank_scale_ppa": scale_ppa,
+            "streaming_hierarchy_out": hierarchy_out,
+            "streaming_hierarchy_report": hierarchy_report,
+            "streaming_hierarchy_scope": (
+                "GPT-2 prompt-stress planning gate for a streaming hierarchy decoder that ranks logits "
+                "directly and avoids full-vocabulary probability materialization for greedy/top-k modes"
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_logit_rank_streaming_hierarchy",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_logit_rank_streaming_hierarchy.py "
+                    f"--prompt-stress {prompt_stress} "
+                    f"--logit-rank-bypass {logit_rank_bypass} "
+                    f"--rank-ppa {rank_ppa} "
+                    f"--scale-ppa {scale_ppa} "
+                    f"--out {hierarchy_out} "
+                    f"--out-md {hierarchy_report}"
+                ),
+            },
+        ],
+        "expected_outputs": [hierarchy_out, hierarchy_report],
+    }
+
+
 def _decoder_distilgpt2_prompt_stress_evidence(*, item_id: str) -> dict[str, Any]:
     return _decoder_distilgpt2_quality_evidence_for_dataset(
         item_id=item_id,
@@ -2332,10 +2371,13 @@ def _build_payload(
         "decoder_gpt2_prompt_stress",
         "decoder_gpt2_tie_rank_frontier",
         "decoder_gpt2_logit_rank_bypass",
+        "decoder_logit_rank_streaming_hierarchy",
         "decoder_quantization_outline",
     }:
         if abstraction_layer_name == "decoder_quantization_outline":
             decoder_evidence = _decoder_quantization_outline_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_logit_rank_streaming_hierarchy":
+            decoder_evidence = _decoder_logit_rank_streaming_hierarchy_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_gpt2_logit_rank_bypass":
             decoder_evidence = _decoder_gpt2_logit_rank_bypass_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_gpt2_tie_rank_frontier":

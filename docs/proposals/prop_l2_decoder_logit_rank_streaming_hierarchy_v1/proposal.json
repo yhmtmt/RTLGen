@@ -1,0 +1,77 @@
+{
+  "proposal_id": "prop_l2_decoder_logit_rank_streaming_hierarchy_v1",
+  "created_utc": "2026-05-04T12:30:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_logit_rank_streaming_hierarchy",
+  "title": "Decoder logit-rank streaming hierarchy",
+  "hypothesis": "A full-vocabulary rank-only decoder path can compose the measured logit-rank tiles behind ready/valid streams, carrying token identity and tile completion metadata explicitly so output projection, tile rank, and cross-tile candidate reduction can overlap without requiring softmax probability materialization.",
+  "direct_comparison": {
+    "primary_question": "Is the proposed LogitTileStream-to-CandidateStream hierarchy, plus a first-order streaming performance model, precise enough to guide implementation of overlapped rank-only decoder reduction?",
+    "include": [
+      "LogitTileStream field and handshake contract",
+      "CandidateStream field and handshake contract",
+      "tile_id, base_token_id, lane_valid, and last semantics",
+      "backpressure and packet stability rules",
+      "producer overlap assumptions between output projection and rank reduction",
+      "integration notes for greedy and top-k consumers",
+      "rough latency comparison against measured flat r8/r16/r32 logit-rank datapaths"
+    ],
+    "exclude": [
+      "new RTL implementation",
+      "probability-producing softmax or sampling consumers",
+      "new physical synthesis",
+      "larger-model quality reruns"
+    ],
+    "follow_on_broad_sweep": [
+      "evaluate tile width, candidate count, and reducer-depth choices once the streaming hierarchy is implemented",
+      "compare overlapped streaming reduction against a buffered full-vocabulary rank pass"
+    ]
+  },
+  "expected_benefit": [
+    "turns the logit-rank bypass result into an integration-ready streaming contract",
+    "keeps rank-only serving separated from probability-producing decoder modes",
+    "allows projection and rank reduction latency to overlap while preserving deterministic token identity"
+  ],
+  "risks": [
+    "the proposal is a documentation/spec slice and does not prove RTL timing closure",
+    "candidate buffering requirements depend on downstream ready behavior and chosen top-k width",
+    "the contract applies only to rank-preserving consumers and excludes temperature, top-p, and probability reporting"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_logit_rank_streaming_hierarchy_v1",
+      "task_type": "l2_campaign",
+      "objective": "Review and gate the decoder logit-rank streaming hierarchy contract and rough performance estimate before RTL implementation.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_logit_rank_streaming_hierarchy",
+      "cost_class": "low",
+      "depends_on_item_ids": [
+        "l2_decoder_gpt2_logit_rank_bypass_v1_r2",
+        "l1_decoder_logit_rank_datapath_v1_r2",
+        "l1_decoder_logit_rank_scale_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "approve_or_iterate",
+        "reason": "The gate should determine whether the documented stream hierarchy and first-order latency/FIFO model are sufficient to start a narrow RTL implementation slice."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_decoder_gpt2_logit_rank_bypass_v1/proposal.json",
+    "docs/proposals/prop_l1_decoder_logit_rank_datapath_v1/proposal.json",
+    "docs/proposals/prop_l1_decoder_logit_rank_scale_v1/proposal.json"
+  ],
+  "knowledge_refs": [
+    "npu/docs/decoder_logit_rank_streaming_hierarchy.md",
+    "npu/eval/summarize_llm_decoder_logit_rank_bypass.py",
+    "npu/eval/estimate_llm_decoder_logit_rank_streaming_hierarchy.py",
+    "npu/eval/model_llm_decoder_logit_rank_streaming.py",
+    "src/rtlgen/rtl_operations.cpp",
+    "npu/shell/spec.md"
+  ]
+}

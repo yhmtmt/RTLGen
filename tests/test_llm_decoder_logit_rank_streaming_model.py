@@ -1,0 +1,87 @@
+import json
+from pathlib import Path
+
+from npu.eval.model_llm_decoder_logit_rank_streaming import (
+    build_report,
+    simulate_streaming_hierarchy,
+)
+
+
+def test_streaming_hierarchy_cycle_model_tracks_fifo_depth() -> None:
+    sim = simulate_streaming_hierarchy(
+        vocab_size=16,
+        producer_lanes=4,
+        producer_latency_cycles=1,
+        producer_ii_cycles=1,
+        local_ranker_latency_cycles=2,
+        local_ranker_ii_cycles=1,
+        local_top_k=2,
+        global_merge_latency_cycles=1,
+        global_merge_ii_cycles=2,
+        candidate_fifo_depth_groups=1,
+    )
+
+    assert sim["tile_count"] == 4
+    assert sim["total_candidates_emitted"] == 8
+    assert sim["local_last_done_cycle"] == 6
+    assert sim["global_last_done_cycle"] == 10
+    assert sim["required_fifo_depth_groups"] == 2
+    assert not sim["fifo_capacity_ok"]
+
+
+def test_logit_rank_streaming_report_compares_flat_and_hierarchy(tmp_path: Path) -> None:
+    ppa = tmp_path / "rank_ppa.json"
+    ppa.write_text(
+        json.dumps(
+            {
+                "proposals": [
+                    {
+                        "metrics_ref": {
+                            "metrics_csv": "runs/designs/activations/logit_rank_r8_l16_k1_wrapper/metrics.csv",
+                            "status": "ok",
+                        },
+                        "metric_summary": {
+                            "critical_path_ns": 3.0,
+                            "die_area": 10.0,
+                            "total_power_mw": 0.1,
+                        },
+                    },
+                    {
+                        "metrics_ref": {
+                            "metrics_csv": "runs/designs/activations/logit_rank_r8_l16_k4_wrapper/metrics.csv",
+                            "status": "ok",
+                        },
+                        "metric_summary": {
+                            "critical_path_ns": 4.0,
+                            "die_area": 20.0,
+                            "total_power_mw": 0.2,
+                        },
+                    },
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    report = build_report(
+        rank_ppa_path=ppa,
+        scale_ppa_path=None,
+        vocab_size=32,
+        producer_lanes=8,
+        top_k=4,
+        global_merge_ii_cycles_list=[1, 2],
+        candidate_fifo_depth_groups=8,
+    )
+
+    assert report["model"] == "decoder_logit_rank_streaming_hierarchy_v1"
+    assert len(report["flat_measured_ranker_points"]) == 2
+    assert len(report["hierarchical_streaming_alternatives"]) == 2
+    assert report["flat_measured_ranker_points"][0]["lanes"] == 8
+    fast = report["hierarchical_streaming_alternatives"][0]
+    assert fast["merge_variant"] == "merge_ii_1"
+    assert fast["fifo_capacity_ok"]
+    assert fast["timing"]["latency_us_per_token"] == 0.044
+    assert report["recommendation"]["architecture"] in {
+        "flat_measured_ranker_scan",
+        "hierarchical_streaming_local_rank_global_merge",
+    }
