@@ -1911,6 +1911,50 @@ def _decoder_logit_rank_streaming_hierarchy_evidence(*, item_id: str) -> dict[st
     }
 
 
+def _decoder_logit_rank_streaming_overlap_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    prompt_stress = f"{base}/decoder_gpt2_prompt_stress__l2_decoder_gpt2_prompt_stress_v1.json"
+    logit_rank_bypass = f"{base}/decoder_gpt2_logit_rank_bypass__l2_decoder_gpt2_logit_rank_bypass_v1.json"
+    overlap_out = f"{base}/decoder_logit_rank_streaming_overlap__{item_id}.json"
+    overlap_report = f"{base}/decoder_logit_rank_streaming_overlap__{item_id}.md"
+    rank_ppa = "control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_datapath_v1_r2.json"
+    scale_ppa = "control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_scale_v1.json"
+    return {
+        "inputs": {
+            "source_prompt_stress": prompt_stress,
+            "source_logit_rank_bypass": logit_rank_bypass,
+            "rank_datapath_ppa": rank_ppa,
+            "rank_scale_ppa": scale_ppa,
+            "streaming_overlap_out": overlap_out,
+            "streaming_overlap_report": overlap_report,
+            "streaming_overlap_scope": (
+                "Refine the decoder logit-rank streaming hierarchy with producer-overlap, FIFO, "
+                "candidate-traffic, and perf-sim/RTL equivalence observables before selecting a merge RTL block"
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_logit_rank_streaming_overlap",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_logit_rank_streaming_hierarchy.py "
+                    f"--prompt-stress {prompt_stress} "
+                    f"--logit-rank-bypass {logit_rank_bypass} "
+                    f"--rank-ppa {rank_ppa} "
+                    f"--scale-ppa {scale_ppa} "
+                    "--producer-lanes-list 8,16,32 "
+                    "--top-k-list 1,4 "
+                    "--producer-ii-cycles-list 1,2,4 "
+                    "--global-merge-ii-cycles 1,2,4 "
+                    "--candidate-fifo-depth-groups-list 16,256,4096 "
+                    f"--out {overlap_out} "
+                    f"--out-md {overlap_report}"
+                ),
+            },
+        ],
+        "expected_outputs": [overlap_out, overlap_report],
+    }
+
+
 def _decoder_distilgpt2_prompt_stress_evidence(*, item_id: str) -> dict[str, Any]:
     return _decoder_distilgpt2_quality_evidence_for_dataset(
         item_id=item_id,
@@ -2372,10 +2416,13 @@ def _build_payload(
         "decoder_gpt2_tie_rank_frontier",
         "decoder_gpt2_logit_rank_bypass",
         "decoder_logit_rank_streaming_hierarchy",
+        "decoder_logit_rank_streaming_overlap",
         "decoder_quantization_outline",
     }:
         if abstraction_layer_name == "decoder_quantization_outline":
             decoder_evidence = _decoder_quantization_outline_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_logit_rank_streaming_overlap":
+            decoder_evidence = _decoder_logit_rank_streaming_overlap_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_logit_rank_streaming_hierarchy":
             decoder_evidence = _decoder_logit_rank_streaming_hierarchy_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_gpt2_logit_rank_bypass":

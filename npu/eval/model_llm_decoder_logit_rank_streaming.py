@@ -41,6 +41,10 @@ def _ceil_div(numerator: int, denominator: int) -> int:
     return (numerator + denominator - 1) // denominator
 
 
+def _byte_width(bits: int) -> int:
+    return _ceil_div(bits, 8)
+
+
 def _parse_csv_point(path: str) -> JsonDict:
     match = re.search(r"logit_rank_r(?P<lanes>\d+)_l(?P<bits>\d+)_k(?P<topk>\d+)", path)
     if not match:
@@ -277,6 +281,144 @@ def _flat_point_report(
     }
 
 
+def _traffic_summary(
+    *,
+    vocab_size: int,
+    tile_count: int,
+    producer_lanes: int,
+    top_k: int,
+    logit_bits: int,
+    token_id_bits: int,
+) -> JsonDict:
+    logit_bytes = _byte_width(logit_bits)
+    token_bytes = _byte_width(token_id_bits)
+    materialized_logit_bytes = vocab_size * logit_bytes
+    candidate_bytes_per_entry = logit_bytes + token_bytes
+    candidate_entries = tile_count * top_k
+    candidate_payload_bytes = candidate_entries * candidate_bytes_per_entry
+    candidate_fifo_round_trip_bytes = candidate_payload_bytes * 2
+    final_topk_bytes = top_k * candidate_bytes_per_entry
+    materialized_rank_memory_bytes = materialized_logit_bytes * 2
+    streaming_memory_bytes = candidate_fifo_round_trip_bytes + final_topk_bytes
+    reduction = 0.0
+    if materialized_rank_memory_bytes > 0:
+        reduction = 1.0 - (streaming_memory_bytes / materialized_rank_memory_bytes)
+    return {
+        "logit_bits": logit_bits,
+        "token_id_bits": token_id_bits,
+        "producer_lanes": producer_lanes,
+        "top_k": top_k,
+        "materialized_rank_memory_bytes": materialized_rank_memory_bytes,
+        "streaming_candidate_memory_bytes": streaming_memory_bytes,
+        "candidate_payload_bytes": candidate_payload_bytes,
+        "candidate_fifo_round_trip_bytes": candidate_fifo_round_trip_bytes,
+        "final_topk_bytes": final_topk_bytes,
+        "candidate_entries": candidate_entries,
+        "traffic_reduction_vs_materialized": round(reduction, 6),
+    }
+
+
+def _streaming_overlap_candidate(
+    *,
+    measured_points: list[JsonDict],
+    vocab_size: int,
+    producer_lanes: int,
+    top_k: int,
+    producer_latency_cycles: int,
+    producer_ii_cycles: int,
+    local_ranker_latency_cycles: int,
+    local_ranker_ii_cycles: int,
+    global_merge_latency_cycles: int,
+    global_merge_ii_cycles: int,
+    candidate_fifo_depth_groups: int,
+    fallback_critical_path_ns: float,
+    token_id_bits: int,
+) -> JsonDict:
+    local_point = _select_ranker_point(
+        measured_points,
+        lanes=producer_lanes,
+        top_k=top_k,
+        default_critical_path_ns=fallback_critical_path_ns,
+    )
+    merge_lanes = max(producer_lanes, top_k)
+    global_point = _select_ranker_point(
+        measured_points,
+        lanes=merge_lanes,
+        top_k=top_k,
+        default_critical_path_ns=fallback_critical_path_ns,
+    )
+    local_clock = _as_float(local_point["metrics"].get("critical_path_ns"), fallback_critical_path_ns)
+    global_clock = _as_float(global_point["metrics"].get("critical_path_ns"), fallback_critical_path_ns)
+    hierarchy_clock_ns = max(local_clock, global_clock)
+    sim = simulate_streaming_hierarchy(
+        vocab_size=vocab_size,
+        producer_lanes=producer_lanes,
+        producer_latency_cycles=producer_latency_cycles,
+        producer_ii_cycles=producer_ii_cycles,
+        local_ranker_latency_cycles=local_ranker_latency_cycles,
+        local_ranker_ii_cycles=local_ranker_ii_cycles,
+        local_top_k=top_k,
+        global_merge_latency_cycles=global_merge_latency_cycles,
+        global_merge_ii_cycles=global_merge_ii_cycles,
+        candidate_fifo_depth_groups=candidate_fifo_depth_groups,
+    )
+    rank_scan_cycles = local_ranker_latency_cycles + max(0, sim["tile_count"] - 1) * local_ranker_ii_cycles
+    buffered_e2e_cycles = sim["producer_last_tile_ready_cycle"] + rank_scan_cycles + global_merge_latency_cycles
+    overlap_recovered_cycles = max(0, buffered_e2e_cycles - sim["total_cycles"])
+    logit_bits = _as_int(local_point.get("logit_bits"), 16) or 16
+    candidate = {
+        "architecture": "hierarchical_streaming_local_rank_global_merge",
+        "merge_variant": f"merge_ii_{global_merge_ii_cycles}",
+        "sweep_key": (
+            f"w{producer_lanes}_k{top_k}_prodii{producer_ii_cycles}_"
+            f"mergeii{global_merge_ii_cycles}_fifo{candidate_fifo_depth_groups}"
+        ),
+        **sim,
+        "timing": _time_summary(
+            cycles=sim["total_cycles"],
+            clock_ns=hierarchy_clock_ns,
+            vocab_size=vocab_size,
+        ),
+        "buffered_baseline": {
+            "rank_after_materialization_cycles": buffered_e2e_cycles,
+            "streaming_cycles": sim["total_cycles"],
+            "overlap_recovered_cycles": overlap_recovered_cycles,
+            "overlap_recovered_fraction": (
+                round(overlap_recovered_cycles / buffered_e2e_cycles, 6)
+                if buffered_e2e_cycles > 0
+                else 0.0
+            ),
+        },
+        "traffic": _traffic_summary(
+            vocab_size=vocab_size,
+            tile_count=sim["tile_count"],
+            producer_lanes=producer_lanes,
+            top_k=top_k,
+            logit_bits=logit_bits,
+            token_id_bits=token_id_bits,
+        ),
+        "local_ranker_point": local_point,
+        "global_merge_point": global_point,
+        "equivalence_contract": {
+            "stream_contract": "LogitTileStream/CandidateStream ready-valid v1",
+            "ordering": "accepted tile_id order, lower token_id tie-break",
+            "perf_sim_observables": [
+                "accepted LogitTileStream beat count",
+                "accepted CandidateStream group count",
+                "producer stall cycles",
+                "candidate FIFO max occupancy",
+                "final last-beat completion cycle",
+            ],
+            "rtl_equivalence_requirement": (
+                "A future RTL merge block must match the same candidate ordering, "
+                "valid masking, backpressure, and last-beat completion observables "
+                "before PPA numbers are used in rankings."
+            ),
+        },
+    }
+    return candidate
+
+
 def build_report(
     *,
     rank_ppa_path: Path | None = DEFAULT_RANK_PPA,
@@ -293,6 +435,11 @@ def build_report(
     global_merge_latency_cycles: int = 3,
     global_merge_ii_cycles_list: list[int] | None = None,
     candidate_fifo_depth_groups: int = 16,
+    producer_lanes_list: list[int] | None = None,
+    top_k_list: list[int] | None = None,
+    producer_ii_cycles_list: list[int] | None = None,
+    candidate_fifo_depth_groups_list: list[int] | None = None,
+    token_id_bits: int = 16,
     fallback_critical_path_ns: float = 3.6,
 ) -> JsonDict:
     if vocab_size <= 0:
@@ -301,7 +448,21 @@ def build_report(
         raise ValueError("producer_lanes must be positive")
     if top_k <= 0:
         raise ValueError("top_k must be positive")
+    if token_id_bits <= 0:
+        raise ValueError("token_id_bits must be positive")
     merge_iis = global_merge_ii_cycles_list or [1, 2, 4]
+    lane_options = producer_lanes_list or [producer_lanes]
+    top_k_options = top_k_list or [top_k]
+    producer_ii_options = producer_ii_cycles_list or [producer_ii_cycles]
+    fifo_options = candidate_fifo_depth_groups_list or [candidate_fifo_depth_groups]
+    for name, values in (
+        ("producer_lanes_list", lane_options),
+        ("top_k_list", top_k_options),
+        ("producer_ii_cycles_list", producer_ii_options),
+        ("candidate_fifo_depth_groups_list", fifo_options),
+    ):
+        if any(item <= 0 for item in values):
+            raise ValueError(f"{name} values must be positive")
     measured_points = load_ranker_points_from_paths([rank_ppa_path, scale_ppa_path])
     if not measured_points:
         measured_points = [
@@ -324,49 +485,52 @@ def build_report(
         if _as_int(point.get("lanes")) > 0
     ]
 
-    local_point = _select_ranker_point(
-        measured_points,
-        lanes=producer_lanes,
-        top_k=top_k,
-        default_critical_path_ns=fallback_critical_path_ns,
-    )
-    global_point = _select_ranker_point(
-        measured_points,
-        lanes=max(producer_lanes, top_k),
-        top_k=top_k,
-        default_critical_path_ns=fallback_critical_path_ns,
-    )
-    local_clock = _as_float(local_point["metrics"].get("critical_path_ns"), fallback_critical_path_ns)
-    global_clock = _as_float(global_point["metrics"].get("critical_path_ns"), fallback_critical_path_ns)
-    hierarchy_clock_ns = max(local_clock, global_clock)
     alternatives: list[JsonDict] = []
     for merge_ii in merge_iis:
-        sim = simulate_streaming_hierarchy(
-            vocab_size=vocab_size,
-            producer_lanes=producer_lanes,
-            producer_latency_cycles=producer_latency_cycles,
-            producer_ii_cycles=producer_ii_cycles,
-            local_ranker_latency_cycles=local_ranker_latency_cycles,
-            local_ranker_ii_cycles=local_ranker_ii_cycles,
-            local_top_k=top_k,
-            global_merge_latency_cycles=global_merge_latency_cycles,
-            global_merge_ii_cycles=merge_ii,
-            candidate_fifo_depth_groups=candidate_fifo_depth_groups,
-        )
         alternatives.append(
-            {
-                "architecture": "hierarchical_streaming_local_rank_global_merge",
-                "merge_variant": f"merge_ii_{merge_ii}",
-                **sim,
-                "timing": _time_summary(
-                    cycles=sim["total_cycles"],
-                    clock_ns=hierarchy_clock_ns,
-                    vocab_size=vocab_size,
-                ),
-                "local_ranker_point": local_point,
-                "global_merge_point": global_point,
-            }
+            _streaming_overlap_candidate(
+                measured_points=measured_points,
+                vocab_size=vocab_size,
+                producer_lanes=producer_lanes,
+                top_k=top_k,
+                producer_latency_cycles=producer_latency_cycles,
+                producer_ii_cycles=producer_ii_cycles,
+                local_ranker_latency_cycles=local_ranker_latency_cycles,
+                local_ranker_ii_cycles=local_ranker_ii_cycles,
+                global_merge_latency_cycles=global_merge_latency_cycles,
+                global_merge_ii_cycles=merge_ii,
+                candidate_fifo_depth_groups=candidate_fifo_depth_groups,
+                fallback_critical_path_ns=fallback_critical_path_ns,
+                token_id_bits=token_id_bits,
+            )
         )
+
+    overlap_sweep: list[JsonDict] = []
+    seen_sweep_keys: set[str] = set()
+    for lanes in lane_options:
+        for local_k in top_k_options:
+            for prod_ii in producer_ii_options:
+                for merge_ii in merge_iis:
+                    for fifo_depth in fifo_options:
+                        candidate = _streaming_overlap_candidate(
+                            measured_points=measured_points,
+                            vocab_size=vocab_size,
+                            producer_lanes=lanes,
+                            top_k=local_k,
+                            producer_latency_cycles=producer_latency_cycles,
+                            producer_ii_cycles=prod_ii,
+                            local_ranker_latency_cycles=local_ranker_latency_cycles,
+                            local_ranker_ii_cycles=local_ranker_ii_cycles,
+                            global_merge_latency_cycles=global_merge_latency_cycles,
+                            global_merge_ii_cycles=merge_ii,
+                            candidate_fifo_depth_groups=fifo_depth,
+                            fallback_critical_path_ns=fallback_critical_path_ns,
+                            token_id_bits=token_id_bits,
+                        )
+                        if candidate["sweep_key"] in seen_sweep_keys:
+                            continue
+                        seen_sweep_keys.add(candidate["sweep_key"])
+                        overlap_sweep.append(candidate)
 
     all_candidates = flat + alternatives
     best = min(
@@ -385,6 +549,22 @@ def build_report(
             row["speedup_vs_best_flat"] = round(
                 baseline["timing"]["latency_us_per_token"] / row["timing"]["latency_us_per_token"], 6
             )
+    for row in overlap_sweep:
+        if baseline is None:
+            row["speedup_vs_best_flat"] = None
+        else:
+            row["speedup_vs_best_flat"] = round(
+                baseline["timing"]["latency_us_per_token"] / row["timing"]["latency_us_per_token"], 6
+            )
+    best_overlap = min(
+        overlap_sweep,
+        key=lambda row: (
+            not bool(row.get("fifo_capacity_ok", True)),
+            -row["buffered_baseline"]["overlap_recovered_fraction"],
+            row["timing"]["latency_us_per_token"],
+            row["traffic"]["streaming_candidate_memory_bytes"],
+        ),
+    ) if overlap_sweep else None
 
     return {
         "version": 0.1,
@@ -410,6 +590,11 @@ def build_report(
             "global_merge_latency_cycles": global_merge_latency_cycles,
             "global_merge_ii_cycles_list": merge_iis,
             "candidate_fifo_depth_groups": candidate_fifo_depth_groups,
+            "producer_lanes_list": lane_options,
+            "top_k_list": top_k_options,
+            "producer_ii_cycles_list": producer_ii_options,
+            "candidate_fifo_depth_groups_list": fifo_options,
+            "token_id_bits": token_id_bits,
             "fallback_critical_path_ns": fallback_critical_path_ns,
         },
         "assumptions": [
@@ -417,12 +602,16 @@ def build_report(
             "Local ranker accepts one producer tile per local ranker II and emits one candidate group after local ranker latency.",
             "Candidate FIFO depth is reported in local candidate groups; overflow is reported as capacity evidence, not hidden by backpressure.",
             "Global merge consumes one local candidate group per merge II and produces the final token rank after the last merge latency.",
+            "Buffered baseline waits for the producer to materialize all logits before rank reduction starts.",
+            "Traffic model counts materialized-logit write+read bytes versus candidate FIFO write+read bytes.",
             "Measured row-8 datapath and row-16/row-32 scale critical_path_ns values are used as ranker clock proxies.",
             "Missing lane points are explicit defaults or log2-lane scaled proxies.",
+            "Perf-sim and future RTL equivalence is defined at accepted ready-valid stream beats, FIFO occupancy, valid masks, last-beat completion, and tie-breaking.",
         ],
         "measured_ranker_points": measured_points,
         "flat_measured_ranker_points": flat,
         "hierarchical_streaming_alternatives": alternatives,
+        "overlap_traffic_sweep": overlap_sweep,
         "recommendation": {
             "architecture": best["architecture"],
             "merge_variant": best.get("merge_variant"),
@@ -434,11 +623,28 @@ def build_report(
                 "hierarchical streaming alternatives."
             ),
         },
+        "overlap_recommendation": (
+            {
+                "sweep_key": best_overlap["sweep_key"],
+                "latency_us_per_token": best_overlap["timing"]["latency_us_per_token"],
+                "tokens_per_s": best_overlap["timing"]["tokens_per_s"],
+                "fifo_capacity_ok": best_overlap["fifo_capacity_ok"],
+                "overlap_recovered_fraction": best_overlap["buffered_baseline"]["overlap_recovered_fraction"],
+                "traffic_reduction_vs_materialized": best_overlap["traffic"]["traffic_reduction_vs_materialized"],
+                "reason": (
+                    "Best FIFO-valid overlap candidate by recovered buffered-baseline cycles, "
+                    "then latency and candidate memory traffic."
+                ),
+            }
+            if best_overlap is not None
+            else None
+        ),
     }
 
 
 def _write_markdown(path: Path, payload: JsonDict) -> None:
     rec = payload["recommendation"]
+    overlap = payload.get("overlap_recommendation") or {}
     lines = [
         "# Decoder Logit-Rank Streaming Hierarchy",
         "",
@@ -450,6 +656,9 @@ def _write_markdown(path: Path, payload: JsonDict) -> None:
         f"- tokens_per_s: `{rec['tokens_per_s']}`",
         f"- fifo_capacity_ok: `{rec['fifo_capacity_ok']}`",
         f"- reason: {rec['reason']}",
+        f"- overlap_sweep_best: `{overlap.get('sweep_key', '')}`",
+        f"- overlap_recovered_fraction: `{overlap.get('overlap_recovered_fraction', '')}`",
+        f"- traffic_reduction_vs_materialized: `{overlap.get('traffic_reduction_vs_materialized', '')}`",
         "",
         "## Inputs",
         "",
@@ -503,6 +712,28 @@ def _write_markdown(path: Path, payload: JsonDict) -> None:
                 speedup=row["speedup_vs_best_flat"],
             )
         )
+    lines.extend(
+        [
+            "",
+            "## Overlap And Traffic Sweep",
+            "",
+            "| key | cycles | latency_us | fifo required/capacity | overlap recovered | traffic reduction | speedup vs flat |",
+            "|---|---:|---:|---:|---:|---:|---:|",
+        ]
+    )
+    for row in payload["overlap_traffic_sweep"][:24]:
+        lines.append(
+            "| `{key}` | {cycles} | {latency} | {fifo}/{cap} | {overlap} | {traffic} | {speedup} |".format(
+                key=row["sweep_key"],
+                cycles=row["total_cycles"],
+                latency=row["timing"]["latency_us_per_token"],
+                fifo=row["required_fifo_depth_groups"],
+                cap=row["candidate_fifo_depth_groups"],
+                overlap=row["buffered_baseline"]["overlap_recovered_fraction"],
+                traffic=row["traffic"]["traffic_reduction_vs_materialized"],
+                speedup=row["speedup_vs_best_flat"],
+            )
+        )
     lines.extend(["", "## Assumptions", ""])
     for item in payload["assumptions"]:
         lines.append(f"- {item}")
@@ -535,6 +766,11 @@ def main() -> int:
     ap.add_argument("--global-merge-latency-cycles", type=int, default=3)
     ap.add_argument("--global-merge-ii-cycles", type=_int_list, default=[1, 2, 4])
     ap.add_argument("--candidate-fifo-depth-groups", type=int, default=16)
+    ap.add_argument("--producer-lanes-list", type=_int_list, help="comma-separated producer lane sweep")
+    ap.add_argument("--top-k-list", type=_int_list, help="comma-separated local top-k sweep")
+    ap.add_argument("--producer-ii-cycles-list", type=_int_list, help="comma-separated producer II sweep")
+    ap.add_argument("--candidate-fifo-depth-groups-list", type=_int_list, help="comma-separated FIFO depth sweep")
+    ap.add_argument("--token-id-bits", type=int, default=16)
     ap.add_argument("--fallback-critical-path-ns", type=float, default=3.6)
     ap.add_argument("--out", required=True, help="output JSON path")
     ap.add_argument("--out-md", required=True, help="output Markdown path")
@@ -555,6 +791,11 @@ def main() -> int:
         global_merge_latency_cycles=args.global_merge_latency_cycles,
         global_merge_ii_cycles_list=args.global_merge_ii_cycles,
         candidate_fifo_depth_groups=args.candidate_fifo_depth_groups,
+        producer_lanes_list=args.producer_lanes_list,
+        top_k_list=args.top_k_list,
+        producer_ii_cycles_list=args.producer_ii_cycles_list,
+        candidate_fifo_depth_groups_list=args.candidate_fifo_depth_groups_list,
+        token_id_bits=args.token_id_bits,
         fallback_critical_path_ns=args.fallback_critical_path_ns,
     )
     out = Path(args.out)

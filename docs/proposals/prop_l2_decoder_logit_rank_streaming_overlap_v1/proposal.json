@@ -1,0 +1,76 @@
+{
+  "proposal_id": "prop_l2_decoder_logit_rank_streaming_overlap_v1",
+  "created_utc": "2026-05-04T21:10:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_logit_rank_streaming_overlap",
+  "title": "Decoder logit-rank streaming overlap and traffic model",
+  "hypothesis": "A rank-only decoder hierarchy should be judged by overlapped producer/reducer latency and candidate traffic, not only standalone rank latency. The perf model must expose the same ready/valid stream observables that later RTL will be required to match.",
+  "direct_comparison": {
+    "primary_question": "Which producer lane width, producer II, merge II, top-k, and FIFO depth combinations preserve the logit-rank stream contract while recovering materialized-rank latency and reducing memory traffic?",
+    "include": [
+      "buffered rank-after-materialization cycle baseline",
+      "streaming producer/ranker/reducer overlap cycles",
+      "candidate FIFO occupancy and capacity validity",
+      "candidate traffic versus materialized-logit write/read traffic",
+      "perf-sim/RTL equivalence observables for ready/valid streams",
+      "sweep over producer lanes, top-k, producer II, merge II, and FIFO depth"
+    ],
+    "exclude": [
+      "new RTL implementation",
+      "new physical synthesis",
+      "probability-producing softmax or sampling consumers",
+      "larger-model quality reruns"
+    ],
+    "follow_on_broad_sweep": [
+      "select the first candidate-stream merge RTL block using the sweep frontier",
+      "measure candidate-stream merge PPA and bind the measured merge block back into this model"
+    ]
+  },
+  "expected_benefit": [
+    "separates rank-only interface readiness from latency and memory-traffic readiness",
+    "identifies whether hierarchy value comes from overlap, traffic reduction, or neither",
+    "sets explicit perf-sim/RTL equivalence observables before measuring a merge datapath"
+  ],
+  "risks": [
+    "traffic model is byte-count based and does not yet include SRAM banking, NoC arbitration, or floorplan distance",
+    "merge latency remains a proxy until candidate-stream merge RTL is measured",
+    "equivalence observables are specified but not yet checked against RTL"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_logit_rank_streaming_overlap_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run the refined decoder logit-rank streaming overlap and traffic model, preserving explicit perf-sim/RTL equivalence observables for the follow-on merge RTL block.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_logit_rank_streaming_overlap",
+      "cost_class": "low",
+      "depends_on_item_ids": [
+        "l2_decoder_logit_rank_streaming_hierarchy_v1",
+        "l2_decoder_gpt2_logit_rank_bypass_v1_r2",
+        "l1_decoder_logit_rank_datapath_v1_r2",
+        "l1_decoder_logit_rank_scale_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "The expected next step is to choose the first measured candidate-stream merge RTL block, not to claim the hierarchy is already a PPA win."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_decoder_logit_rank_streaming_hierarchy_v1/proposal.json",
+    "docs/proposals/prop_l2_decoder_gpt2_logit_rank_bypass_v1/proposal.json",
+    "docs/proposals/prop_l1_decoder_logit_rank_datapath_v1/proposal.json",
+    "docs/proposals/prop_l1_decoder_logit_rank_scale_v1/proposal.json"
+  ],
+  "knowledge_refs": [
+    "npu/docs/decoder_logit_rank_streaming_hierarchy.md",
+    "npu/eval/estimate_llm_decoder_logit_rank_streaming_hierarchy.py",
+    "npu/eval/model_llm_decoder_logit_rank_streaming.py",
+    "tests/test_llm_decoder_logit_rank_streaming_model.py"
+  ]
+}
