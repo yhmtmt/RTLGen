@@ -1686,6 +1686,35 @@ def _decoder_gpt2_quality_evidence(*, item_id: str) -> dict[str, Any]:
     )
 
 
+def _decoder_gpt2_prompt_stress_evidence(*, item_id: str) -> dict[str, Any]:
+    return _decoder_distilgpt2_quality_evidence_for_dataset(
+        item_id=item_id,
+        base="runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1",
+        dataset_id="llm_decoder_eval_gpt2_prompt_stress_v1",
+        output_prefix="decoder_gpt2_prompt_stress",
+        command_suffix="prompt_stress",
+        command_family="gpt2",
+        hf_model_id="gpt2",
+        contract_id="llm_decoder_gpt2_trained_v1",
+        model_dir="runs/models/llm_decoder_gpt2_trained_v1",
+        tokenizer_dir="runs/tokenizers/llm_decoder_gpt2_trained_v1",
+        materialized_model_scope=(
+            "GPT-2 prompt-stress confirmation using evaluator-local generated ONNX/tokenizer "
+            "artifacts; generated model files are intentionally gitignored and shared with the "
+            "GPT-2 quality gate"
+        ),
+        trained_quality_scope=(
+            "broader prompt/input-distribution stress check on GPT-2 small after the 24-sample "
+            "GPT-2 checkpoint gate stayed exact-safe"
+        ),
+        dataset_status="materialized_gpt2_prompt_stress_manifest_v1",
+        dataset_notes=(
+            "GPT-2 prompt-stress dataset. Run materialize_hf_decoder_contract.py before generating "
+            "reference/candidate manifests because the model/tokenizer artifacts are gitignored."
+        ),
+    )
+
+
 def _decoder_distilgpt2_prompt_stress_evidence(*, item_id: str) -> dict[str, Any]:
     return _decoder_distilgpt2_quality_evidence_for_dataset(
         item_id=item_id,
@@ -2143,10 +2172,13 @@ def _build_payload(
         "decoder_distilgpt2_quality",
         "decoder_distilgpt2_prompt_stress",
         "decoder_gpt2_quality",
+        "decoder_gpt2_prompt_stress",
         "decoder_quantization_outline",
     }:
         if abstraction_layer_name == "decoder_quantization_outline":
             decoder_evidence = _decoder_quantization_outline_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_gpt2_prompt_stress":
+            decoder_evidence = _decoder_gpt2_prompt_stress_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_gpt2_quality":
             decoder_evidence = _decoder_gpt2_quality_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_distilgpt2_prompt_stress":

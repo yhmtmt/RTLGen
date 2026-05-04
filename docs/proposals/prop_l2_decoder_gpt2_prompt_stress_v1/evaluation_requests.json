@@ -1,0 +1,18 @@
+{
+  "proposal_id": "prop_l2_decoder_gpt2_prompt_stress_v1",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_gpt2_prompt_stress_v1",
+      "task_type": "l2_campaign",
+      "objective": "Check whether bf16/PWL remains exact-safe on a broader GPT-2 small prompt-stress workload before moving to QAT or larger-array claims.",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_gpt2_prompt_stress",
+      "depends_on_item_ids": [
+        "l2_decoder_gpt2_quality_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    }
+  ]
+}
