@@ -1,0 +1,83 @@
+{
+  "bypass_scope": {
+    "generation_modes": [
+      "greedy_next_token",
+      "topk_ranking",
+      "beam_candidate_ranking"
+    ],
+    "kept_datapaths": [
+      "logit_transform",
+      "topk_or_argmax_rank"
+    ],
+    "not_valid_for": [
+      "temperature_sampling",
+      "top_p_sampling",
+      "probability_reporting"
+    ],
+    "removed_datapaths": [
+      "softmax_exp_or_pwl",
+      "softmax_sum_normalization",
+      "reciprocal_normalization",
+      "probability_quantization"
+    ]
+  },
+  "decision": {
+    "decision": "logit_rank_bypass_exact_safe",
+    "reason": "Raw-logit ranking matches the reference next-token and top-k gate, so greedy/top-k generation does not need softmax, reciprocal normalization, or probability quantization on this workload.",
+    "reference_candidate": "candidate_onnx_softmax_exact",
+    "selected_candidate": "candidate_onnx_logit_rank_bypass"
+  },
+  "next_step": [
+    "Use logit-rank bypass as the greedy/top-k architecture path if the evaluator result stays exact-safe.",
+    "Open a dedicated Layer 1 logit-only top-k/argmax datapath measurement before full array-level PPA comparison.",
+    "Keep approximate softmax work for sampling modes where calibrated probabilities are required."
+  ],
+  "quality": {
+    "exact_softmax": {
+      "exact_safe": true,
+      "next_token_match_rate": 1.0,
+      "next_token_matches": 96,
+      "next_token_mismatch_sample_ids": [],
+      "sample_count": 96,
+      "topk_contains_reference_rate": 1.0,
+      "topk_matches": 96,
+      "topk_miss_sample_ids": []
+    },
+    "logit_rank_bypass": {
+      "exact_safe": true,
+      "next_token_match_rate": 1.0,
+      "next_token_matches": 96,
+      "next_token_mismatch_sample_ids": [],
+      "sample_count": 96,
+      "topk_contains_reference_rate": 1.0,
+      "topk_matches": 96,
+      "topk_miss_sample_ids": []
+    }
+  },
+  "rank_datapath_proxy": {
+    "note": "The existing score/logit tie-rank block is a conservative rank-like upper bound because raw-logit ranking needs only one comparison key. A dedicated logit-only top-k block should be measured before final array-level PPA claims.",
+    "ppa": {
+      "metrics": {
+        "critical_path_ns": 3.2925,
+        "die_area": 6786.4644,
+        "total_power_mw": 0.00526
+      },
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/score_tie_rank_r8_s16_l16_wrapper/metrics.csv",
+        "param_hash": "aa83599c",
+        "platform": "nangate45",
+        "result_kind": "physical_metrics",
+        "result_path": "runs/designs/activations/score_tie_rank_r8_s16_l16_wrapper/work/aa83599c/result.json",
+        "status": "ok",
+        "tag": "score_tie_rank_nangate45_highutil_4c4fe1ea"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows"
+    },
+    "source": "control_plane/shadow_exports/l1_promotions/l1_decoder_bf16_pwl_tie_rank_datapath_v1_r2.json",
+    "status": "upper_bound_from_score_tie_rank"
+  },
+  "rough_grid": "decoder_logit_rank_bypass_v1",
+  "source_sweep": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_quality_sweep__l2_decoder_gpt2_logit_rank_bypass_v1.json",
+  "task": "greedy_next_token",
+  "version": 0.1
+}
