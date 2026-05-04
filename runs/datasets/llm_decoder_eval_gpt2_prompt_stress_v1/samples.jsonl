@@ -1,0 +1,96 @@
+{"sample_id":"gpt2_stress_geo_france_capital","prompt":"The capital city of France is","expected_continuation":" Paris","category":"factual_geo"}
+{"sample_id":"gpt2_stress_geo_japan_capital","prompt":"The capital city of Japan is","expected_continuation":" Tokyo","category":"factual_geo"}
+{"sample_id":"gpt2_stress_geo_germany_capital","prompt":"The capital city of Germany is","expected_continuation":" Berlin","category":"factual_geo"}
+{"sample_id":"gpt2_stress_geo_italy_capital","prompt":"The capital city of Italy is","expected_continuation":" Rome","category":"factual_geo"}
+{"sample_id":"gpt2_stress_geo_spain_capital","prompt":"The capital city of Spain is","expected_continuation":" Madrid","category":"factual_geo"}
+{"sample_id":"gpt2_stress_geo_canada_capital","prompt":"The capital city of Canada is","expected_continuation":" Ottawa","category":"factual_geo"}
+{"sample_id":"gpt2_stress_geo_australia_capital","prompt":"The capital city of Australia is","expected_continuation":" Canberra","category":"factual_geo"}
+{"sample_id":"gpt2_stress_geo_brazil_capital","prompt":"The capital city of Brazil is","expected_continuation":" Brasilia","category":"factual_geo"}
+{"sample_id":"gpt2_stress_science_water_freezes","prompt":"Water freezes at zero degrees","expected_continuation":" Celsius","category":"science_fact"}
+{"sample_id":"gpt2_stress_science_water_boils","prompt":"Water boils at one hundred degrees","expected_continuation":" Celsius","category":"science_fact"}
+{"sample_id":"gpt2_stress_science_earth_orbits","prompt":"The Earth orbits around the","expected_continuation":" Sun","category":"science_fact"}
+{"sample_id":"gpt2_stress_science_moon_orbits","prompt":"The Moon orbits around the","expected_continuation":" Earth","category":"science_fact"}
+{"sample_id":"gpt2_stress_science_humans_breathe","prompt":"Humans breathe in oxygen and breathe out","expected_continuation":" carbon","category":"science_fact"}
+{"sample_id":"gpt2_stress_science_plants_need","prompt":"Plants need sunlight, water, and","expected_continuation":" carbon","category":"science_fact"}
+{"sample_id":"gpt2_stress_science_ice_is","prompt":"Ice is the solid form of","expected_continuation":" water","category":"science_fact"}
+{"sample_id":"gpt2_stress_science_fire_is","prompt":"Fire is usually hot and produces","expected_continuation":" light","category":"science_fact"}
+{"sample_id":"gpt2_stress_color_banana","prompt":"A ripe banana is usually","expected_continuation":" yellow","category":"commonsense_color"}
+{"sample_id":"gpt2_stress_color_sky","prompt":"On a clear day, the sky is","expected_continuation":" blue","category":"commonsense_color"}
+{"sample_id":"gpt2_stress_color_grass","prompt":"Healthy grass is usually","expected_continuation":" green","category":"commonsense_color"}
+{"sample_id":"gpt2_stress_color_snow","prompt":"Fresh snow is usually","expected_continuation":" white","category":"commonsense_color"}
+{"sample_id":"gpt2_stress_color_coal","prompt":"A piece of coal is usually","expected_continuation":" black","category":"commonsense_color"}
+{"sample_id":"gpt2_stress_color_lime","prompt":"A ripe lime is usually","expected_continuation":" green","category":"commonsense_color"}
+{"sample_id":"gpt2_stress_color_strawberry","prompt":"A ripe strawberry is usually","expected_continuation":" red","category":"commonsense_color"}
+{"sample_id":"gpt2_stress_color_ocean","prompt":"From far away, the ocean often looks","expected_continuation":" blue","category":"commonsense_color"}
+{"sample_id":"gpt2_stress_math_two_plus_two","prompt":"2 + 2 =","expected_continuation":" 4","category":"arithmetic_short"}
+{"sample_id":"gpt2_stress_math_seven_plus_five","prompt":"7 + 5 =","expected_continuation":" 12","category":"arithmetic_short"}
+{"sample_id":"gpt2_stress_math_ten_minus_three","prompt":"10 - 3 =","expected_continuation":" 7","category":"arithmetic_short"}
+{"sample_id":"gpt2_stress_math_nine_minus_four","prompt":"9 - 4 =","expected_continuation":" 5","category":"arithmetic_short"}
+{"sample_id":"gpt2_stress_math_three_times_three","prompt":"3 * 3 =","expected_continuation":" 9","category":"arithmetic_short"}
+{"sample_id":"gpt2_stress_math_four_times_five","prompt":"4 * 5 =","expected_continuation":" 20","category":"arithmetic_short"}
+{"sample_id":"gpt2_stress_math_eight_div_two","prompt":"8 / 2 =","expected_continuation":" 4","category":"arithmetic_short"}
+{"sample_id":"gpt2_stress_math_half_of_ten","prompt":"Half of ten is","expected_continuation":" five","category":"arithmetic_short"}
+{"sample_id":"gpt2_stress_sequence_numbers","prompt":"One, two, three, four,","expected_continuation":" five","category":"sequence"}
+{"sample_id":"gpt2_stress_sequence_letters","prompt":"A, B, C, D,","expected_continuation":" E","category":"sequence"}
+{"sample_id":"gpt2_stress_sequence_weekdays","prompt":"Monday, Tuesday, Wednesday,","expected_continuation":" Thursday","category":"sequence"}
+{"sample_id":"gpt2_stress_sequence_months","prompt":"January, February, March,","expected_continuation":" April","category":"sequence"}
+{"sample_id":"gpt2_stress_sequence_countdown","prompt":"Five, four, three, two,","expected_continuation":" one","category":"sequence"}
+{"sample_id":"gpt2_stress_sequence_planets","prompt":"Mercury, Venus, Earth,","expected_continuation":" Mars","category":"sequence"}
+{"sample_id":"gpt2_stress_sequence_directions","prompt":"North, south, east, and","expected_continuation":" west","category":"sequence"}
+{"sample_id":"gpt2_stress_sequence_alphabet_end","prompt":"X, Y,","expected_continuation":" Z","category":"sequence"}
+{"sample_id":"gpt2_stress_code_python_return_sum","prompt":"def add(a, b):\n    return","expected_continuation":" a","category":"code_python"}
+{"sample_id":"gpt2_stress_code_python_loop_print","prompt":"for i in range(3):\n    print","expected_continuation":"(i)","category":"code_python"}
+{"sample_id":"gpt2_stress_code_python_if_positive","prompt":"if x > 0:\n    print","expected_continuation":"(\"","category":"code_python"}
+{"sample_id":"gpt2_stress_code_python_list_append","prompt":"items = []\nitems.append","expected_continuation":"(","category":"code_python"}
+{"sample_id":"gpt2_stress_code_js_function","prompt":"function add(a, b) { return","expected_continuation":" a","category":"code_javascript"}
+{"sample_id":"gpt2_stress_code_js_console","prompt":"for (let i = 0; i < 3; i++) console.log","expected_continuation":"(","category":"code_javascript"}
+{"sample_id":"gpt2_stress_code_json_key","prompt":"{\"name\":","expected_continuation":" \"","category":"code_json"}
+{"sample_id":"gpt2_stress_code_sql_select","prompt":"SELECT name FROM users WHERE id =","expected_continuation":" 1","category":"code_sql"}
+{"sample_id":"gpt2_stress_dialogue_greeting","prompt":"User: Hello\nAssistant:","expected_continuation":" Hello","category":"dialogue"}
+{"sample_id":"gpt2_stress_dialogue_help","prompt":"User: Can you help me?\nAssistant:","expected_continuation":" Yes","category":"dialogue"}
+{"sample_id":"gpt2_stress_dialogue_thanks","prompt":"User: Thanks for your help.\nAssistant:","expected_continuation":" You","category":"dialogue"}
+{"sample_id":"gpt2_stress_dialogue_question","prompt":"User: What time is it?\nAssistant:","expected_continuation":" I","category":"dialogue"}
+{"sample_id":"gpt2_stress_dialogue_weather","prompt":"User: Is it raining?\nAssistant:","expected_continuation":" I","category":"dialogue"}
+{"sample_id":"gpt2_stress_dialogue_name","prompt":"User: What is your name?\nAssistant:","expected_continuation":" I","category":"dialogue"}
+{"sample_id":"gpt2_stress_dialogue_goodbye","prompt":"User: Goodbye\nAssistant:","expected_continuation":" Goodbye","category":"dialogue"}
+{"sample_id":"gpt2_stress_dialogue_summary","prompt":"User: Summarize this in one word: excellent.\nAssistant:","expected_continuation":" excellent","category":"dialogue"}
+{"sample_id":"gpt2_stress_quote_shakespeare","prompt":"To be or not to be, that is the","expected_continuation":" question","category":"quote_completion"}
+{"sample_id":"gpt2_stress_quote_kennedy","prompt":"Ask not what your country can do for","expected_continuation":" you","category":"quote_completion"}
+{"sample_id":"gpt2_stress_quote_lorem","prompt":"Lorem ipsum dolor sit","expected_continuation":" amet","category":"quote_completion"}
+{"sample_id":"gpt2_stress_quote_once_time","prompt":"Once upon a time, there was a","expected_continuation":" little","category":"quote_completion"}
+{"sample_id":"gpt2_stress_quote_call_me","prompt":"Call me","expected_continuation":" Ishmael","category":"quote_completion"}
+{"sample_id":"gpt2_stress_quote_best_times","prompt":"It was the best of times, it was the","expected_continuation":" worst","category":"quote_completion"}
+{"sample_id":"gpt2_stress_quote_dark_stormy","prompt":"It was a dark and stormy","expected_continuation":" night","category":"quote_completion"}
+{"sample_id":"gpt2_stress_quote_four_score","prompt":"Four score and seven years","expected_continuation":" ago","category":"quote_completion"}
+{"sample_id":"gpt2_stress_narrative_meeting","prompt":"In today's meeting, the team decided to","expected_continuation":" continue","category":"narrative"}
+{"sample_id":"gpt2_stress_narrative_story","prompt":"The small village was quiet until","expected_continuation":" the","category":"narrative"}
+{"sample_id":"gpt2_stress_narrative_robot","prompt":"The robot opened its eyes and","expected_continuation":" saw","category":"narrative"}
+{"sample_id":"gpt2_stress_narrative_lab","prompt":"Inside the laboratory, the experiment began to","expected_continuation":" fail","category":"narrative"}
+{"sample_id":"gpt2_stress_narrative_train","prompt":"The train arrived late because","expected_continuation":" the","category":"narrative"}
+{"sample_id":"gpt2_stress_narrative_market","prompt":"At the market, she bought apples and","expected_continuation":" oranges","category":"narrative"}
+{"sample_id":"gpt2_stress_narrative_letter","prompt":"He opened the letter and read the","expected_continuation":" first","category":"narrative"}
+{"sample_id":"gpt2_stress_narrative_map","prompt":"The old map showed a path through the","expected_continuation":" forest","category":"narrative"}
+{"sample_id":"gpt2_stress_long_decoder","prompt":"In a compact language model evaluation, we compare exact and approximate probability paths because small numerical changes can alter","expected_continuation":" the","category":"long_context"}
+{"sample_id":"gpt2_stress_long_quant","prompt":"When a decoder uses a quantized softmax approximation, the most useful diagnostic is not only aggregate accuracy but also the distribution of","expected_continuation":" errors","category":"long_context"}
+{"sample_id":"gpt2_stress_long_hardware","prompt":"A hardware accelerator that looks efficient on a tiny prompt can still fail when the same approximation meets a broader set of","expected_continuation":" inputs","category":"long_context"}
+{"sample_id":"gpt2_stress_long_margin","prompt":"The top two logits can be separated by a large margin or by a very small margin, and this matters because","expected_continuation":" the","category":"long_context"}
+{"sample_id":"gpt2_stress_long_training","prompt":"Quantization-aware training can sometimes recover ranking errors, but before adding that machinery we should first measure whether","expected_continuation":" the","category":"long_context"}
+{"sample_id":"gpt2_stress_long_model","prompt":"Moving from a tiny decoder to gpt2 changes the trained weight distribution, hidden dimension, and layer count while keeping","expected_continuation":" the","category":"long_context"}
+{"sample_id":"gpt2_stress_long_cache","prompt":"During autoregressive decoding, the key value cache grows with each token, so a practical accelerator must manage both compute and","expected_continuation":" memory","category":"long_context"}
+{"sample_id":"gpt2_stress_long_frontier","prompt":"The current frontier is promising only if the exact-safe result remains stable across prompts that represent different entropy and","expected_continuation":" margin","category":"long_context"}
+{"sample_id":"gpt2_stress_ambiguous_yes_no","prompt":"The answer could be yes or","expected_continuation":" no","category":"ambiguous_low_margin"}
+{"sample_id":"gpt2_stress_ambiguous_many_options","prompt":"The next token might be one of many","expected_continuation":" possible","category":"ambiguous_low_margin"}
+{"sample_id":"gpt2_stress_ambiguous_left_right","prompt":"Turn left or","expected_continuation":" right","category":"ambiguous_low_margin"}
+{"sample_id":"gpt2_stress_ambiguous_hot_cold","prompt":"The drink may be hot or","expected_continuation":" cold","category":"ambiguous_low_margin"}
+{"sample_id":"gpt2_stress_ambiguous_up_down","prompt":"The switch can be up or","expected_continuation":" down","category":"ambiguous_low_margin"}
+{"sample_id":"gpt2_stress_ambiguous_true_false","prompt":"The statement is either true or","expected_continuation":" false","category":"ambiguous_low_margin"}
+{"sample_id":"gpt2_stress_ambiguous_start_stop","prompt":"The command says start or","expected_continuation":" stop","category":"ambiguous_low_margin"}
+{"sample_id":"gpt2_stress_ambiguous_more_less","prompt":"The value may become more or","expected_continuation":" less","category":"ambiguous_low_margin"}
+{"sample_id":"gpt2_stress_symbolic_if_positive","prompt":"if x > 0 and y > 0 then","expected_continuation":" x","category":"symbolic_logic"}
+{"sample_id":"gpt2_stress_symbolic_boolean","prompt":"True and False equals","expected_continuation":" False","category":"symbolic_logic"}
+{"sample_id":"gpt2_stress_symbolic_compare","prompt":"If A is greater than B, then B is","expected_continuation":" less","category":"symbolic_logic"}
+{"sample_id":"gpt2_stress_symbolic_set","prompt":"If every cat is an animal and Luna is a cat, then Luna is an","expected_continuation":" animal","category":"symbolic_logic"}
+{"sample_id":"gpt2_stress_symbolic_parentheses","prompt":"The expression (a + b) * c expands to","expected_continuation":" a","category":"symbolic_logic"}
+{"sample_id":"gpt2_stress_symbolic_negation","prompt":"If it is not raining, then the ground may be","expected_continuation":" dry","category":"symbolic_logic"}
+{"sample_id":"gpt2_stress_symbolic_either","prompt":"Either the test passes or it","expected_continuation":" fails","category":"symbolic_logic"}
+{"sample_id":"gpt2_stress_symbolic_all_some","prompt":"All squares are rectangles, but not all rectangles are","expected_continuation":" squares","category":"symbolic_logic"}
