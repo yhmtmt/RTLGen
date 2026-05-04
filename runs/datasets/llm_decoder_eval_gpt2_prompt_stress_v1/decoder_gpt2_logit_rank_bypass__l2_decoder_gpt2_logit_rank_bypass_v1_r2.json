@@ -1,0 +1,158 @@
+{
+  "bypass_scope": {
+    "generation_modes": [
+      "greedy_next_token",
+      "topk_ranking",
+      "beam_candidate_ranking"
+    ],
+    "kept_datapaths": [
+      "logit_transform",
+      "topk_or_argmax_rank"
+    ],
+    "not_valid_for": [
+      "temperature_sampling",
+      "top_p_sampling",
+      "probability_reporting"
+    ],
+    "removed_datapaths": [
+      "softmax_exp_or_pwl",
+      "softmax_sum_normalization",
+      "reciprocal_normalization",
+      "probability_quantization"
+    ]
+  },
+  "decision": {
+    "decision": "logit_rank_bypass_exact_safe",
+    "reason": "Raw-logit ranking matches the reference next-token and top-k gate, so greedy/top-k generation does not need softmax, reciprocal normalization, or probability quantization on this workload.",
+    "reference_candidate": "candidate_onnx_softmax_exact",
+    "selected_candidate": "candidate_onnx_logit_rank_bypass"
+  },
+  "next_step": [
+    "Use logit-rank bypass as the greedy/top-k architecture path if the evaluator result stays exact-safe.",
+    "Use the measured logit-only argmax/top-k rows in decoder ranking instead of the older score/tie-rank proxy.",
+    "Keep approximate softmax work for sampling modes where calibrated probabilities are required."
+  ],
+  "quality": {
+    "exact_softmax": {
+      "exact_safe": true,
+      "next_token_match_rate": 1.0,
+      "next_token_matches": 96,
+      "next_token_mismatch_sample_ids": [],
+      "sample_count": 96,
+      "topk_contains_reference_rate": 1.0,
+      "topk_matches": 96,
+      "topk_miss_sample_ids": []
+    },
+    "logit_rank_bypass": {
+      "exact_safe": true,
+      "next_token_match_rate": 1.0,
+      "next_token_matches": 96,
+      "next_token_mismatch_sample_ids": [],
+      "sample_count": 96,
+      "topk_contains_reference_rate": 1.0,
+      "topk_matches": 96,
+      "topk_miss_sample_ids": []
+    }
+  },
+  "rank_datapath_ppa": {
+    "argmax_ppa": {
+      "metrics": {
+        "critical_path_ns": 3.1833,
+        "die_area": 3738.711025,
+        "total_power_mw": 0.00348
+      },
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/logit_rank_r8_l16_k1_wrapper/metrics.csv",
+        "param_hash": "692e429d",
+        "platform": "nangate45",
+        "result_kind": "physical_metrics",
+        "result_path": "runs/designs/activations/logit_rank_r8_l16_k1_wrapper/work/692e429d/result.json",
+        "status": "ok",
+        "tag": "logit_rank_nangate45_highutil_4c4fe1ea"
+      },
+      "role": "argmax_k1",
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows"
+    },
+    "note": "A merged logit-only datapath artifact is used when available. For greedy decoding, the argmax k=1 row is the closest physical proxy; for top-k/beam ranking, the k=4 row is the current measured proxy. Older score/tie-rank artifacts remain accepted only as conservative fallback evidence.",
+    "ppa": {
+      "metrics": {
+        "critical_path_ns": 3.1833,
+        "die_area": 3738.711025,
+        "total_power_mw": 0.00348
+      },
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/logit_rank_r8_l16_k1_wrapper/metrics.csv",
+        "param_hash": "692e429d",
+        "platform": "nangate45",
+        "result_kind": "physical_metrics",
+        "result_path": "runs/designs/activations/logit_rank_r8_l16_k1_wrapper/work/692e429d/result.json",
+        "status": "ok",
+        "tag": "logit_rank_nangate45_highutil_4c4fe1ea"
+      },
+      "role": "argmax_k1",
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows"
+    },
+    "ppa_rows": [
+      {
+        "metrics": {
+          "critical_path_ns": 3.1833,
+          "die_area": 3738.711025,
+          "total_power_mw": 0.00348
+        },
+        "metrics_ref": {
+          "metrics_csv": "runs/designs/activations/logit_rank_r8_l16_k1_wrapper/metrics.csv",
+          "param_hash": "692e429d",
+          "platform": "nangate45",
+          "result_kind": "physical_metrics",
+          "result_path": "runs/designs/activations/logit_rank_r8_l16_k1_wrapper/work/692e429d/result.json",
+          "status": "ok",
+          "tag": "logit_rank_nangate45_highutil_4c4fe1ea"
+        },
+        "role": "argmax_k1",
+        "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows"
+      },
+      {
+        "metrics": {
+          "critical_path_ns": 3.6015,
+          "die_area": 8605.345225,
+          "total_power_mw": 0.0164
+        },
+        "metrics_ref": {
+          "metrics_csv": "runs/designs/activations/logit_rank_r8_l16_k4_wrapper/metrics.csv",
+          "param_hash": "3c5f4376",
+          "platform": "nangate45",
+          "result_kind": "physical_metrics",
+          "result_path": "runs/designs/activations/logit_rank_r8_l16_k4_wrapper/work/3c5f4376/result.json",
+          "status": "ok",
+          "tag": "logit_rank_nangate45_highutil_2ae5d3c9"
+        },
+        "role": "topk_k4",
+        "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows"
+      }
+    ],
+    "source": "control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_datapath_v1_r2.json",
+    "status": "measured_logit_rank_datapath",
+    "topk_ppa": {
+      "metrics": {
+        "critical_path_ns": 3.6015,
+        "die_area": 8605.345225,
+        "total_power_mw": 0.0164
+      },
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/logit_rank_r8_l16_k4_wrapper/metrics.csv",
+        "param_hash": "3c5f4376",
+        "platform": "nangate45",
+        "result_kind": "physical_metrics",
+        "result_path": "runs/designs/activations/logit_rank_r8_l16_k4_wrapper/work/3c5f4376/result.json",
+        "status": "ok",
+        "tag": "logit_rank_nangate45_highutil_2ae5d3c9"
+      },
+      "role": "topk_k4",
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows"
+    }
+  },
+  "rough_grid": "decoder_logit_rank_bypass_v1",
+  "source_sweep": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_quality_sweep__l2_decoder_gpt2_logit_rank_bypass_v1_r2.json",
+  "task": "greedy_next_token",
+  "version": 0.1
+}
