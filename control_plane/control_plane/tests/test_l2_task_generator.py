@@ -1204,6 +1204,68 @@ def test_generate_l2_campaign_task_adds_decoder_distilgpt2_quality_evidence() ->
             }
 
 
+def test_generate_l2_campaign_task_adds_decoder_distilgpt2_prompt_stress_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    item_id="l2_decoder_distilgpt2_prompt_stress_v1",
+                    proposal_id="prop_l2_decoder_distilgpt2_prompt_stress_v1",
+                    proposal_path="docs/proposals/prop_l2_decoder_distilgpt2_prompt_stress_v1/proposal.json",
+                    evaluation_mode="frontier_detail",
+                    abstraction_layer="decoder_distilgpt2_prompt_stress",
+                    expected_direction="iterate",
+                    comparison_role="ranking",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            command_names = [command["name"] for command in work_item.command_manifest]
+            assert command_names[:7] == [
+                "materialize_decoder_distilgpt2_prompt_stress_contract",
+                "generate_decoder_distilgpt2_prompt_stress_reference",
+                "generate_decoder_distilgpt2_prompt_stress_candidate",
+                "validate_decoder_distilgpt2_prompt_stress_contract",
+                "compare_decoder_distilgpt2_prompt_stress_quality",
+                "sweep_decoder_distilgpt2_prompt_stress_quality",
+                "summarize_decoder_distilgpt2_prompt_stress_quality",
+            ]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+            assert decoder_inputs["dataset_manifest"] == (
+                "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/manifest.json"
+            )
+            assert decoder_inputs["sample_file"] == (
+                "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/samples.jsonl"
+            )
+            assert decoder_inputs["candidate_sweep_grid"] == "decoder_bf16_pwl_scale_probe_v1"
+            assert decoder_inputs["trained_quality_out"] == (
+                "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/"
+                "decoder_distilgpt2_prompt_stress__l2_decoder_distilgpt2_prompt_stress_v1.json"
+            )
+            assert "prompt/input-distribution stress" in decoder_inputs["trained_quality_scope"]
+            assert "--dataset-id llm_decoder_eval_distilgpt2_prompt_stress_v1" in work_item.command_manifest[0]["run"]
+            assert "RTLGEN_HF_MATERIALIZER_PYTHON" in work_item.command_manifest[0]["run"]
+            assert "--rough-grid decoder_bf16_pwl_scale_probe_v1" in work_item.command_manifest[5]["run"]
+            assert decoder_inputs["trained_quality_out"] in work_item.expected_outputs
+            assert decoder_inputs["trained_quality_report"] in work_item.expected_outputs
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
+                "layer": "decoder_distilgpt2_prompt_stress",
+            }
+
+
 def test_generate_l2_campaign_task_adds_decoder_pwl_logit_sensitivity_ladder_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

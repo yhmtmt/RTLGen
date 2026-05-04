@@ -256,15 +256,37 @@ def _write_contracts(*, model_id: str, source_model_id: str, model_dir: Path, to
     _write_json(model_dir / "model_contract.json", contract)
 
 
-def _write_dataset_manifest(*, dataset_dir: Path, model_dir: Path, tokenizer_dir: Path, model_id: str, sample_file: str) -> None:
+def _count_jsonl_rows(path_text: str) -> int:
+    path = _resolve(path_text)
+    if not path.exists():
+        raise SystemExit(f"sample file not found: {path_text}")
+    count = 0
+    with path.open("r", encoding="utf-8") as handle:
+        for line in handle:
+            if line.strip():
+                count += 1
+    return count
+
+
+def _write_dataset_manifest(
+    *,
+    dataset_dir: Path,
+    model_dir: Path,
+    tokenizer_dir: Path,
+    model_id: str,
+    dataset_id: str,
+    sample_file: str,
+    status: str,
+    notes: str,
+) -> None:
     dataset_rel = dataset_dir.relative_to(REPO_ROOT).as_posix()
     model_rel = model_dir.relative_to(REPO_ROOT).as_posix()
     tokenizer_rel = tokenizer_dir.relative_to(REPO_ROOT).as_posix()
     manifest = {
         "version": 0.1,
-        "dataset_id": "llm_decoder_eval_distilgpt2_trained_v1",
+        "dataset_id": dataset_id,
         "task": "greedy_next_token",
-        "sample_count": 24,
+        "sample_count": _count_jsonl_rows(sample_file),
         "sample_file": sample_file,
         "reference_manifest": f"{dataset_rel}/reference_manifest.json",
         "candidate_manifest": f"{dataset_rel}/candidate_manifest.json",
@@ -272,11 +294,8 @@ def _write_dataset_manifest(*, dataset_dir: Path, model_dir: Path, tokenizer_dir
         "tokenizer_manifest": f"{tokenizer_rel}/manifest.json",
         "model_contract": f"{model_rel}/model_contract.json",
         "decoder_backend_interface": "v1",
-        "status": "materialized_distilgpt2_quality_manifest_v1",
-        "notes": (
-            "distilgpt2 trained-checkpoint confirmation dataset. Run materialize_hf_decoder_contract.py "
-            "before generating reference/candidate manifests because the model/tokenizer artifacts are gitignored."
-        ),
+        "status": status,
+        "notes": notes,
         "decoder_backend_configs": {
             "reference": {
                 "topk": 16,
@@ -296,7 +315,16 @@ def main() -> int:
     parser.add_argument("--model-dir", default="runs/models/llm_decoder_distilgpt2_trained_v1")
     parser.add_argument("--tokenizer-dir", default="runs/tokenizers/llm_decoder_distilgpt2_trained_v1")
     parser.add_argument("--dataset-dir", default="runs/datasets/llm_decoder_eval_distilgpt2_trained_v1")
+    parser.add_argument("--dataset-id", default="llm_decoder_eval_distilgpt2_trained_v1")
     parser.add_argument("--sample-file", default="runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/samples.jsonl")
+    parser.add_argument("--dataset-status", default="materialized_distilgpt2_quality_manifest_v1")
+    parser.add_argument(
+        "--dataset-notes",
+        default=(
+            "distilgpt2 trained-checkpoint confirmation dataset. Run materialize_hf_decoder_contract.py "
+            "before generating reference/candidate manifests because the model/tokenizer artifacts are gitignored."
+        ),
+    )
     parser.add_argument("--opset", type=int, default=17)
     parser.add_argument("--force", action="store_true", help="Re-export even when model.onnx already exists")
     args = parser.parse_args()
@@ -339,7 +367,10 @@ def main() -> int:
         model_dir=model_dir,
         tokenizer_dir=tokenizer_dir,
         model_id=args.contract_id,
+        dataset_id=args.dataset_id,
         sample_file=str(Path(args.sample_file).as_posix()),
+        status=args.dataset_status,
+        notes=args.dataset_notes,
     )
     print(
         json.dumps(
