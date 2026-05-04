@@ -43,6 +43,16 @@ class LlmDecoderOnnxCandidateRunnerRegressionTest(unittest.TestCase):
         self.assertGreater(probs[0], probs[1])
         self.assertGreater(probs[1], probs[2])
 
+    def test_logit_rank_bypass_uses_logits_as_scores(self):
+        logits = [1.0, -2.0, 0.5]
+        scores, softmax_meta = self.runner._apply_softmax_path(logits, {'softmax_mode': 'logit_rank_bypass'})
+        ranked, norm_meta = self.runner._apply_normalization_path(scores, {'normalization_mode': 'rank_bypass'})
+        self.assertEqual(logits, scores)
+        self.assertEqual(logits, ranked)
+        self.assertEqual('logit_rank_bypass', softmax_meta['mode'])
+        self.assertEqual('rank_bypass', norm_meta['mode'])
+        self.assertEqual(0, self.runner._select_next_token_id(ranked))
+
     def test_score_distribution_stats_reports_score_sum_and_margin(self):
         stats = self.runner._score_distribution_stats([0.7, 0.2, 0.1, 0.0], topk=2)
         self.assertEqual(4, stats['vocab_size'])

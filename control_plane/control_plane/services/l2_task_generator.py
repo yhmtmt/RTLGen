@@ -1751,6 +1751,126 @@ def _decoder_gpt2_tie_rank_frontier_evidence(*, item_id: str) -> dict[str, Any]:
     }
 
 
+def _decoder_gpt2_logit_rank_bypass_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    dataset_id = "llm_decoder_eval_gpt2_prompt_stress_v1"
+    dataset_manifest = f"{base}/manifest.json"
+    sample_file = f"{base}/samples.jsonl"
+    reference_dir = f"{base}/reference"
+    reference_manifest = f"{base}/reference_manifest.json"
+    candidate_dir = f"{base}/candidate"
+    candidate_manifest = f"{base}/candidate_manifest.json"
+    validation_out = f"{base}/decoder_contract_validation__{item_id}.json"
+    quality_out = f"{base}/decoder_quality_compare__{item_id}.json"
+    sweep_dir = f"{base}/candidate_sweeps/{item_id}"
+    sweep_out = f"{base}/decoder_quality_sweep__{item_id}.json"
+    bypass_out = f"{base}/decoder_gpt2_logit_rank_bypass__{item_id}.json"
+    bypass_report = f"{base}/decoder_gpt2_logit_rank_bypass__{item_id}.md"
+    rough_grid = "decoder_logit_rank_bypass_v1"
+    rank_ppa = "control_plane/shadow_exports/l1_promotions/l1_decoder_bf16_pwl_tie_rank_datapath_v1_r2.json"
+    commands = [
+        {
+            "name": "materialize_decoder_gpt2_logit_rank_bypass_contract",
+            "run": (
+                "bash npu/eval/run_hf_decoder_materializer.sh "
+                "--model-id gpt2 "
+                "--contract-id llm_decoder_gpt2_trained_v1 "
+                "--model-dir runs/models/llm_decoder_gpt2_trained_v1 "
+                "--tokenizer-dir runs/tokenizers/llm_decoder_gpt2_trained_v1 "
+                f"--dataset-id {dataset_id} "
+                f"--dataset-dir {base} "
+                f"--sample-file {sample_file} "
+                "--dataset-status materialized_gpt2_logit_rank_bypass_manifest_v1 "
+                "--dataset-notes 'GPT-2 prompt-stress logit-rank bypass dataset. Run materialization because model/tokenizer artifacts are gitignored.'"
+            ),
+        },
+        {
+            "name": "generate_decoder_gpt2_logit_rank_bypass_reference",
+            "run": (
+                "python3 npu/eval/gen_llm_decoder_reference_suite.py "
+                f"--dataset-manifest {dataset_manifest} "
+                f"--out-dir {reference_dir} "
+                f"--out-manifest {reference_manifest}"
+            ),
+        },
+        {
+            "name": "generate_decoder_gpt2_logit_rank_bypass_candidate",
+            "run": (
+                "python3 npu/eval/gen_llm_decoder_candidate_suite.py "
+                f"--dataset-manifest {dataset_manifest} "
+                f"--out-dir {candidate_dir} "
+                f"--out-manifest {candidate_manifest}"
+            ),
+        },
+        {
+            "name": "validate_decoder_gpt2_logit_rank_bypass_contract",
+            "run": f"python3 npu/eval/validate_llm_decoder_contract.py --dataset-manifest {dataset_manifest} --out {validation_out}",
+        },
+        {
+            "name": "compare_decoder_gpt2_logit_rank_bypass_quality",
+            "run": (
+                "python3 npu/eval/compare_llm_decoder_quality.py "
+                f"--reference-manifest {reference_manifest} "
+                f"--candidate-manifest {candidate_manifest} "
+                f"--out {quality_out}"
+            ),
+        },
+        {
+            "name": "sweep_decoder_gpt2_logit_rank_bypass_quality",
+            "run": (
+                "python3 npu/eval/sweep_llm_decoder_candidate_quality.py "
+                f"--dataset-manifest {dataset_manifest} "
+                f"--rough-grid {rough_grid} "
+                f"--out-dir {sweep_dir} "
+                f"--out {sweep_out}"
+            ),
+        },
+        {
+            "name": "summarize_decoder_gpt2_logit_rank_bypass",
+            "run": (
+                "python3 npu/eval/summarize_llm_decoder_logit_rank_bypass.py "
+                f"--sweep {sweep_out} "
+                f"--rank-ppa {rank_ppa} "
+                f"--out {bypass_out} "
+                f"--out-md {bypass_report}"
+            ),
+        },
+    ]
+    return {
+        "inputs": {
+            "dataset_manifest": dataset_manifest,
+            "sample_file": sample_file,
+            "reference_dir": reference_dir,
+            "reference_manifest": reference_manifest,
+            "candidate_dir": candidate_dir,
+            "candidate_manifest": candidate_manifest,
+            "validation_out": validation_out,
+            "quality_out": quality_out,
+            "candidate_sweep_dir": sweep_dir,
+            "candidate_sweep_out": sweep_out,
+            "candidate_sweep_grid": rough_grid,
+            "logit_rank_bypass_out": bypass_out,
+            "logit_rank_bypass_report": bypass_report,
+            "rank_datapath_proxy_ppa": rank_ppa,
+            "logit_rank_bypass_scope": (
+                "greedy/top-k GPT-2 prompt-stress check that bypasses softmax and ranks transformed logits "
+                "directly; sampling modes remain out of scope because they require probabilities"
+            ),
+        },
+        "commands": commands,
+        "expected_outputs": [
+            dataset_manifest,
+            reference_manifest,
+            candidate_manifest,
+            validation_out,
+            quality_out,
+            sweep_out,
+            bypass_out,
+            bypass_report,
+        ],
+    }
+
+
 def _decoder_distilgpt2_prompt_stress_evidence(*, item_id: str) -> dict[str, Any]:
     return _decoder_distilgpt2_quality_evidence_for_dataset(
         item_id=item_id,
@@ -2210,10 +2330,13 @@ def _build_payload(
         "decoder_gpt2_quality",
         "decoder_gpt2_prompt_stress",
         "decoder_gpt2_tie_rank_frontier",
+        "decoder_gpt2_logit_rank_bypass",
         "decoder_quantization_outline",
     }:
         if abstraction_layer_name == "decoder_quantization_outline":
             decoder_evidence = _decoder_quantization_outline_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_gpt2_logit_rank_bypass":
+            decoder_evidence = _decoder_gpt2_logit_rank_bypass_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_gpt2_tie_rank_frontier":
             decoder_evidence = _decoder_gpt2_tie_rank_frontier_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_gpt2_prompt_stress":

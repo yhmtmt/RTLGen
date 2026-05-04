@@ -64,6 +64,19 @@ def test_bf16_pwl_recovery_grid_adds_logit_tiebreak_variant() -> None:
     assert recovery["score_tie_breaker"] == "logit"
 
 
+def test_logit_rank_bypass_grid_skips_softmax_and_normalization() -> None:
+    model_contract = load_json(Path("runs/models/llm_decoder_tiny_v1/model_contract.json"))
+    grid = _rough_grid_templates(model_contract, "decoder_logit_rank_bypass_v1")
+
+    assert set(grid) == {
+        "candidate_onnx_softmax_exact",
+        "candidate_onnx_logit_rank_bypass",
+    }
+    bypass = grid["candidate_onnx_logit_rank_bypass"]
+    assert bypass["softmax_mode"] == "logit_rank_bypass"
+    assert bypass["normalization_mode"] == "rank_bypass"
+
+
 def test_bf16_pwl_scale_probe_grid_keeps_integer_controls() -> None:
     model_contract = load_json(Path("runs/models/llm_decoder_tiny_v1/model_contract.json"))
     grid = _rough_grid_templates(model_contract, "decoder_bf16_pwl_scale_probe_v1")

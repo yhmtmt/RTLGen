@@ -406,6 +406,12 @@ def _apply_softmax_path(logits: Sequence[float], backend_config: JsonDict) -> Tu
     mode = str(backend_config.get('softmax_mode', 'exact'))
     input_float_format = str(backend_config.get('softmax_input_float_format', '') or '').strip()
     weight_float_format = str(backend_config.get('softmax_weight_float_format', '') or '').strip()
+    if mode == 'logit_rank_bypass':
+        return [float(v) for v in logits], {
+            'mode': 'logit_rank_bypass',
+            'scope': 'greedy_or_topk_ranking_only',
+            'note': 'Softmax is bypassed; scores are transformed logits used directly for ranking.',
+        }
     if mode == 'exact':
         return _softmax_exact(
             logits,
@@ -427,6 +433,12 @@ def _apply_softmax_path(logits: Sequence[float], backend_config: JsonDict) -> Tu
 
 def _apply_normalization_path(weights: Sequence[float], backend_config: JsonDict) -> Tuple[list[float], JsonDict]:
     mode = str(backend_config.get('normalization_mode', 'exact'))
+    if mode == 'rank_bypass':
+        return [float(v) for v in weights], {
+            'mode': 'rank_bypass',
+            'scope': 'greedy_or_topk_ranking_only',
+            'note': 'Normalization is bypassed because logit ranking does not require probabilities.',
+        }
     if mode == 'exact':
         return _normalize_exact(weights)
     if mode == 'reciprocal_quantized':
