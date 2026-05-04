@@ -1,0 +1,444 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-05-04T05:59:08.269092Z",
+  "control_plane_source_commit": "3b247257c2074fb6650da86032a2feb7305e176f",
+  "review_metadata_source_commit": "3b247257c2074fb6650da86032a2feb7305e176f",
+  "item_id": "l2_decoder_gpt2_prompt_stress_v1",
+  "run_key": "l2_decoder_gpt2_prompt_stress_v1_run_afa2563567a387f6",
+  "layer": "layer2",
+  "flow": "openroad",
+  "task_type": "l2_campaign",
+  "source_commit": "3b247257c2074fb6650da86032a2feb7305e176f",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l2_decoder_gpt2_prompt_stress_v1/evaluated.json",
+    "result": {
+      "branch": "eval/l2_decoder_gpt2_prompt_stress_v1/s20260504t055904z",
+      "completed_utc": "2026-05-04T05:58:52.906988Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "b7c2d9c80c1c",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260504t055904z][host:b7c2d9c80c1c][item:l2_decoder_gpt2_prompt_stress_v1]",
+      "metrics_rows": [
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "362e11ef",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/362e11ef/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "6f738885",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/6f738885/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "3e84d92b",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3e84d92b/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "13a2c990",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/13a2c990/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "34eeb6e5",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/34eeb6e5/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r4",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "439adb1e",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/439adb1e/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r5",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "936b2a7b",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/936b2a7b/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "54a235ae",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/54a235ae/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "f190a078",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/f190a078/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "b874bef7",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/b874bef7/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r4",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "3a650f98",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3a650f98/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm1_cmp33_hier_macro_r5",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "3fa4f194",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3fa4f194/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "033cdfdc",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/033cdfdc/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "c4548bca",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/c4548bca/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "258015dc",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/258015dc/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "95526f98",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/95526f98/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "099823db",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/099823db/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r4",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "b276f2e7",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/b276f2e7/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r5",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "f0b4f9e6",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/f0b4f9e6/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r1",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "5d0ac971",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/5d0ac971/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r2",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "a9ae3c35",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/a9ae3c35/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r3",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "c51fa4a2",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/c51fa4a2/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r4",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "98a03366",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/98a03366/result.json"
+        },
+        {
+          "tag": "npu_fp16_nm2_cmp33_hier_macro_r5",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "41f8b4a8",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/41f8b4a8/result.json"
+        }
+      ],
+      "queue_item_id": "l2_decoder_gpt2_prompt_stress_v1",
+      "session_id": "s20260504t055904z",
+      "status": "ok",
+      "summary": "12/12 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "decision_proposal",
+    "path": "control_plane/shadow_exports/l2_decisions/l2_decoder_gpt2_prompt_stress_v1.json",
+    "storage_mode": "repo",
+    "sha256": "150c0ae82535bbfb6a59c7919de52b141b8fa66719849451e7d9084899791bd5",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-05-04T05:59:03.944241Z",
+      "item_id": "l2_decoder_gpt2_prompt_stress_v1",
+      "run_key": "l2_decoder_gpt2_prompt_stress_v1_run_afa2563567a387f6",
+      "layer": "layer2",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l2_campaign",
+      "source_commit": "3b247257c2074fb6650da86032a2feb7305e176f",
+      "review_metadata_source_commit": "3b247257c2074fb6650da86032a2feb7305e176f",
+      "objective": "Check whether bf16/PWL remains exact-safe on a broader GPT-2 small prompt-stress workload before QAT or larger-array claims.",
+      "input_manifest": {
+        "sweeps": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+        ],
+        "configs": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+        ],
+        "design_dirs": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+        ],
+        "macro_manifests": [
+          "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+          "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+        ],
+        "decoder_contract": {
+          "quality_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_quality_compare__l2_decoder_gpt2_prompt_stress_v1.json",
+          "sample_file": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/samples.jsonl",
+          "candidate_dir": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/candidate",
+          "reference_dir": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference",
+          "validation_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_contract_validation__l2_decoder_gpt2_prompt_stress_v1.json",
+          "dataset_manifest": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/manifest.json",
+          "candidate_manifest": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/candidate_manifest.json",
+          "reference_manifest": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/reference_manifest.json",
+          "candidate_sweep_dir": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/candidate_sweeps/l2_decoder_gpt2_prompt_stress_v1",
+          "candidate_sweep_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_quality_sweep__l2_decoder_gpt2_prompt_stress_v1.json",
+          "trained_quality_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_gpt2_prompt_stress__l2_decoder_gpt2_prompt_stress_v1.json",
+          "candidate_sweep_grid": "decoder_bf16_pwl_scale_probe_v1",
+          "trained_quality_scope": "broader prompt/input-distribution stress check on GPT-2 small after the 24-sample GPT-2 checkpoint gate stayed exact-safe",
+          "trained_quality_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_gpt2_prompt_stress__l2_decoder_gpt2_prompt_stress_v1.md",
+          "materialized_model_scope": "GPT-2 prompt-stress confirmation using evaluator-local generated ONNX/tokenizer artifacts; generated model files are intentionally gitignored and shared with the GPT-2 quality gate",
+          "materialized_model_contract": "runs/models/llm_decoder_gpt2_trained_v1/model_contract.json",
+          "materialized_tokenizer_manifest": "runs/tokenizers/llm_decoder_gpt2_trained_v1/manifest.json"
+        },
+        "generated_campaign": {
+          "path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign__l2_decoder_gpt2_prompt_stress_v1.json",
+          "outputs": {
+            "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_gpt2_prompt_stress_v1/report.md",
+            "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_gpt2_prompt_stress_v1/results.csv",
+            "campaign_dir": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_gpt2_prompt_stress_v1"
+          },
+          "clean_outputs": true,
+          "base_campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json"
+        },
+        "candidate_manifests": [
+          "runs/candidates/nangate45/module_candidates.json"
+        ]
+      },
+      "recommendation": {
+        "arch_id": "fp16_nm1",
+        "macro_mode": "flat_nomacro",
+        "objective_rank": 1,
+        "objective_score": "0.0",
+        "latency_ms_mean": 0.028907999999999996,
+        "energy_mj_mean": 5.582770776e-06,
+        "critical_path_ns_mean": 5.557037432204143,
+        "die_area_um2_mean": 2250000.0,
+        "total_power_mw_mean": 0.193122,
+        "flow_elapsed_s_mean": 848.418
+      },
+      "objective_profiles": [],
+      "evaluation_record": {
+        "proposal_id": "prop_l2_decoder_gpt2_prompt_stress_v1",
+        "title": "Decoder GPT-2 prompt-stress quality gate",
+        "primary_question": "Does the current bf16/PWL path remain exact-safe across a broader GPT-2 small next-token prompt distribution?",
+        "evaluation_mode": "frontier_detail",
+        "comparison_role": "ranking",
+        "abstraction_layer": "decoder_gpt2_prompt_stress",
+        "expected_direction": "iterate",
+        "expected_reason": "Use the broader GPT-2 prompt-stress result to decide whether bf16/PWL should move to QAT recovery, failure diagnosis, or larger-array studies.",
+        "summary": "Decoder quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_gpt2_prompt_stress__l2_decoder_gpt2_prompt_stress_v1.json: decision=tie_break_recovery_sufficient; exact_safe_after_recovery=True; recovered_count=2; regression_count=0; recommended_next_step=Treat bf16/PWL as the immediate low-cost frontier and follow with a hardware-friendly score-tie ranking check before full QAT infrastructure.",
+        "outcome": "tie_break_recovery_sufficient",
+        "expectation_status": "unspecified"
+      },
+      "proposal_assessment": {
+        "proposal_id": "prop_l2_decoder_gpt2_prompt_stress_v1",
+        "title": "Decoder GPT-2 prompt-stress quality gate",
+        "kind": "architecture",
+        "primary_question": "Does the current bf16/PWL path remain exact-safe across a broader GPT-2 small next-token prompt distribution?",
+        "evaluation_mode": "frontier_detail",
+        "comparison_role": "ranking",
+        "outcome": "tie_break_recovery_sufficient",
+        "summary": "Decoder quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_gpt2_prompt_stress__l2_decoder_gpt2_prompt_stress_v1.json: decision=tie_break_recovery_sufficient; exact_safe_after_recovery=True; recovered_count=2; regression_count=0; recommended_next_step=Treat bf16/PWL as the immediate low-cost frontier and follow with a hardware-friendly score-tie ranking check before full QAT infrastructure.",
+        "baseline_ref": null,
+        "baseline_item_id": null,
+        "matched_row_count": 0,
+        "matched_rows": [],
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_gpt2_prompt_stress__l2_decoder_gpt2_prompt_stress_v1.json",
+        "decoder_quality": {
+          "diagnosis": {
+            "decision": "tie_break_recovery_sufficient",
+            "exact_safe_after_recovery": true,
+            "recommended_next_step": "Treat bf16/PWL as the immediate low-cost frontier and follow with a hardware-friendly score-tie ranking check before full QAT infrastructure.",
+            "recovered_count": 2,
+            "regression_count": 0
+          },
+          "baseline": {
+            "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_bf16_w_bf16_norm_recip_bf16_prob_fp",
+            "next_token_matches": 94,
+            "next_token_mismatch_sample_ids": [
+              "gpt2_stress_geo_australia_capital",
+              "gpt2_stress_math_four_times_five"
+            ],
+            "normalization_mode": "reciprocal_float",
+            "normalization_reciprocal_float_format": "bf16",
+            "sample_count": 96,
+            "score_tie_breaker": "",
+            "template": "grid_approx_pwl_bf16_path",
+            "topk_matches": 96,
+            "topk_miss_sample_ids": []
+          },
+          "recovery": {
+            "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_bf16_w_bf16_norm_recip_bf16_prob_fp_tiebreak_logit",
+            "next_token_matches": 96,
+            "next_token_mismatch_sample_ids": [],
+            "normalization_mode": "reciprocal_float",
+            "normalization_reciprocal_float_format": "bf16",
+            "sample_count": 96,
+            "score_tie_breaker": "logit",
+            "template": "grid_approx_pwl_bf16_path_logit_tiebreak",
+            "topk_matches": 96,
+            "topk_miss_sample_ids": []
+          },
+          "recovered_sample_ids": [
+            "gpt2_stress_geo_australia_capital",
+            "gpt2_stress_math_four_times_five"
+          ],
+          "regression_sample_ids": [],
+          "source_sweep": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_quality_sweep__l2_decoder_gpt2_prompt_stress_v1.json"
+        }
+      },
+      "source_refs": {
+        "best_point_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_gpt2_prompt_stress_v1/best_point.json",
+        "summary_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_gpt2_prompt_stress_v1/summary.csv",
+        "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_gpt2_prompt_stress_v1/results.csv",
+        "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_gpt2_prompt_stress_v1/report.md",
+        "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_gpt2_prompt_stress_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+        "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_gpt2_prompt_stress_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+        "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_gpt2_prompt_stress_v1/artifacts/perf/fp16_nm1/mlp1/trace.json",
+        "focused_model_artifacts": [
+          {
+            "model_id": "mlp1",
+            "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_gpt2_prompt_stress_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+            "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_gpt2_prompt_stress_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+            "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_gpt2_prompt_stress_v1/artifacts/perf/fp16_nm1/mlp1/trace.json"
+          },
+          {
+            "model_id": "mlp2",
+            "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_gpt2_prompt_stress_v1/artifacts/mapper/fp16_nm1/mlp2/schedule.yml",
+            "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_gpt2_prompt_stress_v1/artifacts/mapper/fp16_nm1/mlp2/descriptors.bin",
+            "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_gpt2_prompt_stress_v1/artifacts/perf/fp16_nm1/mlp2/trace.json"
+          }
+        ],
+        "decoder_dataset_manifest": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/manifest.json",
+        "decoder_sample_file": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/samples.jsonl",
+        "decoder_validation_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_contract_validation__l2_decoder_gpt2_prompt_stress_v1.json",
+        "decoder_quality_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_quality_compare__l2_decoder_gpt2_prompt_stress_v1.json",
+        "decoder_candidate_sweep_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_quality_sweep__l2_decoder_gpt2_prompt_stress_v1.json",
+        "decoder_trained_quality_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_gpt2_prompt_stress__l2_decoder_gpt2_prompt_stress_v1.json",
+        "decoder_trained_quality_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_gpt2_prompt_stress__l2_decoder_gpt2_prompt_stress_v1.md"
+      }
+    }
+  },
+  "developer_loop": {
+    "comparison": {
+      "role": "ranking",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "frontier_detail",
+      "expected_reason": "Use the broader GPT-2 prompt-stress result to decide whether bf16/PWL should move to QAT recovery, failure diagnosis, or larger-array studies.",
+      "expected_direction": "iterate"
+    },
+    "abstraction": {
+      "layer": "decoder_gpt2_prompt_stress"
+    },
+    "proposal_id": "prop_l2_decoder_gpt2_prompt_stress_v1",
+    "dependencies": {
+      "item_ids": [
+        "l2_decoder_gpt2_quality_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    },
+    "proposal_path": "docs/proposals/prop_l2_decoder_gpt2_prompt_stress_v1/proposal.json"
+  },
+  "submission_history": null,
+  "pr_payload": {
+    "branch": "eval/l2_decoder_gpt2_prompt_stress_v1/s20260504t055904z",
+    "title": "eval: run decoder gpt-2 prompt-stress quality gate",
+    "body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260504t055904z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_decoder_gpt2_prompt_stress_v1"
+    },
+    "body_md": "## Summary\n- item_id: `l2_decoder_gpt2_prompt_stress_v1`\n- run_key: `l2_decoder_gpt2_prompt_stress_v1_run_afa2563567a387f6`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `12/12 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_decoder_gpt2_prompt_stress_v1/evaluated.json`\n- metrics_rows_count: `24`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_decoder_gpt2_prompt_stress_v1.json`\n\n## Developer Context\n- proposal_id: `prop_l2_decoder_gpt2_prompt_stress_v1`\n- proposal_path: `docs/proposals/prop_l2_decoder_gpt2_prompt_stress_v1/proposal.json`\n- reviewer_first_read: `docs/proposals/prop_l2_decoder_gpt2_prompt_stress_v1/proposal.json` plus `docs/developer_agent_review.md`\n- execution_source_commit: `3b247257c2074fb6650da86032a2feb7305e176f`\n- review_metadata_source_commit: `3b247257c2074fb6650da86032a2feb7305e176f`\n\n## Evaluation Mode\n- evaluation_mode: `frontier_detail`\n- abstraction_layer: `decoder_gpt2_prompt_stress`\n- comparison_role: `ranking`\n- expected_direction: `iterate`\n- expected_reason: `Use the broader GPT-2 prompt-stress result to decide whether bf16/PWL should move to QAT recovery, failure diagnosis, or larger-array studies.`\n- expectation_status: `unspecified`\n- evaluation_summary: `Decoder quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_gpt2_prompt_stress__l2_decoder_gpt2_prompt_stress_v1.json: decision=tie_break_recovery_sufficient; exact_safe_after_recovery=True; recovered_count=2; regression_count=0; recommended_next_step=Treat bf16/PWL as the immediate low-cost frontier and follow with a hardware-friendly score-tie ranking check before full QAT infrastructure.`\n\n## Focused Comparison\n- primary_question: `Does the current bf16/PWL path remain exact-safe across a broader GPT-2 small next-token prompt distribution?`\n- comparison_role: `ranking`\n- proposal_outcome: `tie_break_recovery_sufficient`\n- comparison_summary: `Decoder quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_gpt2_prompt_stress__l2_decoder_gpt2_prompt_stress_v1.json: decision=tie_break_recovery_sufficient; exact_safe_after_recovery=True; recovered_count=2; regression_count=0; recommended_next_step=Treat bf16/PWL as the immediate low-cost frontier and follow with a hardware-friendly score-tie ranking check before full QAT infrastructure.`\n- baseline_ref: `None`\n- baseline_item_id: `None`\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
