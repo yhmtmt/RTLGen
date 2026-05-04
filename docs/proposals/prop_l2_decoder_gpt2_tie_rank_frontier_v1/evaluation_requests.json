@@ -1,0 +1,18 @@
+{
+  "proposal_id": "prop_l2_decoder_gpt2_tie_rank_frontier_v1",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_gpt2_tie_rank_frontier_v1",
+      "task_type": "l2_campaign",
+      "objective": "Check whether GPT-2 bf16/PWL logit tie-rank recovery is hardware-plausible using merged reciprocal-normalization and score-tie-rank PPA before starting QAT.",
+      "campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_gpt2_tie_rank_frontier",
+      "depends_on_item_ids": [
+        "l2_decoder_gpt2_prompt_stress_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    }
+  ]
+}
