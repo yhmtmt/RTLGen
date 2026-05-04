@@ -1,0 +1,71 @@
+{
+  "proposal_id": "prop_l1_decoder_logit_rank_scale_v1",
+  "created_utc": "2026-05-04T11:50:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "circuit_block",
+  "title": "Decoder logit-only rank scaling",
+  "hypothesis": "The row-8 logit-only rank datapath result may not extrapolate linearly to larger vocabulary tiles, so the next physical frontier should measure row-16 and row-32 argmax/top-k rankers directly before full decoder-array claims.",
+  "direct_comparison": {
+    "primary_question": "How do Nangate45 area, timing, and power scale when the raw-logit rank datapath grows from row_elems=8 to row_elems=16 and row_elems=32?",
+    "include": [
+      "logit_rank_r16_l16_k1 wrapper",
+      "logit_rank_r16_l16_k4 wrapper",
+      "logit_rank_r32_l16_k1 wrapper",
+      "logit_rank_r32_l16_k4 wrapper",
+      "Nangate45 high-utilization Layer 1 sweep",
+      "comparison against the merged row-8 k=1/k=4 logit-rank PPA"
+    ],
+    "exclude": [
+      "top_k=8 or larger candidate retention",
+      "full vocabulary reduction tree",
+      "softmax probability generation",
+      "sampling modes",
+      "full decoder macro integration"
+    ]
+  },
+  "expected_benefit": [
+    "tests whether the row-8 PPA anchor remains plausible for larger rank tiles",
+    "separates greedy argmax scaling from top-k candidate scaling",
+    "gives measured data for deciding whether to pursue wider rank tiles or hierarchical row-8 composition"
+  ],
+  "risks": [
+    "row_elems=16 and row_elems=32 are still tile-level circuit blocks, not full vocabulary reducers",
+    "top_k=4 does not cover wider beam or sampler candidate sets",
+    "isolated ranker PPA may change after integration with output buffering or cross-tile reduction"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_logit_rank_scale_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA scaling for signed 16-bit logit-only rank datapaths at row_elems=16 and row_elems=32, with k=1 and k=4.",
+      "config_paths": [
+        "runs/designs/activations/logit_rank_r16_l16_k1_wrapper/config_logit_rank_r16_l16_k1.json",
+        "runs/designs/activations/logit_rank_r16_l16_k4_wrapper/config_logit_rank_r16_l16_k4.json",
+        "runs/designs/activations/logit_rank_r32_l16_k1_wrapper/config_logit_rank_r32_l16_k1.json",
+        "runs/designs/activations/logit_rank_r32_l16_k4_wrapper/config_logit_rank_r32_l16_k4.json"
+      ],
+      "sweep_path": "runs/campaigns/activations/logit_rank_scale/sweeps/nangate45_highutil.json",
+      "platform": "nangate45",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "circuit_block",
+      "depends_on_item_ids": [
+        "l1_decoder_logit_rank_datapath_v1_r2",
+        "l2_decoder_gpt2_logit_rank_bypass_v1_r2"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    }
+  ],
+  "baseline_refs": [
+    "control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_datapath_v1_r2.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_gpt2_logit_rank_bypass__l2_decoder_gpt2_logit_rank_bypass_v1_r2.json"
+  ],
+  "knowledge_refs": [
+    "src/rtlgen/rtl_operations.cpp",
+    "npu/eval/summarize_llm_decoder_logit_rank_bypass.py",
+    "control_plane/control_plane/services/l1_task_generator.py"
+  ]
+}
