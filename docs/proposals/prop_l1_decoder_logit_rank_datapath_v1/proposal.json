@@ -1,0 +1,68 @@
+{
+  "proposal_id": "prop_l1_decoder_logit_rank_datapath_v1",
+  "created_utc": "2026-05-04T10:45:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "circuit_block",
+  "title": "Decoder logit-only rank datapath",
+  "hypothesis": "Greedy next-token, top-k, and beam candidate ordering can rank raw decoder logits directly, so a dedicated logit-only top-k datapath should be materially smaller than the existing score/logit tie-rank proxy used to price the GPT-2 raw-logit bypass frontier.",
+  "direct_comparison": {
+    "primary_question": "What is the Nangate45 PPA cost of row-8 signed 16-bit raw-logit argmax and top-k rank datapaths for the GPT-2 logit-rank bypass path?",
+    "include": [
+      "logit_rank_r8_l16_k1 wrapper",
+      "logit_rank_r8_l16_k4 wrapper",
+      "Nangate45 high-utilization Layer 1 sweep",
+      "area, timing, and power metrics for isolated rank-only datapaths",
+      "comparison against the merged score/logit tie-rank proxy PPA"
+    ],
+    "exclude": [
+      "softmax probability generation",
+      "temperature sampling",
+      "top-p sampling",
+      "full decoder quality rerun",
+      "larger-model or larger-array proof"
+    ]
+  },
+  "expected_benefit": [
+    "replaces the conservative score/logit tie-rank proxy with measured logit-only PPA",
+    "separates rank-only decoder serving cost from probability-producing serving modes",
+    "gives separate costs for greedy argmax and top-k candidate selection"
+  ],
+  "risks": [
+    "row_elems=8 matches the current tiny decoder frontier and must be scaled in later work",
+    "isolated ranker PPA may differ after integration with output buffering or larger vocab tiling",
+    "the datapath is only valid for monotonic rank consumers, not probability consumers"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_logit_rank_datapath_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for row-8 signed 16-bit logit-only rank datapaths (argmax k=1 and top-k k=4) used by raw-logit GPT-2 decoding.",
+      "config_paths": [
+        "runs/designs/activations/logit_rank_r8_l16_k1_wrapper/config_logit_rank_r8_l16_k1.json",
+        "runs/designs/activations/logit_rank_r8_l16_k4_wrapper/config_logit_rank_r8_l16_k4.json"
+      ],
+      "sweep_path": "runs/campaigns/activations/logit_rank/sweeps/nangate45_highutil.json",
+      "platform": "nangate45",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "circuit_block",
+      "depends_on_item_ids": [
+        "l2_decoder_gpt2_logit_rank_bypass_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_gpt2_logit_rank_bypass__l2_decoder_gpt2_logit_rank_bypass_v1.json",
+    "control_plane/shadow_exports/l1_promotions/l1_decoder_bf16_pwl_tie_rank_datapath_v1_r2.json",
+    "runs/designs/activations/score_tie_rank_r8_s16_l16_wrapper/metrics.csv"
+  ],
+  "knowledge_refs": [
+    "src/rtlgen/rtl_operations.cpp",
+    "examples/config_logit_rank.json",
+    "control_plane/control_plane/services/l1_task_generator.py"
+  ]
+}

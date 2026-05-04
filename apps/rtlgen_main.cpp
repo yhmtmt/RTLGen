@@ -194,7 +194,8 @@ int main(int argc, char** argv) {
               << config.activation_operations.size() << " activation(s), "
               << config.softmax_rowwise_operations.size() << " row-wise softmax block(s), "
               << config.bf16_recip_norm_operations.size() << " bf16 reciprocal-normalization block(s), "
-              << config.score_tie_rank_operations.size() << " score tie-rank block(s)\n";
+              << config.score_tie_rank_operations.size() << " score tie-rank block(s), "
+              << config.logit_rank_operations.size() << " logit-rank block(s)\n";
 
     try {
         std::filesystem::path flopocoPath;
@@ -323,6 +324,15 @@ int main(int argc, char** argv) {
                       << " (row_elems=" << rank.row_elems
                       << ", logit_bits=" << rank.logit_bits << ")\n";
             emitScoreTieRankModule(rank, operandDef);
+        }
+
+        for (const auto &rank : config.logit_rank_operations) {
+            OperandDefinition operandDef = resolveOperand(config, rank.operand);
+            std::cout << "[INFO] Generating logit-rank " << rank.module_name
+                      << " (row_elems=" << rank.row_elems
+                      << ", logit_bits=" << rank.logit_bits
+                      << ", top_k=" << rank.top_k << ")\n";
+            emitLogitRankModule(rank, operandDef);
         }
 
         for (const auto &fp : config.fp_operations) {
