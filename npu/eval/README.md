@@ -62,6 +62,18 @@ python3 npu/eval/materialize_hf_decoder_contract.py \
   --sample-file runs/datasets/llm_decoder_eval_distilgpt2_trained_v1/samples.jsonl
 ```
 
+The same materialized model/tokenizer can be reused for a separate stress
+dataset by passing a different dataset id, dataset directory, and sample file:
+
+```sh
+python3 npu/eval/materialize_hf_decoder_contract.py \
+  --model-id distilgpt2 \
+  --contract-id llm_decoder_distilgpt2_trained_v1 \
+  --dataset-id llm_decoder_eval_distilgpt2_prompt_stress_v1 \
+  --dataset-dir runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1 \
+  --sample-file runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/samples.jsonl
+```
+
 The materializer requires `torch`, `transformers`, and `onnx` in the evaluator
 Python environment. Generated files under
 `runs/models/llm_decoder_distilgpt2_trained_v1/` and

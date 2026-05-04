@@ -1,0 +1,25 @@
+{
+  "proposal_id": "prop_l2_decoder_distilgpt2_prompt_stress_v1",
+  "source_commit": "",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_distilgpt2_prompt_stress_v1",
+      "task_type": "l2_campaign",
+      "objective": "Check whether bf16/PWL remains exact-safe on a broader distilgpt2 prompt-stress workload before moving to GPT-2 scale or larger-array claims.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_distilgpt2_prompt_stress",
+      "comparison_role": "ranking",
+      "paired_baseline_item_id": "",
+      "depends_on_item_ids": [
+        "l2_decoder_distilgpt2_quality_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use the broader distilgpt2 prompt-stress result to decide whether bf16/PWL should move to GPT-2 scale, training recovery, or failure diagnosis."
+      },
+      "status": "pending"
+    }
+  ]
+}

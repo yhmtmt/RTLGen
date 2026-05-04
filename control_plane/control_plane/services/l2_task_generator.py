@@ -7,6 +7,7 @@ from datetime import timezone
 from hashlib import sha256
 import json
 import re
+import shlex
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -1502,8 +1503,18 @@ def _decoder_trained_tiny_quality_evidence(*, item_id: str) -> dict[str, Any]:
     }
 
 
-def _decoder_distilgpt2_quality_evidence(*, item_id: str) -> dict[str, Any]:
-    base = "runs/datasets/llm_decoder_eval_distilgpt2_trained_v1"
+def _decoder_distilgpt2_quality_evidence_for_dataset(
+    *,
+    item_id: str,
+    base: str,
+    dataset_id: str,
+    output_prefix: str,
+    command_suffix: str,
+    materialized_model_scope: str,
+    trained_quality_scope: str,
+    dataset_status: str,
+    dataset_notes: str,
+) -> dict[str, Any]:
     dataset_manifest = f"{base}/manifest.json"
     sample_file = f"{base}/samples.jsonl"
     reference_dir = f"{base}/reference"
@@ -1514,9 +1525,10 @@ def _decoder_distilgpt2_quality_evidence(*, item_id: str) -> dict[str, Any]:
     quality_out = f"{base}/decoder_quality_compare__{item_id}.json"
     sweep_dir = f"{base}/candidate_sweeps/{item_id}"
     sweep_out = f"{base}/decoder_quality_sweep__{item_id}.json"
-    trained_out = f"{base}/decoder_distilgpt2_quality__{item_id}.json"
-    trained_report = f"{base}/decoder_distilgpt2_quality__{item_id}.md"
+    trained_out = f"{base}/{output_prefix}__{item_id}.json"
+    trained_report = f"{base}/{output_prefix}__{item_id}.md"
     rough_grid = "decoder_bf16_pwl_scale_probe_v1"
+    name_mid = f"_{command_suffix}" if command_suffix else ""
     materializer_python = (
         "RTLGEN_HF_MATERIALIZER_PYTHON=${RTLGEN_HF_MATERIALIZER_PYTHON:-/orfs/tools/AutoTuner/autotuner_env/bin/python3}; "
         'if [ ! -x "$RTLGEN_HF_MATERIALIZER_PYTHON" ]; then RTLGEN_HF_MATERIALIZER_PYTHON=python3; fi; '
@@ -1524,17 +1536,20 @@ def _decoder_distilgpt2_quality_evidence(*, item_id: str) -> dict[str, Any]:
     )
     commands = [
         {
-            "name": "materialize_decoder_distilgpt2_contract",
+            "name": f"materialize_decoder_distilgpt2{name_mid}_contract",
             "run": (
                 f"{materializer_python} npu/eval/materialize_hf_decoder_contract.py "
                 "--model-id distilgpt2 "
                 "--contract-id llm_decoder_distilgpt2_trained_v1 "
+                f"--dataset-id {dataset_id} "
                 f"--dataset-dir {base} "
-                f"--sample-file {sample_file}"
+                f"--sample-file {sample_file} "
+                f"--dataset-status {dataset_status} "
+                f"--dataset-notes {shlex.quote(dataset_notes)}"
             ),
         },
         {
-            "name": "generate_decoder_distilgpt2_reference",
+            "name": f"generate_decoder_distilgpt2{name_mid}_reference",
             "run": (
                 "python3 npu/eval/gen_llm_decoder_reference_suite.py "
                 f"--dataset-manifest {dataset_manifest} "
@@ -1543,7 +1558,7 @@ def _decoder_distilgpt2_quality_evidence(*, item_id: str) -> dict[str, Any]:
             ),
         },
         {
-            "name": "generate_decoder_distilgpt2_candidate",
+            "name": f"generate_decoder_distilgpt2{name_mid}_candidate",
             "run": (
                 "python3 npu/eval/gen_llm_decoder_candidate_suite.py "
                 f"--dataset-manifest {dataset_manifest} "
@@ -1552,11 +1567,11 @@ def _decoder_distilgpt2_quality_evidence(*, item_id: str) -> dict[str, Any]:
             ),
         },
         {
-            "name": "validate_decoder_distilgpt2_contract",
+            "name": f"validate_decoder_distilgpt2{name_mid}_contract",
             "run": f"python3 npu/eval/validate_llm_decoder_contract.py --dataset-manifest {dataset_manifest} --out {validation_out}",
         },
         {
-            "name": "compare_decoder_distilgpt2_quality",
+            "name": f"compare_decoder_distilgpt2{name_mid}_quality",
             "run": (
                 "python3 npu/eval/compare_llm_decoder_quality.py "
                 f"--reference-manifest {reference_manifest} "
@@ -1565,7 +1580,7 @@ def _decoder_distilgpt2_quality_evidence(*, item_id: str) -> dict[str, Any]:
             ),
         },
         {
-            "name": "sweep_decoder_distilgpt2_quality",
+            "name": f"sweep_decoder_distilgpt2{name_mid}_quality",
             "run": (
                 "python3 npu/eval/sweep_llm_decoder_candidate_quality.py "
                 f"--dataset-manifest {dataset_manifest} "
@@ -1575,7 +1590,7 @@ def _decoder_distilgpt2_quality_evidence(*, item_id: str) -> dict[str, Any]:
             ),
         },
         {
-            "name": "summarize_decoder_distilgpt2_quality",
+            "name": f"summarize_decoder_distilgpt2{name_mid}_quality",
             "run": (
                 "python3 npu/eval/summarize_llm_decoder_bf16_pwl_recovery.py "
                 f"--sweep {sweep_out} "
@@ -1601,14 +1616,8 @@ def _decoder_distilgpt2_quality_evidence(*, item_id: str) -> dict[str, Any]:
             "trained_quality_report": trained_report,
             "materialized_model_contract": "runs/models/llm_decoder_distilgpt2_trained_v1/model_contract.json",
             "materialized_tokenizer_manifest": "runs/tokenizers/llm_decoder_distilgpt2_trained_v1/manifest.json",
-            "materialized_model_scope": (
-                "distilgpt2 trained-checkpoint confirmation using evaluator-local generated "
-                "ONNX/tokenizer artifacts; generated model files are intentionally gitignored"
-            ),
-            "trained_quality_scope": (
-                "larger trained GPT-2-family confirmation for the bf16/PWL logit tie-break "
-                "frontier after the trained tiny smoke recovered exact-next behavior"
-            ),
+            "materialized_model_scope": materialized_model_scope,
+            "trained_quality_scope": trained_quality_scope,
         },
         "commands": commands,
         "expected_outputs": [
@@ -1622,6 +1631,53 @@ def _decoder_distilgpt2_quality_evidence(*, item_id: str) -> dict[str, Any]:
             trained_report,
         ],
     }
+
+
+def _decoder_distilgpt2_quality_evidence(*, item_id: str) -> dict[str, Any]:
+    return _decoder_distilgpt2_quality_evidence_for_dataset(
+        item_id=item_id,
+        base="runs/datasets/llm_decoder_eval_distilgpt2_trained_v1",
+        dataset_id="llm_decoder_eval_distilgpt2_trained_v1",
+        output_prefix="decoder_distilgpt2_quality",
+        command_suffix="",
+        materialized_model_scope=(
+            "distilgpt2 trained-checkpoint confirmation using evaluator-local generated "
+            "ONNX/tokenizer artifacts; generated model files are intentionally gitignored"
+        ),
+        trained_quality_scope=(
+            "larger trained GPT-2-family confirmation for the bf16/PWL logit tie-break "
+            "frontier after the trained tiny smoke recovered exact-next behavior"
+        ),
+        dataset_status="materialized_distilgpt2_quality_manifest_v1",
+        dataset_notes=(
+            "distilgpt2 trained-checkpoint confirmation dataset. Run materialize_hf_decoder_contract.py "
+            "before generating reference/candidate manifests because the model/tokenizer artifacts are gitignored."
+        ),
+    )
+
+
+def _decoder_distilgpt2_prompt_stress_evidence(*, item_id: str) -> dict[str, Any]:
+    return _decoder_distilgpt2_quality_evidence_for_dataset(
+        item_id=item_id,
+        base="runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1",
+        dataset_id="llm_decoder_eval_distilgpt2_prompt_stress_v1",
+        output_prefix="decoder_distilgpt2_prompt_stress",
+        command_suffix="prompt_stress",
+        materialized_model_scope=(
+            "distilgpt2 prompt-stress confirmation using evaluator-local generated ONNX/tokenizer "
+            "artifacts; generated model files are intentionally gitignored and shared with the "
+            "distilgpt2 quality gate"
+        ),
+        trained_quality_scope=(
+            "broader prompt/input-distribution stress check for the bf16/PWL frontier before "
+            "moving to GPT-2 scale or larger-array conclusions"
+        ),
+        dataset_status="materialized_distilgpt2_prompt_stress_manifest_v1",
+        dataset_notes=(
+            "distilgpt2 prompt-stress dataset. Run materialize_hf_decoder_contract.py before generating "
+            "reference/candidate manifests because the model/tokenizer artifacts are gitignored."
+        ),
+    )
 
 
 def _decoder_pwl_logit_sensitivity_ladder_evidence(*, item_id: str) -> dict[str, Any]:
@@ -2055,10 +2111,13 @@ def _build_payload(
         "decoder_pwl_bitwidth_boundary",
         "decoder_trained_tiny_quality",
         "decoder_distilgpt2_quality",
+        "decoder_distilgpt2_prompt_stress",
         "decoder_quantization_outline",
     }:
         if abstraction_layer_name == "decoder_quantization_outline":
             decoder_evidence = _decoder_quantization_outline_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_distilgpt2_prompt_stress":
+            decoder_evidence = _decoder_distilgpt2_prompt_stress_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_distilgpt2_quality":
             decoder_evidence = _decoder_distilgpt2_quality_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_trained_tiny_quality":
