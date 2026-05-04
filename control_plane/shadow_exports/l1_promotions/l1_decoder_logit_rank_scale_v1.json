@@ -1,0 +1,151 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-05-04T13:40:02.562170Z",
+  "item_id": "l1_decoder_logit_rank_scale_v1",
+  "run_key": "l1_decoder_logit_rank_scale_v1_run_6dbecdd3a9241ef0",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "73c3c00ac05e9b09d0fedd26caff7e5fbc3e2fa0",
+  "objective": "Measure Nangate45 PPA scaling for signed 16-bit logit-only rank datapaths at row_elems=16 and row_elems=32, with k=1 and k=4.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/activations/logit_rank_scale/sweeps/nangate45_highutil.json"
+    ],
+    "configs": [
+      "runs/designs/activations/logit_rank_r16_l16_k1_wrapper/config_logit_rank_r16_l16_k1.json",
+      "runs/designs/activations/logit_rank_r16_l16_k4_wrapper/config_logit_rank_r16_l16_k4.json",
+      "runs/designs/activations/logit_rank_r32_l16_k1_wrapper/config_logit_rank_r32_l16_k1.json",
+      "runs/designs/activations/logit_rank_r32_l16_k4_wrapper/config_logit_rank_r32_l16_k4.json"
+    ],
+    "out_root": "runs/designs/activations",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 4,
+  "evaluation_record": {
+    "evaluation_mode": "measurement_only",
+    "abstraction_layer": "circuit_block",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/logit_rank_r16_l16_k1_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "faabcd26",
+        "tag": "logit_rank_scale_nangate45_highutil_4c4fe1ea",
+        "result_path": "runs/designs/activations/logit_rank_r16_l16_k1_wrapper/work/faabcd26/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 6.9433,
+        "die_area": 7539.4489,
+        "total_power_mw": 0.0111
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/logit_rank_r16_l16_k4_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "faabcd26",
+        "tag": "logit_rank_scale_nangate45_highutil_4c4fe1ea",
+        "result_path": "runs/designs/activations/logit_rank_r16_l16_k4_wrapper/work/faabcd26/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 7.8803,
+        "die_area": 24451.5769,
+        "total_power_mw": 0.449
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/logit_rank_r32_l16_k1_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "0378bb88",
+        "tag": "logit_rank_scale_nangate45_highutil_2ae5d3c9",
+        "result_path": "runs/designs/activations/logit_rank_r32_l16_k1_wrapper/work/0378bb88/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 13.9501,
+        "die_area": 12195.889225,
+        "total_power_mw": 0.402
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/logit_rank_r32_l16_k4_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "faabcd26",
+        "tag": "logit_rank_scale_nangate45_highutil_4c4fe1ea",
+        "result_path": "runs/designs/activations/logit_rank_r32_l16_k4_wrapper/work/faabcd26/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 15.4656,
+        "die_area": 46179.861025,
+        "total_power_mw": 0.858
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_decoder_logit_rank_scale_v1",
+    "completed_trials": 1,
+    "success_count": 1,
+    "failure_count": 0,
+    "success_rate": 1.0,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 6.9433,
+        "mean": 6.9433,
+        "median": 6.9433,
+        "max": 6.9433,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "die_area": {
+        "best": 7539.4489,
+        "mean": 7539.4489,
+        "median": 7539.4489,
+        "max": 7539.4489,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "total_power_mw": {
+        "best": 0.0111,
+        "mean": 0.0111,
+        "median": 0.0111,
+        "max": 0.0111,
+        "range": 0.0,
+        "stddev": 0.0
+      }
+    }
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/activations/logit_rank_r16_l16_k1_wrapper/metrics.csv",
+      "runs/designs/activations/logit_rank_r16_l16_k4_wrapper/metrics.csv",
+      "runs/designs/activations/logit_rank_r32_l16_k1_wrapper/metrics.csv",
+      "runs/designs/activations/logit_rank_r32_l16_k4_wrapper/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_logit_rank_scale_v1/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_logit_rank_scale_v1/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_logit_rank_scale_v1/trial_table.csv"
+  }
+}

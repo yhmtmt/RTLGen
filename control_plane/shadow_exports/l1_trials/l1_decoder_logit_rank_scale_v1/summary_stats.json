@@ -1,0 +1,33 @@
+{
+  "item_id": "l1_decoder_logit_rank_scale_v1",
+  "completed_trials": 1,
+  "success_count": 1,
+  "failure_count": 0,
+  "success_rate": 1.0,
+  "metrics": {
+    "critical_path_ns": {
+      "best": 6.9433,
+      "mean": 6.9433,
+      "median": 6.9433,
+      "max": 6.9433,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "die_area": {
+      "best": 7539.4489,
+      "mean": 7539.4489,
+      "median": 7539.4489,
+      "max": 7539.4489,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "total_power_mw": {
+      "best": 0.0111,
+      "mean": 0.0111,
+      "median": 0.0111,
+      "max": 0.0111,
+      "range": 0.0,
+      "stddev": 0.0
+    }
+  }
+}
