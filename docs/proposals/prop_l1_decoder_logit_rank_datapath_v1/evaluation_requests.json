@@ -1,9 +1,9 @@
 {
   "proposal_id": "prop_l1_decoder_logit_rank_datapath_v1",
-  "source_commit": "15da63a88b9b04e1b9917f7e0c2e5b70f2ce1ec7",
+  "source_commit": "c5e0e264feeb89d9af1a780672d7b473bf23faa8",
   "requested_items": [
     {
-      "item_id": "l1_decoder_logit_rank_datapath_v1",
+      "item_id": "l1_decoder_logit_rank_datapath_v1_r2",
       "task_type": "l1_sweep",
       "objective": "Measure Nangate45 PPA for row-8 signed 16-bit logit-only rank datapaths (argmax k=1 and top-k k=4) used by raw-logit GPT-2 decoding.",
       "evaluation_mode": "measurement_only",
@@ -19,7 +19,14 @@
         "direction": "measure",
         "reason": "Use direct logit-only rank PPA to replace the conservative score/logit tie-rank proxy in the raw-logit GPT-2 bypass cost accounting."
       },
-      "status": "pending"
+      "status": "merged",
+      "prior_item_ids": [
+        "l1_decoder_logit_rank_datapath_v1"
+      ],
+      "merged_pr_number": 393,
+      "merge_commit": "4f93e6db26406e1d59504b05e8fac4c39eee9665",
+      "merged_utc": "2026-05-04T10:59:36.949232Z",
+      "notes": "Merged via PR #393 and merge 4f93e6db26406e1d59504b05e8fac4c39eee9665 at 2026-05-04T10:59:36.949232Z."
     }
   ]
 }
