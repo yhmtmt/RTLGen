@@ -1,0 +1,508 @@
+{
+  "backend": {
+    "backend_id": "command_json_v1",
+    "command": [
+      "python3",
+      "npu/eval/run_llm_decoder_onnx_candidate.py"
+    ],
+    "cwd": "",
+    "equivalence_group": "llm_decoder_distilgpt2_trained_v1_reference_onnx_v1",
+    "input_name": "input_ids",
+    "interface": "decoder_backend_v1",
+    "model_config_path": "runs/models/llm_decoder_distilgpt2_trained_v1/reference_onnx/config.json",
+    "normalization_mode": "reciprocal_quantized",
+    "normalization_reciprocal_bits": 12,
+    "onnx_model_path": "runs/models/llm_decoder_distilgpt2_trained_v1/reference_onnx/model.onnx",
+    "output_name": "logits",
+    "request_schema": "decoder_backend_command_v1",
+    "role": "candidate",
+    "runtime_target": "software_emulation",
+    "softmax_input_quant_bits": 8,
+    "softmax_mode": "approx_pwl",
+    "softmax_weight_quant_bits": 8,
+    "timeout_s": 30.0,
+    "topk": 16,
+    "trace_output_patterns": [
+      "present.*"
+    ],
+    "trace_tensor_quant_bits": 4
+  },
+  "backend_invocation": {
+    "command": [
+      "python3",
+      "npu/eval/run_llm_decoder_onnx_candidate.py"
+    ],
+    "cwd": "",
+    "request_schema": "decoder_backend_command_v1",
+    "result_schema": "decoder_backend_command_result_v1"
+  },
+  "backend_runtime": {
+    "approximation": {
+      "logits": {
+        "mode": "identity_logits"
+      },
+      "normalization": {
+        "exponent": -1,
+        "mantissa": 0.8500000000000006,
+        "mantissa_quantized": 0.85006105006105,
+        "mode": "normalize_reciprocal_quantized",
+        "reciprocal": 0.4250000000000003,
+        "reciprocal_bits": 12,
+        "reciprocal_quantized": 0.425030525030525,
+        "sum_weights": 2.3529411764705865
+      },
+      "probabilities": {
+        "mode": "identity_probabilities"
+      },
+      "softmax": {
+        "anchors": [
+          -8.0,
+          -4.0,
+          -2.0,
+          0.0
+        ],
+        "input_float_quant": null,
+        "input_quant": {
+          "bits": 8,
+          "levels": 127,
+          "max_abs": 28.718502044677734,
+          "mode": "softmax_input_quant",
+          "scale": 0.2261299373596672
+        },
+        "max_logit": -38.56850814819336,
+        "mode": "softmax_approx_pwl",
+        "shifted_min": -28.718502044677734,
+        "weight_float_quant": null,
+        "weight_quant": {
+          "bits": 8,
+          "levels": 255,
+          "max_value": 1.0,
+          "mode": "softmax_weight_quant",
+          "scale": 0.00392156862745098
+        }
+      }
+    },
+    "library": "onnxruntime",
+    "onnxruntime_version": "1.23.1",
+    "runner": "onnx_candidate_v1",
+    "runtime_target": "software_emulation",
+    "score_rank": 1
+  },
+  "candidate": {
+    "confidence": 0.425030525030525,
+    "distribution": {
+      "effective_vocab_size": 16.123978429004314,
+      "entropy_nats": 2.7803075074348924,
+      "nonzero_score_count": 95,
+      "score_sum": 1.000071823601235,
+      "top1_probability": 0.42500000000000016,
+      "top1_score": 0.425030525030525,
+      "top1_top2_score_margin": 0.3316904881610764,
+      "top2_probability": 0.09333333333333337,
+      "top2_score": 0.09334003686944863,
+      "topk_score_mass": 0.7867231678996387,
+      "vocab_size": 50257
+    },
+    "next_token_id": 1936,
+    "next_token_text": " five",
+    "ranking": {
+      "mode": "score_only"
+    },
+    "selected_tensors": [
+      {
+        "dtype": "float32",
+        "max": 7.579482078552246,
+        "mean": 0.01638978347182274,
+        "min": -4.331132411956787,
+        "name": "present.0.key",
+        "quantization": {
+          "bits": 4,
+          "levels": 7,
+          "max_abs": 7.579482078552246,
+          "mode": "trace_tensor_quant",
+          "scale": 1.0827831540788924
+        },
+        "shape": [
+          1,
+          12,
+          8,
+          64
+        ],
+        "std": 1.3620234727859497,
+        "step": 0
+      },
+      {
+        "dtype": "float32",
+        "max": 2.3646626472473145,
+        "mean": 0.012425914406776428,
+        "min": -1.3512357473373413,
+        "name": "present.0.value",
+        "quantization": {
+          "bits": 4,
+          "levels": 7,
+          "max_abs": 2.3646626472473145,
+          "mode": "trace_tensor_quant",
+          "scale": 0.3378089496067592
+        },
+        "shape": [
+          1,
+          12,
+          8,
+          64
+        ],
+        "std": 0.21607330441474915,
+        "step": 0
+      },
+      {
+        "dtype": "float32",
+        "max": 4.839934349060059,
+        "mean": -0.0034135766327381134,
+        "min": -5.646590232849121,
+        "name": "present.1.key",
+        "quantization": {
+          "bits": 4,
+          "levels": 7,
+          "max_abs": 5.646590232849121,
+          "mode": "trace_tensor_quant",
+          "scale": 0.8066557475498745
+        },
+        "shape": [
+          1,
+          12,
+          8,
+          64
+        ],
+        "std": 1.5241941213607788,
+        "step": 0
+      },
+      {
+        "dtype": "float32",
+        "max": 3.2218916416168213,
+        "mean": -0.011461805552244186,
+        "min": -2.3013510704040527,
+        "name": "present.1.value",
+        "quantization": {
+          "bits": 4,
+          "levels": 7,
+          "max_abs": 3.2218916416168213,
+          "mode": "trace_tensor_quant",
+          "scale": 0.46027023451668875
+        },
+        "shape": [
+          1,
+          12,
+          8,
+          64
+        ],
+        "std": 0.5154410004615784,
+        "step": 0
+      },
+      {
+        "dtype": "float32",
+        "max": 9.213055610656738,
+        "mean": -0.11036472767591476,
+        "min": -12.89827823638916,
+        "name": "present.2.key",
+        "quantization": {
+          "bits": 4,
+          "levels": 7,
+          "max_abs": 12.89827823638916,
+          "mode": "trace_tensor_quant",
+          "scale": 1.8426111766270228
+        },
+        "shape": [
+          1,
+          12,
+          8,
+          64
+        ],
+        "std": 2.203948736190796,
+        "step": 0
+      },
+      {
+        "dtype": "float32",
+        "max": 2.6875174045562744,
+        "mean": -0.0036243486683815718,
+        "min": -2.30358624458313,
+        "name": "present.2.value",
+        "quantization": {
+          "bits": 4,
+          "levels": 7,
+          "max_abs": 2.6875174045562744,
+          "mode": "trace_tensor_quant",
+          "scale": 0.38393105779375347
+        },
+        "shape": [
+          1,
+          12,
+          8,
+          64
+        ],
+        "std": 0.5309742093086243,
+        "step": 0
+      },
+      {
+        "dtype": "float32",
+        "max": 9.610845565795898,
+        "mean": -0.01005599182099104,
+        "min": -6.864889621734619,
+        "name": "present.3.key",
+        "quantization": {
+          "bits": 4,
+          "levels": 7,
+          "max_abs": 9.610845565795898,
+          "mode": "trace_tensor_quant",
+          "scale": 1.3729779379708427
+        },
+        "shape": [
+          1,
+          12,
+          8,
+          64
+        ],
+        "std": 1.721280574798584,
+        "step": 0
+      },
+      {
+        "dtype": "float32",
+        "max": 2.924207925796509,
+        "mean": 0.010788091458380222,
+        "min": -3.4115757942199707,
+        "name": "present.3.value",
+        "quantization": {
+          "bits": 4,
+          "levels": 7,
+          "max_abs": 3.4115757942199707,
+          "mode": "trace_tensor_quant",
+          "scale": 0.487367970602853
+        },
+        "shape": [
+          1,
+          12,
+          8,
+          64
+        ],
+        "std": 0.7155783176422119,
+        "step": 0
+      },
+      {
+        "dtype": "float32",
+        "max": 7.488282680511475,
+        "mean": -0.05972101166844368,
+        "min": -7.488282680511475,
+        "name": "present.4.key",
+        "quantization": {
+          "bits": 4,
+          "levels": 7,
+          "max_abs": 7.488282680511475,
+          "mode": "trace_tensor_quant",
+          "scale": 1.0697546686444963
+        },
+        "shape": [
+          1,
+          12,
+          8,
+          64
+        ],
+        "std": 1.390981912612915,
+        "step": 0
+      },
+      {
+        "dtype": "float32",
+        "max": 3.5031323432922363,
+        "mean": -0.002280685817822814,
+        "min": -3.5031323432922363,
+        "name": "present.4.value",
+        "quantization": {
+          "bits": 4,
+          "levels": 7,
+          "max_abs": 3.5031323432922363,
+          "mode": "trace_tensor_quant",
+          "scale": 0.5004474776131767
+        },
+        "shape": [
+          1,
+          12,
+          8,
+          64
+        ],
+        "std": 0.8115680813789368,
+        "step": 0
+      },
+      {
+        "dtype": "float32",
+        "max": 4.706912040710449,
+        "mean": -0.01707306131720543,
+        "min": -4.034495830535889,
+        "name": "present.5.key",
+        "quantization": {
+          "bits": 4,
+          "levels": 7,
+          "max_abs": 4.706912040710449,
+          "mode": "trace_tensor_quant",
+          "scale": 0.6724160058157784
+        },
+        "shape": [
+          1,
+          12,
+          8,
+          64
+        ],
+        "std": 1.0816437005996704,
+        "step": 0
+      },
+      {
+        "dtype": "float32",
+        "max": 7.898958206176758,
+        "mean": 0.02901867963373661,
+        "min": -7.898958206176758,
+        "name": "present.5.value",
+        "quantization": {
+          "bits": 4,
+          "levels": 7,
+          "max_abs": 7.898958206176758,
+          "mode": "trace_tensor_quant",
+          "scale": 1.1284226008823939
+        },
+        "shape": [
+          1,
+          12,
+          8,
+          64
+        ],
+        "std": 1.0013277530670166,
+        "step": 0
+      }
+    ],
+    "selected_tensors_sha256": "e9334224bdb5a2c7166805c1d9145920c9b0e25d3045ccdaf0b1d6d1523dbfc2",
+    "topk": [
+      {
+        "score": 0.425030525030525,
+        "token_id": 1936,
+        "token_text": " five"
+      },
+      {
+        "score": 0.09334003686944863,
+        "token_id": 290,
+        "token_text": " and"
+      },
+      {
+        "score": 0.05667073667073667,
+        "token_id": 1440,
+        "token_text": " four"
+      },
+      {
+        "score": 0.05667073667073667,
+        "token_id": 2237,
+        "token_text": " six"
+      },
+      {
+        "score": 0.033335727453374514,
+        "token_id": 3478,
+        "token_text": " ten"
+      },
+      {
+        "score": 0.033335727453374514,
+        "token_id": 3598,
+        "token_text": " seven"
+      },
+      {
+        "score": 0.023335009217362156,
+        "token_id": 3624,
+        "token_text": " eight"
+      },
+      {
+        "score": 0.011667504608681078,
+        "token_id": 257,
+        "token_text": " a"
+      },
+      {
+        "score": 0.006667145490674902,
+        "token_id": 393,
+        "token_text": " or"
+      },
+      {
+        "score": 0.006667145490674902,
+        "token_id": 530,
+        "token_text": " one"
+      },
+      {
+        "score": 0.006667145490674902,
+        "token_id": 642,
+        "token_text": " 5"
+      },
+      {
+        "score": 0.006667145490674902,
+        "token_id": 734,
+        "token_text": " two"
+      },
+      {
+        "score": 0.006667145490674902,
+        "token_id": 772,
+        "token_text": " even"
+      },
+      {
+        "score": 0.006667145490674902,
+        "token_id": 838,
+        "token_text": " 10"
+      },
+      {
+        "score": 0.006667145490674902,
+        "token_id": 1115,
+        "token_text": " three"
+      },
+      {
+        "score": 0.006667145490674902,
+        "token_id": 3863,
+        "token_text": " maybe"
+      }
+    ]
+  },
+  "candidate_semantics": "onnx_logits_fp_softmax_approx_pwl_in_q8_w_q8_norm_recip_q12_prob_fp",
+  "dataset_id": "llm_decoder_eval_distilgpt2_prompt_stress_v1",
+  "dataset_manifest": "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/manifest.json",
+  "decode_policy": {
+    "max_new_tokens": 1,
+    "strategy": "greedy"
+  },
+  "model_binding": {
+    "contract_path": "runs/models/llm_decoder_distilgpt2_trained_v1/model_contract.json",
+    "execution_backend": "decoder_backend_v1",
+    "model_id": "llm_decoder_distilgpt2_trained_v1",
+    "status": "materialized_distilgpt2_exact_reference_active"
+  },
+  "notes": "ONNX Runtime decoder candidate runner result using explicit softmax and normalization paths.",
+  "prompt": {
+    "text": "One, two, three, four,",
+    "token_count": 8,
+    "token_ids": [
+      3198,
+      11,
+      734,
+      11,
+      1115,
+      11,
+      1440,
+      11
+    ],
+    "tokens": [
+      "One",
+      ",",
+      "\u0120two",
+      ",",
+      "\u0120three",
+      ",",
+      "\u0120four",
+      ","
+    ]
+  },
+  "sample_id": "distilgpt2_stress_sequence_numbers",
+  "task": "greedy_next_token",
+  "tokenizer": {
+    "kind": "gpt2_bpe",
+    "manifest_path": "runs/tokenizers/llm_decoder_distilgpt2_trained_v1/manifest.json",
+    "status": "materialized_hf_decoder_tokenizer_active",
+    "tokenizer_id": "llm_decoder_distilgpt2_trained_v1"
+  },
+  "version": 0.1
+}
