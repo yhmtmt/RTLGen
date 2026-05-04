@@ -18,8 +18,12 @@
         "direction": "iterate",
         "reason": "The job should determine whether rank-only GPT-2 decoding can remove the softmax and reciprocal-normalization datapaths from the current frontier without changing greedy next-token or top-k decisions."
       },
-      "status": "planned"
+      "status": "merged",
+      "merged_pr_number": 388,
+      "merge_commit": "86f42dbf1e99257170342915cac4918e729cb6b3",
+      "merged_utc": "2026-05-04T10:03:10.934260Z",
+      "notes": "Merged via PR #388 and merge 86f42dbf1e99257170342915cac4918e729cb6b3 at 2026-05-04T10:03:10.934260Z."
     }
   ],
-  "source_commit": "5ffb53d8be5021027ed206af7836aa9a913632f3"
+  "source_commit": "cbeb2d85c78953fddec2c01204ce59393757b876"
 }

@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_gpt2_logit_rank_bypass_v1",
+  "decision": "iterate",
+  "pr_number": 388,
+  "merge_commit": "86f42dbf1e99257170342915cac4918e729cb6b3",
+  "merged_utc": "2026-05-04T10:03:10.934260Z"
+}
