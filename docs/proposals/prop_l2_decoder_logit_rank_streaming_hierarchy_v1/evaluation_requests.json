@@ -19,8 +19,12 @@
         "direction": "approve_or_iterate",
         "reason": "The review should confirm whether LogitTileStream and CandidateStream contracts, backpressure, overlap assumptions, and first-order performance model are implementation-ready."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 400,
+      "merge_commit": "4f2a3ce5f45842206517489101c9dcf6578d0a9f",
+      "merged_utc": "2026-05-04T20:52:02.101828Z",
+      "notes": "Merged via PR #400 and merge 4f2a3ce5f45842206517489101c9dcf6578d0a9f at 2026-05-04T20:52:02.101828Z."
     }
   ],
-  "source_commit": "1c7f5a4e440ba17011ef883206c02ebbb55cdd03"
+  "source_commit": "e9f9cc5af7443f78b82552105c757e163b2cfc6c"
 }
