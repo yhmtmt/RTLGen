@@ -148,6 +148,31 @@ def identify_design(config):
             "logit_signed": bool(options.get("logit_signed", True)),
             "include_mg_cpa": False,
         }
+    if op_type == "logit_rank":
+        options = entry.get("options", {})
+        row_elems = int(options.get("row_elems", 1))
+        logit_bits = int(options.get("logit_bits", bit_width) or bit_width)
+        top_k = int(options.get("top_k", 1))
+        if row_elems <= 0:
+            raise ValueError("logit_rank row_elems must be positive")
+        if logit_bits <= 0:
+            raise ValueError("logit_rank logit_bits must be positive")
+        if top_k <= 0 or top_k > row_elems:
+            raise ValueError("logit_rank top_k must be in [1, row_elems]")
+        index_width = _ceil_log2_at_least_one(row_elems)
+        return {
+            "kind": "logit_rank",
+            "module_name": module_name,
+            "wrapper_name": f"{module_name}_wrapper",
+            "logit_width": logit_bits * row_elems,
+            "top_index_width": index_width * top_k,
+            "top_logit_width": logit_bits * top_k,
+            "index_bits": index_width,
+            "logit_bits": logit_bits,
+            "top_k": top_k,
+            "logit_signed": bool(options.get("logit_signed", True)),
+            "include_mg_cpa": False,
+        }
     raise ValueError(f"generate_design.py does not support operation type: {op_type}")
 
 
@@ -391,6 +416,42 @@ module {wrapper_name}(
   assign best_index = best_index_reg;
   assign best_score = best_score_reg;
   assign best_logit = best_logit_reg;
+
+endmodule
+"""
+    elif design["kind"] == "logit_rank":
+        logit_width = int(design["logit_width"])
+        top_index_width = int(design["top_index_width"])
+        top_logit_width = int(design["top_logit_width"])
+        signed_kw = "signed " if design.get("logit_signed", True) else ""
+        wrapper_content = f"""
+module {wrapper_name}(
+  input clk,
+  input {signed_kw}[{logit_width-1}:0] logits,
+  output [{top_index_width-1}:0] top_indices,
+  output {signed_kw}[{top_logit_width-1}:0] top_logits
+);
+
+  reg {signed_kw}[{logit_width-1}:0] logits_reg;
+  wire [{top_index_width-1}:0] top_indices_wire;
+  wire {signed_kw}[{top_logit_width-1}:0] top_logits_wire;
+  reg [{top_index_width-1}:0] top_indices_reg;
+  reg {signed_kw}[{top_logit_width-1}:0] top_logits_reg;
+
+  {module_name} dut (
+    .logits(logits_reg),
+    .top_indices(top_indices_wire),
+    .top_logits(top_logits_wire)
+  );
+
+  always @(posedge clk) begin
+    logits_reg <= logits;
+    top_indices_reg <= top_indices_wire;
+    top_logits_reg <= top_logits_wire;
+  end
+
+  assign top_indices = top_indices_reg;
+  assign top_logits = top_logits_reg;
 
 endmodule
 """

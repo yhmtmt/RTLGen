@@ -1,0 +1,25 @@
+{
+  "version": "1.1",
+  "operands": [
+    {
+      "name": "logits",
+      "dimensions": 1,
+      "bit_width": 16,
+      "signed": true,
+      "kind": "int"
+    }
+  ],
+  "operations": [
+    {
+      "type": "logit_rank",
+      "module_name": "logit_rank_r8_l16_k1",
+      "operand": "logits",
+      "options": {
+        "row_elems": 8,
+        "logit_bits": 16,
+        "top_k": 1,
+        "logit_signed": true
+      }
+    }
+  ]
+}

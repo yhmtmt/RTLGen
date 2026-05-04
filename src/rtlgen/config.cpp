@@ -61,6 +61,7 @@ bool readConfig(const std::string& filename, CircuitConfig& config) {
         config.softmax_rowwise_operations.clear();
         config.bf16_recip_norm_operations.clear();
         config.score_tie_rank_operations.clear();
+        config.logit_rank_operations.clear();
         config.onnx_model.reset();
 
         if (j.contains("operand")) {
@@ -438,6 +439,25 @@ bool readConfig(const std::string& filename, CircuitConfig& config) {
                         throw std::runtime_error("score_tie_rank logit_bits must be in [1, 64] for " + rank.module_name);
                     }
                     config.score_tie_rank_operations.push_back(rank);
+                } else if (type == "logit_rank") {
+                    const json &options = entry.contains("options") ? entry["options"] : entry;
+                    LogitRankOperationConfig rank;
+                    rank.module_name = module_name;
+                    rank.operand = operand_name;
+                    rank.row_elems = options.value("row_elems", 1);
+                    rank.logit_bits = options.value("logit_bits", 16);
+                    rank.top_k = options.value("top_k", 1);
+                    rank.logit_signed = options.value("logit_signed", true);
+                    if (rank.row_elems <= 0 || rank.row_elems > 1024) {
+                        throw std::runtime_error("logit_rank row_elems must be in [1, 1024] for " + rank.module_name);
+                    }
+                    if (rank.logit_bits <= 0 || rank.logit_bits > 64) {
+                        throw std::runtime_error("logit_rank logit_bits must be in [1, 64] for " + rank.module_name);
+                    }
+                    if (rank.top_k <= 0 || rank.top_k > rank.row_elems) {
+                        throw std::runtime_error("logit_rank top_k must be in [1, row_elems] for " + rank.module_name);
+                    }
+                    config.logit_rank_operations.push_back(rank);
                 } else {
                     throw std::runtime_error("Unknown operation type: " + type);
                 }

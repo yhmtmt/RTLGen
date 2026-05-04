@@ -198,6 +198,11 @@ can later be extended without breaking v0.1.
 - `compute.softmax.enabled=true` emits a dedicated row-wise SOFTMAX wrapper
   tagged with `(* keep_hierarchy = 1 *)` so hierarchical OpenROAD flows can
   preserve and blackbox it independently from the rest of `npu_top`.
+- Standalone C++ RTLGen operation configs used by Layer 1 campaigns include
+  `logit_rank`, a combinational signed-logit top-k/argmax datapath with
+  `row_elems`, `logit_bits`, `top_k`, and `logit_signed` options. It is a
+  rank-only block for greedy/top-k/beam candidate ordering and does not produce
+  probabilities for sampling or probability reporting.
 - The current dedicated SOFTMAX generator is structural/PPA-oriented:
   it models the descriptor path and instantiates the selected row-wise module,
   but it does not yet implement full SRAM-backed source/destination dataflow.

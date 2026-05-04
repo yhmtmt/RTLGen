@@ -227,6 +227,15 @@ struct ScoreTieRankOperationConfig {
     bool logit_signed{true};
 };
 
+struct LogitRankOperationConfig {
+    std::string module_name;
+    std::string operand;
+    int row_elems{1};
+    int logit_bits{16};
+    int top_k{1};
+    bool logit_signed{true};
+};
+
 struct CircuitConfig {
     OperandConfig operand;
     std::vector<OperandDefinition> operands;
@@ -241,6 +250,7 @@ struct CircuitConfig {
     std::vector<SoftmaxRowwiseOperationConfig> softmax_rowwise_operations;
     std::vector<Bf16RecipNormOperationConfig> bf16_recip_norm_operations;
     std::vector<ScoreTieRankOperationConfig> score_tie_rank_operations;
+    std::vector<LogitRankOperationConfig> logit_rank_operations;
     std::optional<std::string> onnx_model; // Added ONNX model path
 };
 

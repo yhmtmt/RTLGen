@@ -8,3 +8,4 @@ void emitActivationModule(const ActivationOperationConfig &config, const Operand
 void emitSoftmaxRowwiseModule(const SoftmaxRowwiseOperationConfig &config, const OperandDefinition &operand);
 void emitBf16RecipNormModule(const Bf16RecipNormOperationConfig &config, const OperandDefinition &operand);
 void emitScoreTieRankModule(const ScoreTieRankOperationConfig &config, const OperandDefinition &operand);
+void emitLogitRankModule(const LogitRankOperationConfig &config, const OperandDefinition &operand);

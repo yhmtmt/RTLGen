@@ -1362,3 +1362,84 @@ void emitScoreTieRankModule(const ScoreTieRankOperationConfig &config, const Ope
     os << "  end\n";
     os << "endmodule\n";
 }
+
+void emitLogitRankModule(const LogitRankOperationConfig &config, const OperandDefinition &operand) {
+    const int logit_bits = config.logit_bits > 0 ? config.logit_bits : operand.bit_width;
+    if (logit_bits <= 0 || logit_bits > 64) {
+        throw std::runtime_error("logit_rank logit_bits must be in [1, 64]");
+    }
+    if (config.row_elems <= 0 || config.row_elems > 1024) {
+        throw std::runtime_error("logit_rank row_elems must be in [1, 1024]");
+    }
+    if (config.top_k <= 0 || config.top_k > config.row_elems) {
+        throw std::runtime_error("logit_rank top_k must be in [1, row_elems]");
+    }
+
+    const int index_bits = std::max(1, ceilLog2U64(static_cast<unsigned long long>(config.row_elems)));
+    const int logit_row_width = config.row_elems * logit_bits;
+    const int top_index_width = config.top_k * index_bits;
+    const int top_logit_width = config.top_k * logit_bits;
+    const std::string signed_kw = config.logit_signed ? "signed " : "";
+
+    std::string filename = config.module_name + ".v";
+    std::ofstream os(filename);
+    if (!os) {
+        throw std::runtime_error("Failed to open " + filename + " for writing");
+    }
+
+    os << "`timescale 1ns/1ps\n\n";
+    os << "module " << config.module_name << "(\n";
+    os << "  input  " << signed_kw << "[" << (logit_row_width - 1) << ":0] logits,\n";
+    os << "  output reg [" << (top_index_width - 1) << ":0] top_indices,\n";
+    os << "  output reg " << signed_kw << "[" << (top_logit_width - 1) << ":0] top_logits\n";
+    os << ");\n\n";
+    os << "  // Row-wise logit-only rank selection.\n";
+    os << "  // Primary key: larger logit. Exact ties retain the lowest lane index.\n";
+    os << "  localparam integer ROW_ELEMS = " << config.row_elems << ";\n";
+    os << "  localparam integer LOGIT_W = " << logit_bits << ";\n";
+    os << "  localparam integer TOP_K = " << config.top_k << ";\n";
+    os << "  localparam integer INDEX_W = " << index_bits << ";\n\n";
+    os << "  integer i;\n";
+    os << "  integer k;\n";
+    os << "  integer insert_pos;\n";
+    os << "  reg [TOP_K-1:0] top_valid;\n";
+    os << "  reg [INDEX_W-1:0] lane_index;\n";
+    os << "  reg [INDEX_W-1:0] top_index_k;\n";
+    os << "  reg " << signed_kw << "[LOGIT_W-1:0] logit_i;\n";
+    os << "  reg " << signed_kw << "[LOGIT_W-1:0] top_logit_k;\n\n";
+    os << "  always @* begin\n";
+    os << "    top_indices = {" << top_index_width << "{1'b0}};\n";
+    os << "    top_logits = {" << top_logit_width << "{1'b0}};\n";
+    os << "    top_valid = {TOP_K{1'b0}};\n\n";
+    os << "    for (i = 0; i < ROW_ELEMS; i = i + 1) begin\n";
+    os << "      lane_index = i;\n";
+    if (config.logit_signed) {
+        os << "      logit_i = $signed(logits[(i*LOGIT_W) +: LOGIT_W]);\n";
+    } else {
+        os << "      logit_i = logits[(i*LOGIT_W) +: LOGIT_W];\n";
+    }
+    os << "      insert_pos = TOP_K;\n";
+    os << "      for (k = 0; k < TOP_K; k = k + 1) begin\n";
+    os << "        top_index_k = top_indices[(k*INDEX_W) +: INDEX_W];\n";
+    if (config.logit_signed) {
+        os << "        top_logit_k = $signed(top_logits[(k*LOGIT_W) +: LOGIT_W]);\n";
+    } else {
+        os << "        top_logit_k = top_logits[(k*LOGIT_W) +: LOGIT_W];\n";
+    }
+    os << "        if ((insert_pos == TOP_K) && (!top_valid[k] || (logit_i > top_logit_k) || ((logit_i == top_logit_k) && (lane_index < top_index_k))))\n";
+    os << "          insert_pos = k;\n";
+    os << "      end\n\n";
+    os << "      if (insert_pos < TOP_K) begin\n";
+    os << "        for (k = TOP_K - 1; k > insert_pos; k = k - 1) begin\n";
+    os << "          top_indices[(k*INDEX_W) +: INDEX_W] = top_indices[((k-1)*INDEX_W) +: INDEX_W];\n";
+    os << "          top_logits[(k*LOGIT_W) +: LOGIT_W] = top_logits[((k-1)*LOGIT_W) +: LOGIT_W];\n";
+    os << "          top_valid[k] = top_valid[k-1];\n";
+    os << "        end\n";
+    os << "        top_indices[(insert_pos*INDEX_W) +: INDEX_W] = lane_index;\n";
+    os << "        top_logits[(insert_pos*LOGIT_W) +: LOGIT_W] = logit_i;\n";
+    os << "        top_valid[insert_pos] = 1'b1;\n";
+    os << "      end\n";
+    os << "    end\n";
+    os << "  end\n";
+    os << "endmodule\n";
+}
