@@ -186,6 +186,14 @@ RUN apt-get update && apt-get install -y libgmp-dev libmpfr-dev libmpfi-dev libb
 
 ENV ONNXRUNTIME_DIR=/usr/local/onnxruntime
 ENV LD_LIBRARY_PATH=${ONNXRUNTIME_DIR}/lib:$LD_LIBRARY_PATH
+ENV RTLGEN_HF_MATERIALIZER_PYTHON=/orfs/tools/AutoTuner/autotuner_env/bin/python3
+
+# Keep this late so rebuilding the HF materializer stack does not invalidate the
+# long OpenROAD/ORFS build layers. AutoTuner already provides torch in this venv.
+RUN ${RTLGEN_HF_MATERIALIZER_PYTHON} -m pip install --no-cache-dir \
+    transformers==5.7.0 \
+    onnx==1.21.0 && \
+    ${RTLGEN_HF_MATERIALIZER_PYTHON} -c 'import importlib.util; missing = [name for name in ("torch", "transformers", "onnx") if importlib.util.find_spec(name) is None]; assert not missing, "missing HF materializer dependencies after Dockerfile install: " + ", ".join(missing)'
 
 # Set the working directory
 #WORKDIR /orfs
