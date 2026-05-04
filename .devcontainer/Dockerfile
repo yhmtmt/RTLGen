@@ -191,8 +191,8 @@ ENV RTLGEN_HF_MATERIALIZER_PYTHON=/orfs/tools/AutoTuner/autotuner_env/bin/python
 # Keep this late so rebuilding the HF materializer stack does not invalidate the
 # long OpenROAD/ORFS build layers. AutoTuner already provides torch in this venv.
 RUN ${RTLGEN_HF_MATERIALIZER_PYTHON} -m pip install --no-cache-dir \
-    transformers==5.7.0 \
-    onnx==1.21.0 && \
+    transformers==4.46.3 \
+    onnx==1.17.0 && \
     ${RTLGEN_HF_MATERIALIZER_PYTHON} -c 'import importlib.util; missing = [name for name in ("torch", "transformers", "onnx") if importlib.util.find_spec(name) is None]; assert not missing, "missing HF materializer dependencies after Dockerfile install: " + ", ".join(missing)'
 
 # Set the working directory
