@@ -1,0 +1,40 @@
+## Summary
+- item_id: `l2_decoder_logit_rank_streaming_memory_noc_v1`
+- run_key: `l2_decoder_logit_rank_streaming_memory_noc_v1_run_ab5a53e199f10da5`
+- layer: `layer2`
+- task_type: `l2_campaign`
+- status: `ok`
+- summary: `6/6 commands succeeded`
+- queue_snapshot: `control_plane/shadow_exports/review/l2_decoder_logit_rank_streaming_memory_noc_v1/evaluated.json`
+- metrics_rows_count: `24`
+- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_decoder_logit_rank_streaming_memory_noc_v1.json`
+
+## Developer Context
+- proposal_id: `prop_l2_decoder_logit_rank_streaming_memory_noc_v1`
+- proposal_path: `docs/proposals/prop_l2_decoder_logit_rank_streaming_memory_noc_v1/proposal.json`
+- reviewer_first_read: `docs/proposals/prop_l2_decoder_logit_rank_streaming_memory_noc_v1/proposal.json` plus `docs/developer_agent_review.md`
+- execution_source_commit: `c7ba8ad7f176f8ab44fc96ed5bebb7c597316b41`
+- review_metadata_source_commit: `c7ba8ad7f176f8ab44fc96ed5bebb7c597316b41`
+
+## Evaluation Mode
+- evaluation_mode: `frontier_detail`
+- abstraction_layer: `decoder_logit_rank_streaming_overlap`
+- comparison_role: `ranking`
+- expected_direction: `iterate`
+- expected_reason: `Use memory/NoC-aware ranking to choose measured SRAM/NoC hierarchy work or flat rank scaling.`
+- expectation_status: `unspecified`
+- evaluation_summary: `Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.`
+
+## Focused Comparison
+- primary_question: `Does the rank-only streaming hierarchy become attractive under explicit memory bandwidth, SRAM energy, and NoC hop assumptions?`
+- comparison_role: `ranking`
+- proposal_outcome: `ranking_recorded`
+- comparison_summary: `Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.`
+- baseline_ref: `None`
+- baseline_item_id: `None`
+
+## Checklist
+- [ ] Commit lightweight campaign artifacts only
+- [ ] Include metrics row references in result.metrics_rows
+- [ ] Keep committed result_path fields repo-portable
+- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing
