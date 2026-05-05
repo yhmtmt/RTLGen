@@ -1,0 +1,356 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-05-05T08:46:52.902814Z",
+  "control_plane_source_commit": "d60799a0c49afb9d7c2966458d168cfdd0738c5b",
+  "review_metadata_source_commit": "d60799a0c49afb9d7c2966458d168cfdd0738c5b",
+  "item_id": "l1_decoder_candidate_stream_merge_fifo_v1",
+  "run_key": "l1_decoder_candidate_stream_merge_fifo_v1_run_88f5705fcf8c0872",
+  "layer": "layer1",
+  "flow": "openroad",
+  "task_type": "l1_sweep",
+  "source_commit": "d60799a0c49afb9d7c2966458d168cfdd0738c5b",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l1_decoder_candidate_stream_merge_fifo_v1/evaluated.json",
+    "result": {
+      "branch": "eval/l1_decoder_candidate_stream_merge_fifo_v1/s20260505t084650z",
+      "completed_utc": "2026-05-05T08:46:48.440891Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "b7c2d9c80c1c",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260505t084650z][host:b7c2d9c80c1c][item:l1_decoder_candidate_stream_merge_fifo_v1]",
+      "metrics_rows": [
+        {
+          "tag": "candidate_stream_merge_fifo_nangate45_highutil_b9f525ac",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "351c917e",
+          "metrics_csv": "runs/designs/activations/trials/trial_005/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/trials/trial_005/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/work/351c917e/result.json"
+        },
+        {
+          "tag": "candidate_stream_merge_fifo_nangate45_highutil_3fc3a397",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "f5e749b0",
+          "metrics_csv": "runs/designs/activations/trials/trial_005/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/trials/trial_005/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/work/f5e749b0/result.json"
+        },
+        {
+          "tag": "candidate_stream_merge_fifo_nangate45_highutil_b9f525ac",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "351c917e",
+          "metrics_csv": "runs/designs/activations/trials/trial_005/candidate_stream_merge_fifo_k4_l16_t16_d16_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/trials/trial_005/candidate_stream_merge_fifo_k4_l16_t16_d16_wrapper/work/351c917e/result.json"
+        },
+        {
+          "tag": "candidate_stream_merge_fifo_nangate45_highutil_3fc3a397",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "f5e749b0",
+          "metrics_csv": "runs/designs/activations/trials/trial_005/candidate_stream_merge_fifo_k4_l16_t16_d16_wrapper/metrics.csv",
+          "result_path": "runs/designs/activations/trials/trial_005/candidate_stream_merge_fifo_k4_l16_t16_d16_wrapper/work/f5e749b0/result.json"
+        }
+      ],
+      "queue_item_id": "l1_decoder_candidate_stream_merge_fifo_v1",
+      "session_id": "s20260505t084650z",
+      "status": "ok",
+      "summary": "4/4 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "promotion_proposal",
+    "path": "control_plane/shadow_exports/l1_promotions/l1_decoder_candidate_stream_merge_fifo_v1.json",
+    "storage_mode": "repo",
+    "sha256": "f50a016cb1987d4eca3609036f76d777d958a4fb302c2cf3e9c7ad8a203dc6d6",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-05-05T08:46:49.631936Z",
+      "item_id": "l1_decoder_candidate_stream_merge_fifo_v1",
+      "run_key": "l1_decoder_candidate_stream_merge_fifo_v1_run_88f5705fcf8c0872",
+      "layer": "layer1",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l1_sweep",
+      "source_commit": "d60799a0c49afb9d7c2966458d168cfdd0738c5b",
+      "objective": "Measure Nangate45 PPA for ready-valid candidate-stream merge/FIFO blocks and preserve the perf-sim/RTL equivalence observables from the decoder logit-rank streaming overlap model.",
+      "input_manifest": {
+        "sweeps": [
+          "runs/campaigns/activations/candidate_stream_merge_fifo/sweeps/nangate45_highutil.json"
+        ],
+        "configs": [
+          "runs/designs/activations/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/config_candidate_stream_merge_fifo_k1_l16_t16_d16.json",
+          "runs/designs/activations/candidate_stream_merge_fifo_k4_l16_t16_d16_wrapper/config_candidate_stream_merge_fifo_k4_l16_t16_d16.json"
+        ],
+        "out_root": "runs/designs/activations",
+        "design_dirs": [],
+        "macro_manifests": [],
+        "candidate_manifests": [],
+        "required_submodules": []
+      },
+      "proposal_count": 10,
+      "evaluation_record": {
+        "evaluation_mode": "measurement_only",
+        "abstraction_layer": "candidate_stream_merge_fifo",
+        "result_kind": "physical_metrics",
+        "physical_metrics_present": true,
+        "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+      },
+      "proposal_assessment": null,
+      "proposals": [
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/activations/trials/trial_001/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "39f2b5c6",
+            "tag": "candidate_stream_merge_fifo_nangate45_highutil_94366c78",
+            "result_path": "runs/designs/activations/trials/trial_001/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/work/39f2b5c6/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 2.9145,
+            "die_area": 15682.5529,
+            "total_power_mw": 0.0153
+          }
+        },
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/activations/trials/trial_001/candidate_stream_merge_fifo_k4_l16_t16_d16_wrapper/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "8fb6bfd3",
+            "tag": "candidate_stream_merge_fifo_nangate45_highutil_f22e51f0",
+            "result_path": "runs/designs/activations/trials/trial_001/candidate_stream_merge_fifo_k4_l16_t16_d16_wrapper/work/8fb6bfd3/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 3.1405,
+            "die_area": 42898.6944,
+            "total_power_mw": 0.075
+          }
+        },
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/activations/trials/trial_002/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "a320ae49",
+            "tag": "candidate_stream_merge_fifo_nangate45_highutil_d33c581a",
+            "result_path": "runs/designs/activations/trials/trial_002/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/work/a320ae49/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 2.934,
+            "die_area": 13109.105025,
+            "total_power_mw": 0.0157
+          }
+        },
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/activations/trials/trial_002/candidate_stream_merge_fifo_k4_l16_t16_d16_wrapper/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "a320ae49",
+            "tag": "candidate_stream_merge_fifo_nangate45_highutil_d33c581a",
+            "result_path": "runs/designs/activations/trials/trial_002/candidate_stream_merge_fifo_k4_l16_t16_d16_wrapper/work/a320ae49/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 3.1199,
+            "die_area": 42898.6944,
+            "total_power_mw": 0.075
+          }
+        },
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/activations/trials/trial_003/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "0e47b645",
+            "tag": "candidate_stream_merge_fifo_nangate45_highutil_a099bc87",
+            "result_path": "runs/designs/activations/trials/trial_003/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/work/0e47b645/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 2.9298,
+            "die_area": 15682.5529,
+            "total_power_mw": 0.0154
+          }
+        },
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/activations/trials/trial_003/candidate_stream_merge_fifo_k4_l16_t16_d16_wrapper/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "fbd566e6",
+            "tag": "candidate_stream_merge_fifo_nangate45_highutil_0344a565",
+            "result_path": "runs/designs/activations/trials/trial_003/candidate_stream_merge_fifo_k4_l16_t16_d16_wrapper/work/fbd566e6/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 3.1232,
+            "die_area": 42898.6944,
+            "total_power_mw": 0.077
+          }
+        },
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/activations/trials/trial_004/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "0f84893b",
+            "tag": "candidate_stream_merge_fifo_nangate45_highutil_99c1c254",
+            "result_path": "runs/designs/activations/trials/trial_004/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/work/0f84893b/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 2.9204,
+            "die_area": 15682.5529,
+            "total_power_mw": 0.0159
+          }
+        },
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/activations/trials/trial_004/candidate_stream_merge_fifo_k4_l16_t16_d16_wrapper/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "96534561",
+            "tag": "candidate_stream_merge_fifo_nangate45_highutil_0140a00f",
+            "result_path": "runs/designs/activations/trials/trial_004/candidate_stream_merge_fifo_k4_l16_t16_d16_wrapper/work/96534561/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 3.1012,
+            "die_area": 42898.6944,
+            "total_power_mw": 0.0751
+          }
+        },
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/activations/trials/trial_005/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "f5e749b0",
+            "tag": "candidate_stream_merge_fifo_nangate45_highutil_3fc3a397",
+            "result_path": "runs/designs/activations/trials/trial_005/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/work/f5e749b0/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 2.9047,
+            "die_area": 15682.5529,
+            "total_power_mw": 0.0157
+          }
+        },
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/activations/trials/trial_005/candidate_stream_merge_fifo_k4_l16_t16_d16_wrapper/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "351c917e",
+            "tag": "candidate_stream_merge_fifo_nangate45_highutil_b9f525ac",
+            "result_path": "runs/designs/activations/trials/trial_005/candidate_stream_merge_fifo_k4_l16_t16_d16_wrapper/work/351c917e/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 3.1178,
+            "die_area": 42898.6944,
+            "total_power_mw": 0.0756
+          }
+        }
+      ],
+      "trial_summary": {
+        "item_id": "l1_decoder_candidate_stream_merge_fifo_v1",
+        "completed_trials": 5,
+        "success_count": 5,
+        "failure_count": 0,
+        "success_rate": 1.0,
+        "metrics": {
+          "critical_path_ns": {
+            "best": 2.9047,
+            "mean": 2.92068,
+            "median": 2.9204,
+            "max": 2.934,
+            "range": 0.029300000000000104,
+            "stddev": 0.010528323703230324
+          },
+          "die_area": {
+            "best": 13109.105025,
+            "mean": 15167.863325000002,
+            "median": 15682.5529,
+            "max": 15682.5529,
+            "range": 2573.447875,
+            "stddev": 1029.37915
+          },
+          "total_power_mw": {
+            "best": 0.0153,
+            "mean": 0.0156,
+            "median": 0.0157,
+            "max": 0.0159,
+            "range": 0.0006000000000000016,
+            "stddev": 0.00021908902300206656
+          }
+        }
+      },
+      "source_refs": {
+        "trial_metrics_csvs": [
+          "runs/designs/activations/trials/trial_001/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/metrics.csv",
+          "runs/designs/activations/trials/trial_001/candidate_stream_merge_fifo_k4_l16_t16_d16_wrapper/metrics.csv",
+          "runs/designs/activations/trials/trial_002/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/metrics.csv",
+          "runs/designs/activations/trials/trial_002/candidate_stream_merge_fifo_k4_l16_t16_d16_wrapper/metrics.csv",
+          "runs/designs/activations/trials/trial_003/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/metrics.csv",
+          "runs/designs/activations/trials/trial_003/candidate_stream_merge_fifo_k4_l16_t16_d16_wrapper/metrics.csv",
+          "runs/designs/activations/trials/trial_004/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/metrics.csv",
+          "runs/designs/activations/trials/trial_004/candidate_stream_merge_fifo_k4_l16_t16_d16_wrapper/metrics.csv",
+          "runs/designs/activations/trials/trial_005/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/metrics.csv",
+          "runs/designs/activations/trials/trial_005/candidate_stream_merge_fifo_k4_l16_t16_d16_wrapper/metrics.csv"
+        ],
+        "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_candidate_stream_merge_fifo_v1/summary_stats.json",
+        "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_candidate_stream_merge_fifo_v1/failure_stats.json",
+        "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_candidate_stream_merge_fifo_v1/trial_table.csv"
+      }
+    }
+  },
+  "developer_loop": {
+    "evaluation": {
+      "mode": "measurement_only",
+      "trial_policy": {
+        "seed_start": 1,
+        "trial_count": 5,
+        "stop_after_failures": 1
+      }
+    },
+    "abstraction": {
+      "layer": "candidate_stream_merge_fifo"
+    },
+    "proposal_id": "prop_l1_decoder_candidate_stream_merge_fifo_v1",
+    "proposal_path": "docs/proposals/prop_l1_decoder_candidate_stream_merge_fifo_v1/proposal.json"
+  },
+  "submission_history": null,
+  "pr_payload": {
+    "branch": "eval/l1_decoder_candidate_stream_merge_fifo_v1/s20260505t084650z",
+    "title": "eval: run measure decoder candidate-stream merge fifo",
+    "body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260505t084650z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_decoder_candidate_stream_merge_fifo_v1"
+    },
+    "body_md": "## Summary\n- item_id: `l1_decoder_candidate_stream_merge_fifo_v1`\n- run_key: `l1_decoder_candidate_stream_merge_fifo_v1_run_88f5705fcf8c0872`\n- layer: `layer1`\n- task_type: `l1_sweep`\n- status: `ok`\n- summary: `4/4 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l1_decoder_candidate_stream_merge_fifo_v1/evaluated.json`\n- metrics_rows_count: `4`\n- review_artifact: `promotion_proposal` at `control_plane/shadow_exports/l1_promotions/l1_decoder_candidate_stream_merge_fifo_v1.json`\n\n## Developer Context\n- proposal_id: `prop_l1_decoder_candidate_stream_merge_fifo_v1`\n- proposal_path: `docs/proposals/prop_l1_decoder_candidate_stream_merge_fifo_v1/proposal.json`\n- reviewer_first_read: `docs/proposals/prop_l1_decoder_candidate_stream_merge_fifo_v1/proposal.json` plus `docs/developer_agent_review.md`\n- execution_source_commit: `d60799a0c49afb9d7c2966458d168cfdd0738c5b`\n- review_metadata_source_commit: `d60799a0c49afb9d7c2966458d168cfdd0738c5b`\n\n## Evaluation Mode\n- evaluation_mode: `measurement_only`\n- abstraction_layer: `candidate_stream_merge_fifo`\n- evaluation_summary: `Physical metrics recorded from an accepted status=ok Layer 1 row.`\n\n## Checklist\n- [ ] Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge\n- [ ] Include metrics row references for each completed design\n- [ ] Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}

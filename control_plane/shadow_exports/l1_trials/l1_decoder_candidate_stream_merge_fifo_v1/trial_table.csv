@@ -1,0 +1,6 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_decoder_candidate_stream_merge_fifo_v1_run_3b594c3283694223,1,1,1,succeeded,runs/designs/activations/trials/trial_001/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/metrics.csv,2.9145,15682.5529,0.0153,none,,
+l1_decoder_candidate_stream_merge_fifo_v1_run_f60525b838f60e18,2,2,2,succeeded,runs/designs/activations/trials/trial_002/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/metrics.csv,2.934,13109.105025,0.0157,none,,
+l1_decoder_candidate_stream_merge_fifo_v1_run_ea393074c81096f1,3,3,3,succeeded,runs/designs/activations/trials/trial_003/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/metrics.csv,2.9298,15682.5529,0.0154,none,,
+l1_decoder_candidate_stream_merge_fifo_v1_run_bde1538602964247,4,4,4,succeeded,runs/designs/activations/trials/trial_004/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/metrics.csv,2.9204,15682.5529,0.0159,none,,
+l1_decoder_candidate_stream_merge_fifo_v1_run_88f5705fcf8c0872,5,5,5,succeeded,runs/designs/activations/trials/trial_005/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/metrics.csv,2.9047,15682.5529,0.0157,none,,
