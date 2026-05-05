@@ -1,0 +1,74 @@
+{
+  "proposal_id": "prop_l2_decoder_logit_rank_streaming_sram_nangate45_v1",
+  "created_utc": "2026-05-05T11:45:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_logit_rank_streaming_overlap",
+  "title": "Decoder logit-rank streaming with Nangate45 SRAM metrics",
+  "hypothesis": "Replacing hand-entered SRAM energy defaults with a committed Nangate45 CACTI SRAM artifact should make the decoder streaming memory ranking more comparable to the existing Nangate45 compute PPA while preserving the ready-valid perf-sim/RTL equivalence contract.",
+  "direct_comparison": {
+    "primary_question": "Does the memory-aware decoder streaming frontier change when SRAM energy comes from the Nangate45 minimal_v0_2_draft SRAM artifact instead of a planning default?",
+    "include": [
+      "measured logit-rank datapath PPA",
+      "measured candidate-stream merge/FIFO PPA",
+      "Nangate45 CACTI SRAM metrics from runs/designs/sram/minimal_v0_2_draft/sram_metrics.json",
+      "NoC hop energy still marked as a planning term",
+      "separate latency, overlap, traffic, and memory recommendations",
+      "unchanged ready-valid perf-sim/RTL equivalence observables"
+    ],
+    "exclude": [
+      "measured NoC router PPA",
+      "new SRAM macro RTL or OpenROAD hardening",
+      "new RTL merge semantics",
+      "probability-producing sampling modes"
+    ],
+    "follow_on_broad_sweep": [
+      "add measured NoC/router or banking terms if SRAM-backed memory ranking becomes a useful discriminator",
+      "otherwise prioritize larger-model and larger-array stability checks for the current rank/merge frontier"
+    ]
+  },
+  "expected_benefit": [
+    "removes one hand-entered SRAM energy heuristic from the decoder streaming report",
+    "keeps NoC planning assumptions auditable and separate from SRAM source data",
+    "establishes a repeatable path for later SRAM and NoC artifact-backed hierarchy evaluations"
+  ],
+  "risks": [
+    "CACTI estimates are still pre-synthesis memory estimates, not measured SRAM macro PPA",
+    "the model does not yet account for SRAM banking conflicts or NoC contention",
+    "the minimal_v0_2_draft SRAM sizes may not match every future decoder hierarchy point"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_logit_rank_streaming_sram_nangate45_v1",
+      "task_type": "l2_campaign",
+      "objective": "Rerun the decoder logit-rank streaming memory/NoC report with the committed Nangate45 SRAM metrics artifact, measured merge/FIFO PPA, and unchanged perf-sim/RTL equivalence observables.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_logit_rank_streaming_overlap",
+      "cost_class": "low",
+      "depends_on_item_ids": [
+        "l2_decoder_logit_rank_streaming_memory_noc_v1",
+        "l2_decoder_logit_rank_streaming_measured_merge_v1",
+        "l1_decoder_candidate_stream_merge_fifo_v1",
+        "l1_decoder_logit_rank_datapath_v1_r2",
+        "l1_decoder_logit_rank_scale_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "The result should show whether SRAM-artifact-backed memory energy changes the local streaming frontier before spending work on NoC or larger-array hierarchy points."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_decoder_logit_rank_streaming_memory_noc_v1/proposal.json",
+    "control_plane/shadow_exports/l2_decisions/l2_decoder_logit_rank_streaming_memory_noc_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/model_llm_decoder_logit_rank_streaming.py",
+    "runs/designs/sram/minimal_v0_2_draft/sram_metrics.json",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}
