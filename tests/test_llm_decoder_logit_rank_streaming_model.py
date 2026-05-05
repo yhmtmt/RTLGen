@@ -166,6 +166,58 @@ def test_logit_rank_streaming_report_uses_measured_candidate_merge_ppa(tmp_path:
     )
 
 
+def test_logit_rank_streaming_report_adds_memory_hierarchy_terms(tmp_path: Path) -> None:
+    ppa = tmp_path / "rank_ppa.json"
+    ppa.write_text(
+        json.dumps(
+            {
+                "proposals": [
+                    {
+                        "metrics_ref": {
+                            "metrics_csv": "runs/designs/activations/logit_rank_r8_l16_k1_wrapper/metrics.csv",
+                            "status": "ok",
+                        },
+                        "metric_summary": {
+                            "critical_path_ns": 3.0,
+                            "die_area": 10.0,
+                            "total_power_mw": 0.1,
+                        },
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    report = build_report(
+        rank_ppa_path=ppa,
+        scale_ppa_path=None,
+        candidate_merge_ppa_path=None,
+        vocab_size=64,
+        producer_lanes=8,
+        top_k=1,
+        global_merge_ii_cycles_list=[1],
+        candidate_fifo_depth_groups=16,
+        memory_bandwidth_bytes_per_cycle=8.0,
+        sram_read_energy_pj_per_byte=1.0,
+        sram_write_energy_pj_per_byte=2.0,
+        noc_hops=2,
+        noc_energy_pj_per_byte_hop=0.5,
+    )
+
+    flat = report["flat_measured_ranker_points"][0]
+    streaming = report["hierarchical_streaming_alternatives"][0]
+    assert report["memory_hierarchy_model"]["source"] == "planning_default_not_literature_backed"
+    assert flat["memory_hierarchy"]["total_bytes"] == 256
+    assert streaming["memory_hierarchy"]["total_bytes"] == 68
+    assert streaming["memory_hierarchy"]["total_memory_energy_nj"] == 0.172
+    assert report["memory_traffic_recommendation"]["sweep_key"] == streaming["sweep_key"]
+    assert (
+        streaming["traffic"]["streaming_candidate_memory_bytes"]
+        < flat["memory_hierarchy"]["total_bytes"]
+    )
+
+
 def test_logit_rank_streaming_overlap_sweep_varies_producer_and_fifo(tmp_path: Path) -> None:
     ppa = tmp_path / "rank_ppa.json"
     ppa.write_text(

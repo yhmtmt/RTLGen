@@ -463,6 +463,53 @@ def _traffic_summary(
     }
 
 
+def _memory_service_summary(
+    *,
+    read_bytes: int,
+    write_bytes: int,
+    compute_cycles: int,
+    clock_ns: float,
+    memory_bandwidth_bytes_per_cycle: float,
+    sram_read_energy_pj_per_byte: float,
+    sram_write_energy_pj_per_byte: float,
+    noc_hops: int,
+    noc_energy_pj_per_byte_hop: float,
+) -> JsonDict:
+    if memory_bandwidth_bytes_per_cycle <= 0.0:
+        raise ValueError("memory_bandwidth_bytes_per_cycle must be positive")
+    if min(sram_read_energy_pj_per_byte, sram_write_energy_pj_per_byte, noc_energy_pj_per_byte_hop) < 0.0:
+        raise ValueError("memory energy parameters must be non-negative")
+    if noc_hops < 0:
+        raise ValueError("noc_hops must be non-negative")
+
+    total_bytes = read_bytes + write_bytes
+    service_cycles = math.ceil(total_bytes / memory_bandwidth_bytes_per_cycle)
+    memory_bound_cycles = max(compute_cycles, service_cycles)
+    sram_energy_pj = (
+        read_bytes * sram_read_energy_pj_per_byte
+        + write_bytes * sram_write_energy_pj_per_byte
+    )
+    noc_energy_pj = total_bytes * noc_hops * noc_energy_pj_per_byte_hop
+    total_energy_pj = sram_energy_pj + noc_energy_pj
+    return {
+        "source": "planning_default_not_literature_backed",
+        "unit": "bytes_cycles_and_pj",
+        "read_bytes": read_bytes,
+        "write_bytes": write_bytes,
+        "total_bytes": total_bytes,
+        "bandwidth_bytes_per_cycle": memory_bandwidth_bytes_per_cycle,
+        "service_cycles": service_cycles,
+        "compute_cycles": compute_cycles,
+        "memory_bound_cycles": memory_bound_cycles,
+        "is_memory_bound": service_cycles > compute_cycles,
+        "memory_bound_latency_us": round(memory_bound_cycles * clock_ns / 1000.0, 6),
+        "sram_energy_nj": round(sram_energy_pj / 1000.0, 6),
+        "noc_energy_nj": round(noc_energy_pj / 1000.0, 6),
+        "total_memory_energy_nj": round(total_energy_pj / 1000.0, 6),
+        "noc_hops": noc_hops,
+    }
+
+
 def _streaming_overlap_candidate(
     *,
     measured_points: list[JsonDict],
@@ -479,6 +526,11 @@ def _streaming_overlap_candidate(
     candidate_fifo_depth_groups: int,
     fallback_critical_path_ns: float,
     token_id_bits: int,
+    memory_bandwidth_bytes_per_cycle: float,
+    sram_read_energy_pj_per_byte: float,
+    sram_write_energy_pj_per_byte: float,
+    noc_hops: int,
+    noc_energy_pj_per_byte_hop: float,
 ) -> JsonDict:
     local_point = _select_ranker_point(
         measured_points,
@@ -600,6 +652,20 @@ def _streaming_overlap_candidate(
             ),
         },
     }
+    traffic = candidate["traffic"]
+    candidate_payload_bytes = _as_int(traffic.get("candidate_payload_bytes"))
+    final_topk_bytes = _as_int(traffic.get("final_topk_bytes"))
+    candidate["memory_hierarchy"] = _memory_service_summary(
+        read_bytes=candidate_payload_bytes,
+        write_bytes=candidate_payload_bytes + final_topk_bytes,
+        compute_cycles=sim["total_cycles"],
+        clock_ns=hierarchy_clock_ns,
+        memory_bandwidth_bytes_per_cycle=memory_bandwidth_bytes_per_cycle,
+        sram_read_energy_pj_per_byte=sram_read_energy_pj_per_byte,
+        sram_write_energy_pj_per_byte=sram_write_energy_pj_per_byte,
+        noc_hops=noc_hops,
+        noc_energy_pj_per_byte_hop=noc_energy_pj_per_byte_hop,
+    )
     return candidate
 
 
@@ -626,6 +692,11 @@ def build_report(
     candidate_fifo_depth_groups_list: list[int] | None = None,
     token_id_bits: int = 16,
     fallback_critical_path_ns: float = 3.6,
+    memory_bandwidth_bytes_per_cycle: float = 64.0,
+    sram_read_energy_pj_per_byte: float = 0.05,
+    sram_write_energy_pj_per_byte: float = 0.07,
+    noc_hops: int = 0,
+    noc_energy_pj_per_byte_hop: float = 0.02,
 ) -> JsonDict:
     if vocab_size <= 0:
         raise ValueError("vocab_size must be positive")
@@ -635,6 +706,10 @@ def build_report(
         raise ValueError("top_k must be positive")
     if token_id_bits <= 0:
         raise ValueError("token_id_bits must be positive")
+    if memory_bandwidth_bytes_per_cycle <= 0.0:
+        raise ValueError("memory_bandwidth_bytes_per_cycle must be positive")
+    if noc_hops < 0:
+        raise ValueError("noc_hops must be non-negative")
     merge_iis = global_merge_ii_cycles_list or [1, 2, 4]
     lane_options = producer_lanes_list or [producer_lanes]
     top_k_options = top_k_list or [top_k]
@@ -670,6 +745,30 @@ def build_report(
         for point in measured_points
         if _as_int(point.get("lanes")) > 0
     ]
+    for row in flat:
+        logit_bits = _as_int(row.get("metrics", {}).get("logit_bits"), 0)
+        if logit_bits <= 0:
+            matching_point = next(
+                (
+                    point
+                    for point in measured_points
+                    if point.get("metrics_csv") == row.get("metrics_csv")
+                ),
+                {},
+            )
+            logit_bits = _as_int(matching_point.get("logit_bits"), 16) or 16
+        materialized_logit_bytes = vocab_size * _byte_width(logit_bits)
+        row["memory_hierarchy"] = _memory_service_summary(
+            read_bytes=materialized_logit_bytes,
+            write_bytes=materialized_logit_bytes,
+            compute_cycles=row["total_cycles"],
+            clock_ns=row["timing"]["clock_ns"],
+            memory_bandwidth_bytes_per_cycle=memory_bandwidth_bytes_per_cycle,
+            sram_read_energy_pj_per_byte=sram_read_energy_pj_per_byte,
+            sram_write_energy_pj_per_byte=sram_write_energy_pj_per_byte,
+            noc_hops=noc_hops,
+            noc_energy_pj_per_byte_hop=noc_energy_pj_per_byte_hop,
+        )
 
     alternatives: list[JsonDict] = []
     for merge_ii in merge_iis:
@@ -689,6 +788,11 @@ def build_report(
                 candidate_fifo_depth_groups=candidate_fifo_depth_groups,
                 fallback_critical_path_ns=fallback_critical_path_ns,
                 token_id_bits=token_id_bits,
+                memory_bandwidth_bytes_per_cycle=memory_bandwidth_bytes_per_cycle,
+                sram_read_energy_pj_per_byte=sram_read_energy_pj_per_byte,
+                sram_write_energy_pj_per_byte=sram_write_energy_pj_per_byte,
+                noc_hops=noc_hops,
+                noc_energy_pj_per_byte_hop=noc_energy_pj_per_byte_hop,
             )
         )
 
@@ -714,6 +818,11 @@ def build_report(
                             candidate_fifo_depth_groups=fifo_depth,
                             fallback_critical_path_ns=fallback_critical_path_ns,
                             token_id_bits=token_id_bits,
+                            memory_bandwidth_bytes_per_cycle=memory_bandwidth_bytes_per_cycle,
+                            sram_read_energy_pj_per_byte=sram_read_energy_pj_per_byte,
+                            sram_write_energy_pj_per_byte=sram_write_energy_pj_per_byte,
+                            noc_hops=noc_hops,
+                            noc_energy_pj_per_byte_hop=noc_energy_pj_per_byte_hop,
                         )
                         if candidate["sweep_key"] in seen_sweep_keys:
                             continue
@@ -753,6 +862,15 @@ def build_report(
             row["traffic"]["streaming_candidate_memory_bytes"],
         ),
     ) if overlap_sweep else None
+    best_memory_traffic = min(
+        overlap_sweep,
+        key=lambda row: (
+            not bool(row.get("fifo_capacity_ok", True)),
+            row["memory_hierarchy"]["total_bytes"],
+            row["memory_hierarchy"]["memory_bound_latency_us"],
+            row["timing"]["latency_us_per_token"],
+        ),
+    ) if overlap_sweep else None
 
     return {
         "version": 0.1,
@@ -787,6 +905,19 @@ def build_report(
             "candidate_fifo_depth_groups_list": fifo_options,
             "token_id_bits": token_id_bits,
             "fallback_critical_path_ns": fallback_critical_path_ns,
+            "memory_bandwidth_bytes_per_cycle": memory_bandwidth_bytes_per_cycle,
+            "sram_read_energy_pj_per_byte": sram_read_energy_pj_per_byte,
+            "sram_write_energy_pj_per_byte": sram_write_energy_pj_per_byte,
+            "noc_hops": noc_hops,
+            "noc_energy_pj_per_byte_hop": noc_energy_pj_per_byte_hop,
+        },
+        "memory_hierarchy_model": {
+            "source": "planning_default_not_literature_backed",
+            "unit": "bytes_cycles_and_pj",
+            "scope": (
+                "First-order SRAM/NoC service estimate layered on existing compute cycles. "
+                "This is not a measured Nangate45 memory macro or NoC PPA result."
+            ),
         },
         "assumptions": [
             "Producer emits one W-lane logit tile after producer latency and then every producer II cycles.",
@@ -797,6 +928,7 @@ def build_report(
             "Traffic model counts materialized-logit write+read bytes versus candidate FIFO write+read bytes.",
             "Measured row-8 datapath and row-16/row-32 scale critical_path_ns values are used as ranker clock proxies.",
             "Measured candidate-stream merge/FIFO PPA is used for global merge buffering when an exact or nearest-depth point is available.",
+            "Memory hierarchy estimates use explicit planning parameters and are reported separately from measured cell PPA.",
             "Missing lane points are explicit defaults or log2-lane scaled proxies.",
             "Perf-sim and future RTL equivalence is defined at accepted ready-valid stream beats, FIFO occupancy, valid masks, last-beat completion, and tie-breaking.",
         ],
@@ -832,12 +964,30 @@ def build_report(
             if best_overlap is not None
             else None
         ),
+        "memory_traffic_recommendation": (
+            {
+                "sweep_key": best_memory_traffic["sweep_key"],
+                "latency_us_per_token": best_memory_traffic["timing"]["latency_us_per_token"],
+                "memory_bound_latency_us": best_memory_traffic["memory_hierarchy"]["memory_bound_latency_us"],
+                "memory_total_bytes": best_memory_traffic["memory_hierarchy"]["total_bytes"],
+                "total_memory_energy_nj": best_memory_traffic["memory_hierarchy"]["total_memory_energy_nj"],
+                "traffic_reduction_vs_materialized": best_memory_traffic["traffic"]["traffic_reduction_vs_materialized"],
+                "fifo_capacity_ok": best_memory_traffic["fifo_capacity_ok"],
+                "reason": (
+                    "Best FIFO-valid streaming candidate by modeled memory bytes, then "
+                    "memory-bound latency and compute latency."
+                ),
+            }
+            if best_memory_traffic is not None
+            else None
+        ),
     }
 
 
 def _write_markdown(path: Path, payload: JsonDict) -> None:
     rec = payload["recommendation"]
     overlap = payload.get("overlap_recommendation") or {}
+    memory = payload.get("memory_traffic_recommendation") or {}
     lines = [
         "# Decoder Logit-Rank Streaming Hierarchy",
         "",
@@ -852,6 +1002,9 @@ def _write_markdown(path: Path, payload: JsonDict) -> None:
         f"- overlap_sweep_best: `{overlap.get('sweep_key', '')}`",
         f"- overlap_recovered_fraction: `{overlap.get('overlap_recovered_fraction', '')}`",
         f"- traffic_reduction_vs_materialized: `{overlap.get('traffic_reduction_vs_materialized', '')}`",
+        f"- memory_traffic_best: `{memory.get('sweep_key', '')}`",
+        f"- memory_total_bytes: `{memory.get('memory_total_bytes', '')}`",
+        f"- memory_bound_latency_us: `{memory.get('memory_bound_latency_us', '')}`",
         "",
         "## Inputs",
         "",
@@ -865,17 +1018,20 @@ def _write_markdown(path: Path, payload: JsonDict) -> None:
             "",
             "## Flat Measured Ranker Points",
             "",
-            "| lanes | top_k | cycles | latency_us | tokens_per_s | critical_path_ns | source |",
-            "|---:|---:|---:|---:|---:|---:|---|",
+            "| lanes | top_k | cycles | latency_us | memory_bytes | memory_bound_us | tokens_per_s | critical_path_ns | source |",
+            "|---:|---:|---:|---:|---:|---:|---:|---:|---|",
         ]
     )
     for row in payload["flat_measured_ranker_points"]:
+        mem = row.get("memory_hierarchy") or {}
         lines.append(
-            "| {lanes} | {topk} | {cycles} | {latency} | {tps} | {cp} | `{source}` |".format(
+            "| {lanes} | {topk} | {cycles} | {latency} | {mem_bytes} | {mem_lat} | {tps} | {cp} | `{source}` |".format(
                 lanes=row["lanes"],
                 topk=row["top_k"],
                 cycles=row["total_cycles"],
                 latency=row["timing"]["latency_us_per_token"],
+                mem_bytes=mem.get("total_bytes"),
+                mem_lat=mem.get("memory_bound_latency_us"),
                 tps=row["timing"]["tokens_per_s"],
                 cp=row["timing"]["clock_ns"],
                 source=row.get("metrics_csv") or row.get("source") or "",
@@ -886,21 +1042,24 @@ def _write_markdown(path: Path, payload: JsonDict) -> None:
             "",
             "## Hierarchical Streaming Alternatives",
             "",
-            "| variant | W | top_k | cycles | latency_us | tokens_per_s | merge_fifo_cp_ns | est_area | fifo required/capacity | fifo ok | speedup vs flat |",
-            "|---|---:|---:|---:|---:|---:|---:|---:|---:|---|---:|",
+            "| variant | W | top_k | cycles | latency_us | memory_bytes | memory_bound_us | tokens_per_s | merge_fifo_cp_ns | est_area | fifo required/capacity | fifo ok | speedup vs flat |",
+            "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---:|",
         ]
     )
     for row in payload["hierarchical_streaming_alternatives"]:
         component_ppa = row.get("component_ppa_metrics") or {}
         merge_fifo = row.get("candidate_merge_fifo_point") or {}
         merge_metrics = merge_fifo.get("metrics") or {}
+        mem = row.get("memory_hierarchy") or {}
         lines.append(
-            "| `{variant}` | {lanes} | {topk} | {cycles} | {latency} | {tps} | {merge_cp} | {area} | {fifo}/{cap} | `{ok}` | {speedup} |".format(
+            "| `{variant}` | {lanes} | {topk} | {cycles} | {latency} | {mem_bytes} | {mem_lat} | {tps} | {merge_cp} | {area} | {fifo}/{cap} | `{ok}` | {speedup} |".format(
                 variant=row["merge_variant"],
                 lanes=row["producer_lanes"],
                 topk=row["local_top_k"],
                 cycles=row["total_cycles"],
                 latency=row["timing"]["latency_us_per_token"],
+                mem_bytes=mem.get("total_bytes"),
+                mem_lat=mem.get("memory_bound_latency_us"),
                 tps=row["timing"]["tokens_per_s"],
                 merge_cp=merge_metrics.get("critical_path_ns"),
                 area=component_ppa.get("estimated_total_die_area"),
@@ -915,16 +1074,19 @@ def _write_markdown(path: Path, payload: JsonDict) -> None:
             "",
             "## Overlap And Traffic Sweep",
             "",
-            "| key | cycles | latency_us | fifo required/capacity | overlap recovered | traffic reduction | speedup vs flat |",
-            "|---|---:|---:|---:|---:|---:|---:|",
+            "| key | cycles | latency_us | memory_bytes | memory_energy_nj | fifo required/capacity | overlap recovered | traffic reduction | speedup vs flat |",
+            "|---|---:|---:|---:|---:|---:|---:|---:|---:|",
         ]
     )
     for row in payload["overlap_traffic_sweep"][:24]:
+        mem = row.get("memory_hierarchy") or {}
         lines.append(
-            "| `{key}` | {cycles} | {latency} | {fifo}/{cap} | {overlap} | {traffic} | {speedup} |".format(
+            "| `{key}` | {cycles} | {latency} | {mem_bytes} | {mem_energy} | {fifo}/{cap} | {overlap} | {traffic} | {speedup} |".format(
                 key=row["sweep_key"],
                 cycles=row["total_cycles"],
                 latency=row["timing"]["latency_us_per_token"],
+                mem_bytes=mem.get("total_bytes"),
+                mem_energy=mem.get("total_memory_energy_nj"),
                 fifo=row["required_fifo_depth_groups"],
                 cap=row["candidate_fifo_depth_groups"],
                 overlap=row["buffered_baseline"]["overlap_recovered_fraction"],
@@ -975,6 +1137,11 @@ def main() -> int:
     ap.add_argument("--candidate-fifo-depth-groups-list", type=_int_list, help="comma-separated FIFO depth sweep")
     ap.add_argument("--token-id-bits", type=int, default=16)
     ap.add_argument("--fallback-critical-path-ns", type=float, default=3.6)
+    ap.add_argument("--memory-bandwidth-bytes-per-cycle", type=float, default=64.0)
+    ap.add_argument("--sram-read-energy-pj-per-byte", type=float, default=0.05)
+    ap.add_argument("--sram-write-energy-pj-per-byte", type=float, default=0.07)
+    ap.add_argument("--noc-hops", type=int, default=0)
+    ap.add_argument("--noc-energy-pj-per-byte-hop", type=float, default=0.02)
     ap.add_argument("--out", required=True, help="output JSON path")
     ap.add_argument("--out-md", required=True, help="output Markdown path")
     args = ap.parse_args()
@@ -1001,6 +1168,11 @@ def main() -> int:
         candidate_fifo_depth_groups_list=args.candidate_fifo_depth_groups_list,
         token_id_bits=args.token_id_bits,
         fallback_critical_path_ns=args.fallback_critical_path_ns,
+        memory_bandwidth_bytes_per_cycle=args.memory_bandwidth_bytes_per_cycle,
+        sram_read_energy_pj_per_byte=args.sram_read_energy_pj_per_byte,
+        sram_write_energy_pj_per_byte=args.sram_write_energy_pj_per_byte,
+        noc_hops=args.noc_hops,
+        noc_energy_pj_per_byte_hop=args.noc_energy_pj_per_byte_hop,
     )
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
