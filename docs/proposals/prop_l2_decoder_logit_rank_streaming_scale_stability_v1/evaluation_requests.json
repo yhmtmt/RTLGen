@@ -22,8 +22,12 @@
         "direction": "iterate",
         "reason": "Use larger vocabulary and producer-lane scale points to decide whether NoC/banking measurement or larger-model quality confirmation is the next useful step."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 417,
+      "merge_commit": "72468ee2154cba00ac46598f404dcd9220bc554d",
+      "merged_utc": "2026-05-05T12:12:34.403646Z",
+      "notes": "Merged via PR #417 and merge 72468ee2154cba00ac46598f404dcd9220bc554d at 2026-05-05T12:12:34.403646Z."
     }
   ],
-  "source_commit": "edaea838d766bfb70be2783e7fc0589e39d4fd8b"
+  "source_commit": "c06374c1e379b074dda263af5b55f6cca0c6b7c4"
 }
