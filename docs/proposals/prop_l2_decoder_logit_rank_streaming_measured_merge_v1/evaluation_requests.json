@@ -1,0 +1,26 @@
+{
+  "proposal_id": "prop_l2_decoder_logit_rank_streaming_measured_merge_v1",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_logit_rank_streaming_measured_merge_v1",
+      "task_type": "l2_campaign",
+      "objective": "Rerun the decoder logit-rank streaming overlap model using measured candidate-stream merge/FIFO PPA while preserving perf-sim/RTL equivalence observables.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_logit_rank_streaming_overlap",
+      "cost_class": "low",
+      "depends_on_item_ids": [
+        "l2_decoder_logit_rank_streaming_overlap_v1",
+        "l1_decoder_candidate_stream_merge_fifo_v1",
+        "l1_decoder_logit_rank_datapath_v1_r2",
+        "l1_decoder_logit_rank_scale_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use the measured merge/FIFO-calibrated model to decide whether the next frontier is memory/NoC hierarchy or a return to flat rank datapath scaling."
+      },
+      "status": "pending"
+    }
+  ]
+}

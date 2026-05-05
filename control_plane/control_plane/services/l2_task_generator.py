@@ -1880,12 +1880,16 @@ def _decoder_logit_rank_streaming_hierarchy_evidence(*, item_id: str) -> dict[st
     hierarchy_report = f"{base}/decoder_logit_rank_streaming_hierarchy__{item_id}.md"
     rank_ppa = "control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_datapath_v1_r2.json"
     scale_ppa = "control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_scale_v1.json"
+    candidate_merge_ppa = (
+        "control_plane/shadow_exports/l1_promotions/l1_decoder_candidate_stream_merge_fifo_v1.json"
+    )
     return {
         "inputs": {
             "source_prompt_stress": prompt_stress,
             "source_logit_rank_bypass": logit_rank_bypass,
             "rank_datapath_ppa": rank_ppa,
             "rank_scale_ppa": scale_ppa,
+            "candidate_merge_ppa": candidate_merge_ppa,
             "streaming_hierarchy_out": hierarchy_out,
             "streaming_hierarchy_report": hierarchy_report,
             "streaming_hierarchy_scope": (
@@ -1902,6 +1906,7 @@ def _decoder_logit_rank_streaming_hierarchy_evidence(*, item_id: str) -> dict[st
                     f"--logit-rank-bypass {logit_rank_bypass} "
                     f"--rank-ppa {rank_ppa} "
                     f"--scale-ppa {scale_ppa} "
+                    f"--candidate-merge-ppa {candidate_merge_ppa} "
                     f"--out {hierarchy_out} "
                     f"--out-md {hierarchy_report}"
                 ),
@@ -1919,17 +1924,22 @@ def _decoder_logit_rank_streaming_overlap_evidence(*, item_id: str) -> dict[str,
     overlap_report = f"{base}/decoder_logit_rank_streaming_overlap__{item_id}.md"
     rank_ppa = "control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_datapath_v1_r2.json"
     scale_ppa = "control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_scale_v1.json"
+    candidate_merge_ppa = (
+        "control_plane/shadow_exports/l1_promotions/l1_decoder_candidate_stream_merge_fifo_v1.json"
+    )
     return {
         "inputs": {
             "source_prompt_stress": prompt_stress,
             "source_logit_rank_bypass": logit_rank_bypass,
             "rank_datapath_ppa": rank_ppa,
             "rank_scale_ppa": scale_ppa,
+            "candidate_merge_ppa": candidate_merge_ppa,
             "streaming_overlap_out": overlap_out,
             "streaming_overlap_report": overlap_report,
             "streaming_overlap_scope": (
-                "Refine the decoder logit-rank streaming hierarchy with producer-overlap, FIFO, "
-                "candidate-traffic, and perf-sim/RTL equivalence observables before selecting a merge RTL block"
+                "Refine the decoder logit-rank streaming hierarchy with measured candidate-stream "
+                "merge/FIFO PPA, producer-overlap, FIFO, candidate-traffic, and perf-sim/RTL "
+                "equivalence observables"
             ),
         },
         "commands": [
@@ -1941,6 +1951,7 @@ def _decoder_logit_rank_streaming_overlap_evidence(*, item_id: str) -> dict[str,
                     f"--logit-rank-bypass {logit_rank_bypass} "
                     f"--rank-ppa {rank_ppa} "
                     f"--scale-ppa {scale_ppa} "
+                    f"--candidate-merge-ppa {candidate_merge_ppa} "
                     "--producer-lanes-list 8,16,32 "
                     "--top-k-list 1,4 "
                     "--producer-ii-cycles-list 1,2,4 "
