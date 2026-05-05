@@ -118,7 +118,14 @@ def read_design_names(config_path: Path) -> Tuple[str, str]:
         module_name = cfg["adder"]["module_name"]
     elif "operations" in cfg and len(cfg["operations"]) == 1:
         entry = cfg["operations"][0]
-        if entry["type"] not in ("activation", "softmax_rowwise", "bf16_recip_norm", "score_tie_rank", "logit_rank"):
+        if entry["type"] not in (
+            "activation",
+            "softmax_rowwise",
+            "bf16_recip_norm",
+            "score_tie_rank",
+            "logit_rank",
+            "candidate_stream_merge_fifo",
+        ):
             raise ValueError(f"Unsupported single-operation design type in {config_path}: {entry['type']}")
         module_name = entry["module_name"]
     else:

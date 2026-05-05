@@ -1,0 +1,27 @@
+{
+  "version": "1.1",
+  "operands": [
+    {
+      "name": "candidate_logits",
+      "dimensions": 1,
+      "bit_width": 16,
+      "signed": true,
+      "kind": "int"
+    }
+  ],
+  "operations": [
+    {
+      "type": "candidate_stream_merge_fifo",
+      "module_name": "candidate_stream_merge_fifo_k1_l16_t16_d16",
+      "operand": "candidate_logits",
+      "options": {
+        "top_k": 1,
+        "logit_bits": 16,
+        "token_id_bits": 16,
+        "fifo_depth_groups": 16,
+        "counter_bits": 32,
+        "logit_signed": true
+      }
+    }
+  ]
+}

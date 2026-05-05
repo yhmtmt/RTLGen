@@ -204,6 +204,9 @@ set_tests_properties(test_softmax_rowwise PROPERTIES WORKING_DIRECTORY ${PROJECT
 add_test(NAME test_mac_pp_feedback COMMAND bash ${PROJECT_SOURCE_DIR}/tests/test_mac_pp_feedback.sh)
 set_tests_properties(test_mac_pp_feedback PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
+add_test(NAME test_candidate_stream_merge_fifo COMMAND bash ${PROJECT_SOURCE_DIR}/tests/test_candidate_stream_merge_fifo.sh)
+set_tests_properties(test_candidate_stream_merge_fifo PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
 if(RTLGEN_BUILD_FLOPOCO)
     set(FLOPOCO_STAGED_BIN ${PROJECT_SOURCE_DIR}/bin/flopoco)
     set(FLOPOCO_READY OFF)

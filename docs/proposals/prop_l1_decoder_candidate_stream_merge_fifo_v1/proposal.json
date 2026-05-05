@@ -1,0 +1,70 @@
+{
+  "proposal_id": "prop_l1_decoder_candidate_stream_merge_fifo_v1",
+  "created_utc": "2026-05-05T07:30:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "candidate_stream_merge_fifo",
+  "title": "Decoder candidate-stream merge FIFO datapath",
+  "hypothesis": "The decoder logit-rank streaming hierarchy should not use modeled merge costs until a ready-valid candidate-stream merge/FIFO RTL block is measured and checked against the perf-sim observables recorded in the overlap model.",
+  "direct_comparison": {
+    "primary_question": "What is the Nangate45 PPA cost of a candidate-stream merge/FIFO block that preserves the overlap model's ready-valid equivalence contract for top-1 and top-4 candidate streams?",
+    "include": [
+      "candidate-stream ready-valid input/output RTL",
+      "top-k merge by larger logit with lower token-id tie-break",
+      "accepted candidate group count",
+      "producer stall cycle count",
+      "FIFO max occupancy",
+      "final completion cycle",
+      "top-1 and top-4 signed 16-bit logit, 16-bit token-id variants with 16 candidate-group FIFO depth"
+    ],
+    "exclude": [
+      "full decoder integration",
+      "new prompt quality rerun",
+      "NoC/SRAM banking arbitration",
+      "probability-producing softmax or sampling consumers"
+    ]
+  },
+  "expected_benefit": [
+    "replaces proxy merge latency and area with measured L1 RTL PPA",
+    "creates a concrete perf-sim/RTL equivalence target for the streaming hierarchy",
+    "separates candidate traffic buffering cost from local logit-rank datapath cost"
+  ],
+  "risks": [
+    "the first RTL block uses register FIFO storage; later SRAM-backed queues may differ",
+    "isolated PPA may improve or worsen after integration with producer and consumer timing",
+    "the equivalence test covers stream ordering and counters, not full decoder token quality"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_candidate_stream_merge_fifo_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for ready-valid candidate-stream merge/FIFO blocks used by decoder logit-rank streaming overlap.",
+      "config_paths": [
+        "runs/designs/activations/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/config_candidate_stream_merge_fifo_k1_l16_t16_d16.json",
+        "runs/designs/activations/candidate_stream_merge_fifo_k4_l16_t16_d16_wrapper/config_candidate_stream_merge_fifo_k4_l16_t16_d16.json"
+      ],
+      "sweep_path": "runs/campaigns/activations/candidate_stream_merge_fifo/sweeps/nangate45_highutil.json",
+      "platform": "nangate45",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "candidate_stream_merge_fifo",
+      "depends_on_item_ids": [
+        "l2_decoder_logit_rank_streaming_overlap_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_logit_rank_streaming_overlap__l2_decoder_logit_rank_streaming_overlap_v1.json",
+    "control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_datapath_v1_r2.json",
+    "control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_scale_v1.json"
+  ],
+  "knowledge_refs": [
+    "src/rtlgen/rtl_operations.cpp",
+    "examples/config_candidate_stream_merge_fifo.json",
+    "tests/candidate_stream_merge_fifo_tb.v",
+    "npu/eval/model_llm_decoder_logit_rank_streaming.py"
+  ]
+}

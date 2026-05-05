@@ -195,7 +195,9 @@ int main(int argc, char** argv) {
               << config.softmax_rowwise_operations.size() << " row-wise softmax block(s), "
               << config.bf16_recip_norm_operations.size() << " bf16 reciprocal-normalization block(s), "
               << config.score_tie_rank_operations.size() << " score tie-rank block(s), "
-              << config.logit_rank_operations.size() << " logit-rank block(s)\n";
+              << config.logit_rank_operations.size() << " logit-rank block(s), "
+              << config.candidate_stream_merge_fifo_operations.size()
+              << " candidate-stream merge FIFO block(s)\n";
 
     try {
         std::filesystem::path flopocoPath;
@@ -333,6 +335,16 @@ int main(int argc, char** argv) {
                       << ", logit_bits=" << rank.logit_bits
                       << ", top_k=" << rank.top_k << ")\n";
             emitLogitRankModule(rank, operandDef);
+        }
+
+        for (const auto &merge : config.candidate_stream_merge_fifo_operations) {
+            OperandDefinition operandDef = resolveOperand(config, merge.operand);
+            std::cout << "[INFO] Generating candidate-stream merge FIFO " << merge.module_name
+                      << " (top_k=" << merge.top_k
+                      << ", logit_bits=" << merge.logit_bits
+                      << ", token_id_bits=" << merge.token_id_bits
+                      << ", fifo_depth_groups=" << merge.fifo_depth_groups << ")\n";
+            emitCandidateStreamMergeFifoModule(merge, operandDef);
         }
 
         for (const auto &fp : config.fp_operations) {
