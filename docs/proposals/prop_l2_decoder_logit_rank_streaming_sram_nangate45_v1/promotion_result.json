@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_logit_rank_streaming_sram_nangate45_v1",
+  "decision": "iterate",
+  "pr_number": 415,
+  "merge_commit": "e6c41f0afc4f1cab3b64e608279a5047e00a786d",
+  "merged_utc": "2026-05-05T11:48:38.784218Z"
+}

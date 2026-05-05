@@ -21,8 +21,12 @@
         "direction": "iterate",
         "reason": "Use SRAM-artifact-backed memory energy to decide whether the next hierarchy step should be NoC/banking measurement or larger-model and larger-array stability checks."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 415,
+      "merge_commit": "e6c41f0afc4f1cab3b64e608279a5047e00a786d",
+      "merged_utc": "2026-05-05T11:48:38.784218Z",
+      "notes": "Merged via PR #415 and merge e6c41f0afc4f1cab3b64e608279a5047e00a786d at 2026-05-05T11:48:38.784218Z."
     }
   ],
-  "source_commit": "e00db7bf1af490642d15fa922cb63f876a2b04d9"
+  "source_commit": "79856b13dbbc93b3de1ed2198baa3303e72aac74"
 }
