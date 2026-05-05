@@ -1,0 +1,9 @@
+{
+  "total_area_um2": 40759424.3918,
+  "total_read_energy_pj": 1671.884,
+  "total_write_energy_pj": 2032.1,
+  "max_access_time_ns": 3.34336,
+  "missing_instances": [],
+  "instance_count": 2,
+  "estimated_count": 2
+}

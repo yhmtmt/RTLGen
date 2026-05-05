@@ -64,6 +64,7 @@ def ensure_metrics_shape(metrics_path: Path) -> None:
     instances = data.get("instances")
     if not isinstance(instances, list):
         raise ValueError("metrics json must contain top-level 'instances' list")
+    estimated_count = 0
     for idx, entry in enumerate(instances):
         if not isinstance(entry, dict):
             raise ValueError(f"instances[{idx}] must be an object")
@@ -71,6 +72,23 @@ def ensure_metrics_shape(metrics_path: Path) -> None:
             raise ValueError(
                 f"instances[{idx}] must contain object field 'instance'"
             )
+        if not bool(entry.get("estimated")):
+            continue
+        metrics = entry.get("metrics")
+        if not isinstance(metrics, dict):
+            raise ValueError(f"instances[{idx}] estimated entry must contain metrics object")
+        missing = [
+            key
+            for key in ("area_um2", "access_time_ns", "read_energy_pj", "write_energy_pj")
+            if metrics.get(key) is None
+        ]
+        if missing:
+            raise ValueError(
+                f"instances[{idx}] estimated entry missing metrics: {', '.join(missing)}"
+            )
+        estimated_count += 1
+    if estimated_count == 0:
+        raise ValueError("metrics json must contain at least one estimated SRAM instance")
 
 
 def run_command(
