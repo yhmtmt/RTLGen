@@ -1,0 +1,33 @@
+{
+  "item_id": "l1_decoder_candidate_stream_merge_fifo_v1",
+  "completed_trials": 5,
+  "success_count": 5,
+  "failure_count": 0,
+  "success_rate": 1.0,
+  "metrics": {
+    "critical_path_ns": {
+      "best": 2.9047,
+      "mean": 2.92068,
+      "median": 2.9204,
+      "max": 2.934,
+      "range": 0.029300000000000104,
+      "stddev": 0.010528323703230324
+    },
+    "die_area": {
+      "best": 13109.105025,
+      "mean": 15167.863325000002,
+      "median": 15682.5529,
+      "max": 15682.5529,
+      "range": 2573.447875,
+      "stddev": 1029.37915
+    },
+    "total_power_mw": {
+      "best": 0.0153,
+      "mean": 0.0156,
+      "median": 0.0157,
+      "max": 0.0159,
+      "range": 0.0006000000000000016,
+      "stddev": 0.00021908902300206656
+    }
+  }
+}
