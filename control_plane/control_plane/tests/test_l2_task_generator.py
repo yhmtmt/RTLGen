@@ -1615,6 +1615,14 @@ def test_generate_l2_campaign_task_adds_decoder_logit_rank_streaming_overlap_evi
             assert decoder_inputs["candidate_merge_ppa"] == (
                 "control_plane/shadow_exports/l1_promotions/l1_decoder_candidate_stream_merge_fifo_v1.json"
             )
+            assert decoder_inputs["memory_model"] == {
+                "memory_bandwidth_bytes_per_cycle": 64,
+                "sram_read_energy_pj_per_byte": 0.05,
+                "sram_write_energy_pj_per_byte": 0.07,
+                "noc_hops": 2,
+                "noc_energy_pj_per_byte_hop": 0.02,
+                "source": "planning_default_not_literature_backed",
+            }
             assert decoder_inputs["streaming_overlap_out"] == (
                 "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
                 "decoder_logit_rank_streaming_overlap__l2_decoder_logit_rank_streaming_overlap_v1.json"
@@ -1628,6 +1636,8 @@ def test_generate_l2_campaign_task_adds_decoder_logit_rank_streaming_overlap_evi
             assert "--top-k-list 1,4" in run
             assert "--producer-ii-cycles-list 1,2,4" in run
             assert "--candidate-fifo-depth-groups-list 16,256,4096" in run
+            assert "--noc-hops 2" in run
+            assert "--memory-bandwidth-bytes-per-cycle 64" in run
             assert decoder_inputs["streaming_overlap_out"] in work_item.expected_outputs
             assert decoder_inputs["streaming_overlap_report"] in work_item.expected_outputs
             assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {

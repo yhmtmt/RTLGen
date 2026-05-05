@@ -1927,6 +1927,14 @@ def _decoder_logit_rank_streaming_overlap_evidence(*, item_id: str) -> dict[str,
     candidate_merge_ppa = (
         "control_plane/shadow_exports/l1_promotions/l1_decoder_candidate_stream_merge_fifo_v1.json"
     )
+    memory_model = {
+        "memory_bandwidth_bytes_per_cycle": 64,
+        "sram_read_energy_pj_per_byte": 0.05,
+        "sram_write_energy_pj_per_byte": 0.07,
+        "noc_hops": 2,
+        "noc_energy_pj_per_byte_hop": 0.02,
+        "source": "planning_default_not_literature_backed",
+    }
     return {
         "inputs": {
             "source_prompt_stress": prompt_stress,
@@ -1934,6 +1942,7 @@ def _decoder_logit_rank_streaming_overlap_evidence(*, item_id: str) -> dict[str,
             "rank_datapath_ppa": rank_ppa,
             "rank_scale_ppa": scale_ppa,
             "candidate_merge_ppa": candidate_merge_ppa,
+            "memory_model": memory_model,
             "streaming_overlap_out": overlap_out,
             "streaming_overlap_report": overlap_report,
             "streaming_overlap_scope": (
@@ -1957,6 +1966,11 @@ def _decoder_logit_rank_streaming_overlap_evidence(*, item_id: str) -> dict[str,
                     "--producer-ii-cycles-list 1,2,4 "
                     "--global-merge-ii-cycles 1,2,4 "
                     "--candidate-fifo-depth-groups-list 16,256,4096 "
+                    "--memory-bandwidth-bytes-per-cycle 64 "
+                    "--sram-read-energy-pj-per-byte 0.05 "
+                    "--sram-write-energy-pj-per-byte 0.07 "
+                    "--noc-hops 2 "
+                    "--noc-energy-pj-per-byte-hop 0.02 "
                     f"--out {overlap_out} "
                     f"--out-md {overlap_report}"
                 ),
