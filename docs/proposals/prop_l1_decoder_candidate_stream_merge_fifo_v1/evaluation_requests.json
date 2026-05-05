@@ -20,5 +20,20 @@
       "requires_materialized_refs": true,
       "notes": "Queue after the generator support and proposal package merge so the evaluator can build the new operation type."
     }
+  ],
+  "source_commit": "d60799a0c49afb9d7c2966458d168cfdd0738c5b",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_candidate_stream_merge_fifo_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA for ready-valid candidate-stream merge/FIFO blocks and preserve the perf-sim/RTL equivalence observables from the decoder logit-rank streaming overlap model.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "candidate_stream_merge_fifo",
+      "status": "merged",
+      "merged_pr_number": 405,
+      "merge_commit": "de47bc919b63f53a2ab085cbb7422d7dfb02429d",
+      "merged_utc": "2026-05-05T08:50:09.161145Z",
+      "notes": "Merged via PR #405 and merge de47bc919b63f53a2ab085cbb7422d7dfb02429d at 2026-05-05T08:50:09.161145Z."
+    }
   ]
 }

@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l1_decoder_candidate_stream_merge_fifo_v1",
+  "decision": "promote",
+  "pr_number": 405,
+  "merge_commit": "de47bc919b63f53a2ab085cbb7422d7dfb02429d",
+  "merged_utc": "2026-05-05T08:50:09.161145Z"
+}
