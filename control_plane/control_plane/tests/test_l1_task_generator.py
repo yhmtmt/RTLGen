@@ -216,6 +216,46 @@ def _write_logit_rank_config(repo_root: Path) -> str:
     return str(config_path.relative_to(repo_root))
 
 
+def _write_candidate_stream_merge_fifo_config(repo_root: Path) -> str:
+    config_path = repo_root / "examples" / "config_candidate_stream_merge_fifo.json"
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    config_path.write_text(
+        json.dumps(
+            {
+                "version": "1.1",
+                "operands": [
+                    {
+                        "name": "candidate_logits",
+                        "dimensions": 1,
+                        "bit_width": 16,
+                        "signed": True,
+                        "kind": "int",
+                    }
+                ],
+                "operations": [
+                    {
+                        "type": "candidate_stream_merge_fifo",
+                        "module_name": "candidate_stream_merge_fifo_k2_l16_t8_d2",
+                        "operand": "candidate_logits",
+                        "options": {
+                            "top_k": 2,
+                            "logit_bits": 16,
+                            "token_id_bits": 8,
+                            "fifo_depth_groups": 2,
+                            "counter_bits": 16,
+                            "logit_signed": True,
+                        },
+                    }
+                ],
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return str(config_path.relative_to(repo_root))
+
+
 def _init_git_repo(repo_root: Path) -> str:
     origin_root = repo_root.parent / "origin.git"
     subprocess.run(["git", "init", "--bare", str(origin_root)], check=True, capture_output=True, text=True)
@@ -513,6 +553,39 @@ def test_generate_l1_sweep_task_supports_logit_rank_wrapper_config() -> None:
             assert result.status == "applied"
             assert work_item.expected_outputs == [
                 "runs/designs/activations/logit_rank_r4_l16_k2_wrapper/metrics.csv",
+            ]
+
+
+def test_generate_l1_sweep_task_supports_candidate_stream_merge_fifo_wrapper_config() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _, sweep_path = _write_example_repo(repo_root)
+        config_path = _write_candidate_stream_merge_fifo_config(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/activations",
+                    item_id="l1_demo_candidate_stream_merge_fifo",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="candidate_stream_merge_fifo",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert result.status == "applied"
+            assert work_item.expected_outputs == [
+                "runs/designs/activations/candidate_stream_merge_fifo_k2_l16_t8_d2_wrapper/metrics.csv",
             ]
 
 
