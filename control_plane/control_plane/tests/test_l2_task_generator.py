@@ -1618,6 +1618,8 @@ def test_generate_l2_campaign_task_adds_decoder_logit_rank_streaming_overlap_evi
             assert decoder_inputs["memory_model"] == {
                 "memory_bandwidth_bytes_per_cycle": 64,
                 "sram_metrics_json": "runs/designs/sram/minimal_v0_2_draft/sram_metrics.json",
+                "vocab_size_list": [50257, 100000, 200000],
+                "producer_lanes_list": [8, 16, 32, 64, 128],
                 "sram_read_energy_pj_per_byte": 0.05,
                 "sram_write_energy_pj_per_byte": 0.07,
                 "noc_hops": 2,
@@ -1635,9 +1637,10 @@ def test_generate_l2_campaign_task_adds_decoder_logit_rank_streaming_overlap_evi
             run = work_item.command_manifest[0]["run"]
             assert "estimate_llm_decoder_logit_rank_streaming_hierarchy.py" in run
             assert "--candidate-merge-ppa control_plane/shadow_exports/l1_promotions/l1_decoder_candidate_stream_merge_fifo_v1.json" in run
-            assert "--producer-lanes-list 8,16,32" in run
+            assert "--vocab-size-list 50257,100000,200000" in run
+            assert "--producer-lanes-list 8,16,32,64,128" in run
             assert "--top-k-list 1,4" in run
-            assert "--producer-ii-cycles-list 1,2,4" in run
+            assert "--producer-ii-cycles-list 1,2" in run
             assert "--candidate-fifo-depth-groups-list 16,256,4096" in run
             assert "--sram-metrics-json runs/designs/sram/minimal_v0_2_draft/sram_metrics.json" in run
             assert "--noc-hops 2" in run

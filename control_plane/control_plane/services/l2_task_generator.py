@@ -1931,6 +1931,8 @@ def _decoder_logit_rank_streaming_overlap_evidence(*, item_id: str) -> dict[str,
     memory_model = {
         "memory_bandwidth_bytes_per_cycle": 64,
         "sram_metrics_json": sram_metrics_json,
+        "vocab_size_list": [50257, 100000, 200000],
+        "producer_lanes_list": [8, 16, 32, 64, 128],
         "sram_read_energy_pj_per_byte": 0.05,
         "sram_write_energy_pj_per_byte": 0.07,
         "noc_hops": 2,
@@ -1966,10 +1968,11 @@ def _decoder_logit_rank_streaming_overlap_evidence(*, item_id: str) -> dict[str,
                     f"--scale-ppa {scale_ppa} "
                     f"--candidate-merge-ppa {candidate_merge_ppa} "
                     f"--sram-metrics-json {sram_metrics_json} "
-                    "--producer-lanes-list 8,16,32 "
+                    "--vocab-size-list 50257,100000,200000 "
+                    "--producer-lanes-list 8,16,32,64,128 "
                     "--top-k-list 1,4 "
-                    "--producer-ii-cycles-list 1,2,4 "
-                    "--global-merge-ii-cycles 1,2,4 "
+                    "--producer-ii-cycles-list 1,2 "
+                    "--global-merge-ii-cycles 1,2 "
                     "--candidate-fifo-depth-groups-list 16,256,4096 "
                     "--memory-bandwidth-bytes-per-cycle 64 "
                     "--sram-read-energy-pj-per-byte 0.05 "

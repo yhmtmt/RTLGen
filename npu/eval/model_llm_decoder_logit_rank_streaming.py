@@ -669,6 +669,7 @@ def _streaming_overlap_candidate(
     overlap_recovered_cycles = max(0, buffered_e2e_cycles - sim["total_cycles"])
     candidate = {
         "architecture": "hierarchical_streaming_local_rank_global_merge",
+        "vocab_size": vocab_size,
         "merge_variant": f"merge_ii_{global_merge_ii_cycles}",
         "sweep_key": (
             f"w{producer_lanes}_k{top_k}_prodii{producer_ii_cycles}_"
@@ -781,6 +782,7 @@ def build_report(
     global_merge_latency_cycles: int = 3,
     global_merge_ii_cycles_list: list[int] | None = None,
     candidate_fifo_depth_groups: int = 16,
+    vocab_size_list: list[int] | None = None,
     producer_lanes_list: list[int] | None = None,
     top_k_list: list[int] | None = None,
     producer_ii_cycles_list: list[int] | None = None,
@@ -817,11 +819,13 @@ def build_report(
         else sram_write_energy_pj_per_byte
     )
     merge_iis = global_merge_ii_cycles_list or [1, 2, 4]
+    vocab_options = vocab_size_list or [vocab_size]
     lane_options = producer_lanes_list or [producer_lanes]
     top_k_options = top_k_list or [top_k]
     producer_ii_options = producer_ii_cycles_list or [producer_ii_cycles]
     fifo_options = candidate_fifo_depth_groups_list or [candidate_fifo_depth_groups]
     for name, values in (
+        ("vocab_size_list", vocab_options),
         ("producer_lanes_list", lane_options),
         ("top_k_list", top_k_options),
         ("producer_ii_cycles_list", producer_ii_options),
@@ -907,36 +911,39 @@ def build_report(
     overlap_sweep: list[JsonDict] = []
     seen_sweep_keys: set[str] = set()
     for lanes in lane_options:
-        for local_k in top_k_options:
-            for prod_ii in producer_ii_options:
-                for merge_ii in merge_iis:
-                    for fifo_depth in fifo_options:
-                        candidate = _streaming_overlap_candidate(
-                            measured_points=measured_points,
-                            candidate_merge_points=candidate_merge_points,
-                            vocab_size=vocab_size,
-                            producer_lanes=lanes,
-                            top_k=local_k,
-                            producer_latency_cycles=producer_latency_cycles,
-                            producer_ii_cycles=prod_ii,
-                            local_ranker_latency_cycles=local_ranker_latency_cycles,
-                            local_ranker_ii_cycles=local_ranker_ii_cycles,
-                            global_merge_latency_cycles=global_merge_latency_cycles,
-                            global_merge_ii_cycles=merge_ii,
-                            candidate_fifo_depth_groups=fifo_depth,
-                            fallback_critical_path_ns=fallback_critical_path_ns,
-                            token_id_bits=token_id_bits,
-                            memory_bandwidth_bytes_per_cycle=memory_bandwidth_bytes_per_cycle,
-                            sram_read_energy_pj_per_byte=effective_sram_read_energy_pj_per_byte,
-                            sram_write_energy_pj_per_byte=effective_sram_write_energy_pj_per_byte,
-                            noc_hops=noc_hops,
-                            noc_energy_pj_per_byte_hop=noc_energy_pj_per_byte_hop,
-                            sram_model=sram_model,
-                        )
-                        if candidate["sweep_key"] in seen_sweep_keys:
-                            continue
-                        seen_sweep_keys.add(candidate["sweep_key"])
-                        overlap_sweep.append(candidate)
+        for sweep_vocab_size in vocab_options:
+            for local_k in top_k_options:
+                for prod_ii in producer_ii_options:
+                    for merge_ii in merge_iis:
+                        for fifo_depth in fifo_options:
+                            candidate = _streaming_overlap_candidate(
+                                measured_points=measured_points,
+                                candidate_merge_points=candidate_merge_points,
+                                vocab_size=sweep_vocab_size,
+                                producer_lanes=lanes,
+                                top_k=local_k,
+                                producer_latency_cycles=producer_latency_cycles,
+                                producer_ii_cycles=prod_ii,
+                                local_ranker_latency_cycles=local_ranker_latency_cycles,
+                                local_ranker_ii_cycles=local_ranker_ii_cycles,
+                                global_merge_latency_cycles=global_merge_latency_cycles,
+                                global_merge_ii_cycles=merge_ii,
+                                candidate_fifo_depth_groups=fifo_depth,
+                                fallback_critical_path_ns=fallback_critical_path_ns,
+                                token_id_bits=token_id_bits,
+                                memory_bandwidth_bytes_per_cycle=memory_bandwidth_bytes_per_cycle,
+                                sram_read_energy_pj_per_byte=effective_sram_read_energy_pj_per_byte,
+                                sram_write_energy_pj_per_byte=effective_sram_write_energy_pj_per_byte,
+                                noc_hops=noc_hops,
+                                noc_energy_pj_per_byte_hop=noc_energy_pj_per_byte_hop,
+                                sram_model=sram_model,
+                            )
+                            if len(vocab_options) > 1:
+                                candidate["sweep_key"] = f"v{sweep_vocab_size}_{candidate['sweep_key']}"
+                            if candidate["sweep_key"] in seen_sweep_keys:
+                                continue
+                            seen_sweep_keys.add(candidate["sweep_key"])
+                            overlap_sweep.append(candidate)
 
     all_candidates = flat + alternatives
     best = min(
@@ -948,6 +955,24 @@ def build_report(
         ),
     )
     baseline = min(flat, key=lambda row: row["timing"]["latency_us_per_token"]) if flat else None
+    flat_baseline_by_vocab: dict[int, JsonDict] = {}
+    if measured_points:
+        for sweep_vocab_size in vocab_options:
+            sweep_flat = [
+                _flat_point_report(
+                    point=point,
+                    vocab_size=sweep_vocab_size,
+                    ranker_latency_cycles=local_ranker_latency_cycles,
+                    ranker_ii_cycles=local_ranker_ii_cycles,
+                )
+                for point in measured_points
+                if _as_int(point.get("lanes")) > 0
+            ]
+            if sweep_flat:
+                flat_baseline_by_vocab[sweep_vocab_size] = min(
+                    sweep_flat,
+                    key=lambda row: row["timing"]["latency_us_per_token"],
+                )
     for row in alternatives:
         if baseline is None:
             row["speedup_vs_best_flat"] = None
@@ -956,30 +981,76 @@ def build_report(
                 baseline["timing"]["latency_us_per_token"] / row["timing"]["latency_us_per_token"], 6
             )
     for row in overlap_sweep:
-        if baseline is None:
+        row_baseline = flat_baseline_by_vocab.get(_as_int(row.get("vocab_size"), vocab_size))
+        if row_baseline is None:
             row["speedup_vs_best_flat"] = None
         else:
             row["speedup_vs_best_flat"] = round(
-                baseline["timing"]["latency_us_per_token"] / row["timing"]["latency_us_per_token"], 6
+                row_baseline["timing"]["latency_us_per_token"] / row["timing"]["latency_us_per_token"], 6
             )
+    primary_overlap_sweep = [
+        row
+        for row in overlap_sweep
+        if _as_int(row.get("vocab_size"), vocab_size) == vocab_size
+    ] or overlap_sweep
     best_overlap = min(
-        overlap_sweep,
+        primary_overlap_sweep,
         key=lambda row: (
             not bool(row.get("fifo_capacity_ok", True)),
             -row["buffered_baseline"]["overlap_recovered_fraction"],
             row["timing"]["latency_us_per_token"],
             row["traffic"]["streaming_candidate_memory_bytes"],
         ),
-    ) if overlap_sweep else None
+    ) if primary_overlap_sweep else None
     best_memory_traffic = min(
-        overlap_sweep,
+        primary_overlap_sweep,
         key=lambda row: (
             not bool(row.get("fifo_capacity_ok", True)),
             row["memory_hierarchy"]["total_bytes"],
             row["memory_hierarchy"]["memory_bound_latency_us"],
             row["timing"]["latency_us_per_token"],
         ),
-    ) if overlap_sweep else None
+    ) if primary_overlap_sweep else None
+    scale_stability_summary: list[JsonDict] = []
+    for sweep_vocab_size in vocab_options:
+        rows = [
+            row
+            for row in overlap_sweep
+            if _as_int(row.get("vocab_size"), vocab_size) == sweep_vocab_size
+        ]
+        if not rows:
+            continue
+        overlap_row = min(
+            rows,
+            key=lambda row: (
+                not bool(row.get("fifo_capacity_ok", True)),
+                -row["buffered_baseline"]["overlap_recovered_fraction"],
+                row["timing"]["latency_us_per_token"],
+                row["traffic"]["streaming_candidate_memory_bytes"],
+            ),
+        )
+        memory_row = min(
+            rows,
+            key=lambda row: (
+                not bool(row.get("fifo_capacity_ok", True)),
+                row["memory_hierarchy"]["total_bytes"],
+                row["memory_hierarchy"]["memory_bound_latency_us"],
+                row["timing"]["latency_us_per_token"],
+            ),
+        )
+        scale_stability_summary.append(
+            {
+                "vocab_size": sweep_vocab_size,
+                "best_overlap_sweep_key": overlap_row["sweep_key"],
+                "best_overlap_latency_us_per_token": overlap_row["timing"]["latency_us_per_token"],
+                "best_overlap_recovered_fraction": overlap_row["buffered_baseline"]["overlap_recovered_fraction"],
+                "best_memory_sweep_key": memory_row["sweep_key"],
+                "best_memory_total_bytes": memory_row["memory_hierarchy"]["total_bytes"],
+                "best_memory_bound_latency_us": memory_row["memory_hierarchy"]["memory_bound_latency_us"],
+                "best_memory_energy_nj": memory_row["memory_hierarchy"]["total_memory_energy_nj"],
+                "best_memory_traffic_reduction_vs_materialized": memory_row["traffic"]["traffic_reduction_vs_materialized"],
+            }
+        )
 
     return {
         "version": 0.1,
@@ -1011,6 +1082,7 @@ def build_report(
             "global_merge_latency_cycles": global_merge_latency_cycles,
             "global_merge_ii_cycles_list": merge_iis,
             "candidate_fifo_depth_groups": candidate_fifo_depth_groups,
+            "vocab_size_list": vocab_options,
             "producer_lanes_list": lane_options,
             "top_k_list": top_k_options,
             "producer_ii_cycles_list": producer_ii_options,
@@ -1067,6 +1139,14 @@ def build_report(
         "flat_measured_ranker_points": flat,
         "hierarchical_streaming_alternatives": alternatives,
         "overlap_traffic_sweep": overlap_sweep,
+        "scale_stability_summary": scale_stability_summary,
+        "sweep_recommendation_scope": {
+            "vocab_size": vocab_size,
+            "reason": (
+                "Top-level overlap and memory recommendations are scoped to the primary vocab_size; "
+                "scale_stability_summary compares each vocabulary size separately."
+            ),
+        },
         "recommendation": {
             "architecture": best["architecture"],
             "merge_variant": best.get("merge_variant"),
@@ -1204,15 +1284,16 @@ def _write_markdown(path: Path, payload: JsonDict) -> None:
             "",
             "## Overlap And Traffic Sweep",
             "",
-            "| key | cycles | latency_us | memory_bytes | memory_energy_nj | fifo required/capacity | overlap recovered | traffic reduction | speedup vs flat |",
-            "|---|---:|---:|---:|---:|---:|---:|---:|---:|",
+            "| key | vocab | cycles | latency_us | memory_bytes | memory_energy_nj | fifo required/capacity | overlap recovered | traffic reduction | speedup vs flat |",
+            "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
         ]
     )
     for row in payload["overlap_traffic_sweep"][:24]:
         mem = row.get("memory_hierarchy") or {}
         lines.append(
-            "| `{key}` | {cycles} | {latency} | {mem_bytes} | {mem_energy} | {fifo}/{cap} | {overlap} | {traffic} | {speedup} |".format(
+            "| `{key}` | {vocab} | {cycles} | {latency} | {mem_bytes} | {mem_energy} | {fifo}/{cap} | {overlap} | {traffic} | {speedup} |".format(
                 key=row["sweep_key"],
+                vocab=row.get("vocab_size"),
                 cycles=row["total_cycles"],
                 latency=row["timing"]["latency_us_per_token"],
                 mem_bytes=mem.get("total_bytes"),
@@ -1262,6 +1343,7 @@ def main() -> int:
     ap.add_argument("--global-merge-latency-cycles", type=int, default=3)
     ap.add_argument("--global-merge-ii-cycles", type=_int_list, default=[1, 2, 4])
     ap.add_argument("--candidate-fifo-depth-groups", type=int, default=16)
+    ap.add_argument("--vocab-size-list", type=_int_list, help="comma-separated vocabulary-size sweep")
     ap.add_argument("--producer-lanes-list", type=_int_list, help="comma-separated producer lane sweep")
     ap.add_argument("--top-k-list", type=_int_list, help="comma-separated local top-k sweep")
     ap.add_argument("--producer-ii-cycles-list", type=_int_list, help="comma-separated producer II sweep")
@@ -1294,6 +1376,7 @@ def main() -> int:
         global_merge_latency_cycles=args.global_merge_latency_cycles,
         global_merge_ii_cycles_list=args.global_merge_ii_cycles,
         candidate_fifo_depth_groups=args.candidate_fifo_depth_groups,
+        vocab_size_list=args.vocab_size_list,
         producer_lanes_list=args.producer_lanes_list,
         top_k_list=args.top_k_list,
         producer_ii_cycles_list=args.producer_ii_cycles_list,

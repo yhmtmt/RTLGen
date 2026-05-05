@@ -345,3 +345,60 @@ def test_logit_rank_streaming_overlap_sweep_varies_producer_and_fifo(tmp_path: P
     assert {row["producer_lanes"] for row in report["overlap_traffic_sweep"]} == {8, 16}
     assert any(not row["fifo_capacity_ok"] for row in report["overlap_traffic_sweep"])
     assert report["overlap_recommendation"]["traffic_reduction_vs_materialized"] > 0
+
+
+def test_logit_rank_streaming_overlap_sweep_varies_vocab_size(tmp_path: Path) -> None:
+    ppa = tmp_path / "rank_ppa.json"
+    ppa.write_text(
+        json.dumps(
+            {
+                "proposals": [
+                    {
+                        "metrics_ref": {
+                            "metrics_csv": "runs/designs/activations/logit_rank_r8_l16_k1_wrapper/metrics.csv",
+                            "status": "ok",
+                        },
+                        "metric_summary": {
+                            "critical_path_ns": 3.0,
+                            "die_area": 10.0,
+                            "total_power_mw": 0.1,
+                        },
+                    },
+                    {
+                        "metrics_ref": {
+                            "metrics_csv": "runs/designs/activations/logit_rank_r16_l16_k1_wrapper/metrics.csv",
+                            "status": "ok",
+                        },
+                        "metric_summary": {
+                            "critical_path_ns": 5.0,
+                            "die_area": 16.0,
+                            "total_power_mw": 0.2,
+                        },
+                    },
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    report = build_report(
+        rank_ppa_path=ppa,
+        scale_ppa_path=None,
+        candidate_merge_ppa_path=None,
+        vocab_size=64,
+        producer_lanes=8,
+        top_k=1,
+        global_merge_ii_cycles_list=[1],
+        vocab_size_list=[64, 128],
+        producer_lanes_list=[8, 16],
+        producer_ii_cycles_list=[1],
+        candidate_fifo_depth_groups_list=[16],
+    )
+
+    assert len(report["overlap_traffic_sweep"]) == 4
+    assert {row["vocab_size"] for row in report["overlap_traffic_sweep"]} == {64, 128}
+    assert all(row["sweep_key"].startswith("v") for row in report["overlap_traffic_sweep"])
+    assert [row["vocab_size"] for row in report["scale_stability_summary"]] == [64, 128]
+    assert report["sweep_recommendation_scope"]["vocab_size"] == 64
+    assert report["memory_traffic_recommendation"]["sweep_key"].startswith("v64_")
+    assert report["inputs"]["vocab_size_list"] == [64, 128]

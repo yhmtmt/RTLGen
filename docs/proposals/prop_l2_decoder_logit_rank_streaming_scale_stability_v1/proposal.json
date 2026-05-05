@@ -1,0 +1,76 @@
+{
+  "proposal_id": "prop_l2_decoder_logit_rank_streaming_scale_stability_v1",
+  "created_utc": "2026-05-05T12:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_logit_rank_streaming_overlap",
+  "title": "Decoder logit-rank streaming scale stability",
+  "hypothesis": "The current flat-rank versus streaming-rank conclusion should be checked across larger vocabulary sizes and wider producer arrays before committing to NoC/banking implementation work.",
+  "direct_comparison": {
+    "primary_question": "Does the SRAM-backed decoder logit-rank streaming frontier remain stable as vocabulary size and producer-lane count increase?",
+    "include": [
+      "vocabulary-size sweep at 50257, 100000, and 200000 tokens",
+      "producer-lane sweep at 8, 16, 32, 64, and 128 lanes",
+      "top-k sweep at 1 and 4",
+      "measured logit-rank datapath and candidate-stream merge/FIFO PPA where available",
+      "Nangate45 CACTI SRAM metrics from runs/designs/sram/minimal_v0_2_draft/sram_metrics.json",
+      "NoC hop energy still marked as a planning term",
+      "unchanged ready-valid perf-sim/RTL equivalence observables"
+    ],
+    "exclude": [
+      "new RTL",
+      "new SRAM macro hardening",
+      "measured NoC router PPA",
+      "quality changes from larger trained models"
+    ],
+    "follow_on_broad_sweep": [
+      "if the same memory frontier holds, move to larger-model quality and larger-array hardware points",
+      "if the memory frontier changes, prioritize NoC/banking measurement for the changed scale region"
+    ]
+  },
+  "expected_benefit": [
+    "tests whether the local GPT-2 vocabulary result generalizes to larger vocabulary pressure",
+    "exposes where ranker lane scaling relies on measured points versus log2-lane proxies",
+    "keeps equivalence constraints visible while the architecture search broadens"
+  ],
+  "risks": [
+    "producer lanes beyond measured ranker PPA points use explicit scaled proxies",
+    "larger vocabularies are synthetic scale points, not full larger-model quality runs",
+    "NoC and banking contention remain planning terms"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_logit_rank_streaming_scale_stability_v1",
+      "task_type": "l2_campaign",
+      "objective": "Rerun the decoder logit-rank streaming report with SRAM-backed memory terms across larger vocabulary sizes and wider producer-lane options.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_logit_rank_streaming_overlap",
+      "cost_class": "low",
+      "depends_on_item_ids": [
+        "l2_decoder_logit_rank_streaming_sram_nangate45_v1",
+        "l2_decoder_logit_rank_streaming_memory_noc_v1",
+        "l2_decoder_logit_rank_streaming_measured_merge_v1",
+        "l1_decoder_candidate_stream_merge_fifo_v1",
+        "l1_decoder_logit_rank_datapath_v1_r2",
+        "l1_decoder_logit_rank_scale_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "The result should decide whether to spend the next implementation step on NoC/banking measurement or move to larger-model quality and larger-array hardware confirmation."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_decoder_logit_rank_streaming_sram_nangate45_v1/proposal.json",
+    "control_plane/shadow_exports/l2_decisions/l2_decoder_logit_rank_streaming_sram_nangate45_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/model_llm_decoder_logit_rank_streaming.py",
+    "runs/designs/sram/minimal_v0_2_draft/sram_metrics.json",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}
