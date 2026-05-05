@@ -20,7 +20,12 @@
         "direction": "iterate",
         "reason": "Use the measured merge/FIFO-calibrated model to decide whether the next frontier is memory/NoC hierarchy or a return to flat rank datapath scaling."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 408,
+      "merge_commit": "38656e3d2e6fb49062a0c9df9ada99675bd0ff24",
+      "merged_utc": "2026-05-05T09:05:13.607056Z",
+      "notes": "Merged via PR #408 and merge 38656e3d2e6fb49062a0c9df9ada99675bd0ff24 at 2026-05-05T09:05:13.607056Z."
     }
-  ]
+  ],
+  "source_commit": "948415f211bcc6b8cf094956245aabcd4c80b719"
 }
