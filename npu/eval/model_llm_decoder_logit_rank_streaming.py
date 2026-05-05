@@ -19,6 +19,9 @@ DEFAULT_RANK_PPA = Path(
 DEFAULT_SCALE_PPA = Path(
     "control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_scale_v1.json"
 )
+DEFAULT_CANDIDATE_MERGE_PPA = Path(
+    "control_plane/shadow_exports/l1_promotions/l1_decoder_candidate_stream_merge_fifo_v1.json"
+)
 
 
 def _as_float(value: Any, default: float = 0.0) -> float:
@@ -53,6 +56,27 @@ def _parse_csv_point(path: str) -> JsonDict:
         "lanes": int(match.group("lanes")),
         "logit_bits": int(match.group("bits")),
         "top_k": int(match.group("topk")),
+    }
+
+
+def _parse_candidate_merge_csv_point(path: str) -> JsonDict:
+    match = re.search(
+        r"candidate_stream_merge_fifo_k(?P<topk>\d+)_l(?P<logit_bits>\d+)_t"
+        r"(?P<token_id_bits>\d+)_d(?P<fifo_depth_groups>\d+)",
+        path,
+    )
+    if not match:
+        return {
+            "top_k": None,
+            "logit_bits": None,
+            "token_id_bits": None,
+            "fifo_depth_groups": None,
+        }
+    return {
+        "top_k": int(match.group("topk")),
+        "logit_bits": int(match.group("logit_bits")),
+        "token_id_bits": int(match.group("token_id_bits")),
+        "fifo_depth_groups": int(match.group("fifo_depth_groups")),
     }
 
 
@@ -129,6 +153,52 @@ def load_ranker_points_from_paths(paths: list[Path | None]) -> list[JsonDict]:
     return points
 
 
+def load_candidate_merge_points(path: Path | None) -> list[JsonDict]:
+    if path is None or not path.exists():
+        return []
+    payload = _load_json(path)
+    rows: list[JsonDict] = []
+    for proposal in payload.get("proposals") or []:
+        if not isinstance(proposal, dict):
+            continue
+        ref = proposal.get("metrics_ref")
+        metrics = proposal.get("metric_summary")
+        if not isinstance(ref, dict) or not isinstance(metrics, dict):
+            continue
+        if str(ref.get("status") or "") != "ok":
+            continue
+        metrics_csv = str(ref.get("metrics_csv") or "")
+        point = _parse_candidate_merge_csv_point(metrics_csv)
+        rows.append(
+            {
+                "source": str(path),
+                "artifact_item_id": payload.get("item_id"),
+                "metrics_csv": metrics_csv,
+                "top_k": point["top_k"],
+                "logit_bits": point["logit_bits"],
+                "token_id_bits": point["token_id_bits"],
+                "fifo_depth_groups": point["fifo_depth_groups"],
+                "metrics": {
+                    "critical_path_ns": _as_float(metrics.get("critical_path_ns")),
+                    "die_area": _as_float(metrics.get("die_area")),
+                    "total_power_mw": _as_float(metrics.get("total_power_mw")),
+                },
+            }
+        )
+    rows.sort(
+        key=lambda row: (
+            _as_int(row.get("top_k"), 10**9),
+            _as_int(row.get("logit_bits"), 10**9),
+            _as_int(row.get("token_id_bits"), 10**9),
+            _as_int(row.get("fifo_depth_groups"), 10**9),
+            row["metrics"]["critical_path_ns"],
+            row["metrics"]["die_area"],
+            row["metrics"]["total_power_mw"],
+        )
+    )
+    return rows
+
+
 def _fallback_ranker_point(*, lanes: int, top_k: int, critical_path_ns: float) -> JsonDict:
     return {
         "source": "cli_default",
@@ -169,6 +239,81 @@ def _select_ranker_point(
         return clone
     return _fallback_ranker_point(
         lanes=lanes, top_k=top_k, critical_path_ns=default_critical_path_ns
+    )
+
+
+def _fallback_candidate_merge_point(
+    *,
+    top_k: int,
+    logit_bits: int,
+    token_id_bits: int,
+    fifo_depth_groups: int,
+    critical_path_ns: float,
+) -> JsonDict:
+    return {
+        "source": "fallback_ranker_merge_proxy",
+        "metrics_csv": None,
+        "top_k": top_k,
+        "logit_bits": logit_bits,
+        "token_id_bits": token_id_bits,
+        "fifo_depth_groups": fifo_depth_groups,
+        "metrics": {
+            "critical_path_ns": critical_path_ns,
+            "die_area": None,
+            "total_power_mw": None,
+        },
+        "model_note": "candidate-stream merge/FIFO PPA artifact missing; using ranker clock proxy",
+    }
+
+
+def _select_candidate_merge_point(
+    points: list[JsonDict],
+    *,
+    top_k: int,
+    logit_bits: int,
+    token_id_bits: int,
+    fifo_depth_groups: int,
+    default_critical_path_ns: float,
+) -> JsonDict:
+    exact = [
+        row
+        for row in points
+        if _as_int(row.get("top_k")) == top_k
+        and _as_int(row.get("logit_bits")) == logit_bits
+        and _as_int(row.get("token_id_bits")) == token_id_bits
+        and _as_int(row.get("fifo_depth_groups")) == fifo_depth_groups
+    ]
+    if exact:
+        return exact[0]
+    same_k = [
+        row
+        for row in points
+        if _as_int(row.get("top_k")) == top_k
+        and _as_int(row.get("logit_bits")) == logit_bits
+        and _as_int(row.get("token_id_bits")) == token_id_bits
+    ]
+    if same_k:
+        nearest = min(
+            same_k,
+            key=lambda row: (
+                abs(_as_int(row.get("fifo_depth_groups")) - fifo_depth_groups),
+                row["metrics"]["critical_path_ns"],
+            ),
+        )
+        clone = json.loads(json.dumps(nearest))
+        clone["source"] = f"{nearest['source']}#nearest_fifo_depth"
+        clone["fifo_depth_groups"] = fifo_depth_groups
+        clone["model_note"] = (
+            f"candidate-stream merge/FIFO metrics taken from nearest measured depth "
+            f"d{nearest['fifo_depth_groups']}"
+        )
+        return clone
+    return _fallback_candidate_merge_point(
+        top_k=top_k,
+        logit_bits=logit_bits,
+        token_id_bits=token_id_bits,
+        fifo_depth_groups=fifo_depth_groups,
+        critical_path_ns=default_critical_path_ns,
     )
 
 
@@ -321,6 +466,7 @@ def _traffic_summary(
 def _streaming_overlap_candidate(
     *,
     measured_points: list[JsonDict],
+    candidate_merge_points: list[JsonDict],
     vocab_size: int,
     producer_lanes: int,
     top_k: int,
@@ -349,7 +495,19 @@ def _streaming_overlap_candidate(
     )
     local_clock = _as_float(local_point["metrics"].get("critical_path_ns"), fallback_critical_path_ns)
     global_clock = _as_float(global_point["metrics"].get("critical_path_ns"), fallback_critical_path_ns)
-    hierarchy_clock_ns = max(local_clock, global_clock)
+    logit_bits = _as_int(local_point.get("logit_bits"), 16) or 16
+    merge_fifo_point = _select_candidate_merge_point(
+        candidate_merge_points,
+        top_k=top_k,
+        logit_bits=logit_bits,
+        token_id_bits=token_id_bits,
+        fifo_depth_groups=candidate_fifo_depth_groups,
+        default_critical_path_ns=global_clock,
+    )
+    merge_fifo_clock = _as_float(
+        merge_fifo_point["metrics"].get("critical_path_ns"), global_clock
+    )
+    hierarchy_clock_ns = max(local_clock, merge_fifo_clock)
     sim = simulate_streaming_hierarchy(
         vocab_size=vocab_size,
         producer_lanes=producer_lanes,
@@ -365,7 +523,6 @@ def _streaming_overlap_candidate(
     rank_scan_cycles = local_ranker_latency_cycles + max(0, sim["tile_count"] - 1) * local_ranker_ii_cycles
     buffered_e2e_cycles = sim["producer_last_tile_ready_cycle"] + rank_scan_cycles + global_merge_latency_cycles
     overlap_recovered_cycles = max(0, buffered_e2e_cycles - sim["total_cycles"])
-    logit_bits = _as_int(local_point.get("logit_bits"), 16) or 16
     candidate = {
         "architecture": "hierarchical_streaming_local_rank_global_merge",
         "merge_variant": f"merge_ii_{global_merge_ii_cycles}",
@@ -399,6 +556,33 @@ def _streaming_overlap_candidate(
         ),
         "local_ranker_point": local_point,
         "global_merge_point": global_point,
+        "candidate_merge_fifo_point": merge_fifo_point,
+        "component_ppa_metrics": {
+            "local_ranker": local_point["metrics"],
+            "candidate_merge_fifo": merge_fifo_point["metrics"],
+            "global_merge_ranker_proxy": global_point["metrics"],
+            "estimated_total_die_area": (
+                round(
+                    _as_float(local_point["metrics"].get("die_area"))
+                    + _as_float(merge_fifo_point["metrics"].get("die_area")),
+                    6,
+                )
+                if local_point["metrics"].get("die_area") is not None
+                and merge_fifo_point["metrics"].get("die_area") is not None
+                else None
+            ),
+            "estimated_total_power_mw": (
+                round(
+                    _as_float(local_point["metrics"].get("total_power_mw"))
+                    + _as_float(merge_fifo_point["metrics"].get("total_power_mw")),
+                    6,
+                )
+                if local_point["metrics"].get("total_power_mw") is not None
+                and merge_fifo_point["metrics"].get("total_power_mw") is not None
+                else None
+            ),
+            "clock_source": "max(local_ranker, candidate_merge_fifo)",
+        },
         "equivalence_contract": {
             "stream_contract": "LogitTileStream/CandidateStream ready-valid v1",
             "ordering": "accepted tile_id order, lower token_id tie-break",
@@ -423,6 +607,7 @@ def build_report(
     *,
     rank_ppa_path: Path | None = DEFAULT_RANK_PPA,
     scale_ppa_path: Path | None = DEFAULT_SCALE_PPA,
+    candidate_merge_ppa_path: Path | None = DEFAULT_CANDIDATE_MERGE_PPA,
     prompt_stress_path: Path | None = None,
     logit_rank_bypass_path: Path | None = None,
     vocab_size: int = 50257,
@@ -464,6 +649,7 @@ def build_report(
         if any(item <= 0 for item in values):
             raise ValueError(f"{name} values must be positive")
     measured_points = load_ranker_points_from_paths([rank_ppa_path, scale_ppa_path])
+    candidate_merge_points = load_candidate_merge_points(candidate_merge_ppa_path)
     if not measured_points:
         measured_points = [
             _fallback_ranker_point(
@@ -490,6 +676,7 @@ def build_report(
         alternatives.append(
             _streaming_overlap_candidate(
                 measured_points=measured_points,
+                candidate_merge_points=candidate_merge_points,
                 vocab_size=vocab_size,
                 producer_lanes=producer_lanes,
                 top_k=top_k,
@@ -514,6 +701,7 @@ def build_report(
                     for fifo_depth in fifo_options:
                         candidate = _streaming_overlap_candidate(
                             measured_points=measured_points,
+                            candidate_merge_points=candidate_merge_points,
                             vocab_size=vocab_size,
                             producer_lanes=lanes,
                             top_k=local_k,
@@ -572,12 +760,15 @@ def build_report(
         "rank_ppa_path": str(rank_ppa_path) if rank_ppa_path is not None else None,
         "rank_ppa_paths": [
             str(path)
-            for path in [rank_ppa_path, scale_ppa_path]
+            for path in [rank_ppa_path, scale_ppa_path, candidate_merge_ppa_path]
             if path is not None
         ],
         "inputs": {
             "rank_ppa_path": str(rank_ppa_path) if rank_ppa_path is not None else None,
             "scale_ppa_path": str(scale_ppa_path) if scale_ppa_path is not None else None,
+            "candidate_merge_ppa_path": (
+                str(candidate_merge_ppa_path) if candidate_merge_ppa_path is not None else None
+            ),
             "prompt_stress_path": str(prompt_stress_path) if prompt_stress_path is not None else None,
             "logit_rank_bypass_path": str(logit_rank_bypass_path) if logit_rank_bypass_path is not None else None,
             "vocab_size": vocab_size,
@@ -605,10 +796,12 @@ def build_report(
             "Buffered baseline waits for the producer to materialize all logits before rank reduction starts.",
             "Traffic model counts materialized-logit write+read bytes versus candidate FIFO write+read bytes.",
             "Measured row-8 datapath and row-16/row-32 scale critical_path_ns values are used as ranker clock proxies.",
+            "Measured candidate-stream merge/FIFO PPA is used for global merge buffering when an exact or nearest-depth point is available.",
             "Missing lane points are explicit defaults or log2-lane scaled proxies.",
             "Perf-sim and future RTL equivalence is defined at accepted ready-valid stream beats, FIFO occupancy, valid masks, last-beat completion, and tie-breaking.",
         ],
         "measured_ranker_points": measured_points,
+        "measured_candidate_merge_fifo_points": candidate_merge_points,
         "flat_measured_ranker_points": flat,
         "hierarchical_streaming_alternatives": alternatives,
         "overlap_traffic_sweep": overlap_sweep,
@@ -693,19 +886,24 @@ def _write_markdown(path: Path, payload: JsonDict) -> None:
             "",
             "## Hierarchical Streaming Alternatives",
             "",
-            "| variant | W | top_k | cycles | latency_us | tokens_per_s | fifo required/capacity | fifo ok | speedup vs flat |",
-            "|---|---:|---:|---:|---:|---:|---:|---|---:|",
+            "| variant | W | top_k | cycles | latency_us | tokens_per_s | merge_fifo_cp_ns | est_area | fifo required/capacity | fifo ok | speedup vs flat |",
+            "|---|---:|---:|---:|---:|---:|---:|---:|---:|---|---:|",
         ]
     )
     for row in payload["hierarchical_streaming_alternatives"]:
+        component_ppa = row.get("component_ppa_metrics") or {}
+        merge_fifo = row.get("candidate_merge_fifo_point") or {}
+        merge_metrics = merge_fifo.get("metrics") or {}
         lines.append(
-            "| `{variant}` | {lanes} | {topk} | {cycles} | {latency} | {tps} | {fifo}/{cap} | `{ok}` | {speedup} |".format(
+            "| `{variant}` | {lanes} | {topk} | {cycles} | {latency} | {tps} | {merge_cp} | {area} | {fifo}/{cap} | `{ok}` | {speedup} |".format(
                 variant=row["merge_variant"],
                 lanes=row["producer_lanes"],
                 topk=row["local_top_k"],
                 cycles=row["total_cycles"],
                 latency=row["timing"]["latency_us_per_token"],
                 tps=row["timing"]["tokens_per_s"],
+                merge_cp=merge_metrics.get("critical_path_ns"),
+                area=component_ppa.get("estimated_total_die_area"),
                 fifo=row["required_fifo_depth_groups"],
                 cap=row["candidate_fifo_depth_groups"],
                 ok=row["fifo_capacity_ok"],
@@ -756,6 +954,11 @@ def main() -> int:
     ap.add_argument("--logit-rank-bypass", help="logit-rank bypass evidence JSON path")
     ap.add_argument("--rank-ppa", default=str(DEFAULT_RANK_PPA), help="rank datapath PPA JSON")
     ap.add_argument("--scale-ppa", default=str(DEFAULT_SCALE_PPA), help="rank scale PPA JSON")
+    ap.add_argument(
+        "--candidate-merge-ppa",
+        default=str(DEFAULT_CANDIDATE_MERGE_PPA),
+        help="candidate-stream merge/FIFO PPA JSON",
+    )
     ap.add_argument("--vocab-size", type=int, default=50257, help="decoder vocabulary size")
     ap.add_argument("--producer-lanes", type=int, default=8, help="W-lane producer tile width")
     ap.add_argument("--top-k", type=int, default=4, help="local candidates per tile")
@@ -779,6 +982,7 @@ def main() -> int:
     payload = build_report(
         rank_ppa_path=Path(args.rank_ppa) if args.rank_ppa else None,
         scale_ppa_path=Path(args.scale_ppa) if args.scale_ppa else None,
+        candidate_merge_ppa_path=Path(args.candidate_merge_ppa) if args.candidate_merge_ppa else None,
         prompt_stress_path=Path(args.prompt_stress) if args.prompt_stress else None,
         logit_rank_bypass_path=Path(args.logit_rank_bypass) if args.logit_rank_bypass else None,
         vocab_size=args.vocab_size,
