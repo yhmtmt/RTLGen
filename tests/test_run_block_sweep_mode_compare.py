@@ -136,7 +136,7 @@ class ModeCompareRegressionTest(unittest.TestCase):
             )
             self.assertTrue(report.exists())
             text = report.read_text(encoding="utf-8")
-            self.assertIn("| mode | use_macro | status |", text)
+            self.assertIn("| mode | repeat | use_macro | status |", text)
             self.assertIn("flat_nomacro", text)
             self.assertIn("hier_macro", text)
             self.assertIn("+0.1000", text)

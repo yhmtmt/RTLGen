@@ -182,6 +182,11 @@ def main():
         default=Path("npu/synth/cacti_sram.cfg.in"),
         help="CACTI template config with placeholders",
     )
+    parser.add_argument(
+        "--allow-missing-metrics",
+        action="store_true",
+        help="Write diagnostic artifacts and exit 0 even if no SRAM instance has usable metrics.",
+    )
     args = parser.parse_args()
 
     arch = load_yaml(args.arch)
@@ -346,6 +351,13 @@ def main():
     }
     metrics_path.write_text(json.dumps(payload, indent=2) + "\n")
     print(f"Wrote SRAM metrics: {metrics_path}")
+    estimated_count = sum(1 for record in results if record.get("estimated"))
+    if estimated_count == 0 and not args.allow_missing_metrics:
+        print(
+            "No usable SRAM metrics were estimated; see per-instance CACTI artifacts.",
+            file=sys.stderr,
+        )
+        return 1
     return 0
 
 

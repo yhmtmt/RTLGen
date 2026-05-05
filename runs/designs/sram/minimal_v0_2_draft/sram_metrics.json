@@ -1,0 +1,94 @@
+{
+  "arch": "npu/arch/examples/minimal_v0_2_draft.yml",
+  "id": "minimal_v0_2_draft",
+  "schema_version": "0.2-draft",
+  "source": "cacti",
+  "instances": [
+    {
+      "instance": {
+        "name": "activation_sram",
+        "pdk": "nangate45",
+        "tech_node_nm": 45,
+        "port": "1r1w",
+        "depth": 16384,
+        "width": 256,
+        "banks": 8,
+        "read_latency": 1,
+        "byte_en": true,
+        "size_bytes": 4194304,
+        "word_size_bytes": 32,
+        "block_size_bytes": 64,
+        "bus_width_bits": 512,
+        "read_ports": 1,
+        "write_ports": 1,
+        "rw_ports": 0,
+        "cacti_read_ports": 0,
+        "cacti_write_ports": 0,
+        "cacti_rw_ports": 1,
+        "cacti_port_model": "1rw",
+        "cacti_port_note": "CACTI modeled as 1RW; 1R1W not supported in this config."
+      },
+      "estimated": true,
+      "metrics": {
+        "raw": {
+          "access_time_ns": 3.34336,
+          "read_energy_nj": 0.835942,
+          "write_energy_nj": 1.01605,
+          "area_mm2": 20.3797121959
+        },
+        "area_um2": 20379712.1959,
+        "access_time_ns": 3.34336,
+        "read_energy_pj": 835.942,
+        "write_energy_pj": 1016.05
+      },
+      "artifacts": {
+        "cacti_cfg": "runs/designs/sram/minimal_v0_2_draft/activation_sram.cacti.in.cfg",
+        "cacti_stdout": "runs/designs/sram/minimal_v0_2_draft/activation_sram.cacti.stdout",
+        "cacti_stderr": "runs/designs/sram/minimal_v0_2_draft/activation_sram.cacti.stderr"
+      }
+    },
+    {
+      "instance": {
+        "name": "weight_sram",
+        "pdk": "nangate45",
+        "tech_node_nm": 45,
+        "port": "1r1w",
+        "depth": 16384,
+        "width": 256,
+        "banks": 8,
+        "read_latency": 1,
+        "byte_en": true,
+        "size_bytes": 4194304,
+        "word_size_bytes": 32,
+        "block_size_bytes": 64,
+        "bus_width_bits": 512,
+        "read_ports": 1,
+        "write_ports": 1,
+        "rw_ports": 0,
+        "cacti_read_ports": 0,
+        "cacti_write_ports": 0,
+        "cacti_rw_ports": 1,
+        "cacti_port_model": "1rw",
+        "cacti_port_note": "CACTI modeled as 1RW; 1R1W not supported in this config."
+      },
+      "estimated": true,
+      "metrics": {
+        "raw": {
+          "access_time_ns": 3.34336,
+          "read_energy_nj": 0.835942,
+          "write_energy_nj": 1.01605,
+          "area_mm2": 20.3797121959
+        },
+        "area_um2": 20379712.1959,
+        "access_time_ns": 3.34336,
+        "read_energy_pj": 835.942,
+        "write_energy_pj": 1016.05
+      },
+      "artifacts": {
+        "cacti_cfg": "runs/designs/sram/minimal_v0_2_draft/weight_sram.cacti.in.cfg",
+        "cacti_stdout": "runs/designs/sram/minimal_v0_2_draft/weight_sram.cacti.stdout",
+        "cacti_stderr": "runs/designs/sram/minimal_v0_2_draft/weight_sram.cacti.stderr"
+      }
+    }
+  ]
+}
