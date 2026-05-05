@@ -1553,6 +1553,9 @@ def test_generate_l2_campaign_task_adds_decoder_logit_rank_streaming_hierarchy_e
             assert decoder_inputs["rank_scale_ppa"] == (
                 "control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_scale_v1.json"
             )
+            assert decoder_inputs["candidate_merge_ppa"] == (
+                "control_plane/shadow_exports/l1_promotions/l1_decoder_candidate_stream_merge_fifo_v1.json"
+            )
             assert decoder_inputs["streaming_hierarchy_out"] == (
                 "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
                 "decoder_logit_rank_streaming_hierarchy__l2_decoder_logit_rank_streaming_hierarchy_v1.json"
@@ -1560,6 +1563,7 @@ def test_generate_l2_campaign_task_adds_decoder_logit_rank_streaming_hierarchy_e
             assert "avoids full-vocabulary probability materialization" in decoder_inputs["streaming_hierarchy_scope"]
             assert "estimate_llm_decoder_logit_rank_streaming_hierarchy.py" in work_item.command_manifest[0]["run"]
             assert "--scale-ppa control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_scale_v1.json" in work_item.command_manifest[0]["run"]
+            assert "--candidate-merge-ppa control_plane/shadow_exports/l1_promotions/l1_decoder_candidate_stream_merge_fifo_v1.json" in work_item.command_manifest[0]["run"]
             assert "--out runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_logit_rank_streaming_hierarchy__l2_decoder_logit_rank_streaming_hierarchy_v1.json" in work_item.command_manifest[0]["run"]
             assert "--out-md runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_logit_rank_streaming_hierarchy__l2_decoder_logit_rank_streaming_hierarchy_v1.md" in work_item.command_manifest[0]["run"]
             assert decoder_inputs["streaming_hierarchy_out"] in work_item.expected_outputs
@@ -1608,13 +1612,18 @@ def test_generate_l2_campaign_task_adds_decoder_logit_rank_streaming_overlap_evi
             assert decoder_inputs["rank_scale_ppa"] == (
                 "control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_scale_v1.json"
             )
+            assert decoder_inputs["candidate_merge_ppa"] == (
+                "control_plane/shadow_exports/l1_promotions/l1_decoder_candidate_stream_merge_fifo_v1.json"
+            )
             assert decoder_inputs["streaming_overlap_out"] == (
                 "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
                 "decoder_logit_rank_streaming_overlap__l2_decoder_logit_rank_streaming_overlap_v1.json"
             )
+            assert "measured candidate-stream merge/FIFO PPA" in decoder_inputs["streaming_overlap_scope"]
             assert "perf-sim/RTL equivalence observables" in decoder_inputs["streaming_overlap_scope"]
             run = work_item.command_manifest[0]["run"]
             assert "estimate_llm_decoder_logit_rank_streaming_hierarchy.py" in run
+            assert "--candidate-merge-ppa control_plane/shadow_exports/l1_promotions/l1_decoder_candidate_stream_merge_fifo_v1.json" in run
             assert "--producer-lanes-list 8,16,32" in run
             assert "--top-k-list 1,4" in run
             assert "--producer-ii-cycles-list 1,2,4" in run
