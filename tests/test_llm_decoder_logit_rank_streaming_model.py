@@ -218,6 +218,82 @@ def test_logit_rank_streaming_report_adds_memory_hierarchy_terms(tmp_path: Path)
     )
 
 
+def test_logit_rank_streaming_report_derives_sram_energy_from_metrics_json(tmp_path: Path) -> None:
+    ppa = tmp_path / "rank_ppa.json"
+    ppa.write_text(
+        json.dumps(
+            {
+                "proposals": [
+                    {
+                        "metrics_ref": {
+                            "metrics_csv": "runs/designs/activations/logit_rank_r8_l16_k1_wrapper/metrics.csv",
+                            "status": "ok",
+                        },
+                        "metric_summary": {
+                            "critical_path_ns": 3.0,
+                            "die_area": 10.0,
+                            "total_power_mw": 0.1,
+                        },
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    sram_metrics = tmp_path / "sram_metrics.json"
+    sram_metrics.write_text(
+        json.dumps(
+            {
+                "arch": "unit-test.yml",
+                "id": "unit_test_sram",
+                "instances": [
+                    {
+                        "instance": {
+                            "name": "test_sram",
+                            "pdk": "sky130",
+                            "tech_node_nm": 130,
+                            "word_size_bytes": 4,
+                        },
+                        "estimated": True,
+                        "metrics": {
+                            "area_um2": 100.0,
+                            "access_time_ns": 2.0,
+                            "read_energy_pj": 8.0,
+                            "write_energy_pj": 12.0,
+                        },
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    report = build_report(
+        rank_ppa_path=ppa,
+        scale_ppa_path=None,
+        candidate_merge_ppa_path=None,
+        sram_metrics_json_path=sram_metrics,
+        vocab_size=8,
+        producer_lanes=8,
+        top_k=1,
+        global_merge_ii_cycles_list=[1],
+        candidate_fifo_depth_groups=16,
+        memory_bandwidth_bytes_per_cycle=64.0,
+        sram_read_energy_pj_per_byte=0.05,
+        sram_write_energy_pj_per_byte=0.07,
+        noc_hops=0,
+    )
+
+    flat = report["flat_measured_ranker_points"][0]
+    assert report["inputs"]["sram_metrics_json_path"] == str(sram_metrics)
+    assert report["inputs"]["effective_sram_read_energy_pj_per_byte"] == 2.0
+    assert report["inputs"]["effective_sram_write_energy_pj_per_byte"] == 3.0
+    assert report["memory_hierarchy_model"]["source"] == "sram_metrics_json_plus_planning_noc"
+    assert report["memory_hierarchy_model"]["sram"]["source_path"] == str(sram_metrics)
+    assert flat["memory_hierarchy"]["source"] == "sram_metrics_json_plus_planning_noc"
+    assert flat["memory_hierarchy"]["sram_energy_nj"] == 0.08
+
+
 def test_logit_rank_streaming_overlap_sweep_varies_producer_and_fifo(tmp_path: Path) -> None:
     ppa = tmp_path / "rank_ppa.json"
     ppa.write_text(

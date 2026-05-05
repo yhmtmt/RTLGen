@@ -88,6 +88,78 @@ def _load_json(path: Path) -> JsonDict:
     return payload
 
 
+def _load_sram_metrics_model(path: Path | None) -> JsonDict | None:
+    if path is None:
+        return None
+    payload = _load_json(path)
+    instances = payload.get("instances")
+    if not isinstance(instances, list):
+        raise ValueError(f"expected SRAM metrics JSON with instances list: {path}")
+
+    used: list[JsonDict] = []
+    ignored: list[str] = []
+    for entry in instances:
+        if not isinstance(entry, dict):
+            ignored.append("<non_object>")
+            continue
+        instance = entry.get("instance")
+        metrics = entry.get("metrics")
+        name = "<unnamed>"
+        if isinstance(instance, dict):
+            name = str(instance.get("name") or name)
+        if (
+            not bool(entry.get("estimated"))
+            or not isinstance(instance, dict)
+            or not isinstance(metrics, dict)
+        ):
+            ignored.append(name)
+            continue
+        word_size_bytes = _as_float(instance.get("word_size_bytes"), -1.0)
+        read_energy_pj = _as_float(metrics.get("read_energy_pj"), -1.0)
+        write_energy_pj = _as_float(metrics.get("write_energy_pj"), -1.0)
+        if word_size_bytes <= 0.0 or read_energy_pj < 0.0 or write_energy_pj < 0.0:
+            ignored.append(name)
+            continue
+        used.append(
+            {
+                "name": name,
+                "pdk": instance.get("pdk"),
+                "tech_node_nm": instance.get("tech_node_nm"),
+                "word_size_bytes": word_size_bytes,
+                "area_um2": _as_float(metrics.get("area_um2")),
+                "access_time_ns": _as_float(metrics.get("access_time_ns")),
+                "read_energy_pj": read_energy_pj,
+                "write_energy_pj": write_energy_pj,
+            }
+        )
+
+    if not used:
+        raise ValueError(f"no usable estimated SRAM instances in {path}")
+
+    total_word_bytes = sum(row["word_size_bytes"] for row in used)
+    read_energy_pj_per_byte = sum(row["read_energy_pj"] for row in used) / total_word_bytes
+    write_energy_pj_per_byte = sum(row["write_energy_pj"] for row in used) / total_word_bytes
+    tech_nodes = sorted({row.get("tech_node_nm") for row in used if row.get("tech_node_nm") is not None})
+    pdks = sorted({str(row.get("pdk")) for row in used if row.get("pdk") is not None})
+    return {
+        "source": "sram_metrics_json",
+        "source_path": str(path),
+        "arch": payload.get("arch"),
+        "id": payload.get("id"),
+        "pdk": pdks,
+        "tech_node_nm": tech_nodes,
+        "derivation": "sum_instance_access_energy_divided_by_sum_instance_word_bytes",
+        "estimated_instance_count": len(used),
+        "ignored_instance_count": len(ignored),
+        "ignored_instances": ignored,
+        "read_energy_pj_per_byte": round(read_energy_pj_per_byte, 9),
+        "write_energy_pj_per_byte": round(write_energy_pj_per_byte, 9),
+        "total_area_um2": round(sum(row["area_um2"] for row in used), 6),
+        "max_access_time_ns": round(max(row["access_time_ns"] for row in used), 6),
+        "instances": used,
+    }
+
+
 def load_ranker_points(path: Path | None) -> list[JsonDict]:
     if path is None or not path.exists():
         return []
@@ -474,6 +546,7 @@ def _memory_service_summary(
     sram_write_energy_pj_per_byte: float,
     noc_hops: int,
     noc_energy_pj_per_byte_hop: float,
+    sram_model: JsonDict | None,
 ) -> JsonDict:
     if memory_bandwidth_bytes_per_cycle <= 0.0:
         raise ValueError("memory_bandwidth_bytes_per_cycle must be positive")
@@ -491,9 +564,27 @@ def _memory_service_summary(
     )
     noc_energy_pj = total_bytes * noc_hops * noc_energy_pj_per_byte_hop
     total_energy_pj = sram_energy_pj + noc_energy_pj
+    source = (
+        "sram_metrics_json_plus_planning_noc"
+        if sram_model
+        else "planning_default_not_literature_backed"
+    )
     return {
-        "source": "planning_default_not_literature_backed",
+        "source": source,
         "unit": "bytes_cycles_and_pj",
+        "sram_read_energy_pj_per_byte": sram_read_energy_pj_per_byte,
+        "sram_write_energy_pj_per_byte": sram_write_energy_pj_per_byte,
+        "sram_model": sram_model
+        or {
+            "source": "explicit_parameter_or_default",
+            "read_energy_pj_per_byte": sram_read_energy_pj_per_byte,
+            "write_energy_pj_per_byte": sram_write_energy_pj_per_byte,
+        },
+        "noc_model": {
+            "source": "planning_default_not_literature_backed",
+            "hops": noc_hops,
+            "energy_pj_per_byte_hop": noc_energy_pj_per_byte_hop,
+        },
         "read_bytes": read_bytes,
         "write_bytes": write_bytes,
         "total_bytes": total_bytes,
@@ -531,6 +622,7 @@ def _streaming_overlap_candidate(
     sram_write_energy_pj_per_byte: float,
     noc_hops: int,
     noc_energy_pj_per_byte_hop: float,
+    sram_model: JsonDict | None,
 ) -> JsonDict:
     local_point = _select_ranker_point(
         measured_points,
@@ -646,7 +738,8 @@ def _streaming_overlap_candidate(
                 "final last-beat completion cycle",
             ],
             "rtl_equivalence_requirement": (
-                "A future RTL merge block must match the same candidate ordering, "
+                "Any RTL merge block whose PPA is used in rankings must match the same "
+                "candidate ordering, "
                 "valid masking, backpressure, and last-beat completion observables "
                 "before PPA numbers are used in rankings."
             ),
@@ -665,6 +758,7 @@ def _streaming_overlap_candidate(
         sram_write_energy_pj_per_byte=sram_write_energy_pj_per_byte,
         noc_hops=noc_hops,
         noc_energy_pj_per_byte_hop=noc_energy_pj_per_byte_hop,
+        sram_model=sram_model,
     )
     return candidate
 
@@ -676,6 +770,7 @@ def build_report(
     candidate_merge_ppa_path: Path | None = DEFAULT_CANDIDATE_MERGE_PPA,
     prompt_stress_path: Path | None = None,
     logit_rank_bypass_path: Path | None = None,
+    sram_metrics_json_path: Path | None = None,
     vocab_size: int = 50257,
     producer_lanes: int = 8,
     top_k: int = 4,
@@ -710,6 +805,17 @@ def build_report(
         raise ValueError("memory_bandwidth_bytes_per_cycle must be positive")
     if noc_hops < 0:
         raise ValueError("noc_hops must be non-negative")
+    sram_model = _load_sram_metrics_model(sram_metrics_json_path)
+    effective_sram_read_energy_pj_per_byte = (
+        _as_float(sram_model["read_energy_pj_per_byte"])
+        if sram_model is not None
+        else sram_read_energy_pj_per_byte
+    )
+    effective_sram_write_energy_pj_per_byte = (
+        _as_float(sram_model["write_energy_pj_per_byte"])
+        if sram_model is not None
+        else sram_write_energy_pj_per_byte
+    )
     merge_iis = global_merge_ii_cycles_list or [1, 2, 4]
     lane_options = producer_lanes_list or [producer_lanes]
     top_k_options = top_k_list or [top_k]
@@ -764,10 +870,11 @@ def build_report(
             compute_cycles=row["total_cycles"],
             clock_ns=row["timing"]["clock_ns"],
             memory_bandwidth_bytes_per_cycle=memory_bandwidth_bytes_per_cycle,
-            sram_read_energy_pj_per_byte=sram_read_energy_pj_per_byte,
-            sram_write_energy_pj_per_byte=sram_write_energy_pj_per_byte,
+            sram_read_energy_pj_per_byte=effective_sram_read_energy_pj_per_byte,
+            sram_write_energy_pj_per_byte=effective_sram_write_energy_pj_per_byte,
             noc_hops=noc_hops,
             noc_energy_pj_per_byte_hop=noc_energy_pj_per_byte_hop,
+            sram_model=sram_model,
         )
 
     alternatives: list[JsonDict] = []
@@ -789,10 +896,11 @@ def build_report(
                 fallback_critical_path_ns=fallback_critical_path_ns,
                 token_id_bits=token_id_bits,
                 memory_bandwidth_bytes_per_cycle=memory_bandwidth_bytes_per_cycle,
-                sram_read_energy_pj_per_byte=sram_read_energy_pj_per_byte,
-                sram_write_energy_pj_per_byte=sram_write_energy_pj_per_byte,
+                sram_read_energy_pj_per_byte=effective_sram_read_energy_pj_per_byte,
+                sram_write_energy_pj_per_byte=effective_sram_write_energy_pj_per_byte,
                 noc_hops=noc_hops,
                 noc_energy_pj_per_byte_hop=noc_energy_pj_per_byte_hop,
+                sram_model=sram_model,
             )
         )
 
@@ -819,10 +927,11 @@ def build_report(
                             fallback_critical_path_ns=fallback_critical_path_ns,
                             token_id_bits=token_id_bits,
                             memory_bandwidth_bytes_per_cycle=memory_bandwidth_bytes_per_cycle,
-                            sram_read_energy_pj_per_byte=sram_read_energy_pj_per_byte,
-                            sram_write_energy_pj_per_byte=sram_write_energy_pj_per_byte,
+                            sram_read_energy_pj_per_byte=effective_sram_read_energy_pj_per_byte,
+                            sram_write_energy_pj_per_byte=effective_sram_write_energy_pj_per_byte,
                             noc_hops=noc_hops,
                             noc_energy_pj_per_byte_hop=noc_energy_pj_per_byte_hop,
+                            sram_model=sram_model,
                         )
                         if candidate["sweep_key"] in seen_sweep_keys:
                             continue
@@ -889,6 +998,9 @@ def build_report(
             ),
             "prompt_stress_path": str(prompt_stress_path) if prompt_stress_path is not None else None,
             "logit_rank_bypass_path": str(logit_rank_bypass_path) if logit_rank_bypass_path is not None else None,
+            "sram_metrics_json_path": (
+                str(sram_metrics_json_path) if sram_metrics_json_path is not None else None
+            ),
             "vocab_size": vocab_size,
             "producer_lanes": producer_lanes,
             "top_k": top_k,
@@ -908,16 +1020,33 @@ def build_report(
             "memory_bandwidth_bytes_per_cycle": memory_bandwidth_bytes_per_cycle,
             "sram_read_energy_pj_per_byte": sram_read_energy_pj_per_byte,
             "sram_write_energy_pj_per_byte": sram_write_energy_pj_per_byte,
+            "effective_sram_read_energy_pj_per_byte": effective_sram_read_energy_pj_per_byte,
+            "effective_sram_write_energy_pj_per_byte": effective_sram_write_energy_pj_per_byte,
             "noc_hops": noc_hops,
             "noc_energy_pj_per_byte_hop": noc_energy_pj_per_byte_hop,
         },
         "memory_hierarchy_model": {
-            "source": "planning_default_not_literature_backed",
+            "source": (
+                "sram_metrics_json_plus_planning_noc"
+                if sram_model is not None
+                else "planning_default_not_literature_backed"
+            ),
             "unit": "bytes_cycles_and_pj",
             "scope": (
                 "First-order SRAM/NoC service estimate layered on existing compute cycles. "
                 "This is not a measured Nangate45 memory macro or NoC PPA result."
             ),
+            "sram": sram_model
+            or {
+                "source": "explicit_parameter_or_default",
+                "read_energy_pj_per_byte": effective_sram_read_energy_pj_per_byte,
+                "write_energy_pj_per_byte": effective_sram_write_energy_pj_per_byte,
+            },
+            "noc": {
+                "source": "planning_default_not_literature_backed",
+                "hops": noc_hops,
+                "energy_pj_per_byte_hop": noc_energy_pj_per_byte_hop,
+            },
         },
         "assumptions": [
             "Producer emits one W-lane logit tile after producer latency and then every producer II cycles.",
@@ -928,7 +1057,8 @@ def build_report(
             "Traffic model counts materialized-logit write+read bytes versus candidate FIFO write+read bytes.",
             "Measured row-8 datapath and row-16/row-32 scale critical_path_ns values are used as ranker clock proxies.",
             "Measured candidate-stream merge/FIFO PPA is used for global merge buffering when an exact or nearest-depth point is available.",
-            "Memory hierarchy estimates use explicit planning parameters and are reported separately from measured cell PPA.",
+            "Memory hierarchy estimates use explicit SRAM source data when provided, keep NoC terms as "
+            "planning parameters, and are reported separately from measured cell PPA.",
             "Missing lane points are explicit defaults or log2-lane scaled proxies.",
             "Perf-sim and future RTL equivalence is defined at accepted ready-valid stream beats, FIFO occupancy, valid masks, last-beat completion, and tie-breaking.",
         ],
@@ -1114,6 +1244,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Model decoder logit-rank streaming hierarchy")
     ap.add_argument("--prompt-stress", help="prompt-stress evidence JSON path")
     ap.add_argument("--logit-rank-bypass", help="logit-rank bypass evidence JSON path")
+    ap.add_argument("--sram-metrics-json", help="SRAM metrics JSON path for deriving SRAM pJ/byte")
     ap.add_argument("--rank-ppa", default=str(DEFAULT_RANK_PPA), help="rank datapath PPA JSON")
     ap.add_argument("--scale-ppa", default=str(DEFAULT_SCALE_PPA), help="rank scale PPA JSON")
     ap.add_argument(
@@ -1152,6 +1283,7 @@ def main() -> int:
         candidate_merge_ppa_path=Path(args.candidate_merge_ppa) if args.candidate_merge_ppa else None,
         prompt_stress_path=Path(args.prompt_stress) if args.prompt_stress else None,
         logit_rank_bypass_path=Path(args.logit_rank_bypass) if args.logit_rank_bypass else None,
+        sram_metrics_json_path=Path(args.sram_metrics_json) if args.sram_metrics_json else None,
         vocab_size=args.vocab_size,
         producer_lanes=args.producer_lanes,
         top_k=args.top_k,
