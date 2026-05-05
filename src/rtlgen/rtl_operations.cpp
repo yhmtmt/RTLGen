@@ -1445,3 +1445,197 @@ void emitLogitRankModule(const LogitRankOperationConfig &config, const OperandDe
     os << "  end\n";
     os << "endmodule\n";
 }
+
+void emitCandidateStreamMergeFifoModule(const CandidateStreamMergeFifoOperationConfig &config,
+                                        const OperandDefinition &operand) {
+    const int logit_bits = config.logit_bits > 0 ? config.logit_bits : operand.bit_width;
+    if (config.top_k <= 0 || config.top_k > 16) {
+        throw std::runtime_error("candidate_stream_merge_fifo top_k must be in [1, 16]");
+    }
+    if (logit_bits <= 0 || logit_bits > 64) {
+        throw std::runtime_error("candidate_stream_merge_fifo logit_bits must be in [1, 64]");
+    }
+    if (config.token_id_bits <= 0 || config.token_id_bits > 32) {
+        throw std::runtime_error("candidate_stream_merge_fifo token_id_bits must be in [1, 32]");
+    }
+    if (config.fifo_depth_groups <= 0 || config.fifo_depth_groups > 4096) {
+        throw std::runtime_error("candidate_stream_merge_fifo fifo_depth_groups must be in [1, 4096]");
+    }
+    if (config.counter_bits <= 0 || config.counter_bits > 64) {
+        throw std::runtime_error("candidate_stream_merge_fifo counter_bits must be in [1, 64]");
+    }
+
+    const int ptr_bits = std::max(1, ceilLog2U64(static_cast<unsigned long long>(config.fifo_depth_groups)));
+    const int token_row_width = config.top_k * config.token_id_bits;
+    const int logit_row_width = config.top_k * logit_bits;
+    const std::string signed_kw = config.logit_signed ? "signed " : "";
+
+    std::string filename = config.module_name + ".v";
+    std::ofstream os(filename);
+    if (!os) {
+        throw std::runtime_error("Failed to open " + filename + " for writing");
+    }
+
+    os << "`timescale 1ns/1ps\n\n";
+    os << "module " << config.module_name << "(\n";
+    os << "  input  clk,\n";
+    os << "  input  rst_n,\n";
+    os << "  input  in_valid,\n";
+    os << "  output in_ready,\n";
+    os << "  input  in_last,\n";
+    os << "  input  [" << (config.top_k - 1) << ":0] in_valid_mask,\n";
+    os << "  input  [" << (token_row_width - 1) << ":0] in_token_ids,\n";
+    os << "  input  " << signed_kw << "[" << (logit_row_width - 1) << ":0] in_logits,\n";
+    os << "  output reg out_valid,\n";
+    os << "  input  out_ready,\n";
+    os << "  output reg [" << (config.top_k - 1) << ":0] out_valid_mask,\n";
+    os << "  output reg [" << (token_row_width - 1) << ":0] out_token_ids,\n";
+    os << "  output reg " << signed_kw << "[" << (logit_row_width - 1) << ":0] out_logits,\n";
+    os << "  output reg [" << (config.counter_bits - 1) << ":0] accepted_group_count,\n";
+    os << "  output reg [" << (config.counter_bits - 1) << ":0] producer_stall_cycles,\n";
+    os << "  output reg [" << (config.counter_bits - 1) << ":0] fifo_max_occupancy,\n";
+    os << "  output reg [" << (config.counter_bits - 1) << ":0] final_completion_cycle\n";
+    os << ");\n\n";
+    os << "  // CandidateStream ready-valid merger for decoder logit-rank streaming.\n";
+    os << "  // Ordering contract: larger logit wins; exact ties keep the lower token id.\n";
+    os << "  // Observable counters match the perf-sim/RTL equivalence contract.\n";
+    os << "  localparam integer TOP_K = " << config.top_k << ";\n";
+    os << "  localparam integer LOGIT_W = " << logit_bits << ";\n";
+    os << "  localparam integer TOKEN_ID_W = " << config.token_id_bits << ";\n";
+    os << "  localparam integer FIFO_DEPTH = " << config.fifo_depth_groups << ";\n";
+    os << "  localparam integer PTR_W = " << ptr_bits << ";\n";
+    os << "  localparam integer COUNT_W = " << config.counter_bits << ";\n\n";
+    os << "  localparam [COUNT_W-1:0] FIFO_DEPTH_COUNT = " << config.counter_bits << "'d" << config.fifo_depth_groups << ";\n";
+    os << "  localparam [PTR_W-1:0] FIFO_LAST_PTR = " << ptr_bits << "'d" << (config.fifo_depth_groups - 1) << ";\n\n";
+    os << "  reg fifo_last [0:FIFO_DEPTH-1];\n";
+    os << "  reg [TOP_K-1:0] fifo_mask [0:FIFO_DEPTH-1];\n";
+    os << "  reg [TOP_K*TOKEN_ID_W-1:0] fifo_token_ids [0:FIFO_DEPTH-1];\n";
+    os << "  reg " << signed_kw << "[TOP_K*LOGIT_W-1:0] fifo_logits [0:FIFO_DEPTH-1];\n";
+    os << "  reg [PTR_W-1:0] rd_ptr;\n";
+    os << "  reg [PTR_W-1:0] wr_ptr;\n";
+    os << "  reg [COUNT_W-1:0] occupancy;\n";
+    os << "  reg [COUNT_W-1:0] cycle_count;\n\n";
+    os << "  reg [TOP_K-1:0] top_valid;\n";
+    os << "  reg [TOKEN_ID_W-1:0] top_token [0:TOP_K-1];\n";
+    os << "  reg " << signed_kw << "[LOGIT_W-1:0] top_logit [0:TOP_K-1];\n";
+    os << "  reg [TOP_K-1:0] work_valid;\n";
+    os << "  reg [TOKEN_ID_W-1:0] work_token [0:TOP_K-1];\n";
+    os << "  reg " << signed_kw << "[LOGIT_W-1:0] work_logit [0:TOP_K-1];\n";
+    os << "  reg [TOP_K-1:0] read_mask;\n";
+    os << "  reg [TOP_K*TOKEN_ID_W-1:0] read_token_ids;\n";
+    os << "  reg " << signed_kw << "[TOP_K*LOGIT_W-1:0] read_logits;\n";
+    os << "  reg read_last;\n";
+    os << "  reg [TOKEN_ID_W-1:0] cand_token;\n";
+    os << "  reg " << signed_kw << "[LOGIT_W-1:0] cand_logit;\n";
+    os << "  integer i;\n";
+    os << "  integer k;\n";
+    os << "  integer insert_pos;\n";
+    os << "  integer pop_group;\n";
+    os << "  integer push_group;\n\n";
+    os << "  assign in_ready = (occupancy < FIFO_DEPTH_COUNT);\n\n";
+    os << "  always @(posedge clk or negedge rst_n) begin\n";
+    os << "    if (!rst_n) begin\n";
+    os << "      rd_ptr <= {PTR_W{1'b0}};\n";
+    os << "      wr_ptr <= {PTR_W{1'b0}};\n";
+    os << "      occupancy <= {COUNT_W{1'b0}};\n";
+    os << "      cycle_count <= {COUNT_W{1'b0}};\n";
+    os << "      accepted_group_count <= {COUNT_W{1'b0}};\n";
+    os << "      producer_stall_cycles <= {COUNT_W{1'b0}};\n";
+    os << "      fifo_max_occupancy <= {COUNT_W{1'b0}};\n";
+    os << "      final_completion_cycle <= {COUNT_W{1'b0}};\n";
+    os << "      out_valid <= 1'b0;\n";
+    os << "      out_valid_mask <= {TOP_K{1'b0}};\n";
+    os << "      out_token_ids <= {TOP_K*TOKEN_ID_W{1'b0}};\n";
+    os << "      out_logits <= {TOP_K*LOGIT_W{1'b0}};\n";
+    os << "      top_valid <= {TOP_K{1'b0}};\n";
+    os << "      for (i = 0; i < TOP_K; i = i + 1) begin\n";
+    os << "        top_token[i] <= {TOKEN_ID_W{1'b0}};\n";
+    os << "        top_logit[i] <= {LOGIT_W{1'b0}};\n";
+    os << "      end\n";
+    os << "    end else begin\n";
+    os << "      cycle_count <= cycle_count + {{(COUNT_W-1){1'b0}}, 1'b1};\n";
+    os << "      push_group = in_valid && in_ready;\n";
+    os << "      pop_group = (occupancy != {COUNT_W{1'b0}}) && !out_valid;\n\n";
+    os << "      if (in_valid && !in_ready)\n";
+    os << "        producer_stall_cycles <= producer_stall_cycles + {{(COUNT_W-1){1'b0}}, 1'b1};\n\n";
+    os << "      if (out_valid && out_ready) begin\n";
+    os << "        out_valid <= 1'b0;\n";
+    os << "        top_valid <= {TOP_K{1'b0}};\n";
+    os << "      end\n\n";
+    os << "      if (push_group) begin\n";
+    os << "        fifo_last[wr_ptr] <= in_last;\n";
+    os << "        fifo_mask[wr_ptr] <= in_valid_mask;\n";
+    os << "        fifo_token_ids[wr_ptr] <= in_token_ids;\n";
+    os << "        fifo_logits[wr_ptr] <= in_logits;\n";
+    os << "        accepted_group_count <= accepted_group_count + {{(COUNT_W-1){1'b0}}, 1'b1};\n";
+    os << "        if (wr_ptr == FIFO_LAST_PTR)\n";
+    os << "          wr_ptr <= {PTR_W{1'b0}};\n";
+    os << "        else\n";
+    os << "          wr_ptr <= wr_ptr + {{(PTR_W-1){1'b0}}, 1'b1};\n";
+    os << "      end\n\n";
+    os << "      if (pop_group) begin\n";
+    os << "        read_last = fifo_last[rd_ptr];\n";
+    os << "        read_mask = fifo_mask[rd_ptr];\n";
+    os << "        read_token_ids = fifo_token_ids[rd_ptr];\n";
+    os << "        read_logits = fifo_logits[rd_ptr];\n";
+    os << "        work_valid = top_valid;\n";
+    os << "        for (i = 0; i < TOP_K; i = i + 1) begin\n";
+    os << "          work_token[i] = top_token[i];\n";
+    os << "          work_logit[i] = top_logit[i];\n";
+    os << "        end\n\n";
+    os << "        for (i = 0; i < TOP_K; i = i + 1) begin\n";
+    os << "          if (read_mask[i]) begin\n";
+    os << "            cand_token = read_token_ids[(i*TOKEN_ID_W) +: TOKEN_ID_W];\n";
+    if (config.logit_signed) {
+        os << "            cand_logit = $signed(read_logits[(i*LOGIT_W) +: LOGIT_W]);\n";
+    } else {
+        os << "            cand_logit = read_logits[(i*LOGIT_W) +: LOGIT_W];\n";
+    }
+    os << "            insert_pos = TOP_K;\n";
+    os << "            for (k = 0; k < TOP_K; k = k + 1) begin\n";
+    os << "              if ((insert_pos == TOP_K) && (!work_valid[k] || (cand_logit > work_logit[k]) || ((cand_logit == work_logit[k]) && (cand_token < work_token[k]))))\n";
+    os << "                insert_pos = k;\n";
+    os << "            end\n";
+    os << "            if (insert_pos < TOP_K) begin\n";
+    os << "              for (k = TOP_K - 1; k > 0; k = k - 1) begin\n";
+    os << "                if (k > insert_pos) begin\n";
+    os << "                  work_valid[k] = work_valid[k-1];\n";
+    os << "                  work_token[k] = work_token[k-1];\n";
+    os << "                  work_logit[k] = work_logit[k-1];\n";
+    os << "                end\n";
+    os << "              end\n";
+    os << "              work_valid[insert_pos] = 1'b1;\n";
+    os << "              work_token[insert_pos] = cand_token;\n";
+    os << "              work_logit[insert_pos] = cand_logit;\n";
+    os << "            end\n";
+    os << "          end\n";
+    os << "        end\n\n";
+    os << "        top_valid <= work_valid;\n";
+    os << "        for (i = 0; i < TOP_K; i = i + 1) begin\n";
+    os << "          top_token[i] <= work_token[i];\n";
+    os << "          top_logit[i] <= work_logit[i];\n";
+    os << "        end\n";
+    os << "        if (read_last) begin\n";
+    os << "          out_valid <= 1'b1;\n";
+    os << "          out_valid_mask <= work_valid;\n";
+    os << "          for (i = 0; i < TOP_K; i = i + 1) begin\n";
+    os << "            out_token_ids[(i*TOKEN_ID_W) +: TOKEN_ID_W] <= work_token[i];\n";
+    os << "            out_logits[(i*LOGIT_W) +: LOGIT_W] <= work_logit[i];\n";
+    os << "          end\n";
+    os << "          final_completion_cycle <= cycle_count + {{(COUNT_W-1){1'b0}}, 1'b1};\n";
+    os << "        end\n";
+    os << "        if (rd_ptr == FIFO_LAST_PTR)\n";
+    os << "          rd_ptr <= {PTR_W{1'b0}};\n";
+    os << "        else\n";
+    os << "          rd_ptr <= rd_ptr + {{(PTR_W-1){1'b0}}, 1'b1};\n";
+    os << "      end\n\n";
+    os << "      if (push_group && !pop_group)\n";
+    os << "        occupancy <= occupancy + {{(COUNT_W-1){1'b0}}, 1'b1};\n";
+    os << "      else if (!push_group && pop_group)\n";
+    os << "        occupancy <= occupancy - {{(COUNT_W-1){1'b0}}, 1'b1};\n\n";
+    os << "      if ((occupancy + (push_group ? {{(COUNT_W-1){1'b0}}, 1'b1} : {COUNT_W{1'b0}}) - (pop_group ? {{(COUNT_W-1){1'b0}}, 1'b1} : {COUNT_W{1'b0}})) > fifo_max_occupancy)\n";
+    os << "        fifo_max_occupancy <= occupancy + (push_group ? {{(COUNT_W-1){1'b0}}, 1'b1} : {COUNT_W{1'b0}}) - (pop_group ? {{(COUNT_W-1){1'b0}}, 1'b1} : {COUNT_W{1'b0}});\n";
+    os << "    end\n";
+    os << "  end\n";
+    os << "endmodule\n";
+}

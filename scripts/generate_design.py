@@ -173,6 +173,36 @@ def identify_design(config):
             "logit_signed": bool(options.get("logit_signed", True)),
             "include_mg_cpa": False,
         }
+    if op_type == "candidate_stream_merge_fifo":
+        options = entry.get("options", {})
+        top_k = int(options.get("top_k", 1))
+        logit_bits = int(options.get("logit_bits", bit_width) or bit_width)
+        token_id_bits = int(options.get("token_id_bits", 16))
+        fifo_depth_groups = int(options.get("fifo_depth_groups", 16))
+        counter_bits = int(options.get("counter_bits", 32))
+        if top_k <= 0:
+            raise ValueError("candidate_stream_merge_fifo top_k must be positive")
+        if logit_bits <= 0:
+            raise ValueError("candidate_stream_merge_fifo logit_bits must be positive")
+        if token_id_bits <= 0:
+            raise ValueError("candidate_stream_merge_fifo token_id_bits must be positive")
+        if fifo_depth_groups <= 0:
+            raise ValueError("candidate_stream_merge_fifo fifo_depth_groups must be positive")
+        if counter_bits <= 0:
+            raise ValueError("candidate_stream_merge_fifo counter_bits must be positive")
+        return {
+            "kind": "candidate_stream_merge_fifo",
+            "module_name": module_name,
+            "wrapper_name": f"{module_name}_wrapper",
+            "top_k": top_k,
+            "logit_bits": logit_bits,
+            "token_id_bits": token_id_bits,
+            "token_width": token_id_bits * top_k,
+            "logit_width": logit_bits * top_k,
+            "counter_bits": counter_bits,
+            "logit_signed": bool(options.get("logit_signed", True)),
+            "include_mg_cpa": False,
+        }
     raise ValueError(f"generate_design.py does not support operation type: {op_type}")
 
 
@@ -452,6 +482,55 @@ module {wrapper_name}(
 
   assign top_indices = top_indices_reg;
   assign top_logits = top_logits_reg;
+
+endmodule
+"""
+    elif design["kind"] == "candidate_stream_merge_fifo":
+        top_k = int(design["top_k"])
+        token_width = int(design["token_width"])
+        logit_width = int(design["logit_width"])
+        counter_bits = int(design["counter_bits"])
+        signed_kw = "signed " if design.get("logit_signed", True) else ""
+        wrapper_content = f"""
+module {wrapper_name}(
+  input clk,
+  input rst_n,
+  input in_valid,
+  output in_ready,
+  input in_last,
+  input [{top_k-1}:0] in_valid_mask,
+  input [{token_width-1}:0] in_token_ids,
+  input {signed_kw}[{logit_width-1}:0] in_logits,
+  output out_valid,
+  input out_ready,
+  output [{top_k-1}:0] out_valid_mask,
+  output [{token_width-1}:0] out_token_ids,
+  output {signed_kw}[{logit_width-1}:0] out_logits,
+  output [{counter_bits-1}:0] accepted_group_count,
+  output [{counter_bits-1}:0] producer_stall_cycles,
+  output [{counter_bits-1}:0] fifo_max_occupancy,
+  output [{counter_bits-1}:0] final_completion_cycle
+);
+
+  {module_name} dut (
+    .clk(clk),
+    .rst_n(rst_n),
+    .in_valid(in_valid),
+    .in_ready(in_ready),
+    .in_last(in_last),
+    .in_valid_mask(in_valid_mask),
+    .in_token_ids(in_token_ids),
+    .in_logits(in_logits),
+    .out_valid(out_valid),
+    .out_ready(out_ready),
+    .out_valid_mask(out_valid_mask),
+    .out_token_ids(out_token_ids),
+    .out_logits(out_logits),
+    .accepted_group_count(accepted_group_count),
+    .producer_stall_cycles(producer_stall_cycles),
+    .fifo_max_occupancy(fifo_max_occupancy),
+    .final_completion_cycle(final_completion_cycle)
+  );
 
 endmodule
 """

@@ -9,3 +9,5 @@ void emitSoftmaxRowwiseModule(const SoftmaxRowwiseOperationConfig &config, const
 void emitBf16RecipNormModule(const Bf16RecipNormOperationConfig &config, const OperandDefinition &operand);
 void emitScoreTieRankModule(const ScoreTieRankOperationConfig &config, const OperandDefinition &operand);
 void emitLogitRankModule(const LogitRankOperationConfig &config, const OperandDefinition &operand);
+void emitCandidateStreamMergeFifoModule(const CandidateStreamMergeFifoOperationConfig &config,
+                                        const OperandDefinition &operand);

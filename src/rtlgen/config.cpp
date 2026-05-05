@@ -62,6 +62,7 @@ bool readConfig(const std::string& filename, CircuitConfig& config) {
         config.bf16_recip_norm_operations.clear();
         config.score_tie_rank_operations.clear();
         config.logit_rank_operations.clear();
+        config.candidate_stream_merge_fifo_operations.clear();
         config.onnx_model.reset();
 
         if (j.contains("operand")) {
@@ -458,6 +459,33 @@ bool readConfig(const std::string& filename, CircuitConfig& config) {
                         throw std::runtime_error("logit_rank top_k must be in [1, row_elems] for " + rank.module_name);
                     }
                     config.logit_rank_operations.push_back(rank);
+                } else if (type == "candidate_stream_merge_fifo") {
+                    const json &options = entry.contains("options") ? entry["options"] : entry;
+                    CandidateStreamMergeFifoOperationConfig merge;
+                    merge.module_name = module_name;
+                    merge.operand = operand_name;
+                    merge.top_k = options.value("top_k", 1);
+                    merge.logit_bits = options.value("logit_bits", 16);
+                    merge.token_id_bits = options.value("token_id_bits", 16);
+                    merge.fifo_depth_groups = options.value("fifo_depth_groups", 16);
+                    merge.counter_bits = options.value("counter_bits", 32);
+                    merge.logit_signed = options.value("logit_signed", true);
+                    if (merge.top_k <= 0 || merge.top_k > 16) {
+                        throw std::runtime_error("candidate_stream_merge_fifo top_k must be in [1, 16] for " + merge.module_name);
+                    }
+                    if (merge.logit_bits <= 0 || merge.logit_bits > 64) {
+                        throw std::runtime_error("candidate_stream_merge_fifo logit_bits must be in [1, 64] for " + merge.module_name);
+                    }
+                    if (merge.token_id_bits <= 0 || merge.token_id_bits > 32) {
+                        throw std::runtime_error("candidate_stream_merge_fifo token_id_bits must be in [1, 32] for " + merge.module_name);
+                    }
+                    if (merge.fifo_depth_groups <= 0 || merge.fifo_depth_groups > 4096) {
+                        throw std::runtime_error("candidate_stream_merge_fifo fifo_depth_groups must be in [1, 4096] for " + merge.module_name);
+                    }
+                    if (merge.counter_bits <= 0 || merge.counter_bits > 64) {
+                        throw std::runtime_error("candidate_stream_merge_fifo counter_bits must be in [1, 64] for " + merge.module_name);
+                    }
+                    config.candidate_stream_merge_fifo_operations.push_back(merge);
                 } else {
                     throw std::runtime_error("Unknown operation type: " + type);
                 }
