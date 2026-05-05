@@ -1927,13 +1927,17 @@ def _decoder_logit_rank_streaming_overlap_evidence(*, item_id: str) -> dict[str,
     candidate_merge_ppa = (
         "control_plane/shadow_exports/l1_promotions/l1_decoder_candidate_stream_merge_fifo_v1.json"
     )
+    sram_metrics_json = "runs/designs/sram/minimal_v0_2_draft/sram_metrics.json"
     memory_model = {
         "memory_bandwidth_bytes_per_cycle": 64,
+        "sram_metrics_json": sram_metrics_json,
         "sram_read_energy_pj_per_byte": 0.05,
         "sram_write_energy_pj_per_byte": 0.07,
         "noc_hops": 2,
         "noc_energy_pj_per_byte_hop": 0.02,
-        "source": "planning_default_not_literature_backed",
+        "source": "sram_metrics_json_plus_planning_noc",
+        "sram_source": "cacti_estimated_nangate45_minimal_v0_2_draft",
+        "noc_source": "planning_default_not_literature_backed",
     }
     return {
         "inputs": {
@@ -1961,6 +1965,7 @@ def _decoder_logit_rank_streaming_overlap_evidence(*, item_id: str) -> dict[str,
                     f"--rank-ppa {rank_ppa} "
                     f"--scale-ppa {scale_ppa} "
                     f"--candidate-merge-ppa {candidate_merge_ppa} "
+                    f"--sram-metrics-json {sram_metrics_json} "
                     "--producer-lanes-list 8,16,32 "
                     "--top-k-list 1,4 "
                     "--producer-ii-cycles-list 1,2,4 "
