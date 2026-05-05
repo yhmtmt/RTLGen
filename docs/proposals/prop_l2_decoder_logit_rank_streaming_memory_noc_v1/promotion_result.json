@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_logit_rank_streaming_memory_noc_v1",
+  "decision": "iterate",
+  "pr_number": 411,
+  "merge_commit": "5e8ebed7fea6e75c7cfd69eba4c175e358fb9580",
+  "merged_utc": "2026-05-05T10:02:47.898545Z"
+}

@@ -20,7 +20,12 @@
         "direction": "iterate",
         "reason": "Use memory/NoC-aware ranking to choose measured SRAM/NoC hierarchy work or flat rank scaling."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 411,
+      "merge_commit": "5e8ebed7fea6e75c7cfd69eba4c175e358fb9580",
+      "merged_utc": "2026-05-05T10:02:47.898545Z",
+      "notes": "Merged via PR #411 and merge 5e8ebed7fea6e75c7cfd69eba4c175e358fb9580 at 2026-05-05T10:02:47.898545Z."
     }
-  ]
+  ],
+  "source_commit": "c7ba8ad7f176f8ab44fc96ed5bebb7c597316b41"
 }
