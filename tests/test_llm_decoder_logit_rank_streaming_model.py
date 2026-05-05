@@ -66,6 +66,7 @@ def test_logit_rank_streaming_report_compares_flat_and_hierarchy(tmp_path: Path)
     report = build_report(
         rank_ppa_path=ppa,
         scale_ppa_path=None,
+        candidate_merge_ppa_path=None,
         vocab_size=32,
         producer_lanes=8,
         top_k=4,
@@ -91,6 +92,78 @@ def test_logit_rank_streaming_report_compares_flat_and_hierarchy(tmp_path: Path)
     }
     assert len(report["overlap_traffic_sweep"]) == 2
     assert report["overlap_recommendation"]["sweep_key"] == "w8_k4_prodii1_mergeii1_fifo8"
+
+
+def test_logit_rank_streaming_report_uses_measured_candidate_merge_ppa(tmp_path: Path) -> None:
+    rank_ppa = tmp_path / "rank_ppa.json"
+    rank_ppa.write_text(
+        json.dumps(
+            {
+                "proposals": [
+                    {
+                        "metrics_ref": {
+                            "metrics_csv": "runs/designs/activations/logit_rank_r8_l16_k4_wrapper/metrics.csv",
+                            "status": "ok",
+                        },
+                        "metric_summary": {
+                            "critical_path_ns": 3.0,
+                            "die_area": 10.0,
+                            "total_power_mw": 0.1,
+                        },
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    merge_ppa = tmp_path / "merge_ppa.json"
+    merge_ppa.write_text(
+        json.dumps(
+            {
+                "proposals": [
+                    {
+                        "metrics_ref": {
+                            "metrics_csv": (
+                                "runs/designs/activations/trials/trial_001/"
+                                "candidate_stream_merge_fifo_k4_l16_t16_d8_wrapper/metrics.csv"
+                            ),
+                            "status": "ok",
+                        },
+                        "metric_summary": {
+                            "critical_path_ns": 5.0,
+                            "die_area": 40.0,
+                            "total_power_mw": 0.4,
+                        },
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    report = build_report(
+        rank_ppa_path=rank_ppa,
+        scale_ppa_path=None,
+        candidate_merge_ppa_path=merge_ppa,
+        vocab_size=32,
+        producer_lanes=8,
+        top_k=4,
+        global_merge_ii_cycles_list=[1],
+        candidate_fifo_depth_groups=8,
+    )
+
+    row = report["hierarchical_streaming_alternatives"][0]
+    assert row["timing"]["clock_ns"] == 5.0
+    assert row["candidate_merge_fifo_point"]["metrics_csv"].endswith(
+        "candidate_stream_merge_fifo_k4_l16_t16_d8_wrapper/metrics.csv"
+    )
+    assert row["component_ppa_metrics"]["estimated_total_die_area"] == 50.0
+    assert row["component_ppa_metrics"]["estimated_total_power_mw"] == 0.5
+    assert row["component_ppa_metrics"]["clock_source"] == "max(local_ranker, candidate_merge_fifo)"
+    assert (
+        "producer stall cycles"
+        in row["equivalence_contract"]["perf_sim_observables"]
+    )
 
 
 def test_logit_rank_streaming_overlap_sweep_varies_producer_and_fifo(tmp_path: Path) -> None:
@@ -130,6 +203,7 @@ def test_logit_rank_streaming_overlap_sweep_varies_producer_and_fifo(tmp_path: P
     report = build_report(
         rank_ppa_path=ppa,
         scale_ppa_path=None,
+        candidate_merge_ppa_path=None,
         vocab_size=64,
         producer_lanes=8,
         top_k=1,
