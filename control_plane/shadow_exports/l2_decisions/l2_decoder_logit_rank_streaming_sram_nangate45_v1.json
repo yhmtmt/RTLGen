@@ -1,0 +1,128 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-05-05T11:46:28.327084Z",
+  "item_id": "l2_decoder_logit_rank_streaming_sram_nangate45_v1",
+  "run_key": "l2_decoder_logit_rank_streaming_sram_nangate45_v1_run_d17e26943f2c7a2d",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "79856b13dbbc93b3de1ed2198baa3303e72aac74",
+  "review_metadata_source_commit": "79856b13dbbc93b3de1ed2198baa3303e72aac74",
+  "objective": "Model-set revision campaign that reuses existing physical baselines and reruns mapper+perf reporting.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+    ],
+    "design_dirs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+    ],
+    "macro_manifests": [
+      "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+      "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+    ],
+    "decoder_contract": {
+      "memory_model": {
+        "source": "sram_metrics_json_plus_planning_noc",
+        "noc_hops": 2,
+        "noc_source": "planning_default_not_literature_backed",
+        "sram_source": "cacti_estimated_nangate45_minimal_v0_2_draft",
+        "sram_metrics_json": "runs/designs/sram/minimal_v0_2_draft/sram_metrics.json",
+        "noc_energy_pj_per_byte_hop": 0.02,
+        "sram_read_energy_pj_per_byte": 0.05,
+        "sram_write_energy_pj_per_byte": 0.07,
+        "memory_bandwidth_bytes_per_cycle": 64
+      },
+      "rank_scale_ppa": "control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_scale_v1.json",
+      "rank_datapath_ppa": "control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_datapath_v1_r2.json",
+      "candidate_merge_ppa": "control_plane/shadow_exports/l1_promotions/l1_decoder_candidate_stream_merge_fifo_v1.json",
+      "source_prompt_stress": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_gpt2_prompt_stress__l2_decoder_gpt2_prompt_stress_v1.json",
+      "streaming_overlap_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_logit_rank_streaming_overlap__l2_decoder_logit_rank_streaming_sram_nangate45_v1.json",
+      "streaming_overlap_scope": "Refine the decoder logit-rank streaming hierarchy with measured candidate-stream merge/FIFO PPA, producer-overlap, FIFO, candidate-traffic, and perf-sim/RTL equivalence observables",
+      "source_logit_rank_bypass": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_gpt2_logit_rank_bypass__l2_decoder_gpt2_logit_rank_bypass_v1.json",
+      "streaming_overlap_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_logit_rank_streaming_overlap__l2_decoder_logit_rank_streaming_sram_nangate45_v1.md"
+    },
+    "generated_campaign": {
+      "path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign__l2_decoder_logit_rank_streaming_sram_nangate45_v1.json",
+      "outputs": {
+        "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_logit_rank_streaming_sram_nangate45_v1/report.md",
+        "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_logit_rank_streaming_sram_nangate45_v1/results.csv",
+        "campaign_dir": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_logit_rank_streaming_sram_nangate45_v1"
+      },
+      "clean_outputs": true,
+      "base_campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json"
+    },
+    "candidate_manifests": [
+      "runs/candidates/nangate45/module_candidates.json"
+    ]
+  },
+  "recommendation": {
+    "arch_id": "fp16_nm1",
+    "macro_mode": "flat_nomacro",
+    "objective_rank": 1,
+    "objective_score": "0.0",
+    "latency_ms_mean": 0.028907999999999996,
+    "energy_mj_mean": 5.582770776e-06,
+    "critical_path_ns_mean": 5.557037432204143,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.193122,
+    "flow_elapsed_s_mean": 848.418
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_logit_rank_streaming_sram_nangate45_v1",
+    "title": "Decoder logit-rank streaming with Nangate45 SRAM metrics",
+    "primary_question": "Does the memory-aware decoder streaming frontier change when SRAM energy comes from the Nangate45 minimal_v0_2_draft SRAM artifact instead of a planning default?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "ranking",
+    "abstraction_layer": "decoder_logit_rank_streaming_overlap",
+    "expected_direction": "iterate",
+    "expected_reason": "Confirm the decoder streaming memory frontier with Nangate45 SRAM metrics while NoC remains a planning term.",
+    "summary": "Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
+    "outcome": "ranking_recorded",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_logit_rank_streaming_sram_nangate45_v1",
+    "title": "Decoder logit-rank streaming with Nangate45 SRAM metrics",
+    "kind": "architecture",
+    "primary_question": "Does the memory-aware decoder streaming frontier change when SRAM energy comes from the Nangate45 minimal_v0_2_draft SRAM artifact instead of a planning default?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "ranking",
+    "outcome": "ranking_recorded",
+    "summary": "Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": []
+  },
+  "source_refs": {
+    "best_point_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_logit_rank_streaming_sram_nangate45_v1/best_point.json",
+    "summary_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_logit_rank_streaming_sram_nangate45_v1/summary.csv",
+    "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_logit_rank_streaming_sram_nangate45_v1/results.csv",
+    "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_logit_rank_streaming_sram_nangate45_v1/report.md",
+    "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_logit_rank_streaming_sram_nangate45_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+    "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_logit_rank_streaming_sram_nangate45_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+    "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_logit_rank_streaming_sram_nangate45_v1/artifacts/perf/fp16_nm1/mlp1/trace.json",
+    "focused_model_artifacts": [
+      {
+        "model_id": "mlp1",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_logit_rank_streaming_sram_nangate45_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_logit_rank_streaming_sram_nangate45_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_logit_rank_streaming_sram_nangate45_v1/artifacts/perf/fp16_nm1/mlp1/trace.json"
+      },
+      {
+        "model_id": "mlp2",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_logit_rank_streaming_sram_nangate45_v1/artifacts/mapper/fp16_nm1/mlp2/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_logit_rank_streaming_sram_nangate45_v1/artifacts/mapper/fp16_nm1/mlp2/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_logit_rank_streaming_sram_nangate45_v1/artifacts/perf/fp16_nm1/mlp2/trace.json"
+      }
+    ]
+  }
+}
