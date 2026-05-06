@@ -1,0 +1,71 @@
+{
+  "proposal_id": "prop_l1_decoder_logit_rank_wide_scale_v1",
+  "created_utc": "2026-05-06T10:47:53Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "circuit_block",
+  "title": "Decoder logit rank wide scaling",
+  "hypothesis": "The L2 streaming decoder sweep now explores producer widths of 64 and 128, but those points still depend on scaled ranker PPA proxies. Measuring row-64 and row-128 logit-rank datapaths directly will show whether the wider frontier remains plausible or needs a hierarchical/pipelined ranker before larger-model conclusions.",
+  "direct_comparison": {
+    "primary_question": "How do Nangate45 area, timing, and power scale when the signed 16-bit raw-logit rank datapath grows from the merged row-16/row-32 measurements to row_elems=64 and row_elems=128?",
+    "include": [
+      "logit_rank_r64_l16_k1 wrapper",
+      "logit_rank_r64_l16_k4 wrapper",
+      "logit_rank_r128_l16_k1 wrapper",
+      "logit_rank_r128_l16_k4 wrapper",
+      "Nangate45 high-utilization Layer 1 sweep",
+      "comparison against merged row-16 and row-32 logit-rank PPA"
+    ],
+    "exclude": [
+      "producer-integrated decoder output macro",
+      "full vocabulary reduction tree",
+      "softmax probability generation",
+      "sampling modes",
+      "floating-point logit quantization"
+    ]
+  },
+  "expected_benefit": [
+    "replaces scaled-proxy PPA assumptions for the L2 w64 and w128 streaming candidates with measured circuit-block data",
+    "separates top-1 argmax scaling from top-4 candidate retention scaling at the current width frontier",
+    "provides a gate for deciding whether the next decoder-output ranker should be wider, hierarchical, or pipelined"
+  ],
+  "risks": [
+    "row_elems=64 and row_elems=128 may fail timing or produce unattractive area/power in the unpipelined circuit block",
+    "isolated ranker PPA still does not include producer output statistics, FIFO behavior, or global merge integration",
+    "top_k=4 does not cover wider sampler candidate sets or beam search"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_logit_rank_wide_scale_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 PPA scaling for signed 16-bit logit-only rank datapaths at row_elems=64 and row_elems=128, with k=1 and k=4.",
+      "config_paths": [
+        "runs/designs/activations/logit_rank_r64_l16_k1_wrapper/config_logit_rank_r64_l16_k1.json",
+        "runs/designs/activations/logit_rank_r64_l16_k4_wrapper/config_logit_rank_r64_l16_k4.json",
+        "runs/designs/activations/logit_rank_r128_l16_k1_wrapper/config_logit_rank_r128_l16_k1.json",
+        "runs/designs/activations/logit_rank_r128_l16_k4_wrapper/config_logit_rank_r128_l16_k4.json"
+      ],
+      "sweep_path": "runs/campaigns/activations/logit_rank_scale/sweeps/nangate45_highutil.json",
+      "platform": "nangate45",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "circuit_block",
+      "depends_on_item_ids": [
+        "l1_decoder_logit_rank_scale_v1",
+        "l2_decoder_logit_rank_streaming_scale_stability_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true
+    }
+  ],
+  "baseline_refs": [
+    "control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_scale_v1.json",
+    "control_plane/shadow_exports/l2_decisions/l2_decoder_logit_rank_streaming_scale_stability_v1.json"
+  ],
+  "knowledge_refs": [
+    "src/rtlgen/rtl_operations.cpp",
+    "npu/eval/model_llm_decoder_logit_rank_streaming.py",
+    "control_plane/control_plane/services/l1_task_generator.py"
+  ]
+}
