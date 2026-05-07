@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 from dataclasses import dataclass
 import json
 from pathlib import Path
@@ -89,6 +90,7 @@ def _classify_failure(
     checkout_error: str | None,
     attempt: int,
     max_retry_attempts: int,
+    validation_error: str | None = None,
 ) -> dict[str, Any]:
     if checkout_error is not None:
         category = "checkout_error"
@@ -100,6 +102,11 @@ def _classify_failure(
         retryable = True
         failed_command = None
         detail = worker_error
+    elif validation_error is not None:
+        category = "validation_error"
+        retryable = False
+        failed_command = "acceptance"
+        detail = validation_error
     else:
         failed = next((result for result in command_results if result.returncode != 0), None)
         if failed is None:
@@ -130,7 +137,15 @@ def _classify_failure(
             category = "command_failure"
             retryable = False
 
-    stage = "checkout" if checkout_error is not None else ("worker" if worker_error is not None else (failed_command or "execution"))
+    stage = (
+        "checkout"
+        if checkout_error is not None
+        else (
+            "worker"
+            if worker_error is not None
+            else ("acceptance" if validation_error is not None else (failed_command or "execution"))
+        )
+    )
     signature = detail if isinstance(detail, str) else None
     requeue = retryable and attempt < max_retry_attempts
     return {
@@ -144,6 +159,31 @@ def _classify_failure(
         "failed_command_name": failed_command,
         "detail": detail,
     }
+
+
+def _l1_metrics_acceptance_errors(*, repo_root: str, expected_outputs: list[str]) -> list[str]:
+    repo_path = Path(repo_root).resolve()
+    errors: list[str] = []
+    for output in expected_outputs:
+        if not str(output).endswith("metrics.csv"):
+            continue
+        path = (repo_path / output).resolve()
+        if not path.exists() or not path.is_file():
+            errors.append(f"{output}: missing metrics.csv")
+            continue
+        with path.open("r", encoding="utf-8", newline="") as handle:
+            rows = list(csv.DictReader(handle))
+        if not rows:
+            errors.append(f"{output}: metrics.csv has no data rows")
+            continue
+        if "status" not in (rows[0].keys() if rows else set()):
+            errors.append(f"{output}: metrics.csv lacks status column")
+            continue
+        ok_rows = [row for row in rows if str(row.get("status", "")).strip().lower() == "ok"]
+        if not ok_rows:
+            statuses = sorted({str(row.get("status", "")).strip() or "<blank>" for row in rows})
+            errors.append(f"{output}: no status=ok rows (statuses={','.join(statuses)})")
+    return errors
 
 
 def _load_work_item(session: Session, work_item_id: str) -> WorkItem:
@@ -769,6 +809,21 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
     success = worker_error is None and bool(command_results) and all(result.returncode == 0 for result in command_results)
     if not command_results and not work_item.command_manifest:
         success = True
+    acceptance_errors: list[str] = []
+    if success and str(work_item.task_type) == "l1_sweep":
+        acceptance_errors = _l1_metrics_acceptance_errors(
+            repo_root=checkout_info.work_dir,
+            expected_outputs=active_expected_outputs,
+        )
+        if acceptance_errors:
+            success = False
+            with session_factory() as session:
+                append_run_event(
+                    session,
+                    run_key=run_key,
+                    event_type="acceptance_failed",
+                    event_payload={"errors": acceptance_errors},
+                )
 
     artifacts = collect_expected_output_artifacts(
         repo_root=checkout_info.work_dir,
@@ -824,12 +879,15 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
             worker_error = f"heartbeat_error={heartbeat_error}"
     if worker_error is not None:
         result_payload["worker_error"] = worker_error
+    if acceptance_errors:
+        result_payload["acceptance_errors"] = acceptance_errors
     failure = _classify_failure(
         command_results=command_results,
         worker_error=worker_error,
         checkout_error=None,
         attempt=attempt,
         max_retry_attempts=config.max_retry_attempts,
+        validation_error="; ".join(acceptance_errors) if acceptance_errors else None,
     )
     result_payload["failure_classification"] = failure
     result_payload["retry_decision"] = {
@@ -850,6 +908,8 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
             notes.append(f"failed_command={failure['failed_command_name']}")
         if worker_error is not None:
             notes.append(f"worker_error={worker_error}")
+        for error in acceptance_errors:
+            notes.append(f"acceptance_error={error}")
         if failure["requeue"]:
             notes.append(
                 f"retry_scheduled=attempt_{failure['attempt'] + 1}_of_{failure['max_retry_attempts']}"
