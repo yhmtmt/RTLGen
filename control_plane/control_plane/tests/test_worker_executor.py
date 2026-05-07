@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from control_plane.db import build_session_factory, create_all
 from control_plane.models.enums import LeaseStatus, RunStatus, WorkItemState
+from control_plane.models.run_events import RunEvent
 from control_plane.models.runs import Run
 from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
@@ -322,6 +323,73 @@ def test_worker_executes_ready_item_and_stages_outputs() -> None:
             assert "# report\n" == expected_artifacts[f"runs/campaigns/{seeded.item_id}/report.md"].metadata_["inline_utf8"]
             assert expected_artifacts[f"runs/campaigns/{seeded.item_id}/metrics.csv"].metadata_["transport_policy"] == "inline_text_evidence"
             assert expected_artifacts[f"runs/campaigns/{seeded.item_id}/report.md"].metadata_["transport_policy"] == "inline_text_evidence"
+
+
+def test_l1_worker_fails_when_expected_metrics_have_no_ok_rows() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        init_git_repo(repo_root)
+        db_path = Path(td) / "cp.db"
+        engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
+        create_all(engine)
+        item_id = "item_l1_no_ok_metrics"
+        metrics_rel = f"runs/campaigns/{item_id}/metrics.csv"
+        with Session(engine) as session:
+            seed_ready_work_item(session, item_id=item_id, repo_root=repo_root, failing=False)
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            work_item.task_type = "l1_sweep"
+            work_item.layer = "layer1"
+            work_item.assigned_machine_key = "worker-1"
+            work_item.command_manifest = [
+                {
+                    "name": "write_failed_metrics",
+                    "run": (
+                        "python3 -c \"from pathlib import Path; "
+                        f"p=Path('{metrics_rel}'); "
+                        "p.parent.mkdir(parents=True, exist_ok=True); "
+                        "p.write_text('design,status,critical_path_ns\\nunit,failed,\\n', encoding='utf-8')\""
+                    ),
+                }
+            ]
+            work_item.expected_outputs = [metrics_rel]
+            session.commit()
+
+        session_factory = build_session_factory(engine)
+        results = run_worker(
+            session_factory,
+            config=WorkerConfig(
+                repo_root=str(repo_root),
+                machine_key="worker-1",
+                capabilities={"platform": "nangate45", "flow": "openroad"},
+                capability_filter={"platform": "nangate45", "flow": "openroad"},
+                enforce_source_commit=False,
+                lease_seconds=60,
+                heartbeat_seconds=1,
+                max_retry_attempts=1,
+            ),
+            max_items=1,
+        )
+
+        assert len(results) == 1
+        assert results[0].status == "failed"
+
+        with Session(engine) as session:
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            run = session.query(Run).filter_by(run_key=results[0].run_key).one()
+            event = session.query(RunEvent).filter_by(run_id=run.id, event_type="acceptance_failed").one()
+            assert work_item.state == WorkItemState.FAILED
+            assert run.status == RunStatus.FAILED
+            assert run.failure_stage == "acceptance"
+            assert run.failure_category == "validation_error"
+            assert run.result_payload["queue_result"]["status"] == "fail"
+            assert run.result_payload["queue_result"]["metrics_rows"] == [f"{metrics_rel}:2"]
+            assert run.result_payload["acceptance_errors"] == [
+                f"{metrics_rel}: no status=ok rows (statuses=failed)"
+            ]
+            assert event.event_payload["errors"] == [
+                f"{metrics_rel}: no status=ok rows (statuses=failed)"
+            ]
 
 
 def test_worker_skips_non_transportable_expected_outputs() -> None:
