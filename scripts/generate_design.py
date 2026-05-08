@@ -560,6 +560,11 @@ export CORE_UTILIZATION = 30
 """
     if platform == "nangate45":
         content += "export PDN_TCL ?= $(DESIGN_HOME)/nangate45/$(DESIGN_NAME)/grid_strategy-M1-M4-M7.tcl\n"
+        content += "\n# Register-wrapped Layer-1 blocks are evaluated as macro timing boundaries, not chip pads.\n"
+        content += "# Allow dense block-pin placement so wide datapath buses do not fail at IO placement.\n"
+        content += "export IO_PLACER_H ?= metal3 metal5\n"
+        content += "export IO_PLACER_V ?= metal4 metal6\n"
+        content += "export PLACE_PINS_ARGS ?= -min_distance 0\n"
     with open(os.path.join(platform_dir, "config.mk"), "w") as f:
         f.write(content)
 
