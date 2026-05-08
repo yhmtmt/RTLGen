@@ -132,7 +132,7 @@ def test_heartbeat_updates_expiry_and_machine_progress() -> None:
         assert lease.machine.capabilities["last_progress"]["phase"] == "run_campaign"
 
 
-def test_expire_stale_leases_requeues_nonterminal_work() -> None:
+def test_expire_stale_leases_requeues_assigned_nonterminal_work_as_ready() -> None:
     with make_session() as session:
         _, item_b = seed_ready_items(session)
         from control_plane.services.lease_service import upsert_worker_machine
@@ -166,7 +166,7 @@ def test_expire_stale_leases_requeues_nonterminal_work() -> None:
         assert result.requeued_count == 1
         assert result.cleaned_run_count == 1
         assert lease.status == LeaseStatus.EXPIRED
-        assert item_b.state == WorkItemState.DISPATCH_PENDING
+        assert item_b.state == WorkItemState.READY
         assert run.status == RunStatus.CANCELED
         assert run.completed_at is not None
         assert run.failure_category == "lease_expired"
