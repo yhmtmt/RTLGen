@@ -1,11 +1,11 @@
 {
   "proposal_id": "prop_l1_decoder_logit_rank_wide_scale_v1",
-  "source_commit": "28bacf78b58d1ec4c704a49d818a795ea9aa05e2",
+  "source_commit": "f5787028a39ef1f5546b23627e81d40c21a96de6",
   "requested_items": [
     {
-      "item_id": "l1_decoder_logit_rank_wide_scale_v1",
+      "item_id": "l1_decoder_logit_rank_wide_scale_macro_pins_v2",
       "task_type": "l1_sweep",
-      "objective": "Measure Nangate45 PPA scaling for signed 16-bit logit-only rank datapaths at row_elems=64 and row_elems=128, with k=1 and k=4.",
+      "objective": "Rerun Nangate45 PPA scaling for signed 16-bit logit-only rank datapaths at row_elems=64 and row_elems=128, with k=1 and k=4, using macro-style dense block-pin placement with positive min-distance and failed-row stale-metric protection.",
       "evaluation_mode": "measurement_only",
       "abstraction_layer": "circuit_block",
       "comparison_role": "scale_frontier_component",
@@ -20,7 +20,38 @@
         "direction": "measure",
         "reason": "Use measured row-64 and row-128 logit-rank PPA to replace the current scaled-proxy assumptions for L2 w64/w128 streaming decoder candidates."
       },
-      "status": "proposed"
+      "status": "pending",
+      "prior_item_ids": [
+        "l1_decoder_logit_rank_wide_scale_v1",
+        "l1_decoder_logit_rank_wide_scale_macro_pins_v1"
+      ]
+    },
+    {
+      "item_id": "l1_decoder_logit_rank_wide_scale_v1_r2",
+      "task_type": "l1_sweep",
+      "objective": "Rerun Nangate45 PPA scaling for signed 16-bit logit-only rank datapaths at row_elems=64 and row_elems=128, with k=1 and k=4, after strict metrics acceptance enforcement.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "circuit_block",
+      "status": "pending"
+    },
+    {
+      "item_id": "l1_decoder_logit_rank_r128_k1_pin_perimeter_bound_v1",
+      "task_type": "l1_sweep",
+      "objective": "Diagnose the r128/k1 macro-pin failure with explicit square die-perimeter bounds computed from the OpenROAD PPL-0024 requirement: 2072 pins require 2320.64um perimeter, so the minimum square side is ceil(2320.64 / 4) = 581um. Sweep 540um below-bound control, 581um bound, and 640um margin.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "circuit_block",
+      "comparison_role": "pin_perimeter_diagnostic",
+      "paired_baseline_item_id": "l1_decoder_logit_rank_wide_scale_macro_pins_v2",
+      "depends_on_item_ids": [
+        "l1_decoder_logit_rank_wide_scale_macro_pins_v2"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "diagnose",
+        "reason": "Determine whether r128/k1 reaches later OpenROAD stages once the macro boundary has enough perimeter for 2072 pins. Treat padded die area as diagnostic, not directly rankable PPA."
+      },
+      "status": "pending"
     }
   ]
 }

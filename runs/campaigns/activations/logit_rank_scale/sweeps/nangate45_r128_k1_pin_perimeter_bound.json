@@ -1,0 +1,42 @@
+{
+  "tag_prefix": "logit_rank_scale_nangate45_r128_k1_pin_perimeter_bound",
+  "description": "Diagnostic r128/k1 macro-pin floorplan bound. OpenROAD PPL-0024 reported 2072 pins requiring 2320.64um die perimeter, so the square lower-bound side is ceil(2320.64 / 4) = 581um. Area from this sweep is perimeter padding and should not be ranked against utilization-derived PPA.",
+  "flow_param_sets": [
+    {
+      "CLOCK_PERIOD": 2.5,
+      "CORE_UTILIZATION": "",
+      "DIE_AREA": "0 0 540 540",
+      "CORE_AREA": "20 20 520 520",
+      "PLACE_DENSITY": 0.68,
+      "SYNTH_MEMORY_MAX_BITS": 32768,
+      "IO_PLACER_H": "metal3 metal5",
+      "IO_PLACER_V": "metal4 metal6",
+      "PLACE_PINS_ARGS": "-min_distance 1",
+      "TAG": "logit_rank_scale_nangate45_r128_k1_pinbound_below_540"
+    },
+    {
+      "CLOCK_PERIOD": 2.5,
+      "CORE_UTILIZATION": "",
+      "DIE_AREA": "0 0 581 581",
+      "CORE_AREA": "20 20 561 561",
+      "PLACE_DENSITY": 0.68,
+      "SYNTH_MEMORY_MAX_BITS": 32768,
+      "IO_PLACER_H": "metal3 metal5",
+      "IO_PLACER_V": "metal4 metal6",
+      "PLACE_PINS_ARGS": "-min_distance 1",
+      "TAG": "logit_rank_scale_nangate45_r128_k1_pinbound_min_581"
+    },
+    {
+      "CLOCK_PERIOD": 2.5,
+      "CORE_UTILIZATION": "",
+      "DIE_AREA": "0 0 640 640",
+      "CORE_AREA": "20 20 620 620",
+      "PLACE_DENSITY": 0.68,
+      "SYNTH_MEMORY_MAX_BITS": 32768,
+      "IO_PLACER_H": "metal3 metal5",
+      "IO_PLACER_V": "metal4 metal6",
+      "PLACE_PINS_ARGS": "-min_distance 1",
+      "TAG": "logit_rank_scale_nangate45_r128_k1_pinbound_margin_640"
+    }
+  ]
+}

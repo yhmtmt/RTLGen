@@ -289,15 +289,29 @@ def _validate_architecture_block_sweep_policy(
     if str(abstraction_layer or "").strip() != "architecture_block":
         return
     sweep = _load_json(sweep_path)
-    flow_params = sweep.get("flow_params") or {}
+    flow_params = sweep.get("flow_params")
+    if flow_params is None:
+        flow_params = {}
     if not isinstance(flow_params, dict):
         raise Layer1TaskGenerationError(f"flow_params must be an object in {sweep_path}")
-    hier_value = flow_params.get("SYNTH_HIERARCHICAL")
-    if hier_value is not None and _contains_disabled_hierarchy(hier_value):
-        raise Layer1TaskGenerationError(
-            "architecture_block sweeps must keep hierarchy in early-stage evaluation; "
-            f"found non-hierarchical SYNTH_HIERARCHICAL setting in {sweep_path}"
-        )
+    hier_values = []
+    if "SYNTH_HIERARCHICAL" in flow_params:
+        hier_values.append(flow_params.get("SYNTH_HIERARCHICAL"))
+    flow_param_sets = sweep.get("flow_param_sets")
+    if flow_param_sets is not None:
+        if not isinstance(flow_param_sets, list):
+            raise Layer1TaskGenerationError(f"flow_param_sets must be a list in {sweep_path}")
+        for idx, params in enumerate(flow_param_sets):
+            if not isinstance(params, dict):
+                raise Layer1TaskGenerationError(f"flow_param_sets[{idx}] must be an object in {sweep_path}")
+            if "SYNTH_HIERARCHICAL" in params:
+                hier_values.append(params.get("SYNTH_HIERARCHICAL"))
+    for hier_value in hier_values:
+        if _contains_disabled_hierarchy(hier_value):
+            raise Layer1TaskGenerationError(
+                "architecture_block sweeps must keep hierarchy in early-stage evaluation; "
+                f"found non-hierarchical SYNTH_HIERARCHICAL setting in {sweep_path}"
+            )
     if sweep.get("mode_compare") is not None:
         raise Layer1TaskGenerationError(
             "architecture_block sweeps must not use mode_compare/flat_nomacro in early-stage evaluation; "

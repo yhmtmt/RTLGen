@@ -18,6 +18,40 @@ def _load_run_sweep_module():
     return module
 
 
+def test_load_sweep_param_sets_keeps_floorplan_bounds_paired() -> None:
+    run_sweep = _load_run_sweep_module()
+
+    combos = run_sweep.load_sweep_param_sets(
+        {
+            "flow_param_sets": [
+                {
+                    "CLOCK_PERIOD": 2.5,
+                    "DIE_AREA": "0 0 581 581",
+                    "CORE_AREA": "20 20 561 561",
+                },
+                {
+                    "CLOCK_PERIOD": 2.5,
+                    "DIE_AREA": "0 0 640 640",
+                    "CORE_AREA": "20 20 620 620",
+                },
+            ]
+        }
+    )
+
+    assert combos == [
+        {
+            "CLOCK_PERIOD": 2.5,
+            "DIE_AREA": "0 0 581 581",
+            "CORE_AREA": "20 20 561 561",
+        },
+        {
+            "CLOCK_PERIOD": 2.5,
+            "DIE_AREA": "0 0 640 640",
+            "CORE_AREA": "20 20 620 620",
+        },
+    ]
+
+
 def test_failed_run_does_not_parse_stale_base_reports(tmp_path: Path, monkeypatch) -> None:
     run_sweep = _load_run_sweep_module()
     config_path = tmp_path / "config.json"
