@@ -57,6 +57,24 @@
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true
+    },
+    {
+      "item_id": "l1_decoder_logit_rank_r128_k1_pin_perimeter_bound_v1",
+      "task_type": "l1_sweep",
+      "objective": "Diagnose the r128/k1 macro-pin failure by sweeping explicit square die-perimeter bounds derived from the OpenROAD PPL-0024 requirement of 2320.64um perimeter for 2072 pins.",
+      "config_paths": [
+        "runs/designs/activations/logit_rank_r128_l16_k1_wrapper/config_logit_rank_r128_l16_k1.json"
+      ],
+      "sweep_path": "runs/campaigns/activations/logit_rank_scale/sweeps/nangate45_r128_k1_pin_perimeter_bound.json",
+      "platform": "nangate45",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "circuit_block",
+      "depends_on_item_ids": [
+        "l1_decoder_logit_rank_wide_scale_macro_pins_v2"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "interpretation_note": "The 581um square point is the computed lower bound ceil(2320.64 / 4). The 540um point is an expected below-bound control and the 640um point is a margin check. Padded die area is diagnostic and should not be ranked against utilization-derived PPA rows."
     }
   ],
   "baseline_refs": [

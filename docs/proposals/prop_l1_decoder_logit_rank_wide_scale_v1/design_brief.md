@@ -54,6 +54,20 @@ Follow-on broad sweep:
 - If timing or PPA is poor, evaluate hierarchical or pipelined ranker
   composition instead of continuing to widen the flat scan tile.
 
+Pin-perimeter bound diagnostic:
+
+- `l1_decoder_logit_rank_wide_scale_macro_pins_v2` narrowed the remaining
+  `r128/k1` failure to OpenROAD IO placement capacity, not global placement,
+  routing, DRC, or timing.
+- The evaluator-preserved OpenROAD error reported 2072 pins and a required
+  die perimeter of `2320.64um`. For a square macro diagnostic, this gives
+  `ceil(2320.64 / 4) = 581um` as the minimum side bound.
+- The bound sweep keeps `DIE_AREA` and `CORE_AREA` paired explicitly:
+  `540um` below-bound control, `581um` computed bound, and `640um` margin.
+- Treat the resulting die area as artificial boundary padding. The useful
+  answer is whether the design reaches later OpenROAD stages once the boundary
+  is physically large enough.
+
 ## Knowledge Inputs
 
 - `control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_scale_v1.json`

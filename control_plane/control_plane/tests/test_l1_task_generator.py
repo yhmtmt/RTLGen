@@ -1032,6 +1032,54 @@ def test_generate_l1_sweep_task_accepts_explicit_hierarchical_architecture_block
             assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {"layer": "architecture_block"}
 
 
+def test_generate_l1_sweep_task_rejects_disabled_hierarchy_in_explicit_param_sets() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_block_repo(repo_root, mode_compare=False)
+        sweep_file = repo_root / sweep_path
+        sweep_file.write_text(
+            json.dumps(
+                {
+                    "flow_param_sets": [
+                        {
+                            "CLOCK_PERIOD": 10.0,
+                            "DIE_AREA": "0 0 1500 1500",
+                            "CORE_AREA": "50 50 1450 1450",
+                            "SYNTH_HIERARCHICAL": 0,
+                        }
+                    ],
+                    "tag_prefix": "npu_fp16_nm1_sigmoidcmp",
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            try:
+                generate_l1_sweep_task(
+                    session,
+                    Layer1SweepGenerateRequest(
+                        repo_root=str(repo_root),
+                        sweep_path=sweep_path,
+                        config_paths=[config_path],
+                        platform="nangate45",
+                        out_root="runs/designs/npu_blocks",
+                        requested_by="@tester",
+                        abstraction_layer="architecture_block",
+                    ),
+                )
+            except Layer1TaskGenerationError as exc:
+                assert "architecture_block sweeps must keep hierarchy" in str(exc)
+            else:
+                raise AssertionError("expected Layer1TaskGenerationError for disabled hierarchy")
+
+
 def test_generate_l1_sweep_task_rejects_invalid_explicit_source_commit() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

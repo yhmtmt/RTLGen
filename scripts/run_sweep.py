@@ -10,8 +10,9 @@ Usage example:
         --out_root runs/designs/multipliers \
         --dry_run
 
-The sweep file is JSON and must contain a `flow_params` dictionary whose values
-are arrays. The Cartesian product of all entries forms the sweep:
+The sweep file is JSON and may contain either a `flow_params` dictionary whose
+values are arrays or an explicit `flow_param_sets` list. The Cartesian product
+of all `flow_params` entries forms the sweep:
 {
   "flow_params": {
     "CLOCK_PERIOD": [4.5, 5.0, 6.0],
@@ -19,6 +20,15 @@ are arrays. The Cartesian product of all entries forms the sweep:
     "PLACE_DENSITY": [0.55, 0.65]
   },
   "tag_prefix": "sweep1"
+}
+
+Use `flow_param_sets` when parameters must stay paired, such as DIE_AREA and
+CORE_AREA floorplan bounds:
+{
+  "flow_param_sets": [
+    {"CLOCK_PERIOD": 2.5, "DIE_AREA": "0 0 400 400", "CORE_AREA": "20 20 380 380"}
+  ],
+  "tag_prefix": "floorplan_bound"
 }
 
 For each parameter set the script:
@@ -182,6 +192,29 @@ def cartesian_product(grid: Dict[str, List]) -> List[Dict[str, object]]:
     for prod in itertools.product(*values):
         combos.append({k: v for k, v in zip(keys, prod)})
     return combos
+
+
+def load_sweep_param_sets(sweep_spec: Dict[str, object]) -> List[Dict[str, object]]:
+    has_grid = "flow_params" in sweep_spec
+    has_sets = "flow_param_sets" in sweep_spec
+    if has_grid and has_sets:
+        raise ValueError("Sweep file must contain only one of 'flow_params' or 'flow_param_sets'.")
+    if has_sets:
+        param_sets = sweep_spec["flow_param_sets"]
+        if not isinstance(param_sets, list) or not param_sets:
+            raise ValueError("'flow_param_sets' must be a non-empty list of parameter objects.")
+        combos = []
+        for idx, params in enumerate(param_sets):
+            if not isinstance(params, dict):
+                raise ValueError(f"flow_param_sets[{idx}] must be an object.")
+            combos.append(dict(params))
+        return combos
+    if not has_grid:
+        raise ValueError("Sweep file must contain a 'flow_params' dictionary or 'flow_param_sets' list.")
+    flow_grid = sweep_spec["flow_params"]
+    if not isinstance(flow_grid, dict):
+        raise ValueError("'flow_params' must be an object.")
+    return cartesian_product(flow_grid)
 
 
 def make_run_id(params: Dict[str, object]) -> str:
@@ -471,14 +504,11 @@ def main():
 
     args = parser.parse_args()
     sweep_spec = load_json(Path(args.sweep))
-    if "flow_params" not in sweep_spec:
-        raise ValueError("Sweep file must contain a 'flow_params' dictionary.")
-    flow_grid = sweep_spec["flow_params"]
     tag_prefix = sweep_spec.get("tag_prefix", "sweep")
     out_root = (REPO_ROOT / args.out_root).resolve()
     out_root.mkdir(parents=True, exist_ok=True)
 
-    combos = cartesian_product(flow_grid)
+    combos = load_sweep_param_sets(sweep_spec)
     print(f"[INFO] Loaded {len(combos)} parameter sets from {args.sweep}")
 
     for cfg in args.configs:
