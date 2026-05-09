@@ -564,7 +564,7 @@ export CORE_UTILIZATION = 30
         content += "# Allow dense block-pin placement so wide datapath buses do not fail at IO placement.\n"
         content += "export IO_PLACER_H ?= metal3 metal5\n"
         content += "export IO_PLACER_V ?= metal4 metal6\n"
-        content += "export PLACE_PINS_ARGS ?= -min_distance 0\n"
+        content += "export PLACE_PINS_ARGS ?= -min_distance 1\n"
     with open(os.path.join(platform_dir, "config.mk"), "w") as f:
         f.write(content)
 

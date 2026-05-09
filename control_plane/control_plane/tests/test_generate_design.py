@@ -30,4 +30,4 @@ def test_nangate45_generated_config_uses_macro_pin_placement_defaults(tmp_path: 
     assert "Register-wrapped Layer-1 blocks are evaluated as macro timing boundaries" in content
     assert "export IO_PLACER_H ?= metal3 metal5" in content
     assert "export IO_PLACER_V ?= metal4 metal6" in content
-    assert "export PLACE_PINS_ARGS ?= -min_distance 0" in content
+    assert "export PLACE_PINS_ARGS ?= -min_distance 1" in content
