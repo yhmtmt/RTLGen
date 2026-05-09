@@ -360,30 +360,34 @@ def run_single(
         run_record["status"] = "failed"
         run_record["error"] = str(e)
 
-    # Parse outputs
+    # Parse outputs. ORFS commonly writes successful outputs under FLOW_VARIANT=base
+    # even when TAG is passed, so successful runs may fall back to base reports.
+    # Failed runs must not use that fallback: base can contain stale reports from
+    # an earlier successful parameter point for the same design.
     finish_rpt = REPORT_BASE / platform / wrapper / str(tag) / "6_finish.rpt"
     def_path = RESULT_BASE / platform / wrapper / str(tag) / "6_final.def"
-    # ORFS defaults to FLOW_VARIANT=base; if tag-scoped folders do not exist, fall back.
-    if not finish_rpt.exists():
-        finish_rpt = REPORT_BASE / platform / wrapper / "base" / "6_finish.rpt"
-    if not def_path.exists():
-        def_path = RESULT_BASE / platform / wrapper / "base" / "6_final.def"
+    if run_record["status"] == "ok":
+        if not finish_rpt.exists():
+            finish_rpt = REPORT_BASE / platform / wrapper / "base" / "6_finish.rpt"
+        if not def_path.exists():
+            def_path = RESULT_BASE / platform / wrapper / "base" / "6_final.def"
     run_record["reports"] = {
         "finish": str(finish_rpt),
         "def": str(def_path),
     }
-    metrics = parse_finish_report(finish_rpt, platform=platform)
-    # ASAP7 finish reports emit picoseconds; convert to nanoseconds for consistency.
-    if platform.lower() == "asap7":
-        if "critical_path_ns" in metrics and metrics["critical_path_ns"] is not None:
-            metrics["critical_path_ns"] = metrics["critical_path_ns"] / 1000.0
-        if "total_power_mw" in metrics and metrics["total_power_mw"] is not None:
-            # ASAP7 report_power totals are reported in uW.
-            metrics["total_power_mw"] = metrics["total_power_mw"] / 1000.0
-    die_area = parse_die_area(def_path)
-    if die_area:
-        metrics["die_area"] = die_area
-    run_record["metrics"] = metrics
+    if run_record["status"] == "ok":
+        metrics = parse_finish_report(finish_rpt, platform=platform)
+        # ASAP7 finish reports emit picoseconds; convert to nanoseconds for consistency.
+        if platform.lower() == "asap7":
+            if "critical_path_ns" in metrics and metrics["critical_path_ns"] is not None:
+                metrics["critical_path_ns"] = metrics["critical_path_ns"] / 1000.0
+            if "total_power_mw" in metrics and metrics["total_power_mw"] is not None:
+                # ASAP7 report_power totals are reported in uW.
+                metrics["total_power_mw"] = metrics["total_power_mw"] / 1000.0
+        die_area = parse_die_area(def_path)
+        if die_area:
+            metrics["die_area"] = die_area
+        run_record["metrics"] = metrics
 
     run_record["result_path"] = normalize_repo_path(str(result_path))
     result_path.write_text(json.dumps(run_record, indent=2))
