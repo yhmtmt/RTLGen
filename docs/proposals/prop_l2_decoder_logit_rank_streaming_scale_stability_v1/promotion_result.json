@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_decoder_logit_rank_streaming_scale_stability_v1",
   "decision": "iterate",
-  "pr_number": 417,
-  "merge_commit": "72468ee2154cba00ac46598f404dcd9220bc554d",
-  "merged_utc": "2026-05-05T12:12:34.403646Z"
+  "pr_number": 440,
+  "merge_commit": "5f19659f57245b29aa3325616db8810dbc9e7744",
+  "merged_utc": "2026-05-10T12:29:37.797681Z"
 }

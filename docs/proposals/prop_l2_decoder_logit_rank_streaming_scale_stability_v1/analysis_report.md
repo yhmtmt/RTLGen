@@ -2,13 +2,13 @@
 
 ## Candidate
 - `proposal_id`: `prop_l2_decoder_logit_rank_streaming_scale_stability_v1`
-- `candidate_id`: `l2_decoder_logit_rank_streaming_scale_stability_v1`
+- `candidate_id`: `l2_decoder_logit_rank_streaming_scale_stability_boundary_v1`
 
 ## Evaluations Consumed
-- `l2_decoder_logit_rank_streaming_scale_stability_v1`
-- `l2_decoder_logit_rank_streaming_scale_stability_v1_run_593c263c5b33c31e`
-- source commit: `c06374c1e379b074dda263af5b55f6cca0c6b7c4`
-- review: PR #417
+- `l2_decoder_logit_rank_streaming_scale_stability_boundary_v1`
+- `l2_decoder_logit_rank_streaming_scale_stability_boundary_v1_run_352335d84286fd58`
+- source commit: `08869bb065f24045bb49a929fe994f175bfc3f35`
+- review: PR #440
 
 ## Baseline Comparison
 - baseline_ref: `None`
@@ -29,4 +29,4 @@
 ## Recommendation
 - `iterate`
 - reason: Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.
-- next_action: inspect follow-on work after l2_decoder_logit_rank_streaming_scale_stability_v1
+- next_action: inspect follow-on work after l2_decoder_logit_rank_streaming_scale_stability_boundary_v1

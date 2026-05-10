@@ -51,9 +51,12 @@
         "direction": "iterate",
         "reason": "Check whether the wider producer-lane conclusion changes after adding the r128/k1 boundary sensitivity without charging padded die area to integrated rankers."
       },
-      "status": "requested",
-      "notes": "Dispatch after evaluator updates to a commit containing PR #437 so the L2 command includes --boundary-ppa."
+      "status": "merged",
+      "notes": "Dispatch after evaluator updates to a commit containing PR #437 so the L2 command includes --boundary-ppa. Merged via PR #440 and merge 5f19659f57245b29aa3325616db8810dbc9e7744 at 2026-05-10T12:29:37.797681Z.",
+      "merged_pr_number": 440,
+      "merge_commit": "5f19659f57245b29aa3325616db8810dbc9e7744",
+      "merged_utc": "2026-05-10T12:29:37.797681Z"
     }
   ],
-  "source_commit": "f58c3bccdd1118bf223517af98ad143429369098"
+  "source_commit": "08869bb065f24045bb49a929fe994f175bfc3f35"
 }
