@@ -11,4 +11,6 @@ Extend the decoder logit-rank streaming overlap report from one GPT-2 vocabulary
 
 The report must keep SRAM source data and NoC planning assumptions separate. The SRAM source is `runs/designs/sram/minimal_v0_2_draft/sram_metrics.json`; the NoC hop term remains a planning parameter.
 
+The boundary rerun must also keep the r128/k1 exposed-pin macro diagnostic separate from the integrated-ranker model. It may report the macro-boundary timing, power, and padded die area as sensitivity evidence, but the main ranking should continue to use the normal ranker PPA model for producer-integrated cases.
+
 Equivalence remains the same ready-valid stream contract: accepted `LogitTileStream` beats, accepted `CandidateStream` groups, producer stalls, FIFO occupancy, deterministic ordering, valid masks, and last-beat completion.
