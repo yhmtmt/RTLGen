@@ -1,0 +1,67 @@
+{
+  "proposal_id": "prop_l2_decoder_producer_ranker_coupled_noc_v1",
+  "created_utc": "2026-05-10T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_producer_ranker_coupled_noc",
+  "title": "Decoder producer/ranker shared NoC coupling",
+  "hypothesis": "The r64/r128 producer-integrated ranker frontier should be checked against output-projection producer service curves and shared memory/NoC contention before choosing a combined RTL point.",
+  "direct_comparison": {
+    "primary_question": "Do the r64/r128 ranker winners remain useful when producer II is derived from shared-GEMM output projection and memory bandwidth is reduced by NoC contention?",
+    "include": [
+      "stage-serialized output-projection service curves",
+      "shared NoC/memory bandwidth shares",
+      "r64/r128/r256 producer tile widths",
+      "top-k 1 and 4 ranker coupling",
+      "ready-valid ranker FIFO validity and candidate traffic"
+    ],
+    "exclude": [
+      "new RTL implementation",
+      "full decoder scheduler",
+      "attention/MLP overlap",
+      "KV-cache traffic interaction"
+    ]
+  },
+  "expected_benefit": [
+    "tests whether the current r128/k1 frontier survives realistic producer service assumptions",
+    "identifies memory/NoC sensitivity before RTL work",
+    "chooses the next combined producer/ranker RTL target with clearer assumptions"
+  ],
+  "risks": [
+    "NoC contention is represented by bandwidth shares, not measured arbitration",
+    "producer service remains a planning model until output-projection RTL is measured",
+    "larger decoder scheduling effects are still out of scope"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_producer_ranker_coupled_noc_v1",
+      "task_type": "l2_campaign",
+      "objective": "Couple output-projection producer service curves to the producer-integrated ranker frontier under shared memory/NoC contention assumptions.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_producer_ranker_coupled_noc",
+      "cost_class": "low",
+      "depends_on_item_ids": [
+        "l2_decoder_logit_rank_streaming_producer_integrated_v1",
+        "l1_decoder_candidate_stream_merge_fifo_v1",
+        "l1_decoder_logit_rank_r128_k1_pin_perimeter_bound_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "The expected output is a coupled producer/ranker frontier used to choose the next combined RTL target."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_decoder_logit_rank_streaming_producer_integrated_v1/proposal.json",
+    "docs/proposals/prop_l2_decoder_output_projection_service_v1/proposal.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_producer_ranker_coupling.py",
+    "npu/eval/model_llm_decoder_logit_rank_streaming.py",
+    "tests/test_llm_decoder_producer_ranker_coupling.py"
+  ]
+}

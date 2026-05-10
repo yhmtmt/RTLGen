@@ -1,0 +1,23 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_service_v1",
+  "source_commit": "bbb3fdc6022fc9fc64d444ff20475c1c8f924174",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_output_projection_service_v1",
+      "task_type": "l2_campaign",
+      "objective": "Estimate output-projection producer service curves for a stage-serialized shared GEMM final decoder stage.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_output_projection_service",
+      "comparison_role": "ranking",
+      "paired_baseline_item_id": "",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": false,
+      "requires_materialized_refs": false,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "The expected output is a producer service curve used to select realistic producer_ii values before combined producer/ranker RTL."
+      },
+      "status": "pending"
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_service_v1",
+  "created_utc": "2026-05-10T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_output_projection_service",
+  "title": "Decoder output-projection producer service model",
+  "hypothesis": "The logit-rank producer should be modeled as the final decoder output-projection stage on a shared GEMM/memory fabric. Its producer II should be derived from tile MAC throughput and weight-memory service, not assumed as an abstract activity ratio.",
+  "direct_comparison": {
+    "primary_question": "For plausible vocabulary sizes, hidden sizes, producer tile widths, GEMM throughput, and memory bandwidth, what integer producer II and latency service curves should feed the ranker model?",
+    "include": [
+      "stage-serialized shared GEMM output projection",
+      "hidden vector load charged once per token",
+      "output-projection weight traffic charged per vocabulary tile",
+      "producer II derived from compute cycles and memory service cycles"
+    ],
+    "exclude": [
+      "new RTL implementation",
+      "attention or MLP stage overlap",
+      "KV-cache traffic",
+      "sampling or probability-producing softmax consumers"
+    ]
+  },
+  "expected_benefit": [
+    "removes ambiguity in producer_ii assumptions",
+    "separates producer service limits from ranker limits",
+    "sets a producer service curve for the follow-on producer+ranker NoC coupling job"
+  ],
+  "risks": [
+    "GEMM throughput and memory bandwidth are still planning parameters",
+    "weight locality and SRAM banking are represented only by service bandwidth",
+    "stage scheduling assumes output projection starts after attention/MLP completion"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_output_projection_service_v1",
+      "task_type": "l2_campaign",
+      "objective": "Estimate output-projection producer service curves for a stage-serialized shared GEMM final decoder stage.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_output_projection_service",
+      "cost_class": "low",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": false,
+      "requires_materialized_refs": false,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "The expected output is a producer service curve used to select realistic producer_ii values before combined producer/ranker RTL."
+      }
+    }
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_producer_ranker_coupling.py",
+    "tests/test_llm_decoder_producer_ranker_coupling.py"
+  ]
+}
