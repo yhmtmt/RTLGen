@@ -155,6 +155,19 @@ Required assumptions:
 - consumers must not publish the final next-token/top-k result until the
   accepted `CandidateStream` beat with `last=1` has been reduced
 
+## Producer-Integrated Boundary
+The intended r64/r128 ranker use is a producer-integrated ready/valid macro,
+not a standalone chip with one top-level scalar pin per logit lane. Explicit
+macro-boundary experiments that pad die size to satisfy exposed-pin placement
+are diagnostic sensitivity checks. They may be reported beside the normal
+model, but their padded die area and scalar top-level pin pressure must not be
+charged to the main producer-integrated ranker cost.
+
+A producer-integrated implementation still has to preserve the same stream
+contract as the perf simulator: accepted beat counts, valid masks, stable
+lower-token tie order, FIFO occupancy under backpressure, and final last-beat
+completion must match before RTL PPA is used in rankings.
+
 ## Integration Notes
 This spec intentionally keeps mapper and evaluator changes out of scope. A
 follow-on implementation should bind concrete widths for logit lanes, candidate

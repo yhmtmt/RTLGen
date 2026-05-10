@@ -470,7 +470,8 @@ def test_logit_rank_streaming_report_keeps_boundary_diagnostic_separate(tmp_path
         producer_lanes=128,
         top_k=1,
         global_merge_ii_cycles_list=[1],
-        producer_lanes_list=[128],
+        producer_lanes_list=[64, 128],
+        producer_interface_focus_lanes=[64, 128],
         top_k_list=[1],
         candidate_fifo_depth_groups_list=[16],
     )
@@ -484,3 +485,10 @@ def test_logit_rank_streaming_report_keeps_boundary_diagnostic_separate(tmp_path
     assert report["hierarchical_streaming_alternatives"][0]["local_ranker_point"]["source"].endswith(
         "#scaled_nearest_lane"
     )
+    interface = report["producer_integrated_interface"]
+    assert interface["scope"] == "producer_integrated_ready_valid_ranker_interface"
+    assert interface["focus_lanes"] == [64, 128]
+    assert "top_level_scalar_logit_pin_count" in interface["excluded_from_main_cost"]
+    assert "valid mask per accepted tile" in interface["equivalence_observables"]
+    assert interface["boundary_diagnostics"][0]["critical_path_ratio_vs_normal_model"] == 4.301143
+    assert {row["producer_lanes"] for row in interface["summary_rows"]} == {64, 128}

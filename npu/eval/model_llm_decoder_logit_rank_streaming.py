@@ -939,6 +939,128 @@ def _streaming_overlap_candidate(
     return candidate
 
 
+def _producer_integrated_interface_summary(
+    *,
+    overlap_sweep: list[JsonDict],
+    boundary_sensitivity: JsonDict,
+    primary_vocab_size: int,
+    focus_lanes: list[int],
+) -> JsonDict:
+    focus_lane_set = set(focus_lanes)
+    primary_rows = [
+        row
+        for row in overlap_sweep
+        if _as_int(row.get("vocab_size"), primary_vocab_size) == primary_vocab_size
+        and _as_int(row.get("producer_lanes")) in focus_lane_set
+    ]
+    focus_rows: list[JsonDict] = []
+    for lanes in sorted({_as_int(row.get("producer_lanes")) for row in primary_rows}):
+        for top_k in sorted({_as_int(row.get("local_top_k")) for row in primary_rows if _as_int(row.get("producer_lanes")) == lanes}):
+            for producer_ii in sorted(
+                {
+                    _as_int(row.get("producer_ii_cycles"))
+                    for row in primary_rows
+                    if _as_int(row.get("producer_lanes")) == lanes
+                    and _as_int(row.get("local_top_k")) == top_k
+                }
+            ):
+                candidates = [
+                    row
+                    for row in primary_rows
+                    if _as_int(row.get("producer_lanes")) == lanes
+                    and _as_int(row.get("local_top_k")) == top_k
+                    and _as_int(row.get("producer_ii_cycles")) == producer_ii
+                ]
+                if not candidates:
+                    continue
+                selected = min(
+                    candidates,
+                    key=lambda row: (
+                        not bool(row.get("fifo_capacity_ok", True)),
+                        row["timing"]["latency_us_per_token"],
+                        row["memory_hierarchy"]["total_bytes"],
+                        row["candidate_fifo_depth_groups"],
+                    ),
+                )
+                focus_rows.append(
+                    {
+                        "sweep_key": selected["sweep_key"],
+                        "producer_lanes": selected["producer_lanes"],
+                        "top_k": selected["local_top_k"],
+                        "producer_ii_cycles": selected["producer_ii_cycles"],
+                        "merge_ii_cycles": selected["global_merge_ii_cycles"],
+                        "candidate_fifo_depth_groups": selected["candidate_fifo_depth_groups"],
+                        "required_fifo_depth_groups": selected["required_fifo_depth_groups"],
+                        "fifo_capacity_ok": selected["fifo_capacity_ok"],
+                        "latency_us_per_token": selected["timing"]["latency_us_per_token"],
+                        "memory_total_bytes": selected["memory_hierarchy"]["total_bytes"],
+                        "overlap_recovered_fraction": selected["buffered_baseline"]["overlap_recovered_fraction"],
+                        "traffic_reduction_vs_materialized": selected["traffic"]["traffic_reduction_vs_materialized"],
+                        "speedup_vs_best_flat": selected.get("speedup_vs_best_flat"),
+                    }
+                )
+
+    boundary_comparisons = [
+        {
+            "lanes": row.get("lanes"),
+            "top_k": row.get("top_k"),
+            "boundary_critical_path_ns": row.get("boundary_critical_path_ns"),
+            "normal_model_critical_path_ns": row.get("normal_model_critical_path_ns"),
+            "critical_path_ratio_vs_normal_model": row.get("critical_path_ratio_vs_normal_model"),
+            "boundary_die_perimeter_um": row.get("boundary_die_perimeter_um"),
+            "policy": row.get("policy"),
+        }
+        for row in boundary_sensitivity.get("comparisons", [])
+        if _as_int(row.get("lanes")) in focus_lane_set
+    ]
+    fifo_valid_rows = [row for row in focus_rows if bool(row.get("fifo_capacity_ok"))]
+    best_latency_row = min(
+        fifo_valid_rows or focus_rows,
+        key=lambda row: (
+            row["latency_us_per_token"],
+            row["memory_total_bytes"],
+            row["candidate_fifo_depth_groups"],
+        ),
+        default=None,
+    )
+    return {
+        "scope": "producer_integrated_ready_valid_ranker_interface",
+        "primary_vocab_size": primary_vocab_size,
+        "focus_lanes": focus_lanes,
+        "summary_rows": focus_rows,
+        "best_latency_sweep_key": best_latency_row.get("sweep_key") if best_latency_row else None,
+        "all_focus_rows_fifo_valid": bool(focus_rows) and all(
+            bool(row.get("fifo_capacity_ok")) for row in focus_rows
+        ),
+        "boundary_policy": (
+            "Treat exposed-pin macro-boundary PPA as diagnostic sensitivity only. "
+            "Do not charge padded die area or scalar top-level pin pressure to the "
+            "producer-integrated ready-valid ranker interface."
+        ),
+        "boundary_diagnostics": boundary_comparisons,
+        "excluded_from_main_cost": [
+            "boundary_padded_die_area_um2",
+            "standalone_exposed_pin_macro_perimeter",
+            "top_level_scalar_logit_pin_count",
+        ],
+        "equivalence_observables": [
+            "accepted LogitTileStream beat count",
+            "accepted CandidateStream group count",
+            "producer stall cycles",
+            "ranker backpressure cycles",
+            "candidate FIFO max occupancy",
+            "valid mask per accepted tile",
+            "lower token_id tie-break order",
+            "final last-beat completion cycle",
+        ],
+        "recommendation": (
+            "Use this view to judge r64/r128 producer-integrated ranker candidates. "
+            "A follow-on RTL macro must prove these ready-valid observables against "
+            "the perf simulator before its PPA is used in rankings."
+        ),
+    }
+
+
 def build_report(
     *,
     rank_ppa_path: Path | None = DEFAULT_RANK_PPA,
@@ -960,6 +1082,7 @@ def build_report(
     candidate_fifo_depth_groups: int = 16,
     vocab_size_list: list[int] | None = None,
     producer_lanes_list: list[int] | None = None,
+    producer_interface_focus_lanes: list[int] | None = None,
     top_k_list: list[int] | None = None,
     producer_ii_cycles_list: list[int] | None = None,
     candidate_fifo_depth_groups_list: list[int] | None = None,
@@ -1000,9 +1123,13 @@ def build_report(
     top_k_options = top_k_list or [top_k]
     producer_ii_options = producer_ii_cycles_list or [producer_ii_cycles]
     fifo_options = candidate_fifo_depth_groups_list or [candidate_fifo_depth_groups]
+    interface_focus_lanes = producer_interface_focus_lanes or [
+        lane for lane in sorted(set(lane_options)) if lane >= 64
+    ] or [max(lane_options)]
     for name, values in (
         ("vocab_size_list", vocab_options),
         ("producer_lanes_list", lane_options),
+        ("producer_interface_focus_lanes", interface_focus_lanes),
         ("top_k_list", top_k_options),
         ("producer_ii_cycles_list", producer_ii_options),
         ("candidate_fifo_depth_groups_list", fifo_options),
@@ -1164,7 +1291,7 @@ def build_report(
         else:
             row["speedup_vs_best_flat"] = round(
                 row_baseline["timing"]["latency_us_per_token"] / row["timing"]["latency_us_per_token"], 6
-            )
+        )
     primary_overlap_sweep = [
         row
         for row in overlap_sweep
@@ -1188,6 +1315,19 @@ def build_report(
             row["timing"]["latency_us_per_token"],
         ),
     ) if primary_overlap_sweep else None
+    boundary_sensitivity = _boundary_sensitivity_summary(
+        boundary_points=boundary_points,
+        measured_points=measured_points,
+        lane_options=lane_options,
+        top_k_options=top_k_options,
+        fallback_critical_path_ns=fallback_critical_path_ns,
+    )
+    producer_integrated_interface = _producer_integrated_interface_summary(
+        overlap_sweep=overlap_sweep,
+        boundary_sensitivity=boundary_sensitivity,
+        primary_vocab_size=vocab_size,
+        focus_lanes=interface_focus_lanes,
+    )
     scale_stability_summary: list[JsonDict] = []
     for sweep_vocab_size in vocab_options:
         rows = [
@@ -1262,6 +1402,7 @@ def build_report(
             "candidate_fifo_depth_groups": candidate_fifo_depth_groups,
             "vocab_size_list": vocab_options,
             "producer_lanes_list": lane_options,
+            "producer_interface_focus_lanes": interface_focus_lanes,
             "top_k_list": top_k_options,
             "producer_ii_cycles_list": producer_ii_options,
             "candidate_fifo_depth_groups_list": fifo_options,
@@ -1315,16 +1456,11 @@ def build_report(
         ],
         "measured_ranker_points": measured_points,
         "measured_candidate_merge_fifo_points": candidate_merge_points,
-        "boundary_sensitivity": _boundary_sensitivity_summary(
-            boundary_points=boundary_points,
-            measured_points=measured_points,
-            lane_options=lane_options,
-            top_k_options=top_k_options,
-            fallback_critical_path_ns=fallback_critical_path_ns,
-        ),
+        "boundary_sensitivity": boundary_sensitivity,
         "flat_measured_ranker_points": flat,
         "hierarchical_streaming_alternatives": alternatives,
         "overlap_traffic_sweep": overlap_sweep,
+        "producer_integrated_interface": producer_integrated_interface,
         "scale_stability_summary": scale_stability_summary,
         "sweep_recommendation_scope": {
             "vocab_size": vocab_size,
@@ -1494,6 +1630,39 @@ def _write_markdown(path: Path, payload: JsonDict) -> None:
     lines.extend(
         [
             "",
+            "## Producer-Integrated Interface Focus",
+            "",
+            f"- scope: `{(payload.get('producer_integrated_interface') or {}).get('scope', '')}`",
+            f"- boundary_policy: {(payload.get('producer_integrated_interface') or {}).get('boundary_policy', '')}",
+            f"- best_latency_sweep_key: `{(payload.get('producer_integrated_interface') or {}).get('best_latency_sweep_key', '')}`",
+            "",
+            "| key | W | top_k | producer_ii | merge_ii | fifo required/capacity | fifo ok | latency_us | memory_bytes | overlap recovered | traffic reduction |",
+            "|---|---:|---:|---:|---:|---:|---|---:|---:|---:|---:|",
+        ]
+    )
+    producer_interface = payload.get("producer_integrated_interface") or {}
+    for row in producer_interface.get("summary_rows") or []:
+        lines.append(
+            "| {key} | {lanes} | {topk} | {prodii} | {mergeii} | {fifo}/{cap} | `{ok}` | {latency} | {mem_bytes} | {overlap} | {traffic} |".format(
+                key=f"`{row.get('sweep_key')}`",
+                lanes=row.get("producer_lanes"),
+                topk=row.get("top_k"),
+                prodii=row.get("producer_ii_cycles"),
+                mergeii=row.get("merge_ii_cycles"),
+                fifo=row.get("required_fifo_depth_groups"),
+                cap=row.get("candidate_fifo_depth_groups"),
+                ok=row.get("fifo_capacity_ok"),
+                latency=row.get("latency_us_per_token"),
+                mem_bytes=row.get("memory_total_bytes"),
+                overlap=row.get("overlap_recovered_fraction"),
+                traffic=row.get("traffic_reduction_vs_materialized"),
+            )
+        )
+    if not (producer_interface.get("summary_rows") or []):
+        lines.append("|  |  |  |  |  |  |  |  |  |  | no producer-integrated focus rows |")
+    lines.extend(
+        [
+            "",
             "## Overlap And Traffic Sweep",
             "",
             "| key | vocab | cycles | latency_us | memory_bytes | memory_energy_nj | fifo required/capacity | overlap recovered | traffic reduction | speedup vs flat |",
@@ -1561,6 +1730,11 @@ def main() -> int:
     ap.add_argument("--candidate-fifo-depth-groups", type=int, default=16)
     ap.add_argument("--vocab-size-list", type=_int_list, help="comma-separated vocabulary-size sweep")
     ap.add_argument("--producer-lanes-list", type=_int_list, help="comma-separated producer lane sweep")
+    ap.add_argument(
+        "--producer-interface-focus-lanes",
+        type=_int_list,
+        help="comma-separated producer lanes summarized as integrated ready-valid interface focus",
+    )
     ap.add_argument("--top-k-list", type=_int_list, help="comma-separated local top-k sweep")
     ap.add_argument("--producer-ii-cycles-list", type=_int_list, help="comma-separated producer II sweep")
     ap.add_argument("--candidate-fifo-depth-groups-list", type=_int_list, help="comma-separated FIFO depth sweep")
@@ -1595,6 +1769,7 @@ def main() -> int:
         candidate_fifo_depth_groups=args.candidate_fifo_depth_groups,
         vocab_size_list=args.vocab_size_list,
         producer_lanes_list=args.producer_lanes_list,
+        producer_interface_focus_lanes=args.producer_interface_focus_lanes,
         top_k_list=args.top_k_list,
         producer_ii_cycles_list=args.producer_ii_cycles_list,
         candidate_fifo_depth_groups_list=args.candidate_fifo_depth_groups_list,
