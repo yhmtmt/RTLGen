@@ -14,9 +14,8 @@ OUT_PATH = REPO_ROOT / "runs" / "index.csv"
 
 
 def iter_metrics_files(root: Path):
-    for path in root.rglob("metrics.csv"):
-        if path.is_file():
-            yield path
+    paths = (path for path in root.rglob("metrics.csv") if path.is_file())
+    yield from sorted(paths, key=lambda path: path.relative_to(root).as_posix())
 
 
 def normalize_repo_path(path_str: str):
@@ -147,6 +146,26 @@ def normalize_metrics_file(metrics_path: Path):
     return deduped
 
 
+def read_index_metrics_rows(metrics_path: Path):
+    header, rows = load_metrics(metrics_path)
+    if not header:
+        return []
+    return dedupe_metrics_rows(header, rows)
+
+
+def index_sort_key(row):
+    return (
+        row["circuit_type"],
+        row["design"],
+        row["platform"],
+        row["param_hash"],
+        row["metrics_path"],
+        row["result_path"],
+        row["tag"],
+        row["config_hash"],
+    )
+
+
 def main():
     rows = []
     for metrics_path in iter_metrics_files(DESIGNS_ROOT):
@@ -165,7 +184,7 @@ def main():
                 sram_summary = json.loads(sram_summary_path.read_text())
             except json.JSONDecodeError:
                 sram_summary = {}
-        for row in normalize_metrics_file(metrics_path):
+        for row in read_index_metrics_rows(metrics_path):
             params_json = row.get("params_json", "")
             try:
                 params = json.loads(params_json) if params_json else {}
@@ -194,7 +213,7 @@ def main():
                 }
             )
 
-    rows.sort(key=lambda r: (r["circuit_type"], r["design"], r["platform"], r["param_hash"]))
+    rows.sort(key=index_sort_key)
 
     fieldnames = [
         "circuit_type",

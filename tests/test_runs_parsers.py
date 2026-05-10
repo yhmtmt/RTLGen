@@ -149,6 +149,61 @@ class RunsParserRegressionTest(unittest.TestCase):
         rewritten_lines = metrics_path.read_text(encoding="utf-8").splitlines()
         self.assertEqual(2, len(rewritten_lines))
 
+    def test_build_runs_index_iterates_metrics_files_deterministically(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            paths = [
+                root / "z_type" / "z_design" / "metrics.csv",
+                root / "a_type" / "b_design" / "metrics.csv",
+                root / "a_type" / "a_design" / "metrics.csv",
+            ]
+            for path in paths:
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(HEADER + "\n", encoding="utf-8")
+
+            rel_paths = [
+                path.relative_to(root).as_posix()
+                for path in self.build_runs_index.iter_metrics_files(root)
+            ]
+
+        self.assertEqual(
+            [
+                "a_type/a_design/metrics.csv",
+                "a_type/b_design/metrics.csv",
+                "z_type/z_design/metrics.csv",
+            ],
+            rel_paths,
+        )
+
+    def test_build_runs_index_sort_key_breaks_param_hash_ties(self):
+        base = {
+            "circuit_type": "activations",
+            "design": "trials",
+            "platform": "nangate45",
+            "param_hash": "samehash",
+            "config_hash": "cfg",
+            "tag": "tag",
+        }
+        rows = [
+            {
+                **base,
+                "metrics_path": "runs/designs/activations/trials/trial_002/demo/metrics.csv",
+                "result_path": "runs/designs/activations/trials/trial_002/demo/work/samehash/result.json",
+            },
+            {
+                **base,
+                "metrics_path": "runs/designs/activations/trials/trial_001/demo/metrics.csv",
+                "result_path": "runs/designs/activations/trials/trial_001/demo/work/samehash/result.json",
+            },
+        ]
+
+        ordered = sorted(rows, key=self.build_runs_index.index_sort_key)
+
+        self.assertEqual(
+            "runs/designs/activations/trials/trial_001/demo/metrics.csv",
+            ordered[0]["metrics_path"],
+        )
+
     def test_run_sweep_normalizes_repo_relative_paths(self):
         repo_root = self.run_sweep.REPO_ROOT
         abs_result = str(repo_root / "runs" / "designs" / "activations" / "demo" / "work" / "abcd1234" / "result.json")
