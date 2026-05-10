@@ -1,0 +1,71 @@
+{
+  "proposal_id": "prop_l2_decoder_logit_rank_streaming_producer_integrated_v1",
+  "created_utc": "2026-05-10T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_logit_rank_streaming_producer_integrated",
+  "title": "Decoder logit-rank producer-integrated interface focus",
+  "hypothesis": "The r64/r128 logit-rank candidates should be judged as producer-integrated ready-valid interfaces, not standalone chips with scalar top-level logit pins. Boundary PPA remains useful as a diagnostic sensitivity, but padded macro die area and exposed-pin pressure should not enter the main ranker cost.",
+  "direct_comparison": {
+    "primary_question": "For r64 and r128 producer widths, which top-k, producer-II, merge-II, and FIFO choices remain latency- and traffic-competitive while preserving perf-sim/RTL stream equivalence observables?",
+    "include": [
+      "r64 and r128 producer-integrated focus rows",
+      "candidate FIFO capacity validity",
+      "streaming overlap versus buffered materialized-rank baseline",
+      "candidate traffic versus materialized-logit write/read traffic",
+      "explicit ready-valid equivalence observables for future RTL",
+      "boundary sensitivity as a diagnostic-only section"
+    ],
+    "exclude": [
+      "charging standalone exposed-pin macro padded die area to the main cost",
+      "new RTL implementation",
+      "probability-producing softmax or sampling consumers",
+      "larger-model quality reruns"
+    ]
+  },
+  "expected_benefit": [
+    "keeps the ranker frontier aligned with the intended producer-integrated macro use",
+    "prevents I/O-bound standalone macro artifacts from dominating architecture rankings",
+    "keeps the perf simulator and future RTL tied to the same ready-valid stream contract"
+  ],
+  "risks": [
+    "producer timing is still modeled by lane/II parameters rather than measured producer RTL",
+    "memory and NoC terms remain first-order planning estimates",
+    "the RTL equivalence contract is specified here but must still be checked when a producer-integrated macro is implemented"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_logit_rank_streaming_producer_integrated_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run the decoder logit-rank producer-integrated interface focus view for r64/r128, keeping exposed-pin macro-boundary PPA diagnostic-only and preserving perf-sim/RTL equivalence observables.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_logit_rank_streaming_producer_integrated",
+      "cost_class": "low",
+      "depends_on_item_ids": [
+        "l2_decoder_logit_rank_streaming_overlap_v1",
+        "l2_decoder_logit_rank_streaming_scale_stability_boundary_v1",
+        "l1_decoder_candidate_stream_merge_fifo_v1",
+        "l1_decoder_logit_rank_r128_k1_pin_perimeter_bound_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "The expected result is a clearer r64/r128 producer-integrated frontier and an explicit RTL-equivalence checklist before implementing the combined producer/ranker macro."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_decoder_logit_rank_streaming_overlap_v1/proposal.json",
+    "docs/proposals/prop_l2_decoder_logit_rank_streaming_memory_noc_v1/proposal.json",
+    "docs/proposals/prop_l2_decoder_logit_rank_streaming_scale_stability_v1/proposal.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/model_llm_decoder_logit_rank_streaming.py",
+    "npu/eval/estimate_llm_decoder_logit_rank_streaming_hierarchy.py",
+    "tests/test_llm_decoder_logit_rank_streaming_model.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}

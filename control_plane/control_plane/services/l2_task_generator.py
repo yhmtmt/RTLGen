@@ -2000,6 +2000,86 @@ def _decoder_logit_rank_streaming_overlap_evidence(*, item_id: str) -> dict[str,
     }
 
 
+def _decoder_logit_rank_streaming_producer_integrated_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    prompt_stress = f"{base}/decoder_gpt2_prompt_stress__l2_decoder_gpt2_prompt_stress_v1.json"
+    logit_rank_bypass = f"{base}/decoder_gpt2_logit_rank_bypass__l2_decoder_gpt2_logit_rank_bypass_v1.json"
+    interface_out = f"{base}/decoder_logit_rank_streaming_producer_integrated__{item_id}.json"
+    interface_report = f"{base}/decoder_logit_rank_streaming_producer_integrated__{item_id}.md"
+    rank_ppa = "control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_datapath_v1_r2.json"
+    scale_ppa = "control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_scale_v1.json"
+    candidate_merge_ppa = (
+        "control_plane/shadow_exports/l1_promotions/l1_decoder_candidate_stream_merge_fifo_v1.json"
+    )
+    boundary_ppa = (
+        "control_plane/shadow_exports/l1_promotions/"
+        "l1_decoder_logit_rank_r128_k1_pin_perimeter_bound_v1.json"
+    )
+    sram_metrics_json = "runs/designs/sram/minimal_v0_2_draft/sram_metrics.json"
+    memory_model = {
+        "memory_bandwidth_bytes_per_cycle": 64,
+        "sram_metrics_json": sram_metrics_json,
+        "vocab_size_list": [50257, 100000, 200000],
+        "producer_lanes_list": [8, 16, 32, 64, 128],
+        "producer_interface_focus_lanes": [64, 128],
+        "sram_read_energy_pj_per_byte": 0.05,
+        "sram_write_energy_pj_per_byte": 0.07,
+        "noc_hops": 2,
+        "noc_energy_pj_per_byte_hop": 0.02,
+        "source": "sram_metrics_json_plus_planning_noc",
+        "sram_source": "cacti_estimated_nangate45_minimal_v0_2_draft",
+        "noc_source": "planning_default_not_literature_backed",
+    }
+    return {
+        "inputs": {
+            "source_prompt_stress": prompt_stress,
+            "source_logit_rank_bypass": logit_rank_bypass,
+            "rank_datapath_ppa": rank_ppa,
+            "rank_scale_ppa": scale_ppa,
+            "candidate_merge_ppa": candidate_merge_ppa,
+            "boundary_ppa": boundary_ppa,
+            "memory_model": memory_model,
+            "producer_integrated_out": interface_out,
+            "producer_integrated_report": interface_report,
+            "producer_integrated_scope": (
+                "Focus r64/r128 decoder logit-rank candidates as producer-integrated ready-valid "
+                "interfaces. Keep exposed-pin macro-boundary PPA diagnostic-only, exclude padded "
+                "die area from main cost, and preserve perf-sim/RTL equivalence observables."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_logit_rank_streaming_producer_integrated",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_logit_rank_streaming_hierarchy.py "
+                    f"--prompt-stress {prompt_stress} "
+                    f"--logit-rank-bypass {logit_rank_bypass} "
+                    f"--rank-ppa {rank_ppa} "
+                    f"--scale-ppa {scale_ppa} "
+                    f"--candidate-merge-ppa {candidate_merge_ppa} "
+                    f"--boundary-ppa {boundary_ppa} "
+                    f"--sram-metrics-json {sram_metrics_json} "
+                    "--vocab-size-list 50257,100000,200000 "
+                    "--producer-lanes-list 8,16,32,64,128 "
+                    "--producer-interface-focus-lanes 64,128 "
+                    "--top-k-list 1,4 "
+                    "--producer-ii-cycles-list 1,2 "
+                    "--global-merge-ii-cycles 1,2 "
+                    "--candidate-fifo-depth-groups-list 16,256,4096 "
+                    "--memory-bandwidth-bytes-per-cycle 64 "
+                    "--sram-read-energy-pj-per-byte 0.05 "
+                    "--sram-write-energy-pj-per-byte 0.07 "
+                    "--noc-hops 2 "
+                    "--noc-energy-pj-per-byte-hop 0.02 "
+                    f"--out {interface_out} "
+                    f"--out-md {interface_report}"
+                ),
+            },
+        ],
+        "expected_outputs": [interface_out, interface_report],
+    }
+
+
 def _decoder_distilgpt2_prompt_stress_evidence(*, item_id: str) -> dict[str, Any]:
     return _decoder_distilgpt2_quality_evidence_for_dataset(
         item_id=item_id,
@@ -2462,10 +2542,13 @@ def _build_payload(
         "decoder_gpt2_logit_rank_bypass",
         "decoder_logit_rank_streaming_hierarchy",
         "decoder_logit_rank_streaming_overlap",
+        "decoder_logit_rank_streaming_producer_integrated",
         "decoder_quantization_outline",
     }:
         if abstraction_layer_name == "decoder_quantization_outline":
             decoder_evidence = _decoder_quantization_outline_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_logit_rank_streaming_producer_integrated":
+            decoder_evidence = _decoder_logit_rank_streaming_producer_integrated_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_logit_rank_streaming_overlap":
             decoder_evidence = _decoder_logit_rank_streaming_overlap_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_logit_rank_streaming_hierarchy":
