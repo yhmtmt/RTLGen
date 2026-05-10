@@ -11,7 +11,6 @@
       "comparison_role": "ranking",
       "paired_baseline_item_id": "",
       "depends_on_item_ids": [
-        "l2_decoder_logit_rank_streaming_overlap_v1",
         "l2_decoder_logit_rank_streaming_scale_stability_boundary_v1",
         "l1_decoder_candidate_stream_merge_fifo_v1",
         "l1_decoder_logit_rank_r128_k1_pin_perimeter_bound_v1"
