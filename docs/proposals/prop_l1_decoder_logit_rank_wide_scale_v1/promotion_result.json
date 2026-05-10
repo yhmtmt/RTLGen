@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l1_decoder_logit_rank_wide_scale_v1",
+  "decision": "promote",
+  "pr_number": 436,
+  "merge_commit": "2385a682b59bd6b4369e5d2f58f8508ef5071daf",
+  "merged_utc": "2026-05-10T10:12:04.373280Z"
+}
