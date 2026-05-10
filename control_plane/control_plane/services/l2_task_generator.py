@@ -2080,6 +2080,104 @@ def _decoder_logit_rank_streaming_producer_integrated_evidence(*, item_id: str) 
     }
 
 
+def _decoder_output_projection_service_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_output_projection_service__{item_id}.json"
+    report = f"{base}/decoder_output_projection_service__{item_id}.md"
+    return {
+        "inputs": {
+            "producer_service_out": out,
+            "producer_service_report": report,
+            "producer_service_scope": (
+                "Stage-serialized output-projection producer service model for shared GEMM: "
+                "derive producer latency and integer II from tile MAC count, weight traffic, "
+                "hidden-vector load, and memory bandwidth."
+            ),
+            "producer_service_grid": {
+                "vocab_size_list": [50257, 100000, 200000],
+                "hidden_size_list": [768, 1024, 2048],
+                "producer_lanes_list": [64, 128, 256],
+                "macs_per_cycle_list": [8192, 32768],
+                "memory_bandwidth_bytes_per_cycle_list": [64, 256],
+            },
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_output_projection_service",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_producer_ranker_coupling.py "
+                    "--mode producer_service "
+                    "--vocab-size-list 50257,100000,200000 "
+                    "--hidden-size-list 768,1024,2048 "
+                    "--producer-lanes-list 64,128,256 "
+                    "--macs-per-cycle-list 8192,32768 "
+                    "--memory-bandwidth-bytes-per-cycle-list 64,256 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
+def _decoder_producer_ranker_coupled_noc_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_producer_ranker_coupled_noc__{item_id}.json"
+    report = f"{base}/decoder_producer_ranker_coupled_noc__{item_id}.md"
+    rank_ppa = "control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_datapath_v1_r2.json"
+    scale_ppa = "control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_scale_v1.json"
+    candidate_merge_ppa = (
+        "control_plane/shadow_exports/l1_promotions/l1_decoder_candidate_stream_merge_fifo_v1.json"
+    )
+    boundary_ppa = (
+        "control_plane/shadow_exports/l1_promotions/"
+        "l1_decoder_logit_rank_r128_k1_pin_perimeter_bound_v1.json"
+    )
+    sram_metrics_json = "runs/designs/sram/minimal_v0_2_draft/sram_metrics.json"
+    return {
+        "inputs": {
+            "producer_ranker_coupled_out": out,
+            "producer_ranker_coupled_report": report,
+            "rank_datapath_ppa": rank_ppa,
+            "rank_scale_ppa": scale_ppa,
+            "candidate_merge_ppa": candidate_merge_ppa,
+            "boundary_ppa": boundary_ppa,
+            "sram_metrics_json": sram_metrics_json,
+            "producer_ranker_coupled_scope": (
+                "Couple stage-serialized output-projection producer service curves to the "
+                "producer-integrated ready-valid ranker frontier, including shared NoC/memory "
+                "bandwidth shares for contention sensitivity."
+            ),
+            "memory_share_list": [1.0, 0.5, 0.25],
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_producer_ranker_coupled_noc",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_producer_ranker_coupling.py "
+                    "--mode coupled_noc "
+                    f"--rank-ppa {rank_ppa} "
+                    f"--scale-ppa {scale_ppa} "
+                    f"--candidate-merge-ppa {candidate_merge_ppa} "
+                    f"--boundary-ppa {boundary_ppa} "
+                    f"--sram-metrics-json {sram_metrics_json} "
+                    "--vocab-size-list 50257,100000,200000 "
+                    "--hidden-size-list 768,1024,2048 "
+                    "--producer-lanes-list 64,128,256 "
+                    "--macs-per-cycle-list 8192,32768 "
+                    "--memory-bandwidth-bytes-per-cycle-list 64,256 "
+                    "--memory-share-list 1.0,0.5,0.25 "
+                    "--top-k-list 1,4 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_distilgpt2_prompt_stress_evidence(*, item_id: str) -> dict[str, Any]:
     return _decoder_distilgpt2_quality_evidence_for_dataset(
         item_id=item_id,
@@ -2543,10 +2641,16 @@ def _build_payload(
         "decoder_logit_rank_streaming_hierarchy",
         "decoder_logit_rank_streaming_overlap",
         "decoder_logit_rank_streaming_producer_integrated",
+        "decoder_output_projection_service",
+        "decoder_producer_ranker_coupled_noc",
         "decoder_quantization_outline",
     }:
         if abstraction_layer_name == "decoder_quantization_outline":
             decoder_evidence = _decoder_quantization_outline_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_producer_ranker_coupled_noc":
+            decoder_evidence = _decoder_producer_ranker_coupled_noc_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_output_projection_service":
+            decoder_evidence = _decoder_output_projection_service_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_logit_rank_streaming_producer_integrated":
             decoder_evidence = _decoder_logit_rank_streaming_producer_integrated_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_logit_rank_streaming_overlap":
