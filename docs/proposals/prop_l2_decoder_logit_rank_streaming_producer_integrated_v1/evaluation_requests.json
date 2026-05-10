@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_logit_rank_streaming_producer_integrated_v1",
-  "source_commit": "20002199ee186a4724560b293007f3ceb4522cfa",
+  "source_commit": "c9bca6b1f6d8ac8f0ade88d87ece3bd5962ae64b",
   "requested_items": [
     {
       "item_id": "l2_decoder_logit_rank_streaming_producer_integrated_v1",
@@ -22,7 +22,11 @@
         "direction": "iterate",
         "reason": "The expected result is a clearer r64/r128 producer-integrated frontier and an explicit RTL-equivalence checklist before implementing the combined producer/ranker macro."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 444,
+      "merge_commit": "60242897c1b1ac1ac9062431537ffdd1fc669474",
+      "merged_utc": "2026-05-10T14:05:18.238383Z",
+      "notes": "Merged via PR #444 and merge 60242897c1b1ac1ac9062431537ffdd1fc669474 at 2026-05-10T14:05:18.238383Z."
     }
   ]
 }
