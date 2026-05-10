@@ -389,6 +389,23 @@ argmax cost anchor, while the k=4 row is the current top-k/beam ranking anchor.
 Sampling and probability-reporting modes remain outside this bypass because
 they need calibrated probabilities, not only rank order.
 
+Run the decoder logit-rank streaming hierarchy estimate with the explicit
+macro-boundary diagnostic as sensitivity evidence:
+```sh
+python3 npu/eval/estimate_llm_decoder_logit_rank_streaming_hierarchy.py \
+  --rank-ppa control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_datapath_v1_r2.json \
+  --scale-ppa control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_scale_v1.json \
+  --candidate-merge-ppa control_plane/shadow_exports/l1_promotions/l1_decoder_candidate_stream_merge_fifo_v1.json \
+  --boundary-ppa control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_r128_k1_pin_perimeter_bound_v1.json \
+  --out /tmp/decoder_logit_rank_streaming.json \
+  --out-md /tmp/decoder_logit_rank_streaming.md
+```
+
+The boundary PPA is reported separately from normal ranker PPA. Use it to track
+how exposed scalar-pin macro assumptions affect wide `r128/k1` timing and
+perimeter feasibility; do not charge its padded die area to a producer-integrated
+ranker unless explicitly modelling a standalone exposed-pin macro.
+
 After the corresponding Layer 1 multiplier and accumulator/adder calibration
 jobs merge, synthesize the measured primitive evidence into a decoder
 normalization report:

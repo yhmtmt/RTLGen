@@ -402,3 +402,85 @@ def test_logit_rank_streaming_overlap_sweep_varies_vocab_size(tmp_path: Path) ->
     assert report["sweep_recommendation_scope"]["vocab_size"] == 64
     assert report["memory_traffic_recommendation"]["sweep_key"].startswith("v64_")
     assert report["inputs"]["vocab_size_list"] == [64, 128]
+
+
+def test_logit_rank_streaming_report_keeps_boundary_diagnostic_separate(tmp_path: Path) -> None:
+    rank_ppa = tmp_path / "rank_ppa.json"
+    rank_ppa.write_text(
+        json.dumps(
+            {
+                "proposals": [
+                    {
+                        "metrics_ref": {
+                            "metrics_csv": "runs/designs/activations/logit_rank_r32_l16_k1_wrapper/metrics.csv",
+                            "status": "ok",
+                        },
+                        "metric_summary": {
+                            "critical_path_ns": 10.0,
+                            "die_area": 32.0,
+                            "total_power_mw": 0.32,
+                        },
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    metrics_csv = (
+        tmp_path
+        / "runs"
+        / "designs"
+        / "activations"
+        / "logit_rank_r128_l16_k1_wrapper"
+        / "metrics.csv"
+    )
+    metrics_csv.parent.mkdir(parents=True)
+    metrics_csv.write_text(
+        "\n".join(
+            [
+                "design,platform,config_hash,param_hash,tag,status,critical_path_ns,die_area,total_power_mw,params_json,result_path",
+                (
+                    'logit_rank_r128_l16_k1_wrapper,nangate45,h,87f21ce3,'
+                    'pinbound_540,ok,60.216,291600.0,3.72,'
+                    '"{""DIE_AREA"": ""0 0 540 540"", ""CORE_AREA"": ""20 20 520 520""}",'
+                    'runs/designs/activations/logit_rank_r128_l16_k1_wrapper/work/87f21ce3/result.json'
+                ),
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    boundary_ppa = tmp_path / "boundary_ppa.json"
+    boundary_ppa.write_text(
+        json.dumps(
+            {
+                "item_id": "l1_decoder_logit_rank_r128_k1_pin_perimeter_bound_v1",
+                "source_refs": {"trial_metrics_csvs": [str(metrics_csv)]},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    report = build_report(
+        rank_ppa_path=rank_ppa,
+        scale_ppa_path=None,
+        candidate_merge_ppa_path=None,
+        boundary_ppa_path=boundary_ppa,
+        vocab_size=128,
+        producer_lanes=128,
+        top_k=1,
+        global_merge_ii_cycles_list=[1],
+        producer_lanes_list=[128],
+        top_k_list=[1],
+        candidate_fifo_depth_groups_list=[16],
+    )
+
+    comparison = report["boundary_sensitivity"]["comparisons"][0]
+    assert comparison["boundary_die_perimeter_um"] == 2160.0
+    assert comparison["boundary_padded_die_area_um2"] == 291600.0
+    assert comparison["boundary_critical_path_ns"] == 60.216
+    assert comparison["normal_model_critical_path_ns"] == 14.0
+    assert "Do not charge" in comparison["policy"]
+    assert report["hierarchical_streaming_alternatives"][0]["local_ranker_point"]["source"].endswith(
+        "#scaled_nearest_lane"
+    )
