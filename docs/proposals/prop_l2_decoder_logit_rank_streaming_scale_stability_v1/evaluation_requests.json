@@ -27,7 +27,33 @@
       "merge_commit": "72468ee2154cba00ac46598f404dcd9220bc554d",
       "merged_utc": "2026-05-05T12:12:34.403646Z",
       "notes": "Merged via PR #417 and merge 72468ee2154cba00ac46598f404dcd9220bc554d at 2026-05-05T12:12:34.403646Z."
+    },
+    {
+      "item_id": "l2_decoder_logit_rank_streaming_scale_stability_boundary_v1",
+      "task_type": "l2_campaign",
+      "objective": "Rerun the decoder logit-rank streaming scale-stability report with the r128/k1 explicit macro-boundary diagnostic reported as separate sensitivity evidence.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_logit_rank_streaming_overlap",
+      "cost_class": "low",
+      "depends_on_item_ids": [
+        "l2_decoder_logit_rank_streaming_scale_stability_v1",
+        "l1_decoder_logit_rank_r128_k1_pin_perimeter_bound_v1",
+        "l2_decoder_logit_rank_streaming_sram_nangate45_v1",
+        "l2_decoder_logit_rank_streaming_memory_noc_v1",
+        "l2_decoder_logit_rank_streaming_measured_merge_v1",
+        "l1_decoder_candidate_stream_merge_fifo_v1",
+        "l1_decoder_logit_rank_datapath_v1_r2",
+        "l1_decoder_logit_rank_scale_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Check whether the wider producer-lane conclusion changes after adding the r128/k1 boundary sensitivity without charging padded die area to integrated rankers."
+      },
+      "status": "requested",
+      "notes": "Dispatch after evaluator updates to a commit containing PR #437 so the L2 command includes --boundary-ppa."
     }
   ],
-  "source_commit": "c06374c1e379b074dda263af5b55f6cca0c6b7c4"
+  "source_commit": "f58c3bccdd1118bf223517af98ad143429369098"
 }

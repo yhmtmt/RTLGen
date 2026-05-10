@@ -14,6 +14,7 @@
       "producer-lane sweep at 8, 16, 32, 64, and 128 lanes",
       "top-k sweep at 1 and 4",
       "measured logit-rank datapath and candidate-stream merge/FIFO PPA where available",
+      "r128/k1 exposed-pin macro boundary sensitivity as a separate diagnostic",
       "Nangate45 CACTI SRAM metrics from runs/designs/sram/minimal_v0_2_draft/sram_metrics.json",
       "NoC hop energy still marked as a planning term",
       "unchanged ready-valid perf-sim/RTL equivalence observables"
@@ -36,6 +37,7 @@
   ],
   "risks": [
     "producer lanes beyond measured ranker PPA points use explicit scaled proxies",
+    "the exposed-pin macro boundary diagnostic is not directly comparable to integrated-ranker area",
     "larger vocabularies are synthetic scale points, not full larger-model quality runs",
     "NoC and banking contention remain planning terms"
   ],
@@ -62,11 +64,36 @@
         "direction": "iterate",
         "reason": "The result should decide whether to spend the next implementation step on NoC/banking measurement or move to larger-model quality and larger-array hardware confirmation."
       }
+    },
+    {
+      "item_id": "l2_decoder_logit_rank_streaming_scale_stability_boundary_v1",
+      "task_type": "l2_campaign",
+      "objective": "Rerun the decoder logit-rank streaming scale-stability report with the r128/k1 explicit macro-boundary diagnostic reported as separate sensitivity evidence.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_logit_rank_streaming_overlap",
+      "cost_class": "low",
+      "depends_on_item_ids": [
+        "l2_decoder_logit_rank_streaming_scale_stability_v1",
+        "l1_decoder_logit_rank_r128_k1_pin_perimeter_bound_v1",
+        "l2_decoder_logit_rank_streaming_sram_nangate45_v1",
+        "l2_decoder_logit_rank_streaming_memory_noc_v1",
+        "l2_decoder_logit_rank_streaming_measured_merge_v1",
+        "l1_decoder_candidate_stream_merge_fifo_v1",
+        "l1_decoder_logit_rank_datapath_v1_r2",
+        "l1_decoder_logit_rank_scale_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Check whether the wider producer-lane conclusion changes after adding the r128/k1 boundary sensitivity without charging padded die area to integrated rankers."
+      }
     }
   ],
   "baseline_refs": [
     "docs/proposals/prop_l2_decoder_logit_rank_streaming_sram_nangate45_v1/proposal.json",
-    "control_plane/shadow_exports/l2_decisions/l2_decoder_logit_rank_streaming_sram_nangate45_v1.json"
+    "control_plane/shadow_exports/l2_decisions/l2_decoder_logit_rank_streaming_sram_nangate45_v1.json",
+    "control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_r128_k1_pin_perimeter_bound_v1.json"
   ],
   "knowledge_refs": [
     "npu/eval/model_llm_decoder_logit_rank_streaming.py",
