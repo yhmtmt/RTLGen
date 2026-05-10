@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import math
 import re
@@ -21,6 +22,9 @@ DEFAULT_SCALE_PPA = Path(
 )
 DEFAULT_CANDIDATE_MERGE_PPA = Path(
     "control_plane/shadow_exports/l1_promotions/l1_decoder_candidate_stream_merge_fifo_v1.json"
+)
+DEFAULT_BOUNDARY_PPA = Path(
+    "control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_r128_k1_pin_perimeter_bound_v1.json"
 )
 
 
@@ -77,6 +81,28 @@ def _parse_candidate_merge_csv_point(path: str) -> JsonDict:
         "logit_bits": int(match.group("logit_bits")),
         "token_id_bits": int(match.group("token_id_bits")),
         "fifo_depth_groups": int(match.group("fifo_depth_groups")),
+    }
+
+
+def _parse_area_box(value: Any) -> JsonDict | None:
+    parts = str(value or "").split()
+    if len(parts) != 4:
+        return None
+    try:
+        x0, y0, x1, y1 = [float(part) for part in parts]
+    except ValueError:
+        return None
+    width = max(0.0, x1 - x0)
+    height = max(0.0, y1 - y0)
+    return {
+        "x0_um": x0,
+        "y0_um": y0,
+        "x1_um": x1,
+        "y1_um": y1,
+        "width_um": width,
+        "height_um": height,
+        "perimeter_um": 2.0 * (width + height),
+        "area_um2": width * height,
     }
 
 
@@ -269,6 +295,155 @@ def load_candidate_merge_points(path: Path | None) -> list[JsonDict]:
         )
     )
     return rows
+
+
+def load_boundary_points(path: Path | None) -> list[JsonDict]:
+    """Load explicit macro-boundary diagnostic rows without mixing them into normal PPA."""
+    if path is None or not path.exists():
+        return []
+    payload = _load_json(path)
+    metrics_paths: list[str] = []
+    source_refs = payload.get("source_refs") if isinstance(payload, dict) else {}
+    if isinstance(source_refs, dict):
+        for item in source_refs.get("trial_metrics_csvs") or []:
+            if isinstance(item, str) and item not in metrics_paths:
+                metrics_paths.append(item)
+    for proposal in payload.get("proposals") or []:
+        if not isinstance(proposal, dict):
+            continue
+        ref = proposal.get("metrics_ref")
+        if not isinstance(ref, dict):
+            continue
+        metrics_csv = str(ref.get("metrics_csv") or "")
+        if metrics_csv and metrics_csv not in metrics_paths:
+            metrics_paths.append(metrics_csv)
+
+    rows: list[JsonDict] = []
+    for metrics_csv in metrics_paths:
+        csv_path = Path(metrics_csv)
+        if not csv_path.is_absolute():
+            csv_path = Path.cwd() / csv_path
+        if not csv_path.exists():
+            continue
+        point = _parse_csv_point(metrics_csv)
+        with csv_path.open(newline="", encoding="utf-8") as f:
+            for row in csv.DictReader(f):
+                if str(row.get("status") or "") != "ok":
+                    continue
+                params = {}
+                try:
+                    params = json.loads(row.get("params_json") or "{}")
+                except json.JSONDecodeError:
+                    params = {}
+                die_area = _parse_area_box(params.get("DIE_AREA"))
+                core_area = _parse_area_box(params.get("CORE_AREA"))
+                if die_area is None:
+                    continue
+                rows.append(
+                    {
+                        "source": str(path),
+                        "artifact_item_id": payload.get("item_id"),
+                        "metrics_csv": metrics_csv,
+                        "result_path": row.get("result_path") or None,
+                        "tag": row.get("tag") or None,
+                        "param_hash": row.get("param_hash") or None,
+                        "lanes": point["lanes"],
+                        "logit_bits": point["logit_bits"],
+                        "top_k": point["top_k"],
+                        "boundary_model": "standalone_exposed_pin_macro",
+                        "interpretation": (
+                            "Explicit macro-boundary diagnostic. Use timing/power as rough "
+                            "datapath evidence; padded die area is not normal logic area."
+                        ),
+                        "die": die_area,
+                        "core": core_area,
+                        "metrics": {
+                            "critical_path_ns": _as_float(row.get("critical_path_ns")),
+                            "die_area": _as_float(row.get("die_area")),
+                            "total_power_mw": _as_float(row.get("total_power_mw")),
+                        },
+                    }
+                )
+    rows.sort(
+        key=lambda row: (
+            _as_int(row.get("lanes"), 10**9),
+            _as_int(row.get("top_k"), 10**9),
+            _as_float((row.get("die") or {}).get("perimeter_um"), 10**18),
+            row["metrics"]["critical_path_ns"],
+        )
+    )
+    return rows
+
+
+def _boundary_sensitivity_summary(
+    *,
+    boundary_points: list[JsonDict],
+    measured_points: list[JsonDict],
+    lane_options: list[int],
+    top_k_options: list[int],
+    fallback_critical_path_ns: float,
+) -> JsonDict:
+    comparisons: list[JsonDict] = []
+    for lanes in lane_options:
+        for top_k in top_k_options:
+            matches = [
+                point
+                for point in boundary_points
+                if _as_int(point.get("lanes")) == lanes and _as_int(point.get("top_k")) == top_k
+            ]
+            if not matches:
+                continue
+            min_boundary = min(
+                matches,
+                key=lambda point: (
+                    _as_float((point.get("die") or {}).get("perimeter_um"), 10**18),
+                    _as_float(point["metrics"].get("critical_path_ns"), 10**18),
+                ),
+            )
+            selected = _select_ranker_point(
+                measured_points,
+                lanes=lanes,
+                top_k=top_k,
+                default_critical_path_ns=fallback_critical_path_ns,
+            )
+            selected_cp = _as_float(selected["metrics"].get("critical_path_ns"), fallback_critical_path_ns)
+            boundary_cp = _as_float(min_boundary["metrics"].get("critical_path_ns"), fallback_critical_path_ns)
+            comparisons.append(
+                {
+                    "lanes": lanes,
+                    "top_k": top_k,
+                    "normal_model_source": selected.get("source"),
+                    "normal_model_metrics_csv": selected.get("metrics_csv"),
+                    "normal_model_critical_path_ns": selected_cp,
+                    "boundary_metrics_csv": min_boundary.get("metrics_csv"),
+                    "boundary_tag": min_boundary.get("tag"),
+                    "boundary_critical_path_ns": boundary_cp,
+                    "boundary_total_power_mw": min_boundary["metrics"].get("total_power_mw"),
+                    "boundary_padded_die_area_um2": min_boundary["metrics"].get("die_area"),
+                    "boundary_die_width_um": (min_boundary.get("die") or {}).get("width_um"),
+                    "boundary_die_height_um": (min_boundary.get("die") or {}).get("height_um"),
+                    "boundary_die_perimeter_um": (min_boundary.get("die") or {}).get("perimeter_um"),
+                    "critical_path_delta_ns": round(boundary_cp - selected_cp, 6),
+                    "critical_path_ratio_vs_normal_model": (
+                        round(boundary_cp / selected_cp, 6) if selected_cp > 0 else None
+                    ),
+                    "policy": (
+                        "Do not charge boundary_padded_die_area_um2 in producer-integrated "
+                        "ranker estimates unless modelling an exposed-pin standalone macro."
+                    ),
+                }
+            )
+    return {
+        "boundary_ppa_paths": sorted({str(point.get("source")) for point in boundary_points}),
+        "boundary_points": boundary_points,
+        "comparisons": comparisons,
+        "policy": {
+            "normal_rankings": "unchanged",
+            "standalone_exposed_pin_macro": "may charge padded die area as a pessimistic boundary scenario",
+            "producer_integrated_ranker": "use timing/power as diagnostic evidence; do not charge padded die area blindly",
+            "streaming_tiled_ranker": "prefer internal producer interface to avoid scalar top-level pin pressure",
+        },
+    }
 
 
 def _fallback_ranker_point(*, lanes: int, top_k: int, critical_path_ns: float) -> JsonDict:
@@ -769,6 +944,7 @@ def build_report(
     rank_ppa_path: Path | None = DEFAULT_RANK_PPA,
     scale_ppa_path: Path | None = DEFAULT_SCALE_PPA,
     candidate_merge_ppa_path: Path | None = DEFAULT_CANDIDATE_MERGE_PPA,
+    boundary_ppa_path: Path | None = None,
     prompt_stress_path: Path | None = None,
     logit_rank_bypass_path: Path | None = None,
     sram_metrics_json_path: Path | None = None,
@@ -835,6 +1011,7 @@ def build_report(
             raise ValueError(f"{name} values must be positive")
     measured_points = load_ranker_points_from_paths([rank_ppa_path, scale_ppa_path])
     candidate_merge_points = load_candidate_merge_points(candidate_merge_ppa_path)
+    boundary_points = load_boundary_points(boundary_ppa_path)
     if not measured_points:
         measured_points = [
             _fallback_ranker_point(
@@ -1058,7 +1235,7 @@ def build_report(
         "rank_ppa_path": str(rank_ppa_path) if rank_ppa_path is not None else None,
         "rank_ppa_paths": [
             str(path)
-            for path in [rank_ppa_path, scale_ppa_path, candidate_merge_ppa_path]
+            for path in [rank_ppa_path, scale_ppa_path, candidate_merge_ppa_path, boundary_ppa_path]
             if path is not None
         ],
         "inputs": {
@@ -1067,6 +1244,7 @@ def build_report(
             "candidate_merge_ppa_path": (
                 str(candidate_merge_ppa_path) if candidate_merge_ppa_path is not None else None
             ),
+            "boundary_ppa_path": str(boundary_ppa_path) if boundary_ppa_path is not None else None,
             "prompt_stress_path": str(prompt_stress_path) if prompt_stress_path is not None else None,
             "logit_rank_bypass_path": str(logit_rank_bypass_path) if logit_rank_bypass_path is not None else None,
             "sram_metrics_json_path": (
@@ -1129,6 +1307,7 @@ def build_report(
             "Traffic model counts materialized-logit write+read bytes versus candidate FIFO write+read bytes.",
             "Measured row-8 datapath and row-16/row-32 scale critical_path_ns values are used as ranker clock proxies.",
             "Measured candidate-stream merge/FIFO PPA is used for global merge buffering when an exact or nearest-depth point is available.",
+            "Explicit macro-boundary diagnostics are reported separately from normal ranker PPA; padded die area is charged only in exposed-pin standalone macro sensitivity checks.",
             "Memory hierarchy estimates use explicit SRAM source data when provided, keep NoC terms as "
             "planning parameters, and are reported separately from measured cell PPA.",
             "Missing lane points are explicit defaults or log2-lane scaled proxies.",
@@ -1136,6 +1315,13 @@ def build_report(
         ],
         "measured_ranker_points": measured_points,
         "measured_candidate_merge_fifo_points": candidate_merge_points,
+        "boundary_sensitivity": _boundary_sensitivity_summary(
+            boundary_points=boundary_points,
+            measured_points=measured_points,
+            lane_options=lane_options,
+            top_k_options=top_k_options,
+            fallback_critical_path_ns=fallback_critical_path_ns,
+        ),
         "flat_measured_ranker_points": flat,
         "hierarchical_streaming_alternatives": alternatives,
         "overlap_traffic_sweep": overlap_sweep,
@@ -1223,6 +1409,32 @@ def _write_markdown(path: Path, payload: JsonDict) -> None:
     ]
     for key, value in payload["inputs"].items():
         lines.append(f"| `{key}` | `{value}` |")
+    lines.extend(
+        [
+            "",
+            "## Boundary Sensitivity",
+            "",
+            "| lanes | top_k | boundary tag | perimeter_um | padded_area_um2 | boundary_cp_ns | normal_cp_ns | cp_ratio | policy |",
+            "|---:|---:|---|---:|---:|---:|---:|---:|---|",
+        ]
+    )
+    boundary = payload.get("boundary_sensitivity") or {}
+    for row in boundary.get("comparisons") or []:
+        lines.append(
+            "| {lanes} | {topk} | `{tag}` | {perim} | {area} | {bcp} | {ncp} | {ratio} | {policy} |".format(
+                lanes=row.get("lanes"),
+                topk=row.get("top_k"),
+                tag=row.get("boundary_tag") or "",
+                perim=row.get("boundary_die_perimeter_um"),
+                area=row.get("boundary_padded_die_area_um2"),
+                bcp=row.get("boundary_critical_path_ns"),
+                ncp=row.get("normal_model_critical_path_ns"),
+                ratio=row.get("critical_path_ratio_vs_normal_model"),
+                policy=row.get("policy"),
+            )
+        )
+    if not (boundary.get("comparisons") or []):
+        lines.append("|  |  |  |  |  |  |  |  | no boundary diagnostic input |")
     lines.extend(
         [
             "",
@@ -1333,6 +1545,10 @@ def main() -> int:
         default=str(DEFAULT_CANDIDATE_MERGE_PPA),
         help="candidate-stream merge/FIFO PPA JSON",
     )
+    ap.add_argument(
+        "--boundary-ppa",
+        help="explicit macro-boundary diagnostic PPA JSON, reported as sensitivity evidence",
+    )
     ap.add_argument("--vocab-size", type=int, default=50257, help="decoder vocabulary size")
     ap.add_argument("--producer-lanes", type=int, default=8, help="W-lane producer tile width")
     ap.add_argument("--top-k", type=int, default=4, help="local candidates per tile")
@@ -1363,6 +1579,7 @@ def main() -> int:
         rank_ppa_path=Path(args.rank_ppa) if args.rank_ppa else None,
         scale_ppa_path=Path(args.scale_ppa) if args.scale_ppa else None,
         candidate_merge_ppa_path=Path(args.candidate_merge_ppa) if args.candidate_merge_ppa else None,
+        boundary_ppa_path=Path(args.boundary_ppa) if args.boundary_ppa else None,
         prompt_stress_path=Path(args.prompt_stress) if args.prompt_stress else None,
         logit_rank_bypass_path=Path(args.logit_rank_bypass) if args.logit_rank_bypass else None,
         sram_metrics_json_path=Path(args.sram_metrics_json) if args.sram_metrics_json else None,

@@ -1883,6 +1883,10 @@ def _decoder_logit_rank_streaming_hierarchy_evidence(*, item_id: str) -> dict[st
     candidate_merge_ppa = (
         "control_plane/shadow_exports/l1_promotions/l1_decoder_candidate_stream_merge_fifo_v1.json"
     )
+    boundary_ppa = (
+        "control_plane/shadow_exports/l1_promotions/"
+        "l1_decoder_logit_rank_r128_k1_pin_perimeter_bound_v1.json"
+    )
     return {
         "inputs": {
             "source_prompt_stress": prompt_stress,
@@ -1890,6 +1894,7 @@ def _decoder_logit_rank_streaming_hierarchy_evidence(*, item_id: str) -> dict[st
             "rank_datapath_ppa": rank_ppa,
             "rank_scale_ppa": scale_ppa,
             "candidate_merge_ppa": candidate_merge_ppa,
+            "boundary_ppa": boundary_ppa,
             "streaming_hierarchy_out": hierarchy_out,
             "streaming_hierarchy_report": hierarchy_report,
             "streaming_hierarchy_scope": (
@@ -1907,6 +1912,7 @@ def _decoder_logit_rank_streaming_hierarchy_evidence(*, item_id: str) -> dict[st
                     f"--rank-ppa {rank_ppa} "
                     f"--scale-ppa {scale_ppa} "
                     f"--candidate-merge-ppa {candidate_merge_ppa} "
+                    f"--boundary-ppa {boundary_ppa} "
                     f"--out {hierarchy_out} "
                     f"--out-md {hierarchy_report}"
                 ),
@@ -1926,6 +1932,10 @@ def _decoder_logit_rank_streaming_overlap_evidence(*, item_id: str) -> dict[str,
     scale_ppa = "control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_scale_v1.json"
     candidate_merge_ppa = (
         "control_plane/shadow_exports/l1_promotions/l1_decoder_candidate_stream_merge_fifo_v1.json"
+    )
+    boundary_ppa = (
+        "control_plane/shadow_exports/l1_promotions/"
+        "l1_decoder_logit_rank_r128_k1_pin_perimeter_bound_v1.json"
     )
     sram_metrics_json = "runs/designs/sram/minimal_v0_2_draft/sram_metrics.json"
     memory_model = {
@@ -1948,6 +1958,7 @@ def _decoder_logit_rank_streaming_overlap_evidence(*, item_id: str) -> dict[str,
             "rank_datapath_ppa": rank_ppa,
             "rank_scale_ppa": scale_ppa,
             "candidate_merge_ppa": candidate_merge_ppa,
+            "boundary_ppa": boundary_ppa,
             "memory_model": memory_model,
             "streaming_overlap_out": overlap_out,
             "streaming_overlap_report": overlap_report,
@@ -1967,6 +1978,7 @@ def _decoder_logit_rank_streaming_overlap_evidence(*, item_id: str) -> dict[str,
                     f"--rank-ppa {rank_ppa} "
                     f"--scale-ppa {scale_ppa} "
                     f"--candidate-merge-ppa {candidate_merge_ppa} "
+                    f"--boundary-ppa {boundary_ppa} "
                     f"--sram-metrics-json {sram_metrics_json} "
                     "--vocab-size-list 50257,100000,200000 "
                     "--producer-lanes-list 8,16,32,64,128 "
