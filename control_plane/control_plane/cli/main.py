@@ -22,6 +22,7 @@ from control_plane.cli.import_queue import main as import_queue_main
 from control_plane.cli.operate_submission import main as operate_submission_main
 from control_plane.cli.poll_github import main as poll_github_main
 from control_plane.cli.report_failure_issues import main as report_failure_issues_main
+from control_plane.cli.request_evaluator_refresh import main as request_evaluator_refresh_main
 from control_plane.cli.operator_status import main as operator_status_main
 from control_plane.cli.process_completions import main as process_completions_main
 from control_plane.cli.prepare_submission import main as prepare_submission_main
@@ -161,6 +162,17 @@ def main(argv: list[str] | None = None) -> int:
     failure_issue_parser.add_argument("--database-url", required=True)
     failure_issue_parser.add_argument("--repo", required=True)
     failure_issue_parser.add_argument("--max-items", type=int)
+
+    evaluator_refresh_parser = subparsers.add_parser(
+        "request-evaluator-refresh",
+        help="Open or update a GitHub issue requesting evaluator source refresh and daemon restart",
+    )
+    evaluator_refresh_parser.add_argument("--repo", required=True)
+    evaluator_refresh_parser.add_argument("--repo-root", default=".")
+    evaluator_refresh_parser.add_argument("--target-commit")
+    evaluator_refresh_parser.add_argument("--reason", default="control-plane source changed")
+    evaluator_refresh_parser.add_argument("--evaluator", default="remote evaluator")
+    evaluator_refresh_parser.add_argument("--dry-run", action="store_true")
 
     resolver_parser = subparsers.add_parser(
         "run-dev-resolver",
@@ -1039,6 +1051,22 @@ def main(argv: list[str] | None = None) -> int:
         if args.apply:
             argv2.append("--apply")
         return cleanup_main(argv2)
+    if args.command == "request-evaluator-refresh":
+        argv2 = [
+            "--repo",
+            args.repo,
+            "--repo-root",
+            args.repo_root,
+            "--reason",
+            args.reason,
+            "--evaluator",
+            args.evaluator,
+        ]
+        if args.target_commit is not None:
+            argv2.extend(["--target-commit", str(args.target_commit)])
+        if args.dry_run:
+            argv2.append("--dry-run")
+        return request_evaluator_refresh_main(argv2)
     if args.command == "show-config":
         print(json.dumps(Settings.from_env().__dict__, indent=2, sort_keys=True))
         return 0
