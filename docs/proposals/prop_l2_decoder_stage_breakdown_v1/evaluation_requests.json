@@ -1,0 +1,27 @@
+{
+  "proposal_id": "prop_l2_decoder_stage_breakdown_v1",
+  "source_commit": "7089b70d1156e971659cc3a4096aa8d3004e12ba",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_stage_breakdown_v1",
+      "task_type": "l2_campaign",
+      "objective": "Model-set revision campaign that reuses existing physical baselines and reruns mapper+perf reporting.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_stage_breakdown",
+      "comparison_role": "ranking",
+      "paired_baseline_item_id": "",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "The expected output is a decoder-level dominance map used to choose whether the next RTL job should target ranker integration, output projection service, or attention/KV movement."
+      },
+      "status": "merged",
+      "merged_pr_number": 453,
+      "merge_commit": "9d8fadfddea0af98971e3a4e079a45188d604d04",
+      "merged_utc": "2026-05-11T10:49:57.155823Z",
+      "notes": "Merged via PR #453 and merge 9d8fadfddea0af98971e3a4e079a45188d604d04 at 2026-05-11T10:49:57.155823Z."
+    }
+  ]
+}
