@@ -1,0 +1,71 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_memory_v1",
+  "created_utc": "2026-05-11T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_attention_kv_memory",
+  "title": "Decoder attention/KV memory hierarchy breakdown",
+  "hypothesis": "The whole-decoder breakdown showed attention can dominate long-context decode once weight traffic is resident. The next frontier should isolate whether attention is limited by QKV/output projection compute, QK/value MACs, softmax score movement, or KV-cache memory and NoC service across memory tiers and KV sharing assumptions.",
+  "direct_comparison": {
+    "primary_question": "Across GPT-2-like and larger proxy shapes, which attention substage dominates when sequence length, compute throughput, KV memory tier, NoC hops, KV precision, and MHA/GQA/MQA sharing are varied?",
+    "include": [
+      "single-token causal decode attention substage model",
+      "QKV projection, QK score, softmax score, value mix, and attention output projection terms",
+      "KV-cache read and write traffic",
+      "local SRAM, shared SRAM, HBM, and remote-HBM memory tier bounds",
+      "NoC-hop bandwidth sensitivity for non-local KV tiers",
+      "MHA, GQA, and MQA KV sharing",
+      "8-bit and 16-bit KV-cache precision bounds",
+      "resident-weight and streaming-weight bounds"
+    ],
+    "exclude": [
+      "new RTL implementation",
+      "measured SRAM macro banking or NoC arbitration",
+      "full decoder scheduler overlap",
+      "training, batching, and prefill behavior",
+      "quality impact of KV-cache quantization"
+    ]
+  },
+  "expected_benefit": [
+    "turns the broad decoder-stage result into an attention-specific bottleneck map",
+    "shows whether the next hardware work should target KV locality, NoC bandwidth, attention compute, or score/softmax movement",
+    "keeps larger-model and longer-context scaling visible before choosing a combined producer/ranker RTL point"
+  ],
+  "risks": [
+    "memory-tier bandwidths are planning values, not measured macros",
+    "NoC contention is modeled as an effective bandwidth bound, not arbitration RTL",
+    "quality effects of KV precision and GQA/MQA are not measured in this job",
+    "stage serialization may overstate latency if future scheduler overlap hides some traffic"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_kv_memory_v1",
+      "task_type": "l2_campaign",
+      "objective": "Estimate attention/KV memory hierarchy pressure across larger model proxies, context lengths, memory tiers, NoC hops, KV precision, and KV sharing assumptions.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_memory",
+      "cost_class": "low",
+      "comparison_role": "ranking",
+      "depends_on_item_ids": [
+        "l2_decoder_stage_breakdown_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "The expected output is an attention/KV bottleneck map used to choose whether the next architecture job should measure KV memory hierarchy, NoC coupling, or attention compute datapath."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_decoder_stage_breakdown_v1/proposal.json",
+    "control_plane/shadow_exports/l2_decisions/l2_decoder_stage_breakdown_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_attention_kv_memory.py",
+    "tests/test_llm_decoder_attention_kv_memory.py",
+    "control_plane/control_plane/tests/test_l2_task_generator.py"
+  ]
+}

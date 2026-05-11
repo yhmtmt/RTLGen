@@ -2217,6 +2217,49 @@ def _decoder_stage_breakdown_evidence(*, item_id: str) -> dict[str, Any]:
     }
 
 
+def _decoder_attention_kv_memory_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_kv_memory__{item_id}.json"
+    report = f"{base}/decoder_attention_kv_memory__{item_id}.md"
+    return {
+        "inputs": {
+            "attention_kv_memory_out": out,
+            "attention_kv_memory_report": report,
+            "attention_kv_memory_scope": (
+                "Coarse single-token decoder attention model that separates QKV projection, "
+                "QK score, softmax, value mix, output projection, KV-cache memory tier, "
+                "NoC hops, KV precision, and MHA/GQA/MQA sharing."
+            ),
+            "attention_kv_memory_grid": {
+                "sequence_length_list": [128, 512, 2048, 8192, 32768],
+                "macs_per_cycle_list": [8192, 32768, 131072],
+                "kv_memory_tier_list": ["local_sram", "shared_sram", "hbm", "remote_hbm"],
+                "kv_sharing_list": ["mha", "gqa4", "mqa"],
+                "kv_bits_list": [8, 16],
+                "noc_hops_list": [0, 1, 2, 4],
+            },
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_attention_kv_memory",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_attention_kv_memory.py "
+                    "--sequence-length-list 128,512,2048,8192,32768 "
+                    "--macs-per-cycle-list 8192,32768,131072 "
+                    "--kv-memory-tier-list local_sram,shared_sram,hbm,remote_hbm "
+                    "--kv-sharing-list mha,gqa4,mqa "
+                    "--kv-bits-list 8,16 "
+                    "--noc-hops-list 1,2,4 "
+                    "--noc-bandwidth-bytes-per-cycle 256 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_distilgpt2_prompt_stress_evidence(*, item_id: str) -> dict[str, Any]:
     return _decoder_distilgpt2_quality_evidence_for_dataset(
         item_id=item_id,
@@ -2683,10 +2726,13 @@ def _build_payload(
         "decoder_output_projection_service",
         "decoder_producer_ranker_coupled_noc",
         "decoder_stage_breakdown",
+        "decoder_attention_kv_memory",
         "decoder_quantization_outline",
     }:
         if abstraction_layer_name == "decoder_quantization_outline":
             decoder_evidence = _decoder_quantization_outline_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_kv_memory":
+            decoder_evidence = _decoder_attention_kv_memory_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_stage_breakdown":
             decoder_evidence = _decoder_stage_breakdown_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_producer_ranker_coupled_noc":
