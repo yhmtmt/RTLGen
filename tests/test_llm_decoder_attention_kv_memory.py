@@ -23,7 +23,8 @@ def test_attention_kv_memory_reports_tiers_and_sharing() -> None:
     assert report["model"] == "llm_decoder_attention_kv_memory_v1"
     assert {row["kv_memory_tier"] for row in rows} == {"local_sram", "hbm"}
     assert {row["kv_sharing"] for row in rows} == {"mha", "mqa"}
-    assert {stage["stage"] for stage in rows[0]["stages"]} == {
+    assert "stages" not in rows[0]
+    assert rows[0]["dominant_substage"] in {
         "qkv_projection",
         "kv_cache_write",
         "qk_score",
@@ -72,3 +73,44 @@ def test_attention_kv_memory_exposes_long_context_kv_pressure() -> None:
     assert remote["total_latency_us"] > local["total_latency_us"]
     assert remote["kv_read_byte_share"] > 0.5
     assert remote["dominant_substage"] in {"qk_score", "value_mix"}
+
+
+def test_attention_kv_memory_detail_rows_are_opt_in() -> None:
+    compact = build_report(
+        sequence_length_list=[128],
+        macs_per_cycle_list=[32768],
+        kv_memory_tier_list=["local_sram"],
+        kv_sharing_list=["mha"],
+        kv_bits_list=[8],
+        noc_hops_list=[0],
+        clock_ns=1.0,
+        weight_bits=16,
+        activation_bits=16,
+        score_bits=16,
+        vector_ops_per_cycle=32768,
+        weight_bandwidth_bytes_per_cycle=256.0,
+        activation_bandwidth_bytes_per_cycle=512.0,
+        noc_bandwidth_bytes_per_cycle=256.0,
+    )
+    detailed = build_report(
+        sequence_length_list=[128],
+        macs_per_cycle_list=[32768],
+        kv_memory_tier_list=["local_sram"],
+        kv_sharing_list=["mha"],
+        kv_bits_list=[8],
+        noc_hops_list=[0],
+        clock_ns=1.0,
+        weight_bits=16,
+        activation_bits=16,
+        score_bits=16,
+        vector_ops_per_cycle=32768,
+        weight_bandwidth_bytes_per_cycle=256.0,
+        activation_bandwidth_bytes_per_cycle=512.0,
+        noc_bandwidth_bytes_per_cycle=256.0,
+        include_detail=True,
+    )
+
+    assert "attention_kv_sweep_detail" not in compact
+    assert "attention_kv_sweep_detail" in detailed
+    assert "stages" not in compact["attention_kv_sweep"][0]
+    assert "stages" in detailed["attention_kv_sweep_detail"][0]

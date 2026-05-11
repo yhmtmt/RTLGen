@@ -312,6 +312,33 @@ def _shape_rows(
     }
 
 
+def _compact_row(row: JsonDict) -> JsonDict:
+    return {
+        "label": row["label"],
+        "layers": row["layers"],
+        "hidden_size": row["hidden_size"],
+        "attention_heads": row["attention_heads"],
+        "sequence_length": row["sequence_length"],
+        "kv_sharing": row["kv_sharing"],
+        "kv_heads": row["kv_heads"],
+        "kv_bits": row["kv_bits"],
+        "kv_memory_tier": row["kv_memory_tier"],
+        "noc_hops": row["noc_hops"],
+        "effective_kv_bandwidth_bytes_per_cycle": row["effective_kv_bandwidth_bytes_per_cycle"],
+        "macs_per_cycle": row["macs_per_cycle"],
+        "weight_residency": row["weight_residency"],
+        "total_latency_us": row["total_latency_us"],
+        "total_macs": row["total_macs"],
+        "total_charged_bytes": row["total_charged_bytes"],
+        "total_kv_read_bytes": row["total_kv_read_bytes"],
+        "kv_read_byte_share": row["kv_read_byte_share"],
+        "kv_limited_cycle_share": row["kv_limited_cycle_share"],
+        "attention_arithmetic_intensity_macs_per_byte": row["attention_arithmetic_intensity_macs_per_byte"],
+        "dominant_substage": row["dominant_substage"],
+        "dominant_substage_share": row["dominant_substage_share"],
+    }
+
+
 def build_report(
     *,
     sequence_length_list: list[int],
@@ -328,6 +355,7 @@ def build_report(
     weight_bandwidth_bytes_per_cycle: float,
     activation_bandwidth_bytes_per_cycle: float,
     noc_bandwidth_bytes_per_cycle: float,
+    include_detail: bool = False,
 ) -> JsonDict:
     shapes = [
         {"label": "gpt2_small", "layers": 12, "hidden_size": 768, "attention_heads": 12},
@@ -389,7 +417,15 @@ def build_report(
         and row["kv_bits"] == min(kv_bits_list)
         and row["weight_residency"] == "resident_weights"
     ]
-    return {
+    compact_focus_rows = [_compact_row(row) for row in focus_rows]
+    dominant_substage_counts: dict[str, int] = {}
+    limiter_counts: dict[str, int] = {}
+    for row in rows:
+        dominant_substage_counts[row["dominant_substage"]] = dominant_substage_counts.get(row["dominant_substage"], 0) + 1
+        for stage in row["stages"]:
+            limiter_key = f"{stage['stage']}:{stage['limiter']}"
+            limiter_counts[limiter_key] = limiter_counts.get(limiter_key, 0) + 1
+    payload = {
         "version": 0.1,
         "model": "llm_decoder_attention_kv_memory_v1",
         "inputs": {
@@ -417,7 +453,27 @@ def build_report(
             "GQA/MQA reduce KV-cache width but not query/output projection width.",
             "streaming_weights charges attention projection weights each token; resident_weights exposes KV and compute pressure.",
         ],
-        "attention_kv_sweep": rows,
+        "detail_policy": {
+            "attention_kv_sweep": "compact scalar rows for the decision-focused slice only; full sweep rows are summarized by counts",
+            "full_detail": "available only through the optional --detail-out CLI path",
+        },
+        "sweep_summary": {
+            "generated_row_count": len(rows),
+            "committed_compact_row_count": len(compact_focus_rows),
+            "omitted_full_sweep_row_count": len(rows) - len(compact_focus_rows),
+            "dominant_substage_counts": dict(sorted(dominant_substage_counts.items())),
+            "stage_limiter_counts": dict(sorted(limiter_counts.items())),
+        },
+        "attention_kv_sweep": sorted(
+            compact_focus_rows,
+            key=lambda row: (
+                row["label"],
+                row["sequence_length"],
+                row["kv_memory_tier"],
+                row["kv_sharing"],
+                row["noc_hops"],
+            ),
+        ),
         "focus_summary": sorted(
             [
                 {
@@ -446,6 +502,9 @@ def build_report(
             ),
         ),
     }
+    if include_detail:
+        payload["attention_kv_sweep_detail"] = rows
+    return payload
 
 
 def _write_markdown(path: Path, payload: JsonDict) -> None:
@@ -502,6 +561,7 @@ def main() -> int:
     ap.add_argument("--noc-bandwidth-bytes-per-cycle", type=float, default=256.0)
     ap.add_argument("--out", required=True)
     ap.add_argument("--out-md", required=True)
+    ap.add_argument("--detail-out")
     args = ap.parse_args()
 
     payload = build_report(
@@ -519,11 +579,20 @@ def main() -> int:
         weight_bandwidth_bytes_per_cycle=args.weight_bandwidth_bytes_per_cycle,
         activation_bandwidth_bytes_per_cycle=args.activation_bandwidth_bytes_per_cycle,
         noc_bandwidth_bytes_per_cycle=args.noc_bandwidth_bytes_per_cycle,
+        include_detail=bool(args.detail_out),
     )
 
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    committed_payload = dict(payload)
+    detail_rows = committed_payload.pop("attention_kv_sweep_detail", None)
+    out.write_text(json.dumps(committed_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    if args.detail_out:
+        detail_out = Path(args.detail_out)
+        detail_out.parent.mkdir(parents=True, exist_ok=True)
+        detail_payload = dict(payload)
+        detail_payload["attention_kv_sweep_detail"] = detail_rows or []
+        detail_out.write_text(json.dumps(detail_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     out_md = Path(args.out_md)
     out_md.parent.mkdir(parents=True, exist_ok=True)
     _write_markdown(out_md, payload)
