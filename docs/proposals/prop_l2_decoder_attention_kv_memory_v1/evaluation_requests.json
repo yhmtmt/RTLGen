@@ -1,0 +1,23 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_memory_v1",
+  "source_commit": "6c82791a5b42a3e17bdb8221eb323e1f40e98c5f",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_kv_memory_v1",
+      "task_type": "l2_campaign",
+      "objective": "Model-set revision campaign that reuses existing physical baselines and reruns mapper+perf reporting.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_memory",
+      "comparison_role": "ranking",
+      "paired_baseline_item_id": "",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "The expected output is an attention/KV bottleneck map used to choose whether the next architecture job should measure KV memory hierarchy, NoC coupling, or attention compute datapath."
+      },
+      "status": "pending"
+    }
+  ]
+}
