@@ -122,6 +122,14 @@ Cleanup dry-run:
 /workspaces/RTLGen/control_plane/scripts/cleanup.sh
 ```
 
+Request remote evaluator refresh after a control-plane merge:
+```sh
+/workspaces/RTLGen/control_plane/scripts/request_evaluator_refresh.sh \
+  --reason "merged control-plane change; evaluator should pull master and restart daemons"
+```
+
+The command opens or updates a GitHub issue with the target commit, pull/update checklist, daemon restart checklist, and a machine-readable evaluator acknowledgement block. Use it instead of drafting ad hoc evaluator update issues.
+
 ## What Healthy Looks Like
 
 Healthy idle state:
