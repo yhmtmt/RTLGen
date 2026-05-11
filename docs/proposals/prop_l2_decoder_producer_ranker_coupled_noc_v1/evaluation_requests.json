@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_producer_ranker_coupled_noc_v1",
-  "source_commit": "bbb3fdc6022fc9fc64d444ff20475c1c8f924174",
+  "source_commit": "0b7b404216d47d5bde3b8a7c3e343d14039a06f3",
   "requested_items": [
     {
       "item_id": "l2_decoder_producer_ranker_coupled_noc_v1",
@@ -21,7 +21,11 @@
         "direction": "iterate",
         "reason": "The expected output is a coupled producer/ranker frontier used to choose the next combined RTL target."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 449,
+      "merge_commit": "5de39f57f529a5fae9f4c4351a0d4c40e6178162",
+      "merged_utc": "2026-05-11T07:21:51.637618Z",
+      "notes": "Merged via PR #449 and merge 5de39f57f529a5fae9f4c4351a0d4c40e6178162 at 2026-05-11T07:21:51.637618Z."
     }
   ]
 }
