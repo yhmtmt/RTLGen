@@ -2178,6 +2178,45 @@ def _decoder_producer_ranker_coupled_noc_evidence(*, item_id: str) -> dict[str, 
     }
 
 
+def _decoder_stage_breakdown_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_stage_breakdown__{item_id}.json"
+    report = f"{base}/decoder_stage_breakdown__{item_id}.md"
+    return {
+        "inputs": {
+            "stage_breakdown_out": out,
+            "stage_breakdown_report": report,
+            "stage_breakdown_scope": (
+                "Coarse whole-decoder single-token latency and traffic breakdown across attention, "
+                "MLP, output projection, and ranker. Includes both streaming-weight and "
+                "resident-weight bounds to expose when attention/KV traffic becomes dominant."
+            ),
+            "stage_breakdown_grid": {
+                "sequence_length_list": [128, 512, 2048, 8192],
+                "macs_per_cycle_list": [8192, 32768],
+                "memory_bandwidth_bytes_per_cycle_list": [64, 256],
+                "weight_residency_models": ["streaming_weights", "resident_weights"],
+            },
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_stage_breakdown",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_stage_breakdown.py "
+                    "--sequence-length-list 128,512,2048,8192 "
+                    "--macs-per-cycle-list 8192,32768 "
+                    "--memory-bandwidth-bytes-per-cycle-list 64,256 "
+                    "--ranker-lanes 64 "
+                    "--ranker-ii-cycles 384 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_distilgpt2_prompt_stress_evidence(*, item_id: str) -> dict[str, Any]:
     return _decoder_distilgpt2_quality_evidence_for_dataset(
         item_id=item_id,
@@ -2643,10 +2682,13 @@ def _build_payload(
         "decoder_logit_rank_streaming_producer_integrated",
         "decoder_output_projection_service",
         "decoder_producer_ranker_coupled_noc",
+        "decoder_stage_breakdown",
         "decoder_quantization_outline",
     }:
         if abstraction_layer_name == "decoder_quantization_outline":
             decoder_evidence = _decoder_quantization_outline_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_stage_breakdown":
+            decoder_evidence = _decoder_stage_breakdown_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_producer_ranker_coupled_noc":
             decoder_evidence = _decoder_producer_ranker_coupled_noc_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_service":

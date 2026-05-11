@@ -1,0 +1,67 @@
+{
+  "proposal_id": "prop_l2_decoder_stage_breakdown_v1",
+  "created_utc": "2026-05-11T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_stage_breakdown",
+  "title": "Whole-decoder stage breakdown for ranker context",
+  "hypothesis": "Before choosing a combined producer/ranker RTL target, the exploration should expose a rough whole-decoder breakdown across attention, MLP, output projection, and ranker. The dominant stage may change under streaming-weight versus resident-weight memory assumptions, especially at long context.",
+  "direct_comparison": {
+    "primary_question": "Which decoder stage dominates latency and traffic across GPT-2-like and larger proxy shapes when sequence length, compute throughput, memory bandwidth, and weight residency are varied?",
+    "include": [
+      "single-token causal decode stage breakdown",
+      "attention QKV, score, value, and output projection terms",
+      "MLP feed-forward terms",
+      "final output projection service",
+      "rough ranker streaming bound",
+      "streaming-weight and resident-weight bounds"
+    ],
+    "exclude": [
+      "new RTL implementation",
+      "full scheduler overlap",
+      "measured GPU behavior",
+      "training or batch-prefill behavior"
+    ]
+  },
+  "expected_benefit": [
+    "prevents over-optimizing ranker-local points before seeing whole-decoder dominance",
+    "shows when attention/KV traffic becomes the main frontier",
+    "sets the next RTL target in context of decoder-level latency and traffic"
+  ],
+  "risks": [
+    "stage timing is an analytical bound, not measured RTL",
+    "memory hierarchy is represented only by bandwidth and weight-residency cases",
+    "ranker is approximated as a standalone streaming bound until reused producer-integrated PPA is folded in"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_stage_breakdown_v1",
+      "task_type": "l2_campaign",
+      "objective": "Estimate a coarse whole-decoder single-token latency and traffic breakdown across attention, MLP, output projection, and ranker.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_stage_breakdown",
+      "cost_class": "low",
+      "comparison_role": "ranking",
+      "depends_on_item_ids": [
+        "l2_decoder_output_projection_service_v1",
+        "l2_decoder_producer_ranker_coupled_noc_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "The expected output is a decoder-level dominance map used to choose whether the next RTL job should target ranker integration, output projection service, or attention/KV movement."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_decoder_output_projection_service_v1/proposal.json",
+    "docs/proposals/prop_l2_decoder_producer_ranker_coupled_noc_v1/proposal.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_stage_breakdown.py",
+    "tests/test_llm_decoder_stage_breakdown.py"
+  ]
+}

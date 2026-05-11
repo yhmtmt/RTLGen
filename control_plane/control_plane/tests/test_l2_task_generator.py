@@ -1804,6 +1804,51 @@ def test_generate_l2_campaign_task_adds_decoder_producer_ranker_coupled_noc_evid
             }
 
 
+def test_generate_l2_campaign_task_adds_decoder_stage_breakdown_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    item_id="l2_decoder_stage_breakdown_v1",
+                    proposal_id="prop_l2_decoder_stage_breakdown_v1",
+                    proposal_path="docs/proposals/prop_l2_decoder_stage_breakdown_v1/proposal.json",
+                    evaluation_mode="frontier_detail",
+                    abstraction_layer="decoder_stage_breakdown",
+                    expected_direction="iterate",
+                    comparison_role="ranking",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+            assert work_item.command_manifest[0]["name"] == "estimate_decoder_stage_breakdown"
+            run = work_item.command_manifest[0]["run"]
+            assert "--sequence-length-list 128,512,2048,8192" in run
+            assert "--memory-bandwidth-bytes-per-cycle-list 64,256" in run
+            assert decoder_inputs["stage_breakdown_out"] == (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_stage_breakdown__l2_decoder_stage_breakdown_v1.json"
+            )
+            assert "attention, MLP, output projection, and ranker" in decoder_inputs["stage_breakdown_scope"]
+            assert decoder_inputs["stage_breakdown_out"] in work_item.expected_outputs
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
+                "layer": "decoder_stage_breakdown",
+            }
+
+
 def test_generate_l2_campaign_task_adds_decoder_pwl_logit_sensitivity_ladder_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
