@@ -31,14 +31,15 @@
       "stage_breakdown_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_stage_breakdown__l2_decoder_stage_breakdown_large_array_v2.json",
       "stage_breakdown_grid": {
         "macs_per_cycle_list": [
-          8192,
-          32768
+          32768,
+          131072,
+          524288
         ],
         "sequence_length_list": [
-          128,
-          512,
           2048,
-          8192
+          8192,
+          32768,
+          131072
         ],
         "weight_residency_models": [
           "streaming_weights",
@@ -46,7 +47,8 @@
         ],
         "memory_bandwidth_bytes_per_cycle_list": [
           64,
-          256
+          256,
+          1024
         ]
       },
       "stage_breakdown_scope": "Coarse whole-decoder single-token latency and traffic breakdown across attention, MLP, output projection, and ranker. Includes both streaming-weight and resident-weight bounds to expose when attention/KV traffic becomes dominant.",
