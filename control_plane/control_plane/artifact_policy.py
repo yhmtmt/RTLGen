@@ -23,6 +23,12 @@ _ALLOWED_RUNS_SUFFIXES = {
     "/objective_sweep.md",
 }
 
+_ALLOWED_DATASET_PREFIXES = {
+    "decoder_attention_kv_memory__",
+}
+
+_ALLOWED_DATASET_SUFFIXES = {".json", ".md"}
+
 
 def _normalize_rel_path(path_text: str) -> str:
     path = PurePosixPath(path_text.strip())
@@ -51,5 +57,11 @@ def is_transportable_expected_output(path_text: str) -> bool:
     if rel_path.startswith("runs/campaigns/"):
         name = PurePosixPath(rel_path).name
         if name == "campaign.json" or (name.startswith("campaign__") and name.endswith(".json")):
+            return True
+    if rel_path.startswith("runs/datasets/"):
+        path = PurePosixPath(rel_path)
+        if path.suffix in _ALLOWED_DATASET_SUFFIXES and any(
+            path.name.startswith(prefix) for prefix in _ALLOWED_DATASET_PREFIXES
+        ):
             return True
     return any(rel_path.endswith(suffix) for suffix in _ALLOWED_RUNS_SUFFIXES)
