@@ -304,6 +304,9 @@ def main(argv: list[str] | None = None) -> int:
     worker_daemon_parser.add_argument("--max-polls", type=int)
     worker_daemon_parser.add_argument("--stop-on-no-work", action="store_true")
     worker_daemon_parser.add_argument("--no-scheduler-maintenance", action="store_true")
+    worker_daemon_parser.add_argument("--auto-update-source", action="store_true")
+    worker_daemon_parser.add_argument("--source-update-ref", default="origin/master")
+    worker_daemon_parser.add_argument("--no-restart-on-source-update", action="store_true")
 
     sync_parser = subparsers.add_parser("sync-artifacts", help="Sync a completed run into an evaluated queue snapshot")
     sync_parser.add_argument("--database-url", required=True)
@@ -765,6 +768,7 @@ def main(argv: list[str] | None = None) -> int:
             ("--completion-worktree-root", args.completion_worktree_root),
             ("--completion-commit-message", args.completion_commit_message),
             ("--completion-pr-base", args.completion_pr_base),
+            ("--source-update-ref", args.source_update_ref),
         ]:
             if value is not None:
                 argv2.extend([key, str(value)])
@@ -838,6 +842,10 @@ def main(argv: list[str] | None = None) -> int:
             argv2.append("--stop-on-no-work")
         if args.no_scheduler_maintenance:
             argv2.append("--no-scheduler-maintenance")
+        if args.auto_update_source:
+            argv2.append("--auto-update-source")
+        if args.no_restart_on_source_update:
+            argv2.append("--no-restart-on-source-update")
         return run_worker_daemon_main(argv2)
     if args.command == "sync-artifacts":
         argv2 = [

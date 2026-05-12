@@ -171,6 +171,9 @@ def test_generate_l2_campaign_task_creates_ready_work_item() -> None:
             ]
             payload = work_item.task_request.request_payload
             assert payload["layer"] == "layer2"
+            assert payload["source_requirement"]["required_sha"] == source_commit
+            assert payload["source_requirement"]["required_ref"] == "origin/master"
+            assert payload["source_requirement"]["requires_daemon_restart"] is True
             assert payload["task"]["inputs"]["candidate_manifests"] == [
                 "runs/candidates/nangate45/module_candidates.json"
             ]

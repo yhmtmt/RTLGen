@@ -377,6 +377,9 @@ def test_generate_l1_sweep_task_creates_ready_work_item() -> None:
             ]
             payload = work_item.task_request.request_payload
             assert payload["layer"] == "layer1"
+            assert payload["source_requirement"]["required_sha"] == source_commit
+            assert payload["source_requirement"]["required_ref"] == "origin/master"
+            assert payload["source_requirement"]["requires_daemon_restart"] is True
             assert payload["task"]["inputs"]["sweeps"] == [sweep_path]
             assert payload["task"]["inputs"]["required_submodules"] == [
                 "third_party/nlohmann_json",

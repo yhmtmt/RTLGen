@@ -20,6 +20,7 @@ from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
 from control_plane.services.docs_paths import canonicalize_proposal_path, resolve_proposal_dir, resolve_proposal_file
 from control_plane.services.proposal_scaffold import ensure_proposal_scaffold
+from control_plane.services.source_requirement import build_source_requirement
 
 
 class Layer1TaskGenerationError(RuntimeError):
@@ -736,6 +737,10 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
         ),
         abstraction_layer=effective_abstraction_layer,
         trial_policy=trial_policy,
+    )
+    payload["source_requirement"] = build_source_requirement(
+        repo_root=repo_root,
+        required_sha=source_commit,
     )
     _upsert_evaluation_request_entry(
         repo_root=repo_root,

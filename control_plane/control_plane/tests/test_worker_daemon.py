@@ -33,7 +33,14 @@ from control_plane.workers.executor import (
 )
 
 
-def _seed_ready_work_item(session: Session, *, item_id: str, repo_root: Path, assigned_machine_key: str | None = None) -> None:
+def _seed_ready_work_item(
+    session: Session,
+    *,
+    item_id: str,
+    repo_root: Path,
+    assigned_machine_key: str | None = None,
+    source_commit: str | None = None,
+) -> None:
     task = TaskRequest(
         request_key=f"queue:{item_id}",
         source="test",
@@ -86,6 +93,7 @@ def _seed_ready_work_item(session: Session, *, item_id: str, repo_root: Path, as
             str(report_path.relative_to(repo_root)),
         ],
         acceptance_rules=[],
+        source_commit=source_commit,
     )
     session.add(work_item)
     session.commit()
@@ -290,6 +298,71 @@ def _init_git_repo(repo_root: Path) -> None:
     (repo_root / "README.md").write_text("worker daemon test\n", encoding="utf-8")
     subprocess.run(["git", "-C", str(repo_root), "add", "README.md"], check=True, capture_output=True, text=True)
     subprocess.run(["git", "-C", str(repo_root), "commit", "-m", "init"], check=True, capture_output=True, text=True)
+
+
+def _init_git_repo_with_origin(repo_root: Path) -> tuple[str, str]:
+    origin_root = repo_root.parent / "origin.git"
+    subprocess.run(["git", "init", "--bare", str(origin_root)], check=True, capture_output=True, text=True)
+    subprocess.run(["git", "init", str(repo_root)], check=True, capture_output=True, text=True)
+    subprocess.run(["git", "-C", str(repo_root), "config", "user.email", "tester@example.com"], check=True)
+    subprocess.run(["git", "-C", str(repo_root), "config", "user.name", "Tester"], check=True)
+    (repo_root / "README.md").write_text("worker daemon test\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(repo_root), "add", "README.md"], check=True, capture_output=True, text=True)
+    subprocess.run(["git", "-C", str(repo_root), "commit", "-m", "init"], check=True, capture_output=True, text=True)
+    subprocess.run(["git", "-C", str(repo_root), "remote", "add", "origin", str(origin_root)], check=True, capture_output=True, text=True)
+    subprocess.run(["git", "-C", str(repo_root), "push", "-u", "origin", "HEAD:master"], check=True, capture_output=True, text=True)
+    first = subprocess.run(["git", "-C", str(repo_root), "rev-parse", "HEAD"], check=True, capture_output=True, text=True).stdout.strip()
+    (repo_root / "SOURCE.txt").write_text("new source\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(repo_root), "add", "SOURCE.txt"], check=True, capture_output=True, text=True)
+    subprocess.run(["git", "-C", str(repo_root), "commit", "-m", "source update"], check=True, capture_output=True, text=True)
+    subprocess.run(["git", "-C", str(repo_root), "push", "origin", "HEAD:master"], check=True, capture_output=True, text=True)
+    second = subprocess.run(["git", "-C", str(repo_root), "rev-parse", "HEAD"], check=True, capture_output=True, text=True).stdout.strip()
+    subprocess.run(["git", "-C", str(repo_root), "checkout", "--detach", first], check=True, capture_output=True, text=True)
+    return first, second
+
+
+def test_worker_daemon_updates_service_repo_before_leasing_required_source() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        first_commit, required_commit = _init_git_repo_with_origin(repo_root)
+        db_path = Path(td) / "cp.db"
+        engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            _seed_ready_work_item(
+                session,
+                item_id="daemon_item_source_update",
+                repo_root=repo_root,
+                assigned_machine_key="daemon-worker-source",
+                source_commit=required_commit,
+            )
+
+        session_factory = build_session_factory(engine)
+        result = run_worker_daemon(
+            session_factory,
+            config=WorkerDaemonConfig(
+                worker=WorkerConfig(
+                    repo_root=str(repo_root),
+                    machine_key="daemon-worker-source",
+                    capabilities={"platform": "nangate45", "flow": "openroad"},
+                    capability_filter={"platform": "nangate45", "flow": "openroad"},
+                    heartbeat_seconds=1,
+                ),
+                poll_seconds=0,
+                max_polls=1,
+                auto_update_source=True,
+                restart_on_source_update=False,
+            ),
+        )
+
+        head = subprocess.run(["git", "-C", str(repo_root), "rev-parse", "HEAD"], check=True, capture_output=True, text=True).stdout.strip()
+        assert first_commit != required_commit
+        assert head == required_commit
+        assert [row.status for row in result.results] == ["source_updated"]
+        with Session(engine) as session:
+            item = session.query(WorkItem).filter_by(item_id="daemon_item_source_update").one()
+            assert item.state == WorkItemState.READY
 
 
 def test_worker_daemon_executes_two_items_with_concurrency() -> None:
