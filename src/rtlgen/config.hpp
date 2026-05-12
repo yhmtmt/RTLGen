@@ -247,6 +247,18 @@ struct CandidateStreamMergeFifoOperationConfig {
     bool logit_signed{true};
 };
 
+struct AttentionKvTileOperationConfig {
+    std::string module_name;
+    std::string operand;
+    int head_dim{64};
+    int kv_bits{8};
+    int lanes{16};
+    int stream_bytes_per_cycle{256};
+    int accum_bits{48};
+    int counter_bits{32};
+    bool signed_inputs{true};
+};
+
 struct CircuitConfig {
     OperandConfig operand;
     std::vector<OperandDefinition> operands;
@@ -263,6 +275,7 @@ struct CircuitConfig {
     std::vector<ScoreTieRankOperationConfig> score_tie_rank_operations;
     std::vector<LogitRankOperationConfig> logit_rank_operations;
     std::vector<CandidateStreamMergeFifoOperationConfig> candidate_stream_merge_fifo_operations;
+    std::vector<AttentionKvTileOperationConfig> attention_kv_tile_operations;
     std::optional<std::string> onnx_model; // Added ONNX model path
 };
 

@@ -11,3 +11,5 @@ void emitScoreTieRankModule(const ScoreTieRankOperationConfig &config, const Ope
 void emitLogitRankModule(const LogitRankOperationConfig &config, const OperandDefinition &operand);
 void emitCandidateStreamMergeFifoModule(const CandidateStreamMergeFifoOperationConfig &config,
                                         const OperandDefinition &operand);
+void emitAttentionKvTileModule(const AttentionKvTileOperationConfig &config,
+                               const OperandDefinition &operand);
