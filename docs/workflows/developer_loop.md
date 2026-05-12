@@ -98,3 +98,21 @@ is exported, the artifact PR must be self-contained: the PR body's
 `reviewer_first_read` paths must exist in that PR branch, including the
 proposal scaffold. The submission path resolves `proposal_path` to a single
 `proposal.json` and packages files from that proposal directory.
+
+## Source-enabling evaluation rule
+
+Some proposed measurements require source artifacts that do not exist yet, such
+as a new RTLGen operation, a new config family, or a new sweep file. In that
+case, record the evaluator item in the proposal workspace with a blocked status,
+but do not dispatch it.
+
+Before dispatching such an item:
+
+- the source-enabling implementation must be merged to `master`
+- every referenced config and sweep path must exist in that merged commit
+- local quality gates must pass
+- the queued item must carry `source_requirement.required_sha` for the merged
+  source-enabling commit
+
+This keeps the evaluator deterministic: it should run prepared source, not infer
+or implement missing architecture blocks.

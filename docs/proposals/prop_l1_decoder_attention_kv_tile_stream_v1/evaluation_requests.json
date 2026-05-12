@@ -1,0 +1,60 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_kv_tile_stream_v1",
+  "source_commit": "f06837ae257cb0b813ce77c2366051cfce92f8bb",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_attention_kv_tile_smoke_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure one bounded Nangate45 smoke point for a standalone attention/KV tile stream block after the RTLGen operation lands.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "decoder_attention_kv_tile",
+      "comparison_role": "measured_anchor",
+      "paired_baseline_item_id": "",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_memory_large_context_v2",
+        "l2_decoder_stage_breakdown_large_array_v2"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "config_paths": [
+        "runs/designs/activations/attention_kv_tile_hd64_kv4_l16_b256_wrapper/config_attention_kv_tile_hd64_kv4_l16_b256.json"
+      ],
+      "sweep_path": "runs/campaigns/activations/attention_kv_tile/sweeps/nangate45_macro_smoke.json",
+      "expected_result": {
+        "direction": "measure",
+        "reason": "Create the first measured RTL/PPA anchor for the analytical attention/KV bottleneck model."
+      },
+      "status": "blocked_on_source",
+      "blocker": "Requires merged RTLGen attention_kv_tile operation, smoke config, smoke sweep, and local perf-sim/RTL counter equivalence tests."
+    },
+    {
+      "item_id": "l1_decoder_attention_kv_tile_frontier_v1",
+      "task_type": "l1_sweep",
+      "objective": "Sweep a bounded attention/KV tile frontier over head_dim, KV precision, lane count, and stream width after the smoke point passes.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "decoder_attention_kv_tile",
+      "comparison_role": "precision_width_frontier",
+      "paired_baseline_item_id": "l1_decoder_attention_kv_tile_smoke_v1",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_kv_tile_smoke_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "config_paths": [
+        "runs/designs/activations/attention_kv_tile_hd64_kv4_l16_b128_wrapper/config_attention_kv_tile_hd64_kv4_l16_b128.json",
+        "runs/designs/activations/attention_kv_tile_hd64_kv4_l32_b256_wrapper/config_attention_kv_tile_hd64_kv4_l32_b256.json",
+        "runs/designs/activations/attention_kv_tile_hd64_kv8_l32_b256_wrapper/config_attention_kv_tile_hd64_kv8_l32_b256.json",
+        "runs/designs/activations/attention_kv_tile_hd128_kv4_l32_b256_wrapper/config_attention_kv_tile_hd128_kv4_l32_b256.json",
+        "runs/designs/activations/attention_kv_tile_hd128_kv8_l64_b512_wrapper/config_attention_kv_tile_hd128_kv8_l64_b512.json",
+        "runs/designs/activations/attention_kv_tile_hd128_kv16_l64_b512_wrapper/config_attention_kv_tile_hd128_kv16_l64_b512.json"
+      ],
+      "sweep_path": "runs/campaigns/activations/attention_kv_tile/sweeps/nangate45_macro_frontier.json",
+      "expected_result": {
+        "direction": "measure",
+        "reason": "Calibrate the cost surface of the current long-context attention/KV frontier after a legal smoke measurement exists."
+      },
+      "status": "blocked_on_smoke",
+      "blocker": "Requires l1_decoder_attention_kv_tile_smoke_v1 merged accepted evidence before dispatch."
+    }
+  ]
+}

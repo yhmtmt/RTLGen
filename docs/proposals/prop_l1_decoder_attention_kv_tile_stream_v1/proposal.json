@@ -1,0 +1,118 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_kv_tile_stream_v1",
+  "created_utc": "2026-05-12T02:30:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "abstraction_layer": "decoder_attention_kv_tile",
+  "title": "Decoder attention/KV tile stream measured RTL anchor",
+  "hypothesis": "The long-context decoder frontier is dominated by attention QK/KV service. A measured attention/KV tile stream block will show whether the current analytical shared-SRAM, MQA, and low-bit KV conclusions remain plausible once RTL timing, area, power, and stream-control overhead are included.",
+  "direct_comparison": {
+    "primary_question": "What are the measured Nangate45 timing, area, power, and equivalent cycle/data-movement counters for a standalone QK/KV tile stream datapath across head dimension, KV precision, lane count, and stream width?",
+    "include": [
+      "standalone attention/KV tile stream RTLGen operation",
+      "QK dot-product datapath and KV read stream interface",
+      "macro-style wrapper without IO-pad assumptions",
+      "perf-sim versus RTL equivalence on tile cycle count and bytes consumed",
+      "smoke point before frontier sweep"
+    ],
+    "exclude": [
+      "full decoder integration",
+      "full NoC arbitration RTL",
+      "full SRAM macro banking layout",
+      "quality impact of KV quantization",
+      "training or prefill behavior",
+      "ranker and output-projection integration"
+    ],
+    "follow_on_broad_sweep": [
+      "after smoke passes, run a bounded frontier sweep over head_dim, kv_bits, lanes, and stream width",
+      "feed accepted PPA/cycle points back into the L2 attention/KV estimator"
+    ]
+  },
+  "expected_benefit": [
+    "replaces the current analytical attention/KV datapath proxy with measured circuit-block evidence",
+    "calibrates whether shared SRAM plus MQA plus low-bit KV remains the leading long-context frontier",
+    "creates a reusable measured block for later producer-attention-ranker composition"
+  ],
+  "risks": [
+    "the first operation may under-model SRAM/NoC arbitration if ready throttling is too simple",
+    "unpacked int4 lanes may not capture final packed-KV data movement cost",
+    "standalone block PPA may shift after integration with producer, softmax, value mix, or scheduler overlap",
+    "a full head_dim=128 and lanes=64 point may require macro perimeter/density tuning similar to prior wide-ranker runs"
+  ],
+  "needs_mapper_change": false,
+  "required_source_work": [
+    {
+      "item_id": "item_l1_decoder_attention_kv_tile_op_v1",
+      "objective": "Add the source artifacts needed before remote measurement: RTLGen attention_kv_tile operation, example configs, sweep file, and local perf-sim/RTL equivalence tests.",
+      "status": "not_started",
+      "must_merge_before_dispatch": true
+    }
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_attention_kv_tile_smoke_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure one bounded Nangate45 smoke point for a standalone attention/KV tile stream block after the RTLGen operation lands.",
+      "config_paths": [
+        "runs/designs/activations/attention_kv_tile_hd64_kv4_l16_b256_wrapper/config_attention_kv_tile_hd64_kv4_l16_b256.json"
+      ],
+      "sweep_path": "runs/campaigns/activations/attention_kv_tile/sweeps/nangate45_macro_smoke.json",
+      "platform": "nangate45",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "decoder_attention_kv_tile",
+      "comparison_role": "measured_anchor",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_memory_large_context_v2",
+        "l2_decoder_stage_breakdown_large_array_v2"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "measure",
+        "reason": "Create the first measured RTL/PPA anchor for the analytical attention/KV bottleneck model."
+      }
+    },
+    {
+      "item_id": "l1_decoder_attention_kv_tile_frontier_v1",
+      "task_type": "l1_sweep",
+      "objective": "Sweep a bounded attention/KV tile frontier over head_dim, KV precision, lane count, and stream width after the smoke point passes.",
+      "config_paths": [
+        "runs/designs/activations/attention_kv_tile_hd64_kv4_l16_b128_wrapper/config_attention_kv_tile_hd64_kv4_l16_b128.json",
+        "runs/designs/activations/attention_kv_tile_hd64_kv4_l32_b256_wrapper/config_attention_kv_tile_hd64_kv4_l32_b256.json",
+        "runs/designs/activations/attention_kv_tile_hd64_kv8_l32_b256_wrapper/config_attention_kv_tile_hd64_kv8_l32_b256.json",
+        "runs/designs/activations/attention_kv_tile_hd128_kv4_l32_b256_wrapper/config_attention_kv_tile_hd128_kv4_l32_b256.json",
+        "runs/designs/activations/attention_kv_tile_hd128_kv8_l64_b512_wrapper/config_attention_kv_tile_hd128_kv8_l64_b512.json",
+        "runs/designs/activations/attention_kv_tile_hd128_kv16_l64_b512_wrapper/config_attention_kv_tile_hd128_kv16_l64_b512.json"
+      ],
+      "sweep_path": "runs/campaigns/activations/attention_kv_tile/sweeps/nangate45_macro_frontier.json",
+      "platform": "nangate45",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "decoder_attention_kv_tile",
+      "comparison_role": "precision_width_frontier",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_kv_tile_smoke_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "measure",
+        "reason": "Calibrate the cost surface of the current long-context attention/KV frontier after a legal smoke measurement exists."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_kv_memory_large_context_v2.json",
+    "control_plane/shadow_exports/l2_decisions/l2_decoder_stage_breakdown_large_array_v2.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_memory__l2_decoder_attention_kv_memory_large_context_v2.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_stage_breakdown__l2_decoder_stage_breakdown_large_array_v2.json"
+  ],
+  "knowledge_refs": [
+    "src/rtlgen/config.cpp",
+    "src/rtlgen/config.hpp",
+    "src/rtlgen/rtl_operations.cpp",
+    "npu/eval/estimate_llm_decoder_attention_kv_memory.py",
+    "tests/test_llm_decoder_attention_kv_memory.py",
+    "control_plane/control_plane/services/l1_task_generator.py"
+  ]
+}
