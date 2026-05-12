@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_kv_tile_stream_v1",
+  "decision": "iterate",
+  "pr_number": null,
+  "merge_commit": null,
+  "merged_utc": null
+}

@@ -1,0 +1,12 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_kv_tile_stream_v1",
+  "candidate_id": "",
+  "decision": "iterate",
+  "reason": "Jobs are prepared but blocked on source-enabling RTLGen attention_kv_tile support.",
+  "evidence_refs": [
+    "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_kv_memory_large_context_v2.json",
+    "control_plane/shadow_exports/l2_decisions/l2_decoder_stage_breakdown_large_array_v2.json"
+  ],
+  "next_action": "implement attention_kv_tile RTLGen operation and smoke config, then queue l1_decoder_attention_kv_tile_smoke_v1",
+  "requires_human_approval": false
+}
