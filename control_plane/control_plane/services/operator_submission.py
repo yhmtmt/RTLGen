@@ -302,6 +302,10 @@ def _latest_submission_failure_reason(session: Session, *, run_id: str) -> str |
     return reason or None
 
 
+def _is_cached_eligibility_failure(reason: str | None) -> bool:
+    return bool(reason and " is not eligible for submission:" in reason)
+
+
 def _proposal_linkage_reason(*, repo_root: Path, work_item: WorkItem) -> str | None:
     payload = (work_item.task_request.request_payload or {}) if work_item.task_request is not None else {}
     developer_loop = payload.get("developer_loop")
@@ -336,8 +340,32 @@ def _terminal_proposal_reason(*, repo_root: Path, work_item: WorkItem) -> str | 
         return None
     decision = str(promotion_result.get("decision", "")).strip().lower()
     if decision in {"promote", "promoted", "superseded", "closed", "rejected"}:
+        if _is_pending_requested_evaluation(proposal_json=proposal_json, item_id=work_item.item_id):
+            return None
         return f"proposal already finalized with decision={decision}"
     return None
+
+
+def _is_pending_requested_evaluation(*, proposal_json: Path, item_id: str) -> bool:
+    evaluation_requests_path = proposal_json.parent / "evaluation_requests.json"
+    if not evaluation_requests_path.exists():
+        return False
+    try:
+        payload = json.loads(evaluation_requests_path.read_text(encoding="utf-8"))
+    except Exception:
+        return False
+    requested_items = payload.get("requested_items")
+    if not isinstance(requested_items, list):
+        return False
+    active_statuses = {"", "pending", "queued", "ready", "running", "artifact_sync", "awaiting_review"}
+    for entry in requested_items:
+        if not isinstance(entry, dict):
+            continue
+        if str(entry.get("item_id", "")).strip() != item_id:
+            continue
+        status = str(entry.get("status", "")).strip().lower()
+        return status in active_statuses
+    return False
 
 
 def _ensure_review_artifact_materialized(
@@ -471,8 +499,6 @@ def assess_submission_eligibility(
         submission_failure_reason = _latest_submission_failure_reason(session, run_id=latest_run.id)
         if not required_kind:
             reason = f"unsupported_task_type={work_item.task_type}"
-        elif submission_failure_reason is not None:
-            reason = submission_failure_reason
         elif repo_root is not None:
             proposal_linkage_reason = _proposal_linkage_reason(repo_root=repo_root, work_item=work_item)
             terminal_reason = _terminal_proposal_reason(repo_root=repo_root, work_item=work_item)
@@ -500,6 +526,12 @@ def assess_submission_eligibility(
             reason = f"missing {required_kind} artifact"
         elif not _has_canonical_runs_evidence(work_item):
             reason = "missing canonical runs evidence outputs"
+        if (
+            reason is None
+            and submission_failure_reason is not None
+            and not _is_cached_eligibility_failure(submission_failure_reason)
+        ):
+            reason = submission_failure_reason
 
     return SubmissionEligibility(
         item_id=work_item.item_id,
