@@ -19,7 +19,11 @@
         "direction": "iterate",
         "reason": "The expected output is an attention/KV bottleneck map used to choose whether the next architecture job should measure KV memory hierarchy, NoC coupling, or attention compute datapath."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 459,
+      "merge_commit": "fda7f8142ec897947e482053bc0a82d29a6dd724",
+      "merged_utc": "2026-05-12T01:33:05.827245Z",
+      "notes": "Merged via PR #459 and merge fda7f8142ec897947e482053bc0a82d29a6dd724 at 2026-05-12T01:33:05.827245Z."
     }
   ]
 }

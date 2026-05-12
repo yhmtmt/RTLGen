@@ -2,11 +2,14 @@
   "proposal_id": "prop_l2_decoder_attention_kv_memory_v1",
   "candidate_id": "l2_decoder_attention_kv_memory_v1",
   "decision": "iterate",
-  "reason": "Run the proposal-backed attention/KV memory hierarchy evaluation before choosing the next measured architecture point.",
+  "reason": "Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
   "evidence_refs": [
-    "docs/proposals/prop_l2_decoder_stage_breakdown_v1/proposal.json",
-    "control_plane/shadow_exports/l2_decisions/l2_decoder_stage_breakdown_v1.json"
+    "item:l2_decoder_attention_kv_memory_v1",
+    "run:l2_decoder_attention_kv_memory_v1_run_29f53cac31de747a",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_kv_memory_v1.json",
+    "pr:#459",
+    "https://github.com/yhmtmt/RTLGen/pull/459"
   ],
-  "next_action": "dispatch l2_decoder_attention_kv_memory_v1",
-  "requires_human_approval": true
+  "next_action": "inspect follow-on work after l2_decoder_attention_kv_memory_v1",
+  "requires_human_approval": false
 }
