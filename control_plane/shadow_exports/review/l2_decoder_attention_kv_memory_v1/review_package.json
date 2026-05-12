@@ -367,7 +367,9 @@
             "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_memory_v1/artifacts/mapper/fp16_nm1/mlp2/descriptors.bin",
             "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_memory_v1/artifacts/perf/fp16_nm1/mlp2/trace.json"
           }
-        ]
+        ],
+        "decoder_attention_kv_memory_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_memory__l2_decoder_attention_kv_memory_v1.json",
+        "decoder_attention_kv_memory_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_memory__l2_decoder_attention_kv_memory_v1.md"
       }
     }
   },
