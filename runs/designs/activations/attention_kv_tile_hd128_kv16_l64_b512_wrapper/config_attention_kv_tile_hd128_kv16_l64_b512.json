@@ -1,0 +1,28 @@
+{
+  "version": "1.1",
+  "operands": [
+    {
+      "name": "kv_fragment",
+      "dimensions": 1,
+      "bit_width": 16,
+      "signed": true,
+      "kind": "int"
+    }
+  ],
+  "operations": [
+    {
+      "type": "attention_kv_tile",
+      "module_name": "attention_kv_tile_hd128_kv16_l64_b512",
+      "operand": "kv_fragment",
+      "options": {
+        "head_dim": 128,
+        "kv_bits": 16,
+        "lanes": 64,
+        "stream_bytes_per_cycle": 512,
+        "accum_bits": 48,
+        "counter_bits": 32,
+        "signed_inputs": true
+      }
+    }
+  ]
+}

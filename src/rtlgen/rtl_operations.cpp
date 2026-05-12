@@ -1639,3 +1639,137 @@ void emitCandidateStreamMergeFifoModule(const CandidateStreamMergeFifoOperationC
     os << "  end\n";
     os << "endmodule\n";
 }
+
+void emitAttentionKvTileModule(const AttentionKvTileOperationConfig &config,
+                               const OperandDefinition &operand) {
+    const int data_bits = config.kv_bits > 0 ? config.kv_bits : operand.bit_width;
+    if (config.head_dim <= 0 || config.head_dim > 4096) {
+        throw std::runtime_error("attention_kv_tile head_dim must be in [1, 4096]");
+    }
+    if (data_bits <= 0 || data_bits > 32) {
+        throw std::runtime_error("attention_kv_tile kv_bits must be in [1, 32]");
+    }
+    if (config.lanes <= 0 || config.lanes > 256 || config.lanes > config.head_dim) {
+        throw std::runtime_error("attention_kv_tile lanes must be in [1, min(256, head_dim)]");
+    }
+    if (config.stream_bytes_per_cycle <= 0 || config.stream_bytes_per_cycle > 4096) {
+        throw std::runtime_error("attention_kv_tile stream_bytes_per_cycle must be in [1, 4096]");
+    }
+    if (config.counter_bits <= 0 || config.counter_bits > 64) {
+        throw std::runtime_error("attention_kv_tile counter_bits must be in [1, 64]");
+    }
+    if (config.stream_bytes_per_cycle * 8 < config.lanes * data_bits * 2) {
+        throw std::runtime_error("attention_kv_tile stream_bytes_per_cycle cannot carry query+key lane payload");
+    }
+
+    const int product_width = 2 * data_bits;
+    const int min_accum_bits = product_width +
+        std::max(1, ceilLog2U64(static_cast<unsigned long long>(config.head_dim))) + 1;
+    if (config.accum_bits < min_accum_bits || config.accum_bits > 128) {
+        std::ostringstream oss;
+        oss << "attention_kv_tile accum_bits must be in [" << min_accum_bits
+            << ", 128] for this head_dim/kv_bits";
+        throw std::runtime_error(oss.str());
+    }
+
+    const int fragment_width = config.lanes * data_bits;
+    const int expected_tiles = (config.head_dim + config.lanes - 1) / config.lanes;
+    const std::string signed_kw = config.signed_inputs ? "signed " : "";
+
+    std::string filename = config.module_name + ".v";
+    std::ofstream os(filename);
+    if (!os) {
+        throw std::runtime_error("Failed to open " + filename + " for writing");
+    }
+
+    os << "`timescale 1ns/1ps\n\n";
+    os << "module " << config.module_name << "(\n";
+    os << "  input  clk,\n";
+    os << "  input  rst_n,\n";
+    os << "  input  tile_valid,\n";
+    os << "  output tile_ready,\n";
+    os << "  input  tile_last,\n";
+    os << "  input  [" << (fragment_width - 1) << ":0] query_fragment,\n";
+    os << "  input  [" << (fragment_width - 1) << ":0] key_fragment,\n";
+    os << "  output reg score_valid,\n";
+    os << "  input  score_ready,\n";
+    os << "  output reg " << signed_kw << "[" << (config.accum_bits - 1) << ":0] score,\n";
+    os << "  output reg [" << (config.counter_bits - 1) << ":0] accepted_tile_count,\n";
+    os << "  output reg [" << (config.counter_bits - 1) << ":0] accepted_byte_count,\n";
+    os << "  output reg [" << (config.counter_bits - 1) << ":0] producer_stall_cycles,\n";
+    os << "  output reg [" << (config.counter_bits - 1) << ":0] cycle_count,\n";
+    os << "  output reg [" << (config.counter_bits - 1) << ":0] final_completion_cycle\n";
+    os << ");\n\n";
+    os << "  // Attention/KV tile stream primitive for single-token decoder exploration.\n";
+    os << "  // Each accepted tile consumes LANES query/key pairs, accumulates their dot product,\n";
+    os << "  // and emits one score when tile_last closes the head fragment stream.\n";
+    os << "  localparam integer HEAD_DIM = " << config.head_dim << ";\n";
+    os << "  localparam integer DATA_W = " << data_bits << ";\n";
+    os << "  localparam integer LANES = " << config.lanes << ";\n";
+    os << "  localparam integer PRODUCT_W = " << product_width << ";\n";
+    os << "  localparam integer ACCUM_W = " << config.accum_bits << ";\n";
+    os << "  localparam integer COUNT_W = " << config.counter_bits << ";\n";
+    os << "  localparam integer EXPECTED_TILES = " << expected_tiles << ";\n";
+    os << "  localparam [COUNT_W-1:0] STREAM_BYTES_PER_TILE = "
+       << config.counter_bits << "'d" << config.stream_bytes_per_cycle << ";\n\n";
+    os << "  reg " << signed_kw << "[ACCUM_W-1:0] running_sum;\n";
+    os << "  reg [COUNT_W-1:0] tile_count_in_score;\n";
+    std::vector<std::string> lane_terms;
+    lane_terms.reserve(static_cast<std::size_t>(config.lanes));
+    for (int lane = 0; lane < config.lanes; ++lane) {
+        const std::string product_name = "lane_product_" + std::to_string(lane);
+        const std::string term_name = "lane_term_" + std::to_string(lane);
+        os << "  wire " << signed_kw << "[PRODUCT_W-1:0] " << product_name << " = ";
+        if (config.signed_inputs) {
+            os << "$signed(query_fragment[(" << lane << "*DATA_W) +: DATA_W]) * "
+               << "$signed(key_fragment[(" << lane << "*DATA_W) +: DATA_W]);\n";
+            os << "  wire signed [ACCUM_W-1:0] " << term_name
+               << " = {{(ACCUM_W-PRODUCT_W){" << product_name << "[PRODUCT_W-1]}}, "
+               << product_name << "};\n";
+        } else {
+            os << "query_fragment[(" << lane << "*DATA_W) +: DATA_W] * "
+               << "key_fragment[(" << lane << "*DATA_W) +: DATA_W];\n";
+            os << "  wire [ACCUM_W-1:0] " << term_name
+               << " = {{(ACCUM_W-PRODUCT_W){1'b0}}, " << product_name << "};\n";
+        }
+        lane_terms.push_back(term_name);
+    }
+    const std::string partial_expr = emitSumChain(os, lane_terms, "partial_sum_chain",
+                                                  config.signed_inputs, config.accum_bits);
+    os << "  wire " << signed_kw << "[ACCUM_W-1:0] partial_sum = " << partial_expr << ";\n\n";
+    os << "  assign tile_ready = !score_valid || score_ready;\n\n";
+    os << "  always @(posedge clk or negedge rst_n) begin\n";
+    os << "    if (!rst_n) begin\n";
+    os << "      running_sum <= {ACCUM_W{1'b0}};\n";
+    os << "      score <= {ACCUM_W{1'b0}};\n";
+    os << "      score_valid <= 1'b0;\n";
+    os << "      accepted_tile_count <= {COUNT_W{1'b0}};\n";
+    os << "      accepted_byte_count <= {COUNT_W{1'b0}};\n";
+    os << "      producer_stall_cycles <= {COUNT_W{1'b0}};\n";
+    os << "      cycle_count <= {COUNT_W{1'b0}};\n";
+    os << "      final_completion_cycle <= {COUNT_W{1'b0}};\n";
+    os << "      tile_count_in_score <= {COUNT_W{1'b0}};\n";
+    os << "    end else begin\n";
+    os << "      cycle_count <= cycle_count + {{(COUNT_W-1){1'b0}}, 1'b1};\n\n";
+    os << "      if (score_valid && score_ready)\n";
+    os << "        score_valid <= 1'b0;\n\n";
+    os << "      if (tile_valid && !tile_ready)\n";
+    os << "        producer_stall_cycles <= producer_stall_cycles + {{(COUNT_W-1){1'b0}}, 1'b1};\n\n";
+    os << "      if (tile_valid && tile_ready) begin\n";
+    os << "        accepted_tile_count <= accepted_tile_count + {{(COUNT_W-1){1'b0}}, 1'b1};\n";
+    os << "        accepted_byte_count <= accepted_byte_count + STREAM_BYTES_PER_TILE;\n";
+    os << "        if (tile_last) begin\n";
+    os << "          score <= running_sum + partial_sum;\n";
+    os << "          score_valid <= 1'b1;\n";
+    os << "          running_sum <= {ACCUM_W{1'b0}};\n";
+    os << "          tile_count_in_score <= {COUNT_W{1'b0}};\n";
+    os << "          final_completion_cycle <= cycle_count + {{(COUNT_W-1){1'b0}}, 1'b1};\n";
+    os << "        end else begin\n";
+    os << "          running_sum <= running_sum + partial_sum;\n";
+    os << "          tile_count_in_score <= tile_count_in_score + {{(COUNT_W-1){1'b0}}, 1'b1};\n";
+    os << "        end\n";
+    os << "      end\n";
+    os << "    end\n";
+    os << "  end\n";
+    os << "endmodule\n";
+}

@@ -392,6 +392,37 @@ Reference helper:
 
 - `python3 scripts/softmax_rowwise_ref.py --config examples/config_softmax_rowwise_int8.json --row 0,0,0,0`
 
+## Attention/KV Tile Units
+
+Decoder attention/KV tile candidates use a streaming valid/ready interface so
+Layer 1 measurements can model producer-coupled behavior without assuming chip
+IO pads. Each accepted tile consumes packed query/key fragments, computes a
+lane-parallel integer dot-product partial sum, and accumulates until
+`tile_last` emits one score.
+
+Each tile unit is an `operations[]` entry with:
+
+- `type`: `"attention_kv_tile"`
+- `module_name`: generated Verilog module name
+- `operand`: integer operand reference used for the default element width
+- `options`: tile geometry and counter widths
+
+Supported options:
+
+- `head_dim`: attention head dimension represented by the complete stream
+- `kv_bits`: query/key lane precision
+- `lanes`: lane pairs consumed per accepted tile
+- `stream_bytes_per_cycle`: byte-service assumption for accepted tile counters
+- `accum_bits`: score accumulator width
+- `counter_bits`: observable counter width
+- `signed_inputs`: signed query/key lane multiplication when true
+
+Generated observables include `accepted_tile_count`, `accepted_byte_count`,
+`producer_stall_cycles`, `cycle_count`, and `final_completion_cycle` for
+perf-sim/RTL counter equivalence.
+
+See `examples/config_attention_kv_tile.json` for a minimal smoke configuration.
+
 ## Vector-Op Approximation Notes (NPU Phase-2)
 
 This section documents how `vec_op` math is currently approximated.

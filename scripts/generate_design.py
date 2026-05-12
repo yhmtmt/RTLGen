@@ -203,6 +203,38 @@ def identify_design(config):
             "logit_signed": bool(options.get("logit_signed", True)),
             "include_mg_cpa": False,
         }
+    if op_type == "attention_kv_tile":
+        options = entry.get("options", {})
+        kv_bits = int(options.get("kv_bits", bit_width) or bit_width)
+        head_dim = int(options.get("head_dim", 64))
+        lanes = int(options.get("lanes", 16))
+        stream_bytes_per_cycle = int(options.get("stream_bytes_per_cycle", 256))
+        accum_bits = int(options.get("accum_bits", 48))
+        counter_bits = int(options.get("counter_bits", 32))
+        if head_dim <= 0:
+            raise ValueError("attention_kv_tile head_dim must be positive")
+        if kv_bits <= 0:
+            raise ValueError("attention_kv_tile kv_bits must be positive")
+        if lanes <= 0 or lanes > head_dim:
+            raise ValueError("attention_kv_tile lanes must be in [1, head_dim]")
+        if stream_bytes_per_cycle <= 0:
+            raise ValueError("attention_kv_tile stream_bytes_per_cycle must be positive")
+        if stream_bytes_per_cycle * 8 < lanes * kv_bits * 2:
+            raise ValueError("attention_kv_tile stream_bytes_per_cycle cannot carry query+key lane payload")
+        if accum_bits <= 0:
+            raise ValueError("attention_kv_tile accum_bits must be positive")
+        if counter_bits <= 0:
+            raise ValueError("attention_kv_tile counter_bits must be positive")
+        return {
+            "kind": "attention_kv_tile",
+            "module_name": module_name,
+            "wrapper_name": f"{module_name}_wrapper",
+            "fragment_width": lanes * kv_bits,
+            "accum_bits": accum_bits,
+            "counter_bits": counter_bits,
+            "signed_inputs": bool(options.get("signed_inputs", True)),
+            "include_mg_cpa": False,
+        }
     raise ValueError(f"generate_design.py does not support operation type: {op_type}")
 
 
@@ -529,6 +561,50 @@ module {wrapper_name}(
     .accepted_group_count(accepted_group_count),
     .producer_stall_cycles(producer_stall_cycles),
     .fifo_max_occupancy(fifo_max_occupancy),
+    .final_completion_cycle(final_completion_cycle)
+  );
+
+endmodule
+"""
+    elif design["kind"] == "attention_kv_tile":
+        fragment_width = int(design["fragment_width"])
+        accum_bits = int(design["accum_bits"])
+        counter_bits = int(design["counter_bits"])
+        signed_kw = "signed " if design.get("signed_inputs", True) else ""
+        wrapper_content = f"""
+module {wrapper_name}(
+  input clk,
+  input rst_n,
+  input tile_valid,
+  output tile_ready,
+  input tile_last,
+  input [{fragment_width-1}:0] query_fragment,
+  input [{fragment_width-1}:0] key_fragment,
+  input score_ready,
+  output score_valid,
+  output {signed_kw}[{accum_bits-1}:0] score,
+  output [{counter_bits-1}:0] accepted_tile_count,
+  output [{counter_bits-1}:0] accepted_byte_count,
+  output [{counter_bits-1}:0] producer_stall_cycles,
+  output [{counter_bits-1}:0] cycle_count,
+  output [{counter_bits-1}:0] final_completion_cycle
+);
+
+  {module_name} dut (
+    .clk(clk),
+    .rst_n(rst_n),
+    .tile_valid(tile_valid),
+    .tile_ready(tile_ready),
+    .tile_last(tile_last),
+    .query_fragment(query_fragment),
+    .key_fragment(key_fragment),
+    .score_ready(score_ready),
+    .score_valid(score_valid),
+    .score(score),
+    .accepted_tile_count(accepted_tile_count),
+    .accepted_byte_count(accepted_byte_count),
+    .producer_stall_cycles(producer_stall_cycles),
+    .cycle_count(cycle_count),
     .final_completion_cycle(final_completion_cycle)
   );
 

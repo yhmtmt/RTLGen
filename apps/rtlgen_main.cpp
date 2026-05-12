@@ -197,7 +197,9 @@ int main(int argc, char** argv) {
               << config.score_tie_rank_operations.size() << " score tie-rank block(s), "
               << config.logit_rank_operations.size() << " logit-rank block(s), "
               << config.candidate_stream_merge_fifo_operations.size()
-              << " candidate-stream merge FIFO block(s)\n";
+              << " candidate-stream merge FIFO block(s), "
+              << config.attention_kv_tile_operations.size()
+              << " attention/KV tile block(s)\n";
 
     try {
         std::filesystem::path flopocoPath;
@@ -345,6 +347,16 @@ int main(int argc, char** argv) {
                       << ", token_id_bits=" << merge.token_id_bits
                       << ", fifo_depth_groups=" << merge.fifo_depth_groups << ")\n";
             emitCandidateStreamMergeFifoModule(merge, operandDef);
+        }
+
+        for (const auto &tile : config.attention_kv_tile_operations) {
+            OperandDefinition operandDef = resolveOperand(config, tile.operand);
+            std::cout << "[INFO] Generating attention/KV tile " << tile.module_name
+                      << " (head_dim=" << tile.head_dim
+                      << ", kv_bits=" << tile.kv_bits
+                      << ", lanes=" << tile.lanes
+                      << ", stream_bytes_per_cycle=" << tile.stream_bytes_per_cycle << ")\n";
+            emitAttentionKvTileModule(tile, operandDef);
         }
 
         for (const auto &fp : config.fp_operations) {

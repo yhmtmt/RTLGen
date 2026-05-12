@@ -63,6 +63,7 @@ bool readConfig(const std::string& filename, CircuitConfig& config) {
         config.score_tie_rank_operations.clear();
         config.logit_rank_operations.clear();
         config.candidate_stream_merge_fifo_operations.clear();
+        config.attention_kv_tile_operations.clear();
         config.onnx_model.reset();
 
         if (j.contains("operand")) {
@@ -486,6 +487,43 @@ bool readConfig(const std::string& filename, CircuitConfig& config) {
                         throw std::runtime_error("candidate_stream_merge_fifo counter_bits must be in [1, 64] for " + merge.module_name);
                     }
                     config.candidate_stream_merge_fifo_operations.push_back(merge);
+                } else if (type == "attention_kv_tile") {
+                    const json &options = entry.contains("options") ? entry["options"] : entry;
+                    AttentionKvTileOperationConfig tile;
+                    tile.module_name = module_name;
+                    tile.operand = operand_name;
+                    tile.head_dim = options.value("head_dim", 64);
+                    tile.kv_bits = options.value("kv_bits", 8);
+                    tile.lanes = options.value("lanes", 16);
+                    tile.stream_bytes_per_cycle = options.value("stream_bytes_per_cycle", 256);
+                    tile.accum_bits = options.value("accum_bits", 48);
+                    tile.counter_bits = options.value("counter_bits", 32);
+                    tile.signed_inputs = options.value("signed_inputs", true);
+                    if (tile.head_dim <= 0 || tile.head_dim > 4096) {
+                        throw std::runtime_error("attention_kv_tile head_dim must be in [1, 4096] for " + tile.module_name);
+                    }
+                    if (tile.kv_bits <= 0 || tile.kv_bits > 32) {
+                        throw std::runtime_error("attention_kv_tile kv_bits must be in [1, 32] for " + tile.module_name);
+                    }
+                    if (tile.lanes <= 0 || tile.lanes > 256) {
+                        throw std::runtime_error("attention_kv_tile lanes must be in [1, 256] for " + tile.module_name);
+                    }
+                    if (tile.lanes > tile.head_dim) {
+                        throw std::runtime_error("attention_kv_tile lanes must not exceed head_dim for " + tile.module_name);
+                    }
+                    if (tile.stream_bytes_per_cycle <= 0 || tile.stream_bytes_per_cycle > 4096) {
+                        throw std::runtime_error("attention_kv_tile stream_bytes_per_cycle must be in [1, 4096] for " + tile.module_name);
+                    }
+                    if (tile.accum_bits < 8 || tile.accum_bits > 128) {
+                        throw std::runtime_error("attention_kv_tile accum_bits must be in [8, 128] for " + tile.module_name);
+                    }
+                    if (tile.counter_bits <= 0 || tile.counter_bits > 64) {
+                        throw std::runtime_error("attention_kv_tile counter_bits must be in [1, 64] for " + tile.module_name);
+                    }
+                    if (tile.stream_bytes_per_cycle * 8 < tile.lanes * tile.kv_bits * 2) {
+                        throw std::runtime_error("attention_kv_tile stream_bytes_per_cycle cannot carry query+key lane payload for " + tile.module_name);
+                    }
+                    config.attention_kv_tile_operations.push_back(tile);
                 } else {
                     throw std::runtime_error("Unknown operation type: " + type);
                 }
