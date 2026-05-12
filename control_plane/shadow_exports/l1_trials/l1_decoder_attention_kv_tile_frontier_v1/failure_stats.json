@@ -1,0 +1,13 @@
+{
+  "item_id": "l1_decoder_attention_kv_tile_frontier_v1",
+  "completed_trials": 4,
+  "success_count": 1,
+  "failure_count": 3,
+  "by_category": {
+    "stale_duplicate_run": 2,
+    "lease_expired": 1
+  },
+  "by_stage": {
+    "control_plane": 3
+  }
+}
