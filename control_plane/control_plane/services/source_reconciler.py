@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from contextlib import contextmanager
 from pathlib import Path
 import os
 import subprocess
 import sys
+import time
 from typing import NoReturn
 
 from sqlalchemy.orm import Session
@@ -19,6 +21,11 @@ from control_plane.services.lease_service import upsert_worker_machine
 
 class SourceReconciliationError(RuntimeError):
     pass
+
+
+_SOURCE_RECONCILE_LOCK_NAME = "rtlcp-source-reconcile.lock"
+_SOURCE_RECONCILE_LOCK_TIMEOUT_SECONDS = 30.0
+_SOURCE_RECONCILE_LOCK_POLL_SECONDS = 0.2
 
 
 @dataclass(frozen=True)
@@ -47,6 +54,176 @@ def _git_stdout(repo_root: Path, *args: str) -> str:
 
 def _git_success(repo_root: Path, *args: str) -> bool:
     return _run_git(repo_root, *args, check=False).returncode == 0
+
+
+def _git_common_dir(repo_root: Path) -> Path:
+    raw = _git_stdout(repo_root, "rev-parse", "--git-common-dir")
+    path = Path(raw)
+    if path.is_absolute():
+        return path
+    return (repo_root / path).resolve()
+
+
+def _git_path(repo_root: Path, name: str) -> Path:
+    raw = _git_stdout(repo_root, "rev-parse", "--git-path", name)
+    path = Path(raw)
+    if path.is_absolute():
+        return path
+    return (repo_root / path).resolve()
+
+
+def _pid_is_alive(pid: int) -> bool:
+    if pid <= 0:
+        return False
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+def _read_lock_pid(lock_path: Path) -> int | None:
+    try:
+        for line in lock_path.read_text(encoding="utf-8", errors="replace").splitlines():
+            if line.startswith("pid="):
+                return int(line.split("=", 1)[1].strip())
+    except (OSError, ValueError):
+        return None
+    return None
+
+
+def _remove_stale_control_lock(lock_path: Path) -> bool:
+    pid = _read_lock_pid(lock_path)
+    if pid is not None and _pid_is_alive(pid):
+        return False
+    try:
+        lock_path.unlink()
+        return True
+    except FileNotFoundError:
+        return True
+    except OSError:
+        return False
+
+
+@contextmanager
+def _source_reconcile_lock(repo_root: Path):
+    """Serialize evaluator service-checkout mutation across control-plane daemons."""
+
+    try:
+        lock_dir = _git_common_dir(repo_root)
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise SourceReconciliationError(f"failed to resolve git common dir for source reconciliation: {exc}") from exc
+    lock_path = lock_dir / _SOURCE_RECONCILE_LOCK_NAME
+    deadline = time.monotonic() + _SOURCE_RECONCILE_LOCK_TIMEOUT_SECONDS
+    fd: int | None = None
+    while True:
+        try:
+            fd = os.open(str(lock_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+            payload = f"pid={os.getpid()}\ncreated_at={time.time()}\nrepo_root={repo_root}\n"
+            os.write(fd, payload.encode("utf-8"))
+            break
+        except FileExistsError:
+            if not _remove_stale_control_lock(lock_path):
+                if time.monotonic() >= deadline:
+                    raise SourceReconciliationError(
+                        f"source reconciliation lock is busy: {lock_path}"
+                    )
+                time.sleep(_SOURCE_RECONCILE_LOCK_POLL_SECONDS)
+                continue
+        except OSError as exc:
+            raise SourceReconciliationError(f"failed to acquire source reconciliation lock {lock_path}: {exc}") from exc
+
+    try:
+        yield
+    finally:
+        if fd is not None:
+            try:
+                os.close(fd)
+            except OSError:
+                pass
+        try:
+            lock_path.unlink()
+        except FileNotFoundError:
+            pass
+        except OSError:
+            pass
+
+
+def _git_process_active_for_repo(repo_root: Path) -> bool:
+    """Best-effort guard before removing a stale Git index lock."""
+
+    try:
+        common_dir = _git_common_dir(repo_root)
+    except (OSError, subprocess.CalledProcessError):
+        common_dir = repo_root / ".git"
+    needles = {str(repo_root), str(common_dir)}
+    try:
+        result = subprocess.run(
+            ["ps", "-eo", "pid=,comm=,args="],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return True
+    current_pid = os.getpid()
+    for line in result.stdout.splitlines():
+        text = line.strip()
+        if not text:
+            continue
+        parts = text.split(maxsplit=2)
+        try:
+            pid = int(parts[0])
+        except (ValueError, IndexError):
+            continue
+        if pid == current_pid:
+            continue
+        if "git" not in text:
+            continue
+        if any(needle in text for needle in needles):
+            return True
+    return False
+
+
+def _recover_stale_git_index_lock(repo_root: Path) -> bool:
+    """Remove Git's index.lock only when no live Git process appears to own it."""
+
+    try:
+        index_lock = _git_path(repo_root, "index.lock")
+    except (OSError, subprocess.CalledProcessError):
+        return False
+    if not index_lock.exists():
+        return False
+    if _git_process_active_for_repo(repo_root):
+        raise SourceReconciliationError(
+            f"git index lock is present and a git process still appears active: {index_lock}"
+        )
+    try:
+        index_lock.unlink()
+        return True
+    except FileNotFoundError:
+        return False
+    except OSError as exc:
+        raise SourceReconciliationError(f"failed to remove stale git index lock {index_lock}: {exc}") from exc
+
+
+def _checkout_source_target(repo_root: Path, target: str) -> None:
+    try:
+        _run_git(repo_root, "checkout", "--detach", target)
+    except (OSError, subprocess.CalledProcessError) as exc:
+        stderr = getattr(exc, "stderr", "") or ""
+        if "index.lock" not in stderr:
+            raise SourceReconciliationError(f"failed to checkout source target {target}: {exc}") from exc
+        if not _recover_stale_git_index_lock(repo_root):
+            raise SourceReconciliationError(f"failed to checkout source target {target}: {exc}") from exc
+        try:
+            _run_git(repo_root, "checkout", "--detach", target)
+        except (OSError, subprocess.CalledProcessError) as retry_exc:
+            raise SourceReconciliationError(
+                f"failed to checkout source target {target} after stale index lock recovery: {retry_exc}"
+            ) from retry_exc
 
 
 def _current_head(repo_root: Path) -> str | None:
@@ -136,6 +313,22 @@ def reconcile_service_repo_source(
     if not required:
         return SourceReconciliationResult(status="no_requirement")
 
+    with _source_reconcile_lock(repo_path):
+        return _reconcile_service_repo_source_locked(
+            repo_path=repo_path,
+            required=required,
+            update_ref=update_ref,
+            allow_update=allow_update,
+        )
+
+
+def _reconcile_service_repo_source_locked(
+    *,
+    repo_path: Path,
+    required: str,
+    update_ref: str,
+    allow_update: bool,
+) -> SourceReconciliationResult:
     current = _current_head(repo_path)
     relation = _source_relation(repo_path, required, current)
     if relation in {"exact", "descendant"}:
@@ -174,6 +367,7 @@ def reconcile_service_repo_source(
     if update_ref and _git_success(repo_path, "merge-base", "--is-ancestor", required, update_ref):
         target = update_ref
 
+    _recover_stale_git_index_lock(repo_path)
     if _git_stdout(repo_path, "status", "--porcelain", "--untracked-files=no"):
         return SourceReconciliationResult(
             status="blocked",
@@ -183,10 +377,7 @@ def reconcile_service_repo_source(
             message="service repo has tracked local modifications; refusing automatic checkout",
         )
 
-    try:
-        _run_git(repo_path, "checkout", "--detach", target)
-    except (OSError, subprocess.CalledProcessError) as exc:
-        raise SourceReconciliationError(f"failed to checkout source target {target}: {exc}") from exc
+    _checkout_source_target(repo_path, target)
 
     new_head = _current_head(repo_path)
     new_relation = _source_relation(repo_path, required, new_head)
