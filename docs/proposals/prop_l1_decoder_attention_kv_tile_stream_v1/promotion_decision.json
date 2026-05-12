@@ -1,12 +1,15 @@
 {
   "proposal_id": "prop_l1_decoder_attention_kv_tile_stream_v1",
-  "candidate_id": "",
-  "decision": "iterate",
-  "reason": "Jobs are prepared but blocked on source-enabling RTLGen attention_kv_tile support.",
+  "candidate_id": "l1_decoder_attention_kv_tile_smoke_v1",
+  "decision": "promote",
+  "reason": "Accepted Layer 1 physical metrics were merged in PR #469 for the current candidate.",
   "evidence_refs": [
-    "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_kv_memory_large_context_v2.json",
-    "control_plane/shadow_exports/l2_decisions/l2_decoder_stage_breakdown_large_array_v2.json"
+    "item:l1_decoder_attention_kv_tile_smoke_v1",
+    "run:l1_decoder_attention_kv_tile_smoke_v1_run_546f61362feb8c90",
+    "artifact:control_plane/shadow_exports/l1_promotions/l1_decoder_attention_kv_tile_smoke_v1.json",
+    "pr:#469",
+    "https://github.com/yhmtmt/RTLGen/pull/469"
   ],
-  "next_action": "implement attention_kv_tile RTLGen operation and smoke config, then queue l1_decoder_attention_kv_tile_smoke_v1",
+  "next_action": "queue l1_decoder_attention_kv_tile_frontier_v1",
   "requires_human_approval": false
 }

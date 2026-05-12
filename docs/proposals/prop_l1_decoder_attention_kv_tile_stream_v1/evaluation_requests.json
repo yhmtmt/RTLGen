@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_decoder_attention_kv_tile_stream_v1",
-  "source_commit": "f06837ae257cb0b813ce77c2366051cfce92f8bb",
+  "source_commit": "4deca89f916e647c2a85f55a955db682792ebf4f",
   "requested_items": [
     {
       "item_id": "l1_decoder_attention_kv_tile_smoke_v1",
@@ -24,8 +24,12 @@
         "direction": "measure",
         "reason": "Create the first measured RTL/PPA anchor for the analytical attention/KV bottleneck model."
       },
-      "status": "blocked_on_source",
-      "blocker": "Requires merged RTLGen attention_kv_tile operation, smoke config, smoke sweep, and local perf-sim/RTL counter equivalence tests."
+      "status": "merged",
+      "blocker": "Requires merged RTLGen attention_kv_tile operation, smoke config, smoke sweep, and local perf-sim/RTL counter equivalence tests.",
+      "merged_pr_number": 469,
+      "merge_commit": "a660ea2a128eca50bb1b71b7e0b417df5c6545ac",
+      "merged_utc": "2026-05-12T03:53:29.228064Z",
+      "notes": "Merged via PR #469 and merge a660ea2a128eca50bb1b71b7e0b417df5c6545ac at 2026-05-12T03:53:29.228064Z."
     },
     {
       "item_id": "l1_decoder_attention_kv_tile_frontier_v1",
@@ -53,8 +57,9 @@
         "direction": "measure",
         "reason": "Calibrate the cost surface of the current long-context attention/KV frontier after a legal smoke measurement exists."
       },
-      "status": "blocked_on_smoke",
-      "blocker": "Requires l1_decoder_attention_kv_tile_smoke_v1 merged accepted evidence before dispatch."
+      "status": "ready_to_queue",
+      "blocker": "Requires l1_decoder_attention_kv_tile_smoke_v1 merged accepted evidence before dispatch.",
+      "notes": "Prerequisites are merged; item is ready to queue."
     }
   ]
 }

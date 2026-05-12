@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l1_decoder_attention_kv_tile_stream_v1",
-  "decision": "iterate",
-  "pr_number": null,
-  "merge_commit": null,
-  "merged_utc": null
+  "decision": "promote",
+  "pr_number": 469,
+  "merge_commit": "a660ea2a128eca50bb1b71b7e0b417df5c6545ac",
+  "merged_utc": "2026-05-12T03:53:29.228064Z"
 }
