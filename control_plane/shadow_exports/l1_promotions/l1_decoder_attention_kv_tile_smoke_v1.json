@@ -1,0 +1,94 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-05-12T03:46:02.002597Z",
+  "item_id": "l1_decoder_attention_kv_tile_smoke_v1",
+  "run_key": "l1_decoder_attention_kv_tile_smoke_v1_run_546f61362feb8c90",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "4deca89f916e647c2a85f55a955db682792ebf4f",
+  "objective": "Measure one bounded Nangate45 smoke point for a standalone attention/KV tile stream block after the RTLGen operation lands.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/activations/attention_kv_tile/sweeps/nangate45_macro_smoke.json"
+    ],
+    "configs": [
+      "runs/designs/activations/attention_kv_tile_hd64_kv4_l16_b256_wrapper/config_attention_kv_tile_hd64_kv4_l16_b256.json"
+    ],
+    "out_root": "runs/designs/activations",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 1,
+  "evaluation_record": {
+    "evaluation_mode": "measurement_only",
+    "abstraction_layer": "decoder_attention_kv_tile",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/attention_kv_tile_hd64_kv4_l16_b256_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "715575a3",
+        "tag": "attention_kv_tile_nangate45_macro_smoke_175641b8",
+        "result_path": "runs/designs/activations/attention_kv_tile_hd64_kv4_l16_b256_wrapper/work/715575a3/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 4.4842,
+        "die_area": 11307.132225,
+        "total_power_mw": 0.441
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_decoder_attention_kv_tile_smoke_v1",
+    "completed_trials": 1,
+    "success_count": 1,
+    "failure_count": 0,
+    "success_rate": 1.0,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 4.4842,
+        "mean": 4.4842,
+        "median": 4.4842,
+        "max": 4.4842,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "die_area": {
+        "best": 11307.132225,
+        "mean": 11307.132225,
+        "median": 11307.132225,
+        "max": 11307.132225,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "total_power_mw": {
+        "best": 0.441,
+        "mean": 0.441,
+        "median": 0.441,
+        "max": 0.441,
+        "range": 0.0,
+        "stddev": 0.0
+      }
+    }
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/activations/attention_kv_tile_hd64_kv4_l16_b256_wrapper/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_kv_tile_smoke_v1/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_kv_tile_smoke_v1/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_kv_tile_smoke_v1/trial_table.csv"
+  }
+}

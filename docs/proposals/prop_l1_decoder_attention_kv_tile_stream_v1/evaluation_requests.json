@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_decoder_attention_kv_tile_stream_v1",
-  "source_commit": "4deca89f916e647c2a85f55a955db682792ebf4f",
+  "source_commit": "f06837ae257cb0b813ce77c2366051cfce92f8bb",
   "requested_items": [
     {
       "item_id": "l1_decoder_attention_kv_tile_smoke_v1",
@@ -24,7 +24,8 @@
         "direction": "measure",
         "reason": "Create the first measured RTL/PPA anchor for the analytical attention/KV bottleneck model."
       },
-      "status": "pending"
+      "status": "blocked_on_source",
+      "blocker": "Requires merged RTLGen attention_kv_tile operation, smoke config, smoke sweep, and local perf-sim/RTL counter equivalence tests."
     },
     {
       "item_id": "l1_decoder_attention_kv_tile_frontier_v1",

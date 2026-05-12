@@ -1,0 +1,122 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/activations/attention_kv_tile/sweeps/nangate45_macro_smoke.json"
+      ],
+      "configs": [
+        "runs/designs/activations/attention_kv_tile_hd64_kv4_l16_b256_wrapper/config_attention_kv_tile_hd64_kv4_l16_b256.json"
+      ],
+      "out_root": "runs/designs/activations",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && cmake -S . -B build && cmake --build build --target rtlgen",
+        "name": "build_generator"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 scripts/run_sweep.py --configs runs/designs/activations/attention_kv_tile_hd64_kv4_l16_b256_wrapper/config_attention_kv_tile_hd64_kv4_l16_b256.json --platform nangate45 --sweep runs/campaigns/activations/attention_kv_tile/sweeps/nangate45_macro_smoke.json --out_root runs/designs/activations --force_gen --skip_existing",
+        "name": "run_sweep"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "objective": "Measure one bounded Nangate45 smoke point for a standalone attention/KV tile stream block after the RTLGen operation lands.",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/activations/attention_kv_tile_hd64_kv4_l16_b256_wrapper/metrics.csv"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Attention/KV tile smoke measurement",
+  "result": {
+    "branch": "eval/l1_decoder_attention_kv_tile_smoke_v1/s20260512t034602z",
+    "completed_utc": "2026-05-12T03:46:01.412500Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260512t034602z][host:b7c2d9c80c1c][item:l1_decoder_attention_kv_tile_smoke_v1]",
+    "metrics_rows": [
+      {
+        "tag": "attention_kv_tile_nangate45_macro_smoke_175641b8",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "715575a3",
+        "metrics_csv": "runs/designs/activations/attention_kv_tile_hd64_kv4_l16_b256_wrapper/metrics.csv"
+      },
+      {
+        "tag": "attention_kv_tile_nangate45_macro_smoke_e0c384c0",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "7ca6d8af",
+        "metrics_csv": "runs/designs/activations/attention_kv_tile_hd64_kv4_l16_b256_wrapper/metrics.csv"
+      }
+    ],
+    "queue_item_id": "l1_decoder_attention_kv_tile_smoke_v1",
+    "session_id": "s20260512t034602z",
+    "status": "ok",
+    "summary": "4/4 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_decoder_attention_kv_tile_smoke_v1/s20260512t034602z",
+    "pr_title": "eval: run attention/kv tile smoke measurement",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260512t034602z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_decoder_attention_kv_tile_smoke_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_decoder_attention_kv_tile_smoke_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-05-12T03:33:29.364638Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "evaluation": {
+      "mode": "measurement_only",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      }
+    },
+    "abstraction": {
+      "layer": "decoder_attention_kv_tile"
+    },
+    "proposal_id": "prop_l1_decoder_attention_kv_tile_stream_v1",
+    "proposal_path": "docs/proposals/prop_l1_decoder_attention_kv_tile_stream_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "4deca89f916e647c2a85f55a955db682792ebf4f",
+    "requires_daemon_restart": true
+  }
+}
