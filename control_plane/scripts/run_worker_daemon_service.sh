@@ -32,6 +32,8 @@ MAX_RETRY_ATTEMPTS="${RTLCP_MAX_RETRY_ATTEMPTS:-2}"
 EXECUTOR_KIND="${RTLCP_EXECUTOR_KIND:-local_process}"
 AUTO_PROCESS_COMPLETIONS="${RTLCP_AUTO_PROCESS_COMPLETIONS:-1}"
 COMPLETION_SUBMIT="${RTLCP_COMPLETION_SUBMIT:-1}"
+AUTO_UPDATE_SOURCE="${RTLCP_AUTO_UPDATE_SOURCE:-1}"
+SOURCE_UPDATE_REF="${RTLCP_SOURCE_UPDATE_REF:-origin/master}"
 
 repo_slug="${RTLCP_COMPLETION_REPO:-${RTLCP_REPO_SLUG:-}}"
 if [[ -z "${repo_slug}" ]]; then
@@ -61,6 +63,7 @@ cmd=(
   --poll-seconds "${POLL_SECONDS}"
   --max-items-per-poll "${MAX_ITEMS_PER_POLL}"
   --concurrency "${WORKER_CONCURRENCY}"
+  --source-update-ref "${SOURCE_UPDATE_REF}"
 )
 
 if [[ -n "${RTLCP_CAPABILITIES_JSON:-}" ]]; then
@@ -134,6 +137,14 @@ fi
 
 if [[ "${RTLCP_DISABLE_SCHEDULER_MAINTENANCE:-0}" == "1" ]]; then
   cmd+=(--no-scheduler-maintenance)
+fi
+
+if [[ "${AUTO_UPDATE_SOURCE}" == "1" ]]; then
+  cmd+=(--auto-update-source)
+fi
+
+if [[ "${RTLCP_RESTART_ON_SOURCE_UPDATE:-1}" != "1" ]]; then
+  cmd+=(--no-restart-on-source-update)
 fi
 
 exec env PYTHONPATH="${REPO_ROOT}/control_plane" "${cmd[@]}"

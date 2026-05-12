@@ -28,6 +28,7 @@ Evaluator:
 - usually uses the shared remote PostgreSQL when `RTLCP_DB_MODE=remote`
 - runs the worker daemon
 - executes each item in a disposable clean git worktree at the task `source_commit`
+- checks the next assigned item's required source commit before leasing it; the evaluator service repo auto-fetches, updates to a commit containing that source, and re-execs the worker daemon when `RTLCP_AUTO_UPDATE_SOURCE=1`
 
 ## Required Host Environment
 
@@ -60,6 +61,26 @@ After changing these values:
 3. Notebook completion loop consumes `ARTIFACT_SYNC` items automatically.
 4. If `RTLCP_SUBMIT=1`, the notebook opens the submission PR automatically.
 5. Review and merge the PR normally.
+
+## Source Revision Contract
+
+Generated work items store the required runtime revision in two places:
+- `work_items.source_commit` / `task_requests.source_commit`
+- `task_request.request_payload.source_requirement.required_sha`
+
+The worker daemon uses that value before dispatch:
+- if the evaluator service repo already contains the required commit, the item runs normally
+- if the required commit is reachable from `origin/master`, the service repo is updated and the daemon re-execs itself before leasing the item
+- if the commit is missing or the service repo has tracked local modifications, the daemon reports a `source_blocked` or `source_reconcile_error` result instead of running with stale control-plane code
+
+The default evaluator service wrapper enables this behavior:
+```sh
+RTLCP_AUTO_UPDATE_SOURCE=1
+RTLCP_SOURCE_UPDATE_REF=origin/master
+RTLCP_RESTART_ON_SOURCE_UPDATE=1
+```
+
+Set `RTLCP_AUTO_UPDATE_SOURCE=0` only when deliberately testing stale-checkout behavior.
 
 ## Dispatch Behavior
 

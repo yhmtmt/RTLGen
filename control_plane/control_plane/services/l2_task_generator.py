@@ -21,6 +21,7 @@ from control_plane.models.work_items import WorkItem
 from control_plane.services.dependency_gate import evaluate_work_item_dependencies
 from control_plane.services.docs_paths import canonicalize_proposal_path, resolve_proposal_dir
 from control_plane.services.proposal_scaffold import ensure_proposal_scaffold
+from control_plane.services.source_requirement import build_source_requirement
 
 
 class Layer2TaskGenerationError(RuntimeError):
@@ -2985,6 +2986,10 @@ def generate_l2_campaign_task(session: Session, request: Layer2CampaignGenerateR
         depends_on_item_ids=effective_depends_on_item_ids,
         requires_merged_inputs=effective_requires_merged_inputs,
         requires_materialized_refs=effective_requires_materialized_refs,
+    )
+    payload["source_requirement"] = build_source_requirement(
+        repo_root=repo_root,
+        required_sha=source_commit,
     )
     initial_state = WorkItemState.DISPATCH_PENDING
     transient_work_item = WorkItem(

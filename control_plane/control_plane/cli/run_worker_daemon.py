@@ -56,6 +56,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-polls", type=int)
     parser.add_argument("--stop-on-no-work", action="store_true")
     parser.add_argument("--no-scheduler-maintenance", action="store_true")
+    parser.add_argument("--auto-update-source", action="store_true")
+    parser.add_argument("--source-update-ref", default="origin/master")
+    parser.add_argument("--no-restart-on-source-update", action="store_true")
     args = parser.parse_args(argv)
 
     engine = build_engine(args.database_url)
@@ -102,6 +105,9 @@ def main(argv: list[str] | None = None) -> int:
             max_polls=args.max_polls,
             stop_on_no_work=args.stop_on_no_work,
             run_scheduler_maintenance=not args.no_scheduler_maintenance,
+            auto_update_source=args.auto_update_source,
+            source_update_ref=args.source_update_ref,
+            restart_on_source_update=not args.no_restart_on_source_update,
         ),
     )
     print(

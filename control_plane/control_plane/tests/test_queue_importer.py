@@ -66,6 +66,32 @@ def test_import_real_queue_item(tmp_path: Path) -> None:
         assert reconciliation.status.value == "applied"
 
 
+def test_import_uses_payload_source_requirement(tmp_path: Path) -> None:
+    repo_root, queue_file, source_commit = _make_queue_import_repo(tmp_path)
+    payload = json.loads(queue_file.read_text(encoding="utf-8"))
+    payload["source_requirement"] = {
+        "version": 1,
+        "required_ref": "origin/master",
+        "required_sha": source_commit,
+        "requires_daemon_restart": True,
+    }
+    queue_file.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+    with make_session() as session:
+        import_queue_item(
+            session,
+            QueueImportRequest(
+                repo_root=str(repo_root),
+                queue_path=str(queue_file),
+            ),
+        )
+
+        work_item = session.query(WorkItem).filter_by(item_id="l2_e2e_softmax_macro_tail_v1").one()
+        task_request = session.query(TaskRequest).filter_by(request_key="queue:l2_e2e_softmax_macro_tail_v1").one()
+        assert work_item.source_commit == source_commit
+        assert task_request.source_commit == source_commit
+
+
 def test_import_same_item_is_idempotent() -> None:
     with make_session() as session:
         first = import_queue_item(

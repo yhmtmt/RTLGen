@@ -92,6 +92,16 @@ def _semantic_payload(payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _payload_source_commit(payload: dict[str, Any]) -> str | None:
+    source_requirement = payload.get("source_requirement")
+    if isinstance(source_requirement, dict):
+        required_sha = str(source_requirement.get("required_sha") or "").strip()
+        if required_sha:
+            return required_sha
+    source_commit = str(payload.get("source_commit") or "").strip()
+    return source_commit or None
+
+
 def _queue_state_to_work_item_state(queue_state: str) -> WorkItemState:
     if queue_state == "evaluated":
         return WorkItemState.AWAITING_REVIEW
@@ -200,13 +210,16 @@ def _record_reconciliation(
 
 def import_queue_item(session: Session, request: QueueImportRequest) -> QueueImportResult:
     repo_root = Path(request.repo_root)
-    resolved_source_commit = _resolve_source_commit(repo_root, request.source_commit)
 
     queue_file = request.resolve_path()
     if not queue_file.exists():
         raise QueueImportError(f"queue file not found: {queue_file}")
 
     payload = json.loads(queue_file.read_text(encoding="utf-8"))
+    resolved_source_commit = _resolve_source_commit(
+        repo_root,
+        request.source_commit or _payload_source_commit(payload),
+    )
     item_id = payload.get("item_id")
     if not item_id:
         raise QueueImportError(f"queue item missing item_id: {queue_file}")
@@ -295,7 +308,7 @@ def import_queue_item(session: Session, request: QueueImportRequest) -> QueueImp
         existing.task_request.title = payload.get("title", existing.task_request.title)
         existing.task_request.description = (payload.get("task") or {}).get("objective", existing.task_request.description)
         existing.task_request.priority = int(payload.get("priority", existing.task_request.priority))
-        existing.task_request.source_commit = request.source_commit
+        existing.task_request.source_commit = resolved_source_commit
         changed = True
 
     imported_state = _queue_state_to_work_item_state(payload.get("state", "queued"))

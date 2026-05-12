@@ -11,6 +11,12 @@ from sqlalchemy.exc import DBAPIError, OperationalError
 from sqlalchemy.orm import sessionmaker
 
 from control_plane.clock import utcnow
+from control_plane.services.source_reconciler import (
+    SourceReconciliationError,
+    next_source_required_item,
+    reconcile_service_repo_source,
+    reexec_current_process,
+)
 from control_plane.services.lease_service import expire_stale_leases
 from control_plane.services.worker_service import run_worker
 from control_plane.workers.executor import WorkerConfig, WorkerLoopResult
@@ -25,6 +31,9 @@ class WorkerDaemonConfig:
     max_polls: int | None = None
     stop_on_no_work: bool = False
     run_scheduler_maintenance: bool = True
+    auto_update_source: bool = False
+    source_update_ref: str = "origin/master"
+    restart_on_source_update: bool = True
 
 
 @dataclass(frozen=True)
@@ -82,6 +91,67 @@ def _run_parallel_batch(
     return results
 
 
+def _reconcile_next_item_source(
+    session_factory: sessionmaker,
+    *,
+    config: WorkerDaemonConfig,
+    logger: Callable[[str], None],
+) -> WorkerLoopResult | None:
+    if not config.auto_update_source:
+        return None
+    with session_factory() as session:
+        item = next_source_required_item(
+            session,
+            machine_key=config.worker.machine_key,
+            hostname=config.worker.hostname,
+            executor_kind=config.worker.executor_kind,
+            machine_role=config.worker.machine_role,
+            slot_capacity=config.worker.slot_capacity,
+            capabilities=config.worker.capabilities,
+            capability_filter=config.worker.capability_filter,
+        )
+    if item is None:
+        return None
+
+    required_sha = str(item.source_commit or "").strip()
+    try:
+        result = reconcile_service_repo_source(
+            repo_root=config.worker.repo_root,
+            required_sha=required_sha,
+            update_ref=config.source_update_ref,
+            allow_update=config.auto_update_source,
+        )
+    except SourceReconciliationError as exc:
+        logger(
+            "worker-daemon source_reconcile_error "
+            f"item_id={item.item_id} required_sha={required_sha} error={exc}"
+        )
+        return WorkerLoopResult(
+            status="source_reconcile_error",
+            item_id=item.item_id,
+            summary=str(exc),
+        )
+
+    if result.status in {"satisfied", "no_requirement"}:
+        return None
+
+    logger(
+        "worker-daemon source_reconcile "
+        f"item_id={item.item_id} status={result.status} "
+        f"required_sha={result.required_sha} current_sha={result.current_sha} "
+        f"relation={result.source_commit_relation} message={result.message or ''}"
+    )
+    if result.status == "updated" and result.restart_required and config.restart_on_source_update:
+        logger("worker-daemon source_reconcile reexec reason=service_repo_updated")
+        reexec_current_process()
+
+    return WorkerLoopResult(
+        status=f"source_{result.status}",
+        item_id=item.item_id,
+        summary=result.message or result.source_commit_relation or result.status,
+    )
+
+
 def run_worker_daemon(
     session_factory: sessionmaker,
     *,
@@ -121,7 +191,17 @@ def run_worker_daemon(
                 raise
 
         try:
-            batch = _run_parallel_batch(session_factory, config=config)
+            reconcile_result = _reconcile_next_item_source(
+                session_factory,
+                config=config,
+                logger=logger,
+            )
+            if reconcile_result is not None:
+                batch = [reconcile_result]
+            else:
+                batch = _run_parallel_batch(session_factory, config=config)
+        except SystemExit:
+            raise
         except Exception as exc:
             if _is_retryable_db_error(exc):
                 logger(f"worker-daemon db_unavailable stage=batch error={exc}")
