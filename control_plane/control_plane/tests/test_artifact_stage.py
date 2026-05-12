@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from control_plane.workers.artifact_stage import collect_linked_results_artifacts
+from control_plane.workers.artifact_stage import collect_expected_output_artifacts, collect_linked_results_artifacts
 
 
 def _write_json(path: Path, doc: dict) -> None:
@@ -77,3 +77,28 @@ def test_collect_linked_results_artifacts_includes_decoder_sweep_sidecars(tmp_pa
     ]
     assert all(artifact.kind == "supporting_output" for artifact in artifacts)
     assert all(artifact.metadata["transport_policy"] == "inline_text_supporting" for artifact in artifacts)
+
+
+def test_collect_expected_output_artifacts_includes_attention_kv_dataset(tmp_path: Path) -> None:
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    json_rel = (
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+        "decoder_attention_kv_memory__l2_decoder_attention_kv_memory_v1.json"
+    )
+    report_rel = (
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+        "decoder_attention_kv_memory__l2_decoder_attention_kv_memory_v1.md"
+    )
+    _write_json(repo_root / json_rel, {"sweep_summary": {"generated_rows": 7200, "compact_rows": 240}})
+    (repo_root / report_rel).write_text("# attention kv\n", encoding="utf-8")
+
+    artifacts = collect_expected_output_artifacts(
+        repo_root=str(repo_root),
+        expected_outputs=[json_rel, report_rel],
+    )
+
+    assert [artifact.path for artifact in artifacts] == [json_rel, report_rel]
+    assert all(artifact.kind == "expected_output" for artifact in artifacts)
+    assert all(artifact.metadata["transport_policy"] == "inline_text_evidence" for artifact in artifacts)
+    assert all("inline_utf8" in artifact.metadata for artifact in artifacts)

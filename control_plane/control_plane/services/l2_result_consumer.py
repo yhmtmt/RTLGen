@@ -436,6 +436,7 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
     ("bitwidth_boundary_out", "bitwidth_boundary_report"),
     ("quantization_outline_out", "quantization_outline_report"),
     ("cost_proxy_out", "cost_proxy_report"),
+    ("attention_kv_memory_out", "attention_kv_memory_report"),
 )
 
 

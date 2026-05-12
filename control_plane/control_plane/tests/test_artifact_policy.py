@@ -11,3 +11,14 @@ def test_transportable_expected_output_rejects_campaign_artifacts_dir() -> None:
     assert not is_transportable_expected_output(
         "runs/campaigns/npu/demo_campaign__l2_demo_campaign/artifacts/mapper/x/schedule.yml"
     )
+
+
+def test_transportable_expected_output_allows_compact_attention_kv_dataset() -> None:
+    assert is_transportable_expected_output(
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+        "decoder_attention_kv_memory__l2_decoder_attention_kv_memory_v1.json"
+    )
+    assert is_transportable_expected_output(
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+        "decoder_attention_kv_memory__l2_decoder_attention_kv_memory_v1.md"
+    )
