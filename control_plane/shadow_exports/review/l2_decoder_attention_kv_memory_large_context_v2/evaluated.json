@@ -22,37 +22,35 @@
         "attention_kv_memory_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_memory__l2_decoder_attention_kv_memory_large_context_v2.json",
         "attention_kv_memory_grid": {
           "kv_bits_list": [
+            4,
             8,
             16
           ],
           "noc_hops_list": [
-            0,
             1,
             2,
             4
           ],
           "kv_sharing_list": [
-            "mha",
             "gqa4",
             "mqa"
           ],
           "kv_memory_tier_list": [
-            "local_sram",
             "shared_sram",
             "hbm",
             "remote_hbm"
           ],
           "macs_per_cycle_list": [
-            8192,
             32768,
-            131072
+            131072,
+            524288
           ],
           "sequence_length_list": [
-            128,
-            512,
             2048,
             8192,
-            32768
+            32768,
+            65536,
+            131072
           ]
         },
         "attention_kv_memory_scope": "Coarse single-token decoder attention model that separates QKV projection, QK score, softmax, value mix, output projection, KV-cache memory tier, NoC hops, KV precision, and MHA/GQA/MQA sharing.",
