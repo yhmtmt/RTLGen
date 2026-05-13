@@ -1904,6 +1904,59 @@ def test_generate_l2_campaign_task_adds_decoder_attention_kv_memory_evidence() -
             }
 
 
+def test_generate_l2_campaign_task_adds_decoder_frontier_synthesis_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    item_id="l2_decoder_frontier_synthesis_v1",
+                    proposal_id="prop_l2_decoder_frontier_synthesis_v1",
+                    proposal_path="docs/proposals/prop_l2_decoder_frontier_synthesis_v1/proposal.json",
+                    evaluation_mode="frontier_detail",
+                    abstraction_layer="decoder_frontier_synthesis",
+                    expected_direction="iterate",
+                    comparison_role="ranking",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+            command_names = [command["name"] for command in work_item.command_manifest]
+            assert command_names[:4] == [
+                "estimate_decoder_stage_breakdown",
+                "estimate_decoder_attention_kv_memory",
+                "estimate_decoder_producer_ranker_coupled_noc",
+                "synthesize_decoder_frontier",
+            ]
+            synth_run = work_item.command_manifest[3]["run"]
+            assert "synthesize_llm_decoder_frontier.py" in synth_run
+            assert "--stage-breakdown" in synth_run
+            assert "--attention-kv-memory" in synth_run
+            assert "--producer-ranker-coupled" in synth_run
+            assert decoder_inputs["decoder_frontier_synthesis_out"] == (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_frontier_synthesis__l2_decoder_frontier_synthesis_v1.json"
+            )
+            assert "measured attention/KV tile-calibrated" in decoder_inputs["decoder_frontier_synthesis_scope"]
+            assert decoder_inputs["decoder_frontier_synthesis_out"] in work_item.expected_outputs
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
+                "layer": "decoder_frontier_synthesis",
+            }
+
+
 def test_generate_l2_campaign_task_adds_decoder_pwl_logit_sensitivity_ladder_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

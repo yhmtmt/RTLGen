@@ -2276,6 +2276,57 @@ def _decoder_attention_kv_memory_evidence(*, item_id: str) -> dict[str, Any]:
     }
 
 
+def _decoder_frontier_synthesis_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    stage = _decoder_stage_breakdown_evidence(item_id=item_id)
+    attention = _decoder_attention_kv_memory_evidence(item_id=item_id)
+    producer = _decoder_producer_ranker_coupled_noc_evidence(item_id=item_id)
+    out = f"{base}/decoder_frontier_synthesis__{item_id}.json"
+    report = f"{base}/decoder_frontier_synthesis__{item_id}.md"
+
+    stage_out = stage["inputs"]["stage_breakdown_out"]
+    attention_out = attention["inputs"]["attention_kv_memory_out"]
+    producer_out = producer["inputs"]["producer_ranker_coupled_out"]
+    commands = [
+        *stage["commands"],
+        *attention["commands"],
+        *producer["commands"],
+        {
+            "name": "synthesize_decoder_frontier",
+            "run": (
+                "python3 npu/eval/synthesize_llm_decoder_frontier.py "
+                f"--stage-breakdown {stage_out} "
+                f"--attention-kv-memory {attention_out} "
+                f"--producer-ranker-coupled {producer_out} "
+                f"--out {out} "
+                f"--out-md {report}"
+            ),
+        },
+    ]
+    return {
+        "inputs": {
+            **stage["inputs"],
+            **attention["inputs"],
+            **producer["inputs"],
+            "decoder_frontier_synthesis_out": out,
+            "decoder_frontier_synthesis_report": report,
+            "decoder_frontier_synthesis_scope": (
+                "Combine whole-decoder stage breakdown, measured attention/KV tile-calibrated "
+                "memory pressure, and producer/ranker NoC coupling to identify the dominant "
+                "frontier before queueing deeper RTL blocks."
+            ),
+        },
+        "commands": commands,
+        "expected_outputs": [
+            *stage["expected_outputs"],
+            *attention["expected_outputs"],
+            *producer["expected_outputs"],
+            out,
+            report,
+        ],
+    }
+
+
 def _decoder_distilgpt2_prompt_stress_evidence(*, item_id: str) -> dict[str, Any]:
     return _decoder_distilgpt2_quality_evidence_for_dataset(
         item_id=item_id,
@@ -2743,10 +2794,13 @@ def _build_payload(
         "decoder_producer_ranker_coupled_noc",
         "decoder_stage_breakdown",
         "decoder_attention_kv_memory",
+        "decoder_frontier_synthesis",
         "decoder_quantization_outline",
     }:
         if abstraction_layer_name == "decoder_quantization_outline":
             decoder_evidence = _decoder_quantization_outline_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_frontier_synthesis":
+            decoder_evidence = _decoder_frontier_synthesis_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_memory":
             decoder_evidence = _decoder_attention_kv_memory_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_stage_breakdown":
