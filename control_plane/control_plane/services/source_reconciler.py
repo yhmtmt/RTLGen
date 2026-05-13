@@ -4,8 +4,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from contextlib import contextmanager
+from datetime import datetime, timezone
 from pathlib import Path
+import json
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -37,6 +40,7 @@ class SourceReconciliationResult:
     source_commit_relation: str | None = None
     message: str | None = None
     restart_required: bool = False
+    quarantine_paths: tuple[str, ...] = ()
 
 
 def _run_git(repo_root: Path, *args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
@@ -209,21 +213,114 @@ def _recover_stale_git_index_lock(repo_root: Path) -> bool:
         raise SourceReconciliationError(f"failed to remove stale git index lock {index_lock}: {exc}") from exc
 
 
-def _checkout_source_target(repo_root: Path, target: str) -> None:
-    try:
-        _run_git(repo_root, "checkout", "--detach", target)
-    except (OSError, subprocess.CalledProcessError) as exc:
-        stderr = getattr(exc, "stderr", "") or ""
-        if "index.lock" not in stderr:
-            raise SourceReconciliationError(f"failed to checkout source target {target}: {exc}") from exc
-        if not _recover_stale_git_index_lock(repo_root):
-            raise SourceReconciliationError(f"failed to checkout source target {target}: {exc}") from exc
+def _checkout_blocking_untracked_paths(stderr: str) -> list[str]:
+    marker = "The following untracked working tree files would be overwritten by checkout:"
+    paths: list[str] = []
+    collecting = False
+    for line in stderr.splitlines():
+        text = line.strip()
+        if marker in text:
+            collecting = True
+            continue
+        if not collecting:
+            continue
+        if not text:
+            continue
+        if text.startswith("Please ") or text == "Aborting":
+            break
+        if text.startswith("error:"):
+            continue
+        paths.append(text)
+    return paths
+
+
+def _safe_repo_relative_path(raw_path: str) -> Path:
+    path = Path(raw_path)
+    if path.is_absolute() or not path.parts or any(part in {"", ".", ".."} for part in path.parts):
+        raise SourceReconciliationError(f"unsafe checkout blocker path reported by git: {raw_path}")
+    return path
+
+
+def _source_quarantine_root() -> Path:
+    root = os.environ.get("RTLCP_SOURCE_QUARANTINE_ROOT", "/tmp")
+    return Path(root).resolve()
+
+
+def _quarantine_untracked_checkout_blockers(repo_root: Path, paths: list[str], target: str) -> Path:
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    quarantine_dir = _source_quarantine_root() / f"{repo_root.name}-checkout-blockers-{stamp}-{os.getpid()}"
+    moved: list[dict[str, str]] = []
+    for raw_path in paths:
+        rel_path = _safe_repo_relative_path(raw_path)
+        if _git_success(repo_root, "ls-files", "--error-unmatch", "--", str(rel_path)):
+            raise SourceReconciliationError(f"checkout blocker is tracked in current service repo: {rel_path}")
+        source = (repo_root / rel_path).resolve()
+        try:
+            source.relative_to(repo_root)
+        except ValueError as exc:
+            raise SourceReconciliationError(f"checkout blocker escapes service repo: {rel_path}") from exc
+        if not source.exists():
+            continue
+        destination = quarantine_dir / rel_path
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(source), str(destination))
+        moved.append({"source": str(rel_path), "quarantined_to": str(destination)})
+
+    if not moved:
+        raise SourceReconciliationError(
+            "git reported untracked checkout blockers, but none could be found to quarantine"
+        )
+    manifest = {
+        "repo_root": str(repo_root),
+        "target": target,
+        "moved": moved,
+        "created_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+    }
+    quarantine_dir.mkdir(parents=True, exist_ok=True)
+    (quarantine_dir / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    return quarantine_dir
+
+
+def _checkout_error_message(target: str, exc: Exception, context: str | None = None) -> str:
+    stderr = str(getattr(exc, "stderr", "") or "").strip()
+    prefix = f"failed to checkout source target {target}"
+    if context:
+        prefix = f"{prefix} {context}"
+    if stderr:
+        return f"{prefix}: {stderr}"
+    return f"{prefix}: {exc}"
+
+
+def _checkout_source_target(repo_root: Path, target: str) -> tuple[Path, ...]:
+    quarantine_dirs: list[Path] = []
+    recovered_index_lock = False
+    quarantine_attempts = 0
+
+    while True:
         try:
             _run_git(repo_root, "checkout", "--detach", target)
-        except (OSError, subprocess.CalledProcessError) as retry_exc:
-            raise SourceReconciliationError(
-                f"failed to checkout source target {target} after stale index lock recovery: {retry_exc}"
-            ) from retry_exc
+            return tuple(quarantine_dirs)
+        except (OSError, subprocess.CalledProcessError) as exc:
+            stderr = getattr(exc, "stderr", "") or ""
+            if "index.lock" in stderr and not recovered_index_lock:
+                recovered_index_lock = True
+                if not _recover_stale_git_index_lock(repo_root):
+                    raise SourceReconciliationError(_checkout_error_message(target, exc)) from exc
+                continue
+
+            blocker_paths = _checkout_blocking_untracked_paths(stderr)
+            if blocker_paths and quarantine_attempts < 3:
+                quarantine_attempts += 1
+                quarantine_dirs.append(_quarantine_untracked_checkout_blockers(repo_root, blocker_paths, target))
+                continue
+
+            context = None
+            if recovered_index_lock:
+                context = "after stale index lock recovery"
+            if quarantine_dirs:
+                paths = ", ".join(str(path) for path in quarantine_dirs)
+                context = f"after quarantining untracked blockers at {paths}"
+            raise SourceReconciliationError(_checkout_error_message(target, exc, context)) from exc
 
 
 def _current_head(repo_root: Path) -> str | None:
@@ -377,7 +474,7 @@ def _reconcile_service_repo_source_locked(
             message="service repo has tracked local modifications; refusing automatic checkout",
         )
 
-    _checkout_source_target(repo_path, target)
+    quarantine_paths = _checkout_source_target(repo_path, target)
 
     new_head = _current_head(repo_path)
     new_relation = _source_relation(repo_path, required, new_head)
@@ -390,13 +487,18 @@ def _reconcile_service_repo_source_locked(
             message=f"updated service repo does not satisfy required source commit: {required}",
         )
 
+    message = f"service repo updated to {target}"
+    if quarantine_paths:
+        message = f"{message}; quarantined untracked checkout blockers at {', '.join(str(path) for path in quarantine_paths)}"
+
     return SourceReconciliationResult(
         status="updated",
         required_sha=required,
         current_sha=new_head,
         source_commit_relation=new_relation,
         restart_required=True,
-        message=f"service repo updated to {target}",
+        message=message,
+        quarantine_paths=tuple(str(path) for path in quarantine_paths),
     )
 
 

@@ -82,3 +82,46 @@ def test_reconcile_service_repo_keeps_index_lock_when_git_process_appears_active
         )
 
     assert index_lock.exists()
+
+
+def test_reconcile_service_repo_quarantines_untracked_checkout_blockers(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    first, _second = _init_repo_with_stale_head(repo_root)
+    blocker_rel = Path("runs/designs/activations/demo_wrapper/metrics.csv")
+    _run("git", "-C", str(repo_root), "checkout", "master")
+    tracked_blocker = repo_root / blocker_rel
+    tracked_blocker.parent.mkdir(parents=True, exist_ok=True)
+    tracked_blocker.write_text("tracked,new\n", encoding="utf-8")
+    _run("git", "-C", str(repo_root), "add", str(blocker_rel))
+    _run("git", "-C", str(repo_root), "commit", "-m", "track generated metric")
+    _run("git", "-C", str(repo_root), "push", "origin", "HEAD:master")
+    required = _run("git", "-C", str(repo_root), "rev-parse", "HEAD")
+    _run("git", "-C", str(repo_root), "checkout", "--detach", first)
+    blocker = repo_root / blocker_rel
+    blocker.parent.mkdir(parents=True, exist_ok=True)
+    blocker.write_text("generated,old\n", encoding="utf-8")
+    monkeypatch.setenv("RTLCP_SOURCE_QUARANTINE_ROOT", str(tmp_path / "quarantine"))
+
+    result = reconcile_service_repo_source(
+        repo_root=str(repo_root),
+        required_sha=required,
+        update_ref="origin/master",
+        allow_update=True,
+    )
+
+    assert result.status == "updated"
+    assert result.required_sha == required
+    assert _run("git", "-C", str(repo_root), "rev-parse", "HEAD") == required
+    assert first != required
+    assert blocker.exists()
+    assert blocker.read_text(encoding="utf-8") != "generated,old\n"
+    assert len(result.quarantine_paths) == 1
+    quarantine_dir = Path(result.quarantine_paths[0])
+    assert quarantine_dir.is_dir()
+    assert (quarantine_dir / blocker_rel).read_text(encoding="utf-8") == "generated,old\n"
+    assert (quarantine_dir / "manifest.json").exists()
+    assert "quarantined untracked checkout blockers" in (result.message or "")
