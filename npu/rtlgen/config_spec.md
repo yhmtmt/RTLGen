@@ -43,6 +43,7 @@ can later be extended without breaking v0.1.
   "enable_irq": true,
   "enable_dma_ports": true,
   "enable_cq_mem_ports": true,
+  "cq_mem_ablation_mode": "full",
   "enable_axi_ports": true,
   "enable_axi_lite_wrapper": false,
   "compute": {
@@ -95,6 +96,10 @@ can later be extended without breaking v0.1.
 - `enable_irq` (bool): include IRQ output.
 - `enable_dma_ports` (bool): include a stub DMA/memory interface.
 - `enable_cq_mem_ports` (bool): include a command queue memory read port.
+- `cq_mem_ablation_mode` (string, optional): diagnostic-only command-queue
+  subpath selector for synthesis probes. Default `full` preserves the normal
+  generated CQ fetch/decode/issue RTL. Other values are not production RTL
+  modes; they are used to isolate synthesis behavior.
 - `enable_axi_ports` (bool): include AXI4-like memory interface ports (stub).
 - `enable_axi_lite_wrapper` (bool): emit an AXI-Lite wrapper module for MMIO.
 - `compute` (object, optional): Phase 1 compute generation controls.

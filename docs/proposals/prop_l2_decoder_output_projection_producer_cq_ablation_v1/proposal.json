@@ -1,0 +1,72 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_producer_cq_ablation_v1",
+  "created_utc": "2026-05-13T22:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_output_projection_producer_cq_ablation",
+  "title": "Decoder output-projection producer command-queue synthesis ablation",
+  "hypothesis": "The nm2 whole npu_top timeout was bracketed to the command-queue memory fetch, descriptor decode, and issue logic. Splitting that CQ path into fetch, v0.1 header, DMA, GEMM, VEC, SOFTMAX/EVENT, and v0.2 extension subpaths should identify whether a single decode expression or a subpath interaction triggers the Yosys pre-ABC expansion.",
+  "direct_comparison": {
+    "primary_question": "Which command-queue subpath first changes the nm2 producer top from synth-viable to synth-nonviable?",
+    "include": [
+      "nm2 fp16 producer base config",
+      "known-passing no_cq_mem_ports anchor",
+      "diagnostic generator modes for CQ fetch-only, v0.1 header, DMA_COPY, GEMM issue, VEC validation, SOFTMAX/EVENT, and v0.2 GEMM extension paths",
+      "bounded Nangate45 synth-only target 1_2_yosys",
+      "static generated-RTL size counters per variant"
+    ],
+    "exclude": [
+      "full placement and routing",
+      "producer scale beyond nm2",
+      "quality or QAT experiments",
+      "changing the default full CQ RTL behavior",
+      "changing perf-simulator semantics"
+    ]
+  },
+  "expected_benefit": [
+    "turns the broad CQ-memory culprit from the previous ablation into a specific RTL generator subpath",
+    "distinguishes isolated expression explosion from multi-branch decode interaction",
+    "provides evidence for a targeted fix such as staged decode, hierarchy preservation, or narrower arithmetic expressions"
+  ],
+  "risks": [
+    "the diagnostic modes are not intended as production RTL modes and only preserve the default full mode behavior",
+    "several subpaths may be individually viable, requiring a follow-on pairwise interaction matrix",
+    "bounded timeout values classify synth nonviability for exploration rather than proving absolute impossibility"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_output_projection_producer_cq_ablation_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run bounded synth-only nm2 npu_top command-queue subpath ablations to isolate the descriptor decode/issue logic responsible for the whole-top synthesis timeout.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_output_projection_producer_cq_ablation",
+      "cost_class": "bounded-medium",
+      "comparison_role": "producer_synth_boundary",
+      "paired_baseline_item_id": "l2_decoder_output_projection_producer_top_ablation_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_output_projection_producer_top_ablation_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "The output should identify the first CQ subpath that becomes nonviable, or show that each individual subpath is viable and a pairwise interaction probe is required."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "control_plane/shadow_exports/l2_decisions/l2_decoder_output_projection_producer_top_ablation_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_producer_top_ablation__l2_decoder_output_projection_producer_top_ablation_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_producer_isolated_synth__l2_decoder_output_projection_producer_isolated_synth_scale_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/probe_decoder_producer_cq_ablation.py",
+    "npu/eval/probe_decoder_producer_top_ablation.py",
+    "npu/rtlgen/gen.py",
+    "npu/synth/run_block_sweep.py",
+    "runs/campaigns/npu/output_projection_producer_scale/sweeps/nangate45_synth_boundary.json",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}
