@@ -2377,6 +2377,8 @@ def _decoder_output_projection_producer_isolated_synth_evidence(*, item_id: str)
     configs = [
         "runs/designs/npu_blocks/npu_fp16_cpp_nm1_producer/config_nm1_producer.json",
         "runs/designs/npu_blocks/npu_fp16_cpp_nm2_producer/config_nm2_producer.json",
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm3_producer/config_nm3_producer.json",
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm4_producer/config_nm4_producer.json",
     ]
     sweep = "runs/campaigns/npu/output_projection_producer_scale/sweeps/nangate45_isolated_synth.json"
     return {
@@ -2388,9 +2390,9 @@ def _decoder_output_projection_producer_isolated_synth_evidence(*, item_id: str)
             "producer_synth_boundary_make_target": "1_2_yosys",
             "producer_synth_boundary_top": "gemm_compute_array",
             "producer_synth_boundary_scope": (
-                "Probe the isolated generated gemm_compute_array producer submodule for nm1 and nm2 "
-                "with a clockless synth-only target, separating compute-array synthesis from npu_top "
-                "control/MMIO/queue synthesis."
+                "Probe the isolated generated gemm_compute_array producer submodule for nm1 through "
+                "nm4 with a clockless synth-only target, separating compute-array synthesis from "
+                "npu_top control/MMIO/queue synthesis."
             ),
         },
         "commands": [

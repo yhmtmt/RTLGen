@@ -2054,12 +2054,15 @@ def test_generate_l2_campaign_task_adds_decoder_producer_isolated_synth_evidence
             assert "--make-target 1_2_yosys" in run
             assert "npu_fp16_cpp_nm1_producer/config_nm1_producer.json" in run
             assert "npu_fp16_cpp_nm2_producer/config_nm2_producer.json" in run
+            assert "npu_fp16_cpp_nm3_producer/config_nm3_producer.json" in run
+            assert "npu_fp16_cpp_nm4_producer/config_nm4_producer.json" in run
             assert decoder_inputs["producer_synth_boundary_out"] == (
                 "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
                 "decoder_output_projection_producer_isolated_synth__"
                 "l2_decoder_output_projection_producer_isolated_synth_v1.json"
             )
             assert decoder_inputs["producer_synth_boundary_top"] == "gemm_compute_array"
+            assert "nm1 through nm4" in decoder_inputs["producer_synth_boundary_scope"]
             assert "separating compute-array synthesis" in decoder_inputs["producer_synth_boundary_scope"]
             assert decoder_inputs["producer_synth_boundary_out"] in work_item.expected_outputs
             assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
