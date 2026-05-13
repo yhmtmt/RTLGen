@@ -534,6 +534,23 @@ def _config_args(config_paths: list[str]) -> str:
     return " ".join(shlex.quote(path) for path in config_paths)
 
 
+def _command_manifest_for_targets(targets: list[Layer1ConfigTarget]) -> list[dict[str, str]]:
+    if not targets:
+        return []
+    if targets[0].design_kind != "block":
+        return [dict(command) for command in targets[0].commands]
+
+    commands = [dict(targets[0].commands[0])]
+    multi_target = len(targets) > 1
+    for target in targets:
+        for command in target.commands[1:]:
+            entry = dict(command)
+            if multi_target:
+                entry["name"] = f"{entry['name']}_{target.design_name}"
+            commands.append(entry)
+    return commands
+
+
 def _expand_expected_outputs_for_trials(*, expected_outputs: list[str], trial_policy: dict[str, int]) -> list[str]:
     trial_count = max(int((trial_policy or {}).get("trial_count") or 1), 1)
     if trial_count <= 1:
@@ -688,7 +705,7 @@ def generate_l1_sweep_task(session: Session, request: Layer1SweepGenerateRequest
         raise Layer1TaskGenerationError(
             f"mixed Layer1 config kinds are not supported in one sweep item: {sorted(design_kinds)}"
         )
-    command_manifest = list(targets[0].commands)
+    command_manifest = _command_manifest_for_targets(targets)
     config_args = _config_args(config_paths)
     for command in command_manifest:
         command["run"] = command["run"].format(

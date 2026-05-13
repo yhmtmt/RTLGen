@@ -944,6 +944,77 @@ def test_generate_l1_sweep_task_supports_integrated_npu_block_configs() -> None:
             )
             assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {"layer": "architecture_block"}
 
+
+def test_generate_l1_sweep_task_emits_commands_for_each_integrated_block_config() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_block_repo(
+            repo_root,
+            mode_compare=False,
+            synth_hierarchical=1,
+        )
+        second_design_dir = repo_root / "runs" / "designs" / "npu_blocks" / "npu_fp16_cpp_nm2_sigmoidcmp"
+        second_design_dir.mkdir(parents=True, exist_ok=True)
+        second_config_path = second_design_dir / "config_nm2_sigmoid.json"
+        second_config_path.write_text(
+            json.dumps(
+                {
+                    "version": "0.1",
+                    "top_name": "npu_top",
+                    "mmio_addr_width": 12,
+                    "compute": {
+                        "enabled": True,
+                        "gemm": {"mac_type": "fp16", "lanes": 1, "accum_width": 16, "num_modules": 2},
+                        "vec": {"lanes": 1, "ops": ["add", "mul", "relu", "sigmoid"]},
+                    },
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        second_config_rel = str(second_config_path.relative_to(repo_root))
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path, second_config_rel],
+                    platform="nangate45",
+                    out_root="runs/designs/npu_blocks",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="architecture_block",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert [command["name"] for command in work_item.command_manifest] == [
+                "build_generator",
+                "generate_block_rtl_npu_fp16_cpp_nm1_sigmoidcmp",
+                "run_block_sweep_npu_fp16_cpp_nm1_sigmoidcmp",
+                "generate_block_rtl_npu_fp16_cpp_nm2_sigmoidcmp",
+                "run_block_sweep_npu_fp16_cpp_nm2_sigmoidcmp",
+                "build_runs_index",
+                "validate",
+            ]
+            joined_commands = "\n".join(command["run"] for command in work_item.command_manifest)
+            assert "--config runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/config_nm1_sigmoid.json " in joined_commands
+            assert "--config runs/designs/npu_blocks/npu_fp16_cpp_nm2_sigmoidcmp/config_nm2_sigmoid.json " in joined_commands
+            assert "--design_dir runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp " in joined_commands
+            assert "--design_dir runs/designs/npu_blocks/npu_fp16_cpp_nm2_sigmoidcmp " in joined_commands
+            assert work_item.expected_outputs == [
+                "runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/metrics.csv",
+                "runs/designs/npu_blocks/npu_fp16_cpp_nm2_sigmoidcmp/metrics.csv",
+            ]
+
+
 def test_generate_l1_sweep_task_rejects_flattened_architecture_block_sweeps() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
