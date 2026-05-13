@@ -2496,6 +2496,46 @@ def _decoder_output_projection_producer_cq_ablation_evidence(*, item_id: str) ->
     }
 
 
+def _decoder_output_projection_producer_softmax_event_ablation_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_output_projection_producer_softmax_event_ablation__{item_id}.json"
+    report = f"{base}/decoder_output_projection_producer_softmax_event_ablation__{item_id}.md"
+    base_config = "runs/designs/npu_blocks/npu_fp16_cpp_nm2_producer/config_nm2_producer.json"
+    sweep = "runs/campaigns/npu/output_projection_producer_scale/sweeps/nangate45_synth_boundary.json"
+    return {
+        "inputs": {
+            "producer_softmax_event_ablation_out": out,
+            "producer_softmax_event_ablation_report": report,
+            "producer_softmax_event_ablation_base_config": base_config,
+            "producer_softmax_event_ablation_sweep": sweep,
+            "producer_softmax_event_ablation_make_target": "1_2_yosys",
+            "producer_softmax_event_ablation_scope": (
+                "Probe the prior failing nm2 CQ SOFTMAX/EVENT slice with diagnostic generator "
+                "modes for SOFTMAX checks, SOFTMAX issue, full SOFTMAX, EVENT_SIGNAL, "
+                "EVENT_WAIT, dynamic event_state index/update, full EVENT, and combined guard."
+            ),
+        },
+        "commands": [
+            {
+                "name": "probe_decoder_output_projection_producer_softmax_event_ablation",
+                "run": (
+                    "python3 npu/eval/probe_decoder_producer_softmax_event_ablation.py "
+                    f"--base-config {base_config} "
+                    f"--sweep {sweep} "
+                    "--platform nangate45 "
+                    "--make-target 1_2_yosys "
+                    "--timeout-seconds 900 "
+                    "--stall-timeout-seconds 450 "
+                    "--continue-after-failure "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_distilgpt2_prompt_stress_evidence(*, item_id: str) -> dict[str, Any]:
     return _decoder_distilgpt2_quality_evidence_for_dataset(
         item_id=item_id,
@@ -2968,10 +3008,13 @@ def _build_payload(
         "decoder_output_projection_producer_isolated_synth",
         "decoder_output_projection_producer_top_ablation",
         "decoder_output_projection_producer_cq_ablation",
+        "decoder_output_projection_producer_softmax_event_ablation",
         "decoder_quantization_outline",
     }:
         if abstraction_layer_name == "decoder_quantization_outline":
             decoder_evidence = _decoder_quantization_outline_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_output_projection_producer_softmax_event_ablation":
+            decoder_evidence = _decoder_output_projection_producer_softmax_event_ablation_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_producer_cq_ablation":
             decoder_evidence = _decoder_output_projection_producer_cq_ablation_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_producer_top_ablation":
