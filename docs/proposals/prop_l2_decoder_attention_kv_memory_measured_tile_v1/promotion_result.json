@@ -1,4 +1,7 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_memory_measured_tile_v1",
-  "decision": "pending"
+  "decision": "iterate",
+  "pr_number": 483,
+  "merge_commit": "86d46be43a4e2acf3613e1ce7b16a3350f5c8e6c",
+  "merged_utc": "2026-05-13T01:40:54Z"
 }

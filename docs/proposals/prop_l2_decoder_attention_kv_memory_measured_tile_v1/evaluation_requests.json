@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_memory_measured_tile_v1",
-  "source_commit": "1227040b3707ba4606496f6452bdfe75fc954199",
+  "source_commit": "b748dcf4eb5ce17a104ca4a26328f032f5cb9040",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_kv_memory_measured_tile_v1",
@@ -20,8 +20,11 @@
         "direction": "iterate",
         "reason": "The output should confirm whether measured tile PPA changes the attention/KV bottleneck map before producer/memory/NoC coupled RTL work is queued."
       },
-      "status": "pending",
-      "notes": "Dispatch after PR #480 is merged so the estimator accepts measured tile metrics."
+      "status": "merged",
+      "notes": "Dispatch after PR #480 is merged so the estimator accepts measured tile metrics. Merged via PR #483 and merge 86d46be43a4e2acf3613e1ce7b16a3350f5c8e6c at 2026-05-13T01:40:54Z.",
+      "merged_pr_number": 483,
+      "merge_commit": "86d46be43a4e2acf3613e1ce7b16a3350f5c8e6c",
+      "merged_utc": "2026-05-13T01:40:54Z"
     }
   ]
 }
