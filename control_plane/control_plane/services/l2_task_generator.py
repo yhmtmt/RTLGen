@@ -2370,6 +2370,50 @@ def _decoder_output_projection_producer_synth_boundary_evidence(*, item_id: str)
     }
 
 
+def _decoder_output_projection_producer_isolated_synth_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_output_projection_producer_isolated_synth__{item_id}.json"
+    report = f"{base}/decoder_output_projection_producer_isolated_synth__{item_id}.md"
+    configs = [
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm1_producer/config_nm1_producer.json",
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm2_producer/config_nm2_producer.json",
+    ]
+    sweep = "runs/campaigns/npu/output_projection_producer_scale/sweeps/nangate45_isolated_synth.json"
+    return {
+        "inputs": {
+            "producer_synth_boundary_out": out,
+            "producer_synth_boundary_report": report,
+            "producer_synth_boundary_configs": configs,
+            "producer_synth_boundary_sweep": sweep,
+            "producer_synth_boundary_make_target": "1_2_yosys",
+            "producer_synth_boundary_top": "gemm_compute_array",
+            "producer_synth_boundary_scope": (
+                "Probe the isolated generated gemm_compute_array producer submodule for nm1 and nm2 "
+                "with a clockless synth-only target, separating compute-array synthesis from npu_top "
+                "control/MMIO/queue synthesis."
+            ),
+        },
+        "commands": [
+            {
+                "name": "probe_decoder_output_projection_producer_isolated_synth",
+                "run": (
+                    "python3 npu/eval/probe_decoder_producer_synth_boundary.py "
+                    f"--configs {','.join(configs)} "
+                    f"--sweep {sweep} "
+                    "--platform nangate45 "
+                    "--top gemm_compute_array "
+                    "--make-target 1_2_yosys "
+                    "--timeout-seconds 1800 "
+                    "--stall-timeout-seconds 900 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_distilgpt2_prompt_stress_evidence(*, item_id: str) -> dict[str, Any]:
     return _decoder_distilgpt2_quality_evidence_for_dataset(
         item_id=item_id,
@@ -2839,10 +2883,13 @@ def _build_payload(
         "decoder_attention_kv_memory",
         "decoder_frontier_synthesis",
         "decoder_output_projection_producer_synth_boundary",
+        "decoder_output_projection_producer_isolated_synth",
         "decoder_quantization_outline",
     }:
         if abstraction_layer_name == "decoder_quantization_outline":
             decoder_evidence = _decoder_quantization_outline_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_output_projection_producer_isolated_synth":
+            decoder_evidence = _decoder_output_projection_producer_isolated_synth_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_producer_synth_boundary":
             decoder_evidence = _decoder_output_projection_producer_synth_boundary_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_frontier_synthesis":
