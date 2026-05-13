@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_producer_cq_ablation_v1",
+  "candidate_id": "l2_decoder_output_projection_producer_cq_ablation_v1",
+  "decision": "iterate",
+  "reason": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_producer_cq_ablation__l2_decoder_output_projection_producer_cq_ablation_v1.json: decision=cq_subpath_culprit_bracketed; recommended_next_step=Compare the first non-OK CQ subpath against the preceding OK subpath and stage or preserve hierarchy around that decode/issue expression.",
+  "evidence_refs": [
+    "item:l2_decoder_output_projection_producer_cq_ablation_v1",
+    "run:l2_decoder_output_projection_producer_cq_ablation_v1_run_b3a5f111cbb32bbe",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_output_projection_producer_cq_ablation_v1.json",
+    "pr:#503",
+    "https://github.com/yhmtmt/RTLGen/pull/503"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_output_projection_producer_cq_ablation_v1",
+  "requires_human_approval": false
+}

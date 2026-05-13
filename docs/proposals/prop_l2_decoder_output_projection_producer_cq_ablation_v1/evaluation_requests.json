@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_output_projection_producer_cq_ablation_v1",
-  "source_commit": "0da220bfa4c0110d07f273dd0bc0043682166145",
+  "source_commit": "886574dd25ad57d2bca73db0cb9a279f3b3e365d",
   "requested_items": [
     {
       "item_id": "l2_decoder_output_projection_producer_cq_ablation_v1",
@@ -18,7 +18,12 @@
       "expected_result": {
         "direction": "iterate",
         "reason": "The output should identify the first CQ subpath that becomes nonviable, or show that each individual subpath is viable and a pairwise interaction probe is required."
-      }
+      },
+      "status": "merged",
+      "merged_pr_number": 503,
+      "merge_commit": "bcd85dca4e306d61a891ddec609ca0f36d22dedc",
+      "merged_utc": "2026-05-13T22:54:01.878115Z",
+      "notes": "Merged via PR #503 and merge bcd85dca4e306d61a891ddec609ca0f36d22dedc at 2026-05-13T22:54:01.878115Z."
     }
   ]
 }

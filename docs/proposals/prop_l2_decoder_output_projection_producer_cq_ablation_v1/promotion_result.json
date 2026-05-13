@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_producer_cq_ablation_v1",
+  "decision": "iterate",
+  "pr_number": 503,
+  "merge_commit": "bcd85dca4e306d61a891ddec609ca0f36d22dedc",
+  "merged_utc": "2026-05-13T22:54:01.878115Z"
+}
