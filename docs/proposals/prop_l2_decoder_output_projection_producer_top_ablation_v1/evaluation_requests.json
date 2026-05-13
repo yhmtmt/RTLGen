@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_output_projection_producer_top_ablation_v1",
-  "source_commit": null,
+  "source_commit": "db05f3ba9e0c4d79a72f99201fc79c0de4bdefa2",
   "requested_items": [
     {
       "item_id": "l2_decoder_output_projection_producer_top_ablation_v1",
@@ -19,7 +19,11 @@
         "direction": "iterate",
         "reason": "The output should identify the first top-level feature delta that changes nm2 whole-top synth from viable to nonviable, or show that a broader interaction matrix is required."
       },
-      "status": "proposed"
+      "status": "merged",
+      "merged_pr_number": 501,
+      "merge_commit": "47c6788d0fd5ea4f4f5cd227c16bd0bba053af61",
+      "merged_utc": "2026-05-13T21:48:15.043918Z",
+      "notes": "Merged via PR #501 and merge 47c6788d0fd5ea4f4f5cd227c16bd0bba053af61 at 2026-05-13T21:48:15.043918Z."
     }
   ]
 }
