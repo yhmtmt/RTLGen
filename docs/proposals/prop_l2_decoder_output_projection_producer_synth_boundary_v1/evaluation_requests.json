@@ -1,9 +1,9 @@
 {
   "proposal_id": "prop_l2_decoder_output_projection_producer_synth_boundary_v1",
-  "source_commit": "pending",
+  "source_commit": "c9a4757707c6e4c51f047c2eed2466ab717ecb3b",
   "requested_items": [
     {
-      "item_id": "l2_decoder_output_projection_producer_synth_boundary_v1",
+      "item_id": "l2_decoder_output_projection_producer_synth_boundary_v1_r2",
       "task_type": "l2_campaign",
       "objective": "Run a bounded synth-only probe for decoder output-projection producer scale over nm2, nm3, and nm4 and report the first runtime-nonviable synthesis point.",
       "evaluation_mode": "frontier_detail",
@@ -19,7 +19,14 @@
         "direction": "iterate",
         "reason": "The output should identify the largest producer scale that finishes synth-only compilation and the first point that times out or stalls, so the next producer architecture job can stay inside the explorable region."
       },
-      "status": "proposed"
+      "status": "merged",
+      "prior_item_ids": [
+        "l2_decoder_output_projection_producer_synth_boundary_v1"
+      ],
+      "merged_pr_number": 495,
+      "merge_commit": "dd83cb744d04cda0ebb32528079e63062e3d6a96",
+      "merged_utc": "2026-05-13T08:54:38.208583Z",
+      "notes": "Merged via PR #495 and merge dd83cb744d04cda0ebb32528079e63062e3d6a96 at 2026-05-13T08:54:38.208583Z."
     }
   ]
 }

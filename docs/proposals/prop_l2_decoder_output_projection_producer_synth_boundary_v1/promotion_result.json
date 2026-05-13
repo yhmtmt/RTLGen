@@ -1,4 +1,7 @@
 {
   "proposal_id": "prop_l2_decoder_output_projection_producer_synth_boundary_v1",
-  "decision": "pending"
+  "decision": "iterate",
+  "pr_number": 495,
+  "merge_commit": "dd83cb744d04cda0ebb32528079e63062e3d6a96",
+  "merged_utc": "2026-05-13T08:54:38.208583Z"
 }
