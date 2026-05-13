@@ -1,6 +1,6 @@
 {
   "version": 0.1,
-  "generated_utc": "2026-05-13T02:25:47.476270Z",
+  "generated_utc": "2026-05-13T02:35:44.634594Z",
   "item_id": "l2_decoder_frontier_synthesis_v1",
   "run_key": "l2_decoder_frontier_synthesis_v1_run_e59761847807d227",
   "layer": "layer2",
@@ -8,7 +8,7 @@
   "platform": "nangate45",
   "task_type": "l2_campaign",
   "source_commit": "babb33627fd6a8c6305f28fe82e3b70c319f6f3a",
-  "review_metadata_source_commit": "babb33627fd6a8c6305f28fe82e3b70c319f6f3a",
+  "review_metadata_source_commit": "1c66d2bdbd56b1f2275beed3d457d7aeac672980",
   "objective": "Synthesize measured attention/KV tile-calibrated memory pressure, producer/ranker NoC coupling, and whole-decoder stage breakdown into one dominant-frontier report.",
   "input_manifest": {
     "sweeps": [
@@ -150,7 +150,7 @@
     "abstraction_layer": "decoder_frontier_synthesis",
     "expected_direction": "iterate",
     "expected_reason": "The output should identify whether the next measured RTL job should focus on producer/ranker, attention/KV memory hierarchy, or another whole-decoder bottleneck.",
-    "summary": "Decoder quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_memory__l2_decoder_frontier_synthesis_v1.json: decision=decoder_evidence_recorded.",
+    "summary": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_frontier_synthesis__l2_decoder_frontier_synthesis_v1.json: decision=decoder_evidence_recorded.",
     "outcome": "decoder_evidence_recorded",
     "expectation_status": "unspecified"
   },
@@ -162,12 +162,12 @@
     "evaluation_mode": "frontier_detail",
     "comparison_role": "frontier_synthesis",
     "outcome": "decoder_evidence_recorded",
-    "summary": "Decoder quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_memory__l2_decoder_frontier_synthesis_v1.json: decision=decoder_evidence_recorded.",
+    "summary": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_frontier_synthesis__l2_decoder_frontier_synthesis_v1.json: decision=decoder_evidence_recorded.",
     "baseline_ref": null,
     "baseline_item_id": null,
     "matched_row_count": 0,
     "matched_rows": [],
-    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_memory__l2_decoder_frontier_synthesis_v1.json",
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_frontier_synthesis__l2_decoder_frontier_synthesis_v1.json",
     "decoder_quality": {
       "diagnosis": {}
     }
@@ -194,7 +194,7 @@
         "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_memory_large_context_v2__l2_decoder_frontier_synthesis_v1/artifacts/perf/fp16_nm1/mlp2/trace.json"
       }
     ],
-    "decoder_attention_kv_memory_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_memory__l2_decoder_frontier_synthesis_v1.json",
-    "decoder_attention_kv_memory_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_memory__l2_decoder_frontier_synthesis_v1.md"
+    "decoder_frontier_synthesis_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_frontier_synthesis__l2_decoder_frontier_synthesis_v1.json",
+    "decoder_frontier_synthesis_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_frontier_synthesis__l2_decoder_frontier_synthesis_v1.md"
   }
 }

@@ -190,10 +190,10 @@
   "result": {
     "branch": "eval/l2_decoder_frontier_synthesis_v1/s20260513t022548z",
     "completed_utc": "2026-05-13T02:25:46.375264Z",
-    "evaluator_id": "control_plane",
-    "executor": "@control_plane",
-    "host": "b7c2d9c80c1c",
-    "identity_block": "[role:evaluator][account:control_plane][session:s20260513t022548z][host:b7c2d9c80c1c][item:l2_decoder_frontier_synthesis_v1]",
+    "evaluator_id": "eval-daemon-b7c2d9c80c1c",
+    "executor": "@evaluator",
+    "host": "remote-evaluator",
+    "identity_block": "[role:evaluator][account:eval-daemon-b7c2d9c80c1c][session:s20260513t022548z][host:remote-evaluator][item:l2_decoder_frontier_synthesis_v1]",
     "metrics_rows": [
       {
         "tag": "npu_fp16_nm1_cmp33_flat_nomacro",
@@ -403,9 +403,9 @@
       "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
     ],
     "pr_body_fields": {
-      "host": "b7c2d9c80c1c",
+      "host": "remote-evaluator",
       "session_id": "s20260513t022548z",
-      "evaluator_id": "control_plane",
+      "evaluator_id": "eval-daemon-b7c2d9c80c1c",
       "queue_item_id": "l2_decoder_frontier_synthesis_v1"
     },
     "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"

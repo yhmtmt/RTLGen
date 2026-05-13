@@ -1,8 +1,8 @@
 {
   "version": 0.1,
-  "generated_utc": "2026-05-13T02:25:50.156182Z",
-  "control_plane_source_commit": "babb33627fd6a8c6305f28fe82e3b70c319f6f3a",
-  "review_metadata_source_commit": "babb33627fd6a8c6305f28fe82e3b70c319f6f3a",
+  "generated_utc": "2026-05-13T02:35:44.989402Z",
+  "control_plane_source_commit": "1c66d2bdbd56b1f2275beed3d457d7aeac672980",
+  "review_metadata_source_commit": "1c66d2bdbd56b1f2275beed3d457d7aeac672980",
   "item_id": "l2_decoder_frontier_synthesis_v1",
   "run_key": "l2_decoder_frontier_synthesis_v1_run_e59761847807d227",
   "layer": "layer2",
@@ -14,10 +14,10 @@
     "result": {
       "branch": "eval/l2_decoder_frontier_synthesis_v1/s20260513t022548z",
       "completed_utc": "2026-05-13T02:25:46.375264Z",
-      "evaluator_id": "control_plane",
-      "executor": "@control_plane",
-      "host": "b7c2d9c80c1c",
-      "identity_block": "[role:evaluator][account:control_plane][session:s20260513t022548z][host:b7c2d9c80c1c][item:l2_decoder_frontier_synthesis_v1]",
+      "evaluator_id": "eval-daemon-b7c2d9c80c1c",
+      "executor": "@evaluator",
+      "host": "remote-evaluator",
+      "identity_block": "[role:evaluator][account:eval-daemon-b7c2d9c80c1c][session:s20260513t022548z][host:remote-evaluator][item:l2_decoder_frontier_synthesis_v1]",
       "metrics_rows": [
         {
           "tag": "npu_fp16_nm1_cmp33_flat_nomacro",
@@ -222,10 +222,10 @@
     "kind": "decision_proposal",
     "path": "control_plane/shadow_exports/l2_decisions/l2_decoder_frontier_synthesis_v1.json",
     "storage_mode": "repo",
-    "sha256": "b4f6382a91544ad6c59c92537812a5ae663ff3f453a13fe99f966a642d09a8d1",
+    "sha256": "417bc4670d4d2351ab58f849d9dda74eea6349e6fd2a6d12aa6db65dfa920d15",
     "payload": {
       "version": 0.1,
-      "generated_utc": "2026-05-13T02:25:47.476270Z",
+      "generated_utc": "2026-05-13T02:35:44.634594Z",
       "item_id": "l2_decoder_frontier_synthesis_v1",
       "run_key": "l2_decoder_frontier_synthesis_v1_run_e59761847807d227",
       "layer": "layer2",
@@ -233,7 +233,7 @@
       "platform": "nangate45",
       "task_type": "l2_campaign",
       "source_commit": "babb33627fd6a8c6305f28fe82e3b70c319f6f3a",
-      "review_metadata_source_commit": "babb33627fd6a8c6305f28fe82e3b70c319f6f3a",
+      "review_metadata_source_commit": "1c66d2bdbd56b1f2275beed3d457d7aeac672980",
       "objective": "Synthesize measured attention/KV tile-calibrated memory pressure, producer/ranker NoC coupling, and whole-decoder stage breakdown into one dominant-frontier report.",
       "input_manifest": {
         "sweeps": [
@@ -375,7 +375,7 @@
         "abstraction_layer": "decoder_frontier_synthesis",
         "expected_direction": "iterate",
         "expected_reason": "The output should identify whether the next measured RTL job should focus on producer/ranker, attention/KV memory hierarchy, or another whole-decoder bottleneck.",
-        "summary": "Decoder quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_memory__l2_decoder_frontier_synthesis_v1.json: decision=decoder_evidence_recorded.",
+        "summary": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_frontier_synthesis__l2_decoder_frontier_synthesis_v1.json: decision=decoder_evidence_recorded.",
         "outcome": "decoder_evidence_recorded",
         "expectation_status": "unspecified"
       },
@@ -387,12 +387,12 @@
         "evaluation_mode": "frontier_detail",
         "comparison_role": "frontier_synthesis",
         "outcome": "decoder_evidence_recorded",
-        "summary": "Decoder quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_memory__l2_decoder_frontier_synthesis_v1.json: decision=decoder_evidence_recorded.",
+        "summary": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_frontier_synthesis__l2_decoder_frontier_synthesis_v1.json: decision=decoder_evidence_recorded.",
         "baseline_ref": null,
         "baseline_item_id": null,
         "matched_row_count": 0,
         "matched_rows": [],
-        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_memory__l2_decoder_frontier_synthesis_v1.json",
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_frontier_synthesis__l2_decoder_frontier_synthesis_v1.json",
         "decoder_quality": {
           "diagnosis": {}
         }
@@ -419,8 +419,8 @@
             "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_memory_large_context_v2__l2_decoder_frontier_synthesis_v1/artifacts/perf/fp16_nm1/mlp2/trace.json"
           }
         ],
-        "decoder_attention_kv_memory_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_memory__l2_decoder_frontier_synthesis_v1.json",
-        "decoder_attention_kv_memory_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_memory__l2_decoder_frontier_synthesis_v1.md"
+        "decoder_frontier_synthesis_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_frontier_synthesis__l2_decoder_frontier_synthesis_v1.json",
+        "decoder_frontier_synthesis_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_frontier_synthesis__l2_decoder_frontier_synthesis_v1.md"
       }
     }
   },
@@ -449,17 +449,36 @@
     },
     "proposal_path": "docs/proposals/prop_l2_decoder_frontier_synthesis_v1/proposal.json"
   },
-  "submission_history": null,
+  "submission_history": {
+    "event_count": 1,
+    "failure_count": 0,
+    "retry_request_count": 0,
+    "retry_processed_count": 0,
+    "retry_failed_count": 0,
+    "had_retry": false,
+    "events": [
+      {
+        "event_time": "2026-05-13T02:25:56.844972Z",
+        "event_type": "submission_executed",
+        "pr_url": "https://github.com/yhmtmt/RTLGen/pull/488"
+      }
+    ],
+    "final_submission": {
+      "event_time": "2026-05-13T02:25:56.844972Z",
+      "event_type": "submission_executed",
+      "pr_url": "https://github.com/yhmtmt/RTLGen/pull/488"
+    }
+  },
   "pr_payload": {
     "branch": "eval/l2_decoder_frontier_synthesis_v1/s20260513t022548z",
     "title": "eval: run decoder frontier synthesis",
     "body_fields": {
-      "host": "b7c2d9c80c1c",
+      "host": "remote-evaluator",
       "session_id": "s20260513t022548z",
-      "evaluator_id": "control_plane",
+      "evaluator_id": "eval-daemon-b7c2d9c80c1c",
       "queue_item_id": "l2_decoder_frontier_synthesis_v1"
     },
-    "body_md": "## Summary\n- item_id: `l2_decoder_frontier_synthesis_v1`\n- run_key: `l2_decoder_frontier_synthesis_v1_run_e59761847807d227`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `9/9 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_decoder_frontier_synthesis_v1/evaluated.json`\n- metrics_rows_count: `24`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_decoder_frontier_synthesis_v1.json`\n\n## Developer Context\n- proposal_id: `prop_l2_decoder_frontier_synthesis_v1`\n- proposal_path: `docs/proposals/prop_l2_decoder_frontier_synthesis_v1/proposal.json`\n- reviewer_first_read: `docs/proposals/prop_l2_decoder_frontier_synthesis_v1/proposal.json` plus `docs/developer_agent_review.md`\n- execution_source_commit: `babb33627fd6a8c6305f28fe82e3b70c319f6f3a`\n- review_metadata_source_commit: `babb33627fd6a8c6305f28fe82e3b70c319f6f3a`\n\n## Evaluation Mode\n- evaluation_mode: `frontier_detail`\n- abstraction_layer: `decoder_frontier_synthesis`\n- comparison_role: `frontier_synthesis`\n- expected_direction: `iterate`\n- expected_reason: `The output should identify whether the next measured RTL job should focus on producer/ranker, attention/KV memory hierarchy, or another whole-decoder bottleneck.`\n- expectation_status: `unspecified`\n- evaluation_summary: `Decoder quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_memory__l2_decoder_frontier_synthesis_v1.json: decision=decoder_evidence_recorded.`\n\n## Focused Comparison\n- primary_question: `When measured attention/KV tile PPA, producer/ranker NoC coupling, and whole-decoder stage breakdown are compared together, which component dominates the next RTL frontier?`\n- comparison_role: `frontier_synthesis`\n- proposal_outcome: `decoder_evidence_recorded`\n- comparison_summary: `Decoder quality evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_memory__l2_decoder_frontier_synthesis_v1.json: decision=decoder_evidence_recorded.`\n- baseline_ref: `None`\n- baseline_item_id: `None`\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "body_md": "## Summary\n- item_id: `l2_decoder_frontier_synthesis_v1`\n- run_key: `l2_decoder_frontier_synthesis_v1_run_e59761847807d227`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `9/9 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_decoder_frontier_synthesis_v1/evaluated.json`\n- metrics_rows_count: `24`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_decoder_frontier_synthesis_v1.json`\n\n## Developer Context\n- proposal_id: `prop_l2_decoder_frontier_synthesis_v1`\n- proposal_path: `docs/proposals/prop_l2_decoder_frontier_synthesis_v1/proposal.json`\n- reviewer_first_read: `docs/proposals/prop_l2_decoder_frontier_synthesis_v1/proposal.json` plus `docs/developer_agent_review.md`\n- execution_source_commit: `babb33627fd6a8c6305f28fe82e3b70c319f6f3a`\n- review_metadata_source_commit: `1c66d2bdbd56b1f2275beed3d457d7aeac672980`\n\n## Evaluation Mode\n- evaluation_mode: `frontier_detail`\n- abstraction_layer: `decoder_frontier_synthesis`\n- comparison_role: `frontier_synthesis`\n- expected_direction: `iterate`\n- expected_reason: `The output should identify whether the next measured RTL job should focus on producer/ranker, attention/KV memory hierarchy, or another whole-decoder bottleneck.`\n- expectation_status: `unspecified`\n- evaluation_summary: `Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_frontier_synthesis__l2_decoder_frontier_synthesis_v1.json: decision=decoder_evidence_recorded.`\n\n## Focused Comparison\n- primary_question: `When measured attention/KV tile PPA, producer/ranker NoC coupling, and whole-decoder stage breakdown are compared together, which component dominates the next RTL frontier?`\n- comparison_role: `frontier_synthesis`\n- proposal_outcome: `decoder_evidence_recorded`\n- comparison_summary: `Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_frontier_synthesis__l2_decoder_frontier_synthesis_v1.json: decision=decoder_evidence_recorded.`\n- baseline_ref: `None`\n- baseline_item_id: `None`\n\n## Submission Recovery\n- submission_failure_count: `0`\n- retry_request_count: `0`\n- final_submission_pr: `https://github.com/yhmtmt/RTLGen/pull/488`\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
     "checklist": [
       "Commit lightweight campaign artifacts only",
       "Include metrics row references in result.metrics_rows",
