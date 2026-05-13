@@ -1,0 +1,67 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_producer_isolated_synth_scale_v1",
+  "created_utc": "2026-05-13T10:35:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_output_projection_producer_isolated_synth",
+  "title": "Extended isolated decoder output-projection producer synthesis scale probe",
+  "hypothesis": "The isolated generated gemm_compute_array producer submodule completed synth-only compilation at nm1 and nm2, while whole npu_top synthesis timed out at nm2. Extending the isolated probe through nm3 and nm4 will distinguish a near-term arithmetic-array synthesis boundary from wrapper/top-level integration cost.",
+  "direct_comparison": {
+    "primary_question": "Can the isolated generated gemm_compute_array producer submodule complete synth-only compilation for nm1 through nm4 within the evaluator budget?",
+    "include": [
+      "nm1, nm2, nm3, and nm4 fp16 rtlgen producer configs",
+      "generated gemm_compute_array as the OpenROAD top module",
+      "clockless Nangate45 synth-only target 1_2_yosys",
+      "same rtlgen binary setup check and timeout policy used by the prior isolated producer probe"
+    ],
+    "exclude": [
+      "whole npu_top synthesis",
+      "full placement and routing",
+      "nm8 or nm16 before the nm4 isolated boundary is known",
+      "system-level producer/ranker/attention coupling"
+    ]
+  },
+  "expected_benefit": [
+    "establishes whether isolated arithmetic-array synth remains cheap beyond nm2",
+    "identifies the first nonviable isolated producer scale if nm3 or nm4 stalls",
+    "prevents premature full-PnR runs at scales whose arithmetic synth is already outside the explorable region"
+  ],
+  "risks": [
+    "isolated synth completion still does not prove whole producer integration is feasible",
+    "clockless synth-only timing is not final PPA",
+    "the timeout boundary remains evaluator-machine dependent"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_output_projection_producer_isolated_synth_scale_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run a bounded synth-only probe for the isolated generated gemm_compute_array producer submodule over nm1 through nm4.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_output_projection_producer_isolated_synth",
+      "cost_class": "bounded-medium",
+      "comparison_role": "producer_synth_boundary",
+      "paired_baseline_item_id": "l2_decoder_output_projection_producer_isolated_synth_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_output_projection_producer_isolated_synth_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "The output should show whether the isolated producer arithmetic-array synth boundary appears before nm4 or whether the next blocker is still whole npu_top integration."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "control_plane/shadow_exports/l2_decisions/l2_decoder_output_projection_producer_isolated_synth_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_producer_isolated_synth__l2_decoder_output_projection_producer_isolated_synth_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/probe_decoder_producer_synth_boundary.py",
+    "npu/rtlgen/gen.py",
+    "runs/campaigns/npu/output_projection_producer_scale/sweeps/nangate45_isolated_synth.json",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}
