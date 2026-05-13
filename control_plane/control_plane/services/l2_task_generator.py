@@ -2239,6 +2239,14 @@ def _decoder_attention_kv_memory_evidence(*, item_id: str) -> dict[str, Any]:
                 "kv_bits_list": [8, 16],
                 "noc_hops_list": [0, 1, 2, 4],
             },
+            "measured_tile_metrics": [
+                "runs/designs/activations/attention_kv_tile_hd64_kv4_l16_b128_wrapper/metrics.csv",
+                "runs/designs/activations/attention_kv_tile_hd64_kv4_l32_b256_wrapper/metrics.csv",
+                "runs/designs/activations/attention_kv_tile_hd64_kv8_l32_b256_wrapper/metrics.csv",
+                "runs/designs/activations/attention_kv_tile_hd128_kv4_l32_b256_wrapper/metrics.csv",
+                "runs/designs/activations/attention_kv_tile_hd128_kv8_l64_b512_wrapper/metrics.csv",
+                "runs/designs/activations/attention_kv_tile_hd128_kv16_l64_b512_wrapper/metrics.csv",
+            ],
         },
         "commands": [
             {
@@ -2252,6 +2260,13 @@ def _decoder_attention_kv_memory_evidence(*, item_id: str) -> dict[str, Any]:
                     "--kv-bits-list 8,16 "
                     "--noc-hops-list 1,2,4 "
                     "--noc-bandwidth-bytes-per-cycle 256 "
+                    "--measured-tile-metrics "
+                    "runs/designs/activations/attention_kv_tile_hd64_kv4_l16_b128_wrapper/metrics.csv,"
+                    "runs/designs/activations/attention_kv_tile_hd64_kv4_l32_b256_wrapper/metrics.csv,"
+                    "runs/designs/activations/attention_kv_tile_hd64_kv8_l32_b256_wrapper/metrics.csv,"
+                    "runs/designs/activations/attention_kv_tile_hd128_kv4_l32_b256_wrapper/metrics.csv,"
+                    "runs/designs/activations/attention_kv_tile_hd128_kv8_l64_b512_wrapper/metrics.csv,"
+                    "runs/designs/activations/attention_kv_tile_hd128_kv16_l64_b512_wrapper/metrics.csv "
                     f"--out {out} "
                     f"--out-md {report}"
                 ),
