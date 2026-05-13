@@ -1,0 +1,32 @@
+{
+  "proposal_id": "prop_l1_decoder_output_projection_producer_scale_v1",
+  "source_commit": "",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_output_projection_producer_scale_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure hierarchical Nangate45 PPA for fp16 output-projection producer blocks at num_modules=4, 8, and 16.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "architecture_block",
+      "comparison_role": "producer_scale_anchor",
+      "configs": [
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm4_producer/config_nm4_producer.json",
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm8_producer/config_nm8_producer.json",
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm16_producer/config_nm16_producer.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/output_projection_producer_scale/sweeps/nangate45_hier_macro.json",
+      "out_root": "runs/designs/npu_blocks",
+      "depends_on_item_ids": [
+        "l2_decoder_frontier_synthesis_v1",
+        "l2_decoder_output_projection_service_v1",
+        "l2_decoder_producer_ranker_coupled_noc_v1"
+      ],
+      "requires_merged_inputs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use the measured producer scale curve to decide the first combined producer/ranker macro shape and to bound extrapolation toward the w64 frontier."
+      },
+      "status": "pending"
+    }
+  ]
+}

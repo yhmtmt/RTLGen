@@ -1,0 +1,77 @@
+{
+  "proposal_id": "prop_l1_decoder_output_projection_producer_scale_v1",
+  "created_utc": "2026-05-13T02:45:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "architecture_block",
+  "title": "Output-projection producer GEMM-array scaling anchor",
+  "hypothesis": "The decoder frontier synthesis result is dominated by output_projection_producer_ranker because producer service is weight-memory limited. Before implementing a combined producer/ranker macro, the producer-side GEMM array needs measured Nangate45 scaling points beyond the existing one- and two-module anchors.",
+  "direct_comparison": {
+    "primary_question": "How do fp16 GEMM producer blocks with 4, 8, and 16 modules scale in timing, area, and power when preserved hierarchically for the decoder output-projection producer?",
+    "include": [
+      "hierarchical Nangate45 PPA for num_modules=4, 8, and 16",
+      "gemm_compute_array preserved as a hierarchy boundary",
+      "comparison against existing num_modules=1 and num_modules=2 producer anchors",
+      "explicit caveat that this is producer-side block PPA, not the final combined producer/ranker macro"
+    ],
+    "exclude": [
+      "full vocabulary SRAM/NoC integration",
+      "top-k ranker merge RTL changes",
+      "final decoder end-to-end PPA",
+      "probability sampling path"
+    ]
+  },
+  "expected_benefit": [
+    "replaces a large part of the producer service extrapolation with measured PPA",
+    "checks whether scaling toward the w64 producer frontier remains physically plausible",
+    "feeds the follow-on combined producer/ranker macro target selection"
+  ],
+  "risks": [
+    "the measured NPU block still includes wrapper/control structure around the internal producer array",
+    "num_modules=16 is the current rtlgen generator limit and still far below a full 64-lane producer",
+    "memory and NoC bandwidth remain modeled until a shared-memory producer/ranker macro is implemented"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_output_projection_producer_scale_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure hierarchical Nangate45 PPA for fp16 output-projection producer blocks at num_modules=4, 8, and 16.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "architecture_block",
+      "comparison_role": "producer_scale_anchor",
+      "configs": [
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm4_producer/config_nm4_producer.json",
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm8_producer/config_nm8_producer.json",
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm16_producer/config_nm16_producer.json"
+      ],
+      "sweep_path": "runs/campaigns/npu/output_projection_producer_scale/sweeps/nangate45_hier_macro.json",
+      "out_root": "runs/designs/npu_blocks",
+      "depends_on_item_ids": [
+        "l2_decoder_frontier_synthesis_v1",
+        "l2_decoder_output_projection_service_v1",
+        "l2_decoder_producer_ranker_coupled_noc_v1"
+      ],
+      "requires_merged_inputs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use the measured producer scale curve to decide the first combined producer/ranker macro shape and to bound extrapolation toward the w64 frontier."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "control_plane/shadow_exports/l2_decisions/l2_decoder_frontier_synthesis_v1.json",
+    "control_plane/shadow_exports/l2_decisions/l2_decoder_output_projection_service_v1.json",
+    "control_plane/shadow_exports/l2_decisions/l2_decoder_producer_ranker_coupled_noc_v1.json",
+    "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+    "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+  ],
+  "knowledge_refs": [
+    "npu/rtlgen/gen.py",
+    "npu/rtlgen/config_spec.md",
+    "npu/eval/synthesize_llm_decoder_frontier.py",
+    "npu/eval/estimate_llm_decoder_producer_ranker_coupling.py",
+    "control_plane/control_plane/services/l1_task_generator.py"
+  ]
+}
