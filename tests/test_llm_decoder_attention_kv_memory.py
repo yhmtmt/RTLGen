@@ -114,3 +114,47 @@ def test_attention_kv_memory_detail_rows_are_opt_in() -> None:
     assert "attention_kv_sweep_detail" in detailed
     assert "stages" not in compact["attention_kv_sweep"][0]
     assert "stages" in detailed["attention_kv_sweep_detail"][0]
+
+
+def test_attention_kv_memory_loads_measured_tile_frontier(tmp_path) -> None:
+    metrics = tmp_path / "metrics.csv"
+    metrics.write_text(
+        "\n".join(
+            [
+                "design,platform,config_hash,param_hash,tag,status,critical_path_ns,die_area,total_power_mw,params_json,result_path",
+                'attention_kv_tile_hd64_kv4_l16_b128_wrapper,nangate45,cfg,slow,tag,ok,4.8,12000,0.42,"{}",result.json',
+                'attention_kv_tile_hd64_kv4_l16_b128_wrapper,nangate45,cfg,fast,tag,ok,4.5,13000,0.45,"{}",result.json',
+                'attention_kv_tile_hd128_kv16_l64_b512_wrapper,nangate45,cfg,wide,tag,ok,5.9,225000,2.4,"{}",result.json',
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    report = build_report(
+        sequence_length_list=[128],
+        macs_per_cycle_list=[32768],
+        kv_memory_tier_list=["local_sram"],
+        kv_sharing_list=["mha"],
+        kv_bits_list=[8],
+        noc_hops_list=[0],
+        clock_ns=1.0,
+        weight_bits=16,
+        activation_bits=16,
+        score_bits=16,
+        vector_ops_per_cycle=32768,
+        weight_bandwidth_bytes_per_cycle=256.0,
+        activation_bandwidth_bytes_per_cycle=512.0,
+        noc_bandwidth_bytes_per_cycle=256.0,
+        measured_tile_metrics=[str(metrics)],
+    )
+
+    frontier = report["measured_attention_kv_tile_frontier"]
+    assert frontier["raw_ok_row_count"] == 3
+    assert frontier["best_row_count"] == 2
+    compact = frontier["best_by_design"][0]
+    assert compact["design"] == "attention_kv_tile_hd64_kv4_l16_b128_wrapper"
+    assert compact["param_hash"] == "fast"
+    assert compact["accepted_bytes_per_tile"] == 128
+    assert compact["pipeline_cycle_floor"] == 4
+    assert frontier["scaling_summary"]["area_growth_largest_vs_smallest"] > 10.0

@@ -4,12 +4,18 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import math
 from pathlib import Path
+import re
 from typing import Any
 
 JsonDict = dict[str, Any]
+
+_ATTENTION_KV_TILE_RE = re.compile(
+    r"^attention_kv_tile_hd(?P<head_dim>\d+)_kv(?P<kv_bits>\d+)_l(?P<lanes>\d+)_b(?P<stream_bytes_per_cycle>\d+)_wrapper$"
+)
 
 
 def _int_list(value: str) -> list[int]:
@@ -45,6 +51,121 @@ def _byte_width(bits: int) -> int:
 
 def _ceil_div(numerator: float, denominator: float) -> int:
     return int(math.ceil(numerator / denominator)) if numerator else 0
+
+
+def _parse_attention_kv_tile_design(design: str) -> JsonDict | None:
+    match = _ATTENTION_KV_TILE_RE.match(design)
+    if match is None:
+        return None
+    return {key: int(value) for key, value in match.groupdict().items()}
+
+
+def _load_measured_tile_frontier(paths: list[str]) -> JsonDict | None:
+    if not paths:
+        return None
+
+    rows: list[JsonDict] = []
+    for path_text in paths:
+        path = Path(path_text)
+        if not path.exists():
+            raise FileNotFoundError(f"measured tile metrics not found: {path}")
+        with path.open(newline="", encoding="utf-8") as fh:
+            for row in csv.DictReader(fh):
+                if str(row.get("status", "")).strip() != "ok":
+                    continue
+                design = str(row.get("design", "")).strip()
+                parsed = _parse_attention_kv_tile_design(design)
+                if parsed is None:
+                    continue
+                kv_byte_width = _byte_width(parsed["kv_bits"])
+                accepted_bytes_per_tile = 2 * parsed["head_dim"] * kv_byte_width
+                stream_cycles_per_tile = _ceil_div(
+                    accepted_bytes_per_tile,
+                    parsed["stream_bytes_per_cycle"],
+                )
+                lane_cycles_per_tile = _ceil_div(parsed["head_dim"], parsed["lanes"])
+                pipeline_cycle_floor = max(stream_cycles_per_tile, lane_cycles_per_tile)
+                critical_path_ns = float(row["critical_path_ns"])
+                die_area = float(row["die_area"])
+                total_power_mw = float(row["total_power_mw"])
+                rows.append(
+                    {
+                        "metrics_csv": str(path),
+                        "design": design,
+                        **parsed,
+                        "param_hash": str(row.get("param_hash", "")).strip(),
+                        "tag": str(row.get("tag", "")).strip(),
+                        "critical_path_ns": critical_path_ns,
+                        "frequency_mhz": round(1000.0 / critical_path_ns, 6) if critical_path_ns > 0.0 else 0.0,
+                        "die_area_um2": die_area,
+                        "total_power_mw": total_power_mw,
+                        "accepted_bytes_per_tile": accepted_bytes_per_tile,
+                        "stream_cycles_per_tile": stream_cycles_per_tile,
+                        "lane_cycles_per_tile": lane_cycles_per_tile,
+                        "pipeline_cycle_floor": pipeline_cycle_floor,
+                        "area_per_lane_um2": round(die_area / parsed["lanes"], 6),
+                        "power_per_lane_mw": round(total_power_mw / parsed["lanes"], 6),
+                        "area_per_stream_byte_um2": round(die_area / parsed["stream_bytes_per_cycle"], 6),
+                    }
+                )
+
+    best_by_design: dict[str, JsonDict] = {}
+    for row in rows:
+        current = best_by_design.get(row["design"])
+        if current is None or (
+            row["critical_path_ns"],
+            row["die_area_um2"],
+            row["total_power_mw"],
+        ) < (
+            current["critical_path_ns"],
+            current["die_area_um2"],
+            current["total_power_mw"],
+        ):
+            best_by_design[row["design"]] = row
+
+    best_rows = sorted(
+        best_by_design.values(),
+        key=lambda row: (
+            row["head_dim"],
+            row["kv_bits"],
+            row["lanes"],
+            row["stream_bytes_per_cycle"],
+        ),
+    )
+    if not best_rows:
+        return {
+            "source_metrics": paths,
+            "raw_ok_row_count": 0,
+            "best_row_count": 0,
+            "best_by_design": [],
+            "scaling_summary": {},
+        }
+
+    fastest = min(best_rows, key=lambda row: row["critical_path_ns"])
+    smallest = min(best_rows, key=lambda row: row["die_area_um2"])
+    largest = max(best_rows, key=lambda row: row["die_area_um2"])
+    return {
+        "source_metrics": paths,
+        "raw_ok_row_count": len(rows),
+        "best_row_count": len(best_rows),
+        "selection": "best row per design by critical_path_ns, then die_area_um2, then total_power_mw",
+        "calibration_scope": (
+            "standalone attention_kv_tile RTL/PPA anchor; not a full producer, SRAM, NoC, "
+            "softmax, or value-mix integration model"
+        ),
+        "best_by_design": best_rows,
+        "scaling_summary": {
+            "fastest_design": fastest["design"],
+            "fastest_critical_path_ns": fastest["critical_path_ns"],
+            "smallest_design": smallest["design"],
+            "smallest_die_area_um2": smallest["die_area_um2"],
+            "largest_design": largest["design"],
+            "largest_die_area_um2": largest["die_area_um2"],
+            "area_growth_largest_vs_smallest": round(largest["die_area_um2"] / smallest["die_area_um2"], 6)
+            if smallest["die_area_um2"]
+            else 0.0,
+        },
+    }
 
 
 def _kv_heads(*, attention_heads: int, kv_sharing: str) -> int:
@@ -355,6 +476,7 @@ def build_report(
     weight_bandwidth_bytes_per_cycle: float,
     activation_bandwidth_bytes_per_cycle: float,
     noc_bandwidth_bytes_per_cycle: float,
+    measured_tile_metrics: list[str] | None = None,
     include_detail: bool = False,
 ) -> JsonDict:
     shapes = [
@@ -443,6 +565,7 @@ def build_report(
             "weight_bandwidth_bytes_per_cycle": weight_bandwidth_bytes_per_cycle,
             "activation_bandwidth_bytes_per_cycle": activation_bandwidth_bytes_per_cycle,
             "noc_bandwidth_bytes_per_cycle": noc_bandwidth_bytes_per_cycle,
+            "measured_tile_metrics": measured_tile_metrics or [],
         },
         "assumptions": [
             "This is an analytical single-token decode attention model, not measured RTL.",
@@ -452,6 +575,7 @@ def build_report(
             "NoC contention is represented by effective KV bandwidth min(tier_bandwidth, noc_bandwidth / hops) for non-local tiers.",
             "GQA/MQA reduce KV-cache width but not query/output projection width.",
             "streaming_weights charges attention projection weights each token; resident_weights exposes KV and compute pressure.",
+            "Measured attention_kv_tile frontier rows calibrate standalone datapath PPA only; memory hierarchy and producer coupling remain analytical.",
         ],
         "detail_policy": {
             "attention_kv_sweep": "compact scalar rows for the decision-focused slice only; full sweep rows are summarized by counts",
@@ -502,6 +626,9 @@ def build_report(
             ),
         ),
     }
+    measured_frontier = _load_measured_tile_frontier(measured_tile_metrics or [])
+    if measured_frontier is not None:
+        payload["measured_attention_kv_tile_frontier"] = measured_frontier
     if include_detail:
         payload["attention_kv_sweep_detail"] = rows
     return payload
@@ -537,6 +664,35 @@ def _write_markdown(path: Path, payload: JsonDict) -> None:
             )
         )
 
+    measured_frontier = payload.get("measured_attention_kv_tile_frontier")
+    if isinstance(measured_frontier, dict):
+        lines.extend(
+            [
+                "",
+                "## Measured Attention/KV Tile Frontier",
+                "",
+                f"- calibration_scope: {measured_frontier.get('calibration_scope', '')}",
+                f"- best_row_count: `{measured_frontier.get('best_row_count', 0)}`",
+                "",
+                "| design | hd | kv_bits | lanes | stream_B/cyc | crit_ns | area_um2 | power_mw | cycle_floor |",
+                "|---|---:|---:|---:|---:|---:|---:|---:|---:|",
+            ]
+        )
+        for row in measured_frontier.get("best_by_design", []):
+            lines.append(
+                "| {design} | {hd} | {kv_bits} | {lanes} | {stream} | {crit} | {area} | {power} | {floor} |".format(
+                    design=row["design"],
+                    hd=row["head_dim"],
+                    kv_bits=row["kv_bits"],
+                    lanes=row["lanes"],
+                    stream=row["stream_bytes_per_cycle"],
+                    crit=row["critical_path_ns"],
+                    area=row["die_area_um2"],
+                    power=row["total_power_mw"],
+                    floor=row["pipeline_cycle_floor"],
+                )
+            )
+
     lines.extend(["", "## Assumptions", ""])
     for item in payload["assumptions"]:
         lines.append(f"- {item}")
@@ -559,6 +715,7 @@ def main() -> int:
     ap.add_argument("--weight-bandwidth-bytes-per-cycle", type=float, default=256.0)
     ap.add_argument("--activation-bandwidth-bytes-per-cycle", type=float, default=512.0)
     ap.add_argument("--noc-bandwidth-bytes-per-cycle", type=float, default=256.0)
+    ap.add_argument("--measured-tile-metrics", type=_str_list, default=[])
     ap.add_argument("--out", required=True)
     ap.add_argument("--out-md", required=True)
     ap.add_argument("--detail-out")
@@ -579,6 +736,7 @@ def main() -> int:
         weight_bandwidth_bytes_per_cycle=args.weight_bandwidth_bytes_per_cycle,
         activation_bandwidth_bytes_per_cycle=args.activation_bandwidth_bytes_per_cycle,
         noc_bandwidth_bytes_per_cycle=args.noc_bandwidth_bytes_per_cycle,
+        measured_tile_metrics=args.measured_tile_metrics,
         include_detail=bool(args.detail_out),
     )
 

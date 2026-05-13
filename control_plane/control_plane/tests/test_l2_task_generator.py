@@ -1887,11 +1887,17 @@ def test_generate_l2_campaign_task_adds_decoder_attention_kv_memory_evidence() -
             assert "--sequence-length-list 128,512,2048,8192,32768" in run
             assert "--kv-memory-tier-list local_sram,shared_sram,hbm,remote_hbm" in run
             assert "--kv-sharing-list mha,gqa4,mqa" in run
+            assert "--measured-tile-metrics " in run
+            assert "attention_kv_tile_hd128_kv16_l64_b512_wrapper/metrics.csv" in run
             assert decoder_inputs["attention_kv_memory_out"] == (
                 "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
                 "decoder_attention_kv_memory__l2_decoder_attention_kv_memory_v1.json"
             )
             assert "KV-cache memory tier" in decoder_inputs["attention_kv_memory_scope"]
+            assert (
+                "runs/designs/activations/attention_kv_tile_hd64_kv4_l16_b128_wrapper/metrics.csv"
+                in decoder_inputs["measured_tile_metrics"]
+            )
             assert decoder_inputs["attention_kv_memory_out"] in work_item.expected_outputs
             assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
                 "layer": "decoder_attention_kv_memory",
