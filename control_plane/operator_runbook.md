@@ -72,6 +72,7 @@ The worker daemon uses that value before dispatch:
 - if the evaluator service repo already contains the required commit, the item runs normally
 - if the required commit is reachable from `origin/master`, the service repo is updated and the daemon re-execs itself before leasing the item
 - if the commit is missing or the service repo has tracked local modifications, the daemon reports a `source_blocked` or `source_reconcile_error` result instead of running with stale control-plane code
+- if Git reports untracked generated files that would be overwritten by the update, the daemon quarantines those files under `/tmp/<repo>-checkout-blockers-*`, writes a `manifest.json`, retries the checkout, and includes the quarantine path in the source reconciliation log
 
 The default evaluator service wrapper enables this behavior:
 ```sh
