@@ -61,6 +61,30 @@ def num_modules(config: dict[str, Any]) -> int:
     return int(gemm.get("num_modules", 0))
 
 
+def rtlgen_binary_paths(configs: list[Path]) -> list[Path]:
+    paths: list[Path] = []
+    seen: set[Path] = set()
+    for config_path in configs:
+        config = load_json(config_path)
+        gemm = ((config.get("compute") or {}).get("gemm") or {})
+        if not isinstance(gemm, dict):
+            continue
+        rtlgen_cpp = gemm.get("rtlgen_cpp")
+        if not isinstance(rtlgen_cpp, dict):
+            continue
+        raw_path = str(rtlgen_cpp.get("binary_path", "")).strip()
+        if not raw_path:
+            continue
+        path = Path(raw_path)
+        if not path.is_absolute():
+            path = REPO_ROOT / path
+        resolved = path.resolve()
+        if resolved not in seen:
+            seen.add(resolved)
+            paths.append(resolved)
+    return paths
+
+
 def tail_lines(path: Path, limit: int = 40) -> list[str]:
     try:
         lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
@@ -139,6 +163,66 @@ def run_logged(
         "log_tail": tail_lines(log_path),
         "command": " ".join(cmd),
     }
+
+
+def ensure_rtlgen_binaries(
+    configs: list[Path],
+    *,
+    log_dir: Path,
+    build_timeout_seconds: int,
+    stall_timeout_seconds: int,
+    skip_build: bool,
+) -> dict[str, Any]:
+    paths = rtlgen_binary_paths(configs)
+    missing = [path for path in paths if not path.exists()]
+    if not missing:
+        return {
+            "status": "ok",
+            "required_binaries": [rel(path) for path in paths],
+            "missing_before_build": [],
+            "configure": None,
+            "build": None,
+        }
+    if skip_build:
+        return {
+            "status": "failed",
+            "required_binaries": [rel(path) for path in paths],
+            "missing_before_build": [rel(path) for path in missing],
+            "configure": None,
+            "build": None,
+            "error": "rtlgen binary missing and --skip-rtlgen-build was set",
+        }
+
+    configure = run_logged(
+        ["cmake", "-S", ".", "-B", "build"],
+        cwd=REPO_ROOT,
+        log_path=log_dir / "rtlgen_cmake_configure.log",
+        timeout_seconds=build_timeout_seconds,
+        stall_timeout_seconds=stall_timeout_seconds,
+    )
+    build: dict[str, Any] | None = None
+    if configure["status"] == "ok":
+        build = run_logged(
+            ["cmake", "--build", "build", "--target", "rtlgen", "-j", "2"],
+            cwd=REPO_ROOT,
+            log_path=log_dir / "rtlgen_cmake_build.log",
+            timeout_seconds=build_timeout_seconds,
+            stall_timeout_seconds=stall_timeout_seconds,
+        )
+
+    missing_after = [path for path in paths if not path.exists()]
+    status = "ok" if not missing_after and configure["status"] == "ok" and build and build["status"] == "ok" else "failed"
+    result: dict[str, Any] = {
+        "status": status,
+        "required_binaries": [rel(path) for path in paths],
+        "missing_before_build": [rel(path) for path in missing],
+        "missing_after_build": [rel(path) for path in missing_after],
+        "configure": configure,
+        "build": build,
+    }
+    if status != "ok":
+        result["error"] = "failed to prepare rtlgen C++ binary before producer synthesis probe"
+    return result
 
 
 def latest_metrics_row(design_dir: Path) -> dict[str, Any] | None:
@@ -232,6 +316,21 @@ def probe_config(
 
 
 def build_diagnosis(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    if rows and str(rows[0].get("status")) == "setup_failed":
+        return {
+            "decision": "producer_synth_boundary_setup_failed",
+            "feasible_max_num_modules": None,
+            "first_nonviable_num_modules": None,
+            "recommended_next_step": "Fix evaluator tool setup before interpreting producer synthesis scale.",
+        }
+    tool_failures = [row for row in rows if str(row.get("status", "")).startswith("rtlgen_")]
+    if tool_failures:
+        return {
+            "decision": "producer_synth_boundary_setup_failed",
+            "feasible_max_num_modules": None,
+            "first_nonviable_num_modules": None,
+            "recommended_next_step": "Fix RTL generation before interpreting producer synthesis scale.",
+        }
     ok_rows = [row for row in rows if str(row.get("status")) == "ok"]
     blocked_rows = [row for row in rows if str(row.get("status")) != "ok"]
     feasible = max((int(row.get("num_modules", 0)) for row in ok_rows), default=None)
@@ -307,6 +406,8 @@ def main() -> int:
     ap.add_argument("--out-root", default="runs/designs/npu_blocks")
     ap.add_argument("--timeout-seconds", type=int, default=1800)
     ap.add_argument("--stall-timeout-seconds", type=int, default=900)
+    ap.add_argument("--rtlgen-build-timeout-seconds", type=int, default=900)
+    ap.add_argument("--skip-rtlgen-build", action="store_true")
     ap.add_argument("--continue-after-failure", action="store_true")
     ap.add_argument("--out", required=True)
     ap.add_argument("--out-md", required=True)
@@ -326,22 +427,42 @@ def main() -> int:
     )
     log_dir = log_root / out.stem
 
+    setup = ensure_rtlgen_binaries(
+        configs,
+        log_dir=log_dir,
+        build_timeout_seconds=args.rtlgen_build_timeout_seconds,
+        stall_timeout_seconds=max(120, min(args.stall_timeout_seconds, 300)),
+        skip_build=args.skip_rtlgen_build,
+    )
     rows: list[dict[str, Any]] = []
-    for config_path in configs:
-        row = probe_config(
-            config_path,
-            sweep=sweep,
-            platform=args.platform,
-            top=args.top,
-            make_target=args.make_target,
-            out_root=out_root,
-            timeout_seconds=args.timeout_seconds,
-            stall_timeout_seconds=args.stall_timeout_seconds,
-            log_dir=log_dir,
+    if setup["status"] != "ok":
+        rows.append(
+            {
+                "status": "setup_failed",
+                "num_modules": None,
+                "config": None,
+                "setup": setup,
+                "rtlgen": None,
+                "synthesis": None,
+                "metrics_row": None,
+            }
         )
-        rows.append(row)
-        if row.get("status") != "ok" and not args.continue_after_failure:
-            break
+    else:
+        for config_path in configs:
+            row = probe_config(
+                config_path,
+                sweep=sweep,
+                platform=args.platform,
+                top=args.top,
+                make_target=args.make_target,
+                out_root=out_root,
+                timeout_seconds=args.timeout_seconds,
+                stall_timeout_seconds=args.stall_timeout_seconds,
+                log_dir=log_dir,
+            )
+            rows.append(row)
+            if row.get("status") != "ok" and not args.continue_after_failure:
+                break
 
     payload = {
         "version": 0.1,
@@ -351,6 +472,7 @@ def main() -> int:
         "make_target": args.make_target,
         "timeout_seconds": args.timeout_seconds,
         "stall_timeout_seconds": args.stall_timeout_seconds,
+        "rtlgen_setup": setup,
         "sweep": rel(sweep),
         "probe_rows": rows,
         "diagnosis": build_diagnosis(rows),
@@ -358,7 +480,7 @@ def main() -> int:
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     write_markdown(out_md, payload)
-    return 0
+    return 2 if setup["status"] != "ok" else 0
 
 
 if __name__ == "__main__":
