@@ -1,0 +1,72 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_producer_top_ablation_v1",
+  "created_utc": "2026-05-13T10:45:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_output_projection_producer_top_ablation",
+  "title": "Decoder output-projection producer top-level synthesis ablation",
+  "hypothesis": "The isolated gemm_compute_array producer submodule completes synth-only compilation through nm4, while whole npu_top timed out at nm2. The true blocker is therefore likely in npu_top integration logic, interface wiring, command-queue decode, wrapper files, or an interaction between those features and the generated compute state.",
+  "direct_comparison": {
+    "primary_question": "Which top-level npu_top feature first causes the nm2 producer synth-only run to become nonviable?",
+    "include": [
+      "nm2 fp16 producer base config",
+      "full npu_top reference",
+      "variants removing AXI-Lite wrapper files, SRAM side models, AXI ports, command-queue memory/decode, and external ports",
+      "one wrapper-top variant using npu_top_axi",
+      "static generated-RTL size counters per variant",
+      "bounded Nangate45 synth-only target 1_2_yosys"
+    ],
+    "exclude": [
+      "full placement and routing",
+      "producer scale beyond nm2",
+      "quality or QAT experiments",
+      "changing the isolated gemm_compute_array arithmetic implementation"
+    ]
+  },
+  "expected_benefit": [
+    "identifies whether the nm2 timeout belongs to shell/control/interface logic or a feature interaction",
+    "prevents further full-top retries without knowing which generated feature is responsible",
+    "provides concrete evidence for the next RTL generator fix or macro-level evaluation boundary"
+  ],
+  "risks": [
+    "some variants may fail due to invalid feature combinations; these failures are still diagnostic",
+    "static RTL counters are approximate and supplement, not replace, synthesis logs",
+    "a two-feature interaction may require a follow-on matrix after this one-dimensional ablation"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_output_projection_producer_top_ablation_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run bounded synth-only nm2 npu_top ablations to identify the feature that causes whole-top synthesis to become nonviable.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_output_projection_producer_top_ablation",
+      "cost_class": "bounded-medium",
+      "comparison_role": "producer_synth_boundary",
+      "paired_baseline_item_id": "l2_decoder_output_projection_producer_isolated_synth_scale_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_output_projection_producer_isolated_synth_scale_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "The output should identify the first top-level feature delta that changes nm2 whole-top synth from viable to nonviable, or show that a broader interaction matrix is required."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "control_plane/shadow_exports/l2_decisions/l2_decoder_output_projection_producer_isolated_synth_scale_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_producer_isolated_synth__l2_decoder_output_projection_producer_isolated_synth_scale_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_producer_synth_boundary__l2_decoder_output_projection_producer_synth_boundary_v1_r2.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/probe_decoder_producer_top_ablation.py",
+    "npu/eval/probe_decoder_producer_synth_boundary.py",
+    "npu/rtlgen/gen.py",
+    "npu/synth/run_block_sweep.py",
+    "runs/campaigns/npu/output_projection_producer_scale/sweeps/nangate45_synth_boundary.json",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}
