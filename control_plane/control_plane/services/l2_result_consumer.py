@@ -439,6 +439,7 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
     ("decoder_frontier_synthesis_out", "decoder_frontier_synthesis_report"),
     ("producer_synth_boundary_out", "producer_synth_boundary_report"),
     ("producer_top_ablation_out", "producer_top_ablation_report"),
+    ("producer_cq_ablation_out", "producer_cq_ablation_report"),
     ("attention_kv_memory_out", "attention_kv_memory_report"),
 )
 

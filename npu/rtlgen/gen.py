@@ -2291,6 +2291,22 @@ endmodule
 
     enable_dma_ports = bool(cfg.get("enable_dma_ports", False))
     enable_cq_mem_ports = bool(cfg.get("enable_cq_mem_ports", False))
+    cq_mem_ablation_mode = str(cfg.get("cq_mem_ablation_mode", "full")).lower()
+    valid_cq_mem_ablation_modes = {
+        "full",
+        "fetch_only",
+        "v1_header_only",
+        "v1_dma_only",
+        "v1_gemm_only",
+        "v1_vec_only",
+        "v1_softmax_event_only",
+        "v2_gemm_only",
+    }
+    if cq_mem_ablation_mode not in valid_cq_mem_ablation_modes:
+        die(
+            "cq_mem_ablation_mode must be one of "
+            + ", ".join(sorted(valid_cq_mem_ablation_modes))
+        )
     enable_axi_ports = bool(cfg.get("enable_axi_ports", False))
     sram_instances = cfg.get("sram_instances", [])
     if enable_dma_ports:
@@ -2599,6 +2615,309 @@ endmodule
               end
             end else begin
               error_code <= 32'h1;
+            end
+            if (cq_count <= cq_word0_size) begin
+              irq_status[IRQ_CQ_EMPTY] <= 1'b1;
+            end
+            cq_head <= cq_head + (cq_word0_size * 32);
+            cq_count <= cq_count - cq_word0_size;
+            cq_stage_valid <= 1'b0;
+            cq_pending_ext <= 1'b0;
+          end
+        end
+      end"""
+        if cq_mem_ablation_mode == "fetch_only":
+            cq_block = f"""      // CQ diagnostic ablation: fetch and consume one 32B descriptor word only.
+      if (cq_count != 0) begin
+        if (!cq_stage_valid) begin
+          cq_mem_addr <= {{cq_base_hi, cq_base_lo}} + cq_head;
+          cq_stage_valid <= 1'b1;
+        end else begin
+          cq_word0 <= cq_mem_rdata;
+          cq_word0_size <= cq_mem_rdata[23:16];
+          last_opcode <= cq_mem_rdata[7:0];
+          last_tag <= cq_mem_rdata[63:32];
+          last_src <= cq_mem_rdata[127:64];
+          last_dst <= cq_mem_rdata[191:128];
+          last_size <= cq_mem_rdata[223:192];
+          last_op_uid <= 0;
+          cq_head <= cq_head + 32;
+          if (cq_count == 1) begin
+            irq_status[IRQ_CQ_EMPTY] <= 1'b1;
+          end
+          cq_count <= cq_count - 1;
+          cq_stage_valid <= 1'b0;
+        end
+      end"""
+        elif cq_mem_ablation_mode == "v1_header_only":
+            cq_block = f"""      // CQ diagnostic ablation: decode v0.1 descriptor header fields only.
+      if (cq_count != 0) begin
+        if (!cq_stage_valid) begin
+          cq_mem_addr <= {{cq_base_hi, cq_base_lo}} + cq_head;
+          cq_stage_valid <= 1'b1;
+        end else begin
+          cq_word0 <= cq_mem_rdata;
+          cq_word0_size <= cq_mem_rdata[23:16];
+          last_opcode <= cq_mem_rdata[7:0];
+          last_tag <= cq_mem_rdata[63:32];
+          last_src <= cq_mem_rdata[127:64];
+          last_dst <= cq_mem_rdata[191:128];
+          last_size <= cq_mem_rdata[223:192];
+          last_op_uid <= 0;
+          if (cq_mem_rdata[23:16] >= 8'h02) begin
+            error_code <= 32'hd; // v0.2 extension intentionally excluded by ablation
+          end
+          cq_head <= cq_head + 32;
+          if (cq_count == 1) begin
+            irq_status[IRQ_CQ_EMPTY] <= 1'b1;
+          end
+          cq_count <= cq_count - 1;
+          cq_stage_valid <= 1'b0;
+        end
+      end"""
+        elif cq_mem_ablation_mode == "v1_dma_only":
+            cq_block = f"""      // CQ diagnostic ablation: v0.1 DMA_COPY issue path only.
+      if (cq_count != 0) begin
+        if (!cq_stage_valid) begin
+          cq_mem_addr <= {{cq_base_hi, cq_base_lo}} + cq_head;
+          cq_stage_valid <= 1'b1;
+        end else begin
+          cq_word0 <= cq_mem_rdata;
+          cq_word0_size <= cq_mem_rdata[23:16];
+          last_opcode <= cq_mem_rdata[7:0];
+          last_tag <= cq_mem_rdata[63:32];
+          last_src <= cq_mem_rdata[127:64];
+          last_dst <= cq_mem_rdata[191:128];
+          last_size <= cq_mem_rdata[223:192];
+          last_op_uid <= 0;
+          if (cq_mem_rdata[7:0] == 8'h01) begin
+            dma_req_valid <= 1'b1;
+            dma_req_src <= cq_mem_rdata[127:64];
+            dma_req_dst <= cq_mem_rdata[191:128];
+            dma_req_bytes <= cq_mem_rdata[223:192];
+            dma_src <= cq_mem_rdata[127:64];
+            dma_dst <= cq_mem_rdata[191:128];
+            dma_size <= cq_mem_rdata[223:192];
+            dma_beats <= {dma_beats_expr};
+            dma_arlen <= {dma_arlen_expr};
+            dma_pending <= 1'b1;
+          end
+          cq_head <= cq_head + 32;
+          if (cq_count == 1) begin
+            irq_status[IRQ_CQ_EMPTY] <= 1'b1;
+          end
+          cq_count <= cq_count - 1;
+          cq_stage_valid <= 1'b0;
+        end
+      end"""
+        elif cq_mem_ablation_mode == "v1_gemm_only":
+            cq_block = f"""      // CQ diagnostic ablation: v0.1 GEMM issue path only.
+      if (cq_count != 0) begin
+        if (!cq_stage_valid) begin
+          cq_mem_addr <= {{cq_base_hi, cq_base_lo}} + cq_head;
+          cq_stage_valid <= 1'b1;
+        end else begin
+          cq_word0 <= cq_mem_rdata;
+          cq_word0_size <= cq_mem_rdata[23:16];
+          last_opcode <= cq_mem_rdata[7:0];
+          last_tag <= cq_mem_rdata[63:32];
+          last_src <= cq_mem_rdata[127:64];
+          last_dst <= cq_mem_rdata[191:128];
+          last_size <= cq_mem_rdata[223:192];
+          last_op_uid <= 0;
+          if (cq_mem_rdata[7:0] == 8'h10) begin
+{gemm_issue_chain_v1}
+          end
+          cq_head <= cq_head + 32;
+          if (cq_count == 1) begin
+            irq_status[IRQ_CQ_EMPTY] <= 1'b1;
+          end
+          cq_count <= cq_count - 1;
+          cq_stage_valid <= 1'b0;
+        end
+      end"""
+        elif cq_mem_ablation_mode == "v1_vec_only":
+            cq_block = f"""      // CQ diagnostic ablation: v0.1 VEC_OP validation and issue path only.
+      if (cq_count != 0) begin
+        if (!cq_stage_valid) begin
+          cq_mem_addr <= {{cq_base_hi, cq_base_lo}} + cq_head;
+          cq_stage_valid <= 1'b1;
+        end else begin
+          cq_word0 <= cq_mem_rdata;
+          cq_word0_size <= cq_mem_rdata[23:16];
+          last_opcode <= cq_mem_rdata[7:0];
+          last_tag <= cq_mem_rdata[63:32];
+          last_src <= cq_mem_rdata[127:64];
+          last_dst <= cq_mem_rdata[191:128];
+          last_size <= cq_mem_rdata[223:192];
+          last_op_uid <= 0;
+          if (cq_mem_rdata[7:0] == 8'h11) begin
+            if (vec_pending) begin
+              error_code <= 32'h3;
+            end else begin
+              vec_in0 <= cq_mem_rdata[{vec_a_hi}:64];
+              vec_in1 <= cq_mem_rdata[{vec_b_hi}:128];
+              vec_op_sel <= cq_mem_rdata[11:8];
+              vec_dtype_sel <= cq_mem_rdata[15:12];
+              if (((cq_mem_rdata[15:12] == VEC_DTYPE_FP16) && !VEC_FP16_ENABLED) ||
+                  ((cq_mem_rdata[15:12] != VEC_DTYPE_INT8) && (cq_mem_rdata[15:12] != VEC_DTYPE_FP16)) ||
+                  ((cq_mem_rdata[15:12] == VEC_DTYPE_FP16) &&
+                   (cq_mem_rdata[11:8] != VEC_OP_RELU) &&
+                   (cq_mem_rdata[11:8] != VEC_OP_ADD) &&
+                   (cq_mem_rdata[11:8] != VEC_OP_MUL) &&
+                   (cq_mem_rdata[11:8] != VEC_OP_GELU) &&
+                   (cq_mem_rdata[11:8] != VEC_OP_SOFTMAX) &&
+                   (cq_mem_rdata[11:8] != VEC_OP_LAYERNORM) &&
+                   (cq_mem_rdata[11:8] != VEC_OP_DRELU) &&
+                   (cq_mem_rdata[11:8] != VEC_OP_DGELU) &&
+                   (cq_mem_rdata[11:8] != VEC_OP_DSOFTMAX) &&
+                   (cq_mem_rdata[11:8] != VEC_OP_DLAYERNORM) &&
+                   (cq_mem_rdata[11:8] != VEC_OP_SIGMOID) &&
+                   (cq_mem_rdata[11:8] != VEC_OP_TANH) &&
+                   (cq_mem_rdata[11:8] != VEC_OP_HARDSIGMOID) &&
+                   (cq_mem_rdata[11:8] != VEC_OP_HARDTANH)) ||
+                  (cq_mem_rdata[11:8] == VEC_OP_ADD       && !VEC_EN_ADD)       ||
+                  (cq_mem_rdata[11:8] == VEC_OP_MUL       && !VEC_EN_MUL)       ||
+                  (cq_mem_rdata[11:8] == VEC_OP_RELU      && !VEC_EN_RELU)      ||
+                  (cq_mem_rdata[11:8] == VEC_OP_GELU      && !VEC_EN_GELU)      ||
+                  (cq_mem_rdata[11:8] == VEC_OP_SOFTMAX   && !VEC_EN_SOFTMAX)   ||
+                  (cq_mem_rdata[11:8] == VEC_OP_LAYERNORM && !VEC_EN_LAYERNORM) ||
+                  (cq_mem_rdata[11:8] == VEC_OP_DRELU     && !VEC_EN_DRELU)     ||
+                  (cq_mem_rdata[11:8] == VEC_OP_DGELU     && !VEC_EN_DGELU)     ||
+                  (cq_mem_rdata[11:8] == VEC_OP_DSOFTMAX  && !VEC_EN_DSOFTMAX)  ||
+                  (cq_mem_rdata[11:8] == VEC_OP_DLAYERNORM&& !VEC_EN_DLAYERNORM)||
+                  (cq_mem_rdata[11:8] == VEC_OP_SIGMOID   && !VEC_EN_SIGMOID)   ||
+                  (cq_mem_rdata[11:8] == VEC_OP_TANH      && !VEC_EN_TANH)      ||
+                  (cq_mem_rdata[11:8] == VEC_OP_HARDSIGMOID && !VEC_EN_HARDSIGMOID) ||
+                  (cq_mem_rdata[11:8] == VEC_OP_HARDTANH  && !VEC_EN_HARDTANH)  ||
+                  ((cq_mem_rdata[11:8] != VEC_OP_RELU)      &&
+                   (cq_mem_rdata[11:8] != VEC_OP_ADD)       &&
+                   (cq_mem_rdata[11:8] != VEC_OP_MUL)       &&
+                   (cq_mem_rdata[11:8] != VEC_OP_GELU)      &&
+                   (cq_mem_rdata[11:8] != VEC_OP_SOFTMAX)   &&
+                   (cq_mem_rdata[11:8] != VEC_OP_LAYERNORM) &&
+                   (cq_mem_rdata[11:8] != VEC_OP_DRELU)     &&
+                   (cq_mem_rdata[11:8] != VEC_OP_DGELU)     &&
+                   (cq_mem_rdata[11:8] != VEC_OP_DSOFTMAX)  &&
+                   (cq_mem_rdata[11:8] != VEC_OP_DLAYERNORM)&&
+                   (cq_mem_rdata[11:8] != VEC_OP_SIGMOID)   &&
+                   (cq_mem_rdata[11:8] != VEC_OP_TANH)      &&
+                   (cq_mem_rdata[11:8] != VEC_OP_HARDSIGMOID) &&
+                   (cq_mem_rdata[11:8] != VEC_OP_HARDTANH))) begin
+                error_code <= 32'h6;
+              end else begin
+                vec_pending <= 1'b1;
+              end
+            end
+          end
+          cq_head <= cq_head + 32;
+          if (cq_count == 1) begin
+            irq_status[IRQ_CQ_EMPTY] <= 1'b1;
+          end
+          cq_count <= cq_count - 1;
+          cq_stage_valid <= 1'b0;
+        end
+      end"""
+        elif cq_mem_ablation_mode == "v1_softmax_event_only":
+            cq_block = f"""      // CQ diagnostic ablation: v0.1 SOFTMAX and EVENT descriptor paths only.
+      if (cq_count != 0) begin
+        if (!cq_stage_valid) begin
+          cq_mem_addr <= {{cq_base_hi, cq_base_lo}} + cq_head;
+          cq_stage_valid <= 1'b1;
+        end else begin
+          reg consume_desc;
+          consume_desc = 1'b1;
+          cq_word0 <= cq_mem_rdata;
+          cq_word0_size <= cq_mem_rdata[23:16];
+          last_opcode <= cq_mem_rdata[7:0];
+          last_tag <= cq_mem_rdata[63:32];
+          last_src <= cq_mem_rdata[127:64];
+          last_dst <= cq_mem_rdata[191:128];
+          last_size <= cq_mem_rdata[223:192];
+          last_op_uid <= 0;
+          if (cq_mem_rdata[7:0] == 8'h12) begin
+            last_size <= (cq_mem_rdata[207:192] * cq_mem_rdata[223:208]);
+            if (!SOFTMAX_DESC_ENABLED) begin
+              error_code <= 32'h7;
+            end else if (softmax_pending) begin
+              error_code <= 32'h8;
+            end else if (cq_mem_rdata[15:12] != 4'h0) begin
+              error_code <= 32'h9;
+            end else if (cq_mem_rdata[207:192] != SOFTMAX_ROW_BYTES) begin
+              error_code <= 32'ha;
+            end else begin
+              softmax_in_row <= cq_mem_rdata[{softmax_seed_hi}:64];
+              softmax_last_result <= 0;
+              softmax_row_bytes_reg <= cq_mem_rdata[207:192];
+              softmax_rows_remaining <= cq_mem_rdata[223:208];
+              softmax_cycles_remaining <= (cq_mem_rdata[223:208] == 0) ? 1 : (cq_mem_rdata[223:208] + 1);
+              softmax_pending <= 1'b1;
+            end
+          end else if (cq_mem_rdata[7:0] == 8'h20) begin
+            if (dma_pending || vec_pending || softmax_pending || {gemm_slots_busy_expr}) begin
+              consume_desc = 1'b0;
+            end else begin
+              event_state[cq_mem_rdata[47:32]] <= 1'b1;
+              if (cq_mem_rdata[8]) begin
+                irq_status[IRQ_EVENT] <= 1'b1;
+              end
+            end
+          end else if (cq_mem_rdata[7:0] == 8'h21) begin
+            if (!event_state[cq_mem_rdata[47:32]]) begin
+              consume_desc = 1'b0;
+            end else begin
+              event_state[cq_mem_rdata[47:32]] <= 1'b0;
+            end
+          end
+          if (consume_desc) begin
+            cq_head <= cq_head + 32;
+            if (cq_count == 1) begin
+              irq_status[IRQ_CQ_EMPTY] <= 1'b1;
+            end
+            cq_count <= cq_count - 1;
+            cq_stage_valid <= 1'b0;
+          end
+        end
+      end"""
+        elif cq_mem_ablation_mode == "v2_gemm_only":
+            cq_block = f"""      // CQ diagnostic ablation: v0.2 extension fetch and GEMM issue path only.
+      if (cq_count != 0) begin
+        if (!cq_stage_valid && !cq_pending_ext) begin
+          cq_mem_addr <= {{cq_base_hi, cq_base_lo}} + cq_head;
+          cq_stage_valid <= 1'b1;
+        end else if (cq_stage_valid && !cq_pending_ext) begin
+          cq_word0 <= cq_mem_rdata;
+          cq_word0_size <= cq_mem_rdata[23:16];
+          if (cq_mem_rdata[23:16] >= 8'h02) begin
+            cq_pending_ext <= 1'b1;
+            cq_stage_valid <= 1'b0;
+          end else begin
+            last_opcode <= cq_mem_rdata[7:0];
+            last_tag <= cq_mem_rdata[63:32];
+            last_src <= cq_mem_rdata[127:64];
+            last_dst <= cq_mem_rdata[191:128];
+            last_size <= cq_mem_rdata[223:192];
+            last_op_uid <= 0;
+            cq_head <= cq_head + 32;
+            if (cq_count == 1) begin
+              irq_status[IRQ_CQ_EMPTY] <= 1'b1;
+            end
+            cq_count <= cq_count - 1;
+            cq_stage_valid <= 1'b0;
+          end
+        end else if (cq_pending_ext) begin
+          if (!cq_stage_valid) begin
+            cq_mem_addr <= {{cq_base_hi, cq_base_lo}} + cq_head + 32;
+            cq_stage_valid <= 1'b1;
+          end else begin
+            last_opcode <= cq_word0[7:0];
+            last_tag <= cq_word0[63:32];
+            last_src <= cq_word0[127:64];
+            last_dst <= cq_word0[191:128];
+            last_size <= cq_mem_rdata[31:0];
+            last_op_uid <= cq_mem_rdata[255:192];
+            if (cq_word0[7:0] == 8'h10) begin
+{gemm_issue_chain_v2}
             end
             if (cq_count <= cq_word0_size) begin
               irq_status[IRQ_CQ_EMPTY] <= 1'b1;
