@@ -2300,6 +2300,13 @@ endmodule
         "v1_gemm_only",
         "v1_vec_only",
         "v1_softmax_event_only",
+        "v1_softmax_checks_only",
+        "v1_softmax_issue_only",
+        "v1_softmax_only",
+        "v1_event_signal_only",
+        "v1_event_wait_only",
+        "v1_event_index_only",
+        "v1_event_only",
         "v2_gemm_only",
     }
     if cq_mem_ablation_mode not in valid_cq_mem_ablation_modes:
@@ -2854,6 +2861,259 @@ endmodule
               softmax_pending <= 1'b1;
             end
           end else if (cq_mem_rdata[7:0] == 8'h20) begin
+            if (dma_pending || vec_pending || softmax_pending || {gemm_slots_busy_expr}) begin
+              consume_desc = 1'b0;
+            end else begin
+              event_state[cq_mem_rdata[47:32]] <= 1'b1;
+              if (cq_mem_rdata[8]) begin
+                irq_status[IRQ_EVENT] <= 1'b1;
+              end
+            end
+          end else if (cq_mem_rdata[7:0] == 8'h21) begin
+            if (!event_state[cq_mem_rdata[47:32]]) begin
+              consume_desc = 1'b0;
+            end else begin
+              event_state[cq_mem_rdata[47:32]] <= 1'b0;
+            end
+          end
+          if (consume_desc) begin
+            cq_head <= cq_head + 32;
+            if (cq_count == 1) begin
+              irq_status[IRQ_CQ_EMPTY] <= 1'b1;
+            end
+            cq_count <= cq_count - 1;
+            cq_stage_valid <= 1'b0;
+          end
+        end
+      end"""
+        elif cq_mem_ablation_mode == "v1_softmax_checks_only":
+            cq_block = f"""      // CQ diagnostic ablation: v0.1 SOFTMAX descriptor checks only.
+      if (cq_count != 0) begin
+        if (!cq_stage_valid) begin
+          cq_mem_addr <= {{cq_base_hi, cq_base_lo}} + cq_head;
+          cq_stage_valid <= 1'b1;
+        end else begin
+          cq_word0 <= cq_mem_rdata;
+          cq_word0_size <= cq_mem_rdata[23:16];
+          last_opcode <= cq_mem_rdata[7:0];
+          last_tag <= cq_mem_rdata[63:32];
+          last_src <= cq_mem_rdata[127:64];
+          last_dst <= cq_mem_rdata[191:128];
+          last_size <= cq_mem_rdata[223:192];
+          last_op_uid <= 0;
+          if (cq_mem_rdata[7:0] == 8'h12) begin
+            last_size <= (cq_mem_rdata[207:192] * cq_mem_rdata[223:208]);
+            if (!SOFTMAX_DESC_ENABLED) begin
+              error_code <= 32'h7;
+            end else if (softmax_pending) begin
+              error_code <= 32'h8;
+            end else if (cq_mem_rdata[15:12] != 4'h0) begin
+              error_code <= 32'h9;
+            end else if (cq_mem_rdata[207:192] != SOFTMAX_ROW_BYTES) begin
+              error_code <= 32'ha;
+            end
+          end
+          cq_head <= cq_head + 32;
+          if (cq_count == 1) begin
+            irq_status[IRQ_CQ_EMPTY] <= 1'b1;
+          end
+          cq_count <= cq_count - 1;
+          cq_stage_valid <= 1'b0;
+        end
+      end"""
+        elif cq_mem_ablation_mode == "v1_softmax_issue_only":
+            cq_block = f"""      // CQ diagnostic ablation: v0.1 SOFTMAX issue/update path only.
+      if (cq_count != 0) begin
+        if (!cq_stage_valid) begin
+          cq_mem_addr <= {{cq_base_hi, cq_base_lo}} + cq_head;
+          cq_stage_valid <= 1'b1;
+        end else begin
+          cq_word0 <= cq_mem_rdata;
+          cq_word0_size <= cq_mem_rdata[23:16];
+          last_opcode <= cq_mem_rdata[7:0];
+          last_tag <= cq_mem_rdata[63:32];
+          last_src <= cq_mem_rdata[127:64];
+          last_dst <= cq_mem_rdata[191:128];
+          last_size <= cq_mem_rdata[223:192];
+          last_op_uid <= 0;
+          if (cq_mem_rdata[7:0] == 8'h12) begin
+            last_size <= (cq_mem_rdata[207:192] * cq_mem_rdata[223:208]);
+            softmax_in_row <= cq_mem_rdata[{softmax_seed_hi}:64];
+            softmax_last_result <= 0;
+            softmax_row_bytes_reg <= cq_mem_rdata[207:192];
+            softmax_rows_remaining <= cq_mem_rdata[223:208];
+            softmax_cycles_remaining <= (cq_mem_rdata[223:208] == 0) ? 1 : (cq_mem_rdata[223:208] + 1);
+            softmax_pending <= 1'b1;
+          end
+          cq_head <= cq_head + 32;
+          if (cq_count == 1) begin
+            irq_status[IRQ_CQ_EMPTY] <= 1'b1;
+          end
+          cq_count <= cq_count - 1;
+          cq_stage_valid <= 1'b0;
+        end
+      end"""
+        elif cq_mem_ablation_mode == "v1_softmax_only":
+            cq_block = f"""      // CQ diagnostic ablation: v0.1 SOFTMAX descriptor path only.
+      if (cq_count != 0) begin
+        if (!cq_stage_valid) begin
+          cq_mem_addr <= {{cq_base_hi, cq_base_lo}} + cq_head;
+          cq_stage_valid <= 1'b1;
+        end else begin
+          cq_word0 <= cq_mem_rdata;
+          cq_word0_size <= cq_mem_rdata[23:16];
+          last_opcode <= cq_mem_rdata[7:0];
+          last_tag <= cq_mem_rdata[63:32];
+          last_src <= cq_mem_rdata[127:64];
+          last_dst <= cq_mem_rdata[191:128];
+          last_size <= cq_mem_rdata[223:192];
+          last_op_uid <= 0;
+          if (cq_mem_rdata[7:0] == 8'h12) begin
+            last_size <= (cq_mem_rdata[207:192] * cq_mem_rdata[223:208]);
+            if (!SOFTMAX_DESC_ENABLED) begin
+              error_code <= 32'h7;
+            end else if (softmax_pending) begin
+              error_code <= 32'h8;
+            end else if (cq_mem_rdata[15:12] != 4'h0) begin
+              error_code <= 32'h9;
+            end else if (cq_mem_rdata[207:192] != SOFTMAX_ROW_BYTES) begin
+              error_code <= 32'ha;
+            end else begin
+              softmax_in_row <= cq_mem_rdata[{softmax_seed_hi}:64];
+              softmax_last_result <= 0;
+              softmax_row_bytes_reg <= cq_mem_rdata[207:192];
+              softmax_rows_remaining <= cq_mem_rdata[223:208];
+              softmax_cycles_remaining <= (cq_mem_rdata[223:208] == 0) ? 1 : (cq_mem_rdata[223:208] + 1);
+              softmax_pending <= 1'b1;
+            end
+          end
+          cq_head <= cq_head + 32;
+          if (cq_count == 1) begin
+            irq_status[IRQ_CQ_EMPTY] <= 1'b1;
+          end
+          cq_count <= cq_count - 1;
+          cq_stage_valid <= 1'b0;
+        end
+      end"""
+        elif cq_mem_ablation_mode == "v1_event_signal_only":
+            cq_block = f"""      // CQ diagnostic ablation: v0.1 EVENT_SIGNAL path only.
+      if (cq_count != 0) begin
+        if (!cq_stage_valid) begin
+          cq_mem_addr <= {{cq_base_hi, cq_base_lo}} + cq_head;
+          cq_stage_valid <= 1'b1;
+        end else begin
+          reg consume_desc;
+          consume_desc = 1'b1;
+          cq_word0 <= cq_mem_rdata;
+          cq_word0_size <= cq_mem_rdata[23:16];
+          last_opcode <= cq_mem_rdata[7:0];
+          last_tag <= cq_mem_rdata[63:32];
+          last_src <= cq_mem_rdata[127:64];
+          last_dst <= cq_mem_rdata[191:128];
+          last_size <= cq_mem_rdata[223:192];
+          last_op_uid <= 0;
+          if (cq_mem_rdata[7:0] == 8'h20) begin
+            if (dma_pending || vec_pending || softmax_pending || {gemm_slots_busy_expr}) begin
+              consume_desc = 1'b0;
+            end else begin
+              event_state[cq_mem_rdata[47:32]] <= 1'b1;
+              if (cq_mem_rdata[8]) begin
+                irq_status[IRQ_EVENT] <= 1'b1;
+              end
+            end
+          end
+          if (consume_desc) begin
+            cq_head <= cq_head + 32;
+            if (cq_count == 1) begin
+              irq_status[IRQ_CQ_EMPTY] <= 1'b1;
+            end
+            cq_count <= cq_count - 1;
+            cq_stage_valid <= 1'b0;
+          end
+        end
+      end"""
+        elif cq_mem_ablation_mode == "v1_event_wait_only":
+            cq_block = f"""      // CQ diagnostic ablation: v0.1 EVENT_WAIT path only.
+      if (cq_count != 0) begin
+        if (!cq_stage_valid) begin
+          cq_mem_addr <= {{cq_base_hi, cq_base_lo}} + cq_head;
+          cq_stage_valid <= 1'b1;
+        end else begin
+          reg consume_desc;
+          consume_desc = 1'b1;
+          cq_word0 <= cq_mem_rdata;
+          cq_word0_size <= cq_mem_rdata[23:16];
+          last_opcode <= cq_mem_rdata[7:0];
+          last_tag <= cq_mem_rdata[63:32];
+          last_src <= cq_mem_rdata[127:64];
+          last_dst <= cq_mem_rdata[191:128];
+          last_size <= cq_mem_rdata[223:192];
+          last_op_uid <= 0;
+          if (cq_mem_rdata[7:0] == 8'h21) begin
+            if (!event_state[cq_mem_rdata[47:32]]) begin
+              consume_desc = 1'b0;
+            end else begin
+              event_state[cq_mem_rdata[47:32]] <= 1'b0;
+            end
+          end
+          if (consume_desc) begin
+            cq_head <= cq_head + 32;
+            if (cq_count == 1) begin
+              irq_status[IRQ_CQ_EMPTY] <= 1'b1;
+            end
+            cq_count <= cq_count - 1;
+            cq_stage_valid <= 1'b0;
+          end
+        end
+      end"""
+        elif cq_mem_ablation_mode == "v1_event_index_only":
+            cq_block = f"""      // CQ diagnostic ablation: v0.1 EVENT dynamic state index/update only.
+      if (cq_count != 0) begin
+        if (!cq_stage_valid) begin
+          cq_mem_addr <= {{cq_base_hi, cq_base_lo}} + cq_head;
+          cq_stage_valid <= 1'b1;
+        end else begin
+          cq_word0 <= cq_mem_rdata;
+          cq_word0_size <= cq_mem_rdata[23:16];
+          last_opcode <= cq_mem_rdata[7:0];
+          last_tag <= cq_mem_rdata[63:32];
+          last_src <= cq_mem_rdata[127:64];
+          last_dst <= cq_mem_rdata[191:128];
+          last_size <= cq_mem_rdata[223:192];
+          last_op_uid <= 0;
+          if (cq_mem_rdata[7:0] == 8'h20) begin
+            event_state[cq_mem_rdata[47:32]] <= 1'b1;
+          end else if (cq_mem_rdata[7:0] == 8'h21) begin
+            if (event_state[cq_mem_rdata[47:32]]) begin
+              event_state[cq_mem_rdata[47:32]] <= 1'b0;
+            end
+          end
+          cq_head <= cq_head + 32;
+          if (cq_count == 1) begin
+            irq_status[IRQ_CQ_EMPTY] <= 1'b1;
+          end
+          cq_count <= cq_count - 1;
+          cq_stage_valid <= 1'b0;
+        end
+      end"""
+        elif cq_mem_ablation_mode == "v1_event_only":
+            cq_block = f"""      // CQ diagnostic ablation: v0.1 EVENT_SIGNAL and EVENT_WAIT paths only.
+      if (cq_count != 0) begin
+        if (!cq_stage_valid) begin
+          cq_mem_addr <= {{cq_base_hi, cq_base_lo}} + cq_head;
+          cq_stage_valid <= 1'b1;
+        end else begin
+          reg consume_desc;
+          consume_desc = 1'b1;
+          cq_word0 <= cq_mem_rdata;
+          cq_word0_size <= cq_mem_rdata[23:16];
+          last_opcode <= cq_mem_rdata[7:0];
+          last_tag <= cq_mem_rdata[63:32];
+          last_src <= cq_mem_rdata[127:64];
+          last_dst <= cq_mem_rdata[191:128];
+          last_size <= cq_mem_rdata[223:192];
+          last_op_uid <= 0;
+          if (cq_mem_rdata[7:0] == 8'h20) begin
             if (dma_pending || vec_pending || softmax_pending || {gemm_slots_busy_expr}) begin
               consume_desc = 1'b0;
             end else begin

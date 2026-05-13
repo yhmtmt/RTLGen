@@ -99,7 +99,8 @@ can later be extended without breaking v0.1.
 - `cq_mem_ablation_mode` (string, optional): diagnostic-only command-queue
   subpath selector for synthesis probes. Default `full` preserves the normal
   generated CQ fetch/decode/issue RTL. Other values are not production RTL
-  modes; they are used to isolate synthesis behavior.
+  modes; they are used to isolate synthesis behavior, including finer
+  SOFTMAX/EVENT descriptor branch splits.
 - `enable_axi_ports` (bool): include AXI4-like memory interface ports (stub).
 - `enable_axi_lite_wrapper` (bool): emit an AXI-Lite wrapper module for MMIO.
 - `compute` (object, optional): Phase 1 compute generation controls.

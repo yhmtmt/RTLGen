@@ -1,0 +1,73 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_producer_softmax_event_ablation_v1",
+  "created_utc": "2026-05-13T23:05:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_output_projection_producer_softmax_event_ablation",
+  "title": "Decoder output-projection producer SOFTMAX/EVENT CQ synthesis ablation",
+  "hypothesis": "The prior CQ ablation identified `cq_v1_softmax_event_only` as the first non-OK nm2 synthesis slice while fetch, header, DMA, GEMM, and VEC slices were viable. Splitting SOFTMAX and EVENT into checks, issue/update, signal, wait, dynamic event_state index/update, and combined guard variants should identify whether the timeout is caused by SOFTMAX descriptor logic, the 65536-bit dynamic EVENT state access, or their interaction.",
+  "direct_comparison": {
+    "primary_question": "Which SOFTMAX/EVENT CQ subpath causes the nm2 producer top synthesis timeout?",
+    "include": [
+      "nm2 fp16 producer base config",
+      "known-passing cq_v1_vec_only anchor",
+      "SOFTMAX checks-only, issue-only, and full SOFTMAX variants",
+      "EVENT_SIGNAL-only, EVENT_WAIT-only, dynamic event_state index/update-only, and full EVENT variants",
+      "combined SOFTMAX/EVENT guard",
+      "bounded Nangate45 synth-only target 1_2_yosys",
+      "static generated-RTL size counters per variant"
+    ],
+    "exclude": [
+      "full placement and routing",
+      "producer scale beyond nm2",
+      "changing the default full CQ RTL behavior",
+      "changing perf-simulator semantics"
+    ]
+  },
+  "expected_benefit": [
+    "distinguishes SOFTMAX descriptor arithmetic/check logic from EVENT state indexing as the synthesis blocker",
+    "shows whether the combined SOFTMAX/EVENT branch fails only as an interaction",
+    "provides evidence for a targeted RTL generator fix such as staging event index decode or replacing the wide event_state vector"
+  ],
+  "risks": [
+    "diagnostic modes are not production RTL modes and only preserve default behavior when unset",
+    "a bounded timeout classifies exploration viability rather than absolute synthesis impossibility",
+    "if all individual variants pass, a follow-on pairwise interaction probe may still be required"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_output_projection_producer_softmax_event_ablation_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run bounded synth-only nm2 npu_top SOFTMAX/EVENT command-queue subpath ablations to isolate the descriptor logic responsible for the prior CQ slice timeout.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_output_projection_producer_softmax_event_ablation",
+      "cost_class": "bounded-medium",
+      "comparison_role": "producer_synth_boundary",
+      "paired_baseline_item_id": "l2_decoder_output_projection_producer_cq_ablation_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_output_projection_producer_cq_ablation_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "The output should identify whether SOFTMAX checks, SOFTMAX issue, EVENT signal, EVENT wait, dynamic event_state indexing, or their combination causes the synthesis timeout."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "control_plane/shadow_exports/l2_decisions/l2_decoder_output_projection_producer_cq_ablation_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_producer_cq_ablation__l2_decoder_output_projection_producer_cq_ablation_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_producer_top_ablation__l2_decoder_output_projection_producer_top_ablation_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/probe_decoder_producer_softmax_event_ablation.py",
+    "npu/eval/probe_decoder_producer_cq_ablation.py",
+    "npu/rtlgen/gen.py",
+    "npu/synth/run_block_sweep.py",
+    "runs/campaigns/npu/output_projection_producer_scale/sweeps/nangate45_synth_boundary.json",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}

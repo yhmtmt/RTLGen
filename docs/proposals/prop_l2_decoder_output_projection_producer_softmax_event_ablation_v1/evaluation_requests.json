@@ -1,0 +1,24 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_producer_softmax_event_ablation_v1",
+  "source_commit": "4bb6457756ff7044e59f45b4153b1914bfe0f70f",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_output_projection_producer_softmax_event_ablation_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run bounded synth-only nm2 npu_top SOFTMAX/EVENT command-queue subpath ablations to isolate the descriptor logic responsible for the prior CQ slice timeout.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_output_projection_producer_softmax_event_ablation",
+      "comparison_role": "producer_synth_boundary",
+      "paired_baseline_item_id": "l2_decoder_output_projection_producer_cq_ablation_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_output_projection_producer_cq_ablation_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "The output should identify whether SOFTMAX checks, SOFTMAX issue, EVENT signal, EVENT wait, dynamic event_state indexing, or their combination causes the synthesis timeout."
+      }
+    }
+  ]
+}
