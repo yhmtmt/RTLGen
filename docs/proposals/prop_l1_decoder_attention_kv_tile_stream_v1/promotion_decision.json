@@ -1,15 +1,15 @@
 {
   "proposal_id": "prop_l1_decoder_attention_kv_tile_stream_v1",
-  "candidate_id": "l1_decoder_attention_kv_tile_smoke_v1",
+  "candidate_id": "l1_decoder_attention_kv_tile_frontier_v1",
   "decision": "promote",
-  "reason": "Accepted Layer 1 physical metrics were merged in PR #469 for the current candidate.",
+  "reason": "Accepted Layer 1 physical metrics were merged in PR #478 for the current candidate.",
   "evidence_refs": [
-    "item:l1_decoder_attention_kv_tile_smoke_v1",
-    "run:l1_decoder_attention_kv_tile_smoke_v1_run_546f61362feb8c90",
-    "artifact:control_plane/shadow_exports/l1_promotions/l1_decoder_attention_kv_tile_smoke_v1.json",
-    "pr:#469",
-    "https://github.com/yhmtmt/RTLGen/pull/469"
+    "item:l1_decoder_attention_kv_tile_frontier_v1",
+    "run:l1_decoder_attention_kv_tile_frontier_v1_run_48583f1a2639b4fe",
+    "artifact:control_plane/shadow_exports/l1_promotions/l1_decoder_attention_kv_tile_frontier_v1.json",
+    "pr:#478",
+    "https://github.com/yhmtmt/RTLGen/pull/478"
   ],
-  "next_action": "queue l1_decoder_attention_kv_tile_frontier_v1",
+  "next_action": "inspect the next dependent item",
   "requires_human_approval": false
 }

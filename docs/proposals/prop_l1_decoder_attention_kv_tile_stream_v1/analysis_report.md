@@ -2,13 +2,13 @@
 
 ## Candidate
 - `proposal_id`: `prop_l1_decoder_attention_kv_tile_stream_v1`
-- `candidate_id`: `l1_decoder_attention_kv_tile_smoke_v1`
+- `candidate_id`: `l1_decoder_attention_kv_tile_frontier_v1`
 
 ## Evaluations Consumed
-- `l1_decoder_attention_kv_tile_smoke_v1`
-- `l1_decoder_attention_kv_tile_smoke_v1_run_546f61362feb8c90`
-- source commit: `4deca89f916e647c2a85f55a955db682792ebf4f`
-- review: PR #469
+- `l1_decoder_attention_kv_tile_frontier_v1`
+- `l1_decoder_attention_kv_tile_frontier_v1_run_48583f1a2639b4fe`
+- source commit: `0eaa71e464ef15616e3741e79e53ed86ffed9126`
+- review: PR #478
 
 ## Baseline Comparison
 - not applicable
@@ -25,5 +25,5 @@
 
 ## Recommendation
 - `promote`
-- reason: Accepted Layer 1 physical metrics were merged in PR #469 for the current candidate.
-- next_action: queue l1_decoder_attention_kv_tile_frontier_v1
+- reason: Accepted Layer 1 physical metrics were merged in PR #478 for the current candidate.
+- next_action: inspect the next dependent item
