@@ -1,0 +1,32 @@
+{
+  "flow_params": {
+    "TAG": [
+      "npu_fp16_producer_isolated_synth"
+    ],
+    "FLOW_VARIANT": [
+      "producer_isolated_synth"
+    ],
+    "CLOCK_PORT": [
+      ""
+    ],
+    "CLOCK_PERIOD": [
+      10.0
+    ],
+    "DIE_AREA": [
+      "0 0 400 400"
+    ],
+    "CORE_AREA": [
+      "20 20 380 380"
+    ],
+    "PLACE_DENSITY": [
+      0.30
+    ],
+    "SYNTH_HIERARCHICAL": [
+      1
+    ],
+    "SYNTH_KEEP_MODULES": [
+      "gemm_compute_array"
+    ]
+  },
+  "tag_prefix": "npu_fp16_producer_isolated_synth"
+}
