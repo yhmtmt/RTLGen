@@ -2327,6 +2327,49 @@ def _decoder_frontier_synthesis_evidence(*, item_id: str) -> dict[str, Any]:
     }
 
 
+def _decoder_output_projection_producer_synth_boundary_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_output_projection_producer_synth_boundary__{item_id}.json"
+    report = f"{base}/decoder_output_projection_producer_synth_boundary__{item_id}.md"
+    configs = [
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm2_producer/config_nm2_producer.json",
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm3_producer/config_nm3_producer.json",
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm4_producer/config_nm4_producer.json",
+    ]
+    sweep = "runs/campaigns/npu/output_projection_producer_scale/sweeps/nangate45_synth_boundary.json"
+    return {
+        "inputs": {
+            "producer_synth_boundary_out": out,
+            "producer_synth_boundary_report": report,
+            "producer_synth_boundary_configs": configs,
+            "producer_synth_boundary_sweep": sweep,
+            "producer_synth_boundary_make_target": "1_2_yosys",
+            "producer_synth_boundary_scope": (
+                "Bound decoder output-projection producer synthesis by probing nm2, nm3, "
+                "and nm4 with a synth-only target and explicit timeout before retrying full PnR."
+            ),
+        },
+        "commands": [
+            {
+                "name": "probe_decoder_output_projection_producer_synth_boundary",
+                "run": (
+                    "python3 npu/eval/probe_decoder_producer_synth_boundary.py "
+                    f"--configs {','.join(configs)} "
+                    f"--sweep {sweep} "
+                    "--platform nangate45 "
+                    "--top npu_top "
+                    "--make-target 1_2_yosys "
+                    "--timeout-seconds 1800 "
+                    "--stall-timeout-seconds 900 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_distilgpt2_prompt_stress_evidence(*, item_id: str) -> dict[str, Any]:
     return _decoder_distilgpt2_quality_evidence_for_dataset(
         item_id=item_id,
@@ -2795,10 +2838,13 @@ def _build_payload(
         "decoder_stage_breakdown",
         "decoder_attention_kv_memory",
         "decoder_frontier_synthesis",
+        "decoder_output_projection_producer_synth_boundary",
         "decoder_quantization_outline",
     }:
         if abstraction_layer_name == "decoder_quantization_outline":
             decoder_evidence = _decoder_quantization_outline_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_output_projection_producer_synth_boundary":
+            decoder_evidence = _decoder_output_projection_producer_synth_boundary_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_frontier_synthesis":
             decoder_evidence = _decoder_frontier_synthesis_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_memory":

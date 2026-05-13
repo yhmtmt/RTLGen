@@ -1120,6 +1120,122 @@ def test_consume_l2_result_frontier_synthesis_prefers_synthesis_evidence() -> No
             assert decision_payload["source_refs"].get("decoder_attention_kv_memory_out") is None
 
 
+def test_consume_l2_result_prefers_producer_synth_boundary_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            proposal_dir = (
+                repo_root
+                / "docs"
+                / "proposals"
+                / "prop_l2_decoder_output_projection_producer_synth_boundary_v1"
+            )
+            _write(
+                proposal_dir / "proposal.json",
+                json.dumps(
+                    {
+                        "proposal_id": "prop_l2_decoder_output_projection_producer_synth_boundary_v1",
+                        "kind": "architecture",
+                        "title": "Decoder producer synthesis boundary",
+                        "direct_comparison": {
+                            "primary_question": "Where does producer synthesis become nonviable?"
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            evidence_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_output_projection_producer_synth_boundary__"
+                "l2_decoder_output_projection_producer_synth_boundary_v1.json"
+            )
+            report_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_output_projection_producer_synth_boundary__"
+                "l2_decoder_output_projection_producer_synth_boundary_v1.md"
+            )
+            _write(
+                repo_root / evidence_rel,
+                json.dumps(
+                    {
+                        "version": 0.1,
+                        "model": "decoder_output_projection_producer_synth_boundary_v1",
+                        "diagnosis": {
+                            "decision": "producer_synth_boundary_recorded",
+                            "feasible_max_num_modules": 3,
+                            "first_nonviable_num_modules": 4,
+                            "recommended_next_step": "split the producer before full PnR",
+                        },
+                        "probe_rows": [
+                            {"num_modules": 3, "status": "ok"},
+                            {"num_modules": 4, "status": "stall_timeout"},
+                        ],
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            _write(repo_root / report_rel, "# decoder producer synthesis boundary\n")
+            item_id = _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id="l2_decoder_output_projection_producer_synth_boundary_v1",
+                campaign_dir_rel="runs/campaigns/npu/decoder_producer_synth_boundary_campaign",
+                summary_rows=(
+                    "scope,arch_id,macro_mode,objective_rank,latency_ms_mean,energy_mj_mean,"
+                    "critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,"
+                    "throughput_infer_per_s_mean\n"
+                    "aggregate,fp16_nm3_demo,flat_nomacro,1,0.4,0.15,5.5,0.18,1000,1.0\n"
+                ),
+                proposal_path="docs/proposals/prop_l2_decoder_output_projection_producer_synth_boundary_v1",
+                comparison={"role": "producer_synth_boundary"},
+            )
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            payload = copy.deepcopy(work_item.task_request.request_payload or {})
+            payload["developer_loop"]["evaluation"] = {
+                "mode": "frontier_detail",
+                "expected_direction": "iterate",
+                "expected_reason": "Record bounded producer synthesis frontier before deeper RTL jobs.",
+            }
+            payload["developer_loop"]["abstraction"] = {
+                "layer": "decoder_output_projection_producer_synth_boundary",
+            }
+            work_item.task_request.request_payload = payload
+            work_item.input_manifest = {
+                "decoder_contract": {
+                    "producer_synth_boundary_out": evidence_rel,
+                    "producer_synth_boundary_report": report_rel,
+                }
+            }
+            work_item.expected_outputs = [
+                *(work_item.expected_outputs or []),
+                evidence_rel,
+                report_rel,
+            ]
+            session.commit()
+
+            consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=item_id))
+
+            decision_payload = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{item_id}.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            assessment = decision_payload["proposal_assessment"]
+            assert assessment["outcome"] == "producer_synth_boundary_recorded"
+            assert assessment["decoder_evidence_ref"] == evidence_rel
+            assert decision_payload["evaluation_record"]["abstraction_layer"] == (
+                "decoder_output_projection_producer_synth_boundary"
+            )
+            assert decision_payload["source_refs"]["decoder_producer_synth_boundary_out"] == evidence_rel
+            assert decision_payload["source_refs"]["decoder_producer_synth_boundary_report"] == report_rel
+
+
 def test_consume_l2_result_resolves_prior_art_report_as_baseline() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

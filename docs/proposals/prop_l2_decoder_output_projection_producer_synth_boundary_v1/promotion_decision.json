@@ -1,0 +1,9 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_producer_synth_boundary_v1",
+  "candidate_id": "l2_decoder_output_projection_producer_synth_boundary_v1",
+  "decision": "pending",
+  "reason": "Pending bounded synthesis-boundary evaluation.",
+  "evidence_refs": [],
+  "next_action": "dispatch l2_decoder_output_projection_producer_synth_boundary_v1 after merge",
+  "requires_human_approval": false
+}
