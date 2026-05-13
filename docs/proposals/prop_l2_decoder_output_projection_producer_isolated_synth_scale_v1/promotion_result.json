@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_producer_isolated_synth_scale_v1",
+  "decision": "iterate",
+  "pr_number": 499,
+  "merge_commit": "2ffbaf127693a0d46775a723e8b791937b0899d9",
+  "merged_utc": "2026-05-13T10:40:23.506154Z"
+}
