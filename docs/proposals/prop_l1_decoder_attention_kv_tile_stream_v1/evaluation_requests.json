@@ -58,10 +58,10 @@
         "reason": "Calibrate the cost surface of the current long-context attention/KV frontier after a legal smoke measurement exists."
       },
       "status": "merged",
-      "notes": "Dispatched after l1_decoder_attention_kv_tile_smoke_v1 merged accepted evidence. Merged via PR #478 and merge b72c0398eb1dfe60bcfceb2e20caec95b262cdd4 at 2026-05-13T01:07:31.656270Z.",
+      "notes": "Dispatched after l1_decoder_attention_kv_tile_smoke_v1 merged accepted evidence. Merged via PR #478 and merge 199e0360326b9f31b0fc813e1f14faf18ae5dc82 at 2026-05-13T01:06:47Z.",
       "merged_pr_number": 478,
-      "merge_commit": "b72c0398eb1dfe60bcfceb2e20caec95b262cdd4",
-      "merged_utc": "2026-05-13T01:07:31.656270Z"
+      "merge_commit": "199e0360326b9f31b0fc813e1f14faf18ae5dc82",
+      "merged_utc": "2026-05-13T01:06:47Z"
     }
   ]
 }
