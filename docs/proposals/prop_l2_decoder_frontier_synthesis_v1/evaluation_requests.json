@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_frontier_synthesis_v1",
-  "source_commit": "277f2c0c5397e222604e2a7d317010649dde1b53",
+  "source_commit": "babb33627fd6a8c6305f28fe82e3b70c319f6f3a",
   "requested_items": [
     {
       "item_id": "l2_decoder_frontier_synthesis_v1",
@@ -21,7 +21,11 @@
         "direction": "iterate",
         "reason": "The output should identify whether the next measured RTL job should focus on producer/ranker, attention/KV memory hierarchy, or another whole-decoder bottleneck."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 488,
+      "merge_commit": "fe636ce4eebf95b4e233699f63fa510e3ac30631",
+      "merged_utc": "2026-05-13T02:38:53.172081Z",
+      "notes": "Merged via PR #488 and merge fe636ce4eebf95b4e233699f63fa510e3ac30631 at 2026-05-13T02:38:53.172081Z."
     }
   ]
 }
