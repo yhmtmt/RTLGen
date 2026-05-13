@@ -1,0 +1,36 @@
+{
+  "version": 0.1,
+  "model": "decoder_output_projection_producer_synth_boundary_v1",
+  "platform": "nangate45",
+  "top": "npu_top",
+  "make_target": "1_2_yosys",
+  "timeout_seconds": 1800,
+  "stall_timeout_seconds": 900,
+  "sweep": "runs/campaigns/npu/output_projection_producer_scale/sweeps/nangate45_synth_boundary.json",
+  "probe_rows": [
+    {
+      "config": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_producer/config_nm2_producer.json",
+      "design_dir": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_producer",
+      "num_modules": 2,
+      "rtlgen": {
+        "status": "failed",
+        "returncode": 1,
+        "elapsed_seconds": 2.0027027840260416,
+        "log_path": "nm2_rtlgen.log",
+        "log_tail": [
+          "rtlgen: RTLGen binary not found. tried: /tmp/rtlcp-worktree-uc47bf5r/repo/build/rtlgen, /tmp/rtlcp-worktree-uc47bf5r/repo/build/rtlgen. Build C++ rtlgen first or update binary_path."
+        ],
+        "command": "/workspaces/rtlgen-eval-clean/control_plane/.venv/bin/python3 npu/rtlgen/gen.py --config runs/designs/npu_blocks/npu_fp16_cpp_nm2_producer/config_nm2_producer.json --out runs/designs/npu_blocks/npu_fp16_cpp_nm2_producer/verilog"
+      },
+      "synthesis": null,
+      "metrics_row": null,
+      "status": "rtlgen_failed"
+    }
+  ],
+  "diagnosis": {
+    "decision": "producer_synth_boundary_recorded",
+    "feasible_max_num_modules": null,
+    "first_nonviable_num_modules": 2,
+    "recommended_next_step": "Use the largest completed synth point for near-frontier extrapolation and split or macro-harden larger producers before retrying full physical implementation."
+  }
+}
