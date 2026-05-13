@@ -991,6 +991,135 @@ def test_consume_l2_result_frontier_attention_kv_uses_decoder_evidence() -> None
             assert decision_payload["source_refs"]["decoder_attention_kv_memory_report"] == report_rel
 
 
+def test_consume_l2_result_frontier_synthesis_prefers_synthesis_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            proposal_dir = repo_root / "docs" / "proposals" / "prop_l2_decoder_frontier_synthesis_v1"
+            _write(
+                proposal_dir / "proposal.json",
+                json.dumps(
+                    {
+                        "proposal_id": "prop_l2_decoder_frontier_synthesis_v1",
+                        "kind": "architecture",
+                        "title": "Decoder frontier synthesis",
+                        "direct_comparison": {
+                            "primary_question": "Which measured decoder components dominate the frontier?"
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            synthesis_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_frontier_synthesis__l2_decoder_frontier_synthesis_v1.json"
+            )
+            synthesis_report_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_frontier_synthesis__l2_decoder_frontier_synthesis_v1.md"
+            )
+            attention_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_kv_memory__l2_decoder_frontier_synthesis_v1.json"
+            )
+            attention_report_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_kv_memory__l2_decoder_frontier_synthesis_v1.md"
+            )
+            _write(
+                repo_root / synthesis_rel,
+                json.dumps(
+                    {
+                        "version": 0.1,
+                        "model": "llm_decoder_frontier_synthesis_v1",
+                        "diagnosis": {
+                            "decision": "decoder_frontier_synthesis_recorded",
+                            "recommended_next_step": "measure producer/ranker RTL",
+                        },
+                        "dominant_component_counts": {
+                            "output_projection_producer_ranker": 8,
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            _write(repo_root / synthesis_report_rel, "# decoder frontier synthesis\n")
+            _write(
+                repo_root / attention_rel,
+                json.dumps(
+                    {
+                        "version": 0.1,
+                        "diagnosis": {
+                            "decision": "attention_kv_bottleneck_recorded",
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            _write(repo_root / attention_report_rel, "# attention kv\n")
+            item_id = _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id="l2_decoder_frontier_synthesis_v1",
+                campaign_dir_rel="runs/campaigns/npu/decoder_frontier_synthesis_campaign",
+                summary_rows=(
+                    "scope,arch_id,macro_mode,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,throughput_infer_per_s_mean\n"
+                    "aggregate,fp16_nm1_demo,flat_nomacro,1,0.4,0.15,5.5,0.18,1000,1.0\n"
+                ),
+                proposal_path="docs/proposals/prop_l2_decoder_frontier_synthesis_v1",
+                comparison={"role": "ranking"},
+            )
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            payload = copy.deepcopy(work_item.task_request.request_payload or {})
+            payload["developer_loop"]["evaluation"] = {
+                "mode": "frontier_detail",
+                "expected_direction": "iterate",
+                "expected_reason": "Use measured decoder frontier synthesis evidence for next architecture selection.",
+            }
+            payload["developer_loop"]["abstraction"] = {
+                "layer": "decoder_frontier_synthesis",
+            }
+            work_item.task_request.request_payload = payload
+            work_item.input_manifest = {
+                "decoder_contract": {
+                    "decoder_frontier_synthesis_out": synthesis_rel,
+                    "decoder_frontier_synthesis_report": synthesis_report_rel,
+                    "attention_kv_memory_out": attention_rel,
+                    "attention_kv_memory_report": attention_report_rel,
+                }
+            }
+            work_item.expected_outputs = [
+                *(work_item.expected_outputs or []),
+                synthesis_rel,
+                synthesis_report_rel,
+                attention_rel,
+                attention_report_rel,
+            ]
+            session.commit()
+
+            consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=item_id))
+
+            decision_payload = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{item_id}.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            assessment = decision_payload["proposal_assessment"]
+            assert assessment["outcome"] == "decoder_frontier_synthesis_recorded"
+            assert assessment["decoder_evidence_ref"] == synthesis_rel
+            assert decision_payload["evaluation_record"]["abstraction_layer"] == "decoder_frontier_synthesis"
+            assert decision_payload["source_refs"]["decoder_frontier_synthesis_out"] == synthesis_rel
+            assert decision_payload["source_refs"]["decoder_frontier_synthesis_report"] == synthesis_report_rel
+            assert decision_payload["source_refs"].get("decoder_attention_kv_memory_out") is None
+
+
 def test_consume_l2_result_resolves_prior_art_report_as_baseline() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
