@@ -436,8 +436,13 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
     ("bitwidth_boundary_out", "bitwidth_boundary_report"),
     ("quantization_outline_out", "quantization_outline_report"),
     ("cost_proxy_out", "cost_proxy_report"),
+    ("decoder_frontier_synthesis_out", "decoder_frontier_synthesis_report"),
     ("attention_kv_memory_out", "attention_kv_memory_report"),
 )
+
+
+def _decoder_source_ref_key(key: str) -> str:
+    return key if key.startswith("decoder_") else f"decoder_{key}"
 
 
 def _decoder_evidence_paths(
@@ -452,7 +457,7 @@ def _decoder_evidence_paths(
     for ref_key in ("dataset_manifest", "sample_file", "validation_out", "quality_out", "candidate_sweep_out"):
         value = str(decoder_contract.get(ref_key, "")).strip()
         if value:
-            source_refs[f"decoder_{ref_key}"] = value
+            source_refs[_decoder_source_ref_key(ref_key)] = value
     for out_key, report_key in _DECODER_EVIDENCE_OUTPUT_KEYS:
         out_rel = str(decoder_contract.get(out_key, "")).strip()
         if not out_rel:
@@ -460,10 +465,10 @@ def _decoder_evidence_paths(
         out_path = _resolve_path(repo_root=repo_root, path_text=out_rel)
         if not out_path.exists():
             continue
-        source_refs[f"decoder_{out_key}"] = out_rel
+        source_refs[_decoder_source_ref_key(out_key)] = out_rel
         report_rel = str(decoder_contract.get(report_key, "")).strip()
         if report_rel and _resolve_path(repo_root=repo_root, path_text=report_rel).exists():
-            source_refs[f"decoder_{report_key}"] = report_rel
+            source_refs[_decoder_source_ref_key(report_key)] = report_rel
         return out_rel, source_refs
     return None, source_refs
 
@@ -492,7 +497,7 @@ def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, 
     diagnosis = evidence_payload.get("diagnosis")
     diagnosis_dict = dict(diagnosis) if isinstance(diagnosis, dict) else {}
     decision = str(diagnosis_dict.get("decision", "")).strip() or "decoder_evidence_recorded"
-    parts = [f"Decoder quality evidence recorded from {evidence_ref}: decision={decision}"]
+    parts = [f"Decoder evidence recorded from {evidence_ref}: decision={decision}"]
     if "exact_safe_after_recovery" in diagnosis_dict:
         parts.append(f"exact_safe_after_recovery={bool(diagnosis_dict.get('exact_safe_after_recovery'))}")
     if "recovered_count" in diagnosis_dict:
