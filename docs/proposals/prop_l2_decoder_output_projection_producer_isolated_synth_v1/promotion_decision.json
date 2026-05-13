@@ -1,9 +1,15 @@
 {
   "proposal_id": "prop_l2_decoder_output_projection_producer_isolated_synth_v1",
   "candidate_id": "l2_decoder_output_projection_producer_isolated_synth_v1",
-  "decision": "pending",
-  "reason": "Pending isolated producer synth-boundary evaluation.",
-  "evidence_refs": [],
-  "next_action": "dispatch l2_decoder_output_projection_producer_isolated_synth_v1 after merge",
+  "decision": "iterate",
+  "reason": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_producer_isolated_synth__l2_decoder_output_projection_producer_isolated_synth_v1.json: decision=producer_synth_boundary_not_reached; recommended_next_step=Extend the probe to the next producer scale before launching full PnR.",
+  "evidence_refs": [
+    "item:l2_decoder_output_projection_producer_isolated_synth_v1",
+    "run:l2_decoder_output_projection_producer_isolated_synth_v1_run_154bdab8d73be900",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_output_projection_producer_isolated_synth_v1.json",
+    "pr:#497",
+    "https://github.com/yhmtmt/RTLGen/pull/497"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_output_projection_producer_isolated_synth_v1",
   "requires_human_approval": false
 }
