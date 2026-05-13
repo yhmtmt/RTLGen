@@ -1,0 +1,33 @@
+{
+  "item_id": "l1_decoder_attention_kv_tile_frontier_v1",
+  "completed_trials": 4,
+  "success_count": 1,
+  "failure_count": 3,
+  "success_rate": 0.25,
+  "metrics": {
+    "critical_path_ns": {
+      "best": 4.4824,
+      "mean": 4.4824,
+      "median": 4.4824,
+      "max": 4.4824,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "die_area": {
+      "best": 11299.69,
+      "mean": 11299.69,
+      "median": 11299.69,
+      "max": 11299.69,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "total_power_mw": {
+      "best": 0.385,
+      "mean": 0.385,
+      "median": 0.385,
+      "max": 0.385,
+      "range": 0.0,
+      "stddev": 0.0
+    }
+  }
+}

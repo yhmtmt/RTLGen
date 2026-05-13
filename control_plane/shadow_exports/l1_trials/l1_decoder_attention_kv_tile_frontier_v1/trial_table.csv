@@ -1,0 +1,5 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_decoder_attention_kv_tile_frontier_v1_run_4a4455181bf10099,1,1,,canceled,,,,,stale_duplicate_run,control_plane,run superseded by resolver restart while latest attempt holds active lease
+l1_decoder_attention_kv_tile_frontier_v1_run_5d5e77ec616dd870,2,1,,canceled,,,,,stale_duplicate_run,control_plane,run superseded by resolver restart while latest attempt holds active lease
+l1_decoder_attention_kv_tile_frontier_v1_run_ea35b6e7171f39ac,3,1,,canceled,,,,,lease_expired,control_plane,lease expired before run completion
+l1_decoder_attention_kv_tile_frontier_v1_run_48583f1a2639b4fe,4,3,2,succeeded,runs/designs/activations/attention_kv_tile_hd64_kv4_l16_b128_wrapper/metrics.csv,4.4824,11299.69,0.385,none,,

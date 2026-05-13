@@ -1,0 +1,189 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-05-12T14:40:36.191415Z",
+  "item_id": "l1_decoder_attention_kv_tile_frontier_v1",
+  "run_key": "l1_decoder_attention_kv_tile_frontier_v1_run_48583f1a2639b4fe",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "0eaa71e464ef15616e3741e79e53ed86ffed9126",
+  "objective": "Sweep a bounded attention/KV tile frontier over head_dim, KV precision, lane count, and stream width after the smoke point passes.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/activations/attention_kv_tile/sweeps/nangate45_macro_frontier.json"
+    ],
+    "configs": [
+      "runs/designs/activations/attention_kv_tile_hd64_kv4_l16_b128_wrapper/config_attention_kv_tile_hd64_kv4_l16_b128.json",
+      "runs/designs/activations/attention_kv_tile_hd64_kv4_l32_b256_wrapper/config_attention_kv_tile_hd64_kv4_l32_b256.json",
+      "runs/designs/activations/attention_kv_tile_hd64_kv8_l32_b256_wrapper/config_attention_kv_tile_hd64_kv8_l32_b256.json",
+      "runs/designs/activations/attention_kv_tile_hd128_kv4_l32_b256_wrapper/config_attention_kv_tile_hd128_kv4_l32_b256.json",
+      "runs/designs/activations/attention_kv_tile_hd128_kv8_l64_b512_wrapper/config_attention_kv_tile_hd128_kv8_l64_b512.json",
+      "runs/designs/activations/attention_kv_tile_hd128_kv16_l64_b512_wrapper/config_attention_kv_tile_hd128_kv16_l64_b512.json"
+    ],
+    "out_root": "runs/designs/activations",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 6,
+  "evaluation_record": {
+    "evaluation_mode": "measurement_only",
+    "abstraction_layer": "decoder_attention_kv_tile",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/attention_kv_tile_hd64_kv4_l16_b128_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "34d42afe",
+        "tag": "attention_kv_tile_nangate45_macro_frontier_175641b8",
+        "result_path": "runs/designs/activations/attention_kv_tile_hd64_kv4_l16_b128_wrapper/work/34d42afe/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 4.4824,
+        "die_area": 11299.69,
+        "total_power_mw": 0.385
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/attention_kv_tile_hd64_kv4_l32_b256_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "34d42afe",
+        "tag": "attention_kv_tile_nangate45_macro_frontier_175641b8",
+        "result_path": "runs/designs/activations/attention_kv_tile_hd64_kv4_l32_b256_wrapper/work/34d42afe/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 4.7794,
+        "die_area": 16475.006025,
+        "total_power_mw": 0.549
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/attention_kv_tile_hd64_kv8_l32_b256_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "69e0be16",
+        "tag": "attention_kv_tile_nangate45_macro_frontier_e0c384c0",
+        "result_path": "runs/designs/activations/attention_kv_tile_hd64_kv8_l32_b256_wrapper/work/69e0be16/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 5.255,
+        "die_area": 44620.225225,
+        "total_power_mw": 0.819
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/attention_kv_tile_hd128_kv4_l32_b256_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "34d42afe",
+        "tag": "attention_kv_tile_nangate45_macro_frontier_175641b8",
+        "result_path": "runs/designs/activations/attention_kv_tile_hd128_kv4_l32_b256_wrapper/work/34d42afe/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 4.7794,
+        "die_area": 16475.006025,
+        "total_power_mw": 0.549
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/attention_kv_tile_hd128_kv8_l64_b512_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "34d42afe",
+        "tag": "attention_kv_tile_nangate45_macro_frontier_175641b8",
+        "result_path": "runs/designs/activations/attention_kv_tile_hd128_kv8_l64_b512_wrapper/work/34d42afe/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 5.3567,
+        "die_area": 68615.183025,
+        "total_power_mw": 1.23
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/attention_kv_tile_hd128_kv16_l64_b512_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "69e0be16",
+        "tag": "attention_kv_tile_nangate45_macro_frontier_e0c384c0",
+        "result_path": "runs/designs/activations/attention_kv_tile_hd128_kv16_l64_b512_wrapper/work/69e0be16/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 5.8371,
+        "die_area": 269044.503025,
+        "total_power_mw": 2.37
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_decoder_attention_kv_tile_frontier_v1",
+    "completed_trials": 4,
+    "success_count": 1,
+    "failure_count": 3,
+    "success_rate": 0.25,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 4.4824,
+        "mean": 4.4824,
+        "median": 4.4824,
+        "max": 4.4824,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "die_area": {
+        "best": 11299.69,
+        "mean": 11299.69,
+        "median": 11299.69,
+        "max": 11299.69,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "total_power_mw": {
+        "best": 0.385,
+        "mean": 0.385,
+        "median": 0.385,
+        "max": 0.385,
+        "range": 0.0,
+        "stddev": 0.0
+      }
+    }
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/activations/attention_kv_tile_hd64_kv4_l16_b128_wrapper/metrics.csv",
+      "runs/designs/activations/attention_kv_tile_hd64_kv4_l32_b256_wrapper/metrics.csv",
+      "runs/designs/activations/attention_kv_tile_hd64_kv8_l32_b256_wrapper/metrics.csv",
+      "runs/designs/activations/attention_kv_tile_hd128_kv4_l32_b256_wrapper/metrics.csv",
+      "runs/designs/activations/attention_kv_tile_hd128_kv8_l64_b512_wrapper/metrics.csv",
+      "runs/designs/activations/attention_kv_tile_hd128_kv16_l64_b512_wrapper/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_kv_tile_frontier_v1/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_kv_tile_frontier_v1/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_kv_tile_frontier_v1/trial_table.csv"
+  }
+}
