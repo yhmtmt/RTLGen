@@ -1,0 +1,71 @@
+{
+  "proposal_id": "prop_l2_decoder_frontier_synthesis_v1",
+  "created_utc": "2026-05-13T02:16:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_frontier_synthesis",
+  "title": "Decoder frontier synthesis across attention, producer, and ranker",
+  "hypothesis": "The next useful architecture decision should compare attention/KV memory pressure, output-projection producer service, and ranker coupling under the same shape assumptions. A synthesis pass should identify whether the immediate RTL frontier is still producer/ranker, or whether attention/KV memory hierarchy becomes dominant at larger contexts.",
+  "direct_comparison": {
+    "primary_question": "When measured attention/KV tile PPA, producer/ranker NoC coupling, and whole-decoder stage breakdown are compared together, which component dominates the next RTL frontier?",
+    "include": [
+      "whole-decoder resident-weight stage breakdown",
+      "measured attention/KV tile-calibrated attention memory report",
+      "producer/ranker shared NoC coupling report",
+      "large-context and larger-array shape points"
+    ],
+    "exclude": [
+      "new physical RTL implementation",
+      "final PPA accounting for shared SRAM or NoC",
+      "training-time recovery experiments",
+      "quality impact of KV quantization"
+    ]
+  },
+  "expected_benefit": [
+    "turns separate Layer 2 reports into a single component-ranking view",
+    "prevents over-optimizing standalone attention/KV or ranker blocks before checking whole-decoder dominance",
+    "selects the next measured RTL frontier with a clearer latency and traffic rationale"
+  ],
+  "risks": [
+    "the synthesis is still analytical and inherits assumptions from its three input reports",
+    "producer/ranker coupling uses existing measured ranker components but not a full producer RTL block",
+    "attention/KV memory hierarchy remains modeled rather than measured as an SRAM/NoC subsystem"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_frontier_synthesis_v1",
+      "task_type": "l2_campaign",
+      "objective": "Synthesize measured attention/KV tile-calibrated memory pressure, producer/ranker NoC coupling, and whole-decoder stage breakdown into one dominant-frontier report.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_frontier_synthesis",
+      "cost_class": "low",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_memory_measured_tile_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_stage_breakdown_large_array_v2",
+        "l2_decoder_attention_kv_memory_measured_tile_v1",
+        "l2_decoder_producer_ranker_coupled_noc_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "The output should identify whether the next measured RTL job should focus on producer/ranker, attention/KV memory hierarchy, or another whole-decoder bottleneck."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "control_plane/shadow_exports/l2_decisions/l2_decoder_stage_breakdown_large_array_v2.json",
+    "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_kv_memory_measured_tile_v1.json",
+    "control_plane/shadow_exports/l2_decisions/l2_decoder_producer_ranker_coupled_noc_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/synthesize_llm_decoder_frontier.py",
+    "npu/eval/estimate_llm_decoder_stage_breakdown.py",
+    "npu/eval/estimate_llm_decoder_attention_kv_memory.py",
+    "npu/eval/estimate_llm_decoder_producer_ranker_coupling.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}

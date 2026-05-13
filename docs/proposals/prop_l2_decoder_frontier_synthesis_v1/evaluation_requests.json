@@ -1,0 +1,27 @@
+{
+  "proposal_id": "prop_l2_decoder_frontier_synthesis_v1",
+  "source_commit": "277f2c0c5397e222604e2a7d317010649dde1b53",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_frontier_synthesis_v1",
+      "task_type": "l2_campaign",
+      "objective": "Synthesize measured attention/KV tile-calibrated memory pressure, producer/ranker NoC coupling, and whole-decoder stage breakdown into one dominant-frontier report.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_frontier_synthesis",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_memory_measured_tile_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_stage_breakdown_large_array_v2",
+        "l2_decoder_attention_kv_memory_measured_tile_v1",
+        "l2_decoder_producer_ranker_coupled_noc_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "The output should identify whether the next measured RTL job should focus on producer/ranker, attention/KV memory hierarchy, or another whole-decoder bottleneck."
+      },
+      "status": "pending"
+    }
+  ]
+}
