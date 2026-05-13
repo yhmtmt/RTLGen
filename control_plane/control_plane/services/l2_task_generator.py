@@ -2416,6 +2416,46 @@ def _decoder_output_projection_producer_isolated_synth_evidence(*, item_id: str)
     }
 
 
+def _decoder_output_projection_producer_top_ablation_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_output_projection_producer_top_ablation__{item_id}.json"
+    report = f"{base}/decoder_output_projection_producer_top_ablation__{item_id}.md"
+    base_config = "runs/designs/npu_blocks/npu_fp16_cpp_nm2_producer/config_nm2_producer.json"
+    sweep = "runs/campaigns/npu/output_projection_producer_scale/sweeps/nangate45_synth_boundary.json"
+    return {
+        "inputs": {
+            "producer_top_ablation_out": out,
+            "producer_top_ablation_report": report,
+            "producer_top_ablation_base_config": base_config,
+            "producer_top_ablation_sweep": sweep,
+            "producer_top_ablation_make_target": "1_2_yosys",
+            "producer_top_ablation_scope": (
+                "Probe nm2 whole-top variants that progressively remove AXI-Lite wrapper files, "
+                "SRAM side models, AXI ports, command-queue fetch/decode, and external ports while "
+                "recording static RTL size signals and bounded synth status."
+            ),
+        },
+        "commands": [
+            {
+                "name": "probe_decoder_output_projection_producer_top_ablation",
+                "run": (
+                    "python3 npu/eval/probe_decoder_producer_top_ablation.py "
+                    f"--base-config {base_config} "
+                    f"--sweep {sweep} "
+                    "--platform nangate45 "
+                    "--make-target 1_2_yosys "
+                    "--timeout-seconds 1800 "
+                    "--stall-timeout-seconds 900 "
+                    "--continue-after-failure "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_distilgpt2_prompt_stress_evidence(*, item_id: str) -> dict[str, Any]:
     return _decoder_distilgpt2_quality_evidence_for_dataset(
         item_id=item_id,
@@ -2886,10 +2926,13 @@ def _build_payload(
         "decoder_frontier_synthesis",
         "decoder_output_projection_producer_synth_boundary",
         "decoder_output_projection_producer_isolated_synth",
+        "decoder_output_projection_producer_top_ablation",
         "decoder_quantization_outline",
     }:
         if abstraction_layer_name == "decoder_quantization_outline":
             decoder_evidence = _decoder_quantization_outline_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_output_projection_producer_top_ablation":
+            decoder_evidence = _decoder_output_projection_producer_top_ablation_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_producer_isolated_synth":
             decoder_evidence = _decoder_output_projection_producer_isolated_synth_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_producer_synth_boundary":
