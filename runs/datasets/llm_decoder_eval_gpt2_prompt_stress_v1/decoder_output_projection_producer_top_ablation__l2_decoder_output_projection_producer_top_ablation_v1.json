@@ -1,0 +1,808 @@
+{
+  "version": 0.1,
+  "model": "decoder_output_projection_producer_top_ablation_v1",
+  "platform": "nangate45",
+  "base_config": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_producer/config_nm2_producer.json",
+  "make_target": "1_2_yosys",
+  "timeout_seconds": 1800,
+  "stall_timeout_seconds": 900,
+  "rtlgen_setup": {
+    "status": "ok",
+    "required_binaries": [
+      "build/rtlgen"
+    ],
+    "missing_before_build": [
+      "build/rtlgen"
+    ],
+    "missing_after_build": [],
+    "configure": {
+      "status": "ok",
+      "returncode": 0,
+      "elapsed_seconds": 2.002976088988362,
+      "log_path": "rtlgen_cmake_configure.log",
+      "log_tail": [
+        "-- The C compiler identification is GNU 11.4.0",
+        "-- The CXX compiler identification is GNU 11.4.0",
+        "-- Detecting C compiler ABI info",
+        "-- Detecting C compiler ABI info - done",
+        "-- Check for working C compiler: /usr/bin/cc - skipped",
+        "-- Detecting C compile features",
+        "-- Detecting C compile features - done",
+        "-- Detecting CXX compiler ABI info",
+        "-- Detecting CXX compiler ABI info - done",
+        "-- Check for working CXX compiler: /usr/bin/c++ - skipped",
+        "-- Detecting CXX compile features",
+        "-- Detecting CXX compile features - done",
+        "-- Found GTest: /usr/lib/x86_64-linux-gnu/cmake/GTest/GTestConfig.cmake (found version \"1.14.0\")  ",
+        "-- Configuring done",
+        "-- Generating done",
+        "-- Build files have been written to: /tmp/rtlcp-worktree-z063idxo/repo/build"
+      ],
+      "command": "cmake -S . -B build"
+    },
+    "build": {
+      "status": "ok",
+      "returncode": 0,
+      "elapsed_seconds": 6.00652759699733,
+      "log_path": "rtlgen_cmake_build.log",
+      "log_tail": [
+        "[  8%] Staging provisioned FloPoCo from /workspaces/RTLGen/bin/flopoco",
+        "[ 16%] Building CXX object CMakeFiles/constant_multiplication.dir/src/algorithms/mcm.cpp.o",
+        "[ 16%] Built target flopoco_stage",
+        "[ 25%] Building CXX object CMakeFiles/constant_multiplication.dir/src/algorithms/mcm_algorithms.cpp.o",
+        "[ 33%] Building CXX object CMakeFiles/constant_multiplication.dir/src/algorithms/mcm_ilp.cpp.o",
+        "[ 41%] Building CXX object CMakeFiles/constant_multiplication.dir/src/algorithms/cmvm.cpp.o",
+        "[ 50%] Linking CXX static library libconstant_multiplication.a",
+        "[ 50%] Built target constant_multiplication",
+        "[ 58%] Building CXX object CMakeFiles/rtlgen.dir/apps/rtlgen_main.cpp.o",
+        "[ 66%] Building CXX object CMakeFiles/rtlgen.dir/src/rtlgen/multiplier.cpp.o",
+        "[ 75%] Building CXX object CMakeFiles/rtlgen.dir/src/rtlgen/adder.cpp.o",
+        "[ 83%] Building CXX object CMakeFiles/rtlgen.dir/src/rtlgen/config.cpp.o",
+        "[ 91%] Building CXX object CMakeFiles/rtlgen.dir/src/rtlgen/rtl_operations.cpp.o",
+        "[100%] Linking CXX executable rtlgen",
+        "[100%] Built target rtlgen"
+      ],
+      "command": "cmake --build build --target rtlgen -j 2"
+    }
+  },
+  "sweep": "runs/campaigns/npu/output_projection_producer_scale/sweeps/nangate45_synth_boundary.json",
+  "probe_rows": [
+    {
+      "variant": "full_reference",
+      "description": "Full nm2 producer top as generated today.",
+      "top": "npu_top",
+      "config": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_full_reference/config.json",
+      "design_dir": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_full_reference",
+      "updates": {},
+      "rtlgen": {
+        "status": "ok",
+        "returncode": 0,
+        "elapsed_seconds": 2.0026792119897436,
+        "log_path": "full_reference_rtlgen.log",
+        "log_tail": [
+          "rtlgen: wrote RTL to runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_full_reference/verilog"
+        ],
+        "command": "/workspaces/rtlgen-eval-clean/control_plane/.venv/bin/python3 npu/rtlgen/gen.py --config runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_full_reference/config.json --out runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_full_reference/verilog"
+      },
+      "static_verilog_stats": {
+        "verilog_file_count": 2,
+        "verilog_bytes": 71142,
+        "verilog_lines": 1946,
+        "module_count": 7,
+        "top_found": true,
+        "top_port_decl_count_est": 37,
+        "reg_decl_count": 78,
+        "reg_bit_count_est": 68110,
+        "wire_decl_count": 458,
+        "wire_bit_count_est": 3864,
+        "always_count": 2,
+        "assign_count": 403,
+        "case_count": 3,
+        "ternary_count": 117,
+        "multiply_operator_count": 119,
+        "divide_operator_count": 83,
+        "files": [
+          {
+            "path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_full_reference/verilog/top.v",
+            "bytes": 66789,
+            "lines": 1818
+          },
+          {
+            "path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_full_reference/verilog/top_axi.v",
+            "bytes": 4353,
+            "lines": 128
+          }
+        ]
+      },
+      "synthesis": {
+        "status": "timeout",
+        "returncode": -15,
+        "elapsed_seconds": 1801.7480821060017,
+        "log_path": "full_reference_npu_top_1_2_yosys.log",
+        "log_tail": [
+          "6.1.5. Executing PROC_ARST pass (detect async resets in processes).",
+          "6.1.6. Executing PROC_ROM pass (convert switches to ROMs).",
+          "6.1.7. Executing PROC_MUX pass (convert decision trees to multiplexers).",
+          "6.1.8. Executing PROC_DLATCH pass (convert process syncs to latches).",
+          "6.1.9. Executing PROC_DFF pass (convert process syncs to FFs).",
+          "6.1.10. Executing PROC_MEMWR pass (convert process memory writes to cells).",
+          "6.1.11. Executing PROC_CLEAN pass (remove empty switches from decision trees).",
+          "6.1.12. Executing OPT_EXPR pass (perform const folding).",
+          "6.2. Executing FLATTEN pass (flatten design).",
+          "6.3. Executing OPT_EXPR pass (perform const folding).",
+          "6.4. Executing OPT_CLEAN pass (remove unused cells and wires).",
+          "6.5. Executing CHECK pass (checking for obvious problems).",
+          "6.6. Executing OPT pass (performing simple optimizations).",
+          "6.6.1. Executing OPT_EXPR pass (perform const folding).",
+          "6.6.2. Executing OPT_MERGE pass (detect identical cells).",
+          "6.6.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).",
+          "6.6.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).",
+          "6.6.5. Executing OPT_MERGE pass (detect identical cells).",
+          "6.6.6. Executing OPT_DFF pass (perform DFF optimizations).",
+          "6.6.7. Executing OPT_CLEAN pass (remove unused cells and wires).",
+          "6.6.8. Executing OPT_EXPR pass (perform const folding).",
+          "6.6.9. Finished OPT passes. (There is nothing left to do.)",
+          "6.7. Executing FSM pass (extract and optimize FSM).",
+          "6.7.1. Executing FSM_DETECT pass (finding FSMs in design).",
+          "6.7.2. Executing FSM_EXTRACT pass (extracting FSM from design).",
+          "6.7.3. Executing FSM_OPT pass (simple optimizations of FSMs).",
+          "6.7.4. Executing OPT_CLEAN pass (remove unused cells and wires).",
+          "6.7.5. Executing FSM_OPT pass (simple optimizations of FSMs).",
+          "6.7.6. Executing FSM_RECODE pass (re-assigning FSM state encoding).",
+          "6.7.7. Executing FSM_INFO pass (dumping all available information on FSM cells).",
+          "6.7.8. Executing FSM_MAP pass (mapping FSMs to basic logic).",
+          "6.8. Executing OPT pass (performing simple optimizations).",
+          "6.8.1. Executing OPT_EXPR pass (perform const folding).",
+          "6.8.2. Executing OPT_MERGE pass (detect identical cells).",
+          "6.8.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).",
+          "6.8.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).",
+          "6.8.5. Executing OPT_MERGE pass (detect identical cells).",
+          "6.8.6. Executing OPT_DFF pass (perform DFF optimizations).",
+          "make[1]: *** [Makefile:263: do-yosys] Terminated",
+          "make: *** [Makefile:273: results/nangate45/npu_fp16_cpp_nm2_top_ablate_full_reference/producer_synth_boundary/1_2_yosys.v] Terminated"
+        ],
+        "command": "/workspaces/rtlgen-eval-clean/control_plane/.venv/bin/python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_full_reference --platform nangate45 --top npu_top --sweep runs/campaigns/npu/output_projection_producer_scale/sweeps/nangate45_synth_boundary.json --make_target 1_2_yosys --out_root runs/designs/npu_blocks --force_copy"
+      },
+      "metrics_row": null,
+      "status": "timeout"
+    },
+    {
+      "variant": "no_axi_lite_wrapper",
+      "description": "Remove the unused AXI-Lite wrapper files while keeping npu_top interfaces.",
+      "top": "npu_top",
+      "config": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_no_axi_lite_wrapper/config.json",
+      "design_dir": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_no_axi_lite_wrapper",
+      "updates": {
+        "enable_axi_lite_wrapper": false
+      },
+      "rtlgen": {
+        "status": "ok",
+        "returncode": 0,
+        "elapsed_seconds": 2.0022174380137585,
+        "log_path": "no_axi_lite_wrapper_rtlgen.log",
+        "log_tail": [
+          "rtlgen: wrote RTL to runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_no_axi_lite_wrapper/verilog"
+        ],
+        "command": "/workspaces/rtlgen-eval-clean/control_plane/.venv/bin/python3 npu/rtlgen/gen.py --config runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_no_axi_lite_wrapper/config.json --out runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_no_axi_lite_wrapper/verilog"
+      },
+      "static_verilog_stats": {
+        "verilog_file_count": 1,
+        "verilog_bytes": 66789,
+        "verilog_lines": 1818,
+        "module_count": 6,
+        "top_found": true,
+        "top_port_decl_count_est": 37,
+        "reg_decl_count": 78,
+        "reg_bit_count_est": 68110,
+        "wire_decl_count": 453,
+        "wire_bit_count_est": 3755,
+        "always_count": 2,
+        "assign_count": 403,
+        "case_count": 3,
+        "ternary_count": 117,
+        "multiply_operator_count": 119,
+        "divide_operator_count": 71,
+        "files": [
+          {
+            "path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_no_axi_lite_wrapper/verilog/top.v",
+            "bytes": 66789,
+            "lines": 1818
+          }
+        ]
+      },
+      "synthesis": {
+        "status": "timeout",
+        "returncode": -15,
+        "elapsed_seconds": 1801.7676348540117,
+        "log_path": "no_axi_lite_wrapper_npu_top_1_2_yosys.log",
+        "log_tail": [
+          "6.1.5. Executing PROC_ARST pass (detect async resets in processes).",
+          "6.1.6. Executing PROC_ROM pass (convert switches to ROMs).",
+          "6.1.7. Executing PROC_MUX pass (convert decision trees to multiplexers).",
+          "6.1.8. Executing PROC_DLATCH pass (convert process syncs to latches).",
+          "6.1.9. Executing PROC_DFF pass (convert process syncs to FFs).",
+          "6.1.10. Executing PROC_MEMWR pass (convert process memory writes to cells).",
+          "6.1.11. Executing PROC_CLEAN pass (remove empty switches from decision trees).",
+          "6.1.12. Executing OPT_EXPR pass (perform const folding).",
+          "6.2. Executing FLATTEN pass (flatten design).",
+          "6.3. Executing OPT_EXPR pass (perform const folding).",
+          "6.4. Executing OPT_CLEAN pass (remove unused cells and wires).",
+          "6.5. Executing CHECK pass (checking for obvious problems).",
+          "6.6. Executing OPT pass (performing simple optimizations).",
+          "6.6.1. Executing OPT_EXPR pass (perform const folding).",
+          "6.6.2. Executing OPT_MERGE pass (detect identical cells).",
+          "6.6.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).",
+          "6.6.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).",
+          "6.6.5. Executing OPT_MERGE pass (detect identical cells).",
+          "6.6.6. Executing OPT_DFF pass (perform DFF optimizations).",
+          "6.6.7. Executing OPT_CLEAN pass (remove unused cells and wires).",
+          "6.6.8. Executing OPT_EXPR pass (perform const folding).",
+          "6.6.9. Finished OPT passes. (There is nothing left to do.)",
+          "6.7. Executing FSM pass (extract and optimize FSM).",
+          "6.7.1. Executing FSM_DETECT pass (finding FSMs in design).",
+          "6.7.2. Executing FSM_EXTRACT pass (extracting FSM from design).",
+          "6.7.3. Executing FSM_OPT pass (simple optimizations of FSMs).",
+          "6.7.4. Executing OPT_CLEAN pass (remove unused cells and wires).",
+          "6.7.5. Executing FSM_OPT pass (simple optimizations of FSMs).",
+          "6.7.6. Executing FSM_RECODE pass (re-assigning FSM state encoding).",
+          "6.7.7. Executing FSM_INFO pass (dumping all available information on FSM cells).",
+          "6.7.8. Executing FSM_MAP pass (mapping FSMs to basic logic).",
+          "6.8. Executing OPT pass (performing simple optimizations).",
+          "6.8.1. Executing OPT_EXPR pass (perform const folding).",
+          "6.8.2. Executing OPT_MERGE pass (detect identical cells).",
+          "6.8.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).",
+          "6.8.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).",
+          "6.8.5. Executing OPT_MERGE pass (detect identical cells).",
+          "6.8.6. Executing OPT_DFF pass (perform DFF optimizations).",
+          "make[1]: *** [Makefile:263: do-yosys] Terminated",
+          "make: *** [Makefile:273: results/nangate45/npu_fp16_cpp_nm2_top_ablate_no_axi_lite_wrapper/producer_synth_boundary/1_2_yosys.v] Terminated"
+        ],
+        "command": "/workspaces/rtlgen-eval-clean/control_plane/.venv/bin/python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_no_axi_lite_wrapper --platform nangate45 --top npu_top --sweep runs/campaigns/npu/output_projection_producer_scale/sweeps/nangate45_synth_boundary.json --make_target 1_2_yosys --out_root runs/designs/npu_blocks --force_copy"
+      },
+      "metrics_row": null,
+      "status": "timeout"
+    },
+    {
+      "variant": "no_sram_instances",
+      "description": "Remove generated SRAM side models and SRAM map entries.",
+      "top": "npu_top",
+      "config": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_no_sram_instances/config.json",
+      "design_dir": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_no_sram_instances",
+      "updates": {
+        "sram_instances": []
+      },
+      "rtlgen": {
+        "status": "ok",
+        "returncode": 0,
+        "elapsed_seconds": 2.0029382339853328,
+        "log_path": "no_sram_instances_rtlgen.log",
+        "log_tail": [
+          "rtlgen: wrote RTL to runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_no_sram_instances/verilog"
+        ],
+        "command": "/workspaces/rtlgen-eval-clean/control_plane/.venv/bin/python3 npu/rtlgen/gen.py --config runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_no_sram_instances/config.json --out runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_no_sram_instances/verilog"
+      },
+      "static_verilog_stats": {
+        "verilog_file_count": 2,
+        "verilog_bytes": 71142,
+        "verilog_lines": 1946,
+        "module_count": 7,
+        "top_found": true,
+        "top_port_decl_count_est": 37,
+        "reg_decl_count": 78,
+        "reg_bit_count_est": 68110,
+        "wire_decl_count": 458,
+        "wire_bit_count_est": 3864,
+        "always_count": 2,
+        "assign_count": 403,
+        "case_count": 3,
+        "ternary_count": 117,
+        "multiply_operator_count": 119,
+        "divide_operator_count": 83,
+        "files": [
+          {
+            "path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_no_sram_instances/verilog/top.v",
+            "bytes": 66789,
+            "lines": 1818
+          },
+          {
+            "path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_no_sram_instances/verilog/top_axi.v",
+            "bytes": 4353,
+            "lines": 128
+          }
+        ]
+      },
+      "synthesis": {
+        "status": "timeout",
+        "returncode": -15,
+        "elapsed_seconds": 1801.7381561509974,
+        "log_path": "no_sram_instances_npu_top_1_2_yosys.log",
+        "log_tail": [
+          "6.1.5. Executing PROC_ARST pass (detect async resets in processes).",
+          "6.1.6. Executing PROC_ROM pass (convert switches to ROMs).",
+          "6.1.7. Executing PROC_MUX pass (convert decision trees to multiplexers).",
+          "6.1.8. Executing PROC_DLATCH pass (convert process syncs to latches).",
+          "6.1.9. Executing PROC_DFF pass (convert process syncs to FFs).",
+          "6.1.10. Executing PROC_MEMWR pass (convert process memory writes to cells).",
+          "6.1.11. Executing PROC_CLEAN pass (remove empty switches from decision trees).",
+          "6.1.12. Executing OPT_EXPR pass (perform const folding).",
+          "6.2. Executing FLATTEN pass (flatten design).",
+          "6.3. Executing OPT_EXPR pass (perform const folding).",
+          "6.4. Executing OPT_CLEAN pass (remove unused cells and wires).",
+          "6.5. Executing CHECK pass (checking for obvious problems).",
+          "6.6. Executing OPT pass (performing simple optimizations).",
+          "6.6.1. Executing OPT_EXPR pass (perform const folding).",
+          "6.6.2. Executing OPT_MERGE pass (detect identical cells).",
+          "6.6.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).",
+          "6.6.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).",
+          "6.6.5. Executing OPT_MERGE pass (detect identical cells).",
+          "6.6.6. Executing OPT_DFF pass (perform DFF optimizations).",
+          "6.6.7. Executing OPT_CLEAN pass (remove unused cells and wires).",
+          "6.6.8. Executing OPT_EXPR pass (perform const folding).",
+          "6.6.9. Finished OPT passes. (There is nothing left to do.)",
+          "6.7. Executing FSM pass (extract and optimize FSM).",
+          "6.7.1. Executing FSM_DETECT pass (finding FSMs in design).",
+          "6.7.2. Executing FSM_EXTRACT pass (extracting FSM from design).",
+          "6.7.3. Executing FSM_OPT pass (simple optimizations of FSMs).",
+          "6.7.4. Executing OPT_CLEAN pass (remove unused cells and wires).",
+          "6.7.5. Executing FSM_OPT pass (simple optimizations of FSMs).",
+          "6.7.6. Executing FSM_RECODE pass (re-assigning FSM state encoding).",
+          "6.7.7. Executing FSM_INFO pass (dumping all available information on FSM cells).",
+          "6.7.8. Executing FSM_MAP pass (mapping FSMs to basic logic).",
+          "6.8. Executing OPT pass (performing simple optimizations).",
+          "6.8.1. Executing OPT_EXPR pass (perform const folding).",
+          "6.8.2. Executing OPT_MERGE pass (detect identical cells).",
+          "6.8.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).",
+          "6.8.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).",
+          "6.8.5. Executing OPT_MERGE pass (detect identical cells).",
+          "6.8.6. Executing OPT_DFF pass (perform DFF optimizations).",
+          "make[1]: *** [Makefile:263: do-yosys] Terminated",
+          "make: *** [Makefile:273: results/nangate45/npu_fp16_cpp_nm2_top_ablate_no_sram_instances/producer_synth_boundary/1_2_yosys.v] Terminated"
+        ],
+        "command": "/workspaces/rtlgen-eval-clean/control_plane/.venv/bin/python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_no_sram_instances --platform nangate45 --top npu_top --sweep runs/campaigns/npu/output_projection_producer_scale/sweeps/nangate45_synth_boundary.json --make_target 1_2_yosys --out_root runs/designs/npu_blocks --force_copy"
+      },
+      "metrics_row": null,
+      "status": "timeout"
+    },
+    {
+      "variant": "no_axi_ports",
+      "description": "Remove AXI4 memory-interface ports and AXI DMA FSM logic from npu_top.",
+      "top": "npu_top",
+      "config": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_no_axi_ports/config.json",
+      "design_dir": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_no_axi_ports",
+      "updates": {
+        "enable_axi_ports": false,
+        "enable_axi_lite_wrapper": false
+      },
+      "rtlgen": {
+        "status": "ok",
+        "returncode": 0,
+        "elapsed_seconds": 2.0031292010098696,
+        "log_path": "no_axi_ports_rtlgen.log",
+        "log_tail": [
+          "rtlgen: wrote RTL to runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_no_axi_ports/verilog"
+        ],
+        "command": "/workspaces/rtlgen-eval-clean/control_plane/.venv/bin/python3 npu/rtlgen/gen.py --config runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_no_axi_ports/config.json --out runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_no_axi_ports/verilog"
+      },
+      "static_verilog_stats": {
+        "verilog_file_count": 1,
+        "verilog_bytes": 63287,
+        "verilog_lines": 1709,
+        "module_count": 6,
+        "top_found": true,
+        "top_port_decl_count_est": 16,
+        "reg_decl_count": 78,
+        "reg_bit_count_est": 68110,
+        "wire_decl_count": 453,
+        "wire_bit_count_est": 3755,
+        "always_count": 2,
+        "assign_count": 403,
+        "case_count": 2,
+        "ternary_count": 117,
+        "multiply_operator_count": 117,
+        "divide_operator_count": 67,
+        "files": [
+          {
+            "path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_no_axi_ports/verilog/top.v",
+            "bytes": 63287,
+            "lines": 1709
+          }
+        ]
+      },
+      "synthesis": {
+        "status": "timeout",
+        "returncode": -15,
+        "elapsed_seconds": 1801.7531747269968,
+        "log_path": "no_axi_ports_npu_top_1_2_yosys.log",
+        "log_tail": [
+          "6.1.5. Executing PROC_ARST pass (detect async resets in processes).",
+          "6.1.6. Executing PROC_ROM pass (convert switches to ROMs).",
+          "6.1.7. Executing PROC_MUX pass (convert decision trees to multiplexers).",
+          "6.1.8. Executing PROC_DLATCH pass (convert process syncs to latches).",
+          "6.1.9. Executing PROC_DFF pass (convert process syncs to FFs).",
+          "6.1.10. Executing PROC_MEMWR pass (convert process memory writes to cells).",
+          "6.1.11. Executing PROC_CLEAN pass (remove empty switches from decision trees).",
+          "6.1.12. Executing OPT_EXPR pass (perform const folding).",
+          "6.2. Executing FLATTEN pass (flatten design).",
+          "6.3. Executing OPT_EXPR pass (perform const folding).",
+          "6.4. Executing OPT_CLEAN pass (remove unused cells and wires).",
+          "6.5. Executing CHECK pass (checking for obvious problems).",
+          "6.6. Executing OPT pass (performing simple optimizations).",
+          "6.6.1. Executing OPT_EXPR pass (perform const folding).",
+          "6.6.2. Executing OPT_MERGE pass (detect identical cells).",
+          "6.6.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).",
+          "6.6.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).",
+          "6.6.5. Executing OPT_MERGE pass (detect identical cells).",
+          "6.6.6. Executing OPT_DFF pass (perform DFF optimizations).",
+          "6.6.7. Executing OPT_CLEAN pass (remove unused cells and wires).",
+          "6.6.8. Executing OPT_EXPR pass (perform const folding).",
+          "6.6.9. Finished OPT passes. (There is nothing left to do.)",
+          "6.7. Executing FSM pass (extract and optimize FSM).",
+          "6.7.1. Executing FSM_DETECT pass (finding FSMs in design).",
+          "6.7.2. Executing FSM_EXTRACT pass (extracting FSM from design).",
+          "6.7.3. Executing FSM_OPT pass (simple optimizations of FSMs).",
+          "6.7.4. Executing OPT_CLEAN pass (remove unused cells and wires).",
+          "6.7.5. Executing FSM_OPT pass (simple optimizations of FSMs).",
+          "6.7.6. Executing FSM_RECODE pass (re-assigning FSM state encoding).",
+          "6.7.7. Executing FSM_INFO pass (dumping all available information on FSM cells).",
+          "6.7.8. Executing FSM_MAP pass (mapping FSMs to basic logic).",
+          "6.8. Executing OPT pass (performing simple optimizations).",
+          "6.8.1. Executing OPT_EXPR pass (perform const folding).",
+          "6.8.2. Executing OPT_MERGE pass (detect identical cells).",
+          "6.8.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).",
+          "6.8.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).",
+          "6.8.5. Executing OPT_MERGE pass (detect identical cells).",
+          "6.8.6. Executing OPT_DFF pass (perform DFF optimizations).",
+          "make[1]: *** [Makefile:263: do-yosys] Terminated",
+          "make: *** [Makefile:273: results/nangate45/npu_fp16_cpp_nm2_top_ablate_no_axi_ports/producer_synth_boundary/1_2_yosys.v] Terminated"
+        ],
+        "command": "/workspaces/rtlgen-eval-clean/control_plane/.venv/bin/python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_no_axi_ports --platform nangate45 --top npu_top --sweep runs/campaigns/npu/output_projection_producer_scale/sweeps/nangate45_synth_boundary.json --make_target 1_2_yosys --out_root runs/designs/npu_blocks --force_copy"
+      },
+      "metrics_row": null,
+      "status": "timeout"
+    },
+    {
+      "variant": "no_cq_mem_ports",
+      "description": "Remove command-queue memory fetch ports and descriptor decode/issue logic.",
+      "top": "npu_top",
+      "config": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_no_cq_mem_ports/config.json",
+      "design_dir": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_no_cq_mem_ports",
+      "updates": {
+        "enable_cq_mem_ports": false
+      },
+      "rtlgen": {
+        "status": "ok",
+        "returncode": 0,
+        "elapsed_seconds": 2.0026125260046683,
+        "log_path": "no_cq_mem_ports_rtlgen.log",
+        "log_tail": [
+          "rtlgen: wrote RTL to runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_no_cq_mem_ports/verilog"
+        ],
+        "command": "/workspaces/rtlgen-eval-clean/control_plane/.venv/bin/python3 npu/rtlgen/gen.py --config runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_no_cq_mem_ports/config.json --out runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_no_cq_mem_ports/verilog"
+      },
+      "static_verilog_stats": {
+        "verilog_file_count": 2,
+        "verilog_bytes": 52207,
+        "verilog_lines": 1635,
+        "module_count": 7,
+        "top_found": true,
+        "top_port_decl_count_est": 34,
+        "reg_decl_count": 77,
+        "reg_bit_count_est": 68109,
+        "wire_decl_count": 458,
+        "wire_bit_count_est": 3864,
+        "always_count": 2,
+        "assign_count": 403,
+        "case_count": 3,
+        "ternary_count": 102,
+        "multiply_operator_count": 73,
+        "divide_operator_count": 49,
+        "files": [
+          {
+            "path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_no_cq_mem_ports/verilog/top.v",
+            "bytes": 47854,
+            "lines": 1507
+          },
+          {
+            "path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_no_cq_mem_ports/verilog/top_axi.v",
+            "bytes": 4353,
+            "lines": 128
+          }
+        ]
+      },
+      "synthesis": {
+        "status": "ok",
+        "returncode": 0,
+        "elapsed_seconds": 184.17890439901385,
+        "log_path": "no_cq_mem_ports_npu_top_1_2_yosys.log",
+        "log_tail": [
+          "15.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).",
+          "15.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).",
+          "15.5. Executing OPT_MERGE pass (detect identical cells).",
+          "15.6. Executing OPT_DFF pass (perform DFF optimizations).",
+          "15.7. Executing OPT_CLEAN pass (remove unused cells and wires).",
+          "15.8. Executing OPT_EXPR pass (perform const folding).",
+          "15.9. Rerunning OPT passes. (Maybe there is more to do..)",
+          "15.10. Executing OPT_MUXTREE pass (detect dead branches in mux trees).",
+          "15.11. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).",
+          "15.12. Executing OPT_MERGE pass (detect identical cells).",
+          "15.13. Executing OPT_DFF pass (perform DFF optimizations).",
+          "15.14. Executing OPT_CLEAN pass (remove unused cells and wires).",
+          "15.15. Executing OPT_EXPR pass (perform const folding).",
+          "15.16. Finished OPT passes. (There is nothing left to do.)",
+          "16. Executing SETUNDEF pass (replace undef values with defined constants).",
+          "abc -script /orfs/flow/scripts/abc_speed.script -liberty /orfs/flow/platforms/nangate45/lib/NangateOpenCellLibrary_typical.lib -dont_use TAPCELL_X1 -dont_use FILLCELL_X1 -dont_use AOI211_X1 -dont_use OAI211_X1 -constr ./objects/nangate45/npu_fp16_cpp_nm2_top_ablate_no_cq_mem_ports/producer_synth_boundary/abc.constr",
+          "17. Executing ABC pass (technology mapping using ABC).",
+          "17.1. Extracting gate netlist of module `\\npu_top' to `<abc-temp-dir>/input.blif'..",
+          "17.1.1. Executing ABC.",
+          "17.1.2. Re-integrating ABC results.",
+          "Took 116 seconds: abc -script /orfs/flow/scripts/abc_speed.script -liberty /orfs/flow/platforms/nangate45/lib/NangateOpenCellLibrary_typical.lib -dont_use TAPCELL_X1 -dont_use FILLCELL_X1 -dont_use AOI211_X1 -dont_use OAI211_X1 -constr ./objects/nangate45/npu_fp16_cpp_nm2_top_ablate_no_cq_mem_ports/producer_synth_boundary/abc.constr",
+          "18. Executing SPLITNETS pass (splitting up multi-bit signals).",
+          "19. Executing OPT_CLEAN pass (remove unused cells and wires).",
+          "20. Executing HILOMAP pass (mapping to constant drivers).",
+          "21. Executing INSBUF pass (insert buffer cells for connected wires).",
+          "22. Executing CHECK pass (checking for obvious problems).",
+          "23. Printing statistics.",
+          "24. Executing CHECK pass (checking for obvious problems).",
+          "25. Executing Verilog backend.",
+          "25.1. Executing BMUXMAP pass.",
+          "25.2. Executing DEMUXMAP pass.",
+          "exec cp /orfs/flow/designs/nangate45/npu_fp16_cpp_nm2_top_ablate_no_cq_mem_ports/constraint.sdc ./results/nangate45/npu_fp16_cpp_nm2_top_ablate_no_cq_mem_ports/producer_synth_boundary/1_synth.sdc",
+          "Warnings: 8 unique messages, 8 total",
+          "End of script. Logfile hash: a67dc24a13, CPU: user 63.97s system 0.64s, MEM: 935.45 MB peak",
+          "Yosys 0.55+46 (git sha1 aa1daa702, clang++ 18.1.8 -fPIC -O3)",
+          "Time spent: 65% 2x abc (119 sec), 7% 44x opt_clean (12 sec), ...",
+          "Elapsed time: 3:01.26[h:]min:sec. CPU time: user 180.01 sys 1.21 (99%). Peak memory: 957904KB.",
+          "mkdir -p ./results/nangate45/npu_fp16_cpp_nm2_top_ablate_no_cq_mem_ports/producer_synth_boundary ./logs/nangate45/npu_fp16_cpp_nm2_top_ablate_no_cq_mem_ports/producer_synth_boundary ./reports/nangate45/npu_fp16_cpp_nm2_top_ablate_no_cq_mem_ports/producer_synth_boundary",
+          "cp ./results/nangate45/npu_fp16_cpp_nm2_top_ablate_no_cq_mem_ports/producer_synth_boundary/1_2_yosys.v ./results/nangate45/npu_fp16_cpp_nm2_top_ablate_no_cq_mem_ports/producer_synth_boundary/1_synth.v",
+          "[INFO] Running OpenROAD flow: make DESIGN_CONFIG=/orfs/flow/designs/nangate45/npu_fp16_cpp_nm2_top_ablate_no_cq_mem_ports/config.mk TAG=npu_fp16_producer_synth_boundary SDC_FILE=/orfs/flow/designs/nangate45/npu_fp16_cpp_nm2_top_ablate_no_cq_mem_ports/constraint.sdc CLOCK_PERIOD=10.0 CORE_AREA=80 80 2120 2120 DIE_AREA=0 0 2200 2200 FLOW_VARIANT=producer_synth_boundary PLACE_DENSITY=0.36 SYNTH_HIERARCHICAL=1 SYNTH_KEEP_MODULES=gemm_compute_array TAG=npu_fp16_producer_synth_boundary TAG_PREFIX=npu_fp16_producer_synth_boundary CORE_UTILIZATION= synth"
+        ],
+        "command": "/workspaces/rtlgen-eval-clean/control_plane/.venv/bin/python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_no_cq_mem_ports --platform nangate45 --top npu_top --sweep runs/campaigns/npu/output_projection_producer_scale/sweeps/nangate45_synth_boundary.json --make_target 1_2_yosys --out_root runs/designs/npu_blocks --force_copy"
+      },
+      "metrics_row": {
+        "design": "npu_fp16_cpp_nm2_top_ablate_no_cq_mem_ports",
+        "platform": "nangate45",
+        "config_hash": "4fa2e7475fc7",
+        "param_hash": "3a2fb3e1",
+        "tag": "npu_fp16_producer_synth_boundary",
+        "status": "ok",
+        "critical_path_ns": "",
+        "die_area": "",
+        "total_power_mw": "",
+        "flow_elapsed_seconds": "181.44",
+        "stage_elapsed_seconds": "181.26",
+        "params_json": "{\"CLOCK_PERIOD\": 10.0, \"CORE_AREA\": \"80 80 2120 2120\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 2200 2200\", \"FLOW_VARIANT\": \"producer_synth_boundary\", \"PLACE_DENSITY\": 0.36, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_KEEP_MODULES\": \"gemm_compute_array\", \"TAG\": \"npu_fp16_producer_synth_boundary\", \"tag_prefix\": \"npu_fp16_producer_synth_boundary\"}",
+        "result_path": "/orfs/flow/results/nangate45/npu_fp16_cpp_nm2_top_ablate_no_cq_mem_ports/producer_synth_boundary/1_2_yosys.v",
+        "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_no_cq_mem_ports/work/3a2fb3e1/result.json",
+        "synth_script_path": "",
+        "synth_script_sha1": ""
+      },
+      "status": "ok"
+    },
+    {
+      "variant": "external_ports_off",
+      "description": "Keep compute state inside npu_top but remove CQ memory, DMA, AXI, AXI-Lite, and SRAM side features.",
+      "top": "npu_top",
+      "config": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_external_ports_off/config.json",
+      "design_dir": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_external_ports_off",
+      "updates": {
+        "enable_dma_ports": false,
+        "enable_cq_mem_ports": false,
+        "enable_axi_ports": false,
+        "enable_axi_lite_wrapper": false,
+        "sram_instances": []
+      },
+      "rtlgen": {
+        "status": "ok",
+        "returncode": 0,
+        "elapsed_seconds": 2.0033572270185687,
+        "log_path": "external_ports_off_rtlgen.log",
+        "log_tail": [
+          "rtlgen: wrote RTL to runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_external_ports_off/verilog"
+        ],
+        "command": "/workspaces/rtlgen-eval-clean/control_plane/.venv/bin/python3 npu/rtlgen/gen.py --config runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_external_ports_off/config.json --out runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_external_ports_off/verilog"
+      },
+      "static_verilog_stats": {
+        "verilog_file_count": 1,
+        "verilog_bytes": 43745,
+        "verilog_lines": 1383,
+        "module_count": 6,
+        "top_found": true,
+        "top_port_decl_count_est": 7,
+        "reg_decl_count": 77,
+        "reg_bit_count_est": 68109,
+        "wire_decl_count": 453,
+        "wire_bit_count_est": 3755,
+        "always_count": 2,
+        "assign_count": 403,
+        "case_count": 2,
+        "ternary_count": 102,
+        "multiply_operator_count": 71,
+        "divide_operator_count": 31,
+        "files": [
+          {
+            "path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_external_ports_off/verilog/top.v",
+            "bytes": 43745,
+            "lines": 1383
+          }
+        ]
+      },
+      "synthesis": {
+        "status": "ok",
+        "returncode": 0,
+        "elapsed_seconds": 4.005060411000159,
+        "log_path": "external_ports_off_npu_top_1_2_yosys.log",
+        "log_tail": [
+          "15.2. Executing OPT_MERGE pass (detect identical cells).",
+          "15.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).",
+          "15.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).",
+          "15.5. Executing OPT_MERGE pass (detect identical cells).",
+          "15.6. Executing OPT_DFF pass (perform DFF optimizations).",
+          "15.7. Executing OPT_CLEAN pass (remove unused cells and wires).",
+          "15.8. Executing OPT_EXPR pass (perform const folding).",
+          "15.9. Rerunning OPT passes. (Maybe there is more to do..)",
+          "15.10. Executing OPT_MUXTREE pass (detect dead branches in mux trees).",
+          "15.11. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).",
+          "15.12. Executing OPT_MERGE pass (detect identical cells).",
+          "15.13. Executing OPT_DFF pass (perform DFF optimizations).",
+          "15.14. Executing OPT_CLEAN pass (remove unused cells and wires).",
+          "15.15. Executing OPT_EXPR pass (perform const folding).",
+          "15.16. Finished OPT passes. (There is nothing left to do.)",
+          "16. Executing SETUNDEF pass (replace undef values with defined constants).",
+          "abc -script /orfs/flow/scripts/abc_speed.script -liberty /orfs/flow/platforms/nangate45/lib/NangateOpenCellLibrary_typical.lib -dont_use TAPCELL_X1 -dont_use FILLCELL_X1 -dont_use AOI211_X1 -dont_use OAI211_X1 -constr ./objects/nangate45/npu_fp16_cpp_nm2_top_ablate_external_ports_off/producer_synth_boundary/abc.constr",
+          "17. Executing ABC pass (technology mapping using ABC).",
+          "17.1. Extracting gate netlist of module `\\npu_top' to `<abc-temp-dir>/input.blif'..",
+          "17.1.1. Executing ABC.",
+          "17.1.2. Re-integrating ABC results.",
+          "18. Executing SPLITNETS pass (splitting up multi-bit signals).",
+          "19. Executing OPT_CLEAN pass (remove unused cells and wires).",
+          "20. Executing HILOMAP pass (mapping to constant drivers).",
+          "21. Executing INSBUF pass (insert buffer cells for connected wires).",
+          "22. Executing CHECK pass (checking for obvious problems).",
+          "23. Printing statistics.",
+          "24. Executing CHECK pass (checking for obvious problems).",
+          "25. Executing Verilog backend.",
+          "25.1. Executing BMUXMAP pass.",
+          "25.2. Executing DEMUXMAP pass.",
+          "exec cp /orfs/flow/designs/nangate45/npu_fp16_cpp_nm2_top_ablate_external_ports_off/constraint.sdc ./results/nangate45/npu_fp16_cpp_nm2_top_ablate_external_ports_off/producer_synth_boundary/1_synth.sdc",
+          "Warnings: 8 unique messages, 8 total",
+          "End of script. Logfile hash: cf889d1a66, CPU: user 0.80s system 0.02s, MEM: 61.37 MB peak",
+          "Yosys 0.55+46 (git sha1 aa1daa702, clang++ 18.1.8 -fPIC -O3)",
+          "Time spent: 51% 2x abc (0 sec), 7% 39x opt_clean (0 sec), ...",
+          "Elapsed time: 0:01.67[h:]min:sec. CPU time: user 1.63 sys 0.04 (99%). Peak memory: 62840KB.",
+          "mkdir -p ./results/nangate45/npu_fp16_cpp_nm2_top_ablate_external_ports_off/producer_synth_boundary ./logs/nangate45/npu_fp16_cpp_nm2_top_ablate_external_ports_off/producer_synth_boundary ./reports/nangate45/npu_fp16_cpp_nm2_top_ablate_external_ports_off/producer_synth_boundary",
+          "cp ./results/nangate45/npu_fp16_cpp_nm2_top_ablate_external_ports_off/producer_synth_boundary/1_2_yosys.v ./results/nangate45/npu_fp16_cpp_nm2_top_ablate_external_ports_off/producer_synth_boundary/1_synth.v",
+          "[INFO] Running OpenROAD flow: make DESIGN_CONFIG=/orfs/flow/designs/nangate45/npu_fp16_cpp_nm2_top_ablate_external_ports_off/config.mk TAG=npu_fp16_producer_synth_boundary SDC_FILE=/orfs/flow/designs/nangate45/npu_fp16_cpp_nm2_top_ablate_external_ports_off/constraint.sdc CLOCK_PERIOD=10.0 CORE_AREA=80 80 2120 2120 DIE_AREA=0 0 2200 2200 FLOW_VARIANT=producer_synth_boundary PLACE_DENSITY=0.36 SYNTH_HIERARCHICAL=1 SYNTH_KEEP_MODULES=gemm_compute_array TAG=npu_fp16_producer_synth_boundary TAG_PREFIX=npu_fp16_producer_synth_boundary CORE_UTILIZATION= synth"
+        ],
+        "command": "/workspaces/rtlgen-eval-clean/control_plane/.venv/bin/python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_external_ports_off --platform nangate45 --top npu_top --sweep runs/campaigns/npu/output_projection_producer_scale/sweeps/nangate45_synth_boundary.json --make_target 1_2_yosys --out_root runs/designs/npu_blocks --force_copy"
+      },
+      "metrics_row": {
+        "design": "npu_fp16_cpp_nm2_top_ablate_external_ports_off",
+        "platform": "nangate45",
+        "config_hash": "53db5229e46e",
+        "param_hash": "3a2fb3e1",
+        "tag": "npu_fp16_producer_synth_boundary",
+        "status": "ok",
+        "critical_path_ns": "",
+        "die_area": "",
+        "total_power_mw": "",
+        "flow_elapsed_seconds": "1.78",
+        "stage_elapsed_seconds": "1.67",
+        "params_json": "{\"CLOCK_PERIOD\": 10.0, \"CORE_AREA\": \"80 80 2120 2120\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 2200 2200\", \"FLOW_VARIANT\": \"producer_synth_boundary\", \"PLACE_DENSITY\": 0.36, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_KEEP_MODULES\": \"gemm_compute_array\", \"TAG\": \"npu_fp16_producer_synth_boundary\", \"tag_prefix\": \"npu_fp16_producer_synth_boundary\"}",
+        "result_path": "/orfs/flow/results/nangate45/npu_fp16_cpp_nm2_top_ablate_external_ports_off/producer_synth_boundary/1_2_yosys.v",
+        "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_external_ports_off/work/3a2fb3e1/result.json",
+        "synth_script_path": "",
+        "synth_script_sha1": ""
+      },
+      "status": "ok"
+    },
+    {
+      "variant": "axi_lite_wrapper_top",
+      "description": "Synthesize the generated AXI-Lite wrapper top instead of npu_top.",
+      "top": "npu_top_axi",
+      "config": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_axi_lite_wrapper_top/config.json",
+      "design_dir": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_axi_lite_wrapper_top",
+      "updates": {
+        "enable_axi_lite_wrapper": true
+      },
+      "rtlgen": {
+        "status": "ok",
+        "returncode": 0,
+        "elapsed_seconds": 2.0037858670111746,
+        "log_path": "axi_lite_wrapper_top_rtlgen.log",
+        "log_tail": [
+          "rtlgen: wrote RTL to runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_axi_lite_wrapper_top/verilog"
+        ],
+        "command": "/workspaces/rtlgen-eval-clean/control_plane/.venv/bin/python3 npu/rtlgen/gen.py --config runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_axi_lite_wrapper_top/config.json --out runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_axi_lite_wrapper_top/verilog"
+      },
+      "static_verilog_stats": {
+        "verilog_file_count": 2,
+        "verilog_bytes": 71142,
+        "verilog_lines": 1946,
+        "module_count": 7,
+        "top_found": true,
+        "top_port_decl_count_est": 49,
+        "reg_decl_count": 78,
+        "reg_bit_count_est": 68110,
+        "wire_decl_count": 458,
+        "wire_bit_count_est": 3864,
+        "always_count": 2,
+        "assign_count": 403,
+        "case_count": 3,
+        "ternary_count": 117,
+        "multiply_operator_count": 119,
+        "divide_operator_count": 83,
+        "files": [
+          {
+            "path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_axi_lite_wrapper_top/verilog/top.v",
+            "bytes": 66789,
+            "lines": 1818
+          },
+          {
+            "path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_axi_lite_wrapper_top/verilog/top_axi.v",
+            "bytes": 4353,
+            "lines": 128
+          }
+        ]
+      },
+      "synthesis": {
+        "status": "failed",
+        "returncode": 1,
+        "elapsed_seconds": 2.003421811008593,
+        "log_path": "axi_lite_wrapper_top_npu_top_axi_1_2_yosys.log",
+        "log_tail": [
+          "mkdir -p results/nangate45/npu_fp16_cpp_nm2_top_ablate_axi_lite_wrapper_top/producer_synth_boundary/",
+          "echo $clock_period > results/nangate45/npu_fp16_cpp_nm2_top_ablate_axi_lite_wrapper_top/producer_synth_boundary/clock_period.txt",
+          "/orfs/flow/scripts/synth.sh /orfs/flow/scripts/synth_canonicalize.tcl ./logs/nangate45/npu_fp16_cpp_nm2_top_ablate_axi_lite_wrapper_top/producer_synth_boundary/1_1_yosys_canonicalize.log",
+          "Using ABC speed script.",
+          "Extracting clock period from SDC file: ./results/nangate45/npu_fp16_cpp_nm2_top_ablate_axi_lite_wrapper_top/producer_synth_boundary/clock_period.txt",
+          "1. Executing Liberty frontend: /orfs/flow/platforms/nangate45/lib/NangateOpenCellLibrary_typical.lib",
+          "2. Executing Liberty frontend: /orfs/flow/platforms/nangate45/lib/NangateOpenCellLibrary_typical.lib",
+          "3. Executing Verilog-2005 frontend: /orfs/flow/designs/src/npu_fp16_cpp_nm2_top_ablate_axi_lite_wrapper_top/top.v",
+          "Warning: Encountered `parallel_case' comment! Such legacy hot comments are supported by Yosys, but are not part of any formal language specification. Using the Verilog `parallel_case' attribute or the SystemVerilog `unique' or `priority' keywords is recommended!",
+          "4. Executing Verilog-2005 frontend: /orfs/flow/designs/src/npu_fp16_cpp_nm2_top_ablate_axi_lite_wrapper_top/top_axi.v",
+          "5. Executing Verilog-2005 frontend: /orfs/flow/platforms/nangate45/cells_clkgate.v",
+          "6. Executing HIERARCHY pass (managing design hierarchy).",
+          "7. Executing AST frontend in derive mode using pre-parsed AST for module `\\npu_top_axi'.",
+          "7.1. Analyzing design hierarchy..",
+          "7.2. Executing AST frontend in derive mode using pre-parsed AST for module `\\npu_top'.",
+          "Warning: Replacing memory \\dma_buf_mem with list of registers. See /orfs/flow/designs/src/npu_fp16_cpp_nm2_top_ablate_axi_lite_wrapper_top/top.v:1428",
+          "ERROR: Module `\\axi_lite_mmio_bridge' referenced in module `\\npu_top_axi' in cell `\\u_bridge' is not part of the design.",
+          "Command exited with non-zero status 1",
+          "Elapsed time: 0:00.49[h:]min:sec. CPU time: user 0.45 sys 0.03 (100%). Peak memory: 222260KB.",
+          "make[1]: *** [Makefile:267: do-yosys-canonicalize] Error 1",
+          "make: *** [Makefile:270: results/nangate45/npu_fp16_cpp_nm2_top_ablate_axi_lite_wrapper_top/producer_synth_boundary/1_1_yosys_canonicalize.rtlil] Error 2",
+          "[INFO] Running OpenROAD flow: make DESIGN_CONFIG=/orfs/flow/designs/nangate45/npu_fp16_cpp_nm2_top_ablate_axi_lite_wrapper_top/config.mk TAG=npu_fp16_producer_synth_boundary SDC_FILE=/orfs/flow/designs/nangate45/npu_fp16_cpp_nm2_top_ablate_axi_lite_wrapper_top/constraint.sdc CLOCK_PERIOD=10.0 CORE_AREA=80 80 2120 2120 DIE_AREA=0 0 2200 2200 FLOW_VARIANT=producer_synth_boundary PLACE_DENSITY=0.36 SYNTH_HIERARCHICAL=1 SYNTH_KEEP_MODULES=gemm_compute_array TAG=npu_fp16_producer_synth_boundary TAG_PREFIX=npu_fp16_producer_synth_boundary CORE_UTILIZATION= synth",
+          "Traceback (most recent call last):",
+          "  File \"/tmp/rtlcp-worktree-z063idxo/repo/npu/synth/run_block_sweep.py\", line 1868, in <module>",
+          "    sys.exit(main())",
+          "  File \"/tmp/rtlcp-worktree-z063idxo/repo/npu/synth/run_block_sweep.py\", line 1825, in main",
+          "    row = run_single(",
+          "  File \"/tmp/rtlcp-worktree-z063idxo/repo/npu/synth/run_block_sweep.py\", line 1439, in run_single",
+          "    subprocess.run(make_cmd, cwd=\"/orfs/flow\", check=True, env=env)",
+          "  File \"/usr/lib/python3.10/subprocess.py\", line 526, in run",
+          "    raise CalledProcessError(retcode, process.args,",
+          "subprocess.CalledProcessError: Command '['make', 'DESIGN_CONFIG=/orfs/flow/designs/nangate45/npu_fp16_cpp_nm2_top_ablate_axi_lite_wrapper_top/config.mk', 'TAG=npu_fp16_producer_synth_boundary', 'SDC_FILE=/orfs/flow/designs/nangate45/npu_fp16_cpp_nm2_top_ablate_axi_lite_wrapper_top/constraint.sdc', 'CLOCK_PERIOD=10.0', 'CORE_AREA=80 80 2120 2120', 'DIE_AREA=0 0 2200 2200', 'FLOW_VARIANT=producer_synth_boundary', 'PLACE_DENSITY=0.36', 'SYNTH_HIERARCHICAL=1', 'SYNTH_KEEP_MODULES=gemm_compute_array', 'TAG=npu_fp16_producer_synth_boundary', 'TAG_PREFIX=npu_fp16_producer_synth_boundary', 'CORE_UTILIZATION=', 'synth']' returned non-zero exit status 2."
+        ],
+        "command": "/workspaces/rtlgen-eval-clean/control_plane/.venv/bin/python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/npu_fp16_cpp_nm2_top_ablate_axi_lite_wrapper_top --platform nangate45 --top npu_top_axi --sweep runs/campaigns/npu/output_projection_producer_scale/sweeps/nangate45_synth_boundary.json --make_target 1_2_yosys --out_root runs/designs/npu_blocks --force_copy"
+      },
+      "metrics_row": null,
+      "status": "failed"
+    }
+  ],
+  "diagnosis": {
+    "decision": "producer_top_culprit_bracketed",
+    "ok_variants": [
+      "no_cq_mem_ports",
+      "external_ports_off"
+    ],
+    "non_ok_variants": [
+      "full_reference",
+      "no_axi_lite_wrapper",
+      "no_sram_instances",
+      "no_axi_ports",
+      "axi_lite_wrapper_top"
+    ],
+    "first_non_ok_variant": "full_reference",
+    "recommended_next_step": "Compare the last passing ablation against the full reference to isolate the added top-level feature."
+  }
+}
