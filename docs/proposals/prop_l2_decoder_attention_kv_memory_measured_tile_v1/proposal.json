@@ -1,0 +1,71 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_memory_measured_tile_v1",
+  "created_utc": "2026-05-13T01:30:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_attention_kv_memory",
+  "title": "Decoder attention/KV memory model with measured tile calibration",
+  "hypothesis": "The standalone attention/KV tile frontier now provides measured PPA anchors. Feeding those anchors into the decoder attention/KV memory report should clarify whether the next architecture frontier remains producer, memory hierarchy, and NoC coupling rather than only standalone tile datapath scaling.",
+  "direct_comparison": {
+    "primary_question": "Do the accepted Layer 1 attention/KV tile measurements materially change the Layer 2 attention/KV memory bottleneck map and next-job priority?",
+    "include": [
+      "previous decoder_attention_kv_memory analytical sweep shape",
+      "merged attention_kv_tile frontier metrics from l1_decoder_attention_kv_tile_frontier_v1",
+      "measured tile critical path, area, power, cycle-floor, and scaling summary",
+      "large-context memory tiers, NoC hops, KV precision, and MHA/GQA/MQA sharing"
+    ],
+    "exclude": [
+      "new RTL implementation",
+      "measured SRAM macro banking",
+      "measured NoC arbitration",
+      "producer-coupled attention RTL",
+      "quality impact of KV quantization"
+    ]
+  },
+  "expected_benefit": [
+    "records the accepted attention/KV tile PPA directly inside the Layer 2 attention/KV report",
+    "keeps the next architecture choice grounded in measured datapath cost instead of a purely analytical proxy",
+    "sets up the following producer/memory/NoC-coupled attention job with a clearer standalone datapath baseline"
+  ],
+  "risks": [
+    "the measured tile is still standalone and does not include SRAM arbitration, producer overlap, softmax, or value-mix integration",
+    "the current calibration summarizes PPA and cycle-floor scaling but does not yet replace the full analytical latency model",
+    "larger LLM shapes may shift the balance once producer scheduling and memory hierarchy are measured together"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_kv_memory_measured_tile_v1",
+      "task_type": "l2_campaign",
+      "objective": "Refresh the decoder attention/KV memory hierarchy report with the merged measured attention/KV tile frontier as explicit calibration evidence.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_memory",
+      "cost_class": "low",
+      "comparison_role": "calibrated_refresh",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_memory_large_context_v2",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_memory_large_context_v2",
+        "l1_decoder_attention_kv_tile_frontier_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "The output should confirm whether measured tile PPA changes the attention/KV bottleneck map before producer/memory/NoC coupled RTL work is queued."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_decoder_attention_kv_memory_v1/proposal.json",
+    "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_kv_memory_large_context_v2.json",
+    "control_plane/shadow_exports/l1_promotions/l1_decoder_attention_kv_tile_frontier_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_attention_kv_memory.py",
+    "tests/test_llm_decoder_attention_kv_memory.py",
+    "control_plane/control_plane/services/l2_task_generator.py",
+    "runs/designs/activations/attention_kv_tile_hd64_kv4_l16_b128_wrapper/metrics.csv",
+    "runs/designs/activations/attention_kv_tile_hd128_kv16_l64_b512_wrapper/metrics.csv"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_memory_measured_tile_v1",
+  "source_commit": "1227040b3707ba4606496f6452bdfe75fc954199",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_kv_memory_measured_tile_v1",
+      "task_type": "l2_campaign",
+      "objective": "Refresh the decoder attention/KV memory hierarchy report with the merged measured attention/KV tile frontier as explicit calibration evidence.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_memory",
+      "comparison_role": "calibrated_refresh",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_memory_large_context_v2",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_memory_large_context_v2",
+        "l1_decoder_attention_kv_tile_frontier_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "The output should confirm whether measured tile PPA changes the attention/KV bottleneck map before producer/memory/NoC coupled RTL work is queued."
+      },
+      "status": "pending",
+      "notes": "Dispatch after PR #480 is merged so the estimator accepts measured tile metrics."
+    }
+  ]
+}
