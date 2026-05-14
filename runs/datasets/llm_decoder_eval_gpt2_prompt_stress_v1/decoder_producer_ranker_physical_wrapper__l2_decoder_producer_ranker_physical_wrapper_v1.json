@@ -1,0 +1,155 @@
+{
+  "assumptions": [
+    "The wrapper measures ranker plus candidate-merge ready-valid logic, not the full output-projection GEMM.",
+    "The deterministic stream reference remains token/logit exact with lower-token tie order from the predecessor equivalence run.",
+    "The top-level physical wrapper is a bounded macro diagnostic; padded die area and IO pin pressure must be interpreted separately from connected producer placement."
+  ],
+  "checks": [
+    {
+      "name": "ready_valid_equivalence_predecessor_passed",
+      "observed": "ready_valid_equivalence_passed",
+      "passed": true
+    },
+    {
+      "name": "physical_wrapper_rtl_materialized",
+      "observed": [
+        "runs/designs/activations/decoder_r64_k1_producer_ranker_physical_wrapper/verilog/candidate_stream_merge_fifo_k1_l16_t16_d16.v",
+        "runs/designs/activations/decoder_r64_k1_producer_ranker_physical_wrapper/verilog/decoder_r64_k1_producer_ranker_physical_wrapper.v",
+        "runs/designs/activations/decoder_r64_k1_producer_ranker_physical_wrapper/verilog/logit_rank_r64_l16_k1.v"
+      ],
+      "passed": true
+    },
+    {
+      "name": "physical_sweep_completed_with_metrics",
+      "observed": {
+        "metrics_status": "ok",
+        "synthesis_status": "ok"
+      },
+      "passed": true
+    }
+  ],
+  "decision": {
+    "decision": "producer_ranker_physical_wrapper_measured",
+    "next_step": "Use this wrapper PPA as the first measured producer-ranker integration point and then compare r128 or producer-coupled variants."
+  },
+  "materialization": {
+    "config_manifest": "runs/designs/activations/decoder_r64_k1_producer_ranker_physical_wrapper/config_decoder_r64_k1_producer_ranker_physical_wrapper.json",
+    "design_dir": "runs/designs/activations/decoder_r64_k1_producer_ranker_physical_wrapper",
+    "generated_verilog": [
+      "runs/designs/activations/decoder_r64_k1_producer_ranker_physical_wrapper/verilog/candidate_stream_merge_fifo_k1_l16_t16_d16.v",
+      "runs/designs/activations/decoder_r64_k1_producer_ranker_physical_wrapper/verilog/decoder_r64_k1_producer_ranker_physical_wrapper.v",
+      "runs/designs/activations/decoder_r64_k1_producer_ranker_physical_wrapper/verilog/logit_rank_r64_l16_k1.v"
+    ],
+    "merge_log_tail": [
+      "Configuration Loaded Successfully:",
+      "  Operand candidate_logits: signed, width 16, dimensions 1",
+      "  Operations: 0 multiplier(s), 0 MAC block(s), 0 adder(s), 0 yosys multiplier(s), 0 MCM block(s), 0 CMVM block(s), 0 FP op(s), 0 activation(s), 0 row-wise softmax block(s), 0 bf16 reciprocal-normalization block(s), 0 score tie-rank block(s), 0 logit-rank block(s), 1 candidate-stream merge FIFO block(s), 0 attention/KV tile block(s)",
+      "[INFO] Generating candidate-stream merge FIFO candidate_stream_merge_fifo_k1_l16_t16_d16 (top_k=1, logit_bits=16, token_id_bits=16, fifo_depth_groups=16)"
+    ],
+    "merge_module": "candidate_stream_merge_fifo_k1_l16_t16_d16",
+    "merge_returncode": 0,
+    "rank_log_tail": [
+      "Configuration Loaded Successfully:",
+      "  Operand logits: signed, width 16, dimensions 1",
+      "  Operations: 0 multiplier(s), 0 MAC block(s), 0 adder(s), 0 yosys multiplier(s), 0 MCM block(s), 0 CMVM block(s), 0 FP op(s), 0 activation(s), 0 row-wise softmax block(s), 0 bf16 reciprocal-normalization block(s), 0 score tie-rank block(s), 1 logit-rank block(s), 0 candidate-stream merge FIFO block(s), 0 attention/KV tile block(s)",
+      "[INFO] Generating logit-rank logit_rank_r64_l16_k1 (row_elems=64, logit_bits=16, top_k=1)"
+    ],
+    "rank_module": "logit_rank_r64_l16_k1",
+    "rank_returncode": 0,
+    "status": "ok",
+    "target": {
+      "logit_bits": 16,
+      "producer_lanes": 64,
+      "token_id_bits": 16,
+      "top_k": 1
+    },
+    "top": "decoder_r64_k1_producer_ranker_physical_wrapper",
+    "verilog_dir": "runs/designs/activations/decoder_r64_k1_producer_ranker_physical_wrapper/verilog"
+  },
+  "metrics_row": {
+    "config_hash": "293976aa5915",
+    "critical_path_ns": "32.244646582551134",
+    "design": "decoder_r64_k1_producer_ranker_physical_wrapper",
+    "die_area": "810000.0",
+    "flow_elapsed_seconds": "361.68999999999994",
+    "param_hash": "e229ebfd",
+    "params_json": "{\"CLOCK_PERIOD\": 10.0, \"CORE_AREA\": \"40 40 860 860\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 900 900\", \"FLOW_VARIANT\": \"decoder_r64_k1_producer_ranker_physical_wrapper\", \"PLACE_DENSITY\": 0.36, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_KEEP_MODULES\": \"logit_rank_r64_l16_k1 candidate_stream_merge_fifo_k1_l16_t16_d16\", \"TAG\": \"decoder_r64_k1_producer_ranker_physical_wrapper\", \"tag_prefix\": \"decoder_r64_k1_producer_ranker_physical_wrapper\"}",
+    "platform": "nangate45",
+    "result_path": "",
+    "stage_elapsed_seconds": "24.01",
+    "status": "ok",
+    "synth_script_path": "",
+    "synth_script_sha1": "",
+    "tag": "decoder_r64_k1_producer_ranker_physical_wrapper",
+    "total_power_mw": "1.82241",
+    "work_result_json": "runs/designs/activations/decoder_r64_k1_producer_ranker_physical_wrapper/work/e229ebfd/result.json"
+  },
+  "model": "decoder_producer_ranker_physical_wrapper_v1",
+  "reference": {
+    "deterministic_tile_count": 3,
+    "full_vocab_top1": {
+      "logit": 500,
+      "token": 5
+    },
+    "source_equivalence_decision": "ready_valid_equivalence_passed"
+  },
+  "synthesis": {
+    "command": "/workspaces/rtlgen-eval-clean/control_plane/.venv/bin/python3 npu/synth/run_block_sweep.py --design_dir runs/designs/activations/decoder_r64_k1_producer_ranker_physical_wrapper --platform nangate45 --top decoder_r64_k1_producer_ranker_physical_wrapper --sweep runs/campaigns/npu/decoder_producer_ranker_physical_wrapper/sweeps/nangate45_r64_k1_macro.json --make_target 3_3_place_gp --out_root runs/designs/activations --force_copy",
+    "elapsed_seconds": 366.3730021750089,
+    "log_path": "control_plane/runtime_logs/decoder_producer_ranker_physical_wrapper/decoder_r64_k1_producer_ranker_physical_wrapper_3_3_place_gp.log",
+    "log_tail": [
+      "    14000 |     +0.9% |    3845 |     4074 |       942",
+      "    final |     +0.8% |    3977 |     4186 |         0",
+      "-------------------------------------------------------",
+      "[INFO GPL-0106] Timing-driven: worst slack -2.22e-08",
+      "[INFO GPL-0107] Timing-driven: repair_design delta area: 314.678 um^2 (+1.32%)",
+      "[INFO GPL-0108] Timing-driven: repair_design, gpl cells created: 288 (+0.00%)",
+      "[INFO GPL-0110] Timing-driven: new target density: 0.36580405",
+      "Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group",
+      "---------------------------------------------------------------",
+      "      360 |   0.1701 |  3.661005e+05 |   +2.62% |  3.19e-07 |      ",
+      "      370 |   0.1507 |  3.646241e+05 |   -0.40% |  4.71e-07 |      ",
+      "      380 |   0.1281 |  3.651208e+05 |   +0.14% |  6.93e-07 |      ",
+      "      390 |   0.1090 |  3.653939e+05 |   +0.07% |  1.02e-06 |      ",
+      "      396 |   0.0987 |  3.655877e+05 |          |  1.34e-06 |      ",
+      "---------------------------------------------------------------",
+      "[INFO GPL-1001] Global placement finished at iteration 396",
+      "[INFO GPL-1003] Routability mode iteration count: 107",
+      "[INFO GPL-1005] Routability final weighted congestion: 0.6907",
+      "[INFO GPL-1002] Placed Cell Area            24110.2400",
+      "[INFO GPL-1003] Available Free Area         670677.5040",
+      "[INFO GPL-1004] Minimum Feasible Density        0.0400 (cell_area / free_area)",
+      "[INFO GPL-1006]   Suggested Target Densities:",
+      "[INFO GPL-1007]     - For 90% usage of free space: 0.0399",
+      "[INFO GPL-1008]     - For 80% usage of free space: 0.0449",
+      "[INFO GPL-1009]     - For 50% usage of free space: 0.0719",
+      "[INFO GPL-1011] Original area (um^2): 20217.60",
+      "[INFO GPL-1012] Total routability artificial inflation: 3577.97 (+17.70%)",
+      "[INFO GPL-1013] Total timing-driven delta area: 3892.64 (+19.25%)",
+      "[INFO GPL-1014] Final placement area: 24110.24 (+19.25%)",
+      "Took 22 seconds: global_placement -density 0.36 -pad_left 0 -pad_right 0 -routability_driven -timing_driven",
+      "Report metrics stage 3, global place...",
+      "",
+      "==========================================================================",
+      "global place report_design_area",
+      "--------------------------------------------------------------------------",
+      "Design area 24110 u^2 4% utilization.",
+      "Elapsed time: 0:24.01[h:]min:sec. CPU time: user 128.31 sys 5.84 (558%). Peak memory: 621372KB.",
+      "Log                        Elapsed/s Peak Memory/MB  sha1sum .odb [0:20)",
+      "3_3_place_gp                      24            606 b87fb675ed569f2d5831",
+      "[INFO] Running OpenROAD flow: make DESIGN_CONFIG=/orfs/flow/designs/nangate45/decoder_r64_k1_producer_ranker_physical_wrapper/config.mk TAG=decoder_r64_k1_producer_ranker_physical_wrapper SDC_FILE=/orfs/flow/designs/nangate45/decoder_r64_k1_producer_ranker_physical_wrapper/constraint.sdc CLOCK_PERIOD=10.0 CORE_AREA=40 40 860 860 DIE_AREA=0 0 900 900 FLOW_VARIANT=decoder_r64_k1_producer_ranker_physical_wrapper PLACE_DENSITY=0.36 SYNTH_HIERARCHICAL=1 SYNTH_KEEP_MODULES=logit_rank_r64_l16_k1 candidate_stream_merge_fifo_k1_l16_t16_d16 TAG=decoder_r64_k1_producer_ranker_physical_wrapper TAG_PREFIX=decoder_r64_k1_producer_ranker_physical_wrapper CORE_UTILIZATION= 3_3_place_gp"
+    ],
+    "returncode": 0,
+    "status": "ok"
+  },
+  "target": {
+    "logit_bits": 16,
+    "make_target": "3_3_place_gp",
+    "name": "r64_k1_nm16_ready_valid_physical_wrapper",
+    "producer_lanes": 64,
+    "sweep": "runs/campaigns/npu/decoder_producer_ranker_physical_wrapper/sweeps/nangate45_r64_k1_macro.json",
+    "token_id_bits": 16,
+    "top_k": 1
+  },
+  "version": 0.1
+}

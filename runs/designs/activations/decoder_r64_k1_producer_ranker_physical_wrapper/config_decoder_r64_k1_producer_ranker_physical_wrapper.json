@@ -1,0 +1,13 @@
+{
+  "design": "decoder_r64_k1_producer_ranker_physical_wrapper",
+  "logit_bits": 16,
+  "logit_rank_config": "runs/designs/activations/logit_rank_r64_l16_k1_wrapper/config_logit_rank_r64_l16_k1.json",
+  "merge_config": "runs/designs/activations/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/config_candidate_stream_merge_fifo_k1_l16_t16_d16.json",
+  "producer_lanes": 64,
+  "rtlgen_binary": "/tmp/rtlcp-worktree-2p09xrj0/repo/build/rtlgen",
+  "stream_contract": "LogitTileStream to CandidateStream ready-valid wrapper",
+  "token_id_bits": 16,
+  "top": "decoder_r64_k1_producer_ranker_physical_wrapper",
+  "top_k": 1,
+  "version": 0.1
+}
