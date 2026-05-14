@@ -1,0 +1,73 @@
+{
+  "proposal_id": "prop_l2_decoder_frontier_synthesis_nm16_physical_v1",
+  "created_utc": "2026-05-14T08:20:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_frontier_synthesis",
+  "title": "Decoder frontier synthesis with nm16 producer physical anchor",
+  "hypothesis": "The decoder frontier synthesis should be refreshed now that the post-scoreboard nm16 output-projection producer has completed a bounded physical placement target. The refreshed report should keep producer service and NoC contention analytical while carrying measured nm16 producer-wrapper PPA as feasibility context for the next larger decoder point.",
+  "direct_comparison": {
+    "primary_question": "Does the current decoder frontier conclusion remain valid when the producer/ranker coupling report carries the largest measured producer physical anchor?",
+    "include": [
+      "whole-decoder resident-weight stage breakdown",
+      "measured attention/KV tile-calibrated memory report",
+      "producer/ranker shared NoC coupling report",
+      "bounded SOFTMAX/EVENT producer-control guard evidence",
+      "nm16 producer-wrapper 3_3_place_gp physical feasibility and PPA evidence"
+    ],
+    "exclude": [
+      "new producer RTL generation",
+      "new ranker datapath synthesis",
+      "full route closure beyond the existing nm16 target",
+      "shared SRAM/NoC arbitration implementation",
+      "quality or QAT experiments"
+    ]
+  },
+  "expected_benefit": [
+    "ties the whole-decoder frontier scorecard to the largest measured producer physical point",
+    "separates analytical producer latency assumptions from measured producer feasibility and PPA",
+    "chooses whether the next measured job should extend producer parallelism, add producer/ranker/memory integration, or move toward attention/KV hierarchy"
+  ],
+  "risks": [
+    "the producer service latency model remains analytical and weight-memory dominated",
+    "the nm16 evidence is a bounded placement target, not final route closure",
+    "the measured producer block is isolated and does not include shared NoC or memory hierarchy arbitration"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_frontier_synthesis_nm16_physical_v1",
+      "task_type": "l2_campaign",
+      "objective": "Refresh decoder frontier synthesis after the nm16 producer physical feasibility result and include that measured PPA anchor in the producer/ranker coupling and final scorecard.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_frontier_synthesis",
+      "cost_class": "low",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_frontier_synthesis_scoreboard_boundary_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_frontier_synthesis_scoreboard_boundary_v1",
+        "l2_decoder_output_projection_producer_synth_boundary_nm8_nm16_v1",
+        "l2_decoder_output_projection_producer_pnr_nm16_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "The output should show whether the nm16 physical anchor changes the next architecture frontier or simply validates continued producer/ranker/memory exploration."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "control_plane/shadow_exports/l2_decisions/l2_decoder_frontier_synthesis_scoreboard_boundary_v1.json",
+    "control_plane/shadow_exports/l2_decisions/l2_decoder_output_projection_producer_pnr_nm16_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_producer_pnr_feasibility__l2_decoder_output_projection_producer_pnr_nm16_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_producer_ranker_coupling.py",
+    "npu/eval/synthesize_llm_decoder_frontier.py",
+    "control_plane/control_plane/services/l2_task_generator.py",
+    "tests/test_llm_decoder_producer_ranker_coupling.py",
+    "tests/test_llm_decoder_frontier_synthesis.py"
+  ]
+}

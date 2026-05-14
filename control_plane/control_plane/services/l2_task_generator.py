@@ -2140,6 +2140,11 @@ def _decoder_producer_ranker_coupled_noc_evidence(*, item_id: str) -> dict[str, 
         "decoder_output_projection_producer_softmax_event_ablation__"
         "l2_decoder_output_projection_producer_event_scoreboard_v1.json"
     )
+    producer_physical_boundary = (
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+        "decoder_output_projection_producer_pnr_feasibility__"
+        "l2_decoder_output_projection_producer_pnr_nm16_v1.json"
+    )
     sram_metrics_json = "runs/designs/sram/minimal_v0_2_draft/sram_metrics.json"
     return {
         "inputs": {
@@ -2150,12 +2155,14 @@ def _decoder_producer_ranker_coupled_noc_evidence(*, item_id: str) -> dict[str, 
             "candidate_merge_ppa": candidate_merge_ppa,
             "boundary_ppa": boundary_ppa,
             "producer_control_boundary": producer_control_boundary,
+            "producer_physical_boundary": producer_physical_boundary,
             "sram_metrics_json": sram_metrics_json,
             "producer_ranker_coupled_scope": (
                 "Couple stage-serialized output-projection producer service curves to the "
                 "producer-integrated ready-valid ranker frontier, including shared NoC/memory "
                 "bandwidth shares for contention sensitivity and bounded SOFTMAX/EVENT "
-                "producer-control synthesis evidence."
+                "producer-control synthesis evidence plus nm16 producer-wrapper physical "
+                "feasibility/PPA evidence."
             ),
             "memory_share_list": [1.0, 0.5, 0.25],
         },
@@ -2170,6 +2177,7 @@ def _decoder_producer_ranker_coupled_noc_evidence(*, item_id: str) -> dict[str, 
                     f"--candidate-merge-ppa {candidate_merge_ppa} "
                     f"--boundary-ppa {boundary_ppa} "
                     f"--producer-control-boundary {producer_control_boundary} "
+                    f"--producer-physical-boundary {producer_physical_boundary} "
                     f"--sram-metrics-json {sram_metrics_json} "
                     "--vocab-size-list 50257,100000,200000 "
                     "--hidden-size-list 768,1024,2048 "

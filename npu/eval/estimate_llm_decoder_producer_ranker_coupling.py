@@ -85,6 +85,63 @@ def _load_producer_control_boundary(path: Path | None) -> JsonDict | None:
     }
 
 
+def _maybe_float(value: Any) -> float | None:
+    if value is None or value == "":
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _load_producer_physical_boundary(path: Path | None) -> JsonDict | None:
+    if path is None:
+        return None
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    diagnosis = payload.get("diagnosis") if isinstance(payload.get("diagnosis"), dict) else {}
+    probe_rows = [row for row in payload.get("probe_rows", []) if isinstance(row, dict)]
+    ok_rows = [row for row in probe_rows if row.get("status") == "ok"]
+    boundary_row = max(ok_rows, key=lambda row: int(row.get("num_modules", 0) or 0), default=None)
+    if boundary_row is None:
+        return {
+            "source": str(path),
+            "status": "missing_ok_probe_row",
+            "decision": diagnosis.get("decision"),
+            "feasible_max_num_modules": diagnosis.get("feasible_max_num_modules"),
+            "first_nonviable_num_modules": diagnosis.get("first_nonviable_num_modules"),
+        }
+    synthesis = (
+        boundary_row.get("synthesis")
+        if isinstance(boundary_row.get("synthesis"), dict)
+        else {}
+    )
+    metrics = (
+        boundary_row.get("metrics_row")
+        if isinstance(boundary_row.get("metrics_row"), dict)
+        else {}
+    )
+    return {
+        "source": str(path),
+        "status": boundary_row.get("status"),
+        "decision": diagnosis.get("decision"),
+        "feasible_max_num_modules": diagnosis.get("feasible_max_num_modules"),
+        "first_nonviable_num_modules": diagnosis.get("first_nonviable_num_modules"),
+        "recommended_next_step": diagnosis.get("recommended_next_step"),
+        "make_target": payload.get("make_target"),
+        "boundary_kind": payload.get("boundary_kind"),
+        "num_modules": boundary_row.get("num_modules"),
+        "design_dir": boundary_row.get("design_dir"),
+        "synthesis_status": synthesis.get("status"),
+        "synthesis_elapsed_seconds": synthesis.get("elapsed_seconds"),
+        "critical_path_ns": _maybe_float(metrics.get("critical_path_ns")),
+        "die_area_um2": _maybe_float(metrics.get("die_area")),
+        "total_power_mw": _maybe_float(metrics.get("total_power_mw")),
+        "flow_elapsed_seconds": _maybe_float(metrics.get("flow_elapsed_seconds")),
+        "stage_elapsed_seconds": _maybe_float(metrics.get("stage_elapsed_seconds")),
+        "result_path": metrics.get("result_path") or metrics.get("work_result_json"),
+    }
+
+
 def _producer_service_row(
     *,
     scenario: str,
@@ -150,6 +207,7 @@ def build_coupling_report(
     candidate_merge_ppa_path: Path | None,
     boundary_ppa_path: Path | None,
     producer_control_boundary_path: Path | None,
+    producer_physical_boundary_path: Path | None,
     sram_metrics_json_path: Path | None,
     vocab_size_list: list[int],
     hidden_size_list: list[int],
@@ -163,6 +221,7 @@ def build_coupling_report(
     clock_ns: float,
 ) -> JsonDict:
     producer_control_boundary = _load_producer_control_boundary(producer_control_boundary_path)
+    producer_physical_boundary = _load_producer_physical_boundary(producer_physical_boundary_path)
     scenarios = (
         ["shared_gemm_stage_serial"]
         if mode == "producer_service"
@@ -300,6 +359,7 @@ def build_coupling_report(
             "clock_ns": clock_ns,
         },
         "producer_control_boundary": producer_control_boundary,
+        "producer_physical_boundary": producer_physical_boundary,
         "assumptions": [
             "Producer means only the final decoder output-projection logit source.",
             "Shared GEMM is stage-serialized: attention/MLP have completed before output projection starts.",
@@ -308,6 +368,7 @@ def build_coupling_report(
             "shared_noc_contention reduces effective producer memory bandwidth by memory_share.",
             "Ranker coupling reuses the ready-valid logit-rank model and preserves its equivalence observables.",
             "If producer_control_boundary is present, it is control-path synthesis feasibility evidence; it does not replace the output-projection service model.",
+            "If producer_physical_boundary is present, it is measured producer-wrapper physical feasibility/PPA evidence; latency and memory-coupling rows remain analytical service estimates.",
         ],
         "producer_service_sweep": producer_rows,
         "coupled_ranker_sweep": coupled_rows,
@@ -354,6 +415,18 @@ def _write_markdown(path: Path, payload: JsonDict) -> None:
                 f"- producer_control_boundary: `{boundary.get('decision')} "
                 f"{boundary.get('guard_variant')} {boundary.get('synthesis_status')}`",
                 f"- producer_control_boundary_elapsed_s: `{boundary.get('synthesis_elapsed_seconds')}`",
+            ]
+        )
+    if payload.get("producer_physical_boundary"):
+        boundary = payload["producer_physical_boundary"]
+        lines.extend(
+            [
+                f"- producer_physical_boundary: `{boundary.get('decision')} "
+                f"nm{boundary.get('num_modules')} {boundary.get('make_target')}`",
+                f"- producer_physical_boundary_critical_path_ns: `{boundary.get('critical_path_ns')}`",
+                f"- producer_physical_boundary_area_um2: `{boundary.get('die_area_um2')}`",
+                f"- producer_physical_boundary_power_mw: `{boundary.get('total_power_mw')}`",
+                f"- producer_physical_boundary_elapsed_s: `{boundary.get('synthesis_elapsed_seconds')}`",
             ]
         )
     lines.extend(
@@ -424,6 +497,7 @@ def main() -> int:
     ap.add_argument("--candidate-merge-ppa", help="candidate merge PPA JSON")
     ap.add_argument("--boundary-ppa", help="boundary diagnostic PPA JSON")
     ap.add_argument("--producer-control-boundary", help="bounded producer control-path evidence JSON")
+    ap.add_argument("--producer-physical-boundary", help="bounded producer physical feasibility evidence JSON")
     ap.add_argument("--sram-metrics-json", help="SRAM metrics JSON")
     ap.add_argument("--vocab-size-list", type=_int_list, default=[50257, 100000, 200000])
     ap.add_argument("--hidden-size-list", type=_int_list, default=[768, 1024, 2048])
@@ -445,6 +519,7 @@ def main() -> int:
         candidate_merge_ppa_path=Path(args.candidate_merge_ppa) if args.candidate_merge_ppa else None,
         boundary_ppa_path=Path(args.boundary_ppa) if args.boundary_ppa else None,
         producer_control_boundary_path=Path(args.producer_control_boundary) if args.producer_control_boundary else None,
+        producer_physical_boundary_path=Path(args.producer_physical_boundary) if args.producer_physical_boundary else None,
         sram_metrics_json_path=Path(args.sram_metrics_json) if args.sram_metrics_json else None,
         vocab_size_list=args.vocab_size_list,
         hidden_size_list=args.hidden_size_list,
