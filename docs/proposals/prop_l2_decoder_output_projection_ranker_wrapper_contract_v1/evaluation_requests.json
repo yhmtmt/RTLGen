@@ -1,0 +1,27 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_ranker_wrapper_contract_v1",
+  "source_commit": "79cae818b82aedf850438211a69dbb1f505e39af",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_output_projection_ranker_wrapper_contract_v1",
+      "task_type": "l2_campaign",
+      "objective": "Check representative RTL/perf equivalence cases for the promoted output-projection ranker wrapper policy before final RTL wrapper implementation.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_output_projection_ranker_wrapper_contract",
+      "comparison_role": "producer_ranker_service",
+      "paired_baseline_item_id": "l2_decoder_output_projection_ranker_policy_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_output_projection_ranker_policy_v1",
+        "l2_decoder_serial_lpc1_producer_coupled_wrapper_v1",
+        "l2_decoder_resident_ranktree_fallback_promotion_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "If the representative serial, r64 rank-tree, and banked r128 contract cases pass, implement the final wrapper mux/control RTL and then run a physical wrapper sweep."
+      },
+      "status": "pending"
+    }
+  ]
+}

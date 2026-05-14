@@ -1,0 +1,116 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-05-14T11:19:38.833587Z",
+  "item_id": "l2_decoder_output_projection_ranker_wrapper_contract_v1",
+  "run_key": "l2_decoder_output_projection_ranker_wrapper_contract_v1_run_780850e900b0662c",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "79cae818b82aedf850438211a69dbb1f505e39af",
+  "review_metadata_source_commit": "79cae818b82aedf850438211a69dbb1f505e39af",
+  "objective": "Check representative RTL/perf equivalence cases for the promoted output-projection ranker wrapper policy before final RTL wrapper implementation.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+    ],
+    "design_dirs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+    ],
+    "macro_manifests": [
+      "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+      "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+    ],
+    "decoder_contract": {
+      "candidate_merge_config": "runs/designs/activations/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/config_candidate_stream_merge_fifo_k1_l16_t16_d16.json",
+      "output_projection_ranker_policy": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_ranker_policy__l2_decoder_output_projection_ranker_policy_v1.json",
+      "resident_ranktree_fallback_promotion": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_resident_ranktree_fallback_promotion__l2_decoder_resident_ranktree_fallback_promotion_v1.json",
+      "serial_lpc1_producer_coupled_wrapper": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_serial_lpc1_producer_coupled_wrapper__l2_decoder_serial_lpc1_producer_coupled_wrapper_v1.json",
+      "output_projection_ranker_wrapper_contract_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_ranker_wrapper_contract__l2_decoder_output_projection_ranker_wrapper_contract_v1.json",
+      "output_projection_ranker_wrapper_contract_scope": "Check representative wrapper-policy cases before implementing final RTL mux/control: fresh serial_lpc1 RTL replay, r64 rank-tree primitive RTL equivalence, and r128 banked-r64 composition against the full-tile perf reference.",
+      "output_projection_ranker_wrapper_contract_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_ranker_wrapper_contract__l2_decoder_output_projection_ranker_wrapper_contract_v1.md"
+    },
+    "generated_campaign": {
+      "path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign__l2_decoder_output_projection_ranker_wrapper_contract_v1.json",
+      "outputs": {
+        "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_ranker_wrapper_contract_v1/report.md",
+        "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_ranker_wrapper_contract_v1/results.csv",
+        "campaign_dir": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_ranker_wrapper_contract_v1"
+      },
+      "clean_outputs": true,
+      "base_campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json"
+    },
+    "candidate_manifests": [
+      "runs/candidates/nangate45/module_candidates.json"
+    ]
+  },
+  "recommendation": {
+    "arch_id": "fp16_nm1",
+    "macro_mode": "flat_nomacro",
+    "objective_rank": 1,
+    "objective_score": "0.0",
+    "latency_ms_mean": 0.028907999999999996,
+    "energy_mj_mean": 5.582770776e-06,
+    "critical_path_ns_mean": 5.557037432204143,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.193122,
+    "flow_elapsed_s_mean": 848.418
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_output_projection_ranker_wrapper_contract_v1",
+    "title": "Decoder output-projection ranker wrapper contract",
+    "primary_question": "Do representative serial, rank-tree r64, and banked rank-tree r128 cases satisfy the promoted policy contract before implementing final wrapper mux/control RTL?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "producer_ranker_service",
+    "abstraction_layer": "decoder_output_projection_ranker_wrapper_contract",
+    "expected_direction": "iterate",
+    "expected_reason": "If the representative serial, r64 rank-tree, and banked r128 contract cases pass, implement the final wrapper mux/control RTL and then run a physical wrapper sweep.",
+    "summary": "Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
+    "outcome": "ranking_recorded",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_output_projection_ranker_wrapper_contract_v1",
+    "title": "Decoder output-projection ranker wrapper contract",
+    "kind": "architecture",
+    "primary_question": "Do representative serial, rank-tree r64, and banked rank-tree r128 cases satisfy the promoted policy contract before implementing final wrapper mux/control RTL?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "producer_ranker_service",
+    "outcome": "ranking_recorded",
+    "summary": "Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": []
+  },
+  "source_refs": {
+    "best_point_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_ranker_wrapper_contract_v1/best_point.json",
+    "summary_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_ranker_wrapper_contract_v1/summary.csv",
+    "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_ranker_wrapper_contract_v1/results.csv",
+    "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_ranker_wrapper_contract_v1/report.md",
+    "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_ranker_wrapper_contract_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+    "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_ranker_wrapper_contract_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+    "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_ranker_wrapper_contract_v1/artifacts/perf/fp16_nm1/mlp1/trace.json",
+    "focused_model_artifacts": [
+      {
+        "model_id": "mlp1",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_ranker_wrapper_contract_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_ranker_wrapper_contract_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_ranker_wrapper_contract_v1/artifacts/perf/fp16_nm1/mlp1/trace.json"
+      },
+      {
+        "model_id": "mlp2",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_ranker_wrapper_contract_v1/artifacts/mapper/fp16_nm1/mlp2/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_ranker_wrapper_contract_v1/artifacts/mapper/fp16_nm1/mlp2/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_ranker_wrapper_contract_v1/artifacts/perf/fp16_nm1/mlp2/trace.json"
+      }
+    ]
+  }
+}

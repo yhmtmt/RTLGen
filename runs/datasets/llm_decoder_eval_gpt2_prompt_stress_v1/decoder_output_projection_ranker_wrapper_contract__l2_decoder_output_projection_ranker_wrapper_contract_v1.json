@@ -1,0 +1,203 @@
+{
+  "assumptions": [
+    "The serial path is checked by a fresh RTL replay of the promoted serial_lpc1 wrapper at the policy threshold.",
+    "The r64 rank-tree path reuses the promoted rank-tree primitive RTL simulation from the rank-tree architecture sweep.",
+    "The r128 banked path is a composition contract: two proven r64 primitives plus deterministic lower-token tie-break across banks.",
+    "This job does not synthesize the final wrapper mux/control; it establishes the contract that the next RTL wrapper must implement."
+  ],
+  "checks": [
+    {
+      "name": "ranker_policy_promoted",
+      "observed": "output_projection_ranker_policy_promoted",
+      "passed": true
+    },
+    {
+      "name": "representative_cases_passed",
+      "observed": {
+        "resident_ranktree_banked_r128": true,
+        "resident_ranktree_r64": true,
+        "streaming_serial_lpc1_r64": true
+      },
+      "passed": true
+    }
+  ],
+  "decision": {
+    "decision": "output_projection_ranker_wrapper_contract_passed",
+    "next_step": "Implement the wrapper RTL mux/control around the verified serial_lpc1 and rank-tree primitive paths, then run a physical wrapper sweep."
+  },
+  "model": "decoder_output_projection_ranker_wrapper_contract_v1",
+  "representative_cases": [
+    {
+      "case": "streaming_serial_lpc1_r64",
+      "passed": true,
+      "policy_row": {
+        "consumer_ii_cycles": 384,
+        "coverage_status": "covered",
+        "producer": {
+          "hidden_size": 768,
+          "macs_per_cycle": 8192,
+          "memory_bandwidth_bytes_per_cycle": 256.0,
+          "producer_ii_cycles": 384,
+          "producer_lanes": 64,
+          "service_limiter": "weight_memory",
+          "tile_count": 786,
+          "vocab_size": 50257,
+          "weight_cache_hit_rate": 0.0
+        },
+        "ranker_instances": 1,
+        "selected_path": "serial_lpc1",
+        "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+      },
+      "reason": "serial RTL replay matches perf reference with zero backpressure",
+      "rtl_sim": {
+        "expected": {
+          "logit": 500,
+          "token": 5
+        },
+        "log_tail": [
+          "RESULT scenario=policy_serial_lpc1 lpc=1 producer_ii=384 token=5 logit=500 accepted=6 tb_backpressure=0 dut_stalls=0 fifo_max=1 final_cycle=1987",
+          "/tmp/tmp53ctei1k/tb_decoder_r64_k1_serial_rank_lpc1_wrapper_producer_replay_policy_serial_lpc1.v:505: $finish called at 19910000 (1ps)"
+        ],
+        "observed": {
+          "accepted": 6,
+          "dut_stalls": 0,
+          "fifo_max": 1,
+          "final_cycle": 1987,
+          "logit": 500,
+          "lpc": 1,
+          "producer_ii": 384,
+          "scenario": "policy_serial_lpc1",
+          "tb_backpressure": 0,
+          "token": 5
+        },
+        "returncode": 0,
+        "status": "ok"
+      }
+    },
+    {
+      "case": "resident_ranktree_r64",
+      "observed": {
+        "accepted": 3,
+        "fifo_max": 1,
+        "final_cycle": 10,
+        "logit": 500,
+        "stalls": 0,
+        "token": 5
+      },
+      "passed": true,
+      "policy_row": {
+        "consumer_ii_cycles": 1,
+        "coverage_status": "covered",
+        "producer": {
+          "hidden_size": 768,
+          "macs_per_cycle": 32768,
+          "memory_bandwidth_bytes_per_cycle": 64.0,
+          "producer_ii_cycles": 2,
+          "producer_lanes": 64,
+          "service_limiter": "compute_array",
+          "tile_count": 786,
+          "vocab_size": 50257,
+          "weight_cache_hit_rate": 1.0
+        },
+        "ranker_instances": 1,
+        "ranktree_radix": 4,
+        "selected_path": "single_r64_ranktree",
+        "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+      },
+      "primitive_rtl_sim": {
+        "expected": {
+          "logit": 500,
+          "token": 5
+        },
+        "log_tail": [
+          "RESULT token=5 logit=500 accepted=3 stalls=0 fifo_max=1 final_cycle=10",
+          "/tmp/rtlcp-worktree-nh2cvu6u/repo/runs/designs/activations/decoder_r64_k1_ranktree_radix4_pipe3_wrapper/tb_decoder_r64_k1_ranktree_radix4_pipe3_wrapper.v:293: $finish called at 140000 (1ps)"
+        ],
+        "returncode": 0,
+        "status": "ok"
+      },
+      "reason": "rank-tree r64 RTL primitive matches perf reference"
+    },
+    {
+      "banked_mode": {
+        "consumer_ii_cycles": 1,
+        "max_required_buffer_r64_tiles": 0,
+        "mode": "banked_r64_ranktrees",
+        "producer_ii_cycles_max": 32,
+        "producer_ii_cycles_min": 3,
+        "producer_lanes": [
+          128
+        ],
+        "ranker_instances": 2,
+        "ranker_placed_cell_area_um2": 48904.632,
+        "ranker_total_power_mw": 0.0228612,
+        "ranktree_radix": 4,
+        "recommended_strategy_count": 16
+      },
+      "case": "resident_ranktree_banked_r128",
+      "composition_reference": {
+        "bank_results": [
+          {
+            "bank": 0,
+            "global_token": 5,
+            "local_token": 5,
+            "logit": 500
+          },
+          {
+            "bank": 1,
+            "global_token": 319,
+            "local_token": 255,
+            "logit": 128
+          }
+        ],
+        "banked_reference": {
+          "logit": 500,
+          "token": 5
+        },
+        "equivalent": true,
+        "full_reference": {
+          "logit": 500,
+          "token": 5
+        },
+        "num_tiles": 6,
+        "producer_lanes": 128
+      },
+      "passed": true,
+      "policy_row": {
+        "consumer_ii_cycles": 1,
+        "coverage_status": "covered",
+        "producer": {
+          "hidden_size": 768,
+          "macs_per_cycle": 32768,
+          "memory_bandwidth_bytes_per_cycle": 64.0,
+          "producer_ii_cycles": 3,
+          "producer_lanes": 128,
+          "service_limiter": "compute_array",
+          "tile_count": 393,
+          "vocab_size": 50257,
+          "weight_cache_hit_rate": 1.0
+        },
+        "ranker_instances": 2,
+        "ranktree_radix": 4,
+        "selected_path": "banked_r64_ranktrees",
+        "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+      },
+      "primitive_rtl_status": "ok",
+      "reason": "banked r64 composition matches full r128 perf reference"
+    }
+  ],
+  "target": {
+    "num_tiles": 6,
+    "paths": [
+      "serial_lpc1",
+      "single_r64_ranktree",
+      "banked_r64_ranktrees"
+    ],
+    "producer_lanes": [
+      64,
+      128
+    ],
+    "top_k": 1
+  },
+  "version": 0.1
+}
