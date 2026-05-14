@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_output_projection_producer_event_wait_staged_v1",
-  "source_commit": "c10ca39fe34ed359daa7cdcbcebc43b3ade67a93",
+  "source_commit": "349a499fda759dc08b5a8e1e92a40d2826530d4c",
   "requested_items": [
     {
       "item_id": "l2_decoder_output_projection_producer_event_wait_staged_v1",
@@ -19,7 +19,11 @@
         "direction": "promote",
         "reason": "EVENT_WAIT-only and full EVENT variants should move from timeout to bounded synth result after staging the descriptor-indexed event_state access."
       },
-      "status": "proposed"
+      "status": "merged",
+      "merged_pr_number": 508,
+      "merge_commit": "391fb27e",
+      "merged_utc": "2026-05-14T02:12:46.245878Z",
+      "notes": "Merged via PR #508 and merge 391fb27e at 2026-05-14T02:12:46.245878Z."
     }
   ]
 }

@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_producer_event_wait_staged_v1",
+  "candidate_id": "l2_decoder_output_projection_producer_event_wait_staged_v1",
+  "decision": "iterate",
+  "reason": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_producer_softmax_event_ablation__l2_decoder_output_projection_producer_event_wait_staged_v1.json: decision=softmax_event_subpath_culprit_bracketed; recommended_next_step=Inspect the first non-OK SOFTMAX/EVENT subpath and replace the failing expression with staged decode or preserved hierarchy.",
+  "evidence_refs": [
+    "item:l2_decoder_output_projection_producer_event_wait_staged_v1",
+    "run:l2_decoder_output_projection_producer_event_wait_staged_v1_run_ad3b7b36639d2b28",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_output_projection_producer_event_wait_staged_v1.json",
+    "pr:#508",
+    "https://github.com/yhmtmt/RTLGen/pull/508"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_output_projection_producer_event_wait_staged_v1",
+  "requires_human_approval": false
+}
