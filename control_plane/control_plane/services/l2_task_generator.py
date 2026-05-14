@@ -2448,6 +2448,75 @@ def _decoder_producer_ranker_ready_valid_equivalence_evidence(*, item_id: str) -
     }
 
 
+def _decoder_producer_ranker_physical_wrapper_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_producer_ranker_physical_wrapper__{item_id}.json"
+    report = f"{base}/decoder_producer_ranker_physical_wrapper__{item_id}.md"
+    design_dir = "runs/designs/activations/decoder_r64_k1_producer_ranker_physical_wrapper"
+    logit_rank_config = "runs/designs/activations/logit_rank_r64_l16_k1_wrapper/config_logit_rank_r64_l16_k1.json"
+    merge_config = (
+        "runs/designs/activations/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/"
+        "config_candidate_stream_merge_fifo_k1_l16_t16_d16.json"
+    )
+    ready_valid_equivalence = (
+        f"{base}/decoder_producer_ranker_ready_valid_equivalence__"
+        "l2_decoder_producer_ranker_ready_valid_equivalence_v1_r2.json"
+    )
+    sweep = "runs/campaigns/npu/decoder_producer_ranker_physical_wrapper/sweeps/nangate45_r64_k1_macro.json"
+    top = "decoder_r64_k1_producer_ranker_physical_wrapper"
+    return {
+        "inputs": {
+            "producer_ranker_physical_wrapper_out": out,
+            "producer_ranker_physical_wrapper_report": report,
+            "producer_ranker_physical_wrapper_design_dir": design_dir,
+            "producer_ranker_physical_wrapper_sweep": sweep,
+            "producer_ranker_physical_wrapper_make_target": "3_3_place_gp",
+            "ready_valid_equivalence": ready_valid_equivalence,
+            "logit_rank_config": logit_rank_config,
+            "candidate_merge_config": merge_config,
+            "producer_ranker_physical_wrapper_scope": (
+                "Materialize and physically probe the first r64/k1 producer-to-ranker "
+                "ready-valid wrapper after stream equivalence passed. The wrapper ties "
+                "logit_rank_r64_l16_k1 to candidate_stream_merge_fifo_k1_l16_t16_d16 "
+                "and records bounded macro-style PPA before scaling r/w or producer coupling."
+            ),
+        },
+        "commands": [
+            {
+                "name": "build_generator",
+                "run": "export PATH=/oss-cad-suite/bin:$PATH && cmake -S . -B build && cmake --build build --target rtlgen",
+            },
+            {
+                "name": "probe_decoder_producer_ranker_physical_wrapper",
+                "run": (
+                    "python3 npu/eval/probe_llm_decoder_producer_ranker_physical_wrapper.py "
+                    f"--logit-rank-config {logit_rank_config} "
+                    f"--merge-config {merge_config} "
+                    f"--ready-valid-equivalence {ready_valid_equivalence} "
+                    f"--design-dir {design_dir} "
+                    f"--top {top} "
+                    f"--sweep {sweep} "
+                    "--platform nangate45 "
+                    "--make-target 3_3_place_gp "
+                    "--timeout-seconds 1800 "
+                    "--stall-timeout-seconds 900 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [
+            out,
+            report,
+            f"{design_dir}/metrics.csv",
+            f"{design_dir}/config_decoder_r64_k1_producer_ranker_physical_wrapper.json",
+            f"{design_dir}/verilog/{top}.v",
+            f"{design_dir}/verilog/logit_rank_r64_l16_k1.v",
+            f"{design_dir}/verilog/candidate_stream_merge_fifo_k1_l16_t16_d16.v",
+        ],
+    }
+
+
 def _decoder_output_projection_producer_synth_boundary_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_output_projection_producer_synth_boundary__{item_id}.json"
@@ -3182,6 +3251,7 @@ def _build_payload(
         "decoder_frontier_synthesis",
         "decoder_producer_ranker_memory_integration_plan",
         "decoder_producer_ranker_ready_valid_equivalence",
+        "decoder_producer_ranker_physical_wrapper",
         "decoder_output_projection_producer_pnr_feasibility",
         "decoder_output_projection_producer_synth_boundary",
         "decoder_output_projection_producer_isolated_synth",
@@ -3210,6 +3280,8 @@ def _build_payload(
             decoder_evidence = _decoder_producer_ranker_memory_integration_plan_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_producer_ranker_ready_valid_equivalence":
             decoder_evidence = _decoder_producer_ranker_ready_valid_equivalence_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_producer_ranker_physical_wrapper":
+            decoder_evidence = _decoder_producer_ranker_physical_wrapper_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_memory":
             decoder_evidence = _decoder_attention_kv_memory_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_stage_breakdown":
