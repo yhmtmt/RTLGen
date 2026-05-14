@@ -738,8 +738,6 @@ def main(argv: list[str] | None = None) -> int:
             str(args.lease_seconds),
             "--machine-role",
             str(args.machine_role),
-            "--machine-role",
-            str(args.machine_role),
             "--heartbeat-seconds",
             str(args.heartbeat_seconds),
             "--max-retry-attempts",
@@ -749,7 +747,6 @@ def main(argv: list[str] | None = None) -> int:
         ]
         for key, value in [
             ("--hostname", args.hostname),
-            ("--slot-capacity", args.slot_capacity),
             ("--slot-capacity", args.slot_capacity),
             ("--capabilities-json", args.capabilities_json),
             ("--capability-filter-json", args.capability_filter_json),
@@ -768,7 +765,6 @@ def main(argv: list[str] | None = None) -> int:
             ("--completion-worktree-root", args.completion_worktree_root),
             ("--completion-commit-message", args.completion_commit_message),
             ("--completion-pr-base", args.completion_pr_base),
-            ("--source-update-ref", args.source_update_ref),
         ]:
             if value is not None:
                 argv2.extend([key, str(value)])
