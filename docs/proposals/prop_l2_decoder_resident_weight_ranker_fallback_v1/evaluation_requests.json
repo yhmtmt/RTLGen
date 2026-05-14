@@ -1,0 +1,27 @@
+{
+  "proposal_id": "prop_l2_decoder_resident_weight_ranker_fallback_v1",
+  "source_commit": "82d342bd325da144cbff33333a5f5d79b948cc6c",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_resident_weight_ranker_fallback_v1",
+      "task_type": "l2_campaign",
+      "objective": "Compare buffered serial rankers and rank-tree fallback for resident-weight producer cadences that outpace measured serial rankers.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_resident_weight_ranker_fallback",
+      "comparison_role": "producer_ranker_service",
+      "paired_baseline_item_id": "l2_decoder_output_projection_cadence_sensitivity_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_output_projection_cadence_sensitivity_v1",
+        "l2_decoder_rank_tree_architecture_v1",
+        "l2_decoder_serial_ranker_producer_replay_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Choose whether resident-weight producer rows should use a buffered serial_lpc4 guard or a rank-tree fallback."
+      },
+      "status": "pending"
+    }
+  ]
+}
