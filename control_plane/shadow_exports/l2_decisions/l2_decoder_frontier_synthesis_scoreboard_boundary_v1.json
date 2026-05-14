@@ -1,0 +1,207 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-05-14T03:29:06.198658Z",
+  "item_id": "l2_decoder_frontier_synthesis_scoreboard_boundary_v1",
+  "run_key": "l2_decoder_frontier_synthesis_scoreboard_boundary_v1_run_b9da932dfe2cfa48",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "f10b308a65a9ecdeac76ea9ebed1edbe41ae9311",
+  "review_metadata_source_commit": "f10b308a65a9ecdeac76ea9ebed1edbe41ae9311",
+  "objective": "Refresh decoder frontier synthesis after the bounded EVENT scoreboard result and include SOFTMAX/EVENT guard metrics as producer-control feasibility evidence.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+    ],
+    "design_dirs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+    ],
+    "macro_manifests": [
+      "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+      "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+    ],
+    "decoder_contract": {
+      "boundary_ppa": "control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_r128_k1_pin_perimeter_bound_v1.json",
+      "rank_scale_ppa": "control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_scale_v1.json",
+      "memory_share_list": [
+        1.0,
+        0.5,
+        0.25
+      ],
+      "rank_datapath_ppa": "control_plane/shadow_exports/l1_promotions/l1_decoder_logit_rank_datapath_v1_r2.json",
+      "sram_metrics_json": "runs/designs/sram/minimal_v0_2_draft/sram_metrics.json",
+      "candidate_merge_ppa": "control_plane/shadow_exports/l1_promotions/l1_decoder_candidate_stream_merge_fifo_v1.json",
+      "stage_breakdown_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_stage_breakdown__l2_decoder_frontier_synthesis_scoreboard_boundary_v1.json",
+      "stage_breakdown_grid": {
+        "macs_per_cycle_list": [
+          8192,
+          32768
+        ],
+        "sequence_length_list": [
+          128,
+          512,
+          2048,
+          8192
+        ],
+        "weight_residency_models": [
+          "streaming_weights",
+          "resident_weights"
+        ],
+        "memory_bandwidth_bytes_per_cycle_list": [
+          64,
+          256
+        ]
+      },
+      "measured_tile_metrics": [
+        "runs/designs/activations/attention_kv_tile_hd64_kv4_l16_b128_wrapper/metrics.csv",
+        "runs/designs/activations/attention_kv_tile_hd64_kv4_l32_b256_wrapper/metrics.csv",
+        "runs/designs/activations/attention_kv_tile_hd64_kv8_l32_b256_wrapper/metrics.csv",
+        "runs/designs/activations/attention_kv_tile_hd128_kv4_l32_b256_wrapper/metrics.csv",
+        "runs/designs/activations/attention_kv_tile_hd128_kv8_l64_b512_wrapper/metrics.csv",
+        "runs/designs/activations/attention_kv_tile_hd128_kv16_l64_b512_wrapper/metrics.csv"
+      ],
+      "stage_breakdown_scope": "Coarse whole-decoder single-token latency and traffic breakdown across attention, MLP, output projection, and ranker. Includes both streaming-weight and resident-weight bounds to expose when attention/KV traffic becomes dominant.",
+      "stage_breakdown_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_stage_breakdown__l2_decoder_frontier_synthesis_scoreboard_boundary_v1.md",
+      "attention_kv_memory_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_memory__l2_decoder_frontier_synthesis_scoreboard_boundary_v1.json",
+      "attention_kv_memory_grid": {
+        "kv_bits_list": [
+          8,
+          16
+        ],
+        "noc_hops_list": [
+          0,
+          1,
+          2,
+          4
+        ],
+        "kv_sharing_list": [
+          "mha",
+          "gqa4",
+          "mqa"
+        ],
+        "kv_memory_tier_list": [
+          "local_sram",
+          "shared_sram",
+          "hbm",
+          "remote_hbm"
+        ],
+        "macs_per_cycle_list": [
+          8192,
+          32768,
+          131072
+        ],
+        "sequence_length_list": [
+          128,
+          512,
+          2048,
+          8192,
+          32768
+        ]
+      },
+      "attention_kv_memory_scope": "Coarse single-token decoder attention model that separates QKV projection, QK score, softmax, value mix, output projection, KV-cache memory tier, NoC hops, KV precision, and MHA/GQA/MQA sharing.",
+      "producer_control_boundary": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_producer_softmax_event_ablation__l2_decoder_output_projection_producer_event_scoreboard_v1.json",
+      "attention_kv_memory_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_memory__l2_decoder_frontier_synthesis_scoreboard_boundary_v1.md",
+      "producer_ranker_coupled_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_producer_ranker_coupled_noc__l2_decoder_frontier_synthesis_scoreboard_boundary_v1.json",
+      "producer_ranker_coupled_scope": "Couple stage-serialized output-projection producer service curves to the producer-integrated ready-valid ranker frontier, including shared NoC/memory bandwidth shares for contention sensitivity and bounded SOFTMAX/EVENT producer-control synthesis evidence.",
+      "decoder_frontier_synthesis_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_frontier_synthesis__l2_decoder_frontier_synthesis_scoreboard_boundary_v1.json",
+      "producer_ranker_coupled_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_producer_ranker_coupled_noc__l2_decoder_frontier_synthesis_scoreboard_boundary_v1.md",
+      "decoder_frontier_synthesis_scope": "Combine whole-decoder stage breakdown, measured attention/KV tile-calibrated memory pressure, and producer/ranker NoC coupling to identify the dominant frontier before queueing deeper RTL blocks.",
+      "decoder_frontier_synthesis_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_frontier_synthesis__l2_decoder_frontier_synthesis_scoreboard_boundary_v1.md"
+    },
+    "generated_campaign": {
+      "path": "runs/campaigns/npu/e2e_eval_llm_smoke_v1/campaign__l2_decoder_frontier_synthesis_scoreboard_boundary_v1.json",
+      "outputs": {
+        "report_md": "runs/campaigns/npu/e2e_eval_llm_smoke_v1__l2_decoder_frontier_synthesis_scoreboard_boundary_v1/report.md",
+        "results_csv": "runs/campaigns/npu/e2e_eval_llm_smoke_v1__l2_decoder_frontier_synthesis_scoreboard_boundary_v1/results.csv",
+        "campaign_dir": "runs/campaigns/npu/e2e_eval_llm_smoke_v1__l2_decoder_frontier_synthesis_scoreboard_boundary_v1"
+      },
+      "clean_outputs": true,
+      "base_campaign_path": "runs/campaigns/npu/e2e_eval_llm_smoke_v1/campaign.json"
+    },
+    "candidate_manifests": [
+      "runs/candidates/nangate45/module_candidates.json"
+    ]
+  },
+  "recommendation": {
+    "arch_id": "fp16_nm1",
+    "macro_mode": "flat_nomacro",
+    "objective_rank": 1,
+    "objective_score": "0.0",
+    "latency_ms_mean": 0.004462666666666666,
+    "energy_mj_mean": 8.61839112e-07,
+    "critical_path_ns_mean": 5.557037432204143,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.193122,
+    "flow_elapsed_s_mean": 844.5733333333334
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_frontier_synthesis_scoreboard_boundary_v1",
+    "title": "Decoder frontier synthesis with bounded producer control evidence",
+    "primary_question": "Does the whole-decoder frontier conclusion change when the producer/ranker coupling report carries the bounded SOFTMAX/EVENT guard result as control-path feasibility evidence?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "frontier_synthesis",
+    "abstraction_layer": "decoder_frontier_synthesis",
+    "expected_direction": "iterate",
+    "expected_reason": "The output should identify whether the bounded producer-control result changes the next architecture frontier or simply validates continued producer/ranker modeling.",
+    "summary": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_frontier_synthesis__l2_decoder_frontier_synthesis_scoreboard_boundary_v1.json: decision=decoder_evidence_recorded.",
+    "outcome": "decoder_evidence_recorded",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_frontier_synthesis_scoreboard_boundary_v1",
+    "title": "Decoder frontier synthesis with bounded producer control evidence",
+    "kind": "architecture",
+    "primary_question": "Does the whole-decoder frontier conclusion change when the producer/ranker coupling report carries the bounded SOFTMAX/EVENT guard result as control-path feasibility evidence?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "frontier_synthesis",
+    "outcome": "decoder_evidence_recorded",
+    "summary": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_frontier_synthesis__l2_decoder_frontier_synthesis_scoreboard_boundary_v1.json: decision=decoder_evidence_recorded.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": [],
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_frontier_synthesis__l2_decoder_frontier_synthesis_scoreboard_boundary_v1.json",
+    "decoder_quality": {
+      "diagnosis": {}
+    }
+  },
+  "source_refs": {
+    "best_point_json": "runs/campaigns/npu/e2e_eval_llm_smoke_v1__l2_decoder_frontier_synthesis_scoreboard_boundary_v1/best_point.json",
+    "summary_csv": "runs/campaigns/npu/e2e_eval_llm_smoke_v1__l2_decoder_frontier_synthesis_scoreboard_boundary_v1/summary.csv",
+    "results_csv": "runs/campaigns/npu/e2e_eval_llm_smoke_v1__l2_decoder_frontier_synthesis_scoreboard_boundary_v1/results.csv",
+    "report_md": "runs/campaigns/npu/e2e_eval_llm_smoke_v1__l2_decoder_frontier_synthesis_scoreboard_boundary_v1/report.md",
+    "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_llm_smoke_v1__l2_decoder_frontier_synthesis_scoreboard_boundary_v1/artifacts/mapper/fp16_nm1/attn1_s32_h64/schedule.yml",
+    "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_smoke_v1__l2_decoder_frontier_synthesis_scoreboard_boundary_v1/artifacts/mapper/fp16_nm1/attn1_s32_h64/descriptors.bin",
+    "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_smoke_v1__l2_decoder_frontier_synthesis_scoreboard_boundary_v1/artifacts/perf/fp16_nm1/attn1_s32_h64/trace.json",
+    "focused_model_artifacts": [
+      {
+        "model_id": "attn1_s32_h64",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_smoke_v1__l2_decoder_frontier_synthesis_scoreboard_boundary_v1/artifacts/mapper/fp16_nm1/attn1_s32_h64/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_smoke_v1__l2_decoder_frontier_synthesis_scoreboard_boundary_v1/artifacts/mapper/fp16_nm1/attn1_s32_h64/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_smoke_v1__l2_decoder_frontier_synthesis_scoreboard_boundary_v1/artifacts/perf/fp16_nm1/attn1_s32_h64/trace.json"
+      },
+      {
+        "model_id": "attn1_s64_h64",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_smoke_v1__l2_decoder_frontier_synthesis_scoreboard_boundary_v1/artifacts/mapper/fp16_nm1/attn1_s64_h64/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_smoke_v1__l2_decoder_frontier_synthesis_scoreboard_boundary_v1/artifacts/mapper/fp16_nm1/attn1_s64_h64/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_smoke_v1__l2_decoder_frontier_synthesis_scoreboard_boundary_v1/artifacts/perf/fp16_nm1/attn1_s64_h64/trace.json"
+      },
+      {
+        "model_id": "attn2_s32_h64",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_smoke_v1__l2_decoder_frontier_synthesis_scoreboard_boundary_v1/artifacts/mapper/fp16_nm1/attn2_s32_h64/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_smoke_v1__l2_decoder_frontier_synthesis_scoreboard_boundary_v1/artifacts/mapper/fp16_nm1/attn2_s32_h64/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_smoke_v1__l2_decoder_frontier_synthesis_scoreboard_boundary_v1/artifacts/perf/fp16_nm1/attn2_s32_h64/trace.json"
+      }
+    ],
+    "decoder_frontier_synthesis_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_frontier_synthesis__l2_decoder_frontier_synthesis_scoreboard_boundary_v1.json",
+    "decoder_frontier_synthesis_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_frontier_synthesis__l2_decoder_frontier_synthesis_scoreboard_boundary_v1.md"
+  }
+}
