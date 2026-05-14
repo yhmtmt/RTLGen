@@ -2534,6 +2534,63 @@ def _decoder_output_projection_ranker_policy_evidence(*, item_id: str) -> dict[s
     }
 
 
+def _decoder_output_projection_ranker_wrapper_contract_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_output_projection_ranker_wrapper_contract__{item_id}.json"
+    report = f"{base}/decoder_output_projection_ranker_wrapper_contract__{item_id}.md"
+    policy = (
+        f"{base}/decoder_output_projection_ranker_policy__"
+        "l2_decoder_output_projection_ranker_policy_v1.json"
+    )
+    serial_wrapper = (
+        f"{base}/decoder_serial_lpc1_producer_coupled_wrapper__"
+        "l2_decoder_serial_lpc1_producer_coupled_wrapper_v1.json"
+    )
+    ranktree_promotion = (
+        f"{base}/decoder_resident_ranktree_fallback_promotion__"
+        "l2_decoder_resident_ranktree_fallback_promotion_v1.json"
+    )
+    merge_config = (
+        "runs/designs/activations/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/"
+        "config_candidate_stream_merge_fifo_k1_l16_t16_d16.json"
+    )
+    return {
+        "inputs": {
+            "output_projection_ranker_wrapper_contract_out": out,
+            "output_projection_ranker_wrapper_contract_report": report,
+            "output_projection_ranker_policy": policy,
+            "serial_lpc1_producer_coupled_wrapper": serial_wrapper,
+            "resident_ranktree_fallback_promotion": ranktree_promotion,
+            "candidate_merge_config": merge_config,
+            "output_projection_ranker_wrapper_contract_scope": (
+                "Check representative wrapper-policy cases before implementing final RTL mux/control: "
+                "fresh serial_lpc1 RTL replay, r64 rank-tree primitive RTL equivalence, and r128 "
+                "banked-r64 composition against the full-tile perf reference."
+            ),
+        },
+        "commands": [
+            {
+                "name": "build_generator",
+                "run": "export PATH=/oss-cad-suite/bin:$PATH && cmake -S . -B build && cmake --build build --target rtlgen",
+            },
+            {
+                "name": "probe_decoder_output_projection_ranker_wrapper_contract",
+                "run": (
+                    "python3 npu/eval/probe_llm_decoder_output_projection_ranker_wrapper_contract.py "
+                    f"--policy {policy} "
+                    f"--serial-wrapper {serial_wrapper} "
+                    f"--ranktree-promotion {ranktree_promotion} "
+                    f"--merge-config {merge_config} "
+                    "--num-tiles 6 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_stage_breakdown_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_stage_breakdown__{item_id}.json"
@@ -3818,6 +3875,7 @@ def _build_payload(
         "decoder_resident_weight_ranker_fallback",
         "decoder_resident_ranktree_fallback_promotion",
         "decoder_output_projection_ranker_policy",
+        "decoder_output_projection_ranker_wrapper_contract",
         "decoder_stage_breakdown",
         "decoder_attention_kv_memory",
         "decoder_frontier_synthesis",
@@ -3883,6 +3941,8 @@ def _build_payload(
             decoder_evidence = _decoder_resident_ranktree_fallback_promotion_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_ranker_policy":
             decoder_evidence = _decoder_output_projection_ranker_policy_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_output_projection_ranker_wrapper_contract":
+            decoder_evidence = _decoder_output_projection_ranker_wrapper_contract_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_service":
             decoder_evidence = _decoder_output_projection_service_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_logit_rank_streaming_producer_integrated":

@@ -1,0 +1,70 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_ranker_wrapper_contract_v1",
+  "created_utc": "2026-05-14T10:55:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_output_projection_ranker_wrapper_contract",
+  "title": "Decoder output-projection ranker wrapper contract",
+  "hypothesis": "The promoted ranker policy can be implemented by a wrapper that selects serial_lpc1 for slow r64 streams, a single radix-4 r64 rank-tree for fast r64 streams, and two banked radix-4 r64 rank-trees for fast r128 streams while preserving top-1 equivalence to the perf reference.",
+  "direct_comparison": {
+    "primary_question": "Do representative serial, rank-tree r64, and banked rank-tree r128 cases satisfy the promoted policy contract before implementing final wrapper mux/control RTL?",
+    "include": [
+      "fresh RTL replay of the promoted serial_lpc1 wrapper at the policy threshold",
+      "promoted r64 rank-tree primitive RTL simulation result",
+      "banked r128 composition against a full r128 perf reference",
+      "deterministic lower-token tie-break across banks",
+      "representative policy rows for each selected path"
+    ],
+    "exclude": [
+      "new physical synthesis",
+      "full producer GEMM RTL",
+      "NoC or SRAM arbitration",
+      "new measured producer burst traces"
+    ]
+  },
+  "expected_benefit": [
+    "establishes the exact functional contract the next wrapper RTL must implement",
+    "keeps serial and rank-tree primitive equivalence tied to RTL evidence",
+    "checks the banked r128 composition before adding wrapper control and mux logic"
+  ],
+  "risks": [
+    "banked r128 is checked as a composition contract rather than a monolithic RTL wrapper",
+    "final wrapper mux/control timing is not measured in this job",
+    "future producer burst traces may need additional buffering around the policy boundary"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_output_projection_ranker_wrapper_contract_v1",
+      "task_type": "l2_campaign",
+      "objective": "Check representative RTL/perf equivalence cases for the promoted output-projection ranker wrapper policy before final RTL wrapper implementation.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_output_projection_ranker_wrapper_contract",
+      "cost_class": "low",
+      "comparison_role": "producer_ranker_service",
+      "paired_baseline_item_id": "l2_decoder_output_projection_ranker_policy_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_output_projection_ranker_policy_v1",
+        "l2_decoder_serial_lpc1_producer_coupled_wrapper_v1",
+        "l2_decoder_resident_ranktree_fallback_promotion_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "If the representative serial, r64 rank-tree, and banked r128 contract cases pass, implement the final wrapper mux/control RTL and then run a physical wrapper sweep."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_ranker_policy__l2_decoder_output_projection_ranker_policy_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_serial_lpc1_producer_coupled_wrapper__l2_decoder_serial_lpc1_producer_coupled_wrapper_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_resident_ranktree_fallback_promotion__l2_decoder_resident_ranktree_fallback_promotion_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/probe_llm_decoder_output_projection_ranker_wrapper_contract.py",
+    "tests/test_llm_decoder_output_projection_ranker_wrapper_contract.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}
