@@ -144,7 +144,7 @@
         "flow_elapsed_seconds": "185.05",
         "stage_elapsed_seconds": "184.84",
         "params_json": "{\"CLOCK_PERIOD\": 10.0, \"CORE_AREA\": \"80 80 2120 2120\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 2200 2200\", \"FLOW_VARIANT\": \"producer_synth_boundary\", \"PLACE_DENSITY\": 0.36, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_KEEP_MODULES\": \"gemm_compute_array\", \"TAG\": \"npu_fp16_producer_synth_boundary\", \"tag_prefix\": \"npu_fp16_producer_synth_boundary\"}",
-        "result_path": "/orfs/flow/results/nangate45/npu_fp16_cpp_nm2_producer/producer_synth_boundary/1_2_yosys.v",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_producer/work/3a2fb3e1/result.json",
         "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_producer/work/3a2fb3e1/result.json",
         "synth_script_path": "",
         "synth_script_sha1": ""
@@ -227,7 +227,7 @@
         "flow_elapsed_seconds": "184.71",
         "stage_elapsed_seconds": "184.49",
         "params_json": "{\"CLOCK_PERIOD\": 10.0, \"CORE_AREA\": \"80 80 2120 2120\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 2200 2200\", \"FLOW_VARIANT\": \"producer_synth_boundary\", \"PLACE_DENSITY\": 0.36, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_KEEP_MODULES\": \"gemm_compute_array\", \"TAG\": \"npu_fp16_producer_synth_boundary\", \"tag_prefix\": \"npu_fp16_producer_synth_boundary\"}",
-        "result_path": "/orfs/flow/results/nangate45/npu_fp16_cpp_nm3_producer/producer_synth_boundary/1_2_yosys.v",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm3_producer/work/3a2fb3e1/result.json",
         "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm3_producer/work/3a2fb3e1/result.json",
         "synth_script_path": "",
         "synth_script_sha1": ""
@@ -310,7 +310,7 @@
         "flow_elapsed_seconds": "184.86999999999998",
         "stage_elapsed_seconds": "184.64",
         "params_json": "{\"CLOCK_PERIOD\": 10.0, \"CORE_AREA\": \"80 80 2120 2120\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 2200 2200\", \"FLOW_VARIANT\": \"producer_synth_boundary\", \"PLACE_DENSITY\": 0.36, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_KEEP_MODULES\": \"gemm_compute_array\", \"TAG\": \"npu_fp16_producer_synth_boundary\", \"tag_prefix\": \"npu_fp16_producer_synth_boundary\"}",
-        "result_path": "/orfs/flow/results/nangate45/npu_fp16_cpp_nm4_producer/producer_synth_boundary/1_2_yosys.v",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm4_producer/work/3a2fb3e1/result.json",
         "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm4_producer/work/3a2fb3e1/result.json",
         "synth_script_path": "",
         "synth_script_sha1": ""
