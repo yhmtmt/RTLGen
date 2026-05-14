@@ -2241,6 +2241,59 @@ def _decoder_producer_ranker_service_compatibility_evidence(*, item_id: str) -> 
     }
 
 
+def _decoder_serial_ranker_producer_replay_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_serial_ranker_producer_replay__{item_id}.json"
+    report = f"{base}/decoder_serial_ranker_producer_replay__{item_id}.md"
+    serial_ranker = (
+        f"{base}/decoder_serial_ranker_architecture__"
+        "l2_decoder_serial_ranker_architecture_v1.json"
+    )
+    service_compatibility = (
+        f"{base}/decoder_producer_ranker_service_compatibility__"
+        "l2_decoder_producer_ranker_service_compatibility_v1.json"
+    )
+    merge_config = (
+        "runs/designs/activations/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/"
+        "config_candidate_stream_merge_fifo_k1_l16_t16_d16.json"
+    )
+    return {
+        "inputs": {
+            "serial_ranker_producer_replay_out": out,
+            "serial_ranker_producer_replay_report": report,
+            "serial_ranker_architecture": serial_ranker,
+            "producer_ranker_service_compatibility": service_compatibility,
+            "candidate_merge_config": merge_config,
+            "serial_ranker_producer_replay_scope": (
+                "Replay fixed producer tile issue intervals through the measured serial-ranker "
+                "RTL wrappers for lpc1, lpc2, and lpc4. The harness checks full-token top-1 "
+                "equivalence and records ready-valid backpressure at aggressive and producer-model cadences."
+            ),
+        },
+        "commands": [
+            {
+                "name": "build_generator",
+                "run": "export PATH=/oss-cad-suite/bin:$PATH && cmake -S . -B build && cmake --build build --target rtlgen",
+            },
+            {
+                "name": "probe_decoder_serial_ranker_producer_replay",
+                "run": (
+                    "python3 npu/eval/probe_llm_decoder_serial_ranker_producer_replay.py "
+                    f"--serial-ranker {serial_ranker} "
+                    f"--service-compatibility {service_compatibility} "
+                    f"--merge-config {merge_config} "
+                    "--lanes-per-cycle 1,2,4 "
+                    "--producer-ii-cycles 16,33,65,384 "
+                    "--num-tiles 6 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_stage_breakdown_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_stage_breakdown__{item_id}.json"
@@ -3519,6 +3572,7 @@ def _build_payload(
         "decoder_output_projection_service",
         "decoder_producer_ranker_coupled_noc",
         "decoder_producer_ranker_service_compatibility",
+        "decoder_serial_ranker_producer_replay",
         "decoder_stage_breakdown",
         "decoder_attention_kv_memory",
         "decoder_frontier_synthesis",
@@ -3572,6 +3626,8 @@ def _build_payload(
             decoder_evidence = _decoder_producer_ranker_coupled_noc_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_producer_ranker_service_compatibility":
             decoder_evidence = _decoder_producer_ranker_service_compatibility_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_serial_ranker_producer_replay":
+            decoder_evidence = _decoder_serial_ranker_producer_replay_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_service":
             decoder_evidence = _decoder_output_projection_service_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_logit_rank_streaming_producer_integrated":

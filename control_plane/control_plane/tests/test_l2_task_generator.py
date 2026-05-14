@@ -1881,6 +1881,65 @@ def test_generate_l2_campaign_task_adds_decoder_producer_ranker_service_compatib
             }
 
 
+def test_generate_l2_campaign_task_adds_decoder_serial_ranker_producer_replay() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    item_id="l2_decoder_serial_ranker_producer_replay_v1",
+                    proposal_id="prop_l2_decoder_serial_ranker_producer_replay_v1",
+                    proposal_path=(
+                        "docs/proposals/"
+                        "prop_l2_decoder_serial_ranker_producer_replay_v1/proposal.json"
+                    ),
+                    evaluation_mode="frontier_detail",
+                    abstraction_layer="decoder_serial_ranker_producer_replay",
+                    expected_direction="iterate",
+                    comparison_role="producer_ranker_service",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+            assert [command["name"] for command in work_item.command_manifest[:2]] == [
+                "build_generator",
+                "probe_decoder_serial_ranker_producer_replay"
+            ]
+            run = work_item.command_manifest[1]["run"]
+            assert "probe_llm_decoder_serial_ranker_producer_replay.py" in run
+            assert "--merge-config" in run
+            assert "--lanes-per-cycle 1,2,4" in run
+            assert "--producer-ii-cycles 16,33,65,384" in run
+            assert decoder_inputs["serial_ranker_producer_replay_out"] == (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_serial_ranker_producer_replay__"
+                "l2_decoder_serial_ranker_producer_replay_v1.json"
+            )
+            assert decoder_inputs["producer_ranker_service_compatibility"].endswith(
+                "l2_decoder_producer_ranker_service_compatibility_v1.json"
+            )
+            assert "full-token top-1 equivalence" in decoder_inputs[
+                "serial_ranker_producer_replay_scope"
+            ]
+            assert decoder_inputs["serial_ranker_producer_replay_out"] in work_item.expected_outputs
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
+                "layer": "decoder_serial_ranker_producer_replay",
+            }
+
+
 def test_generate_l2_campaign_task_adds_decoder_stage_breakdown_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
