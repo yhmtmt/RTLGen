@@ -1998,6 +1998,62 @@ def test_generate_l2_campaign_task_adds_decoder_serial_lpc1_producer_coupled_wra
             }
 
 
+def test_generate_l2_campaign_task_adds_decoder_output_projection_cadence_sensitivity() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    item_id="l2_decoder_output_projection_cadence_sensitivity_v1",
+                    proposal_id="prop_l2_decoder_output_projection_cadence_sensitivity_v1",
+                    proposal_path=(
+                        "docs/proposals/"
+                        "prop_l2_decoder_output_projection_cadence_sensitivity_v1/proposal.json"
+                    ),
+                    evaluation_mode="frontier_detail",
+                    abstraction_layer="decoder_output_projection_cadence_sensitivity",
+                    expected_direction="iterate",
+                    comparison_role="producer_ranker_service",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+            assert work_item.command_manifest[0]["name"] == (
+                "estimate_decoder_output_projection_cadence_sensitivity"
+            )
+            run = work_item.command_manifest[0]["run"]
+            assert "estimate_llm_decoder_output_projection_cadence_sensitivity.py" in run
+            assert "--weight-cache-hit-rate-list 0.0,0.5,0.9,1.0" in run
+            assert decoder_inputs["output_projection_cadence_sensitivity_out"] == (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_output_projection_cadence_sensitivity__"
+                "l2_decoder_output_projection_cadence_sensitivity_v1.json"
+            )
+            assert decoder_inputs["serial_lpc1_producer_coupled_wrapper"].endswith(
+                "l2_decoder_serial_lpc1_producer_coupled_wrapper_v1.json"
+            )
+            assert "resident or cache-backed output weights" in decoder_inputs[
+                "output_projection_cadence_sensitivity_scope"
+            ]
+            assert decoder_inputs["output_projection_cadence_sensitivity_out"] in work_item.expected_outputs
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
+                "layer": "decoder_output_projection_cadence_sensitivity",
+            }
+
+
 def test_generate_l2_campaign_task_adds_decoder_stage_breakdown_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

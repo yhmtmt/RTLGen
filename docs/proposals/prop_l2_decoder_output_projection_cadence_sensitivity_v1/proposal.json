@@ -1,0 +1,70 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_cadence_sensitivity_v1",
+  "created_utc": "2026-05-14T10:10:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_output_projection_cadence_sensitivity",
+  "title": "Decoder output-projection producer cadence sensitivity",
+  "hypothesis": "The promoted serial_lpc1 ranker is safe for the current streaming-weight output-projection producer model, but resident or cache-backed output weights may make producer tiles arrive faster than serial_lpc1 can absorb without buffering.",
+  "direct_comparison": {
+    "primary_question": "At what output-projection weight residency/cache-hit assumptions does the producer II cross the replay-observed zero-backpressure thresholds for serial_lpc1, lpc2, and lpc4?",
+    "include": [
+      "streaming-weight through resident-weight cache hit rates",
+      "producer lanes 64 and 128",
+      "hidden sizes 768 and 2048",
+      "MAC/cycle and memory bandwidth sensitivity",
+      "replay-observed zero-backpressure thresholds instead of only analytical ranker service cycles"
+    ],
+    "exclude": [
+      "new physical PPA",
+      "new producer RTL",
+      "NoC or SRAM arbitration",
+      "quality or probability changes"
+    ]
+  },
+  "expected_benefit": [
+    "separates ranker promotion under streaming weights from the faster resident-weight producer case",
+    "identifies when lpc1 remains valid and when lpc2/lpc4 or rank-tree/buffering should be evaluated",
+    "sets up measured producer trace work with explicit cadence risk boundaries"
+  ],
+  "risks": [
+    "cache hit rate is a planning parameter, not measured hardware behavior",
+    "bursty producer traffic with buffering may differ from fixed-II assumptions",
+    "wider producer tiles require separate banking assumptions"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_output_projection_cadence_sensitivity_v1",
+      "task_type": "l2_campaign",
+      "objective": "Estimate output-projection producer II under streaming, partially cached, and resident weights, then compare against serial ranker replay thresholds.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_output_projection_cadence_sensitivity",
+      "cost_class": "low",
+      "comparison_role": "producer_ranker_service",
+      "paired_baseline_item_id": "l2_decoder_serial_lpc1_producer_coupled_wrapper_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_serial_ranker_architecture_v1",
+        "l2_decoder_serial_ranker_producer_replay_v1",
+        "l2_decoder_serial_lpc1_producer_coupled_wrapper_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "If resident/cache-backed producer rows are unsafe for all measured serial rankers, plan a buffered or rank-tree producer-coupled wrapper; otherwise select the lowest-power serial guard point for that cadence."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_serial_ranker_architecture__l2_decoder_serial_ranker_architecture_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_serial_ranker_producer_replay__l2_decoder_serial_ranker_producer_replay_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_serial_lpc1_producer_coupled_wrapper__l2_decoder_serial_lpc1_producer_coupled_wrapper_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_output_projection_cadence_sensitivity.py",
+    "tests/test_llm_decoder_output_projection_cadence_sensitivity.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}

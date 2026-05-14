@@ -2354,6 +2354,58 @@ def _decoder_serial_lpc1_producer_coupled_wrapper_evidence(*, item_id: str) -> d
     }
 
 
+def _decoder_output_projection_cadence_sensitivity_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_output_projection_cadence_sensitivity__{item_id}.json"
+    report = f"{base}/decoder_output_projection_cadence_sensitivity__{item_id}.md"
+    serial_ranker = (
+        f"{base}/decoder_serial_ranker_architecture__"
+        "l2_decoder_serial_ranker_architecture_v1.json"
+    )
+    producer_replay = (
+        f"{base}/decoder_serial_ranker_producer_replay__"
+        "l2_decoder_serial_ranker_producer_replay_v1.json"
+    )
+    promoted_wrapper = (
+        f"{base}/decoder_serial_lpc1_producer_coupled_wrapper__"
+        "l2_decoder_serial_lpc1_producer_coupled_wrapper_v1.json"
+    )
+    return {
+        "inputs": {
+            "output_projection_cadence_sensitivity_out": out,
+            "output_projection_cadence_sensitivity_report": report,
+            "serial_ranker_architecture": serial_ranker,
+            "serial_ranker_producer_replay": producer_replay,
+            "serial_lpc1_producer_coupled_wrapper": promoted_wrapper,
+            "output_projection_cadence_sensitivity_scope": (
+                "Stress the serial_lpc1 promotion against faster output-projection producer cadences "
+                "caused by resident or cache-backed output weights. The model compares producer II "
+                "against replay-observed zero-backpressure thresholds for serial_lpc1/lpc2/lpc4."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_output_projection_cadence_sensitivity",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_output_projection_cadence_sensitivity.py "
+                    f"--serial-ranker {serial_ranker} "
+                    f"--producer-replay {producer_replay} "
+                    f"--promoted-wrapper {promoted_wrapper} "
+                    "--vocab-size-list 50257,100000 "
+                    "--hidden-size-list 768,2048 "
+                    "--producer-lanes-list 64,128 "
+                    "--macs-per-cycle-list 8192,32768 "
+                    "--memory-bandwidth-bytes-per-cycle-list 64,256 "
+                    "--weight-cache-hit-rate-list 0.0,0.5,0.9,1.0 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_stage_breakdown_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_stage_breakdown__{item_id}.json"
@@ -3634,6 +3686,7 @@ def _build_payload(
         "decoder_producer_ranker_service_compatibility",
         "decoder_serial_ranker_producer_replay",
         "decoder_serial_lpc1_producer_coupled_wrapper",
+        "decoder_output_projection_cadence_sensitivity",
         "decoder_stage_breakdown",
         "decoder_attention_kv_memory",
         "decoder_frontier_synthesis",
@@ -3691,6 +3744,8 @@ def _build_payload(
             decoder_evidence = _decoder_serial_ranker_producer_replay_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_serial_lpc1_producer_coupled_wrapper":
             decoder_evidence = _decoder_serial_lpc1_producer_coupled_wrapper_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_output_projection_cadence_sensitivity":
+            decoder_evidence = _decoder_output_projection_cadence_sensitivity_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_service":
             decoder_evidence = _decoder_output_projection_service_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_logit_rank_streaming_producer_integrated":
