@@ -2448,6 +2448,46 @@ def _decoder_resident_weight_ranker_fallback_evidence(*, item_id: str) -> dict[s
     }
 
 
+def _decoder_resident_ranktree_fallback_promotion_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_resident_ranktree_fallback_promotion__{item_id}.json"
+    report = f"{base}/decoder_resident_ranktree_fallback_promotion__{item_id}.md"
+    fallback = (
+        f"{base}/decoder_resident_weight_ranker_fallback__"
+        "l2_decoder_resident_weight_ranker_fallback_v1.json"
+    )
+    rank_tree = (
+        f"{base}/decoder_rank_tree_architecture__"
+        "l2_decoder_rank_tree_architecture_v1.json"
+    )
+    return {
+        "inputs": {
+            "resident_ranktree_fallback_promotion_out": out,
+            "resident_ranktree_fallback_promotion_report": report,
+            "resident_weight_ranker_fallback": fallback,
+            "rank_tree_architecture": rank_tree,
+            "resident_ranktree_fallback_promotion_scope": (
+                "Promote the resident-weight output-projection fallback policy to the measured "
+                "radix-4 r64 rank-tree: one instance for r64 producer tiles and banked r64 "
+                "instances for wider resident-weight producer tiles."
+            ),
+        },
+        "commands": [
+            {
+                "name": "promote_decoder_resident_ranktree_fallback",
+                "run": (
+                    "python3 npu/eval/promote_llm_decoder_resident_ranktree_fallback.py "
+                    f"--fallback {fallback} "
+                    f"--rank-tree {rank_tree} "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_stage_breakdown_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_stage_breakdown__{item_id}.json"
@@ -3730,6 +3770,7 @@ def _build_payload(
         "decoder_serial_lpc1_producer_coupled_wrapper",
         "decoder_output_projection_cadence_sensitivity",
         "decoder_resident_weight_ranker_fallback",
+        "decoder_resident_ranktree_fallback_promotion",
         "decoder_stage_breakdown",
         "decoder_attention_kv_memory",
         "decoder_frontier_synthesis",
@@ -3791,6 +3832,8 @@ def _build_payload(
             decoder_evidence = _decoder_output_projection_cadence_sensitivity_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_resident_weight_ranker_fallback":
             decoder_evidence = _decoder_resident_weight_ranker_fallback_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_resident_ranktree_fallback_promotion":
+            decoder_evidence = _decoder_resident_ranktree_fallback_promotion_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_service":
             decoder_evidence = _decoder_output_projection_service_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_logit_rank_streaming_producer_integrated":

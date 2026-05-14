@@ -1,0 +1,70 @@
+{
+  "proposal_id": "prop_l2_decoder_resident_ranktree_fallback_promotion_v1",
+  "created_utc": "2026-05-14T10:35:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_resident_ranktree_fallback_promotion",
+  "title": "Decoder resident-weight rank-tree fallback promotion",
+  "hypothesis": "The resident-weight output-projection rows that outpace serial rankers can be covered by the measured radix-4 r64 rank-tree without an input waiting buffer, using one instance for r64 tiles and banked instances for r128 tiles.",
+  "direct_comparison": {
+    "primary_question": "Can the resident-weight ranker fallback policy be promoted to the measured radix-4 r64 rank-tree while preserving RTL simulation evidence, physical metrics, and zero-buffer service coverage?",
+    "include": [
+      "rank-tree fallback recommendations from the resident-weight fallback study",
+      "measured r64/k1 rank-tree RTL simulation status",
+      "measured rank-tree critical path, placed cell area, and power",
+      "single-r64 and banked-r64 producer coupling modes",
+      "zero waiting-buffer promotion gate"
+    ],
+    "exclude": [
+      "new physical synthesis",
+      "new producer RTL",
+      "NoC or SRAM arbitration",
+      "larger-than-r128 producer tiles"
+    ]
+  },
+  "expected_benefit": [
+    "turns the resident-weight fallback recommendation into a concrete producer-coupled ranker policy",
+    "keeps the promotion anchored to measured RTL and PPA rather than heuristic costs",
+    "separates r64 single-instance and r128 banked-instance integration assumptions before implementing the wrapper"
+  ],
+  "risks": [
+    "the producer traffic is still fixed-II planning data rather than measured burst traces",
+    "banked r64 instances assume independent 64-lane chunks can be routed and reduced without extra arbitration overhead",
+    "future wider producer tiles may require a second-level reduction or a broader rank-tree measurement"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_resident_ranktree_fallback_promotion_v1",
+      "task_type": "l2_campaign",
+      "objective": "Promote the measured radix-4 r64 rank-tree as the resident-weight output-projection fallback policy for unsafe producer cadences.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_resident_ranktree_fallback_promotion",
+      "cost_class": "low",
+      "comparison_role": "producer_ranker_service",
+      "paired_baseline_item_id": "l2_decoder_resident_weight_ranker_fallback_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_resident_weight_ranker_fallback_v1",
+        "l2_decoder_rank_tree_architecture_v1",
+        "l2_decoder_output_projection_cadence_sensitivity_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "promote",
+        "reason": "If all unsafe resident-weight rows use zero-buffer rank-tree recommendations and the selected radix has clean RTL simulation plus measured PPA, use it as the producer-coupled fallback implementation target."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_resident_weight_ranker_fallback__l2_decoder_resident_weight_ranker_fallback_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_rank_tree_architecture__l2_decoder_rank_tree_architecture_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_cadence_sensitivity__l2_decoder_output_projection_cadence_sensitivity_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/promote_llm_decoder_resident_ranktree_fallback.py",
+    "tests/test_llm_decoder_resident_ranktree_fallback_promotion.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}
