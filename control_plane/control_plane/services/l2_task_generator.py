@@ -2195,6 +2195,52 @@ def _decoder_producer_ranker_coupled_noc_evidence(*, item_id: str) -> dict[str, 
     }
 
 
+def _decoder_producer_ranker_service_compatibility_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_producer_ranker_service_compatibility__{item_id}.json"
+    report = f"{base}/decoder_producer_ranker_service_compatibility__{item_id}.md"
+    producer_service = (
+        f"{base}/decoder_output_projection_service__"
+        "l2_decoder_output_projection_service_v1.json"
+    )
+    serial_ranker = (
+        f"{base}/decoder_serial_ranker_architecture__"
+        "l2_decoder_serial_ranker_architecture_v1.json"
+    )
+    rank_tree = (
+        f"{base}/decoder_rank_tree_architecture__"
+        "l2_decoder_rank_tree_architecture_v1.json"
+    )
+    return {
+        "inputs": {
+            "producer_ranker_service_compatibility_out": out,
+            "producer_ranker_service_compatibility_report": report,
+            "producer_service": producer_service,
+            "serial_ranker_architecture": serial_ranker,
+            "rank_tree_architecture": rank_tree,
+            "producer_ranker_service_compatibility_scope": (
+                "Compare measured r64/k1 serial and fully parallel ranker service cycles against "
+                "the output-projection producer tile cadence. Includes single-r64 and banked-r64 "
+                "integration assumptions for wider producer tiles before choosing producer-coupled RTL."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_producer_ranker_service_compatibility",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_producer_ranker_service_compatibility.py "
+                    f"--producer-service {producer_service} "
+                    f"--serial-ranker {serial_ranker} "
+                    f"--rank-tree {rank_tree} "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_stage_breakdown_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_stage_breakdown__{item_id}.json"
@@ -3472,6 +3518,7 @@ def _build_payload(
         "decoder_logit_rank_streaming_producer_integrated",
         "decoder_output_projection_service",
         "decoder_producer_ranker_coupled_noc",
+        "decoder_producer_ranker_service_compatibility",
         "decoder_stage_breakdown",
         "decoder_attention_kv_memory",
         "decoder_frontier_synthesis",
@@ -3523,6 +3570,8 @@ def _build_payload(
             decoder_evidence = _decoder_stage_breakdown_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_producer_ranker_coupled_noc":
             decoder_evidence = _decoder_producer_ranker_coupled_noc_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_producer_ranker_service_compatibility":
+            decoder_evidence = _decoder_producer_ranker_service_compatibility_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_service":
             decoder_evidence = _decoder_output_projection_service_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_logit_rank_streaming_producer_integrated":
