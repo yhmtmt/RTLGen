@@ -1,0 +1,34 @@
+{
+  "proposal_id": "prop_l2_decoder_producer_ranker_memory_integration_plan_v1",
+  "source_commit": "5c3c565c1850b9b5b0a4103f0ec7d9f7dd080c1b",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_producer_ranker_memory_integration_plan_v1_r2",
+      "task_type": "l2_campaign",
+      "objective": "Reconcile nm16 producer physical MAC capacity with the W64/W128 producer/ranker memory-coupling frontier and choose the first ready-valid integration target, using smallest-focus-row target selection.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_producer_ranker_memory_integration_plan",
+      "comparison_role": "integration_plan",
+      "paired_baseline_item_id": "l2_decoder_frontier_synthesis_nm16_physical_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_frontier_synthesis_nm16_physical_v1",
+        "l2_decoder_output_projection_producer_pnr_nm16_v1",
+        "l2_decoder_logit_rank_streaming_producer_integrated_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "The report should identify the first integrated producer/ranker/memory target and quantify the physical/analytical MAC-capacity gap before implementation."
+      },
+      "status": "merged",
+      "prior_item_ids": [
+        "l2_decoder_producer_ranker_memory_integration_plan_v1"
+      ],
+      "merged_pr_number": 527,
+      "merge_commit": "34899743f266155cfa06c78e24c74cc3799780cf",
+      "merged_utc": "2026-05-14T07:08:31.905107Z",
+      "notes": "Merged via PR #527 and merge 34899743f266155cfa06c78e24c74cc3799780cf at 2026-05-14T07:08:31.905107Z."
+    }
+  ]
+}
