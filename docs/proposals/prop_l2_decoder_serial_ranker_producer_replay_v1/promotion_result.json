@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_serial_ranker_producer_replay_v1",
+  "decision": "iterate",
+  "pr_number": 543,
+  "merge_commit": "90279ef21ed040525d23a47c5105099709c19341",
+  "merged_utc": "2026-05-14T09:49:24.523114Z"
+}
