@@ -1,0 +1,31 @@
+{
+  "proposal_id": "prop_l2_decoder_frontier_synthesis_nm16_physical_v1",
+  "source_commit": "044189b1eec4c6d851b32f2f9a102d44eb0e25c9",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_frontier_synthesis_nm16_physical_v1",
+      "task_type": "l2_campaign",
+      "objective": "Refresh decoder frontier synthesis after the nm16 producer physical feasibility result and include that measured PPA anchor in the producer/ranker coupling and final scorecard.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_frontier_synthesis",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_frontier_synthesis_scoreboard_boundary_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_frontier_synthesis_scoreboard_boundary_v1",
+        "l2_decoder_output_projection_producer_synth_boundary_nm8_nm16_v1",
+        "l2_decoder_output_projection_producer_pnr_nm16_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "The output should show whether the nm16 physical anchor changes the next architecture frontier or validates continued producer/ranker/memory exploration."
+      },
+      "status": "merged",
+      "merged_pr_number": 523,
+      "merge_commit": "191da818e5cf8105fcd07e006e61761808200650",
+      "merged_utc": "2026-05-14T06:39:13.529935Z",
+      "notes": "Merged via PR #523 and merge 191da818e5cf8105fcd07e006e61761808200650 at 2026-05-14T06:39:13.529935Z."
+    }
+  ]
+}
