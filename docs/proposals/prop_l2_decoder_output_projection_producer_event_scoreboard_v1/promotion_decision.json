@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_producer_event_scoreboard_v1",
+  "candidate_id": "l2_decoder_output_projection_producer_event_scoreboard_v1",
+  "decision": "iterate",
+  "reason": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_producer_softmax_event_ablation__l2_decoder_output_projection_producer_event_scoreboard_v1.json: decision=softmax_event_guard_synth_ok_under_bound; recommended_next_step=Use the guard metrics as an updated synthesis boundary before changing RTL.",
+  "evidence_refs": [
+    "item:l2_decoder_output_projection_producer_event_scoreboard_v1",
+    "run:l2_decoder_output_projection_producer_event_scoreboard_v1_run_70e5e989fe18345e",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_output_projection_producer_event_scoreboard_v1.json",
+    "pr:#510",
+    "https://github.com/yhmtmt/RTLGen/pull/510"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_output_projection_producer_event_scoreboard_v1",
+  "requires_human_approval": false
+}

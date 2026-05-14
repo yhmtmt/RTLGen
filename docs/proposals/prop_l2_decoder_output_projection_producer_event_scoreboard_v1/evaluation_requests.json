@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_output_projection_producer_event_scoreboard_v1",
-  "source_commit": "257045a723785a364aeec841fff29f8fd8a52bde",
+  "source_commit": "dbad5522be1193b3abffbfe96a37d1df59e5cf6f",
   "requested_items": [
     {
       "item_id": "l2_decoder_output_projection_producer_event_scoreboard_v1",
@@ -19,7 +19,11 @@
         "direction": "promote",
         "reason": "EVENT_WAIT-only, full EVENT, and SOFTMAX/EVENT guard variants should move from timeout to bounded synth result once the wide dynamic event_state vector is removed."
       },
-      "status": "proposed"
+      "status": "merged",
+      "merged_pr_number": 510,
+      "merge_commit": "850c8486824658fb9382d29eac913d3cf3559d1b",
+      "merged_utc": "2026-05-14T02:55:58.225485Z",
+      "notes": "Merged via PR #510 and merge 850c8486824658fb9382d29eac913d3cf3559d1b at 2026-05-14T02:55:58.225485Z."
     }
   ]
 }
