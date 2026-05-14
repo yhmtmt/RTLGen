@@ -21,7 +21,11 @@
         "direction": "iterate",
         "reason": "If the muxed policy wrapper PPA is acceptable, integrate it into the output-projection producer wrapper; otherwise split serial and rank-tree wrappers or add clock/path gating."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 558,
+      "merge_commit": "ddb99cf7a38ad8dca4610f6e2daaca9ae2ceb57c",
+      "merged_utc": "2026-05-14T11:44:35.750618Z",
+      "notes": "Merged via PR #558 and merge ddb99cf7a38ad8dca4610f6e2daaca9ae2ceb57c at 2026-05-14T11:44:35.750618Z."
     }
   ]
 }
