@@ -1,0 +1,93 @@
+{
+  "assumptions": [
+    "The harness validates stream ordering, lower-token tie-break, final last-beat completion, and merge observables for the first r64/k1 target.",
+    "The current wrapper is a functional ready-valid harness, not the final physical macro implementation.",
+    "nm16 producer config is used as measured MAC-context metadata; the harness feeds deterministic logit tiles directly."
+  ],
+  "decision": {
+    "decision": "ready_valid_equivalence_passed",
+    "next_step": "Queue a bounded macro-style r64/k1 producer-to-ranker physical wrapper."
+  },
+  "equivalence_checks": [
+    {
+      "name": "producer_lanes_match_r64_target",
+      "observed": 64,
+      "passed": true
+    },
+    {
+      "name": "top_k_matches_first_target",
+      "observed": {
+        "merge_top_k": 1,
+        "rank_top_k": 1
+      },
+      "passed": true
+    },
+    {
+      "name": "token_id_width_covers_gpt2_vocab",
+      "observed": 16,
+      "passed": true
+    },
+    {
+      "expected": {
+        "logit": 500,
+        "token": 5
+      },
+      "name": "rtl_stream_matches_full_vocab_reference",
+      "observed": {
+        "accepted": 3,
+        "cycle": 7,
+        "fifo": 1,
+        "logit": 500,
+        "stalls": 0,
+        "token": 5
+      },
+      "passed": true
+    }
+  ],
+  "integration_plan_next_target": {
+    "hidden_size": 768,
+    "measured_mac_lanes_per_cycle": 16,
+    "name": "r64_k1_nm16_ready_valid_equivalence",
+    "producer_lanes": 64,
+    "reason": "Use the smallest focus row that already dominates the frontier before attempting larger producer parallelism.",
+    "top_k": 1,
+    "vocab_size": 50257
+  },
+  "model": "decoder_producer_ranker_ready_valid_equivalence_v1",
+  "producer_config_summary": {
+    "lanes_per_module": 1,
+    "mac_lanes_per_cycle": 16,
+    "mac_type": "fp16",
+    "num_modules": 16
+  },
+  "rtl_sim": {
+    "expected": {
+      "logit": 500,
+      "token": 5
+    },
+    "log_tail": [
+      "RESULT token=5 logit=500 accepted=3 stalls=0 fifo_max=1 final_cycle=7",
+      "/tmp/tmp4gbbm4wb/decoder_ranker_ready_valid_tb.v:293: $finish called at 110000 (1ps)"
+    ],
+    "observed": {
+      "accepted": 3,
+      "cycle": 7,
+      "fifo": 1,
+      "logit": 500,
+      "stalls": 0,
+      "token": 5
+    },
+    "returncode": 0,
+    "rtlgen_binary": "/tmp/rtlcp-worktree-_kvew8nw/repo/build/rtlgen",
+    "status": "ok"
+  },
+  "target": {
+    "fifo_depth_groups": 16,
+    "logit_bits": 16,
+    "name": "r64_k1_nm16_ready_valid_equivalence",
+    "producer_lanes": 64,
+    "token_id_bits": 16,
+    "top_k": 1
+  },
+  "version": 0.1
+}
