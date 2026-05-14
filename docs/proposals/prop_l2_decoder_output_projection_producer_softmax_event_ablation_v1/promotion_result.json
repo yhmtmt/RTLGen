@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_producer_softmax_event_ablation_v1",
+  "decision": "iterate",
+  "pr_number": 505,
+  "merge_commit": "25ba6b245feda1c5e180b2002adc518ff6c368c9",
+  "merged_utc": "2026-05-14T00:16:44.457365Z"
+}

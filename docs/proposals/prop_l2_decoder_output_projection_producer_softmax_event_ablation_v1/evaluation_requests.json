@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_output_projection_producer_softmax_event_ablation_v1",
-  "source_commit": "4bb6457756ff7044e59f45b4153b1914bfe0f70f",
+  "source_commit": "cd952f91797794cbde71a487caf472486115a0c4",
   "requested_items": [
     {
       "item_id": "l2_decoder_output_projection_producer_softmax_event_ablation_v1",
@@ -18,7 +18,12 @@
       "expected_result": {
         "direction": "iterate",
         "reason": "The output should identify whether SOFTMAX checks, SOFTMAX issue, EVENT signal, EVENT wait, dynamic event_state indexing, or their combination causes the synthesis timeout."
-      }
+      },
+      "status": "merged",
+      "merged_pr_number": 505,
+      "merge_commit": "25ba6b245feda1c5e180b2002adc518ff6c368c9",
+      "merged_utc": "2026-05-14T00:16:44.457365Z",
+      "notes": "Merged via PR #505 and merge 25ba6b245feda1c5e180b2002adc518ff6c368c9 at 2026-05-14T00:16:44.457365Z."
     }
   ]
 }
