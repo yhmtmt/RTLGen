@@ -17,6 +17,16 @@
       "top": "npu_top",
       "make_target": "1_2_yosys",
       "num_modules": 2
+    },
+    "requires_repo_text": [
+      {
+        "path": "npu/rtlgen/gen.py",
+        "contains": "event_state"
+      }
+    ],
+    "invalidated_by": {
+      "commit": "dbad5522be1193b3abffbfe96a37d1df59e5cf6f",
+      "reason": "The bounded EVENT scoreboard change removed the wide event_state vector from generated RTL."
     }
   }
 ]

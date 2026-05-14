@@ -95,6 +95,27 @@ def load_infeasible_registry(path: Path | None) -> list[dict[str, Any]]:
     return entries
 
 
+def repo_text_requirements_satisfied(entry: dict[str, Any]) -> bool:
+    requirements = entry.get("requires_repo_text") or []
+    if not isinstance(requirements, list):
+        raise ValueError(f"infeasible registry entry has invalid requires_repo_text: {entry.get('id')}")
+    for requirement in requirements:
+        if not isinstance(requirement, dict):
+            raise ValueError(f"infeasible registry entry has invalid text requirement: {entry.get('id')}")
+        raw_path = str(requirement.get("path", "")).strip()
+        needle = str(requirement.get("contains", ""))
+        if not raw_path or not needle:
+            raise ValueError(f"infeasible registry text requirement missing path/contains: {entry.get('id')}")
+        path = REPO_ROOT / raw_path
+        try:
+            text = path.read_text(encoding="utf-8", errors="ignore")
+        except FileNotFoundError:
+            return False
+        if needle not in text:
+            return False
+    return True
+
+
 def find_infeasible_match(
     registry: list[dict[str, Any]],
     *,
@@ -118,6 +139,8 @@ def find_infeasible_match(
         if match.get("make_target") is not None and str(match.get("make_target")) != make_target:
             continue
         if match.get("num_modules") is not None and int(match.get("num_modules")) != modules:
+            continue
+        if not repo_text_requirements_satisfied(entry):
             continue
         return entry
     return None
