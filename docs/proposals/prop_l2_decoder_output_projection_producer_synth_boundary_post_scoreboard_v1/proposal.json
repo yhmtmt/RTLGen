@@ -1,0 +1,74 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_producer_synth_boundary_post_scoreboard_v1",
+  "created_utc": "2026-05-14T05:30:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_output_projection_producer_synth_boundary",
+  "title": "Post-scoreboard decoder output-projection producer synthesis boundary",
+  "hypothesis": "The previous nm2 full-producer synth timeout was tied to the pre-scoreboard RTL structure that used a wide dynamic event_state vector. After replacing that structure with a bounded EVENT scoreboard, the producer parallelism boundary should be remeasured instead of treating nm1 as the practical limit.",
+  "direct_comparison": {
+    "primary_question": "After the bounded EVENT scoreboard fix, what is the largest decoder output-projection producer module count that completes bounded synth-only compilation?",
+    "include": [
+      "nm2, nm3, and nm4 fp16 producer configs",
+      "full npu_top producer wrapper rather than isolated GEMM-only top",
+      "Nangate45 synth-only OpenROAD target 1_2_yosys",
+      "hard total timeout and quiet-output stall timeout per point",
+      "comparison against the pre-scoreboard synth-boundary timeout record",
+      "explicit report of whether each point was skipped, completed, timed out, or failed"
+    ],
+    "exclude": [
+      "full placement and routing",
+      "nm8 or nm16 retries before nm2 through nm4 are bounded",
+      "quality or QAT experiments",
+      "new producer/ranker NoC implementation changes"
+    ]
+  },
+  "expected_benefit": [
+    "tests whether the small bounded-scoreboard RTL change recovers producer parallelism beyond nm1",
+    "prevents an invalidated pre-scoreboard timeout from suppressing post-fix exploration",
+    "separates remaining synthesis scaling problems from the already-fixed wide EVENT state register"
+  ],
+  "risks": [
+    "synth-only completion still does not prove placement or routing feasibility",
+    "nm2 may still time out because of a different wide mux, generated-control, or hierarchy issue",
+    "the bounded EVENT scoreboard preserves current descriptor-stream semantics but does not make the event namespace unbounded"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_output_projection_producer_synth_boundary_post_scoreboard_v1",
+      "task_type": "l2_campaign",
+      "objective": "Rerun the bounded synth-only decoder output-projection producer scale probe after the bounded EVENT scoreboard fix and source-conditional infeasible-registry guard.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_output_projection_producer_synth_boundary",
+      "cost_class": "bounded-medium",
+      "comparison_role": "producer_synth_boundary",
+      "paired_baseline_item_id": "l2_decoder_output_projection_producer_synth_boundary_v1_r2",
+      "depends_on_item_ids": [
+        "l2_decoder_output_projection_producer_event_scoreboard_v1",
+        "l2_decoder_frontier_synthesis_scoreboard_boundary_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "The result should identify whether nm2 now completes after removing the wide event_state vector, and if not, preserve the exact new failure signature for the next small RTL change."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_decoder_output_projection_producer_synth_boundary_v1/proposal.json",
+    "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_producer_synth_boundary_v1_r2/report.md",
+    "runs/knowledge/infeasible_designs.json"
+  ],
+  "knowledge_refs": [
+    "npu/rtlgen/gen.py",
+    "npu/eval/probe_decoder_producer_synth_boundary.py",
+    "runs/campaigns/npu/output_projection_producer_scale/sweeps/nangate45_synth_boundary.json",
+    "docs/proposals/prop_l2_decoder_output_projection_producer_event_scoreboard_v1/proposal.json",
+    "docs/proposals/prop_l2_decoder_frontier_synthesis_scoreboard_boundary_v1/proposal.json",
+    "tests/test_decoder_producer_synth_infeasible_registry.py",
+    "tests/test_npu_contract_equivalence.py"
+  ]
+}

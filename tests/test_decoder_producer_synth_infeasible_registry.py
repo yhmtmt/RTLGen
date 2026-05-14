@@ -26,8 +26,7 @@ def test_infeasible_registry_matches_exact_known_timeout() -> None:
         make_target="1_2_yosys",
     )
 
-    assert match is not None
-    assert match["id"] == "npu_fp16_nm2_producer_npu_top_yosys_timeout_20260513"
+    assert match is None
 
 
 def test_infeasible_registry_does_not_match_diagnostic_top_or_target() -> None:
@@ -59,7 +58,22 @@ def test_infeasible_registry_does_not_match_diagnostic_top_or_target() -> None:
 
 
 def test_probe_config_skips_known_infeasible_without_synth(tmp_path: Path) -> None:
-    registry = load_infeasible_registry(REGISTRY)
+    registry = [
+        {
+            "id": "test_infeasible",
+            "reason": "test",
+            "source_evidence": {
+                "item_id": "l2_decoder_output_projection_producer_synth_boundary_v1_r2"
+            },
+            "match": {
+                "config": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_producer/config_nm2_producer.json",
+                "platform": "nangate45",
+                "top": "npu_top",
+                "make_target": "1_2_yosys",
+                "num_modules": 2,
+            },
+        }
+    ]
 
     row = probe_config(
         NM2_CONFIG,
@@ -79,3 +93,42 @@ def test_probe_config_skips_known_infeasible_without_synth(tmp_path: Path) -> No
     assert row["known_infeasible"]["source_evidence"]["item_id"] == (
         "l2_decoder_output_projection_producer_synth_boundary_v1_r2"
     )
+
+
+def test_infeasible_registry_matches_when_required_source_text_exists(tmp_path: Path, monkeypatch) -> None:
+    source = tmp_path / "npu/rtlgen/gen.py"
+    source.parent.mkdir(parents=True)
+    source.write_text("reg [65535:0] event_state;\n", encoding="utf-8")
+    monkeypatch.setattr("npu.eval.probe_decoder_producer_synth_boundary.REPO_ROOT", tmp_path)
+
+    registry = [
+        {
+            "id": "old_event_state_timeout",
+            "match": {
+                "config": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_producer/config_nm2_producer.json",
+                "platform": "nangate45",
+                "top": "npu_top",
+                "make_target": "1_2_yosys",
+                "num_modules": 2,
+            },
+            "requires_repo_text": [
+                {
+                    "path": "npu/rtlgen/gen.py",
+                    "contains": "event_state",
+                }
+            ],
+        }
+    ]
+    config = load_json(NM2_CONFIG)
+    config_path = tmp_path / "runs/designs/npu_blocks/npu_fp16_cpp_nm2_producer/config_nm2_producer.json"
+
+    match = find_infeasible_match(
+        registry,
+        config_path=config_path,
+        config=config,
+        platform="nangate45",
+        top="npu_top",
+        make_target="1_2_yosys",
+    )
+
+    assert match is not None
