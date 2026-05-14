@@ -1,0 +1,29 @@
+{
+  "flow_params": {
+    "TAG": [
+      "decoder_r64_k1_serial_ranker"
+    ],
+    "FLOW_VARIANT": [
+      "decoder_r64_k1_serial_ranker"
+    ],
+    "CLOCK_PERIOD": [
+      10.0
+    ],
+    "DIE_AREA": [
+      "0 0 900 900"
+    ],
+    "CORE_AREA": [
+      "40 40 860 860"
+    ],
+    "PLACE_DENSITY": [
+      0.36
+    ],
+    "SYNTH_HIERARCHICAL": [
+      1
+    ],
+    "SYNTH_KEEP_MODULES": [
+      "candidate_stream_merge_fifo_k1_l16_t16_d16"
+    ]
+  },
+  "tag_prefix": "decoder_r64_k1_serial_ranker"
+}
