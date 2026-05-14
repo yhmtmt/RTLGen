@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_decoder_resident_weight_ranker_fallback_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "iterate",
+  "pr_number": 549,
+  "merge_commit": "0cebd16971fb7563895b5fd85d50d1440ea3de00",
+  "merged_utc": "2026-05-14T10:24:49.219141Z"
 }

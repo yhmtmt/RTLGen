@@ -21,7 +21,11 @@
         "direction": "iterate",
         "reason": "Choose whether resident-weight producer rows should use a buffered serial_lpc4 guard or a rank-tree fallback."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 549,
+      "merge_commit": "0cebd16971fb7563895b5fd85d50d1440ea3de00",
+      "merged_utc": "2026-05-14T10:24:49.219141Z",
+      "notes": "Merged via PR #549 and merge 0cebd16971fb7563895b5fd85d50d1440ea3de00 at 2026-05-14T10:24:49.219141Z."
     }
   ]
 }
