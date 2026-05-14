@@ -1,0 +1,162 @@
+{
+  "version": 0.1,
+  "model": "decoder_output_projection_producer_synth_boundary_v1",
+  "platform": "nangate45",
+  "top": "npu_top",
+  "make_target": "3_3_place_gp",
+  "boundary_kind": "physical",
+  "timeout_seconds": 3600,
+  "stall_timeout_seconds": 1200,
+  "infeasible_registry": "runs/knowledge/infeasible_designs.json",
+  "rtlgen_setup": {
+    "status": "ok",
+    "required_binaries": [
+      "build/rtlgen"
+    ],
+    "missing_before_build": [
+      "build/rtlgen"
+    ],
+    "missing_after_build": [],
+    "configure": {
+      "status": "ok",
+      "returncode": 0,
+      "elapsed_seconds": 2.002854552003555,
+      "log_path": "rtlgen_cmake_configure.log",
+      "log_tail": [
+        "-- The C compiler identification is GNU 11.4.0",
+        "-- The CXX compiler identification is GNU 11.4.0",
+        "-- Detecting C compiler ABI info",
+        "-- Detecting C compiler ABI info - done",
+        "-- Check for working C compiler: /usr/bin/cc - skipped",
+        "-- Detecting C compile features",
+        "-- Detecting C compile features - done",
+        "-- Detecting CXX compiler ABI info",
+        "-- Detecting CXX compiler ABI info - done",
+        "-- Check for working CXX compiler: /usr/bin/c++ - skipped",
+        "-- Detecting CXX compile features",
+        "-- Detecting CXX compile features - done",
+        "-- Found GTest: /usr/lib/x86_64-linux-gnu/cmake/GTest/GTestConfig.cmake (found version \"1.14.0\")  ",
+        "-- Configuring done",
+        "-- Generating done",
+        "-- Build files have been written to: /tmp/rtlcp-worktree-0f6mgs8p/repo/build"
+      ],
+      "command": "cmake -S . -B build"
+    },
+    "build": {
+      "status": "ok",
+      "returncode": 0,
+      "elapsed_seconds": 6.004991291003535,
+      "log_path": "rtlgen_cmake_build.log",
+      "log_tail": [
+        "[  8%] Staging provisioned FloPoCo from /workspaces/RTLGen/bin/flopoco",
+        "[ 16%] Building CXX object CMakeFiles/constant_multiplication.dir/src/algorithms/mcm.cpp.o",
+        "[ 16%] Built target flopoco_stage",
+        "[ 25%] Building CXX object CMakeFiles/constant_multiplication.dir/src/algorithms/mcm_algorithms.cpp.o",
+        "[ 33%] Building CXX object CMakeFiles/constant_multiplication.dir/src/algorithms/mcm_ilp.cpp.o",
+        "[ 41%] Building CXX object CMakeFiles/constant_multiplication.dir/src/algorithms/cmvm.cpp.o",
+        "[ 50%] Linking CXX static library libconstant_multiplication.a",
+        "[ 50%] Built target constant_multiplication",
+        "[ 58%] Building CXX object CMakeFiles/rtlgen.dir/apps/rtlgen_main.cpp.o",
+        "[ 66%] Building CXX object CMakeFiles/rtlgen.dir/src/rtlgen/multiplier.cpp.o",
+        "[ 75%] Building CXX object CMakeFiles/rtlgen.dir/src/rtlgen/adder.cpp.o",
+        "[ 83%] Building CXX object CMakeFiles/rtlgen.dir/src/rtlgen/config.cpp.o",
+        "[ 91%] Building CXX object CMakeFiles/rtlgen.dir/src/rtlgen/rtl_operations.cpp.o",
+        "[100%] Linking CXX executable rtlgen",
+        "[100%] Built target rtlgen"
+      ],
+      "command": "cmake --build build --target rtlgen -j 2"
+    }
+  },
+  "sweep": "runs/campaigns/npu/output_projection_producer_scale/sweeps/nangate45_synth_boundary.json",
+  "probe_rows": [
+    {
+      "config": "runs/designs/npu_blocks/npu_fp16_cpp_nm8_producer/config_nm8_producer.json",
+      "design_dir": "runs/designs/npu_blocks/npu_fp16_cpp_nm8_producer",
+      "num_modules": 8,
+      "rtlgen": {
+        "status": "ok",
+        "returncode": 0,
+        "elapsed_seconds": 2.002309653995326,
+        "log_path": "nm8_rtlgen.log",
+        "log_tail": [
+          "rtlgen: wrote RTL to runs/designs/npu_blocks/npu_fp16_cpp_nm8_producer/verilog"
+        ],
+        "command": "/workspaces/rtlgen-eval-clean/control_plane/.venv/bin/python3 npu/rtlgen/gen.py --config runs/designs/npu_blocks/npu_fp16_cpp_nm8_producer/config_nm8_producer.json --out runs/designs/npu_blocks/npu_fp16_cpp_nm8_producer/verilog"
+      },
+      "synthesis": {
+        "status": "ok",
+        "returncode": 0,
+        "elapsed_seconds": 662.6738181260007,
+        "log_path": "nm8_3_3_place_gp.log",
+        "log_tail": [
+          "[INFO GPL-0106] Timing-driven: worst slack 4.24e-09",
+          "[INFO GPL-0107] Timing-driven: repair_design delta area: -4409.505 um^2 (-0.76%)",
+          "[INFO GPL-0108] Timing-driven: repair_design, gpl cells created: -4577 (+0.00%)",
+          "[INFO GPL-0110] Timing-driven: new target density: 0.36750424",
+          "Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group",
+          "---------------------------------------------------------------",
+          "      510 |   0.2056 |  1.047934e+07 |  +10.14% |  5.63e-08 |      ",
+          "      520 |   0.1775 |  1.023681e+07 |   -2.31% |  8.17e-08 |      ",
+          "      530 |   0.1737 |  9.691142e+06 |   -5.33% |  1.20e-07 |      ",
+          "      540 |   0.1548 |  9.416374e+06 |   -2.84% |  1.77e-07 |      ",
+          "      550 |   0.1360 |  9.247153e+06 |   -1.80% |  2.61e-07 |      ",
+          "      560 |   0.1172 |  9.141775e+06 |   -1.14% |  3.85e-07 |      ",
+          "      570 |   0.1016 |  9.069233e+06 |   -0.79% |  5.67e-07 |      ",
+          "      572 |   0.0988 |  9.059978e+06 |          |  6.37e-07 |      ",
+          "---------------------------------------------------------------",
+          "[INFO GPL-1001] Global placement finished at iteration 572",
+          "[INFO GPL-1003] Routability mode iteration count: 141",
+          "[INFO GPL-1005] Routability final weighted congestion: 0.8426",
+          "[INFO GPL-1002] Placed Cell Area            578331.8595",
+          "[INFO GPL-1003] Available Free Area         4153744.8120",
+          "[INFO GPL-1004] Minimum Feasible Density        0.1300 (cell_area / free_area)",
+          "[INFO GPL-1006]   Suggested Target Densities:",
+          "[INFO GPL-1007]     - For 90% usage of free space: 0.1547",
+          "[INFO GPL-1008]     - For 80% usage of free space: 0.1740",
+          "[INFO GPL-1009]     - For 50% usage of free space: 0.2785",
+          "[INFO GPL-1011] Original area (um^2): 515588.33",
+          "[INFO GPL-1012] Total routability artificial inflation: 67153.03 (+13.02%)",
+          "[INFO GPL-1013] Total timing-driven delta area: 31169.86 (+6.05%)",
+          "[INFO GPL-1014] Final placement area: 578331.86 (+12.17%)",
+          "Took 241 seconds: global_placement -density 0.36 -pad_left 0 -pad_right 0 -routability_driven -timing_driven",
+          "Report metrics stage 3, global place...",
+          "",
+          "==========================================================================",
+          "global place report_design_area",
+          "--------------------------------------------------------------------------",
+          "Design area 547049 u^2 13% utilization.",
+          "Elapsed time: 5:15.60[h:]min:sec. CPU time: user 775.53 sys 133.65 (288%). Peak memory: 3786652KB.",
+          "Log                        Elapsed/s Peak Memory/MB  sha1sum .odb [0:20)",
+          "3_3_place_gp                     315           3697 34c7939e2dfad3988887",
+          "[INFO] Running OpenROAD flow: make DESIGN_CONFIG=/orfs/flow/designs/nangate45/npu_fp16_cpp_nm8_producer/config.mk TAG=npu_fp16_producer_synth_boundary SDC_FILE=/orfs/flow/designs/nangate45/npu_fp16_cpp_nm8_producer/constraint.sdc CLOCK_PERIOD=10.0 CORE_AREA=80 80 2120 2120 DIE_AREA=0 0 2200 2200 FLOW_VARIANT=producer_synth_boundary PLACE_DENSITY=0.36 SYNTH_HIERARCHICAL=1 SYNTH_KEEP_MODULES=gemm_compute_array TAG=npu_fp16_producer_synth_boundary TAG_PREFIX=npu_fp16_producer_synth_boundary CORE_UTILIZATION= 3_3_place_gp"
+        ],
+        "command": "/workspaces/rtlgen-eval-clean/control_plane/.venv/bin/python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/npu_fp16_cpp_nm8_producer --platform nangate45 --top npu_top --sweep runs/campaigns/npu/output_projection_producer_scale/sweeps/nangate45_synth_boundary.json --make_target 3_3_place_gp --out_root runs/designs/npu_blocks --force_copy"
+      },
+      "metrics_row": {
+        "design": "npu_fp16_cpp_nm8_producer",
+        "platform": "nangate45",
+        "config_hash": "a7744c71186a",
+        "param_hash": "3a2fb3e1",
+        "tag": "npu_fp16_producer_synth_boundary",
+        "status": "ok",
+        "critical_path_ns": "5.665080444142307",
+        "die_area": "4840000.0",
+        "total_power_mw": "0.209406",
+        "flow_elapsed_seconds": "658.12",
+        "stage_elapsed_seconds": "315.6",
+        "params_json": "{\"CLOCK_PERIOD\": 10.0, \"CORE_AREA\": \"80 80 2120 2120\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 2200 2200\", \"FLOW_VARIANT\": \"producer_synth_boundary\", \"PLACE_DENSITY\": 0.36, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_KEEP_MODULES\": \"gemm_compute_array\", \"TAG\": \"npu_fp16_producer_synth_boundary\", \"tag_prefix\": \"npu_fp16_producer_synth_boundary\"}",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm8_producer/work/3a2fb3e1/result.json",
+        "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm8_producer/work/3a2fb3e1/result.json",
+        "synth_script_path": "",
+        "synth_script_sha1": ""
+      },
+      "status": "ok"
+    }
+  ],
+  "diagnosis": {
+    "decision": "producer_physical_boundary_not_reached",
+    "feasible_max_num_modules": 8,
+    "first_nonviable_num_modules": null,
+    "recommended_next_step": "Use the largest completed physical point for near-frontier extrapolation or extend cautiously."
+  }
+}
