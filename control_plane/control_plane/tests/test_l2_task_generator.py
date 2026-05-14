@@ -1798,16 +1798,24 @@ def test_generate_l2_campaign_task_adds_decoder_producer_ranker_coupled_noc_evid
             assert "--memory-share-list 1.0,0.5,0.25" in run
             assert "--producer-control-boundary" in run
             assert "l2_decoder_output_projection_producer_event_scoreboard_v1.json" in run
+            assert "--producer-physical-boundary" in run
+            assert "l2_decoder_output_projection_producer_pnr_nm16_v1.json" in run
             assert decoder_inputs["producer_ranker_coupled_out"] == (
                 "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
                 "decoder_producer_ranker_coupled_noc__l2_decoder_producer_ranker_coupled_noc_v1.json"
             )
             assert "shared NoC/memory bandwidth shares" in decoder_inputs["producer_ranker_coupled_scope"]
             assert "producer-control synthesis evidence" in decoder_inputs["producer_ranker_coupled_scope"]
+            assert "nm16 producer-wrapper physical" in decoder_inputs["producer_ranker_coupled_scope"]
             assert decoder_inputs["producer_control_boundary"] == (
                 "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
                 "decoder_output_projection_producer_softmax_event_ablation__"
                 "l2_decoder_output_projection_producer_event_scoreboard_v1.json"
+            )
+            assert decoder_inputs["producer_physical_boundary"] == (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_output_projection_producer_pnr_feasibility__"
+                "l2_decoder_output_projection_producer_pnr_nm16_v1.json"
             )
             assert decoder_inputs["producer_ranker_coupled_out"] in work_item.expected_outputs
             assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {

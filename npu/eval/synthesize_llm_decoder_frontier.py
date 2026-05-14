@@ -150,6 +150,7 @@ def build_report(*, stage_breakdown: JsonDict, attention_kv: JsonDict, producer_
             "attention_kv_model": attention_kv.get("model"),
             "producer_ranker_model": producer_ranker.get("model"),
             "producer_control_boundary": producer_ranker.get("producer_control_boundary"),
+            "producer_physical_boundary": producer_ranker.get("producer_physical_boundary"),
         },
         "measured_attention_kv_tile_summary": tile_frontier.get("scaling_summary", {}),
         "dominant_component_counts": dominant_counts,
@@ -162,6 +163,7 @@ def build_report(*, stage_breakdown: JsonDict, attention_kv: JsonDict, producer_
             "This is a synthesis of existing analytical reports, not a new RTL measurement.",
             "Attention/KV uses the best latency row per shape and sequence from the calibrated attention/KV report.",
             "Producer/ranker uses the best FIFO-valid coupled row per hidden/vocab shape.",
+            "Producer physical-boundary evidence is carried as feasibility/PPA context; it does not replace the analytical producer/ranker latency model.",
             "MLP and norm are resident-weight estimates from the whole-decoder stage breakdown.",
             "Use this report to choose the next measured RTL frontier, not as final PPA accounting.",
         ],
@@ -219,6 +221,23 @@ def _write_markdown(path: Path, payload: JsonDict) -> None:
                 f"- synthesis_elapsed_seconds: `{control_boundary.get('synthesis_elapsed_seconds')}`",
                 f"- reg_bits_est: `{control_boundary.get('reg_bits_est')}`",
                 f"- wire_bits_est: `{control_boundary.get('wire_bits_est')}`",
+            ]
+        )
+    physical_boundary = payload.get("inputs", {}).get("producer_physical_boundary")
+    if physical_boundary:
+        lines.extend(
+            [
+                "",
+                "## Producer Physical Boundary",
+                "",
+                f"- decision: `{physical_boundary.get('decision')}`",
+                f"- make_target: `{physical_boundary.get('make_target')}`",
+                f"- num_modules: `{physical_boundary.get('num_modules')}`",
+                f"- critical_path_ns: `{physical_boundary.get('critical_path_ns')}`",
+                f"- die_area_um2: `{physical_boundary.get('die_area_um2')}`",
+                f"- total_power_mw: `{physical_boundary.get('total_power_mw')}`",
+                f"- synthesis_elapsed_seconds: `{physical_boundary.get('synthesis_elapsed_seconds')}`",
+                f"- result_path: `{physical_boundary.get('result_path')}`",
             ]
         )
     lines.extend(["", "## Assumptions", ""])
