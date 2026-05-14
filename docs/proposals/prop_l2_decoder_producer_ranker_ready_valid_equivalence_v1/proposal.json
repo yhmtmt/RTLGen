@@ -1,0 +1,74 @@
+{
+  "proposal_id": "prop_l2_decoder_producer_ranker_ready_valid_equivalence_v1",
+  "created_utc": "2026-05-14T07:20:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_producer_ranker_ready_valid_equivalence",
+  "title": "Decoder producer/ranker r64 k1 ready-valid equivalence",
+  "hypothesis": "Before measuring a producer-integrated ranker macro, the first r64/k1 target should prove the ready-valid stream contract against generated RTL blocks. A deterministic RTL harness tying logit_rank_r64_l16_k1 to candidate_stream_merge_fifo_k1_l16_t16_d16 should match the full-vocabulary reference for accepted beat count, lower-token tie order, FIFO observables, and final last-beat completion.",
+  "direct_comparison": {
+    "primary_question": "Does the first r64/k1 producer-to-ranker stream target preserve the perf-sim/full-vocabulary ranking semantics under the ready-valid contract?",
+    "include": [
+      "logit_rank_r64_l16_k1 generated RTL",
+      "candidate_stream_merge_fifo_k1_l16_t16_d16 generated RTL",
+      "deterministic three-tile LogitTileStream stimulus",
+      "lower-token tie break across tiles",
+      "accepted beat count, FIFO occupancy, stall count, and final completion observables",
+      "nm16 producer config as measured MAC-context metadata"
+    ],
+    "exclude": [
+      "new physical OpenROAD PnR",
+      "full output-projection GEMM datapath integration",
+      "shared SRAM or NoC arbitration",
+      "probability/softmax sampling semantics"
+    ]
+  },
+  "expected_benefit": [
+    "adds the missing equivalence gate before PPA is charged to the producer-integrated ranker path",
+    "keeps the first integrated target at r64/k1 and tied to the nm16 producer context",
+    "separates stream-contract correctness from later physical macro measurement"
+  ],
+  "risks": [
+    "the harness feeds deterministic logit tiles directly rather than connecting the full producer GEMM",
+    "the wrapper is a functional integration harness, not the final floorplanned macro",
+    "randomized backpressure and deeper buffering remain follow-up work"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_producer_ranker_ready_valid_equivalence_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run the first r64/k1 producer-to-ranker ready-valid RTL equivalence harness and record stream-contract observables against a full-vocabulary reference.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_producer_ranker_ready_valid_equivalence",
+      "cost_class": "low",
+      "comparison_role": "equivalence_check",
+      "paired_baseline_item_id": "l2_decoder_producer_ranker_memory_integration_plan_v1_r2",
+      "depends_on_item_ids": [
+        "l2_decoder_producer_ranker_memory_integration_plan_v1_r2",
+        "l2_decoder_output_projection_producer_pnr_nm16_v1",
+        "l1_decoder_logit_rank_datapath_v1_r2",
+        "l1_decoder_candidate_stream_merge_fifo_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "If the stream harness passes, the next measured job can be a bounded r64/k1 producer-integrated ranker macro. If it fails, fix stream contract or RTL integration before physical measurement."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "control_plane/shadow_exports/l2_decisions/l2_decoder_producer_ranker_memory_integration_plan_v1_r2.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_producer_ranker_memory_integration_plan__l2_decoder_producer_ranker_memory_integration_plan_v1_r2.json",
+    "npu/docs/decoder_logit_rank_streaming_hierarchy.md"
+  ],
+  "knowledge_refs": [
+    "npu/eval/probe_llm_decoder_producer_ranker_ready_valid_equivalence.py",
+    "runs/designs/activations/logit_rank_r64_l16_k1_wrapper/config_logit_rank_r64_l16_k1.json",
+    "runs/designs/activations/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/config_candidate_stream_merge_fifo_k1_l16_t16_d16.json",
+    "tests/test_llm_decoder_producer_ranker_ready_valid_equivalence.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}
