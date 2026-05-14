@@ -2394,8 +2394,9 @@ def _decoder_output_projection_producer_pnr_feasibility_evidence(*, item_id: str
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_output_projection_producer_pnr_feasibility__{item_id}.json"
     report = f"{base}/decoder_output_projection_producer_pnr_feasibility__{item_id}.md"
+    num_modules = 16 if "nm16" in item_id else 8
     configs = [
-        "runs/designs/npu_blocks/npu_fp16_cpp_nm8_producer/config_nm8_producer.json",
+        f"runs/designs/npu_blocks/npu_fp16_cpp_nm{num_modules}_producer/config_nm{num_modules}_producer.json",
     ]
     sweep = "runs/campaigns/npu/output_projection_producer_scale/sweeps/nangate45_synth_boundary.json"
     return {
@@ -2406,9 +2407,9 @@ def _decoder_output_projection_producer_pnr_feasibility_evidence(*, item_id: str
             "producer_synth_boundary_sweep": sweep,
             "producer_synth_boundary_make_target": "3_3_place_gp",
             "producer_synth_boundary_scope": (
-                "Probe full physical implementation feasibility for the post-scoreboard nm8 "
+                f"Probe full physical implementation feasibility for the post-scoreboard nm{num_modules} "
                 "decoder output-projection producer using the same bounded producer floorplan "
-                "before attempting nm16 PnR."
+                "before attempting a larger or more integrated physical implementation."
             ),
         },
         "commands": [
