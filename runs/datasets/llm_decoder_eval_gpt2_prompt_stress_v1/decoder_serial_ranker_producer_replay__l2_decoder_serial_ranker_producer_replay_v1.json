@@ -1,0 +1,439 @@
+{
+  "assumptions": [
+    "The replay uses the same generated serial-ranker RTL wrappers measured in the architecture sweep.",
+    "Producer tiles are released at fixed issue intervals; if the ranker is busy, the testbench holds valid and counts backpressure.",
+    "The RTL output is checked against a full-token top-1 reference with deterministic lower-token tie-break.",
+    "This validates stream behavior and cadence tolerance; it is not a new physical PPA measurement."
+  ],
+  "decision": {
+    "decision": "producer_cadence_replay_passed",
+    "next_step": "Promote serial_lpc1 into a producer-coupled RTL wrapper if the chosen producer cadence matches the output-projection service model; keep lpc2/lpc4 as guard points for faster resident-weight producer assumptions.",
+    "throughput_safe_rows": 6,
+    "total_rows": 12
+  },
+  "model": "decoder_serial_ranker_producer_replay_v1",
+  "replay_rows": [
+    {
+      "expected_throughput_ok": false,
+      "lanes_per_cycle": 1,
+      "producer_ii_cycles": 16,
+      "ranker_service_cycles": 65,
+      "rtl_sim": {
+        "expected": {
+          "logit": 500,
+          "token": 5
+        },
+        "log_tail": [
+          "RESULT scenario=ii16 lpc=1 producer_ii=16 token=5 logit=500 accepted=6 tb_backpressure=310 dut_stalls=0 fifo_max=1 final_cycle=397",
+          "/tmp/tmpz8wv8fmg/tb_decoder_r64_k1_serial_rank_lpc1_wrapper_producer_replay_ii16.v:505: $finish called at 4010000 (1ps)"
+        ],
+        "observed": {
+          "accepted": 6,
+          "dut_stalls": 0,
+          "fifo_max": 1,
+          "final_cycle": 397,
+          "logit": 500,
+          "lpc": 1,
+          "producer_ii": 16,
+          "scenario": "ii16",
+          "tb_backpressure": 310,
+          "token": 5
+        },
+        "returncode": 0,
+        "status": "ok"
+      },
+      "scenario": "ii16"
+    },
+    {
+      "expected_throughput_ok": false,
+      "lanes_per_cycle": 1,
+      "producer_ii_cycles": 33,
+      "ranker_service_cycles": 65,
+      "rtl_sim": {
+        "expected": {
+          "logit": 500,
+          "token": 5
+        },
+        "log_tail": [
+          "RESULT scenario=ii33 lpc=1 producer_ii=33 token=5 logit=500 accepted=6 tb_backpressure=293 dut_stalls=0 fifo_max=1 final_cycle=397",
+          "/tmp/tmprimsj0o0/tb_decoder_r64_k1_serial_rank_lpc1_wrapper_producer_replay_ii33.v:505: $finish called at 4010000 (1ps)"
+        ],
+        "observed": {
+          "accepted": 6,
+          "dut_stalls": 0,
+          "fifo_max": 1,
+          "final_cycle": 397,
+          "logit": 500,
+          "lpc": 1,
+          "producer_ii": 33,
+          "scenario": "ii33",
+          "tb_backpressure": 293,
+          "token": 5
+        },
+        "returncode": 0,
+        "status": "ok"
+      },
+      "scenario": "ii33"
+    },
+    {
+      "expected_throughput_ok": true,
+      "lanes_per_cycle": 1,
+      "producer_ii_cycles": 65,
+      "ranker_service_cycles": 65,
+      "rtl_sim": {
+        "expected": {
+          "logit": 500,
+          "token": 5
+        },
+        "log_tail": [
+          "RESULT scenario=ii65 lpc=1 producer_ii=65 token=5 logit=500 accepted=6 tb_backpressure=15 dut_stalls=0 fifo_max=1 final_cycle=397",
+          "/tmp/tmphcykbjot/tb_decoder_r64_k1_serial_rank_lpc1_wrapper_producer_replay_ii65.v:505: $finish called at 4010000 (1ps)"
+        ],
+        "observed": {
+          "accepted": 6,
+          "dut_stalls": 0,
+          "fifo_max": 1,
+          "final_cycle": 397,
+          "logit": 500,
+          "lpc": 1,
+          "producer_ii": 65,
+          "scenario": "ii65",
+          "tb_backpressure": 15,
+          "token": 5
+        },
+        "returncode": 0,
+        "status": "ok"
+      },
+      "scenario": "ii65"
+    },
+    {
+      "expected_throughput_ok": true,
+      "lanes_per_cycle": 1,
+      "producer_ii_cycles": 384,
+      "ranker_service_cycles": 65,
+      "rtl_sim": {
+        "expected": {
+          "logit": 500,
+          "token": 5
+        },
+        "log_tail": [
+          "RESULT scenario=ii384 lpc=1 producer_ii=384 token=5 logit=500 accepted=6 tb_backpressure=0 dut_stalls=0 fifo_max=1 final_cycle=1987",
+          "/tmp/tmppauchxzu/tb_decoder_r64_k1_serial_rank_lpc1_wrapper_producer_replay_ii384.v:505: $finish called at 19910000 (1ps)"
+        ],
+        "observed": {
+          "accepted": 6,
+          "dut_stalls": 0,
+          "fifo_max": 1,
+          "final_cycle": 1987,
+          "logit": 500,
+          "lpc": 1,
+          "producer_ii": 384,
+          "scenario": "ii384",
+          "tb_backpressure": 0,
+          "token": 5
+        },
+        "returncode": 0,
+        "status": "ok"
+      },
+      "scenario": "ii384"
+    },
+    {
+      "expected_throughput_ok": false,
+      "lanes_per_cycle": 2,
+      "producer_ii_cycles": 16,
+      "ranker_service_cycles": 33,
+      "rtl_sim": {
+        "expected": {
+          "logit": 500,
+          "token": 5
+        },
+        "log_tail": [
+          "RESULT scenario=ii16 lpc=2 producer_ii=16 token=5 logit=500 accepted=6 tb_backpressure=150 dut_stalls=0 fifo_max=1 final_cycle=205",
+          "/tmp/tmpc_j2atmy/tb_decoder_r64_k1_serial_rank_lpc2_wrapper_producer_replay_ii16.v:505: $finish called at 2090000 (1ps)"
+        ],
+        "observed": {
+          "accepted": 6,
+          "dut_stalls": 0,
+          "fifo_max": 1,
+          "final_cycle": 205,
+          "logit": 500,
+          "lpc": 2,
+          "producer_ii": 16,
+          "scenario": "ii16",
+          "tb_backpressure": 150,
+          "token": 5
+        },
+        "returncode": 0,
+        "status": "ok"
+      },
+      "scenario": "ii16"
+    },
+    {
+      "expected_throughput_ok": true,
+      "lanes_per_cycle": 2,
+      "producer_ii_cycles": 33,
+      "ranker_service_cycles": 33,
+      "rtl_sim": {
+        "expected": {
+          "logit": 500,
+          "token": 5
+        },
+        "log_tail": [
+          "RESULT scenario=ii33 lpc=2 producer_ii=33 token=5 logit=500 accepted=6 tb_backpressure=15 dut_stalls=0 fifo_max=1 final_cycle=205",
+          "/tmp/tmpwrpew21b/tb_decoder_r64_k1_serial_rank_lpc2_wrapper_producer_replay_ii33.v:505: $finish called at 2090000 (1ps)"
+        ],
+        "observed": {
+          "accepted": 6,
+          "dut_stalls": 0,
+          "fifo_max": 1,
+          "final_cycle": 205,
+          "logit": 500,
+          "lpc": 2,
+          "producer_ii": 33,
+          "scenario": "ii33",
+          "tb_backpressure": 15,
+          "token": 5
+        },
+        "returncode": 0,
+        "status": "ok"
+      },
+      "scenario": "ii33"
+    },
+    {
+      "expected_throughput_ok": true,
+      "lanes_per_cycle": 2,
+      "producer_ii_cycles": 65,
+      "ranker_service_cycles": 33,
+      "rtl_sim": {
+        "expected": {
+          "logit": 500,
+          "token": 5
+        },
+        "log_tail": [
+          "RESULT scenario=ii65 lpc=2 producer_ii=65 token=5 logit=500 accepted=6 tb_backpressure=0 dut_stalls=0 fifo_max=1 final_cycle=360",
+          "/tmp/tmpkmy1k4bn/tb_decoder_r64_k1_serial_rank_lpc2_wrapper_producer_replay_ii65.v:505: $finish called at 3640000 (1ps)"
+        ],
+        "observed": {
+          "accepted": 6,
+          "dut_stalls": 0,
+          "fifo_max": 1,
+          "final_cycle": 360,
+          "logit": 500,
+          "lpc": 2,
+          "producer_ii": 65,
+          "scenario": "ii65",
+          "tb_backpressure": 0,
+          "token": 5
+        },
+        "returncode": 0,
+        "status": "ok"
+      },
+      "scenario": "ii65"
+    },
+    {
+      "expected_throughput_ok": true,
+      "lanes_per_cycle": 2,
+      "producer_ii_cycles": 384,
+      "ranker_service_cycles": 33,
+      "rtl_sim": {
+        "expected": {
+          "logit": 500,
+          "token": 5
+        },
+        "log_tail": [
+          "RESULT scenario=ii384 lpc=2 producer_ii=384 token=5 logit=500 accepted=6 tb_backpressure=0 dut_stalls=0 fifo_max=1 final_cycle=1955",
+          "/tmp/tmpfgcw_2lg/tb_decoder_r64_k1_serial_rank_lpc2_wrapper_producer_replay_ii384.v:505: $finish called at 19590000 (1ps)"
+        ],
+        "observed": {
+          "accepted": 6,
+          "dut_stalls": 0,
+          "fifo_max": 1,
+          "final_cycle": 1955,
+          "logit": 500,
+          "lpc": 2,
+          "producer_ii": 384,
+          "scenario": "ii384",
+          "tb_backpressure": 0,
+          "token": 5
+        },
+        "returncode": 0,
+        "status": "ok"
+      },
+      "scenario": "ii384"
+    },
+    {
+      "expected_throughput_ok": false,
+      "lanes_per_cycle": 4,
+      "producer_ii_cycles": 16,
+      "ranker_service_cycles": 17,
+      "rtl_sim": {
+        "expected": {
+          "logit": 500,
+          "token": 5
+        },
+        "log_tail": [
+          "RESULT scenario=ii16 lpc=4 producer_ii=16 token=5 logit=500 accepted=6 tb_backpressure=30 dut_stalls=0 fifo_max=1 final_cycle=109",
+          "/tmp/tmpdtxflfqh/tb_decoder_r64_k1_serial_rank_lpc4_wrapper_producer_replay_ii16.v:505: $finish called at 1130000 (1ps)"
+        ],
+        "observed": {
+          "accepted": 6,
+          "dut_stalls": 0,
+          "fifo_max": 1,
+          "final_cycle": 109,
+          "logit": 500,
+          "lpc": 4,
+          "producer_ii": 16,
+          "scenario": "ii16",
+          "tb_backpressure": 30,
+          "token": 5
+        },
+        "returncode": 0,
+        "status": "ok"
+      },
+      "scenario": "ii16"
+    },
+    {
+      "expected_throughput_ok": true,
+      "lanes_per_cycle": 4,
+      "producer_ii_cycles": 33,
+      "ranker_service_cycles": 17,
+      "rtl_sim": {
+        "expected": {
+          "logit": 500,
+          "token": 5
+        },
+        "log_tail": [
+          "RESULT scenario=ii33 lpc=4 producer_ii=33 token=5 logit=500 accepted=6 tb_backpressure=0 dut_stalls=0 fifo_max=1 final_cycle=184",
+          "/tmp/tmpha7kr0mz/tb_decoder_r64_k1_serial_rank_lpc4_wrapper_producer_replay_ii33.v:505: $finish called at 1880000 (1ps)"
+        ],
+        "observed": {
+          "accepted": 6,
+          "dut_stalls": 0,
+          "fifo_max": 1,
+          "final_cycle": 184,
+          "logit": 500,
+          "lpc": 4,
+          "producer_ii": 33,
+          "scenario": "ii33",
+          "tb_backpressure": 0,
+          "token": 5
+        },
+        "returncode": 0,
+        "status": "ok"
+      },
+      "scenario": "ii33"
+    },
+    {
+      "expected_throughput_ok": true,
+      "lanes_per_cycle": 4,
+      "producer_ii_cycles": 65,
+      "ranker_service_cycles": 17,
+      "rtl_sim": {
+        "expected": {
+          "logit": 500,
+          "token": 5
+        },
+        "log_tail": [
+          "RESULT scenario=ii65 lpc=4 producer_ii=65 token=5 logit=500 accepted=6 tb_backpressure=0 dut_stalls=0 fifo_max=1 final_cycle=344",
+          "/tmp/tmpsa4c1f_j/tb_decoder_r64_k1_serial_rank_lpc4_wrapper_producer_replay_ii65.v:505: $finish called at 3480000 (1ps)"
+        ],
+        "observed": {
+          "accepted": 6,
+          "dut_stalls": 0,
+          "fifo_max": 1,
+          "final_cycle": 344,
+          "logit": 500,
+          "lpc": 4,
+          "producer_ii": 65,
+          "scenario": "ii65",
+          "tb_backpressure": 0,
+          "token": 5
+        },
+        "returncode": 0,
+        "status": "ok"
+      },
+      "scenario": "ii65"
+    },
+    {
+      "expected_throughput_ok": true,
+      "lanes_per_cycle": 4,
+      "producer_ii_cycles": 384,
+      "ranker_service_cycles": 17,
+      "rtl_sim": {
+        "expected": {
+          "logit": 500,
+          "token": 5
+        },
+        "log_tail": [
+          "RESULT scenario=ii384 lpc=4 producer_ii=384 token=5 logit=500 accepted=6 tb_backpressure=0 dut_stalls=0 fifo_max=1 final_cycle=1939",
+          "/tmp/tmpnr4dwtsv/tb_decoder_r64_k1_serial_rank_lpc4_wrapper_producer_replay_ii384.v:505: $finish called at 19430000 (1ps)"
+        ],
+        "observed": {
+          "accepted": 6,
+          "dut_stalls": 0,
+          "fifo_max": 1,
+          "final_cycle": 1939,
+          "logit": 500,
+          "lpc": 4,
+          "producer_ii": 384,
+          "scenario": "ii384",
+          "tb_backpressure": 0,
+          "token": 5
+        },
+        "returncode": 0,
+        "status": "ok"
+      },
+      "scenario": "ii384"
+    }
+  ],
+  "service_compatibility_lowest_power_feasible": {
+    "coupled_extra_cycles_after_producer": 65,
+    "coupled_latency_us_per_token": 1205.855,
+    "coupled_total_cycles": 1205855,
+    "hidden_size": 768,
+    "integration": "single_r64_ranker",
+    "macs_per_cycle": 8192,
+    "max_ranker_wait_cycles": 0,
+    "memory_bandwidth_bytes_per_cycle": 64.0,
+    "producer_done_cycles": 1205790,
+    "producer_ii_cycles": 1536,
+    "producer_lanes": 64,
+    "producer_latency_cycles": 30,
+    "producer_latency_us_per_token": 1205.79,
+    "ranker": "serial_lpc1",
+    "ranker_critical_path_ns": 2.864771333952124,
+    "ranker_family": "serial_running_best",
+    "ranker_instances": 1,
+    "ranker_pipeline_tail_cycles": 0,
+    "ranker_placed_cell_area_um2": 19304.684,
+    "ranker_service_cycles_per_producer_tile": 65,
+    "ranker_tile_service_cycles": 65,
+    "ranker_total_power_mw": 0.0065519,
+    "ranker_utilization": 0.042318,
+    "scenario": "shared_gemm_stage_serial",
+    "service_limiter": "weight_memory",
+    "throughput_margin_cycles": 1471,
+    "throughput_ok": true,
+    "tile_count": 786,
+    "vocab_size": 50257
+  },
+  "target": {
+    "lanes_per_cycle": [
+      1,
+      2,
+      4
+    ],
+    "num_tiles": 6,
+    "producer_ii_cycles": [
+      16,
+      33,
+      65,
+      384
+    ],
+    "producer_lanes": 64,
+    "serial_ranker_model": "decoder_serial_ranker_architecture_v1",
+    "service_compatibility_model": "decoder_producer_ranker_service_compatibility_v1",
+    "top_k": 1
+  },
+  "version": 0.1
+}
