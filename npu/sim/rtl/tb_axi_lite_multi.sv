@@ -2,7 +2,7 @@
 
 module tb_axi_lite_multi;
   localparam CLK_PERIOD = 10;
-  `include "npu/rtlgen/out/mmio_map.vh"
+  `include "mmio_map.vh"
 
   reg clk;
   reg rst_n;
@@ -156,7 +156,7 @@ module tb_axi_lite_multi;
   reg checked_dma;
   reg sram_test;
   reg event_test;
-  `include "npu/rtlgen/out/sram_map.vh"
+  `include "sram_map.vh"
   localparam [63:0] MEM_DST_BASE = 64'h0000_0000_0001_0000;
 
   initial begin

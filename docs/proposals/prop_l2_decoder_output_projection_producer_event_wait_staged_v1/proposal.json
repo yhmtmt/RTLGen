@@ -1,0 +1,69 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_producer_event_wait_staged_v1",
+  "created_utc": "2026-05-14T00:45:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_output_projection_producer_softmax_event_ablation",
+  "title": "Decoder output-projection producer staged EVENT_WAIT confirmation",
+  "hypothesis": "The SOFTMAX/EVENT ablation identified EVENT_WAIT as the first nm2 command-queue synthesis timeout. Staging EVENT_WAIT by latching the event id and servicing the wait from a small pending state should remove the direct descriptor-indexed event_state read from the retire branch while preserving perf-vs-RTL ordering.",
+  "direct_comparison": {
+    "primary_question": "Does the staged EVENT_WAIT RTL make the prior EVENT_WAIT and combined SOFTMAX/EVENT CQ variants synthesize under the bounded nm2 probe?",
+    "include": [
+      "nm2 fp16 producer base config",
+      "existing SOFTMAX/EVENT command-queue ablation variants",
+      "bounded Nangate45 synth-only target 1_2_yosys",
+      "static generated-RTL size counters per variant",
+      "perf-vs-RTL event-DMA contract regression"
+    ],
+    "exclude": [
+      "full placement and routing",
+      "producer scale beyond nm2",
+      "changing command ordering semantics",
+      "quality or QAT experiments"
+    ]
+  },
+  "expected_benefit": [
+    "confirms whether staged EVENT_WAIT eliminates the prior synthesis explosion",
+    "keeps the diagnostic event_index_only mode as the remaining direct dynamic-index reference",
+    "preserves the existing command-queue/perf-simulator contract except for an allowed one-cycle RTL staging latency"
+  ],
+  "risks": [
+    "bounded synthesis success does not prove larger producer configurations are viable",
+    "the staged wait adds a cycle between EVENT_WAIT decode and retirement",
+    "the combined SOFTMAX/EVENT path may still expose a separate interaction after EVENT_WAIT is fixed"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_output_projection_producer_event_wait_staged_v1",
+      "task_type": "l2_campaign",
+      "objective": "Rerun the bounded nm2 SOFTMAX/EVENT CQ ablation after staging EVENT_WAIT to confirm the prior timeout is removed and the combined guard remains explorable.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_output_projection_producer_softmax_event_ablation",
+      "cost_class": "bounded-medium",
+      "comparison_role": "producer_synth_boundary",
+      "paired_baseline_item_id": "l2_decoder_output_projection_producer_softmax_event_ablation_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_output_projection_producer_softmax_event_ablation_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "promote",
+        "reason": "The expected result is that EVENT_WAIT-only and full EVENT variants move from timeout to bounded synth result, validating the RTL staging fix before broader producer exploration resumes."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_decoder_output_projection_producer_softmax_event_ablation_v1/analysis_report.md",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_producer_softmax_event_ablation__l2_decoder_output_projection_producer_softmax_event_ablation_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/rtlgen/gen.py",
+    "npu/eval/probe_decoder_producer_softmax_event_ablation.py",
+    "tests/test_npu_contract_equivalence.py",
+    "tests/test_npu_rtlgen_event_wait.py",
+    "npu/sim/rtl/tb_npu_shell.sv"
+  ]
+}

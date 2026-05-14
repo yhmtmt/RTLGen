@@ -5,7 +5,7 @@ module tb_npu_shell;
   localparam MMIO_ADDR_W = 12;
   localparam DATA_W = 32;
 
-  `include "npu/rtlgen/out/mmio_map.vh"
+  `include "mmio_map.vh"
 
   reg clk;
   reg rst_n;
@@ -218,7 +218,7 @@ module tb_npu_shell;
   reg [DATA_W-1:0] cq_head_prev_mon;
   integer dma_complete_index;
   string bin_path;
-  `include "npu/rtlgen/out/sram_map.vh"
+  `include "sram_map.vh"
   localparam [63:0] MEM_DST_BASE = 64'h0000_0000_0001_0000;
 
   initial begin
@@ -814,6 +814,14 @@ module tb_npu_shell;
         $finish(1);
       end
     end else if (event_dma_test) begin
+      begin : wait_second_dma_after_event
+        integer t4;
+        for (t4 = 0; t4 < 600; t4 = t4 + 1) begin
+          @(posedge clk);
+          if (dma_req_count >= 2)
+            disable wait_second_dma_after_event;
+        end
+      end
       if (dma_req_count != 2) begin
         mmio_read(OFF_CQ_HEAD, cq_head);
         $display("ERROR: expected 2 DMA requests in event_dma_test, saw %0d head=%h tail=%h last_opcode=%h event0=%b dma_pending=%b bvalid=%b",
