@@ -465,35 +465,50 @@ def probe_config(
     return row
 
 
-def build_diagnosis(rows: list[dict[str, Any]]) -> dict[str, Any]:
+def boundary_kind(make_target: str) -> str:
+    return "synth" if make_target == "1_2_yosys" else "physical"
+
+
+def build_diagnosis(rows: list[dict[str, Any]], *, make_target: str) -> dict[str, Any]:
+    kind = boundary_kind(make_target)
+    prefix = "producer_synth_boundary" if kind == "synth" else "producer_physical_boundary"
     if rows and str(rows[0].get("status")) == "setup_failed":
         return {
-            "decision": "producer_synth_boundary_setup_failed",
+            "decision": f"{prefix}_setup_failed",
             "feasible_max_num_modules": None,
             "first_nonviable_num_modules": None,
-            "recommended_next_step": "Fix evaluator tool setup before interpreting producer synthesis scale.",
+            "recommended_next_step": f"Fix evaluator tool setup before interpreting producer {kind} scale.",
         }
     tool_failures = [row for row in rows if str(row.get("status", "")).startswith("rtlgen_")]
     if tool_failures:
         return {
-            "decision": "producer_synth_boundary_setup_failed",
+            "decision": f"{prefix}_setup_failed",
             "feasible_max_num_modules": None,
             "first_nonviable_num_modules": None,
-            "recommended_next_step": "Fix RTL generation before interpreting producer synthesis scale.",
+            "recommended_next_step": f"Fix RTL generation before interpreting producer {kind} scale.",
         }
     ok_rows = [row for row in rows if str(row.get("status")) == "ok"]
     blocked_rows = [row for row in rows if str(row.get("status")) != "ok"]
     feasible = max((int(row.get("num_modules", 0)) for row in ok_rows), default=None)
     first_blocked = min((int(row.get("num_modules", 0)) for row in blocked_rows), default=None)
     if first_blocked is None:
-        decision = "producer_synth_boundary_not_reached"
-        next_step = "Extend the probe to the next producer scale before launching full PnR."
+        decision = f"{prefix}_not_reached"
+        if kind == "synth":
+            next_step = "Extend the probe to the next producer scale before launching full PnR."
+        else:
+            next_step = "Use the largest completed physical point for near-frontier extrapolation or extend cautiously."
     else:
-        decision = "producer_synth_boundary_recorded"
-        next_step = (
-            "Use the largest completed synth point for near-frontier extrapolation and split or macro-harden "
-            "larger producers before retrying full physical implementation."
-        )
+        decision = f"{prefix}_recorded"
+        if kind == "synth":
+            next_step = (
+                "Use the largest completed synth point for near-frontier extrapolation and split or macro-harden "
+                "larger producers before retrying full physical implementation."
+            )
+        else:
+            next_step = (
+                "Use the largest completed physical point for near-frontier extrapolation and adjust floorplan, "
+                "hierarchy, or macro hardening before retrying larger producers."
+            )
     return {
         "decision": decision,
         "feasible_max_num_modules": feasible,
@@ -503,8 +518,10 @@ def build_diagnosis(rows: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def write_markdown(path: Path, payload: dict[str, Any]) -> None:
+    kind = payload.get("boundary_kind") or boundary_kind(str(payload.get("make_target", "")))
+    title = "Decoder Producer Synthesis Boundary" if kind == "synth" else "Decoder Producer Physical Boundary"
     lines = [
-        "# Decoder Producer Synthesis Boundary",
+        f"# {title}",
         "",
         f"- make_target: `{payload['make_target']}`",
         f"- timeout_seconds: `{payload['timeout_seconds']}`",
@@ -654,13 +671,14 @@ def main() -> int:
         "platform": args.platform,
         "top": args.top,
         "make_target": args.make_target,
+        "boundary_kind": boundary_kind(args.make_target),
         "timeout_seconds": args.timeout_seconds,
         "stall_timeout_seconds": args.stall_timeout_seconds,
         "infeasible_registry": rel(registry_path) if registry_path is not None else None,
         "rtlgen_setup": setup,
         "sweep": rel(sweep),
         "probe_rows": rows,
-        "diagnosis": build_diagnosis(rows),
+        "diagnosis": build_diagnosis(rows, make_target=args.make_target),
     }
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(payload, indent=2), encoding="utf-8")
