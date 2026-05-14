@@ -51,6 +51,39 @@ def portable_log_label(path: Path) -> str:
         return path.name
 
 
+def repo_portable_path_text(raw: Any) -> str:
+    text = str(raw or "").strip()
+    if not text:
+        return ""
+    path = Path(text)
+    if not path.is_absolute():
+        return text
+    try:
+        return str(path.resolve().relative_to(REPO_ROOT))
+    except ValueError:
+        return ""
+
+
+def portable_metrics_row(row: dict[str, Any]) -> dict[str, Any]:
+    portable = dict(row)
+    work_result = repo_portable_path_text(portable.get("work_result_json"))
+    if work_result:
+        portable["work_result_json"] = work_result
+    result_path = repo_portable_path_text(portable.get("result_path"))
+    if result_path:
+        portable["result_path"] = result_path
+    elif work_result:
+        portable["result_path"] = work_result
+    else:
+        portable["result_path"] = ""
+    synth_script = repo_portable_path_text(portable.get("synth_script_path"))
+    if synth_script:
+        portable["synth_script_path"] = synth_script
+    elif "synth_script_path" in portable:
+        portable["synth_script_path"] = ""
+    return portable
+
+
 def parse_configs(args: argparse.Namespace) -> list[Path]:
     raw: list[str] = []
     for item in args.configs or []:
@@ -422,7 +455,7 @@ def probe_config(
     row["synthesis"] = synth_result
     metrics_row = latest_metrics_row(out_root / design_dir.name)
     if metrics_row is not None:
-        row["metrics_row"] = metrics_row
+        row["metrics_row"] = portable_metrics_row(metrics_row)
     if synth_result["status"] != "ok":
         row["status"] = synth_result["status"]
     elif metrics_row and str(metrics_row.get("status", "")).strip():

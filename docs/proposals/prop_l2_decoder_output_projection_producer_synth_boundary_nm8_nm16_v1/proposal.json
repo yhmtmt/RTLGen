@@ -1,0 +1,70 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_producer_synth_boundary_nm8_nm16_v1",
+  "created_utc": "2026-05-14T05:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_output_projection_producer_synth_boundary",
+  "title": "Extended decoder output-projection producer synthesis boundary",
+  "hypothesis": "After the bounded EVENT scoreboard fix, the full decoder output-projection producer wrapper completes synth-only compilation through nm4. The next boundary should be measured at nm8 and nm16 before attempting full PnR or concluding that practical producer parallelism is limited.",
+  "direct_comparison": {
+    "primary_question": "Does the post-scoreboard full producer wrapper remain synth-feasible at nm8 and nm16 under the same bounded synth-only target?",
+    "include": [
+      "nm8 and nm16 fp16 producer configs",
+      "full npu_top producer wrapper rather than isolated GEMM-only top",
+      "Nangate45 synth-only OpenROAD target 1_2_yosys",
+      "hard total timeout and quiet-output stall timeout per point",
+      "comparison against the merged nm2/nm3/nm4 post-scoreboard boundary result"
+    ],
+    "exclude": [
+      "full placement and routing",
+      "new RTL architecture changes",
+      "quality or QAT experiments",
+      "producer/ranker NoC implementation changes"
+    ]
+  },
+  "expected_benefit": [
+    "identifies whether the repaired producer control path scales to practically useful module counts",
+    "finds the next synthesis explosion boundary with bounded evaluator time",
+    "provides a better scale target for subsequent producer/ranker and memory-hierarchy coupling estimates"
+  ],
+  "risks": [
+    "nm8 or nm16 may still timeout and require hierarchy or macro hardening before PnR",
+    "synth-only completion does not prove placement or routing feasibility",
+    "the larger probe can consume significant evaluator time if the next boundary is below nm16"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_output_projection_producer_synth_boundary_nm8_nm16_v1",
+      "task_type": "l2_campaign",
+      "objective": "Extend the post-scoreboard bounded synth-only decoder output-projection producer scale probe to nm8 and nm16.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_output_projection_producer_synth_boundary",
+      "cost_class": "bounded-high",
+      "comparison_role": "producer_synth_boundary",
+      "paired_baseline_item_id": "l2_decoder_output_projection_producer_synth_boundary_post_scoreboard_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_output_projection_producer_synth_boundary_post_scoreboard_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "The result should report whether nm8 and nm16 complete synth-only compilation or record the first nonviable module count for the next hierarchy or macro-hardening change."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_decoder_output_projection_producer_synth_boundary_post_scoreboard_v1/proposal.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_producer_synth_boundary__l2_decoder_output_projection_producer_synth_boundary_post_scoreboard_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_producer_synth_boundary__l2_decoder_output_projection_producer_synth_boundary_post_scoreboard_v1.md"
+  ],
+  "knowledge_refs": [
+    "npu/eval/probe_decoder_producer_synth_boundary.py",
+    "control_plane/control_plane/services/l2_task_generator.py",
+    "runs/campaigns/npu/output_projection_producer_scale/sweeps/nangate45_synth_boundary.json",
+    "runs/designs/npu_blocks/npu_fp16_cpp_nm8_producer/config_nm8_producer.json",
+    "runs/designs/npu_blocks/npu_fp16_cpp_nm16_producer/config_nm16_producer.json"
+  ]
+}
