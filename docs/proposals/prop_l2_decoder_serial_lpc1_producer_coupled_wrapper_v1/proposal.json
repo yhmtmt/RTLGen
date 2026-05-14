@@ -1,0 +1,70 @@
+{
+  "proposal_id": "prop_l2_decoder_serial_lpc1_producer_coupled_wrapper_v1",
+  "created_utc": "2026-05-14T10:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_serial_lpc1_producer_coupled_wrapper",
+  "title": "Decoder serial_lpc1 producer-coupled wrapper promotion",
+  "hypothesis": "The measured serial_lpc1 r64/k1 ranker wrapper is the best next producer-coupled ranker block for the current output-projection producer cadence because it has the lowest measured power/area and zero replay backpressure at II=384.",
+  "direct_comparison": {
+    "primary_question": "Can serial_lpc1 be promoted as the selected producer-coupled ranker wrapper under the current output-projection producer cadence assumption?",
+    "include": [
+      "measured serial_lpc1 physical metrics from the serial ranker architecture sweep",
+      "service compatibility lowest-power selection",
+      "prior producer-cadence replay at II=384",
+      "focused RTL replay at II=384 with zero-backpressure requirement",
+      "explicit assumptions for current producer cadence versus future resident-weight producer models"
+    ],
+    "exclude": [
+      "new physical PPA for the same serial_lpc1 macro",
+      "full output-projection GEMM datapath integration",
+      "wider producer tiles",
+      "NoC or SRAM arbitration"
+    ]
+  },
+  "expected_benefit": [
+    "turns the serial ranker exploration into a concrete selected producer-coupled ranker block",
+    "avoids re-measuring identical serial_lpc1 PPA while still rechecking RTL at the selected cadence",
+    "defines the next blocker as producer-cadence measurement rather than ranker architecture"
+  ],
+  "risks": [
+    "producer II=384 still comes from the analytical output-projection service model",
+    "the promoted wrapper is r64/k1 only",
+    "resident-weight or cached producers may need lpc2/lpc4 based on the replay guard rows"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_serial_lpc1_producer_coupled_wrapper_v1",
+      "task_type": "l2_campaign",
+      "objective": "Promote measured serial_lpc1 as the selected producer-coupled ranker wrapper by checking service selection, prior replay, focused II=384 RTL replay, and measured PPA availability.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_serial_lpc1_producer_coupled_wrapper",
+      "cost_class": "low",
+      "comparison_role": "producer_ranker_service",
+      "paired_baseline_item_id": "l2_decoder_producer_ranker_physical_wrapper_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_serial_ranker_architecture_v1",
+        "l2_decoder_producer_ranker_service_compatibility_v1",
+        "l2_decoder_serial_ranker_producer_replay_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "If serial_lpc1 passes focused replay at II=384 and measured PPA is available, use it as the selected ranker block for the next output-projection producer wrapper. If not, fall back to lpc2/lpc4 or rank-tree guard candidates."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_serial_ranker_architecture__l2_decoder_serial_ranker_architecture_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_producer_ranker_service_compatibility__l2_decoder_producer_ranker_service_compatibility_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_serial_ranker_producer_replay__l2_decoder_serial_ranker_producer_replay_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/promote_llm_decoder_serial_lpc1_producer_wrapper.py",
+    "tests/test_llm_decoder_serial_lpc1_producer_wrapper.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}
