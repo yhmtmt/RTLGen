@@ -2517,6 +2517,83 @@ def _decoder_producer_ranker_physical_wrapper_evidence(*, item_id: str) -> dict[
     }
 
 
+def _decoder_pipelined_ranker_architecture_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_pipelined_ranker_architecture__{item_id}.json"
+    report = f"{base}/decoder_pipelined_ranker_architecture__{item_id}.md"
+    merge_config = (
+        "runs/designs/activations/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/"
+        "config_candidate_stream_merge_fifo_k1_l16_t16_d16.json"
+    )
+    ready_valid_equivalence = (
+        f"{base}/decoder_producer_ranker_ready_valid_equivalence__"
+        "l2_decoder_producer_ranker_ready_valid_equivalence_v1_r2.json"
+    )
+    physical_wrapper = (
+        f"{base}/decoder_producer_ranker_physical_wrapper__"
+        "l2_decoder_producer_ranker_physical_wrapper_v1.json"
+    )
+    sweep = "runs/campaigns/npu/decoder_pipelined_ranker_architecture/sweeps/nangate45_r64_pipe2.json"
+    design_root = "runs/designs/activations"
+    tops = [
+        "decoder_r64_k1_rankseg8_pipe2_wrapper",
+        "decoder_r64_k1_rankseg16_pipe2_wrapper",
+        "decoder_r64_k1_rankseg32_pipe2_wrapper",
+    ]
+    return {
+        "inputs": {
+            "pipelined_ranker_architecture_out": out,
+            "pipelined_ranker_architecture_report": report,
+            "pipelined_ranker_architecture_sweep": sweep,
+            "pipelined_ranker_architecture_make_target": "3_3_place_gp",
+            "pipelined_ranker_architecture_local_lanes": [8, 16, 32],
+            "candidate_merge_config": merge_config,
+            "ready_valid_equivalence": ready_valid_equivalence,
+            "unpipelined_physical_wrapper": physical_wrapper,
+            "pipelined_ranker_architecture_scope": (
+                "Explore segmented r64/k1 rankers after the unpipelined wrapper measured "
+                "a 32 ns critical path. Variants split the 64-logit tile into local rankers "
+                "of 8, 16, and 32 lanes, register local winners, register the global winner "
+                "before the merge FIFO, and preserve II=1 ready-valid semantics."
+            ),
+        },
+        "commands": [
+            {
+                "name": "build_generator",
+                "run": "export PATH=/oss-cad-suite/bin:$PATH && cmake -S . -B build && cmake --build build --target rtlgen",
+            },
+            {
+                "name": "probe_decoder_pipelined_ranker_architecture",
+                "run": (
+                    "python3 npu/eval/probe_llm_decoder_pipelined_ranker_architecture.py "
+                    f"--merge-config {merge_config} "
+                    f"--ready-valid-equivalence {ready_valid_equivalence} "
+                    f"--design-root {design_root} "
+                    "--local-lanes 8,16,32 "
+                    f"--sweep {sweep} "
+                    "--platform nangate45 "
+                    "--make-target 3_3_place_gp "
+                    "--timeout-seconds 1800 "
+                    "--stall-timeout-seconds 900 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+            {
+                "name": "build_runs_index",
+                "run": "python3 scripts/build_runs_index.py",
+            },
+        ],
+        "expected_outputs": [
+            out,
+            report,
+            "runs/index.csv",
+            *[f"{design_root}/{top}/metrics.csv" for top in tops],
+            *[f"{design_root}/{top}/verilog/{top}.v" for top in tops],
+        ],
+    }
+
+
 def _decoder_output_projection_producer_synth_boundary_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_output_projection_producer_synth_boundary__{item_id}.json"
@@ -3252,6 +3329,7 @@ def _build_payload(
         "decoder_producer_ranker_memory_integration_plan",
         "decoder_producer_ranker_ready_valid_equivalence",
         "decoder_producer_ranker_physical_wrapper",
+        "decoder_pipelined_ranker_architecture",
         "decoder_output_projection_producer_pnr_feasibility",
         "decoder_output_projection_producer_synth_boundary",
         "decoder_output_projection_producer_isolated_synth",
@@ -3282,6 +3360,8 @@ def _build_payload(
             decoder_evidence = _decoder_producer_ranker_ready_valid_equivalence_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_producer_ranker_physical_wrapper":
             decoder_evidence = _decoder_producer_ranker_physical_wrapper_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_pipelined_ranker_architecture":
+            decoder_evidence = _decoder_pipelined_ranker_architecture_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_memory":
             decoder_evidence = _decoder_attention_kv_memory_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_stage_breakdown":
