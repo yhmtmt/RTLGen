@@ -2113,6 +2113,50 @@ def test_generate_l2_campaign_task_adds_decoder_producer_pnr_feasibility_evidenc
             }
 
 
+def test_generate_l2_campaign_task_adds_decoder_producer_nm16_pnr_feasibility_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    item_id="l2_decoder_output_projection_producer_pnr_nm16_v1",
+                    proposal_id="prop_l2_decoder_output_projection_producer_pnr_nm16_v1",
+                    proposal_path=(
+                        "docs/proposals/"
+                        "prop_l2_decoder_output_projection_producer_pnr_nm16_v1/proposal.json"
+                    ),
+                    evaluation_mode="frontier_detail",
+                    abstraction_layer="decoder_output_projection_producer_pnr_feasibility",
+                    expected_direction="iterate",
+                    comparison_role="producer_pnr_feasibility",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+            run = work_item.command_manifest[0]["run"]
+            assert "npu_fp16_cpp_nm16_producer/config_nm16_producer.json" in run
+            assert "npu_fp16_cpp_nm8_producer/config_nm8_producer.json" not in run
+            assert "post-scoreboard nm16" in decoder_inputs["producer_synth_boundary_scope"]
+            assert decoder_inputs["producer_synth_boundary_out"] == (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_output_projection_producer_pnr_feasibility__"
+                "l2_decoder_output_projection_producer_pnr_nm16_v1.json"
+            )
+
+
 def test_generate_l2_campaign_task_adds_decoder_producer_isolated_synth_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

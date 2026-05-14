@@ -1,0 +1,72 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_producer_pnr_nm16_v1",
+  "created_utc": "2026-05-14T05:50:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_output_projection_producer_pnr_feasibility",
+  "title": "Decoder output-projection producer nm16 physical feasibility",
+  "hypothesis": "The post-scoreboard nm8 producer completed bounded physical implementation after the full producer wrapper synthesized through nm16. Testing nm16 with the same bounded 3_3_place_gp target will show whether producer parallelism remains physically feasible at the largest currently generated point or whether floorplan/hierarchy work is needed before larger integration.",
+  "direct_comparison": {
+    "primary_question": "Can the post-scoreboard nm16 decoder output-projection producer complete the bounded Nangate45 3_3_place_gp physical target?",
+    "include": [
+      "nm16 fp16 producer config",
+      "full npu_top producer wrapper",
+      "Nangate45 OpenROAD target 3_3_place_gp",
+      "same producer floorplan parameters used for nm8 physical feasibility",
+      "hard total timeout and quiet-output stall timeout"
+    ],
+    "exclude": [
+      "new floorplan or hierarchy changes",
+      "full route closure beyond the existing target",
+      "quality or QAT experiments",
+      "producer/ranker NoC implementation changes"
+    ]
+  },
+  "expected_benefit": [
+    "tests whether the largest generated producer module count is physically feasible after the EVENT scoreboard repair",
+    "separates physical floorplan pressure from remaining system-level producer/ranker/memory coupling questions",
+    "provides a high-parallelism physical anchor for the next decoder frontier update"
+  ],
+  "risks": [
+    "nm16 may fail placement even though nm8 passes, requiring floorplan, hierarchy, or macro-hardening follow-up",
+    "3_3_place_gp is not full route closure",
+    "a successful isolated producer physical point still does not include shared NoC or memory hierarchy contention"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_output_projection_producer_pnr_nm16_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run a bounded physical feasibility probe for the post-scoreboard nm16 decoder output-projection producer using OpenROAD target 3_3_place_gp.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_output_projection_producer_pnr_feasibility",
+      "cost_class": "bounded-high",
+      "comparison_role": "producer_pnr_feasibility",
+      "paired_baseline_item_id": "l2_decoder_output_projection_producer_pnr_nm8_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_output_projection_producer_pnr_nm8_v1",
+        "l2_decoder_output_projection_producer_synth_boundary_nm8_nm16_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "The result should report whether nm16 completes bounded physical implementation or identify the first placement-stage blocker for a floorplan or hierarchy follow-up."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_decoder_output_projection_producer_pnr_nm8_v1/proposal.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_producer_pnr_feasibility__l2_decoder_output_projection_producer_pnr_nm8_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_producer_pnr_feasibility__l2_decoder_output_projection_producer_pnr_nm8_v1.md",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_producer_synth_boundary__l2_decoder_output_projection_producer_synth_boundary_nm8_nm16_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/probe_decoder_producer_synth_boundary.py",
+    "npu/synth/run_block_sweep.py",
+    "control_plane/control_plane/services/l2_task_generator.py",
+    "runs/campaigns/npu/output_projection_producer_scale/sweeps/nangate45_synth_boundary.json",
+    "runs/designs/npu_blocks/npu_fp16_cpp_nm16_producer/config_nm16_producer.json"
+  ]
+}
