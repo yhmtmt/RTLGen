@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 import re
 import shutil
@@ -311,7 +312,47 @@ def _write_testbench(
 
 
 def _run(cmd: list[str], *, cwd: Path) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(cmd, cwd=cwd, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False)
+    try:
+        return subprocess.run(
+            cmd,
+            cwd=cwd,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            check=False,
+        )
+    except FileNotFoundError as exc:
+        return subprocess.CompletedProcess(cmd, 127, stdout=str(exc))
+
+
+def _resolve_executable(requested: str) -> str | None:
+    candidate_paths: list[Path] = []
+    requested_path = Path(requested)
+    if requested_path.is_absolute():
+        candidate_paths.append(requested_path)
+    elif "/" in requested or "\\" in requested:
+        candidate_paths.append((Path.cwd() / requested_path).resolve())
+    else:
+        found = shutil.which(requested)
+        if found is not None:
+            candidate_paths.append(Path(found))
+
+    env_path = os.environ.get("RTLGEN_BINARY")
+    if env_path:
+        candidate_paths.append(Path(env_path).expanduser())
+
+    repo_root = Path(__file__).resolve().parents[2]
+    candidate_paths.extend(
+        [
+            Path.cwd() / "build" / "rtlgen",
+            repo_root / "build" / "rtlgen",
+            Path("/workspaces/RTLGen/build/rtlgen"),
+        ]
+    )
+    for candidate in candidate_paths:
+        if candidate.is_file() and os.access(candidate, os.X_OK):
+            return str(candidate.resolve())
+    return None
 
 
 def _run_rtl_sim(
@@ -538,17 +579,26 @@ def main() -> int:
         if iverilog is None or vvp is None:
             rtl_sim = {"status": "simulator_missing", "iverilog": iverilog, "vvp": vvp}
         else:
-            rtl_sim = _run_rtl_sim(
-                rtlgen_binary=args.rtlgen_binary,
-                iverilog_binary=iverilog,
-                vvp_binary=vvp,
-                logit_rank_config=Path(args.logit_rank_config).resolve(),
-                merge_config=Path(args.merge_config).resolve(),
-                producer_lanes=_as_int(rank_opts.get("row_elems")),
-                logit_bits=_as_int(rank_opts.get("logit_bits")),
-                token_id_bits=_as_int(merge_opts.get("token_id_bits")),
-                top_k=_as_int(rank_opts.get("top_k")),
-            )
+            rtlgen_binary = _resolve_executable(args.rtlgen_binary)
+            if rtlgen_binary is None:
+                rtl_sim = {
+                    "status": "rtlgen_binary_missing",
+                    "requested": args.rtlgen_binary,
+                    "rtlgen_binary_env": os.environ.get("RTLGEN_BINARY"),
+                }
+            else:
+                rtl_sim = _run_rtl_sim(
+                    rtlgen_binary=rtlgen_binary,
+                    iverilog_binary=iverilog,
+                    vvp_binary=vvp,
+                    logit_rank_config=Path(args.logit_rank_config).resolve(),
+                    merge_config=Path(args.merge_config).resolve(),
+                    producer_lanes=_as_int(rank_opts.get("row_elems")),
+                    logit_bits=_as_int(rank_opts.get("logit_bits")),
+                    token_id_bits=_as_int(merge_opts.get("token_id_bits")),
+                    top_k=_as_int(rank_opts.get("top_k")),
+                )
+                rtl_sim["rtlgen_binary"] = rtlgen_binary
     payload = build_report(
         producer_config=producer_config,
         logit_rank_config=logit_rank_config,

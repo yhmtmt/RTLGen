@@ -2427,6 +2427,10 @@ def _decoder_producer_ranker_ready_valid_equivalence_evidence(*, item_id: str) -
         },
         "commands": [
             {
+                "name": "build_generator",
+                "run": "export PATH=/oss-cad-suite/bin:$PATH && cmake -S . -B build && cmake --build build --target rtlgen",
+            },
+            {
                 "name": "probe_decoder_producer_ranker_ready_valid_equivalence",
                 "run": (
                     "python3 npu/eval/probe_llm_decoder_producer_ranker_ready_valid_equivalence.py "
