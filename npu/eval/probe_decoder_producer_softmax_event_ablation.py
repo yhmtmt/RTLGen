@@ -57,7 +57,7 @@ VARIANTS: list[dict[str, Any]] = [
     {
         "name": "cq_v1_event_wait_only",
         "top": "npu_top",
-        "description": "EVENT_WAIT path with dynamic event_state read, stall, and clear.",
+        "description": "EVENT_WAIT path with staged event id latch, pending wait, and indexed event_state clear.",
         "updates": {"cq_mem_ablation_mode": "v1_event_wait_only"},
     },
     {

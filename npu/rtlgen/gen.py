@@ -81,6 +81,8 @@ module {top_name} (
   reg        cq_stage_valid;
   reg        dma_pending;
   reg [65535:0] event_state;
+  reg        event_wait_pending;
+  reg [15:0] event_wait_id;
   reg [2:0]  dma_state;
 {gemm_state_regs}
 {compute_state_regs}
@@ -200,6 +202,8 @@ module {top_name} (
       cq_stage_valid <= 0;
       dma_pending <= 0;
       event_state <= 0;
+      event_wait_pending <= 0;
+      event_wait_id <= 0;
       dma_state <= 0;
 {gemm_reset}
 {compute_reset}
@@ -249,7 +253,7 @@ module {top_name} (
         status <= STATUS_ERR;
         irq_status[IRQ_ERROR] <= 1'b1;
       end else if (!(mmio_we && mmio_addr == OFF_DOORBELL)) begin
-        if ((cq_count != 0) || cq_stage_valid || dma_pending || vec_pending || softmax_pending || {gemm_slots_busy_expr}) begin
+        if ((cq_count != 0) || cq_stage_valid || event_wait_pending || dma_pending || vec_pending || softmax_pending || {gemm_slots_busy_expr}) begin
           status <= STATUS_BUSY;
         end else begin
           status <= STATUS_IDLE;
@@ -2395,6 +2399,21 @@ endmodule
       end
       gemm_pending <= (gemm_slot_valid != {gemm_slot_valid_zero});"""
 
+    event_wait_service_block = """        if (event_state[event_wait_id]) begin
+          event_state[event_wait_id] <= 1'b0;
+          event_wait_pending <= 1'b0;
+          cq_head <= cq_head + 32;
+          if (cq_count == 1) begin
+            irq_status[IRQ_CQ_EMPTY] <= 1'b1;
+          end
+          cq_count <= cq_count - 1;
+        end"""
+
+    event_wait_latch_block = """              consume_desc = 1'b0;
+              event_wait_id <= cq_mem_rdata[47:32];
+              event_wait_pending <= 1'b1;
+              cq_stage_valid <= 1'b0;"""
+
     if enable_cq_mem_ports:
         cq_mem_ports = f""",
     output reg  [{dma_addr_width_minus1}:0] cq_mem_addr,
@@ -2402,7 +2421,9 @@ endmodule
 """
         cq_block = f"""      // Command queue fetch (supports v0.1 32B and v0.2 64B descriptors).
       if (cq_count != 0) begin
-        if (!cq_stage_valid && !cq_pending_ext) begin
+        if (event_wait_pending) begin
+{event_wait_service_block}
+        end else if (!cq_stage_valid && !cq_pending_ext) begin
           cq_mem_addr <= {{cq_base_hi, cq_base_lo}} + cq_head;
           cq_stage_valid <= 1'b1;
         end else if (cq_stage_valid && !cq_pending_ext) begin
@@ -2524,11 +2545,7 @@ endmodule
               end
             end else if (cq_mem_rdata[7:0] == 8'h21) begin
               // EVENT_WAIT: stall command retirement until the event is signaled.
-              if (!event_state[cq_mem_rdata[47:32]]) begin
-                consume_desc = 1'b0;
-              end else begin
-                event_state[cq_mem_rdata[47:32]] <= 1'b0;
-              end
+{event_wait_latch_block}
             end else begin
               error_code <= 32'h1;
             end
@@ -2828,7 +2845,9 @@ endmodule
         elif cq_mem_ablation_mode == "v1_softmax_event_only":
             cq_block = f"""      // CQ diagnostic ablation: v0.1 SOFTMAX and EVENT descriptor paths only.
       if (cq_count != 0) begin
-        if (!cq_stage_valid) begin
+        if (event_wait_pending) begin
+{event_wait_service_block}
+        end else if (!cq_stage_valid) begin
           cq_mem_addr <= {{cq_base_hi, cq_base_lo}} + cq_head;
           cq_stage_valid <= 1'b1;
         end else begin
@@ -2870,11 +2889,7 @@ endmodule
               end
             end
           end else if (cq_mem_rdata[7:0] == 8'h21) begin
-            if (!event_state[cq_mem_rdata[47:32]]) begin
-              consume_desc = 1'b0;
-            end else begin
-              event_state[cq_mem_rdata[47:32]] <= 1'b0;
-            end
+{event_wait_latch_block}
           end
           if (consume_desc) begin
             cq_head <= cq_head + 32;
@@ -3035,7 +3050,9 @@ endmodule
         elif cq_mem_ablation_mode == "v1_event_wait_only":
             cq_block = f"""      // CQ diagnostic ablation: v0.1 EVENT_WAIT path only.
       if (cq_count != 0) begin
-        if (!cq_stage_valid) begin
+        if (event_wait_pending) begin
+{event_wait_service_block}
+        end else if (!cq_stage_valid) begin
           cq_mem_addr <= {{cq_base_hi, cq_base_lo}} + cq_head;
           cq_stage_valid <= 1'b1;
         end else begin
@@ -3050,11 +3067,7 @@ endmodule
           last_size <= cq_mem_rdata[223:192];
           last_op_uid <= 0;
           if (cq_mem_rdata[7:0] == 8'h21) begin
-            if (!event_state[cq_mem_rdata[47:32]]) begin
-              consume_desc = 1'b0;
-            end else begin
-              event_state[cq_mem_rdata[47:32]] <= 1'b0;
-            end
+{event_wait_latch_block}
           end
           if (consume_desc) begin
             cq_head <= cq_head + 32;
@@ -3099,7 +3112,9 @@ endmodule
         elif cq_mem_ablation_mode == "v1_event_only":
             cq_block = f"""      // CQ diagnostic ablation: v0.1 EVENT_SIGNAL and EVENT_WAIT paths only.
       if (cq_count != 0) begin
-        if (!cq_stage_valid) begin
+        if (event_wait_pending) begin
+{event_wait_service_block}
+        end else if (!cq_stage_valid) begin
           cq_mem_addr <= {{cq_base_hi, cq_base_lo}} + cq_head;
           cq_stage_valid <= 1'b1;
         end else begin
@@ -3123,11 +3138,7 @@ endmodule
               end
             end
           end else if (cq_mem_rdata[7:0] == 8'h21) begin
-            if (!event_state[cq_mem_rdata[47:32]]) begin
-              consume_desc = 1'b0;
-            end else begin
-              event_state[cq_mem_rdata[47:32]] <= 1'b0;
-            end
+{event_wait_latch_block}
           end
           if (consume_desc) begin
             cq_head <= cq_head + 32;

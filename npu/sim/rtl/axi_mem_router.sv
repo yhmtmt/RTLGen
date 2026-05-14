@@ -25,7 +25,7 @@ module axi_mem_router (
   output reg [255:0] m_axi_rdata,
   output reg         m_axi_rlast
 );
-  `include "npu/rtlgen/out/sram_map.vh"
+  `include "sram_map.vh"
 
   reg [7:0] mem [0:2097151];
   reg [63:0] aw_addr_q;
