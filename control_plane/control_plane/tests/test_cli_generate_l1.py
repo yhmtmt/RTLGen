@@ -50,3 +50,32 @@ def test_top_level_generate_l1_forwards_extended_generation_flags() -> None:
     assert forwarded[forwarded.index("--trial-count") + 1] == "3"
     assert forwarded[forwarded.index("--seed-start") + 1] == "100"
     assert forwarded[forwarded.index("--stop-after-failures") + 1] == "2"
+
+
+def test_top_level_run_worker_forwards_only_worker_flags() -> None:
+    with patch("control_plane.cli.main.run_worker_main", return_value=0) as worker:
+        result = main(
+            [
+                "run-worker",
+                "--database-url",
+                "sqlite+pysqlite:///:memory:",
+                "--repo-root",
+                "/repo",
+                "--machine-key",
+                "eval-daemon",
+                "--machine-role",
+                "evaluator",
+                "--slot-capacity",
+                "1",
+                "--max-items",
+                "1",
+            ]
+        )
+
+    assert result == 0
+    forwarded = worker.call_args.args[0]
+    assert "--source-update-ref" not in forwarded
+    assert forwarded.count("--machine-role") == 1
+    assert forwarded.count("--slot-capacity") == 1
+    assert forwarded[forwarded.index("--machine-role") + 1] == "evaluator"
+    assert forwarded[forwarded.index("--slot-capacity") + 1] == "1"
