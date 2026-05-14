@@ -51,19 +51,19 @@ VARIANTS: list[dict[str, Any]] = [
     {
         "name": "cq_v1_event_signal_only",
         "top": "npu_top",
-        "description": "EVENT_SIGNAL path with busy gating, dynamic event_state set, and optional IRQ.",
+        "description": "EVENT_SIGNAL path with busy gating, bounded event scoreboard set, and optional IRQ.",
         "updates": {"cq_mem_ablation_mode": "v1_event_signal_only"},
     },
     {
         "name": "cq_v1_event_wait_only",
         "top": "npu_top",
-        "description": "EVENT_WAIT path with staged event id latch, pending wait, and indexed event_state clear.",
+        "description": "EVENT_WAIT path with staged event id latch, pending wait, and bounded scoreboard clear.",
         "updates": {"cq_mem_ablation_mode": "v1_event_wait_only"},
     },
     {
         "name": "cq_v1_event_index_only",
         "top": "npu_top",
-        "description": "Dynamic event_state index read/write only, without EVENT busy gating or stall behavior.",
+        "description": "Bounded event scoreboard set/clear only, without EVENT busy gating or stall behavior.",
         "updates": {"cq_mem_ablation_mode": "v1_event_index_only"},
     },
     {

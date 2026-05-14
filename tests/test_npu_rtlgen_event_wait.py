@@ -32,12 +32,15 @@ def _generate_top(tmp_path: Path, mode: str = "full") -> str:
 def test_full_cq_event_wait_latches_id_before_stalling(tmp_path: Path) -> None:
     top = _generate_top(tmp_path)
 
+    assert "reg [15:0] event_scoreboard_id [0:15];" in top
+    assert "reg [15:0] event_scoreboard_valid;" in top
     assert "reg        event_wait_pending;" in top
     assert "reg [15:0] event_wait_id;" in top
     assert "event_wait_id <= cq_mem_rdata[47:32];" in top
     assert "event_wait_pending <= 1'b1;" in top
-    assert "if (!event_state[cq_mem_rdata[47:32]])" not in top
-    assert "event_state[event_wait_id] <= 1'b0;" in top
+    assert "event_scoreboard_id[event_i] == event_wait_id" in top
+    assert "event_scoreboard_valid[event_wait_match_slot] <= 1'b0;" in top
+    assert "event_state" not in top
 
 
 @pytest.mark.parametrize("mode", ["v1_softmax_event_only", "v1_event_wait_only", "v1_event_only"])
@@ -46,12 +49,14 @@ def test_event_wait_diagnostic_modes_use_staged_wait(tmp_path: Path, mode: str) 
 
     assert "event_wait_id <= cq_mem_rdata[47:32];" in top
     assert "if (event_wait_pending) begin" in top
-    assert "event_state[event_wait_id] <= 1'b0;" in top
-    assert "if (!event_state[cq_mem_rdata[47:32]])" not in top
+    assert "event_scoreboard_id[event_i] == event_wait_id" in top
+    assert "event_scoreboard_valid[event_wait_match_slot] <= 1'b0;" in top
+    assert "event_state" not in top
 
 
-def test_event_index_diagnostic_mode_keeps_direct_dynamic_access(tmp_path: Path) -> None:
+def test_event_index_diagnostic_mode_uses_bounded_scoreboard(tmp_path: Path) -> None:
     top = _generate_top(tmp_path, "v1_event_index_only")
 
     assert "event_wait_id <= cq_mem_rdata[47:32];" not in top
-    assert "event_state[cq_mem_rdata[47:32]]" in top
+    assert "event_scoreboard_id[event_i] == cq_mem_rdata[47:32]" in top
+    assert "event_state" not in top
