@@ -1,0 +1,334 @@
+{
+  "assumptions": [
+    "All variants preserve a 64-logit tile and top-k=1 stream contract.",
+    "Local rankers operate in parallel; only local winners cross the register cut into the global selector.",
+    "The generated wrappers target II=1 when downstream merge FIFO is ready; additional latency is tolerated."
+  ],
+  "best_timing_variant": {
+    "critical_path_ns": "6.635964271968359",
+    "die_area": "810000.0",
+    "groups": 8,
+    "local_lanes": 8,
+    "top": "decoder_r64_k1_rankseg8_pipe2_wrapper",
+    "total_power_mw": "0.0143868"
+  },
+  "decision": {
+    "decision": "pipelined_ranker_architecture_measured",
+    "next_step": "Compare the best pipelined r64 point against the unpipelined wrapper, then decide whether to scale r128 or tune register cuts."
+  },
+  "model": "decoder_pipelined_ranker_architecture_v1",
+  "target": {
+    "explored_local_lanes": [
+      8,
+      16,
+      32
+    ],
+    "make_target": "3_3_place_gp",
+    "pipeline_register_cuts": [
+      "after_local_rank",
+      "before_merge_fifo"
+    ],
+    "producer_lanes": 64,
+    "sweep": "runs/campaigns/npu/decoder_pipelined_ranker_architecture/sweeps/nangate45_r64_pipe2.json",
+    "top_k": 1
+  },
+  "variants": [
+    {
+      "config_manifest": "runs/designs/activations/decoder_r64_k1_rankseg8_pipe2_wrapper/config_decoder_r64_k1_rankseg8_pipe2_wrapper.json",
+      "design_dir": "runs/designs/activations/decoder_r64_k1_rankseg8_pipe2_wrapper",
+      "generated_verilog": [
+        "runs/designs/activations/decoder_r64_k1_rankseg8_pipe2_wrapper/verilog/candidate_stream_merge_fifo_k1_l16_t16_d16.v",
+        "runs/designs/activations/decoder_r64_k1_rankseg8_pipe2_wrapper/verilog/decoder_r64_k1_rankseg8_pipe2_wrapper.v",
+        "runs/designs/activations/decoder_r64_k1_rankseg8_pipe2_wrapper/verilog/logit_rank_r8_l16_k1.v"
+      ],
+      "groups": 8,
+      "local_lanes": 8,
+      "metrics_row": {
+        "config_hash": "e7540ae14af6",
+        "critical_path_ns": "6.635964271968359",
+        "design": "decoder_r64_k1_rankseg8_pipe2_wrapper",
+        "die_area": "810000.0",
+        "flow_elapsed_seconds": "41.459999999999994",
+        "param_hash": "4580f581",
+        "params_json": "{\"CLOCK_PERIOD\": 10.0, \"CORE_AREA\": \"40 40 860 860\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 900 900\", \"FLOW_VARIANT\": \"decoder_r64_k1_rankseg_pipe2\", \"PLACE_DENSITY\": 0.36, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_KEEP_MODULES\": \"candidate_stream_merge_fifo_k1_l16_t16_d16\", \"TAG\": \"decoder_r64_k1_rankseg_pipe2\", \"tag_prefix\": \"decoder_r64_k1_rankseg_pipe2\"}",
+        "platform": "nangate45",
+        "result_path": "",
+        "stage_elapsed_seconds": "20.36",
+        "status": "ok",
+        "synth_script_path": "",
+        "synth_script_sha1": "",
+        "tag": "decoder_r64_k1_rankseg_pipe2",
+        "total_power_mw": "0.0143868",
+        "work_result_json": "runs/designs/activations/decoder_r64_k1_rankseg8_pipe2_wrapper/work/4580f581/result.json"
+      },
+      "returncodes": {
+        "global": 0,
+        "local": 0,
+        "merge": 0
+      },
+      "simulation": {
+        "expected": {
+          "logit": 500,
+          "token": 5
+        },
+        "log_tail": [
+          "RESULT token=5 logit=500 accepted=3 stalls=0 fifo_max=1 final_cycle=9",
+          "/tmp/rtlcp-worktree-9e9f_pcd/repo/runs/designs/activations/decoder_r64_k1_rankseg8_pipe2_wrapper/tb_decoder_r64_k1_rankseg8_pipe2_wrapper.v:293: $finish called at 130000 (1ps)"
+        ],
+        "returncode": 0,
+        "status": "ok"
+      },
+      "status": "ok",
+      "synthesis": {
+        "command": "python3 npu/synth/run_block_sweep.py --design_dir runs/designs/activations/decoder_r64_k1_rankseg8_pipe2_wrapper --platform nangate45 --top decoder_r64_k1_rankseg8_pipe2_wrapper --sweep runs/campaigns/npu/decoder_pipelined_ranker_architecture/sweeps/nangate45_r64_pipe2.json --make_target 3_3_place_gp --out_root runs/designs/activations --force_copy",
+        "elapsed_seconds": 46.04684253301821,
+        "log_path": "control_plane/runtime_logs/decoder_pipelined_ranker_architecture/decoder_r64_k1_rankseg8_pipe2_wrapper_3_3_place_gp.log",
+        "log_tail": [
+          "    15000 |     +0.0% |     291 |      302 |       344",
+          "    final |     +0.0% |     317 |      334 |         0",
+          "-------------------------------------------------------",
+          "[INFO GPL-0106] Timing-driven: worst slack 3.43e-09",
+          "[INFO GPL-0107] Timing-driven: repair_design delta area: 82.194 um^2 (+0.38%)",
+          "[INFO GPL-0108] Timing-driven: repair_design, gpl cells created: 69 (+0.00%)",
+          "[INFO GPL-0110] Timing-driven: new target density: 0.36053464",
+          "Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group",
+          "---------------------------------------------------------------",
+          "      350 |   0.1754 |  3.488533e+05 |   +2.62% |  2.97e-07 |      ",
+          "      360 |   0.1528 |  3.484679e+05 |   -0.11% |  4.37e-07 |      ",
+          "      370 |   0.1286 |  3.483231e+05 |   -0.04% |  6.44e-07 |      ",
+          "      380 |   0.1115 |  3.482534e+05 |   -0.02% |  9.48e-07 |      ",
+          "      386 |   0.0994 |  3.484330e+05 |          |  1.24e-06 |      ",
+          "---------------------------------------------------------------",
+          "[INFO GPL-1001] Global placement finished at iteration 386",
+          "[INFO GPL-1003] Routability mode iteration count: 88",
+          "[INFO GPL-1005] Routability final weighted congestion: 0.6965",
+          "[INFO GPL-1002] Placed Cell Area            21701.6100",
+          "[INFO GPL-1003] Available Free Area         670677.5040",
+          "[INFO GPL-1004] Minimum Feasible Density        0.0400 (cell_area / free_area)",
+          "[INFO GPL-1006]   Suggested Target Densities:",
+          "[INFO GPL-1007]     - For 90% usage of free space: 0.0360",
+          "[INFO GPL-1008]     - For 80% usage of free space: 0.0404",
+          "[INFO GPL-1009]     - For 50% usage of free space: 0.0647",
+          "[INFO GPL-1011] Original area (um^2): 21343.04",
+          "[INFO GPL-1012] Total routability artificial inflation: 276.37 (+1.29%)",
+          "[INFO GPL-1013] Total timing-driven delta area: 358.57 (+1.68%)",
+          "[INFO GPL-1014] Final placement area: 21701.61 (+1.68%)",
+          "Took 19 seconds: global_placement -density 0.36 -pad_left 0 -pad_right 0 -routability_driven -timing_driven",
+          "Report metrics stage 3, global place...",
+          "",
+          "==========================================================================",
+          "global place report_design_area",
+          "--------------------------------------------------------------------------",
+          "Design area 21702 u^2 3% utilization.",
+          "Elapsed time: 0:20.36[h:]min:sec. CPU time: user 126.33 sys 4.56 (642%). Peak memory: 603724KB.",
+          "Log                        Elapsed/s Peak Memory/MB  sha1sum .odb [0:20)",
+          "3_3_place_gp                      20            589 53190736b8f17a75ef6c",
+          "[INFO] Running OpenROAD flow: make DESIGN_CONFIG=/orfs/flow/designs/nangate45/decoder_r64_k1_rankseg8_pipe2_wrapper/config.mk TAG=decoder_r64_k1_rankseg_pipe2 SDC_FILE=/orfs/flow/designs/nangate45/decoder_r64_k1_rankseg8_pipe2_wrapper/constraint.sdc CLOCK_PERIOD=10.0 CORE_AREA=40 40 860 860 DIE_AREA=0 0 900 900 FLOW_VARIANT=decoder_r64_k1_rankseg_pipe2 PLACE_DENSITY=0.36 SYNTH_HIERARCHICAL=1 SYNTH_KEEP_MODULES=candidate_stream_merge_fifo_k1_l16_t16_d16 TAG=decoder_r64_k1_rankseg_pipe2 TAG_PREFIX=decoder_r64_k1_rankseg_pipe2 CORE_UTILIZATION= 3_3_place_gp"
+        ],
+        "returncode": 0,
+        "status": "ok"
+      },
+      "top": "decoder_r64_k1_rankseg8_pipe2_wrapper",
+      "verilog_dir": "runs/designs/activations/decoder_r64_k1_rankseg8_pipe2_wrapper/verilog"
+    },
+    {
+      "config_manifest": "runs/designs/activations/decoder_r64_k1_rankseg16_pipe2_wrapper/config_decoder_r64_k1_rankseg16_pipe2_wrapper.json",
+      "design_dir": "runs/designs/activations/decoder_r64_k1_rankseg16_pipe2_wrapper",
+      "generated_verilog": [
+        "runs/designs/activations/decoder_r64_k1_rankseg16_pipe2_wrapper/verilog/candidate_stream_merge_fifo_k1_l16_t16_d16.v",
+        "runs/designs/activations/decoder_r64_k1_rankseg16_pipe2_wrapper/verilog/decoder_r64_k1_rankseg16_pipe2_wrapper.v",
+        "runs/designs/activations/decoder_r64_k1_rankseg16_pipe2_wrapper/verilog/logit_rank_r16_l16_k1.v",
+        "runs/designs/activations/decoder_r64_k1_rankseg16_pipe2_wrapper/verilog/logit_rank_r4_l16_k1.v"
+      ],
+      "groups": 4,
+      "local_lanes": 16,
+      "metrics_row": {
+        "config_hash": "e793beb9a61f",
+        "critical_path_ns": "10.302088130243119",
+        "design": "decoder_r64_k1_rankseg16_pipe2_wrapper",
+        "die_area": "810000.0",
+        "flow_elapsed_seconds": "50.120000000000005",
+        "param_hash": "4580f581",
+        "params_json": "{\"CLOCK_PERIOD\": 10.0, \"CORE_AREA\": \"40 40 860 860\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 900 900\", \"FLOW_VARIANT\": \"decoder_r64_k1_rankseg_pipe2\", \"PLACE_DENSITY\": 0.36, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_KEEP_MODULES\": \"candidate_stream_merge_fifo_k1_l16_t16_d16\", \"TAG\": \"decoder_r64_k1_rankseg_pipe2\", \"tag_prefix\": \"decoder_r64_k1_rankseg_pipe2\"}",
+        "platform": "nangate45",
+        "result_path": "",
+        "stage_elapsed_seconds": "22.53",
+        "status": "ok",
+        "synth_script_path": "",
+        "synth_script_sha1": "",
+        "tag": "decoder_r64_k1_rankseg_pipe2",
+        "total_power_mw": "0.105272",
+        "work_result_json": "runs/designs/activations/decoder_r64_k1_rankseg16_pipe2_wrapper/work/4580f581/result.json"
+      },
+      "returncodes": {
+        "global": 0,
+        "local": 0,
+        "merge": 0
+      },
+      "simulation": {
+        "expected": {
+          "logit": 500,
+          "token": 5
+        },
+        "log_tail": [
+          "RESULT token=5 logit=500 accepted=3 stalls=0 fifo_max=1 final_cycle=9",
+          "/tmp/rtlcp-worktree-9e9f_pcd/repo/runs/designs/activations/decoder_r64_k1_rankseg16_pipe2_wrapper/tb_decoder_r64_k1_rankseg16_pipe2_wrapper.v:293: $finish called at 130000 (1ps)"
+        ],
+        "returncode": 0,
+        "status": "ok"
+      },
+      "status": "ok",
+      "synthesis": {
+        "command": "python3 npu/synth/run_block_sweep.py --design_dir runs/designs/activations/decoder_r64_k1_rankseg16_pipe2_wrapper --platform nangate45 --top decoder_r64_k1_rankseg16_pipe2_wrapper --sweep runs/campaigns/npu/decoder_pipelined_ranker_architecture/sweeps/nangate45_r64_pipe2.json --make_target 3_3_place_gp --out_root runs/designs/activations --force_copy",
+        "elapsed_seconds": 54.06218067900045,
+        "log_path": "control_plane/runtime_logs/decoder_pipelined_ranker_architecture/decoder_r64_k1_rankseg16_pipe2_wrapper_3_3_place_gp.log",
+        "log_tail": [
+          "    final |     -6.8% |    2088 |      443 |         0",
+          "-------------------------------------------------------",
+          "[INFO GPL-0106] Timing-driven: worst slack -1.69e-10",
+          "[INFO GPL-0107] Timing-driven: repair_design delta area: -1414.056 um^2 (-6.53%)",
+          "[INFO GPL-0108] Timing-driven: repair_design, gpl cells created: -1611 (+0.00%)",
+          "[INFO GPL-0110] Timing-driven: new target density: 0.36072978",
+          "Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group",
+          "---------------------------------------------------------------",
+          "      350 |   0.1837 |  3.686047e+05 |   +2.17% |  2.84e-07 |      ",
+          "      360 |   0.1534 |  3.634050e+05 |   -1.41% |  4.18e-07 |      ",
+          "      370 |   0.1397 |  3.610800e+05 |   -0.64% |  6.16e-07 |      ",
+          "      380 |   0.1159 |  3.608989e+05 |   -0.05% |  9.07e-07 |      ",
+          "      390 |   0.0996 |  3.609734e+05 |   +0.02% |  1.34e-06 |      ",
+          "      390 |   0.0996 |  3.609734e+05 |          |  1.39e-06 |      ",
+          "---------------------------------------------------------------",
+          "[INFO GPL-1001] Global placement finished at iteration 390",
+          "[INFO GPL-1003] Routability mode iteration count: 107",
+          "[INFO GPL-1005] Routability final weighted congestion: 0.6799",
+          "[INFO GPL-1002] Placed Cell Area            20224.2460",
+          "[INFO GPL-1003] Available Free Area         670677.5040",
+          "[INFO GPL-1004] Minimum Feasible Density        0.0300 (cell_area / free_area)",
+          "[INFO GPL-1006]   Suggested Target Densities:",
+          "[INFO GPL-1007]     - For 90% usage of free space: 0.0335",
+          "[INFO GPL-1008]     - For 80% usage of free space: 0.0377",
+          "[INFO GPL-1009]     - For 50% usage of free space: 0.0603",
+          "[INFO GPL-1011] Original area (um^2): 19734.81",
+          "[INFO GPL-1012] Total routability artificial inflation: 1903.50 (+9.65%)",
+          "[INFO GPL-1013] Total timing-driven delta area: 489.44 (+2.48%)",
+          "[INFO GPL-1014] Final placement area: 20224.25 (+2.48%)",
+          "Took 20 seconds: global_placement -density 0.36 -pad_left 0 -pad_right 0 -routability_driven -timing_driven",
+          "Report metrics stage 3, global place...",
+          "",
+          "==========================================================================",
+          "global place report_design_area",
+          "--------------------------------------------------------------------------",
+          "Design area 20224 u^2 3% utilization.",
+          "Elapsed time: 0:22.53[h:]min:sec. CPU time: user 127.68 sys 5.05 (589%). Peak memory: 613648KB.",
+          "Log                        Elapsed/s Peak Memory/MB  sha1sum .odb [0:20)",
+          "3_3_place_gp                      22            599 a19d1864e4928904479d",
+          "[INFO] Running OpenROAD flow: make DESIGN_CONFIG=/orfs/flow/designs/nangate45/decoder_r64_k1_rankseg16_pipe2_wrapper/config.mk TAG=decoder_r64_k1_rankseg_pipe2 SDC_FILE=/orfs/flow/designs/nangate45/decoder_r64_k1_rankseg16_pipe2_wrapper/constraint.sdc CLOCK_PERIOD=10.0 CORE_AREA=40 40 860 860 DIE_AREA=0 0 900 900 FLOW_VARIANT=decoder_r64_k1_rankseg_pipe2 PLACE_DENSITY=0.36 SYNTH_HIERARCHICAL=1 SYNTH_KEEP_MODULES=candidate_stream_merge_fifo_k1_l16_t16_d16 TAG=decoder_r64_k1_rankseg_pipe2 TAG_PREFIX=decoder_r64_k1_rankseg_pipe2 CORE_UTILIZATION= 3_3_place_gp"
+        ],
+        "returncode": 0,
+        "status": "ok"
+      },
+      "top": "decoder_r64_k1_rankseg16_pipe2_wrapper",
+      "verilog_dir": "runs/designs/activations/decoder_r64_k1_rankseg16_pipe2_wrapper/verilog"
+    },
+    {
+      "config_manifest": "runs/designs/activations/decoder_r64_k1_rankseg32_pipe2_wrapper/config_decoder_r64_k1_rankseg32_pipe2_wrapper.json",
+      "design_dir": "runs/designs/activations/decoder_r64_k1_rankseg32_pipe2_wrapper",
+      "generated_verilog": [
+        "runs/designs/activations/decoder_r64_k1_rankseg32_pipe2_wrapper/verilog/candidate_stream_merge_fifo_k1_l16_t16_d16.v",
+        "runs/designs/activations/decoder_r64_k1_rankseg32_pipe2_wrapper/verilog/decoder_r64_k1_rankseg32_pipe2_wrapper.v",
+        "runs/designs/activations/decoder_r64_k1_rankseg32_pipe2_wrapper/verilog/logit_rank_r2_l16_k1.v",
+        "runs/designs/activations/decoder_r64_k1_rankseg32_pipe2_wrapper/verilog/logit_rank_r32_l16_k1.v"
+      ],
+      "groups": 2,
+      "local_lanes": 32,
+      "metrics_row": {
+        "config_hash": "50d7504ad8b8",
+        "critical_path_ns": "17.2747075823874",
+        "design": "decoder_r64_k1_rankseg32_pipe2_wrapper",
+        "die_area": "810000.0",
+        "flow_elapsed_seconds": "172.09",
+        "param_hash": "4580f581",
+        "params_json": "{\"CLOCK_PERIOD\": 10.0, \"CORE_AREA\": \"40 40 860 860\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 900 900\", \"FLOW_VARIANT\": \"decoder_r64_k1_rankseg_pipe2\", \"PLACE_DENSITY\": 0.36, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_KEEP_MODULES\": \"candidate_stream_merge_fifo_k1_l16_t16_d16\", \"TAG\": \"decoder_r64_k1_rankseg_pipe2\", \"tag_prefix\": \"decoder_r64_k1_rankseg_pipe2\"}",
+        "platform": "nangate45",
+        "result_path": "",
+        "stage_elapsed_seconds": "22.45",
+        "status": "ok",
+        "synth_script_path": "",
+        "synth_script_sha1": "",
+        "tag": "decoder_r64_k1_rankseg_pipe2",
+        "total_power_mw": "1.31634",
+        "work_result_json": "runs/designs/activations/decoder_r64_k1_rankseg32_pipe2_wrapper/work/4580f581/result.json"
+      },
+      "returncodes": {
+        "global": 0,
+        "local": 0,
+        "merge": 0
+      },
+      "simulation": {
+        "expected": {
+          "logit": 500,
+          "token": 5
+        },
+        "log_tail": [
+          "RESULT token=5 logit=500 accepted=3 stalls=0 fifo_max=1 final_cycle=9",
+          "/tmp/rtlcp-worktree-9e9f_pcd/repo/runs/designs/activations/decoder_r64_k1_rankseg32_pipe2_wrapper/tb_decoder_r64_k1_rankseg32_pipe2_wrapper.v:293: $finish called at 130000 (1ps)"
+        ],
+        "returncode": 0,
+        "status": "ok"
+      },
+      "status": "ok",
+      "synthesis": {
+        "command": "python3 npu/synth/run_block_sweep.py --design_dir runs/designs/activations/decoder_r64_k1_rankseg32_pipe2_wrapper --platform nangate45 --top decoder_r64_k1_rankseg32_pipe2_wrapper --sweep runs/campaigns/npu/decoder_pipelined_ranker_architecture/sweeps/nangate45_r64_pipe2.json --make_target 3_3_place_gp --out_root runs/designs/activations --force_copy",
+        "elapsed_seconds": 176.18203770599212,
+        "log_path": "control_plane/runtime_logs/decoder_pipelined_ranker_architecture/decoder_r64_k1_rankseg32_pipe2_wrapper_3_3_place_gp.log",
+        "log_tail": [
+          "    final |     +0.8% |    3574 |     3849 |         0",
+          "-------------------------------------------------------",
+          "[INFO GPL-0106] Timing-driven: worst slack -7.32e-09",
+          "[INFO GPL-0107] Timing-driven: repair_design delta area: 238.336 um^2 (+1.00%)",
+          "[INFO GPL-0108] Timing-driven: repair_design, gpl cells created: 308 (+0.00%)",
+          "[INFO GPL-0110] Timing-driven: new target density: 0.36516947",
+          "Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group",
+          "---------------------------------------------------------------",
+          "      360 |   0.1893 |  3.383913e+05 |   +1.78% |  2.84e-07 |      ",
+          "      370 |   0.1618 |  3.407051e+05 |   +0.68% |  4.18e-07 |      ",
+          "      380 |   0.1411 |  3.406808e+05 |   -0.01% |  6.16e-07 |      ",
+          "      390 |   0.1188 |  3.407886e+05 |   +0.03% |  9.07e-07 |      ",
+          "      400 |   0.1006 |  3.410782e+05 |   +0.08% |  1.34e-06 |      ",
+          "      401 |   0.0985 |  3.412489e+05 |          |  1.44e-06 |      ",
+          "---------------------------------------------------------------",
+          "[INFO GPL-1001] Global placement finished at iteration 401",
+          "[INFO GPL-1003] Routability mode iteration count: 93",
+          "[INFO GPL-1005] Routability final weighted congestion: 0.7124",
+          "[INFO GPL-1002] Placed Cell Area            24121.1460",
+          "[INFO GPL-1003] Available Free Area         670677.5040",
+          "[INFO GPL-1004] Minimum Feasible Density        0.0400 (cell_area / free_area)",
+          "[INFO GPL-1006]   Suggested Target Densities:",
+          "[INFO GPL-1007]     - For 90% usage of free space: 0.0400",
+          "[INFO GPL-1008]     - For 80% usage of free space: 0.0450",
+          "[INFO GPL-1009]     - For 50% usage of free space: 0.0719",
+          "[INFO GPL-1011] Original area (um^2): 20654.10",
+          "[INFO GPL-1012] Total routability artificial inflation: 3228.71 (+15.63%)",
+          "[INFO GPL-1013] Total timing-driven delta area: 3467.04 (+16.79%)",
+          "[INFO GPL-1014] Final placement area: 24121.15 (+16.79%)",
+          "Took 20 seconds: global_placement -density 0.36 -pad_left 0 -pad_right 0 -routability_driven -timing_driven",
+          "Report metrics stage 3, global place...",
+          "",
+          "==========================================================================",
+          "global place report_design_area",
+          "--------------------------------------------------------------------------",
+          "Design area 24121 u^2 4% utilization.",
+          "Elapsed time: 0:22.45[h:]min:sec. CPU time: user 124.22 sys 5.69 (578%). Peak memory: 617388KB.",
+          "Log                        Elapsed/s Peak Memory/MB  sha1sum .odb [0:20)",
+          "3_3_place_gp                      22            602 94de692ddef985dabc75",
+          "[INFO] Running OpenROAD flow: make DESIGN_CONFIG=/orfs/flow/designs/nangate45/decoder_r64_k1_rankseg32_pipe2_wrapper/config.mk TAG=decoder_r64_k1_rankseg_pipe2 SDC_FILE=/orfs/flow/designs/nangate45/decoder_r64_k1_rankseg32_pipe2_wrapper/constraint.sdc CLOCK_PERIOD=10.0 CORE_AREA=40 40 860 860 DIE_AREA=0 0 900 900 FLOW_VARIANT=decoder_r64_k1_rankseg_pipe2 PLACE_DENSITY=0.36 SYNTH_HIERARCHICAL=1 SYNTH_KEEP_MODULES=candidate_stream_merge_fifo_k1_l16_t16_d16 TAG=decoder_r64_k1_rankseg_pipe2 TAG_PREFIX=decoder_r64_k1_rankseg_pipe2 CORE_UTILIZATION= 3_3_place_gp"
+        ],
+        "returncode": 0,
+        "status": "ok"
+      },
+      "top": "decoder_r64_k1_rankseg32_pipe2_wrapper",
+      "verilog_dir": "runs/designs/activations/decoder_r64_k1_rankseg32_pipe2_wrapper/verilog"
+    }
+  ],
+  "version": 0.1
+}
