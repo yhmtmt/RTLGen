@@ -1,0 +1,72 @@
+{
+  "proposal_id": "prop_l2_decoder_producer_ranker_memory_integration_plan_v1",
+  "created_utc": "2026-05-14T06:55:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_producer_ranker_memory_integration_plan",
+  "title": "Decoder producer/ranker memory integration plan",
+  "hypothesis": "The nm16 producer physical result should not be treated as proof of the full analytical 8192-MAC output-projection frontier. A focused integration-planning pass should reconcile measured nm16 MAC lanes, W64/W128 ranker tile widths, memory service assumptions, and ready-valid equivalence requirements before queueing an expensive producer/ranker/memory RTL macro.",
+  "direct_comparison": {
+    "primary_question": "Which first producer-to-ranker memory-interface target should be implemented after the nm16 physical producer anchor, and how large is the gap between measured nm16 MAC capacity and the analytical producer service rows?",
+    "include": [
+      "nm16 producer physical feasibility/PPA evidence",
+      "nm16 producer RTLGen config and measured MAC-lane count",
+      "decoder frontier synthesis with nm16 physical anchor",
+      "producer/ranker coupled NoC report",
+      "ready-valid LogitTileStream and CandidateStream equivalence requirements"
+    ],
+    "exclude": [
+      "new integrated RTL implementation",
+      "new OpenROAD PnR run",
+      "final SRAM/NoC arbitration PPA",
+      "training-time recovery or quality sweeps"
+    ]
+  },
+  "expected_benefit": [
+    "prevents charging the isolated nm16 producer as if it were the full analytical 8192-MAC producer",
+    "selects a concrete first r64/k1 producer-to-ranker integration target",
+    "keeps perf-sim/RTL stream equivalence requirements explicit before PPA is used in rankings"
+  ],
+  "risks": [
+    "the result is a planning report, not a new physical measurement",
+    "the extrapolation uses existing memory-service assumptions",
+    "placed-cell area is only available when present in the physical log tail; padded floorplan area remains diagnostic-only"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_producer_ranker_memory_integration_plan_v1",
+      "task_type": "l2_campaign",
+      "objective": "Reconcile nm16 producer physical MAC capacity with the W64/W128 producer/ranker memory-coupling frontier and choose the first ready-valid integration target.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_producer_ranker_memory_integration_plan",
+      "cost_class": "low",
+      "comparison_role": "integration_plan",
+      "paired_baseline_item_id": "l2_decoder_frontier_synthesis_nm16_physical_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_frontier_synthesis_nm16_physical_v1",
+        "l2_decoder_output_projection_producer_pnr_nm16_v1",
+        "l2_decoder_logit_rank_streaming_producer_integrated_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "The report should identify the first integrated producer/ranker/memory target and quantify the physical/analytical MAC-capacity gap before implementation."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "control_plane/shadow_exports/l2_decisions/l2_decoder_frontier_synthesis_nm16_physical_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_frontier_synthesis__l2_decoder_frontier_synthesis_nm16_physical_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_producer_pnr_feasibility__l2_decoder_output_projection_producer_pnr_nm16_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/plan_llm_decoder_producer_ranker_memory_integration.py",
+    "npu/docs/decoder_logit_rank_streaming_hierarchy.md",
+    "npu/eval/estimate_llm_decoder_producer_ranker_coupling.py",
+    "control_plane/control_plane/services/l2_task_generator.py",
+    "tests/test_llm_decoder_producer_ranker_memory_integration.py"
+  ]
+}

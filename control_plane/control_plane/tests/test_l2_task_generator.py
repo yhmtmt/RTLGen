@@ -1973,6 +1973,58 @@ def test_generate_l2_campaign_task_adds_decoder_frontier_synthesis_evidence() ->
             }
 
 
+def test_generate_l2_campaign_task_adds_decoder_producer_ranker_memory_integration_plan() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    item_id="l2_decoder_producer_ranker_memory_integration_plan_v1",
+                    proposal_id="prop_l2_decoder_producer_ranker_memory_integration_plan_v1",
+                    proposal_path="docs/proposals/prop_l2_decoder_producer_ranker_memory_integration_plan_v1/proposal.json",
+                    evaluation_mode="frontier_detail",
+                    abstraction_layer="decoder_producer_ranker_memory_integration_plan",
+                    expected_direction="iterate",
+                    comparison_role="integration_plan",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+            assert work_item.command_manifest[0]["name"] == "plan_decoder_producer_ranker_memory_integration"
+            run = work_item.command_manifest[0]["run"]
+            assert "plan_llm_decoder_producer_ranker_memory_integration.py" in run
+            assert "--frontier-synthesis" in run
+            assert "--producer-ranker-coupled" in run
+            assert "--producer-physical-boundary" in run
+            assert "--producer-config" in run
+            assert decoder_inputs["integration_plan_out"] == (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_producer_ranker_memory_integration_plan__"
+                "l2_decoder_producer_ranker_memory_integration_plan_v1.json"
+            )
+            assert "ready-valid stream equivalence" in decoder_inputs["integration_plan_scope"]
+            assert decoder_inputs["producer_config"] == (
+                "runs/designs/npu_blocks/npu_fp16_cpp_nm16_producer/config_nm16_producer.json"
+            )
+            assert decoder_inputs["integration_plan_out"] in work_item.expected_outputs
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
+                "layer": "decoder_producer_ranker_memory_integration_plan",
+            }
+
+
 def test_generate_l2_campaign_task_adds_decoder_producer_synth_boundary_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
