@@ -21,7 +21,11 @@
         "direction": "promote",
         "reason": "If all unsafe resident-weight rows use zero-buffer rank-tree recommendations and the selected radix has clean RTL simulation plus measured PPA, use it as the producer-coupled fallback implementation target."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 552,
+      "merge_commit": "06d632883026dd72f62387c3c08ae5fcb219557c",
+      "merged_utc": "2026-05-14T10:39:27.022113Z",
+      "notes": "Merged via PR #552 and merge 06d632883026dd72f62387c3c08ae5fcb219557c at 2026-05-14T10:39:27.022113Z."
     }
   ]
 }
