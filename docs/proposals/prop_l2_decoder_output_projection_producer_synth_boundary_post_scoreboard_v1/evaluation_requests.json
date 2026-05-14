@@ -1,0 +1,30 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_producer_synth_boundary_post_scoreboard_v1",
+  "source_commit": "74e781a0eee1cac95b1fbc415c39fa41d90de360",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_output_projection_producer_synth_boundary_post_scoreboard_v1",
+      "task_type": "l2_campaign",
+      "objective": "Rerun the bounded synth-only decoder output-projection producer scale probe after the bounded EVENT scoreboard fix and source-conditional infeasible-registry guard.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_output_projection_producer_synth_boundary",
+      "comparison_role": "producer_synth_boundary",
+      "paired_baseline_item_id": "l2_decoder_output_projection_producer_synth_boundary_v1_r2",
+      "depends_on_item_ids": [
+        "l2_decoder_output_projection_producer_event_scoreboard_v1",
+        "l2_decoder_frontier_synthesis_scoreboard_boundary_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "The result should identify whether nm2 now completes after removing the wide event_state vector, and if not, preserve the exact new failure signature for the next small RTL change."
+      },
+      "status": "merged",
+      "merged_pr_number": 515,
+      "merge_commit": "2796b0c463c8601e4c2b29b7379c7c0ca87f0eac",
+      "merged_utc": "2026-05-14T04:54:28.796826Z",
+      "notes": "Merged via PR #515 and merge 2796b0c463c8601e4c2b29b7379c7c0ca87f0eac at 2026-05-14T04:54:28.796826Z."
+    }
+  ]
+}

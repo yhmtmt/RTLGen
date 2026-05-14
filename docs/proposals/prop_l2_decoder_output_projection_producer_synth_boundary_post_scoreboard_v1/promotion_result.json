@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_producer_synth_boundary_post_scoreboard_v1",
+  "decision": "iterate",
+  "pr_number": 515,
+  "merge_commit": "2796b0c463c8601e4c2b29b7379c7c0ca87f0eac",
+  "merged_utc": "2026-05-14T04:54:28.796826Z"
+}
