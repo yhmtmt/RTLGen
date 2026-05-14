@@ -26,6 +26,17 @@ def load_json(path: Path) -> dict[str, Any]:
     return data
 
 
+def load_json_list(path: Path) -> list[dict[str, Any]]:
+    with path.open(encoding="utf-8") as f:
+        data = json.load(f)
+    if not isinstance(data, list):
+        raise ValueError(f"expected JSON array: {path}")
+    entries = [entry for entry in data if isinstance(entry, dict)]
+    if len(entries) != len(data):
+        raise ValueError(f"expected only JSON objects in {path}")
+    return entries
+
+
 def rel(path: Path) -> str:
     try:
         return str(path.resolve().relative_to(REPO_ROOT))
@@ -59,6 +70,57 @@ def num_modules(config: dict[str, Any]) -> int:
     if not isinstance(gemm, dict):
         raise ValueError("config missing compute.gemm object")
     return int(gemm.get("num_modules", 0))
+
+
+def normalize_repo_path(path: str | Path | None) -> str | None:
+    if path is None:
+        return None
+    raw = str(path).strip()
+    if not raw:
+        return None
+    candidate = Path(raw)
+    if not candidate.is_absolute():
+        candidate = REPO_ROOT / candidate
+    return rel(candidate)
+
+
+def load_infeasible_registry(path: Path | None) -> list[dict[str, Any]]:
+    if path is None or not path.exists():
+        return []
+    entries = load_json_list(path)
+    for entry in entries:
+        match = entry.get("match")
+        if not isinstance(match, dict):
+            raise ValueError(f"infeasible registry entry missing match object: {entry.get('id')}")
+    return entries
+
+
+def find_infeasible_match(
+    registry: list[dict[str, Any]],
+    *,
+    config_path: Path,
+    config: dict[str, Any],
+    platform: str,
+    top: str,
+    make_target: str,
+) -> dict[str, Any] | None:
+    normalized_config = rel(config_path)
+    modules = num_modules(config)
+    for entry in registry:
+        match = entry.get("match") or {}
+        match_config = normalize_repo_path(match.get("config"))
+        if match_config is not None and match_config != normalized_config:
+            continue
+        if match.get("platform") is not None and str(match.get("platform")) != platform:
+            continue
+        if match.get("top") is not None and str(match.get("top")) != top:
+            continue
+        if match.get("make_target") is not None and str(match.get("make_target")) != make_target:
+            continue
+        if match.get("num_modules") is not None and int(match.get("num_modules")) != modules:
+            continue
+        return entry
+    return None
 
 
 def rtlgen_binary_paths(configs: list[Path]) -> list[Path]:
@@ -245,11 +307,43 @@ def probe_config(
     timeout_seconds: int,
     stall_timeout_seconds: int,
     log_dir: Path,
+    infeasible_registry: list[dict[str, Any]],
 ) -> dict[str, Any]:
     config = load_json(config_path)
     modules = num_modules(config)
     design_dir = config_path.parent
     verilog_dir = design_dir / "verilog"
+    infeasible = find_infeasible_match(
+        infeasible_registry,
+        config_path=config_path,
+        config=config,
+        platform=platform,
+        top=top,
+        make_target=make_target,
+    )
+    if infeasible is not None:
+        return {
+            "config": rel(config_path),
+            "design_dir": rel(design_dir),
+            "num_modules": modules,
+            "rtlgen": None,
+            "synthesis": {
+                "status": "known_infeasible",
+                "returncode": None,
+                "elapsed_seconds": 0.0,
+                "log_path": "",
+                "log_tail": [],
+                "command": "",
+            },
+            "metrics_row": None,
+            "status": "known_infeasible",
+            "known_infeasible": {
+                "id": infeasible.get("id"),
+                "reason": infeasible.get("reason"),
+                "source_evidence": infeasible.get("source_evidence"),
+                "recorded_utc": infeasible.get("recorded_utc"),
+            },
+        }
 
     gen_cmd = [
         sys.executable,
@@ -409,6 +503,11 @@ def main() -> int:
     ap.add_argument("--rtlgen-build-timeout-seconds", type=int, default=900)
     ap.add_argument("--skip-rtlgen-build", action="store_true")
     ap.add_argument("--continue-after-failure", action="store_true")
+    ap.add_argument(
+        "--infeasible-registry",
+        default="runs/knowledge/infeasible_designs.json",
+        help="JSON registry of exact synth points to skip before launching long-running tools",
+    )
     ap.add_argument("--out", required=True)
     ap.add_argument("--out-md", required=True)
     args = ap.parse_args()
@@ -426,14 +525,42 @@ def main() -> int:
         os.environ.get("RTLGEN_PRODUCER_SYNTH_BOUNDARY_LOG_DIR", "/tmp/rtlgen-producer-synth-boundary")
     )
     log_dir = log_root / out.stem
+    registry_path = (
+        (REPO_ROOT / args.infeasible_registry).resolve()
+        if args.infeasible_registry and not Path(args.infeasible_registry).is_absolute()
+        else Path(args.infeasible_registry).resolve()
+        if args.infeasible_registry
+        else None
+    )
+    infeasible_registry = load_infeasible_registry(registry_path)
+
+    configs_requiring_tools: list[Path] = []
+    for config_path in configs:
+        config = load_json(config_path)
+        if find_infeasible_match(
+            infeasible_registry,
+            config_path=config_path,
+            config=config,
+            platform=args.platform,
+            top=args.top,
+            make_target=args.make_target,
+        ) is None:
+            configs_requiring_tools.append(config_path)
 
     setup = ensure_rtlgen_binaries(
-        configs,
+        configs_requiring_tools,
         log_dir=log_dir,
         build_timeout_seconds=args.rtlgen_build_timeout_seconds,
         stall_timeout_seconds=max(120, min(args.stall_timeout_seconds, 300)),
         skip_build=args.skip_rtlgen_build,
-    )
+    ) if configs_requiring_tools else {
+        "status": "ok",
+        "required_binaries": [],
+        "missing_before_build": [],
+        "configure": None,
+        "build": None,
+        "skipped": "all requested configs matched infeasible registry",
+    }
     rows: list[dict[str, Any]] = []
     if setup["status"] != "ok":
         rows.append(
@@ -459,6 +586,7 @@ def main() -> int:
                 timeout_seconds=args.timeout_seconds,
                 stall_timeout_seconds=args.stall_timeout_seconds,
                 log_dir=log_dir,
+                infeasible_registry=infeasible_registry,
             )
             rows.append(row)
             if row.get("status") != "ok" and not args.continue_after_failure:
@@ -472,6 +600,7 @@ def main() -> int:
         "make_target": args.make_target,
         "timeout_seconds": args.timeout_seconds,
         "stall_timeout_seconds": args.stall_timeout_seconds,
+        "infeasible_registry": rel(registry_path) if registry_path is not None else None,
         "rtlgen_setup": setup,
         "sweep": rel(sweep),
         "probe_rows": rows,
