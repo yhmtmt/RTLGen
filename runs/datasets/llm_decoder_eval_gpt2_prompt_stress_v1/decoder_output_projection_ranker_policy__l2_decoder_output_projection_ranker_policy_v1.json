@@ -1,0 +1,2502 @@
+{
+  "assumptions": [
+    "The policy is conservative: lpc2/lpc4 rows that were analytically safe are routed to the promoted rank-tree unless lpc1 is also safe.",
+    "The rank-tree fallback uses one r64 rank-tree for producer_lanes <= 64 and banked r64 rank-trees for wider producer tiles.",
+    "The selection boundary is replay-observed ready-valid backpressure, not only analytical ranker service cycles.",
+    "Future measured producer burst traces may add hysteresis or buffering around this fixed-II policy boundary."
+  ],
+  "checks": [
+    {
+      "name": "serial_lpc1_wrapper_promoted",
+      "observed": "serial_lpc1_producer_coupled_wrapper_promoted",
+      "passed": true
+    },
+    {
+      "name": "resident_ranktree_fallback_promoted",
+      "observed": "resident_weight_ranktree_fallback_promoted",
+      "passed": true
+    },
+    {
+      "name": "serial_lpc1_threshold_available",
+      "observed": 384,
+      "passed": true
+    },
+    {
+      "name": "all_cadence_rows_covered",
+      "observed": {
+        "total_rows": 128,
+        "uncovered_rows": 0
+      },
+      "passed": true
+    },
+    {
+      "name": "ranktree_has_single_and_banked_modes",
+      "observed": [
+        "banked_r64_ranktrees",
+        "single_r64_ranktree"
+      ],
+      "passed": true
+    }
+  ],
+  "decision": {
+    "decision": "output_projection_ranker_policy_promoted",
+    "next_step": "Implement the output-projection producer wrapper policy with a serial_lpc1 path for streaming/slow producer cadences and a radix-4 rank-tree fallback path for faster resident/cache-backed cadences."
+  },
+  "model": "decoder_output_projection_ranker_policy_v1",
+  "path_summary": {
+    "path_counts": {
+      "banked_r64_ranktrees": 28,
+      "serial_lpc1": 68,
+      "single_r64_ranktree": 32
+    },
+    "ranktree_rows": 60,
+    "serial_lpc1_rows": 68,
+    "total_rows": 128,
+    "uncovered_rows": 0
+  },
+  "policy": {
+    "ranktree_mode_by_lanes": {
+      "producer_lanes <= 64": "single_r64_ranktree",
+      "producer_lanes > 64": "banked_r64_ranktrees"
+    },
+    "rule": "Use serial_lpc1 when producer_ii_cycles is at least the replay-proven serial_lpc1 zero-backpressure threshold; otherwise use the promoted radix-4 rank-tree fallback mode selected by producer_lanes.",
+    "serial_lpc1_min_ii_cycles": 384
+  },
+  "policy_rows": [
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 1536,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 786,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.0
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 768,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 786,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.5
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 154,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 786,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.9
+      },
+      "ranker_instances": 1,
+      "ranktree_radix": 4,
+      "selected_path": "single_r64_ranktree",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 6,
+        "producer_lanes": 64,
+        "service_limiter": "compute_array",
+        "tile_count": 786,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 1.0
+      },
+      "ranker_instances": 1,
+      "ranktree_radix": 4,
+      "selected_path": "single_r64_ranktree",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 384,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 786,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.0
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 192,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 786,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.5
+      },
+      "ranker_instances": 1,
+      "ranktree_radix": 4,
+      "selected_path": "single_r64_ranktree",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 39,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 786,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.9
+      },
+      "ranker_instances": 1,
+      "ranktree_radix": 4,
+      "selected_path": "single_r64_ranktree",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 6,
+        "producer_lanes": 64,
+        "service_limiter": "compute_array",
+        "tile_count": 786,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 1.0
+      },
+      "ranker_instances": 1,
+      "ranktree_radix": 4,
+      "selected_path": "single_r64_ranktree",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 1536,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 786,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.0
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 768,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 786,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.5
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 154,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 786,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.9
+      },
+      "ranker_instances": 1,
+      "ranktree_radix": 4,
+      "selected_path": "single_r64_ranktree",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 2,
+        "producer_lanes": 64,
+        "service_limiter": "compute_array",
+        "tile_count": 786,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 1.0
+      },
+      "ranker_instances": 1,
+      "ranktree_radix": 4,
+      "selected_path": "single_r64_ranktree",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 384,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 786,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.0
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 192,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 786,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.5
+      },
+      "ranker_instances": 1,
+      "ranktree_radix": 4,
+      "selected_path": "single_r64_ranktree",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 39,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 786,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.9
+      },
+      "ranker_instances": 1,
+      "ranktree_radix": 4,
+      "selected_path": "single_r64_ranktree",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 2,
+        "producer_lanes": 64,
+        "service_limiter": "compute_array",
+        "tile_count": 786,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 1.0
+      },
+      "ranker_instances": 1,
+      "ranktree_radix": 4,
+      "selected_path": "single_r64_ranktree",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 3072,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 393,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.0
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 1536,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 393,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.5
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 308,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 393,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.9
+      },
+      "ranker_instances": 2,
+      "ranktree_radix": 4,
+      "selected_path": "banked_r64_ranktrees",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 12,
+        "producer_lanes": 128,
+        "service_limiter": "compute_array",
+        "tile_count": 393,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 1.0
+      },
+      "ranker_instances": 2,
+      "ranktree_radix": 4,
+      "selected_path": "banked_r64_ranktrees",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 768,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 393,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.0
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 384,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 393,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.5
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 77,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 393,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.9
+      },
+      "ranker_instances": 2,
+      "ranktree_radix": 4,
+      "selected_path": "banked_r64_ranktrees",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 12,
+        "producer_lanes": 128,
+        "service_limiter": "compute_array",
+        "tile_count": 393,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 1.0
+      },
+      "ranker_instances": 2,
+      "ranktree_radix": 4,
+      "selected_path": "banked_r64_ranktrees",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 3072,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 393,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.0
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 1536,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 393,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.5
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 308,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 393,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.9
+      },
+      "ranker_instances": 2,
+      "ranktree_radix": 4,
+      "selected_path": "banked_r64_ranktrees",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 3,
+        "producer_lanes": 128,
+        "service_limiter": "compute_array",
+        "tile_count": 393,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 1.0
+      },
+      "ranker_instances": 2,
+      "ranktree_radix": 4,
+      "selected_path": "banked_r64_ranktrees",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 768,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 393,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.0
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 384,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 393,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.5
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 77,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 393,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.9
+      },
+      "ranker_instances": 2,
+      "ranktree_radix": 4,
+      "selected_path": "banked_r64_ranktrees",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 3,
+        "producer_lanes": 128,
+        "service_limiter": "compute_array",
+        "tile_count": 393,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 1.0
+      },
+      "ranker_instances": 2,
+      "ranktree_radix": 4,
+      "selected_path": "banked_r64_ranktrees",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 4096,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 786,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.0
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 2048,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 786,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.5
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 410,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 786,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.9
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 16,
+        "producer_lanes": 64,
+        "service_limiter": "compute_array",
+        "tile_count": 786,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 1.0
+      },
+      "ranker_instances": 1,
+      "ranktree_radix": 4,
+      "selected_path": "single_r64_ranktree",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 1024,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 786,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.0
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 512,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 786,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.5
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 103,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 786,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.9
+      },
+      "ranker_instances": 1,
+      "ranktree_radix": 4,
+      "selected_path": "single_r64_ranktree",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 16,
+        "producer_lanes": 64,
+        "service_limiter": "compute_array",
+        "tile_count": 786,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 1.0
+      },
+      "ranker_instances": 1,
+      "ranktree_radix": 4,
+      "selected_path": "single_r64_ranktree",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 4096,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 786,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.0
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 2048,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 786,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.5
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 410,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 786,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.9
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 4,
+        "producer_lanes": 64,
+        "service_limiter": "compute_array",
+        "tile_count": 786,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 1.0
+      },
+      "ranker_instances": 1,
+      "ranktree_radix": 4,
+      "selected_path": "single_r64_ranktree",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 1024,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 786,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.0
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 512,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 786,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.5
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 103,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 786,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.9
+      },
+      "ranker_instances": 1,
+      "ranktree_radix": 4,
+      "selected_path": "single_r64_ranktree",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 4,
+        "producer_lanes": 64,
+        "service_limiter": "compute_array",
+        "tile_count": 786,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 1.0
+      },
+      "ranker_instances": 1,
+      "ranktree_radix": 4,
+      "selected_path": "single_r64_ranktree",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 8192,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 393,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.0
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 4096,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 393,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.5
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 820,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 393,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.9
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 32,
+        "producer_lanes": 128,
+        "service_limiter": "compute_array",
+        "tile_count": 393,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 1.0
+      },
+      "ranker_instances": 2,
+      "ranktree_radix": 4,
+      "selected_path": "banked_r64_ranktrees",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 2048,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 393,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.0
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 1024,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 393,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.5
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 205,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 393,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.9
+      },
+      "ranker_instances": 2,
+      "ranktree_radix": 4,
+      "selected_path": "banked_r64_ranktrees",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 32,
+        "producer_lanes": 128,
+        "service_limiter": "compute_array",
+        "tile_count": 393,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 1.0
+      },
+      "ranker_instances": 2,
+      "ranktree_radix": 4,
+      "selected_path": "banked_r64_ranktrees",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 8192,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 393,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.0
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 4096,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 393,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.5
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 820,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 393,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.9
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 8,
+        "producer_lanes": 128,
+        "service_limiter": "compute_array",
+        "tile_count": 393,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 1.0
+      },
+      "ranker_instances": 2,
+      "ranktree_radix": 4,
+      "selected_path": "banked_r64_ranktrees",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 2048,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 393,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.0
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 1024,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 393,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.5
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 205,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 393,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 0.9
+      },
+      "ranker_instances": 2,
+      "ranktree_radix": 4,
+      "selected_path": "banked_r64_ranktrees",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 8,
+        "producer_lanes": 128,
+        "service_limiter": "compute_array",
+        "tile_count": 393,
+        "vocab_size": 50257,
+        "weight_cache_hit_rate": 1.0
+      },
+      "ranker_instances": 2,
+      "ranktree_radix": 4,
+      "selected_path": "banked_r64_ranktrees",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 1536,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 1563,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.0
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 768,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 1563,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.5
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 154,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 1563,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.9
+      },
+      "ranker_instances": 1,
+      "ranktree_radix": 4,
+      "selected_path": "single_r64_ranktree",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 6,
+        "producer_lanes": 64,
+        "service_limiter": "compute_array",
+        "tile_count": 1563,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 1.0
+      },
+      "ranker_instances": 1,
+      "ranktree_radix": 4,
+      "selected_path": "single_r64_ranktree",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 384,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 1563,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.0
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 192,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 1563,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.5
+      },
+      "ranker_instances": 1,
+      "ranktree_radix": 4,
+      "selected_path": "single_r64_ranktree",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 39,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 1563,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.9
+      },
+      "ranker_instances": 1,
+      "ranktree_radix": 4,
+      "selected_path": "single_r64_ranktree",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 6,
+        "producer_lanes": 64,
+        "service_limiter": "compute_array",
+        "tile_count": 1563,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 1.0
+      },
+      "ranker_instances": 1,
+      "ranktree_radix": 4,
+      "selected_path": "single_r64_ranktree",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 1536,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 1563,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.0
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 768,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 1563,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.5
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 154,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 1563,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.9
+      },
+      "ranker_instances": 1,
+      "ranktree_radix": 4,
+      "selected_path": "single_r64_ranktree",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 2,
+        "producer_lanes": 64,
+        "service_limiter": "compute_array",
+        "tile_count": 1563,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 1.0
+      },
+      "ranker_instances": 1,
+      "ranktree_radix": 4,
+      "selected_path": "single_r64_ranktree",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 384,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 1563,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.0
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 192,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 1563,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.5
+      },
+      "ranker_instances": 1,
+      "ranktree_radix": 4,
+      "selected_path": "single_r64_ranktree",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 39,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 1563,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.9
+      },
+      "ranker_instances": 1,
+      "ranktree_radix": 4,
+      "selected_path": "single_r64_ranktree",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 2,
+        "producer_lanes": 64,
+        "service_limiter": "compute_array",
+        "tile_count": 1563,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 1.0
+      },
+      "ranker_instances": 1,
+      "ranktree_radix": 4,
+      "selected_path": "single_r64_ranktree",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 3072,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 782,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.0
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 1536,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 782,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.5
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 308,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 782,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.9
+      },
+      "ranker_instances": 2,
+      "ranktree_radix": 4,
+      "selected_path": "banked_r64_ranktrees",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 12,
+        "producer_lanes": 128,
+        "service_limiter": "compute_array",
+        "tile_count": 782,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 1.0
+      },
+      "ranker_instances": 2,
+      "ranktree_radix": 4,
+      "selected_path": "banked_r64_ranktrees",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 768,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 782,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.0
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 384,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 782,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.5
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 77,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 782,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.9
+      },
+      "ranker_instances": 2,
+      "ranktree_radix": 4,
+      "selected_path": "banked_r64_ranktrees",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 12,
+        "producer_lanes": 128,
+        "service_limiter": "compute_array",
+        "tile_count": 782,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 1.0
+      },
+      "ranker_instances": 2,
+      "ranktree_radix": 4,
+      "selected_path": "banked_r64_ranktrees",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 3072,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 782,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.0
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 1536,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 782,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.5
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 308,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 782,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.9
+      },
+      "ranker_instances": 2,
+      "ranktree_radix": 4,
+      "selected_path": "banked_r64_ranktrees",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 3,
+        "producer_lanes": 128,
+        "service_limiter": "compute_array",
+        "tile_count": 782,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 1.0
+      },
+      "ranker_instances": 2,
+      "ranktree_radix": 4,
+      "selected_path": "banked_r64_ranktrees",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 768,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 782,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.0
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 384,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 782,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.5
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 77,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 782,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.9
+      },
+      "ranker_instances": 2,
+      "ranktree_radix": 4,
+      "selected_path": "banked_r64_ranktrees",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 768,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 3,
+        "producer_lanes": 128,
+        "service_limiter": "compute_array",
+        "tile_count": 782,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 1.0
+      },
+      "ranker_instances": 2,
+      "ranktree_radix": 4,
+      "selected_path": "banked_r64_ranktrees",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 4096,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 1563,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.0
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 2048,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 1563,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.5
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 410,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 1563,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.9
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 16,
+        "producer_lanes": 64,
+        "service_limiter": "compute_array",
+        "tile_count": 1563,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 1.0
+      },
+      "ranker_instances": 1,
+      "ranktree_radix": 4,
+      "selected_path": "single_r64_ranktree",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 1024,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 1563,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.0
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 512,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 1563,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.5
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 103,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 1563,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.9
+      },
+      "ranker_instances": 1,
+      "ranktree_radix": 4,
+      "selected_path": "single_r64_ranktree",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 16,
+        "producer_lanes": 64,
+        "service_limiter": "compute_array",
+        "tile_count": 1563,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 1.0
+      },
+      "ranker_instances": 1,
+      "ranktree_radix": 4,
+      "selected_path": "single_r64_ranktree",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 4096,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 1563,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.0
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 2048,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 1563,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.5
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 410,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 1563,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.9
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 4,
+        "producer_lanes": 64,
+        "service_limiter": "compute_array",
+        "tile_count": 1563,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 1.0
+      },
+      "ranker_instances": 1,
+      "ranktree_radix": 4,
+      "selected_path": "single_r64_ranktree",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 1024,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 1563,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.0
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 512,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 1563,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.5
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 103,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "tile_count": 1563,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.9
+      },
+      "ranker_instances": 1,
+      "ranktree_radix": 4,
+      "selected_path": "single_r64_ranktree",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 4,
+        "producer_lanes": 64,
+        "service_limiter": "compute_array",
+        "tile_count": 1563,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 1.0
+      },
+      "ranker_instances": 1,
+      "ranktree_radix": 4,
+      "selected_path": "single_r64_ranktree",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 8192,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 782,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.0
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 4096,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 782,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.5
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 820,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 782,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.9
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 32,
+        "producer_lanes": 128,
+        "service_limiter": "compute_array",
+        "tile_count": 782,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 1.0
+      },
+      "ranker_instances": 2,
+      "ranktree_radix": 4,
+      "selected_path": "banked_r64_ranktrees",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 2048,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 782,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.0
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 1024,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 782,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.5
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 205,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 782,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.9
+      },
+      "ranker_instances": 2,
+      "ranktree_radix": 4,
+      "selected_path": "banked_r64_ranktrees",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 8192,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 32,
+        "producer_lanes": 128,
+        "service_limiter": "compute_array",
+        "tile_count": 782,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 1.0
+      },
+      "ranker_instances": 2,
+      "ranktree_radix": 4,
+      "selected_path": "banked_r64_ranktrees",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 8192,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 782,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.0
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 4096,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 782,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.5
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 820,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 782,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.9
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_ii_cycles": 8,
+        "producer_lanes": 128,
+        "service_limiter": "compute_array",
+        "tile_count": 782,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 1.0
+      },
+      "ranker_instances": 2,
+      "ranktree_radix": 4,
+      "selected_path": "banked_r64_ranktrees",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 2048,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 782,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.0
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 384,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 1024,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 782,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.5
+      },
+      "ranker_instances": 1,
+      "selected_path": "serial_lpc1",
+      "selection_reason": "producer_ii_meets_serial_lpc1_zero_backpressure_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 205,
+        "producer_lanes": 128,
+        "service_limiter": "weight_memory",
+        "tile_count": 782,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 0.9
+      },
+      "ranker_instances": 2,
+      "ranktree_radix": 4,
+      "selected_path": "banked_r64_ranktrees",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    },
+    {
+      "consumer_ii_cycles": 1,
+      "coverage_status": "covered",
+      "producer": {
+        "hidden_size": 2048,
+        "macs_per_cycle": 32768,
+        "memory_bandwidth_bytes_per_cycle": 256.0,
+        "producer_ii_cycles": 8,
+        "producer_lanes": 128,
+        "service_limiter": "compute_array",
+        "tile_count": 782,
+        "vocab_size": 100000,
+        "weight_cache_hit_rate": 1.0
+      },
+      "ranker_instances": 2,
+      "ranktree_radix": 4,
+      "selected_path": "banked_r64_ranktrees",
+      "selection_reason": "producer_ii_is_faster_than_serial_lpc1_threshold"
+    }
+  ],
+  "selected_artifacts": {
+    "ranktree_fallback": {
+      "decision": "resident_weight_ranktree_fallback_promoted",
+      "metrics": {
+        "critical_path_ns": 4.35477479282159,
+        "design_dir": "runs/designs/activations/decoder_r64_k1_ranktree_radix4_pipe3_wrapper",
+        "die_area_um2": 810000.0,
+        "metrics_status": "ok",
+        "pipeline_stages": 3,
+        "placed_cell_area_um2": 24452.316,
+        "radix": 4,
+        "simulation_status": "ok",
+        "top": "decoder_r64_k1_ranktree_radix4_pipe3_wrapper",
+        "total_power_mw": 0.0114306
+      },
+      "producer_modes": [
+        {
+          "consumer_ii_cycles": 1,
+          "max_required_buffer_r64_tiles": 0,
+          "mode": "single_r64_ranktree",
+          "producer_ii_cycles_max": 16,
+          "producer_ii_cycles_min": 2,
+          "producer_lanes": [
+            64
+          ],
+          "ranker_instances": 1,
+          "ranker_placed_cell_area_um2": 24452.316,
+          "ranker_total_power_mw": 0.0114306,
+          "ranktree_radix": 4,
+          "recommended_strategy_count": 16
+        },
+        {
+          "consumer_ii_cycles": 1,
+          "max_required_buffer_r64_tiles": 0,
+          "mode": "banked_r64_ranktrees",
+          "producer_ii_cycles_max": 32,
+          "producer_ii_cycles_min": 3,
+          "producer_lanes": [
+            128
+          ],
+          "ranker_instances": 2,
+          "ranker_placed_cell_area_um2": 48904.632,
+          "ranker_total_power_mw": 0.0228612,
+          "ranktree_radix": 4,
+          "recommended_strategy_count": 16
+        }
+      ]
+    },
+    "serial_lpc1": {
+      "decision": "serial_lpc1_producer_coupled_wrapper_promoted",
+      "metrics": {
+        "critical_path_ns": 2.864771333952124,
+        "design_dir": "runs/designs/activations/decoder_r64_k1_serial_rank_lpc1_wrapper",
+        "die_area_um2": 810000.0,
+        "metrics_status": "ok",
+        "placed_cell_area_um2": 19304.684,
+        "stage_elapsed_seconds": 45.66,
+        "top": "decoder_r64_k1_serial_rank_lpc1_wrapper",
+        "total_power_mw": 0.0065519
+      },
+      "target": {
+        "lanes_per_cycle": 1,
+        "producer_ii_cycles": 384,
+        "producer_lanes": 64,
+        "top_k": 1,
+        "wrapper_role": "selected_serial_ranker_for_output_projection_producer"
+      }
+    }
+  },
+  "uncovered_rows": [],
+  "version": 0.1
+}
