@@ -2055,8 +2055,15 @@ def test_generate_l2_campaign_task_adds_decoder_producer_ranker_ready_valid_equi
 
             work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
             decoder_inputs = work_item.input_manifest["decoder_contract"]
-            assert work_item.command_manifest[0]["name"] == "probe_decoder_producer_ranker_ready_valid_equivalence"
-            run = work_item.command_manifest[0]["run"]
+            assert [command["name"] for command in work_item.command_manifest[:2]] == [
+                "build_generator",
+                "probe_decoder_producer_ranker_ready_valid_equivalence",
+            ]
+            assert work_item.command_manifest[0]["run"] == (
+                "export PATH=/oss-cad-suite/bin:$PATH && "
+                "cmake -S . -B build && cmake --build build --target rtlgen"
+            )
+            run = work_item.command_manifest[1]["run"]
             assert "probe_llm_decoder_producer_ranker_ready_valid_equivalence.py" in run
             assert "--run-rtl-sim" in run
             assert "logit_rank_r64_l16_k1" in run
