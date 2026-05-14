@@ -1,0 +1,535 @@
+{
+  "assumptions": [
+    "All variants preserve a 64-logit tile and top-k=1 stream contract.",
+    "The serial wrapper backpressures the producer while scanning one tile; it is intended for producer cadences slower than one full 64-logit tile per cycle.",
+    "The measured PPA isolates ranker area/timing and must be compared against producer service time before promotion."
+  ],
+  "best_timing_variant": {
+    "critical_path_ns": "2.864771333952124",
+    "die_area": "810000.0",
+    "lanes_per_cycle": 1,
+    "tile_scan_cycles": 64,
+    "top": "decoder_r64_k1_serial_rank_lpc1_wrapper",
+    "total_power_mw": "0.0065519"
+  },
+  "decision": {
+    "decision": "serial_ranker_architecture_measured",
+    "next_step": "Compare serial service time against producer output cadence, then choose a ranker point for producer coupling."
+  },
+  "lowest_power_variant": {
+    "critical_path_ns": "2.864771333952124",
+    "die_area": "810000.0",
+    "lanes_per_cycle": 1,
+    "tile_scan_cycles": 64,
+    "top": "decoder_r64_k1_serial_rank_lpc1_wrapper",
+    "total_power_mw": "0.0065519"
+  },
+  "model": "decoder_serial_ranker_architecture_v1",
+  "target": {
+    "architecture": "serial_running_best",
+    "explored_lanes_per_cycle": [
+      1,
+      2,
+      4,
+      8,
+      16
+    ],
+    "make_target": "3_3_place_gp",
+    "producer_lanes": 64,
+    "sweep": "runs/campaigns/npu/decoder_serial_ranker_architecture/sweeps/nangate45_r64_serial.json",
+    "top_k": 1
+  },
+  "variants": [
+    {
+      "config_manifest": "runs/designs/activations/decoder_r64_k1_serial_rank_lpc1_wrapper/config_decoder_r64_k1_serial_rank_lpc1_wrapper.json",
+      "design_dir": "runs/designs/activations/decoder_r64_k1_serial_rank_lpc1_wrapper",
+      "generated_verilog": [
+        "runs/designs/activations/decoder_r64_k1_serial_rank_lpc1_wrapper/verilog/candidate_stream_merge_fifo_k1_l16_t16_d16.v",
+        "runs/designs/activations/decoder_r64_k1_serial_rank_lpc1_wrapper/verilog/decoder_r64_k1_serial_rank_lpc1_wrapper.v",
+        "runs/designs/activations/decoder_r64_k1_serial_rank_lpc1_wrapper/verilog/logit_rank_r1_l16_k1.v"
+      ],
+      "ii_goal_cycles": 65,
+      "lanes_per_cycle": 1,
+      "metrics_row": {
+        "config_hash": "76aa44d7da4a",
+        "critical_path_ns": "2.864771333952124",
+        "design": "decoder_r64_k1_serial_rank_lpc1_wrapper",
+        "die_area": "810000.0",
+        "flow_elapsed_seconds": "90.12",
+        "param_hash": "7eddf354",
+        "params_json": "{\"CLOCK_PERIOD\": 10.0, \"CORE_AREA\": \"40 40 860 860\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 900 900\", \"FLOW_VARIANT\": \"decoder_r64_k1_serial_ranker\", \"PLACE_DENSITY\": 0.36, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_KEEP_MODULES\": \"candidate_stream_merge_fifo_k1_l16_t16_d16\", \"TAG\": \"decoder_r64_k1_serial_ranker\", \"tag_prefix\": \"decoder_r64_k1_serial_ranker\"}",
+        "platform": "nangate45",
+        "result_path": "",
+        "stage_elapsed_seconds": "45.66",
+        "status": "ok",
+        "synth_script_path": "",
+        "synth_script_sha1": "",
+        "tag": "decoder_r64_k1_serial_ranker",
+        "total_power_mw": "0.0065519",
+        "work_result_json": "runs/designs/activations/decoder_r64_k1_serial_rank_lpc1_wrapper/work/7eddf354/result.json"
+      },
+      "returncodes": {
+        "merge": 0,
+        "rank": 0
+      },
+      "simulation": {
+        "expected": {
+          "logit": 500,
+          "token": 5
+        },
+        "log_tail": [
+          "RESULT token=5 logit=500 accepted=3 stalls=0 fifo_max=1 final_cycle=200",
+          "/tmp/rtlcp-worktree-w4m3k8na/repo/runs/designs/activations/decoder_r64_k1_serial_rank_lpc1_wrapper/tb_decoder_r64_k1_serial_rank_lpc1_wrapper.v:293: $finish called at 2040000 (1ps)"
+        ],
+        "returncode": 0,
+        "status": "ok"
+      },
+      "status": "ok",
+      "synthesis": {
+        "command": "python3 npu/synth/run_block_sweep.py --design_dir runs/designs/activations/decoder_r64_k1_serial_rank_lpc1_wrapper --platform nangate45 --top decoder_r64_k1_serial_rank_lpc1_wrapper --sweep runs/campaigns/npu/decoder_serial_ranker_architecture/sweeps/nangate45_r64_serial.json --make_target 3_3_place_gp --out_root runs/designs/activations --force_copy",
+        "elapsed_seconds": 96.1157672710251,
+        "log_path": "control_plane/runtime_logs/decoder_serial_ranker_architecture/decoder_r64_k1_serial_rank_lpc1_wrapper_3_3_place_gp.log",
+        "log_tail": [
+          "    final |     -0.3% |     567 |      534 |         0",
+          "-------------------------------------------------------",
+          "[INFO GPL-0106] Timing-driven: worst slack 7.12e-09",
+          "[INFO GPL-0107] Timing-driven: repair_design delta area: 20.748 um^2 (+0.11%)",
+          "[INFO GPL-0108] Timing-driven: repair_design, gpl cells created: 15 (+0.00%)",
+          "[INFO GPL-0110] Timing-driven: new target density: 0.36084402",
+          "Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group",
+          "---------------------------------------------------------------",
+          "      320 |   0.1853 |  5.849331e+05 |   +1.41% |  1.59e-07 |      ",
+          "      330 |   0.1602 |  5.810397e+05 |   -0.67% |  2.34e-07 |      ",
+          "      340 |   0.1362 |  5.790614e+05 |   -0.34% |  3.45e-07 |      ",
+          "      350 |   0.1177 |  5.776423e+05 |   -0.25% |  5.08e-07 |      ",
+          "      360 |   0.0980 |  5.770422e+05 |   -0.10% |  7.49e-07 |      ",
+          "      360 |   0.0980 |  5.770422e+05 |          |  7.78e-07 |      ",
+          "---------------------------------------------------------------",
+          "[INFO GPL-1001] Global placement finished at iteration 360",
+          "[INFO GPL-1003] Routability mode iteration count: 275",
+          "[INFO GPL-1005] Routability final weighted congestion: 0.7462",
+          "[INFO GPL-1002] Placed Cell Area            19304.6840",
+          "[INFO GPL-1003] Available Free Area         670677.5040",
+          "[INFO GPL-1004] Minimum Feasible Density        0.0300 (cell_area / free_area)",
+          "[INFO GPL-1006]   Suggested Target Densities:",
+          "[INFO GPL-1007]     - For 90% usage of free space: 0.0320",
+          "[INFO GPL-1008]     - For 80% usage of free space: 0.0360",
+          "[INFO GPL-1009]     - For 50% usage of free space: 0.0576",
+          "[INFO GPL-1011] Original area (um^2): 18738.64",
+          "[INFO GPL-1012] Total routability artificial inflation: 545.30 (+2.91%)",
+          "[INFO GPL-1013] Total timing-driven delta area: 566.05 (+3.02%)",
+          "[INFO GPL-1014] Final placement area: 19304.68 (+3.02%)",
+          "Took 42 seconds: global_placement -density 0.36 -pad_left 0 -pad_right 0 -routability_driven -timing_driven",
+          "Report metrics stage 3, global place...",
+          "",
+          "==========================================================================",
+          "global place report_design_area",
+          "--------------------------------------------------------------------------",
+          "Design area 19305 u^2 3% utilization.",
+          "Elapsed time: 0:45.66[h:]min:sec. CPU time: user 381.66 sys 10.46 (858%). Peak memory: 616240KB.",
+          "Log                        Elapsed/s Peak Memory/MB  sha1sum .odb [0:20)",
+          "3_3_place_gp                      45            601 698d5a878434065907f1",
+          "[INFO] Running OpenROAD flow: make DESIGN_CONFIG=/orfs/flow/designs/nangate45/decoder_r64_k1_serial_rank_lpc1_wrapper/config.mk TAG=decoder_r64_k1_serial_ranker SDC_FILE=/orfs/flow/designs/nangate45/decoder_r64_k1_serial_rank_lpc1_wrapper/constraint.sdc CLOCK_PERIOD=10.0 CORE_AREA=40 40 860 860 DIE_AREA=0 0 900 900 FLOW_VARIANT=decoder_r64_k1_serial_ranker PLACE_DENSITY=0.36 SYNTH_HIERARCHICAL=1 SYNTH_KEEP_MODULES=candidate_stream_merge_fifo_k1_l16_t16_d16 TAG=decoder_r64_k1_serial_ranker TAG_PREFIX=decoder_r64_k1_serial_ranker CORE_UTILIZATION= 3_3_place_gp"
+        ],
+        "returncode": 0,
+        "status": "ok"
+      },
+      "tile_scan_cycles": 64,
+      "top": "decoder_r64_k1_serial_rank_lpc1_wrapper",
+      "verilog_dir": "runs/designs/activations/decoder_r64_k1_serial_rank_lpc1_wrapper/verilog"
+    },
+    {
+      "config_manifest": "runs/designs/activations/decoder_r64_k1_serial_rank_lpc2_wrapper/config_decoder_r64_k1_serial_rank_lpc2_wrapper.json",
+      "design_dir": "runs/designs/activations/decoder_r64_k1_serial_rank_lpc2_wrapper",
+      "generated_verilog": [
+        "runs/designs/activations/decoder_r64_k1_serial_rank_lpc2_wrapper/verilog/candidate_stream_merge_fifo_k1_l16_t16_d16.v",
+        "runs/designs/activations/decoder_r64_k1_serial_rank_lpc2_wrapper/verilog/decoder_r64_k1_serial_rank_lpc2_wrapper.v",
+        "runs/designs/activations/decoder_r64_k1_serial_rank_lpc2_wrapper/verilog/logit_rank_r2_l16_k1.v"
+      ],
+      "ii_goal_cycles": 33,
+      "lanes_per_cycle": 2,
+      "metrics_row": {
+        "config_hash": "b5c7480dce20",
+        "critical_path_ns": "2.927734723812145",
+        "design": "decoder_r64_k1_serial_rank_lpc2_wrapper",
+        "die_area": "810000.0",
+        "flow_elapsed_seconds": "94.49",
+        "param_hash": "7eddf354",
+        "params_json": "{\"CLOCK_PERIOD\": 10.0, \"CORE_AREA\": \"40 40 860 860\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 900 900\", \"FLOW_VARIANT\": \"decoder_r64_k1_serial_ranker\", \"PLACE_DENSITY\": 0.36, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_KEEP_MODULES\": \"candidate_stream_merge_fifo_k1_l16_t16_d16\", \"TAG\": \"decoder_r64_k1_serial_ranker\", \"tag_prefix\": \"decoder_r64_k1_serial_ranker\"}",
+        "platform": "nangate45",
+        "result_path": "",
+        "stage_elapsed_seconds": "50.86",
+        "status": "ok",
+        "synth_script_path": "",
+        "synth_script_sha1": "",
+        "tag": "decoder_r64_k1_serial_ranker",
+        "total_power_mw": "0.0075567",
+        "work_result_json": "runs/designs/activations/decoder_r64_k1_serial_rank_lpc2_wrapper/work/7eddf354/result.json"
+      },
+      "returncodes": {
+        "merge": 0,
+        "rank": 0
+      },
+      "simulation": {
+        "expected": {
+          "logit": 500,
+          "token": 5
+        },
+        "log_tail": [
+          "RESULT token=5 logit=500 accepted=3 stalls=0 fifo_max=1 final_cycle=104",
+          "/tmp/rtlcp-worktree-w4m3k8na/repo/runs/designs/activations/decoder_r64_k1_serial_rank_lpc2_wrapper/tb_decoder_r64_k1_serial_rank_lpc2_wrapper.v:293: $finish called at 1080000 (1ps)"
+        ],
+        "returncode": 0,
+        "status": "ok"
+      },
+      "status": "ok",
+      "synthesis": {
+        "command": "python3 npu/synth/run_block_sweep.py --design_dir runs/designs/activations/decoder_r64_k1_serial_rank_lpc2_wrapper --platform nangate45 --top decoder_r64_k1_serial_rank_lpc2_wrapper --sweep runs/campaigns/npu/decoder_serial_ranker_architecture/sweeps/nangate45_r64_serial.json --make_target 3_3_place_gp --out_root runs/designs/activations --force_copy",
+        "elapsed_seconds": 102.11608749901643,
+        "log_path": "control_plane/runtime_logs/decoder_serial_ranker_architecture/decoder_r64_k1_serial_rank_lpc2_wrapper_3_3_place_gp.log",
+        "log_tail": [
+          "    final |     -0.4% |     764 |      706 |         0",
+          "-------------------------------------------------------",
+          "[INFO GPL-0106] Timing-driven: worst slack 7.05e-09",
+          "[INFO GPL-0107] Timing-driven: repair_design delta area: 19.684 um^2 (+0.10%)",
+          "[INFO GPL-0108] Timing-driven: repair_design, gpl cells created: 1 (+0.00%)",
+          "[INFO GPL-0110] Timing-driven: new target density: 0.36123785",
+          "Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group",
+          "---------------------------------------------------------------",
+          "      320 |   0.1904 |  4.854279e+05 |   +2.51% |  1.49e-07 |      ",
+          "      330 |   0.1646 |  4.828627e+05 |   -0.53% |  2.19e-07 |      ",
+          "      340 |   0.1391 |  4.802137e+05 |   -0.55% |  3.23e-07 |      ",
+          "      350 |   0.1210 |  4.786368e+05 |   -0.33% |  4.76e-07 |      ",
+          "      360 |   0.0991 |  4.775943e+05 |   -0.22% |  7.01e-07 |      ",
+          "      360 |   0.0991 |  4.775943e+05 |          |  7.29e-07 |      ",
+          "---------------------------------------------------------------",
+          "[INFO GPL-1001] Global placement finished at iteration 360",
+          "[INFO GPL-1003] Routability mode iteration count: 273",
+          "[INFO GPL-1005] Routability final weighted congestion: 0.6768",
+          "[INFO GPL-1002] Placed Cell Area            19585.5800",
+          "[INFO GPL-1003] Available Free Area         670677.5040",
+          "[INFO GPL-1004] Minimum Feasible Density        0.0300 (cell_area / free_area)",
+          "[INFO GPL-1006]   Suggested Target Densities:",
+          "[INFO GPL-1007]     - For 90% usage of free space: 0.0324",
+          "[INFO GPL-1008]     - For 80% usage of free space: 0.0365",
+          "[INFO GPL-1009]     - For 50% usage of free space: 0.0584",
+          "[INFO GPL-1011] Original area (um^2): 18755.39",
+          "[INFO GPL-1012] Total routability artificial inflation: 810.50 (+4.32%)",
+          "[INFO GPL-1013] Total timing-driven delta area: 830.19 (+4.43%)",
+          "[INFO GPL-1014] Final placement area: 19585.58 (+4.43%)",
+          "Took 47 seconds: global_placement -density 0.36 -pad_left 0 -pad_right 0 -routability_driven -timing_driven",
+          "Report metrics stage 3, global place...",
+          "",
+          "==========================================================================",
+          "global place report_design_area",
+          "--------------------------------------------------------------------------",
+          "Design area 19586 u^2 3% utilization.",
+          "Elapsed time: 0:50.86[h:]min:sec. CPU time: user 449.77 sys 10.60 (905%). Peak memory: 569552KB.",
+          "Log                        Elapsed/s Peak Memory/MB  sha1sum .odb [0:20)",
+          "3_3_place_gp                      50            556 d372d20042e7a944fea3",
+          "[INFO] Running OpenROAD flow: make DESIGN_CONFIG=/orfs/flow/designs/nangate45/decoder_r64_k1_serial_rank_lpc2_wrapper/config.mk TAG=decoder_r64_k1_serial_ranker SDC_FILE=/orfs/flow/designs/nangate45/decoder_r64_k1_serial_rank_lpc2_wrapper/constraint.sdc CLOCK_PERIOD=10.0 CORE_AREA=40 40 860 860 DIE_AREA=0 0 900 900 FLOW_VARIANT=decoder_r64_k1_serial_ranker PLACE_DENSITY=0.36 SYNTH_HIERARCHICAL=1 SYNTH_KEEP_MODULES=candidate_stream_merge_fifo_k1_l16_t16_d16 TAG=decoder_r64_k1_serial_ranker TAG_PREFIX=decoder_r64_k1_serial_ranker CORE_UTILIZATION= 3_3_place_gp"
+        ],
+        "returncode": 0,
+        "status": "ok"
+      },
+      "tile_scan_cycles": 32,
+      "top": "decoder_r64_k1_serial_rank_lpc2_wrapper",
+      "verilog_dir": "runs/designs/activations/decoder_r64_k1_serial_rank_lpc2_wrapper/verilog"
+    },
+    {
+      "config_manifest": "runs/designs/activations/decoder_r64_k1_serial_rank_lpc4_wrapper/config_decoder_r64_k1_serial_rank_lpc4_wrapper.json",
+      "design_dir": "runs/designs/activations/decoder_r64_k1_serial_rank_lpc4_wrapper",
+      "generated_verilog": [
+        "runs/designs/activations/decoder_r64_k1_serial_rank_lpc4_wrapper/verilog/candidate_stream_merge_fifo_k1_l16_t16_d16.v",
+        "runs/designs/activations/decoder_r64_k1_serial_rank_lpc4_wrapper/verilog/decoder_r64_k1_serial_rank_lpc4_wrapper.v",
+        "runs/designs/activations/decoder_r64_k1_serial_rank_lpc4_wrapper/verilog/logit_rank_r4_l16_k1.v"
+      ],
+      "ii_goal_cycles": 17,
+      "lanes_per_cycle": 4,
+      "metrics_row": {
+        "config_hash": "fc0dc73e1670",
+        "critical_path_ns": "3.1307233536308563",
+        "design": "decoder_r64_k1_serial_rank_lpc4_wrapper",
+        "die_area": "810000.0",
+        "flow_elapsed_seconds": "93.92",
+        "param_hash": "7eddf354",
+        "params_json": "{\"CLOCK_PERIOD\": 10.0, \"CORE_AREA\": \"40 40 860 860\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 900 900\", \"FLOW_VARIANT\": \"decoder_r64_k1_serial_ranker\", \"PLACE_DENSITY\": 0.36, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_KEEP_MODULES\": \"candidate_stream_merge_fifo_k1_l16_t16_d16\", \"TAG\": \"decoder_r64_k1_serial_ranker\", \"tag_prefix\": \"decoder_r64_k1_serial_ranker\"}",
+        "platform": "nangate45",
+        "result_path": "",
+        "stage_elapsed_seconds": "46.75",
+        "status": "ok",
+        "synth_script_path": "",
+        "synth_script_sha1": "",
+        "tag": "decoder_r64_k1_serial_ranker",
+        "total_power_mw": "0.0109817",
+        "work_result_json": "runs/designs/activations/decoder_r64_k1_serial_rank_lpc4_wrapper/work/7eddf354/result.json"
+      },
+      "returncodes": {
+        "merge": 0,
+        "rank": 0
+      },
+      "simulation": {
+        "expected": {
+          "logit": 500,
+          "token": 5
+        },
+        "log_tail": [
+          "RESULT token=5 logit=500 accepted=3 stalls=0 fifo_max=1 final_cycle=56",
+          "/tmp/rtlcp-worktree-w4m3k8na/repo/runs/designs/activations/decoder_r64_k1_serial_rank_lpc4_wrapper/tb_decoder_r64_k1_serial_rank_lpc4_wrapper.v:293: $finish called at 600000 (1ps)"
+        ],
+        "returncode": 0,
+        "status": "ok"
+      },
+      "status": "ok",
+      "synthesis": {
+        "command": "python3 npu/synth/run_block_sweep.py --design_dir runs/designs/activations/decoder_r64_k1_serial_rank_lpc4_wrapper --platform nangate45 --top decoder_r64_k1_serial_rank_lpc4_wrapper --sweep runs/campaigns/npu/decoder_serial_ranker_architecture/sweeps/nangate45_r64_serial.json --make_target 3_3_place_gp --out_root runs/designs/activations --force_copy",
+        "elapsed_seconds": 100.12121094303438,
+        "log_path": "control_plane/runtime_logs/decoder_serial_ranker_architecture/decoder_r64_k1_serial_rank_lpc4_wrapper_3_3_place_gp.log",
+        "log_tail": [
+          "    12000 |     -0.7% |     625 |      494 |       516",
+          "    final |     -0.7% |     741 |      603 |         0",
+          "-------------------------------------------------------",
+          "[INFO GPL-0106] Timing-driven: worst slack 6.95e-09",
+          "[INFO GPL-0107] Timing-driven: repair_design delta area: -49.210 um^2 (-0.25%)",
+          "[INFO GPL-0108] Timing-driven: repair_design, gpl cells created: -82 (+0.00%)",
+          "[INFO GPL-0110] Timing-driven: new target density: 0.36101136",
+          "Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group",
+          "---------------------------------------------------------------",
+          "      330 |   0.1760 |  5.120755e+05 |   +0.99% |  1.75e-07 |      ",
+          "      340 |   0.1481 |  5.098112e+05 |   -0.44% |  2.57e-07 |      ",
+          "      350 |   0.1267 |  5.088395e+05 |   -0.19% |  3.79e-07 |      ",
+          "      360 |   0.1080 |  5.077747e+05 |   -0.21% |  5.59e-07 |      ",
+          "      365 |   0.0984 |  5.076652e+05 |          |  7.05e-07 |      ",
+          "---------------------------------------------------------------",
+          "[INFO GPL-1001] Global placement finished at iteration 365",
+          "[INFO GPL-1003] Routability mode iteration count: 272",
+          "[INFO GPL-1005] Routability final weighted congestion: 0.7138",
+          "[INFO GPL-1002] Placed Cell Area            19954.5220",
+          "[INFO GPL-1003] Available Free Area         670677.5040",
+          "[INFO GPL-1004] Minimum Feasible Density        0.0300 (cell_area / free_area)",
+          "[INFO GPL-1006]   Suggested Target Densities:",
+          "[INFO GPL-1007]     - For 90% usage of free space: 0.0331",
+          "[INFO GPL-1008]     - For 80% usage of free space: 0.0372",
+          "[INFO GPL-1009]     - For 50% usage of free space: 0.0595",
+          "[INFO GPL-1011] Original area (um^2): 19276.22",
+          "[INFO GPL-1012] Total routability artificial inflation: 727.51 (+3.77%)",
+          "[INFO GPL-1013] Total timing-driven delta area: 678.30 (+3.52%)",
+          "[INFO GPL-1014] Final placement area: 19954.52 (+3.52%)",
+          "Took 43 seconds: global_placement -density 0.36 -pad_left 0 -pad_right 0 -routability_driven -timing_driven",
+          "Report metrics stage 3, global place...",
+          "",
+          "==========================================================================",
+          "global place report_design_area",
+          "--------------------------------------------------------------------------",
+          "Design area 19955 u^2 3% utilization.",
+          "Elapsed time: 0:46.75[h:]min:sec. CPU time: user 362.80 sys 11.32 (800%). Peak memory: 577564KB.",
+          "Log                        Elapsed/s Peak Memory/MB  sha1sum .odb [0:20)",
+          "3_3_place_gp                      46            564 05a8317b3220ed2ccf52",
+          "[INFO] Running OpenROAD flow: make DESIGN_CONFIG=/orfs/flow/designs/nangate45/decoder_r64_k1_serial_rank_lpc4_wrapper/config.mk TAG=decoder_r64_k1_serial_ranker SDC_FILE=/orfs/flow/designs/nangate45/decoder_r64_k1_serial_rank_lpc4_wrapper/constraint.sdc CLOCK_PERIOD=10.0 CORE_AREA=40 40 860 860 DIE_AREA=0 0 900 900 FLOW_VARIANT=decoder_r64_k1_serial_ranker PLACE_DENSITY=0.36 SYNTH_HIERARCHICAL=1 SYNTH_KEEP_MODULES=candidate_stream_merge_fifo_k1_l16_t16_d16 TAG=decoder_r64_k1_serial_ranker TAG_PREFIX=decoder_r64_k1_serial_ranker CORE_UTILIZATION= 3_3_place_gp"
+        ],
+        "returncode": 0,
+        "status": "ok"
+      },
+      "tile_scan_cycles": 16,
+      "top": "decoder_r64_k1_serial_rank_lpc4_wrapper",
+      "verilog_dir": "runs/designs/activations/decoder_r64_k1_serial_rank_lpc4_wrapper/verilog"
+    },
+    {
+      "config_manifest": "runs/designs/activations/decoder_r64_k1_serial_rank_lpc8_wrapper/config_decoder_r64_k1_serial_rank_lpc8_wrapper.json",
+      "design_dir": "runs/designs/activations/decoder_r64_k1_serial_rank_lpc8_wrapper",
+      "generated_verilog": [
+        "runs/designs/activations/decoder_r64_k1_serial_rank_lpc8_wrapper/verilog/candidate_stream_merge_fifo_k1_l16_t16_d16.v",
+        "runs/designs/activations/decoder_r64_k1_serial_rank_lpc8_wrapper/verilog/decoder_r64_k1_serial_rank_lpc8_wrapper.v",
+        "runs/designs/activations/decoder_r64_k1_serial_rank_lpc8_wrapper/verilog/logit_rank_r8_l16_k1.v"
+      ],
+      "ii_goal_cycles": 9,
+      "lanes_per_cycle": 8,
+      "metrics_row": {
+        "config_hash": "384fc55b305e",
+        "critical_path_ns": "5.772938772211382",
+        "design": "decoder_r64_k1_serial_rank_lpc8_wrapper",
+        "die_area": "810000.0",
+        "flow_elapsed_seconds": "96.99000000000001",
+        "param_hash": "7eddf354",
+        "params_json": "{\"CLOCK_PERIOD\": 10.0, \"CORE_AREA\": \"40 40 860 860\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 900 900\", \"FLOW_VARIANT\": \"decoder_r64_k1_serial_ranker\", \"PLACE_DENSITY\": 0.36, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_KEEP_MODULES\": \"candidate_stream_merge_fifo_k1_l16_t16_d16\", \"TAG\": \"decoder_r64_k1_serial_ranker\", \"tag_prefix\": \"decoder_r64_k1_serial_ranker\"}",
+        "platform": "nangate45",
+        "result_path": "",
+        "stage_elapsed_seconds": "51.55",
+        "status": "ok",
+        "synth_script_path": "",
+        "synth_script_sha1": "",
+        "tag": "decoder_r64_k1_serial_ranker",
+        "total_power_mw": "0.014957",
+        "work_result_json": "runs/designs/activations/decoder_r64_k1_serial_rank_lpc8_wrapper/work/7eddf354/result.json"
+      },
+      "returncodes": {
+        "merge": 0,
+        "rank": 0
+      },
+      "simulation": {
+        "expected": {
+          "logit": 500,
+          "token": 5
+        },
+        "log_tail": [
+          "RESULT token=5 logit=500 accepted=3 stalls=0 fifo_max=1 final_cycle=32",
+          "/tmp/rtlcp-worktree-w4m3k8na/repo/runs/designs/activations/decoder_r64_k1_serial_rank_lpc8_wrapper/tb_decoder_r64_k1_serial_rank_lpc8_wrapper.v:293: $finish called at 360000 (1ps)"
+        ],
+        "returncode": 0,
+        "status": "ok"
+      },
+      "status": "ok",
+      "synthesis": {
+        "command": "python3 npu/synth/run_block_sweep.py --design_dir runs/designs/activations/decoder_r64_k1_serial_rank_lpc8_wrapper --platform nangate45 --top decoder_r64_k1_serial_rank_lpc8_wrapper --sweep runs/campaigns/npu/decoder_serial_ranker_architecture/sweeps/nangate45_r64_serial.json --make_target 3_3_place_gp --out_root runs/designs/activations --force_copy",
+        "elapsed_seconds": 104.12235158996191,
+        "log_path": "control_plane/runtime_logs/decoder_serial_ranker_architecture/decoder_r64_k1_serial_rank_lpc8_wrapper_3_3_place_gp.log",
+        "log_tail": [
+          "    12000 |     -0.1% |     433 |      444 |       596",
+          "    final |     -0.1% |     524 |      532 |         0",
+          "-------------------------------------------------------",
+          "[INFO GPL-0106] Timing-driven: worst slack 4.23e-09",
+          "[INFO GPL-0107] Timing-driven: repair_design delta area: 102.144 um^2 (+0.51%)",
+          "[INFO GPL-0108] Timing-driven: repair_design, gpl cells created: 87 (+0.00%)",
+          "[INFO GPL-0110] Timing-driven: new target density: 0.3608825",
+          "Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group",
+          "---------------------------------------------------------------",
+          "      340 |   0.1766 |  4.213774e+05 |   +0.85% |  2.23e-07 |      ",
+          "      350 |   0.1581 |  4.193865e+05 |   -0.47% |  3.29e-07 |      ",
+          "      360 |   0.1319 |  4.194959e+05 |   +0.03% |  4.85e-07 |      ",
+          "      370 |   0.1145 |  4.193095e+05 |   -0.04% |  7.14e-07 |      ",
+          "      379 |   0.0995 |  4.189488e+05 |          |  1.05e-06 |      ",
+          "---------------------------------------------------------------",
+          "[INFO GPL-1001] Global placement finished at iteration 379",
+          "[INFO GPL-1003] Routability mode iteration count: 280",
+          "[INFO GPL-1005] Routability final weighted congestion: 0.6651",
+          "[INFO GPL-1002] Placed Cell Area            20013.5740",
+          "[INFO GPL-1003] Available Free Area         670677.5040",
+          "[INFO GPL-1004] Minimum Feasible Density        0.0300 (cell_area / free_area)",
+          "[INFO GPL-1006]   Suggested Target Densities:",
+          "[INFO GPL-1007]     - For 90% usage of free space: 0.0332",
+          "[INFO GPL-1008]     - For 80% usage of free space: 0.0373",
+          "[INFO GPL-1009]     - For 50% usage of free space: 0.0597",
+          "[INFO GPL-1011] Original area (um^2): 19421.72",
+          "[INFO GPL-1012] Total routability artificial inflation: 489.71 (+2.52%)",
+          "[INFO GPL-1013] Total timing-driven delta area: 591.85 (+3.05%)",
+          "[INFO GPL-1014] Final placement area: 20013.57 (+3.05%)",
+          "Took 47 seconds: global_placement -density 0.36 -pad_left 0 -pad_right 0 -routability_driven -timing_driven",
+          "Report metrics stage 3, global place...",
+          "",
+          "==========================================================================",
+          "global place report_design_area",
+          "--------------------------------------------------------------------------",
+          "Design area 20014 u^2 3% utilization.",
+          "Elapsed time: 0:51.55[h:]min:sec. CPU time: user 430.91 sys 11.52 (858%). Peak memory: 576296KB.",
+          "Log                        Elapsed/s Peak Memory/MB  sha1sum .odb [0:20)",
+          "3_3_place_gp                      51            562 1719d312bb1dcf803a5f",
+          "[INFO] Running OpenROAD flow: make DESIGN_CONFIG=/orfs/flow/designs/nangate45/decoder_r64_k1_serial_rank_lpc8_wrapper/config.mk TAG=decoder_r64_k1_serial_ranker SDC_FILE=/orfs/flow/designs/nangate45/decoder_r64_k1_serial_rank_lpc8_wrapper/constraint.sdc CLOCK_PERIOD=10.0 CORE_AREA=40 40 860 860 DIE_AREA=0 0 900 900 FLOW_VARIANT=decoder_r64_k1_serial_ranker PLACE_DENSITY=0.36 SYNTH_HIERARCHICAL=1 SYNTH_KEEP_MODULES=candidate_stream_merge_fifo_k1_l16_t16_d16 TAG=decoder_r64_k1_serial_ranker TAG_PREFIX=decoder_r64_k1_serial_ranker CORE_UTILIZATION= 3_3_place_gp"
+        ],
+        "returncode": 0,
+        "status": "ok"
+      },
+      "tile_scan_cycles": 8,
+      "top": "decoder_r64_k1_serial_rank_lpc8_wrapper",
+      "verilog_dir": "runs/designs/activations/decoder_r64_k1_serial_rank_lpc8_wrapper/verilog"
+    },
+    {
+      "config_manifest": "runs/designs/activations/decoder_r64_k1_serial_rank_lpc16_wrapper/config_decoder_r64_k1_serial_rank_lpc16_wrapper.json",
+      "design_dir": "runs/designs/activations/decoder_r64_k1_serial_rank_lpc16_wrapper",
+      "generated_verilog": [
+        "runs/designs/activations/decoder_r64_k1_serial_rank_lpc16_wrapper/verilog/candidate_stream_merge_fifo_k1_l16_t16_d16.v",
+        "runs/designs/activations/decoder_r64_k1_serial_rank_lpc16_wrapper/verilog/decoder_r64_k1_serial_rank_lpc16_wrapper.v",
+        "runs/designs/activations/decoder_r64_k1_serial_rank_lpc16_wrapper/verilog/logit_rank_r16_l16_k1.v"
+      ],
+      "ii_goal_cycles": 5,
+      "lanes_per_cycle": 16,
+      "metrics_row": {
+        "config_hash": "0fd8639dc950",
+        "critical_path_ns": "10.071416413790185",
+        "design": "decoder_r64_k1_serial_rank_lpc16_wrapper",
+        "die_area": "810000.0",
+        "flow_elapsed_seconds": "107.96000000000001",
+        "param_hash": "7eddf354",
+        "params_json": "{\"CLOCK_PERIOD\": 10.0, \"CORE_AREA\": \"40 40 860 860\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 900 900\", \"FLOW_VARIANT\": \"decoder_r64_k1_serial_ranker\", \"PLACE_DENSITY\": 0.36, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_KEEP_MODULES\": \"candidate_stream_merge_fifo_k1_l16_t16_d16\", \"TAG\": \"decoder_r64_k1_serial_ranker\", \"tag_prefix\": \"decoder_r64_k1_serial_ranker\"}",
+        "platform": "nangate45",
+        "result_path": "",
+        "stage_elapsed_seconds": "57.41",
+        "status": "ok",
+        "synth_script_path": "",
+        "synth_script_sha1": "",
+        "tag": "decoder_r64_k1_serial_ranker",
+        "total_power_mw": "0.0842604",
+        "work_result_json": "runs/designs/activations/decoder_r64_k1_serial_rank_lpc16_wrapper/work/7eddf354/result.json"
+      },
+      "returncodes": {
+        "merge": 0,
+        "rank": 0
+      },
+      "simulation": {
+        "expected": {
+          "logit": 500,
+          "token": 5
+        },
+        "log_tail": [
+          "RESULT token=5 logit=500 accepted=3 stalls=0 fifo_max=1 final_cycle=20",
+          "/tmp/rtlcp-worktree-w4m3k8na/repo/runs/designs/activations/decoder_r64_k1_serial_rank_lpc16_wrapper/tb_decoder_r64_k1_serial_rank_lpc16_wrapper.v:293: $finish called at 240000 (1ps)"
+        ],
+        "returncode": 0,
+        "status": "ok"
+      },
+      "status": "ok",
+      "synthesis": {
+        "command": "python3 npu/synth/run_block_sweep.py --design_dir runs/designs/activations/decoder_r64_k1_serial_rank_lpc16_wrapper --platform nangate45 --top decoder_r64_k1_serial_rank_lpc16_wrapper --sweep runs/campaigns/npu/decoder_serial_ranker_architecture/sweeps/nangate45_r64_serial.json --make_target 3_3_place_gp --out_root runs/designs/activations --force_copy",
+        "elapsed_seconds": 114.1278302629944,
+        "log_path": "control_plane/runtime_logs/decoder_serial_ranker_architecture/decoder_r64_k1_serial_rank_lpc16_wrapper_3_3_place_gp.log",
+        "log_tail": [
+          "    13000 |     -2.5% |     915 |      425 |       742",
+          "    final |     -2.5% |    1002 |      514 |         0",
+          "-------------------------------------------------------",
+          "[INFO GPL-0106] Timing-driven: worst slack -6.61e-11",
+          "[INFO GPL-0107] Timing-driven: repair_design delta area: -335.692 um^2 (-1.56%)",
+          "[INFO GPL-0108] Timing-driven: repair_design, gpl cells created: -370 (+0.00%)",
+          "[INFO GPL-0110] Timing-driven: new target density: 0.36095148",
+          "Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group",
+          "---------------------------------------------------------------",
+          "      340 |   0.1713 |  4.414441e+05 |   +0.74% |  2.50e-07 |      ",
+          "      350 |   0.1445 |  4.411835e+05 |   -0.06% |  3.68e-07 |      ",
+          "      360 |   0.1232 |  4.414946e+05 |   +0.07% |  5.43e-07 |      ",
+          "      370 |   0.1038 |  4.417410e+05 |   +0.06% |  7.99e-07 |      ",
+          "      373 |   0.0997 |  4.418589e+05 |          |  9.33e-07 |      ",
+          "---------------------------------------------------------------",
+          "[INFO GPL-1001] Global placement finished at iteration 373",
+          "[INFO GPL-1003] Routability mode iteration count: 278",
+          "[INFO GPL-1005] Routability final weighted congestion: 0.6790",
+          "[INFO GPL-1002] Placed Cell Area            21180.5160",
+          "[INFO GPL-1003] Available Free Area         670677.5040",
+          "[INFO GPL-1004] Minimum Feasible Density        0.0400 (cell_area / free_area)",
+          "[INFO GPL-1006]   Suggested Target Densities:",
+          "[INFO GPL-1007]     - For 90% usage of free space: 0.0351",
+          "[INFO GPL-1008]     - For 80% usage of free space: 0.0395",
+          "[INFO GPL-1009]     - For 50% usage of free space: 0.0632",
+          "[INFO GPL-1011] Original area (um^2): 20542.38",
+          "[INFO GPL-1012] Total routability artificial inflation: 973.83 (+4.74%)",
+          "[INFO GPL-1013] Total timing-driven delta area: 638.13 (+3.11%)",
+          "[INFO GPL-1014] Final placement area: 21180.52 (+3.11%)",
+          "Took 53 seconds: global_placement -density 0.36 -pad_left 0 -pad_right 0 -routability_driven -timing_driven",
+          "Report metrics stage 3, global place...",
+          "",
+          "==========================================================================",
+          "global place report_design_area",
+          "--------------------------------------------------------------------------",
+          "Design area 21181 u^2 3% utilization.",
+          "Elapsed time: 0:57.41[h:]min:sec. CPU time: user 488.72 sys 14.01 (875%). Peak memory: 591288KB.",
+          "Log                        Elapsed/s Peak Memory/MB  sha1sum .odb [0:20)",
+          "3_3_place_gp                      57            577 3cd18ec0db9ed94412d0",
+          "[INFO] Running OpenROAD flow: make DESIGN_CONFIG=/orfs/flow/designs/nangate45/decoder_r64_k1_serial_rank_lpc16_wrapper/config.mk TAG=decoder_r64_k1_serial_ranker SDC_FILE=/orfs/flow/designs/nangate45/decoder_r64_k1_serial_rank_lpc16_wrapper/constraint.sdc CLOCK_PERIOD=10.0 CORE_AREA=40 40 860 860 DIE_AREA=0 0 900 900 FLOW_VARIANT=decoder_r64_k1_serial_ranker PLACE_DENSITY=0.36 SYNTH_HIERARCHICAL=1 SYNTH_KEEP_MODULES=candidate_stream_merge_fifo_k1_l16_t16_d16 TAG=decoder_r64_k1_serial_ranker TAG_PREFIX=decoder_r64_k1_serial_ranker CORE_UTILIZATION= 3_3_place_gp"
+        ],
+        "returncode": 0,
+        "status": "ok"
+      },
+      "tile_scan_cycles": 4,
+      "top": "decoder_r64_k1_serial_rank_lpc16_wrapper",
+      "verilog_dir": "runs/designs/activations/decoder_r64_k1_serial_rank_lpc16_wrapper/verilog"
+    }
+  ],
+  "version": 0.1
+}
