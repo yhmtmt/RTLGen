@@ -1,0 +1,71 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_ranker_wrapper_physical_v1",
+  "created_utc": "2026-05-14T11:30:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_output_projection_ranker_wrapper_physical",
+  "title": "Decoder output-projection ranker physical wrapper",
+  "hypothesis": "A concrete output-projection ranker policy wrapper can mux between serial_lpc1 and radix-4 rank-tree paths for r64, and bank both paths for r128, while preserving top-1 RTL equivalence and exposing the physical overhead of carrying both selected paths.",
+  "direct_comparison": {
+    "primary_question": "What is the PPA overhead of a concrete policy wrapper that contains serial and rank-tree paths plus selection mux/control for r64 and banked r128 producer tiles?",
+    "include": [
+      "generated r64 policy wrapper with serial_lpc1 and rank-tree paths selected by use_ranktree",
+      "generated r128 policy wrapper with two banked r64 serial paths and two banked r64 rank-tree paths",
+      "RTL simulation of both selected paths for each wrapper",
+      "bounded nangate45 physical sweep through 3_3_place_gp",
+      "wrapper mux/control and inactive-path area overhead"
+    ],
+    "exclude": [
+      "full output-projection GEMM producer RTL",
+      "NoC or SRAM arbitration",
+      "clock gating for inactive paths",
+      "larger-than-r128 producer tiles"
+    ]
+  },
+  "expected_benefit": [
+    "moves from policy contract to concrete wrapper RTL that can be synthesized",
+    "checks whether carrying both serial and rank-tree paths is physically tolerable",
+    "reveals whether path-specific wrappers are preferable to a single muxed policy wrapper"
+  ],
+  "risks": [
+    "r128 wrapper pin pressure may dominate the standalone physical sweep",
+    "inactive paths are present in area/power because clock gating is not modeled",
+    "the final producer-integrated wrapper may have different routing than this standalone macro-style wrapper"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_output_projection_ranker_wrapper_physical_v1",
+      "task_type": "l2_campaign",
+      "objective": "Generate concrete output-projection ranker policy wrappers for r64 and r128, simulate both selected paths, and measure wrapper PPA.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_output_projection_ranker_wrapper_physical",
+      "cost_class": "medium",
+      "comparison_role": "producer_ranker_service",
+      "paired_baseline_item_id": "l2_decoder_output_projection_ranker_wrapper_contract_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_output_projection_ranker_policy_v1",
+        "l2_decoder_output_projection_ranker_wrapper_contract_v1",
+        "l2_decoder_resident_ranktree_fallback_promotion_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "If the muxed policy wrapper PPA is acceptable, integrate it into the output-projection producer wrapper; otherwise split serial and rank-tree wrappers or add clock/path gating."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_ranker_policy__l2_decoder_output_projection_ranker_policy_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_ranker_wrapper_contract__l2_decoder_output_projection_ranker_wrapper_contract_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_resident_ranktree_fallback_promotion__l2_decoder_resident_ranktree_fallback_promotion_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/probe_llm_decoder_output_projection_ranker_wrapper_physical.py",
+    "tests/test_llm_decoder_output_projection_ranker_wrapper_physical.py",
+    "control_plane/control_plane/services/l2_task_generator.py",
+    "runs/campaigns/npu/decoder_output_projection_ranker_wrapper_physical/sweeps/nangate45_policy_wrapper.json"
+  ]
+}

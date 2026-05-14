@@ -2591,6 +2591,81 @@ def _decoder_output_projection_ranker_wrapper_contract_evidence(*, item_id: str)
     }
 
 
+def _decoder_output_projection_ranker_wrapper_physical_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_output_projection_ranker_wrapper_physical__{item_id}.json"
+    report = f"{base}/decoder_output_projection_ranker_wrapper_physical__{item_id}.md"
+    policy = (
+        f"{base}/decoder_output_projection_ranker_policy__"
+        "l2_decoder_output_projection_ranker_policy_v1.json"
+    )
+    wrapper_contract = (
+        f"{base}/decoder_output_projection_ranker_wrapper_contract__"
+        "l2_decoder_output_projection_ranker_wrapper_contract_v1.json"
+    )
+    merge_config = (
+        "runs/designs/activations/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/"
+        "config_candidate_stream_merge_fifo_k1_l16_t16_d16.json"
+    )
+    sweep = "runs/campaigns/npu/decoder_output_projection_ranker_wrapper_physical/sweeps/nangate45_policy_wrapper.json"
+    design_root = "runs/designs/activations"
+    tops = [
+        "decoder_output_ranker_policy_r64_wrapper",
+        "decoder_output_ranker_policy_r128_wrapper",
+    ]
+    return {
+        "inputs": {
+            "output_projection_ranker_wrapper_physical_out": out,
+            "output_projection_ranker_wrapper_physical_report": report,
+            "output_projection_ranker_policy": policy,
+            "output_projection_ranker_wrapper_contract": wrapper_contract,
+            "candidate_merge_config": merge_config,
+            "output_projection_ranker_wrapper_physical_sweep": sweep,
+            "output_projection_ranker_wrapper_physical_make_target": "3_3_place_gp",
+            "output_projection_ranker_wrapper_physical_scope": (
+                "Generate concrete output-projection ranker policy wrappers for r64 and r128, "
+                "simulate both serial and rank-tree selected paths, then measure wrapper mux/control "
+                "and inactive-path overhead with a bounded nangate45 physical sweep."
+            ),
+        },
+        "commands": [
+            {
+                "name": "build_generator",
+                "run": "export PATH=/oss-cad-suite/bin:$PATH && cmake -S . -B build && cmake --build build --target rtlgen",
+            },
+            {
+                "name": "probe_decoder_output_projection_ranker_wrapper_physical",
+                "run": (
+                    "python3 npu/eval/probe_llm_decoder_output_projection_ranker_wrapper_physical.py "
+                    f"--policy {policy} "
+                    f"--wrapper-contract {wrapper_contract} "
+                    f"--merge-config {merge_config} "
+                    f"--design-root {design_root} "
+                    "--producer-lanes 64,128 "
+                    f"--sweep {sweep} "
+                    "--platform nangate45 "
+                    "--make-target 3_3_place_gp "
+                    "--timeout-seconds 1800 "
+                    "--stall-timeout-seconds 900 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+            {
+                "name": "build_runs_index",
+                "run": "python3 scripts/build_runs_index.py",
+            },
+        ],
+        "expected_outputs": [
+            out,
+            report,
+            "runs/index.csv",
+            *[f"{design_root}/{top}/metrics.csv" for top in tops],
+            *[f"{design_root}/{top}/verilog/{top}.v" for top in tops],
+        ],
+    }
+
+
 def _decoder_stage_breakdown_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_stage_breakdown__{item_id}.json"
@@ -3876,6 +3951,7 @@ def _build_payload(
         "decoder_resident_ranktree_fallback_promotion",
         "decoder_output_projection_ranker_policy",
         "decoder_output_projection_ranker_wrapper_contract",
+        "decoder_output_projection_ranker_wrapper_physical",
         "decoder_stage_breakdown",
         "decoder_attention_kv_memory",
         "decoder_frontier_synthesis",
@@ -3943,6 +4019,8 @@ def _build_payload(
             decoder_evidence = _decoder_output_projection_ranker_policy_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_ranker_wrapper_contract":
             decoder_evidence = _decoder_output_projection_ranker_wrapper_contract_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_output_projection_ranker_wrapper_physical":
+            decoder_evidence = _decoder_output_projection_ranker_wrapper_physical_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_service":
             decoder_evidence = _decoder_output_projection_service_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_logit_rank_streaming_producer_integrated":
