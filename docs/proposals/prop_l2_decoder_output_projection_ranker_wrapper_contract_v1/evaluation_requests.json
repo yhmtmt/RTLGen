@@ -21,7 +21,11 @@
         "direction": "iterate",
         "reason": "If the representative serial, r64 rank-tree, and banked r128 contract cases pass, implement the final wrapper mux/control RTL and then run a physical wrapper sweep."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 556,
+      "merge_commit": "4413b3e847a72c7157496a91de6c02e07992698e",
+      "merged_utc": "2026-05-14T11:21:24.790810Z",
+      "notes": "Merged via PR #556 and merge 4413b3e847a72c7157496a91de6c02e07992698e at 2026-05-14T11:21:24.790810Z."
     }
   ]
 }

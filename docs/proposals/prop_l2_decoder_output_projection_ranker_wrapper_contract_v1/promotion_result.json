@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_decoder_output_projection_ranker_wrapper_contract_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "iterate",
+  "pr_number": 556,
+  "merge_commit": "4413b3e847a72c7157496a91de6c02e07992698e",
+  "merged_utc": "2026-05-14T11:21:24.790810Z"
 }
