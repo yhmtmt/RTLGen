@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_producer_synth_boundary_nm8_nm16_v1",
+  "decision": "iterate",
+  "pr_number": 517,
+  "merge_commit": "7ed53729485f08c88d6908a55107742cd87f8628",
+  "merged_utc": "2026-05-14T05:09:36.925257Z"
+}
