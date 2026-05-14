@@ -1,0 +1,365 @@
+{
+  "assumptions": [
+    "This is a synthesis of existing analytical reports, not a new RTL measurement.",
+    "Attention/KV uses the best latency row per shape and sequence from the calibrated attention/KV report.",
+    "Producer/ranker uses the best FIFO-valid coupled row per hidden/vocab shape.",
+    "MLP and norm are resident-weight estimates from the whole-decoder stage breakdown.",
+    "Use this report to choose the next measured RTL frontier, not as final PPA accounting."
+  ],
+  "dominant_component_counts": {
+    "output_projection_producer_ranker": 8
+  },
+  "focus_summary": [
+    {
+      "attention_choice": {
+        "dominant_substage": "softmax_scores",
+        "kv_bits": 8,
+        "kv_limited_cycle_share": 0.431034,
+        "kv_memory_tier": "local_sram",
+        "kv_sharing": "mqa",
+        "noc_hops": 0
+      },
+      "component_latency_us": {
+        "attention_kv_best": 1.392,
+        "mlp_resident": 6.144,
+        "norm_residual": 0.768,
+        "output_projection_producer_ranker": 6728.322951
+      },
+      "dominant_component": "output_projection_producer_ranker",
+      "dominant_component_share": 0.998767,
+      "hidden_size": 1024,
+      "label": "gpt2_medium_proxy",
+      "macs_per_cycle": 32768,
+      "memory_bandwidth_bytes_per_cycle": 256.0,
+      "producer_choice": {
+        "memory_share": 1.0,
+        "producer_ii_cycles": 512,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "top_k": 1,
+        "traffic_reduction_vs_materialized": 0.968701
+      },
+      "sequence_length": 128,
+      "vocab_size": 50257
+    },
+    {
+      "attention_choice": {
+        "dominant_substage": "softmax_scores",
+        "kv_bits": 8,
+        "kv_limited_cycle_share": 0.456522,
+        "kv_memory_tier": "local_sram",
+        "kv_sharing": "mqa",
+        "noc_hops": 0
+      },
+      "component_latency_us": {
+        "attention_kv_best": 0.552,
+        "mlp_resident": 1.728,
+        "norm_residual": 0.288,
+        "output_projection_producer_ranker": 5046.275694
+      },
+      "dominant_component": "output_projection_producer_ranker",
+      "dominant_component_share": 0.999491,
+      "hidden_size": 768,
+      "label": "gpt2_small",
+      "macs_per_cycle": 32768,
+      "memory_bandwidth_bytes_per_cycle": 256.0,
+      "producer_choice": {
+        "memory_share": 1.0,
+        "producer_ii_cycles": 384,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "top_k": 1,
+        "traffic_reduction_vs_materialized": 0.968701
+      },
+      "sequence_length": 128,
+      "vocab_size": 50257
+    }
+  ],
+  "frontier_rows": [
+    {
+      "attention_choice": {
+        "dominant_substage": "softmax_scores",
+        "kv_bits": 8,
+        "kv_limited_cycle_share": 0.456522,
+        "kv_memory_tier": "local_sram",
+        "kv_sharing": "mqa",
+        "noc_hops": 0
+      },
+      "component_latency_us": {
+        "attention_kv_best": 0.552,
+        "mlp_resident": 6.912,
+        "norm_residual": 1.152,
+        "output_projection_producer_ranker": 5046.275694
+      },
+      "dominant_component": "output_projection_producer_ranker",
+      "dominant_component_share": 0.998296,
+      "hidden_size": 768,
+      "label": "gpt2_small",
+      "macs_per_cycle": 8192,
+      "memory_bandwidth_bytes_per_cycle": 64.0,
+      "producer_choice": {
+        "memory_share": 1.0,
+        "producer_ii_cycles": 384,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "top_k": 1,
+        "traffic_reduction_vs_materialized": 0.968701
+      },
+      "sequence_length": 128,
+      "vocab_size": 50257
+    },
+    {
+      "attention_choice": {
+        "dominant_substage": "softmax_scores",
+        "kv_bits": 8,
+        "kv_limited_cycle_share": 0.456522,
+        "kv_memory_tier": "local_sram",
+        "kv_sharing": "mqa",
+        "noc_hops": 0
+      },
+      "component_latency_us": {
+        "attention_kv_best": 0.552,
+        "mlp_resident": 6.912,
+        "norm_residual": 0.288,
+        "output_projection_producer_ranker": 5046.275694
+      },
+      "dominant_component": "output_projection_producer_ranker",
+      "dominant_component_share": 0.998466,
+      "hidden_size": 768,
+      "label": "gpt2_small",
+      "macs_per_cycle": 8192,
+      "memory_bandwidth_bytes_per_cycle": 256.0,
+      "producer_choice": {
+        "memory_share": 1.0,
+        "producer_ii_cycles": 384,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "top_k": 1,
+        "traffic_reduction_vs_materialized": 0.968701
+      },
+      "sequence_length": 128,
+      "vocab_size": 50257
+    },
+    {
+      "attention_choice": {
+        "dominant_substage": "softmax_scores",
+        "kv_bits": 8,
+        "kv_limited_cycle_share": 0.456522,
+        "kv_memory_tier": "local_sram",
+        "kv_sharing": "mqa",
+        "noc_hops": 0
+      },
+      "component_latency_us": {
+        "attention_kv_best": 0.552,
+        "mlp_resident": 2.592,
+        "norm_residual": 1.152,
+        "output_projection_producer_ranker": 5046.275694
+      },
+      "dominant_component": "output_projection_producer_ranker",
+      "dominant_component_share": 0.999149,
+      "hidden_size": 768,
+      "label": "gpt2_small",
+      "macs_per_cycle": 32768,
+      "memory_bandwidth_bytes_per_cycle": 64.0,
+      "producer_choice": {
+        "memory_share": 1.0,
+        "producer_ii_cycles": 384,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "top_k": 1,
+        "traffic_reduction_vs_materialized": 0.968701
+      },
+      "sequence_length": 128,
+      "vocab_size": 50257
+    },
+    {
+      "attention_choice": {
+        "dominant_substage": "softmax_scores",
+        "kv_bits": 8,
+        "kv_limited_cycle_share": 0.456522,
+        "kv_memory_tier": "local_sram",
+        "kv_sharing": "mqa",
+        "noc_hops": 0
+      },
+      "component_latency_us": {
+        "attention_kv_best": 0.552,
+        "mlp_resident": 1.728,
+        "norm_residual": 0.288,
+        "output_projection_producer_ranker": 5046.275694
+      },
+      "dominant_component": "output_projection_producer_ranker",
+      "dominant_component_share": 0.999491,
+      "hidden_size": 768,
+      "label": "gpt2_small",
+      "macs_per_cycle": 32768,
+      "memory_bandwidth_bytes_per_cycle": 256.0,
+      "producer_choice": {
+        "memory_share": 1.0,
+        "producer_ii_cycles": 384,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "top_k": 1,
+        "traffic_reduction_vs_materialized": 0.968701
+      },
+      "sequence_length": 128,
+      "vocab_size": 50257
+    },
+    {
+      "attention_choice": {
+        "dominant_substage": "softmax_scores",
+        "kv_bits": 8,
+        "kv_limited_cycle_share": 0.431034,
+        "kv_memory_tier": "local_sram",
+        "kv_sharing": "mqa",
+        "noc_hops": 0
+      },
+      "component_latency_us": {
+        "attention_kv_best": 1.392,
+        "mlp_resident": 24.576,
+        "norm_residual": 3.072,
+        "output_projection_producer_ranker": 6728.322951
+      },
+      "dominant_component": "output_projection_producer_ranker",
+      "dominant_component_share": 0.995702,
+      "hidden_size": 1024,
+      "label": "gpt2_medium_proxy",
+      "macs_per_cycle": 8192,
+      "memory_bandwidth_bytes_per_cycle": 64.0,
+      "producer_choice": {
+        "memory_share": 1.0,
+        "producer_ii_cycles": 512,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "top_k": 1,
+        "traffic_reduction_vs_materialized": 0.968701
+      },
+      "sequence_length": 128,
+      "vocab_size": 50257
+    },
+    {
+      "attention_choice": {
+        "dominant_substage": "softmax_scores",
+        "kv_bits": 8,
+        "kv_limited_cycle_share": 0.431034,
+        "kv_memory_tier": "local_sram",
+        "kv_sharing": "mqa",
+        "noc_hops": 0
+      },
+      "component_latency_us": {
+        "attention_kv_best": 1.392,
+        "mlp_resident": 24.576,
+        "norm_residual": 0.768,
+        "output_projection_producer_ranker": 6728.322951
+      },
+      "dominant_component": "output_projection_producer_ranker",
+      "dominant_component_share": 0.996042,
+      "hidden_size": 1024,
+      "label": "gpt2_medium_proxy",
+      "macs_per_cycle": 8192,
+      "memory_bandwidth_bytes_per_cycle": 256.0,
+      "producer_choice": {
+        "memory_share": 1.0,
+        "producer_ii_cycles": 512,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "top_k": 1,
+        "traffic_reduction_vs_materialized": 0.968701
+      },
+      "sequence_length": 128,
+      "vocab_size": 50257
+    },
+    {
+      "attention_choice": {
+        "dominant_substage": "softmax_scores",
+        "kv_bits": 8,
+        "kv_limited_cycle_share": 0.431034,
+        "kv_memory_tier": "local_sram",
+        "kv_sharing": "mqa",
+        "noc_hops": 0
+      },
+      "component_latency_us": {
+        "attention_kv_best": 1.392,
+        "mlp_resident": 6.912,
+        "norm_residual": 3.072,
+        "output_projection_producer_ranker": 6728.322951
+      },
+      "dominant_component": "output_projection_producer_ranker",
+      "dominant_component_share": 0.998312,
+      "hidden_size": 1024,
+      "label": "gpt2_medium_proxy",
+      "macs_per_cycle": 32768,
+      "memory_bandwidth_bytes_per_cycle": 64.0,
+      "producer_choice": {
+        "memory_share": 1.0,
+        "producer_ii_cycles": 512,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "top_k": 1,
+        "traffic_reduction_vs_materialized": 0.968701
+      },
+      "sequence_length": 128,
+      "vocab_size": 50257
+    },
+    {
+      "attention_choice": {
+        "dominant_substage": "softmax_scores",
+        "kv_bits": 8,
+        "kv_limited_cycle_share": 0.431034,
+        "kv_memory_tier": "local_sram",
+        "kv_sharing": "mqa",
+        "noc_hops": 0
+      },
+      "component_latency_us": {
+        "attention_kv_best": 1.392,
+        "mlp_resident": 6.144,
+        "norm_residual": 0.768,
+        "output_projection_producer_ranker": 6728.322951
+      },
+      "dominant_component": "output_projection_producer_ranker",
+      "dominant_component_share": 0.998767,
+      "hidden_size": 1024,
+      "label": "gpt2_medium_proxy",
+      "macs_per_cycle": 32768,
+      "memory_bandwidth_bytes_per_cycle": 256.0,
+      "producer_choice": {
+        "memory_share": 1.0,
+        "producer_ii_cycles": 512,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "top_k": 1,
+        "traffic_reduction_vs_materialized": 0.968701
+      },
+      "sequence_length": 128,
+      "vocab_size": 50257
+    }
+  ],
+  "inputs": {
+    "attention_kv_model": "llm_decoder_attention_kv_memory_v1",
+    "producer_control_boundary": {
+      "decision": "softmax_event_guard_synth_ok_under_bound",
+      "flow_elapsed_seconds": "195.14",
+      "guard_variant": "cq_v1_softmax_event_guard",
+      "reg_bits_est": 2634,
+      "source": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_producer_softmax_event_ablation__l2_decoder_output_projection_producer_event_scoreboard_v1.json",
+      "stage_elapsed_seconds": "194.97",
+      "status": "ok",
+      "synthesis_elapsed_seconds": 196.19542427099077,
+      "synthesis_status": "ok",
+      "verilog_kb": 55.841,
+      "wire_bits_est": 3864
+    },
+    "producer_ranker_model": "decoder_output_projection_producer_ranker_coupling_v1",
+    "stage_breakdown_model": "llm_decoder_stage_breakdown_v1"
+  },
+  "measured_attention_kv_tile_summary": {
+    "area_growth_largest_vs_smallest": 23.809901,
+    "fastest_critical_path_ns": 4.4824,
+    "fastest_design": "attention_kv_tile_hd64_kv4_l16_b128_wrapper",
+    "largest_design": "attention_kv_tile_hd128_kv16_l64_b512_wrapper",
+    "largest_die_area_um2": 269044.503025,
+    "smallest_design": "attention_kv_tile_hd64_kv4_l16_b128_wrapper",
+    "smallest_die_area_um2": 11299.69
+  },
+  "model": "llm_decoder_frontier_synthesis_v1",
+  "version": 0.1
+}
