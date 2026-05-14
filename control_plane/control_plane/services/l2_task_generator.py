@@ -2670,6 +2670,79 @@ def _decoder_rank_tree_architecture_evidence(*, item_id: str) -> dict[str, Any]:
     }
 
 
+def _decoder_serial_ranker_architecture_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_serial_ranker_architecture__{item_id}.json"
+    report = f"{base}/decoder_serial_ranker_architecture__{item_id}.md"
+    merge_config = (
+        "runs/designs/activations/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/"
+        "config_candidate_stream_merge_fifo_k1_l16_t16_d16.json"
+    )
+    ready_valid_equivalence = (
+        f"{base}/decoder_producer_ranker_ready_valid_equivalence__"
+        "l2_decoder_producer_ranker_ready_valid_equivalence_v1_r2.json"
+    )
+    rank_tree = (
+        f"{base}/decoder_rank_tree_architecture__"
+        "l2_decoder_rank_tree_architecture_v1.json"
+    )
+    sweep = "runs/campaigns/npu/decoder_serial_ranker_architecture/sweeps/nangate45_r64_serial.json"
+    design_root = "runs/designs/activations"
+    lane_counts = [1, 2, 4, 8, 16]
+    tops = [f"decoder_r64_k1_serial_rank_lpc{lanes}_wrapper" for lanes in lane_counts]
+    return {
+        "inputs": {
+            "serial_ranker_architecture_out": out,
+            "serial_ranker_architecture_report": report,
+            "serial_ranker_architecture_sweep": sweep,
+            "serial_ranker_architecture_make_target": "3_3_place_gp",
+            "serial_ranker_architecture_lanes_per_cycle": lane_counts,
+            "candidate_merge_config": merge_config,
+            "ready_valid_equivalence": ready_valid_equivalence,
+            "rank_tree_architecture": rank_tree,
+            "serial_ranker_architecture_scope": (
+                "Explore area-conservative r64/k1 running-best rankers after the fully parallel "
+                "rank-tree sweep. Variants consume 1, 2, 4, 8, or 16 logits per cycle, "
+                "backpressure during tile scan, and preserve deterministic top-1 ready-valid output."
+            ),
+        },
+        "commands": [
+            {
+                "name": "build_generator",
+                "run": "export PATH=/oss-cad-suite/bin:$PATH && cmake -S . -B build && cmake --build build --target rtlgen",
+            },
+            {
+                "name": "probe_decoder_serial_ranker_architecture",
+                "run": (
+                    "python3 npu/eval/probe_llm_decoder_serial_ranker_architecture.py "
+                    f"--merge-config {merge_config} "
+                    f"--ready-valid-equivalence {ready_valid_equivalence} "
+                    f"--design-root {design_root} "
+                    "--lanes-per-cycle 1,2,4,8,16 "
+                    f"--sweep {sweep} "
+                    "--platform nangate45 "
+                    "--make-target 3_3_place_gp "
+                    "--timeout-seconds 1800 "
+                    "--stall-timeout-seconds 900 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+            {
+                "name": "build_runs_index",
+                "run": "python3 scripts/build_runs_index.py",
+            },
+        ],
+        "expected_outputs": [
+            out,
+            report,
+            "runs/index.csv",
+            *[f"{design_root}/{top}/metrics.csv" for top in tops],
+            *[f"{design_root}/{top}/verilog/{top}.v" for top in tops],
+        ],
+    }
+
+
 def _decoder_output_projection_producer_synth_boundary_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_output_projection_producer_synth_boundary__{item_id}.json"
@@ -3407,6 +3480,7 @@ def _build_payload(
         "decoder_producer_ranker_physical_wrapper",
         "decoder_pipelined_ranker_architecture",
         "decoder_rank_tree_architecture",
+        "decoder_serial_ranker_architecture",
         "decoder_output_projection_producer_pnr_feasibility",
         "decoder_output_projection_producer_synth_boundary",
         "decoder_output_projection_producer_isolated_synth",
@@ -3441,6 +3515,8 @@ def _build_payload(
             decoder_evidence = _decoder_pipelined_ranker_architecture_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_rank_tree_architecture":
             decoder_evidence = _decoder_rank_tree_architecture_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_serial_ranker_architecture":
+            decoder_evidence = _decoder_serial_ranker_architecture_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_memory":
             decoder_evidence = _decoder_attention_kv_memory_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_stage_breakdown":

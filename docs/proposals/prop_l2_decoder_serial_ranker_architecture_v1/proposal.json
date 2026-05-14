@@ -1,0 +1,73 @@
+{
+  "proposal_id": "prop_l2_decoder_serial_ranker_architecture_v1",
+  "created_utc": "2026-05-14T09:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_serial_ranker_architecture",
+  "title": "Decoder serial ranker architecture space",
+  "hypothesis": "The fully parallel r64/k1 rank trees improved timing but still assume the ranker consumes all 64 logits at once. For larger LLMs, output projection and memory traffic are likely to dominate service time, so a serial or partially-serial running-best ranker may reduce area and power while staying off the critical throughput path.",
+  "direct_comparison": {
+    "primary_question": "How much ranker area/power can be saved by scanning fewer logits per cycle before ranker service time exceeds producer cadence?",
+    "include": [
+      "lanes_per_cycle 1, 2, 4, 8, and 16 over the same 64-logit tile",
+      "running-best top-1 with deterministic token tie-break",
+      "ready-valid simulation against the deterministic decoder ranker reference",
+      "bounded nangate45 physical sweep through 3_3_place_gp",
+      "comparison against the fully parallel radix-2/radix-4 rank-tree anchors"
+    ],
+    "exclude": [
+      "full producer coupling",
+      "r128 or wider ranker tiles",
+      "shared SRAM or NoC arbitration",
+      "quality or probability recovery"
+    ]
+  },
+  "expected_benefit": [
+    "adds the area-conservative side of the ranker design space",
+    "separates tile service time from ranker critical path",
+    "creates candidates for producer-coupled evaluation where producer cadence is slower than one full tile per cycle"
+  ],
+  "risks": [
+    "the wrapper intentionally backpressures while scanning a tile and may be unsuitable for a producer that emits one full 64-logit tile every cycle",
+    "the current standalone macro-style wrapper does not yet model producer overlap or buffering",
+    "reported die_area remains fixed by the macro floorplan, so placed cell area from logs may be needed for nuanced area comparison"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_serial_ranker_architecture_v1",
+      "task_type": "l2_campaign",
+      "objective": "Measure r64/k1 serial running-best ranker wrappers with lanes_per_cycle 1, 2, 4, 8, and 16.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_serial_ranker_architecture",
+      "cost_class": "medium",
+      "comparison_role": "ranker_pipeline_architecture",
+      "paired_baseline_item_id": "l2_decoder_rank_tree_architecture_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_rank_tree_architecture_v1",
+        "l2_decoder_pipelined_ranker_architecture_v1",
+        "l2_decoder_producer_ranker_ready_valid_equivalence_v1_r2",
+        "l1_decoder_logit_rank_datapath_v1_r2",
+        "l1_decoder_candidate_stream_merge_fifo_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "If a serial point has much lower power/area and its tile scan cycles fit under the producer cadence, promote it to producer-coupled timing. If all serial points are dominated, keep radix-4/radix-2 rank trees for coupling."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_rank_tree_architecture__l2_decoder_rank_tree_architecture_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_pipelined_ranker_architecture__l2_decoder_pipelined_ranker_architecture_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_producer_ranker_ready_valid_equivalence__l2_decoder_producer_ranker_ready_valid_equivalence_v1_r2.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/probe_llm_decoder_serial_ranker_architecture.py",
+    "runs/campaigns/npu/decoder_serial_ranker_architecture/sweeps/nangate45_r64_serial.json",
+    "control_plane/control_plane/services/l2_task_generator.py",
+    "tests/test_llm_decoder_serial_ranker_architecture.py"
+  ]
+}
