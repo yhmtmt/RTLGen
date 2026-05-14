@@ -1,0 +1,32 @@
+{
+  "proposal_id": "prop_l2_decoder_rank_tree_architecture_v1",
+  "source_commit": "54663fdc9c350a7012914e2ebb8332cabf5478fb",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_rank_tree_architecture_v1",
+      "task_type": "l2_campaign",
+      "objective": "Measure r64/k1 rank-tree wrappers with radix 2, 4, and 8 plus a register after every rank level.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_rank_tree_architecture",
+      "comparison_role": "ranker_pipeline_architecture",
+      "paired_baseline_item_id": "l2_decoder_pipelined_ranker_architecture_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_pipelined_ranker_architecture_v1",
+        "l2_decoder_producer_ranker_ready_valid_equivalence_v1_r2",
+        "l1_decoder_logit_rank_datapath_v1_r2",
+        "l1_decoder_candidate_stream_merge_fifo_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Find whether deeper rank-tree cuts improve the r64 ranker anchor before producer coupling or r128 scaling."
+      },
+      "status": "merged",
+      "merged_pr_number": 537,
+      "merge_commit": "6c52eb2d40b81e0fae52837168c48207a29e1e85",
+      "merged_utc": "2026-05-14T08:52:35.749444Z",
+      "notes": "Merged via PR #537 and merge 6c52eb2d40b81e0fae52837168c48207a29e1e85 at 2026-05-14T08:52:35.749444Z."
+    }
+  ]
+}
