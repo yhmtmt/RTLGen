@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_producer_pnr_nm8_v1",
+  "decision": "iterate",
+  "pr_number": 519,
+  "merge_commit": "314dec85a34b7983375eb447571b840fec6dcc64",
+  "merged_utc": "2026-05-14T05:45:14.010668Z"
+}
