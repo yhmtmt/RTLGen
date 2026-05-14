@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_frontier_synthesis_scoreboard_boundary_v1",
-  "source_commit": "b866a3bad1e33bba4301d13aa1d7fd38f043c239",
+  "source_commit": "f10b308a65a9ecdeac76ea9ebed1edbe41ae9311",
   "requested_items": [
     {
       "item_id": "l2_decoder_frontier_synthesis_scoreboard_boundary_v1",
@@ -20,7 +20,11 @@
         "direction": "iterate",
         "reason": "The output should identify whether the bounded producer-control result changes the next architecture frontier or simply validates continued producer/ranker modeling."
       },
-      "status": "proposed"
+      "status": "merged",
+      "merged_pr_number": 512,
+      "merge_commit": "a9f0cca7b34475eff36ed8c96de46396263bc007",
+      "merged_utc": "2026-05-14T03:33:01.967168Z",
+      "notes": "Merged via PR #512 and merge a9f0cca7b34475eff36ed8c96de46396263bc007 at 2026-05-14T03:33:01.967168Z."
     }
   ]
 }
