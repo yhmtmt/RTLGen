@@ -1,0 +1,70 @@
+{
+  "proposal_id": "prop_l2_decoder_resident_weight_ranker_fallback_v1",
+  "created_utc": "2026-05-14T12:30:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_resident_weight_ranker_fallback",
+  "title": "Decoder resident-weight ranker fallback study",
+  "hypothesis": "Resident or cache-backed output-projection weights can make producer tiles arrive faster than the promoted serial_lpc1 ranker, so unsafe rows need either a bounded waiting buffer in front of a serial ranker or a measured rank-tree fallback.",
+  "direct_comparison": {
+    "primary_question": "For cadence rows that outpace the replay-proven serial ranker thresholds, is a small input buffer in front of serial_lpc4 sufficient, or should those rows fall back to the measured r64 rank-tree architecture?",
+    "include": [
+      "unsafe rows from the output-projection cadence sensitivity report",
+      "buffer-depth simulation for serial_lpc1, serial_lpc2, and serial_lpc4",
+      "single r64 rank-tree fallback for r64 producer tiles",
+      "banked r64 rank-tree fallback for producer tiles wider than r64",
+      "raw logit storage bytes for the required waiting buffer"
+    ],
+    "exclude": [
+      "new physical PPA",
+      "new producer RTL",
+      "SRAM macro sizing or FIFO control overhead beyond raw logit bytes",
+      "NoC arbitration and multi-producer traffic"
+    ]
+  },
+  "expected_benefit": [
+    "turns the resident-weight serial-ranker risk into an explicit fallback decision",
+    "separates near-threshold rows that only need a small FIFO from rows that need rank-tree throughput",
+    "uses measured ranker PPA rather than a heuristic rank-tree proxy"
+  ],
+  "risks": [
+    "the model uses fixed-II producer arrivals rather than measured burst traces",
+    "raw buffer bytes omit FIFO control and SRAM/compiler overhead",
+    "wider producer tiles are represented by r64 rank-tree banking assumptions"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_resident_weight_ranker_fallback_v1",
+      "task_type": "l2_campaign",
+      "objective": "Compare buffered serial rankers and rank-tree fallback for resident-weight producer cadences that outpace measured serial rankers.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_resident_weight_ranker_fallback",
+      "cost_class": "low",
+      "comparison_role": "producer_ranker_service",
+      "paired_baseline_item_id": "l2_decoder_output_projection_cadence_sensitivity_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_output_projection_cadence_sensitivity_v1",
+        "l2_decoder_rank_tree_architecture_v1",
+        "l2_decoder_serial_ranker_producer_replay_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Choose whether resident-weight producer rows should use a buffered serial_lpc4 guard or a rank-tree fallback before implementing a producer-coupled resident-weight wrapper."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_cadence_sensitivity__l2_decoder_output_projection_cadence_sensitivity_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_rank_tree_architecture__l2_decoder_rank_tree_architecture_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_serial_ranker_producer_replay__l2_decoder_serial_ranker_producer_replay_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_resident_weight_ranker_fallback.py",
+    "tests/test_llm_decoder_resident_weight_ranker_fallback.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}
