@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l2_decoder_serial_ranker_architecture_v1",
+  "candidate_id": "l2_decoder_serial_ranker_architecture_v1",
+  "decision": "iterate",
+  "reason": "Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
+  "evidence_refs": [
+    "item:l2_decoder_serial_ranker_architecture_v1",
+    "run:l2_decoder_serial_ranker_architecture_v1_run_6efca10c68c01bf9",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_serial_ranker_architecture_v1.json",
+    "pr:#539",
+    "https://github.com/yhmtmt/RTLGen/pull/539"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_serial_ranker_architecture_v1",
+  "requires_human_approval": false
+}
