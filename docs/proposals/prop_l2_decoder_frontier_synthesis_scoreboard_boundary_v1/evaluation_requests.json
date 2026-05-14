@@ -1,0 +1,26 @@
+{
+  "proposal_id": "prop_l2_decoder_frontier_synthesis_scoreboard_boundary_v1",
+  "source_commit": "b866a3bad1e33bba4301d13aa1d7fd38f043c239",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_frontier_synthesis_scoreboard_boundary_v1",
+      "task_type": "l2_campaign",
+      "objective": "Refresh decoder frontier synthesis after the bounded EVENT scoreboard result and include SOFTMAX/EVENT guard metrics as producer-control feasibility evidence.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_frontier_synthesis",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_frontier_synthesis_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_frontier_synthesis_v1",
+        "l2_decoder_output_projection_producer_event_scoreboard_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "The output should identify whether the bounded producer-control result changes the next architecture frontier or simply validates continued producer/ranker modeling."
+      },
+      "status": "proposed"
+    }
+  ]
+}

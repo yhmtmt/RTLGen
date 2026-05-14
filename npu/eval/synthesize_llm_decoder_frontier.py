@@ -149,6 +149,7 @@ def build_report(*, stage_breakdown: JsonDict, attention_kv: JsonDict, producer_
             "stage_breakdown_model": stage_breakdown.get("model"),
             "attention_kv_model": attention_kv.get("model"),
             "producer_ranker_model": producer_ranker.get("model"),
+            "producer_control_boundary": producer_ranker.get("producer_control_boundary"),
         },
         "measured_attention_kv_tile_summary": tile_frontier.get("scaling_summary", {}),
         "dominant_component_counts": dominant_counts,
@@ -205,6 +206,21 @@ def _write_markdown(path: Path, payload: JsonDict) -> None:
     lines.extend(["", "## Measured Attention/KV Tile Summary", ""])
     for key, value in payload["measured_attention_kv_tile_summary"].items():
         lines.append(f"- {key}: `{value}`")
+    control_boundary = payload.get("inputs", {}).get("producer_control_boundary")
+    if control_boundary:
+        lines.extend(
+            [
+                "",
+                "## Producer Control Boundary",
+                "",
+                f"- decision: `{control_boundary.get('decision')}`",
+                f"- guard_variant: `{control_boundary.get('guard_variant')}`",
+                f"- synthesis_status: `{control_boundary.get('synthesis_status')}`",
+                f"- synthesis_elapsed_seconds: `{control_boundary.get('synthesis_elapsed_seconds')}`",
+                f"- reg_bits_est: `{control_boundary.get('reg_bits_est')}`",
+                f"- wire_bits_est: `{control_boundary.get('wire_bits_est')}`",
+            ]
+        )
     lines.extend(["", "## Assumptions", ""])
     for item in payload["assumptions"]:
         lines.append(f"- {item}")

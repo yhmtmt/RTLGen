@@ -47,6 +47,44 @@ def _ceil_div(a: int, b: int) -> int:
     return (a + b - 1) // b
 
 
+def _load_producer_control_boundary(path: Path | None) -> JsonDict | None:
+    if path is None:
+        return None
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    diagnosis = payload.get("diagnosis") if isinstance(payload.get("diagnosis"), dict) else {}
+    guard = None
+    for row in payload.get("probe_rows", []):
+        if isinstance(row, dict) and row.get("variant") == "cq_v1_softmax_event_guard":
+            guard = row
+            break
+    if guard is None:
+        return {
+            "source": str(path),
+            "status": "missing_guard_variant",
+            "decision": diagnosis.get("decision"),
+        }
+    synthesis = guard.get("synthesis") if isinstance(guard.get("synthesis"), dict) else {}
+    static_stats = (
+        guard.get("static_verilog_stats")
+        if isinstance(guard.get("static_verilog_stats"), dict)
+        else {}
+    )
+    metrics = guard.get("metrics_row") if isinstance(guard.get("metrics_row"), dict) else {}
+    return {
+        "source": str(path),
+        "status": guard.get("status"),
+        "decision": diagnosis.get("decision"),
+        "guard_variant": guard.get("variant"),
+        "synthesis_status": synthesis.get("status"),
+        "synthesis_elapsed_seconds": synthesis.get("elapsed_seconds"),
+        "flow_elapsed_seconds": metrics.get("flow_elapsed_seconds"),
+        "stage_elapsed_seconds": metrics.get("stage_elapsed_seconds"),
+        "verilog_kb": round(float(static_stats.get("verilog_bytes", 0) or 0) / 1024.0, 3),
+        "reg_bits_est": static_stats.get("reg_bit_count_est"),
+        "wire_bits_est": static_stats.get("wire_bit_count_est"),
+    }
+
+
 def _producer_service_row(
     *,
     scenario: str,
@@ -111,6 +149,7 @@ def build_coupling_report(
     scale_ppa_path: Path | None,
     candidate_merge_ppa_path: Path | None,
     boundary_ppa_path: Path | None,
+    producer_control_boundary_path: Path | None,
     sram_metrics_json_path: Path | None,
     vocab_size_list: list[int],
     hidden_size_list: list[int],
@@ -123,6 +162,7 @@ def build_coupling_report(
     activation_bits: int,
     clock_ns: float,
 ) -> JsonDict:
+    producer_control_boundary = _load_producer_control_boundary(producer_control_boundary_path)
     scenarios = (
         ["shared_gemm_stage_serial"]
         if mode == "producer_service"
@@ -259,6 +299,7 @@ def build_coupling_report(
             "activation_bits": activation_bits,
             "clock_ns": clock_ns,
         },
+        "producer_control_boundary": producer_control_boundary,
         "assumptions": [
             "Producer means only the final decoder output-projection logit source.",
             "Shared GEMM is stage-serialized: attention/MLP have completed before output projection starts.",
@@ -266,6 +307,7 @@ def build_coupling_report(
             "Hidden vector load is charged once per token; output projection weights are streamed per vocabulary tile.",
             "shared_noc_contention reduces effective producer memory bandwidth by memory_share.",
             "Ranker coupling reuses the ready-valid logit-rank model and preserves its equivalence observables.",
+            "If producer_control_boundary is present, it is control-path synthesis feasibility evidence; it does not replace the output-projection service model.",
         ],
         "producer_service_sweep": producer_rows,
         "coupled_ranker_sweep": coupled_rows,
@@ -304,6 +346,15 @@ def _write_markdown(path: Path, payload: JsonDict) -> None:
         lines.append(
             f"- coupled_best: `{best['scenario']} w{best['producer_lanes']} k{best['top_k']} "
             f"ii{best['producer_ii_cycles']}`"
+        )
+    if payload.get("producer_control_boundary"):
+        boundary = payload["producer_control_boundary"]
+        lines.extend(
+            [
+                f"- producer_control_boundary: `{boundary.get('decision')} "
+                f"{boundary.get('guard_variant')} {boundary.get('synthesis_status')}`",
+                f"- producer_control_boundary_elapsed_s: `{boundary.get('synthesis_elapsed_seconds')}`",
+            ]
         )
     lines.extend(
         [
@@ -372,6 +423,7 @@ def main() -> int:
     ap.add_argument("--scale-ppa", help="rank scale PPA JSON")
     ap.add_argument("--candidate-merge-ppa", help="candidate merge PPA JSON")
     ap.add_argument("--boundary-ppa", help="boundary diagnostic PPA JSON")
+    ap.add_argument("--producer-control-boundary", help="bounded producer control-path evidence JSON")
     ap.add_argument("--sram-metrics-json", help="SRAM metrics JSON")
     ap.add_argument("--vocab-size-list", type=_int_list, default=[50257, 100000, 200000])
     ap.add_argument("--hidden-size-list", type=_int_list, default=[768, 1024, 2048])
@@ -392,6 +444,7 @@ def main() -> int:
         scale_ppa_path=Path(args.scale_ppa) if args.scale_ppa else None,
         candidate_merge_ppa_path=Path(args.candidate_merge_ppa) if args.candidate_merge_ppa else None,
         boundary_ppa_path=Path(args.boundary_ppa) if args.boundary_ppa else None,
+        producer_control_boundary_path=Path(args.producer_control_boundary) if args.producer_control_boundary else None,
         sram_metrics_json_path=Path(args.sram_metrics_json) if args.sram_metrics_json else None,
         vocab_size_list=args.vocab_size_list,
         hidden_size_list=args.hidden_size_list,
