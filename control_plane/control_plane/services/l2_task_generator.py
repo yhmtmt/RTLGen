@@ -2294,6 +2294,66 @@ def _decoder_serial_ranker_producer_replay_evidence(*, item_id: str) -> dict[str
     }
 
 
+def _decoder_serial_lpc1_producer_coupled_wrapper_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_serial_lpc1_producer_coupled_wrapper__{item_id}.json"
+    report = f"{base}/decoder_serial_lpc1_producer_coupled_wrapper__{item_id}.md"
+    serial_ranker = (
+        f"{base}/decoder_serial_ranker_architecture__"
+        "l2_decoder_serial_ranker_architecture_v1.json"
+    )
+    service_compatibility = (
+        f"{base}/decoder_producer_ranker_service_compatibility__"
+        "l2_decoder_producer_ranker_service_compatibility_v1.json"
+    )
+    producer_replay = (
+        f"{base}/decoder_serial_ranker_producer_replay__"
+        "l2_decoder_serial_ranker_producer_replay_v1.json"
+    )
+    merge_config = (
+        "runs/designs/activations/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/"
+        "config_candidate_stream_merge_fifo_k1_l16_t16_d16.json"
+    )
+    return {
+        "inputs": {
+            "serial_lpc1_producer_coupled_wrapper_out": out,
+            "serial_lpc1_producer_coupled_wrapper_report": report,
+            "serial_ranker_architecture": serial_ranker,
+            "producer_ranker_service_compatibility": service_compatibility,
+            "serial_ranker_producer_replay": producer_replay,
+            "candidate_merge_config": merge_config,
+            "serial_lpc1_producer_coupled_wrapper_scope": (
+                "Promote the measured serial_lpc1 r64/k1 ranker wrapper as the selected "
+                "output-projection producer-coupled ranker. The job runs a focused RTL replay "
+                "at the selected producer II=384, checks zero backpressure, and carries forward "
+                "measured serial_lpc1 PPA from the architecture sweep."
+            ),
+        },
+        "commands": [
+            {
+                "name": "build_generator",
+                "run": "export PATH=/oss-cad-suite/bin:$PATH && cmake -S . -B build && cmake --build build --target rtlgen",
+            },
+            {
+                "name": "promote_decoder_serial_lpc1_producer_wrapper",
+                "run": (
+                    "python3 npu/eval/promote_llm_decoder_serial_lpc1_producer_wrapper.py "
+                    f"--serial-ranker {serial_ranker} "
+                    f"--service-compatibility {service_compatibility} "
+                    f"--producer-replay {producer_replay} "
+                    f"--merge-config {merge_config} "
+                    "--lanes-per-cycle 1 "
+                    "--producer-ii-cycles 384 "
+                    "--num-tiles 6 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_stage_breakdown_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_stage_breakdown__{item_id}.json"
@@ -3573,6 +3633,7 @@ def _build_payload(
         "decoder_producer_ranker_coupled_noc",
         "decoder_producer_ranker_service_compatibility",
         "decoder_serial_ranker_producer_replay",
+        "decoder_serial_lpc1_producer_coupled_wrapper",
         "decoder_stage_breakdown",
         "decoder_attention_kv_memory",
         "decoder_frontier_synthesis",
@@ -3628,6 +3689,8 @@ def _build_payload(
             decoder_evidence = _decoder_producer_ranker_service_compatibility_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_serial_ranker_producer_replay":
             decoder_evidence = _decoder_serial_ranker_producer_replay_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_serial_lpc1_producer_coupled_wrapper":
+            decoder_evidence = _decoder_serial_lpc1_producer_coupled_wrapper_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_service":
             decoder_evidence = _decoder_output_projection_service_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_logit_rank_streaming_producer_integrated":
