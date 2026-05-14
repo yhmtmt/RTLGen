@@ -2135,6 +2135,11 @@ def _decoder_producer_ranker_coupled_noc_evidence(*, item_id: str) -> dict[str, 
         "control_plane/shadow_exports/l1_promotions/"
         "l1_decoder_logit_rank_r128_k1_pin_perimeter_bound_v1.json"
     )
+    producer_control_boundary = (
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+        "decoder_output_projection_producer_softmax_event_ablation__"
+        "l2_decoder_output_projection_producer_event_scoreboard_v1.json"
+    )
     sram_metrics_json = "runs/designs/sram/minimal_v0_2_draft/sram_metrics.json"
     return {
         "inputs": {
@@ -2144,11 +2149,13 @@ def _decoder_producer_ranker_coupled_noc_evidence(*, item_id: str) -> dict[str, 
             "rank_scale_ppa": scale_ppa,
             "candidate_merge_ppa": candidate_merge_ppa,
             "boundary_ppa": boundary_ppa,
+            "producer_control_boundary": producer_control_boundary,
             "sram_metrics_json": sram_metrics_json,
             "producer_ranker_coupled_scope": (
                 "Couple stage-serialized output-projection producer service curves to the "
                 "producer-integrated ready-valid ranker frontier, including shared NoC/memory "
-                "bandwidth shares for contention sensitivity."
+                "bandwidth shares for contention sensitivity and bounded SOFTMAX/EVENT "
+                "producer-control synthesis evidence."
             ),
             "memory_share_list": [1.0, 0.5, 0.25],
         },
@@ -2162,6 +2169,7 @@ def _decoder_producer_ranker_coupled_noc_evidence(*, item_id: str) -> dict[str, 
                     f"--scale-ppa {scale_ppa} "
                     f"--candidate-merge-ppa {candidate_merge_ppa} "
                     f"--boundary-ppa {boundary_ppa} "
+                    f"--producer-control-boundary {producer_control_boundary} "
                     f"--sram-metrics-json {sram_metrics_json} "
                     "--vocab-size-list 50257,100000,200000 "
                     "--hidden-size-list 768,1024,2048 "

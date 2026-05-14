@@ -10,6 +10,7 @@ def test_producer_service_derives_integer_ii_from_compute_and_memory() -> None:
         scale_ppa_path=None,
         candidate_merge_ppa_path=None,
         boundary_ppa_path=None,
+        producer_control_boundary_path=None,
         sram_metrics_json_path=None,
         vocab_size_list=[256],
         hidden_size_list=[64],
@@ -38,6 +39,7 @@ def test_coupled_noc_reports_ranker_rows(tmp_path: Path) -> None:
         scale_ppa_path=None,
         candidate_merge_ppa_path=None,
         boundary_ppa_path=None,
+        producer_control_boundary_path=None,
         sram_metrics_json_path=None,
         vocab_size_list=[256],
         hidden_size_list=[64],
@@ -59,3 +61,55 @@ def test_coupled_noc_reports_ranker_rows(tmp_path: Path) -> None:
     assert "ranker_latency_us_per_token" in row
     assert row["coupled_latency_us_per_token"] >= row["producer_latency_us_per_token"]
     assert report["recommendation"]["coupled_best"] is not None
+
+
+def test_coupling_report_carries_producer_control_boundary(tmp_path: Path) -> None:
+    boundary = tmp_path / "softmax_event.json"
+    boundary.write_text(
+        """
+{
+  "diagnosis": {"decision": "softmax_event_guard_synth_ok_under_bound"},
+  "probe_rows": [
+    {
+      "variant": "cq_v1_softmax_event_guard",
+      "status": "ok",
+      "static_verilog_stats": {
+        "verilog_bytes": 57181,
+        "reg_bit_count_est": 2634,
+        "wire_bit_count_est": 3864
+      },
+      "synthesis": {"status": "ok", "elapsed_seconds": 196.2},
+      "metrics_row": {"flow_elapsed_seconds": "195.14"}
+    }
+  ]
+}
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+
+    report = build_coupling_report(
+        mode="producer_service",
+        rank_ppa_path=None,
+        scale_ppa_path=None,
+        candidate_merge_ppa_path=None,
+        boundary_ppa_path=None,
+        producer_control_boundary_path=boundary,
+        sram_metrics_json_path=None,
+        vocab_size_list=[256],
+        hidden_size_list=[64],
+        producer_lanes_list=[64],
+        macs_per_cycle_list=[4096],
+        memory_bandwidth_bytes_per_cycle_list=[128.0],
+        memory_share_list=[1.0],
+        top_k_list=[1],
+        weight_bits=16,
+        activation_bits=16,
+        clock_ns=1.0,
+    )
+
+    control = report["producer_control_boundary"]
+    assert control["decision"] == "softmax_event_guard_synth_ok_under_bound"
+    assert control["guard_variant"] == "cq_v1_softmax_event_guard"
+    assert control["synthesis_status"] == "ok"
+    assert control["reg_bits_est"] == 2634

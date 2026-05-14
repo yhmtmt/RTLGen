@@ -1,0 +1,70 @@
+{
+  "proposal_id": "prop_l2_decoder_frontier_synthesis_scoreboard_boundary_v1",
+  "created_utc": "2026-05-14T03:05:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_frontier_synthesis",
+  "title": "Decoder frontier synthesis with bounded producer control evidence",
+  "hypothesis": "The previous decoder frontier synthesis should be refreshed now that the SOFTMAX/EVENT producer control path has a bounded scoreboard implementation and confirmed synth result. The dominant-frontier view should explicitly separate producer service latency from producer-control synthesis feasibility before choosing the next RTL target.",
+  "direct_comparison": {
+    "primary_question": "Does the whole-decoder frontier conclusion change when the producer/ranker coupling report carries the bounded SOFTMAX/EVENT guard result as control-path feasibility evidence?",
+    "include": [
+      "whole-decoder resident-weight stage breakdown",
+      "measured attention/KV tile-calibrated memory report",
+      "producer/ranker shared NoC coupling report",
+      "bounded SOFTMAX/EVENT producer-control guard result from l2_decoder_output_projection_producer_event_scoreboard_v1",
+      "focus rows for GPT-2 small and medium proxy shapes"
+    ],
+    "exclude": [
+      "new physical RTL implementation",
+      "new ranker datapath synthesis",
+      "quality or QAT experiments",
+      "full SRAM/NoC arbitration PPA"
+    ]
+  },
+  "expected_benefit": [
+    "updates the system-level frontier using the repaired producer control path",
+    "keeps the scorecard honest by treating the guard result as feasibility evidence rather than as a replacement for producer latency modeling",
+    "chooses whether the next measured RTL job should remain producer/ranker-focused or shift toward attention/KV hierarchy"
+  ],
+  "risks": [
+    "the producer service model remains analytical and weight-memory dominated",
+    "the SOFTMAX/EVENT guard is a synth-only bounded probe, not full placement and routing",
+    "attention/KV memory hierarchy is still modeled from measured tiles rather than a complete shared-memory subsystem"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_frontier_synthesis_scoreboard_boundary_v1",
+      "task_type": "l2_campaign",
+      "objective": "Refresh decoder frontier synthesis after the bounded EVENT scoreboard result and include SOFTMAX/EVENT guard metrics as producer-control feasibility evidence.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_frontier_synthesis",
+      "cost_class": "low",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_frontier_synthesis_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_frontier_synthesis_v1",
+        "l2_decoder_output_projection_producer_event_scoreboard_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "The output should identify whether the bounded producer-control result changes the next architecture frontier or simply validates continued producer/ranker modeling."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "control_plane/shadow_exports/l2_decisions/l2_decoder_frontier_synthesis_v1.json",
+    "control_plane/shadow_exports/l2_decisions/l2_decoder_output_projection_producer_event_scoreboard_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_producer_softmax_event_ablation__l2_decoder_output_projection_producer_event_scoreboard_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_producer_ranker_coupling.py",
+    "npu/eval/synthesize_llm_decoder_frontier.py",
+    "control_plane/control_plane/services/l2_task_generator.py",
+    "tests/test_llm_decoder_producer_ranker_coupling.py"
+  ]
+}
