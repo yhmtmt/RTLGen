@@ -2406,6 +2406,48 @@ def _decoder_output_projection_cadence_sensitivity_evidence(*, item_id: str) -> 
     }
 
 
+def _decoder_resident_weight_ranker_fallback_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_resident_weight_ranker_fallback__{item_id}.json"
+    report = f"{base}/decoder_resident_weight_ranker_fallback__{item_id}.md"
+    cadence_sensitivity = (
+        f"{base}/decoder_output_projection_cadence_sensitivity__"
+        "l2_decoder_output_projection_cadence_sensitivity_v1.json"
+    )
+    rank_tree = (
+        f"{base}/decoder_rank_tree_architecture__"
+        "l2_decoder_rank_tree_architecture_v1.json"
+    )
+    return {
+        "inputs": {
+            "resident_weight_ranker_fallback_out": out,
+            "resident_weight_ranker_fallback_report": report,
+            "output_projection_cadence_sensitivity": cadence_sensitivity,
+            "rank_tree_architecture": rank_tree,
+            "resident_weight_ranker_fallback_small_buffer_tiles": 32,
+            "resident_weight_ranker_fallback_scope": (
+                "Compare small waiting buffers in front of measured serial_lpc1/lpc2/lpc4 "
+                "rankers against measured r64 rank-tree fallback variants for resident-weight "
+                "producer cadences that outpace replay-proven serial ranker service."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_resident_weight_ranker_fallback",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_resident_weight_ranker_fallback.py "
+                    f"--cadence-sensitivity {cadence_sensitivity} "
+                    f"--rank-tree {rank_tree} "
+                    "--small-buffer-tiles 32 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_stage_breakdown_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_stage_breakdown__{item_id}.json"
@@ -3687,6 +3729,7 @@ def _build_payload(
         "decoder_serial_ranker_producer_replay",
         "decoder_serial_lpc1_producer_coupled_wrapper",
         "decoder_output_projection_cadence_sensitivity",
+        "decoder_resident_weight_ranker_fallback",
         "decoder_stage_breakdown",
         "decoder_attention_kv_memory",
         "decoder_frontier_synthesis",
@@ -3746,6 +3789,8 @@ def _build_payload(
             decoder_evidence = _decoder_serial_lpc1_producer_coupled_wrapper_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_cadence_sensitivity":
             decoder_evidence = _decoder_output_projection_cadence_sensitivity_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_resident_weight_ranker_fallback":
+            decoder_evidence = _decoder_resident_weight_ranker_fallback_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_service":
             decoder_evidence = _decoder_output_projection_service_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_logit_rank_streaming_producer_integrated":
