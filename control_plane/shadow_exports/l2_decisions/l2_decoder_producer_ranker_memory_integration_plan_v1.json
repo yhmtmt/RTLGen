@@ -1,0 +1,117 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-05-14T07:02:21.133917Z",
+  "item_id": "l2_decoder_producer_ranker_memory_integration_plan_v1",
+  "run_key": "l2_decoder_producer_ranker_memory_integration_plan_v1_run_9151f24ea99292dc",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "178a4f652239f8677ecc87b56a9a7755b183fe4a",
+  "review_metadata_source_commit": "178a4f652239f8677ecc87b56a9a7755b183fe4a",
+  "objective": "Reconcile nm16 producer physical MAC capacity with the W64/W128 producer/ranker memory-coupling frontier and choose the first ready-valid integration target.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+    ],
+    "design_dirs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+    ],
+    "macro_manifests": [
+      "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+      "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+    ],
+    "decoder_contract": {
+      "producer_config": "runs/designs/npu_blocks/npu_fp16_cpp_nm16_producer/config_nm16_producer.json",
+      "stream_contract": "npu/docs/decoder_logit_rank_streaming_hierarchy.md",
+      "frontier_synthesis": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_frontier_synthesis__l2_decoder_frontier_synthesis_nm16_physical_v1.json",
+      "integration_plan_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_producer_ranker_memory_integration_plan__l2_decoder_producer_ranker_memory_integration_plan_v1.json",
+      "integration_plan_scope": "Reconcile the nm16 measured producer MAC lanes with the W64/W128 producer/ranker frontier, shared memory assumptions, and ready-valid stream equivalence requirements before queueing an integrated RTL macro.",
+      "integration_plan_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_producer_ranker_memory_integration_plan__l2_decoder_producer_ranker_memory_integration_plan_v1.md",
+      "producer_ranker_coupled": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_producer_ranker_coupled_noc__l2_decoder_frontier_synthesis_nm16_physical_v1.json",
+      "producer_physical_boundary": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_producer_pnr_feasibility__l2_decoder_output_projection_producer_pnr_nm16_v1.json"
+    },
+    "generated_campaign": {
+      "path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign__l2_decoder_output_projection_producer_synth_boundary_v1_r2__l2_decoder_producer_ranker_memory_integration_plan_v1.json",
+      "outputs": {
+        "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_producer_synth_boundary_v1_r2__l2_decoder_producer_ranker_memory_integration_plan_v1/report.md",
+        "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_producer_synth_boundary_v1_r2__l2_decoder_producer_ranker_memory_integration_plan_v1/results.csv",
+        "campaign_dir": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_producer_synth_boundary_v1_r2__l2_decoder_producer_ranker_memory_integration_plan_v1"
+      },
+      "clean_outputs": true,
+      "base_campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign__l2_decoder_output_projection_producer_synth_boundary_v1_r2.json"
+    },
+    "candidate_manifests": [
+      "runs/candidates/nangate45/module_candidates.json"
+    ]
+  },
+  "recommendation": {
+    "arch_id": "fp16_nm1",
+    "macro_mode": "flat_nomacro",
+    "objective_rank": 1,
+    "objective_score": "0.0",
+    "latency_ms_mean": 0.028907999999999996,
+    "energy_mj_mean": 5.582770776e-06,
+    "critical_path_ns_mean": 5.557037432204143,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.193122,
+    "flow_elapsed_s_mean": 848.418
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_producer_ranker_memory_integration_plan_v1",
+    "title": "Decoder producer/ranker memory integration plan",
+    "primary_question": "Which first producer-to-ranker memory-interface target should be implemented after the nm16 physical producer anchor, and how large is the gap between measured nm16 MAC capacity and the analytical producer service rows?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "integration_plan",
+    "abstraction_layer": "decoder_producer_ranker_memory_integration_plan",
+    "expected_direction": "iterate",
+    "expected_reason": "The report should identify the first integrated producer/ranker/memory target and quantify the physical/analytical MAC-capacity gap before implementation.",
+    "summary": "Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
+    "outcome": "ranking_recorded",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_producer_ranker_memory_integration_plan_v1",
+    "title": "Decoder producer/ranker memory integration plan",
+    "kind": "architecture",
+    "primary_question": "Which first producer-to-ranker memory-interface target should be implemented after the nm16 physical producer anchor, and how large is the gap between measured nm16 MAC capacity and the analytical producer service rows?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "integration_plan",
+    "outcome": "ranking_recorded",
+    "summary": "Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": []
+  },
+  "source_refs": {
+    "best_point_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_producer_synth_boundary_v1_r2__l2_decoder_producer_ranker_memory_integration_plan_v1/best_point.json",
+    "summary_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_producer_synth_boundary_v1_r2__l2_decoder_producer_ranker_memory_integration_plan_v1/summary.csv",
+    "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_producer_synth_boundary_v1_r2__l2_decoder_producer_ranker_memory_integration_plan_v1/results.csv",
+    "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_producer_synth_boundary_v1_r2__l2_decoder_producer_ranker_memory_integration_plan_v1/report.md",
+    "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_producer_synth_boundary_v1_r2__l2_decoder_producer_ranker_memory_integration_plan_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+    "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_producer_synth_boundary_v1_r2__l2_decoder_producer_ranker_memory_integration_plan_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+    "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_producer_synth_boundary_v1_r2__l2_decoder_producer_ranker_memory_integration_plan_v1/artifacts/perf/fp16_nm1/mlp1/trace.json",
+    "focused_model_artifacts": [
+      {
+        "model_id": "mlp1",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_producer_synth_boundary_v1_r2__l2_decoder_producer_ranker_memory_integration_plan_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_producer_synth_boundary_v1_r2__l2_decoder_producer_ranker_memory_integration_plan_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_producer_synth_boundary_v1_r2__l2_decoder_producer_ranker_memory_integration_plan_v1/artifacts/perf/fp16_nm1/mlp1/trace.json"
+      },
+      {
+        "model_id": "mlp2",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_producer_synth_boundary_v1_r2__l2_decoder_producer_ranker_memory_integration_plan_v1/artifacts/mapper/fp16_nm1/mlp2/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_producer_synth_boundary_v1_r2__l2_decoder_producer_ranker_memory_integration_plan_v1/artifacts/mapper/fp16_nm1/mlp2/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_producer_synth_boundary_v1_r2__l2_decoder_producer_ranker_memory_integration_plan_v1/artifacts/perf/fp16_nm1/mlp2/trace.json"
+      }
+    ]
+  }
+}
