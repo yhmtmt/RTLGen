@@ -756,8 +756,8 @@ module tb_npu_shell;
       end
       if (dma_req_valid !== 1'b1) begin
         mmio_read(OFF_CQ_HEAD, cq_head);
-        $display("ERROR: expected dma_req_valid in contract_gemm_event_dma_test head=%h tail=%h last_opcode=%h event0=%b dma_pending=%b",
-                 cq_head, cq_tail, dut.last_opcode, dut.event_state[0], dut.dma_pending);
+        $display("ERROR: expected dma_req_valid in contract_gemm_event_dma_test head=%h tail=%h last_opcode=%h event_valid=0x%h dma_pending=%b",
+                 cq_head, cq_tail, dut.last_opcode, dut.event_scoreboard_valid, dut.dma_pending);
         $finish(1);
       end
       dma_req_ready = 1'b1;
@@ -774,8 +774,8 @@ module tb_npu_shell;
       end
       if (dma_req_valid !== 1'b1) begin
         mmio_read(OFF_CQ_HEAD, cq_head);
-        $display("ERROR: expected dma_req_valid in event_dma_test head=%h tail=%h last_opcode=%h event0=%b dma_pending=%b bvalid=%b",
-                 cq_head, cq_tail, dut.last_opcode, dut.event_state[0], dut.dma_pending, saw_bvalid);
+        $display("ERROR: expected dma_req_valid in event_dma_test head=%h tail=%h last_opcode=%h event_valid=0x%h dma_pending=%b bvalid=%b",
+                 cq_head, cq_tail, dut.last_opcode, dut.event_scoreboard_valid, dut.dma_pending, saw_bvalid);
         $finish(1);
       end
       if (dma_req_src !== expected_dma_src) begin
@@ -824,8 +824,8 @@ module tb_npu_shell;
       end
       if (dma_req_count != 2) begin
         mmio_read(OFF_CQ_HEAD, cq_head);
-        $display("ERROR: expected 2 DMA requests in event_dma_test, saw %0d head=%h tail=%h last_opcode=%h event0=%b dma_pending=%b bvalid=%b",
-                 dma_req_count, cq_head, cq_tail, dut.last_opcode, dut.event_state[0], dut.dma_pending, saw_bvalid);
+        $display("ERROR: expected 2 DMA requests in event_dma_test, saw %0d head=%h tail=%h last_opcode=%h event_valid=0x%h dma_pending=%b bvalid=%b",
+                 dma_req_count, cq_head, cq_tail, dut.last_opcode, dut.event_scoreboard_valid, dut.dma_pending, saw_bvalid);
         $finish(1);
       end
       if (second_dma_seen_before_first_bvalid) begin

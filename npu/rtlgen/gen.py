@@ -80,9 +80,16 @@ module {top_name} (
   reg [31:0] dma_size;
   reg        cq_stage_valid;
   reg        dma_pending;
-  reg [65535:0] event_state;
+  reg [{event_scoreboard_entries_minus1}:0] event_scoreboard_valid;
+  reg [15:0] event_scoreboard_id [0:{event_scoreboard_entries_minus1}];
   reg        event_wait_pending;
   reg [15:0] event_wait_id;
+  reg        event_wait_match;
+  reg [{event_slot_idx_width_minus1}:0] event_wait_match_slot;
+  reg        event_signal_match;
+  reg        event_signal_free;
+  reg [{event_slot_idx_width_minus1}:0] event_signal_slot;
+  integer    event_i;
   reg [2:0]  dma_state;
 {gemm_state_regs}
 {compute_state_regs}
@@ -100,6 +107,7 @@ module {top_name} (
   localparam STATUS_ERR  = 32'h4;
 
   localparam integer AXI_BEAT_BYTES = {axi_beat_bytes};
+  localparam integer EVENT_SCOREBOARD_ENTRIES = {event_scoreboard_entries};
 
   localparam IRQ_CQ_EMPTY    = 0;
   localparam IRQ_EVENT       = 1;
@@ -201,9 +209,17 @@ module {top_name} (
       dma_size <= 0;
       cq_stage_valid <= 0;
       dma_pending <= 0;
-      event_state <= 0;
+      event_scoreboard_valid <= 0;
+      for (event_i = 0; event_i < EVENT_SCOREBOARD_ENTRIES; event_i = event_i + 1) begin
+        event_scoreboard_id[event_i] <= 0;
+      end
       event_wait_pending <= 0;
       event_wait_id <= 0;
+      event_wait_match <= 0;
+      event_wait_match_slot <= 0;
+      event_signal_match <= 0;
+      event_signal_free <= 0;
+      event_signal_slot <= 0;
       dma_state <= 0;
 {gemm_reset}
 {compute_reset}
@@ -2296,6 +2312,12 @@ endmodule
     enable_dma_ports = bool(cfg.get("enable_dma_ports", False))
     enable_cq_mem_ports = bool(cfg.get("enable_cq_mem_ports", False))
     cq_mem_ablation_mode = str(cfg.get("cq_mem_ablation_mode", "full")).lower()
+    event_scoreboard_entries = int(cfg.get("event_scoreboard_entries", 16))
+    if event_scoreboard_entries < 1 or event_scoreboard_entries > 64:
+        die("event_scoreboard_entries must be in [1, 64]")
+    event_slot_idx_width = max(1, math.ceil(math.log2(event_scoreboard_entries)))
+    event_slot_idx_width_minus1 = event_slot_idx_width - 1
+    event_scoreboard_entries_minus1 = event_scoreboard_entries - 1
     valid_cq_mem_ablation_modes = {
         "full",
         "fetch_only",
@@ -2399,8 +2421,16 @@ endmodule
       end
       gemm_pending <= (gemm_slot_valid != {gemm_slot_valid_zero});"""
 
-    event_wait_service_block = """        if (event_state[event_wait_id]) begin
-          event_state[event_wait_id] <= 1'b0;
+    event_wait_service_block = """        event_wait_match = 1'b0;
+        event_wait_match_slot = 0;
+        for (event_i = 0; event_i < EVENT_SCOREBOARD_ENTRIES; event_i = event_i + 1) begin
+          if (event_scoreboard_valid[event_i] && (event_scoreboard_id[event_i] == event_wait_id)) begin
+            event_wait_match = 1'b1;
+            event_wait_match_slot = event_i;
+          end
+        end
+        if (event_wait_match) begin
+          event_scoreboard_valid[event_wait_match_slot] <= 1'b0;
           event_wait_pending <= 1'b0;
           cq_head <= cq_head + 32;
           if (cq_count == 1) begin
@@ -2413,6 +2443,28 @@ endmodule
               event_wait_id <= cq_mem_rdata[47:32];
               event_wait_pending <= 1'b1;
               cq_stage_valid <= 1'b0;"""
+
+    event_signal_block = """                event_signal_match = 1'b0;
+                event_signal_free = 1'b0;
+                event_signal_slot = 0;
+                for (event_i = 0; event_i < EVENT_SCOREBOARD_ENTRIES; event_i = event_i + 1) begin
+                  if (event_scoreboard_valid[event_i] && (event_scoreboard_id[event_i] == cq_mem_rdata[47:32])) begin
+                    event_signal_match = 1'b1;
+                    event_signal_slot = event_i;
+                  end else if (!event_scoreboard_valid[event_i] && !event_signal_free) begin
+                    event_signal_free = 1'b1;
+                    event_signal_slot = event_i;
+                  end
+                end
+                if (!event_signal_match && !event_signal_free) begin
+                  error_code <= 32'hb; // EVENT scoreboard full
+                end else begin
+                  event_scoreboard_valid[event_signal_slot] <= 1'b1;
+                  event_scoreboard_id[event_signal_slot] <= cq_mem_rdata[47:32];
+                  if (cq_mem_rdata[8]) begin
+                    irq_status[IRQ_EVENT] <= 1'b1;
+                  end
+                end"""
 
     if enable_cq_mem_ports:
         cq_mem_ports = f""",
@@ -2538,10 +2590,7 @@ endmodule
               if (dma_pending || vec_pending || softmax_pending || {gemm_slots_busy_expr}) begin
                 consume_desc = 1'b0;
               end else begin
-                event_state[cq_mem_rdata[47:32]] <= 1'b1;
-                if (cq_mem_rdata[8]) begin
-                  irq_status[IRQ_EVENT] <= 1'b1;
-                end
+{event_signal_block}
               end
             end else if (cq_mem_rdata[7:0] == 8'h21) begin
               // EVENT_WAIT: stall command retirement until the event is signaled.
@@ -2883,10 +2932,7 @@ endmodule
             if (dma_pending || vec_pending || softmax_pending || {gemm_slots_busy_expr}) begin
               consume_desc = 1'b0;
             end else begin
-              event_state[cq_mem_rdata[47:32]] <= 1'b1;
-              if (cq_mem_rdata[8]) begin
-                irq_status[IRQ_EVENT] <= 1'b1;
-              end
+{event_signal_block}
             end
           end else if (cq_mem_rdata[7:0] == 8'h21) begin
 {event_wait_latch_block}
@@ -3031,10 +3077,7 @@ endmodule
             if (dma_pending || vec_pending || softmax_pending || {gemm_slots_busy_expr}) begin
               consume_desc = 1'b0;
             end else begin
-              event_state[cq_mem_rdata[47:32]] <= 1'b1;
-              if (cq_mem_rdata[8]) begin
-                irq_status[IRQ_EVENT] <= 1'b1;
-              end
+{event_signal_block}
             end
           end
           if (consume_desc) begin
@@ -3095,10 +3138,18 @@ endmodule
           last_size <= cq_mem_rdata[223:192];
           last_op_uid <= 0;
           if (cq_mem_rdata[7:0] == 8'h20) begin
-            event_state[cq_mem_rdata[47:32]] <= 1'b1;
+{event_signal_block}
           end else if (cq_mem_rdata[7:0] == 8'h21) begin
-            if (event_state[cq_mem_rdata[47:32]]) begin
-              event_state[cq_mem_rdata[47:32]] <= 1'b0;
+            event_wait_match = 1'b0;
+            event_wait_match_slot = 0;
+            for (event_i = 0; event_i < EVENT_SCOREBOARD_ENTRIES; event_i = event_i + 1) begin
+              if (event_scoreboard_valid[event_i] && (event_scoreboard_id[event_i] == cq_mem_rdata[47:32])) begin
+                event_wait_match = 1'b1;
+                event_wait_match_slot = event_i;
+              end
+            end
+            if (event_wait_match) begin
+              event_scoreboard_valid[event_wait_match_slot] <= 1'b0;
             end
           end
           cq_head <= cq_head + 32;
@@ -3132,10 +3183,7 @@ endmodule
             if (dma_pending || vec_pending || softmax_pending || {gemm_slots_busy_expr}) begin
               consume_desc = 1'b0;
             end else begin
-              event_state[cq_mem_rdata[47:32]] <= 1'b1;
-              if (cq_mem_rdata[8]) begin
-                irq_status[IRQ_EVENT] <= 1'b1;
-              end
+{event_signal_block}
             end
           end else if (cq_mem_rdata[7:0] == 8'h21) begin
 {event_wait_latch_block}
@@ -3335,6 +3383,9 @@ endmodule
         axi_data_width_minus1=axi_data_width_minus1,
         axi_strb_width_minus1=axi_strb_width_minus1,
         axi_beat_bytes=(1 << axi_size),
+        event_scoreboard_entries=event_scoreboard_entries,
+        event_scoreboard_entries_minus1=event_scoreboard_entries_minus1,
+        event_slot_idx_width_minus1=event_slot_idx_width_minus1,
         vec_en_add=vec_en_add,
         vec_en_mul=vec_en_mul,
         vec_en_relu=vec_en_relu,

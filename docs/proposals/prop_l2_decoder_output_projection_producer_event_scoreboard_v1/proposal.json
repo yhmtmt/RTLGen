@@ -1,0 +1,69 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_producer_event_scoreboard_v1",
+  "created_utc": "2026-05-14T02:20:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_output_projection_producer_softmax_event_ablation",
+  "title": "Decoder output-projection producer bounded EVENT scoreboard",
+  "hypothesis": "The staged EVENT_WAIT rerun still timed out because the wait service retained a dynamic read over the wide 65536-bit event_state vector. Replacing that vector with a small bounded event scoreboard should preserve EVENT_SIGNAL/EVENT_WAIT ordering for the descriptor streams under exploration while avoiding the large random-access mux that appears to explode synthesis.",
+  "direct_comparison": {
+    "primary_question": "Does a bounded EVENT scoreboard make the prior EVENT_WAIT-only, full EVENT, and SOFTMAX/EVENT guard variants synthesize under the nm2 bounded probe?",
+    "include": [
+      "nm2 fp16 producer base config",
+      "existing SOFTMAX/EVENT command-queue ablation variants",
+      "bounded Nangate45 synth-only target 1_2_yosys",
+      "static generated-RTL size counters per variant",
+      "perf-vs-RTL EVENT/DMA contract regression"
+    ],
+    "exclude": [
+      "full placement and routing",
+      "producer scale beyond nm2",
+      "unbounded 16-bit EVENT namespace storage",
+      "quality or QAT experiments"
+    ]
+  },
+  "expected_benefit": [
+    "removes the wide dynamic event_state read/write structure from production EVENT paths",
+    "keeps multiple outstanding signaled events through a bounded associative table",
+    "preserves command ordering and EVENT_WAIT consumption semantics for the current producer command streams"
+  ],
+  "risks": [
+    "the EVENT namespace becomes bounded by event_scoreboard_entries rather than all 65536 IDs being simultaneously resident",
+    "descriptor streams with more unique signaled-but-unwaited events than the scoreboard depth will now report an EVENT scoreboard full error",
+    "if the timeout persists, the remaining issue is likely loop/control structure or hierarchy rather than event storage width"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_output_projection_producer_event_scoreboard_v1",
+      "task_type": "l2_campaign",
+      "objective": "Rerun the bounded nm2 SOFTMAX/EVENT CQ ablation after replacing the wide event_state vector with a bounded scoreboard.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_output_projection_producer_softmax_event_ablation",
+      "cost_class": "bounded-medium",
+      "comparison_role": "producer_synth_boundary",
+      "paired_baseline_item_id": "l2_decoder_output_projection_producer_event_wait_staged_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_output_projection_producer_event_wait_staged_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "promote",
+        "reason": "EVENT_WAIT-only, full EVENT, and SOFTMAX/EVENT guard variants should move from timeout to bounded synth result once the wide dynamic event_state vector is removed."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l2_decoder_output_projection_producer_event_wait_staged_v1/analysis_report.md",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_producer_softmax_event_ablation__l2_decoder_output_projection_producer_event_wait_staged_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/rtlgen/gen.py",
+    "npu/eval/probe_decoder_producer_softmax_event_ablation.py",
+    "tests/test_npu_contract_equivalence.py",
+    "tests/test_npu_rtlgen_event_wait.py",
+    "npu/sim/rtl/tb_npu_shell.sv"
+  ]
+}
