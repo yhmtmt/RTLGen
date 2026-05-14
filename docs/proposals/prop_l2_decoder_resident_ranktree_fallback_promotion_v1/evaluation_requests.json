@@ -1,0 +1,27 @@
+{
+  "proposal_id": "prop_l2_decoder_resident_ranktree_fallback_promotion_v1",
+  "source_commit": "1e78f669391143bd638c632f3fa903c02672a4f2",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_resident_ranktree_fallback_promotion_v1",
+      "task_type": "l2_campaign",
+      "objective": "Promote the measured radix-4 r64 rank-tree as the resident-weight output-projection fallback policy for unsafe producer cadences.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_resident_ranktree_fallback_promotion",
+      "comparison_role": "producer_ranker_service",
+      "paired_baseline_item_id": "l2_decoder_resident_weight_ranker_fallback_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_resident_weight_ranker_fallback_v1",
+        "l2_decoder_rank_tree_architecture_v1",
+        "l2_decoder_output_projection_cadence_sensitivity_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "promote",
+        "reason": "If all unsafe resident-weight rows use zero-buffer rank-tree recommendations and the selected radix has clean RTL simulation plus measured PPA, use it as the producer-coupled fallback implementation target."
+      },
+      "status": "pending"
+    }
+  ]
+}
