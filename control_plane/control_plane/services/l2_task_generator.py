@@ -2395,6 +2395,55 @@ def _decoder_producer_ranker_memory_integration_plan_evidence(*, item_id: str) -
     }
 
 
+def _decoder_producer_ranker_ready_valid_equivalence_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_producer_ranker_ready_valid_equivalence__{item_id}.json"
+    report = f"{base}/decoder_producer_ranker_ready_valid_equivalence__{item_id}.md"
+    producer_config = "runs/designs/npu_blocks/npu_fp16_cpp_nm16_producer/config_nm16_producer.json"
+    logit_rank_config = "runs/designs/activations/logit_rank_r64_l16_k1_wrapper/config_logit_rank_r64_l16_k1.json"
+    merge_config = (
+        "runs/designs/activations/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/"
+        "config_candidate_stream_merge_fifo_k1_l16_t16_d16.json"
+    )
+    integration_plan = (
+        f"{base}/decoder_producer_ranker_memory_integration_plan__"
+        "l2_decoder_producer_ranker_memory_integration_plan_v1_r2.json"
+    )
+    return {
+        "inputs": {
+            "ready_valid_equivalence_out": out,
+            "ready_valid_equivalence_report": report,
+            "producer_config": producer_config,
+            "logit_rank_config": logit_rank_config,
+            "candidate_merge_config": merge_config,
+            "integration_plan": integration_plan,
+            "ready_valid_equivalence_scope": (
+                "Run a deterministic RTL ready-valid harness for the first r64/k1 "
+                "producer-to-ranker integration target. The harness ties generated "
+                "logit_rank_r64_l16_k1 to candidate_stream_merge_fifo_k1_l16_t16_d16, "
+                "checks lower-token tie order, accepted beat count, FIFO observables, "
+                "and final last-beat completion against a full-vocabulary reference."
+            ),
+        },
+        "commands": [
+            {
+                "name": "probe_decoder_producer_ranker_ready_valid_equivalence",
+                "run": (
+                    "python3 npu/eval/probe_llm_decoder_producer_ranker_ready_valid_equivalence.py "
+                    f"--producer-config {producer_config} "
+                    f"--logit-rank-config {logit_rank_config} "
+                    f"--merge-config {merge_config} "
+                    f"--integration-plan {integration_plan} "
+                    "--run-rtl-sim "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_output_projection_producer_synth_boundary_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_output_projection_producer_synth_boundary__{item_id}.json"
@@ -3128,6 +3177,7 @@ def _build_payload(
         "decoder_attention_kv_memory",
         "decoder_frontier_synthesis",
         "decoder_producer_ranker_memory_integration_plan",
+        "decoder_producer_ranker_ready_valid_equivalence",
         "decoder_output_projection_producer_pnr_feasibility",
         "decoder_output_projection_producer_synth_boundary",
         "decoder_output_projection_producer_isolated_synth",
@@ -3154,6 +3204,8 @@ def _build_payload(
             decoder_evidence = _decoder_frontier_synthesis_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_producer_ranker_memory_integration_plan":
             decoder_evidence = _decoder_producer_ranker_memory_integration_plan_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_producer_ranker_ready_valid_equivalence":
+            decoder_evidence = _decoder_producer_ranker_ready_valid_equivalence_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_memory":
             decoder_evidence = _decoder_attention_kv_memory_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_stage_breakdown":
