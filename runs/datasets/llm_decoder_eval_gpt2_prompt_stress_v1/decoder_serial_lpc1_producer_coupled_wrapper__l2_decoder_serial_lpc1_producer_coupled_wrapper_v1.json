@@ -1,0 +1,334 @@
+{
+  "assumptions": [
+    "The promoted wrapper is the measured serial_lpc1 ranker plus candidate merge FIFO, not a synthetic producer ROM.",
+    "The output-projection producer is assumed to issue r64 tiles no faster than the selected 384-cycle cadence.",
+    "The focused replay validates ready-valid behavior at the selected cadence and carries prior PPA from the serial architecture sweep.",
+    "If a resident-weight or cached producer issues faster tiles, lpc2/lpc4 remain guard candidates from the replay result."
+  ],
+  "checks": [
+    {
+      "name": "selected_variant_exists",
+      "observed": "decoder_r64_k1_serial_rank_lpc1_wrapper",
+      "passed": true
+    },
+    {
+      "name": "selected_variant_has_physical_metrics",
+      "observed": {
+        "critical_path_ns": 2.864771333952124,
+        "design_dir": "runs/designs/activations/decoder_r64_k1_serial_rank_lpc1_wrapper",
+        "die_area_um2": 810000.0,
+        "metrics_status": "ok",
+        "placed_cell_area_um2": 19304.684,
+        "stage_elapsed_seconds": 45.66,
+        "top": "decoder_r64_k1_serial_rank_lpc1_wrapper",
+        "total_power_mw": 0.0065519
+      },
+      "passed": true
+    },
+    {
+      "name": "service_compatibility_selected_lowest_power",
+      "observed": {
+        "coupled_extra_cycles_after_producer": 65,
+        "coupled_latency_us_per_token": 1205.855,
+        "coupled_total_cycles": 1205855,
+        "hidden_size": 768,
+        "integration": "single_r64_ranker",
+        "macs_per_cycle": 8192,
+        "max_ranker_wait_cycles": 0,
+        "memory_bandwidth_bytes_per_cycle": 64.0,
+        "producer_done_cycles": 1205790,
+        "producer_ii_cycles": 1536,
+        "producer_lanes": 64,
+        "producer_latency_cycles": 30,
+        "producer_latency_us_per_token": 1205.79,
+        "ranker": "serial_lpc1",
+        "ranker_critical_path_ns": 2.864771333952124,
+        "ranker_family": "serial_running_best",
+        "ranker_instances": 1,
+        "ranker_pipeline_tail_cycles": 0,
+        "ranker_placed_cell_area_um2": 19304.684,
+        "ranker_service_cycles_per_producer_tile": 65,
+        "ranker_tile_service_cycles": 65,
+        "ranker_total_power_mw": 0.0065519,
+        "ranker_utilization": 0.042318,
+        "scenario": "shared_gemm_stage_serial",
+        "service_limiter": "weight_memory",
+        "throughput_margin_cycles": 1471,
+        "throughput_ok": true,
+        "tile_count": 786,
+        "vocab_size": 50257
+      },
+      "passed": true
+    },
+    {
+      "name": "prior_replay_clean_at_selected_cadence",
+      "observed": {
+        "expected_throughput_ok": true,
+        "lanes_per_cycle": 1,
+        "producer_ii_cycles": 384,
+        "ranker_service_cycles": 65,
+        "rtl_sim": {
+          "expected": {
+            "logit": 500,
+            "token": 5
+          },
+          "log_tail": [
+            "RESULT scenario=ii384 lpc=1 producer_ii=384 token=5 logit=500 accepted=6 tb_backpressure=0 dut_stalls=0 fifo_max=1 final_cycle=1987",
+            "/tmp/tmppauchxzu/tb_decoder_r64_k1_serial_rank_lpc1_wrapper_producer_replay_ii384.v:505: $finish called at 19910000 (1ps)"
+          ],
+          "observed": {
+            "accepted": 6,
+            "dut_stalls": 0,
+            "fifo_max": 1,
+            "final_cycle": 1987,
+            "logit": 500,
+            "lpc": 1,
+            "producer_ii": 384,
+            "scenario": "ii384",
+            "tb_backpressure": 0,
+            "token": 5
+          },
+          "returncode": 0,
+          "status": "ok"
+        },
+        "scenario": "ii384"
+      },
+      "passed": true
+    },
+    {
+      "name": "focused_rtl_replay_matches_reference",
+      "observed": {
+        "expected": {
+          "logit": 500,
+          "token": 5
+        },
+        "log_tail": [
+          "RESULT scenario=selected_ii384 lpc=1 producer_ii=384 token=5 logit=500 accepted=6 tb_backpressure=0 dut_stalls=0 fifo_max=1 final_cycle=1987",
+          "/tmp/tmpxc0eidc2/tb_decoder_r64_k1_serial_rank_lpc1_wrapper_producer_replay_selected_ii384.v:505: $finish called at 19910000 (1ps)"
+        ],
+        "observed": {
+          "accepted": 6,
+          "dut_stalls": 0,
+          "fifo_max": 1,
+          "final_cycle": 1987,
+          "logit": 500,
+          "lpc": 1,
+          "producer_ii": 384,
+          "scenario": "selected_ii384",
+          "tb_backpressure": 0,
+          "token": 5
+        },
+        "returncode": 0,
+        "status": "ok"
+      },
+      "passed": true
+    }
+  ],
+  "decision": {
+    "decision": "serial_lpc1_producer_coupled_wrapper_promoted",
+    "next_step": "Use serial_lpc1 as the ranker block in the next output-projection producer wrapper. The next open architectural risk is replacing the analytical producer cadence with measured producer output statistics or a resident-weight producer model."
+  },
+  "focused_rtl_sim": {
+    "expected": {
+      "logit": 500,
+      "token": 5
+    },
+    "log_tail": [
+      "RESULT scenario=selected_ii384 lpc=1 producer_ii=384 token=5 logit=500 accepted=6 tb_backpressure=0 dut_stalls=0 fifo_max=1 final_cycle=1987",
+      "/tmp/tmpxc0eidc2/tb_decoder_r64_k1_serial_rank_lpc1_wrapper_producer_replay_selected_ii384.v:505: $finish called at 19910000 (1ps)"
+    ],
+    "observed": {
+      "accepted": 6,
+      "dut_stalls": 0,
+      "fifo_max": 1,
+      "final_cycle": 1987,
+      "logit": 500,
+      "lpc": 1,
+      "producer_ii": 384,
+      "scenario": "selected_ii384",
+      "tb_backpressure": 0,
+      "token": 5
+    },
+    "returncode": 0,
+    "status": "ok"
+  },
+  "model": "decoder_serial_lpc1_producer_coupled_wrapper_v1",
+  "selected_metrics": {
+    "critical_path_ns": 2.864771333952124,
+    "design_dir": "runs/designs/activations/decoder_r64_k1_serial_rank_lpc1_wrapper",
+    "die_area_um2": 810000.0,
+    "metrics_status": "ok",
+    "placed_cell_area_um2": 19304.684,
+    "stage_elapsed_seconds": 45.66,
+    "top": "decoder_r64_k1_serial_rank_lpc1_wrapper",
+    "total_power_mw": 0.0065519
+  },
+  "selected_prior_replay_row": {
+    "expected_throughput_ok": true,
+    "lanes_per_cycle": 1,
+    "producer_ii_cycles": 384,
+    "ranker_service_cycles": 65,
+    "rtl_sim": {
+      "expected": {
+        "logit": 500,
+        "token": 5
+      },
+      "log_tail": [
+        "RESULT scenario=ii384 lpc=1 producer_ii=384 token=5 logit=500 accepted=6 tb_backpressure=0 dut_stalls=0 fifo_max=1 final_cycle=1987",
+        "/tmp/tmppauchxzu/tb_decoder_r64_k1_serial_rank_lpc1_wrapper_producer_replay_ii384.v:505: $finish called at 19910000 (1ps)"
+      ],
+      "observed": {
+        "accepted": 6,
+        "dut_stalls": 0,
+        "fifo_max": 1,
+        "final_cycle": 1987,
+        "logit": 500,
+        "lpc": 1,
+        "producer_ii": 384,
+        "scenario": "ii384",
+        "tb_backpressure": 0,
+        "token": 5
+      },
+      "returncode": 0,
+      "status": "ok"
+    },
+    "scenario": "ii384"
+  },
+  "selected_variant": {
+    "config_manifest": "runs/designs/activations/decoder_r64_k1_serial_rank_lpc1_wrapper/config_decoder_r64_k1_serial_rank_lpc1_wrapper.json",
+    "design_dir": "runs/designs/activations/decoder_r64_k1_serial_rank_lpc1_wrapper",
+    "generated_verilog": [
+      "runs/designs/activations/decoder_r64_k1_serial_rank_lpc1_wrapper/verilog/candidate_stream_merge_fifo_k1_l16_t16_d16.v",
+      "runs/designs/activations/decoder_r64_k1_serial_rank_lpc1_wrapper/verilog/decoder_r64_k1_serial_rank_lpc1_wrapper.v",
+      "runs/designs/activations/decoder_r64_k1_serial_rank_lpc1_wrapper/verilog/logit_rank_r1_l16_k1.v"
+    ],
+    "ii_goal_cycles": 65,
+    "lanes_per_cycle": 1,
+    "metrics_row": {
+      "config_hash": "76aa44d7da4a",
+      "critical_path_ns": "2.864771333952124",
+      "design": "decoder_r64_k1_serial_rank_lpc1_wrapper",
+      "die_area": "810000.0",
+      "flow_elapsed_seconds": "90.12",
+      "param_hash": "7eddf354",
+      "params_json": "{\"CLOCK_PERIOD\": 10.0, \"CORE_AREA\": \"40 40 860 860\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 900 900\", \"FLOW_VARIANT\": \"decoder_r64_k1_serial_ranker\", \"PLACE_DENSITY\": 0.36, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_KEEP_MODULES\": \"candidate_stream_merge_fifo_k1_l16_t16_d16\", \"TAG\": \"decoder_r64_k1_serial_ranker\", \"tag_prefix\": \"decoder_r64_k1_serial_ranker\"}",
+      "platform": "nangate45",
+      "result_path": "",
+      "stage_elapsed_seconds": "45.66",
+      "status": "ok",
+      "synth_script_path": "",
+      "synth_script_sha1": "",
+      "tag": "decoder_r64_k1_serial_ranker",
+      "total_power_mw": "0.0065519",
+      "work_result_json": "runs/designs/activations/decoder_r64_k1_serial_rank_lpc1_wrapper/work/7eddf354/result.json"
+    },
+    "returncodes": {
+      "merge": 0,
+      "rank": 0
+    },
+    "simulation": {
+      "expected": {
+        "logit": 500,
+        "token": 5
+      },
+      "log_tail": [
+        "RESULT token=5 logit=500 accepted=3 stalls=0 fifo_max=1 final_cycle=200",
+        "/tmp/rtlcp-worktree-w4m3k8na/repo/runs/designs/activations/decoder_r64_k1_serial_rank_lpc1_wrapper/tb_decoder_r64_k1_serial_rank_lpc1_wrapper.v:293: $finish called at 2040000 (1ps)"
+      ],
+      "returncode": 0,
+      "status": "ok"
+    },
+    "status": "ok",
+    "synthesis": {
+      "command": "python3 npu/synth/run_block_sweep.py --design_dir runs/designs/activations/decoder_r64_k1_serial_rank_lpc1_wrapper --platform nangate45 --top decoder_r64_k1_serial_rank_lpc1_wrapper --sweep runs/campaigns/npu/decoder_serial_ranker_architecture/sweeps/nangate45_r64_serial.json --make_target 3_3_place_gp --out_root runs/designs/activations --force_copy",
+      "elapsed_seconds": 96.1157672710251,
+      "log_path": "control_plane/runtime_logs/decoder_serial_ranker_architecture/decoder_r64_k1_serial_rank_lpc1_wrapper_3_3_place_gp.log",
+      "log_tail": [
+        "    final |     -0.3% |     567 |      534 |         0",
+        "-------------------------------------------------------",
+        "[INFO GPL-0106] Timing-driven: worst slack 7.12e-09",
+        "[INFO GPL-0107] Timing-driven: repair_design delta area: 20.748 um^2 (+0.11%)",
+        "[INFO GPL-0108] Timing-driven: repair_design, gpl cells created: 15 (+0.00%)",
+        "[INFO GPL-0110] Timing-driven: new target density: 0.36084402",
+        "Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group",
+        "---------------------------------------------------------------",
+        "      320 |   0.1853 |  5.849331e+05 |   +1.41% |  1.59e-07 |      ",
+        "      330 |   0.1602 |  5.810397e+05 |   -0.67% |  2.34e-07 |      ",
+        "      340 |   0.1362 |  5.790614e+05 |   -0.34% |  3.45e-07 |      ",
+        "      350 |   0.1177 |  5.776423e+05 |   -0.25% |  5.08e-07 |      ",
+        "      360 |   0.0980 |  5.770422e+05 |   -0.10% |  7.49e-07 |      ",
+        "      360 |   0.0980 |  5.770422e+05 |          |  7.78e-07 |      ",
+        "---------------------------------------------------------------",
+        "[INFO GPL-1001] Global placement finished at iteration 360",
+        "[INFO GPL-1003] Routability mode iteration count: 275",
+        "[INFO GPL-1005] Routability final weighted congestion: 0.7462",
+        "[INFO GPL-1002] Placed Cell Area            19304.6840",
+        "[INFO GPL-1003] Available Free Area         670677.5040",
+        "[INFO GPL-1004] Minimum Feasible Density        0.0300 (cell_area / free_area)",
+        "[INFO GPL-1006]   Suggested Target Densities:",
+        "[INFO GPL-1007]     - For 90% usage of free space: 0.0320",
+        "[INFO GPL-1008]     - For 80% usage of free space: 0.0360",
+        "[INFO GPL-1009]     - For 50% usage of free space: 0.0576",
+        "[INFO GPL-1011] Original area (um^2): 18738.64",
+        "[INFO GPL-1012] Total routability artificial inflation: 545.30 (+2.91%)",
+        "[INFO GPL-1013] Total timing-driven delta area: 566.05 (+3.02%)",
+        "[INFO GPL-1014] Final placement area: 19304.68 (+3.02%)",
+        "Took 42 seconds: global_placement -density 0.36 -pad_left 0 -pad_right 0 -routability_driven -timing_driven",
+        "Report metrics stage 3, global place...",
+        "",
+        "==========================================================================",
+        "global place report_design_area",
+        "--------------------------------------------------------------------------",
+        "Design area 19305 u^2 3% utilization.",
+        "Elapsed time: 0:45.66[h:]min:sec. CPU time: user 381.66 sys 10.46 (858%). Peak memory: 616240KB.",
+        "Log                        Elapsed/s Peak Memory/MB  sha1sum .odb [0:20)",
+        "3_3_place_gp                      45            601 698d5a878434065907f1",
+        "[INFO] Running OpenROAD flow: make DESIGN_CONFIG=/orfs/flow/designs/nangate45/decoder_r64_k1_serial_rank_lpc1_wrapper/config.mk TAG=decoder_r64_k1_serial_ranker SDC_FILE=/orfs/flow/designs/nangate45/decoder_r64_k1_serial_rank_lpc1_wrapper/constraint.sdc CLOCK_PERIOD=10.0 CORE_AREA=40 40 860 860 DIE_AREA=0 0 900 900 FLOW_VARIANT=decoder_r64_k1_serial_ranker PLACE_DENSITY=0.36 SYNTH_HIERARCHICAL=1 SYNTH_KEEP_MODULES=candidate_stream_merge_fifo_k1_l16_t16_d16 TAG=decoder_r64_k1_serial_ranker TAG_PREFIX=decoder_r64_k1_serial_ranker CORE_UTILIZATION= 3_3_place_gp"
+      ],
+      "returncode": 0,
+      "status": "ok"
+    },
+    "tile_scan_cycles": 64,
+    "top": "decoder_r64_k1_serial_rank_lpc1_wrapper",
+    "verilog_dir": "runs/designs/activations/decoder_r64_k1_serial_rank_lpc1_wrapper/verilog"
+  },
+  "service_compatibility_lowest_power_feasible": {
+    "coupled_extra_cycles_after_producer": 65,
+    "coupled_latency_us_per_token": 1205.855,
+    "coupled_total_cycles": 1205855,
+    "hidden_size": 768,
+    "integration": "single_r64_ranker",
+    "macs_per_cycle": 8192,
+    "max_ranker_wait_cycles": 0,
+    "memory_bandwidth_bytes_per_cycle": 64.0,
+    "producer_done_cycles": 1205790,
+    "producer_ii_cycles": 1536,
+    "producer_lanes": 64,
+    "producer_latency_cycles": 30,
+    "producer_latency_us_per_token": 1205.79,
+    "ranker": "serial_lpc1",
+    "ranker_critical_path_ns": 2.864771333952124,
+    "ranker_family": "serial_running_best",
+    "ranker_instances": 1,
+    "ranker_pipeline_tail_cycles": 0,
+    "ranker_placed_cell_area_um2": 19304.684,
+    "ranker_service_cycles_per_producer_tile": 65,
+    "ranker_tile_service_cycles": 65,
+    "ranker_total_power_mw": 0.0065519,
+    "ranker_utilization": 0.042318,
+    "scenario": "shared_gemm_stage_serial",
+    "service_limiter": "weight_memory",
+    "throughput_margin_cycles": 1471,
+    "throughput_ok": true,
+    "tile_count": 786,
+    "vocab_size": 50257
+  },
+  "target": {
+    "lanes_per_cycle": 1,
+    "producer_ii_cycles": 384,
+    "producer_lanes": 64,
+    "top_k": 1,
+    "wrapper_role": "selected_serial_ranker_for_output_projection_producer"
+  },
+  "version": 0.1
+}
