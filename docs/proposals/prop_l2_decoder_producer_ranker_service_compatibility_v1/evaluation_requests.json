@@ -1,0 +1,32 @@
+{
+  "proposal_id": "prop_l2_decoder_producer_ranker_service_compatibility_v1",
+  "source_commit": "3bbd68263897b8f830d19f2a69d3a84121081efc",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_producer_ranker_service_compatibility_v1",
+      "task_type": "l2_campaign",
+      "objective": "Compare measured r64/k1 serial and rank-tree ranker service cycles against output-projection producer cadence.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_producer_ranker_service_compatibility",
+      "comparison_role": "producer_ranker_service",
+      "paired_baseline_item_id": "l2_decoder_producer_ranker_coupled_noc_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_output_projection_service_v1",
+        "l2_decoder_serial_ranker_architecture_v1",
+        "l2_decoder_rank_tree_architecture_v1",
+        "l2_decoder_producer_ranker_ready_valid_equivalence_v1_r2"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use measured ranker PPA/service and producer cadence to choose the next producer-coupled RTL candidate."
+      },
+      "status": "merged",
+      "merged_pr_number": 541,
+      "merge_commit": "0328c9f29cde153334d9bde27418b04564cf2582",
+      "merged_utc": "2026-05-14T09:35:33.728939Z",
+      "notes": "Merged via PR #541 and merge 0328c9f29cde153334d9bde27418b04564cf2582 at 2026-05-14T09:35:33.728939Z."
+    }
+  ]
+}

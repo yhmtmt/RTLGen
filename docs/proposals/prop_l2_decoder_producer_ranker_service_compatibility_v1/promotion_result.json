@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_producer_ranker_service_compatibility_v1",
+  "decision": "iterate",
+  "pr_number": 541,
+  "merge_commit": "0328c9f29cde153334d9bde27418b04564cf2582",
+  "merged_utc": "2026-05-14T09:35:33.728939Z"
+}
