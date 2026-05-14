@@ -1,0 +1,71 @@
+{
+  "proposal_id": "prop_l2_decoder_rank_tree_architecture_v1",
+  "created_utc": "2026-05-14T08:30:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_rank_tree_architecture",
+  "title": "Decoder deeper pipelined rank-tree architecture",
+  "hypothesis": "The r64/k1 two-stage segmented ranker improved the standalone wrapper from about 32 ns to 6.6 ns, but the remaining path may still be dominated by ranker fan-in. A deeper rank tree with smaller radix and a register after every rank level should trade additional latency and registers for lower critical path while preserving II=1 ready-valid semantics.",
+  "direct_comparison": {
+    "primary_question": "Which rank-tree radix gives the best r64/k1 timing/PPA tradeoff after registering every rank level?",
+    "include": [
+      "radix 2, 4, and 8 trees over the same 64-logit tile",
+      "a ready-valid register cut after every rank level",
+      "generated RTL simulation against the deterministic ready-valid reference",
+      "bounded nangate45 physical sweep through 3_3_place_gp",
+      "comparison against the measured two-stage radix-8/local-lanes-8 anchor"
+    ],
+    "exclude": [
+      "r128 or wider ranker tiles",
+      "full output-projection producer timing",
+      "shared SRAM or NoC arbitration",
+      "probability recovery or training"
+    ]
+  },
+  "expected_benefit": [
+    "identifies whether the 6.6 ns r64 ranker anchor is limited by radix-8 fan-in",
+    "exposes the latency versus critical-path tradeoff before scaling ranker width",
+    "keeps stream equivalence explicit before coupling the ranker to the producer"
+  ],
+  "risks": [
+    "deeper trees add latency and more rank-level registers even if throughput remains II=1",
+    "radix-2 may increase register and routing overhead enough to lose PPA despite shorter local logic",
+    "the standalone 64-logit wrapper still retains macro-style pin pressure not present inside a larger producer"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_rank_tree_architecture_v1",
+      "task_type": "l2_campaign",
+      "objective": "Measure r64/k1 rank-tree wrappers with radix 2, 4, and 8 plus a register after every rank level.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_rank_tree_architecture",
+      "cost_class": "medium",
+      "comparison_role": "ranker_pipeline_architecture",
+      "paired_baseline_item_id": "l2_decoder_pipelined_ranker_architecture_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_pipelined_ranker_architecture_v1",
+        "l2_decoder_producer_ranker_ready_valid_equivalence_v1_r2",
+        "l1_decoder_logit_rank_datapath_v1_r2",
+        "l1_decoder_candidate_stream_merge_fifo_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "If a smaller radix improves timing enough to justify latency/register overhead, use it as the r64 anchor for producer-coupled timing and r128 scaling. If radix 8 remains best, keep the two-stage shape and move to producer coupling."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_pipelined_ranker_architecture__l2_decoder_pipelined_ranker_architecture_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_producer_ranker_ready_valid_equivalence__l2_decoder_producer_ranker_ready_valid_equivalence_v1_r2.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/probe_llm_decoder_rank_tree_architecture.py",
+    "runs/campaigns/npu/decoder_rank_tree_architecture/sweeps/nangate45_r64_ranktree.json",
+    "control_plane/control_plane/services/l2_task_generator.py",
+    "tests/test_llm_decoder_rank_tree_architecture.py"
+  ]
+}
