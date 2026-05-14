@@ -239,7 +239,16 @@ def build_report(
             }
         )
 
-    first_target = rows[0] if rows else {}
+    first_target = min(
+        rows,
+        key=lambda row: (
+            _as_int(row.get("hidden_size")),
+            _as_int(row.get("vocab_size")),
+            _as_int(row.get("sequence_length")),
+            str(row.get("label", "")),
+        ),
+        default={},
+    )
     area_basis = physical.get("placed_cell_area_um2") or physical.get("die_area_um2") or 0.0
     clusters = (
         first_target.get("nm16_mac_projection", {}).get("equivalent_nm16_clusters_for_analytical_macs")
