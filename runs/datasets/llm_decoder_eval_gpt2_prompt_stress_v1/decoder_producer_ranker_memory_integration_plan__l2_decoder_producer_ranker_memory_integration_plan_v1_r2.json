@@ -1,0 +1,144 @@
+{
+  "assumptions": [
+    "Producer num_modules and producer_lanes are different axes: num_modules is measured FP16 MAC parallelism, producer_lanes is logit tile width.",
+    "The nm16 physical anchor proves bounded feasibility for the current generated producer wrapper, not an 8192-MAC output-projection array.",
+    "Latency rows are recalculated with the same weight-memory model but with measured nm16 MAC lanes to expose the physical/analytical gap.",
+    "Ready/valid stream equivalence must be validated before integrated RTL PPA is used in rankings."
+  ],
+  "inputs": {
+    "coupling_model": "decoder_output_projection_producer_ranker_coupling_v1",
+    "frontier_model": "llm_decoder_frontier_synthesis_v1",
+    "stream_contract": "npu/docs/decoder_logit_rank_streaming_hierarchy.md"
+  },
+  "integration_rows": [
+    {
+      "bottleneck_if_nm16_model_clock": "ranker",
+      "bottleneck_if_nm16_physical_clock": "producer_mac_limited",
+      "coupled_model": {
+        "coupled_latency_us_per_token": 6728.322951,
+        "macs_per_cycle": 8192,
+        "memory_share": 1.0,
+        "producer_latency_us_per_token": 401.936,
+        "ranker_candidate_memory_bytes": 6292,
+        "ranker_fifo_capacity_ok": true,
+        "ranker_latency_us_per_token": 6728.322951,
+        "ranker_required_fifo_depth_groups": 1,
+        "scenario": "shared_gemm_stage_serial"
+      },
+      "frontier_dominant_component": "output_projection_producer_ranker",
+      "hidden_size": 1024,
+      "label": "gpt2_medium_proxy",
+      "nm16_mac_projection": {
+        "analytical_compute_cycles_per_tile": 8,
+        "analytical_macs_per_cycle": 8192,
+        "equivalent_nm16_clusters_for_analytical_macs": 512,
+        "hidden_load_cycles": 8,
+        "macs_per_tile": 65536,
+        "measured_compute_cycles_per_tile": 4096,
+        "measured_ii_cycles": 4096,
+        "measured_mac_lanes_per_cycle": 16,
+        "model_clock_latency_us_per_token": 3219.464,
+        "physical_clock_latency_us_per_token": 19653.047645,
+        "tile_count": 786,
+        "weight_cycles_per_tile": 512
+      },
+      "producer_choice": {
+        "memory_share": 1.0,
+        "producer_ii_cycles": 512,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "top_k": 1,
+        "traffic_reduction_vs_materialized": 0.968701
+      },
+      "sequence_length": 128,
+      "vocab_size": 50257
+    },
+    {
+      "bottleneck_if_nm16_model_clock": "ranker",
+      "bottleneck_if_nm16_physical_clock": "producer_mac_limited",
+      "coupled_model": {
+        "coupled_latency_us_per_token": 5046.275694,
+        "macs_per_cycle": 8192,
+        "memory_share": 1.0,
+        "producer_latency_us_per_token": 301.452,
+        "ranker_candidate_memory_bytes": 6292,
+        "ranker_fifo_capacity_ok": true,
+        "ranker_latency_us_per_token": 5046.275694,
+        "ranker_required_fifo_depth_groups": 1,
+        "scenario": "shared_gemm_stage_serial"
+      },
+      "frontier_dominant_component": "output_projection_producer_ranker",
+      "hidden_size": 768,
+      "label": "gpt2_small",
+      "nm16_mac_projection": {
+        "analytical_compute_cycles_per_tile": 6,
+        "analytical_macs_per_cycle": 8192,
+        "equivalent_nm16_clusters_for_analytical_macs": 512,
+        "hidden_load_cycles": 6,
+        "macs_per_tile": 49152,
+        "measured_compute_cycles_per_tile": 3072,
+        "measured_ii_cycles": 3072,
+        "measured_mac_lanes_per_cycle": 16,
+        "model_clock_latency_us_per_token": 2414.598,
+        "physical_clock_latency_us_per_token": 14739.785734,
+        "tile_count": 786,
+        "weight_cycles_per_tile": 384
+      },
+      "producer_choice": {
+        "memory_share": 1.0,
+        "producer_ii_cycles": 384,
+        "producer_lanes": 64,
+        "service_limiter": "weight_memory",
+        "top_k": 1,
+        "traffic_reduction_vs_materialized": 0.968701
+      },
+      "sequence_length": 128,
+      "vocab_size": 50257
+    }
+  ],
+  "model": "decoder_producer_ranker_memory_integration_plan_v1",
+  "producer_config_summary": {
+    "lanes_per_module": 1,
+    "mac_lanes_per_cycle": 16,
+    "mac_source": "gemm_mac_fp16_ieee",
+    "mac_type": "fp16",
+    "num_modules": 16
+  },
+  "producer_physical_anchor": {
+    "boundary_kind": "physical",
+    "critical_path_ns": 6.10444708970485,
+    "die_area_note": "die_area is the bounded floorplan area; placed_cell_area is preferred for extrapolation when present.",
+    "die_area_um2": 4840000.0,
+    "make_target": "3_3_place_gp",
+    "num_modules": 16,
+    "placed_cell_area_um2": 597643.1212,
+    "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm16_producer/work/3a2fb3e1/result.json",
+    "source_decision": "producer_physical_boundary_not_reached",
+    "synthesis_elapsed_seconds": 822.8356093889743,
+    "total_power_mw": 0.254279
+  },
+  "recommendation": {
+    "implementation_order": [
+      "add producer-to-ranker LogitTileStream/CandidateStream ready-valid equivalence harness",
+      "measure a macro-style r64/k1 wrapper with one-entry skid buffers and no exposed scalar logit pins",
+      "only then scale producer MAC parallelism or shared-memory/NoC arbitration"
+    ],
+    "large_array_gap": {
+      "analytical_macs_per_cycle": 8192,
+      "area_basis_kind": "placed_cell_area",
+      "area_basis_um2_per_nm16_cluster": 597643.1212,
+      "do_not_charge_padded_die_area_blindly": true,
+      "equivalent_nm16_clusters": 512
+    },
+    "next_target": {
+      "hidden_size": 768,
+      "measured_mac_lanes_per_cycle": 16,
+      "name": "r64_k1_nm16_ready_valid_equivalence",
+      "producer_lanes": 64,
+      "reason": "Use the smallest focus row that already dominates the frontier before attempting larger producer parallelism.",
+      "top_k": 1,
+      "vocab_size": 50257
+    }
+  },
+  "version": 0.1
+}
