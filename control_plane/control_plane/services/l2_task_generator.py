@@ -2390,6 +2390,48 @@ def _decoder_output_projection_producer_synth_boundary_evidence(*, item_id: str)
     }
 
 
+def _decoder_output_projection_producer_pnr_feasibility_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_output_projection_producer_pnr_feasibility__{item_id}.json"
+    report = f"{base}/decoder_output_projection_producer_pnr_feasibility__{item_id}.md"
+    configs = [
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm8_producer/config_nm8_producer.json",
+    ]
+    sweep = "runs/campaigns/npu/output_projection_producer_scale/sweeps/nangate45_synth_boundary.json"
+    return {
+        "inputs": {
+            "producer_synth_boundary_out": out,
+            "producer_synth_boundary_report": report,
+            "producer_synth_boundary_configs": configs,
+            "producer_synth_boundary_sweep": sweep,
+            "producer_synth_boundary_make_target": "3_3_place_gp",
+            "producer_synth_boundary_scope": (
+                "Probe full physical implementation feasibility for the post-scoreboard nm8 "
+                "decoder output-projection producer using the same bounded producer floorplan "
+                "before attempting nm16 PnR."
+            ),
+        },
+        "commands": [
+            {
+                "name": "probe_decoder_output_projection_producer_pnr_feasibility",
+                "run": (
+                    "python3 npu/eval/probe_decoder_producer_synth_boundary.py "
+                    f"--configs {','.join(configs)} "
+                    f"--sweep {sweep} "
+                    "--platform nangate45 "
+                    "--top npu_top "
+                    "--make-target 3_3_place_gp "
+                    "--timeout-seconds 3600 "
+                    "--stall-timeout-seconds 1200 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_output_projection_producer_isolated_synth_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_output_projection_producer_isolated_synth__{item_id}.json"
@@ -3024,6 +3066,7 @@ def _build_payload(
         "decoder_stage_breakdown",
         "decoder_attention_kv_memory",
         "decoder_frontier_synthesis",
+        "decoder_output_projection_producer_pnr_feasibility",
         "decoder_output_projection_producer_synth_boundary",
         "decoder_output_projection_producer_isolated_synth",
         "decoder_output_projection_producer_top_ablation",
@@ -3041,6 +3084,8 @@ def _build_payload(
             decoder_evidence = _decoder_output_projection_producer_top_ablation_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_producer_isolated_synth":
             decoder_evidence = _decoder_output_projection_producer_isolated_synth_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_output_projection_producer_pnr_feasibility":
+            decoder_evidence = _decoder_output_projection_producer_pnr_feasibility_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_producer_synth_boundary":
             decoder_evidence = _decoder_output_projection_producer_synth_boundary_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_frontier_synthesis":

@@ -2,6 +2,7 @@ from pathlib import Path
 
 from npu.eval.probe_decoder_producer_synth_boundary import (
     REPO_ROOT,
+    build_diagnosis,
     find_infeasible_match,
     load_infeasible_registry,
     load_json,
@@ -148,3 +149,13 @@ def test_portable_metrics_row_prefers_repo_relative_work_result_for_external_res
     assert row["result_path"] == "runs/designs/npu_blocks/demo/work/abcd/result.json"
     assert row["work_result_json"] == "runs/designs/npu_blocks/demo/work/abcd/result.json"
     assert row["synth_script_path"] == ""
+
+
+def test_build_diagnosis_uses_physical_boundary_for_place_target() -> None:
+    diagnosis = build_diagnosis(
+        [{"num_modules": 8, "status": "ok"}],
+        make_target="3_3_place_gp",
+    )
+
+    assert diagnosis["decision"] == "producer_physical_boundary_not_reached"
+    assert diagnosis["feasible_max_num_modules"] == 8
