@@ -5,6 +5,7 @@ from npu.eval.probe_decoder_producer_synth_boundary import (
     find_infeasible_match,
     load_infeasible_registry,
     load_json,
+    portable_metrics_row,
     probe_config,
 )
 
@@ -132,3 +133,18 @@ def test_infeasible_registry_matches_when_required_source_text_exists(tmp_path: 
     )
 
     assert match is not None
+
+
+def test_portable_metrics_row_prefers_repo_relative_work_result_for_external_result_path() -> None:
+    row = portable_metrics_row(
+        {
+            "status": "ok",
+            "result_path": "/orfs/flow/results/nangate45/demo/1_2_yosys.v",
+            "work_result_json": "runs/designs/npu_blocks/demo/work/abcd/result.json",
+            "synth_script_path": "/orfs/flow/scripts/synth.tcl",
+        }
+    )
+
+    assert row["result_path"] == "runs/designs/npu_blocks/demo/work/abcd/result.json"
+    assert row["work_result_json"] == "runs/designs/npu_blocks/demo/work/abcd/result.json"
+    assert row["synth_script_path"] == ""

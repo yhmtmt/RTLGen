@@ -2339,11 +2339,26 @@ def _decoder_output_projection_producer_synth_boundary_evidence(*, item_id: str)
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_output_projection_producer_synth_boundary__{item_id}.json"
     report = f"{base}/decoder_output_projection_producer_synth_boundary__{item_id}.md"
-    configs = [
-        "runs/designs/npu_blocks/npu_fp16_cpp_nm2_producer/config_nm2_producer.json",
-        "runs/designs/npu_blocks/npu_fp16_cpp_nm3_producer/config_nm3_producer.json",
-        "runs/designs/npu_blocks/npu_fp16_cpp_nm4_producer/config_nm4_producer.json",
-    ]
+    if "nm8_nm16" in item_id:
+        configs = [
+            "runs/designs/npu_blocks/npu_fp16_cpp_nm8_producer/config_nm8_producer.json",
+            "runs/designs/npu_blocks/npu_fp16_cpp_nm16_producer/config_nm16_producer.json",
+        ]
+        scope = (
+            "Extend the post-scoreboard decoder output-projection producer synthesis boundary "
+            "by probing nm8 and nm16 with a synth-only target and explicit timeout before "
+            "retrying full PnR."
+        )
+    else:
+        configs = [
+            "runs/designs/npu_blocks/npu_fp16_cpp_nm2_producer/config_nm2_producer.json",
+            "runs/designs/npu_blocks/npu_fp16_cpp_nm3_producer/config_nm3_producer.json",
+            "runs/designs/npu_blocks/npu_fp16_cpp_nm4_producer/config_nm4_producer.json",
+        ]
+        scope = (
+            "Bound decoder output-projection producer synthesis by probing nm2, nm3, "
+            "and nm4 with a synth-only target and explicit timeout before retrying full PnR."
+        )
     sweep = "runs/campaigns/npu/output_projection_producer_scale/sweeps/nangate45_synth_boundary.json"
     return {
         "inputs": {
@@ -2352,10 +2367,7 @@ def _decoder_output_projection_producer_synth_boundary_evidence(*, item_id: str)
             "producer_synth_boundary_configs": configs,
             "producer_synth_boundary_sweep": sweep,
             "producer_synth_boundary_make_target": "1_2_yosys",
-            "producer_synth_boundary_scope": (
-                "Bound decoder output-projection producer synthesis by probing nm2, nm3, "
-                "and nm4 with a synth-only target and explicit timeout before retrying full PnR."
-            ),
+            "producer_synth_boundary_scope": scope,
         },
         "commands": [
             {
