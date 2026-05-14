@@ -1,0 +1,389 @@
+{
+  "assumptions": [
+    "All variants preserve a 64-logit tile and top-k=1 stream contract.",
+    "Every rank level is separated by a ready-valid register cut, so added latency is tolerated while II=1 is preserved.",
+    "The radix controls ranker fan-in and pipeline depth: radix 8 reproduces the prior two-stage 8x8 shape, radix 4 and 2 test deeper trees."
+  ],
+  "best_timing_variant": {
+    "critical_path_ns": "3.0732257499439135",
+    "die_area": "810000.0",
+    "pipeline_stages": 6,
+    "radix": 2,
+    "top": "decoder_r64_k1_ranktree_radix2_pipe6_wrapper",
+    "total_power_mw": "0.0150608"
+  },
+  "decision": {
+    "decision": "rank_tree_architecture_measured",
+    "next_step": "Use the best radix as the r64 ranker anchor, then test producer-coupled timing and r128 scaling."
+  },
+  "model": "decoder_rank_tree_architecture_v1",
+  "target": {
+    "explored_radices": [
+      2,
+      4,
+      8
+    ],
+    "make_target": "3_3_place_gp",
+    "pipeline_register_cuts": [
+      "after_each_rank_level"
+    ],
+    "producer_lanes": 64,
+    "sweep": "runs/campaigns/npu/decoder_rank_tree_architecture/sweeps/nangate45_r64_ranktree.json",
+    "top_k": 1
+  },
+  "variants": [
+    {
+      "config_manifest": "runs/designs/activations/decoder_r64_k1_ranktree_radix2_pipe6_wrapper/config_decoder_r64_k1_ranktree_radix2_pipe6_wrapper.json",
+      "design_dir": "runs/designs/activations/decoder_r64_k1_ranktree_radix2_pipe6_wrapper",
+      "generated_verilog": [
+        "runs/designs/activations/decoder_r64_k1_ranktree_radix2_pipe6_wrapper/verilog/candidate_stream_merge_fifo_k1_l16_t16_d16.v",
+        "runs/designs/activations/decoder_r64_k1_ranktree_radix2_pipe6_wrapper/verilog/decoder_r64_k1_ranktree_radix2_pipe6_wrapper.v",
+        "runs/designs/activations/decoder_r64_k1_ranktree_radix2_pipe6_wrapper/verilog/logit_rank_r2_l16_k1.v"
+      ],
+      "levels": [
+        {
+          "dest_count": 32,
+          "level": 0,
+          "source_count": 64
+        },
+        {
+          "dest_count": 16,
+          "level": 1,
+          "source_count": 32
+        },
+        {
+          "dest_count": 8,
+          "level": 2,
+          "source_count": 16
+        },
+        {
+          "dest_count": 4,
+          "level": 3,
+          "source_count": 8
+        },
+        {
+          "dest_count": 2,
+          "level": 4,
+          "source_count": 4
+        },
+        {
+          "dest_count": 1,
+          "level": 5,
+          "source_count": 2
+        }
+      ],
+      "metrics_row": {
+        "config_hash": "d8d84a6898fa",
+        "critical_path_ns": "3.0732257499439135",
+        "design": "decoder_r64_k1_ranktree_radix2_pipe6_wrapper",
+        "die_area": "810000.0",
+        "flow_elapsed_seconds": "115.69999999999999",
+        "param_hash": "367af298",
+        "params_json": "{\"CLOCK_PERIOD\": 10.0, \"CORE_AREA\": \"40 40 860 860\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 900 900\", \"FLOW_VARIANT\": \"decoder_r64_k1_ranktree\", \"PLACE_DENSITY\": 0.36, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_KEEP_MODULES\": \"candidate_stream_merge_fifo_k1_l16_t16_d16\", \"TAG\": \"decoder_r64_k1_ranktree\", \"tag_prefix\": \"decoder_r64_k1_ranktree\"}",
+        "platform": "nangate45",
+        "result_path": "",
+        "stage_elapsed_seconds": "49.7",
+        "status": "ok",
+        "synth_script_path": "",
+        "synth_script_sha1": "",
+        "tag": "decoder_r64_k1_ranktree",
+        "total_power_mw": "0.0150608",
+        "work_result_json": "runs/designs/activations/decoder_r64_k1_ranktree_radix2_pipe6_wrapper/work/367af298/result.json"
+      },
+      "pipeline_stages": 6,
+      "radix": 2,
+      "returncodes": {
+        "merge": 0,
+        "rank": 0
+      },
+      "simulation": {
+        "expected": {
+          "logit": 500,
+          "token": 5
+        },
+        "log_tail": [
+          "RESULT token=5 logit=500 accepted=3 stalls=0 fifo_max=1 final_cycle=13",
+          "/tmp/rtlcp-worktree-nh2cvu6u/repo/runs/designs/activations/decoder_r64_k1_ranktree_radix2_pipe6_wrapper/tb_decoder_r64_k1_ranktree_radix2_pipe6_wrapper.v:293: $finish called at 170000 (1ps)"
+        ],
+        "returncode": 0,
+        "status": "ok"
+      },
+      "status": "ok",
+      "synthesis": {
+        "command": "python3 npu/synth/run_block_sweep.py --design_dir runs/designs/activations/decoder_r64_k1_ranktree_radix2_pipe6_wrapper --platform nangate45 --top decoder_r64_k1_ranktree_radix2_pipe6_wrapper --sweep runs/campaigns/npu/decoder_rank_tree_architecture/sweeps/nangate45_r64_ranktree.json --make_target 3_3_place_gp --out_root runs/designs/activations --force_copy",
+        "elapsed_seconds": 122.13718284998322,
+        "log_path": "control_plane/runtime_logs/decoder_rank_tree_architecture/decoder_r64_k1_ranktree_radix2_pipe6_wrapper_3_3_place_gp.log",
+        "log_tail": [
+          "    20000 |     +0.1% |     441 |      467 |       765",
+          "    final |     +0.1% |     543 |      581 |         0",
+          "-------------------------------------------------------",
+          "[INFO GPL-0106] Timing-driven: worst slack 6.95e-09",
+          "[INFO GPL-0107] Timing-driven: repair_design delta area: 79.002 um^2 (+0.23%)",
+          "[INFO GPL-0108] Timing-driven: repair_design, gpl cells created: 71 (+0.00%)",
+          "[INFO GPL-0110] Timing-driven: new target density: 0.36094236",
+          "Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group",
+          "---------------------------------------------------------------",
+          "      360 |   0.1680 |  4.241183e+05 |   +4.24% |  2.43e-07 |      ",
+          "      370 |   0.1460 |  4.200308e+05 |   -0.96% |  3.57e-07 |      ",
+          "      380 |   0.1264 |  4.180019e+05 |   -0.48% |  5.27e-07 |      ",
+          "      390 |   0.1074 |  4.168443e+05 |   -0.28% |  7.76e-07 |      ",
+          "      395 |   0.0992 |  4.163608e+05 |          |  9.79e-07 |      ",
+          "---------------------------------------------------------------",
+          "[INFO GPL-1001] Global placement finished at iteration 395",
+          "[INFO GPL-1003] Routability mode iteration count: 98",
+          "[INFO GPL-1005] Routability final weighted congestion: 0.7013",
+          "[INFO GPL-1002] Placed Cell Area            33983.0960",
+          "[INFO GPL-1003] Available Free Area         670677.5040",
+          "[INFO GPL-1004] Minimum Feasible Density        0.0500 (cell_area / free_area)",
+          "[INFO GPL-1006]   Suggested Target Densities:",
+          "[INFO GPL-1007]     - For 90% usage of free space: 0.0563",
+          "[INFO GPL-1008]     - For 80% usage of free space: 0.0633",
+          "[INFO GPL-1009]     - For 50% usage of free space: 0.1013",
+          "[INFO GPL-1011] Original area (um^2): 33351.08",
+          "[INFO GPL-1012] Total routability artificial inflation: 553.01 (+1.66%)",
+          "[INFO GPL-1013] Total timing-driven delta area: 632.02 (+1.90%)",
+          "[INFO GPL-1014] Final placement area: 33983.10 (+1.90%)",
+          "Took 44 seconds: global_placement -density 0.36 -pad_left 0 -pad_right 0 -routability_driven -timing_driven",
+          "Report metrics stage 3, global place...",
+          "",
+          "==========================================================================",
+          "global place report_design_area",
+          "--------------------------------------------------------------------------",
+          "Design area 33983 u^2 5% utilization.",
+          "Elapsed time: 0:49.70[h:]min:sec. CPU time: user 348.92 sys 14.82 (731%). Peak memory: 627808KB.",
+          "Log                        Elapsed/s Peak Memory/MB  sha1sum .odb [0:20)",
+          "3_3_place_gp                      49            613 e308b128dff34f95f468",
+          "[INFO] Running OpenROAD flow: make DESIGN_CONFIG=/orfs/flow/designs/nangate45/decoder_r64_k1_ranktree_radix2_pipe6_wrapper/config.mk TAG=decoder_r64_k1_ranktree SDC_FILE=/orfs/flow/designs/nangate45/decoder_r64_k1_ranktree_radix2_pipe6_wrapper/constraint.sdc CLOCK_PERIOD=10.0 CORE_AREA=40 40 860 860 DIE_AREA=0 0 900 900 FLOW_VARIANT=decoder_r64_k1_ranktree PLACE_DENSITY=0.36 SYNTH_HIERARCHICAL=1 SYNTH_KEEP_MODULES=candidate_stream_merge_fifo_k1_l16_t16_d16 TAG=decoder_r64_k1_ranktree TAG_PREFIX=decoder_r64_k1_ranktree CORE_UTILIZATION= 3_3_place_gp"
+        ],
+        "returncode": 0,
+        "status": "ok"
+      },
+      "top": "decoder_r64_k1_ranktree_radix2_pipe6_wrapper",
+      "verilog_dir": "runs/designs/activations/decoder_r64_k1_ranktree_radix2_pipe6_wrapper/verilog"
+    },
+    {
+      "config_manifest": "runs/designs/activations/decoder_r64_k1_ranktree_radix4_pipe3_wrapper/config_decoder_r64_k1_ranktree_radix4_pipe3_wrapper.json",
+      "design_dir": "runs/designs/activations/decoder_r64_k1_ranktree_radix4_pipe3_wrapper",
+      "generated_verilog": [
+        "runs/designs/activations/decoder_r64_k1_ranktree_radix4_pipe3_wrapper/verilog/candidate_stream_merge_fifo_k1_l16_t16_d16.v",
+        "runs/designs/activations/decoder_r64_k1_ranktree_radix4_pipe3_wrapper/verilog/decoder_r64_k1_ranktree_radix4_pipe3_wrapper.v",
+        "runs/designs/activations/decoder_r64_k1_ranktree_radix4_pipe3_wrapper/verilog/logit_rank_r4_l16_k1.v"
+      ],
+      "levels": [
+        {
+          "dest_count": 16,
+          "level": 0,
+          "source_count": 64
+        },
+        {
+          "dest_count": 4,
+          "level": 1,
+          "source_count": 16
+        },
+        {
+          "dest_count": 1,
+          "level": 2,
+          "source_count": 4
+        }
+      ],
+      "metrics_row": {
+        "config_hash": "5e28f270cd02",
+        "critical_path_ns": "4.35477479282159",
+        "design": "decoder_r64_k1_ranktree_radix4_pipe3_wrapper",
+        "die_area": "810000.0",
+        "flow_elapsed_seconds": "121.87",
+        "param_hash": "367af298",
+        "params_json": "{\"CLOCK_PERIOD\": 10.0, \"CORE_AREA\": \"40 40 860 860\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 900 900\", \"FLOW_VARIANT\": \"decoder_r64_k1_ranktree\", \"PLACE_DENSITY\": 0.36, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_KEEP_MODULES\": \"candidate_stream_merge_fifo_k1_l16_t16_d16\", \"TAG\": \"decoder_r64_k1_ranktree\", \"tag_prefix\": \"decoder_r64_k1_ranktree\"}",
+        "platform": "nangate45",
+        "result_path": "",
+        "stage_elapsed_seconds": "50.87",
+        "status": "ok",
+        "synth_script_path": "",
+        "synth_script_sha1": "",
+        "tag": "decoder_r64_k1_ranktree",
+        "total_power_mw": "0.0114306",
+        "work_result_json": "runs/designs/activations/decoder_r64_k1_ranktree_radix4_pipe3_wrapper/work/367af298/result.json"
+      },
+      "pipeline_stages": 3,
+      "radix": 4,
+      "returncodes": {
+        "merge": 0,
+        "rank": 0
+      },
+      "simulation": {
+        "expected": {
+          "logit": 500,
+          "token": 5
+        },
+        "log_tail": [
+          "RESULT token=5 logit=500 accepted=3 stalls=0 fifo_max=1 final_cycle=10",
+          "/tmp/rtlcp-worktree-nh2cvu6u/repo/runs/designs/activations/decoder_r64_k1_ranktree_radix4_pipe3_wrapper/tb_decoder_r64_k1_ranktree_radix4_pipe3_wrapper.v:293: $finish called at 140000 (1ps)"
+        ],
+        "returncode": 0,
+        "status": "ok"
+      },
+      "status": "ok",
+      "synthesis": {
+        "command": "python3 npu/synth/run_block_sweep.py --design_dir runs/designs/activations/decoder_r64_k1_ranktree_radix4_pipe3_wrapper --platform nangate45 --top decoder_r64_k1_ranktree_radix4_pipe3_wrapper --sweep runs/campaigns/npu/decoder_rank_tree_architecture/sweeps/nangate45_r64_ranktree.json --make_target 3_3_place_gp --out_root runs/designs/activations --force_copy",
+        "elapsed_seconds": 128.15520695003215,
+        "log_path": "control_plane/runtime_logs/decoder_rank_tree_architecture/decoder_r64_k1_ranktree_radix4_pipe3_wrapper_3_3_place_gp.log",
+        "log_tail": [
+          "    17000 |     +0.2% |     413 |      475 |       382",
+          "    final |     +0.2% |     466 |      535 |         0",
+          "-------------------------------------------------------",
+          "[INFO GPL-0106] Timing-driven: worst slack 5.68e-09",
+          "[INFO GPL-0107] Timing-driven: repair_design delta area: 98.952 um^2 (+0.41%)",
+          "[INFO GPL-0108] Timing-driven: repair_design, gpl cells created: 99 (+0.00%)",
+          "[INFO GPL-0110] Timing-driven: new target density: 0.36086184",
+          "Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group",
+          "---------------------------------------------------------------",
+          "      350 |   0.1843 |  3.675367e+05 |   +3.91% |  2.49e-07 |      ",
+          "      360 |   0.1576 |  3.654812e+05 |   -0.56% |  3.67e-07 |      ",
+          "      370 |   0.1354 |  3.659909e+05 |   +0.14% |  5.41e-07 |      ",
+          "      380 |   0.1148 |  3.661737e+05 |   +0.05% |  7.97e-07 |      ",
+          "      389 |   0.0988 |  3.670593e+05 |          |  1.17e-06 |      ",
+          "---------------------------------------------------------------",
+          "[INFO GPL-1001] Global placement finished at iteration 389",
+          "[INFO GPL-1003] Routability mode iteration count: 97",
+          "[INFO GPL-1005] Routability final weighted congestion: 0.6897",
+          "[INFO GPL-1002] Placed Cell Area            24452.3160",
+          "[INFO GPL-1003] Available Free Area         670677.5040",
+          "[INFO GPL-1004] Minimum Feasible Density        0.0400 (cell_area / free_area)",
+          "[INFO GPL-1006]   Suggested Target Densities:",
+          "[INFO GPL-1007]     - For 90% usage of free space: 0.0405",
+          "[INFO GPL-1008]     - For 80% usage of free space: 0.0456",
+          "[INFO GPL-1009]     - For 50% usage of free space: 0.0729",
+          "[INFO GPL-1011] Original area (um^2): 23874.30",
+          "[INFO GPL-1012] Total routability artificial inflation: 479.07 (+2.01%)",
+          "[INFO GPL-1013] Total timing-driven delta area: 578.02 (+2.42%)",
+          "[INFO GPL-1014] Final placement area: 24452.32 (+2.42%)",
+          "Took 46 seconds: global_placement -density 0.36 -pad_left 0 -pad_right 0 -routability_driven -timing_driven",
+          "Report metrics stage 3, global place...",
+          "",
+          "==========================================================================",
+          "global place report_design_area",
+          "--------------------------------------------------------------------------",
+          "Design area 24452 u^2 4% utilization.",
+          "Elapsed time: 0:50.87[h:]min:sec. CPU time: user 344.89 sys 13.16 (703%). Peak memory: 619644KB.",
+          "Log                        Elapsed/s Peak Memory/MB  sha1sum .odb [0:20)",
+          "3_3_place_gp                      50            605 683864deebecaacf779d",
+          "[INFO] Running OpenROAD flow: make DESIGN_CONFIG=/orfs/flow/designs/nangate45/decoder_r64_k1_ranktree_radix4_pipe3_wrapper/config.mk TAG=decoder_r64_k1_ranktree SDC_FILE=/orfs/flow/designs/nangate45/decoder_r64_k1_ranktree_radix4_pipe3_wrapper/constraint.sdc CLOCK_PERIOD=10.0 CORE_AREA=40 40 860 860 DIE_AREA=0 0 900 900 FLOW_VARIANT=decoder_r64_k1_ranktree PLACE_DENSITY=0.36 SYNTH_HIERARCHICAL=1 SYNTH_KEEP_MODULES=candidate_stream_merge_fifo_k1_l16_t16_d16 TAG=decoder_r64_k1_ranktree TAG_PREFIX=decoder_r64_k1_ranktree CORE_UTILIZATION= 3_3_place_gp"
+        ],
+        "returncode": 0,
+        "status": "ok"
+      },
+      "top": "decoder_r64_k1_ranktree_radix4_pipe3_wrapper",
+      "verilog_dir": "runs/designs/activations/decoder_r64_k1_ranktree_radix4_pipe3_wrapper/verilog"
+    },
+    {
+      "config_manifest": "runs/designs/activations/decoder_r64_k1_ranktree_radix8_pipe2_wrapper/config_decoder_r64_k1_ranktree_radix8_pipe2_wrapper.json",
+      "design_dir": "runs/designs/activations/decoder_r64_k1_ranktree_radix8_pipe2_wrapper",
+      "generated_verilog": [
+        "runs/designs/activations/decoder_r64_k1_ranktree_radix8_pipe2_wrapper/verilog/candidate_stream_merge_fifo_k1_l16_t16_d16.v",
+        "runs/designs/activations/decoder_r64_k1_ranktree_radix8_pipe2_wrapper/verilog/decoder_r64_k1_ranktree_radix8_pipe2_wrapper.v",
+        "runs/designs/activations/decoder_r64_k1_ranktree_radix8_pipe2_wrapper/verilog/logit_rank_r8_l16_k1.v"
+      ],
+      "levels": [
+        {
+          "dest_count": 8,
+          "level": 0,
+          "source_count": 64
+        },
+        {
+          "dest_count": 1,
+          "level": 1,
+          "source_count": 8
+        }
+      ],
+      "metrics_row": {
+        "config_hash": "526c0884c167",
+        "critical_path_ns": "6.867424372489098",
+        "design": "decoder_r64_k1_ranktree_radix8_pipe2_wrapper",
+        "die_area": "810000.0",
+        "flow_elapsed_seconds": "102.62",
+        "param_hash": "367af298",
+        "params_json": "{\"CLOCK_PERIOD\": 10.0, \"CORE_AREA\": \"40 40 860 860\", \"CORE_UTILIZATION\": \"\", \"DIE_AREA\": \"0 0 900 900\", \"FLOW_VARIANT\": \"decoder_r64_k1_ranktree\", \"PLACE_DENSITY\": 0.36, \"SYNTH_HIERARCHICAL\": 1, \"SYNTH_KEEP_MODULES\": \"candidate_stream_merge_fifo_k1_l16_t16_d16\", \"TAG\": \"decoder_r64_k1_ranktree\", \"tag_prefix\": \"decoder_r64_k1_ranktree\"}",
+        "platform": "nangate45",
+        "result_path": "",
+        "stage_elapsed_seconds": "50.0",
+        "status": "ok",
+        "synth_script_path": "",
+        "synth_script_sha1": "",
+        "tag": "decoder_r64_k1_ranktree",
+        "total_power_mw": "0.0156103",
+        "work_result_json": "runs/designs/activations/decoder_r64_k1_ranktree_radix8_pipe2_wrapper/work/367af298/result.json"
+      },
+      "pipeline_stages": 2,
+      "radix": 8,
+      "returncodes": {
+        "merge": 0,
+        "rank": 0
+      },
+      "simulation": {
+        "expected": {
+          "logit": 500,
+          "token": 5
+        },
+        "log_tail": [
+          "RESULT token=5 logit=500 accepted=3 stalls=0 fifo_max=1 final_cycle=9",
+          "/tmp/rtlcp-worktree-nh2cvu6u/repo/runs/designs/activations/decoder_r64_k1_ranktree_radix8_pipe2_wrapper/tb_decoder_r64_k1_ranktree_radix8_pipe2_wrapper.v:293: $finish called at 130000 (1ps)"
+        ],
+        "returncode": 0,
+        "status": "ok"
+      },
+      "status": "ok",
+      "synthesis": {
+        "command": "python3 npu/synth/run_block_sweep.py --design_dir runs/designs/activations/decoder_r64_k1_ranktree_radix8_pipe2_wrapper --platform nangate45 --top decoder_r64_k1_ranktree_radix8_pipe2_wrapper --sweep runs/campaigns/npu/decoder_rank_tree_architecture/sweeps/nangate45_r64_ranktree.json --make_target 3_3_place_gp --out_root runs/designs/activations --force_copy",
+        "elapsed_seconds": 110.12485749402549,
+        "log_path": "control_plane/runtime_logs/decoder_rank_tree_architecture/decoder_r64_k1_ranktree_radix8_pipe2_wrapper_3_3_place_gp.log",
+        "log_tail": [
+          "    16000 |     +0.1% |     263 |      310 |       451",
+          "    final |     +0.1% |     306 |      353 |         0",
+          "-------------------------------------------------------",
+          "[INFO GPL-0106] Timing-driven: worst slack 3.22e-09",
+          "[INFO GPL-0107] Timing-driven: repair_design delta area: 106.134 um^2 (+0.46%)",
+          "[INFO GPL-0108] Timing-driven: repair_design, gpl cells created: 99 (+0.00%)",
+          "[INFO GPL-0110] Timing-driven: new target density: 0.36054176",
+          "Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group",
+          "---------------------------------------------------------------",
+          "      350 |   0.1785 |  4.298442e+05 |   +3.04% |  2.76e-07 |      ",
+          "      360 |   0.1564 |  4.283953e+05 |   -0.34% |  4.07e-07 |      ",
+          "      370 |   0.1328 |  4.287726e+05 |   +0.09% |  6.00e-07 |      ",
+          "      380 |   0.1112 |  4.288770e+05 |   +0.02% |  8.84e-07 |      ",
+          "      387 |   0.0995 |  4.300726e+05 |          |  1.20e-06 |      ",
+          "---------------------------------------------------------------",
+          "[INFO GPL-1001] Global placement finished at iteration 387",
+          "[INFO GPL-1003] Routability mode iteration count: 92",
+          "[INFO GPL-1005] Routability final weighted congestion: 0.7163",
+          "[INFO GPL-1002] Placed Cell Area            22945.4260",
+          "[INFO GPL-1003] Available Free Area         670677.5040",
+          "[INFO GPL-1004] Minimum Feasible Density        0.0400 (cell_area / free_area)",
+          "[INFO GPL-1006]   Suggested Target Densities:",
+          "[INFO GPL-1007]     - For 90% usage of free space: 0.0380",
+          "[INFO GPL-1008]     - For 80% usage of free space: 0.0428",
+          "[INFO GPL-1009]     - For 50% usage of free space: 0.0684",
+          "[INFO GPL-1011] Original area (um^2): 22582.07",
+          "[INFO GPL-1012] Total routability artificial inflation: 257.22 (+1.14%)",
+          "[INFO GPL-1013] Total timing-driven delta area: 363.36 (+1.61%)",
+          "[INFO GPL-1014] Final placement area: 22945.43 (+1.61%)",
+          "Took 46 seconds: global_placement -density 0.36 -pad_left 0 -pad_right 0 -routability_driven -timing_driven",
+          "Report metrics stage 3, global place...",
+          "",
+          "==========================================================================",
+          "global place report_design_area",
+          "--------------------------------------------------------------------------",
+          "Design area 22945 u^2 3% utilization.",
+          "Elapsed time: 0:50.00[h:]min:sec. CPU time: user 352.05 sys 12.78 (729%). Peak memory: 612840KB.",
+          "Log                        Elapsed/s Peak Memory/MB  sha1sum .odb [0:20)",
+          "3_3_place_gp                      50            598 3d227d2d452decf4439a",
+          "[INFO] Running OpenROAD flow: make DESIGN_CONFIG=/orfs/flow/designs/nangate45/decoder_r64_k1_ranktree_radix8_pipe2_wrapper/config.mk TAG=decoder_r64_k1_ranktree SDC_FILE=/orfs/flow/designs/nangate45/decoder_r64_k1_ranktree_radix8_pipe2_wrapper/constraint.sdc CLOCK_PERIOD=10.0 CORE_AREA=40 40 860 860 DIE_AREA=0 0 900 900 FLOW_VARIANT=decoder_r64_k1_ranktree PLACE_DENSITY=0.36 SYNTH_HIERARCHICAL=1 SYNTH_KEEP_MODULES=candidate_stream_merge_fifo_k1_l16_t16_d16 TAG=decoder_r64_k1_ranktree TAG_PREFIX=decoder_r64_k1_ranktree CORE_UTILIZATION= 3_3_place_gp"
+        ],
+        "returncode": 0,
+        "status": "ok"
+      },
+      "top": "decoder_r64_k1_ranktree_radix8_pipe2_wrapper",
+      "verilog_dir": "runs/designs/activations/decoder_r64_k1_ranktree_radix8_pipe2_wrapper/verilog"
+    }
+  ],
+  "version": 0.1
+}
