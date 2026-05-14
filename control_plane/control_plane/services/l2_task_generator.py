@@ -2343,6 +2343,58 @@ def _decoder_frontier_synthesis_evidence(*, item_id: str) -> dict[str, Any]:
     }
 
 
+def _decoder_producer_ranker_memory_integration_plan_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_producer_ranker_memory_integration_plan__{item_id}.json"
+    report = f"{base}/decoder_producer_ranker_memory_integration_plan__{item_id}.md"
+    frontier = (
+        f"{base}/decoder_frontier_synthesis__"
+        "l2_decoder_frontier_synthesis_nm16_physical_v1.json"
+    )
+    producer_ranker = (
+        f"{base}/decoder_producer_ranker_coupled_noc__"
+        "l2_decoder_frontier_synthesis_nm16_physical_v1.json"
+    )
+    producer_physical = (
+        f"{base}/decoder_output_projection_producer_pnr_feasibility__"
+        "l2_decoder_output_projection_producer_pnr_nm16_v1.json"
+    )
+    producer_config = "runs/designs/npu_blocks/npu_fp16_cpp_nm16_producer/config_nm16_producer.json"
+    stream_contract = "npu/docs/decoder_logit_rank_streaming_hierarchy.md"
+    return {
+        "inputs": {
+            "integration_plan_out": out,
+            "integration_plan_report": report,
+            "frontier_synthesis": frontier,
+            "producer_ranker_coupled": producer_ranker,
+            "producer_physical_boundary": producer_physical,
+            "producer_config": producer_config,
+            "stream_contract": stream_contract,
+            "integration_plan_scope": (
+                "Reconcile the nm16 measured producer MAC lanes with the W64/W128 "
+                "producer/ranker frontier, shared memory assumptions, and ready-valid "
+                "stream equivalence requirements before queueing an integrated RTL macro."
+            ),
+        },
+        "commands": [
+            {
+                "name": "plan_decoder_producer_ranker_memory_integration",
+                "run": (
+                    "python3 npu/eval/plan_llm_decoder_producer_ranker_memory_integration.py "
+                    f"--frontier-synthesis {frontier} "
+                    f"--producer-ranker-coupled {producer_ranker} "
+                    f"--producer-physical-boundary {producer_physical} "
+                    f"--producer-config {producer_config} "
+                    f"--stream-contract {stream_contract} "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_output_projection_producer_synth_boundary_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_output_projection_producer_synth_boundary__{item_id}.json"
@@ -3075,6 +3127,7 @@ def _build_payload(
         "decoder_stage_breakdown",
         "decoder_attention_kv_memory",
         "decoder_frontier_synthesis",
+        "decoder_producer_ranker_memory_integration_plan",
         "decoder_output_projection_producer_pnr_feasibility",
         "decoder_output_projection_producer_synth_boundary",
         "decoder_output_projection_producer_isolated_synth",
@@ -3099,6 +3152,8 @@ def _build_payload(
             decoder_evidence = _decoder_output_projection_producer_synth_boundary_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_frontier_synthesis":
             decoder_evidence = _decoder_frontier_synthesis_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_producer_ranker_memory_integration_plan":
+            decoder_evidence = _decoder_producer_ranker_memory_integration_plan_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_memory":
             decoder_evidence = _decoder_attention_kv_memory_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_stage_breakdown":
