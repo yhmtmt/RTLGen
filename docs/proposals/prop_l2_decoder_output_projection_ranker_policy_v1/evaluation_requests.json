@@ -21,7 +21,11 @@
         "direction": "promote",
         "reason": "If the promoted serial and rank-tree artifacts cover every cadence row, use this policy as the contract for the next output-projection producer wrapper implementation."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 554,
+      "merge_commit": "549b814aa34734f17fce3c7b14ff833d363a9801",
+      "merged_utc": "2026-05-14T10:48:42.963415Z",
+      "notes": "Merged via PR #554 and merge 549b814aa34734f17fce3c7b14ff833d363a9801 at 2026-05-14T10:48:42.963415Z."
     }
   ]
 }
