@@ -1,0 +1,118 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-05-14T07:55:42.454383Z",
+  "item_id": "l2_decoder_producer_ranker_physical_wrapper_v1",
+  "run_key": "l2_decoder_producer_ranker_physical_wrapper_v1_run_876f6c046062d123",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "0b05f529e8920bbdd924612d2f31403e3c7a8d45",
+  "review_metadata_source_commit": "0b05f529e8920bbdd924612d2f31403e3c7a8d45",
+  "objective": "Materialize and physically probe the r64/k1 ready-valid producer-to-ranker wrapper after equivalence passed, recording bounded PPA/timing before scaling producer-ranker integration.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+    ],
+    "design_dirs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+    ],
+    "macro_manifests": [
+      "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+      "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+    ],
+    "decoder_contract": {
+      "logit_rank_config": "runs/designs/activations/logit_rank_r64_l16_k1_wrapper/config_logit_rank_r64_l16_k1.json",
+      "candidate_merge_config": "runs/designs/activations/candidate_stream_merge_fifo_k1_l16_t16_d16_wrapper/config_candidate_stream_merge_fifo_k1_l16_t16_d16.json",
+      "ready_valid_equivalence": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_producer_ranker_ready_valid_equivalence__l2_decoder_producer_ranker_ready_valid_equivalence_v1_r2.json",
+      "producer_ranker_physical_wrapper_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_producer_ranker_physical_wrapper__l2_decoder_producer_ranker_physical_wrapper_v1.json",
+      "producer_ranker_physical_wrapper_scope": "Materialize and physically probe the first r64/k1 producer-to-ranker ready-valid wrapper after stream equivalence passed. The wrapper ties logit_rank_r64_l16_k1 to candidate_stream_merge_fifo_k1_l16_t16_d16 and records bounded macro-style PPA before scaling r/w or producer coupling.",
+      "producer_ranker_physical_wrapper_sweep": "runs/campaigns/npu/decoder_producer_ranker_physical_wrapper/sweeps/nangate45_r64_k1_macro.json",
+      "producer_ranker_physical_wrapper_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_producer_ranker_physical_wrapper__l2_decoder_producer_ranker_physical_wrapper_v1.md",
+      "producer_ranker_physical_wrapper_design_dir": "runs/designs/activations/decoder_r64_k1_producer_ranker_physical_wrapper",
+      "producer_ranker_physical_wrapper_make_target": "3_3_place_gp"
+    },
+    "generated_campaign": {
+      "path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign__l2_decoder_producer_ranker_physical_wrapper_v1.json",
+      "outputs": {
+        "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_producer_ranker_physical_wrapper_v1/report.md",
+        "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_producer_ranker_physical_wrapper_v1/results.csv",
+        "campaign_dir": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_producer_ranker_physical_wrapper_v1"
+      },
+      "clean_outputs": true,
+      "base_campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json"
+    },
+    "candidate_manifests": [
+      "runs/candidates/nangate45/module_candidates.json"
+    ]
+  },
+  "recommendation": {
+    "arch_id": "fp16_nm1",
+    "macro_mode": "flat_nomacro",
+    "objective_rank": 1,
+    "objective_score": "0.0",
+    "latency_ms_mean": 0.028907999999999996,
+    "energy_mj_mean": 5.582770776e-06,
+    "critical_path_ns_mean": 5.557037432204143,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.193122,
+    "flow_elapsed_s_mean": 848.418
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_producer_ranker_physical_wrapper_v1",
+    "title": "Decoder producer/ranker r64 k1 physical wrapper",
+    "primary_question": "What is the first bounded physical PPA/timing anchor for the r64/k1 producer-to-ranker ready-valid wrapper after equivalence has passed?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "physical_wrapper",
+    "abstraction_layer": "decoder_producer_ranker_physical_wrapper",
+    "expected_direction": "iterate",
+    "expected_reason": "Use the first measured r64/k1 producer-ranker wrapper PPA before r128 or producer-coupled scaling.",
+    "summary": "Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
+    "outcome": "ranking_recorded",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_producer_ranker_physical_wrapper_v1",
+    "title": "Decoder producer/ranker r64 k1 physical wrapper",
+    "kind": "architecture",
+    "primary_question": "What is the first bounded physical PPA/timing anchor for the r64/k1 producer-to-ranker ready-valid wrapper after equivalence has passed?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "physical_wrapper",
+    "outcome": "ranking_recorded",
+    "summary": "Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": []
+  },
+  "source_refs": {
+    "best_point_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_producer_ranker_physical_wrapper_v1/best_point.json",
+    "summary_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_producer_ranker_physical_wrapper_v1/summary.csv",
+    "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_producer_ranker_physical_wrapper_v1/results.csv",
+    "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_producer_ranker_physical_wrapper_v1/report.md",
+    "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_producer_ranker_physical_wrapper_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+    "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_producer_ranker_physical_wrapper_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+    "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_producer_ranker_physical_wrapper_v1/artifacts/perf/fp16_nm1/mlp1/trace.json",
+    "focused_model_artifacts": [
+      {
+        "model_id": "mlp1",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_producer_ranker_physical_wrapper_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_producer_ranker_physical_wrapper_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_producer_ranker_physical_wrapper_v1/artifacts/perf/fp16_nm1/mlp1/trace.json"
+      },
+      {
+        "model_id": "mlp2",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_producer_ranker_physical_wrapper_v1/artifacts/mapper/fp16_nm1/mlp2/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_producer_ranker_physical_wrapper_v1/artifacts/mapper/fp16_nm1/mlp2/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_producer_ranker_physical_wrapper_v1/artifacts/perf/fp16_nm1/mlp2/trace.json"
+      }
+    ]
+  }
+}
