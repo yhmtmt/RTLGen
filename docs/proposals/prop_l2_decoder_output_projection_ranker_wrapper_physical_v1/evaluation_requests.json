@@ -1,0 +1,27 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_ranker_wrapper_physical_v1",
+  "source_commit": "3cd726e689206ffa9a2b1ea4d737c982a329f0b1",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_output_projection_ranker_wrapper_physical_v1",
+      "task_type": "l2_campaign",
+      "objective": "Generate concrete output-projection ranker policy wrappers for r64 and r128, simulate both selected paths, and measure wrapper PPA.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_output_projection_ranker_wrapper_physical",
+      "comparison_role": "producer_ranker_service",
+      "paired_baseline_item_id": "l2_decoder_output_projection_ranker_wrapper_contract_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_output_projection_ranker_policy_v1",
+        "l2_decoder_output_projection_ranker_wrapper_contract_v1",
+        "l2_decoder_resident_ranktree_fallback_promotion_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "If the muxed policy wrapper PPA is acceptable, integrate it into the output-projection producer wrapper; otherwise split serial and rank-tree wrappers or add clock/path gating."
+      },
+      "status": "pending"
+    }
+  ]
+}
