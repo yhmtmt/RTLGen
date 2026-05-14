@@ -2133,6 +2133,56 @@ def test_generate_l2_campaign_task_adds_decoder_producer_ranker_physical_wrapper
             }
 
 
+def test_generate_l2_campaign_task_adds_decoder_pipelined_ranker_architecture() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    item_id="l2_decoder_pipelined_ranker_architecture_v1",
+                    proposal_id="prop_l2_decoder_pipelined_ranker_architecture_v1",
+                    proposal_path="docs/proposals/prop_l2_decoder_pipelined_ranker_architecture_v1/proposal.json",
+                    evaluation_mode="frontier_detail",
+                    abstraction_layer="decoder_pipelined_ranker_architecture",
+                    expected_direction="iterate",
+                    comparison_role="ranker_pipeline_architecture",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+            assert [command["name"] for command in work_item.command_manifest[:3]] == [
+                "build_generator",
+                "probe_decoder_pipelined_ranker_architecture",
+                "build_runs_index",
+            ]
+            run = work_item.command_manifest[1]["run"]
+            assert "probe_llm_decoder_pipelined_ranker_architecture.py" in run
+            assert "--local-lanes 8,16,32" in run
+            assert "decoder_pipelined_ranker_architecture" in decoder_inputs[
+                "pipelined_ranker_architecture_sweep"
+            ]
+            assert decoder_inputs["unpipelined_physical_wrapper"].endswith(
+                "l2_decoder_producer_ranker_physical_wrapper_v1.json"
+            )
+            assert "runs/index.csv" in work_item.expected_outputs
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
+                "layer": "decoder_pipelined_ranker_architecture",
+            }
+
+
 def test_generate_l2_campaign_task_adds_decoder_producer_synth_boundary_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

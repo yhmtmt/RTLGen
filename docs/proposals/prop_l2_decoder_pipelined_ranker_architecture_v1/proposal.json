@@ -1,0 +1,71 @@
+{
+  "proposal_id": "prop_l2_decoder_pipelined_ranker_architecture_v1",
+  "created_utc": "2026-05-14T08:05:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_pipelined_ranker_architecture",
+  "title": "Decoder pipelined ranker architecture space",
+  "hypothesis": "The measured r64/k1 unpipelined producer-ranker wrapper is too slow because it charges a wide combinational ranker-to-merge path. Splitting the 64-logit tile into parallel local rankers, registering local winners, and registering the global winner before the merge FIFO should expose a more realistic architecture space with lower critical path at modest area/power cost.",
+  "direct_comparison": {
+    "primary_question": "Which segmented r64/k1 ranker parallelism point gives the best first timing/PPA tradeoff after adding register cuts?",
+    "include": [
+      "local ranker widths 8, 16, and 32 over the same 64-logit tile",
+      "two register cuts: after local rank winners and before candidate merge FIFO",
+      "generated RTL simulation against the deterministic ready-valid reference",
+      "bounded nangate45 physical sweep through 3_3_place_gp",
+      "comparison against the unpipelined r64/k1 physical wrapper result"
+    ],
+    "exclude": [
+      "full output-projection GEMM producer",
+      "r128 or wider ranker tiles",
+      "shared SRAM or NoC arbitration",
+      "training or probability recovery"
+    ]
+  },
+  "expected_benefit": [
+    "replaces the optimistic wide-ranker assumption with measured pipelined variants",
+    "separates local-ranker parallelism from global-selection timing",
+    "keeps stream equivalence and II=1 ready-valid semantics explicit before scaling to r128"
+  ],
+  "risks": [
+    "the top-level wrapper still exposes a 64-logit tile and may retain standalone pin-pressure artifacts",
+    "two register cuts add latency even if throughput remains II=1",
+    "a single floorplan point may need follow-up tuning for the best segmented variant"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_pipelined_ranker_architecture_v1",
+      "task_type": "l2_campaign",
+      "objective": "Measure r64/k1 segmented ranker wrappers with local rank widths 8, 16, and 32 plus register cuts after local rank and before merge FIFO.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_pipelined_ranker_architecture",
+      "cost_class": "medium",
+      "comparison_role": "ranker_pipeline_architecture",
+      "paired_baseline_item_id": "l2_decoder_producer_ranker_physical_wrapper_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_producer_ranker_physical_wrapper_v1",
+        "l2_decoder_producer_ranker_ready_valid_equivalence_v1_r2",
+        "l1_decoder_logit_rank_datapath_v1_r2",
+        "l1_decoder_candidate_stream_merge_fifo_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "If pipelined segmentation reduces the critical path versus the 32 ns unpipelined wrapper, use the best local width as the r64 anchor before r128 or producer-coupled scaling. If not, revisit ranker algorithm or stream granularity."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_producer_ranker_physical_wrapper__l2_decoder_producer_ranker_physical_wrapper_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_producer_ranker_ready_valid_equivalence__l2_decoder_producer_ranker_ready_valid_equivalence_v1_r2.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/probe_llm_decoder_pipelined_ranker_architecture.py",
+    "runs/campaigns/npu/decoder_pipelined_ranker_architecture/sweeps/nangate45_r64_pipe2.json",
+    "control_plane/control_plane/services/l2_task_generator.py",
+    "tests/test_llm_decoder_pipelined_ranker_architecture.py"
+  ]
+}
