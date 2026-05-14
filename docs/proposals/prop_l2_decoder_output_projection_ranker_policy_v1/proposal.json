@@ -1,0 +1,70 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_ranker_policy_v1",
+  "created_utc": "2026-05-14T10:45:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_output_projection_ranker_policy",
+  "title": "Decoder output-projection ranker selection policy",
+  "hypothesis": "The output-projection producer can use the low-power serial_lpc1 ranker for streaming or otherwise slow producer cadences, and switch to the promoted radix-4 rank-tree fallback for resident or cache-backed cadences that exceed the serial_lpc1 replay threshold.",
+  "direct_comparison": {
+    "primary_question": "Does a simple producer-II policy cover the full cadence sweep using only promoted artifacts: serial_lpc1 for II >= the replay-proven threshold and radix-4 rank-tree fallback for faster rows?",
+    "include": [
+      "promoted serial_lpc1 producer-coupled wrapper",
+      "output-projection cadence sensitivity rows",
+      "promoted resident-weight rank-tree fallback",
+      "coverage over r64 and r128 producer lanes",
+      "explicit conservative routing of lpc2/lpc4-safe rows to rank-tree unless lpc1 is also safe"
+    ],
+    "exclude": [
+      "new RTL synthesis",
+      "new producer burst traces",
+      "NoC or SRAM arbitration",
+      "training or probability quality effects"
+    ]
+  },
+  "expected_benefit": [
+    "converts separate serial and resident-ranktree promotions into one implementation policy",
+    "keeps the selection boundary tied to replay-observed ready-valid behavior",
+    "avoids depending on unpromoted lpc2/lpc4 rankers for near-threshold cache-backed cases"
+  ],
+  "risks": [
+    "the fixed-II policy may be too conservative for lpc2/lpc4-safe cache-backed rows",
+    "measured producer bursts may need hysteresis or buffering near the threshold",
+    "banked rank-tree routing cost is still represented by duplicated measured r64 instances"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_output_projection_ranker_policy_v1",
+      "task_type": "l2_campaign",
+      "objective": "Promote a combined output-projection ranker selection policy using serial_lpc1 for slow producer cadences and radix-4 rank-tree fallback for faster resident/cache-backed cadences.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_output_projection_ranker_policy",
+      "cost_class": "low",
+      "comparison_role": "producer_ranker_service",
+      "paired_baseline_item_id": "l2_decoder_resident_ranktree_fallback_promotion_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_serial_lpc1_producer_coupled_wrapper_v1",
+        "l2_decoder_output_projection_cadence_sensitivity_v1",
+        "l2_decoder_resident_ranktree_fallback_promotion_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "promote",
+        "reason": "If the promoted serial and rank-tree artifacts cover every cadence row, use this policy as the contract for the next output-projection producer wrapper implementation."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_serial_lpc1_producer_coupled_wrapper__l2_decoder_serial_lpc1_producer_coupled_wrapper_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_cadence_sensitivity__l2_decoder_output_projection_cadence_sensitivity_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_resident_ranktree_fallback_promotion__l2_decoder_resident_ranktree_fallback_promotion_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/promote_llm_decoder_output_projection_ranker_policy.py",
+    "tests/test_llm_decoder_output_projection_ranker_policy.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}

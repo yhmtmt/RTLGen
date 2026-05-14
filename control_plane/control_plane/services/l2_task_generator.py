@@ -2488,6 +2488,52 @@ def _decoder_resident_ranktree_fallback_promotion_evidence(*, item_id: str) -> d
     }
 
 
+def _decoder_output_projection_ranker_policy_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_output_projection_ranker_policy__{item_id}.json"
+    report = f"{base}/decoder_output_projection_ranker_policy__{item_id}.md"
+    serial_wrapper = (
+        f"{base}/decoder_serial_lpc1_producer_coupled_wrapper__"
+        "l2_decoder_serial_lpc1_producer_coupled_wrapper_v1.json"
+    )
+    cadence_sensitivity = (
+        f"{base}/decoder_output_projection_cadence_sensitivity__"
+        "l2_decoder_output_projection_cadence_sensitivity_v1.json"
+    )
+    ranktree_promotion = (
+        f"{base}/decoder_resident_ranktree_fallback_promotion__"
+        "l2_decoder_resident_ranktree_fallback_promotion_v1.json"
+    )
+    return {
+        "inputs": {
+            "output_projection_ranker_policy_out": out,
+            "output_projection_ranker_policy_report": report,
+            "serial_lpc1_producer_coupled_wrapper": serial_wrapper,
+            "output_projection_cadence_sensitivity": cadence_sensitivity,
+            "resident_ranktree_fallback_promotion": ranktree_promotion,
+            "output_projection_ranker_policy_scope": (
+                "Promote the output-projection ranker selection policy: serial_lpc1 for "
+                "producer cadences at or above the replay-proven lpc1 threshold, and radix-4 "
+                "rank-tree fallback for faster resident/cache-backed producer cadences."
+            ),
+        },
+        "commands": [
+            {
+                "name": "promote_decoder_output_projection_ranker_policy",
+                "run": (
+                    "python3 npu/eval/promote_llm_decoder_output_projection_ranker_policy.py "
+                    f"--serial-wrapper {serial_wrapper} "
+                    f"--cadence-sensitivity {cadence_sensitivity} "
+                    f"--ranktree-promotion {ranktree_promotion} "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_stage_breakdown_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_stage_breakdown__{item_id}.json"
@@ -3771,6 +3817,7 @@ def _build_payload(
         "decoder_output_projection_cadence_sensitivity",
         "decoder_resident_weight_ranker_fallback",
         "decoder_resident_ranktree_fallback_promotion",
+        "decoder_output_projection_ranker_policy",
         "decoder_stage_breakdown",
         "decoder_attention_kv_memory",
         "decoder_frontier_synthesis",
@@ -3834,6 +3881,8 @@ def _build_payload(
             decoder_evidence = _decoder_resident_weight_ranker_fallback_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_resident_ranktree_fallback_promotion":
             decoder_evidence = _decoder_resident_ranktree_fallback_promotion_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_output_projection_ranker_policy":
+            decoder_evidence = _decoder_output_projection_ranker_policy_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_service":
             decoder_evidence = _decoder_output_projection_service_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_logit_rank_streaming_producer_integrated":
