@@ -2698,6 +2698,8 @@ def test_generate_l2_campaign_task_adds_decoder_frontier_synthesis_policy_calibr
             ]
             run = work_item.command_manifest[0]["run"]
             assert "--producer-ranker-policy-calibration" in run
+            assert "l2_decoder_stage_breakdown_large_array_v2.json" in run
+            assert "l2_decoder_attention_kv_memory_broad_gqa8_v1.json" in run
             assert "l2_decoder_producer_ranker_policy_calibration_v1.json" in run
             assert decoder_inputs["decoder_frontier_synthesis_out"] == (
                 "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
