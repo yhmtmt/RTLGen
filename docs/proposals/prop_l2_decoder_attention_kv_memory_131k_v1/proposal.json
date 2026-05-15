@@ -1,0 +1,64 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_memory_131k_v1",
+  "created_utc": "2026-05-15T19:40:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_attention_kv_memory",
+  "title": "Decoder attention/KV memory sweep through 131k context",
+  "hypothesis": "Extending the attention/KV sweep to 131072 tokens will expose the context length where attention/KV memory pressure overtakes calibrated output-projection producer service.",
+  "direct_comparison": {
+    "primary_question": "At 131072-token context, which KV sharing and memory-tier choices keep attention/KV feasible, and does attention/KV become the whole-decoder bottleneck?",
+    "include": [
+      "sequence lengths through 131072",
+      "MHA, GQA4, GQA8, and MQA sharing",
+      "local SRAM, shared SRAM, HBM, and remote HBM tiers",
+      "8-bit and 16-bit KV precision",
+      "measured attention/KV tile PPA frontier context"
+    ],
+    "exclude": [
+      "new routed integrated attention subsystem",
+      "new SRAM macro generation",
+      "quality or training recovery"
+    ]
+  },
+  "expected_benefit": [
+    "closes the gap between the 131k stage breakdown and 32k attention/KV sweep",
+    "tests whether MQA/GQA8 remain adequate at larger context",
+    "feeds a refreshed calibrated frontier synthesis"
+  ],
+  "risks": [
+    "the model is analytical and uses tier bandwidth assumptions",
+    "the measured tile frontier is standalone and not integrated with SRAM/NoC arbitration",
+    "larger model labels still require matched producer rows for full frontier accounting"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_kv_memory_131k_v1",
+      "task_type": "l2_campaign",
+      "objective": "Extend decoder attention/KV memory hierarchy sweep to 131072-token context.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_memory",
+      "cost_class": "low",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_memory_broad_gqa8_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_memory_broad_gqa8_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "If 131k attention dominates under best local MQA/GQA assumptions, prioritize integrated attention/KV memory hierarchy; otherwise continue producer memory/cache exploration."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_memory__l2_decoder_attention_kv_memory_broad_gqa8_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_attention_kv_memory.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}
