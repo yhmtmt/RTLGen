@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_producer_ranker_policy_calibration_v1",
+  "decision": "iterate",
+  "pr_number": 564,
+  "merge_commit": "28c712a33c2ba41adee92f6790dbaf016ccab74d",
+  "merged_utc": "2026-05-15T10:51:34.585726Z"
+}
