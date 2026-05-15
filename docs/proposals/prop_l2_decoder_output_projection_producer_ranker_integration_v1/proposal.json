@@ -1,0 +1,68 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_producer_ranker_integration_v1",
+  "created_utc": "2026-05-15T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_output_projection_producer_ranker_integration",
+  "title": "Decoder output-projection producer/ranker integration accounting",
+  "hypothesis": "The measured output-ranker policy wrapper can be integrated with the measured output-projection producer without becoming the timing bottleneck, while its area and power overhead stay small enough to use as the next producer-side baseline.",
+  "direct_comparison": {
+    "primary_question": "When independently measured producer and output-ranker wrapper PPA are accounted together, does the ranker wrapper materially change the producer-side timing, area, or power picture?",
+    "include": [
+      "aggregate producer PPA rows from the current producer/ranker physical-wrapper campaign",
+      "measured r64 and r128 output-ranker policy-wrapper PPA",
+      "policy coverage summary for serial_lpc1 versus rank-tree selected rows",
+      "additive timing, area, and power breakdown for fp16_nm1 and fp16_nm2 producer points"
+    ],
+    "exclude": [
+      "routed monolithic producer-plus-ranker macro",
+      "clock gating for inactive ranker paths",
+      "NoC, SRAM arbitration, or attention/KV-memory integration"
+    ]
+  },
+  "expected_benefit": [
+    "turns the independently measured ranker wrapper into a producer-side accounting baseline",
+    "shows whether the wrapper is timing-dominated by the producer or needs path splitting",
+    "quantifies first-order area and power overhead before requesting a heavier routed integration"
+  ],
+  "risks": [
+    "additive accounting may understate routing interaction in a monolithic macro",
+    "wrapper power includes inactive path overhead because clock gating is not modeled",
+    "fp16_nm1 to r64 and fp16_nm2 to r128 lane mapping is an architectural convention that should be revisited for larger arrays"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_output_projection_producer_ranker_integration_v1",
+      "task_type": "l2_campaign",
+      "objective": "Account measured output-projection producer PPA together with the measured output-ranker policy-wrapper PPA and report timing/area/power overhead.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_output_projection_producer_ranker_integration",
+      "cost_class": "small",
+      "comparison_role": "producer_ranker_service",
+      "paired_baseline_item_id": "l2_decoder_producer_ranker_physical_wrapper_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_producer_ranker_physical_wrapper_v1",
+        "l2_decoder_output_projection_ranker_policy_v1",
+        "l2_decoder_output_projection_ranker_wrapper_physical_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "If accounting shows low overhead and producer-dominated timing, use it as the producer-side integration baseline; otherwise split/gate the wrapper before monolithic integration."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_producer_ranker_physical_wrapper_v1/summary.csv",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_ranker_policy__l2_decoder_output_projection_ranker_policy_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_ranker_wrapper_physical__l2_decoder_output_projection_ranker_wrapper_physical_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_output_projection_integrated_breakdown.py",
+    "tests/test_llm_decoder_output_projection_integrated_breakdown.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}
