@@ -1,0 +1,26 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_producer_memory_hierarchy_v1",
+  "source_commit": "cc9c6969225c9e16c2c7ffe58733d67aee5ddac7",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_output_projection_producer_memory_hierarchy_v1",
+      "task_type": "l2_campaign",
+      "objective": "Estimate output-projection producer latency under explicit weight-memory hierarchy assumptions after calibrated ranker service.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_output_projection_producer_memory_hierarchy",
+      "comparison_role": "producer_memory_hierarchy",
+      "paired_baseline_item_id": "l2_decoder_frontier_synthesis_policy_calibrated_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_frontier_synthesis_policy_calibrated_v1",
+        "l2_decoder_producer_ranker_policy_calibration_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "If moderate cache capacity/bandwidth removes the producer bottleneck, queue a measured resident/sharded producer; otherwise revisit output-projection mapping or external memory assumptions."
+      },
+      "status": "pending"
+    }
+  ]
+}
