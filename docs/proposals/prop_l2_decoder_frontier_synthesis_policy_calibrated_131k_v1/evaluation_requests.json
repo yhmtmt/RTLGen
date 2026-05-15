@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_frontier_synthesis_policy_calibrated_131k_v1",
-  "source_commit": "a6f4b1deaccfa28f869cd443825afb24181ea481",
+  "source_commit": "aa66b8d6c7c5f40af91e8508016f581f2a4131df",
   "requested_items": [
     {
       "item_id": "l2_decoder_frontier_synthesis_policy_calibrated_131k_v1",
@@ -19,8 +19,9 @@
       "requires_materialized_refs": true,
       "expected_result": {
         "direction": "iterate",
-        "reason": "If attention/KV dominates at 131k, prioritize integrated attention/KV memory hierarchy; if not, continue producer memory/cache measurement."
-      }
+        "reason": "Use 131k attention/KV evidence to choose integrated attention memory hierarchy versus producer memory/cache next."
+      },
+      "status": "pending"
     }
   ]
 }
