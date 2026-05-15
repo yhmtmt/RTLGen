@@ -19,7 +19,11 @@
         "direction": "iterate",
         "reason": "If producer-side request/throttle behavior matches perf-sim, queue a measured bounded physical wrapper for control logic while keeping resident storage as macro/proxy."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 576,
+      "merge_commit": "8422427fe685ce1074a07c47c8c454fdce1a14c8",
+      "merged_utc": "2026-05-15T19:09:00.852149Z",
+      "notes": "Merged via PR #576 and merge 8422427fe685ce1074a07c47c8c454fdce1a14c8 at 2026-05-15T19:09:00.852149Z."
     }
   ]
 }
