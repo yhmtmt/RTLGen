@@ -1,0 +1,25 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_memory_broad_gqa8_v1",
+  "source_commit": "a914c731cb4e248e1d2f341b92e89178757c8a04",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_kv_memory_broad_gqa8_v1",
+      "task_type": "l2_campaign",
+      "objective": "Broaden the decoder attention/KV memory sweep with GQA8, larger compute-array points, and wider NoC assumptions for long-context proxy models.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_memory",
+      "comparison_role": "memory_hierarchy",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_memory_measured_tile_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_memory_measured_tile_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use the broadened attention/KV sweep to decide whether the next measured physical work should stay on output-projection memory or shift toward KV/cache/attention data movement."
+      },
+      "status": "pending"
+    }
+  ]
+}
