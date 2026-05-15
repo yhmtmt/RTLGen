@@ -20,7 +20,11 @@
         "direction": "iterate",
         "reason": "If moderate cache capacity/bandwidth removes the producer bottleneck, queue a measured resident/sharded producer; otherwise revisit output-projection mapping or external memory assumptions."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 568,
+      "merge_commit": "c1e616d952f99832df252ee032b013817cc973d2",
+      "merged_utc": "2026-05-15T11:32:10.323407Z",
+      "notes": "Merged via PR #568 and merge c1e616d952f99832df252ee032b013817cc973d2 at 2026-05-15T11:32:10.323407Z."
     }
   ]
 }

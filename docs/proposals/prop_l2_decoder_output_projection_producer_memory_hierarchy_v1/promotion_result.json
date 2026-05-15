@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_decoder_output_projection_producer_memory_hierarchy_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "iterate",
+  "pr_number": 568,
+  "merge_commit": "c1e616d952f99832df252ee032b013817cc973d2",
+  "merged_utc": "2026-05-15T11:32:10.323407Z"
 }
