@@ -41,5 +41,6 @@
     "Do not instantiate the full 37-bank or 50-bank resident store as flip-flops.",
     "Do not claim SRAM macro PPA from this bounded interface-contract job.",
     "Do not replace the producer or ranker equivalence contracts."
-  ]
+  ],
+  "created_utc": "2026-05-15T12:09:25.916433Z"
 }
