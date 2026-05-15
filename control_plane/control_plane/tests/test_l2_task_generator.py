@@ -2868,6 +2868,62 @@ def test_generate_l2_campaign_task_adds_decoder_output_projection_weight_store_i
             }
 
 
+def test_generate_l2_campaign_task_adds_decoder_output_projection_weight_fetch_wrapper() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    item_id="l2_decoder_output_projection_weight_fetch_wrapper_v1",
+                    proposal_id="prop_l2_decoder_output_projection_weight_fetch_wrapper_v1",
+                    proposal_path=(
+                        "docs/proposals/"
+                        "prop_l2_decoder_output_projection_weight_fetch_wrapper_v1/proposal.json"
+                    ),
+                    evaluation_mode="frontier_detail",
+                    abstraction_layer="decoder_output_projection_weight_fetch_wrapper",
+                    expected_direction="iterate",
+                    comparison_role="weight_fetch_contract",
+                    paired_baseline_item_id="l2_decoder_output_projection_weight_store_interface_v1_r2",
+                    depends_on_item_ids=["l2_decoder_output_projection_weight_store_interface_v1_r2"],
+                    requires_merged_inputs=True,
+                    requires_materialized_refs=True,
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+            assert [command["name"] for command in work_item.command_manifest[:1]] == [
+                "probe_decoder_output_projection_weight_fetch_wrapper",
+            ]
+            run = work_item.command_manifest[0]["run"]
+            assert "probe_llm_decoder_output_projection_weight_fetch_wrapper.py" in run
+            assert "--outstanding-depth-list 1,4" in run
+            assert "l2_decoder_output_projection_weight_store_feasibility_v1.json" in run
+            assert decoder_inputs["weight_fetch_wrapper_out"] == (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_output_projection_weight_fetch_wrapper__"
+                "l2_decoder_output_projection_weight_fetch_wrapper_v1.json"
+            )
+            assert "request cadence" in decoder_inputs["weight_fetch_wrapper_scope"]
+            assert decoder_inputs["weight_fetch_wrapper_out"] in work_item.expected_outputs
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
+                "layer": "decoder_output_projection_weight_fetch_wrapper",
+            }
+
+
 def test_generate_l2_campaign_task_adds_decoder_producer_ranker_memory_integration_plan() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
