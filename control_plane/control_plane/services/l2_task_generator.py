@@ -3141,6 +3141,50 @@ def _decoder_output_projection_weight_store_interface_evidence(*, item_id: str) 
     }
 
 
+def _decoder_output_projection_weight_fetch_wrapper_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_output_projection_weight_fetch_wrapper__{item_id}.json"
+    report = f"{base}/decoder_output_projection_weight_fetch_wrapper__{item_id}.md"
+    feasibility = (
+        f"{base}/decoder_output_projection_weight_store_feasibility__"
+        "l2_decoder_output_projection_weight_store_feasibility_v1.json"
+    )
+    interface = (
+        f"{base}/decoder_output_projection_weight_store_interface__"
+        "l2_decoder_output_projection_weight_store_interface_v1_r2.json"
+    )
+    return {
+        "inputs": {
+            "weight_fetch_wrapper_out": out,
+            "weight_fetch_wrapper_report": report,
+            "weight_store_feasibility": feasibility,
+            "weight_store_interface": interface,
+            "weight_fetch_wrapper_scope": (
+                "Check producer-side tile request cadence, outstanding request throttling, "
+                "full-bank request masks, and response ordering against a cycle-level perf model. "
+                "This is a control-contract RTL simulation; full resident storage remains modeled "
+                "by the weight-store feasibility artifact."
+            ),
+        },
+        "commands": [
+            {
+                "name": "probe_decoder_output_projection_weight_fetch_wrapper",
+                "run": (
+                    "python3 npu/eval/probe_llm_decoder_output_projection_weight_fetch_wrapper.py "
+                    f"--weight-store-feasibility {feasibility} "
+                    "--read-latency-cycles-list 1,4,8 "
+                    "--outstanding-depth-list 1,4 "
+                    "--request-count 12 "
+                    "--address-stride 5 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_producer_ranker_memory_integration_plan_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_producer_ranker_memory_integration_plan__{item_id}.json"
@@ -4289,6 +4333,7 @@ def _build_payload(
         "decoder_output_projection_producer_memory_hierarchy",
         "decoder_output_projection_weight_store_feasibility",
         "decoder_output_projection_weight_store_interface",
+        "decoder_output_projection_weight_fetch_wrapper",
         "decoder_producer_ranker_memory_integration_plan",
         "decoder_producer_ranker_ready_valid_equivalence",
         "decoder_producer_ranker_physical_wrapper",
@@ -4329,6 +4374,8 @@ def _build_payload(
             decoder_evidence = _decoder_output_projection_weight_store_feasibility_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_weight_store_interface":
             decoder_evidence = _decoder_output_projection_weight_store_interface_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_output_projection_weight_fetch_wrapper":
+            decoder_evidence = _decoder_output_projection_weight_fetch_wrapper_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_producer_ranker_memory_integration_plan":
             decoder_evidence = _decoder_producer_ranker_memory_integration_plan_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_producer_ranker_ready_valid_equivalence":
