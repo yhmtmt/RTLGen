@@ -2714,6 +2714,53 @@ def _decoder_output_projection_producer_ranker_integration_evidence(*, item_id: 
     }
 
 
+def _decoder_producer_ranker_policy_calibration_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_producer_ranker_policy_calibration__{item_id}.json"
+    report = f"{base}/decoder_producer_ranker_policy_calibration__{item_id}.md"
+    coupled = (
+        f"{base}/decoder_producer_ranker_coupled_noc__"
+        "l2_decoder_frontier_synthesis_integrated_v1.json"
+    )
+    ranker_wrapper_physical = (
+        f"{base}/decoder_output_projection_ranker_wrapper_physical__"
+        "l2_decoder_output_projection_ranker_wrapper_physical_v1.json"
+    )
+    policy = (
+        f"{base}/decoder_output_projection_ranker_policy__"
+        "l2_decoder_output_projection_ranker_policy_v1.json"
+    )
+    return {
+        "inputs": {
+            "producer_ranker_policy_calibration_out": out,
+            "producer_ranker_policy_calibration_report": report,
+            "producer_ranker_coupled_report": coupled,
+            "output_projection_ranker_wrapper_physical": ranker_wrapper_physical,
+            "output_projection_ranker_policy": policy,
+            "producer_ranker_policy_calibration_scope": (
+                "Recompute producer/ranker coupling with measured output-ranker policy-wrapper "
+                "service latency. This preserves the old coupled report as baseline evidence while "
+                "checking whether the reported output-projection domination came from stale ranker "
+                "hierarchy latency rather than measured policy-wrapper service."
+            ),
+        },
+        "commands": [
+            {
+                "name": "calibrate_decoder_producer_ranker_policy_service",
+                "run": (
+                    "python3 npu/eval/calibrate_llm_decoder_producer_ranker_policy_service.py "
+                    f"--coupled-report {coupled} "
+                    f"--wrapper-physical {ranker_wrapper_physical} "
+                    f"--policy {policy} "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_stage_breakdown_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_stage_breakdown__{item_id}.json"
@@ -4059,6 +4106,7 @@ def _build_payload(
         "decoder_output_projection_ranker_wrapper_contract",
         "decoder_output_projection_ranker_wrapper_physical",
         "decoder_output_projection_producer_ranker_integration",
+        "decoder_producer_ranker_policy_calibration",
         "decoder_stage_breakdown",
         "decoder_attention_kv_memory",
         "decoder_frontier_synthesis",
@@ -4133,6 +4181,8 @@ def _build_payload(
             decoder_evidence = _decoder_output_projection_ranker_wrapper_physical_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_producer_ranker_integration":
             decoder_evidence = _decoder_output_projection_producer_ranker_integration_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_producer_ranker_policy_calibration":
+            decoder_evidence = _decoder_producer_ranker_policy_calibration_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_service":
             decoder_evidence = _decoder_output_projection_service_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_logit_rank_streaming_producer_integrated":
