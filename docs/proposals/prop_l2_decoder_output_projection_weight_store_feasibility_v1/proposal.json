@@ -1,0 +1,67 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_weight_store_feasibility_v1",
+  "created_utc": "2026-05-15T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_output_projection_weight_store_feasibility",
+  "title": "Decoder output-projection resident weight-store feasibility",
+  "hypothesis": "The producer memory-hierarchy speedup requires a resident/sharded weight store with very high aggregate local read bandwidth. A bounded banking and proxy storage-area estimate can decide whether a routed weight-store interface wrapper is worth measuring next.",
+  "direct_comparison": {
+    "primary_question": "Can the required resident output-projection weights and local read bandwidth be satisfied by a plausible number of SRAM banks and read ports under a coarse area envelope?",
+    "include": [
+      "resident weight capacity targets from producer memory-hierarchy results",
+      "local-cache bandwidth targets from best parallel producer rows",
+      "bank capacity sweep",
+      "bank read-width and read-port sweep",
+      "proxy storage-area budget sweep",
+      "aggregate read-width pressure"
+    ],
+    "exclude": [
+      "generated SRAM macro or CACTI invocation",
+      "routed producer datapath",
+      "NoC refill protocol",
+      "model quality or training effects"
+    ]
+  },
+  "expected_benefit": [
+    "turns the 74-99 MB resident-weight requirement into concrete bank-count and read-width targets",
+    "shows whether the next measured RTL block should be a sharded weight-store interface wrapper",
+    "prevents queueing a full producer integration if the storage and local bandwidth envelope is already implausible"
+  ],
+  "risks": [
+    "proxy area uses a coarse bitcell-area assumption and does not replace SRAM compiler output",
+    "aggregate read bandwidth assumes independent banks and a distributed producer fabric",
+    "the interface-width pressure may require floorplanning or NoC decisions not captured by this estimate"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_output_projection_weight_store_feasibility_v1",
+      "task_type": "l2_campaign",
+      "objective": "Estimate bank count, read width, and proxy storage-area feasibility for resident output-projection producer weights.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_output_projection_weight_store_feasibility",
+      "cost_class": "low",
+      "comparison_role": "producer_memory_hierarchy",
+      "paired_baseline_item_id": "l2_decoder_output_projection_producer_memory_hierarchy_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_output_projection_producer_memory_hierarchy_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "If banked storage is plausible under the proxy envelope, queue a measured sharded weight-store interface wrapper; otherwise revisit model partitioning or memory assumptions."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_producer_memory_hierarchy__l2_decoder_output_projection_producer_memory_hierarchy_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_output_projection_weight_store_feasibility.py",
+    "tests/test_llm_decoder_output_projection_weight_store_feasibility.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}
