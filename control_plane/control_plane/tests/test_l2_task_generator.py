@@ -2535,7 +2535,10 @@ def test_generate_l2_campaign_task_adds_decoder_attention_kv_memory_evidence() -
             run = work_item.command_manifest[0]["run"]
             assert "--sequence-length-list 128,512,2048,8192,32768" in run
             assert "--kv-memory-tier-list local_sram,shared_sram,hbm,remote_hbm" in run
-            assert "--kv-sharing-list mha,gqa4,mqa" in run
+            assert "--macs-per-cycle-list 8192,32768,131072,524288" in run
+            assert "--kv-sharing-list mha,gqa4,gqa8,mqa" in run
+            assert "--noc-hops-list 1,2,4,8" in run
+            assert "--noc-bandwidth-bytes-per-cycle 4096" in run
             assert "--measured-tile-metrics " in run
             assert "attention_kv_tile_hd128_kv16_l64_b512_wrapper/metrics.csv" in run
             assert decoder_inputs["attention_kv_memory_out"] == (
