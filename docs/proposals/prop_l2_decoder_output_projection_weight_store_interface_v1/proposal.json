@@ -1,0 +1,45 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_weight_store_interface_v1",
+  "title": "Decoder output-projection sharded weight-store interface contract",
+  "layer": "layer2",
+  "kind": "architecture",
+  "status": "proposed",
+  "source_commit": "",
+  "summary": "Validate a bounded RTL/perf-sim ready/valid contract for the sharded resident weight-store interface implied by the output-projection weight-store feasibility result.",
+  "motivation": [
+    "The resident output-projection weight-store feasibility result selected large bank counts and high aggregate read widths.",
+    "Those values should not be naively instantiated as a monolithic register or SRAM block in the next RTL job.",
+    "Before measuring producer-side logic, the sharded read interface needs an equivalence check against a perf-sim model so later producer integration preserves request/response ordering and data selection behavior."
+  ],
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_output_projection_weight_store_interface_v1",
+      "task_type": "l2_campaign",
+      "objective": "Probe a bounded RTL/perf-sim sharded ready/valid weight-store interface derived from the resident output-projection weight-store feasibility rows.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_output_projection_weight_store_interface",
+      "comparison_role": "weight_store_contract",
+      "paired_baseline_item_id": "l2_decoder_output_projection_weight_store_feasibility_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_output_projection_weight_store_feasibility_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "If the bounded sharded interface matches perf-sim, use the contract for a measured producer-side weight-fetch wrapper while keeping full storage PPA from the feasibility model."
+      },
+      "status": "pending"
+    }
+  ],
+  "success_criteria": [
+    "The probe reads the merged weight-store feasibility artifact.",
+    "The Python perf reference and RTL simulation agree on accepted requests, response count, and deterministic checksum for representative sharded-bank cases.",
+    "The report clearly states that full resident storage capacity and area remain proxy-modeled rather than synthesized."
+  ],
+  "non_goals": [
+    "Do not instantiate the full 37-bank or 50-bank resident store as flip-flops.",
+    "Do not claim SRAM macro PPA from this bounded interface-contract job.",
+    "Do not replace the producer or ranker equivalence contracts."
+  ]
+}
