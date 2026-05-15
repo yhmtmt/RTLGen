@@ -25,6 +25,7 @@ _ALLOWED_RUNS_SUFFIXES = {
 
 _ALLOWED_DATASET_PREFIXES = {
     "decoder_attention_kv_memory__",
+    "decoder_attention_kv_capacity_noc__",
 }
 
 _ALLOWED_DATASET_SUFFIXES = {".json", ".md"}

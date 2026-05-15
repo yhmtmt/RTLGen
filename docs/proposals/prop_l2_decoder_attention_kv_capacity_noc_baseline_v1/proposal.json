@@ -1,0 +1,69 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_capacity_noc_baseline_v1",
+  "created_utc": "2026-05-15T20:35:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_attention_kv_capacity_noc",
+  "title": "Capacity-constrained decoder attention/KV memory and NoC baseline",
+  "hypothesis": "Once local/shared SRAM placements are constrained by practical die-area-derived capacity, the optimal attention/KV memory placement will move from HBM or spill-heavy shared SRAM on small dies toward local/shared SRAM only at sufficiently large SRAM budgets.",
+  "direct_comparison": {
+    "primary_question": "How does the best feasible attention/KV memory placement move as die area, SRAM fraction, usable SRAM, density, banking, NoC bandwidth, and hop count vary?",
+    "include": [
+      "die areas 25, 50, 100, 200, and 400 mm2",
+      "SRAM area fractions 0.2, 0.4, and 0.6",
+      "usable SRAM fractions 0.55 and 0.7",
+      "bitcell area proxies 0.02, 0.05, and 0.10 um2/bit",
+      "local/shared SRAM partition fractions",
+      "bank count and bank bandwidth",
+      "NoC bandwidth and hop count",
+      "HBM bandwidth",
+      "MQA, GQA8, and MHA at 8-bit and 16-bit KV"
+    ],
+    "exclude": [
+      "cycle-accurate NoC arbitration",
+      "routed SRAM macro PPA",
+      "cache replacement policy",
+      "quality or training recovery"
+    ]
+  },
+  "expected_benefit": [
+    "prevents infeasible local-SRAM latency winners from dominating architecture selection",
+    "shows which die-size range can practically hold 131k KV cache on chip",
+    "selects the next integrated memory/NoC measurement point"
+  ],
+  "risks": [
+    "NoC scheduling is approximated as bandwidth divided by hop count",
+    "bank conflicts and arbitration are not modeled",
+    "SRAM capacity uses area proxy rather than generated macro data"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_kv_capacity_noc_baseline_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run a capacity-constrained attention/KV memory and NoC baseline sweep across die size and SRAM assumptions.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_capacity_noc",
+      "cost_class": "low",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_memory_131k_capacity_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_memory_131k_capacity_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use the capacity-feasible best points to choose the next integrated attention/KV SRAM and NoC scheduling measurement."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_memory__l2_decoder_attention_kv_memory_131k_capacity_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_attention_kv_capacity_noc.py",
+    "npu/eval/estimate_llm_decoder_attention_kv_memory.py"
+  ]
+}
