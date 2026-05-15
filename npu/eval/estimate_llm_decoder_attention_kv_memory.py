@@ -396,6 +396,7 @@ def _shape_rows(
     total_bytes = sum(stage["charged_bytes"] for stage in stages)
     total_macs = sum(stage["macs"] for stage in stages)
     total_kv_read = sum(stage["kv_read_bytes"] for stage in stages)
+    kv_cache_bytes = 2 * s * kv_width * kv_b * layers
     for stage in stages:
         stage["cycle_share"] = round(stage["cycles"] / total_cycles, 6) if total_cycles else 0.0
         stage["byte_share"] = round(stage["charged_bytes"] / total_bytes, 6) if total_bytes else 0.0
@@ -424,6 +425,9 @@ def _shape_rows(
         "total_macs": total_macs,
         "total_charged_bytes": total_bytes,
         "total_kv_read_bytes": total_kv_read,
+        "kv_cache_bytes": kv_cache_bytes,
+        "kv_cache_mib": round(kv_cache_bytes / (1024 * 1024), 6),
+        "kv_cache_sram_area_mm2_at_0p05um2_per_bit": round(kv_cache_bytes * 8 * 0.05 / 1_000_000, 6),
         "kv_read_byte_share": round(total_kv_read / total_bytes, 6) if total_bytes else 0.0,
         "attention_arithmetic_intensity_macs_per_byte": round(total_macs / total_bytes, 6) if total_bytes else 0.0,
         "kv_limited_cycle_share": round(kv_cycle_share / total_cycles, 6) if total_cycles else 0.0,
@@ -452,6 +456,9 @@ def _compact_row(row: JsonDict) -> JsonDict:
         "total_macs": row["total_macs"],
         "total_charged_bytes": row["total_charged_bytes"],
         "total_kv_read_bytes": row["total_kv_read_bytes"],
+        "kv_cache_bytes": row["kv_cache_bytes"],
+        "kv_cache_mib": row["kv_cache_mib"],
+        "kv_cache_sram_area_mm2_at_0p05um2_per_bit": row["kv_cache_sram_area_mm2_at_0p05um2_per_bit"],
         "kv_read_byte_share": row["kv_read_byte_share"],
         "kv_limited_cycle_share": row["kv_limited_cycle_share"],
         "attention_arithmetic_intensity_macs_per_byte": row["attention_arithmetic_intensity_macs_per_byte"],
@@ -612,6 +619,10 @@ def build_report(
                     "dominant_substage_share": row["dominant_substage_share"],
                     "kv_read_byte_share": row["kv_read_byte_share"],
                     "kv_limited_cycle_share": row["kv_limited_cycle_share"],
+                    "kv_cache_mib": row["kv_cache_mib"],
+                    "kv_cache_sram_area_mm2_at_0p05um2_per_bit": row[
+                        "kv_cache_sram_area_mm2_at_0p05um2_per_bit"
+                    ],
                     "effective_kv_bandwidth_bytes_per_cycle": row["effective_kv_bandwidth_bytes_per_cycle"],
                     "arithmetic_intensity": row["attention_arithmetic_intensity_macs_per_byte"],
                 }
@@ -642,12 +653,12 @@ def _write_markdown(path: Path, payload: JsonDict) -> None:
         "",
         "## Focus Summary",
         "",
-        "| shape | seq | tier | share | bits | hops | total_us | dominant | dom_share | kv_byte_share | kv_cycle_share | eff_kv_B/cyc | intensity |",
-        "|---|---:|---|---|---:|---:|---:|---|---:|---:|---:|---:|---:|",
+        "| shape | seq | tier | share | bits | hops | total_us | dominant | dom_share | kv_cache_MiB | sram0p05_mm2 | kv_byte_share | kv_cycle_share | eff_kv_B/cyc | intensity |",
+        "|---|---:|---|---|---:|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for row in payload["focus_summary"]:
         lines.append(
-            "| {label} | {seq} | {tier} | {share} | {bits} | {hops} | {total} | {dom} | {dom_share} | {kv_bytes} | {kv_cycles} | {eff_bw} | {intensity} |".format(
+            "| {label} | {seq} | {tier} | {share} | {bits} | {hops} | {total} | {dom} | {dom_share} | {kv_cache_mib} | {sram_area} | {kv_bytes} | {kv_cycles} | {eff_bw} | {intensity} |".format(
                 label=row["label"],
                 seq=row["sequence_length"],
                 tier=row["kv_memory_tier"],
@@ -657,6 +668,8 @@ def _write_markdown(path: Path, payload: JsonDict) -> None:
                 total=row["total_latency_us"],
                 dom=row["dominant_substage"],
                 dom_share=row["dominant_substage_share"],
+                kv_cache_mib=row["kv_cache_mib"],
+                sram_area=row["kv_cache_sram_area_mm2_at_0p05um2_per_bit"],
                 kv_bytes=row["kv_read_byte_share"],
                 kv_cycles=row["kv_limited_cycle_share"],
                 eff_bw=row["effective_kv_bandwidth_bytes_per_cycle"],

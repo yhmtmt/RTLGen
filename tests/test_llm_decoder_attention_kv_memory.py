@@ -72,6 +72,8 @@ def test_attention_kv_memory_exposes_long_context_kv_pressure() -> None:
     assert remote["effective_kv_bandwidth_bytes_per_cycle"] < local["effective_kv_bandwidth_bytes_per_cycle"]
     assert remote["total_latency_us"] > local["total_latency_us"]
     assert remote["kv_read_byte_share"] > 0.5
+    assert local["kv_cache_mib"] > 100.0
+    assert local["kv_cache_sram_area_mm2_at_0p05um2_per_bit"] > 40.0
     assert remote["dominant_substage"] in {"qk_score", "value_mix"}
 
 
