@@ -19,7 +19,11 @@
         "direction": "iterate",
         "reason": "If the bounded sharded interface matches perf-sim, use the contract for a measured producer-side weight-fetch wrapper while keeping full storage PPA from the feasibility model."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 572,
+      "merge_commit": "028044ad81dc56dd93ed0b94b91be316b6291e64",
+      "merged_utc": "2026-05-15T12:11:30.803592Z",
+      "notes": "Merged via PR #572 and merge 028044ad81dc56dd93ed0b94b91be316b6291e64 at 2026-05-15T12:11:30.803592Z."
     }
   ]
 }
