@@ -2967,6 +2967,56 @@ def _decoder_frontier_synthesis_integrated_evidence(*, item_id: str) -> dict[str
     }
 
 
+def _decoder_frontier_synthesis_policy_calibrated_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_frontier_synthesis__{item_id}.json"
+    report = f"{base}/decoder_frontier_synthesis__{item_id}.md"
+    stage_out = f"{base}/decoder_stage_breakdown__l2_decoder_frontier_synthesis_integrated_v1.json"
+    attention_out = f"{base}/decoder_attention_kv_memory__l2_decoder_frontier_synthesis_integrated_v1.json"
+    producer_out = f"{base}/decoder_producer_ranker_coupled_noc__l2_decoder_frontier_synthesis_integrated_v1.json"
+    integration_out = (
+        f"{base}/decoder_output_projection_producer_ranker_integration__"
+        "l2_decoder_frontier_synthesis_integrated_v1.json"
+    )
+    calibration_out = (
+        f"{base}/decoder_producer_ranker_policy_calibration__"
+        "l2_decoder_producer_ranker_policy_calibration_v1.json"
+    )
+    return {
+        "inputs": {
+            "stage_breakdown_out": stage_out,
+            "attention_kv_memory_out": attention_out,
+            "producer_ranker_coupled_out": producer_out,
+            "output_projection_producer_ranker_integration_out": integration_out,
+            "producer_ranker_policy_calibration_out": calibration_out,
+            "decoder_frontier_synthesis_out": out,
+            "decoder_frontier_synthesis_report": report,
+            "decoder_frontier_synthesis_scope": (
+                "Refresh whole-decoder frontier synthesis with the measured policy-wrapper "
+                "producer/ranker latency calibration. This replaces the older streaming ranker "
+                "hierarchy latency in the ranking while preserving the coupled and additive "
+                "integration reports as context."
+            ),
+        },
+        "commands": [
+            {
+                "name": "synthesize_decoder_frontier_policy_calibrated",
+                "run": (
+                    "python3 npu/eval/synthesize_llm_decoder_frontier.py "
+                    f"--stage-breakdown {stage_out} "
+                    f"--attention-kv-memory {attention_out} "
+                    f"--producer-ranker-coupled {producer_out} "
+                    f"--producer-ranker-integration {integration_out} "
+                    f"--producer-ranker-policy-calibration {calibration_out} "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_producer_ranker_memory_integration_plan_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_producer_ranker_memory_integration_plan__{item_id}.json"
@@ -4111,6 +4161,7 @@ def _build_payload(
         "decoder_attention_kv_memory",
         "decoder_frontier_synthesis",
         "decoder_frontier_synthesis_integrated",
+        "decoder_frontier_synthesis_policy_calibrated",
         "decoder_producer_ranker_memory_integration_plan",
         "decoder_producer_ranker_ready_valid_equivalence",
         "decoder_producer_ranker_physical_wrapper",
@@ -4143,6 +4194,8 @@ def _build_payload(
             decoder_evidence = _decoder_frontier_synthesis_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_frontier_synthesis_integrated":
             decoder_evidence = _decoder_frontier_synthesis_integrated_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_frontier_synthesis_policy_calibrated":
+            decoder_evidence = _decoder_frontier_synthesis_policy_calibrated_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_producer_ranker_memory_integration_plan":
             decoder_evidence = _decoder_producer_ranker_memory_integration_plan_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_producer_ranker_ready_valid_equivalence":
