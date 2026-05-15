@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_frontier_synthesis_policy_calibrated_broad_attention_v1",
+  "decision": "iterate",
+  "pr_number": 581,
+  "merge_commit": "b99dc9add29fa4d8416669263ae645b1449db458",
+  "merged_utc": "2026-05-15T19:33:39.555938Z"
+}

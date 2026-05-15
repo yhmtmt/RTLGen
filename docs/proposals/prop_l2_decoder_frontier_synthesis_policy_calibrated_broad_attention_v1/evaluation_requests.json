@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_frontier_synthesis_policy_calibrated_broad_attention_v1",
-  "source_commit": "dd45870b087c68be7fe2438d57d36d0319907d6d",
+  "source_commit": "b0a25aa1556a106e9fcb1484b6de2c08aeb09a47",
   "requested_items": [
     {
       "item_id": "l2_decoder_frontier_synthesis_policy_calibrated_broad_attention_v1",
@@ -20,7 +20,12 @@
       "expected_result": {
         "direction": "iterate",
         "reason": "If output projection still dominates, continue with producer memory/cache hierarchy; if attention/KV dominates at long context, move to integrated attention/KV memory hierarchy measurement."
-      }
+      },
+      "status": "merged",
+      "merged_pr_number": 581,
+      "merge_commit": "b99dc9add29fa4d8416669263ae645b1449db458",
+      "merged_utc": "2026-05-15T19:33:39.555938Z",
+      "notes": "Merged via PR #581 and merge b99dc9add29fa4d8416669263ae645b1449db458 at 2026-05-15T19:33:39.555938Z."
     }
   ]
 }
