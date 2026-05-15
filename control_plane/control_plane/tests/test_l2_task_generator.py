@@ -2853,7 +2853,8 @@ def test_generate_l2_campaign_task_adds_decoder_output_projection_weight_store_i
             ]
             run = work_item.command_manifest[0]["run"]
             assert "probe_llm_decoder_output_projection_weight_store_interface.py" in run
-            assert "--max-representative-banks 8" in run
+            assert "--max-representative-banks 64" in run
+            assert "--read-latency-cycles-list 1,2,4,8" in run
             assert "l2_decoder_output_projection_weight_store_feasibility_v1.json" in run
             assert decoder_inputs["weight_store_interface_out"] == (
                 "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"

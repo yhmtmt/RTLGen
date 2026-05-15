@@ -3128,10 +3128,10 @@ def _decoder_output_projection_weight_store_interface_evidence(*, item_id: str) 
                 "run": (
                     "python3 npu/eval/probe_llm_decoder_output_projection_weight_store_interface.py "
                     f"--weight-store-feasibility {feasibility} "
-                    "--max-representative-banks 8 "
-                    "--read-latency-cycles-list 1,2 "
-                    "--request-count 12 "
-                    "--address-stride 3 "
+                    "--max-representative-banks 64 "
+                    "--read-latency-cycles-list 1,2,4,8 "
+                    "--request-count 16 "
+                    "--address-stride 5 "
                     f"--out {out} "
                     f"--out-md {report}"
                 ),
