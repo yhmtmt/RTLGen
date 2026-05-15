@@ -3102,6 +3102,45 @@ def _decoder_output_projection_weight_store_feasibility_evidence(*, item_id: str
     }
 
 
+def _decoder_output_projection_weight_store_interface_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_output_projection_weight_store_interface__{item_id}.json"
+    report = f"{base}/decoder_output_projection_weight_store_interface__{item_id}.md"
+    feasibility = (
+        f"{base}/decoder_output_projection_weight_store_feasibility__"
+        "l2_decoder_output_projection_weight_store_feasibility_v1.json"
+    )
+    return {
+        "inputs": {
+            "weight_store_interface_out": out,
+            "weight_store_interface_report": report,
+            "weight_store_feasibility": feasibility,
+            "weight_store_interface_scope": (
+                "Check a bounded RTL/perf-sim contract for the sharded ready/valid "
+                "weight-store read interface selected by the resident output-projection "
+                "weight-store feasibility model. This intentionally scales down bank count "
+                "for RTL simulation; full storage capacity and area remain proxy-modeled."
+            ),
+        },
+        "commands": [
+            {
+                "name": "probe_decoder_output_projection_weight_store_interface",
+                "run": (
+                    "python3 npu/eval/probe_llm_decoder_output_projection_weight_store_interface.py "
+                    f"--weight-store-feasibility {feasibility} "
+                    "--max-representative-banks 8 "
+                    "--read-latency-cycles-list 1,2 "
+                    "--request-count 12 "
+                    "--address-stride 3 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_producer_ranker_memory_integration_plan_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_producer_ranker_memory_integration_plan__{item_id}.json"
@@ -4249,6 +4288,7 @@ def _build_payload(
         "decoder_frontier_synthesis_policy_calibrated",
         "decoder_output_projection_producer_memory_hierarchy",
         "decoder_output_projection_weight_store_feasibility",
+        "decoder_output_projection_weight_store_interface",
         "decoder_producer_ranker_memory_integration_plan",
         "decoder_producer_ranker_ready_valid_equivalence",
         "decoder_producer_ranker_physical_wrapper",
@@ -4287,6 +4327,8 @@ def _build_payload(
             decoder_evidence = _decoder_output_projection_producer_memory_hierarchy_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_weight_store_feasibility":
             decoder_evidence = _decoder_output_projection_weight_store_feasibility_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_output_projection_weight_store_interface":
+            decoder_evidence = _decoder_output_projection_weight_store_interface_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_producer_ranker_memory_integration_plan":
             decoder_evidence = _decoder_producer_ranker_memory_integration_plan_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_producer_ranker_ready_valid_equivalence":
