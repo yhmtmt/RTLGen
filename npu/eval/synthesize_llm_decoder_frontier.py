@@ -69,7 +69,39 @@ def _dominant_component(components: dict[str, float]) -> tuple[str, float]:
     return name, round(share, 6)
 
 
-def build_report(*, stage_breakdown: JsonDict, attention_kv: JsonDict, producer_ranker: JsonDict) -> JsonDict:
+def _integration_summary(payload: JsonDict | None) -> JsonDict | None:
+    if not payload:
+        return None
+    summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+    rows = payload.get("integrations") if isinstance(payload.get("integrations"), list) else []
+    return {
+        "model": payload.get("model"),
+        "decision": (payload.get("decision") or {}).get("decision"),
+        "ok_integrations": summary.get("ok_integrations"),
+        "total_integrations": summary.get("total_integrations"),
+        "max_ranker_area_over_producer": summary.get("max_ranker_area_over_producer"),
+        "max_ranker_power_over_producer": summary.get("max_ranker_power_over_producer"),
+        "timing_bottlenecks": [
+            {
+                "arch_id": row.get("arch_id"),
+                "macro_mode": row.get("macro_mode"),
+                "producer_lanes": row.get("producer_lanes"),
+                "timing_bottleneck": (row.get("integrated_accounting") or {}).get("timing_bottleneck"),
+                "critical_path_ns": (row.get("integrated_accounting") or {}).get("critical_path_ns_max"),
+            }
+            for row in rows
+            if isinstance(row, dict)
+        ],
+    }
+
+
+def build_report(
+    *,
+    stage_breakdown: JsonDict,
+    attention_kv: JsonDict,
+    producer_ranker: JsonDict,
+    producer_ranker_integration: JsonDict | None = None,
+) -> JsonDict:
     attention_best = _best_attention_by_label_seq(attention_kv)
     producer_best = _best_producer_by_shape(producer_ranker)
     rows: list[JsonDict] = []
@@ -142,6 +174,7 @@ def build_report(*, stage_breakdown: JsonDict, attention_kv: JsonDict, producer_
         dominant_counts[row["dominant_component"]] = dominant_counts.get(row["dominant_component"], 0) + 1
 
     tile_frontier = attention_kv.get("measured_attention_kv_tile_frontier", {})
+    integration_summary = _integration_summary(producer_ranker_integration)
     return {
         "version": 0.1,
         "model": "llm_decoder_frontier_synthesis_v1",
@@ -149,8 +182,12 @@ def build_report(*, stage_breakdown: JsonDict, attention_kv: JsonDict, producer_
             "stage_breakdown_model": stage_breakdown.get("model"),
             "attention_kv_model": attention_kv.get("model"),
             "producer_ranker_model": producer_ranker.get("model"),
+            "producer_ranker_integration_model": (
+                producer_ranker_integration.get("model") if producer_ranker_integration else None
+            ),
             "producer_control_boundary": producer_ranker.get("producer_control_boundary"),
             "producer_physical_boundary": producer_ranker.get("producer_physical_boundary"),
+            "producer_ranker_integration_accounting": integration_summary,
         },
         "measured_attention_kv_tile_summary": tile_frontier.get("scaling_summary", {}),
         "dominant_component_counts": dominant_counts,
@@ -164,6 +201,7 @@ def build_report(*, stage_breakdown: JsonDict, attention_kv: JsonDict, producer_
             "Attention/KV uses the best latency row per shape and sequence from the calibrated attention/KV report.",
             "Producer/ranker uses the best FIFO-valid coupled row per hidden/vocab shape.",
             "Producer physical-boundary evidence is carried as feasibility/PPA context; it does not replace the analytical producer/ranker latency model.",
+            "Producer/ranker integration accounting is carried as measured additive PPA context; it does not replace the analytical coupled latency model.",
             "MLP and norm are resident-weight estimates from the whole-decoder stage breakdown.",
             "Use this report to choose the next measured RTL frontier, not as final PPA accounting.",
         ],
@@ -240,6 +278,33 @@ def _write_markdown(path: Path, payload: JsonDict) -> None:
                 f"- result_path: `{physical_boundary.get('result_path')}`",
             ]
         )
+    integration = payload.get("inputs", {}).get("producer_ranker_integration_accounting")
+    if integration:
+        lines.extend(
+            [
+                "",
+                "## Producer/Ranker Integration Accounting",
+                "",
+                f"- decision: `{integration.get('decision')}`",
+                f"- ok_integrations: `{integration.get('ok_integrations')}`",
+                f"- total_integrations: `{integration.get('total_integrations')}`",
+                f"- max_ranker_area_over_producer: `{integration.get('max_ranker_area_over_producer')}`",
+                f"- max_ranker_power_over_producer: `{integration.get('max_ranker_power_over_producer')}`",
+                "",
+                "| arch | macro | lanes | bottleneck | cp ns |",
+                "|---|---|---:|---|---:|",
+            ]
+        )
+        for row in integration.get("timing_bottlenecks", []):
+            lines.append(
+                "| {arch} | {macro} | {lanes} | {bottleneck} | {cp} |".format(
+                    arch=row.get("arch_id"),
+                    macro=row.get("macro_mode"),
+                    lanes=row.get("producer_lanes"),
+                    bottleneck=row.get("timing_bottleneck"),
+                    cp=row.get("critical_path_ns"),
+                )
+            )
     lines.extend(["", "## Assumptions", ""])
     for item in payload["assumptions"]:
         lines.append(f"- {item}")
@@ -251,6 +316,7 @@ def main() -> int:
     ap.add_argument("--stage-breakdown", required=True)
     ap.add_argument("--attention-kv-memory", required=True)
     ap.add_argument("--producer-ranker-coupled", required=True)
+    ap.add_argument("--producer-ranker-integration")
     ap.add_argument("--out", required=True)
     ap.add_argument("--out-md", required=True)
     args = ap.parse_args()
@@ -258,6 +324,9 @@ def main() -> int:
         stage_breakdown=_load_json(args.stage_breakdown),
         attention_kv=_load_json(args.attention_kv_memory),
         producer_ranker=_load_json(args.producer_ranker_coupled),
+        producer_ranker_integration=(
+            _load_json(args.producer_ranker_integration) if args.producer_ranker_integration else None
+        ),
     )
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
