@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_capacity_noc_baseline_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "iterate",
+  "pr_number": 591,
+  "merge_commit": "c99e206041f930fae19268114c52139c012f0211",
+  "merged_utc": "2026-05-15T22:15:03.548797Z"
 }

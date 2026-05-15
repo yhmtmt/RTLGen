@@ -19,7 +19,11 @@
         "direction": "iterate",
         "reason": "Use capacity-feasible best points to choose the next integrated attention/KV SRAM and NoC scheduling measurement."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 591,
+      "merge_commit": "c99e206041f930fae19268114c52139c012f0211",
+      "merged_utc": "2026-05-15T22:15:03.548797Z",
+      "notes": "Merged via PR #591 and merge c99e206041f930fae19268114c52139c012f0211 at 2026-05-15T22:15:03.548797Z."
     }
   ]
 }
