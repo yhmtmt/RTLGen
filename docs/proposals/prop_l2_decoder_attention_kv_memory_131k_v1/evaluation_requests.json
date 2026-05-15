@@ -19,7 +19,11 @@
         "direction": "iterate",
         "reason": "Test whether 131k context shifts the next measured block to attention/KV memory hierarchy."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 584,
+      "merge_commit": "a6f4b1deaccfa28f869cd443825afb24181ea481",
+      "merged_utc": "2026-05-15T19:38:33.683968Z",
+      "notes": "Merged via PR #584 and merge a6f4b1deaccfa28f869cd443825afb24181ea481 at 2026-05-15T19:38:33.683968Z."
     }
   ]
 }

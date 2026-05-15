@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_memory_131k_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "iterate",
+  "pr_number": 584,
+  "merge_commit": "a6f4b1deaccfa28f869cd443825afb24181ea481",
+  "merged_utc": "2026-05-15T19:38:33.683968Z"
 }

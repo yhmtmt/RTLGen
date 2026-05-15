@@ -1,12 +1,15 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_memory_131k_v1",
-  "candidate_id": "",
+  "candidate_id": "l2_decoder_attention_kv_memory_131k_v1",
   "decision": "iterate",
-  "reason": "Replace with the actual decision rationale.",
+  "reason": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_memory__l2_decoder_attention_kv_memory_131k_v1.json: decision=decoder_evidence_recorded.",
   "evidence_refs": [
-    "item:example",
-    "run:example"
+    "item:l2_decoder_attention_kv_memory_131k_v1",
+    "run:l2_decoder_attention_kv_memory_131k_v1_run_f41fbf6dd7737c54",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_kv_memory_131k_v1.json",
+    "pr:#584",
+    "https://github.com/yhmtmt/RTLGen/pull/584"
   ],
-  "next_action": "Describe the next action.",
-  "requires_human_approval": true
+  "next_action": "inspect follow-on work after l2_decoder_attention_kv_memory_131k_v1",
+  "requires_human_approval": false
 }
