@@ -1,0 +1,24 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_capacity_noc_baseline_v1",
+  "source_commit": "2c52004e69b01bdcd6f843f497f68f25060acfb2",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_kv_capacity_noc_baseline_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run a capacity-constrained attention/KV memory and NoC baseline sweep across die size and SRAM assumptions.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_capacity_noc",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_memory_131k_capacity_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_memory_131k_capacity_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use the capacity-feasible best points to choose the next integrated attention/KV SRAM and NoC scheduling measurement."
+      }
+    }
+  ]
+}

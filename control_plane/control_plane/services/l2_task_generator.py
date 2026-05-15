@@ -3064,6 +3064,51 @@ def _decoder_output_projection_producer_memory_hierarchy_evidence(*, item_id: st
     }
 
 
+def _decoder_attention_kv_capacity_noc_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_kv_capacity_noc__{item_id}.json"
+    report = f"{base}/decoder_attention_kv_capacity_noc__{item_id}.md"
+    return {
+        "inputs": {
+            "attention_kv_memory_out": out,
+            "attention_kv_memory_report": report,
+            "attention_kv_capacity_noc_scope": (
+                "Capacity-constrained attention/KV memory and NoC baseline. Sweep die area, "
+                "SRAM area fraction, usable SRAM fraction, bitcell density, local/shared SRAM "
+                "partition, bank bandwidth, NoC bandwidth/hops, HBM bandwidth, KV sharing, and "
+                "KV precision. Local/shared SRAM placements are disallowed unless the KV cache "
+                "fits in the selected capacity."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_attention_kv_capacity_noc",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_attention_kv_capacity_noc.py "
+                    "--sequence-length-list 32768,131072 "
+                    "--kv-sharing-list mqa,gqa8,mha "
+                    "--kv-bits-list 8,16 "
+                    "--die-area-mm2-list 25,50,100,200,400 "
+                    "--sram-area-fraction-list 0.2,0.4,0.6 "
+                    "--usable-sram-fraction-list 0.55,0.7 "
+                    "--bitcell-area-um2-per-bit-list 0.02,0.05,0.1 "
+                    "--local-sram-fraction-list 0.25,0.5,0.75 "
+                    "--bank-count-list 16,64,256 "
+                    "--bank-bandwidth-bytes-per-cycle-list 64,256,1024 "
+                    "--noc-bandwidth-bytes-per-cycle-list 1024,4096,16384 "
+                    "--noc-hops-list 1,2,4,8 "
+                    "--hbm-bandwidth-bytes-per-cycle-list 256,1024,4096 "
+                    "--macs-per-cycle 524288 "
+                    "--vector-ops-per-cycle 65536 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_output_projection_weight_store_feasibility_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_output_projection_weight_store_feasibility__{item_id}.json"
@@ -4330,6 +4375,7 @@ def _build_payload(
         "decoder_frontier_synthesis",
         "decoder_frontier_synthesis_integrated",
         "decoder_frontier_synthesis_policy_calibrated",
+        "decoder_attention_kv_capacity_noc",
         "decoder_output_projection_producer_memory_hierarchy",
         "decoder_output_projection_weight_store_feasibility",
         "decoder_output_projection_weight_store_interface",
@@ -4368,6 +4414,8 @@ def _build_payload(
             decoder_evidence = _decoder_frontier_synthesis_integrated_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_frontier_synthesis_policy_calibrated":
             decoder_evidence = _decoder_frontier_synthesis_policy_calibrated_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_kv_capacity_noc":
+            decoder_evidence = _decoder_attention_kv_capacity_noc_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_producer_memory_hierarchy":
             decoder_evidence = _decoder_output_projection_producer_memory_hierarchy_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_weight_store_feasibility":
