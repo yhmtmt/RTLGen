@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_decoder_output_projection_weight_store_feasibility_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "iterate",
+  "pr_number": 570,
+  "merge_commit": "254d2f465907f62fa1871117ef0e988f432848a0",
+  "merged_utc": "2026-05-15T12:03:03.733106Z"
 }

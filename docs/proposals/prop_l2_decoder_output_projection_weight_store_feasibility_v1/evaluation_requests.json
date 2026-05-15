@@ -19,7 +19,11 @@
         "direction": "iterate",
         "reason": "If banked storage is plausible under the proxy envelope, queue a measured sharded weight-store interface wrapper; otherwise revisit model partitioning or memory assumptions."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 570,
+      "merge_commit": "254d2f465907f62fa1871117ef0e988f432848a0",
+      "merged_utc": "2026-05-15T12:03:03.733106Z",
+      "notes": "Merged via PR #570 and merge 254d2f465907f62fa1871117ef0e988f432848a0 at 2026-05-15T12:03:03.733106Z."
     }
   ]
 }
