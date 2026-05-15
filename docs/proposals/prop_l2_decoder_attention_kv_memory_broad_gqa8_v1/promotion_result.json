@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_memory_broad_gqa8_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "iterate",
+  "pr_number": 578,
+  "merge_commit": "777f7d93048b66f6f0328189a61b3667963981c1",
+  "merged_utc": "2026-05-15T19:16:42.538166Z"
 }

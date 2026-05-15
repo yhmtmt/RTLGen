@@ -19,7 +19,11 @@
         "direction": "iterate",
         "reason": "Use the broadened attention/KV sweep to decide whether the next measured physical work should stay on output-projection memory or shift toward KV/cache/attention data movement."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 578,
+      "merge_commit": "777f7d93048b66f6f0328189a61b3667963981c1",
+      "merged_utc": "2026-05-15T19:16:42.538166Z",
+      "notes": "Merged via PR #578 and merge 777f7d93048b66f6f0328189a61b3667963981c1 at 2026-05-15T19:16:42.538166Z."
     }
   ]
 }
