@@ -2971,8 +2971,8 @@ def _decoder_frontier_synthesis_policy_calibrated_evidence(*, item_id: str) -> d
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_frontier_synthesis__{item_id}.json"
     report = f"{base}/decoder_frontier_synthesis__{item_id}.md"
-    stage_out = f"{base}/decoder_stage_breakdown__l2_decoder_frontier_synthesis_integrated_v1.json"
-    attention_out = f"{base}/decoder_attention_kv_memory__l2_decoder_frontier_synthesis_integrated_v1.json"
+    stage_out = f"{base}/decoder_stage_breakdown__l2_decoder_stage_breakdown_large_array_v2.json"
+    attention_out = f"{base}/decoder_attention_kv_memory__l2_decoder_attention_kv_memory_broad_gqa8_v1.json"
     producer_out = f"{base}/decoder_producer_ranker_coupled_noc__l2_decoder_frontier_synthesis_integrated_v1.json"
     integration_out = (
         f"{base}/decoder_output_projection_producer_ranker_integration__"
