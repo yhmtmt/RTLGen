@@ -1,0 +1,241 @@
+{
+  "assumptions": [
+    "This is an additive accounting model over independently measured producer and ranker-wrapper macros; it is not a routed monolithic integration.",
+    "The default lane map treats fp16_nm1 as a 64-lane output tile producer and fp16_nm2 as a 128-lane output tile producer.",
+    "Wrapper power includes inactive serial or rank-tree path because no clock gating was modeled in the physical wrapper measurement."
+  ],
+  "checks": [
+    {
+      "name": "ranker_wrapper_physical_measured",
+      "observed": "output_projection_ranker_wrapper_physical_measured",
+      "passed": true
+    },
+    {
+      "name": "ranker_policy_promoted",
+      "observed": "output_projection_ranker_policy_promoted",
+      "passed": true
+    },
+    {
+      "name": "all_producer_arches_have_ranker_mapping",
+      "observed": {
+        "ok": 4,
+        "total": 4
+      },
+      "passed": true
+    },
+    {
+      "name": "ranker_not_timing_bottleneck",
+      "observed": [
+        {
+          "arch_id": "fp16_nm1",
+          "macro_mode": "flat_nomacro",
+          "timing_bottleneck": "producer"
+        },
+        {
+          "arch_id": "fp16_nm1",
+          "macro_mode": "hier_macro",
+          "timing_bottleneck": "producer"
+        },
+        {
+          "arch_id": "fp16_nm2",
+          "macro_mode": "flat_nomacro",
+          "timing_bottleneck": "producer"
+        },
+        {
+          "arch_id": "fp16_nm2",
+          "macro_mode": "hier_macro",
+          "timing_bottleneck": "producer"
+        }
+      ],
+      "passed": true
+    },
+    {
+      "name": "ranker_overhead_within_first_order_budget",
+      "observed": {
+        "budget": {
+          "area": 0.15,
+          "power": 0.2
+        },
+        "max_ranker_area_over_producer": 0.123332,
+        "max_ranker_power_over_producer": 0.14483589494995577
+      },
+      "passed": true
+    }
+  ],
+  "decision": {
+    "decision": "producer_output_ranker_integration_accounting_passed",
+    "next_step": "Use the additive breakdown as the producer-side integration baseline, then decide whether to add clock/path gating or a monolithic routed wrapper."
+  },
+  "integrations": [
+    {
+      "arch_id": "fp16_nm1",
+      "integrated_accounting": {
+        "area_um2_sum": 2385943.0,
+        "critical_path_ns_max": 5.557037432204143,
+        "power_mw_sum": 0.2092637,
+        "ranker_area_over_producer": 0.06041911111111111,
+        "ranker_power_over_producer": 0.08358291649837926,
+        "timing_bottleneck": "producer"
+      },
+      "macro_mode": "flat_nomacro",
+      "producer": {
+        "area_um2": 2250000.0,
+        "critical_path_ns": 5.557037432204143,
+        "energy_mj_mean": 5.582770776e-06,
+        "flow_elapsed_s_mean": 848.418,
+        "latency_ms_mean": 0.028907999999999996,
+        "power_mw": 0.193122
+      },
+      "producer_lanes": 64,
+      "ranker_wrapper": {
+        "area_um2": 135943.0,
+        "critical_path_ns": 4.347542551572723,
+        "policy_summary": {
+          "producer_ii_cycles_max": 4096,
+          "producer_ii_cycles_min": 2,
+          "producer_lanes": 64,
+          "ranktree_rows": 32,
+          "rows": 64,
+          "serial_lpc1_rows": 32
+        },
+        "power_mw": 0.0161417,
+        "ranktree_final_cycle": 35,
+        "ranktree_service_ns_at_ranker_cp": 152.1639893050453,
+        "serial_final_cycle": 1987,
+        "serial_service_ns_at_ranker_cp": 8638.567049975001
+      },
+      "status": "ok"
+    },
+    {
+      "arch_id": "fp16_nm1",
+      "integrated_accounting": {
+        "area_um2_sum": 2385943.0,
+        "critical_path_ns_max": 5.774905724664045,
+        "power_mw_sum": 0.21358270000000001,
+        "ranker_area_over_producer": 0.06041911111111111,
+        "ranker_power_over_producer": 0.0817545494603451,
+        "timing_bottleneck": "producer"
+      },
+      "macro_mode": "hier_macro",
+      "producer": {
+        "area_um2": 2250000.0,
+        "critical_path_ns": 5.774905724664045,
+        "energy_mj_mean": 5.707624428e-06,
+        "flow_elapsed_s_mean": 978.894,
+        "latency_ms_mean": 0.028907999999999996,
+        "power_mw": 0.197441
+      },
+      "producer_lanes": 64,
+      "ranker_wrapper": {
+        "area_um2": 135943.0,
+        "critical_path_ns": 4.347542551572723,
+        "policy_summary": {
+          "producer_ii_cycles_max": 4096,
+          "producer_ii_cycles_min": 2,
+          "producer_lanes": 64,
+          "ranktree_rows": 32,
+          "rows": 64,
+          "serial_lpc1_rows": 32
+        },
+        "power_mw": 0.0161417,
+        "ranktree_final_cycle": 35,
+        "ranktree_service_ns_at_ranker_cp": 152.1639893050453,
+        "serial_final_cycle": 1987,
+        "serial_service_ns_at_ranker_cp": 8638.567049975001
+      },
+      "status": "ok"
+    },
+    {
+      "arch_id": "fp16_nm2",
+      "integrated_accounting": {
+        "area_um2_sum": 2527497.0,
+        "critical_path_ns_max": 5.701286780426342,
+        "power_mw_sum": 0.2408895,
+        "ranker_area_over_producer": 0.123332,
+        "ranker_power_over_producer": 0.14483589494995577,
+        "timing_bottleneck": "producer"
+      },
+      "macro_mode": "flat_nomacro",
+      "producer": {
+        "area_um2": 2250000.0,
+        "critical_path_ns": 5.701286780426342,
+        "energy_mj_mean": 9.955948824e-06,
+        "flow_elapsed_s_mean": 829.814,
+        "latency_ms_mean": 0.047316,
+        "power_mw": 0.21041400000000002
+      },
+      "producer_lanes": 128,
+      "ranker_wrapper": {
+        "area_um2": 277497.0,
+        "critical_path_ns": 4.43030684305195,
+        "policy_summary": {
+          "producer_ii_cycles_max": 8192,
+          "producer_ii_cycles_min": 3,
+          "producer_lanes": 128,
+          "ranktree_rows": 28,
+          "rows": 64,
+          "serial_lpc1_rows": 36
+        },
+        "power_mw": 0.0304755,
+        "ranktree_final_cycle": 20,
+        "ranktree_service_ns_at_ranker_cp": 88.606136861039,
+        "serial_final_cycle": 1987,
+        "serial_service_ns_at_ranker_cp": 8803.019697144224
+      },
+      "status": "ok"
+    },
+    {
+      "arch_id": "fp16_nm2",
+      "integrated_accounting": {
+        "area_um2_sum": 2527497.0,
+        "critical_path_ns_max": 5.740890641774165,
+        "power_mw_sum": 0.24329050000000002,
+        "ranker_area_over_producer": 0.123332,
+        "ranker_power_over_producer": 0.14320184197542463,
+        "timing_bottleneck": "producer"
+      },
+      "macro_mode": "hier_macro",
+      "producer": {
+        "area_um2": 2250000.0,
+        "critical_path_ns": 5.740890641774165,
+        "energy_mj_mean": 1.0069554539999999e-05,
+        "flow_elapsed_s_mean": 981.7819999999999,
+        "latency_ms_mean": 0.047316,
+        "power_mw": 0.21281500000000003
+      },
+      "producer_lanes": 128,
+      "ranker_wrapper": {
+        "area_um2": 277497.0,
+        "critical_path_ns": 4.43030684305195,
+        "policy_summary": {
+          "producer_ii_cycles_max": 8192,
+          "producer_ii_cycles_min": 3,
+          "producer_lanes": 128,
+          "ranktree_rows": 28,
+          "rows": 64,
+          "serial_lpc1_rows": 36
+        },
+        "power_mw": 0.0304755,
+        "ranktree_final_cycle": 20,
+        "ranktree_service_ns_at_ranker_cp": 88.606136861039,
+        "serial_final_cycle": 1987,
+        "serial_service_ns_at_ranker_cp": 8803.019697144224
+      },
+      "status": "ok"
+    }
+  ],
+  "model": "decoder_output_projection_producer_ranker_integration_v1",
+  "source_refs": {
+    "lane_map": "fp16_nm1=64,fp16_nm2=128",
+    "policy": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_ranker_policy__l2_decoder_output_projection_ranker_policy_v1.json",
+    "producer_summary": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_producer_ranker_physical_wrapper_v1/summary.csv",
+    "ranker_wrapper_physical": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_ranker_wrapper_physical__l2_decoder_output_projection_ranker_wrapper_physical_v1.json"
+  },
+  "summary": {
+    "max_ranker_area_over_producer": 0.123332,
+    "max_ranker_power_over_producer": 0.14483589494995577,
+    "ok_integrations": 4,
+    "total_integrations": 4
+  },
+  "version": 0.1
+}
