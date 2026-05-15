@@ -1,0 +1,69 @@
+{
+  "proposal_id": "prop_l2_decoder_frontier_synthesis_policy_calibrated_broad_attention_v1",
+  "created_utc": "2026-05-15T19:45:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_frontier_synthesis_policy_calibrated",
+  "title": "Decoder frontier synthesis with broad attention/KV inputs",
+  "hypothesis": "Refreshing the calibrated decoder frontier with the large-array stage breakdown and broad GQA/MQA attention/KV sweep will show whether long-context attention/KV or output-projection producer service is now the next dominant bottleneck.",
+  "direct_comparison": {
+    "primary_question": "With calibrated producer/ranker service and broad attention/KV evidence, which decoder component dominates the focused frontier rows?",
+    "include": [
+      "large-array stage breakdown",
+      "broad GQA/MQA/MHA attention/KV memory sweep",
+      "producer/ranker coupled NoC report as context",
+      "producer/ranker integration PPA accounting",
+      "producer/ranker policy-service calibration"
+    ],
+    "exclude": [
+      "new routed SRAM/cache macro",
+      "new producer physical synthesis",
+      "new attention/KV RTL synthesis",
+      "quality recovery or training experiments"
+    ]
+  },
+  "expected_benefit": [
+    "keeps the official frontier synthesis aligned with the newest attention/KV result",
+    "separates short-context output-projection pressure from long-context attention/KV pressure",
+    "selects the next measured hardware block from a current whole-decoder view"
+  ],
+  "risks": [
+    "the synthesis is analytical and composes separate evidence reports",
+    "large hidden-size producer rows are only partially covered by existing calibration",
+    "attention/KV memory hierarchy is not yet a routed integrated subsystem"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_frontier_synthesis_policy_calibrated_broad_attention_v1",
+      "task_type": "l2_campaign",
+      "objective": "Refresh calibrated decoder frontier synthesis using broad attention/KV and large-array stage inputs.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_frontier_synthesis_policy_calibrated",
+      "cost_class": "low",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_frontier_synthesis_policy_calibrated_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_stage_breakdown_large_array_v2",
+        "l2_decoder_attention_kv_memory_broad_gqa8_v1",
+        "l2_decoder_producer_ranker_policy_calibration_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "If output projection still dominates, continue with producer memory/cache hierarchy; if attention/KV dominates at long context, move to integrated attention/KV memory hierarchy measurement."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_frontier_synthesis__l2_decoder_frontier_synthesis_policy_calibrated_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_memory__l2_decoder_attention_kv_memory_broad_gqa8_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_stage_breakdown__l2_decoder_stage_breakdown_large_array_v2.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/synthesize_llm_decoder_frontier.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}
