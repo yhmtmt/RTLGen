@@ -19,7 +19,11 @@
         "direction": "iterate",
         "reason": "Use capacity-annotated attention/KV evidence to define the next integrated memory-hierarchy measurement."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 589,
+      "merge_commit": "0ab9fa749580a837492aeb89f90fee96a720ff25",
+      "merged_utc": "2026-05-15T19:54:22.142752Z",
+      "notes": "Merged via PR #589 and merge 0ab9fa749580a837492aeb89f90fee96a720ff25 at 2026-05-15T19:54:22.142752Z."
     }
   ]
 }
