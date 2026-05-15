@@ -1,0 +1,24 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_memory_131k_capacity_v1",
+  "source_commit": "4f8d9a9d4cb820fb08b737b2664f9d7ef8c5ffbc",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_kv_memory_131k_capacity_v1",
+      "task_type": "l2_campaign",
+      "objective": "Rerun the 131k decoder attention/KV memory sweep with KV-cache capacity and SRAM area proxy fields.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_memory",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_memory_131k_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_memory_131k_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use capacity-annotated attention/KV evidence to define the next integrated memory-hierarchy measurement."
+      }
+    }
+  ]
+}

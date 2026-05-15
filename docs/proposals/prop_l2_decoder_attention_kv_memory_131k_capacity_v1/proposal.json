@@ -1,0 +1,63 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_memory_131k_capacity_v1",
+  "created_utc": "2026-05-15T20:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_attention_kv_memory",
+  "title": "Decoder attention/KV 131k sweep with capacity accounting",
+  "hypothesis": "Adding KV-cache capacity and SRAM area proxies to the 131k attention/KV sweep will distinguish latency-optimal local-SRAM assumptions from physically plausible storage points.",
+  "direct_comparison": {
+    "primary_question": "How much KV-cache capacity and SRAM area does the best 131k attention/KV point require?",
+    "include": [
+      "131072-token context",
+      "KV-cache MiB per focused row",
+      "0.05 um2/bit SRAM area proxy",
+      "MHA/GQA/MQA sharing and memory-tier latency"
+    ],
+    "exclude": [
+      "new routed SRAM macro",
+      "banked cache controller RTL",
+      "quality recovery"
+    ]
+  },
+  "expected_benefit": [
+    "prevents local-SRAM latency rows from being interpreted without storage cost",
+    "sets up a capacity-constrained attention/KV hierarchy measurement",
+    "keeps the frontier report tied to capacity-aware attention evidence"
+  ],
+  "risks": [
+    "the SRAM area proxy is not a macro PPA result",
+    "capacity does not yet model banking, ports, replacement, or NoC arbitration",
+    "the result remains analytical"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_kv_memory_131k_capacity_v1",
+      "task_type": "l2_campaign",
+      "objective": "Rerun the 131k decoder attention/KV memory sweep with KV-cache capacity and SRAM area proxy fields.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_memory",
+      "cost_class": "low",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_memory_131k_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_memory_131k_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use capacity-annotated attention/KV evidence to define the next integrated memory-hierarchy measurement."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_memory__l2_decoder_attention_kv_memory_131k_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_attention_kv_memory.py",
+    "tests/test_llm_decoder_attention_kv_memory.py"
+  ]
+}
