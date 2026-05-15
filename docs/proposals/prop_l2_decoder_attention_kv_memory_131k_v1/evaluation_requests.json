@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_memory_131k_v1",
-  "source_commit": "31f474944a919f040b89b3fc9ba386dda133109a",
+  "source_commit": "d4a3430c088661edb694e8803e348e748f5dea51",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_kv_memory_131k_v1",
@@ -17,8 +17,9 @@
       "requires_materialized_refs": true,
       "expected_result": {
         "direction": "iterate",
-        "reason": "If 131k attention dominates under best local MQA/GQA assumptions, prioritize integrated attention/KV memory hierarchy; otherwise continue producer memory/cache exploration."
-      }
+        "reason": "Test whether 131k context shifts the next measured block to attention/KV memory hierarchy."
+      },
+      "status": "pending"
     }
   ]
 }
