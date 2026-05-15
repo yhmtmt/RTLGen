@@ -1,0 +1,25 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_weight_store_feasibility_v1",
+  "source_commit": "8b12dd393dba5dbd639a110a11792fe579142c41",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_output_projection_weight_store_feasibility_v1",
+      "task_type": "l2_campaign",
+      "objective": "Estimate bank count, read width, and proxy storage-area feasibility for resident output-projection producer weights.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_output_projection_weight_store_feasibility",
+      "comparison_role": "producer_memory_hierarchy",
+      "paired_baseline_item_id": "l2_decoder_output_projection_producer_memory_hierarchy_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_output_projection_producer_memory_hierarchy_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "If banked storage is plausible under the proxy envelope, queue a measured sharded weight-store interface wrapper; otherwise revisit model partitioning or memory assumptions."
+      },
+      "status": "pending"
+    }
+  ]
+}
