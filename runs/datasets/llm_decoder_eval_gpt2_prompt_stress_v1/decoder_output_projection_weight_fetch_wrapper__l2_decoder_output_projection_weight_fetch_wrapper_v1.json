@@ -1,0 +1,1042 @@
+{
+  "assumptions": [
+    "This is a control-contract RTL simulation, not an SRAM macro or full output-projection datapath.",
+    "The model uses full selected bank counts from the feasibility artifact but deterministic generated data instead of resident weight arrays.",
+    "Scenarios include both throughput stress and selected producer cadence from the feasibility rows."
+  ],
+  "decision": {
+    "decision": "weight_fetch_wrapper_contract_passed",
+    "next_step": "Use this producer-side request/throttle contract for a measured bounded physical wrapper; keep full storage as memory macro/proxy."
+  },
+  "fetch_wrapper_rows": [
+    {
+      "address_stride": 5,
+      "bank_read_width_bits": 2048,
+      "banks": 50,
+      "issue_interval_cycles": 1,
+      "label": "gpt2_medium_proxy",
+      "outstanding_depth": 1,
+      "passed": true,
+      "perf_reference": {
+        "accepted": 12,
+        "checksum": 2465400,
+        "final_cycle": 25,
+        "producer_stall_cycles": 11,
+        "responses": 12
+      },
+      "read_latency_cycles": 1,
+      "request_count": 12,
+      "rtl_sim": {
+        "observed": {
+          "accepted": 12,
+          "checksum": 2465400,
+          "final_cycle": 25,
+          "producer_stall_cycles": 11,
+          "responses": 12
+        },
+        "returncode": 0,
+        "status": "ok",
+        "stderr_tail": "",
+        "stdout_tail": [
+          "RESULT accepted=12 responses=12 stalls=11 checksum=2465400 final_cycle=25 bank_mask=50'd1125899906842623",
+          "/tmp/tmp76cpoia0/decoder_weight_fetch_wrapper_tb.v:82: $finish called at 275000 (1ps)"
+        ]
+      }
+    },
+    {
+      "address_stride": 5,
+      "bank_read_width_bits": 2048,
+      "banks": 50,
+      "issue_interval_cycles": 21,
+      "label": "gpt2_medium_proxy",
+      "outstanding_depth": 1,
+      "passed": true,
+      "perf_reference": {
+        "accepted": 12,
+        "checksum": 2465400,
+        "final_cycle": 234,
+        "producer_stall_cycles": 0,
+        "responses": 12
+      },
+      "read_latency_cycles": 1,
+      "request_count": 12,
+      "rtl_sim": {
+        "observed": {
+          "accepted": 12,
+          "checksum": 2465400,
+          "final_cycle": 234,
+          "producer_stall_cycles": 0,
+          "responses": 12
+        },
+        "returncode": 0,
+        "status": "ok",
+        "stderr_tail": "",
+        "stdout_tail": [
+          "RESULT accepted=12 responses=12 stalls=0 checksum=2465400 final_cycle=234 bank_mask=50'd1125899906842623",
+          "/tmp/tmpjxd_a2f5/decoder_weight_fetch_wrapper_tb.v:82: $finish called at 2365000 (1ps)"
+        ]
+      }
+    },
+    {
+      "address_stride": 5,
+      "bank_read_width_bits": 2048,
+      "banks": 50,
+      "issue_interval_cycles": 29,
+      "label": "gpt2_medium_proxy",
+      "outstanding_depth": 1,
+      "passed": true,
+      "perf_reference": {
+        "accepted": 12,
+        "checksum": 2465400,
+        "final_cycle": 322,
+        "producer_stall_cycles": 0,
+        "responses": 12
+      },
+      "read_latency_cycles": 1,
+      "request_count": 12,
+      "rtl_sim": {
+        "observed": {
+          "accepted": 12,
+          "checksum": 2465400,
+          "final_cycle": 322,
+          "producer_stall_cycles": 0,
+          "responses": 12
+        },
+        "returncode": 0,
+        "status": "ok",
+        "stderr_tail": "",
+        "stdout_tail": [
+          "RESULT accepted=12 responses=12 stalls=0 checksum=2465400 final_cycle=322 bank_mask=50'd1125899906842623",
+          "/tmp/tmplfyuo02c/decoder_weight_fetch_wrapper_tb.v:82: $finish called at 3245000 (1ps)"
+        ]
+      }
+    },
+    {
+      "address_stride": 5,
+      "bank_read_width_bits": 2048,
+      "banks": 50,
+      "issue_interval_cycles": 1,
+      "label": "gpt2_medium_proxy",
+      "outstanding_depth": 4,
+      "passed": true,
+      "perf_reference": {
+        "accepted": 12,
+        "checksum": 2465400,
+        "final_cycle": 14,
+        "producer_stall_cycles": 0,
+        "responses": 12
+      },
+      "read_latency_cycles": 1,
+      "request_count": 12,
+      "rtl_sim": {
+        "observed": {
+          "accepted": 12,
+          "checksum": 2465400,
+          "final_cycle": 14,
+          "producer_stall_cycles": 0,
+          "responses": 12
+        },
+        "returncode": 0,
+        "status": "ok",
+        "stderr_tail": "",
+        "stdout_tail": [
+          "RESULT accepted=12 responses=12 stalls=0 checksum=2465400 final_cycle=14 bank_mask=50'd1125899906842623",
+          "/tmp/tmpkj2zk7ga/decoder_weight_fetch_wrapper_tb.v:82: $finish called at 165000 (1ps)"
+        ]
+      }
+    },
+    {
+      "address_stride": 5,
+      "bank_read_width_bits": 2048,
+      "banks": 50,
+      "issue_interval_cycles": 21,
+      "label": "gpt2_medium_proxy",
+      "outstanding_depth": 4,
+      "passed": true,
+      "perf_reference": {
+        "accepted": 12,
+        "checksum": 2465400,
+        "final_cycle": 234,
+        "producer_stall_cycles": 0,
+        "responses": 12
+      },
+      "read_latency_cycles": 1,
+      "request_count": 12,
+      "rtl_sim": {
+        "observed": {
+          "accepted": 12,
+          "checksum": 2465400,
+          "final_cycle": 234,
+          "producer_stall_cycles": 0,
+          "responses": 12
+        },
+        "returncode": 0,
+        "status": "ok",
+        "stderr_tail": "",
+        "stdout_tail": [
+          "RESULT accepted=12 responses=12 stalls=0 checksum=2465400 final_cycle=234 bank_mask=50'd1125899906842623",
+          "/tmp/tmp1joijpm8/decoder_weight_fetch_wrapper_tb.v:82: $finish called at 2365000 (1ps)"
+        ]
+      }
+    },
+    {
+      "address_stride": 5,
+      "bank_read_width_bits": 2048,
+      "banks": 50,
+      "issue_interval_cycles": 29,
+      "label": "gpt2_medium_proxy",
+      "outstanding_depth": 4,
+      "passed": true,
+      "perf_reference": {
+        "accepted": 12,
+        "checksum": 2465400,
+        "final_cycle": 322,
+        "producer_stall_cycles": 0,
+        "responses": 12
+      },
+      "read_latency_cycles": 1,
+      "request_count": 12,
+      "rtl_sim": {
+        "observed": {
+          "accepted": 12,
+          "checksum": 2465400,
+          "final_cycle": 322,
+          "producer_stall_cycles": 0,
+          "responses": 12
+        },
+        "returncode": 0,
+        "status": "ok",
+        "stderr_tail": "",
+        "stdout_tail": [
+          "RESULT accepted=12 responses=12 stalls=0 checksum=2465400 final_cycle=322 bank_mask=50'd1125899906842623",
+          "/tmp/tmpshfppokd/decoder_weight_fetch_wrapper_tb.v:82: $finish called at 3245000 (1ps)"
+        ]
+      }
+    },
+    {
+      "address_stride": 5,
+      "bank_read_width_bits": 2048,
+      "banks": 50,
+      "issue_interval_cycles": 1,
+      "label": "gpt2_medium_proxy",
+      "outstanding_depth": 1,
+      "passed": true,
+      "perf_reference": {
+        "accepted": 12,
+        "checksum": 2465400,
+        "final_cycle": 61,
+        "producer_stall_cycles": 44,
+        "responses": 12
+      },
+      "read_latency_cycles": 4,
+      "request_count": 12,
+      "rtl_sim": {
+        "observed": {
+          "accepted": 12,
+          "checksum": 2465400,
+          "final_cycle": 61,
+          "producer_stall_cycles": 44,
+          "responses": 12
+        },
+        "returncode": 0,
+        "status": "ok",
+        "stderr_tail": "",
+        "stdout_tail": [
+          "RESULT accepted=12 responses=12 stalls=44 checksum=2465400 final_cycle=61 bank_mask=50'd1125899906842623",
+          "/tmp/tmpv0sfubii/decoder_weight_fetch_wrapper_tb.v:82: $finish called at 635000 (1ps)"
+        ]
+      }
+    },
+    {
+      "address_stride": 5,
+      "bank_read_width_bits": 2048,
+      "banks": 50,
+      "issue_interval_cycles": 21,
+      "label": "gpt2_medium_proxy",
+      "outstanding_depth": 1,
+      "passed": true,
+      "perf_reference": {
+        "accepted": 12,
+        "checksum": 2465400,
+        "final_cycle": 237,
+        "producer_stall_cycles": 0,
+        "responses": 12
+      },
+      "read_latency_cycles": 4,
+      "request_count": 12,
+      "rtl_sim": {
+        "observed": {
+          "accepted": 12,
+          "checksum": 2465400,
+          "final_cycle": 237,
+          "producer_stall_cycles": 0,
+          "responses": 12
+        },
+        "returncode": 0,
+        "status": "ok",
+        "stderr_tail": "",
+        "stdout_tail": [
+          "RESULT accepted=12 responses=12 stalls=0 checksum=2465400 final_cycle=237 bank_mask=50'd1125899906842623",
+          "/tmp/tmp8cip357f/decoder_weight_fetch_wrapper_tb.v:82: $finish called at 2395000 (1ps)"
+        ]
+      }
+    },
+    {
+      "address_stride": 5,
+      "bank_read_width_bits": 2048,
+      "banks": 50,
+      "issue_interval_cycles": 29,
+      "label": "gpt2_medium_proxy",
+      "outstanding_depth": 1,
+      "passed": true,
+      "perf_reference": {
+        "accepted": 12,
+        "checksum": 2465400,
+        "final_cycle": 325,
+        "producer_stall_cycles": 0,
+        "responses": 12
+      },
+      "read_latency_cycles": 4,
+      "request_count": 12,
+      "rtl_sim": {
+        "observed": {
+          "accepted": 12,
+          "checksum": 2465400,
+          "final_cycle": 325,
+          "producer_stall_cycles": 0,
+          "responses": 12
+        },
+        "returncode": 0,
+        "status": "ok",
+        "stderr_tail": "",
+        "stdout_tail": [
+          "RESULT accepted=12 responses=12 stalls=0 checksum=2465400 final_cycle=325 bank_mask=50'd1125899906842623",
+          "/tmp/tmpb03z82ih/decoder_weight_fetch_wrapper_tb.v:82: $finish called at 3275000 (1ps)"
+        ]
+      }
+    },
+    {
+      "address_stride": 5,
+      "bank_read_width_bits": 2048,
+      "banks": 50,
+      "issue_interval_cycles": 1,
+      "label": "gpt2_medium_proxy",
+      "outstanding_depth": 4,
+      "passed": true,
+      "perf_reference": {
+        "accepted": 12,
+        "checksum": 2465400,
+        "final_cycle": 19,
+        "producer_stall_cycles": 2,
+        "responses": 12
+      },
+      "read_latency_cycles": 4,
+      "request_count": 12,
+      "rtl_sim": {
+        "observed": {
+          "accepted": 12,
+          "checksum": 2465400,
+          "final_cycle": 19,
+          "producer_stall_cycles": 2,
+          "responses": 12
+        },
+        "returncode": 0,
+        "status": "ok",
+        "stderr_tail": "",
+        "stdout_tail": [
+          "RESULT accepted=12 responses=12 stalls=2 checksum=2465400 final_cycle=19 bank_mask=50'd1125899906842623",
+          "/tmp/tmpo751x2q8/decoder_weight_fetch_wrapper_tb.v:82: $finish called at 215000 (1ps)"
+        ]
+      }
+    },
+    {
+      "address_stride": 5,
+      "bank_read_width_bits": 2048,
+      "banks": 50,
+      "issue_interval_cycles": 21,
+      "label": "gpt2_medium_proxy",
+      "outstanding_depth": 4,
+      "passed": true,
+      "perf_reference": {
+        "accepted": 12,
+        "checksum": 2465400,
+        "final_cycle": 237,
+        "producer_stall_cycles": 0,
+        "responses": 12
+      },
+      "read_latency_cycles": 4,
+      "request_count": 12,
+      "rtl_sim": {
+        "observed": {
+          "accepted": 12,
+          "checksum": 2465400,
+          "final_cycle": 237,
+          "producer_stall_cycles": 0,
+          "responses": 12
+        },
+        "returncode": 0,
+        "status": "ok",
+        "stderr_tail": "",
+        "stdout_tail": [
+          "RESULT accepted=12 responses=12 stalls=0 checksum=2465400 final_cycle=237 bank_mask=50'd1125899906842623",
+          "/tmp/tmp9ljtec4n/decoder_weight_fetch_wrapper_tb.v:82: $finish called at 2395000 (1ps)"
+        ]
+      }
+    },
+    {
+      "address_stride": 5,
+      "bank_read_width_bits": 2048,
+      "banks": 50,
+      "issue_interval_cycles": 29,
+      "label": "gpt2_medium_proxy",
+      "outstanding_depth": 4,
+      "passed": true,
+      "perf_reference": {
+        "accepted": 12,
+        "checksum": 2465400,
+        "final_cycle": 325,
+        "producer_stall_cycles": 0,
+        "responses": 12
+      },
+      "read_latency_cycles": 4,
+      "request_count": 12,
+      "rtl_sim": {
+        "observed": {
+          "accepted": 12,
+          "checksum": 2465400,
+          "final_cycle": 325,
+          "producer_stall_cycles": 0,
+          "responses": 12
+        },
+        "returncode": 0,
+        "status": "ok",
+        "stderr_tail": "",
+        "stdout_tail": [
+          "RESULT accepted=12 responses=12 stalls=0 checksum=2465400 final_cycle=325 bank_mask=50'd1125899906842623",
+          "/tmp/tmp35lzogih/decoder_weight_fetch_wrapper_tb.v:82: $finish called at 3275000 (1ps)"
+        ]
+      }
+    },
+    {
+      "address_stride": 5,
+      "bank_read_width_bits": 2048,
+      "banks": 50,
+      "issue_interval_cycles": 1,
+      "label": "gpt2_medium_proxy",
+      "outstanding_depth": 1,
+      "passed": true,
+      "perf_reference": {
+        "accepted": 12,
+        "checksum": 2465400,
+        "final_cycle": 109,
+        "producer_stall_cycles": 88,
+        "responses": 12
+      },
+      "read_latency_cycles": 8,
+      "request_count": 12,
+      "rtl_sim": {
+        "observed": {
+          "accepted": 12,
+          "checksum": 2465400,
+          "final_cycle": 109,
+          "producer_stall_cycles": 88,
+          "responses": 12
+        },
+        "returncode": 0,
+        "status": "ok",
+        "stderr_tail": "",
+        "stdout_tail": [
+          "RESULT accepted=12 responses=12 stalls=88 checksum=2465400 final_cycle=109 bank_mask=50'd1125899906842623",
+          "/tmp/tmpif8g55up/decoder_weight_fetch_wrapper_tb.v:82: $finish called at 1115000 (1ps)"
+        ]
+      }
+    },
+    {
+      "address_stride": 5,
+      "bank_read_width_bits": 2048,
+      "banks": 50,
+      "issue_interval_cycles": 21,
+      "label": "gpt2_medium_proxy",
+      "outstanding_depth": 1,
+      "passed": true,
+      "perf_reference": {
+        "accepted": 12,
+        "checksum": 2465400,
+        "final_cycle": 241,
+        "producer_stall_cycles": 0,
+        "responses": 12
+      },
+      "read_latency_cycles": 8,
+      "request_count": 12,
+      "rtl_sim": {
+        "observed": {
+          "accepted": 12,
+          "checksum": 2465400,
+          "final_cycle": 241,
+          "producer_stall_cycles": 0,
+          "responses": 12
+        },
+        "returncode": 0,
+        "status": "ok",
+        "stderr_tail": "",
+        "stdout_tail": [
+          "RESULT accepted=12 responses=12 stalls=0 checksum=2465400 final_cycle=241 bank_mask=50'd1125899906842623",
+          "/tmp/tmpt8vxnqsp/decoder_weight_fetch_wrapper_tb.v:82: $finish called at 2435000 (1ps)"
+        ]
+      }
+    },
+    {
+      "address_stride": 5,
+      "bank_read_width_bits": 2048,
+      "banks": 50,
+      "issue_interval_cycles": 29,
+      "label": "gpt2_medium_proxy",
+      "outstanding_depth": 1,
+      "passed": true,
+      "perf_reference": {
+        "accepted": 12,
+        "checksum": 2465400,
+        "final_cycle": 329,
+        "producer_stall_cycles": 0,
+        "responses": 12
+      },
+      "read_latency_cycles": 8,
+      "request_count": 12,
+      "rtl_sim": {
+        "observed": {
+          "accepted": 12,
+          "checksum": 2465400,
+          "final_cycle": 329,
+          "producer_stall_cycles": 0,
+          "responses": 12
+        },
+        "returncode": 0,
+        "status": "ok",
+        "stderr_tail": "",
+        "stdout_tail": [
+          "RESULT accepted=12 responses=12 stalls=0 checksum=2465400 final_cycle=329 bank_mask=50'd1125899906842623",
+          "/tmp/tmptcujwxco/decoder_weight_fetch_wrapper_tb.v:82: $finish called at 3315000 (1ps)"
+        ]
+      }
+    },
+    {
+      "address_stride": 5,
+      "bank_read_width_bits": 2048,
+      "banks": 50,
+      "issue_interval_cycles": 1,
+      "label": "gpt2_medium_proxy",
+      "outstanding_depth": 4,
+      "passed": true,
+      "perf_reference": {
+        "accepted": 12,
+        "checksum": 2465400,
+        "final_cycle": 31,
+        "producer_stall_cycles": 10,
+        "responses": 12
+      },
+      "read_latency_cycles": 8,
+      "request_count": 12,
+      "rtl_sim": {
+        "observed": {
+          "accepted": 12,
+          "checksum": 2465400,
+          "final_cycle": 31,
+          "producer_stall_cycles": 10,
+          "responses": 12
+        },
+        "returncode": 0,
+        "status": "ok",
+        "stderr_tail": "",
+        "stdout_tail": [
+          "RESULT accepted=12 responses=12 stalls=10 checksum=2465400 final_cycle=31 bank_mask=50'd1125899906842623",
+          "/tmp/tmp56yu1yjw/decoder_weight_fetch_wrapper_tb.v:82: $finish called at 335000 (1ps)"
+        ]
+      }
+    },
+    {
+      "address_stride": 5,
+      "bank_read_width_bits": 2048,
+      "banks": 50,
+      "issue_interval_cycles": 21,
+      "label": "gpt2_medium_proxy",
+      "outstanding_depth": 4,
+      "passed": true,
+      "perf_reference": {
+        "accepted": 12,
+        "checksum": 2465400,
+        "final_cycle": 241,
+        "producer_stall_cycles": 0,
+        "responses": 12
+      },
+      "read_latency_cycles": 8,
+      "request_count": 12,
+      "rtl_sim": {
+        "observed": {
+          "accepted": 12,
+          "checksum": 2465400,
+          "final_cycle": 241,
+          "producer_stall_cycles": 0,
+          "responses": 12
+        },
+        "returncode": 0,
+        "status": "ok",
+        "stderr_tail": "",
+        "stdout_tail": [
+          "RESULT accepted=12 responses=12 stalls=0 checksum=2465400 final_cycle=241 bank_mask=50'd1125899906842623",
+          "/tmp/tmpp064yutg/decoder_weight_fetch_wrapper_tb.v:82: $finish called at 2435000 (1ps)"
+        ]
+      }
+    },
+    {
+      "address_stride": 5,
+      "bank_read_width_bits": 2048,
+      "banks": 50,
+      "issue_interval_cycles": 29,
+      "label": "gpt2_medium_proxy",
+      "outstanding_depth": 4,
+      "passed": true,
+      "perf_reference": {
+        "accepted": 12,
+        "checksum": 2465400,
+        "final_cycle": 329,
+        "producer_stall_cycles": 0,
+        "responses": 12
+      },
+      "read_latency_cycles": 8,
+      "request_count": 12,
+      "rtl_sim": {
+        "observed": {
+          "accepted": 12,
+          "checksum": 2465400,
+          "final_cycle": 329,
+          "producer_stall_cycles": 0,
+          "responses": 12
+        },
+        "returncode": 0,
+        "status": "ok",
+        "stderr_tail": "",
+        "stdout_tail": [
+          "RESULT accepted=12 responses=12 stalls=0 checksum=2465400 final_cycle=329 bank_mask=50'd1125899906842623",
+          "/tmp/tmp9m87o3ch/decoder_weight_fetch_wrapper_tb.v:82: $finish called at 3315000 (1ps)"
+        ]
+      }
+    },
+    {
+      "address_stride": 5,
+      "bank_read_width_bits": 2048,
+      "banks": 37,
+      "issue_interval_cycles": 1,
+      "label": "gpt2_small",
+      "outstanding_depth": 1,
+      "passed": true,
+      "perf_reference": {
+        "accepted": 12,
+        "checksum": 1775334,
+        "final_cycle": 25,
+        "producer_stall_cycles": 11,
+        "responses": 12
+      },
+      "read_latency_cycles": 1,
+      "request_count": 12,
+      "rtl_sim": {
+        "observed": {
+          "accepted": 12,
+          "checksum": 1775334,
+          "final_cycle": 25,
+          "producer_stall_cycles": 11,
+          "responses": 12
+        },
+        "returncode": 0,
+        "status": "ok",
+        "stderr_tail": "",
+        "stdout_tail": [
+          "RESULT accepted=12 responses=12 stalls=11 checksum=1775334 final_cycle=25 bank_mask=37'd137438953471",
+          "/tmp/tmppjkhz8vt/decoder_weight_fetch_wrapper_tb.v:82: $finish called at 275000 (1ps)"
+        ]
+      }
+    },
+    {
+      "address_stride": 5,
+      "bank_read_width_bits": 2048,
+      "banks": 37,
+      "issue_interval_cycles": 11,
+      "label": "gpt2_small",
+      "outstanding_depth": 1,
+      "passed": true,
+      "perf_reference": {
+        "accepted": 12,
+        "checksum": 1775334,
+        "final_cycle": 124,
+        "producer_stall_cycles": 0,
+        "responses": 12
+      },
+      "read_latency_cycles": 1,
+      "request_count": 12,
+      "rtl_sim": {
+        "observed": {
+          "accepted": 12,
+          "checksum": 1775334,
+          "final_cycle": 124,
+          "producer_stall_cycles": 0,
+          "responses": 12
+        },
+        "returncode": 0,
+        "status": "ok",
+        "stderr_tail": "",
+        "stdout_tail": [
+          "RESULT accepted=12 responses=12 stalls=0 checksum=1775334 final_cycle=124 bank_mask=37'd137438953471",
+          "/tmp/tmp0w6j185p/decoder_weight_fetch_wrapper_tb.v:82: $finish called at 1265000 (1ps)"
+        ]
+      }
+    },
+    {
+      "address_stride": 5,
+      "bank_read_width_bits": 2048,
+      "banks": 37,
+      "issue_interval_cycles": 1,
+      "label": "gpt2_small",
+      "outstanding_depth": 4,
+      "passed": true,
+      "perf_reference": {
+        "accepted": 12,
+        "checksum": 1775334,
+        "final_cycle": 14,
+        "producer_stall_cycles": 0,
+        "responses": 12
+      },
+      "read_latency_cycles": 1,
+      "request_count": 12,
+      "rtl_sim": {
+        "observed": {
+          "accepted": 12,
+          "checksum": 1775334,
+          "final_cycle": 14,
+          "producer_stall_cycles": 0,
+          "responses": 12
+        },
+        "returncode": 0,
+        "status": "ok",
+        "stderr_tail": "",
+        "stdout_tail": [
+          "RESULT accepted=12 responses=12 stalls=0 checksum=1775334 final_cycle=14 bank_mask=37'd137438953471",
+          "/tmp/tmp5mnwy262/decoder_weight_fetch_wrapper_tb.v:82: $finish called at 165000 (1ps)"
+        ]
+      }
+    },
+    {
+      "address_stride": 5,
+      "bank_read_width_bits": 2048,
+      "banks": 37,
+      "issue_interval_cycles": 11,
+      "label": "gpt2_small",
+      "outstanding_depth": 4,
+      "passed": true,
+      "perf_reference": {
+        "accepted": 12,
+        "checksum": 1775334,
+        "final_cycle": 124,
+        "producer_stall_cycles": 0,
+        "responses": 12
+      },
+      "read_latency_cycles": 1,
+      "request_count": 12,
+      "rtl_sim": {
+        "observed": {
+          "accepted": 12,
+          "checksum": 1775334,
+          "final_cycle": 124,
+          "producer_stall_cycles": 0,
+          "responses": 12
+        },
+        "returncode": 0,
+        "status": "ok",
+        "stderr_tail": "",
+        "stdout_tail": [
+          "RESULT accepted=12 responses=12 stalls=0 checksum=1775334 final_cycle=124 bank_mask=37'd137438953471",
+          "/tmp/tmp71ra18cf/decoder_weight_fetch_wrapper_tb.v:82: $finish called at 1265000 (1ps)"
+        ]
+      }
+    },
+    {
+      "address_stride": 5,
+      "bank_read_width_bits": 2048,
+      "banks": 37,
+      "issue_interval_cycles": 1,
+      "label": "gpt2_small",
+      "outstanding_depth": 1,
+      "passed": true,
+      "perf_reference": {
+        "accepted": 12,
+        "checksum": 1775334,
+        "final_cycle": 61,
+        "producer_stall_cycles": 44,
+        "responses": 12
+      },
+      "read_latency_cycles": 4,
+      "request_count": 12,
+      "rtl_sim": {
+        "observed": {
+          "accepted": 12,
+          "checksum": 1775334,
+          "final_cycle": 61,
+          "producer_stall_cycles": 44,
+          "responses": 12
+        },
+        "returncode": 0,
+        "status": "ok",
+        "stderr_tail": "",
+        "stdout_tail": [
+          "RESULT accepted=12 responses=12 stalls=44 checksum=1775334 final_cycle=61 bank_mask=37'd137438953471",
+          "/tmp/tmppfgwmbfh/decoder_weight_fetch_wrapper_tb.v:82: $finish called at 635000 (1ps)"
+        ]
+      }
+    },
+    {
+      "address_stride": 5,
+      "bank_read_width_bits": 2048,
+      "banks": 37,
+      "issue_interval_cycles": 11,
+      "label": "gpt2_small",
+      "outstanding_depth": 1,
+      "passed": true,
+      "perf_reference": {
+        "accepted": 12,
+        "checksum": 1775334,
+        "final_cycle": 127,
+        "producer_stall_cycles": 0,
+        "responses": 12
+      },
+      "read_latency_cycles": 4,
+      "request_count": 12,
+      "rtl_sim": {
+        "observed": {
+          "accepted": 12,
+          "checksum": 1775334,
+          "final_cycle": 127,
+          "producer_stall_cycles": 0,
+          "responses": 12
+        },
+        "returncode": 0,
+        "status": "ok",
+        "stderr_tail": "",
+        "stdout_tail": [
+          "RESULT accepted=12 responses=12 stalls=0 checksum=1775334 final_cycle=127 bank_mask=37'd137438953471",
+          "/tmp/tmpj4vrpejj/decoder_weight_fetch_wrapper_tb.v:82: $finish called at 1295000 (1ps)"
+        ]
+      }
+    },
+    {
+      "address_stride": 5,
+      "bank_read_width_bits": 2048,
+      "banks": 37,
+      "issue_interval_cycles": 1,
+      "label": "gpt2_small",
+      "outstanding_depth": 4,
+      "passed": true,
+      "perf_reference": {
+        "accepted": 12,
+        "checksum": 1775334,
+        "final_cycle": 19,
+        "producer_stall_cycles": 2,
+        "responses": 12
+      },
+      "read_latency_cycles": 4,
+      "request_count": 12,
+      "rtl_sim": {
+        "observed": {
+          "accepted": 12,
+          "checksum": 1775334,
+          "final_cycle": 19,
+          "producer_stall_cycles": 2,
+          "responses": 12
+        },
+        "returncode": 0,
+        "status": "ok",
+        "stderr_tail": "",
+        "stdout_tail": [
+          "RESULT accepted=12 responses=12 stalls=2 checksum=1775334 final_cycle=19 bank_mask=37'd137438953471",
+          "/tmp/tmpyovbfocg/decoder_weight_fetch_wrapper_tb.v:82: $finish called at 215000 (1ps)"
+        ]
+      }
+    },
+    {
+      "address_stride": 5,
+      "bank_read_width_bits": 2048,
+      "banks": 37,
+      "issue_interval_cycles": 11,
+      "label": "gpt2_small",
+      "outstanding_depth": 4,
+      "passed": true,
+      "perf_reference": {
+        "accepted": 12,
+        "checksum": 1775334,
+        "final_cycle": 127,
+        "producer_stall_cycles": 0,
+        "responses": 12
+      },
+      "read_latency_cycles": 4,
+      "request_count": 12,
+      "rtl_sim": {
+        "observed": {
+          "accepted": 12,
+          "checksum": 1775334,
+          "final_cycle": 127,
+          "producer_stall_cycles": 0,
+          "responses": 12
+        },
+        "returncode": 0,
+        "status": "ok",
+        "stderr_tail": "",
+        "stdout_tail": [
+          "RESULT accepted=12 responses=12 stalls=0 checksum=1775334 final_cycle=127 bank_mask=37'd137438953471",
+          "/tmp/tmpjcqfjmcg/decoder_weight_fetch_wrapper_tb.v:82: $finish called at 1295000 (1ps)"
+        ]
+      }
+    },
+    {
+      "address_stride": 5,
+      "bank_read_width_bits": 2048,
+      "banks": 37,
+      "issue_interval_cycles": 1,
+      "label": "gpt2_small",
+      "outstanding_depth": 1,
+      "passed": true,
+      "perf_reference": {
+        "accepted": 12,
+        "checksum": 1775334,
+        "final_cycle": 109,
+        "producer_stall_cycles": 88,
+        "responses": 12
+      },
+      "read_latency_cycles": 8,
+      "request_count": 12,
+      "rtl_sim": {
+        "observed": {
+          "accepted": 12,
+          "checksum": 1775334,
+          "final_cycle": 109,
+          "producer_stall_cycles": 88,
+          "responses": 12
+        },
+        "returncode": 0,
+        "status": "ok",
+        "stderr_tail": "",
+        "stdout_tail": [
+          "RESULT accepted=12 responses=12 stalls=88 checksum=1775334 final_cycle=109 bank_mask=37'd137438953471",
+          "/tmp/tmp61vk6aw3/decoder_weight_fetch_wrapper_tb.v:82: $finish called at 1115000 (1ps)"
+        ]
+      }
+    },
+    {
+      "address_stride": 5,
+      "bank_read_width_bits": 2048,
+      "banks": 37,
+      "issue_interval_cycles": 11,
+      "label": "gpt2_small",
+      "outstanding_depth": 1,
+      "passed": true,
+      "perf_reference": {
+        "accepted": 12,
+        "checksum": 1775334,
+        "final_cycle": 131,
+        "producer_stall_cycles": 0,
+        "responses": 12
+      },
+      "read_latency_cycles": 8,
+      "request_count": 12,
+      "rtl_sim": {
+        "observed": {
+          "accepted": 12,
+          "checksum": 1775334,
+          "final_cycle": 131,
+          "producer_stall_cycles": 0,
+          "responses": 12
+        },
+        "returncode": 0,
+        "status": "ok",
+        "stderr_tail": "",
+        "stdout_tail": [
+          "RESULT accepted=12 responses=12 stalls=0 checksum=1775334 final_cycle=131 bank_mask=37'd137438953471",
+          "/tmp/tmpqsxqjiq8/decoder_weight_fetch_wrapper_tb.v:82: $finish called at 1335000 (1ps)"
+        ]
+      }
+    },
+    {
+      "address_stride": 5,
+      "bank_read_width_bits": 2048,
+      "banks": 37,
+      "issue_interval_cycles": 1,
+      "label": "gpt2_small",
+      "outstanding_depth": 4,
+      "passed": true,
+      "perf_reference": {
+        "accepted": 12,
+        "checksum": 1775334,
+        "final_cycle": 31,
+        "producer_stall_cycles": 10,
+        "responses": 12
+      },
+      "read_latency_cycles": 8,
+      "request_count": 12,
+      "rtl_sim": {
+        "observed": {
+          "accepted": 12,
+          "checksum": 1775334,
+          "final_cycle": 31,
+          "producer_stall_cycles": 10,
+          "responses": 12
+        },
+        "returncode": 0,
+        "status": "ok",
+        "stderr_tail": "",
+        "stdout_tail": [
+          "RESULT accepted=12 responses=12 stalls=10 checksum=1775334 final_cycle=31 bank_mask=37'd137438953471",
+          "/tmp/tmp91fh4h1x/decoder_weight_fetch_wrapper_tb.v:82: $finish called at 335000 (1ps)"
+        ]
+      }
+    },
+    {
+      "address_stride": 5,
+      "bank_read_width_bits": 2048,
+      "banks": 37,
+      "issue_interval_cycles": 11,
+      "label": "gpt2_small",
+      "outstanding_depth": 4,
+      "passed": true,
+      "perf_reference": {
+        "accepted": 12,
+        "checksum": 1775334,
+        "final_cycle": 131,
+        "producer_stall_cycles": 0,
+        "responses": 12
+      },
+      "read_latency_cycles": 8,
+      "request_count": 12,
+      "rtl_sim": {
+        "observed": {
+          "accepted": 12,
+          "checksum": 1775334,
+          "final_cycle": 131,
+          "producer_stall_cycles": 0,
+          "responses": 12
+        },
+        "returncode": 0,
+        "status": "ok",
+        "stderr_tail": "",
+        "stdout_tail": [
+          "RESULT accepted=12 responses=12 stalls=0 checksum=1775334 final_cycle=131 bank_mask=37'd137438953471",
+          "/tmp/tmpgehv8wey/decoder_weight_fetch_wrapper_tb.v:82: $finish called at 1335000 (1ps)"
+        ]
+      }
+    }
+  ],
+  "model": "decoder_output_projection_weight_fetch_wrapper_contract_v1",
+  "source_feasibility_decision": "weight_store_area_budget_feasible",
+  "summary": {
+    "max_banks": 50,
+    "passed_count": 30,
+    "scenario_count": 30,
+    "stall_scenario_count": 10
+  },
+  "version": 0.1
+}

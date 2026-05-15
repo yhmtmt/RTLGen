@@ -41,5 +41,6 @@
     "Do not instantiate full resident weight arrays as registers.",
     "Do not claim SRAM bitcell or macro PPA from this control-contract job.",
     "Do not replace the full-bank weight-store interface contract."
-  ]
+  ],
+  "created_utc": "2026-05-15T19:05:52.422345Z"
 }
