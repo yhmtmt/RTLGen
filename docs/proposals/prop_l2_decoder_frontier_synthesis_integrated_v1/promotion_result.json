@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_decoder_frontier_synthesis_integrated_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "iterate",
+  "pr_number": 562,
+  "merge_commit": "a9b224cc65f1a20d35e46ef63996b6b82dee1a77",
+  "merged_utc": "2026-05-15T09:47:40.505978Z"
 }
