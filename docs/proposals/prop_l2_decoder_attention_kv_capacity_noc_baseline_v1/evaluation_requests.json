@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_capacity_noc_baseline_v1",
-  "source_commit": "2c52004e69b01bdcd6f843f497f68f25060acfb2",
+  "source_commit": "643bc642be773f5cd543761016ec5a940e40d0b7",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_kv_capacity_noc_baseline_v1",
@@ -17,8 +17,9 @@
       "requires_materialized_refs": true,
       "expected_result": {
         "direction": "iterate",
-        "reason": "Use the capacity-feasible best points to choose the next integrated attention/KV SRAM and NoC scheduling measurement."
-      }
+        "reason": "Use capacity-feasible best points to choose the next integrated attention/KV SRAM and NoC scheduling measurement."
+      },
+      "status": "pending"
     }
   ]
 }
