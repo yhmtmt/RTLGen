@@ -2815,11 +2815,11 @@ def _decoder_attention_kv_memory_evidence(*, item_id: str) -> dict[str, Any]:
             ),
             "attention_kv_memory_grid": {
                 "sequence_length_list": [128, 512, 2048, 8192, 32768],
-                "macs_per_cycle_list": [8192, 32768, 131072],
+                "macs_per_cycle_list": [8192, 32768, 131072, 524288],
                 "kv_memory_tier_list": ["local_sram", "shared_sram", "hbm", "remote_hbm"],
-                "kv_sharing_list": ["mha", "gqa4", "mqa"],
+                "kv_sharing_list": ["mha", "gqa4", "gqa8", "mqa"],
                 "kv_bits_list": [8, 16],
-                "noc_hops_list": [0, 1, 2, 4],
+                "noc_hops_list": [0, 1, 2, 4, 8],
             },
             "measured_tile_metrics": [
                 "runs/designs/activations/attention_kv_tile_hd64_kv4_l16_b128_wrapper/metrics.csv",
@@ -2836,12 +2836,12 @@ def _decoder_attention_kv_memory_evidence(*, item_id: str) -> dict[str, Any]:
                 "run": (
                     "python3 npu/eval/estimate_llm_decoder_attention_kv_memory.py "
                     "--sequence-length-list 128,512,2048,8192,32768 "
-                    "--macs-per-cycle-list 8192,32768,131072 "
+                    "--macs-per-cycle-list 8192,32768,131072,524288 "
                     "--kv-memory-tier-list local_sram,shared_sram,hbm,remote_hbm "
-                    "--kv-sharing-list mha,gqa4,mqa "
+                    "--kv-sharing-list mha,gqa4,gqa8,mqa "
                     "--kv-bits-list 8,16 "
-                    "--noc-hops-list 1,2,4 "
-                    "--noc-bandwidth-bytes-per-cycle 256 "
+                    "--noc-hops-list 1,2,4,8 "
+                    "--noc-bandwidth-bytes-per-cycle 4096 "
                     "--measured-tile-metrics "
                     "runs/designs/activations/attention_kv_tile_hd64_kv4_l16_b128_wrapper/metrics.csv,"
                     "runs/designs/activations/attention_kv_tile_hd64_kv4_l32_b256_wrapper/metrics.csv,"
