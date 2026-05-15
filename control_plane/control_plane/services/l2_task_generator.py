@@ -3017,6 +3017,53 @@ def _decoder_frontier_synthesis_policy_calibrated_evidence(*, item_id: str) -> d
     }
 
 
+def _decoder_output_projection_producer_memory_hierarchy_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_output_projection_producer_memory_hierarchy__{item_id}.json"
+    report = f"{base}/decoder_output_projection_producer_memory_hierarchy__{item_id}.md"
+    frontier = (
+        f"{base}/decoder_frontier_synthesis__"
+        "l2_decoder_frontier_synthesis_policy_calibrated_v1.json"
+    )
+    calibration = (
+        f"{base}/decoder_producer_ranker_policy_calibration__"
+        "l2_decoder_producer_ranker_policy_calibration_v1.json"
+    )
+    return {
+        "inputs": {
+            "producer_memory_hierarchy_out": out,
+            "producer_memory_hierarchy_report": report,
+            "frontier_synthesis_policy_calibrated": frontier,
+            "producer_ranker_policy_calibration": calibration,
+            "producer_memory_hierarchy_scope": (
+                "Explore output-projection producer weight-memory hierarchy assumptions after "
+                "ranker service calibration. Sweep cache capacity, effective cache hit rate, "
+                "off-chip bandwidth, local-cache bandwidth, compute lanes, and producer lanes to "
+                "identify whether producer latency is mainly storage/bandwidth limited or compute limited."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_output_projection_producer_memory_hierarchy",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_output_projection_producer_memory_hierarchy.py "
+                    f"--frontier {frontier} "
+                    f"--calibration {calibration} "
+                    "--producer-lanes-list 64,128,256 "
+                    "--macs-per-cycle-list 32768,65536,131072 "
+                    "--offchip-bw-bytes-per-cycle-list 256,1024,4096 "
+                    "--local-cache-bw-bytes-per-cycle-list 1024,4096,16384 "
+                    "--cache-capacity-mb-list 0,8,32,128,256 "
+                    "--cache-hit-rate-list 0,0.5,0.9,0.99,1.0 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_producer_ranker_memory_integration_plan_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_producer_ranker_memory_integration_plan__{item_id}.json"
@@ -4162,6 +4209,7 @@ def _build_payload(
         "decoder_frontier_synthesis",
         "decoder_frontier_synthesis_integrated",
         "decoder_frontier_synthesis_policy_calibrated",
+        "decoder_output_projection_producer_memory_hierarchy",
         "decoder_producer_ranker_memory_integration_plan",
         "decoder_producer_ranker_ready_valid_equivalence",
         "decoder_producer_ranker_physical_wrapper",
@@ -4196,6 +4244,8 @@ def _build_payload(
             decoder_evidence = _decoder_frontier_synthesis_integrated_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_frontier_synthesis_policy_calibrated":
             decoder_evidence = _decoder_frontier_synthesis_policy_calibrated_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_output_projection_producer_memory_hierarchy":
+            decoder_evidence = _decoder_output_projection_producer_memory_hierarchy_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_producer_ranker_memory_integration_plan":
             decoder_evidence = _decoder_producer_ranker_memory_integration_plan_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_producer_ranker_ready_valid_equivalence":

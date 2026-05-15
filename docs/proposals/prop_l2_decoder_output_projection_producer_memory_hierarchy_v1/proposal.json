@@ -1,0 +1,69 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_producer_memory_hierarchy_v1",
+  "created_utc": "2026-05-15T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_output_projection_producer_memory_hierarchy",
+  "title": "Decoder output-projection producer memory hierarchy",
+  "hypothesis": "After policy-wrapper ranker calibration, output projection remains dominant because producer weight delivery is modeled as streaming. Sweeping cache capacity, cache hit rate, local-cache bandwidth, off-chip bandwidth, and compute lanes will identify whether a resident/sharded weight hierarchy can move the frontier.",
+  "direct_comparison": {
+    "primary_question": "How much producer output-projection latency can be removed by plausible weight-cache capacity and bandwidth before compute becomes the limiter?",
+    "include": [
+      "calibrated frontier focus shapes",
+      "producer/ranker policy calibration baseline rows",
+      "cache capacity and effective hit-rate sweep",
+      "off-chip and local-cache bandwidth sweep",
+      "producer lane and MAC/cycle sweep",
+      "serial and parallel cache/miss service bounds"
+    ],
+    "exclude": [
+      "routed SRAM/cache macro",
+      "new producer RTL implementation",
+      "NoC arbitration measurement",
+      "training or model-quality effects"
+    ]
+  },
+  "expected_benefit": [
+    "separates producer compute parallelism from weight-memory hierarchy requirements",
+    "estimates the cache capacity and local bandwidth needed to reduce the current 301-401 us producer bottleneck",
+    "selects whether the next measured RTL job should be a resident/sharded weight-cache producer or a different output-projection mapping"
+  ],
+  "risks": [
+    "cache hit rate is an architectural assumption, not measured reuse from a concrete scheduler",
+    "parallel cache/off-chip service is optimistic when the local cache and refill path share ports",
+    "large resident weight capacity may be impractical on Nangate45 without a macro/SRAM model"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_output_projection_producer_memory_hierarchy_v1",
+      "task_type": "l2_campaign",
+      "objective": "Estimate output-projection producer latency under explicit weight-memory hierarchy assumptions after calibrated ranker service.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_output_projection_producer_memory_hierarchy",
+      "cost_class": "low",
+      "comparison_role": "producer_memory_hierarchy",
+      "paired_baseline_item_id": "l2_decoder_frontier_synthesis_policy_calibrated_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_frontier_synthesis_policy_calibrated_v1",
+        "l2_decoder_producer_ranker_policy_calibration_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "If moderate cache capacity/bandwidth removes the producer bottleneck, queue a measured resident/sharded producer; otherwise revisit output-projection mapping or external memory assumptions."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_frontier_synthesis__l2_decoder_frontier_synthesis_policy_calibrated_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_producer_ranker_policy_calibration__l2_decoder_producer_ranker_policy_calibration_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_output_projection_producer_memory_hierarchy.py",
+    "tests/test_llm_decoder_output_projection_producer_memory_hierarchy.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}
