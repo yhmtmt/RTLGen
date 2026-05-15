@@ -1,0 +1,31 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_producer_ranker_integration_v1",
+  "source_commit": "d0ea782633adba598d6334dbf11dd2125dea7da7",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_output_projection_producer_ranker_integration_v1",
+      "task_type": "l2_campaign",
+      "objective": "Account measured output-projection producer PPA together with measured output-ranker policy-wrapper PPA and report timing, area, power, and service-cycle overhead.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_output_projection_producer_ranker_integration",
+      "comparison_role": "producer_ranker_service",
+      "paired_baseline_item_id": "l2_decoder_producer_ranker_physical_wrapper_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_producer_ranker_physical_wrapper_v1",
+        "l2_decoder_output_projection_ranker_policy_v1",
+        "l2_decoder_output_projection_ranker_wrapper_physical_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "If additive accounting shows producer-dominated timing and bounded overhead, use it as the producer-side integration baseline; otherwise split or gate the ranker wrapper before monolithic integration."
+      },
+      "status": "merged",
+      "merged_pr_number": 560,
+      "merge_commit": "ef76dfae3b1d18f6b52e1a5451dd196838efadc5",
+      "merged_utc": "2026-05-15T09:36:57.805927Z",
+      "notes": "Merged via PR #560 and merge ef76dfae3b1d18f6b52e1a5451dd196838efadc5 at 2026-05-15T09:36:57.805927Z."
+    }
+  ]
+}

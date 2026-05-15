@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_producer_ranker_integration_v1",
+  "decision": "iterate",
+  "pr_number": 560,
+  "merge_commit": "ef76dfae3b1d18f6b52e1a5451dd196838efadc5",
+  "merged_utc": "2026-05-15T09:36:57.805927Z"
+}
