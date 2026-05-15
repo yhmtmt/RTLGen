@@ -1,0 +1,71 @@
+{
+  "proposal_id": "prop_l2_decoder_frontier_synthesis_integrated_v1",
+  "created_utc": "2026-05-15T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_frontier_synthesis_integrated",
+  "title": "Decoder frontier synthesis with producer/ranker integration accounting",
+  "hypothesis": "The latest measured producer/ranker integration accounting can be carried into the whole-decoder frontier synthesis as PPA context without replacing the existing analytical producer/ranker latency model.",
+  "direct_comparison": {
+    "primary_question": "After adding measured additive producer/ranker integration PPA context, is the next measured RTL frontier still producer/ranker, or does attention/KV memory dominate larger contexts?",
+    "include": [
+      "whole-decoder large-array stage breakdown",
+      "attention/KV memory hierarchy report calibrated by measured tile PPA",
+      "producer/ranker NoC coupling latency model",
+      "producer/ranker integration accounting from measured producer and ranker-wrapper PPA",
+      "dominant component ranking across shape and context points"
+    ],
+    "exclude": [
+      "new physical RTL implementation",
+      "routed monolithic producer-plus-ranker macro",
+      "measured SRAM/NoC subsystem",
+      "quality impact of KV quantization or GQA/MQA"
+    ]
+  },
+  "expected_benefit": [
+    "keeps the newly measured producer/ranker wrapper overhead visible in frontier selection",
+    "prevents additive PPA evidence from being confused with the producer/ranker latency model",
+    "selects a better next RTL job across attention/KV and producer/ranker candidates"
+  ],
+  "risks": [
+    "the synthesis remains analytical and inherits assumptions from its input reports",
+    "producer/ranker integration accounting is additive and may understate monolithic routing interaction",
+    "attention/KV hierarchy remains modeled rather than a routed memory or NoC implementation"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_frontier_synthesis_integrated_v1",
+      "task_type": "l2_campaign",
+      "objective": "Refresh decoder frontier synthesis with measured producer/ranker integration accounting as PPA context.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_frontier_synthesis_integrated",
+      "cost_class": "low",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_frontier_synthesis_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_stage_breakdown_large_array_v2",
+        "l2_decoder_attention_kv_memory_measured_tile_v1",
+        "l2_decoder_producer_ranker_coupled_noc_v1",
+        "l2_decoder_output_projection_producer_ranker_integration_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use the refreshed synthesis to choose whether the next measured RTL job should target attention/KV memory hierarchy, producer/ranker integration, or another whole-decoder bottleneck."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "control_plane/shadow_exports/l2_decisions/l2_decoder_frontier_synthesis_v1.json",
+    "control_plane/shadow_exports/l2_decisions/l2_decoder_output_projection_producer_ranker_integration_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/synthesize_llm_decoder_frontier.py",
+    "npu/eval/estimate_llm_decoder_output_projection_integrated_breakdown.py",
+    "tests/test_llm_decoder_frontier_synthesis.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}
