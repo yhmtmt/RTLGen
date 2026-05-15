@@ -2814,7 +2814,7 @@ def _decoder_attention_kv_memory_evidence(*, item_id: str) -> dict[str, Any]:
                 "NoC hops, KV precision, and MHA/GQA/MQA sharing."
             ),
             "attention_kv_memory_grid": {
-                "sequence_length_list": [128, 512, 2048, 8192, 32768],
+                "sequence_length_list": [128, 512, 2048, 8192, 32768, 131072],
                 "macs_per_cycle_list": [8192, 32768, 131072, 524288],
                 "kv_memory_tier_list": ["local_sram", "shared_sram", "hbm", "remote_hbm"],
                 "kv_sharing_list": ["mha", "gqa4", "gqa8", "mqa"],
@@ -2835,7 +2835,7 @@ def _decoder_attention_kv_memory_evidence(*, item_id: str) -> dict[str, Any]:
                 "name": "estimate_decoder_attention_kv_memory",
                 "run": (
                     "python3 npu/eval/estimate_llm_decoder_attention_kv_memory.py "
-                    "--sequence-length-list 128,512,2048,8192,32768 "
+                    "--sequence-length-list 128,512,2048,8192,32768,131072 "
                     "--macs-per-cycle-list 8192,32768,131072,524288 "
                     "--kv-memory-tier-list local_sram,shared_sram,hbm,remote_hbm "
                     "--kv-sharing-list mha,gqa4,gqa8,mqa "

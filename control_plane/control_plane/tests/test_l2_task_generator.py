@@ -2533,7 +2533,7 @@ def test_generate_l2_campaign_task_adds_decoder_attention_kv_memory_evidence() -
             decoder_inputs = work_item.input_manifest["decoder_contract"]
             assert work_item.command_manifest[0]["name"] == "estimate_decoder_attention_kv_memory"
             run = work_item.command_manifest[0]["run"]
-            assert "--sequence-length-list 128,512,2048,8192,32768" in run
+            assert "--sequence-length-list 128,512,2048,8192,32768,131072" in run
             assert "--kv-memory-tier-list local_sram,shared_sram,hbm,remote_hbm" in run
             assert "--macs-per-cycle-list 8192,32768,131072,524288" in run
             assert "--kv-sharing-list mha,gqa4,gqa8,mqa" in run
