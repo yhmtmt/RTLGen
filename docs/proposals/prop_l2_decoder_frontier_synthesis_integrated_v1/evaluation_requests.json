@@ -1,0 +1,28 @@
+{
+  "proposal_id": "prop_l2_decoder_frontier_synthesis_integrated_v1",
+  "source_commit": "27ecd8deeb2ff0485365050a656c62caae452dae",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_frontier_synthesis_integrated_v1",
+      "task_type": "l2_campaign",
+      "objective": "Refresh decoder frontier synthesis with measured producer/ranker integration accounting as additive PPA context alongside stage breakdown, attention/KV, and producer/ranker coupling evidence.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_frontier_synthesis_integrated",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_frontier_synthesis_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_stage_breakdown_large_array_v2",
+        "l2_decoder_attention_kv_memory_measured_tile_v1",
+        "l2_decoder_producer_ranker_coupled_noc_v1",
+        "l2_decoder_output_projection_producer_ranker_integration_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use the refreshed synthesis to choose whether the next measured RTL job should target attention/KV memory hierarchy, producer/ranker integration, or another whole-decoder bottleneck."
+      },
+      "status": "pending"
+    }
+  ]
+}
