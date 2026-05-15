@@ -1,0 +1,25 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_weight_fetch_wrapper_v1",
+  "source_commit": "9f11b0f4b1cf60ac956d313b262630c137a2b406",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_output_projection_weight_fetch_wrapper_v1",
+      "task_type": "l2_campaign",
+      "objective": "Probe producer-side tile request cadence, outstanding request throttling, full-bank masks, and response ordering for the resident output-projection weight-fetch wrapper.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_output_projection_weight_fetch_wrapper",
+      "comparison_role": "weight_fetch_contract",
+      "paired_baseline_item_id": "l2_decoder_output_projection_weight_store_interface_v1_r2",
+      "depends_on_item_ids": [
+        "l2_decoder_output_projection_weight_store_interface_v1_r2"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "If producer-side request/throttle behavior matches perf-sim, queue a measured bounded physical wrapper for control logic while keeping resident storage as macro/proxy."
+      },
+      "status": "pending"
+    }
+  ]
+}
