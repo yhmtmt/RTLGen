@@ -20,7 +20,11 @@
         "direction": "iterate",
         "reason": "If output projection still dominates after calibrated ranker service, target producer memory/cache hierarchy; otherwise move to the newly dominant decoder component."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 566,
+      "merge_commit": "23cc98b057d8d718b9761765d324323e9522c4d1",
+      "merged_utc": "2026-05-15T11:22:01.837837Z",
+      "notes": "Merged via PR #566 and merge 23cc98b057d8d718b9761765d324323e9522c4d1 at 2026-05-15T11:22:01.837837Z."
     }
   ]
 }
