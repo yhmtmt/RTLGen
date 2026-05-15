@@ -21,7 +21,11 @@
         "direction": "iterate",
         "reason": "Use 131k attention/KV evidence to choose integrated attention memory hierarchy versus producer memory/cache next."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 586,
+      "merge_commit": "fe9eeffc2019f83d2b7139ba9329b75f3ac88729",
+      "merged_utc": "2026-05-15T19:45:50.554674Z",
+      "notes": "Merged via PR #586 and merge fe9eeffc2019f83d2b7139ba9329b75f3ac88729 at 2026-05-15T19:45:50.554674Z."
     }
   ]
 }
