@@ -1,0 +1,25 @@
+{
+  "proposal_id": "prop_l2_decoder_output_projection_weight_store_interface_v1",
+  "source_commit": "205f77703ca5ca868d880f363bbfb4454b5f544e",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_output_projection_weight_store_interface_v1",
+      "task_type": "l2_campaign",
+      "objective": "Probe a bounded RTL/perf-sim sharded ready/valid weight-store interface derived from the resident output-projection weight-store feasibility rows.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_output_projection_weight_store_interface",
+      "comparison_role": "weight_store_contract",
+      "paired_baseline_item_id": "l2_decoder_output_projection_weight_store_feasibility_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_output_projection_weight_store_feasibility_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "If the bounded sharded interface matches perf-sim, use the contract for a measured producer-side weight-fetch wrapper while keeping full storage PPA from the feasibility model."
+      },
+      "status": "pending"
+    }
+  ]
+}

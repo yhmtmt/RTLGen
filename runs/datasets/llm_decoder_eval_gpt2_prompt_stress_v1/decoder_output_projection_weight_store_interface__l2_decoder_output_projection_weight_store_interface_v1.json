@@ -1,0 +1,165 @@
+{
+  "assumptions": [
+    "The RTL probe scales the number of banks down to a bounded representative count; full resident capacity and area remain from the feasibility artifact.",
+    "The probe models independent sharded bank reads and deterministic response ordering, not SRAM bitcell layout.",
+    "Python perf reference and RTL simulation must agree on accepted requests, response count, and data checksum."
+  ],
+  "decision": {
+    "decision": "weight_store_interface_contract_passed",
+    "next_step": "Use the sharded ready/valid contract when building a measured producer-side weight fetch wrapper; keep storage PPA from the feasibility model."
+  },
+  "interface_rows": [
+    {
+      "address_stride": 3,
+      "bank_read_width_bits": 2048,
+      "data_bits_in_probe": 32,
+      "full_required_banks": 50,
+      "label": "gpt2_medium_proxy",
+      "passed": true,
+      "perf_reference": {
+        "accepted": 12,
+        "checksum": 221856,
+        "final_cycle_lower_bound": 13,
+        "first_response_cycle": 1,
+        "responses": 12
+      },
+      "read_latency_cycles": 1,
+      "read_ports_per_bank": 2,
+      "representative_banks": 8,
+      "request_count": 12,
+      "rtl_sim": {
+        "observed": {
+          "accepted": 12,
+          "checksum": 221856,
+          "final_cycle": 15,
+          "passed": 1,
+          "responses": 12
+        },
+        "returncode": 0,
+        "status": "ok",
+        "stderr_tail": "",
+        "stdout_tail": [
+          "RESULT passed=1 accepted=12 responses=12 checksum=221856 final_cycle=15",
+          "/tmp/tmptlcpmw57/decoder_weight_store_interface_tb.v:89: $finish called at 175000 (1ps)"
+        ]
+      }
+    },
+    {
+      "address_stride": 3,
+      "bank_read_width_bits": 2048,
+      "data_bits_in_probe": 32,
+      "full_required_banks": 50,
+      "label": "gpt2_medium_proxy",
+      "passed": true,
+      "perf_reference": {
+        "accepted": 12,
+        "checksum": 221856,
+        "final_cycle_lower_bound": 14,
+        "first_response_cycle": 2,
+        "responses": 12
+      },
+      "read_latency_cycles": 2,
+      "read_ports_per_bank": 2,
+      "representative_banks": 8,
+      "request_count": 12,
+      "rtl_sim": {
+        "observed": {
+          "accepted": 12,
+          "checksum": 221856,
+          "final_cycle": 16,
+          "passed": 1,
+          "responses": 12
+        },
+        "returncode": 0,
+        "status": "ok",
+        "stderr_tail": "",
+        "stdout_tail": [
+          "RESULT passed=1 accepted=12 responses=12 checksum=221856 final_cycle=16",
+          "/tmp/tmpupu_y2_t/decoder_weight_store_interface_tb.v:89: $finish called at 185000 (1ps)"
+        ]
+      }
+    },
+    {
+      "address_stride": 3,
+      "bank_read_width_bits": 2048,
+      "data_bits_in_probe": 32,
+      "full_required_banks": 37,
+      "label": "gpt2_small",
+      "passed": true,
+      "perf_reference": {
+        "accepted": 12,
+        "checksum": 221856,
+        "final_cycle_lower_bound": 13,
+        "first_response_cycle": 1,
+        "responses": 12
+      },
+      "read_latency_cycles": 1,
+      "read_ports_per_bank": 2,
+      "representative_banks": 8,
+      "request_count": 12,
+      "rtl_sim": {
+        "observed": {
+          "accepted": 12,
+          "checksum": 221856,
+          "final_cycle": 15,
+          "passed": 1,
+          "responses": 12
+        },
+        "returncode": 0,
+        "status": "ok",
+        "stderr_tail": "",
+        "stdout_tail": [
+          "RESULT passed=1 accepted=12 responses=12 checksum=221856 final_cycle=15",
+          "/tmp/tmp_4zh7vt3/decoder_weight_store_interface_tb.v:89: $finish called at 175000 (1ps)"
+        ]
+      }
+    },
+    {
+      "address_stride": 3,
+      "bank_read_width_bits": 2048,
+      "data_bits_in_probe": 32,
+      "full_required_banks": 37,
+      "label": "gpt2_small",
+      "passed": true,
+      "perf_reference": {
+        "accepted": 12,
+        "checksum": 221856,
+        "final_cycle_lower_bound": 14,
+        "first_response_cycle": 2,
+        "responses": 12
+      },
+      "read_latency_cycles": 2,
+      "read_ports_per_bank": 2,
+      "representative_banks": 8,
+      "request_count": 12,
+      "rtl_sim": {
+        "observed": {
+          "accepted": 12,
+          "checksum": 221856,
+          "final_cycle": 16,
+          "passed": 1,
+          "responses": 12
+        },
+        "returncode": 0,
+        "status": "ok",
+        "stderr_tail": "",
+        "stdout_tail": [
+          "RESULT passed=1 accepted=12 responses=12 checksum=221856 final_cycle=16",
+          "/tmp/tmpgshbxtdi/decoder_weight_store_interface_tb.v:89: $finish called at 185000 (1ps)"
+        ]
+      }
+    }
+  ],
+  "model": "decoder_output_projection_weight_store_interface_contract_v1",
+  "source_feasibility_decision": "weight_store_area_budget_feasible",
+  "summary": {
+    "full_required_banks": {
+      "gpt2_medium_proxy": 50,
+      "gpt2_small": 37
+    },
+    "max_representative_banks": 8,
+    "passed_count": 4,
+    "scenario_count": 4
+  },
+  "version": 0.1
+}
