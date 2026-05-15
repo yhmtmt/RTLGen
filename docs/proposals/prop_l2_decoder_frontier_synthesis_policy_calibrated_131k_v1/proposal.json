@@ -1,0 +1,68 @@
+{
+  "proposal_id": "prop_l2_decoder_frontier_synthesis_policy_calibrated_131k_v1",
+  "created_utc": "2026-05-15T19:50:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_frontier_synthesis_policy_calibrated",
+  "title": "Decoder frontier synthesis with 131k attention/KV input",
+  "hypothesis": "Using the 131072-token attention/KV sweep in the calibrated decoder frontier will reveal whether long-context attention/KV becomes the next dominant architecture point after ranker-service calibration.",
+  "direct_comparison": {
+    "primary_question": "Does 131k attention/KV overtake output-projection producer service in the matched calibrated frontier rows?",
+    "include": [
+      "large-array stage breakdown",
+      "131k attention/KV memory sweep",
+      "producer/ranker coupled NoC report",
+      "producer/ranker integration PPA accounting",
+      "producer/ranker policy-service calibration"
+    ],
+    "exclude": [
+      "new routed attention/KV subsystem",
+      "new SRAM/cache macro",
+      "new producer physical synthesis",
+      "quality recovery"
+    ]
+  },
+  "expected_benefit": [
+    "aligns the whole-decoder frontier with the longest current attention/KV evidence",
+    "tests the near-term producer-memory path against the long-context attention-memory path",
+    "identifies the next measured integrated block"
+  ],
+  "risks": [
+    "the frontier still only matches shapes that have producer calibration rows",
+    "attention/KV and producer service are composed from separate evidence reports",
+    "memory-tier assumptions need later SRAM/NoC macro validation"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_frontier_synthesis_policy_calibrated_131k_v1",
+      "task_type": "l2_campaign",
+      "objective": "Refresh calibrated decoder frontier synthesis with the 131k attention/KV input.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_frontier_synthesis_policy_calibrated",
+      "cost_class": "low",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_frontier_synthesis_policy_calibrated_broad_attention_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_stage_breakdown_large_array_v2",
+        "l2_decoder_attention_kv_memory_131k_v1",
+        "l2_decoder_producer_ranker_policy_calibration_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "If attention/KV dominates at 131k, prioritize integrated attention/KV memory hierarchy; if not, continue producer memory/cache measurement."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_frontier_synthesis__l2_decoder_frontier_synthesis_policy_calibrated_broad_attention_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_memory__l2_decoder_attention_kv_memory_131k_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/synthesize_llm_decoder_frontier.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}
