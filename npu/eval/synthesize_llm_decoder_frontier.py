@@ -35,26 +35,34 @@ def _best_attention_by_label_seq(payload: JsonDict) -> dict[tuple[str, int], Jso
     return best
 
 
+def _producer_latency_us(row: JsonDict) -> float:
+    return float(
+        row.get("calibrated_coupled_latency_us_per_token")
+        or row.get("coupled_latency_us_per_token")
+        or row.get("producer_latency_us_per_token")
+        or 0.0
+    )
+
+
 def _best_producer_by_shape(payload: JsonDict) -> dict[tuple[int, int], JsonDict]:
     best: dict[tuple[int, int], JsonDict] = {}
-    rows = payload.get("coupled_ranker_sweep") or payload.get("producer_service_sweep") or []
+    rows = (
+        payload.get("calibrated_coupled_ranker_sweep")
+        or payload.get("coupled_ranker_sweep")
+        or payload.get("producer_service_sweep")
+        or []
+    )
     for row in rows:
+        if row.get("status") not in (None, "ok"):
+            continue
         if row.get("ranker_fifo_capacity_ok") is False:
             continue
         key = (int(row.get("hidden_size", 0) or 0), int(row.get("vocab_size", 0) or 0))
         if key[0] <= 0 or key[1] <= 0:
             continue
         current = best.get(key)
-        latency = float(
-            row.get("coupled_latency_us_per_token")
-            or row.get("producer_latency_us_per_token")
-            or 0.0
-        )
-        current_latency = float(
-            current.get("coupled_latency_us_per_token")
-            or current.get("producer_latency_us_per_token")
-            or 0.0
-        ) if current else 0.0
+        latency = _producer_latency_us(row)
+        current_latency = _producer_latency_us(current) if current else 0.0
         if current is None or latency < current_latency:
             best[key] = row
     return best
@@ -95,15 +103,38 @@ def _integration_summary(payload: JsonDict | None) -> JsonDict | None:
     }
 
 
+def _calibration_summary(payload: JsonDict | None) -> JsonDict | None:
+    if not payload:
+        return None
+    summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+    best = payload.get("calibrated_best") if isinstance(payload.get("calibrated_best"), dict) else {}
+    old_best = payload.get("old_best") if isinstance(payload.get("old_best"), dict) else {}
+    return {
+        "model": payload.get("model"),
+        "decision": (payload.get("decision") or {}).get("decision"),
+        "row_count": summary.get("row_count"),
+        "calibrated_row_count": summary.get("calibrated_row_count"),
+        "missing_wrapper_physical_rows": summary.get("missing_wrapper_physical_rows"),
+        "producer_dominant_rows": summary.get("producer_dominant_rows"),
+        "ranker_dominant_rows": summary.get("ranker_dominant_rows"),
+        "old_to_calibrated_best_latency_speedup": summary.get("old_to_calibrated_best_latency_speedup"),
+        "old_best_us": old_best.get("coupled_latency_us_per_token"),
+        "calibrated_best_us": best.get("calibrated_coupled_latency_us_per_token"),
+        "calibrated_best_dominant_term": best.get("calibrated_dominant_term"),
+    }
+
+
 def build_report(
     *,
     stage_breakdown: JsonDict,
     attention_kv: JsonDict,
     producer_ranker: JsonDict,
     producer_ranker_integration: JsonDict | None = None,
+    producer_ranker_policy_calibration: JsonDict | None = None,
 ) -> JsonDict:
     attention_best = _best_attention_by_label_seq(attention_kv)
-    producer_best = _best_producer_by_shape(producer_ranker)
+    producer_source = producer_ranker_policy_calibration or producer_ranker
+    producer_best = _best_producer_by_shape(producer_source)
     rows: list[JsonDict] = []
 
     for row in stage_breakdown.get("breakdown_sweep", []):
@@ -119,11 +150,7 @@ def build_report(
         producer = producer_best.get((hidden_size, vocab_size))
         if attention is None or producer is None:
             continue
-        producer_us = float(
-            producer.get("coupled_latency_us_per_token")
-            or producer.get("producer_latency_us_per_token")
-            or 0.0
-        )
+        producer_us = _producer_latency_us(producer)
         components = {
             "attention_kv_best": float(attention.get("total_latency_us", 0.0) or 0.0),
             "mlp_resident": _stage_component_us(row, "mlp"),
@@ -157,6 +184,11 @@ def build_report(
                     "producer_ii_cycles": producer.get("producer_ii_cycles"),
                     "service_limiter": producer.get("service_limiter"),
                     "traffic_reduction_vs_materialized": producer.get("ranker_traffic_reduction_vs_materialized"),
+                    "calibrated_selected_path": producer.get("calibrated_selected_path"),
+                    "calibrated_ranker_latency_us_per_token": producer.get(
+                        "calibrated_ranker_latency_us_per_token"
+                    ),
+                    "old_coupled_latency_us_per_token": producer.get("old_coupled_latency_us_per_token"),
                 },
             }
         )
@@ -175,9 +207,14 @@ def build_report(
 
     tile_frontier = attention_kv.get("measured_attention_kv_tile_frontier", {})
     integration_summary = _integration_summary(producer_ranker_integration)
+    calibration_summary = _calibration_summary(producer_ranker_policy_calibration)
     return {
         "version": 0.1,
-        "model": "llm_decoder_frontier_synthesis_v1",
+        "model": (
+            "llm_decoder_frontier_synthesis_policy_calibrated_v1"
+            if producer_ranker_policy_calibration
+            else "llm_decoder_frontier_synthesis_v1"
+        ),
         "inputs": {
             "stage_breakdown_model": stage_breakdown.get("model"),
             "attention_kv_model": attention_kv.get("model"),
@@ -185,9 +222,13 @@ def build_report(
             "producer_ranker_integration_model": (
                 producer_ranker_integration.get("model") if producer_ranker_integration else None
             ),
+            "producer_ranker_policy_calibration_model": (
+                producer_ranker_policy_calibration.get("model") if producer_ranker_policy_calibration else None
+            ),
             "producer_control_boundary": producer_ranker.get("producer_control_boundary"),
             "producer_physical_boundary": producer_ranker.get("producer_physical_boundary"),
             "producer_ranker_integration_accounting": integration_summary,
+            "producer_ranker_policy_calibration": calibration_summary,
         },
         "measured_attention_kv_tile_summary": tile_frontier.get("scaling_summary", {}),
         "dominant_component_counts": dominant_counts,
@@ -202,6 +243,7 @@ def build_report(
             "Producer/ranker uses the best FIFO-valid coupled row per hidden/vocab shape.",
             "Producer physical-boundary evidence is carried as feasibility/PPA context; it does not replace the analytical producer/ranker latency model.",
             "Producer/ranker integration accounting is carried as measured additive PPA context; it does not replace the analytical coupled latency model.",
+            "When producer/ranker policy calibration is provided, calibrated coupled latency replaces the older streaming ranker hierarchy latency for frontier ranking.",
             "MLP and norm are resident-weight estimates from the whole-decoder stage breakdown.",
             "Use this report to choose the next measured RTL frontier, not as final PPA accounting.",
         ],
@@ -305,6 +347,23 @@ def _write_markdown(path: Path, payload: JsonDict) -> None:
                     cp=row.get("critical_path_ns"),
                 )
             )
+    calibration = payload.get("inputs", {}).get("producer_ranker_policy_calibration")
+    if calibration:
+        lines.extend(
+            [
+                "",
+                "## Producer/Ranker Policy Calibration",
+                "",
+                f"- decision: `{calibration.get('decision')}`",
+                f"- calibrated_row_count: `{calibration.get('calibrated_row_count')}`",
+                f"- missing_wrapper_physical_rows: `{calibration.get('missing_wrapper_physical_rows')}`",
+                f"- producer_dominant_rows: `{calibration.get('producer_dominant_rows')}`",
+                f"- ranker_dominant_rows: `{calibration.get('ranker_dominant_rows')}`",
+                f"- old_best_us: `{calibration.get('old_best_us')}`",
+                f"- calibrated_best_us: `{calibration.get('calibrated_best_us')}`",
+                f"- old_to_calibrated_best_latency_speedup: `{calibration.get('old_to_calibrated_best_latency_speedup')}`",
+            ]
+        )
     lines.extend(["", "## Assumptions", ""])
     for item in payload["assumptions"]:
         lines.append(f"- {item}")
@@ -317,6 +376,7 @@ def main() -> int:
     ap.add_argument("--attention-kv-memory", required=True)
     ap.add_argument("--producer-ranker-coupled", required=True)
     ap.add_argument("--producer-ranker-integration")
+    ap.add_argument("--producer-ranker-policy-calibration")
     ap.add_argument("--out", required=True)
     ap.add_argument("--out-md", required=True)
     args = ap.parse_args()
@@ -326,6 +386,11 @@ def main() -> int:
         producer_ranker=_load_json(args.producer_ranker_coupled),
         producer_ranker_integration=(
             _load_json(args.producer_ranker_integration) if args.producer_ranker_integration else None
+        ),
+        producer_ranker_policy_calibration=(
+            _load_json(args.producer_ranker_policy_calibration)
+            if args.producer_ranker_policy_calibration
+            else None
         ),
     )
     out = Path(args.out)

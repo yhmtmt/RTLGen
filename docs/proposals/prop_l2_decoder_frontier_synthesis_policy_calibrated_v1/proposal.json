@@ -1,0 +1,68 @@
+{
+  "proposal_id": "prop_l2_decoder_frontier_synthesis_policy_calibrated_v1",
+  "created_utc": "2026-05-15T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_frontier_synthesis_policy_calibrated",
+  "title": "Decoder frontier synthesis with calibrated producer/ranker service",
+  "hypothesis": "Replacing the older streaming ranker hierarchy latency with measured policy-wrapper ranker service will move the whole-decoder frontier away from ranker-dominated output projection and expose whether producer output projection, attention/KV memory, or MLP is the next measured bottleneck.",
+  "direct_comparison": {
+    "primary_question": "After substituting calibrated producer/ranker latency, what component dominates the focused whole-decoder rows?",
+    "include": [
+      "integrated frontier stage breakdown and attention/KV evidence",
+      "prior producer/ranker coupled NoC report as baseline context",
+      "producer/ranker integration PPA accounting",
+      "producer/ranker policy-service latency calibration",
+      "dominant component counts and focused row latency breakdowns"
+    ],
+    "exclude": [
+      "new routed RTL implementation",
+      "new producer or ranker physical synthesis",
+      "measured SRAM/NoC arbitration",
+      "model-quality or training recovery effects"
+    ]
+  },
+  "expected_benefit": [
+    "uses measured ranker-wrapper service in the frontier ranking rather than only as side evidence",
+    "prevents the next job from targeting a ranker bottleneck that calibration already removed",
+    "selects a more defensible next architecture point across producer memory/cache and attention/KV hierarchy"
+  ],
+  "risks": [
+    "producer service latency and initiation interval remain analytical",
+    "r256 rows remain outside the measured wrapper calibration",
+    "attention/KV and MLP costs still come from coarse synthesis models rather than full routed subsystems"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_frontier_synthesis_policy_calibrated_v1",
+      "task_type": "l2_campaign",
+      "objective": "Refresh decoder frontier synthesis using calibrated producer/ranker policy-wrapper service latency.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_frontier_synthesis_policy_calibrated",
+      "cost_class": "low",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_frontier_synthesis_integrated_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_frontier_synthesis_integrated_v1",
+        "l2_decoder_producer_ranker_policy_calibration_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "If output projection still dominates after calibrated ranker service, target producer memory/cache hierarchy; otherwise move to the newly dominant decoder component."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_frontier_synthesis__l2_decoder_frontier_synthesis_integrated_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_producer_ranker_policy_calibration__l2_decoder_producer_ranker_policy_calibration_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/synthesize_llm_decoder_frontier.py",
+    "tests/test_llm_decoder_frontier_synthesis.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}
