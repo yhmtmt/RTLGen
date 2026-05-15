@@ -2666,6 +2666,54 @@ def _decoder_output_projection_ranker_wrapper_physical_evidence(*, item_id: str)
     }
 
 
+def _decoder_output_projection_producer_ranker_integration_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_output_projection_producer_ranker_integration__{item_id}.json"
+    report = f"{base}/decoder_output_projection_producer_ranker_integration__{item_id}.md"
+    producer_summary = (
+        "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__"
+        "l2_decoder_producer_ranker_physical_wrapper_v1/summary.csv"
+    )
+    ranker_wrapper_physical = (
+        f"{base}/decoder_output_projection_ranker_wrapper_physical__"
+        "l2_decoder_output_projection_ranker_wrapper_physical_v1.json"
+    )
+    policy = (
+        f"{base}/decoder_output_projection_ranker_policy__"
+        "l2_decoder_output_projection_ranker_policy_v1.json"
+    )
+    return {
+        "inputs": {
+            "output_projection_producer_ranker_integration_out": out,
+            "output_projection_producer_ranker_integration_report": report,
+            "output_projection_producer_summary": producer_summary,
+            "output_projection_ranker_wrapper_physical": ranker_wrapper_physical,
+            "output_projection_ranker_policy": policy,
+            "output_projection_producer_ranker_integration_scope": (
+                "Additively account independently measured output-projection producer PPA "
+                "and measured output-ranker policy-wrapper PPA. Report timing bottleneck, "
+                "area/power overhead, and serial versus rank-tree service behavior before "
+                "requesting a heavier routed monolithic wrapper."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_output_projection_producer_ranker_integration",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_output_projection_integrated_breakdown.py "
+                    f"--producer-summary {producer_summary} "
+                    f"--ranker-wrapper-physical {ranker_wrapper_physical} "
+                    f"--policy {policy} "
+                    "--lane-map fp16_nm1=64,fp16_nm2=128 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_stage_breakdown_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_stage_breakdown__{item_id}.json"
@@ -3952,6 +4000,7 @@ def _build_payload(
         "decoder_output_projection_ranker_policy",
         "decoder_output_projection_ranker_wrapper_contract",
         "decoder_output_projection_ranker_wrapper_physical",
+        "decoder_output_projection_producer_ranker_integration",
         "decoder_stage_breakdown",
         "decoder_attention_kv_memory",
         "decoder_frontier_synthesis",
@@ -4021,6 +4070,8 @@ def _build_payload(
             decoder_evidence = _decoder_output_projection_ranker_wrapper_contract_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_ranker_wrapper_physical":
             decoder_evidence = _decoder_output_projection_ranker_wrapper_physical_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_output_projection_producer_ranker_integration":
+            decoder_evidence = _decoder_output_projection_producer_ranker_integration_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_service":
             decoder_evidence = _decoder_output_projection_service_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_logit_rank_streaming_producer_integrated":
