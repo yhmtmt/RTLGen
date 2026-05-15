@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_memory_131k_capacity_v1",
-  "source_commit": "4f8d9a9d4cb820fb08b737b2664f9d7ef8c5ffbc",
+  "source_commit": "35340bfdb7c34865190f190b36a149fc9b60a6f5",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_kv_memory_131k_capacity_v1",
@@ -18,7 +18,8 @@
       "expected_result": {
         "direction": "iterate",
         "reason": "Use capacity-annotated attention/KV evidence to define the next integrated memory-hierarchy measurement."
-      }
+      },
+      "status": "pending"
     }
   ]
 }
