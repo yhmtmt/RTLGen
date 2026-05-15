@@ -1,0 +1,114 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-05-15T11:30:40.086194Z",
+  "item_id": "l2_decoder_output_projection_producer_memory_hierarchy_v1",
+  "run_key": "l2_decoder_output_projection_producer_memory_hierarchy_v1_run_beff645c502ce67f",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "cc9c6969225c9e16c2c7ffe58733d67aee5ddac7",
+  "review_metadata_source_commit": "cc9c6969225c9e16c2c7ffe58733d67aee5ddac7",
+  "objective": "Estimate output-projection producer latency under explicit weight-memory hierarchy assumptions after calibrated ranker service.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+    ],
+    "design_dirs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+    ],
+    "macro_manifests": [
+      "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+      "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+    ],
+    "decoder_contract": {
+      "producer_memory_hierarchy_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_producer_memory_hierarchy__l2_decoder_output_projection_producer_memory_hierarchy_v1.json",
+      "producer_memory_hierarchy_scope": "Explore output-projection producer weight-memory hierarchy assumptions after ranker service calibration. Sweep cache capacity, effective cache hit rate, off-chip bandwidth, local-cache bandwidth, compute lanes, and producer lanes to identify whether producer latency is mainly storage/bandwidth limited or compute limited.",
+      "producer_memory_hierarchy_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_producer_memory_hierarchy__l2_decoder_output_projection_producer_memory_hierarchy_v1.md",
+      "producer_ranker_policy_calibration": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_producer_ranker_policy_calibration__l2_decoder_producer_ranker_policy_calibration_v1.json",
+      "frontier_synthesis_policy_calibrated": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_frontier_synthesis__l2_decoder_frontier_synthesis_policy_calibrated_v1.json"
+    },
+    "generated_campaign": {
+      "path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign__l2_decoder_output_projection_producer_memory_hierarchy_v1.json",
+      "outputs": {
+        "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_producer_memory_hierarchy_v1/report.md",
+        "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_producer_memory_hierarchy_v1/results.csv",
+        "campaign_dir": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_producer_memory_hierarchy_v1"
+      },
+      "clean_outputs": true,
+      "base_campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json"
+    },
+    "candidate_manifests": [
+      "runs/candidates/nangate45/module_candidates.json"
+    ]
+  },
+  "recommendation": {
+    "arch_id": "fp16_nm1",
+    "macro_mode": "flat_nomacro",
+    "objective_rank": 1,
+    "objective_score": "0.0",
+    "latency_ms_mean": 0.028907999999999996,
+    "energy_mj_mean": 5.582770776e-06,
+    "critical_path_ns_mean": 5.557037432204143,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.193122,
+    "flow_elapsed_s_mean": 848.418
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_output_projection_producer_memory_hierarchy_v1",
+    "title": "Decoder output-projection producer memory hierarchy",
+    "primary_question": "How much producer output-projection latency can be removed by plausible weight-cache capacity and bandwidth before compute becomes the limiter?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "producer_memory_hierarchy",
+    "abstraction_layer": "decoder_output_projection_producer_memory_hierarchy",
+    "expected_direction": "iterate",
+    "expected_reason": "If moderate cache capacity/bandwidth removes the producer bottleneck, queue a measured resident/sharded producer; otherwise revisit output-projection mapping or external memory assumptions.",
+    "summary": "Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
+    "outcome": "ranking_recorded",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_output_projection_producer_memory_hierarchy_v1",
+    "title": "Decoder output-projection producer memory hierarchy",
+    "kind": "architecture",
+    "primary_question": "How much producer output-projection latency can be removed by plausible weight-cache capacity and bandwidth before compute becomes the limiter?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "producer_memory_hierarchy",
+    "outcome": "ranking_recorded",
+    "summary": "Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": []
+  },
+  "source_refs": {
+    "best_point_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_producer_memory_hierarchy_v1/best_point.json",
+    "summary_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_producer_memory_hierarchy_v1/summary.csv",
+    "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_producer_memory_hierarchy_v1/results.csv",
+    "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_producer_memory_hierarchy_v1/report.md",
+    "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_producer_memory_hierarchy_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+    "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_producer_memory_hierarchy_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+    "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_producer_memory_hierarchy_v1/artifacts/perf/fp16_nm1/mlp1/trace.json",
+    "focused_model_artifacts": [
+      {
+        "model_id": "mlp1",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_producer_memory_hierarchy_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_producer_memory_hierarchy_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_producer_memory_hierarchy_v1/artifacts/perf/fp16_nm1/mlp1/trace.json"
+      },
+      {
+        "model_id": "mlp2",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_producer_memory_hierarchy_v1/artifacts/mapper/fp16_nm1/mlp2/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_producer_memory_hierarchy_v1/artifacts/mapper/fp16_nm1/mlp2/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_output_projection_producer_memory_hierarchy_v1/artifacts/perf/fp16_nm1/mlp2/trace.json"
+      }
+    ]
+  }
+}
