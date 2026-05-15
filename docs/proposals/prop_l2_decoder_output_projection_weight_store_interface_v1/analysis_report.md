@@ -2,13 +2,13 @@
 
 ## Candidate
 - `proposal_id`: `prop_l2_decoder_output_projection_weight_store_interface_v1`
-- `candidate_id`: `l2_decoder_output_projection_weight_store_interface_v1`
+- `candidate_id`: `l2_decoder_output_projection_weight_store_interface_v1_r2`
 
 ## Evaluations Consumed
-- `l2_decoder_output_projection_weight_store_interface_v1`
-- `l2_decoder_output_projection_weight_store_interface_v1_run_e393c69b92bd41cf`
-- source commit: `205f77703ca5ca868d880f363bbfb4454b5f544e`
-- review: PR #572
+- `l2_decoder_output_projection_weight_store_interface_v1_r2`
+- `l2_decoder_output_projection_weight_store_interface_v1_r2_run_0ac601ba28103b6c`
+- source commit: `b908594c612c36541c6a2b123557ee4fe3fc042f`
+- review: PR #574
 
 ## Baseline Comparison
 - baseline_ref: `None`
@@ -29,4 +29,4 @@
 ## Recommendation
 - `iterate`
 - reason: Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.
-- next_action: inspect follow-on work after l2_decoder_output_projection_weight_store_interface_v1
+- next_action: inspect follow-on work after l2_decoder_output_projection_weight_store_interface_v1_r2

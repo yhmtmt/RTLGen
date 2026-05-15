@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_decoder_output_projection_weight_store_interface_v1",
   "decision": "iterate",
-  "pr_number": 572,
-  "merge_commit": "028044ad81dc56dd93ed0b94b91be316b6291e64",
-  "merged_utc": "2026-05-15T12:11:30.803592Z"
+  "pr_number": 574,
+  "merge_commit": "0c2f0b8fe1765680e8329157668df9214ef2e663",
+  "merged_utc": "2026-05-15T18:53:27.451839Z"
 }
