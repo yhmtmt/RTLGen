@@ -1,0 +1,70 @@
+{
+  "proposal_id": "prop_l2_decoder_producer_ranker_policy_calibration_v1",
+  "created_utc": "2026-05-15T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_producer_ranker_policy_calibration",
+  "title": "Decoder producer/ranker policy-service latency calibration",
+  "hypothesis": "The current producer/ranker coupled frontier is dominated by an older streaming ranker hierarchy latency estimate; replacing that ranker service with measured output-ranker policy-wrapper service may move the bottleneck back to producer output-projection service.",
+  "direct_comparison": {
+    "primary_question": "Does measured policy-wrapper ranker service still dominate producer/ranker coupling, or was the previous frontier dominated by stale ranker hierarchy latency?",
+    "include": [
+      "existing producer/ranker coupled NoC report from the integrated frontier synthesis",
+      "measured r64 and r128 output-ranker policy-wrapper service cycles and clock",
+      "output-ranker policy rows for serial_lpc1 versus rank-tree selection",
+      "old versus calibrated coupled latency best rows",
+      "producer-dominant versus ranker-dominant row counts after calibration"
+    ],
+    "exclude": [
+      "new routed RTL implementation",
+      "new producer physical synthesis",
+      "measured SRAM or NoC arbitration",
+      "quality or training recovery effects"
+    ]
+  },
+  "expected_benefit": [
+    "separates stale analytical ranker latency from measured policy-wrapper ranker service",
+    "prevents the next frontier choice from chasing a ranker bottleneck that may already be resolved",
+    "identifies whether the immediate RTL target should be producer memory/cache hierarchy or whole-decoder attention/KV breakdown"
+  ],
+  "risks": [
+    "producer latency and initiation interval still come from the prior analytical service model",
+    "policy-wrapper measurements are standalone and do not include NoC/SRAM contention",
+    "exact policy matching can fall back to a threshold if a coupled row is missing from the policy report"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_producer_ranker_policy_calibration_v1",
+      "task_type": "l2_campaign",
+      "objective": "Recompute producer/ranker coupling using measured output-ranker policy-wrapper service instead of the older streaming ranker hierarchy latency.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_producer_ranker_policy_calibration",
+      "cost_class": "low",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_frontier_synthesis_integrated_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_frontier_synthesis_integrated_v1",
+        "l2_decoder_output_projection_ranker_wrapper_physical_v1",
+        "l2_decoder_output_projection_ranker_policy_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "If calibrated producer/ranker latency no longer dominates, refresh frontier synthesis with calibrated latency; otherwise target producer weight-memory/cache hierarchy."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_producer_ranker_coupled_noc__l2_decoder_frontier_synthesis_integrated_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_ranker_wrapper_physical__l2_decoder_output_projection_ranker_wrapper_physical_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_output_projection_ranker_policy__l2_decoder_output_projection_ranker_policy_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/calibrate_llm_decoder_producer_ranker_policy_service.py",
+    "tests/test_llm_decoder_producer_ranker_policy_calibration.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}
