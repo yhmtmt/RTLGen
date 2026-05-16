@@ -1,0 +1,67 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_noc_scheduler_selected_v1",
+  "created_utc": "2026-05-16T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_attention_kv_noc_scheduler",
+  "title": "Selected attention/KV NoC scheduler refinement",
+  "hypothesis": "The capacity-constrained attention/KV frontier should be re-ranked at a few transition points once SRAM bank pressure, NoC hop latency, arbitration efficiency, virtual-channel relief, and producer overlap bounds are modeled explicitly.",
+  "direct_comparison": {
+    "primary_question": "Do the practical die-size transition points chosen by the capacity/NoC baseline remain attractive when selected-point scheduling pressure is included?",
+    "include": [
+      "gpt2_small at 131k tokens around the 100 to 200 mm2 transition",
+      "gpt2_medium_proxy at 131k tokens around the 200 to 400 mm2 transition",
+      "llama7b_proxy at 131k tokens in the 400 mm2 spill-heavy case",
+      "tile token sizes from 128 to 2048",
+      "virtual channels 1, 2, and 4",
+      "NoC arbitration efficiency 0.55, 0.70, and 0.85",
+      "strict serialized latency and an overlap lower bound"
+    ],
+    "exclude": [
+      "cycle-accurate RTL NoC arbitration",
+      "router placement and routed wire delay",
+      "SRAM macro timing closure",
+      "quality or training recovery"
+    ]
+  },
+  "expected_benefit": [
+    "separates capacity feasibility from scheduling feasibility",
+    "identifies whether selected transition points are memory, NoC, producer, or compute limited",
+    "chooses the next detailed memory/NoC RTL or scheduler target without broadening the sweep further"
+  ],
+  "risks": [
+    "the overlap bound is optimistic and should not be treated as a final latency",
+    "bank conflicts are modeled with a compact efficiency term",
+    "inter-layer transformer dependencies are preserved only as a per-layer scheduling bound, not a full pipeline trace"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_kv_noc_scheduler_selected_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run a selected-point attention/KV NoC scheduler refinement using the capacity/NoC baseline transition points.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_noc_scheduler",
+      "cost_class": "low",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_capacity_noc_baseline_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_capacity_noc_baseline_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use strict-vs-overlap scheduler bounds to pick the next detailed shared-SRAM/NoC plus producer measurement point."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_capacity_noc__l2_decoder_attention_kv_capacity_noc_baseline_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_attention_kv_noc_scheduler.py",
+    "npu/eval/estimate_llm_decoder_attention_kv_capacity_noc.py"
+  ]
+}

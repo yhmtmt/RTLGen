@@ -1,0 +1,25 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_noc_scheduler_selected_v1",
+  "source_commit": "21da33d8fffa6196f44950ecdf646361a3ac0ef9",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_kv_noc_scheduler_selected_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run a selected-point attention/KV NoC scheduler refinement using the capacity/NoC baseline transition points.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_noc_scheduler",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_capacity_noc_baseline_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_capacity_noc_baseline_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use strict-vs-overlap scheduler bounds to pick the next detailed shared-SRAM/NoC plus producer measurement point."
+      },
+      "status": "pending"
+    }
+  ]
+}
