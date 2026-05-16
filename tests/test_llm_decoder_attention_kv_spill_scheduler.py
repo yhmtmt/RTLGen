@@ -72,5 +72,5 @@ def test_spill_scheduler_improves_with_more_hbm_parallelism() -> None:
         clock_ns=1.0,
     )
 
-    by_outstanding = {row["hbm_outstanding"]: row for row in report["rows"]}
+    by_outstanding = {row["hbm_outstanding"]: row for row in report["top_rows"]}
     assert by_outstanding[4]["latency_us"] <= by_outstanding[1]["latency_us"]

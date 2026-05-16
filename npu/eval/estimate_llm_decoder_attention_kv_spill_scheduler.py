@@ -268,6 +268,7 @@ def build_report(
     for row in rows:
         key = str(row["dominant_tile_resource"])
         dominant_counts[key] = dominant_counts.get(key, 0) + 1
+    top_rows = sorted(rows, key=lambda row: row["latency_us"])[:50]
     return {
         "version": 0.1,
         "model": "llm_decoder_attention_kv_spill_scheduler_llama7b_131k_v1",
@@ -294,10 +295,11 @@ def build_report(
         },
         "sweep_summary": {
             "generated_row_count": len(rows),
+            "retained_top_row_count": len(top_rows),
             "dominant_tile_resource_counts": dominant_counts,
         },
         "best": best,
-        "rows": sorted(rows, key=lambda row: row["latency_us"]),
+        "top_rows": top_rows,
         "assumptions": [
             "This is a tile-level spill scheduler estimator for the selected llama7b_proxy 131k 400 mm2 point.",
             "The KV cache residency split is inherited from the capacity/NoC best_by_die result.",
@@ -343,7 +345,7 @@ def _write_markdown(path: Path, payload: JsonDict) -> None:
         "| rank | tile | prefetch_dist | hbm_out | hbm_eff | arb_eff | vc | start | latency_us | resource |",
         "|---:|---:|---:|---:|---:|---:|---:|---|---:|---|",
     ]
-    for index, row in enumerate(payload["rows"][:10], start=1):
+    for index, row in enumerate(payload["top_rows"][:10], start=1):
         lines.append(
             "| {rank} | {tile} | {dist} | {hbm_out} | {hbm_eff} | {arb} | {vc} | {start} | {lat} | {res} |".format(
                 rank=index,
