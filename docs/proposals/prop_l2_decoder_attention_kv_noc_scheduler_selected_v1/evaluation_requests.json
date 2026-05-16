@@ -19,7 +19,11 @@
         "direction": "iterate",
         "reason": "Use strict-vs-overlap scheduler bounds to pick the next detailed shared-SRAM/NoC plus producer measurement point."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 593,
+      "merge_commit": "4b3a308a51647ac01f8d714c11e023296d3c7498",
+      "merged_utc": "2026-05-16T07:50:49.005182Z",
+      "notes": "Merged via PR #593 and merge 4b3a308a51647ac01f8d714c11e023296d3c7498 at 2026-05-16T07:50:49.005182Z."
     }
   ]
 }

@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_noc_scheduler_selected_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "iterate",
+  "pr_number": 593,
+  "merge_commit": "4b3a308a51647ac01f8d714c11e023296d3c7498",
+  "merged_utc": "2026-05-16T07:50:49.005182Z"
 }
