@@ -9,7 +9,10 @@ import math
 from pathlib import Path
 from typing import Any
 
-from npu.eval.estimate_llm_decoder_attention_kv_spill_scheduler import _find_baseline_row, _simulate_layer
+try:
+    from npu.eval.estimate_llm_decoder_attention_kv_spill_scheduler import _find_baseline_row, _simulate_layer
+except ModuleNotFoundError:
+    from estimate_llm_decoder_attention_kv_spill_scheduler import _find_baseline_row, _simulate_layer
 
 JsonDict = dict[str, Any]
 
