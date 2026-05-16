@@ -3211,6 +3211,67 @@ def _decoder_attention_kv_spill_scheduler_evidence(*, item_id: str) -> dict[str,
     }
 
 
+def _decoder_attention_kv_hbm_controller_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_kv_hbm_controller__{item_id}.json"
+    report = f"{base}/decoder_attention_kv_hbm_controller__{item_id}.md"
+    capacity_noc = (
+        f"{base}/decoder_attention_kv_capacity_noc__"
+        "l2_decoder_attention_kv_capacity_noc_baseline_v1.json"
+    )
+    spill = (
+        f"{base}/decoder_attention_kv_spill_scheduler__"
+        "l2_decoder_attention_kv_spill_scheduler_llama7b_v1_r2.json"
+    )
+    return {
+        "inputs": {
+            "attention_kv_memory_out": out,
+            "attention_kv_memory_report": report,
+            "attention_kv_capacity_noc_baseline": capacity_noc,
+            "attention_kv_spill_scheduler": spill,
+            "attention_kv_hbm_controller_scope": (
+                "HBM-controller realism refinement for the llama7b_proxy 131k 400 mm2 "
+                "spill point. Derive HBM service from channel count, per-channel bandwidth, "
+                "burst size, outstanding requests, command overhead, row-hit rate, row-miss "
+                "penalty, and scheduler efficiency before rerunning the tile-level spill model."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_attention_kv_hbm_controller",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_attention_kv_hbm_controller.py "
+                    f"--capacity-noc-baseline {capacity_noc} "
+                    "--label llama7b_proxy "
+                    "--sequence-length 131072 "
+                    "--die-area-mm2 400 "
+                    "--tile-tokens-list 1024,2048,4096 "
+                    "--prefetch-distance-tiles-list 2,4,8,16 "
+                    "--channel-count-list 4,8,16 "
+                    "--channel-bandwidth-bytes-per-cycle-list 128,256,512 "
+                    "--burst-bytes-list 256,512,1024 "
+                    "--hbm-outstanding-list 2,4,8,16 "
+                    "--request-overhead-cycles-list 4,8,16 "
+                    "--row-hit-rate-list 0.5,0.75,0.9 "
+                    "--row-miss-penalty-cycles-list 16,32,64 "
+                    "--scheduler-efficiency-list 0.6,0.75,0.9 "
+                    "--arbitration-efficiency-list 0.7,0.85 "
+                    "--virtual-channel-list 2,4 "
+                    "--prefetch-start-list during_qkv "
+                    "--bank-interleave-tokens 16 "
+                    "--bank-conflict-efficiency 0.75 "
+                    "--router-latency-cycles-per-hop 2 "
+                    "--macs-per-cycle 524288 "
+                    "--vector-ops-per-cycle 65536 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_output_projection_weight_store_feasibility_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_output_projection_weight_store_feasibility__{item_id}.json"
@@ -4480,6 +4541,7 @@ def _build_payload(
         "decoder_attention_kv_capacity_noc",
         "decoder_attention_kv_noc_scheduler",
         "decoder_attention_kv_spill_scheduler",
+        "decoder_attention_kv_hbm_controller",
         "decoder_output_projection_producer_memory_hierarchy",
         "decoder_output_projection_weight_store_feasibility",
         "decoder_output_projection_weight_store_interface",
@@ -4524,6 +4586,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_kv_noc_scheduler_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_spill_scheduler":
             decoder_evidence = _decoder_attention_kv_spill_scheduler_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_kv_hbm_controller":
+            decoder_evidence = _decoder_attention_kv_hbm_controller_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_producer_memory_hierarchy":
             decoder_evidence = _decoder_output_projection_producer_memory_hierarchy_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_weight_store_feasibility":
