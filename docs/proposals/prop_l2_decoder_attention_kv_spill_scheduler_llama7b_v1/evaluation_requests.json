@@ -20,10 +20,14 @@
         "direction": "iterate",
         "reason": "Use compact tile-level spill scheduling to choose the next concrete memory/NoC RTL or controller measurement."
       },
-      "status": "pending",
+      "status": "merged",
       "prior_item_ids": [
         "l2_decoder_attention_kv_spill_scheduler_llama7b_v1"
-      ]
+      ],
+      "merged_pr_number": 597,
+      "merge_commit": "79e0af797ac875d9d7bd332234e833a25ad8cff7",
+      "merged_utc": "2026-05-16T08:11:07.936199Z",
+      "notes": "Merged via PR #597 and merge 79e0af797ac875d9d7bd332234e833a25ad8cff7 at 2026-05-16T08:11:07.936199Z."
     }
   ]
 }
