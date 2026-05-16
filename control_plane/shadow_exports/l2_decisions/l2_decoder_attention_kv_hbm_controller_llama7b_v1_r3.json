@@ -1,0 +1,120 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-05-16T08:56:11.190433Z",
+  "item_id": "l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3",
+  "run_key": "l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3_run_076e4c95d23d9b4d",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "19896536fe7b1f600961037e118cb9b73be4c6a3",
+  "review_metadata_source_commit": "19896536fe7b1f600961037e118cb9b73be4c6a3",
+  "objective": "Run an HBM-controller realism sweep for the llama7b_proxy 131k 400 mm2 attention/KV spill point.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+    ],
+    "design_dirs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+    ],
+    "macro_manifests": [
+      "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+      "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+    ],
+    "decoder_contract": {
+      "attention_kv_memory_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_hbm_controller__l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3.json",
+      "attention_kv_memory_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_hbm_controller__l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3.md",
+      "attention_kv_spill_scheduler": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_spill_scheduler__l2_decoder_attention_kv_spill_scheduler_llama7b_v1_r2.json",
+      "attention_kv_hbm_controller_scope": "HBM-controller realism refinement for the llama7b_proxy 131k 400 mm2 spill point. Derive HBM service from channel count, per-channel bandwidth, burst size, outstanding requests, command overhead, row-hit rate, row-miss penalty, and scheduler efficiency before rerunning the tile-level spill model.",
+      "attention_kv_capacity_noc_baseline": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_capacity_noc__l2_decoder_attention_kv_capacity_noc_baseline_v1.json"
+    },
+    "generated_campaign": {
+      "path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign__l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3.json",
+      "outputs": {
+        "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3/report.md",
+        "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3/results.csv",
+        "campaign_dir": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3"
+      },
+      "clean_outputs": true,
+      "base_campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json"
+    },
+    "candidate_manifests": [
+      "runs/candidates/nangate45/module_candidates.json"
+    ]
+  },
+  "recommendation": {
+    "arch_id": "fp16_nm1",
+    "macro_mode": "flat_nomacro",
+    "objective_rank": 1,
+    "objective_score": "0.0",
+    "latency_ms_mean": 0.028907999999999996,
+    "energy_mj_mean": 5.582770776e-06,
+    "critical_path_ns_mean": 5.557037432204143,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.193122,
+    "flow_elapsed_s_mean": 848.418
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_attention_kv_hbm_controller_llama7b_v1",
+    "title": "Llama7B attention/KV HBM controller realism",
+    "primary_question": "Which HBM channel, burst, outstanding-request, command-overhead, and row-locality assumptions are needed to make the llama7B spill schedule plausible?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "frontier_synthesis",
+    "abstraction_layer": "decoder_attention_kv_hbm_controller",
+    "expected_direction": "iterate",
+    "expected_reason": "Use HBM-controller feasibility to choose the next concrete memory/NoC RTL or HBM prefetch interface measurement.",
+    "summary": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_hbm_controller__l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3.json: decision=decoder_evidence_recorded.",
+    "outcome": "decoder_evidence_recorded",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_attention_kv_hbm_controller_llama7b_v1",
+    "title": "Llama7B attention/KV HBM controller realism",
+    "kind": "architecture",
+    "primary_question": "Which HBM channel, burst, outstanding-request, command-overhead, and row-locality assumptions are needed to make the llama7B spill schedule plausible?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "frontier_synthesis",
+    "outcome": "decoder_evidence_recorded",
+    "summary": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_hbm_controller__l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3.json: decision=decoder_evidence_recorded.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": [],
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_hbm_controller__l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3.json",
+    "decoder_quality": {
+      "diagnosis": {}
+    }
+  },
+  "source_refs": {
+    "best_point_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3/best_point.json",
+    "summary_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3/summary.csv",
+    "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3/results.csv",
+    "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3/report.md",
+    "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+    "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+    "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3/artifacts/perf/fp16_nm1/mlp1/trace.json",
+    "focused_model_artifacts": [
+      {
+        "model_id": "mlp1",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3/artifacts/perf/fp16_nm1/mlp1/trace.json"
+      },
+      {
+        "model_id": "mlp2",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3/artifacts/mapper/fp16_nm1/mlp2/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3/artifacts/mapper/fp16_nm1/mlp2/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3/artifacts/perf/fp16_nm1/mlp2/trace.json"
+      }
+    ],
+    "decoder_attention_kv_memory_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_hbm_controller__l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3.json",
+    "decoder_attention_kv_memory_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_hbm_controller__l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3.md"
+  }
+}

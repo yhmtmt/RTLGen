@@ -1,9 +1,9 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_hbm_controller_llama7b_v1",
-  "source_commit": "53d999d3597790d2794bef1542bc1f5d2930706a",
+  "source_commit": "19896536fe7b1f600961037e118cb9b73be4c6a3",
   "requested_items": [
     {
-      "item_id": "l2_decoder_attention_kv_hbm_controller_llama7b_v1",
+      "item_id": "l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3",
       "task_type": "l2_campaign",
       "objective": "Run an HBM-controller realism sweep for the llama7b_proxy 131k 400 mm2 attention/KV spill point.",
       "evaluation_mode": "frontier_detail",
@@ -20,7 +20,10 @@
         "direction": "iterate",
         "reason": "Use HBM-controller feasibility to choose the next concrete memory/NoC RTL or HBM prefetch interface measurement."
       },
-      "status": "pending"
+      "status": "pending",
+      "prior_item_ids": [
+        "l2_decoder_attention_kv_hbm_controller_llama7b_v1"
+      ]
     }
   ]
 }
