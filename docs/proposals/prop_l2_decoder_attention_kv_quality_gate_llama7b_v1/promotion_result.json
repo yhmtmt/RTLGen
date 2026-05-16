@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_quality_gate_llama7b_v1",
+  "decision": "iterate",
+  "pr_number": 605,
+  "merge_commit": "131a15156e57d198e30d5a55edfa9636beb0224f",
+  "merged_utc": "2026-05-16T11:53:42.595084Z"
+}

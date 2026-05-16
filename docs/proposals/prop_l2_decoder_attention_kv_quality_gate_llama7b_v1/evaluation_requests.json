@@ -1,0 +1,29 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_quality_gate_llama7b_v1",
+  "source_commit": "8be07438e47b462201c5de112b7503652162a39e",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_kv_quality_gate_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run the attention/KV quality-risk gate over the merged physical-HBM frontier.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_quality_gate",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_physical_hbm_frontier_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_physical_hbm_frontier_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use the quality-risk gate to choose the next deployability experiment for GQA/KV quantization."
+      },
+      "status": "merged",
+      "merged_pr_number": 605,
+      "merge_commit": "131a15156e57d198e30d5a55edfa9636beb0224f",
+      "merged_utc": "2026-05-16T11:53:42.595084Z",
+      "notes": "Merged via PR #605 and merge 131a15156e57d198e30d5a55edfa9636beb0224f at 2026-05-16T11:53:42.595084Z."
+    }
+  ]
+}
