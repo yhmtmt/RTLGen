@@ -1,0 +1,29 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_quality_proxy_llama7b_v1",
+  "source_commit": "71463e8812ddd6147873644218d899a8bc85c7a7",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_kv_quality_proxy_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run the controlled attention/KV quality proxy for GQA8 and KV4 candidates.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_quality_proxy",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_quality_gate_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_quality_gate_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use the proxy to decide whether the next expensive quality job should target model-native GQA8/KV8 or low-bit KV4 recovery."
+      },
+      "status": "merged",
+      "merged_pr_number": 607,
+      "merge_commit": "235bb7a39d93c9aaf1e14f5ba37c54b122fd696d",
+      "merged_utc": "2026-05-16T14:26:47.472251Z",
+      "notes": "Merged via PR #607 and merge 235bb7a39d93c9aaf1e14f5ba37c54b122fd696d at 2026-05-16T14:26:47.472251Z."
+    }
+  ]
+}

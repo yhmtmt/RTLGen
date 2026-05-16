@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_quality_proxy_llama7b_v1",
+  "decision": "iterate",
+  "pr_number": 607,
+  "merge_commit": "235bb7a39d93c9aaf1e14f5ba37c54b122fd696d",
+  "merged_utc": "2026-05-16T14:26:47.472251Z"
+}
