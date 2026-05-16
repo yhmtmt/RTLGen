@@ -27,6 +27,7 @@ _ALLOWED_DATASET_PREFIXES = {
     "decoder_attention_kv_memory__",
     "decoder_attention_kv_capacity_noc__",
     "decoder_attention_kv_noc_scheduler__",
+    "decoder_attention_kv_spill_scheduler__",
 }
 
 _ALLOWED_DATASET_SUFFIXES = {".json", ".md"}

@@ -1,0 +1,72 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_spill_scheduler_llama7b_v1",
+  "created_utc": "2026-05-16T08:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_attention_kv_spill_scheduler",
+  "title": "Llama7B 131k attention/KV spill scheduler",
+  "hypothesis": "The llama7b_proxy 131k-token 400 mm2 point remains memory dominated because the HBM-spilled fraction cannot be hidden without sufficient prefetch distance, HBM request parallelism, and NoC/shared-SRAM service efficiency.",
+  "direct_comparison": {
+    "primary_question": "How much of the llama7b_proxy 131k spill latency can be hidden by tile-level prefetch scheduling and finite HBM parallelism?",
+    "include": [
+      "llama7b_proxy at 131k tokens and 400 mm2",
+      "capacity/NoC baseline residency split for shared SRAM plus HBM spill",
+      "tile sizes from 256 to 4096 tokens",
+      "prefetch distance from 1 to 16 tiles",
+      "HBM outstanding requests 1, 2, 4, and 8",
+      "HBM efficiency 0.4, 0.6, and 0.8",
+      "NoC arbitration efficiency 0.55, 0.70, and 0.85",
+      "virtual channels 1, 2, and 4",
+      "prefetch starting after QKV production or during QKV production"
+    ],
+    "exclude": [
+      "cycle-accurate RTL NoC arbitration",
+      "SRAM macro timing closure",
+      "router placement and wire delay",
+      "quality or training recovery"
+    ]
+  },
+  "expected_benefit": [
+    "identifies whether the hard llama7B point is HBM-request limited, NoC limited, or tile-compute limited",
+    "shows whether producer-prefetch overlap has enough room to recover the spill-heavy case",
+    "selects the next RTL-facing shared-SRAM/NoC scheduler or HBM interface target"
+  ],
+  "risks": [
+    "prefetching assumes deterministic KV addresses and sufficient buffering",
+    "HBM efficiency is still an input parameter rather than a measured controller result",
+    "the scheduler model serializes tile compute and should be validated later with a fuller trace"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_kv_spill_scheduler_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run a tile-level spill scheduler for the llama7b_proxy 131k 400 mm2 attention/KV point.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_spill_scheduler",
+      "cost_class": "low",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_noc_scheduler_selected_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_capacity_noc_baseline_v1",
+        "l2_decoder_attention_kv_noc_scheduler_selected_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use tile-level spill scheduling to choose the next concrete memory/NoC RTL or controller measurement."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_capacity_noc__l2_decoder_attention_kv_capacity_noc_baseline_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_noc_scheduler__l2_decoder_attention_kv_noc_scheduler_selected_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_attention_kv_spill_scheduler.py",
+    "npu/eval/estimate_llm_decoder_attention_kv_noc_scheduler.py",
+    "npu/eval/estimate_llm_decoder_attention_kv_capacity_noc.py"
+  ]
+}
