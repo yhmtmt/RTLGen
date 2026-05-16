@@ -1,0 +1,66 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_quality_gate_llama7b_v1",
+  "created_utc": "2026-05-16T10:05:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_attention_kv_quality_gate",
+  "title": "Llama7B attention/KV structural-reduction quality gate",
+  "hypothesis": "The physical-HBM frontier's MQA/KV4 winner is a hardware lower bound rather than a deployable point; practical follow-up should prioritize GQA8/KV8 and test GQA8/KV4 quality before considering MQA.",
+  "direct_comparison": {
+    "primary_question": "Which KV structural-reduction points should remain practical architecture candidates once quality risk is considered alongside the physical-HBM benefit?",
+    "include": [
+      "merged physical-HBM frontier evidence for llama7b_proxy 131k",
+      "die areas 100, 200, and 400 mm2",
+      "KV sharing choices MHA, GQA4, GQA8, and MQA",
+      "KV storage precisions 16, 8, and 4 bits",
+      "quality-risk classification for head sharing and KV precision",
+      "hardware speedup and HBM byte share from the physical-HBM frontier"
+    ],
+    "exclude": [
+      "claiming measured LLaMA perplexity or task accuracy",
+      "training or QAT",
+      "cycle-accurate attention simulation",
+      "promoting MQA/KV4 as deployable without model evidence"
+    ]
+  },
+  "expected_benefit": [
+    "prevents hardware-only MQA/KV4 from being selected as the next architecture point",
+    "identifies GQA8/KV8 as the conservative structural candidate",
+    "identifies GQA8/KV4 as the targeted quality experiment for low-bit KV recovery"
+  ],
+  "risks": [
+    "quality-risk labels are conservative classifications, not measured LLaMA quality",
+    "GQA deployment still requires a model trained or adapted for grouped-query attention",
+    "KV4 still needs long-context quality and retrieval-stability evidence"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_kv_quality_gate_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run the attention/KV quality-risk gate over the merged physical-HBM frontier.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_quality_gate",
+      "cost_class": "low",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_physical_hbm_frontier_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_physical_hbm_frontier_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use the quality-risk gate to choose the next deployability experiment for GQA/KV quantization."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_physical_hbm_frontier__l2_decoder_attention_kv_physical_hbm_frontier_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_attention_kv_quality_gate.py",
+    "npu/eval/estimate_llm_decoder_attention_kv_physical_hbm_frontier.py"
+  ]
+}

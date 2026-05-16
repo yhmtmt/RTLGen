@@ -3331,6 +3331,42 @@ def _decoder_attention_kv_physical_hbm_frontier_evidence(*, item_id: str) -> dic
     }
 
 
+def _decoder_attention_kv_quality_gate_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_kv_quality_gate__{item_id}.json"
+    report = f"{base}/decoder_attention_kv_quality_gate__{item_id}.md"
+    physical_frontier = (
+        f"{base}/decoder_attention_kv_physical_hbm_frontier__"
+        "l2_decoder_attention_kv_physical_hbm_frontier_llama7b_v1.json"
+    )
+    return {
+        "inputs": {
+            "attention_kv_memory_out": out,
+            "attention_kv_memory_report": report,
+            "attention_kv_physical_hbm_frontier": physical_frontier,
+            "attention_kv_quality_gate_scope": (
+                "Quality-risk gate for structural KV reductions identified by the physical-HBM "
+                "frontier. Treat MQA and KV4 hardware wins as non-deployable until model-quality "
+                "or retraining evidence exists, and select practical GQA/KV candidates for follow-up."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_attention_kv_quality_gate",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_attention_kv_quality_gate.py "
+                    f"--physical-hbm-frontier {physical_frontier} "
+                    "--sequence-length-list 131072 "
+                    "--die-area-mm2-list 100,200,400 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_output_projection_weight_store_feasibility_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_output_projection_weight_store_feasibility__{item_id}.json"
@@ -4602,6 +4638,7 @@ def _build_payload(
         "decoder_attention_kv_spill_scheduler",
         "decoder_attention_kv_hbm_controller",
         "decoder_attention_kv_physical_hbm_frontier",
+        "decoder_attention_kv_quality_gate",
         "decoder_output_projection_producer_memory_hierarchy",
         "decoder_output_projection_weight_store_feasibility",
         "decoder_output_projection_weight_store_interface",
@@ -4650,6 +4687,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_kv_hbm_controller_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_physical_hbm_frontier":
             decoder_evidence = _decoder_attention_kv_physical_hbm_frontier_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_kv_quality_gate":
+            decoder_evidence = _decoder_attention_kv_quality_gate_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_producer_memory_hierarchy":
             decoder_evidence = _decoder_output_projection_producer_memory_hierarchy_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_weight_store_feasibility":
