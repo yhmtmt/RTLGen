@@ -1,0 +1,1428 @@
+{
+  "all_candidate_rows": [
+    {
+      "candidate_class": "bound_only_retrain_required",
+      "combined_quality_risk": "high",
+      "data_rate_mtps": 6400,
+      "die_area_mm2": 100.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 25.669228,
+      "hbm_byte_share": 0.633292,
+      "kv_bits": 4,
+      "kv_heads": 1,
+      "kv_precision_quality_risk": "high",
+      "kv_sharing": "mqa",
+      "latency_us": 79.136,
+      "quality_rationale": [
+        "collapses all K/V heads and should be treated as retraining-required",
+        "low-bit KV cache can perturb attention scores and retrieval behavior"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "high",
+      "stack_count": 4
+    },
+    {
+      "candidate_class": "bound_only_retrain_required",
+      "combined_quality_risk": "high",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 100.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 25.669228,
+      "hbm_byte_share": 0.816646,
+      "kv_bits": 8,
+      "kv_heads": 1,
+      "kv_precision_quality_risk": "medium",
+      "kv_sharing": "mqa",
+      "latency_us": 79.136,
+      "quality_rationale": [
+        "collapses all K/V heads and should be treated as retraining-required",
+        "plausible cache quantization, but must be checked on long-context prompts"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "high",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "quality_experiment_required",
+      "combined_quality_risk": "high",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 100.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 25.371703,
+      "hbm_byte_share": 0.908323,
+      "kv_bits": 4,
+      "kv_heads": 4,
+      "kv_precision_quality_risk": "high",
+      "kv_sharing": "gqa8",
+      "latency_us": 80.064,
+      "quality_rationale": [
+        "plausible if the model is trained or adapted for grouped-query attention",
+        "low-bit KV cache can perturb attention scores and retrieval behavior"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "medium",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "bound_only_retrain_required",
+      "combined_quality_risk": "high",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 100.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 25.371703,
+      "hbm_byte_share": 0.908323,
+      "kv_bits": 16,
+      "kv_heads": 1,
+      "kv_precision_quality_risk": "low",
+      "kv_sharing": "mqa",
+      "latency_us": 80.064,
+      "quality_rationale": [
+        "collapses all K/V heads and should be treated as retraining-required",
+        "keeps baseline KV precision"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "high",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "quality_experiment_required",
+      "combined_quality_risk": "high",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 100.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 14.752498,
+      "hbm_byte_share": 0.954161,
+      "kv_bits": 4,
+      "kv_heads": 8,
+      "kv_precision_quality_risk": "high",
+      "kv_sharing": "gqa4",
+      "latency_us": 137.696,
+      "quality_rationale": [
+        "plausible if the model is trained or adapted for grouped-query attention",
+        "low-bit KV cache can perturb attention scores and retrieval behavior"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "medium",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "deployable_if_model_supports_structure",
+      "combined_quality_risk": "medium",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 100.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 14.752498,
+      "hbm_byte_share": 0.954161,
+      "kv_bits": 8,
+      "kv_heads": 4,
+      "kv_precision_quality_risk": "medium",
+      "kv_sharing": "gqa8",
+      "latency_us": 137.696,
+      "quality_rationale": [
+        "plausible if the model is trained or adapted for grouped-query attention",
+        "plausible cache quantization, but must be checked on long-context prompts"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "medium",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "deployable_if_model_supports_structure",
+      "combined_quality_risk": "medium",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 100.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 7.689885,
+      "hbm_byte_share": 0.977081,
+      "kv_bits": 8,
+      "kv_heads": 8,
+      "kv_precision_quality_risk": "medium",
+      "kv_sharing": "gqa4",
+      "latency_us": 264.16,
+      "quality_rationale": [
+        "plausible if the model is trained or adapted for grouped-query attention",
+        "plausible cache quantization, but must be checked on long-context prompts"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "medium",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "deployable_if_model_supports_structure",
+      "combined_quality_risk": "medium",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 100.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 7.689885,
+      "hbm_byte_share": 0.977081,
+      "kv_bits": 16,
+      "kv_heads": 4,
+      "kv_precision_quality_risk": "low",
+      "kv_sharing": "gqa8",
+      "latency_us": 264.16,
+      "quality_rationale": [
+        "plausible if the model is trained or adapted for grouped-query attention",
+        "keeps baseline KV precision"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "medium",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "deployable_if_model_supports_structure",
+      "combined_quality_risk": "medium",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 100.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 3.937721,
+      "hbm_byte_share": 0.98854,
+      "kv_bits": 16,
+      "kv_heads": 8,
+      "kv_precision_quality_risk": "low",
+      "kv_sharing": "gqa4",
+      "latency_us": 515.872,
+      "quality_rationale": [
+        "plausible if the model is trained or adapted for grouped-query attention",
+        "keeps baseline KV precision"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "medium",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "quality_experiment_required",
+      "combined_quality_risk": "high",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 100.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 3.937721,
+      "hbm_byte_share": 0.98854,
+      "kv_bits": 4,
+      "kv_heads": 32,
+      "kv_precision_quality_risk": "high",
+      "kv_sharing": "mha",
+      "latency_us": 515.872,
+      "quality_rationale": [
+        "preserves baseline per-head K/V structure",
+        "low-bit KV cache can perturb attention scores and retrieval behavior"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "low",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "deployable_if_model_supports_structure",
+      "combined_quality_risk": "medium",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 100.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 1.989033,
+      "hbm_byte_share": 0.99427,
+      "kv_bits": 8,
+      "kv_heads": 32,
+      "kv_precision_quality_risk": "medium",
+      "kv_sharing": "mha",
+      "latency_us": 1021.28,
+      "quality_rationale": [
+        "preserves baseline per-head K/V structure",
+        "plausible cache quantization, but must be checked on long-context prompts"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "low",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "conservative_reference",
+      "combined_quality_risk": "low",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 100.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 1.0,
+      "hbm_byte_share": 0.997135,
+      "kv_bits": 16,
+      "kv_heads": 32,
+      "kv_precision_quality_risk": "low",
+      "kv_sharing": "mha",
+      "latency_us": 2031.36,
+      "quality_rationale": [
+        "preserves baseline per-head K/V structure",
+        "keeps baseline KV precision"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "low",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "bound_only_retrain_required",
+      "combined_quality_risk": "high",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 200.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 25.559774,
+      "hbm_byte_share": 0.266583,
+      "kv_bits": 4,
+      "kv_heads": 1,
+      "kv_precision_quality_risk": "high",
+      "kv_sharing": "mqa",
+      "latency_us": 79.232,
+      "quality_rationale": [
+        "collapses all K/V heads and should be treated as retraining-required",
+        "low-bit KV cache can perturb attention scores and retrieval behavior"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "high",
+      "stack_count": 1
+    },
+    {
+      "candidate_class": "bound_only_retrain_required",
+      "combined_quality_risk": "high",
+      "data_rate_mtps": 6400,
+      "die_area_mm2": 200.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 25.559774,
+      "hbm_byte_share": 0.633292,
+      "kv_bits": 8,
+      "kv_heads": 1,
+      "kv_precision_quality_risk": "medium",
+      "kv_sharing": "mqa",
+      "latency_us": 79.232,
+      "quality_rationale": [
+        "collapses all K/V heads and should be treated as retraining-required",
+        "plausible cache quantization, but must be checked on long-context prompts"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "high",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "quality_experiment_required",
+      "combined_quality_risk": "high",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 200.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 25.36513,
+      "hbm_byte_share": 0.816646,
+      "kv_bits": 4,
+      "kv_heads": 4,
+      "kv_precision_quality_risk": "high",
+      "kv_sharing": "gqa8",
+      "latency_us": 79.84,
+      "quality_rationale": [
+        "plausible if the model is trained or adapted for grouped-query attention",
+        "low-bit KV cache can perturb attention scores and retrieval behavior"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "medium",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "bound_only_retrain_required",
+      "combined_quality_risk": "high",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 200.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 25.36513,
+      "hbm_byte_share": 0.816646,
+      "kv_bits": 16,
+      "kv_heads": 1,
+      "kv_precision_quality_risk": "low",
+      "kv_sharing": "mqa",
+      "latency_us": 79.84,
+      "quality_rationale": [
+        "collapses all K/V heads and should be treated as retraining-required",
+        "keeps baseline KV precision"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "high",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "quality_experiment_required",
+      "combined_quality_risk": "high",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 200.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 15.401801,
+      "hbm_byte_share": 0.908323,
+      "kv_bits": 4,
+      "kv_heads": 8,
+      "kv_precision_quality_risk": "high",
+      "kv_sharing": "gqa4",
+      "latency_us": 131.488,
+      "quality_rationale": [
+        "plausible if the model is trained or adapted for grouped-query attention",
+        "low-bit KV cache can perturb attention scores and retrieval behavior"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "medium",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "deployable_if_model_supports_structure",
+      "combined_quality_risk": "medium",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 200.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 15.401801,
+      "hbm_byte_share": 0.908323,
+      "kv_bits": 8,
+      "kv_heads": 4,
+      "kv_precision_quality_risk": "medium",
+      "kv_sharing": "gqa8",
+      "latency_us": 131.488,
+      "quality_rationale": [
+        "plausible if the model is trained or adapted for grouped-query attention",
+        "plausible cache quantization, but must be checked on long-context prompts"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "medium",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "deployable_if_model_supports_structure",
+      "combined_quality_risk": "medium",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 200.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 7.850887,
+      "hbm_byte_share": 0.954161,
+      "kv_bits": 8,
+      "kv_heads": 8,
+      "kv_precision_quality_risk": "medium",
+      "kv_sharing": "gqa4",
+      "latency_us": 257.952,
+      "quality_rationale": [
+        "plausible if the model is trained or adapted for grouped-query attention",
+        "plausible cache quantization, but must be checked on long-context prompts"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "medium",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "deployable_if_model_supports_structure",
+      "combined_quality_risk": "medium",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 200.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 7.850887,
+      "hbm_byte_share": 0.954161,
+      "kv_bits": 16,
+      "kv_heads": 4,
+      "kv_precision_quality_risk": "low",
+      "kv_sharing": "gqa8",
+      "latency_us": 257.952,
+      "quality_rationale": [
+        "plausible if the model is trained or adapted for grouped-query attention",
+        "keeps baseline KV precision"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "medium",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "deployable_if_model_supports_structure",
+      "combined_quality_risk": "medium",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 200.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 3.967526,
+      "hbm_byte_share": 0.977081,
+      "kv_bits": 16,
+      "kv_heads": 8,
+      "kv_precision_quality_risk": "low",
+      "kv_sharing": "gqa4",
+      "latency_us": 510.432,
+      "quality_rationale": [
+        "plausible if the model is trained or adapted for grouped-query attention",
+        "keeps baseline KV precision"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "medium",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "quality_experiment_required",
+      "combined_quality_risk": "high",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 200.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 3.967526,
+      "hbm_byte_share": 0.977081,
+      "kv_bits": 4,
+      "kv_heads": 32,
+      "kv_precision_quality_risk": "high",
+      "kv_sharing": "mha",
+      "latency_us": 510.432,
+      "quality_rationale": [
+        "preserves baseline per-head K/V structure",
+        "low-bit KV cache can perturb attention scores and retrieval behavior"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "low",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "deployable_if_model_supports_structure",
+      "combined_quality_risk": "medium",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 200.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 1.995082,
+      "hbm_byte_share": 0.98854,
+      "kv_bits": 8,
+      "kv_heads": 32,
+      "kv_precision_quality_risk": "medium",
+      "kv_sharing": "mha",
+      "latency_us": 1015.072,
+      "quality_rationale": [
+        "preserves baseline per-head K/V structure",
+        "plausible cache quantization, but must be checked on long-context prompts"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "low",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "conservative_reference",
+      "combined_quality_risk": "low",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 200.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 1.0,
+      "hbm_byte_share": 0.99427,
+      "kv_bits": 16,
+      "kv_heads": 32,
+      "kv_precision_quality_risk": "low",
+      "kv_sharing": "mha",
+      "latency_us": 2025.152,
+      "quality_rationale": [
+        "preserves baseline per-head K/V structure",
+        "keeps baseline KV precision"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "low",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "bound_only_retrain_required",
+      "combined_quality_risk": "high",
+      "data_rate_mtps": 3200,
+      "die_area_mm2": 400.0,
+      "dominant_tile_resource": "tile_attention",
+      "hardware_speedup_vs_mha16": 25.382009,
+      "hbm_byte_share": 0.0,
+      "kv_bits": 4,
+      "kv_heads": 1,
+      "kv_precision_quality_risk": "high",
+      "kv_sharing": "mqa",
+      "latency_us": 79.328,
+      "quality_rationale": [
+        "collapses all K/V heads and should be treated as retraining-required",
+        "low-bit KV cache can perturb attention scores and retrieval behavior"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "high",
+      "stack_count": 1
+    },
+    {
+      "candidate_class": "bound_only_retrain_required",
+      "combined_quality_risk": "high",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 400.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 25.34112,
+      "hbm_byte_share": 0.266583,
+      "kv_bits": 8,
+      "kv_heads": 1,
+      "kv_precision_quality_risk": "medium",
+      "kv_sharing": "mqa",
+      "latency_us": 79.456,
+      "quality_rationale": [
+        "collapses all K/V heads and should be treated as retraining-required",
+        "plausible cache quantization, but must be checked on long-context prompts"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "high",
+      "stack_count": 2
+    },
+    {
+      "candidate_class": "bound_only_retrain_required",
+      "combined_quality_risk": "high",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 400.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 25.34112,
+      "hbm_byte_share": 0.633292,
+      "kv_bits": 16,
+      "kv_heads": 1,
+      "kv_precision_quality_risk": "low",
+      "kv_sharing": "mqa",
+      "latency_us": 79.456,
+      "quality_rationale": [
+        "collapses all K/V heads and should be treated as retraining-required",
+        "keeps baseline KV precision"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "high",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "quality_experiment_required",
+      "combined_quality_risk": "high",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 400.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 25.280032,
+      "hbm_byte_share": 0.633292,
+      "kv_bits": 4,
+      "kv_heads": 4,
+      "kv_precision_quality_risk": "high",
+      "kv_sharing": "gqa8",
+      "latency_us": 79.648,
+      "quality_rationale": [
+        "plausible if the model is trained or adapted for grouped-query attention",
+        "low-bit KV cache can perturb attention scores and retrieval behavior"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "medium",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "quality_experiment_required",
+      "combined_quality_risk": "high",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 400.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 16.801602,
+      "hbm_byte_share": 0.816646,
+      "kv_bits": 4,
+      "kv_heads": 8,
+      "kv_precision_quality_risk": "high",
+      "kv_sharing": "gqa4",
+      "latency_us": 119.84,
+      "quality_rationale": [
+        "plausible if the model is trained or adapted for grouped-query attention",
+        "low-bit KV cache can perturb attention scores and retrieval behavior"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "medium",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "deployable_if_model_supports_structure",
+      "combined_quality_risk": "medium",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 400.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 16.801602,
+      "hbm_byte_share": 0.816646,
+      "kv_bits": 8,
+      "kv_heads": 4,
+      "kv_precision_quality_risk": "medium",
+      "kv_sharing": "gqa8",
+      "latency_us": 119.84,
+      "quality_rationale": [
+        "plausible if the model is trained or adapted for grouped-query attention",
+        "plausible cache quantization, but must be checked on long-context prompts"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "medium",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "deployable_if_model_supports_structure",
+      "combined_quality_risk": "medium",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 400.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 8.174873,
+      "hbm_byte_share": 0.908323,
+      "kv_bits": 8,
+      "kv_heads": 8,
+      "kv_precision_quality_risk": "medium",
+      "kv_sharing": "gqa4",
+      "latency_us": 246.304,
+      "quality_rationale": [
+        "plausible if the model is trained or adapted for grouped-query attention",
+        "plausible cache quantization, but must be checked on long-context prompts"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "medium",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "deployable_if_model_supports_structure",
+      "combined_quality_risk": "medium",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 400.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 8.174873,
+      "hbm_byte_share": 0.908323,
+      "kv_bits": 16,
+      "kv_heads": 4,
+      "kv_precision_quality_risk": "low",
+      "kv_sharing": "gqa8",
+      "latency_us": 246.304,
+      "quality_rationale": [
+        "plausible if the model is trained or adapted for grouped-query attention",
+        "keeps baseline KV precision"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "medium",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "deployable_if_model_supports_structure",
+      "combined_quality_risk": "medium",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 400.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 4.036826,
+      "hbm_byte_share": 0.954161,
+      "kv_bits": 16,
+      "kv_heads": 8,
+      "kv_precision_quality_risk": "low",
+      "kv_sharing": "gqa4",
+      "latency_us": 498.784,
+      "quality_rationale": [
+        "plausible if the model is trained or adapted for grouped-query attention",
+        "keeps baseline KV precision"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "medium",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "quality_experiment_required",
+      "combined_quality_risk": "high",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 400.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 4.036826,
+      "hbm_byte_share": 0.954161,
+      "kv_bits": 4,
+      "kv_heads": 32,
+      "kv_precision_quality_risk": "high",
+      "kv_sharing": "mha",
+      "latency_us": 498.784,
+      "quality_rationale": [
+        "preserves baseline per-head K/V structure",
+        "low-bit KV cache can perturb attention scores and retrieval behavior"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "low",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "deployable_if_model_supports_structure",
+      "combined_quality_risk": "medium",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 400.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 2.006633,
+      "hbm_byte_share": 0.977081,
+      "kv_bits": 8,
+      "kv_heads": 32,
+      "kv_precision_quality_risk": "medium",
+      "kv_sharing": "mha",
+      "latency_us": 1003.424,
+      "quality_rationale": [
+        "preserves baseline per-head K/V structure",
+        "plausible cache quantization, but must be checked on long-context prompts"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "low",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "conservative_reference",
+      "combined_quality_risk": "low",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 400.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 1.0,
+      "hbm_byte_share": 0.98854,
+      "kv_bits": 16,
+      "kv_heads": 32,
+      "kv_precision_quality_risk": "low",
+      "kv_sharing": "mha",
+      "latency_us": 2013.504,
+      "quality_rationale": [
+        "preserves baseline per-head K/V structure",
+        "keeps baseline KV precision"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "low",
+      "stack_count": 8
+    }
+  ],
+  "assumptions": [
+    "This gate does not claim measured LLaMA quality; it prevents hardware-only winners from being treated as deployable.",
+    "GQA candidates require a model trained or adapted for grouped-query attention before deployment.",
+    "MQA candidates are classified as bound-only unless a retrained/adapted model is supplied.",
+    "KV4 candidates require long-context quality and retrieval-stability experiments before they can be promoted.",
+    "The hardware benefit values come from the merged physical-HBM frontier artifact."
+  ],
+  "bound_only_candidates": [
+    {
+      "candidate_class": "bound_only_retrain_required",
+      "combined_quality_risk": "high",
+      "data_rate_mtps": 6400,
+      "die_area_mm2": 100.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 25.669228,
+      "hbm_byte_share": 0.633292,
+      "kv_bits": 4,
+      "kv_heads": 1,
+      "kv_precision_quality_risk": "high",
+      "kv_sharing": "mqa",
+      "latency_us": 79.136,
+      "quality_rationale": [
+        "collapses all K/V heads and should be treated as retraining-required",
+        "low-bit KV cache can perturb attention scores and retrieval behavior"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "high",
+      "stack_count": 4
+    },
+    {
+      "candidate_class": "bound_only_retrain_required",
+      "combined_quality_risk": "high",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 100.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 25.669228,
+      "hbm_byte_share": 0.816646,
+      "kv_bits": 8,
+      "kv_heads": 1,
+      "kv_precision_quality_risk": "medium",
+      "kv_sharing": "mqa",
+      "latency_us": 79.136,
+      "quality_rationale": [
+        "collapses all K/V heads and should be treated as retraining-required",
+        "plausible cache quantization, but must be checked on long-context prompts"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "high",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "bound_only_retrain_required",
+      "combined_quality_risk": "high",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 200.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 25.559774,
+      "hbm_byte_share": 0.266583,
+      "kv_bits": 4,
+      "kv_heads": 1,
+      "kv_precision_quality_risk": "high",
+      "kv_sharing": "mqa",
+      "latency_us": 79.232,
+      "quality_rationale": [
+        "collapses all K/V heads and should be treated as retraining-required",
+        "low-bit KV cache can perturb attention scores and retrieval behavior"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "high",
+      "stack_count": 1
+    },
+    {
+      "candidate_class": "bound_only_retrain_required",
+      "combined_quality_risk": "high",
+      "data_rate_mtps": 6400,
+      "die_area_mm2": 200.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 25.559774,
+      "hbm_byte_share": 0.633292,
+      "kv_bits": 8,
+      "kv_heads": 1,
+      "kv_precision_quality_risk": "medium",
+      "kv_sharing": "mqa",
+      "latency_us": 79.232,
+      "quality_rationale": [
+        "collapses all K/V heads and should be treated as retraining-required",
+        "plausible cache quantization, but must be checked on long-context prompts"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "high",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "bound_only_retrain_required",
+      "combined_quality_risk": "high",
+      "data_rate_mtps": 3200,
+      "die_area_mm2": 400.0,
+      "dominant_tile_resource": "tile_attention",
+      "hardware_speedup_vs_mha16": 25.382009,
+      "hbm_byte_share": 0.0,
+      "kv_bits": 4,
+      "kv_heads": 1,
+      "kv_precision_quality_risk": "high",
+      "kv_sharing": "mqa",
+      "latency_us": 79.328,
+      "quality_rationale": [
+        "collapses all K/V heads and should be treated as retraining-required",
+        "low-bit KV cache can perturb attention scores and retrieval behavior"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "high",
+      "stack_count": 1
+    },
+    {
+      "candidate_class": "bound_only_retrain_required",
+      "combined_quality_risk": "high",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 400.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 25.34112,
+      "hbm_byte_share": 0.266583,
+      "kv_bits": 8,
+      "kv_heads": 1,
+      "kv_precision_quality_risk": "medium",
+      "kv_sharing": "mqa",
+      "latency_us": 79.456,
+      "quality_rationale": [
+        "collapses all K/V heads and should be treated as retraining-required",
+        "plausible cache quantization, but must be checked on long-context prompts"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "high",
+      "stack_count": 2
+    },
+    {
+      "candidate_class": "bound_only_retrain_required",
+      "combined_quality_risk": "high",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 400.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 25.34112,
+      "hbm_byte_share": 0.633292,
+      "kv_bits": 16,
+      "kv_heads": 1,
+      "kv_precision_quality_risk": "low",
+      "kv_sharing": "mqa",
+      "latency_us": 79.456,
+      "quality_rationale": [
+        "collapses all K/V heads and should be treated as retraining-required",
+        "keeps baseline KV precision"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "high",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "bound_only_retrain_required",
+      "combined_quality_risk": "high",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 200.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 25.36513,
+      "hbm_byte_share": 0.816646,
+      "kv_bits": 16,
+      "kv_heads": 1,
+      "kv_precision_quality_risk": "low",
+      "kv_sharing": "mqa",
+      "latency_us": 79.84,
+      "quality_rationale": [
+        "collapses all K/V heads and should be treated as retraining-required",
+        "keeps baseline KV precision"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "high",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "bound_only_retrain_required",
+      "combined_quality_risk": "high",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 100.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 25.371703,
+      "hbm_byte_share": 0.908323,
+      "kv_bits": 16,
+      "kv_heads": 1,
+      "kv_precision_quality_risk": "low",
+      "kv_sharing": "mqa",
+      "latency_us": 80.064,
+      "quality_rationale": [
+        "collapses all K/V heads and should be treated as retraining-required",
+        "keeps baseline KV precision"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "high",
+      "stack_count": 8
+    }
+  ],
+  "inputs": {
+    "die_area_mm2_list": [
+      100.0,
+      200.0,
+      400.0
+    ],
+    "physical_hbm_frontier_model": "llm_decoder_attention_kv_physical_hbm_frontier_llama7b_v1",
+    "sequence_length_list": [
+      131072
+    ]
+  },
+  "model": "llm_decoder_attention_kv_quality_gate_v1",
+  "practical_candidates": [
+    {
+      "candidate_class": "deployable_if_model_supports_structure",
+      "combined_quality_risk": "medium",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 400.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 16.801602,
+      "hbm_byte_share": 0.816646,
+      "kv_bits": 8,
+      "kv_heads": 4,
+      "kv_precision_quality_risk": "medium",
+      "kv_sharing": "gqa8",
+      "latency_us": 119.84,
+      "quality_rationale": [
+        "plausible if the model is trained or adapted for grouped-query attention",
+        "plausible cache quantization, but must be checked on long-context prompts"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "medium",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "deployable_if_model_supports_structure",
+      "combined_quality_risk": "medium",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 200.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 15.401801,
+      "hbm_byte_share": 0.908323,
+      "kv_bits": 8,
+      "kv_heads": 4,
+      "kv_precision_quality_risk": "medium",
+      "kv_sharing": "gqa8",
+      "latency_us": 131.488,
+      "quality_rationale": [
+        "plausible if the model is trained or adapted for grouped-query attention",
+        "plausible cache quantization, but must be checked on long-context prompts"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "medium",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "deployable_if_model_supports_structure",
+      "combined_quality_risk": "medium",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 100.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 14.752498,
+      "hbm_byte_share": 0.954161,
+      "kv_bits": 8,
+      "kv_heads": 4,
+      "kv_precision_quality_risk": "medium",
+      "kv_sharing": "gqa8",
+      "latency_us": 137.696,
+      "quality_rationale": [
+        "plausible if the model is trained or adapted for grouped-query attention",
+        "plausible cache quantization, but must be checked on long-context prompts"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "medium",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "deployable_if_model_supports_structure",
+      "combined_quality_risk": "medium",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 400.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 8.174873,
+      "hbm_byte_share": 0.908323,
+      "kv_bits": 8,
+      "kv_heads": 8,
+      "kv_precision_quality_risk": "medium",
+      "kv_sharing": "gqa4",
+      "latency_us": 246.304,
+      "quality_rationale": [
+        "plausible if the model is trained or adapted for grouped-query attention",
+        "plausible cache quantization, but must be checked on long-context prompts"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "medium",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "deployable_if_model_supports_structure",
+      "combined_quality_risk": "medium",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 400.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 8.174873,
+      "hbm_byte_share": 0.908323,
+      "kv_bits": 16,
+      "kv_heads": 4,
+      "kv_precision_quality_risk": "low",
+      "kv_sharing": "gqa8",
+      "latency_us": 246.304,
+      "quality_rationale": [
+        "plausible if the model is trained or adapted for grouped-query attention",
+        "keeps baseline KV precision"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "medium",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "deployable_if_model_supports_structure",
+      "combined_quality_risk": "medium",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 200.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 7.850887,
+      "hbm_byte_share": 0.954161,
+      "kv_bits": 8,
+      "kv_heads": 8,
+      "kv_precision_quality_risk": "medium",
+      "kv_sharing": "gqa4",
+      "latency_us": 257.952,
+      "quality_rationale": [
+        "plausible if the model is trained or adapted for grouped-query attention",
+        "plausible cache quantization, but must be checked on long-context prompts"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "medium",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "deployable_if_model_supports_structure",
+      "combined_quality_risk": "medium",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 200.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 7.850887,
+      "hbm_byte_share": 0.954161,
+      "kv_bits": 16,
+      "kv_heads": 4,
+      "kv_precision_quality_risk": "low",
+      "kv_sharing": "gqa8",
+      "latency_us": 257.952,
+      "quality_rationale": [
+        "plausible if the model is trained or adapted for grouped-query attention",
+        "keeps baseline KV precision"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "medium",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "deployable_if_model_supports_structure",
+      "combined_quality_risk": "medium",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 100.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 7.689885,
+      "hbm_byte_share": 0.977081,
+      "kv_bits": 8,
+      "kv_heads": 8,
+      "kv_precision_quality_risk": "medium",
+      "kv_sharing": "gqa4",
+      "latency_us": 264.16,
+      "quality_rationale": [
+        "plausible if the model is trained or adapted for grouped-query attention",
+        "plausible cache quantization, but must be checked on long-context prompts"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "medium",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "deployable_if_model_supports_structure",
+      "combined_quality_risk": "medium",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 100.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 7.689885,
+      "hbm_byte_share": 0.977081,
+      "kv_bits": 16,
+      "kv_heads": 4,
+      "kv_precision_quality_risk": "low",
+      "kv_sharing": "gqa8",
+      "latency_us": 264.16,
+      "quality_rationale": [
+        "plausible if the model is trained or adapted for grouped-query attention",
+        "keeps baseline KV precision"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "medium",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "deployable_if_model_supports_structure",
+      "combined_quality_risk": "medium",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 400.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 4.036826,
+      "hbm_byte_share": 0.954161,
+      "kv_bits": 16,
+      "kv_heads": 8,
+      "kv_precision_quality_risk": "low",
+      "kv_sharing": "gqa4",
+      "latency_us": 498.784,
+      "quality_rationale": [
+        "plausible if the model is trained or adapted for grouped-query attention",
+        "keeps baseline KV precision"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "medium",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "deployable_if_model_supports_structure",
+      "combined_quality_risk": "medium",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 200.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 3.967526,
+      "hbm_byte_share": 0.977081,
+      "kv_bits": 16,
+      "kv_heads": 8,
+      "kv_precision_quality_risk": "low",
+      "kv_sharing": "gqa4",
+      "latency_us": 510.432,
+      "quality_rationale": [
+        "plausible if the model is trained or adapted for grouped-query attention",
+        "keeps baseline KV precision"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "medium",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "deployable_if_model_supports_structure",
+      "combined_quality_risk": "medium",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 100.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 3.937721,
+      "hbm_byte_share": 0.98854,
+      "kv_bits": 16,
+      "kv_heads": 8,
+      "kv_precision_quality_risk": "low",
+      "kv_sharing": "gqa4",
+      "latency_us": 515.872,
+      "quality_rationale": [
+        "plausible if the model is trained or adapted for grouped-query attention",
+        "keeps baseline KV precision"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "medium",
+      "stack_count": 8
+    }
+  ],
+  "quality_experiment_candidates": [
+    {
+      "candidate_class": "quality_experiment_required",
+      "combined_quality_risk": "high",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 400.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 25.280032,
+      "hbm_byte_share": 0.633292,
+      "kv_bits": 4,
+      "kv_heads": 4,
+      "kv_precision_quality_risk": "high",
+      "kv_sharing": "gqa8",
+      "latency_us": 79.648,
+      "quality_rationale": [
+        "plausible if the model is trained or adapted for grouped-query attention",
+        "low-bit KV cache can perturb attention scores and retrieval behavior"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "medium",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "quality_experiment_required",
+      "combined_quality_risk": "high",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 200.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 25.36513,
+      "hbm_byte_share": 0.816646,
+      "kv_bits": 4,
+      "kv_heads": 4,
+      "kv_precision_quality_risk": "high",
+      "kv_sharing": "gqa8",
+      "latency_us": 79.84,
+      "quality_rationale": [
+        "plausible if the model is trained or adapted for grouped-query attention",
+        "low-bit KV cache can perturb attention scores and retrieval behavior"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "medium",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "quality_experiment_required",
+      "combined_quality_risk": "high",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 100.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 25.371703,
+      "hbm_byte_share": 0.908323,
+      "kv_bits": 4,
+      "kv_heads": 4,
+      "kv_precision_quality_risk": "high",
+      "kv_sharing": "gqa8",
+      "latency_us": 80.064,
+      "quality_rationale": [
+        "plausible if the model is trained or adapted for grouped-query attention",
+        "low-bit KV cache can perturb attention scores and retrieval behavior"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "medium",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "quality_experiment_required",
+      "combined_quality_risk": "high",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 400.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 16.801602,
+      "hbm_byte_share": 0.816646,
+      "kv_bits": 4,
+      "kv_heads": 8,
+      "kv_precision_quality_risk": "high",
+      "kv_sharing": "gqa4",
+      "latency_us": 119.84,
+      "quality_rationale": [
+        "plausible if the model is trained or adapted for grouped-query attention",
+        "low-bit KV cache can perturb attention scores and retrieval behavior"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "medium",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "quality_experiment_required",
+      "combined_quality_risk": "high",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 200.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 15.401801,
+      "hbm_byte_share": 0.908323,
+      "kv_bits": 4,
+      "kv_heads": 8,
+      "kv_precision_quality_risk": "high",
+      "kv_sharing": "gqa4",
+      "latency_us": 131.488,
+      "quality_rationale": [
+        "plausible if the model is trained or adapted for grouped-query attention",
+        "low-bit KV cache can perturb attention scores and retrieval behavior"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "medium",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "quality_experiment_required",
+      "combined_quality_risk": "high",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 100.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 14.752498,
+      "hbm_byte_share": 0.954161,
+      "kv_bits": 4,
+      "kv_heads": 8,
+      "kv_precision_quality_risk": "high",
+      "kv_sharing": "gqa4",
+      "latency_us": 137.696,
+      "quality_rationale": [
+        "plausible if the model is trained or adapted for grouped-query attention",
+        "low-bit KV cache can perturb attention scores and retrieval behavior"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "medium",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "quality_experiment_required",
+      "combined_quality_risk": "high",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 400.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 4.036826,
+      "hbm_byte_share": 0.954161,
+      "kv_bits": 4,
+      "kv_heads": 32,
+      "kv_precision_quality_risk": "high",
+      "kv_sharing": "mha",
+      "latency_us": 498.784,
+      "quality_rationale": [
+        "preserves baseline per-head K/V structure",
+        "low-bit KV cache can perturb attention scores and retrieval behavior"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "low",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "quality_experiment_required",
+      "combined_quality_risk": "high",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 200.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 3.967526,
+      "hbm_byte_share": 0.977081,
+      "kv_bits": 4,
+      "kv_heads": 32,
+      "kv_precision_quality_risk": "high",
+      "kv_sharing": "mha",
+      "latency_us": 510.432,
+      "quality_rationale": [
+        "preserves baseline per-head K/V structure",
+        "low-bit KV cache can perturb attention scores and retrieval behavior"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "low",
+      "stack_count": 8
+    },
+    {
+      "candidate_class": "quality_experiment_required",
+      "combined_quality_risk": "high",
+      "data_rate_mtps": 9000,
+      "die_area_mm2": 100.0,
+      "dominant_tile_resource": "hbm",
+      "hardware_speedup_vs_mha16": 3.937721,
+      "hbm_byte_share": 0.98854,
+      "kv_bits": 4,
+      "kv_heads": 32,
+      "kv_precision_quality_risk": "high",
+      "kv_sharing": "mha",
+      "latency_us": 515.872,
+      "quality_rationale": [
+        "preserves baseline per-head K/V structure",
+        "low-bit KV cache can perturb attention scores and retrieval behavior"
+      ],
+      "sequence_length": 131072,
+      "sharing_quality_risk": "low",
+      "stack_count": 8
+    }
+  ],
+  "recommendation": {
+    "bound_only_candidate": "mqa_kv4",
+    "primary_hardware_candidate": "gqa8_kv8",
+    "primary_quality_experiment": "gqa8_kv4",
+    "reason": "MQA/KV4 is the strongest hardware lower bound, but both dimensions carry high quality risk. GQA8/KV8 is the conservative structural candidate; GQA8/KV4 is the useful quality experiment for testing whether low-bit KV can recover enough of the HBM benefit without changing to MQA."
+  },
+  "sweep_summary": {
+    "bound_only_candidate_count": 9,
+    "candidate_row_count": 36,
+    "practical_candidate_count": 18,
+    "quality_experiment_candidate_count": 9
+  },
+  "version": 0.1
+}
