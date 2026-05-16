@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_hbm_controller_llama7b_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "iterate",
+  "pr_number": 601,
+  "merge_commit": "250d9122058b3c905d15a41bc568241104d9c89b",
+  "merged_utc": "2026-05-16T08:58:31.538382Z"
 }

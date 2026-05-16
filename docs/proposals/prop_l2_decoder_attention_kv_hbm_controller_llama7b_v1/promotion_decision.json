@@ -1,12 +1,15 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_hbm_controller_llama7b_v1",
-  "candidate_id": "",
+  "candidate_id": "l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3",
   "decision": "iterate",
-  "reason": "Replace with the actual decision rationale.",
+  "reason": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_hbm_controller__l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3.json: decision=decoder_evidence_recorded.",
   "evidence_refs": [
-    "item:example",
-    "run:example"
+    "item:l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3",
+    "run:l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3_run_076e4c95d23d9b4d",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3.json",
+    "pr:#601",
+    "https://github.com/yhmtmt/RTLGen/pull/601"
   ],
-  "next_action": "Describe the next action.",
-  "requires_human_approval": true
+  "next_action": "inspect follow-on work after l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3",
+  "requires_human_approval": false
 }

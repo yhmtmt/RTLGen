@@ -20,10 +20,14 @@
         "direction": "iterate",
         "reason": "Use HBM-controller feasibility to choose the next concrete memory/NoC RTL or HBM prefetch interface measurement."
       },
-      "status": "pending",
+      "status": "merged",
       "prior_item_ids": [
         "l2_decoder_attention_kv_hbm_controller_llama7b_v1"
-      ]
+      ],
+      "merged_pr_number": 601,
+      "merge_commit": "250d9122058b3c905d15a41bc568241104d9c89b",
+      "merged_utc": "2026-05-16T08:58:31.538382Z",
+      "notes": "Merged via PR #601 and merge 250d9122058b3c905d15a41bc568241104d9c89b at 2026-05-16T08:58:31.538382Z."
     }
   ]
 }
