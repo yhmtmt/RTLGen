@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_noc_scheduler_selected_v1",
-  "source_commit": "21da33d8fffa6196f44950ecdf646361a3ac0ef9",
+  "source_commit": "3925916bfafa4b29592a5cbfece314232fc341bb",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_kv_noc_scheduler_selected_v1",
