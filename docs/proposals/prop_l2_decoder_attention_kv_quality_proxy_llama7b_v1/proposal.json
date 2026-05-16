@@ -1,0 +1,66 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_quality_proxy_llama7b_v1",
+  "created_utc": "2026-05-16T12:05:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_attention_kv_quality_proxy",
+  "title": "Llama7B attention/KV quality proxy for GQA and KV4",
+  "hypothesis": "A controlled attention proxy can separate the risk of low-bit KV quantization from the larger risk of post-hoc K/V head sharing, so GQA8/KV4 should remain a quality experiment until native-GQA or retraining evidence exists.",
+  "direct_comparison": {
+    "primary_question": "Do GQA8/KV8 and GQA8/KV4 preserve attention top-1, retrieval hits, probability distribution, and value outputs under controlled long-context attention regimes?",
+    "include": [
+      "merged attention/KV quality gate evidence",
+      "MHA/KV8 and MHA/KV4 quantization controls",
+      "GQA8/KV8 and GQA8/KV4 structural candidates",
+      "MQA/KV4 bound-only candidate",
+      "correlated-head, retrieval, low-margin, and independent-head regimes",
+      "attention top-1 match, retrieval hit, KL divergence, output cosine, and output RMSE"
+    ],
+    "exclude": [
+      "claiming measured LLaMA perplexity or task accuracy",
+      "training native GQA or MQA weights",
+      "QAT or learned KV quantization scales",
+      "cycle-accurate attention hardware simulation"
+    ]
+  },
+  "expected_benefit": [
+    "checks whether KV4 alone is less risky than head sharing",
+    "tests whether GQA8/KV4 is plausible enough to justify a model-native quality run",
+    "keeps MQA/KV4 visible as a hardware bound while preventing accidental promotion"
+  ],
+  "risks": [
+    "post-hoc K/V head averaging is pessimistic for models trained natively with GQA",
+    "the proxy is synthetic and cannot replace trained-model perplexity or long-context retrieval tests",
+    "KV quantization uses simple symmetric scales rather than a learned or calibrated scheme"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_kv_quality_proxy_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run the controlled attention/KV quality proxy for GQA8 and KV4 candidates.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_quality_proxy",
+      "cost_class": "low",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_quality_gate_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_quality_gate_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use the proxy to decide whether the next expensive quality job should target model-native GQA8/KV8 or low-bit KV4 recovery."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_quality_gate__l2_decoder_attention_kv_quality_gate_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_attention_kv_quality_proxy.py",
+    "npu/eval/estimate_llm_decoder_attention_kv_quality_gate.py"
+  ]
+}

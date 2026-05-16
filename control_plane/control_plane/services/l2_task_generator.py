@@ -3367,6 +3367,43 @@ def _decoder_attention_kv_quality_gate_evidence(*, item_id: str) -> dict[str, An
     }
 
 
+def _decoder_attention_kv_quality_proxy_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_kv_quality_proxy__{item_id}.json"
+    report = f"{base}/decoder_attention_kv_quality_proxy__{item_id}.md"
+    quality_gate = f"{base}/decoder_attention_kv_quality_gate__l2_decoder_attention_kv_quality_gate_llama7b_v1.json"
+    return {
+        "inputs": {
+            "attention_kv_memory_out": out,
+            "attention_kv_memory_report": report,
+            "attention_kv_quality_gate": quality_gate,
+            "attention_kv_quality_proxy_scope": (
+                "Controlled attention proxy for GQA/MQA head sharing and packed KV quantization. "
+                "Compare attention top-1, retrieval hit, distribution KL, and value-output cosine "
+                "against an MHA/KV16 reference on correlated, retrieval, low-margin, and independent-head regimes."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_attention_kv_quality_proxy",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_attention_kv_quality_proxy.py "
+                    f"--quality-gate {quality_gate} "
+                    "--attention-heads 32 "
+                    "--head-dim 32 "
+                    "--sequence-length-list 128,512 "
+                    "--regime-list correlated_heads,retrieval,low_margin,independent_heads "
+                    "--seed-count 2 "
+                    "--candidate-spec-list mha:kv8,mha:kv4,gqa8:kv8,gqa8:kv4,mqa:kv4 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_output_projection_weight_store_feasibility_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_output_projection_weight_store_feasibility__{item_id}.json"
@@ -4639,6 +4676,7 @@ def _build_payload(
         "decoder_attention_kv_hbm_controller",
         "decoder_attention_kv_physical_hbm_frontier",
         "decoder_attention_kv_quality_gate",
+        "decoder_attention_kv_quality_proxy",
         "decoder_output_projection_producer_memory_hierarchy",
         "decoder_output_projection_weight_store_feasibility",
         "decoder_output_projection_weight_store_interface",
@@ -4689,6 +4727,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_kv_physical_hbm_frontier_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_quality_gate":
             decoder_evidence = _decoder_attention_kv_quality_gate_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_kv_quality_proxy":
+            decoder_evidence = _decoder_attention_kv_quality_proxy_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_producer_memory_hierarchy":
             decoder_evidence = _decoder_output_projection_producer_memory_hierarchy_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_weight_store_feasibility":
