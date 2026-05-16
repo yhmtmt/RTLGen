@@ -1,0 +1,31 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_physical_hbm_frontier_llama7b_v1",
+  "source_commit": "c523a854b1765103086dfd3889744d6cfbff0c19",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_kv_physical_hbm_frontier_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run the physical-HBM plus KV-byte-reduction frontier for llama7b_proxy long-context decode.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_physical_hbm_frontier",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_capacity_noc_baseline_v1",
+        "l2_decoder_attention_kv_spill_scheduler_llama7b_v1_r2",
+        "l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use the physical HBM and KV-byte-reduction frontier to choose the next structural KV, SRAM, or HBM-interface refinement."
+      },
+      "status": "merged",
+      "merged_pr_number": 603,
+      "merge_commit": "0724c2c6597639bbf70b51f046d249d29a912edd",
+      "merged_utc": "2026-05-16T09:45:41.775893Z",
+      "notes": "Merged via PR #603 and merge 0724c2c6597639bbf70b51f046d249d29a912edd at 2026-05-16T09:45:41.775893Z."
+    }
+  ]
+}
