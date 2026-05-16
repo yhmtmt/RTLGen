@@ -1,0 +1,78 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_physical_hbm_frontier_llama7b_v1",
+  "created_utc": "2026-05-16T09:20:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_attention_kv_physical_hbm_frontier",
+  "title": "Llama7B attention/KV physical HBM and KV-byte-reduction frontier",
+  "hypothesis": "For llama7b_proxy long-context decode, physically parameterized HBM bandwidth will keep the 131k-token point memory dominated unless KV bytes are structurally reduced through GQA/MQA and packed lower-bit KV storage.",
+  "direct_comparison": {
+    "primary_question": "Under plausible physical HBM stack, pseudo-channel, width, MT/s, and efficiency assumptions, which KV sharing and KV bitwidth choices move llama7B 131k decode away from the HBM wall?",
+    "include": [
+      "llama7b_proxy at 32k, 64k, and 131k tokens",
+      "die areas 100, 200, and 400 mm2",
+      "KV sharing choices MHA, GQA4, GQA8, and MQA",
+      "packed KV storage at 16, 8, and 4 bits",
+      "HBM stack counts 1, 2, 4, and 8",
+      "pseudo-channels per stack 8 and 16",
+      "pseudo-channel width 64 bits",
+      "data rates 3200, 6400, and 9000 MT/s",
+      "aggregate HBM efficiency 0.35, 0.55, and 0.75",
+      "tile sizes 512 and 1024",
+      "prefetch distance 4 tiles",
+      "outstanding HBM requests 8 and 16"
+    ],
+    "exclude": [
+      "JEDEC-accurate HBM timing",
+      "cycle-accurate NoC arbitration",
+      "SRAM macro generation or PPA",
+      "quality recovery for low-bit KV",
+      "training or QAT experiments"
+    ]
+  },
+  "expected_benefit": [
+    "grounds the HBM bound in physical interface parameters instead of bytes per core cycle",
+    "tests whether KV-byte reduction is more effective than further scheduler tuning",
+    "identifies which KV structure deserves follow-on accuracy and RTL-interface work"
+  ],
+  "risks": [
+    "HBM efficiency is still an aggregate parameter rather than a DRAM timing trace",
+    "KV4 is modeled as packed storage traffic without quality or retraining evidence",
+    "SRAM capacity uses an area proxy and should be refined by macro data later"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_kv_physical_hbm_frontier_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run the physical-HBM plus KV-byte-reduction frontier for llama7b_proxy long-context decode.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_physical_hbm_frontier",
+      "cost_class": "low",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_capacity_noc_baseline_v1",
+        "l2_decoder_attention_kv_spill_scheduler_llama7b_v1_r2",
+        "l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use the physical HBM and KV-byte-reduction frontier to choose the next structural KV, SRAM, or HBM-interface refinement."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_capacity_noc__l2_decoder_attention_kv_capacity_noc_baseline_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_spill_scheduler__l2_decoder_attention_kv_spill_scheduler_llama7b_v1_r2.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_hbm_controller__l2_decoder_attention_kv_hbm_controller_llama7b_v1_r3.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_attention_kv_physical_hbm_frontier.py",
+    "npu/eval/estimate_llm_decoder_attention_kv_hbm_controller.py",
+    "npu/eval/estimate_llm_decoder_attention_kv_capacity_noc.py"
+  ]
+}

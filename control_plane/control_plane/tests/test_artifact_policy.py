@@ -38,3 +38,8 @@ def test_transportable_expected_output_allows_compact_attention_kv_dataset() -> 
         "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
         "decoder_attention_kv_hbm_controller__l2_decoder_attention_kv_hbm_controller_llama7b_v1.md"
     )
+    assert is_transportable_expected_output(
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+        "decoder_attention_kv_physical_hbm_frontier__"
+        "l2_decoder_attention_kv_physical_hbm_frontier_llama7b_v1.json"
+    )
