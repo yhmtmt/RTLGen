@@ -3156,6 +3156,61 @@ def _decoder_attention_kv_noc_scheduler_evidence(*, item_id: str) -> dict[str, A
     }
 
 
+def _decoder_attention_kv_spill_scheduler_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_kv_spill_scheduler__{item_id}.json"
+    report = f"{base}/decoder_attention_kv_spill_scheduler__{item_id}.md"
+    capacity_noc = (
+        f"{base}/decoder_attention_kv_capacity_noc__"
+        "l2_decoder_attention_kv_capacity_noc_baseline_v1.json"
+    )
+    scheduler = (
+        f"{base}/decoder_attention_kv_noc_scheduler__"
+        "l2_decoder_attention_kv_noc_scheduler_selected_v1.json"
+    )
+    return {
+        "inputs": {
+            "attention_kv_memory_out": out,
+            "attention_kv_memory_report": report,
+            "attention_kv_capacity_noc_baseline": capacity_noc,
+            "attention_kv_noc_scheduler_selected": scheduler,
+            "attention_kv_spill_scheduler_scope": (
+                "Tile-level spill scheduler for the hard llama7b_proxy 131k 400 mm2 point. "
+                "Refine the shared-SRAM/HBM spill result with HBM prefetch distance, finite "
+                "outstanding HBM requests, HBM efficiency, NoC arbitration, virtual channels, "
+                "bank conflict pressure, and producer-prefetch overlap."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_attention_kv_spill_scheduler",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_attention_kv_spill_scheduler.py "
+                    f"--capacity-noc-baseline {capacity_noc} "
+                    "--label llama7b_proxy "
+                    "--sequence-length 131072 "
+                    "--die-area-mm2 400 "
+                    "--tile-tokens-list 256,512,1024,2048,4096 "
+                    "--prefetch-distance-tiles-list 1,2,4,8,16 "
+                    "--hbm-outstanding-list 1,2,4,8 "
+                    "--hbm-efficiency-list 0.4,0.6,0.8 "
+                    "--arbitration-efficiency-list 0.55,0.7,0.85 "
+                    "--virtual-channel-list 1,2,4 "
+                    "--bank-interleave-tokens 16 "
+                    "--bank-conflict-efficiency 0.75 "
+                    "--router-latency-cycles-per-hop 2 "
+                    "--prefetch-start-list after_qkv,during_qkv "
+                    "--macs-per-cycle 524288 "
+                    "--vector-ops-per-cycle 65536 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_output_projection_weight_store_feasibility_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_output_projection_weight_store_feasibility__{item_id}.json"
@@ -4424,6 +4479,7 @@ def _build_payload(
         "decoder_frontier_synthesis_policy_calibrated",
         "decoder_attention_kv_capacity_noc",
         "decoder_attention_kv_noc_scheduler",
+        "decoder_attention_kv_spill_scheduler",
         "decoder_output_projection_producer_memory_hierarchy",
         "decoder_output_projection_weight_store_feasibility",
         "decoder_output_projection_weight_store_interface",
@@ -4466,6 +4522,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_kv_capacity_noc_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_noc_scheduler":
             decoder_evidence = _decoder_attention_kv_noc_scheduler_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_kv_spill_scheduler":
+            decoder_evidence = _decoder_attention_kv_spill_scheduler_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_producer_memory_hierarchy":
             decoder_evidence = _decoder_output_projection_producer_memory_hierarchy_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_weight_store_feasibility":
