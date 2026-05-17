@@ -3441,6 +3441,46 @@ def _decoder_attention_kv_native_gqa_proxy_evidence(*, item_id: str) -> dict[str
     }
 
 
+def _decoder_attention_kv_trace_calibration_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_kv_trace_calibration__{item_id}.json"
+    report = f"{base}/decoder_attention_kv_trace_calibration__{item_id}.md"
+    native_gqa = f"{base}/decoder_attention_kv_native_gqa_proxy__l2_decoder_attention_kv_native_gqa_proxy_llama7b_v1.json"
+    gpt2_quality = f"{base}/decoder_quality_compare__l2_decoder_gpt2_prompt_stress_v1.json"
+    distil_quality = (
+        "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/"
+        "decoder_quality_compare__l2_decoder_distilgpt2_prompt_stress_v1.json"
+    )
+    return {
+        "inputs": {
+            "attention_kv_memory_out": out,
+            "attention_kv_memory_report": report,
+            "attention_kv_native_gqa_proxy": native_gqa,
+            "gpt2_prompt_stress_quality_compare": gpt2_quality,
+            "distilgpt2_prompt_stress_quality_compare": distil_quality,
+            "attention_kv_trace_calibration_scope": (
+                "Calibrate the native GQA8/KV4 proxy with real GPT-2-family prompt-stress KV trace "
+                "statistics. This is a scheduling gate for a model-native or QAT GQA run, not a "
+                "native-GQA quality claim."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_attention_kv_trace_calibration",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_attention_kv_trace_calibration.py "
+                    f"--native-gqa-proxy {native_gqa} "
+                    f"--quality-compare gpt2_prompt_stress={gpt2_quality} "
+                    f"--quality-compare distilgpt2_prompt_stress={distil_quality} "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_output_projection_weight_store_feasibility_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_output_projection_weight_store_feasibility__{item_id}.json"
@@ -4715,6 +4755,7 @@ def _build_payload(
         "decoder_attention_kv_quality_gate",
         "decoder_attention_kv_quality_proxy",
         "decoder_attention_kv_native_gqa_proxy",
+        "decoder_attention_kv_trace_calibration",
         "decoder_output_projection_producer_memory_hierarchy",
         "decoder_output_projection_weight_store_feasibility",
         "decoder_output_projection_weight_store_interface",
@@ -4769,6 +4810,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_kv_quality_proxy_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_native_gqa_proxy":
             decoder_evidence = _decoder_attention_kv_native_gqa_proxy_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_kv_trace_calibration":
+            decoder_evidence = _decoder_attention_kv_trace_calibration_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_producer_memory_hierarchy":
             decoder_evidence = _decoder_output_projection_producer_memory_hierarchy_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_weight_store_feasibility":
