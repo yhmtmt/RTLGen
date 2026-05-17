@@ -15,7 +15,8 @@
       "merged distilgpt2 prompt-stress decoder quality compare with present.* KV trace summaries",
       "next-token and top-k exactness controls",
       "KV4 trace mean, max, scale, and outlier rollups",
-      "explicit low-margin caution from the native GQA proxy"
+      "explicit low-margin caution from the native GQA proxy",
+      "GPT-2 and distilgpt2 quality compare JSONs as materialized repo references rather than DB-gated work-item dependencies"
     ],
     "exclude": [
       "claiming native GQA model quality",
@@ -46,9 +47,7 @@
       "comparison_role": "frontier_synthesis",
       "paired_baseline_item_id": "l2_decoder_attention_kv_native_gqa_proxy_llama7b_v1",
       "depends_on_item_ids": [
-        "l2_decoder_attention_kv_native_gqa_proxy_llama7b_v1",
-        "l2_decoder_gpt2_prompt_stress_v1",
-        "l2_decoder_distilgpt2_prompt_stress_v1"
+        "l2_decoder_attention_kv_native_gqa_proxy_llama7b_v1"
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
