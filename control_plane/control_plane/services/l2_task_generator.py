@@ -3409,6 +3409,76 @@ def _decoder_attention_kv_physical_hbm_quality_backed_evidence(*, item_id: str) 
     }
 
 
+def _decoder_attention_kv_physical_hbm_memory_noc_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_kv_physical_hbm_memory_noc__{item_id}.json"
+    report = f"{base}/decoder_attention_kv_physical_hbm_memory_noc__{item_id}.md"
+    quality_backed = (
+        f"{base}/decoder_attention_kv_physical_hbm_quality_backed__"
+        "l2_decoder_attention_kv_physical_hbm_quality_backed_llama7b_v1.json"
+    )
+    native_recovery = (
+        f"{base}/decoder_attention_kv_model_native_recovery__"
+        "l2_decoder_attention_kv_model_native_recovery_tinyllama_v1.json"
+    )
+    return {
+        "inputs": {
+            "attention_kv_physical_hbm_quality_backed": quality_backed,
+            "attention_kv_model_native_recovery": native_recovery,
+            "attention_kv_memory_out": out,
+            "attention_kv_memory_report": report,
+            "attention_kv_physical_hbm_memory_noc_scope": (
+                "Quality-backed native-GQA KV8 memory/NoC sensitivity at 131k context. "
+                "Keep KV4 and MQA out of the ranking, then vary die size, SRAM area/use "
+                "fraction, local/shared split, bank service, NoC bandwidth/hops, tile size, "
+                "and HBM service to see whether the optimum moves from HBM-bound to SRAM/NoC "
+                "or compute-bound under practical physical constraints."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_attention_kv_physical_hbm_memory_noc",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_attention_kv_physical_hbm_frontier.py "
+                    "--label llama7b_proxy "
+                    "--sequence-length-list 131072 "
+                    "--die-area-mm2-list 100,200,400,800,1200 "
+                    "--kv-sharing-list gqa8 "
+                    "--kv-bits-list 8,16 "
+                    "--stack-count-list 8 "
+                    "--pseudo-channels-per-stack-list 16 "
+                    "--pseudo-channel-width-bits-list 64 "
+                    "--data-rate-mtps-list 6400,9000 "
+                    "--hbm-efficiency-list 0.55,0.75 "
+                    "--tile-tokens-list 512,1024 "
+                    "--prefetch-distance-tiles-list 4 "
+                    "--hbm-outstanding-list 8,16 "
+                    "--arbitration-efficiency-list 0.85 "
+                    "--virtual-channel-list 4 "
+                    "--prefetch-start-list during_qkv "
+                    "--sram-area-fraction 0.4,0.6,0.75 "
+                    "--usable-sram-fraction 0.7,0.85 "
+                    "--bitcell-area-um2-per-bit 0.02,0.05 "
+                    "--local-sram-fraction 0.1,0.25,0.5 "
+                    "--bank-count 16,64 "
+                    "--bank-bandwidth-bytes-per-cycle 512,2048 "
+                    "--bank-interleave-tokens 16 "
+                    "--bank-conflict-efficiency 0.75 "
+                    "--noc-bandwidth-bytes-per-cycle 8192,32768 "
+                    "--noc-hops 1,4 "
+                    "--router-latency-cycles-per-hop 2 "
+                    "--macs-per-cycle 524288 "
+                    "--vector-ops-per-cycle 65536 "
+                    "--clock-ns 1.0 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_attention_kv_quality_gate_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_kv_quality_gate__{item_id}.json"
@@ -4907,6 +4977,7 @@ def _build_payload(
         "decoder_attention_kv_hbm_controller",
         "decoder_attention_kv_physical_hbm_frontier",
         "decoder_attention_kv_physical_hbm_quality_backed",
+        "decoder_attention_kv_physical_hbm_memory_noc",
         "decoder_attention_kv_quality_gate",
         "decoder_attention_kv_quality_proxy",
         "decoder_attention_kv_native_gqa_proxy",
@@ -4963,6 +5034,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_kv_physical_hbm_frontier_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_physical_hbm_quality_backed":
             decoder_evidence = _decoder_attention_kv_physical_hbm_quality_backed_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_kv_physical_hbm_memory_noc":
+            decoder_evidence = _decoder_attention_kv_physical_hbm_memory_noc_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_quality_gate":
             decoder_evidence = _decoder_attention_kv_quality_gate_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_quality_proxy":

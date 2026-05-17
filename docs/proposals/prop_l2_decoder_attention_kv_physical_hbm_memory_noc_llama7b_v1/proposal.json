@@ -1,0 +1,74 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_physical_hbm_memory_noc_llama7b_v1",
+  "created_utc": "2026-05-17T10:35:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_attention_kv_physical_hbm_memory_noc",
+  "title": "Llama7B quality-backed KV8 memory/NoC sensitivity at 131k context",
+  "hypothesis": "For quality-backed native-GQA KV8 at 131k context, the optimum remains HBM-dominated across practical monolithic die sizes unless SRAM allocation and NoC service are large enough to keep a much larger KV fraction resident.",
+  "direct_comparison": {
+    "primary_question": "How does the best memory and NoC architecture move with die size when llama7b_proxy is restricted to quality-backed native-GQA KV8/KV16 at 131k context?",
+    "include": [
+      "llama7b_proxy at 131k tokens",
+      "native-GQA group-8 only",
+      "KV8 and KV16 only",
+      "die sizes 100, 200, 400, 800, and 1200 mm2",
+      "SRAM area fractions 0.4, 0.6, and 0.75",
+      "usable SRAM fractions 0.7 and 0.85",
+      "bitcell area points 0.02 and 0.05 um2/bit",
+      "local/shared SRAM split points 0.1, 0.25, and 0.5 local",
+      "NoC bandwidth and hop-count sensitivity",
+      "bank count and bank bandwidth sensitivity"
+    ],
+    "exclude": [
+      "KV4, because native-checkpoint recovery failed the top-1/top-k quality gate",
+      "MQA or non-native KV sharing, because trained-checkpoint quality evidence is not available",
+      "JEDEC-accurate HBM timing",
+      "cycle-accurate NoC arbitration",
+      "SRAM macro floorplanning"
+    ]
+  },
+  "expected_benefit": [
+    "shows whether the practical frontier is still HBM service, SRAM capacity, shared-bank service, or NoC topology",
+    "turns the previous fixed-SRAM physical-HBM result into a die-size and memory-hierarchy sensitivity",
+    "identifies whether the next architectural work should target SRAM residency, HBM controller service, NoC scheduling, or KV4 QAT recovery"
+  ],
+  "risks": [
+    "large SRAM fractions and 800-1200 mm2 points are planning bounds, not proof of manufacturable single-die implementation",
+    "bitcell-area points are coarse and do not include periphery, ECC, repair, or macro floorplan loss",
+    "the model remains a bandwidth/service approximation, so detailed NoC and SRAM macro evaluation is still required for selected points"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_kv_physical_hbm_memory_noc_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Sweep quality-backed native-GQA KV8/KV16 131k physical-HBM points across die size, SRAM allocation, bank service, and NoC service.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_physical_hbm_memory_noc",
+      "cost_class": "low",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_physical_hbm_quality_backed_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_physical_hbm_quality_backed_llama7b_v1",
+        "l2_decoder_attention_kv_model_native_recovery_tinyllama_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "If the best 131k points remain HBM-bound, prioritize HBM service and KV compression/QAT; if SRAM/NoC dominates at large die sizes, select those points for detailed memory hierarchy modeling."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_physical_hbm_quality_backed__l2_decoder_attention_kv_physical_hbm_quality_backed_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_model_native_recovery__l2_decoder_attention_kv_model_native_recovery_tinyllama_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_attention_kv_physical_hbm_frontier.py",
+    "docs/proposals/prop_l2_decoder_attention_kv_physical_hbm_quality_backed_llama7b_v1/proposal.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_physical_hbm_quality_backed__l2_decoder_attention_kv_physical_hbm_quality_backed_llama7b_v1.md"
+  ]
+}

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import itertools
 import heapq
 import json
 import math
@@ -291,9 +292,20 @@ def _shape_row(
         "kv_heads": kv_heads,
         "kv_bits": kv_bits,
         "kv_cache_mib": round(kv_cache_bytes / (1024 * 1024), 6),
+        "sram_area_fraction": sram_area_fraction,
+        "usable_sram_fraction": usable_sram_fraction,
+        "bitcell_area_um2_per_bit": bitcell_area_um2_per_bit,
+        "local_sram_fraction": local_sram_fraction,
         "total_sram_mib": round(total_sram_bytes / (1024 * 1024), 6),
         "shared_capacity_mib": round(shared_capacity_bytes / (1024 * 1024), 6),
         "hbm_byte_share": round(hbm_read_share, 6),
+        "bank_count": bank_count,
+        "bank_bandwidth_bytes_per_cycle": bank_bandwidth_bytes_per_cycle,
+        "bank_interleave_tokens": bank_interleave_tokens,
+        "bank_conflict_efficiency": bank_conflict_efficiency,
+        "noc_bandwidth_bytes_per_cycle": noc_bandwidth_bytes_per_cycle,
+        "noc_hops": noc_hops,
+        "router_latency_cycles_per_hop": router_latency_cycles_per_hop,
         "stack_count": stack_count,
         "pseudo_channels_per_stack": pseudo_channels_per_stack,
         "pseudo_channel_width_bits": pseudo_channel_width_bits,
@@ -344,17 +356,17 @@ def build_report(
     arbitration_efficiency_list: list[float],
     virtual_channel_list: list[int],
     prefetch_start_list: list[str],
-    sram_area_fraction: float,
-    usable_sram_fraction: float,
-    bitcell_area_um2_per_bit: float,
-    local_sram_fraction: float,
-    bank_count: int,
-    bank_bandwidth_bytes_per_cycle: float,
-    bank_interleave_tokens: int,
-    bank_conflict_efficiency: float,
-    noc_bandwidth_bytes_per_cycle: float,
-    noc_hops: int,
-    router_latency_cycles_per_hop: int,
+    sram_area_fraction_list: list[float],
+    usable_sram_fraction_list: list[float],
+    bitcell_area_um2_per_bit_list: list[float],
+    local_sram_fraction_list: list[float],
+    bank_count_list: list[int],
+    bank_bandwidth_bytes_per_cycle_list: list[float],
+    bank_interleave_tokens_list: list[int],
+    bank_conflict_efficiency_list: list[float],
+    noc_bandwidth_bytes_per_cycle_list: list[float],
+    noc_hops_list: list[int],
+    router_latency_cycles_per_hop_list: list[int],
     macs_per_cycle: int,
     vector_ops_per_cycle: int,
     clock_ns: float,
@@ -366,56 +378,97 @@ def build_report(
         raise ValueError(f"unsupported label: {label}")
     shape = shapes[label]
     rows: list[JsonDict] = []
-    for sequence_length in sequence_length_list:
-        for die_area_mm2 in die_area_mm2_list:
-            for kv_sharing in kv_sharing_list:
-                for kv_bits in kv_bits_list:
-                    for stack_count in stack_count_list:
-                        for pseudo_channels_per_stack in pseudo_channels_per_stack_list:
-                            for pseudo_channel_width_bits in pseudo_channel_width_bits_list:
-                                for data_rate_mtps in data_rate_mtps_list:
-                                    for hbm_efficiency in hbm_efficiency_list:
-                                        for tile_tokens in tile_tokens_list:
-                                            for prefetch_distance_tiles in prefetch_distance_tiles_list:
-                                                for hbm_outstanding in hbm_outstanding_list:
-                                                    for arbitration_efficiency in arbitration_efficiency_list:
-                                                        for virtual_channels in virtual_channel_list:
-                                                            for prefetch_start in prefetch_start_list:
-                                                                rows.append(
-                                                                    _shape_row(
-                                                                        label=label,
-                                                                        sequence_length=sequence_length,
-                                                                        die_area_mm2=die_area_mm2,
-                                                                        kv_sharing=kv_sharing,
-                                                                        kv_bits=kv_bits,
-                                                                        stack_count=stack_count,
-                                                                        pseudo_channels_per_stack=pseudo_channels_per_stack,
-                                                                        pseudo_channel_width_bits=pseudo_channel_width_bits,
-                                                                        data_rate_mtps=data_rate_mtps,
-                                                                        hbm_efficiency=hbm_efficiency,
-                                                                        tile_tokens=tile_tokens,
-                                                                        prefetch_distance_tiles=prefetch_distance_tiles,
-                                                                        hbm_outstanding=hbm_outstanding,
-                                                                        arbitration_efficiency=arbitration_efficiency,
-                                                                        virtual_channels=virtual_channels,
-                                                                        prefetch_start=prefetch_start,
-                                                                        sram_area_fraction=sram_area_fraction,
-                                                                        usable_sram_fraction=usable_sram_fraction,
-                                                                        bitcell_area_um2_per_bit=bitcell_area_um2_per_bit,
-                                                                        local_sram_fraction=local_sram_fraction,
-                                                                        bank_count=bank_count,
-                                                                        bank_bandwidth_bytes_per_cycle=bank_bandwidth_bytes_per_cycle,
-                                                                        bank_interleave_tokens=bank_interleave_tokens,
-                                                                        bank_conflict_efficiency=bank_conflict_efficiency,
-                                                                        noc_bandwidth_bytes_per_cycle=noc_bandwidth_bytes_per_cycle,
-                                                                        noc_hops=noc_hops,
-                                                                        router_latency_cycles_per_hop=router_latency_cycles_per_hop,
-                                                                        macs_per_cycle=macs_per_cycle,
-                                                                        vector_ops_per_cycle=vector_ops_per_cycle,
-                                                                        clock_ns=clock_ns,
-                                                                        **shape,
-                                                                    )
-                                                                )
+    sweep_axes = (
+        sequence_length_list,
+        die_area_mm2_list,
+        kv_sharing_list,
+        kv_bits_list,
+        stack_count_list,
+        pseudo_channels_per_stack_list,
+        pseudo_channel_width_bits_list,
+        data_rate_mtps_list,
+        hbm_efficiency_list,
+        tile_tokens_list,
+        prefetch_distance_tiles_list,
+        hbm_outstanding_list,
+        arbitration_efficiency_list,
+        virtual_channel_list,
+        prefetch_start_list,
+        sram_area_fraction_list,
+        usable_sram_fraction_list,
+        bitcell_area_um2_per_bit_list,
+        local_sram_fraction_list,
+        bank_count_list,
+        bank_bandwidth_bytes_per_cycle_list,
+        bank_interleave_tokens_list,
+        bank_conflict_efficiency_list,
+        noc_bandwidth_bytes_per_cycle_list,
+        noc_hops_list,
+        router_latency_cycles_per_hop_list,
+    )
+    for (
+        sequence_length,
+        die_area_mm2,
+        kv_sharing,
+        kv_bits,
+        stack_count,
+        pseudo_channels_per_stack,
+        pseudo_channel_width_bits,
+        data_rate_mtps,
+        hbm_efficiency,
+        tile_tokens,
+        prefetch_distance_tiles,
+        hbm_outstanding,
+        arbitration_efficiency,
+        virtual_channels,
+        prefetch_start,
+        sram_area_fraction,
+        usable_sram_fraction,
+        bitcell_area_um2_per_bit,
+        local_sram_fraction,
+        bank_count,
+        bank_bandwidth_bytes_per_cycle,
+        bank_interleave_tokens,
+        bank_conflict_efficiency,
+        noc_bandwidth_bytes_per_cycle,
+        noc_hops,
+        router_latency_cycles_per_hop,
+    ) in itertools.product(*sweep_axes):
+        rows.append(
+            _shape_row(
+                label=label,
+                sequence_length=sequence_length,
+                die_area_mm2=die_area_mm2,
+                kv_sharing=kv_sharing,
+                kv_bits=kv_bits,
+                stack_count=stack_count,
+                pseudo_channels_per_stack=pseudo_channels_per_stack,
+                pseudo_channel_width_bits=pseudo_channel_width_bits,
+                data_rate_mtps=data_rate_mtps,
+                hbm_efficiency=hbm_efficiency,
+                tile_tokens=tile_tokens,
+                prefetch_distance_tiles=prefetch_distance_tiles,
+                hbm_outstanding=hbm_outstanding,
+                arbitration_efficiency=arbitration_efficiency,
+                virtual_channels=virtual_channels,
+                prefetch_start=prefetch_start,
+                sram_area_fraction=sram_area_fraction,
+                usable_sram_fraction=usable_sram_fraction,
+                bitcell_area_um2_per_bit=bitcell_area_um2_per_bit,
+                local_sram_fraction=local_sram_fraction,
+                bank_count=bank_count,
+                bank_bandwidth_bytes_per_cycle=bank_bandwidth_bytes_per_cycle,
+                bank_interleave_tokens=bank_interleave_tokens,
+                bank_conflict_efficiency=bank_conflict_efficiency,
+                noc_bandwidth_bytes_per_cycle=noc_bandwidth_bytes_per_cycle,
+                noc_hops=noc_hops,
+                router_latency_cycles_per_hop=router_latency_cycles_per_hop,
+                macs_per_cycle=macs_per_cycle,
+                vector_ops_per_cycle=vector_ops_per_cycle,
+                clock_ns=clock_ns,
+                **shape,
+            )
+        )
 
     rows_sorted = sorted(rows, key=lambda row: row["latency_us"])
     dominance: dict[str, int] = {}
@@ -439,6 +492,17 @@ def build_report(
             "tile_tokens_list": tile_tokens_list,
             "prefetch_distance_tiles_list": prefetch_distance_tiles_list,
             "hbm_outstanding_list": hbm_outstanding_list,
+            "sram_area_fraction_list": sram_area_fraction_list,
+            "usable_sram_fraction_list": usable_sram_fraction_list,
+            "bitcell_area_um2_per_bit_list": bitcell_area_um2_per_bit_list,
+            "local_sram_fraction_list": local_sram_fraction_list,
+            "bank_count_list": bank_count_list,
+            "bank_bandwidth_bytes_per_cycle_list": bank_bandwidth_bytes_per_cycle_list,
+            "bank_interleave_tokens_list": bank_interleave_tokens_list,
+            "bank_conflict_efficiency_list": bank_conflict_efficiency_list,
+            "noc_bandwidth_bytes_per_cycle_list": noc_bandwidth_bytes_per_cycle_list,
+            "noc_hops_list": noc_hops_list,
+            "router_latency_cycles_per_hop_list": router_latency_cycles_per_hop_list,
             "clock_ns": clock_ns,
         },
         "sweep_summary": {
@@ -459,6 +523,21 @@ def build_report(
                 "pseudo_channels_per_stack",
                 "pseudo_channel_width_bits",
                 "data_rate_mtps",
+            ),
+        ),
+        "best_by_memory_noc": _best_by(
+            rows,
+            (
+                "sequence_length",
+                "die_area_mm2",
+                "sram_area_fraction",
+                "usable_sram_fraction",
+                "bitcell_area_um2_per_bit",
+                "local_sram_fraction",
+                "bank_count",
+                "bank_bandwidth_bytes_per_cycle",
+                "noc_bandwidth_bytes_per_cycle",
+                "noc_hops",
             ),
         ),
         "assumptions": [
@@ -503,18 +582,22 @@ def _write_markdown(path: Path, payload: JsonDict) -> None:
         "",
         "## Best By Sequence And Die",
         "",
-        "| seq | die | kv | bits | stacks | MT/s | hbm_share | latency_us | resource |",
-        "|---:|---:|---|---:|---:|---:|---:|---:|---|",
+        "| seq | die | kv | bits | stacks | MT/s | SRAM MiB | local_frac | NoC B/cyc | hops | hbm_share | latency_us | resource |",
+        "|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|",
     ]
     for row in payload["best_by_sequence_die"]:
         lines.append(
-            "| {seq} | {die} | {kv} | {bits} | {stacks} | {mtps} | {share} | {lat} | {res} |".format(
+            "| {seq} | {die} | {kv} | {bits} | {stacks} | {mtps} | {sram} | {local} | {noc} | {hops} | {share} | {lat} | {res} |".format(
                 seq=row["sequence_length"],
                 die=row["die_area_mm2"],
                 kv=row["kv_sharing"],
                 bits=row["kv_bits"],
                 stacks=row["stack_count"],
                 mtps=row["data_rate_mtps"],
+                sram=row["total_sram_mib"],
+                local=row["local_sram_fraction"],
+                noc=row["noc_bandwidth_bytes_per_cycle"],
+                hops=row["noc_hops"],
                 share=row["hbm_byte_share"],
                 lat=row["latency_us"],
                 res=row["dominant_tile_resource"],
@@ -570,17 +653,17 @@ def main() -> int:
     ap.add_argument("--arbitration-efficiency-list", type=_float_list, default=[0.85])
     ap.add_argument("--virtual-channel-list", type=_int_list, default=[4])
     ap.add_argument("--prefetch-start-list", type=_str_list, default=["during_qkv"])
-    ap.add_argument("--sram-area-fraction", type=float, default=0.6)
-    ap.add_argument("--usable-sram-fraction", type=float, default=0.7)
-    ap.add_argument("--bitcell-area-um2-per-bit", type=float, default=0.02)
-    ap.add_argument("--local-sram-fraction", type=float, default=0.25)
-    ap.add_argument("--bank-count", type=int, default=16)
-    ap.add_argument("--bank-bandwidth-bytes-per-cycle", type=float, default=1024.0)
-    ap.add_argument("--bank-interleave-tokens", type=int, default=16)
-    ap.add_argument("--bank-conflict-efficiency", type=float, default=0.75)
-    ap.add_argument("--noc-bandwidth-bytes-per-cycle", type=float, default=16384.0)
-    ap.add_argument("--noc-hops", type=int, default=1)
-    ap.add_argument("--router-latency-cycles-per-hop", type=int, default=2)
+    ap.add_argument("--sram-area-fraction", type=_float_list, default=[0.6])
+    ap.add_argument("--usable-sram-fraction", type=_float_list, default=[0.7])
+    ap.add_argument("--bitcell-area-um2-per-bit", type=_float_list, default=[0.02])
+    ap.add_argument("--local-sram-fraction", type=_float_list, default=[0.25])
+    ap.add_argument("--bank-count", type=_int_list, default=[16])
+    ap.add_argument("--bank-bandwidth-bytes-per-cycle", type=_float_list, default=[1024.0])
+    ap.add_argument("--bank-interleave-tokens", type=_int_list, default=[16])
+    ap.add_argument("--bank-conflict-efficiency", type=_float_list, default=[0.75])
+    ap.add_argument("--noc-bandwidth-bytes-per-cycle", type=_float_list, default=[16384.0])
+    ap.add_argument("--noc-hops", type=_int_list, default=[1])
+    ap.add_argument("--router-latency-cycles-per-hop", type=_int_list, default=[2])
     ap.add_argument("--macs-per-cycle", type=int, default=524288)
     ap.add_argument("--vector-ops-per-cycle", type=int, default=65536)
     ap.add_argument("--clock-ns", type=float, default=1.0)
@@ -605,17 +688,17 @@ def main() -> int:
         arbitration_efficiency_list=args.arbitration_efficiency_list,
         virtual_channel_list=args.virtual_channel_list,
         prefetch_start_list=args.prefetch_start_list,
-        sram_area_fraction=args.sram_area_fraction,
-        usable_sram_fraction=args.usable_sram_fraction,
-        bitcell_area_um2_per_bit=args.bitcell_area_um2_per_bit,
-        local_sram_fraction=args.local_sram_fraction,
-        bank_count=args.bank_count,
-        bank_bandwidth_bytes_per_cycle=args.bank_bandwidth_bytes_per_cycle,
-        bank_interleave_tokens=args.bank_interleave_tokens,
-        bank_conflict_efficiency=args.bank_conflict_efficiency,
-        noc_bandwidth_bytes_per_cycle=args.noc_bandwidth_bytes_per_cycle,
-        noc_hops=args.noc_hops,
-        router_latency_cycles_per_hop=args.router_latency_cycles_per_hop,
+        sram_area_fraction_list=args.sram_area_fraction,
+        usable_sram_fraction_list=args.usable_sram_fraction,
+        bitcell_area_um2_per_bit_list=args.bitcell_area_um2_per_bit,
+        local_sram_fraction_list=args.local_sram_fraction,
+        bank_count_list=args.bank_count,
+        bank_bandwidth_bytes_per_cycle_list=args.bank_bandwidth_bytes_per_cycle,
+        bank_interleave_tokens_list=args.bank_interleave_tokens,
+        bank_conflict_efficiency_list=args.bank_conflict_efficiency,
+        noc_bandwidth_bytes_per_cycle_list=args.noc_bandwidth_bytes_per_cycle,
+        noc_hops_list=args.noc_hops,
+        router_latency_cycles_per_hop_list=args.router_latency_cycles_per_hop,
         macs_per_cycle=args.macs_per_cycle,
         vector_ops_per_cycle=args.vector_ops_per_cycle,
         clock_ns=args.clock_ns,

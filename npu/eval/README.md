@@ -541,3 +541,28 @@ Outputs:
 - `objective_sweep.csv`
 - `objective_sweep.md`
 - per-profile reports under `objective_profiles/<profile>/`
+
+## Decoder Attention/KV Physical HBM Model
+`estimate_llm_decoder_attention_kv_physical_hbm_frontier.py` is the planning
+model for long-context KV-cache service. It derives HBM bytes/cycle from stack
+count, pseudo-channel count, interface width, transfer rate, and core clock,
+then combines that with shared-SRAM residency, bank service, NoC service, tile
+size, and prefetch depth.
+
+The scalar memory and NoC options also accept comma-separated sweeps. This keeps
+quality-backed jobs from ranking unsafe KV4/MQA points while still testing how
+the optimum moves with die size and memory hierarchy assumptions:
+
+```sh
+python3 npu/eval/estimate_llm_decoder_attention_kv_physical_hbm_frontier.py \
+  --sequence-length-list 131072 \
+  --kv-sharing-list gqa8 \
+  --kv-bits-list 8,16 \
+  --sram-area-fraction 0.4,0.6,0.75 \
+  --noc-bandwidth-bytes-per-cycle 8192,32768 \
+  --noc-hops 1,4 \
+  --out /tmp/kv.json --out-md /tmp/kv.md
+```
+
+Treat high SRAM fractions and very large die points as planning bounds until
+they are backed by SRAM macro/floorplan data.
