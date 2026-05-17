@@ -1,0 +1,30 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_physical_hbm_memory_noc_llama7b_v1",
+  "source_commit": "3eb4165d1c13d6220456ed682ae6515ba61db0dc",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_kv_physical_hbm_memory_noc_llama7b_v1_r2",
+      "task_type": "l2_campaign",
+      "objective": "Rerun the quality-backed native-GQA KV8/KV16 131k memory/NoC sensitivity with capped grouped evidence.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_physical_hbm_memory_noc",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_physical_hbm_quality_backed_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_physical_hbm_quality_backed_llama7b_v1",
+        "l2_decoder_attention_kv_model_native_recovery_tinyllama_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "If best 131k points remain HBM-bound, prioritize HBM service and KV compression/QAT; if SRAM/NoC dominates at large die sizes, select those points for detailed memory hierarchy modeling."
+      },
+      "status": "merged",
+      "merged_pr_number": 626,
+      "merge_commit": "29b69010ecebcbeb8d8d73cb607697791910cf77",
+      "merged_utc": "2026-05-17T11:00:35.127856Z",
+      "notes": "Merged via PR #626 and merge 29b69010ecebcbeb8d8d73cb607697791910cf77 at 2026-05-17T11:00:35.127856Z."
+    }
+  ]
+}

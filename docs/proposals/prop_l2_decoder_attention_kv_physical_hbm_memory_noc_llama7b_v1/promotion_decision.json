@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_physical_hbm_memory_noc_llama7b_v1",
+  "candidate_id": "l2_decoder_attention_kv_physical_hbm_memory_noc_llama7b_v1_r2",
+  "decision": "iterate",
+  "reason": "Decoder evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_physical_hbm_memory_noc__l2_decoder_attention_kv_physical_hbm_memory_noc_llama7b_v1_r2.json: decision=decoder_evidence_recorded.",
+  "evidence_refs": [
+    "item:l2_decoder_attention_kv_physical_hbm_memory_noc_llama7b_v1_r2",
+    "run:l2_decoder_attention_kv_physical_hbm_memory_noc_llama7b_v1_r2_run_a33f9be91ff0e60b",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_kv_physical_hbm_memory_noc_llama7b_v1_r2.json",
+    "pr:#626",
+    "https://github.com/yhmtmt/RTLGen/pull/626"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_attention_kv_physical_hbm_memory_noc_llama7b_v1_r2",
+  "requires_human_approval": false
+}
