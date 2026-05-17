@@ -1,0 +1,68 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_model_native_quality_tinyllama_v1",
+  "created_utc": "2026-05-17T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_attention_kv_model_native_quality",
+  "title": "Native trained-GQA checkpoint KV4 quality gate",
+  "hypothesis": "After the synthetic native-GQA proxy and GPT-2-family trace calibration, the next useful frontier check is a trained native-GQA checkpoint where KV8/KV4 cache values are fed back through decoding rather than only summarized as traces.",
+  "direct_comparison": {
+    "primary_question": "Does post-training KV4 cache quantization preserve next-token ranking on a trained native-GQA checkpoint closely enough to keep GQA8/KV4 on the LLaMA-class frontier before QAT?",
+    "include": [
+      "trained native-GQA Hugging Face causal LM checkpoint",
+      "teacher-forced greedy decode over prompt-stress-style prompts",
+      "KV8 and KV4 quantized past_key_values feedback",
+      "top-1 match, top-k containment, logit cosine, probability KL, margin, and max logit-delta rollups",
+      "explicit GQA group-size check against the intended GQA8 architecture",
+      "model id override through RTLGEN_MODEL_NATIVE_GQA_MODEL_ID for evaluator-local checkpoint selection"
+    ],
+    "exclude": [
+      "QAT or fine-tuning",
+      "claiming final LLaMA7B quality",
+      "committing Hugging Face model weights",
+      "new physical synthesis"
+    ]
+  },
+  "expected_benefit": [
+    "tests the actual feedback path missing from the KV trace calibration",
+    "separates native GQA checkpoint evidence from synthetic attention-only proxies",
+    "provides an explicit go/no-go gate for scheduling larger 7B-class or QAT confirmation"
+  ],
+  "risks": [
+    "TinyLlama is a smaller checkpoint than the target LLaMA7B-class architecture, so a pass is not final deployability evidence",
+    "post-training KV4 may fail even if QAT could recover it",
+    "Hugging Face model access and evaluator memory determine whether the run is feasible"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_kv_model_native_quality_tinyllama_v1",
+      "task_type": "l2_campaign",
+      "objective": "Measure trained native-GQA checkpoint sensitivity to KV8/KV4 cache quantization feedback.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_model_native_quality",
+      "cost_class": "medium",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_trace_calibration_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_trace_calibration_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_hf_model_access": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use native trained-checkpoint KV feedback quality to decide whether the frontier should proceed to larger 7B-class/QAT confirmation or retreat to KV8/safer formats."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_trace_calibration__l2_decoder_attention_kv_trace_calibration_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_native_gqa_proxy__l2_decoder_attention_kv_native_gqa_proxy_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/evaluate_llm_decoder_model_native_kv_quant.py",
+    "npu/eval/estimate_llm_decoder_attention_kv_trace_calibration.py",
+    "npu/eval/estimate_llm_decoder_attention_kv_native_gqa_proxy.py"
+  ]
+}
