@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_trace_calibration_v1",
+  "decision": "iterate",
+  "pr_number": 614,
+  "merge_commit": "1f698d82b5dd0513fa966c4ece63fedda146ab38",
+  "merged_utc": "2026-05-17T09:39:26.860095Z"
+}

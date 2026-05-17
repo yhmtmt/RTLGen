@@ -1,0 +1,18 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_trace_calibration_v1",
+  "source_commit": "d9616b11bc44eb201e781f4c9d1a6bd1d5732506",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_kv_trace_calibration_v1",
+      "task_type": "l2_campaign",
+      "objective": "Calibrate native GQA8/KV4 proxy risk with real GPT-2-family KV4 prompt-stress trace statistics.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_trace_calibration",
+      "status": "merged",
+      "merged_pr_number": 614,
+      "merge_commit": "1f698d82b5dd0513fa966c4ece63fedda146ab38",
+      "merged_utc": "2026-05-17T09:39:26.860095Z",
+      "notes": "Merged via PR #614 and merge 1f698d82b5dd0513fa966c4ece63fedda146ab38 at 2026-05-17T09:39:26.860095Z."
+    }
+  ]
+}
