@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_model_native_quality_tinyllama_v1",
+  "decision": "iterate",
+  "pr_number": 618,
+  "merge_commit": "9f3372aebb407cf8628d148a2d7c5a1adf591068",
+  "merged_utc": "2026-05-17T10:03:01.728116Z"
+}

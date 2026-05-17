@@ -1,0 +1,18 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_model_native_quality_tinyllama_v1",
+  "source_commit": "9604548806761a0e1cefdf273ff960660504e6ec",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_kv_model_native_quality_tinyllama_v1_r2",
+      "task_type": "l2_campaign",
+      "objective": "Retry trained native-GQA checkpoint sensitivity to KV8/KV4 cache quantization feedback with HF Python selection.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_model_native_quality",
+      "status": "merged",
+      "merged_pr_number": 618,
+      "merge_commit": "9f3372aebb407cf8628d148a2d7c5a1adf591068",
+      "merged_utc": "2026-05-17T10:03:01.728116Z",
+      "notes": "Merged via PR #618 and merge 9f3372aebb407cf8628d148a2d7c5a1adf591068 at 2026-05-17T10:03:01.728116Z."
+    }
+  ]
+}
