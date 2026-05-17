@@ -1,0 +1,66 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_model_native_recovery_tinyllama_v1",
+  "created_utc": "2026-05-17T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_attention_kv_model_native_recovery",
+  "title": "Native GQA KV4 scale-granularity recovery screen",
+  "hypothesis": "TinyLlama native-GQA post-training tensor-scale KV4 failed next-token ranking, but a finer KV4 scaling granularity may recover enough quality to justify pricing scale metadata before moving to full QAT.",
+  "direct_comparison": {
+    "primary_question": "Can KV4 recover on a trained native-GQA checkpoint by changing quantization scale granularity from whole tensor to per-KV-head or per-token-vector scaling?",
+    "include": [
+      "same trained native-GQA checkpoint and prompt set as the merged native-quality run",
+      "KV4 tensor-scale baseline",
+      "KV4 per-KV-head scale candidate",
+      "KV4 per-token-vector scale candidate",
+      "top-1 match, top-k containment, logit cosine, probability KL, margin, and max logit-delta rollups",
+      "explicit best-KV4 candidate and promotion/hold decision"
+    ],
+    "exclude": [
+      "training or weight updates",
+      "claiming full QAT recovery",
+      "committing Hugging Face model weights",
+      "new physical synthesis or scale-metadata PPA"
+    ]
+  },
+  "expected_benefit": [
+    "separates quantization-granularity recoverability from true training recoverability",
+    "identifies whether the next useful work is scale metadata hardware pricing or actual QAT",
+    "keeps KV8 as the measured safe fallback while testing the closest low-bit recovery point"
+  ],
+  "risks": [
+    "per-token-vector scaling may recover quality but impose metadata and multiply costs that erase KV4 bandwidth benefit",
+    "TinyLlama remains smaller than the target LLaMA7B-class model",
+    "a failure does not prove QAT cannot recover KV4"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_kv_model_native_recovery_tinyllama_v1",
+      "task_type": "l2_campaign",
+      "objective": "Sweep trained native-GQA KV4 quantization scale granularity after tensor-scale KV4 failed.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_model_native_recovery",
+      "cost_class": "medium",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_model_native_quality_tinyllama_v1_r2",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_model_native_quality_tinyllama_v1_r2"
+      ],
+      "requires_merged_inputs": true,
+      "requires_hf_model_access": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "If fine-grain KV4 scaling recovers ranking, price the hardware scale metadata path; otherwise move to QAT/fine-tuning or keep KV8."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_model_native_quality__l2_decoder_attention_kv_model_native_quality_tinyllama_v1_r2.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/evaluate_llm_decoder_model_native_kv_quant.py",
+    "npu/eval/run_hf_eval_python.sh"
+  ]
+}

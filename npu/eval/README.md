@@ -93,6 +93,24 @@ the wrapper tries `/orfs/tools/AutoTuner/autotuner_env/bin/python3` and then
 `python3`. Later reference/candidate commands still use normal `python3` for
 ONNX Runtime inference.
 
+Native-checkpoint quality jobs that run Hugging Face models directly should use
+`run_hf_eval_python.sh` for the same interpreter selection without requiring the
+`onnx` export dependency. The native GQA KV feedback runner supports a recovery
+screen for KV4 scale granularity:
+
+```sh
+bash npu/eval/run_hf_eval_python.sh \
+  npu/eval/evaluate_llm_decoder_model_native_kv_quant.py \
+  --kv-bits-list 4 \
+  --kv-granularity-list tensor,kv_head,token_vector \
+  --out /tmp/native_kv_recovery.json \
+  --out-md /tmp/native_kv_recovery.md
+```
+
+Treat a recovered non-tensor granularity as a hardware metadata/scale-cost
+question, not as QAT evidence. If no granularity recovers top-1/top-k ranking,
+the next quality path is true QAT/fine-tuning or the KV8 fallback.
+
 ## Validation
 Validate campaign manifest:
 ```sh

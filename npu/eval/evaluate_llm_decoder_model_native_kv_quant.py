@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 JsonDict = dict[str, Any]
+CandidateKey = tuple[int, str]
 
 DEFAULT_PROMPTS = [
     "The capital of France is",
@@ -94,20 +95,25 @@ def _decision(candidate_summary: list[JsonDict], *, expected_gqa_group_size: int
         blockers.append(
             f"model_gqa_group_size {actual_gqa_group_size:g} does not match expected {expected_gqa_group_size}"
         )
-    by_bits = {int(row.get("kv_bits", 0)): row for row in candidate_summary}
-    kv4 = by_bits.get(4, {})
-    kv8 = by_bits.get(8, {})
+    kv4_candidates = [row for row in candidate_summary if int(row.get("kv_bits", 0)) == 4]
+    kv8_candidates = [row for row in candidate_summary if int(row.get("kv_bits", 0)) == 8]
+    kv4 = max(kv4_candidates, key=_candidate_rank_key) if kv4_candidates else {}
+    kv8 = max(kv8_candidates, key=_candidate_rank_key) if kv8_candidates else {}
+    kv4_granularity = str(kv4.get("kv_granularity", "tensor") or "tensor")
     if kv8 and _float(kv8.get("top1_match_rate")) < 0.995:
         cautions.append("KV8 changed at least one top-1 decision; check model/runtime determinism before trusting KV4")
     if not kv4:
         blockers.append("KV4 candidate was not evaluated")
     elif _float(kv4.get("top1_match_rate")) < 0.98 or _float(kv4.get("topk_contains_rate")) < 0.995:
-        blockers.append("KV4 changed too many native-checkpoint next-token rankings")
+        blockers.append("Best KV4 candidate changed too many native-checkpoint next-token rankings")
     elif _float(kv4.get("mean_logit_cosine")) < 0.999:
-        cautions.append("KV4 ranking mostly holds, but logit cosine is below the promotion caution line")
+        cautions.append("Best KV4 ranking mostly holds, but logit cosine is below the promotion caution line")
     if blockers:
         status = "hold_for_qat_or_safer_kv_format"
         next_step = "Run QAT/fine-tuning recovery or move the frontier back to KV8 for the native GQA checkpoint."
+    elif kv4_granularity != "tensor":
+        status = "kv4_granularity_recovery_promising"
+        next_step = "Price the recovered KV4 scale granularity in hardware metadata/bandwidth before larger-model confirmation."
     else:
         status = "native_checkpoint_kv4_promising"
         next_step = "Use this checkpoint evidence with the PPA model, then schedule a larger 7B-class or QAT confirmation."
@@ -116,6 +122,7 @@ def _decision(candidate_summary: list[JsonDict], *, expected_gqa_group_size: int
         "blockers": blockers,
         "cautions": cautions,
         "next_step": next_step,
+        "selected_kv4_granularity": kv4_granularity if kv4 else "",
         "thresholds": {
             "kv4_top1_match_min": 0.98,
             "kv4_topk_contains_min": 0.995,
@@ -151,6 +158,26 @@ def _parse_bits(value: str) -> list[int]:
     return bits
 
 
+def _parse_granularities(value: str) -> list[str]:
+    allowed = {"tensor", "kv_head", "token_vector"}
+    granularities = [item.strip() for item in value.split(",") if item.strip()]
+    if not granularities:
+        raise argparse.ArgumentTypeError("expected comma-separated KV quantization granularities")
+    invalid = sorted(set(granularities) - allowed)
+    if invalid:
+        raise argparse.ArgumentTypeError(f"unsupported KV quantization granularities: {', '.join(invalid)}")
+    return granularities
+
+
+def _candidate_rank_key(row: JsonDict) -> tuple[float, float, float, float]:
+    return (
+        _float(row.get("top1_match_rate")),
+        _float(row.get("topk_contains_rate")),
+        _float(row.get("mean_logit_cosine")),
+        -_float(row.get("mean_probability_kl")),
+    )
+
+
 def _write_report_md(payload: JsonDict) -> str:
     lines = [
         "# Native GQA KV Quantization Quality",
@@ -167,13 +194,14 @@ def _write_report_md(payload: JsonDict) -> str:
         "",
         "## Candidates",
         "",
-        "| kv_bits | comparisons | top1 | topk | cosine | kl | min_margin | max_delta |",
-        "|---:|---:|---:|---:|---:|---:|---:|---:|",
+        "| kv_bits | granularity | comparisons | top1 | topk | cosine | kl | min_margin | max_delta |",
+        "|---:|---|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for row in payload["candidate_summary"]:
         lines.append(
-            "| {kv_bits} | {comparison_count} | {top1:.6f} | {topk:.6f} | {cosine:.6f} | {kl:.6f} | {margin:.6f} | {delta:.6f} |".format(
+            "| {kv_bits} | {granularity} | {comparison_count} | {top1:.6f} | {topk:.6f} | {cosine:.6f} | {kl:.6f} | {margin:.6f} | {delta:.6f} |".format(
                 kv_bits=row["kv_bits"],
+                granularity=row.get("kv_granularity", "tensor"),
                 comparison_count=row["comparison_count"],
                 top1=row["top1_match_rate"],
                 topk=row["topk_contains_rate"],
@@ -223,7 +251,7 @@ def _run_model_eval(args: argparse.Namespace) -> JsonDict:
 
     levels_by_bits = {bits: (1 << (bits - 1)) - 1 for bits in args.kv_bits_list}
 
-    def quantize_tensor(tensor: Any, bits: int) -> Any:
+    def quantize_tensor_slice(tensor: Any, bits: int) -> Any:
         if not torch.is_tensor(tensor):
             return tensor
         levels = levels_by_bits[bits]
@@ -234,21 +262,45 @@ def _run_model_eval(args: argparse.Namespace) -> JsonDict:
         scale = max_abs / float(levels)
         return torch.clamp(torch.round(data / scale), -levels, levels).to(data.dtype) * scale
 
-    def quantize_past(past: Any, bits: int) -> Any:
+    def quantize_tensor(tensor: Any, bits: int, granularity: str) -> Any:
+        if not torch.is_tensor(tensor):
+            return tensor
+        data = tensor.detach()
+        if granularity == "tensor" or data.ndim < 4:
+            return quantize_tensor_slice(data, bits)
+        if granularity == "kv_head":
+            out = data.clone()
+            for batch in range(data.shape[0]):
+                for head in range(data.shape[1]):
+                    out[batch, head, :, :] = quantize_tensor_slice(data[batch, head, :, :], bits)
+            return out
+        if granularity == "token_vector":
+            out = data.clone()
+            for batch in range(data.shape[0]):
+                for head in range(data.shape[1]):
+                    for token in range(data.shape[2]):
+                        out[batch, head, token, :] = quantize_tensor_slice(data[batch, head, token, :], bits)
+            return out
+        raise SystemExit(f"unsupported KV quantization granularity: {granularity}")
+
+    def quantize_past(past: Any, bits: int, granularity: str) -> Any:
         if past is None:
             return None
         if torch.is_tensor(past):
-            return quantize_tensor(past, bits)
+            return quantize_tensor(past, bits, granularity)
         if isinstance(past, tuple):
-            return tuple(quantize_past(item, bits) for item in past)
+            return tuple(quantize_past(item, bits, granularity) for item in past)
         if isinstance(past, list):
-            return [quantize_past(item, bits) for item in past]
+            return [quantize_past(item, bits, granularity) for item in past]
         if hasattr(past, "to_legacy_cache"):
             legacy = past.to_legacy_cache()
-            return tuple(quantize_past(item, bits) for item in legacy)
+            return tuple(quantize_past(item, bits, granularity) for item in legacy)
         return past
 
-    rows_by_bits: dict[int, list[JsonDict]] = {bits: [] for bits in args.kv_bits_list}
+    candidate_keys: list[CandidateKey] = [
+        (bits, granularity) for bits in args.kv_bits_list for granularity in args.kv_granularity_list
+    ]
+    rows_by_candidate: dict[CandidateKey, list[JsonDict]] = {key: [] for key in candidate_keys}
     prompt_records: list[JsonDict] = []
     with torch.no_grad():
         for prompt_index, prompt in enumerate(prompts):
@@ -266,7 +318,10 @@ def _run_model_eval(args: argparse.Namespace) -> JsonDict:
                     "prefill_reference_margin": ref_logits[ref_top[0]] - ref_logits[ref_top[1]],
                 }
             )
-            candidate_past = {bits: quantize_past(fp_past, bits) for bits in args.kv_bits_list}
+            candidate_past = {
+                key: quantize_past(fp_past, key[0], key[1])
+                for key in candidate_keys
+            }
             next_input = torch.tensor([[ref_top[0]]], dtype=torch.long, device=device)
             for step in range(args.generation_steps):
                 ref_out = model(input_ids=next_input, past_key_values=fp_past, use_cache=True)
@@ -276,17 +331,19 @@ def _run_model_eval(args: argparse.Namespace) -> JsonDict:
                 ref_order = _topk(ref_logits, max(2, args.topk))
                 ref_next = ref_order[0]
                 ref_margin = ref_logits[ref_order[0]] - ref_logits[ref_order[1]]
-                for bits in args.kv_bits_list:
-                    cand_out = model(input_ids=next_input, past_key_values=candidate_past[bits], use_cache=True)
-                    candidate_past[bits] = quantize_past(cand_out.past_key_values, bits)
+                for bits, granularity in candidate_keys:
+                    key = (bits, granularity)
+                    cand_out = model(input_ids=next_input, past_key_values=candidate_past[key], use_cache=True)
+                    candidate_past[key] = quantize_past(cand_out.past_key_values, bits, granularity)
                     cand_logits = cand_out.logits[:, -1, :].float().cpu().reshape(-1).tolist()
                     cand_probs = _safe_exp_softmax(cand_logits)
                     cand_order = _topk(cand_logits, args.topk)
-                    rows_by_bits[bits].append(
+                    rows_by_candidate[key].append(
                         {
                             "prompt_index": prompt_index,
                             "step": step,
                             "kv_bits": bits,
+                            "kv_granularity": granularity,
                             "reference_top1": ref_next,
                             "candidate_top1": cand_order[0],
                             "top1_match": 1.0 if cand_order[0] == ref_next else 0.0,
@@ -300,12 +357,15 @@ def _run_model_eval(args: argparse.Namespace) -> JsonDict:
                 next_input = torch.tensor([[ref_next]], dtype=torch.long, device=device)
 
     candidate_summary: list[JsonDict] = []
-    for bits in args.kv_bits_list:
-        summary = _summarize_rows(rows_by_bits[bits])
+    for bits, granularity in candidate_keys:
+        summary = _summarize_rows(rows_by_candidate[(bits, granularity)])
         summary["kv_bits"] = bits
+        summary["kv_granularity"] = granularity
         candidate_summary.append(summary)
+    best_kv4_candidates = [row for row in candidate_summary if int(row.get("kv_bits", 0)) == 4]
+    best_kv4 = max(best_kv4_candidates, key=_candidate_rank_key) if best_kv4_candidates else None
     return {
-        "version": 0.1,
+        "version": 0.2,
         "model": {
             "model_id": model_id,
             "attention_heads": attention_heads,
@@ -317,8 +377,10 @@ def _run_model_eval(args: argparse.Namespace) -> JsonDict:
         "prompt_count": len(prompts),
         "generation_steps": args.generation_steps,
         "topk": args.topk,
+        "kv_granularity_list": args.kv_granularity_list,
         "prompt_records": prompt_records,
         "candidate_summary": candidate_summary,
+        "best_kv4_candidate": best_kv4,
         "decision": _decision(
             candidate_summary,
             expected_gqa_group_size=args.expected_gqa_group_size,
@@ -340,6 +402,7 @@ def main() -> int:
     parser.add_argument("--generation-steps", type=int, default=8)
     parser.add_argument("--topk", type=int, default=5)
     parser.add_argument("--kv-bits-list", type=_parse_bits, default=[8, 4])
+    parser.add_argument("--kv-granularity-list", type=_parse_granularities, default=["tensor"])
     parser.add_argument("--expected-gqa-group-size", type=int, default=8)
     parser.add_argument("--device", default="auto", choices=["auto", "cpu", "cuda"])
     parser.add_argument("--out", required=True)

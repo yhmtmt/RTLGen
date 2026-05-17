@@ -3517,6 +3517,46 @@ def _decoder_attention_kv_model_native_quality_evidence(*, item_id: str) -> dict
     }
 
 
+def _decoder_attention_kv_model_native_recovery_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_kv_model_native_recovery__{item_id}.json"
+    report = f"{base}/decoder_attention_kv_model_native_recovery__{item_id}.md"
+    native_quality = (
+        f"{base}/decoder_attention_kv_model_native_quality__"
+        "l2_decoder_attention_kv_model_native_quality_tinyllama_v1_r2.json"
+    )
+    return {
+        "inputs": {
+            "attention_kv_memory_out": out,
+            "attention_kv_memory_report": report,
+            "attention_kv_model_native_quality": native_quality,
+            "attention_kv_model_native_recovery_scope": (
+                "Sweep KV4 quantization scale granularity on the same trained native-GQA checkpoint. "
+                "This is a recovery screen before full QAT: tensor-scale failure is already known; "
+                "per-KV-head or per-token-vector recovery would move the next question to hardware scale metadata cost."
+            ),
+        },
+        "commands": [
+            {
+                "name": "evaluate_decoder_attention_kv_model_native_recovery",
+                "run": (
+                    "bash npu/eval/run_hf_eval_python.sh "
+                    "npu/eval/evaluate_llm_decoder_model_native_kv_quant.py "
+                    "--expected-gqa-group-size 8 "
+                    "--kv-bits-list 4 "
+                    "--kv-granularity-list tensor,kv_head,token_vector "
+                    "--max-prompts 8 "
+                    "--generation-steps 8 "
+                    "--topk 5 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_output_projection_weight_store_feasibility_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_output_projection_weight_store_feasibility__{item_id}.json"
@@ -4793,6 +4833,7 @@ def _build_payload(
         "decoder_attention_kv_native_gqa_proxy",
         "decoder_attention_kv_trace_calibration",
         "decoder_attention_kv_model_native_quality",
+        "decoder_attention_kv_model_native_recovery",
         "decoder_output_projection_producer_memory_hierarchy",
         "decoder_output_projection_weight_store_feasibility",
         "decoder_output_projection_weight_store_interface",
@@ -4851,6 +4892,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_kv_trace_calibration_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_model_native_quality":
             decoder_evidence = _decoder_attention_kv_model_native_quality_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_kv_model_native_recovery":
+            decoder_evidence = _decoder_attention_kv_model_native_recovery_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_producer_memory_hierarchy":
             decoder_evidence = _decoder_output_projection_producer_memory_hierarchy_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_weight_store_feasibility":

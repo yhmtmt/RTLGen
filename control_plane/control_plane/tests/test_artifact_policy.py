@@ -63,3 +63,7 @@ def test_transportable_expected_output_allows_compact_attention_kv_dataset() -> 
         "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
         "decoder_attention_kv_model_native_quality__l2_decoder_attention_kv_model_native_quality_tinyllama_v1.md"
     )
+    assert is_transportable_expected_output(
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+        "decoder_attention_kv_model_native_recovery__l2_decoder_attention_kv_model_native_recovery_tinyllama_v1.json"
+    )

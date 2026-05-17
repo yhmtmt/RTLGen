@@ -44,6 +44,35 @@ def test_decision_advances_when_native_checkpoint_kv4_rankings_hold() -> None:
     assert decision["blockers"] == []
 
 
+def test_decision_marks_non_tensor_kv4_granularity_as_recovery_candidate() -> None:
+    decision = _decision(
+        [
+            {
+                "kv_bits": 4,
+                "kv_granularity": "tensor",
+                "top1_match_rate": 0.75,
+                "topk_contains_rate": 0.9,
+                "mean_logit_cosine": 0.98,
+                "mean_probability_kl": 0.2,
+            },
+            {
+                "kv_bits": 4,
+                "kv_granularity": "token_vector",
+                "top1_match_rate": 1.0,
+                "topk_contains_rate": 1.0,
+                "mean_logit_cosine": 0.9999,
+                "mean_probability_kl": 0.0001,
+            },
+        ],
+        expected_gqa_group_size=8,
+        actual_gqa_group_size=8.0,
+    )
+
+    assert decision["status"] == "kv4_granularity_recovery_promising"
+    assert decision["selected_kv4_granularity"] == "token_vector"
+    assert decision["blockers"] == []
+
+
 def test_decision_blocks_wrong_gqa_group_or_kv4_rank_regression() -> None:
     decision = _decision(
         [
@@ -56,4 +85,4 @@ def test_decision_blocks_wrong_gqa_group_or_kv4_rank_regression() -> None:
 
     assert decision["status"] == "hold_for_qat_or_safer_kv_format"
     assert any("model_gqa_group_size" in blocker for blocker in decision["blockers"])
-    assert any("KV4 changed too many" in blocker for blocker in decision["blockers"])
+    assert any("KV4 candidate changed too many" in blocker for blocker in decision["blockers"])
