@@ -3272,9 +3272,9 @@ def test_generate_l2_campaign_task_adds_decoder_attention_kv_model_native_qualit
                 "evaluate_decoder_attention_kv_model_native_quality",
             ]
             run = work_item.command_manifest[0]["run"]
+            assert "run_hf_eval_python.sh" in run
             assert "evaluate_llm_decoder_model_native_kv_quant.py" in run
             assert "--kv-bits-list 8,4" in run
-            assert "TinyLlama/TinyLlama-1.1B-Chat-v1.0" in run
             assert decoder_inputs["attention_kv_memory_out"] == (
                 "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
                 "decoder_attention_kv_model_native_quality__"

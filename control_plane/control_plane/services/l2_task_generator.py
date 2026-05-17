@@ -3501,8 +3501,8 @@ def _decoder_attention_kv_model_native_quality_evidence(*, item_id: str) -> dict
             {
                 "name": "evaluate_decoder_attention_kv_model_native_quality",
                 "run": (
-                    "python3 npu/eval/evaluate_llm_decoder_model_native_kv_quant.py "
-                    "--model-id ${RTLGEN_MODEL_NATIVE_GQA_MODEL_ID:-TinyLlama/TinyLlama-1.1B-Chat-v1.0} "
+                    "bash npu/eval/run_hf_eval_python.sh "
+                    "npu/eval/evaluate_llm_decoder_model_native_kv_quant.py "
                     "--expected-gqa-group-size 8 "
                     "--kv-bits-list 8,4 "
                     "--max-prompts 8 "
