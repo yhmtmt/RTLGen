@@ -34,6 +34,7 @@ _ALLOWED_DATASET_PREFIXES = {
     "decoder_attention_kv_quality_proxy__",
     "decoder_attention_kv_native_gqa_proxy__",
     "decoder_attention_kv_trace_calibration__",
+    "decoder_attention_kv_model_native_quality__",
 }
 
 _ALLOWED_DATASET_SUFFIXES = {".json", ".md"}

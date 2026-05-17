@@ -3481,6 +3481,42 @@ def _decoder_attention_kv_trace_calibration_evidence(*, item_id: str) -> dict[st
     }
 
 
+def _decoder_attention_kv_model_native_quality_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_kv_model_native_quality__{item_id}.json"
+    report = f"{base}/decoder_attention_kv_model_native_quality__{item_id}.md"
+    trace_calibration = f"{base}/decoder_attention_kv_trace_calibration__l2_decoder_attention_kv_trace_calibration_v1.json"
+    return {
+        "inputs": {
+            "attention_kv_memory_out": out,
+            "attention_kv_memory_report": report,
+            "attention_kv_trace_calibration": trace_calibration,
+            "attention_kv_model_native_quality_scope": (
+                "Run a trained native-GQA checkpoint through teacher-forced decode while feeding back "
+                "KV8/KV4-quantized past_key_values. This is the first real-checkpoint quality gate after "
+                "the synthetic native-GQA proxy and GPT-2-family trace calibration; it is not QAT."
+            ),
+        },
+        "commands": [
+            {
+                "name": "evaluate_decoder_attention_kv_model_native_quality",
+                "run": (
+                    "python3 npu/eval/evaluate_llm_decoder_model_native_kv_quant.py "
+                    "--model-id ${RTLGEN_MODEL_NATIVE_GQA_MODEL_ID:-TinyLlama/TinyLlama-1.1B-Chat-v1.0} "
+                    "--expected-gqa-group-size 8 "
+                    "--kv-bits-list 8,4 "
+                    "--max-prompts 8 "
+                    "--generation-steps 8 "
+                    "--topk 5 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_output_projection_weight_store_feasibility_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_output_projection_weight_store_feasibility__{item_id}.json"
@@ -4756,6 +4792,7 @@ def _build_payload(
         "decoder_attention_kv_quality_proxy",
         "decoder_attention_kv_native_gqa_proxy",
         "decoder_attention_kv_trace_calibration",
+        "decoder_attention_kv_model_native_quality",
         "decoder_output_projection_producer_memory_hierarchy",
         "decoder_output_projection_weight_store_feasibility",
         "decoder_output_projection_weight_store_interface",
@@ -4812,6 +4849,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_kv_native_gqa_proxy_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_trace_calibration":
             decoder_evidence = _decoder_attention_kv_trace_calibration_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_kv_model_native_quality":
+            decoder_evidence = _decoder_attention_kv_model_native_quality_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_producer_memory_hierarchy":
             decoder_evidence = _decoder_output_projection_producer_memory_hierarchy_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_weight_store_feasibility":
