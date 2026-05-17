@@ -1,0 +1,143 @@
+{
+  "assumptions": [
+    "This is post-training native-checkpoint KV cache quantization, not QAT.",
+    "Teacher-forced reference tokens isolate KV-cache perturbation from divergent generated text.",
+    "The evaluator must have Hugging Face model access; generated model weights are not committed."
+  ],
+  "best_kv4_candidate": {
+    "comparison_count": 64,
+    "kv_bits": 4,
+    "kv_granularity": "token_vector",
+    "max_abs_logit_delta_max": 6.029404282569885,
+    "max_abs_logit_delta_mean": 1.928302600979805,
+    "mean_logit_cosine": 0.9957706132218983,
+    "mean_probability_kl": 0.07262384624960894,
+    "mean_reference_margin": 1.4789680913090706,
+    "min_reference_margin": 0.01865100860595703,
+    "top1_match_rate": 0.875,
+    "topk_contains_rate": 0.953125
+  },
+  "candidate_summary": [
+    {
+      "comparison_count": 64,
+      "kv_bits": 4,
+      "kv_granularity": "tensor",
+      "max_abs_logit_delta_max": 6.787605285644531,
+      "max_abs_logit_delta_mean": 3.6656868141144514,
+      "mean_logit_cosine": 0.9850634253075999,
+      "mean_probability_kl": 0.23608873868768165,
+      "mean_reference_margin": 1.4789680913090706,
+      "min_reference_margin": 0.01865100860595703,
+      "top1_match_rate": 0.75,
+      "topk_contains_rate": 0.9375
+    },
+    {
+      "comparison_count": 64,
+      "kv_bits": 4,
+      "kv_granularity": "kv_head",
+      "max_abs_logit_delta_max": 5.406605243682861,
+      "max_abs_logit_delta_mean": 2.95610668649897,
+      "mean_logit_cosine": 0.9901501023917654,
+      "mean_probability_kl": 0.13660207325508786,
+      "mean_reference_margin": 1.4789680913090706,
+      "min_reference_margin": 0.01865100860595703,
+      "top1_match_rate": 0.78125,
+      "topk_contains_rate": 0.96875
+    },
+    {
+      "comparison_count": 64,
+      "kv_bits": 4,
+      "kv_granularity": "token_vector",
+      "max_abs_logit_delta_max": 6.029404282569885,
+      "max_abs_logit_delta_mean": 1.928302600979805,
+      "mean_logit_cosine": 0.9957706132218983,
+      "mean_probability_kl": 0.07262384624960894,
+      "mean_reference_margin": 1.4789680913090706,
+      "min_reference_margin": 0.01865100860595703,
+      "top1_match_rate": 0.875,
+      "topk_contains_rate": 0.953125
+    }
+  ],
+  "decision": {
+    "blockers": [
+      "Best KV4 candidate changed too many native-checkpoint next-token rankings"
+    ],
+    "cautions": [],
+    "next_step": "Run QAT/fine-tuning recovery or move the frontier back to KV8 for the native GQA checkpoint.",
+    "selected_kv4_granularity": "token_vector",
+    "status": "hold_for_qat_or_safer_kv_format",
+    "thresholds": {
+      "kv4_mean_logit_cosine_caution_below": 0.999,
+      "kv4_top1_match_min": 0.98,
+      "kv4_topk_contains_min": 0.995,
+      "kv8_top1_match_caution_below": 0.995
+    }
+  },
+  "generation_steps": 8,
+  "kv_granularity_list": [
+    "tensor",
+    "kv_head",
+    "token_vector"
+  ],
+  "model": {
+    "attention_heads": 32,
+    "device": "cpu",
+    "dtype": "torch.float32",
+    "gqa_group_size": 8.0,
+    "kv_heads": 4,
+    "model_id": "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
+  },
+  "prompt_count": 8,
+  "prompt_records": [
+    {
+      "prefill_reference_margin": 1.119795799255371,
+      "prefill_reference_top1": 3681,
+      "prompt": "The capital of France is",
+      "prompt_index": 0
+    },
+    {
+      "prefill_reference_margin": 0.9343633651733398,
+      "prefill_reference_top1": 29871,
+      "prompt": "Two plus two equals",
+      "prompt_index": 1
+    },
+    {
+      "prefill_reference_margin": 2.108941078186035,
+      "prefill_reference_top1": 278,
+      "prompt": "In a transformer decoder, the key value cache stores",
+      "prompt_index": 2
+    },
+    {
+      "prefill_reference_margin": 0.10363197326660156,
+      "prefill_reference_top1": 263,
+      "prompt": "The next word in the sequence Monday Tuesday Wednesday is",
+      "prompt_index": 3
+    },
+    {
+      "prefill_reference_margin": 0.057715415954589844,
+      "prefill_reference_top1": 1371,
+      "prompt": "If a system has a narrow top-token margin, quantization can",
+      "prompt_index": 4
+    },
+    {
+      "prefill_reference_margin": 1.7196722030639648,
+      "prefill_reference_top1": 367,
+      "prompt": "A hardware accelerator with limited SRAM should",
+      "prompt_index": 5
+    },
+    {
+      "prefill_reference_margin": 0.06666755676269531,
+      "prefill_reference_top1": 7254,
+      "prompt": "The color of the clear daytime sky is",
+      "prompt_index": 6
+    },
+    {
+      "prefill_reference_margin": 1.8677349090576172,
+      "prefill_reference_top1": 278,
+      "prompt": "When comparing approximate inference results, the safest metric is",
+      "prompt_index": 7
+    }
+  ],
+  "topk": 5,
+  "version": 0.2
+}
