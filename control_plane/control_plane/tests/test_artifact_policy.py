@@ -50,6 +50,11 @@ def test_transportable_expected_output_allows_compact_attention_kv_dataset() -> 
     )
     assert is_transportable_expected_output(
         "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+        "decoder_attention_kv_physical_hbm_memory_noc__"
+        "l2_decoder_attention_kv_physical_hbm_memory_noc_llama7b_v1.json"
+    )
+    assert is_transportable_expected_output(
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
         "decoder_attention_kv_quality_gate__l2_decoder_attention_kv_quality_gate_llama7b_v1.md"
     )
     assert is_transportable_expected_output(
