@@ -3331,6 +3331,84 @@ def _decoder_attention_kv_physical_hbm_frontier_evidence(*, item_id: str) -> dic
     }
 
 
+def _decoder_attention_kv_physical_hbm_quality_backed_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_kv_physical_hbm_quality_backed__{item_id}.json"
+    report = f"{base}/decoder_attention_kv_physical_hbm_quality_backed__{item_id}.md"
+    native_quality = (
+        f"{base}/decoder_attention_kv_model_native_quality__"
+        "l2_decoder_attention_kv_model_native_quality_tinyllama_v1_r2.json"
+    )
+    native_recovery = (
+        f"{base}/decoder_attention_kv_model_native_recovery__"
+        "l2_decoder_attention_kv_model_native_recovery_tinyllama_v1.json"
+    )
+    physical_frontier = (
+        f"{base}/decoder_attention_kv_physical_hbm_frontier__"
+        "l2_decoder_attention_kv_physical_hbm_frontier_llama7b_v1.json"
+    )
+    return {
+        "inputs": {
+            "attention_kv_model_native_quality": native_quality,
+            "attention_kv_model_native_recovery": native_recovery,
+            "attention_kv_physical_hbm_frontier": physical_frontier,
+            "attention_kv_memory_out": out,
+            "attention_kv_memory_report": report,
+            "attention_kv_physical_hbm_quality_backed_out": out,
+            "attention_kv_physical_hbm_quality_backed_report": report,
+            "attention_kv_physical_hbm_quality_backed_scope": (
+                "Quality-backed physical-HBM frontier for llama7b_proxy decode. "
+                "Constrain the physical sweep to native-GQA group-8 KV storage with "
+                "KV16 and KV8 only: native TinyLlama evidence accepts KV8, while "
+                "KV4 remains below top-1/top-k thresholds even with per-token-vector "
+                "scaling. MQA and other structural KV sharing are excluded until "
+                "trained-checkpoint quality evidence exists."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_attention_kv_physical_hbm_quality_backed",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_attention_kv_physical_hbm_frontier.py "
+                    "--label llama7b_proxy "
+                    "--sequence-length-list 32768,65536,131072 "
+                    "--die-area-mm2-list 100,200,400 "
+                    "--kv-sharing-list gqa8 "
+                    "--kv-bits-list 16,8 "
+                    "--stack-count-list 1,2,4,8 "
+                    "--pseudo-channels-per-stack-list 8,16 "
+                    "--pseudo-channel-width-bits-list 64 "
+                    "--data-rate-mtps-list 3200,6400,9000 "
+                    "--hbm-efficiency-list 0.35,0.55,0.75 "
+                    "--tile-tokens-list 512,1024 "
+                    "--prefetch-distance-tiles-list 4 "
+                    "--hbm-outstanding-list 8,16 "
+                    "--arbitration-efficiency-list 0.85 "
+                    "--virtual-channel-list 4 "
+                    "--prefetch-start-list during_qkv "
+                    "--sram-area-fraction 0.6 "
+                    "--usable-sram-fraction 0.7 "
+                    "--bitcell-area-um2-per-bit 0.02 "
+                    "--local-sram-fraction 0.25 "
+                    "--bank-count 16 "
+                    "--bank-bandwidth-bytes-per-cycle 1024 "
+                    "--bank-interleave-tokens 16 "
+                    "--bank-conflict-efficiency 0.75 "
+                    "--noc-bandwidth-bytes-per-cycle 16384 "
+                    "--noc-hops 1 "
+                    "--router-latency-cycles-per-hop 2 "
+                    "--macs-per-cycle 524288 "
+                    "--vector-ops-per-cycle 65536 "
+                    "--clock-ns 1.0 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_attention_kv_quality_gate_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_kv_quality_gate__{item_id}.json"
@@ -4828,6 +4906,7 @@ def _build_payload(
         "decoder_attention_kv_spill_scheduler",
         "decoder_attention_kv_hbm_controller",
         "decoder_attention_kv_physical_hbm_frontier",
+        "decoder_attention_kv_physical_hbm_quality_backed",
         "decoder_attention_kv_quality_gate",
         "decoder_attention_kv_quality_proxy",
         "decoder_attention_kv_native_gqa_proxy",
@@ -4882,6 +4961,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_kv_hbm_controller_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_physical_hbm_frontier":
             decoder_evidence = _decoder_attention_kv_physical_hbm_frontier_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_kv_physical_hbm_quality_backed":
+            decoder_evidence = _decoder_attention_kv_physical_hbm_quality_backed_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_quality_gate":
             decoder_evidence = _decoder_attention_kv_quality_gate_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_quality_proxy":
