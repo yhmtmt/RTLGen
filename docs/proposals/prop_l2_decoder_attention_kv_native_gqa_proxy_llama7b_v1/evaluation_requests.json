@@ -1,0 +1,18 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_native_gqa_proxy_llama7b_v1",
+  "source_commit": "1fd04443454294c4fc8b97800dd985e00f7c3967",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_kv_native_gqa_proxy_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run native same-sharing attention/KV quality proxy for GQA8 and KV4 candidates.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_native_gqa_proxy",
+      "status": "merged",
+      "merged_pr_number": 609,
+      "merge_commit": "ee628d94a41a2fcce9d5719ff94788e9f3fa75c4",
+      "merged_utc": "2026-05-17T09:04:05.949823Z",
+      "notes": "Merged via PR #609 and merge ee628d94a41a2fcce9d5719ff94788e9f3fa75c4 at 2026-05-17T09:04:05.949823Z."
+    }
+  ]
+}
