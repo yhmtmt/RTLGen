@@ -1,0 +1,71 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_trace_calibration_v1",
+  "created_utc": "2026-05-17T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_attention_kv_trace_calibration",
+  "title": "Trained-checkpoint KV trace calibration for GQA8/KV4 follow-up",
+  "hypothesis": "Before spending evaluator time on a model-native GQA8/KV4 or QAT run, the native same-sharing proxy should be calibrated against real GPT-2-family prompt-stress KV trace quantization statistics so the next dataset explicitly covers low-margin and KV-outlier regimes.",
+  "direct_comparison": {
+    "primary_question": "Do real GPT-2 and distilgpt2 prompt-stress KV4 trace errors remain small enough, alongside the native GQA8/KV4 proxy, to justify a model-native GQA8/KV4 quality run?",
+    "include": [
+      "merged native GQA8/KV4 proxy evidence",
+      "merged GPT-2 prompt-stress decoder quality compare with present.* KV trace summaries",
+      "merged distilgpt2 prompt-stress decoder quality compare with present.* KV trace summaries",
+      "next-token and top-k exactness controls",
+      "KV4 trace mean, max, scale, and outlier rollups",
+      "explicit low-margin caution from the native GQA proxy"
+    ],
+    "exclude": [
+      "claiming native GQA model quality",
+      "claiming LLaMA perplexity or task accuracy",
+      "training or QAT",
+      "new physical synthesis"
+    ]
+  },
+  "expected_benefit": [
+    "turns the synthetic native GQA8/KV4 proxy into a better-scoped scheduling decision",
+    "uses existing real-checkpoint KV trace evidence before requesting a heavier model-native run",
+    "forces the next quality dataset to include low-margin and KV-outlier stress cases"
+  ],
+  "risks": [
+    "GPT-2-family checkpoints use MHA rather than native GQA, so this is still not final deployability evidence",
+    "trace summaries provide distribution and quantization-error statistics, not full attention-output quality under shared K/V heads",
+    "thresholds are engineering gates for scheduling the next job, not acceptance metrics"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_kv_trace_calibration_v1",
+      "task_type": "l2_campaign",
+      "objective": "Calibrate native GQA8/KV4 proxy risk with real GPT-2-family KV4 prompt-stress trace statistics.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_trace_calibration",
+      "cost_class": "low",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_native_gqa_proxy_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_native_gqa_proxy_llama7b_v1",
+        "l2_decoder_gpt2_prompt_stress_v1",
+        "l2_decoder_distilgpt2_prompt_stress_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use real-checkpoint KV trace calibration to decide whether to schedule the heavier model-native or QAT GQA8/KV4 quality run."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_native_gqa_proxy__l2_decoder_attention_kv_native_gqa_proxy_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_quality_compare__l2_decoder_gpt2_prompt_stress_v1.json",
+    "runs/datasets/llm_decoder_eval_distilgpt2_prompt_stress_v1/decoder_quality_compare__l2_decoder_distilgpt2_prompt_stress_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_attention_kv_trace_calibration.py",
+    "npu/eval/estimate_llm_decoder_attention_kv_native_gqa_proxy.py",
+    "npu/eval/compare_llm_decoder_quality.py"
+  ]
+}
