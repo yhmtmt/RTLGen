@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_model_native_recovery_tinyllama_v1",
+  "decision": "iterate",
+  "pr_number": 620,
+  "merge_commit": "c39e413e24b5e2695ad784b29a824a2192a5fd07",
+  "merged_utc": "2026-05-17T10:17:14.699992Z"
+}

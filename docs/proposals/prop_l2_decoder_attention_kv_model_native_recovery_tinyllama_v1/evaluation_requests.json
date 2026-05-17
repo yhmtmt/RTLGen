@@ -1,0 +1,18 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_model_native_recovery_tinyllama_v1",
+  "source_commit": "f7d35d9089ba34a9f6130386ff7f1f11223393a1",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_kv_model_native_recovery_tinyllama_v1",
+      "task_type": "l2_campaign",
+      "objective": "Sweep trained native-GQA KV4 quantization scale granularity after tensor-scale KV4 failed.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_model_native_recovery",
+      "status": "merged",
+      "merged_pr_number": 620,
+      "merge_commit": "c39e413e24b5e2695ad784b29a824a2192a5fd07",
+      "merged_utc": "2026-05-17T10:17:14.699992Z",
+      "notes": "Merged via PR #620 and merge c39e413e24b5e2695ad784b29a824a2192a5fd07 at 2026-05-17T10:17:14.699992Z."
+    }
+  ]
+}
