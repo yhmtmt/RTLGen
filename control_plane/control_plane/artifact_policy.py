@@ -30,6 +30,7 @@ _ALLOWED_DATASET_PREFIXES = {
     "decoder_attention_kv_spill_scheduler__",
     "decoder_attention_kv_hbm_controller__",
     "decoder_attention_kv_physical_hbm_frontier__",
+    "decoder_attention_kv_physical_hbm_quality_backed__",
     "decoder_attention_kv_quality_gate__",
     "decoder_attention_kv_quality_proxy__",
     "decoder_attention_kv_native_gqa_proxy__",
