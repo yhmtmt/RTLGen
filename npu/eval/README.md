@@ -566,3 +566,6 @@ python3 npu/eval/estimate_llm_decoder_attention_kv_physical_hbm_frontier.py \
 
 Treat high SRAM fractions and very large die points as planning bounds until
 they are backed by SRAM macro/floorplan data.
+For large sweeps, the JSON retains all global top rows and the 200 lowest
+latency grouped memory/NoC rows; the full generated row count is still recorded
+in `sweep_summary`.

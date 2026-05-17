@@ -475,6 +475,22 @@ def build_report(
     for row in rows:
         key = str(row["dominant_tile_resource"])
         dominance[key] = dominance.get(key, 0) + 1
+    best_by_memory_noc = _best_by(
+        rows,
+        (
+            "sequence_length",
+            "die_area_mm2",
+            "sram_area_fraction",
+            "usable_sram_fraction",
+            "bitcell_area_um2_per_bit",
+            "local_sram_fraction",
+            "bank_count",
+            "bank_bandwidth_bytes_per_cycle",
+            "noc_bandwidth_bytes_per_cycle",
+            "noc_hops",
+        ),
+    )
+    retained_memory_noc = sorted(best_by_memory_noc, key=lambda row: row["latency_us"])[:200]
     return {
         "version": 0.1,
         "model": "llm_decoder_attention_kv_physical_hbm_frontier_llama7b_v1",
@@ -508,6 +524,8 @@ def build_report(
         "sweep_summary": {
             "generated_row_count": len(rows),
             "retained_top_row_count": min(50, len(rows_sorted)),
+            "best_by_memory_noc_row_count": len(best_by_memory_noc),
+            "retained_best_by_memory_noc_row_count": len(retained_memory_noc),
             "dominant_tile_resource_counts": dict(sorted(dominance.items())),
         },
         "best": rows_sorted[0],
@@ -525,21 +543,7 @@ def build_report(
                 "data_rate_mtps",
             ),
         ),
-        "best_by_memory_noc": _best_by(
-            rows,
-            (
-                "sequence_length",
-                "die_area_mm2",
-                "sram_area_fraction",
-                "usable_sram_fraction",
-                "bitcell_area_um2_per_bit",
-                "local_sram_fraction",
-                "bank_count",
-                "bank_bandwidth_bytes_per_cycle",
-                "noc_bandwidth_bytes_per_cycle",
-                "noc_hops",
-            ),
-        ),
+        "best_by_memory_noc": retained_memory_noc,
         "assumptions": [
             "This is a planning model for single-token decode attention/KV, not a JEDEC HBM timing model.",
             "HBM bandwidth is derived from stack count, pseudo-channel count, interface width, MT/s, and the core clock period.",
