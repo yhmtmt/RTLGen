@@ -1,0 +1,65 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_native_gqa_proxy_llama7b_v1",
+  "created_utc": "2026-05-17T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_attention_kv_native_gqa_proxy",
+  "title": "Llama7B native GQA attention/KV quality proxy",
+  "hypothesis": "If GQA8 is trained or adapted natively, the post-hoc head-sharing penalty observed in the MHA-referenced proxy should disappear; KV4 should then be judged mainly by same-sharing quantization sensitivity before scheduling a trained-model or QAT run.",
+  "direct_comparison": {
+    "primary_question": "Do native GQA8/KV8 and native GQA8/KV4 preserve attention top-1, retrieval hits, distribution shape, and value outputs relative to a same-sharing KV16 reference?",
+    "include": [
+      "merged post-hoc attention/KV quality proxy evidence",
+      "GQA8/KV8 and GQA8/KV4 native-sharing candidates",
+      "MQA/KV8 and MQA/KV4 bound-only native-sharing candidates",
+      "native correlated-query, retrieval, and low-margin regimes",
+      "attention top-1 match, retrieval hit, KL divergence, output cosine, and output RMSE"
+    ],
+    "exclude": [
+      "claiming measured LLaMA perplexity or task accuracy",
+      "training native GQA or MQA weights",
+      "QAT or learned KV quantization scales",
+      "cycle-accurate attention hardware simulation"
+    ]
+  },
+  "expected_benefit": [
+    "separates native GQA feasibility from the pessimistic post-hoc MHA head-sharing proxy",
+    "tests whether GQA8/KV4 remains plausible enough for a model-native or QAT quality job",
+    "keeps MQA visible as a hardware lower bound while requiring explicit model evidence"
+  ],
+  "risks": [
+    "the proxy is synthetic and cannot replace trained-model perplexity or long-context retrieval tests",
+    "same-sharing references may be optimistic compared with an actual converted LLaMA checkpoint",
+    "KV quantization uses simple symmetric scales rather than learned or calibrated quantization"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_kv_native_gqa_proxy_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run a native same-sharing attention/KV quality proxy for GQA8 and KV4 candidates.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_native_gqa_proxy",
+      "cost_class": "low",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_quality_proxy_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_quality_proxy_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use the native-sharing proxy to decide whether GQA8/KV4 should advance to a model-native or QAT quality run."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_quality_proxy__l2_decoder_attention_kv_quality_proxy_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_attention_kv_native_gqa_proxy.py",
+    "npu/eval/estimate_llm_decoder_attention_kv_quality_proxy.py"
+  ]
+}
