@@ -1,0 +1,18 @@
+{
+  "proposal_id": "prop_l1_npu_fp16_compute_parallelism_ladder_v1",
+  "source_commit": "b1b8caf3a85dc96759e69c39dfc0d25c11688c63",
+  "requested_items": [
+    {
+      "item_id": "l1_npu_fp16_compute_parallelism_ladder_nm4_nm8_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure full-NPU Nangate45 PPA for nm4 and nm8 FP16 MAC parallelism and compare against nm1/nm2 anchors.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "npu_compute_parallelism_ladder",
+      "status": "merged",
+      "merged_pr_number": 630,
+      "merge_commit": "f6eed086a87523ab5d6425754abddd84f2bb7dbc",
+      "merged_utc": "2026-05-18T20:52:47Z",
+      "notes": "Merged via PR #630 and merge f6eed086a87523ab5d6425754abddd84f2bb7dbc at 2026-05-18T20:52:47Z."
+    }
+  ]
+}

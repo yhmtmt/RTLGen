@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l1_npu_fp16_compute_parallelism_ladder_v1",
+  "decision": "promote",
+  "pr_number": 630,
+  "merge_commit": "f6eed086a87523ab5d6425754abddd84f2bb7dbc",
+  "merged_utc": "2026-05-18T20:52:47Z"
+}
