@@ -1,0 +1,68 @@
+{
+  "proposal_id": "prop_l1_npu_fp16_compute_parallelism_ladder_v1",
+  "created_utc": "2026-05-18T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "npu_compute_parallelism_ladder",
+  "title": "NPU FP16 compute parallelism ladder",
+  "hypothesis": "The current decoder frontier uses analytical MAC/cycle knobs that are much larger than the measured nm1/nm2 NPU physical anchors. Measuring wider full-NPU FP16 compute arrays will show the physically achievable parallelism trend before the decoder attention/KV frontier is re-ranked.",
+  "direct_comparison": {
+    "primary_question": "How do full-NPU Nangate45 PPA, timing, and implementation runtime scale when FP16 GEMM module count increases beyond the measured nm1/nm2 anchors?",
+    "include": [
+      "full npu_top wrapper with the same SRAM, DMA, CQ, AXI, and vector settings as nm1/nm2 cmp anchors",
+      "FP16 GEMM num_modules ladder beginning with nm4 and nm8",
+      "flat_nomacro and hier_macro mode comparison using the existing cmp33 floorplan",
+      "metrics.csv rows suitable for fitting MAC parallelism against area, power, timing, and implementation feasibility"
+    ],
+    "exclude": [
+      "decoder-quality or QAT experiments",
+      "memory hierarchy or NoC contention modeling",
+      "new floorplan tuning for nm16+",
+      "claiming the analytical decoder MAC/cycle points are physically feasible before measured or fitted support exists"
+    ]
+  },
+  "expected_benefit": [
+    "anchors decoder attention/KV compute sensitivity to generated physical designs instead of free analytical MAC/cycle values",
+    "identifies whether the first practical bottleneck is compute-array area, timing, or implementation runtime",
+    "selects the next wider ladder point, such as nm16 or nm32, with a measured runtime boundary"
+  ],
+  "risks": [
+    "the inherited cmp33 floorplan may become limiting before the compute array itself does",
+    "flat_nomacro may become slow or infeasible at higher module counts",
+    "nm4/nm8 still remain far below Llama7B-scale throughput, so the result must feed a scaling model rather than be treated as a final architecture"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l1_npu_fp16_compute_parallelism_ladder_nm4_nm8_v1",
+      "task_type": "l1_sweep",
+      "objective": "Run full Nangate45 OpenROAD PPA measurement for full-NPU FP16 nm4 and nm8 compute parallelism using the cmp33 mode-compare sweep.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "npu_compute_parallelism_ladder",
+      "cost_class": "bounded-high",
+      "comparison_role": "physical_compute_anchor",
+      "paired_baseline_item_id": "npu_fp16_cpp_nm2_cmp",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use nm4/nm8 measured PPA and runtime to decide whether to launch nm16/nm32 full physical measurement or a synth-prefilter boundary job first."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+    "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+    "runs/index.csv"
+  ],
+  "knowledge_refs": [
+    "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+    "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json",
+    "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+    "npu/rtlgen/gen.py",
+    "npu/synth/run_block_sweep.py",
+    "npu/eval/estimate_llm_decoder_attention_kv_physical_hbm_frontier.py"
+  ]
+}
