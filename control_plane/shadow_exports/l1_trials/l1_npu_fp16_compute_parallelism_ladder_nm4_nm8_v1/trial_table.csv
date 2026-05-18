@@ -1,0 +1,2 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_npu_fp16_compute_parallelism_ladder_nm4_nm8_v1_run_27fdea1e7cf3a42f,1,1,0,succeeded,runs/designs/npu_blocks/npu_fp16_cpp_nm4_cmp/metrics.csv,2.7073,2250000.0,0.216,none,,
