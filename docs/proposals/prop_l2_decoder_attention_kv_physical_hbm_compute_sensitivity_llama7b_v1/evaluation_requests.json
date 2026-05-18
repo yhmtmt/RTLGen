@@ -1,0 +1,30 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_physical_hbm_compute_sensitivity_llama7b_v1",
+  "source_commit": "fb0eedb654ac6e27bbecb438dd12b5869cf31017",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_kv_physical_hbm_compute_sensitivity_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Find the smallest MAC/cycle and vector-op/cycle point that keeps the 131k quality-backed KV8 frontier memory-bound.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_physical_hbm_compute_sensitivity",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_physical_hbm_memory_noc_llama7b_v1_r2",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_physical_hbm_memory_noc_llama7b_v1_r2",
+        "l2_decoder_attention_kv_model_native_recovery_tinyllama_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "If lower compute points remain HBM-bound with similar latency, schedule RTL/PPA for smaller compute arrays; if tile attention becomes dominant, keep compute near the transition point."
+      },
+      "status": "merged",
+      "merged_pr_number": 628,
+      "merge_commit": "44f66ebceec63b15b7412f0f0c63e5900a4f2142",
+      "merged_utc": "2026-05-18T12:58:50Z",
+      "notes": "Merged via PR #628 and merge 44f66ebceec63b15b7412f0f0c63e5900a4f2142 at 2026-05-18T12:58:50Z."
+    }
+  ]
+}

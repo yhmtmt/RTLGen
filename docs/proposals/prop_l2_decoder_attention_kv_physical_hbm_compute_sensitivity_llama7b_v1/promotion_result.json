@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_physical_hbm_compute_sensitivity_llama7b_v1",
+  "decision": "iterate",
+  "pr_number": 628,
+  "merge_commit": "44f66ebceec63b15b7412f0f0c63e5900a4f2142",
+  "merged_utc": "2026-05-18T12:58:50Z"
+}
