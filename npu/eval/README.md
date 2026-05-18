@@ -549,9 +549,10 @@ count, pseudo-channel count, interface width, transfer rate, and core clock,
 then combines that with shared-SRAM residency, bank service, NoC service, tile
 size, and prefetch depth.
 
-The scalar memory and NoC options also accept comma-separated sweeps. This keeps
-quality-backed jobs from ranking unsafe KV4/MQA points while still testing how
-the optimum moves with die size and memory hierarchy assumptions:
+The scalar memory, NoC, MAC throughput, and vector throughput options also
+accept comma-separated sweeps. This keeps quality-backed jobs from ranking
+unsafe KV4/MQA points while still testing how the optimum moves with die size,
+memory hierarchy assumptions, and compute array sizing:
 
 ```sh
 python3 npu/eval/estimate_llm_decoder_attention_kv_physical_hbm_frontier.py \
@@ -561,6 +562,8 @@ python3 npu/eval/estimate_llm_decoder_attention_kv_physical_hbm_frontier.py \
   --sram-area-fraction 0.4,0.6,0.75 \
   --noc-bandwidth-bytes-per-cycle 8192,32768 \
   --noc-hops 1,4 \
+  --macs-per-cycle 32768,65536,131072,262144,524288 \
+  --vector-ops-per-cycle 8192,16384,32768,65536 \
   --out /tmp/kv.json --out-md /tmp/kv.md
 ```
 
