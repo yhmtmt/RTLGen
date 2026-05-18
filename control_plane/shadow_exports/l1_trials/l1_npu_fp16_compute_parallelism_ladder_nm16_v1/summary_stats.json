@@ -1,0 +1,33 @@
+{
+  "item_id": "l1_npu_fp16_compute_parallelism_ladder_nm16_v1",
+  "completed_trials": 1,
+  "success_count": 1,
+  "failure_count": 0,
+  "success_rate": 1.0,
+  "metrics": {
+    "critical_path_ns": {
+      "best": 5.5222,
+      "mean": 5.5222,
+      "median": 5.5222,
+      "max": 5.5222,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "die_area": {
+      "best": 2250000.0,
+      "mean": 2250000.0,
+      "median": 2250000.0,
+      "max": 2250000.0,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "total_power_mw": {
+      "best": 0.265,
+      "mean": 0.265,
+      "median": 0.265,
+      "max": 0.265,
+      "range": 0.0,
+      "stddev": 0.0
+    }
+  }
+}
