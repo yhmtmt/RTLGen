@@ -367,8 +367,8 @@ def build_report(
     noc_bandwidth_bytes_per_cycle_list: list[float],
     noc_hops_list: list[int],
     router_latency_cycles_per_hop_list: list[int],
-    macs_per_cycle: int,
-    vector_ops_per_cycle: int,
+    macs_per_cycle_list: list[int],
+    vector_ops_per_cycle_list: list[int],
     clock_ns: float,
 ) -> JsonDict:
     shapes = {
@@ -405,6 +405,8 @@ def build_report(
         noc_bandwidth_bytes_per_cycle_list,
         noc_hops_list,
         router_latency_cycles_per_hop_list,
+        macs_per_cycle_list,
+        vector_ops_per_cycle_list,
     )
     for (
         sequence_length,
@@ -433,6 +435,8 @@ def build_report(
         noc_bandwidth_bytes_per_cycle,
         noc_hops,
         router_latency_cycles_per_hop,
+        macs_per_cycle,
+        vector_ops_per_cycle,
     ) in itertools.product(*sweep_axes):
         rows.append(
             _shape_row(
@@ -490,6 +494,15 @@ def build_report(
             "noc_hops",
         ),
     )
+    best_by_compute = _best_by(
+        rows,
+        (
+            "sequence_length",
+            "die_area_mm2",
+            "macs_per_cycle",
+            "vector_ops_per_cycle",
+        ),
+    )
     retained_memory_noc = sorted(best_by_memory_noc, key=lambda row: row["latency_us"])[:200]
     return {
         "version": 0.1,
@@ -519,6 +532,8 @@ def build_report(
             "noc_bandwidth_bytes_per_cycle_list": noc_bandwidth_bytes_per_cycle_list,
             "noc_hops_list": noc_hops_list,
             "router_latency_cycles_per_hop_list": router_latency_cycles_per_hop_list,
+            "macs_per_cycle_list": macs_per_cycle_list,
+            "vector_ops_per_cycle_list": vector_ops_per_cycle_list,
             "clock_ns": clock_ns,
         },
         "sweep_summary": {
@@ -544,12 +559,14 @@ def build_report(
             ),
         ),
         "best_by_memory_noc": retained_memory_noc,
+        "best_by_compute": best_by_compute,
         "assumptions": [
             "This is a planning model for single-token decode attention/KV, not a JEDEC HBM timing model.",
             "HBM bandwidth is derived from stack count, pseudo-channel count, interface width, MT/s, and the core clock period.",
             "HBM efficiency represents controller scheduling, protocol overhead, row locality, and clock-crossing loss in aggregate.",
             "KV bits are treated as packed storage bits, so kv4 has half the byte traffic of kv8.",
             "Shared SRAM residency is capacity-based; the remaining KV-cache traffic spills to HBM.",
+            "MAC/cycle and vector-op/cycle values are throughput proxies for architecture sizing, not physical proofs of an implemented array.",
             "The tile scheduler is a compact service model intended to rank architecture directions before RTL.",
         ],
     }
@@ -566,13 +583,15 @@ def _write_markdown(path: Path, payload: JsonDict) -> None:
         "",
         "## Best",
         "",
-        "| seq | die | kv | bits | stacks | pch/stack | width | MT/s | eff | hbm_B/cyc | hbm_share | latency_us | resource |",
-        "|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|",
-        "| {seq} | {die} | {kv} | {bits} | {stacks} | {pch} | {width} | {mtps} | {eff} | {bw} | {share} | {lat} | {res} |".format(
+        "| seq | die | kv | bits | MAC/cyc | vec/cyc | stacks | pch/stack | width | MT/s | eff | hbm_B/cyc | hbm_share | latency_us | resource |",
+        "|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|",
+        "| {seq} | {die} | {kv} | {bits} | {macs} | {vec} | {stacks} | {pch} | {width} | {mtps} | {eff} | {bw} | {share} | {lat} | {res} |".format(
             seq=best["sequence_length"],
             die=best["die_area_mm2"],
             kv=best["kv_sharing"],
             bits=best["kv_bits"],
+            macs=best["macs_per_cycle"],
+            vec=best["vector_ops_per_cycle"],
             stacks=best["stack_count"],
             pch=best["pseudo_channels_per_stack"],
             width=best["pseudo_channel_width_bits"],
@@ -586,16 +605,18 @@ def _write_markdown(path: Path, payload: JsonDict) -> None:
         "",
         "## Best By Sequence And Die",
         "",
-        "| seq | die | kv | bits | stacks | MT/s | SRAM MiB | local_frac | NoC B/cyc | hops | hbm_share | latency_us | resource |",
-        "|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|",
+        "| seq | die | kv | bits | MAC/cyc | vec/cyc | stacks | MT/s | SRAM MiB | local_frac | NoC B/cyc | hops | hbm_share | latency_us | resource |",
+        "|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|",
     ]
     for row in payload["best_by_sequence_die"]:
         lines.append(
-            "| {seq} | {die} | {kv} | {bits} | {stacks} | {mtps} | {sram} | {local} | {noc} | {hops} | {share} | {lat} | {res} |".format(
+            "| {seq} | {die} | {kv} | {bits} | {macs} | {vec} | {stacks} | {mtps} | {sram} | {local} | {noc} | {hops} | {share} | {lat} | {res} |".format(
                 seq=row["sequence_length"],
                 die=row["die_area_mm2"],
                 kv=row["kv_sharing"],
                 bits=row["kv_bits"],
+                macs=row["macs_per_cycle"],
+                vec=row["vector_ops_per_cycle"],
                 stacks=row["stack_count"],
                 mtps=row["data_rate_mtps"],
                 sram=row["total_sram_mib"],
@@ -612,18 +633,20 @@ def _write_markdown(path: Path, payload: JsonDict) -> None:
             "",
             "## Top 10",
             "",
-            "| rank | seq | die | kv | bits | stacks | pch/stack | MT/s | hbm_B/cyc | hbm_share | latency_us | resource |",
-            "|---:|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|---|",
+            "| rank | seq | die | kv | bits | MAC/cyc | vec/cyc | stacks | pch/stack | MT/s | hbm_B/cyc | hbm_share | latency_us | resource |",
+            "|---:|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|",
         ]
     )
     for index, row in enumerate(payload["top_rows"][:10], start=1):
         lines.append(
-            "| {rank} | {seq} | {die} | {kv} | {bits} | {stacks} | {pch} | {mtps} | {bw} | {share} | {lat} | {res} |".format(
+            "| {rank} | {seq} | {die} | {kv} | {bits} | {macs} | {vec} | {stacks} | {pch} | {mtps} | {bw} | {share} | {lat} | {res} |".format(
                 rank=index,
                 seq=row["sequence_length"],
                 die=row["die_area_mm2"],
                 kv=row["kv_sharing"],
                 bits=row["kv_bits"],
+                macs=row["macs_per_cycle"],
+                vec=row["vector_ops_per_cycle"],
                 stacks=row["stack_count"],
                 pch=row["pseudo_channels_per_stack"],
                 mtps=row["data_rate_mtps"],
@@ -668,8 +691,8 @@ def main() -> int:
     ap.add_argument("--noc-bandwidth-bytes-per-cycle", type=_float_list, default=[16384.0])
     ap.add_argument("--noc-hops", type=_int_list, default=[1])
     ap.add_argument("--router-latency-cycles-per-hop", type=_int_list, default=[2])
-    ap.add_argument("--macs-per-cycle", type=int, default=524288)
-    ap.add_argument("--vector-ops-per-cycle", type=int, default=65536)
+    ap.add_argument("--macs-per-cycle", type=_int_list, default=[524288])
+    ap.add_argument("--vector-ops-per-cycle", type=_int_list, default=[65536])
     ap.add_argument("--clock-ns", type=float, default=1.0)
     ap.add_argument("--out", required=True)
     ap.add_argument("--out-md", required=True)
@@ -703,8 +726,8 @@ def main() -> int:
         noc_bandwidth_bytes_per_cycle_list=args.noc_bandwidth_bytes_per_cycle,
         noc_hops_list=args.noc_hops,
         router_latency_cycles_per_hop_list=args.router_latency_cycles_per_hop,
-        macs_per_cycle=args.macs_per_cycle,
-        vector_ops_per_cycle=args.vector_ops_per_cycle,
+        macs_per_cycle_list=args.macs_per_cycle,
+        vector_ops_per_cycle_list=args.vector_ops_per_cycle,
         clock_ns=args.clock_ns,
     )
     out = Path(args.out)

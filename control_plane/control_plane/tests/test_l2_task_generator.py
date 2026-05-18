@@ -3153,6 +3153,71 @@ def test_generate_l2_campaign_task_adds_decoder_attention_kv_physical_hbm_memory
             }
 
 
+def test_generate_l2_campaign_task_adds_decoder_attention_kv_physical_hbm_compute_sensitivity() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    item_id="l2_decoder_attention_kv_physical_hbm_compute_sensitivity_llama7b_v1",
+                    proposal_id="prop_l2_decoder_attention_kv_physical_hbm_compute_sensitivity_llama7b_v1",
+                    proposal_path=(
+                        "docs/proposals/"
+                        "prop_l2_decoder_attention_kv_physical_hbm_compute_sensitivity_llama7b_v1/proposal.json"
+                    ),
+                    evaluation_mode="frontier_detail",
+                    abstraction_layer="decoder_attention_kv_physical_hbm_compute_sensitivity",
+                    expected_direction="iterate",
+                    comparison_role="frontier_synthesis",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+            assert [command["name"] for command in work_item.command_manifest[:1]] == [
+                "estimate_decoder_attention_kv_physical_hbm_compute_sensitivity",
+            ]
+            run = work_item.command_manifest[0]["run"]
+            assert "estimate_llm_decoder_attention_kv_physical_hbm_frontier.py" in run
+            assert "--sequence-length-list 131072" in run
+            assert "--kv-sharing-list gqa8" in run
+            assert "--kv-bits-list 8" in run
+            assert "--die-area-mm2-list 400,800,1200" in run
+            assert "--usable-sram-fraction 0.7,0.85" in run
+            assert "--bank-count 16,64" in run
+            assert "--macs-per-cycle 32768,65536,131072,262144,524288" in run
+            assert "--vector-ops-per-cycle 8192,16384,32768,65536" in run
+            assert decoder_inputs["attention_kv_memory_out"] == (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_kv_physical_hbm_compute_sensitivity__"
+                "l2_decoder_attention_kv_physical_hbm_compute_sensitivity_llama7b_v1.json"
+            )
+            assert decoder_inputs["attention_kv_physical_hbm_memory_noc"].endswith(
+                "decoder_attention_kv_physical_hbm_memory_noc__"
+                "l2_decoder_attention_kv_physical_hbm_memory_noc_llama7b_v1_r2.json"
+            )
+            assert (
+                "compute-downsizing sensitivity"
+                in decoder_inputs["attention_kv_physical_hbm_compute_sensitivity_scope"]
+            )
+            assert decoder_inputs["attention_kv_memory_out"] in work_item.expected_outputs
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
+                "layer": "decoder_attention_kv_physical_hbm_compute_sensitivity",
+            }
+
+
 def test_generate_l2_campaign_task_adds_decoder_attention_kv_quality_gate() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
