@@ -69,6 +69,25 @@
         "direction": "iterate",
         "reason": "Use nm16 PPA and runtime to determine whether nm32 should run as full PnR, synth-prefilter, or require floorplan/hierarchy changes first."
       }
+    },
+    {
+      "item_id": "l1_npu_fp16_dynamic_dispatcher_capacity_nm32_v1",
+      "task_type": "l1_sweep",
+      "objective": "Run full Nangate45 OpenROAD PPA measurement for the current centralized dynamic GEMM dispatcher at nm32, while recording real instance-area utilization fields.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "npu_compute_parallelism_ladder",
+      "cost_class": "bounded-high",
+      "comparison_role": "dynamic_dispatcher_capacity",
+      "paired_baseline_item_id": "l1_npu_fp16_compute_parallelism_ladder_nm16_v1",
+      "depends_on_item_ids": [
+        "l1_npu_fp16_compute_parallelism_ladder_nm16_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use nm32 timing, power, utilization, and runtime to decide whether nm64 on the current dispatcher is practical or should switch to synth-prefilter/larger-floorplan characterization."
+      }
     }
   ],
   "baseline_refs": [
@@ -79,6 +98,9 @@
   "knowledge_refs": [
     "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
     "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json",
+    "runs/designs/npu_blocks/npu_fp16_cpp_nm16_cmp/config_nm16.json",
+    "runs/designs/npu_blocks/npu_fp16_cpp_nm32_cmp/config_nm32.json",
+    "runs/designs/npu_blocks/npu_fp16_cpp_nm64_cmp/config_nm64.json",
     "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
     "npu/rtlgen/gen.py",
     "npu/synth/run_block_sweep.py",

@@ -551,6 +551,70 @@ def parse_die_area(def_path: Path) -> float:
     return 0.0
 
 
+def rect_area_um2(value: object) -> Optional[float]:
+    rect = parse_rect_param(value)
+    if rect is None:
+        return None
+    x1, y1, x2, y2 = rect
+    width = max(0.0, x2 - x1)
+    height = max(0.0, y2 - y1)
+    if width <= 0 or height <= 0:
+        return None
+    return width * height
+
+
+def parse_openroad_metrics_json(metrics_json_path: Path) -> Dict[str, object]:
+    try:
+        raw = json.loads(metrics_json_path.read_text())
+    except FileNotFoundError:
+        return {}
+    except json.JSONDecodeError:
+        return {}
+    if not isinstance(raw, dict):
+        return {}
+    return raw
+
+
+def resolve_finish_metrics_path(platform: str, design_name: str, tag: str, flow_variant: str) -> Path:
+    tag_path = LOG_BASE / platform / design_name / str(tag) / "6_finish.json"
+    if tag_path.exists():
+        return tag_path
+    variant_path = LOG_BASE / platform / design_name / flow_variant / "6_finish.json"
+    if variant_path.exists():
+        return variant_path
+    base_path = LOG_BASE / platform / design_name / "base" / "6_finish.json"
+    if base_path.exists():
+        return base_path
+    return tag_path
+
+
+def add_utilization_metrics(
+    metrics: Dict[str, object],
+    *,
+    metrics_json: Dict[str, object],
+    sweep_params: Dict[str, object],
+) -> None:
+    instance_area = safe_float(metrics_json.get("finish__design__instance__area"))
+    if instance_area is None:
+        instance_area = safe_float(metrics_json.get("placeopt__design__instance__area"))
+    if instance_area is not None:
+        metrics["instance_area_um2"] = instance_area
+
+    stdcell_area = safe_float(metrics_json.get("synth__design__instance__area__stdcell"))
+    if stdcell_area is not None:
+        metrics["stdcell_area_um2"] = stdcell_area
+
+    stdcell_count = safe_float(metrics_json.get("placeopt__design__instance__count__stdcell"))
+    if stdcell_count is not None:
+        metrics["stdcell_count"] = stdcell_count
+
+    core_area = rect_area_um2(sweep_params.get("CORE_AREA"))
+    if core_area is not None:
+        metrics["core_area_um2"] = core_area
+        if instance_area is not None:
+            metrics["utilization_pct"] = (100.0 * instance_area) / core_area
+
+
 def parse_rect_param(value: object) -> Optional[tuple[float, float, float, float]]:
     if value is None:
         return None
@@ -624,11 +688,8 @@ def safe_float(val):
 
 def parse_stage_metrics(metrics_json_path: Path, stage_prefix: str) -> Dict[str, object]:
     metrics: Dict[str, object] = {}
-    try:
-        data = json.loads(metrics_json_path.read_text())
-    except FileNotFoundError:
-        return metrics
-    except json.JSONDecodeError:
+    data = parse_openroad_metrics_json(metrics_json_path)
+    if not data:
         return metrics
 
     fmax_hz = safe_float(data.get(f"{stage_prefix}__timing__fmax"))
@@ -1058,6 +1119,11 @@ def append_metrics(metrics_path: Path, row: Dict[str, object]):
         "critical_path_ns",
         "die_area",
         "total_power_mw",
+        "instance_area_um2",
+        "stdcell_area_um2",
+        "stdcell_count",
+        "core_area_um2",
+        "utilization_pct",
         "flow_elapsed_seconds",
         "stage_elapsed_seconds",
         "params_json",
@@ -1476,6 +1542,11 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
             flow_variant,
         )
         metrics = parse_stage_metrics(metrics_path, stage_prefix_map[str(make_target)])
+        add_utilization_metrics(
+            metrics,
+            metrics_json=parse_openroad_metrics_json(metrics_path),
+            sweep_params=sweep_params,
+        )
         report_path = metrics_path
     elif synth_only_target:
         report_path = synth_result_artifact(platform, design_name, flow_variant, str(make_target))
@@ -1499,6 +1570,12 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
             report_path = REPORT_BASE / platform / design_name / "base" / "6_finish.rpt"
 
         metrics = parse_finish_report(report_path)
+        finish_metrics_path = resolve_finish_metrics_path(platform, design_name, str(tag), flow_variant)
+        add_utilization_metrics(
+            metrics,
+            metrics_json=parse_openroad_metrics_json(finish_metrics_path),
+            sweep_params=sweep_params,
+        )
         if platform.lower() == "asap7":
             if metrics.get("critical_path_ns") is not None:
                 metrics["critical_path_ns"] = metrics["critical_path_ns"] / 1000.0
@@ -1523,6 +1600,11 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
         "critical_path_ns": metrics.get("critical_path_ns"),
         "die_area": metrics.get("die_area"),
         "total_power_mw": metrics.get("total_power_mw"),
+        "instance_area_um2": metrics.get("instance_area_um2"),
+        "stdcell_area_um2": metrics.get("stdcell_area_um2"),
+        "stdcell_count": metrics.get("stdcell_count"),
+        "core_area_um2": metrics.get("core_area_um2"),
+        "utilization_pct": metrics.get("utilization_pct"),
         "flow_elapsed_seconds": flow_elapsed_seconds,
         "stage_elapsed_seconds": stage_elapsed_seconds,
         "params_json": json.dumps(sweep_params, sort_keys=True),

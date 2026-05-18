@@ -1365,8 +1365,8 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
 
     if gemm_pipeline < 1:
         die("compute.gemm.pipeline must be >= 1")
-    if gemm_num_modules < 1 or gemm_num_modules > 16:
-        die("compute.gemm.num_modules must be in [1, 16]")
+    if gemm_num_modules < 1 or gemm_num_modules > 64:
+        die("compute.gemm.num_modules must be in [1, 64]")
 
     if compute_enabled and gemm_mac_type not in ("int8", "int16", "fp16"):
         die("compute.gemm.mac_type must be one of: int8, int16, fp16")

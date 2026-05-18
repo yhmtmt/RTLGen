@@ -118,9 +118,9 @@ can later be extended without breaking v0.1.
     - `mac_type=int8` -> `builtin_int8_dot`
     - `mac_type=int16` -> `builtin_int16_dot`
     - `mac_type=fp16` -> `rtlgen_cpp` (default fp16 backend lock)
-- `compute.gemm.num_modules` (int): number of parallel GEMM module slots to emit (`1..16`, default `2`).
+- `compute.gemm.num_modules` (int): number of parallel GEMM module slots to emit (`1..64`, default `2`).
   - Each slot gets its own MAC instance and per-slot state (`valid/done/cycles/src/dst/size`).
-  - This is the first step toward hierarchical GEMM composition in generated RTL.
+  - The current shell uses a centralized first-free dynamic dispatcher and per-slot completion state. Larger values are intended for capacity characterization of that simple dispatcher, not as the final die-scale hierarchy.
 - `compute.gemm.lanes_per_module` (int): number of MAC lanes per module (depends on `mac_type`).
   - Backward-compatible alias: `compute.gemm.lanes`.
   - If both are provided, values must match.

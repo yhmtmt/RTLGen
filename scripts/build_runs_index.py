@@ -199,6 +199,11 @@ def main():
                     "critical_path_ns": row.get("critical_path_ns", ""),
                     "die_area": row.get("die_area", ""),
                     "total_power_mw": row.get("total_power_mw", ""),
+                    "instance_area_um2": row.get("instance_area_um2", ""),
+                    "stdcell_area_um2": row.get("stdcell_area_um2", ""),
+                    "stdcell_count": row.get("stdcell_count", ""),
+                    "core_area_um2": row.get("core_area_um2", ""),
+                    "utilization_pct": row.get("utilization_pct", ""),
                     "config_hash": row.get("config_hash", ""),
                     "param_hash": row.get("param_hash", ""),
                     "tag": row.get("tag", ""),
@@ -223,6 +228,11 @@ def main():
         "critical_path_ns",
         "die_area",
         "total_power_mw",
+        "instance_area_um2",
+        "stdcell_area_um2",
+        "stdcell_count",
+        "core_area_um2",
+        "utilization_pct",
         "config_hash",
         "param_hash",
         "tag",
@@ -238,7 +248,7 @@ def main():
 
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     with OUT_PATH.open("w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer = csv.DictWriter(f, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
         for row in rows:
             writer.writerow(row)
