@@ -227,3 +227,20 @@ class SynthTargetMappingRegressionTest(unittest.TestCase):
     def test_resolve_make_target_maps_synth_variants_to_synth(self):
         self.assertEqual("synth", self.run_block_sweep.resolve_make_target("1_2_yosys"))
         self.assertEqual("synth", self.run_block_sweep.resolve_make_target("1_synth.v"))
+
+    def test_add_utilization_metrics_from_finish_json(self):
+        metrics = {}
+        self.run_block_sweep.add_utilization_metrics(
+            metrics,
+            metrics_json={
+                "finish__design__instance__area": 490000.0,
+                "synth__design__instance__area__stdcell": 470000.0,
+                "placeopt__design__instance__count__stdcell": 12345,
+            },
+            sweep_params={"CORE_AREA": "50 50 1450 1450"},
+        )
+        self.assertEqual(490000.0, metrics["instance_area_um2"])
+        self.assertEqual(470000.0, metrics["stdcell_area_um2"])
+        self.assertEqual(12345.0, metrics["stdcell_count"])
+        self.assertEqual(1960000.0, metrics["core_area_um2"])
+        self.assertAlmostEqual(25.0, metrics["utilization_pct"])
