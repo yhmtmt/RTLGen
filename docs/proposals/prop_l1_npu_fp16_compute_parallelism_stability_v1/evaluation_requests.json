@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l1_npu_fp16_compute_parallelism_stability_v1",
+  "source_commit": "5cdba5be0b99f2c4c2381c1f1f955a31651cfa3e",
+  "requested_items": [
+    {
+      "item_id": "l1_npu_fp16_compute_parallelism_stability_nm8_nm16_nm32_seed3_v1",
+      "task_type": "l1_sweep",
+      "objective": "measure_seed_variance",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "npu_compute_parallelism_stability",
+      "status": "pending",
+      "notes": "Run three control-plane trials over nm8/nm16/nm32 with FLOW_RANDOM_SEED propagated to the NPU block sweep."
+    }
+  ]
+}

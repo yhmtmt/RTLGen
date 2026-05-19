@@ -474,6 +474,29 @@ def apply_mode_to_params(
     return params
 
 
+def apply_repeat_to_params(
+    params: Dict[str, object],
+    *,
+    repeat_index: int,
+    repeat_count: int,
+) -> Dict[str, object]:
+    params_run = dict(params)
+    if repeat_count <= 1:
+        return params_run
+
+    repeat_suffix = f"r{repeat_index + 1}"
+    if "TAG" in params_run:
+        params_run["TAG"] = f"{params_run['TAG']}_{repeat_suffix}"
+    if "FLOW_VARIANT" in params_run:
+        params_run["FLOW_VARIANT"] = f"{params_run['FLOW_VARIANT']}_{repeat_suffix}"
+    if "TAG" not in params_run and "tag_prefix" in params_run:
+        params_run["tag_prefix"] = f"{params_run['tag_prefix']}_{repeat_suffix}"
+
+    if not str(params_run.get("FLOW_RANDOM_SEED", "")).strip():
+        params_run["FLOW_RANDOM_SEED"] = repeat_index + 1
+    return params_run
+
+
 def write_sdc(clock_period: float, path: Path, clock_port: str = "clk"):
     if clock_port:
         content = f"""set clock_port "{clock_port}"
@@ -1885,15 +1908,11 @@ def main():
                 else ""
             )
             for repeat_index in range(repeat_count):
-                repeat_suffix = f"r{repeat_index + 1}"
-                params_run = dict(params)
-                if repeat_count > 1:
-                    if "TAG" in params_run:
-                        params_run["TAG"] = f"{params_run['TAG']}_{repeat_suffix}"
-                    if "FLOW_VARIANT" in params_run:
-                        params_run["FLOW_VARIANT"] = f"{params_run['FLOW_VARIANT']}_{repeat_suffix}"
-                    if "TAG" not in params_run and "tag_prefix" in params_run:
-                        params_run["tag_prefix"] = f"{params_run['tag_prefix']}_{repeat_suffix}"
+                params_run = apply_repeat_to_params(
+                    params,
+                    repeat_index=repeat_index,
+                    repeat_count=repeat_count,
+                )
 
                 force_copy = args.force_copy or (manifest_signature != active_manifest_signature)
                 run_id_extra = None

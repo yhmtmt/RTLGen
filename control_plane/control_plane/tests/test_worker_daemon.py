@@ -161,6 +161,33 @@ def test_active_command_manifest_injects_flow_random_seed_for_multi_trial_sweep(
     assert "--out_root runs/designs/activations/demo_wrapper/trials/trial_002" in commands[0]["run"]
 
 
+def test_active_command_manifest_injects_flow_random_seed_for_npu_block_sweep() -> None:
+    work_item = WorkItem(
+        item_id="seeded_npu_item",
+        task_type="l1_sweep",
+        input_manifest={"out_root": "runs/designs/npu_blocks"},
+        command_manifest=[
+            {
+                "name": "run_block_sweep",
+                "run": (
+                    "export PATH=/oss-cad-suite/bin:$PATH && "
+                    "python3 npu/synth/run_block_sweep.py "
+                    "--design_dir runs/designs/npu_blocks/npu_fp16_cpp_nm16_cmp "
+                    "--platform nangate45 --top npu_top "
+                    "--sweep runs/campaigns/npu/compute_parallelism_ladder/sweeps/nangate45_cmp33_mode_compare.json "
+                    "--out_root runs/designs/npu_blocks --skip_existing"
+                ),
+            }
+        ],
+        trial_policy_json={"trial_count": 3, "seed_start": 200, "stop_after_failures": 3},
+    )
+
+    commands = _active_command_manifest(work_item, 3)
+
+    assert "FLOW_RANDOM_SEED=202 python3 npu/synth/run_block_sweep.py" in commands[0]["run"]
+    assert "--out_root runs/designs/npu_blocks/trials/trial_003" in commands[0]["run"]
+
+
 def test_active_expected_outputs_keeps_trial_scoped_outputs_for_multi_trial_sweep() -> None:
     work_item = WorkItem(
         item_id="seeded_item",

@@ -92,6 +92,23 @@ class ModeCompareRegressionTest(unittest.TestCase):
         self.assertEqual("seed_flat_nomacro", out2["tag_prefix"])
         self.assertEqual("flat_nomacro", out2["FLOW_VARIANT"])
 
+    def test_apply_repeat_to_params_sets_flow_random_seed(self):
+        out = self.run_block_sweep.apply_repeat_to_params(
+            {"TAG": "tag_flat", "FLOW_VARIANT": "var_flat"},
+            repeat_index=1,
+            repeat_count=3,
+        )
+        self.assertEqual("tag_flat_r2", out["TAG"])
+        self.assertEqual("var_flat_r2", out["FLOW_VARIANT"])
+        self.assertEqual(2, out["FLOW_RANDOM_SEED"])
+
+        explicit_seed = self.run_block_sweep.apply_repeat_to_params(
+            {"TAG": "tag_flat", "FLOW_RANDOM_SEED": 99},
+            repeat_index=1,
+            repeat_count=3,
+        )
+        self.assertEqual(99, explicit_seed["FLOW_RANDOM_SEED"])
+
     def test_write_mode_compare_report(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td) / "npu_fp16_cpp_hiercmp"

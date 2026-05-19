@@ -1,0 +1,71 @@
+{
+  "proposal_id": "prop_l1_npu_fp16_compute_parallelism_stability_v1",
+  "created_utc": "2026-05-19T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "npu_compute_parallelism_stability",
+  "title": "NPU FP16 compute parallelism PnR stability",
+  "hypothesis": "The single-sample nm32 timing result can look better than nm16 because OpenROAD placement and routing quality varies by random seed. Running seed trials across nm8, nm16, and nm32 will distinguish a real scaling trend from PnR-quality noise before choosing nm64 or changing dispatcher architecture.",
+  "direct_comparison": {
+    "primary_question": "How stable are critical path, power, and implementation runtime across OpenROAD seeds as FP16 GEMM module count increases from nm8 to nm32?",
+    "include": [
+      "full npu_top wrapper with the same cmp33 floorplan and NPU shell used by the compute parallelism ladder",
+      "nm8, nm16, and nm32 FP16 GEMM module counts",
+      "flat_nomacro and hier_macro mode comparison",
+      "three control-plane trials with FLOW_RANDOM_SEED propagated to OpenROAD"
+    ],
+    "exclude": [
+      "nm64 boundary measurement before nm16/nm32 stability is understood",
+      "new floorplan tuning",
+      "memory hierarchy, NoC, or producer scheduling changes"
+    ]
+  },
+  "expected_benefit": [
+    "quantifies whether the apparent nm32 timing improvement over nm16 is within seed variance",
+    "provides mean, best, worst, and spread for the current centralized dynamic dispatcher",
+    "sets a more reliable basis for deciding whether to run nm64 or pivot to a hierarchical/static scheduler"
+  ],
+  "risks": [
+    "three seeds are enough for a first confidence check but not a full statistical characterization",
+    "the fixed cmp33 floorplan may dominate variance at larger module counts",
+    "result aggregation must keep flat and hier modes separated while comparing only seed changes"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l1_npu_fp16_compute_parallelism_stability_nm8_nm16_nm32_seed3_v1",
+      "task_type": "l1_sweep",
+      "objective": "measure_seed_variance",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "npu_compute_parallelism_stability",
+      "cost_class": "high",
+      "comparison_role": "stability",
+      "paired_baseline_item_id": "l1_npu_fp16_dynamic_dispatcher_capacity_nm32_v1",
+      "depends_on_item_ids": [
+        "l1_npu_fp16_compute_parallelism_ladder_nm16_v1",
+        "l1_npu_fp16_dynamic_dispatcher_capacity_nm32_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use seed variance to decide whether nm32 is genuinely no worse than nm16, and whether nm64 is a meaningful next physical point."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/designs/npu_blocks/npu_fp16_cpp_nm8_cmp/metrics.csv",
+    "runs/designs/npu_blocks/npu_fp16_cpp_nm16_cmp/metrics.csv",
+    "runs/designs/npu_blocks/npu_fp16_cpp_nm32_cmp/metrics.csv",
+    "runs/index.csv"
+  ],
+  "knowledge_refs": [
+    "runs/designs/npu_blocks/npu_fp16_cpp_nm8_cmp/config_nm8.json",
+    "runs/designs/npu_blocks/npu_fp16_cpp_nm16_cmp/config_nm16.json",
+    "runs/designs/npu_blocks/npu_fp16_cpp_nm32_cmp/config_nm32.json",
+    "runs/campaigns/npu/compute_parallelism_stability/sweeps/nangate45_cmp33_mode_compare.json",
+    "control_plane/control_plane/workers/executor.py",
+    "npu/synth/run_block_sweep.py"
+  ]
+}
