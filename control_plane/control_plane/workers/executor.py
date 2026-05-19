@@ -289,12 +289,15 @@ def _active_command_manifest(work_item: WorkItem, trial_index: int) -> list[dict
         if trial_out_root and out_root and token in run_text:
             command["run"] = run_text.replace(token, replacement)
             run_text = str(command.get("run", ""))
-        if flow_seed is not None and "python3 scripts/run_sweep.py" in run_text and "FLOW_RANDOM_SEED=" not in run_text:
-            command["run"] = run_text.replace(
-                "python3 scripts/run_sweep.py",
-                f"FLOW_RANDOM_SEED={flow_seed} python3 scripts/run_sweep.py",
-                1,
-            )
+        if flow_seed is not None and "FLOW_RANDOM_SEED=" not in run_text:
+            for runner in ("python3 scripts/run_sweep.py", "python3 npu/synth/run_block_sweep.py"):
+                if runner in run_text:
+                    command["run"] = run_text.replace(
+                        runner,
+                        f"FLOW_RANDOM_SEED={flow_seed} {runner}",
+                        1,
+                    )
+                    break
     return commands
 
 
