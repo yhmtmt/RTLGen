@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_npu_fp16_compute_parallelism_ladder_v1",
-  "source_commit": "b1b8caf3a85dc96759e69c39dfc0d25c11688c63",
+  "source_commit": "d41cd629152ed189583d854126acd2299bf8ee69",
   "requested_items": [
     {
       "item_id": "l1_npu_fp16_compute_parallelism_ladder_nm4_nm8_v1",
@@ -13,6 +13,27 @@
       "merge_commit": "f6eed086a87523ab5d6425754abddd84f2bb7dbc",
       "merged_utc": "2026-05-18T20:52:47Z",
       "notes": "Merged via PR #630 and merge f6eed086a87523ab5d6425754abddd84f2bb7dbc at 2026-05-18T20:52:47Z."
+    },
+    {
+      "item_id": "l1_npu_fp16_compute_parallelism_ladder_nm16_v1",
+      "task_type": "l1_sweep",
+      "objective": "Run full Nangate45 OpenROAD PPA measurement for full-NPU FP16 nm16 compute parallelism using the same cmp33 mode-compare sweep after nm4/nm8 completed.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "npu_compute_parallelism_ladder",
+      "status": "merged",
+      "merged_pr_number": 633,
+      "merge_commit": "4860f6af08da1cdafeeebfd73ddbfe99333b426e",
+      "merged_utc": "2026-05-18T22:56:19Z",
+      "notes": "Merged via PR #633 and merge 4860f6af08da1cdafeeebfd73ddbfe99333b426e at 2026-05-18T22:56:19Z."
+    },
+    {
+      "item_id": "l1_npu_fp16_dynamic_dispatcher_capacity_nm32_v1",
+      "task_type": "l1_sweep",
+      "objective": "Run full Nangate45 OpenROAD PPA measurement for the current centralized dynamic GEMM dispatcher at nm32, while recording real instance-area utilization fields.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "npu_compute_parallelism_ladder",
+      "status": "artifact_sync",
+      "notes": "Run l1_npu_fp16_dynamic_dispatcher_capacity_nm32_v1_run_13af7f23fe2dc73a completed successfully and is awaiting artifact submission."
     }
   ]
 }
