@@ -2,13 +2,13 @@
 
 ## Candidate
 - `proposal_id`: `prop_l1_npu_fp16_compute_parallelism_ladder_v1`
-- `candidate_id`: `l1_npu_fp16_compute_parallelism_ladder_nm4_nm8_v1`
+- `candidate_id`: `l1_npu_fp16_dynamic_dispatcher_capacity_nm32_v1`
 
 ## Evaluations Consumed
-- `l1_npu_fp16_compute_parallelism_ladder_nm4_nm8_v1`
-- `l1_npu_fp16_compute_parallelism_ladder_nm4_nm8_v1_run_27fdea1e7cf3a42f`
-- source commit: `b1b8caf3a85dc96759e69c39dfc0d25c11688c63`
-- review: PR #630
+- `l1_npu_fp16_dynamic_dispatcher_capacity_nm32_v1`
+- `l1_npu_fp16_dynamic_dispatcher_capacity_nm32_v1_run_13af7f23fe2dc73a`
+- source commit: `d41cd629152ed189583d854126acd2299bf8ee69`
+- review: PR #638
 
 ## Baseline Comparison
 - not applicable
@@ -25,5 +25,5 @@
 
 ## Recommendation
 - `promote`
-- reason: Accepted Layer 1 physical metrics were merged in PR #630 for the current candidate.
+- reason: Accepted Layer 1 physical metrics were merged in PR #638 for the current candidate.
 - next_action: inspect the next dependent item
