@@ -1,0 +1,2 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_npu_fp16_dynamic_dispatcher_capacity_nm32_v1_run_13af7f23fe2dc73a,1,1,0,succeeded,runs/designs/npu_blocks/npu_fp16_cpp_nm32_cmp/metrics.csv,5.446,2250000.0,0.317,none,,
