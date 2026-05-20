@@ -1,0 +1,45 @@
+{
+  "item_id": "l1_npu_fp16_compute_parallelism_stability_nm8_nm16_nm32_seed3_v1_r2",
+  "completed_trials": 3,
+  "success_count": 2,
+  "failure_count": 1,
+  "success_rate": 0.6666666666666666,
+  "metrics": {
+    "critical_path_ns": {
+      "best": 5.3272,
+      "mean": 5.328150000000001,
+      "median": 5.328150000000001,
+      "max": 5.3291,
+      "range": 0.0019000000000000128,
+      "stddev": 0.0009500000000000064
+    },
+    "die_area": {
+      "best": 2250000.0,
+      "mean": 2250000.0,
+      "median": 2250000.0,
+      "max": 2250000.0,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "total_power_mw": {
+      "best": 0.234,
+      "mean": 0.2345,
+      "median": 0.2345,
+      "max": 0.235,
+      "range": 0.0009999999999999731,
+      "stddev": 0.0004999999999999866
+    }
+  },
+  "comparison_mode": "same_non_seed_flow_params",
+  "comparison_params": {
+    "CLOCK_PERIOD": 10.0,
+    "CORE_AREA": "50 50 1450 1450",
+    "CORE_UTILIZATION": "",
+    "DIE_AREA": "0 0 1500 1500",
+    "FLOW_VARIANT": "compute_stability_cmp33_hier_macro",
+    "PLACE_DENSITY": 0.4,
+    "SYNTH_HIERARCHICAL": 1,
+    "SYNTH_KEEP_MODULES": "gemm_compute_array",
+    "tag_prefix": "npu_fp16_compute_stability"
+  }
+}
