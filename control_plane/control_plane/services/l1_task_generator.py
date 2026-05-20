@@ -488,6 +488,7 @@ def _read_config_target(
                         "--platform {platform} "
                         f"--top {top_name} "
                         f"--sweep {{sweep_path}} "
+                        f"--out_root {out_root} "
                         + (f"--make_target {make_target} " if make_target else "")
                         + "--skip_existing"
                         )
