@@ -1,0 +1,220 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/npu/compute_parallelism_stability/sweeps/nangate45_cmp33_mode_compare.json"
+      ],
+      "configs": [
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm8_cmp/config_nm8.json",
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm16_cmp/config_nm16.json",
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm32_cmp/config_nm32.json"
+      ],
+      "out_root": "runs/designs/npu_blocks",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && cmake -S . -B build && cmake --build build --target rtlgen",
+        "name": "build_generator"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen.py --config runs/designs/npu_blocks/npu_fp16_cpp_nm8_cmp/config_nm8.json --out runs/designs/npu_blocks/npu_fp16_cpp_nm8_cmp/verilog",
+        "name": "generate_block_rtl_npu_fp16_cpp_nm8_cmp"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/npu_fp16_cpp_nm8_cmp --platform nangate45 --top npu_top --sweep runs/campaigns/npu/compute_parallelism_stability/sweeps/nangate45_cmp33_mode_compare.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep_npu_fp16_cpp_nm8_cmp"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen.py --config runs/designs/npu_blocks/npu_fp16_cpp_nm16_cmp/config_nm16.json --out runs/designs/npu_blocks/npu_fp16_cpp_nm16_cmp/verilog",
+        "name": "generate_block_rtl_npu_fp16_cpp_nm16_cmp"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/npu_fp16_cpp_nm16_cmp --platform nangate45 --top npu_top --sweep runs/campaigns/npu/compute_parallelism_stability/sweeps/nangate45_cmp33_mode_compare.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep_npu_fp16_cpp_nm16_cmp"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen.py --config runs/designs/npu_blocks/npu_fp16_cpp_nm32_cmp/config_nm32.json --out runs/designs/npu_blocks/npu_fp16_cpp_nm32_cmp/verilog",
+        "name": "generate_block_rtl_npu_fp16_cpp_nm32_cmp"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/npu_fp16_cpp_nm32_cmp --platform nangate45 --top npu_top --sweep runs/campaigns/npu/compute_parallelism_stability/sweeps/nangate45_cmp33_mode_compare.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep_npu_fp16_cpp_nm32_cmp"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "objective": "measure_seed_variance",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/npu_blocks/trials/trial_001/npu_fp16_cpp_nm8_cmp/metrics.csv",
+      "runs/designs/npu_blocks/trials/trial_002/npu_fp16_cpp_nm8_cmp/metrics.csv",
+      "runs/designs/npu_blocks/trials/trial_003/npu_fp16_cpp_nm8_cmp/metrics.csv",
+      "runs/designs/npu_blocks/trials/trial_001/npu_fp16_cpp_nm16_cmp/metrics.csv",
+      "runs/designs/npu_blocks/trials/trial_002/npu_fp16_cpp_nm16_cmp/metrics.csv",
+      "runs/designs/npu_blocks/trials/trial_003/npu_fp16_cpp_nm16_cmp/metrics.csv",
+      "runs/designs/npu_blocks/trials/trial_001/npu_fp16_cpp_nm32_cmp/metrics.csv",
+      "runs/designs/npu_blocks/trials/trial_002/npu_fp16_cpp_nm32_cmp/metrics.csv",
+      "runs/designs/npu_blocks/trials/trial_003/npu_fp16_cpp_nm32_cmp/metrics.csv"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "NPU FP16 compute parallelism seed stability nm8/nm16/nm32 r2",
+  "result": {
+    "branch": "eval/l1_npu_fp16_compute_parallelism_stability_nm8_nm16_nm32_seed3_v1_r2/s20260520t191047z",
+    "completed_utc": "2026-05-20T19:10:46.340652Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260520t191047z][host:b7c2d9c80c1c][item:l1_npu_fp16_compute_parallelism_stability_nm8_nm16_nm32_seed3_v1_r2]",
+    "metrics_rows": [
+      {
+        "metrics_csv": "runs/designs/npu_blocks/trials/trial_001/npu_fp16_cpp_nm8_cmp/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "trial_index": 1,
+        "seed": 101,
+        "critical_path_ns": 5.3179,
+        "die_area": 2250000.0,
+        "total_power_mw": 0.234
+      },
+      {
+        "metrics_csv": "runs/designs/npu_blocks/trials/trial_002/npu_fp16_cpp_nm8_cmp/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "trial_index": 2,
+        "seed": 102,
+        "critical_path_ns": 5.3272,
+        "die_area": 2250000.0,
+        "total_power_mw": 0.234
+      },
+      {
+        "metrics_csv": "runs/designs/npu_blocks/trials/trial_003/npu_fp16_cpp_nm8_cmp/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "trial_index": 3,
+        "seed": 103,
+        "critical_path_ns": 5.3291,
+        "die_area": 2250000.0,
+        "total_power_mw": 0.235
+      }
+    ],
+    "queue_item_id": "l1_npu_fp16_compute_parallelism_stability_nm8_nm16_nm32_seed3_v1_r2",
+    "session_id": "s20260520t191047z",
+    "status": "ok",
+    "summary": "3/3 seed trials succeeded",
+    "final_attempt_metrics_rows": [
+      {
+        "tag": "npu_fp16_compute_stability_cmp33_flat_nomacro",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "40c9c722",
+        "metrics_csv": "runs/designs/npu_blocks/trials/trial_003/npu_fp16_cpp_nm8_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/trials/trial_003/npu_fp16_cpp_nm8_cmp/work/40c9c722/result.json"
+      },
+      {
+        "tag": "npu_fp16_compute_stability_cmp33_hier_macro",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "b0f7e8e4",
+        "metrics_csv": "runs/designs/npu_blocks/trials/trial_003/npu_fp16_cpp_nm8_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/trials/trial_003/npu_fp16_cpp_nm8_cmp/work/b0f7e8e4/result.json"
+      },
+      {
+        "tag": "npu_fp16_compute_stability_cmp33_flat_nomacro",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "40c9c722",
+        "metrics_csv": "runs/designs/npu_blocks/trials/trial_003/npu_fp16_cpp_nm16_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/trials/trial_003/npu_fp16_cpp_nm16_cmp/work/40c9c722/result.json"
+      },
+      {
+        "tag": "npu_fp16_compute_stability_cmp33_hier_macro",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "b0f7e8e4",
+        "metrics_csv": "runs/designs/npu_blocks/trials/trial_003/npu_fp16_cpp_nm16_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/trials/trial_003/npu_fp16_cpp_nm16_cmp/work/b0f7e8e4/result.json"
+      },
+      {
+        "tag": "npu_fp16_compute_stability_cmp33_flat_nomacro",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "40c9c722",
+        "metrics_csv": "runs/designs/npu_blocks/trials/trial_003/npu_fp16_cpp_nm32_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/trials/trial_003/npu_fp16_cpp_nm32_cmp/work/40c9c722/result.json"
+      },
+      {
+        "tag": "npu_fp16_compute_stability_cmp33_hier_macro",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "b0f7e8e4",
+        "metrics_csv": "runs/designs/npu_blocks/trials/trial_003/npu_fp16_cpp_nm32_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/trials/trial_003/npu_fp16_cpp_nm32_cmp/work/b0f7e8e4/result.json"
+      }
+    ],
+    "metrics_rows_scope": "successful_seed_trials",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_npu_fp16_compute_parallelism_stability_nm8_nm16_nm32_seed3_v1_r2/trial_table.csv"
+  },
+  "handoff": {
+    "branch": "eval/l1_npu_fp16_compute_parallelism_stability_nm8_nm16_nm32_seed3_v1_r2/s20260520t191047z",
+    "pr_title": "eval: run npu fp16 compute parallelism seed stability nm8/nm16/nm32 r2",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260520t191047z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_npu_fp16_compute_parallelism_stability_nm8_nm16_nm32_seed3_v1_r2"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_npu_fp16_compute_parallelism_stability_nm8_nm16_nm32_seed3_v1_r2",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-05-20T03:00:50.818014Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "evaluation": {
+      "mode": "measurement_only",
+      "trial_policy": {
+        "seed_start": 101,
+        "trial_count": 3,
+        "stop_after_failures": 3
+      }
+    },
+    "abstraction": {
+      "layer": "npu_compute_parallelism_stability"
+    },
+    "proposal_id": "prop_l1_npu_fp16_compute_parallelism_stability_v1",
+    "proposal_path": "docs/proposals/prop_l1_npu_fp16_compute_parallelism_stability_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "8676df60746526fc9b52620f4eaf0e6e85d0845e",
+    "requires_daemon_restart": true
+  }
+}
