@@ -188,7 +188,7 @@ def test_active_command_manifest_injects_flow_random_seed_for_npu_block_sweep() 
     assert "--out_root runs/designs/npu_blocks/trials/trial_003" in commands[0]["run"]
 
 
-def test_active_expected_outputs_keeps_trial_scoped_outputs_for_multi_trial_sweep() -> None:
+def test_active_expected_outputs_filters_to_active_trial_for_multi_trial_sweep() -> None:
     work_item = WorkItem(
         item_id="seeded_item",
         task_type="l1_sweep",
@@ -197,14 +197,14 @@ def test_active_expected_outputs_keeps_trial_scoped_outputs_for_multi_trial_swee
             "runs/designs/activations/demo_wrapper/trials/trial_001/demo_wrapper/metrics.csv",
             "runs/designs/activations/demo_wrapper/trials/trial_002/demo_wrapper/metrics.csv",
             "runs/designs/activations/demo_wrapper/trials/trial_003/demo_wrapper/metrics.csv",
+            "runs/index.csv",
         ],
         trial_policy_json={"trial_count": 3, "seed_start": 100, "stop_after_failures": 3},
     )
 
     assert _active_expected_outputs(work_item, 2) == [
-        "runs/designs/activations/demo_wrapper/trials/trial_001/demo_wrapper/metrics.csv",
         "runs/designs/activations/demo_wrapper/trials/trial_002/demo_wrapper/metrics.csv",
-        "runs/designs/activations/demo_wrapper/trials/trial_003/demo_wrapper/metrics.csv",
+        "runs/index.csv",
     ]
 
 

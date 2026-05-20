@@ -940,6 +940,7 @@ def test_generate_l1_sweep_task_supports_integrated_npu_block_configs() -> None:
                 "--platform nangate45 "
                 "--top npu_top "
                 "--sweep runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/sweep_compare_33.json "
+                "--out_root runs/designs/npu_blocks "
                 "--skip_existing"
             )
             assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {"layer": "architecture_block"}
@@ -1009,6 +1010,7 @@ def test_generate_l1_sweep_task_emits_commands_for_each_integrated_block_config(
             assert "--config runs/designs/npu_blocks/npu_fp16_cpp_nm2_sigmoidcmp/config_nm2_sigmoid.json " in joined_commands
             assert "--design_dir runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp " in joined_commands
             assert "--design_dir runs/designs/npu_blocks/npu_fp16_cpp_nm2_sigmoidcmp " in joined_commands
+            assert joined_commands.count("--out_root runs/designs/npu_blocks ") == 2
             assert work_item.expected_outputs == [
                 "runs/designs/npu_blocks/npu_fp16_cpp_nm1_sigmoidcmp/metrics.csv",
                 "runs/designs/npu_blocks/npu_fp16_cpp_nm2_sigmoidcmp/metrics.csv",

@@ -260,13 +260,16 @@ def _active_expected_outputs(work_item: WorkItem, trial_index: int) -> list[str]
         return expected_outputs
     prefix = f"{out_root}/"
     trial_prefix = f"{out_root}/trials/trial_"
+    current_trial_prefix = f"{trial_out_root}/"
     replacement = f"{trial_out_root}/"
     result: list[str] = []
     for rel_path in expected_outputs:
         if rel_path == "runs/index.csv":
             result.append(rel_path)
-        elif rel_path.startswith(trial_prefix):
+        elif rel_path.startswith(current_trial_prefix):
             result.append(rel_path)
+        elif rel_path.startswith(trial_prefix):
+            continue
         elif rel_path.startswith(prefix):
             result.append(rel_path.replace(prefix, replacement, 1))
         else:
