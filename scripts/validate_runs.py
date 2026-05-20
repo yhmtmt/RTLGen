@@ -136,6 +136,16 @@ def read_metrics_csv(path: Path):
     return legacy_header, legacy_rows
 
 
+def _trial_duplicate_scope(metrics_path: Path) -> str:
+    parts = metrics_path.parts
+    for index, part in enumerate(parts[:-1]):
+        if part == "trials" and index + 1 < len(parts):
+            trial_part = parts[index + 1]
+            if trial_part.startswith("trial_"):
+                return f"trials/{trial_part}"
+    return ""
+
+
 def validate_metrics():
     errors = []
     seen = set()
@@ -150,6 +160,7 @@ def validate_metrics():
                 row.get("platform"),
                 row.get("param_hash"),
                 row.get("result_path"),
+                _trial_duplicate_scope(metrics_path),
             )
             if key in seen:
                 errors.append(f"duplicate run: {key} in {metrics_path}")

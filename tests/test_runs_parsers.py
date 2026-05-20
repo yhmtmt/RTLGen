@@ -204,6 +204,36 @@ class RunsParserRegressionTest(unittest.TestCase):
             ordered[0]["metrics_path"],
         )
 
+    def test_validate_runs_allows_seed_trial_metrics_with_shared_result_path(self):
+        row = (
+            "npu_fp16_cpp_nm8_cmp,nangate45,cfg123,param123,trial_tag,ok,"
+            '5.3,2250000.0,0.234,"{""CLOCK_PERIOD"": 10.0}",'
+            "/orfs/flow/reports/nangate45/npu_fp16_cpp_nm8_cmp/shared/6_finish.rpt"
+        )
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            for trial in ("trial_001", "trial_002"):
+                metrics_path = (
+                    root
+                    / "runs"
+                    / "designs"
+                    / "npu_blocks"
+                    / "trials"
+                    / trial
+                    / "npu_fp16_cpp_nm8_cmp"
+                    / "metrics.csv"
+                )
+                metrics_path.parent.mkdir(parents=True, exist_ok=True)
+                metrics_path.write_text("\n".join([HEADER, row]) + "\n", encoding="utf-8")
+
+            old = self._set_validate_runs_paths(root)
+            try:
+                errors = self.validate_runs.validate_metrics()
+            finally:
+                self._restore_validate_runs_paths(old)
+
+        self.assertEqual([], errors)
+
     def test_run_sweep_normalizes_repo_relative_paths(self):
         repo_root = self.run_sweep.REPO_ROOT
         abs_result = str(repo_root / "runs" / "designs" / "activations" / "demo" / "work" / "abcd1234" / "result.json")
