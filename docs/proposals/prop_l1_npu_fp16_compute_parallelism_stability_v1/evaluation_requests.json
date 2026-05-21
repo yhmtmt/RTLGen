@@ -23,7 +23,11 @@
       "objective": "measure_seed_variance",
       "evaluation_mode": "measurement_only",
       "abstraction_layer": "npu_compute_parallelism_stability",
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 648,
+      "merge_commit": "c5eab6bfcf1f2caef54dbe3bfc3f18b493c787c1",
+      "merged_utc": "2026-05-21T12:27:17.949066Z",
+      "notes": "Merged via PR #648 and merge c5eab6bfcf1f2caef54dbe3bfc3f18b493c787c1 at 2026-05-21T12:27:17.949066Z."
     }
   ]
 }

@@ -2,13 +2,13 @@
 
 ## Candidate
 - `proposal_id`: `prop_l1_npu_fp16_compute_parallelism_stability_v1`
-- `candidate_id`: `l1_npu_fp16_compute_parallelism_stability_nm8_nm16_nm32_seed3_v1_r2`
+- `candidate_id`: `l1_npu_fp16_compute_parallelism_stability_nm1_nm2_nm4_seed3_v1`
 
 ## Evaluations Consumed
-- `l1_npu_fp16_compute_parallelism_stability_nm8_nm16_nm32_seed3_v1_r2`
-- `l1_npu_fp16_compute_parallelism_stability_nm8_nm16_nm32_seed3_v1_r2_run_34c3b2955b6b98b0`
-- source commit: `8676df60746526fc9b52620f4eaf0e6e85d0845e`
-- review: PR #643
+- `l1_npu_fp16_compute_parallelism_stability_nm1_nm2_nm4_seed3_v1`
+- `l1_npu_fp16_compute_parallelism_stability_nm1_nm2_nm4_seed3_v1_run_5dbcdd8553bd2ace`
+- source commit: `7f343c3aa1b1f1bcaf7ecdb78f89795467958573`
+- review: PR #648
 
 ## Baseline Comparison
 - not applicable
@@ -25,5 +25,5 @@
 
 ## Recommendation
 - `promote`
-- reason: Accepted Layer 1 physical metrics were merged in PR #643 for the current candidate.
+- reason: Accepted Layer 1 physical metrics were merged in PR #648 for the current candidate.
 - next_action: inspect the next dependent item
