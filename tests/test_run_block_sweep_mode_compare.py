@@ -240,6 +240,31 @@ class SynthTargetMappingRegressionTest(unittest.TestCase):
         self.assertEqual("synth", self.run_block_sweep.resolve_make_target("1_2_yosys"))
         self.assertEqual("synth", self.run_block_sweep.resolve_make_target("1_synth.v"))
 
+    def test_should_generate_openroad_metadata_for_full_flow_and_finish(self):
+        self.assertTrue(self.run_block_sweep.should_generate_openroad_metadata(None))
+        self.assertTrue(self.run_block_sweep.should_generate_openroad_metadata(""))
+        self.assertTrue(self.run_block_sweep.should_generate_openroad_metadata("finish"))
+        self.assertFalse(self.run_block_sweep.should_generate_openroad_metadata("3_3_place_gp"))
+        self.assertFalse(self.run_block_sweep.should_generate_openroad_metadata("synth"))
+
+    def test_merge_openroad_metrics_json_prefers_later_paths(self):
+        with tempfile.TemporaryDirectory() as td:
+            base = Path(td)
+            first = base / "6_finish.json"
+            second = base / "metadata.json"
+            first.write_text(
+                json.dumps({"finish__design__instance__area": 1.0, "shared": 1}),
+                encoding="utf-8",
+            )
+            second.write_text(
+                json.dumps({"synth__design__instance__count__stdcell": 2, "shared": 2}),
+                encoding="utf-8",
+            )
+            merged = self.run_block_sweep.merge_openroad_metrics_json([first, second])
+        self.assertEqual(1.0, merged["finish__design__instance__area"])
+        self.assertEqual(2, merged["synth__design__instance__count__stdcell"])
+        self.assertEqual(2, merged["shared"])
+
     def test_add_utilization_metrics_from_finish_json(self):
         metrics = {}
         self.run_block_sweep.add_utilization_metrics(

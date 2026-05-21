@@ -598,6 +598,13 @@ def parse_openroad_metrics_json(metrics_json_path: Path) -> Dict[str, object]:
     return raw
 
 
+def merge_openroad_metrics_json(paths: List[Path]) -> Dict[str, object]:
+    merged: Dict[str, object] = {}
+    for path in paths:
+        merged.update(parse_openroad_metrics_json(path))
+    return merged
+
+
 def first_openroad_metric(metrics_json: Dict[str, object], keys: List[str]) -> Optional[float]:
     for key in keys:
         value = safe_float(metrics_json.get(key))
@@ -617,6 +624,25 @@ def resolve_finish_metrics_path(platform: str, design_name: str, tag: str, flow_
     if base_path.exists():
         return base_path
     return tag_path
+
+
+def resolve_metadata_metrics_path(platform: str, design_name: str, tag: str, flow_variant: str) -> Path:
+    tag_path = REPORT_BASE / platform / design_name / str(tag) / "metadata.json"
+    if tag_path.exists():
+        return tag_path
+    variant_path = REPORT_BASE / platform / design_name / flow_variant / "metadata.json"
+    if variant_path.exists():
+        return variant_path
+    base_path = REPORT_BASE / platform / design_name / "base" / "metadata.json"
+    if base_path.exists():
+        return base_path
+    return tag_path
+
+
+def should_generate_openroad_metadata(make_target: Optional[str]) -> bool:
+    if make_target is None:
+        return True
+    return str(make_target).strip() in {"", "finish"}
 
 
 def add_utilization_metrics(
@@ -1571,6 +1597,13 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
         make_cmd.append(actual_make_target)
     print(f"[INFO] Running OpenROAD flow: {' '.join(make_cmd)}")
     subprocess.run(make_cmd, cwd="/orfs/flow", check=True, env=env)
+    if should_generate_openroad_metadata(actual_make_target):
+        metadata_cmd = list(make_cmd)
+        if actual_make_target:
+            metadata_cmd = metadata_cmd[:-1]
+        metadata_cmd.append("metadata-generate")
+        print(f"[INFO] Running OpenROAD metadata extraction: {' '.join(metadata_cmd)}")
+        subprocess.run(metadata_cmd, cwd="/orfs/flow", check=True, env=env)
 
     blackbox_counts: Dict[str, int] = {}
     missing_blackboxes: List[str] = []
@@ -1639,9 +1672,10 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
 
         metrics = parse_finish_report(report_path)
         finish_metrics_path = resolve_finish_metrics_path(platform, design_name, str(tag), flow_variant)
+        metadata_metrics_path = resolve_metadata_metrics_path(platform, design_name, str(tag), flow_variant)
         add_utilization_metrics(
             metrics,
-            metrics_json=parse_openroad_metrics_json(finish_metrics_path),
+            metrics_json=merge_openroad_metrics_json([finish_metrics_path, metadata_metrics_path]),
             sweep_params=sweep_params,
         )
         if platform.lower() == "asap7":
