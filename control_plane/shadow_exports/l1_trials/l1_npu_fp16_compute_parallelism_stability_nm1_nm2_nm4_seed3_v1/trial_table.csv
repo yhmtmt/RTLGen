@@ -1,0 +1,4 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_npu_fp16_compute_parallelism_stability_nm1_nm2_nm4_seed3_v1_run_0034da9420cd26fc,1,1,201,succeeded,runs/designs/npu_blocks/trials/trial_001/npu_fp16_cpp_nm4_cmp/metrics.csv,2.7084,2250000.0,0.217,none,,
+l1_npu_fp16_compute_parallelism_stability_nm1_nm2_nm4_seed3_v1_run_2e75ed59cba2e311,2,2,202,succeeded,runs/designs/npu_blocks/trials/trial_002/npu_fp16_cpp_nm4_cmp/metrics.csv,2.7048,2250000.0,0.216,none,,
+l1_npu_fp16_compute_parallelism_stability_nm1_nm2_nm4_seed3_v1_run_5dbcdd8553bd2ace,3,3,203,succeeded,runs/designs/npu_blocks/trials/trial_003/npu_fp16_cpp_nm4_cmp/metrics.csv,2.701,2250000.0,0.217,none,,
