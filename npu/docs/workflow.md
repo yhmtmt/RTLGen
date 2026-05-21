@@ -175,6 +175,10 @@ For the current practical baseline, use
 
 ## 8) Aggregate results and iterate
 - Track result rows in per-design `metrics.csv`.
+- For physical architecture comparisons, retain `instance_area_um2`,
+  `stdcell_area_um2`, and `stdcell_count` when OpenROAD emits them. A timing or
+  power point with blank cell/area columns is not enough to prove that requested
+  parallel datapaths survived logic synthesis.
 - Keep run-level artifacts in `work/<hash>/result.json`.
 - Update `npu/docs/status.md` and affected plan docs after milestone runs.
 
