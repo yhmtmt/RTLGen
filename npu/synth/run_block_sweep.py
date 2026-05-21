@@ -598,6 +598,14 @@ def parse_openroad_metrics_json(metrics_json_path: Path) -> Dict[str, object]:
     return raw
 
 
+def first_openroad_metric(metrics_json: Dict[str, object], keys: List[str]) -> Optional[float]:
+    for key in keys:
+        value = safe_float(metrics_json.get(key))
+        if value is not None:
+            return value
+    return None
+
+
 def resolve_finish_metrics_path(platform: str, design_name: str, tag: str, flow_variant: str) -> Path:
     tag_path = LOG_BASE / platform / design_name / str(tag) / "6_finish.json"
     if tag_path.exists():
@@ -617,17 +625,54 @@ def add_utilization_metrics(
     metrics_json: Dict[str, object],
     sweep_params: Dict[str, object],
 ) -> None:
-    instance_area = safe_float(metrics_json.get("finish__design__instance__area"))
-    if instance_area is None:
-        instance_area = safe_float(metrics_json.get("placeopt__design__instance__area"))
+    instance_area = first_openroad_metric(
+        metrics_json,
+        [
+            "finish__design__instance__area",
+            "final__design__instance__area",
+            "detailedroute__design__instance__area",
+            "globalroute__design__instance__area",
+            "cts__design__instance__area",
+            "detailedplace__design__instance__area",
+            "placeopt__design__instance__area",
+            "globalplace__design__instance__area",
+            "synth__design__instance__area",
+        ],
+    )
     if instance_area is not None:
         metrics["instance_area_um2"] = instance_area
 
-    stdcell_area = safe_float(metrics_json.get("synth__design__instance__area__stdcell"))
+    stdcell_area = first_openroad_metric(
+        metrics_json,
+        [
+            "finish__design__instance__area__stdcell",
+            "final__design__instance__area__stdcell",
+            "detailedroute__design__instance__area__stdcell",
+            "globalroute__design__instance__area__stdcell",
+            "cts__design__instance__area__stdcell",
+            "detailedplace__design__instance__area__stdcell",
+            "placeopt__design__instance__area__stdcell",
+            "globalplace__design__instance__area__stdcell",
+            "synth__design__instance__area__stdcell",
+        ],
+    )
     if stdcell_area is not None:
         metrics["stdcell_area_um2"] = stdcell_area
 
-    stdcell_count = safe_float(metrics_json.get("placeopt__design__instance__count__stdcell"))
+    stdcell_count = first_openroad_metric(
+        metrics_json,
+        [
+            "finish__design__instance__count__stdcell",
+            "final__design__instance__count__stdcell",
+            "detailedroute__design__instance__count__stdcell",
+            "globalroute__design__instance__count__stdcell",
+            "cts__design__instance__count__stdcell",
+            "detailedplace__design__instance__count__stdcell",
+            "placeopt__design__instance__count__stdcell",
+            "globalplace__design__instance__count__stdcell",
+            "synth__design__instance__count__stdcell",
+        ],
+    )
     if stdcell_count is not None:
         metrics["stdcell_count"] = stdcell_count
 

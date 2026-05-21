@@ -220,11 +220,6 @@ class ModeCompareRegressionTest(unittest.TestCase):
             self.assertIn("'SYNTH_HIERARCHICAL': 0", out)
             self.assertIn("'SYNTH_HIERARCHICAL': 1", out)
 
-
-if __name__ == "__main__":
-    unittest.main()
-
-
 class SynthTargetMappingRegressionTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -261,3 +256,39 @@ class SynthTargetMappingRegressionTest(unittest.TestCase):
         self.assertEqual(12345.0, metrics["stdcell_count"])
         self.assertEqual(1960000.0, metrics["core_area_um2"])
         self.assertAlmostEqual(25.0, metrics["utilization_pct"])
+
+    def test_add_utilization_metrics_accepts_final_stage_cell_metrics(self):
+        metrics = {}
+        self.run_block_sweep.add_utilization_metrics(
+            metrics,
+            metrics_json={
+                "final__design__instance__area": 510000.0,
+                "final__design__instance__area__stdcell": 501000.0,
+                "final__design__instance__count__stdcell": 23456,
+            },
+            sweep_params={"CORE_AREA": "50 50 1450 1450"},
+        )
+        self.assertEqual(510000.0, metrics["instance_area_um2"])
+        self.assertEqual(501000.0, metrics["stdcell_area_um2"])
+        self.assertEqual(23456.0, metrics["stdcell_count"])
+        self.assertAlmostEqual(510000.0 * 100.0 / 1960000.0, metrics["utilization_pct"])
+
+    def test_add_utilization_metrics_accepts_synth_only_cell_metrics(self):
+        metrics = {}
+        self.run_block_sweep.add_utilization_metrics(
+            metrics,
+            metrics_json={
+                "synth__design__instance__area": 410000.0,
+                "synth__design__instance__area__stdcell": 409000.0,
+                "synth__design__instance__count__stdcell": 19876,
+            },
+            sweep_params={"CORE_AREA": "0 0 1000 1000"},
+        )
+        self.assertEqual(410000.0, metrics["instance_area_um2"])
+        self.assertEqual(409000.0, metrics["stdcell_area_um2"])
+        self.assertEqual(19876.0, metrics["stdcell_count"])
+        self.assertAlmostEqual(41.0, metrics["utilization_pct"])
+
+
+if __name__ == "__main__":
+    unittest.main()
