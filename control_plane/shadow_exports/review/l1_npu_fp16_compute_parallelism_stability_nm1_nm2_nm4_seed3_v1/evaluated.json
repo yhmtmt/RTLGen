@@ -85,6 +85,26 @@
     "identity_block": "[role:evaluator][account:control_plane][session:s20260521t122156z][host:b7c2d9c80c1c][item:l1_npu_fp16_compute_parallelism_stability_nm1_nm2_nm4_seed3_v1]",
     "metrics_rows": [
       {
+        "metrics_csv": "runs/designs/npu_blocks/trials/trial_001/npu_fp16_cpp_nm4_cmp/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "trial_index": 1,
+        "seed": 201,
+        "critical_path_ns": 2.7084,
+        "die_area": 2250000.0,
+        "total_power_mw": 0.217
+      },
+      {
+        "metrics_csv": "runs/designs/npu_blocks/trials/trial_002/npu_fp16_cpp_nm4_cmp/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "trial_index": 2,
+        "seed": 202,
+        "critical_path_ns": 2.7048,
+        "die_area": 2250000.0,
+        "total_power_mw": 0.216
+      },
+      {
         "metrics_csv": "runs/designs/npu_blocks/trials/trial_003/npu_fp16_cpp_nm4_cmp/metrics.csv",
         "platform": "nangate45",
         "status": "ok",
@@ -98,7 +118,7 @@
     "queue_item_id": "l1_npu_fp16_compute_parallelism_stability_nm1_nm2_nm4_seed3_v1",
     "session_id": "s20260521t122156z",
     "status": "ok",
-    "summary": "1/3 seed trials succeeded; 2 trial failures recorded",
+    "summary": "3/3 seed trials succeeded",
     "final_attempt_metrics_rows": [
       {
         "tag": "npu_fp16_compute_stability_cmp33_flat_nomacro",

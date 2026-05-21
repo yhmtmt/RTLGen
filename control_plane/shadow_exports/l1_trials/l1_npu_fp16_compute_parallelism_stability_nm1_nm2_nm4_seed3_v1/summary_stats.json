@@ -1,17 +1,17 @@
 {
   "item_id": "l1_npu_fp16_compute_parallelism_stability_nm1_nm2_nm4_seed3_v1",
   "completed_trials": 3,
-  "success_count": 1,
-  "failure_count": 2,
-  "success_rate": 0.3333333333333333,
+  "success_count": 3,
+  "failure_count": 0,
+  "success_rate": 1.0,
   "metrics": {
     "critical_path_ns": {
       "best": 2.701,
-      "mean": 2.701,
-      "median": 2.701,
-      "max": 2.701,
-      "range": 0.0,
-      "stddev": 0.0
+      "mean": 2.7047333333333334,
+      "median": 2.7048,
+      "max": 2.7084,
+      "range": 0.007400000000000073,
+      "stddev": 0.0030214051182999393
     },
     "die_area": {
       "best": 2250000.0,
@@ -22,12 +22,24 @@
       "stddev": 0.0
     },
     "total_power_mw": {
-      "best": 0.217,
-      "mean": 0.217,
+      "best": 0.216,
+      "mean": 0.21666666666666667,
       "median": 0.217,
       "max": 0.217,
-      "range": 0.0,
-      "stddev": 0.0
+      "range": 0.0010000000000000009,
+      "stddev": 0.00047140452079103207
     }
+  },
+  "comparison_mode": "same_non_seed_flow_params",
+  "comparison_params": {
+    "CLOCK_PERIOD": 10.0,
+    "CORE_AREA": "50 50 1450 1450",
+    "CORE_UTILIZATION": "",
+    "DIE_AREA": "0 0 1500 1500",
+    "FLOW_VARIANT": "compute_stability_cmp33_flat_nomacro",
+    "PLACE_DENSITY": 0.4,
+    "SYNTH_HIERARCHICAL": 0,
+    "SYNTH_KEEP_MODULES": "",
+    "tag_prefix": "npu_fp16_compute_stability"
   }
 }
