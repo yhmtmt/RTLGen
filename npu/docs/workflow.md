@@ -179,6 +179,9 @@ For the current practical baseline, use
   `stdcell_area_um2`, and `stdcell_count` when OpenROAD emits them. A timing or
   power point with blank cell/area columns is not enough to prove that requested
   parallel datapaths survived logic synthesis.
+  `run_block_sweep.py` runs ORFS `metadata-generate` after full-flow/finish runs
+  and reads `reports/<platform>/<design>/<variant>/metadata.json` for these
+  fields.
 - Keep run-level artifacts in `work/<hash>/result.json`.
 - Update `npu/docs/status.md` and affected plan docs after milestone runs.
 
