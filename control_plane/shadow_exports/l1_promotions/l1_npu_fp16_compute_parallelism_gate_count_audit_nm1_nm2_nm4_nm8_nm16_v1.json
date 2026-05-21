@@ -1,0 +1,175 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-05-21T21:31:38.562600Z",
+  "item_id": "l1_npu_fp16_compute_parallelism_gate_count_audit_nm1_nm2_nm4_nm8_nm16_v1",
+  "run_key": "l1_npu_fp16_compute_parallelism_gate_count_audit_nm1_nm2_nm4_nm8_nm16_v1_run_a7f297dce0578d92",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "99286a0eb503f85857df5fc31db64dc33f0ab243",
+  "objective": "audit_gate_count_scaling",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/npu/compute_parallelism_stability/sweeps/nangate45_cmp33_mode_compare.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm4_cmp/config_nm4.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm8_cmp/config_nm8.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm16_cmp/config_nm16.json"
+    ],
+    "out_root": "runs/designs/npu_blocks",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 5,
+  "evaluation_record": {
+    "evaluation_mode": "measurement_only",
+    "abstraction_layer": "npu_compute_parallelism_gate_count",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "40c9c722",
+        "tag": "npu_fp16_compute_stability_cmp33_flat_nomacro",
+        "result_path": "/orfs/flow/reports/nangate45/npu_fp16_cpp_nm1_cmp/compute_stability_cmp33_flat_nomacro/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/40c9c722/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 5.3644,
+        "die_area": 2250000.0,
+        "total_power_mw": 0.224
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "40c9c722",
+        "tag": "npu_fp16_compute_stability_cmp33_flat_nomacro",
+        "result_path": "/orfs/flow/reports/nangate45/npu_fp16_cpp_nm2_cmp/compute_stability_cmp33_flat_nomacro/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/40c9c722/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 5.4385,
+        "die_area": 2250000.0,
+        "total_power_mw": 0.223
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm4_cmp/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "40c9c722",
+        "tag": "npu_fp16_compute_stability_cmp33_flat_nomacro",
+        "result_path": "/orfs/flow/reports/nangate45/npu_fp16_cpp_nm4_cmp/compute_stability_cmp33_flat_nomacro/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm4_cmp/work/40c9c722/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 2.7073,
+        "die_area": 2250000.0,
+        "total_power_mw": 0.216
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm8_cmp/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "02bf217a",
+        "tag": "npu_fp16_compute_ladder_cmp33_hier_macro",
+        "result_path": "/orfs/flow/reports/nangate45/npu_fp16_cpp_nm8_cmp/compute_ladder_cmp33_hier_macro/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm8_cmp/work/02bf217a/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 5.3293,
+        "die_area": 2250000.0,
+        "total_power_mw": 0.235
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm16_cmp/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "40c9c722",
+        "tag": "npu_fp16_compute_stability_cmp33_flat_nomacro",
+        "result_path": "/orfs/flow/reports/nangate45/npu_fp16_cpp_nm16_cmp/compute_stability_cmp33_flat_nomacro/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm16_cmp/work/40c9c722/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 5.5222,
+        "die_area": 2250000.0,
+        "total_power_mw": 0.265
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_npu_fp16_compute_parallelism_gate_count_audit_nm1_nm2_nm4_nm8_nm16_v1",
+    "completed_trials": 1,
+    "success_count": 1,
+    "failure_count": 0,
+    "success_rate": 1.0,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 2.7073,
+        "mean": 2.7073,
+        "median": 2.7073,
+        "max": 2.7073,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "die_area": {
+        "best": 2250000.0,
+        "mean": 2250000.0,
+        "median": 2250000.0,
+        "max": 2250000.0,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "total_power_mw": {
+        "best": 0.216,
+        "mean": 0.216,
+        "median": 0.216,
+        "max": 0.216,
+        "range": 0.0,
+        "stddev": 0.0
+      }
+    }
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm4_cmp/metrics.csv",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm8_cmp/metrics.csv",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm16_cmp/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_npu_fp16_compute_parallelism_gate_count_audit_nm1_nm2_nm4_nm8_nm16_v1/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_npu_fp16_compute_parallelism_gate_count_audit_nm1_nm2_nm4_nm8_nm16_v1/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_npu_fp16_compute_parallelism_gate_count_audit_nm1_nm2_nm4_nm8_nm16_v1/trial_table.csv"
+  }
+}
