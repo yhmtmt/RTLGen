@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_npu_fp16_compute_parallelism_gate_count_audit_v1",
-  "source_commit": "",
+  "source_commit": "d9a740cd7856d83a797bd43f0903457292b74779",
   "requested_items": [
     {
       "item_id": "l1_npu_fp16_compute_parallelism_gate_count_audit_nm1_nm2_nm4_nm8_nm16_v1",
@@ -8,7 +8,20 @@
       "objective": "audit_gate_count_scaling",
       "evaluation_mode": "measurement_only",
       "abstraction_layer": "npu_compute_parallelism_gate_count",
-      "status": "pending"
+      "status": "superseded",
+      "notes": "Closed PR #651 because the run did not populate instance/stdcell area or stdcell count."
+    },
+    {
+      "item_id": "l1_npu_fp16_compute_parallelism_gate_count_audit_nm1_nm2_nm4_nm8_nm16_v1_r2",
+      "task_type": "l1_sweep",
+      "objective": "audit_gate_count_scaling",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "npu_compute_parallelism_gate_count",
+      "status": "pending",
+      "prior_item_ids": [
+        "l1_npu_fp16_compute_parallelism_gate_count_audit_nm1_nm2_nm4_nm8_nm16_v1"
+      ],
+      "notes": "Retry after PR #652 added ORFS metadata-generate parsing for instance/stdcell area and count."
     }
   ]
 }
