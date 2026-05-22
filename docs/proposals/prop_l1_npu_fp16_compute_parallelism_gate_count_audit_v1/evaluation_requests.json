@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_npu_fp16_compute_parallelism_gate_count_audit_v1",
-  "source_commit": "d9a740cd7856d83a797bd43f0903457292b74779",
+  "source_commit": "c291683e629f8d70cbbcd17be8bdb97a148c6e12",
   "requested_items": [
     {
       "item_id": "l1_npu_fp16_compute_parallelism_gate_count_audit_nm1_nm2_nm4_nm8_nm16_v1",
@@ -17,11 +17,14 @@
       "objective": "audit_gate_count_scaling",
       "evaluation_mode": "measurement_only",
       "abstraction_layer": "npu_compute_parallelism_gate_count",
-      "status": "pending",
+      "status": "merged",
       "prior_item_ids": [
         "l1_npu_fp16_compute_parallelism_gate_count_audit_nm1_nm2_nm4_nm8_nm16_v1"
       ],
-      "notes": "Retry after PR #652 added ORFS metadata-generate parsing for instance/stdcell area and count."
+      "notes": "Retry after PR #652 added ORFS metadata-generate parsing for instance/stdcell area and count. Merged via PR #654 and merge ee228ae1c407dbef1db63b8a634a7717b517df8b at 2026-05-22T23:30:12.223312Z.",
+      "merged_pr_number": 654,
+      "merge_commit": "ee228ae1c407dbef1db63b8a634a7717b517df8b",
+      "merged_utc": "2026-05-22T23:30:12.223312Z"
     }
   ]
 }
