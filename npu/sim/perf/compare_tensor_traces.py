@@ -33,6 +33,7 @@ def _build_perf_tensor_trace(path: str | Path) -> list[dict[str, Any]]:
 
     tensors = []
     gemm_step = 0
+    vec_step = 0
     softmax_step = 0
     vec_step = 0
     for event in trace.get('trace', []):
@@ -92,6 +93,54 @@ def _build_perf_tensor_trace(path: str | Path) -> list[dict[str, Any]]:
     return sorted(tensors, key=lambda entry: (int(entry.get('step', 0)), str(entry.get('name', ''))))
 
 
+def _int32_le_bytes(value: int | str) -> list[int]:
+    raw = int(str(value), 0) if isinstance(value, str) else int(value)
+    raw &= 0xFFFF_FFFF
+    return [(raw >> (8 * idx)) & 0xFF for idx in range(4)]
+
+
+def _build_perf_arch_tensor_trace(path: str | Path) -> list[dict[str, Any]]:
+    with Path(path).open('r', encoding='utf-8') as f:
+        trace = json.load(f)
+
+    tensors = []
+    gemm_step = 0
+    vec_step = 0
+    for event in trace.get('trace', []):
+        if event.get('name') == 'GEMM':
+            if 'expected_accum' not in event:
+                raise ValueError('perf GEMM event missing expected_accum')
+            if 'c' not in event:
+                raise ValueError('perf GEMM event missing architectural destination c')
+            gemm_step += 1
+            tensor = byte_vector_tensor_summary(
+                name='gemm.c',
+                step=gemm_step,
+                data_bytes=_int32_le_bytes(event['expected_accum']),
+                dtype='int32_le',
+                shape=[1, 4],
+            )
+            tensor['addr'] = str(event['c'])
+            tensors.append(tensor)
+        elif event.get('name') == 'VEC_OP' and event.get('memory_backed'):
+            if 'expected_result_bytes' not in event:
+                raise ValueError('perf memory-backed VEC_OP event missing expected_result_bytes')
+            if 'dst' not in event:
+                raise ValueError('perf memory-backed VEC_OP event missing dst')
+            vec_step += 1
+            data_bytes = [int(value) & 0xFF for value in event['expected_result_bytes']]
+            tensor = byte_vector_tensor_summary(
+                name='vec.dst',
+                step=vec_step,
+                data_bytes=data_bytes,
+                dtype='packed_u8',
+                shape=[1, len(data_bytes)],
+            )
+            tensor['addr'] = str(event['dst'])
+            tensors.append(tensor)
+    return sorted(tensors, key=lambda entry: (int(entry.get('step', 0)), str(entry.get('name', ''))))
+
+
 def _write_json(path: str | None, payload: Any) -> None:
     if not path:
         return
@@ -104,11 +153,25 @@ def main() -> int:
     ap.add_argument('--perf-trace', required=True, help='Perf trace JSON file')
     ap.add_argument('--rtl-summary-out', help='Optional path to write canonical RTL tensor trace JSON')
     ap.add_argument('--perf-summary-out', help='Optional path to write canonical perf tensor trace JSON')
+    ap.add_argument(
+        '--require-architectural-gemm-writeback',
+        action='store_true',
+        help='Compare memory-visible GEMM C writeback tensors instead of internal GEMM accumulator traces',
+    )
+    ap.add_argument(
+        '--require-architectural-writeback',
+        action='store_true',
+        help='Compare memory-visible architectural writeback tensors such as GEMM C and memory-backed VEC dst',
+    )
     args = ap.parse_args()
 
     try:
         rtl_tensors = parse_rtl_tensor_trace_log(args.rtl_log)
-        perf_tensors = _build_perf_tensor_trace(args.perf_trace)
+        if args.require_architectural_gemm_writeback or args.require_architectural_writeback:
+            rtl_tensors = [entry for entry in rtl_tensors if entry.get('name') in ('gemm.c', 'vec.dst')]
+            perf_tensors = _build_perf_arch_tensor_trace(args.perf_trace)
+        else:
+            perf_tensors = _build_perf_tensor_trace(args.perf_trace)
     except ValueError as exc:
         print(f'compare-tensor-trace: {exc}', file=sys.stderr)
         return 2

@@ -78,6 +78,7 @@ make -f npu/sim/perf/Makefile test
   - `compare_compute_results.py` reduces both sides to the canonical `npu_compute_equivalence_trace_v1` summary, prints the RTL/perf SHA-256 values, and fails strict equivalence on summary hash mismatch.
   - `run_golden.sh` writes durable `*_compute_summary.json` artifacts next to each RTL log and perf trace for post-run inspection.
   - `compare_tensor_traces.py` compares RTL `TENSOR_TRACE` lines for GEMM accumulations, generic VEC results, semantic softmax/normalization-family VEC results, and dedicated `SOFTMAX` expected output bytes when a perf memory image is supplied. It writes durable `*_tensor_trace_summary.json` artifacts.
+  - `compare_tensor_traces.py --require-architectural-writeback` switches from internal summaries to memory-visible writeback tensors. The RTL log must emit `gemm.c` for GEMM C destinations and `vec.dst` for memory-backed VEC destinations; perf compares those bytes against its memory model. `--require-architectural-gemm-writeback` remains as a compatibility alias.
 - Runs timing cross-check:
   - `compare_gemm_timing.py` compares RTL GEMM cycles vs perf GEMM latency model.
   - `golden_gemm_v2_ooo` additionally checks out-of-order completion behavior (`--require-order-change`).
@@ -115,6 +116,11 @@ make -f npu/sim/perf/Makefile test
   `python3 npu/synth/pre_synth_memory.py <arch.yml> --id <id>`.
 - VEC op decode uses descriptor `flags` low nibble (`[3:0]`) for op code and
   high nibble (`[7:4]`) for dtype.
+- VEC descriptors with `tag[31]` set are memory-backed: descriptor bytes
+  `[15:8]` are interpreted as `src`, `[23:16]` as `dst`, and `[27:24]` as
+  byte count. Perf reads the source bytes from its memory image and writes the
+  computed result bytes back to `dst`, matching the stricter RTL architectural
+  writeback gate.
 
 ### Bandwidth units
 All `*_bw_gbps` knobs are interpreted as effective **GB/s** (gigabytes per

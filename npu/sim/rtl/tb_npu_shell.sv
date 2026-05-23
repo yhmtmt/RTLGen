@@ -150,6 +150,7 @@ module tb_npu_shell;
   integer gemm_desc_offsets [0:127];
   reg [31:0] gemm_desc_tags [0:127];
   reg [63:0] gemm_desc_uids [0:127];
+  reg [63:0] gemm_desc_c_addrs [0:127];
   integer gemm_desc_expected_accum [0:127];
   integer softmax_count;
   integer softmax_desc_count;
@@ -163,6 +164,8 @@ module tb_npu_shell;
   integer vec_count;
   integer vec_desc_count;
   integer vec_desc_offsets [0:127];
+  reg vec_desc_memory_backed [0:127];
+  reg [63:0] vec_desc_dst_addrs [0:127];
   reg [63:0] vec_desc_expected [0:127];
   reg [3:0] vec_desc_op [0:127];
   reg [3:0] vec_desc_dtype [0:127];
@@ -599,6 +602,10 @@ module tb_npu_shell;
         scan_tag = {bin_data[scan_off + 7], bin_data[scan_off + 6], bin_data[scan_off + 5], bin_data[scan_off + 4]};
         gemm_desc_tags[gemm_desc_count] = scan_tag;
         gemm_desc_offsets[gemm_desc_count] = scan_off;
+        gemm_desc_c_addrs[gemm_desc_count] = {
+          bin_data[scan_off + 31], bin_data[scan_off + 30], bin_data[scan_off + 29], bin_data[scan_off + 28],
+          bin_data[scan_off + 27], bin_data[scan_off + 26], bin_data[scan_off + 25], bin_data[scan_off + 24]
+        };
         if (scan_size >= 2) begin
           gemm_desc_uids[gemm_desc_count] = {
             bin_data[scan_off + 63], bin_data[scan_off + 62], bin_data[scan_off + 61], bin_data[scan_off + 60],
@@ -649,8 +656,13 @@ module tb_npu_shell;
       end else if ((scan_opcode == 8'h11) && (vec_desc_count < 128)) begin
         vec_op_sel = bin_data[scan_off + 1] & 8'hf;
         vec_desc_dtype[vec_desc_count] = (bin_data[scan_off + 1] >> 4) & 4'hf;
+        vec_desc_memory_backed[vec_desc_count] = bin_data[scan_off + 7][7];
+        vec_desc_dst_addrs[vec_desc_count] = {
+          bin_data[scan_off + 23], bin_data[scan_off + 22], bin_data[scan_off + 21], bin_data[scan_off + 20],
+          bin_data[scan_off + 19], bin_data[scan_off + 18], bin_data[scan_off + 17], bin_data[scan_off + 16]
+        };
         vec_expected_vec = 64'h0;
-        if (vec_desc_dtype[vec_desc_count] == 4'h0) begin
+        if ((vec_desc_dtype[vec_desc_count] == 4'h0) && !vec_desc_memory_backed[vec_desc_count]) begin
           for (gemm_lane = 0; gemm_lane < vec_lanes; gemm_lane = gemm_lane + 1) begin
             if (vec_op_sel == 1) begin
               vec_tmp = sx8(bin_data[scan_off + 8 + gemm_lane]) + sx8(bin_data[scan_off + 16 + gemm_lane]);
@@ -854,43 +866,93 @@ module tb_npu_shell;
           $finish(1);
         end
       end
-      gemm_test_bytes = 0;
-      if ($value$plusargs("gemm_mem_test=%d", gemm_test_bytes)) begin
-        // GEMM stub path: C should match A for test_bytes
-        for (j = 0; j < gemm_test_bytes; j = j + 1) begin
-          if (axi_mem.mem[21'h3000 + j] !== axi_mem.mem[21'h1000 + j]) begin
-            $display("ERROR: GEMM mem copy mismatch at byte %0d", j);
-            $finish(1);
-          end
-        end
-      end
     end
 
     // With multi-inflight GEMM, IRQ/CQ may complete before GEMM compute finishes.
     // Wait for all GEMM descriptors to emit completion timing lines.
     if (gemm_desc_count > 0) begin : wait_gemm_done
       integer w;
-      for (w = 0; w < 2000; w = w + 1) begin
-        @(negedge clk);
-        if (gemm_count >= gemm_desc_count)
-          disable wait_gemm_done;
+      integer gw;
+      integer all_writebacks_ok;
+      begin : wait_gemm_done_loop
+        for (w = 0; w < 2000; w = w + 1) begin
+          @(negedge clk);
+          if (gemm_count >= gemm_desc_count)
+            disable wait_gemm_done_loop;
+        end
       end
       if (gemm_count < gemm_desc_count) begin
         $display("ERROR: GEMM completion timeout count=%0d expected=%0d", gemm_count, gemm_desc_count);
         $finish(1);
       end
+      gemm_test_bytes = 0;
+      if ($value$plusargs("gemm_mem_test=%d", gemm_test_bytes)) begin
+        begin : wait_gemm_writeback_loop
+          for (gw = 0; gw < 2000; gw = gw + 1) begin
+            all_writebacks_ok = 1;
+            for (gemm_lookup_i = 0; gemm_lookup_i < gemm_desc_count; gemm_lookup_i = gemm_lookup_i + 1) begin
+              for (j = 0; j < 4; j = j + 1) begin
+                if (axi_mem.mem[gemm_desc_c_addrs[gemm_lookup_i][20:0] + j] !==
+                    ((gemm_desc_expected_accum[gemm_lookup_i] >> (8 * j)) & 8'hff)) begin
+                  all_writebacks_ok = 0;
+                end
+              end
+            end
+            if (all_writebacks_ok)
+              disable wait_gemm_writeback_loop;
+            @(negedge clk);
+          end
+        end
+        // GEMM architectural writeback path: C[0:3] should contain the int32 accumulator.
+        for (gemm_lookup_i = 0; gemm_lookup_i < gemm_desc_count; gemm_lookup_i = gemm_lookup_i + 1) begin
+          for (j = 0; j < 4; j = j + 1) begin
+            if (axi_mem.mem[gemm_desc_c_addrs[gemm_lookup_i][20:0] + j] !==
+                ((gemm_desc_expected_accum[gemm_lookup_i] >> (8 * j)) & 8'hff)) begin
+              $display("ERROR: GEMM writeback mismatch index=%0d byte=%0d got=0x%02h exp=0x%02h",
+                       gemm_lookup_i, j,
+                       axi_mem.mem[gemm_desc_c_addrs[gemm_lookup_i][20:0] + j],
+                       ((gemm_desc_expected_accum[gemm_lookup_i] >> (8 * j)) & 8'hff));
+              $finish(1);
+            end
+          end
+        end
+      end
+      if (contract_trace) begin
+        for (w = 0; w < gemm_desc_count; w = w + 1) begin
+          $write("TENSOR_TRACE name=gemm.c step=%0d addr=0x%016h shape=1,4 dtype=int32_le bytes_hex=0x",
+                 w + 1, gemm_desc_c_addrs[w]);
+          for (j = 0; j < 4; j = j + 1) begin
+            $write("%02x", axi_mem.mem[gemm_desc_c_addrs[w][20:0] + j]);
+          end
+          $display("");
+        end
+      end
     end
 
     if (vec_desc_count > 0) begin : wait_vec_done
       integer vw;
-      for (vw = 0; vw < 2000; vw = vw + 1) begin
-        @(negedge clk);
-        if (vec_count >= vec_desc_count)
-          disable wait_vec_done;
+      begin : wait_vec_done_loop
+        for (vw = 0; vw < 2000; vw = vw + 1) begin
+          @(negedge clk);
+          if (vec_count >= vec_desc_count)
+            disable wait_vec_done_loop;
+        end
       end
       if (vec_count < vec_desc_count) begin
         $display("ERROR: VEC completion timeout count=%0d expected=%0d", vec_count, vec_desc_count);
         $finish(1);
+      end
+      if (contract_trace) begin
+        for (vw = 0; vw < vec_desc_count; vw = vw + 1) begin
+          if (vec_desc_memory_backed[vw]) begin
+            $write("TENSOR_TRACE name=vec.dst step=%0d addr=0x%016h shape=1,%0d dtype=packed_u8 bytes_hex=0x",
+                   vw + 1, vec_desc_dst_addrs[vw], vec_lanes);
+            for (j = 0; j < vec_lanes; j = j + 1) begin
+              $write("%02x", axi_mem.mem[vec_desc_dst_addrs[vw][20:0] + j]);
+            end
+            $display("");
+          end
+        end
       end
     end
 
@@ -1133,7 +1195,7 @@ module tb_npu_shell;
           $display("ERROR: unexpected VEC completion vec_count=%0d vec_desc_count=%0d", vec_count, vec_desc_count);
           $finish(1);
         end
-        if (vec_desc_dtype[vec_count] == 4'h0) begin
+        if ((vec_desc_dtype[vec_count] == 4'h0) && !vec_desc_memory_backed[vec_count]) begin
           for (gemm_lane = 0; gemm_lane < vec_lanes; gemm_lane = gemm_lane + 1) begin
             if (dut.vec_last_result[(gemm_lane*8) +: 8] !== vec_desc_expected[vec_count][(gemm_lane*8) +: 8]) begin
               $display("ERROR: VEC mismatch index=%0d lane=%0d got=0x%02h exp=0x%02h",

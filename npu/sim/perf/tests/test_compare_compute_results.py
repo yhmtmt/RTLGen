@@ -380,3 +380,104 @@ def test_compare_tensor_traces_includes_dedicated_softmax_result_bytes():
     assert rtl_doc == perf_doc
     assert perf_doc[0]["name"] == "softmax.result"
     assert perf_doc[0]["raw_hex"] == "0x017f0040"
+
+
+def test_compare_tensor_traces_can_require_architectural_gemm_writeback():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp = Path(tmpdir)
+        rtl_log = tmp / "rtl.log"
+        perf_trace = tmp / "perf.json"
+        rtl_summary = tmp / "rtl_tensor.json"
+        perf_summary = tmp / "perf_tensor.json"
+        rtl_log.write_text(
+            "TENSOR_TRACE name=gemm.c step=1 addr=0x0000000000003000 shape=1,4 dtype=int32_le bytes_hex=0x7b000000\n",
+            encoding="utf-8",
+        )
+        perf_trace.write_text(
+            json.dumps(
+                {
+                    "trace": [
+                        {
+                            "name": "GEMM",
+                            "c": "0x0000000000003000",
+                            "expected_accum": 123,
+                        }
+                    ]
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+
+        proc = subprocess.run(
+            [
+                "python3",
+                "npu/sim/perf/compare_tensor_traces.py",
+                "--rtl-log",
+                str(rtl_log),
+                "--perf-trace",
+                str(perf_trace),
+                "--rtl-summary-out",
+                str(rtl_summary),
+                "--perf-summary-out",
+                str(perf_summary),
+                "--require-architectural-gemm-writeback",
+            ],
+            cwd=str(REPO_ROOT),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        rtl_doc = json.loads(rtl_summary.read_text(encoding="utf-8"))
+        perf_doc = json.loads(perf_summary.read_text(encoding="utf-8"))
+
+    assert proc.returncode == 0, proc.stderr
+    assert "compare-tensor-trace: OK" in proc.stdout
+    assert rtl_doc == perf_doc
+    assert perf_doc[0]["name"] == "gemm.c"
+    assert perf_doc[0]["addr"] == "0x0000000000003000"
+
+
+def test_compare_tensor_traces_architectural_gemm_writeback_mismatch_fails():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp = Path(tmpdir)
+        rtl_log = tmp / "rtl.log"
+        perf_trace = tmp / "perf.json"
+        rtl_log.write_text(
+            "TENSOR_TRACE name=gemm.c step=1 addr=0x0000000000003000 shape=1,4 dtype=int32_le bytes_hex=0x00010203\n",
+            encoding="utf-8",
+        )
+        perf_trace.write_text(
+            json.dumps(
+                {
+                    "trace": [
+                        {
+                            "name": "GEMM",
+                            "c": "0x0000000000003000",
+                            "expected_accum": 123,
+                        }
+                    ]
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+
+        proc = subprocess.run(
+            [
+                "python3",
+                "npu/sim/perf/compare_tensor_traces.py",
+                "--rtl-log",
+                str(rtl_log),
+                "--perf-trace",
+                str(perf_trace),
+                "--require-architectural-gemm-writeback",
+            ],
+            cwd=str(REPO_ROOT),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+    assert proc.returncode == 1
+    assert "FAIL canonical tensor trace hash mismatch" in proc.stderr
