@@ -540,6 +540,11 @@ def _bytes_to_hex_le(data):
     return "0x" + payload[::-1].hex()
 
 
+def _int32_le_bytes(value):
+    raw = int(value) & 0xFFFFFFFF
+    return [(raw >> (8 * idx)) & 0xFF for idx in range(4)]
+
+
 def _load_memory_image(path):
     doc = json.loads(Path(path).read_text(encoding="utf-8"))
     segments = doc.get("segments", [])
@@ -795,7 +800,25 @@ def desc_to_event(desc, cfg, memory=None):
         op_code = desc["flags"] & 0xF
         op_name = VEC_OP_NAMES.get(op_code, "unknown")
         dtype_code, dtype_name, dtype_bytes = _decode_dtype(desc["flags"], cfg, "vec")
-        vec_expected = _vec_expected_result(raw, desc["flags"], cfg, dtype_code=dtype_code)
+        memory_backed = bool(int(desc["tag"]) & 0x80000000)
+        expected_raw = raw
+        if memory_backed:
+            if memory is None:
+                event["warning"] = "vec expected-result unavailable: missing memory image"
+            else:
+                src_bytes = _mem_read_bytes(memory, src, min(int(size), 32))
+                if src_bytes is None:
+                    event["warning"] = (
+                        f"vec expected-result unavailable: missing memory image for "
+                        f"src=0x{src:016x} bytes={size}"
+                    )
+                else:
+                    expected_raw = bytearray(raw)
+                    for idx, byte in enumerate(src_bytes[:8]):
+                        expected_raw[8 + idx] = int(byte) & 0xFF
+                    for idx in range(8):
+                        expected_raw[16 + idx] = 0
+        vec_expected = _vec_expected_result(expected_raw, desc["flags"], cfg, dtype_code=dtype_code)
         event.update({
             "name": "VEC_OP",
             "op": op_name,
@@ -805,6 +828,7 @@ def desc_to_event(desc, cfg, memory=None):
             "src": f"0x{src:016x}",
             "dst": f"0x{dst:016x}",
             "bytes": size,
+            "memory_backed": memory_backed,
             "duration_ns": model.vec_time_ns(size, op_name, cfg, dtype_bytes=dtype_bytes),
         })
         event.update(
@@ -1035,10 +1059,14 @@ def build_trace(descs, cfg, overlap, memory=None):
         elif name == "GEMM":
             stats["gemm_ops"] += 1
             stats["gemm_time_ns"] += dur
+            if memory is not None and "expected_accum" in event:
+                _mem_write_bytes(memory, int(event["c"], 0), _int32_le_bytes(event["expected_accum"]))
         elif name == "VEC_OP":
             stats["vec_ops"] += 1
             stats["total_bytes"] += int(event.get("bytes", 0))
             stats["vec_time_ns"] += dur
+            if memory is not None and "expected_result_bytes" in event:
+                _mem_write_bytes(memory, int(event["dst"], 0), event["expected_result_bytes"])
         elif name == "SOFTMAX":
             stats["softmax_ops"] += 1
             stats["softmax_issue_count"] += 1

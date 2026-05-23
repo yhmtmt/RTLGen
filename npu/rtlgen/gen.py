@@ -98,6 +98,11 @@ module {top_name} (
   reg [8:0]  dma_beats_left;
   reg [7:0]  dma_arlen;
   reg [{axi_data_width_minus1}:0] dma_buf_mem [0:255];
+  reg        dma_writeback;
+  reg [{axi_data_width_minus1}:0] dma_writeback_data;
+  reg [{axi_strb_width_minus1}:0] dma_writeback_wstrb;
+  reg        dma_vec_read;
+  reg        dma_vec_write;
   reg [7:0]  dma_rd_idx;
   reg [7:0]  dma_wr_idx;
   reg [{data_width_minus1}:0] error_code;
@@ -227,6 +232,11 @@ module {top_name} (
       dma_beats <= 0;
       dma_beats_left <= 0;
       dma_arlen <= 0;
+      dma_writeback <= 0;
+      dma_writeback_data <= 0;
+      dma_writeback_wstrb <= 0;
+      dma_vec_read <= 0;
+      dma_vec_write <= 0;
       dma_rd_idx <= 0;
       dma_wr_idx <= 0;
 {dma_reset}
@@ -1454,6 +1464,8 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
     gemm_mac_vec_width = gemm_mac_lanes * gemm_elem_bits
     gemm_mac_vec_width_minus1 = gemm_mac_vec_width - 1
     gemm_accum_width_minus1 = gemm_accum_width - 1
+    gemm_accum_byte_width = max(1, min(axi_strb_width, (gemm_accum_width + 7) // 8))
+    gemm_writeback_wstrb = (1 << gemm_accum_byte_width) - 1
     gemm_a_hi = 64 + gemm_mac_vec_width - 1
     gemm_b_hi = 128 + gemm_mac_vec_width - 1
     gemm_slot_count_minus1 = gemm_num_modules - 1
@@ -1512,6 +1524,8 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
     gemm_slots_busy_expr = f"(gemm_slot_valid != {gemm_slot_valid_zero})"
     vec_data_width = vec_lanes * 8
     vec_data_width_minus1 = vec_data_width - 1
+    vec_writeback_byte_width = max(1, min(axi_strb_width, vec_data_width // 8))
+    vec_writeback_wstrb = (1 << vec_writeback_byte_width) - 1
     vec_a_hi = 64 + vec_data_width - 1
     vec_b_hi = 128 + vec_data_width - 1
     vec_fp16_elem_lanes = max(1, vec_lanes // 2)
@@ -1613,6 +1627,11 @@ def write_outputs(cfg: dict, out_dir: str) -> None:
             f"  reg [{vec_data_width_minus1}:0] vec_in0;",
             f"  reg [{vec_data_width_minus1}:0] vec_in1;",
             f"  reg [{vec_data_width_minus1}:0] vec_last_result;",
+            f"  reg [{dma_addr_width_minus1}:0] vec_mem_dst;",
+            "  reg [31:0] vec_mem_bytes;",
+            "  reg [3:0] vec_mem_op_sel;",
+            "  reg [3:0] vec_mem_dtype_sel;",
+            "  reg vec_mem_writeback;",
             "  reg [3:0] vec_op_sel;",
             "  reg [3:0] vec_dtype_sel;",
             "  reg vec_pending;",
@@ -2172,12 +2191,26 @@ endmodule
 """
     compute_instances = gemm_compute_instances + vec_compute_instances + softmax_compute_instances
 
-    vec_update = """      vec_done_pulse <= 1'b0;
+    vec_update = f"""      vec_done_pulse <= 1'b0;
       if (vec_pending) begin
         vec_last_result <= vec_result_next;
         vec_pending <= 1'b0;
-        vec_done_pulse <= 1'b1;
-        irq_status[IRQ_EVENT] <= 1'b1;
+        if (vec_mem_writeback) begin
+          dma_dst <= vec_mem_dst;
+          dma_size <= vec_mem_bytes;
+          dma_beats <= 1;
+          dma_arlen <= 0;
+          dma_writeback <= 1'b1;
+          dma_writeback_data <= 0;
+          dma_writeback_data[{vec_data_width_minus1}:0] <= vec_result_next;
+          dma_writeback_wstrb <= {axi_strb_width}'h{vec_writeback_wstrb:x};
+          dma_vec_write <= 1'b1;
+          dma_pending <= 1'b1;
+          vec_mem_writeback <= 1'b0;
+        end else begin
+          vec_done_pulse <= 1'b1;
+          irq_status[IRQ_EVENT] <= 1'b1;
+        end
       end
 """
     softmax_update = """      softmax_done_pulse <= 1'b0;
@@ -2213,6 +2246,11 @@ endmodule
             "      vec_in0 <= 0;",
             "      vec_in1 <= 0;",
             "      vec_last_result <= 0;",
+            "      vec_mem_dst <= 0;",
+            "      vec_mem_bytes <= 0;",
+            "      vec_mem_op_sel <= 0;",
+            "      vec_mem_dtype_sel <= 0;",
+            "      vec_mem_writeback <= 0;",
             "      vec_op_sel <= 0;",
             "      vec_dtype_sel <= 0;",
             "      vec_pending <= 0;",
@@ -2398,9 +2436,13 @@ endmodule
                 f"        {branch_kw} (gemm_slot_done[{slot_idx}]) begin",
                 f"          dma_src <= gemm_slot_src{slot_idx};",
                 f"          dma_dst <= gemm_slot_dst{slot_idx};",
-                f"          dma_size <= gemm_slot_size{slot_idx};",
-                f"          dma_beats <= gemm_slot_beats{slot_idx};",
-                f"          dma_arlen <= gemm_slot_arlen{slot_idx};",
+                f"          dma_size <= {gemm_accum_byte_width};",
+                "          dma_beats <= 1;",
+                "          dma_arlen <= 0;",
+                "          dma_writeback <= 1'b1;",
+                "          dma_writeback_data <= 0;",
+                f"          dma_writeback_data[{gemm_accum_width_minus1}:0] <= gemm_slot_accum{slot_idx};",
+                f"          dma_writeback_wstrb <= {axi_strb_width}'h{gemm_writeback_wstrb:x};",
                 "          dma_pending <= 1'b1;",
                 f"          gemm_slot_valid[{slot_idx}] <= 1'b0;",
                 f"          gemm_slot_done[{slot_idx}] <= 1'b0;",
@@ -2410,7 +2452,7 @@ endmodule
         )
     gemm_dispatch_block = "\n".join(gemm_dispatch_lines)
 
-    gemm_update = f"""      // {gemm_num_modules}-slot GEMM stub with OOO-capable completion scheduling.
+    gemm_update = f"""      // {gemm_num_modules}-slot GEMM compute path with scalar accumulator writeback.
       gemm_done_pulse <= 1'b0;
 {vec_update}\
 {softmax_update}\
@@ -2503,15 +2545,38 @@ endmodule
               dma_size <= cq_mem_rdata[223:192];
               dma_beats <= {dma_beats_expr};
               dma_arlen <= {dma_arlen_expr};
+              dma_writeback <= 1'b0;
+              dma_writeback_data <= 0;
+              dma_writeback_wstrb <= 0;
               dma_pending <= 1'b1;
             end else if (cq_mem_rdata[7:0] == 8'h10) begin
-              // GEMM stub: v0.1 sizes packed in TAG.
+              // GEMM v0.1: sizes packed in TAG.
 {gemm_issue_chain_v1}
             end else if (cq_mem_rdata[7:0] == 8'h11) begin
               // VEC_OP (v0.1): input vectors are carried in descriptor payload bytes.
               if (vec_pending) begin
                 error_code <= 32'h3; // VEC in-flight queue full
               end else begin
+                if (cq_mem_rdata[63]) begin
+                  if (dma_pending) begin
+                    error_code <= 32'h9; // VEC memory read while DMA engine busy
+                  end else begin
+                    vec_mem_dst <= cq_mem_rdata[191:128];
+                    vec_mem_bytes <= cq_mem_rdata[223:192];
+                    vec_mem_op_sel <= cq_mem_rdata[11:8];
+                    vec_mem_dtype_sel <= cq_mem_rdata[15:12];
+                    dma_src <= cq_mem_rdata[127:64];
+                    dma_dst <= cq_mem_rdata[191:128];
+                    dma_size <= cq_mem_rdata[223:192];
+                    dma_beats <= 1;
+                    dma_arlen <= 0;
+                    dma_writeback <= 1'b0;
+                    dma_writeback_data <= 0;
+                    dma_writeback_wstrb <= 0;
+                    dma_vec_read <= 1'b1;
+                    dma_pending <= 1'b1;
+                  end
+                end else begin
                 vec_in0 <= cq_mem_rdata[{vec_a_hi}:64];
                 vec_in1 <= cq_mem_rdata[{vec_b_hi}:128];
                 vec_op_sel <= cq_mem_rdata[11:8];
@@ -2564,6 +2629,7 @@ endmodule
                   error_code <= 32'h6; // unsupported configured VEC op
                 end else begin
                   vec_pending <= 1'b1;
+                end
                 end
               end
             end else if (cq_mem_rdata[7:0] == 8'h12) begin
@@ -2619,13 +2685,33 @@ endmodule
             last_size <= cq_mem_rdata[31:0];
             last_op_uid <= cq_mem_rdata[255:192];
             if (cq_word0[7:0] == 8'h10) begin
-              // GEMM stub: v0.2 sizes in extension.
+              // GEMM v0.2: sizes in extension.
 {gemm_issue_chain_v2}
             end else if (cq_word0[7:0] == 8'h11) begin
               // VEC_OP (v0.2 base word): vectors are sourced from header payload.
               if (vec_pending) begin
                 error_code <= 32'h3; // VEC in-flight queue full
               end else begin
+                if (cq_word0[63]) begin
+                  if (dma_pending) begin
+                    error_code <= 32'h9; // VEC memory read while DMA engine busy
+                  end else begin
+                    vec_mem_dst <= cq_word0[191:128];
+                    vec_mem_bytes <= cq_word0[223:192];
+                    vec_mem_op_sel <= cq_word0[11:8];
+                    vec_mem_dtype_sel <= cq_word0[15:12];
+                    dma_src <= cq_word0[127:64];
+                    dma_dst <= cq_word0[191:128];
+                    dma_size <= cq_word0[223:192];
+                    dma_beats <= 1;
+                    dma_arlen <= 0;
+                    dma_writeback <= 1'b0;
+                    dma_writeback_data <= 0;
+                    dma_writeback_wstrb <= 0;
+                    dma_vec_read <= 1'b1;
+                    dma_pending <= 1'b1;
+                  end
+                end else begin
                 vec_in0 <= cq_word0[{vec_a_hi}:64];
                 vec_in1 <= cq_word0[{vec_b_hi}:128];
                 vec_op_sel <= cq_word0[11:8];
@@ -2684,6 +2770,7 @@ endmodule
                   error_code <= 32'h6;
                 end else begin
                   vec_pending <= 1'b1;
+                end
                 end
               end
             end else begin
@@ -2773,6 +2860,9 @@ endmodule
             dma_size <= cq_mem_rdata[223:192];
             dma_beats <= {dma_beats_expr};
             dma_arlen <= {dma_arlen_expr};
+            dma_writeback <= 1'b0;
+            dma_writeback_data <= 0;
+            dma_writeback_wstrb <= 0;
             dma_pending <= 1'b1;
           end
           cq_head <= cq_head + 32;
@@ -3294,27 +3384,45 @@ endmodule
       case (dma_state)
         0: begin
           if (dma_pending) begin
-            if (dma_beats_left == 0) begin
-              dma_beats_left <= dma_beats;
-              dma_rd_idx <= 0;
+            if (dma_writeback) begin
+              dma_beats_left <= 1;
               dma_wr_idx <= 0;
-            end
-            m_axi_arvalid <= 1'b1;
-            m_axi_araddr <= dma_src;
-            m_axi_arlen <= dma_arlen;
-            m_axi_arsize <= 3'd{axi_size}; // beat bytes = 2**{axi_size}
-            if (m_axi_arready) begin
-              dma_state <= 1;
+              dma_state <= 2;
+            end else begin
+              if (dma_beats_left == 0) begin
+                dma_beats_left <= dma_beats;
+                dma_rd_idx <= 0;
+                dma_wr_idx <= 0;
+              end
+              m_axi_arvalid <= 1'b1;
+              m_axi_araddr <= dma_src;
+              m_axi_arlen <= dma_arlen;
+              m_axi_arsize <= 3'd{axi_size}; // beat bytes = 2**{axi_size}
+              if (m_axi_arready) begin
+                dma_state <= 1;
+              end
             end
           end
         end
         1: begin
           m_axi_rready <= 1'b1;
           if (m_axi_rvalid) begin
-            dma_buf_mem[dma_rd_idx] <= m_axi_rdata;
-            dma_rd_idx <= dma_rd_idx + 1;
-            if (m_axi_rlast) begin
-              dma_state <= 2;
+            if (dma_vec_read) begin
+              vec_in0 <= m_axi_rdata[{vec_data_width_minus1}:0];
+              vec_in1 <= 0;
+              vec_op_sel <= vec_mem_op_sel;
+              vec_dtype_sel <= vec_mem_dtype_sel;
+              vec_pending <= 1'b1;
+              vec_mem_writeback <= 1'b1;
+              dma_vec_read <= 1'b0;
+              dma_pending <= 1'b0;
+              dma_state <= 0;
+            end else begin
+              dma_buf_mem[dma_rd_idx] <= m_axi_rdata;
+              dma_rd_idx <= dma_rd_idx + 1;
+              if (m_axi_rlast) begin
+                dma_state <= 2;
+              end
             end
           end
         end
@@ -3329,8 +3437,8 @@ endmodule
         end
         3: begin
           m_axi_wvalid <= 1'b1;
-          m_axi_wdata <= dma_buf_mem[dma_wr_idx];
-          m_axi_wstrb <= {{{axi_strb_width}{{1'b1}}}};
+          m_axi_wdata <= dma_writeback ? dma_writeback_data : dma_buf_mem[dma_wr_idx];
+          m_axi_wstrb <= dma_writeback ? dma_writeback_wstrb : {{{axi_strb_width}{{1'b1}}}};
           m_axi_wlast <= (dma_beats_left == 1);
           if (m_axi_wready) begin
             if (dma_beats_left == 1) begin
@@ -3347,6 +3455,11 @@ endmodule
             dma_beats_left <= 0;
             dma_state <= 0;
             dma_pending <= 1'b0;
+            dma_writeback <= 1'b0;
+            if (dma_vec_write) begin
+              vec_done_pulse <= 1'b1;
+              dma_vec_write <= 1'b0;
+            end
             irq_status[IRQ_EVENT] <= 1'b1;
           end
         end

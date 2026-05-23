@@ -174,13 +174,16 @@ def _parse_tensor_trace_line(line: str) -> JsonDict | None:
         if len(text) % 2 != 0:
             raise ValueError('TENSOR_TRACE bytes_hex must contain an even number of nybbles')
         data_bytes = [int(text[idx:idx + 2], 16) for idx in range(0, len(text), 2)]
-        return byte_vector_tensor_summary(
+        summary = byte_vector_tensor_summary(
             name=fields.get('name', 'tensor'),
             step=int(fields.get('step', 0)),
             data_bytes=data_bytes,
             dtype=fields.get('dtype', 'u8'),
             shape=_parse_shape(fields['shape']) if 'shape' in fields else None,
         )
+        if 'addr' in fields:
+            summary['addr'] = fields['addr']
+        return summary
 
     required = ('name', 'step', 'shape', 'dtype', 'min', 'max', 'mean', 'std')
     missing = [key for key in required if key not in fields]
@@ -203,6 +206,8 @@ def _parse_tensor_trace_line(line: str) -> JsonDict | None:
             summary['quantization'] = quantization
     if 'raw_hex' in fields:
         summary['raw_hex'] = fields['raw_hex']
+    if 'addr' in fields:
+        summary['addr'] = fields['addr']
     return summary
 
 

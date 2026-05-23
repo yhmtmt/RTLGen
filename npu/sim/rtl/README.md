@@ -75,6 +75,7 @@ The tests validate descriptor execution behavior, MMIO/IRQ flow, and AXI memory 
   - Canonical GEMM/VEC tensor trace summaries (`*_tensor_trace_summary.json`) with strict SHA-256 equality checks.
 - Future activation trace emitters should use the shared `TENSOR_TRACE` summary line contract documented by `npu/eval/tensor_trace_summary.py`, so RTL traces can be hashed against software/perf summaries without a schema translation layer.
 - Dedicated SOFTMAX byte-vector traces use `TENSOR_TRACE name=softmax.result step=<n> shape=<rows,row_bytes> dtype=<encoding> bytes_hex=0x...`; the RTL testbench emits the aggregated row-engine output stream, and perf emits the matching summary when `--mem-json` provides descriptor source bytes.
+- When `+contract_trace=1` is enabled, the testbench also emits memory-visible writeback snapshots: `TENSOR_TRACE name=gemm.c step=<n> addr=<c_addr> shape=1,4 dtype=int32_le bytes_hex=0x...` for GEMM C destinations, and `TENSOR_TRACE name=vec.dst ... dtype=packed_u8 ...` for memory-backed VEC destinations. These traces feed the stricter architectural writeback gate and should be preferred over internal-only `gemm.accum` as the correctness proof.
 
 ## Current coverage boundaries
 

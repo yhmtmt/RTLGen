@@ -59,9 +59,35 @@ def _write_gemm_event_dma_stream(path: Path) -> None:
     path.write_bytes(bytes(raw))
 
 
-def _run_perf(bin_path: Path, out_path: Path, cfg_path: Path) -> list[dict[str, object]]:
-    subprocess.run(
-        [
+def _write_gemm_vec_dependent_stream(path: Path) -> None:
+    raw = bytearray()
+
+    gemm = _pack_desc(0x10, tag=_encode_gemm_tag(1, 1, 1))
+    for idx, value in enumerate([2, 3, 4, 5, 6, 7, 8, 9]):
+        gemm[8 + idx] = value
+    for idx in range(8):
+        gemm[16 + idx] = 1
+    struct.pack_into("<Q", gemm, 24, 0x3000)
+    raw.extend(gemm)
+
+    raw.extend(_pack_desc(0x20, tag=1))
+    raw.extend(_pack_desc(0x21, tag=1))
+
+    vec = _pack_desc(0x11, flags=0x00, tag=0x80000000)
+    struct.pack_into("<QQI", vec, 8, 0x3000, 0x6000, 8)
+    raw.extend(vec)
+
+    path.write_bytes(bytes(raw))
+
+
+def _run_perf(
+    bin_path: Path,
+    out_path: Path,
+    cfg_path: Path,
+    *,
+    mem_path: Path | None = None,
+) -> list[dict[str, object]]:
+    cmd = [
             sys.executable,
             str(REPO_ROOT / "npu/sim/perf/run.py"),
             "--bin",
@@ -71,7 +97,11 @@ def _run_perf(bin_path: Path, out_path: Path, cfg_path: Path) -> list[dict[str, 
             "--config",
             str(cfg_path),
             "--overlap",
-        ],
+        ]
+    if mem_path is not None:
+        cmd.extend(["--mem-json", str(mem_path)])
+    subprocess.run(
+        cmd,
         cwd=str(REPO_ROOT),
         check=True,
     )
@@ -106,7 +136,7 @@ def _normalize_perf_trace(trace: list[dict[str, object]], scenario: str) -> list
     return normalized
 
 
-def _run_rtl(bin_path: Path, plusargs: list[str]) -> list[dict[str, object]]:
+def _run_rtl_stdout(bin_path: Path, plusargs: list[str]) -> str:
     with tempfile.TemporaryDirectory() as td:
         tmp = Path(td)
         rtl_out = tmp / "rtl_out"
@@ -156,12 +186,17 @@ def _run_rtl(bin_path: Path, plusargs: list[str]) -> list[dict[str, object]]:
             text=True,
         )
 
+    return completed.stdout
+
+
+def _run_rtl(bin_path: Path, plusargs: list[str]) -> list[dict[str, object]]:
+    stdout = _run_rtl_stdout(bin_path, plusargs)
     pattern = re.compile(
         r"^CONTRACT_TRACE kind=(?P<kind>[a-z_]+) opcode=0x(?P<opcode>[0-9a-fA-F]+) "
         r"offset=(?P<offset>-?\d+) cycle=(?P<cycle>\d+)$"
     )
     normalized: list[dict[str, object]] = []
-    for line in completed.stdout.splitlines():
+    for line in stdout.splitlines():
         match = pattern.match(line.strip())
         if not match:
             continue
@@ -207,6 +242,119 @@ class NpuContractEquivalenceTest(unittest.TestCase):
         ]
         self.assertEqual(perf_trace, expected)
         self.assertEqual(rtl_trace, expected)
+
+    def test_gemm_architectural_writeback_matches_between_perf_and_rtl(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            bin_path = tmp / "gemm_event_dma.bin"
+            perf_path = tmp / "trace.json"
+            cfg_path = tmp / "cfg.json"
+            rtl_log = tmp / "rtl.log"
+            rtl_summary = tmp / "rtl_arch_summary.json"
+            perf_summary = tmp / "perf_arch_summary.json"
+            _write_gemm_event_dma_stream(bin_path)
+            cfg_path.write_text(
+                json.dumps(
+                    {
+                        "gemm_tops": 1.0,
+                        "dma_bw_gbps": 16.0,
+                    },
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
+
+            _run_perf(bin_path, perf_path, cfg_path)
+            rtl_log.write_text(
+                _run_rtl_stdout(
+                    bin_path,
+                    ["+bytes=128", "+contract_trace=1", "+gemm_mac_test=1", "+contract_gemm_event_dma_test=1"],
+                ),
+                encoding="utf-8",
+            )
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO_ROOT / "npu/sim/perf/compare_tensor_traces.py"),
+                    "--rtl-log",
+                    str(rtl_log),
+                    "--perf-trace",
+                    str(perf_path),
+                    "--rtl-summary-out",
+                    str(rtl_summary),
+                    "--perf-summary-out",
+                    str(perf_summary),
+                    "--require-architectural-gemm-writeback",
+                ],
+                cwd=str(REPO_ROOT),
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+
+        self.assertEqual(completed.returncode, 0, completed.stderr + completed.stdout)
+        self.assertIn("compare-tensor-trace: OK", completed.stdout)
+
+    def test_gemm_to_memory_backed_vec_matches_between_perf_and_rtl(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            bin_path = tmp / "gemm_vec.bin"
+            perf_path = tmp / "trace.json"
+            cfg_path = tmp / "cfg.json"
+            mem_path = tmp / "mem.json"
+            rtl_log = tmp / "rtl.log"
+            _write_gemm_vec_dependent_stream(bin_path)
+            cfg_path.write_text(
+                json.dumps(
+                    {
+                        "gemm_tops": 1.0,
+                        "dma_bw_gbps": 16.0,
+                    },
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
+            mem_path.write_text(
+                json.dumps(
+                    {
+                        "segments": [
+                            {
+                                "addr": "0x3000",
+                                "data_bytes": [0, 1, 2, 3, 4, 5, 6, 7],
+                            }
+                        ]
+                    },
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
+
+            _run_perf(bin_path, perf_path, cfg_path, mem_path=mem_path)
+            rtl_log.write_text(
+                _run_rtl_stdout(
+                    bin_path,
+                    ["+bytes=128", "+vec_test=1", "+contract_trace=1", "+gemm_mac_test=1"],
+                ),
+                encoding="utf-8",
+            )
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO_ROOT / "npu/sim/perf/compare_tensor_traces.py"),
+                    "--rtl-log",
+                    str(rtl_log),
+                    "--perf-trace",
+                    str(perf_path),
+                    "--require-architectural-writeback",
+                ],
+                cwd=str(REPO_ROOT),
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+
+        self.assertEqual(completed.returncode, 0, completed.stderr + completed.stdout)
+        self.assertIn("compare-tensor-trace: OK", completed.stdout)
 
     def test_gemm_event_dma_contract_matches_between_perf_and_rtl(self) -> None:
         with tempfile.TemporaryDirectory() as td:
