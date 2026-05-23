@@ -1261,6 +1261,82 @@ def append_metrics(metrics_path: Path, row: Dict[str, object]):
         writer.writerow({h: row.get(h, "") for h in header})
 
 
+def command_to_text(command: List[object]) -> str:
+    return " ".join(str(part) for part in command)
+
+
+def write_flow_failure_result(
+    *,
+    circuit_root: Path,
+    result_path: Path,
+    design_name: str,
+    platform: str,
+    config_hash: str,
+    run_id: str,
+    tag: str,
+    sweep_params: Dict[str, object],
+    flow_variant: str,
+    failing_stage: str,
+    failing_command: List[object],
+    returncode: int,
+    macro_manifest: Optional[Dict[str, object]],
+    macro_selection: Optional[Dict[str, object]],
+    synth_script_override: Optional[Path],
+    synth_script_sha1: str,
+    mode_name: Optional[str],
+    mode_use_macro: Optional[bool],
+    compare_group: str,
+) -> Dict[str, object]:
+    log_dir = resolve_flow_log_dir(platform, design_name, str(tag), flow_variant)
+    flow_elapsed_seconds = sum_elapsed_seconds_in_log_dir(log_dir)
+    payload = {
+        "design": design_name,
+        "platform": platform,
+        "config_hash": config_hash,
+        "param_hash": run_id,
+        "tag": tag,
+        "status": "flow_failed",
+        "critical_path_ns": None,
+        "die_area": None,
+        "total_power_mw": None,
+        "instance_area_um2": None,
+        "stdcell_area_um2": None,
+        "stdcell_count": None,
+        "core_area_um2": rect_area_um2(sweep_params.get("CORE_AREA")),
+        "utilization_pct": None,
+        "flow_elapsed_seconds": flow_elapsed_seconds,
+        "stage_elapsed_seconds": None,
+        "params_json": json.dumps(sweep_params, sort_keys=True),
+        "result_path": str(log_dir),
+        "failure_stage": failing_stage,
+        "failure_returncode": returncode,
+        "failure_command": command_to_text(failing_command),
+        "blackbox_instance_counts": {},
+        "missing_blackboxes": [],
+        "macro_manifest_path": (
+            str(macro_manifest.get("manifest_path", ""))
+            if macro_manifest is not None
+            else ""
+        ),
+        "macro_selection": macro_selection or {},
+        "work_result_json": str(result_path),
+        "synth_script_path": (
+            str(synth_script_override.resolve()) if synth_script_override is not None else ""
+        ),
+        "synth_script_sha1": synth_script_sha1,
+        "mode_name": mode_name or "",
+        "mode_use_macro": bool(mode_use_macro),
+        "compare_group": compare_group,
+    }
+    result_path.write_text(json.dumps(payload, indent=2))
+    append_metrics(circuit_root / "metrics.csv", payload)
+    print(
+        "[WARN] OpenROAD sweep point failed; recorded flow_failed metrics row "
+        f"stage={failing_stage} returncode={returncode} tag={tag}"
+    )
+    return payload
+
+
 def _fmt_metric(value: object) -> str:
     num = safe_float(value)
     if num is None:
@@ -1583,7 +1659,30 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
         synth_cmd.append("ADDITIONAL_LIBS=")
         synth_cmd.append("synth")
         print(f"[INFO] Running OpenROAD flow: {' '.join(synth_cmd)}")
-        subprocess.run(synth_cmd, cwd="/orfs/flow", check=True, env=env)
+        try:
+            subprocess.run(synth_cmd, cwd="/orfs/flow", check=True, env=env)
+        except subprocess.CalledProcessError as exc:
+            return write_flow_failure_result(
+                circuit_root=circuit_root,
+                result_path=result_path,
+                design_name=design_name,
+                platform=platform,
+                config_hash=config_hash,
+                run_id=run_id,
+                tag=tag,
+                sweep_params=sweep_params,
+                flow_variant=flow_variant,
+                failing_stage="synth",
+                failing_command=synth_cmd,
+                returncode=int(exc.returncode),
+                macro_manifest=macro_manifest,
+                macro_selection=macro_selection,
+                synth_script_override=synth_script_override,
+                synth_script_sha1=synth_script_sha1,
+                mode_name=mode_name,
+                mode_use_macro=mode_use_macro,
+                compare_group=compare_group,
+            )
 
         synth_netlist = RESULT_BASE / platform / design_name / flow_variant / "1_synth.v"
         if not synth_netlist.exists():
@@ -1596,14 +1695,43 @@ def run_single(design_dir: Path, design_name: str, platform: str, top: str, veri
     if actual_make_target:
         make_cmd.append(actual_make_target)
     print(f"[INFO] Running OpenROAD flow: {' '.join(make_cmd)}")
-    subprocess.run(make_cmd, cwd="/orfs/flow", check=True, env=env)
+    try:
+        subprocess.run(make_cmd, cwd="/orfs/flow", check=True, env=env)
+    except subprocess.CalledProcessError as exc:
+        return write_flow_failure_result(
+            circuit_root=circuit_root,
+            result_path=result_path,
+            design_name=design_name,
+            platform=platform,
+            config_hash=config_hash,
+            run_id=run_id,
+            tag=tag,
+            sweep_params=sweep_params,
+            flow_variant=flow_variant,
+            failing_stage=str(actual_make_target or "flow"),
+            failing_command=make_cmd,
+            returncode=int(exc.returncode),
+            macro_manifest=macro_manifest,
+            macro_selection=macro_selection,
+            synth_script_override=synth_script_override,
+            synth_script_sha1=synth_script_sha1,
+            mode_name=mode_name,
+            mode_use_macro=mode_use_macro,
+            compare_group=compare_group,
+        )
     if should_generate_openroad_metadata(actual_make_target):
         metadata_cmd = list(make_cmd)
         if actual_make_target:
             metadata_cmd = metadata_cmd[:-1]
         metadata_cmd.append("metadata-generate")
         print(f"[INFO] Running OpenROAD metadata extraction: {' '.join(metadata_cmd)}")
-        subprocess.run(metadata_cmd, cwd="/orfs/flow", check=True, env=env)
+        try:
+            subprocess.run(metadata_cmd, cwd="/orfs/flow", check=True, env=env)
+        except subprocess.CalledProcessError as exc:
+            print(
+                "[WARN] OpenROAD metadata extraction failed; continuing with "
+                f"available report metrics returncode={exc.returncode}"
+            )
 
     blackbox_counts: Dict[str, int] = {}
     missing_blackboxes: List[str] = []
