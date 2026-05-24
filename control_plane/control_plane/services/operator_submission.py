@@ -321,6 +321,12 @@ def _proposal_linkage_reason(*, repo_root: Path, work_item: WorkItem) -> str | N
     return None
 
 
+def _developer_loop_payload(work_item: WorkItem) -> dict[str, Any]:
+    payload = (work_item.task_request.request_payload or {}) if work_item.task_request is not None else {}
+    developer_loop = payload.get("developer_loop")
+    return dict(developer_loop) if isinstance(developer_loop, dict) else {}
+
+
 def _terminal_proposal_reason(*, repo_root: Path, work_item: WorkItem) -> str | None:
     payload = (work_item.task_request.request_payload or {}) if work_item.task_request is not None else {}
     developer_loop = payload.get("developer_loop")
@@ -341,6 +347,8 @@ def _terminal_proposal_reason(*, repo_root: Path, work_item: WorkItem) -> str | 
     decision = str(promotion_result.get("decision", "")).strip().lower()
     if decision in {"promote", "promoted", "superseded", "closed", "rejected"}:
         if _is_pending_requested_evaluation(proposal_json=proposal_json, item_id=work_item.item_id):
+            return None
+        if _is_revision_requested_evaluation(proposal_json=proposal_json, item_id=work_item.item_id, work_item=work_item):
             return None
         return f"proposal already finalized with decision={decision}"
     return None
@@ -366,6 +374,66 @@ def _is_pending_requested_evaluation(*, proposal_json: Path, item_id: str) -> bo
         status = str(entry.get("status", "")).strip().lower()
         return status in active_statuses
     return False
+
+
+def _revision_payload_from_entry(entry: dict[str, Any]) -> dict[str, Any]:
+    revision = entry.get("revision")
+    if isinstance(revision, dict):
+        return dict(revision)
+    if any(key in entry for key in ("revision_reason", "invalidates_item_ids", "invalidates")):
+        return {
+            "reason": entry.get("revision_reason", ""),
+            "invalidates_item_ids": entry.get("invalidates_item_ids", []),
+            "invalidates": entry.get("invalidates", []),
+        }
+    return {}
+
+
+def _revision_payload_from_work_item(work_item: WorkItem) -> dict[str, Any]:
+    developer_loop = _developer_loop_payload(work_item)
+    for key in ("revision", "evaluation_revision"):
+        revision = developer_loop.get(key)
+        if isinstance(revision, dict):
+            return dict(revision)
+    return {}
+
+
+def _revision_declares_invalidations(revision: dict[str, Any]) -> bool:
+    if not revision:
+        return False
+    invalidates = revision.get("invalidates")
+    invalidates_item_ids = revision.get("invalidates_item_ids")
+    reason = str(revision.get("reason", revision.get("revision_reason", ""))).strip()
+    has_invalidates = (
+        isinstance(invalidates, list)
+        and any(str(value).strip() for value in invalidates)
+    ) or (
+        isinstance(invalidates_item_ids, list)
+        and any(str(value).strip() for value in invalidates_item_ids)
+    )
+    return bool(reason and has_invalidates)
+
+
+def _is_revision_requested_evaluation(*, proposal_json: Path, item_id: str, work_item: WorkItem) -> bool:
+    evaluation_requests_path = proposal_json.parent / "evaluation_requests.json"
+    if evaluation_requests_path.exists():
+        try:
+            payload = json.loads(evaluation_requests_path.read_text(encoding="utf-8"))
+        except Exception:
+            payload = {}
+        requested_items = payload.get("requested_items") if isinstance(payload, dict) else None
+        if isinstance(requested_items, list):
+            for entry in requested_items:
+                if not isinstance(entry, dict):
+                    continue
+                if str(entry.get("item_id", "")).strip() != item_id:
+                    continue
+                status = str(entry.get("status", "")).strip().lower()
+                if status in {"merged", "retracted", "invalidated", "superseded"}:
+                    return False
+                return _revision_declares_invalidations(_revision_payload_from_entry(entry))
+
+    return _revision_declares_invalidations(_revision_payload_from_work_item(work_item))
 
 
 def _ensure_review_artifact_materialized(

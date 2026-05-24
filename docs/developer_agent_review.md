@@ -96,6 +96,32 @@ When a broader sweep is present, distinguish explicitly between:
 If the direct comparison set is missing or mixed together with a much broader
 comparison set, treat the review as lower-clarity and call that out.
 
+## Revision and Retraction Rule
+
+If merged evidence is later found to have used the wrong configuration, missing
+connectivity, wrong baseline, or another invalidating setup error, do not erase
+the historical PR or artifact. Mark it out of the active decision path and
+replace it with an explicit revision item.
+
+A corrective evaluation against a finalized proposal must declare a revision in
+`evaluation_requests.json`:
+
+- `revision.reason`: short invalidation reason, for example
+  `wrong_configuration`
+- `revision.invalidates_item_ids`: prior requested item IDs that should no
+  longer contribute to active proposal decisions
+- optional `revision.invalidates`: structured references such as PR numbers,
+  run keys, or artifact paths
+
+When the corrective PR is finalized, the finalizer marks invalidated requested
+items as `retracted`, records the replacement item, and updates
+`promotion_decision.json` / `promotion_result.json` with revision metadata. The
+old artifacts remain audit evidence, but dashboard rankings, proposal summaries,
+and follow-on decisions should use the replacement evidence.
+
+Reviewers should reject or block a corrective PR that claims to revise a
+finalized proposal but does not state what it invalidates and why.
+
 ## Mapper Headroom Rule
 
 The reviewer should not treat every losing or flat result as an architecture
