@@ -1230,6 +1230,7 @@ def append_metrics(metrics_path: Path, row: Dict[str, object]):
     existing_rows: List[Dict[str, object]] = []
     header = list(default_header)
     needs_rewrite = False
+    replaced_existing = False
     if metrics_path.exists():
         with metrics_path.open("r", encoding="utf-8", newline="") as f:
             reader = csv.DictReader(f)
@@ -1244,7 +1245,22 @@ def append_metrics(metrics_path: Path, row: Dict[str, object]):
             else:
                 needs_rewrite = True
 
-    if needs_rewrite:
+    def identity_key(record: Dict[str, object]) -> tuple[str, str, str, str]:
+        return (
+            str(record.get("design", "")).strip(),
+            str(record.get("platform", "")).strip(),
+            str(record.get("param_hash", "")).strip(),
+            str(record.get("tag", "")).strip(),
+        )
+
+    row_key = identity_key(row)
+    if all(row_key):
+        kept_rows = [old_row for old_row in existing_rows if identity_key(old_row) != row_key]
+        replaced_existing = len(kept_rows) != len(existing_rows)
+        if replaced_existing:
+            existing_rows = kept_rows
+
+    if needs_rewrite or replaced_existing:
         with metrics_path.open("w", encoding="utf-8", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=header)
             writer.writeheader()
