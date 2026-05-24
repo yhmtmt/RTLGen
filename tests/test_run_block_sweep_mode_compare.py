@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Regression tests for run_block_sweep mode_compare behavior."""
 
+import csv
 import importlib.util
 import json
 import subprocess
@@ -285,6 +286,44 @@ class ModeCompareRegressionTest(unittest.TestCase):
             )
             self.assertIn("flow_failed", metrics_text)
             self.assertTrue((tmp / "out" / "demo_design" / "work").is_dir())
+
+    def test_append_metrics_replaces_same_run_identity(self):
+        with tempfile.TemporaryDirectory() as td:
+            metrics_path = Path(td) / "metrics.csv"
+            old_row = {
+                "design": "demo_design",
+                "platform": "nangate45",
+                "config_hash": "old_cfg",
+                "param_hash": "same_params",
+                "tag": "same_tag",
+                "status": "ok",
+                "critical_path_ns": 5.0,
+                "die_area": 1000.0,
+                "total_power_mw": 0.1,
+                "params_json": json.dumps({"TAG": "same_tag"}),
+                "result_path": "/orfs/flow/reports/old/6_finish.rpt",
+            }
+            new_row = dict(old_row)
+            new_row.update(
+                {
+                    "config_hash": "new_cfg",
+                    "status": "flow_failed",
+                    "critical_path_ns": None,
+                    "die_area": None,
+                    "total_power_mw": None,
+                    "result_path": "/orfs/flow/logs/new",
+                }
+            )
+
+            self.run_block_sweep.append_metrics(metrics_path, old_row)
+            self.run_block_sweep.append_metrics(metrics_path, new_row)
+
+            with metrics_path.open(newline="", encoding="utf-8") as f:
+                rows = list(csv.DictReader(f))
+            self.assertEqual(1, len(rows))
+            self.assertEqual("new_cfg", rows[0]["config_hash"])
+            self.assertEqual("flow_failed", rows[0]["status"])
+            self.assertEqual("/orfs/flow/logs/new", rows[0]["result_path"])
 
 class SynthTargetMappingRegressionTest(unittest.TestCase):
     @classmethod
