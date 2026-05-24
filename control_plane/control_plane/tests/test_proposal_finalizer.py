@@ -1333,6 +1333,153 @@ def test_finalize_skips_unlisted_supplemental_item_when_proposal_already_finaliz
         assert result.skip_reason == "proposal already finalized with decision=promote"
 
 
+def test_finalize_revision_retracts_invalidated_merged_item_after_promotion() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        proposal_id = "prop_l1_revision_demo_v1"
+        proposal_dir = _seed_repo_files(
+            repo_root,
+            proposal_id,
+            [
+                {
+                    "item_id": "revision_demo_r1",
+                    "task_type": "l1_sweep",
+                    "objective": "demo_metrics",
+                    "status": "merged",
+                    "merged_pr_number": 10,
+                },
+                {
+                    "item_id": "revision_demo_r2",
+                    "task_type": "l1_sweep",
+                    "objective": "demo_metrics",
+                    "status": "artifact_sync",
+                    "revision": {
+                        "reason": "wrong_configuration",
+                        "invalidates_item_ids": ["revision_demo_r1"],
+                    },
+                },
+            ],
+        )
+        promotion_result_path = proposal_dir / "promotion_result.json"
+        promotion_result = json.loads(promotion_result_path.read_text())
+        promotion_result.update(
+            {
+                "decision": "promote",
+                "pr_number": 10,
+                "merge_commit": "oldmerge",
+                "merged_utc": "2026-03-25T04:00:00Z",
+            }
+        )
+        promotion_result_path.write_text(json.dumps(promotion_result, indent=2) + "\n")
+
+        payload_path = repo_root / "control_plane" / "shadow_exports" / "l1_promotions" / "revision_demo_r2.json"
+        _write(
+            payload_path,
+            json.dumps(
+                {
+                    "item_id": "revision_demo_r2",
+                    "run_key": "revision_demo_r2_run_1",
+                    "source_commit": "abc123",
+                    "proposals": [
+                        {
+                            "metrics_ref": {"metrics_csv": "runs/designs/demo/metrics.csv", "platform": "nangate45", "status": "ok"},
+                            "metric_summary": {"critical_path_ns": 1.0, "die_area": 100.0, "total_power_mw": 0.01},
+                        }
+                    ],
+                },
+                indent=2,
+            )
+            + "\n",
+        )
+
+        with _session() as session:
+            task = TaskRequest(
+                request_key="l1:revision_demo_r2",
+                source="test",
+                requested_by="tester",
+                title="revision l1",
+                description="demo_metrics",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                priority=1,
+                request_payload={
+                    "developer_loop": {
+                        "proposal_id": proposal_id,
+                        "proposal_path": str((proposal_dir / "proposal.json").relative_to(repo_root)),
+                    },
+                    "task": {"objective": "demo_metrics"},
+                },
+            )
+            session.add(task)
+            session.flush()
+            work_item = WorkItem(
+                work_item_key="l1:revision_demo_r2",
+                task_request_id=task.id,
+                item_id="revision_demo_r2",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                platform="nangate45",
+                task_type="l1_sweep",
+                state=WorkItemState.MERGED,
+                priority=1,
+                input_manifest={},
+                command_manifest=[],
+                expected_outputs=["runs/designs/demo/metrics.csv"],
+                acceptance_rules=[],
+                source_commit="abc123",
+            )
+            session.add(work_item)
+            session.flush()
+            run = Run(
+                run_key="revision_demo_r2_run_1",
+                work_item_id=work_item.id,
+                attempt=1,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.SUCCEEDED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="abc123",
+                result_summary="ok",
+                result_payload={"queue_result": {"status": "ok"}},
+            )
+            session.add(run)
+            session.flush()
+            session.add(
+                Artifact(
+                    run_id=run.id,
+                    kind="promotion_proposal",
+                    storage_mode="repo",
+                    path=str(payload_path.relative_to(repo_root)),
+                    sha256="x",
+                    metadata_={},
+                )
+            )
+            session.commit()
+
+            result = finalize_after_merge(
+                session,
+                ProposalFinalizeRequest(
+                    repo_root=str(repo_root),
+                    item_id="revision_demo_r2",
+                    pr_number=11,
+                    merge_commit="newmerge",
+                    merged_utc="2026-03-26T04:00:00Z",
+                    git_publish=False,
+                ),
+            )
+
+        assert result.skipped is False
+        updated_requests = json.loads((proposal_dir / "evaluation_requests.json").read_text())
+        by_id = {entry["item_id"]: entry for entry in updated_requests["requested_items"]}
+        assert by_id["revision_demo_r1"]["status"] == "retracted"
+        assert by_id["revision_demo_r1"]["retraction_reason"] == "wrong_configuration"
+        assert by_id["revision_demo_r1"]["retracted_by_item_id"] == "revision_demo_r2"
+        assert by_id["revision_demo_r2"]["status"] == "merged"
+        updated_result = json.loads((proposal_dir / "promotion_result.json").read_text())
+        assert updated_result["pr_number"] == 11
+        assert updated_result["revision"]["invalidated_item_ids"] == ["revision_demo_r1"]
+
+
 def test_finalize_seeded_iterate_l1_proposal_advances_instead_of_skipping() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

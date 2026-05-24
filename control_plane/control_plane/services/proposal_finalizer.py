@@ -379,6 +379,95 @@ def _is_terminal_decision(decision: str) -> bool:
     return normalized in {"promote", "promoted", "iterate", "reject", "rejected", "close", "closed", "superseded"}
 
 
+def _revision_payload_from_entry(entry: dict[str, Any]) -> dict[str, Any]:
+    revision = entry.get("revision")
+    if isinstance(revision, dict):
+        return dict(revision)
+    if any(key in entry for key in ("revision_reason", "invalidates_item_ids", "invalidates")):
+        return {
+            "reason": entry.get("revision_reason", ""),
+            "invalidates_item_ids": entry.get("invalidates_item_ids", []),
+            "invalidates": entry.get("invalidates", []),
+        }
+    return {}
+
+
+def _revision_payload_from_work_item(work_item: WorkItem) -> dict[str, Any]:
+    developer_loop = _developer_loop_payload(work_item)
+    for key in ("revision", "evaluation_revision"):
+        revision = developer_loop.get(key)
+        if isinstance(revision, dict):
+            return dict(revision)
+    return {}
+
+
+def _revision_declares_invalidations(revision: dict[str, Any]) -> bool:
+    if not revision:
+        return False
+    invalidates = revision.get("invalidates")
+    invalidates_item_ids = revision.get("invalidates_item_ids")
+    reason = str(revision.get("reason", revision.get("revision_reason", ""))).strip()
+    has_invalidates = (
+        isinstance(invalidates, list)
+        and any(str(value).strip() for value in invalidates)
+    ) or (
+        isinstance(invalidates_item_ids, list)
+        and any(str(value).strip() for value in invalidates_item_ids)
+    )
+    return bool(reason and has_invalidates)
+
+
+def _revision_payload_for_item(entry: dict[str, Any], work_item: WorkItem) -> dict[str, Any]:
+    entry_revision = _revision_payload_from_entry(entry)
+    if _revision_declares_invalidations(entry_revision):
+        return entry_revision
+    return _revision_payload_from_work_item(work_item)
+
+
+def _revision_invalidated_item_ids(revision: dict[str, Any]) -> list[str]:
+    values: list[str] = []
+    for key in ("invalidates_item_ids", "invalidates"):
+        raw = revision.get(key)
+        if not isinstance(raw, list):
+            continue
+        for value in raw:
+            if isinstance(value, dict):
+                item_id = str(value.get("item_id", "")).strip()
+            else:
+                item_id = str(value).strip()
+            if item_id and item_id not in values:
+                values.append(item_id)
+    return values
+
+
+def _apply_revision_invalidations(
+    requested_items: list[dict[str, Any]],
+    *,
+    current_item_id: str,
+    revision: dict[str, Any],
+    artifact_rel: str,
+) -> list[str]:
+    invalidated_item_ids = set(_revision_invalidated_item_ids(revision))
+    if not invalidated_item_ids:
+        return []
+    reason = str(revision.get("reason", revision.get("revision_reason", ""))).strip()
+    invalidated_at = utcnow().isoformat().replace("+00:00", "Z")
+    invalidated: list[str] = []
+    for entry in requested_items:
+        if not isinstance(entry, dict):
+            continue
+        item_id = str(entry.get("item_id", "")).strip()
+        if item_id not in invalidated_item_ids or item_id == current_item_id:
+            continue
+        entry["status"] = "retracted"
+        entry["retracted_utc"] = invalidated_at
+        entry["retracted_by_item_id"] = current_item_id
+        entry["retraction_reason"] = reason
+        entry["replacement_artifact"] = artifact_rel
+        invalidated.append(item_id)
+    return invalidated
+
+
 def _mark_merged_requested_item(
     entry: dict[str, Any],
     *,
@@ -659,40 +748,51 @@ def finalize_after_merge(session: Session, request: ProposalFinalizeRequest) -> 
         )
     except ProposalFinalizationError as exc:
         if _is_terminal_decision(existing_decision):
-            finalized_pr_number = str(promotion_result.get("pr_number") or "").strip()
-            if pr_number is not None and finalized_pr_number == str(pr_number):
-                _supersede_stale_sibling_reviews(
-                    session,
-                    proposal_id=proposal_id,
-                    current_item_id=work_item.item_id,
-                    decision=existing_decision,
-                )
-                session.flush()
-                session.commit()
+            work_item_revision = _revision_payload_from_work_item(work_item)
+            if _revision_declares_invalidations(work_item_revision) and " is not present in " in str(exc):
+                matched_entry = _append_missing_requested_entry(requested_items, work_item=work_item)
+                matched_entry["revision"] = work_item_revision
+            else:
+                finalized_pr_number = str(promotion_result.get("pr_number") or "").strip()
+                if pr_number is not None and finalized_pr_number == str(pr_number):
+                    _supersede_stale_sibling_reviews(
+                        session,
+                        proposal_id=proposal_id,
+                        current_item_id=work_item.item_id,
+                        decision=existing_decision,
+                    )
+                    session.flush()
+                    session.commit()
+                    return ProposalFinalizeResult(
+                        item_id=work_item.item_id,
+                        proposal_id=proposal_id,
+                        decision=existing_decision,
+                        next_item_id=None,
+                        commit_sha=merge_commit or str(promotion_result.get("merge_commit") or "").strip() or None,
+                        skipped=False,
+                        skip_reason=None,
+                    )
                 return ProposalFinalizeResult(
                     item_id=work_item.item_id,
                     proposal_id=proposal_id,
                     decision=existing_decision,
                     next_item_id=None,
-                    commit_sha=merge_commit or str(promotion_result.get("merge_commit") or "").strip() or None,
-                    skipped=False,
-                    skip_reason=None,
+                    commit_sha=None,
+                    skipped=True,
+                    skip_reason=f"proposal already finalized with decision={existing_decision}",
                 )
-            return ProposalFinalizeResult(
-                item_id=work_item.item_id,
-                proposal_id=proposal_id,
-                decision=existing_decision,
-                next_item_id=None,
-                commit_sha=None,
-                skipped=True,
-                skip_reason=f"proposal already finalized with decision={existing_decision}",
-            )
-        if " is not present in " not in str(exc):
+        elif " is not present in " not in str(exc):
             raise
-        matched_entry = _append_missing_requested_entry(requested_items, work_item=work_item)
+        else:
+            matched_entry = _append_missing_requested_entry(requested_items, work_item=work_item)
 
+    if "matched_entry" not in locals():
+        raise ProposalFinalizationError(f"item {work_item.item_id} could not be resolved for finalization")
+
+    revision_payload = _revision_payload_for_item(matched_entry, work_item)
+    is_revision = _revision_declares_invalidations(revision_payload)
     matched_status = str(matched_entry.get("status", "")).strip().lower()
-    if _is_terminal_decision(existing_decision) and _is_merged_status(matched_status):
+    if _is_terminal_decision(existing_decision) and _is_merged_status(matched_status) and not is_revision:
         finalized_pr_number = str(promotion_result.get("pr_number") or "").strip()
         if pr_number is not None and finalized_pr_number == str(pr_number):
             _supersede_stale_sibling_reviews(
@@ -728,6 +828,16 @@ def finalize_after_merge(session: Session, request: ProposalFinalizeRequest) -> 
         merge_commit=merge_commit,
         merged_utc=merged_utc,
     )
+    invalidated_item_ids: list[str] = []
+    if is_revision:
+        matched_entry["revision"] = revision_payload
+        matched_entry["revision_of_decision"] = existing_decision or str(promotion_result.get("decision", "")).strip()
+        invalidated_item_ids = _apply_revision_invalidations(
+            [entry for entry in requested_items if isinstance(entry, dict)],
+            current_item_id=work_item.item_id,
+            revision=revision_payload,
+            artifact_rel=artifact_rel,
+        )
     evaluation_requests["source_commit"] = str(payload.get("source_commit") or run.checkout_commit or work_item.source_commit or "")
     ready_items = _refresh_ready_items([entry for entry in requested_items if isinstance(entry, dict)])
 
@@ -769,6 +879,18 @@ def finalize_after_merge(session: Session, request: ProposalFinalizeRequest) -> 
             "merged_utc": merged_utc,
         }
     )
+    if is_revision:
+        promotion_decision["revision"] = {
+            "reason": str(revision_payload.get("reason", revision_payload.get("revision_reason", ""))).strip(),
+            "invalidated_item_ids": invalidated_item_ids,
+            "replacement_item_id": work_item.item_id,
+        }
+        promotion_result["revision"] = {
+            "reason": str(revision_payload.get("reason", revision_payload.get("revision_reason", ""))).strip(),
+            "invalidated_item_ids": invalidated_item_ids,
+            "replacement_item_id": work_item.item_id,
+            "previous_decision": existing_decision,
+        }
 
     analysis_report = _build_analysis_report(
         proposal_id=proposal_id,

@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_npu_fp16_compute_parallelism_gate_count_audit_v1",
-  "source_commit": "c291683e629f8d70cbbcd17be8bdb97a148c6e12",
+  "source_commit": "62c19c19f91d0d2ec978bc64a2a1cdc625fe403a",
   "requested_items": [
     {
       "item_id": "l1_npu_fp16_compute_parallelism_gate_count_audit_nm1_nm2_nm4_nm8_nm16_v1",
@@ -17,14 +17,50 @@
       "objective": "audit_gate_count_scaling",
       "evaluation_mode": "measurement_only",
       "abstraction_layer": "npu_compute_parallelism_gate_count",
-      "status": "merged",
+      "status": "retracted",
       "prior_item_ids": [
         "l1_npu_fp16_compute_parallelism_gate_count_audit_nm1_nm2_nm4_nm8_nm16_v1"
       ],
       "notes": "Retry after PR #652 added ORFS metadata-generate parsing for instance/stdcell area and count. Merged via PR #654 and merge ee228ae1c407dbef1db63b8a634a7717b517df8b at 2026-05-22T23:30:12.223312Z.",
       "merged_pr_number": 654,
       "merge_commit": "ee228ae1c407dbef1db63b8a634a7717b517df8b",
-      "merged_utc": "2026-05-22T23:30:12.223312Z"
+      "merged_utc": "2026-05-22T23:30:12.223312Z",
+      "retracted_utc": "2026-05-24T14:37:09Z",
+      "retracted_by_item_id": "l1_npu_fp16_compute_parallelism_gate_count_audit_nm1_nm2_nm4_nm8_nm16_v1_r5",
+      "retraction_reason": "wrong_configuration: earlier nm1/nm2/nm4/nm8/nm16 gate-count audit used pre-fix NPU RTL where the GEMM output path was not connected to architectural writeback, so the physical evidence could include optimized-away compute logic.",
+      "replacement_run_key": "l1_npu_fp16_compute_parallelism_gate_count_audit_nm1_nm2_nm4_nm8_nm16_v1_r5_run_05db7eaa0e146670"
+    },
+    {
+      "item_id": "l1_npu_fp16_compute_parallelism_gate_count_audit_nm1_nm2_nm4_nm8_nm16_v1_r5",
+      "task_type": "l1_sweep",
+      "objective": "audit_gate_count_scaling_after_output_connection_fix",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "npu_compute_parallelism_gate_count",
+      "status": "merged",
+      "prior_item_ids": [
+        "l1_npu_fp16_compute_parallelism_gate_count_audit_nm1_nm2_nm4_nm8_nm16_v1",
+        "l1_npu_fp16_compute_parallelism_gate_count_audit_nm1_nm2_nm4_nm8_nm16_v1_r2",
+        "l1_npu_fp16_compute_parallelism_gate_count_audit_nm1_nm2_nm4_nm8_nm16_v1_r3",
+        "l1_npu_fp16_compute_parallelism_gate_count_audit_nm1_nm2_nm4_nm8_nm16_v1_r4"
+      ],
+      "revision": {
+        "reason": "wrong_configuration: missing GEMM output connection before the writeback-correctness fix",
+        "invalidates_item_ids": [
+          "l1_npu_fp16_compute_parallelism_gate_count_audit_nm1_nm2_nm4_nm8_nm16_v1_r2"
+        ],
+        "invalidates": [
+          {
+            "pr_number": 654,
+            "item_id": "l1_npu_fp16_compute_parallelism_gate_count_audit_nm1_nm2_nm4_nm8_nm16_v1_r2"
+          },
+          {
+            "run_key": "l1_npu_fp16_compute_parallelism_gate_count_audit_nm1_nm2_nm4_nm8_nm16_v1_r2_run_5232f508e5731188"
+          }
+        ]
+      },
+      "source_commit": "62c19c19f91d0d2ec978bc64a2a1cdc625fe403a",
+      "run_key": "l1_npu_fp16_compute_parallelism_gate_count_audit_nm1_nm2_nm4_nm8_nm16_v1_r5_run_05db7eaa0e146670",
+      "notes": "Corrective r5 run after PR #655 connected the GEMM/VEC writeback path and PR #659 made deterministic block-sweep metrics rows upsert-safe. The run completed 13/13 commands and validate_runs.py --skip_eval_queue passed; issue #660 blocked automatic artifact PR submission only because the proposal had already been finalized."
     }
   ]
 }
