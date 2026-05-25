@@ -1,12 +1,15 @@
 {
   "proposal_id": "prop_l1_npu_corrected_compute_frontier_v1",
-  "candidate_id": "",
+  "candidate_id": "l2_npu_compute_full_path_equivalence_guard_v1",
   "decision": "iterate",
-  "reason": "Replace with the actual decision rationale.",
+  "reason": "Focused comparison baseline could not be resolved from proposal baseline_refs or prior_art.",
   "evidence_refs": [
-    "item:example",
-    "run:example"
+    "item:l2_npu_compute_full_path_equivalence_guard_v1",
+    "run:l2_npu_compute_full_path_equivalence_guard_v1_run_feb36ad11106d282",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_npu_compute_full_path_equivalence_guard_v1.json",
+    "pr:#666",
+    "https://github.com/yhmtmt/RTLGen/pull/666"
   ],
-  "next_action": "Describe the next action.",
-  "requires_human_approval": true
+  "next_action": "inspect follow-on work after l2_npu_compute_full_path_equivalence_guard_v1",
+  "requires_human_approval": false
 }

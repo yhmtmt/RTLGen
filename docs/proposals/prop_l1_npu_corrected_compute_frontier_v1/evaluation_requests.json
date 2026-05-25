@@ -9,7 +9,7 @@
       "evaluation_mode": "correctness_guard",
       "abstraction_layer": "npu_compute_full_path_equivalence_guard",
       "comparison_role": "precondition",
-      "status": "pending",
+      "status": "merged",
       "paired_baseline_item_id": "",
       "depends_on_item_ids": [],
       "requires_merged_inputs": false,
@@ -17,7 +17,11 @@
       "expected_result": {
         "direction": "gate",
         "reason": "Run PPA sweeps only if corrected datapath guard passes"
-      }
+      },
+      "merged_pr_number": 666,
+      "merge_commit": "9aec3826a7a1ad1d418fae1a023224155db85701",
+      "merged_utc": "2026-05-25T09:20:18.981966Z",
+      "notes": "Merged via PR #666 and merge 9aec3826a7a1ad1d418fae1a023224155db85701 at 2026-05-25T09:20:18.981966Z."
     },
     {
       "item_id": "l1_npu_corrected_compute_frontier_nm1_nm2_nm4_seed3_v1",
@@ -31,7 +35,8 @@
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
-      "status": "pending"
+      "status": "ready_to_queue",
+      "notes": "Prerequisites are merged; item is ready to queue."
     },
     {
       "item_id": "l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1",
@@ -45,7 +50,8 @@
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
-      "status": "pending"
+      "status": "ready_to_queue",
+      "notes": "Prerequisites are merged; item is ready to queue."
     }
   ]
 }
