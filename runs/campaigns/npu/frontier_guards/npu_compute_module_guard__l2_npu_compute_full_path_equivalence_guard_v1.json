@@ -1,0 +1,40 @@
+{
+  "configs_checked": 3,
+  "results": [
+    {
+      "config": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+      "expected_num_modules": 1,
+      "gemm_mac_a_register_count": 1,
+      "gemm_mac_b_register_count": 1,
+      "gemm_writeback_slot_count": 1,
+      "has_gemm_slot_loop": true,
+      "rtl_num_modules_localparam": 1,
+      "status": "ok",
+      "top_gemm_num_modules_localparam": 1
+    },
+    {
+      "config": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json",
+      "expected_num_modules": 2,
+      "gemm_mac_a_register_count": 2,
+      "gemm_mac_b_register_count": 2,
+      "gemm_writeback_slot_count": 2,
+      "has_gemm_slot_loop": true,
+      "rtl_num_modules_localparam": 2,
+      "status": "ok",
+      "top_gemm_num_modules_localparam": 2
+    },
+    {
+      "config": "runs/designs/npu_blocks/npu_fp16_cpp_nm4_cmp/config_nm4.json",
+      "expected_num_modules": 4,
+      "gemm_mac_a_register_count": 4,
+      "gemm_mac_b_register_count": 4,
+      "gemm_writeback_slot_count": 4,
+      "has_gemm_slot_loop": true,
+      "rtl_num_modules_localparam": 4,
+      "status": "ok",
+      "top_gemm_num_modules_localparam": 4
+    }
+  ],
+  "schema": "npu_compute_module_guard_v1",
+  "status": "ok"
+}

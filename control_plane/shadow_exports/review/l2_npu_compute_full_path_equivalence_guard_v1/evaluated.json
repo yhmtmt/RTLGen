@@ -1,0 +1,267 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/npu/compute_parallelism_stability/sweeps/nangate45_cmp33_mode_compare.json"
+      ],
+      "configs": [
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json"
+      ],
+      "design_dirs": [
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp"
+      ],
+      "macro_manifests": [],
+      "decoder_contract": {
+        "guard_scope": "Pre-PPA guard for the corrected NPU compute frontier: prove RTL/perf architectural writeback equivalence and confirm generated nm1/nm2/nm4 RTL retains the requested FP16 GEMM module structure.",
+        "rtlgen_configs": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json",
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm4_cmp/config_nm4.json"
+        ],
+        "npu_compute_guard_out": "runs/campaigns/npu/frontier_guards/npu_compute_module_guard__l2_npu_compute_full_path_equivalence_guard_v1.json",
+        "npu_contract_equivalence_log": "runs/campaigns/npu/frontier_guards/npu_contract_equivalence__l2_npu_compute_full_path_equivalence_guard_v1.log"
+      },
+      "generated_campaign": {
+        "path": "runs/campaigns/npu/frontier_guard/campaign_npu_compute_full_path_guard_v1__l2_npu_compute_full_path_equivalence_guard_v1.json",
+        "outputs": {
+          "report_md": "runs/campaigns/npu/frontier_guard/compute_full_path_guard_v1__l2_npu_compute_full_path_equivalence_guard_v1/report.md",
+          "results_csv": "runs/campaigns/npu/frontier_guard/compute_full_path_guard_v1__l2_npu_compute_full_path_equivalence_guard_v1/results.csv",
+          "campaign_dir": "runs/campaigns/npu/frontier_guard/compute_full_path_guard_v1__l2_npu_compute_full_path_equivalence_guard_v1"
+        },
+        "clean_outputs": true,
+        "base_campaign_path": "runs/campaigns/npu/frontier_guard/campaign_npu_compute_full_path_guard_v1.json"
+      },
+      "candidate_manifests": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && cmake -S . -B build && cmake --build build --target rtlgen",
+        "name": "build_generator"
+      },
+      {
+        "run": "python3 npu/eval/check_npu_compute_module_guard.py --configs runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json runs/designs/npu_blocks/npu_fp16_cpp_nm4_cmp/config_nm4.json --out runs/campaigns/npu/frontier_guards/npu_compute_module_guard__l2_npu_compute_full_path_equivalence_guard_v1.json",
+        "name": "check_npu_compute_module_guard"
+      },
+      {
+        "run": "mkdir -p runs/campaigns/npu/frontier_guards && python3 tests/test_npu_contract_equivalence.py > runs/campaigns/npu/frontier_guards/npu_contract_equivalence__l2_npu_compute_full_path_equivalence_guard_v1.log 2>&1",
+        "name": "run_npu_contract_equivalence"
+      },
+      {
+        "run": "python3 npu/eval/fetch_models.py --manifest runs/models/mlp_smoke_v0/manifest.json",
+        "name": "fetch_models"
+      },
+      {
+        "run": "python3 npu/eval/validate.py --campaign runs/campaigns/npu/frontier_guard/campaign_npu_compute_full_path_guard_v1__l2_npu_compute_full_path_equivalence_guard_v1.json --check_paths",
+        "name": "validate_campaign"
+      },
+      {
+        "run": "python3 npu/eval/run_campaign.py --campaign runs/campaigns/npu/frontier_guard/campaign_npu_compute_full_path_guard_v1__l2_npu_compute_full_path_equivalence_guard_v1.json --jobs 1 --batch_id l2_npu_compute_full_path_equivalence_guard_v1_r1",
+        "name": "run_campaign"
+      },
+      {
+        "run": "python3 npu/eval/report_campaign.py --campaign runs/campaigns/npu/frontier_guard/campaign_npu_compute_full_path_guard_v1__l2_npu_compute_full_path_equivalence_guard_v1.json",
+        "name": "report_campaign"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate_runs"
+      }
+    ],
+    "objective": "Run corrected NPU compute full-path RTL/perf equivalence guard before PPA sweeps",
+    "acceptance": [
+      "Populate metrics.csv for all referenced design dirs",
+      "Write campaign summary outputs under the campaign output directory",
+      "Keep result_path/work_result_json fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "source_mode": "src_verilog",
+    "expected_outputs": [
+      "runs/campaigns/npu/frontier_guard/campaign_npu_compute_full_path_guard_v1__l2_npu_compute_full_path_equivalence_guard_v1.json",
+      "runs/campaigns/npu/frontier_guard/compute_full_path_guard_v1__l2_npu_compute_full_path_equivalence_guard_v1/results.csv",
+      "runs/campaigns/npu/frontier_guard/compute_full_path_guard_v1__l2_npu_compute_full_path_equivalence_guard_v1/report.md",
+      "runs/campaigns/npu/frontier_guard/compute_full_path_guard_v1__l2_npu_compute_full_path_equivalence_guard_v1/summary.csv",
+      "runs/campaigns/npu/frontier_guard/compute_full_path_guard_v1__l2_npu_compute_full_path_equivalence_guard_v1/pareto.csv",
+      "runs/campaigns/npu/frontier_guard/compute_full_path_guard_v1__l2_npu_compute_full_path_equivalence_guard_v1/best_point.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+      "runs/campaigns/npu/frontier_guards/npu_compute_module_guard__l2_npu_compute_full_path_equivalence_guard_v1.json",
+      "runs/campaigns/npu/frontier_guards/npu_contract_equivalence__l2_npu_compute_full_path_equivalence_guard_v1.log"
+    ]
+  },
+  "layer": "layer2",
+  "state": "evaluated",
+  "title": "NPU corrected compute full-path guard",
+  "result": {
+    "branch": "eval/l2_npu_compute_full_path_equivalence_guard_v1/s20260525t091751z",
+    "completed_utc": "2026-05-25T09:17:35.269596Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "notebook-guard",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260525t091751z][host:notebook-guard][item:l2_npu_compute_full_path_equivalence_guard_v1]",
+    "metrics_rows": [
+      {
+        "tag": "npu_fp16_nm1_cmp33_flat_nomacro",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "362e11ef",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/362e11ef/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_cmp33_hier_macro",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "6f738885",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/6f738885/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r1",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "3e84d92b",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3e84d92b/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r2",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "13a2c990",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/13a2c990/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r3",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "34eeb6e5",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/34eeb6e5/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r4",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "439adb1e",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/439adb1e/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r5",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "936b2a7b",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/936b2a7b/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_cmp33_hier_macro_r1",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "54a235ae",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/54a235ae/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_cmp33_hier_macro_r2",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "f190a078",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/f190a078/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_cmp33_hier_macro_r3",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "b874bef7",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/b874bef7/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_cmp33_hier_macro_r4",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "3a650f98",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3a650f98/result.json"
+      },
+      {
+        "tag": "npu_fp16_nm1_cmp33_hier_macro_r5",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "3fa4f194",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3fa4f194/result.json"
+      },
+      {
+        "tag": "npu_fp16_compute_stability_cmp33_flat_nomacro",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "40c9c722",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/40c9c722/result.json"
+      },
+      {
+        "tag": "npu_fp16_compute_stability_cmp33_hier_macro",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "b0f7e8e4",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/b0f7e8e4/result.json"
+      }
+    ],
+    "queue_item_id": "l2_npu_compute_full_path_equivalence_guard_v1",
+    "session_id": "s20260525t091751z",
+    "status": "ok",
+    "summary": "8/8 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l2_npu_compute_full_path_equivalence_guard_v1/s20260525t091751z",
+    "pr_title": "eval: run npu corrected compute full-path guard",
+    "checklist": [
+      "Commit lightweight campaign artifacts only",
+      "Include metrics row references in result.metrics_rows",
+      "Keep committed result_path fields repo-portable",
+      "Run python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "notebook-guard",
+      "session_id": "s20260525t091751z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l2_npu_compute_full_path_equivalence_guard_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l2_npu_compute_full_path_equivalence_guard_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 80,
+  "created_utc": "2026-05-25T09:12:22.285758Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "comparison": {
+      "role": "precondition",
+      "paired_baseline_item_id": ""
+    },
+    "evaluation": {
+      "mode": "correctness_guard",
+      "expected_reason": "Run PPA sweeps only if corrected datapath guard passes",
+      "expected_direction": "gate"
+    },
+    "abstraction": {
+      "layer": "npu_compute_full_path_equivalence_guard"
+    },
+    "proposal_id": "prop_l1_npu_corrected_compute_frontier_v1",
+    "proposal_path": "docs/proposals/prop_l1_npu_corrected_compute_frontier_v1"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "b2d32a837b3da1bc43a192aecd8f7089cf972c61",
+    "requires_daemon_restart": true
+  }
+}
