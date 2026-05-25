@@ -504,6 +504,49 @@ PY2"""
     }
 
 
+def _npu_compute_full_path_equivalence_guard_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/campaigns/npu/frontier_guards"
+    guard_out = f"{base}/npu_compute_module_guard__{item_id}.json"
+    equivalence_log = f"{base}/npu_contract_equivalence__{item_id}.log"
+    configs = [
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json",
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm4_cmp/config_nm4.json",
+    ]
+    config_args = " ".join(shlex.quote(path) for path in configs)
+    return {
+        "inputs": {
+            "npu_compute_guard_out": guard_out,
+            "npu_contract_equivalence_log": equivalence_log,
+            "rtlgen_configs": configs,
+            "guard_scope": (
+                "Pre-PPA guard for the corrected NPU compute frontier: prove RTL/perf "
+                "architectural writeback equivalence and confirm generated nm1/nm2/nm4 RTL "
+                "retains the requested FP16 GEMM module structure."
+            ),
+        },
+        "commands": [
+            {
+                "name": "build_generator",
+                "run": "export PATH=/oss-cad-suite/bin:$PATH && cmake -S . -B build && cmake --build build --target rtlgen",
+            },
+            {
+                "name": "check_npu_compute_module_guard",
+                "run": (
+                    "python3 npu/eval/check_npu_compute_module_guard.py "
+                    f"--configs {config_args} "
+                    f"--out {guard_out}"
+                ),
+            },
+            {
+                "name": "run_npu_contract_equivalence",
+                "run": f"mkdir -p {base} && python3 tests/test_npu_contract_equivalence.py > {equivalence_log} 2>&1",
+            },
+        ],
+        "expected_outputs": [guard_out, equivalence_log],
+    }
+
+
 def _decoder_probability_sweep_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_tiny_v1"
     path_evidence = _decoder_probability_path_evidence(item_id=item_id)
@@ -5071,8 +5114,11 @@ def _build_payload(
         "decoder_output_projection_producer_cq_ablation",
         "decoder_output_projection_producer_softmax_event_ablation",
         "decoder_quantization_outline",
+        "npu_compute_full_path_equivalence_guard",
     }:
-        if abstraction_layer_name == "decoder_quantization_outline":
+        if abstraction_layer_name == "npu_compute_full_path_equivalence_guard":
+            decoder_evidence = _npu_compute_full_path_equivalence_guard_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_quantization_outline":
             decoder_evidence = _decoder_quantization_outline_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_output_projection_producer_softmax_event_ablation":
             decoder_evidence = _decoder_output_projection_producer_softmax_event_ablation_evidence(item_id=item_id)

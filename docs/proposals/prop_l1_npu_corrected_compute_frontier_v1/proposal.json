@@ -1,0 +1,98 @@
+{
+  "proposal_id": "prop_l1_npu_corrected_compute_frontier_v1",
+  "created_utc": "2026-05-25T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "npu_corrected_compute_frontier",
+  "title": "Corrected NPU FP16 compute frontier",
+  "hypothesis": "After the GEMM/VEC writeback connection fix, the useful compute frontier should be rebuilt from guarded RTL/perf equivalence, seed-stability checks for nm1/nm2/nm4, and a bounded parallelism sweep through the largest practical current dynamic-dispatch point.",
+  "direct_comparison": {
+    "primary_question": "Which corrected FP16 NPU compute module count is the practical PPA anchor once disconnected-output measurements are excluded?",
+    "include": [
+      "full-path RTL/perf architectural writeback guard before new PPA decisions",
+      "nm1, nm2, and nm4 three-seed corrected PPA stability",
+      "nm1, nm2, nm4, nm8, nm16, and nm32 parallelism boundary measurement under the current dynamic dispatcher"
+    ],
+    "exclude": [
+      "quality-changing KV sharing or quantization decisions",
+      "new static scheduler or NoC implementation",
+      "promotion of pre-writeback-fix r2 metrics"
+    ]
+  },
+  "expected_benefit": [
+    "prevents another disconnected or optimized-away datapath result from entering the frontier",
+    "separates seed/floorplan noise from true nm1/nm2/nm4 PPA differences",
+    "identifies where the current dynamic dispatcher ceases to be a credible scaling path"
+  ],
+  "risks": [
+    "three seeds are still a first-order stability check, not a final statistical model",
+    "module-retention evidence is structural and must be interpreted with RTL/perf equivalence",
+    "nm32 may remain expensive; stalled or flow-failed points should be recorded rather than retried indefinitely"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_npu_compute_full_path_equivalence_guard_v1",
+      "task_type": "l2_campaign",
+      "objective": "prove_corrected_compute_datapath_guard",
+      "evaluation_mode": "correctness_guard",
+      "abstraction_layer": "npu_compute_full_path_equivalence_guard",
+      "cost_class": "low",
+      "comparison_role": "precondition",
+      "expected_result": {
+        "direction": "gate",
+        "reason": "Only run new corrected PPA sweeps if RTL/perf architectural writeback equivalence passes and nm1/nm2/nm4 generated RTL retains requested GEMM module structure."
+      }
+    },
+    {
+      "item_id": "l1_npu_corrected_compute_frontier_nm1_nm2_nm4_seed3_v1",
+      "task_type": "l1_sweep",
+      "objective": "measure_corrected_seed_variance_low_nm",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "npu_corrected_compute_frontier",
+      "cost_class": "medium",
+      "comparison_role": "stability",
+      "depends_on_item_ids": [
+        "l2_npu_compute_full_path_equivalence_guard_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Confirm whether nm2 remains the best low-power corrected PPA anchor across seed variation."
+      }
+    },
+    {
+      "item_id": "l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1",
+      "task_type": "l1_sweep",
+      "objective": "measure_corrected_parallelism_boundary",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "npu_corrected_compute_frontier",
+      "cost_class": "high",
+      "comparison_role": "boundary",
+      "depends_on_item_ids": [
+        "l2_npu_compute_full_path_equivalence_guard_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use corrected physical scaling through nm32 to decide whether to keep dynamic dispatch, reduce to low-nm anchors, or design a hierarchical/static scheduler."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l1_npu_fp16_compute_parallelism_gate_count_audit_v1/analysis_report.md",
+    "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+    "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+    "runs/designs/npu_blocks/npu_fp16_cpp_nm4_cmp/metrics.csv"
+  ],
+  "knowledge_refs": [
+    "tests/test_npu_contract_equivalence.py",
+    "npu/eval/check_npu_compute_module_guard.py",
+    "npu/sim/perf/compare_tensor_traces.py",
+    "npu/synth/run_block_sweep.py",
+    "runs/campaigns/npu/compute_parallelism_stability/sweeps/nangate45_cmp33_mode_compare.json"
+  ]
+}
