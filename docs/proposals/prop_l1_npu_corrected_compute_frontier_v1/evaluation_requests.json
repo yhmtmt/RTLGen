@@ -1,0 +1,43 @@
+{
+  "proposal_id": "prop_l1_npu_corrected_compute_frontier_v1",
+  "source_commit": "7946362a3aac5dee1ef7563c37cddd61365c8149",
+  "requested_items": [
+    {
+      "item_id": "l2_npu_compute_full_path_equivalence_guard_v1",
+      "task_type": "l2_campaign",
+      "objective": "prove_corrected_compute_datapath_guard",
+      "evaluation_mode": "correctness_guard",
+      "abstraction_layer": "npu_compute_full_path_equivalence_guard",
+      "comparison_role": "precondition",
+      "status": "pending"
+    },
+    {
+      "item_id": "l1_npu_corrected_compute_frontier_nm1_nm2_nm4_seed3_v1",
+      "task_type": "l1_sweep",
+      "objective": "measure_corrected_seed_variance_low_nm",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "npu_corrected_compute_frontier",
+      "comparison_role": "stability",
+      "depends_on_item_ids": [
+        "l2_npu_compute_full_path_equivalence_guard_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "status": "pending"
+    },
+    {
+      "item_id": "l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1",
+      "task_type": "l1_sweep",
+      "objective": "measure_corrected_parallelism_boundary",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "npu_corrected_compute_frontier",
+      "comparison_role": "boundary",
+      "depends_on_item_ids": [
+        "l2_npu_compute_full_path_equivalence_guard_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "status": "pending"
+    }
+  ]
+}

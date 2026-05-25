@@ -1,0 +1,31 @@
+{
+  "version": 0.1,
+  "campaign_id": "npu_compute_full_path_guard_v1",
+  "model_set_id": "mlp_smoke_v0",
+  "model_manifest": "runs/models/mlp_smoke_v0/manifest.json",
+  "description": "Minimal campaign wrapper for corrected NPU compute full-path equivalence guard evidence.",
+  "platform": "nangate45",
+  "make_target": "3_3_place_gp",
+  "repeats": 1,
+  "models": [
+    {
+      "model_id": "mlp1",
+      "onnx_path": "runs/models/mlp_smoke_v0/mlp1.onnx",
+      "mapper_arch": "npu/arch/examples/minimal.yml",
+      "perf_config": "npu/sim/perf/example_config_fp16_cpp.json"
+    }
+  ],
+  "architecture_points": [
+    {
+      "arch_id": "fp16_nm1_guard",
+      "rtlgen_config": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+      "synth_design_dir": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+      "sweep_file": "runs/campaigns/npu/compute_parallelism_stability/sweeps/nangate45_cmp33_mode_compare.json"
+    }
+  ],
+  "outputs": {
+    "campaign_dir": "runs/campaigns/npu/frontier_guard/compute_full_path_guard_v1",
+    "results_csv": "runs/campaigns/npu/frontier_guard/compute_full_path_guard_v1/results.csv",
+    "report_md": "runs/campaigns/npu/frontier_guard/compute_full_path_guard_v1/report.md"
+  }
+}
