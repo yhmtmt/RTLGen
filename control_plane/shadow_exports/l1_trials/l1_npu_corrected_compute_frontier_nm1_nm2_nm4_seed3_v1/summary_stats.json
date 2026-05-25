@@ -1,0 +1,33 @@
+{
+  "item_id": "l1_npu_corrected_compute_frontier_nm1_nm2_nm4_seed3_v1",
+  "completed_trials": 3,
+  "success_count": 3,
+  "failure_count": 0,
+  "success_rate": 1.0,
+  "metrics": {
+    "critical_path_ns": {
+      "best": 5.9121,
+      "mean": 5.919666666666667,
+      "median": 5.9162,
+      "max": 5.9307,
+      "range": 0.018600000000000172,
+      "stddev": 0.007979278719839887
+    },
+    "die_area": {
+      "best": 2250000.0,
+      "mean": 2250000.0,
+      "median": 2250000.0,
+      "max": 2250000.0,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "total_power_mw": {
+      "best": 0.219,
+      "mean": 0.219,
+      "median": 0.219,
+      "max": 0.219,
+      "range": 0.0,
+      "stddev": 0.0
+    }
+  }
+}
