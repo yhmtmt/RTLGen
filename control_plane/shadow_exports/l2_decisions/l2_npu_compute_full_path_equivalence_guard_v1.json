@@ -1,0 +1,102 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-05-25T09:17:51.738366Z",
+  "item_id": "l2_npu_compute_full_path_equivalence_guard_v1",
+  "run_key": "l2_npu_compute_full_path_equivalence_guard_v1_run_feb36ad11106d282",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "b2d32a837b3da1bc43a192aecd8f7089cf972c61",
+  "review_metadata_source_commit": "b2d32a837b3da1bc43a192aecd8f7089cf972c61",
+  "objective": "Run corrected NPU compute full-path RTL/perf equivalence guard before PPA sweeps",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/npu/compute_parallelism_stability/sweeps/nangate45_cmp33_mode_compare.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json"
+    ],
+    "design_dirs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp"
+    ],
+    "macro_manifests": [],
+    "decoder_contract": {
+      "guard_scope": "Pre-PPA guard for the corrected NPU compute frontier: prove RTL/perf architectural writeback equivalence and confirm generated nm1/nm2/nm4 RTL retains the requested FP16 GEMM module structure.",
+      "rtlgen_configs": [
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json",
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm4_cmp/config_nm4.json"
+      ],
+      "npu_compute_guard_out": "runs/campaigns/npu/frontier_guards/npu_compute_module_guard__l2_npu_compute_full_path_equivalence_guard_v1.json",
+      "npu_contract_equivalence_log": "runs/campaigns/npu/frontier_guards/npu_contract_equivalence__l2_npu_compute_full_path_equivalence_guard_v1.log"
+    },
+    "generated_campaign": {
+      "path": "runs/campaigns/npu/frontier_guard/campaign_npu_compute_full_path_guard_v1__l2_npu_compute_full_path_equivalence_guard_v1.json",
+      "outputs": {
+        "report_md": "runs/campaigns/npu/frontier_guard/compute_full_path_guard_v1__l2_npu_compute_full_path_equivalence_guard_v1/report.md",
+        "results_csv": "runs/campaigns/npu/frontier_guard/compute_full_path_guard_v1__l2_npu_compute_full_path_equivalence_guard_v1/results.csv",
+        "campaign_dir": "runs/campaigns/npu/frontier_guard/compute_full_path_guard_v1__l2_npu_compute_full_path_equivalence_guard_v1"
+      },
+      "clean_outputs": true,
+      "base_campaign_path": "runs/campaigns/npu/frontier_guard/campaign_npu_compute_full_path_guard_v1.json"
+    },
+    "candidate_manifests": []
+  },
+  "recommendation": {
+    "arch_id": "fp16_nm1_guard",
+    "macro_mode": "flat_nomacro",
+    "objective_rank": 1,
+    "objective_score": "0.0",
+    "latency_ms_mean": 0.004282,
+    "energy_mj_mean": 8.26948404e-07,
+    "critical_path_ns_mean": 5.557037432204143,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.193122,
+    "flow_elapsed_s_mean": 834.99
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l1_npu_corrected_compute_frontier_v1",
+    "title": "Corrected NPU FP16 compute frontier",
+    "primary_question": "Which corrected FP16 NPU compute module count is the practical PPA anchor once disconnected-output measurements are excluded?",
+    "evaluation_mode": "correctness_guard",
+    "comparison_role": "precondition",
+    "abstraction_layer": "npu_compute_full_path_equivalence_guard",
+    "expected_direction": "gate",
+    "expected_reason": "Run PPA sweeps only if corrected datapath guard passes",
+    "summary": "Focused comparison baseline could not be resolved from proposal baseline_refs or prior_art.",
+    "outcome": "unavailable",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l1_npu_corrected_compute_frontier_v1",
+    "title": "Corrected NPU FP16 compute frontier",
+    "primary_question": "Which corrected FP16 NPU compute module count is the practical PPA anchor once disconnected-output measurements are excluded?",
+    "evaluation_mode": "correctness_guard",
+    "comparison_role": "precondition",
+    "outcome": "unavailable",
+    "summary": "Focused comparison baseline could not be resolved from proposal baseline_refs or prior_art.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": []
+  },
+  "source_refs": {
+    "best_point_json": "runs/campaigns/npu/frontier_guard/compute_full_path_guard_v1__l2_npu_compute_full_path_equivalence_guard_v1/best_point.json",
+    "summary_csv": "runs/campaigns/npu/frontier_guard/compute_full_path_guard_v1__l2_npu_compute_full_path_equivalence_guard_v1/summary.csv",
+    "results_csv": "runs/campaigns/npu/frontier_guard/compute_full_path_guard_v1__l2_npu_compute_full_path_equivalence_guard_v1/results.csv",
+    "report_md": "runs/campaigns/npu/frontier_guard/compute_full_path_guard_v1__l2_npu_compute_full_path_equivalence_guard_v1/report.md",
+    "focused_candidate_schedule_yml": "runs/campaigns/npu/frontier_guard/compute_full_path_guard_v1__l2_npu_compute_full_path_equivalence_guard_v1/artifacts/mapper/fp16_nm1_guard/mlp1/schedule.yml",
+    "focused_candidate_descriptors_bin": "runs/campaigns/npu/frontier_guard/compute_full_path_guard_v1__l2_npu_compute_full_path_equivalence_guard_v1/artifacts/mapper/fp16_nm1_guard/mlp1/descriptors.bin",
+    "focused_candidate_perf_trace_json": "runs/campaigns/npu/frontier_guard/compute_full_path_guard_v1__l2_npu_compute_full_path_equivalence_guard_v1/artifacts/perf/fp16_nm1_guard/mlp1/trace.json",
+    "focused_model_artifacts": [
+      {
+        "model_id": "mlp1",
+        "schedule_yml": "runs/campaigns/npu/frontier_guard/compute_full_path_guard_v1__l2_npu_compute_full_path_equivalence_guard_v1/artifacts/mapper/fp16_nm1_guard/mlp1/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/frontier_guard/compute_full_path_guard_v1__l2_npu_compute_full_path_equivalence_guard_v1/artifacts/mapper/fp16_nm1_guard/mlp1/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/frontier_guard/compute_full_path_guard_v1__l2_npu_compute_full_path_equivalence_guard_v1/artifacts/perf/fp16_nm1_guard/mlp1/trace.json"
+      }
+    ]
+  }
+}

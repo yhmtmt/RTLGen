@@ -1,0 +1,40 @@
+{
+  "campaign_id": "npu_compute_full_path_guard_v1",
+  "generated_utc": "2026-05-25T09:17:33+00:00",
+  "objective_weights": {
+    "latency": 1.0,
+    "energy": 1.0,
+    "area": 0.0,
+    "power": 0.0,
+    "runtime": 0.0
+  },
+  "best": {
+    "arch_id": "fp16_nm1_guard",
+    "macro_mode": "flat_nomacro",
+    "objective_rank": 1,
+    "objective_score": 0.0,
+    "latency_ms_mean": 0.004282,
+    "throughput_infer_per_s_mean": 233535.7309668379,
+    "energy_mj_mean": 8.26948404e-07,
+    "critical_path_ns_mean": 5.557037432204143,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.193122,
+    "flow_elapsed_s_mean": 834.99,
+    "place_gp_elapsed_s_mean": 416.78
+  },
+  "pareto_count": 1,
+  "scheduler_visibility_decision": {
+    "recommendation": "no_architecture_change_yet",
+    "rationale": "Softmax occupancy is low and no wait or backpressure counters are active; the current evidence does not justify a softmax architecture change.",
+    "metrics": {
+      "max_softmax_engine_occupancy": 0.0,
+      "max_softmax_backpressure_events": 0.0,
+      "max_softmax_backpressure_ns": 0.0,
+      "max_dependency_wait_ns": 0.0,
+      "max_softmax_wait_on_gemm_ns": 0.0,
+      "max_softmax_wait_on_misc_compute_ns": 0.0,
+      "min_latency_us_per_token": null,
+      "max_latency_us_per_token": null
+    }
+  }
+}

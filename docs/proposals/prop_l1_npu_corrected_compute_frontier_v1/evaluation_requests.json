@@ -1,15 +1,23 @@
 {
   "proposal_id": "prop_l1_npu_corrected_compute_frontier_v1",
-  "source_commit": "7946362a3aac5dee1ef7563c37cddd61365c8149",
+  "source_commit": "b2d32a837b3da1bc43a192aecd8f7089cf972c61",
   "requested_items": [
     {
       "item_id": "l2_npu_compute_full_path_equivalence_guard_v1",
       "task_type": "l2_campaign",
-      "objective": "prove_corrected_compute_datapath_guard",
+      "objective": "Run corrected NPU compute full-path RTL/perf equivalence guard before PPA sweeps",
       "evaluation_mode": "correctness_guard",
       "abstraction_layer": "npu_compute_full_path_equivalence_guard",
       "comparison_role": "precondition",
-      "status": "pending"
+      "status": "pending",
+      "paired_baseline_item_id": "",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": false,
+      "requires_materialized_refs": false,
+      "expected_result": {
+        "direction": "gate",
+        "reason": "Run PPA sweeps only if corrected datapath guard passes"
+      }
     },
     {
       "item_id": "l1_npu_corrected_compute_frontier_nm1_nm2_nm4_seed3_v1",
