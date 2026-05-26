@@ -597,6 +597,15 @@ def _build_payload(
     abstraction_layer: str | None,
     trial_policy: dict[str, int],
 ) -> dict[str, Any]:
+    lower_objective = objective.lower()
+    boundary_acceptance = "boundary" in lower_objective or "accept timing/flow failures" in lower_objective
+    metrics_acceptance = (
+        "Each generated wrapper metrics.csv contains recorded rows with a status column; "
+        "allow non-ok metrics such as flow_failed when the row is boundary evidence"
+        if boundary_acceptance
+        else "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep"
+    )
+
     payload = {
         "version": 0.1,
         "item_id": item_id,
@@ -633,7 +642,7 @@ def _build_payload(
             ],
             "expected_outputs": expected_outputs,
             "acceptance": [
-                "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+                metrics_acceptance,
                 "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
                 "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass",
             ],

@@ -392,6 +392,69 @@ def test_l1_worker_fails_when_expected_metrics_have_no_ok_rows() -> None:
             ]
 
 
+def test_l1_worker_allows_non_ok_metrics_for_boundary_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        init_git_repo(repo_root)
+        db_path = Path(td) / "cp.db"
+        engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
+        create_all(engine)
+        item_id = "item_l1_boundary_metrics"
+        metrics_rel = f"runs/campaigns/{item_id}/metrics.csv"
+        with Session(engine) as session:
+            seed_ready_work_item(session, item_id=item_id, repo_root=repo_root, failing=False)
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            work_item.task_type = "l1_sweep"
+            work_item.layer = "layer1"
+            work_item.assigned_machine_key = "worker-1"
+            work_item.command_manifest = [
+                {
+                    "name": "write_boundary_metrics",
+                    "run": (
+                        "python3 -c \"from pathlib import Path; "
+                        f"p=Path('{metrics_rel}'); "
+                        "p.parent.mkdir(parents=True, exist_ok=True); "
+                        "p.write_text('design,status,critical_path_ns\\nunit,flow_failed,\\n', encoding='utf-8')\""
+                    ),
+                }
+            ]
+            work_item.expected_outputs = [metrics_rel]
+            work_item.acceptance_rules = [
+                "Each generated wrapper metrics.csv contains recorded rows with a status column; "
+                "allow non-ok metrics such as flow_failed when the row is boundary evidence"
+            ]
+            session.commit()
+
+        session_factory = build_session_factory(engine)
+        results = run_worker(
+            session_factory,
+            config=WorkerConfig(
+                repo_root=str(repo_root),
+                machine_key="worker-1",
+                capabilities={"platform": "nangate45", "flow": "openroad"},
+                capability_filter={"platform": "nangate45", "flow": "openroad"},
+                enforce_source_commit=False,
+                lease_seconds=60,
+                heartbeat_seconds=1,
+                max_retry_attempts=1,
+            ),
+            max_items=1,
+        )
+
+        assert len(results) == 1
+        assert results[0].status == "succeeded"
+
+        with Session(engine) as session:
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            run = session.query(Run).filter_by(run_key=results[0].run_key).one()
+            assert work_item.state == WorkItemState.ARTIFACT_SYNC
+            assert run.status == RunStatus.SUCCEEDED
+            assert run.result_payload["queue_result"]["status"] == "ok"
+            assert run.result_payload["queue_result"]["metrics_rows"] == [f"{metrics_rel}:2"]
+            assert "acceptance_errors" not in run.result_payload
+
+
 def test_worker_skips_non_transportable_expected_outputs() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"

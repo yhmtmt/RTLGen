@@ -422,12 +422,49 @@ def test_generate_l1_sweep_task_creates_ready_work_item() -> None:
             assert payload["source_requirement"]["required_ref"] == "origin/master"
             assert payload["source_requirement"]["requires_daemon_restart"] is True
             assert payload["task"]["inputs"]["sweeps"] == [sweep_path]
+            assert payload["task"]["acceptance"][0] == (
+                "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep"
+            )
             assert payload["task"]["inputs"]["required_submodules"] == [
                 "third_party/nlohmann_json",
                 "third_party/cacti",
             ]
             assert payload["developer_loop"]["abstraction"] == {"layer": "circuit_block"}
             assert payload["handoff"]["pr_body_fields"]["queue_item_id"] == result.item_id
+
+
+def test_generate_l1_sweep_task_uses_boundary_metrics_acceptance() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_repo(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            with patch(
+                "control_plane.services.l1_task_generator._image_provided_l1_runtime_deps_available",
+                return_value=False,
+            ):
+                result = generate_l1_sweep_task(
+                    session,
+                    Layer1SweepGenerateRequest(
+                        repo_root=str(repo_root),
+                        sweep_path=sweep_path,
+                        config_paths=[config_path],
+                        platform="nangate45",
+                        out_root="runs/designs/activations",
+                        requested_by="@tester",
+                        source_commit=source_commit,
+                        objective="Measure physical boundary and accept timing/flow failures as boundary evidence",
+                    ),
+                )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert "allow non-ok metrics" in work_item.acceptance_rules[0]
+            assert "flow_failed" in work_item.acceptance_rules[0]
+            assert work_item.task_request.request_payload["task"]["acceptance"] == work_item.acceptance_rules
 
 
 def test_generate_l1_sweep_task_expands_expected_outputs_for_multi_trial_items() -> None:

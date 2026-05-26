@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_npu_corrected_compute_frontier_v1",
-  "source_commit": "06c8844931c9ace09aaf06adbba3d20b14c545d7",
+  "source_commit": "f65101658410467b41d9a5b6f356d676fbf371ff",
   "requested_items": [
     {
       "item_id": "l2_npu_compute_full_path_equivalence_guard_v1",
@@ -44,7 +44,7 @@
     {
       "item_id": "l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1",
       "task_type": "l1_sweep",
-      "objective": "measure_corrected_parallelism_boundary",
+      "objective": "Measure corrected NPU compute parallelism boundary after full-path equivalence guard; accept timing/flow failures as boundary evidence and preserve lightweight metrics.",
       "evaluation_mode": "measurement_only",
       "abstraction_layer": "npu_corrected_compute_frontier",
       "comparison_role": "boundary",
@@ -53,7 +53,7 @@
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
-      "status": "ready_to_queue",
+      "status": "pending",
       "notes": "Prerequisites are merged; item is ready to queue."
     }
   ]
