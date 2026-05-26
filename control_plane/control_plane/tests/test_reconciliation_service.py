@@ -477,6 +477,7 @@ def test_normalize_metrics_csv_refs_supports_modern_npu_metrics_shape() -> None:
 
         rows = _normalize_metrics_csv_refs(
             repo_root=repo_root,
+            work_item=WorkItem(input_manifest={}),
             metrics_csv="runs/designs/npu_blocks/demo_block/metrics.csv",
             allow_missing=False,
         )
@@ -485,6 +486,40 @@ def test_normalize_metrics_csv_refs_supports_modern_npu_metrics_shape() -> None:
         assert rows[0]["param_hash"] == "deadbeef"
         assert rows[0]["tag"] == "demo_tag"
         assert rows[0]["result_path"] == "runs/designs/npu_blocks/demo_block/work/deadbeef/result.json"
+
+
+def test_normalize_metrics_csv_refs_filters_current_sweep_tag_prefix() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        metrics_path = repo_root / "runs" / "designs" / "npu_blocks" / "demo_block" / "metrics.csv"
+        metrics_path.parent.mkdir(parents=True, exist_ok=True)
+        metrics_path.write_text(
+            (
+                "design,platform,config_hash,param_hash,tag,status,critical_path_ns,die_area,total_power_mw,"
+                "flow_elapsed_seconds,stage_elapsed_seconds,params_json,result_path,work_result_json,synth_script_path,synth_script_sha1\n"
+                "demo_block,nangate45,abc123,oldfast,old_sweep_flat,ok,1.0,100.0,0.1,10.0,4.0,{},"
+                "/orfs/flow/logs/demo/old.json,runs/designs/npu_blocks/demo_block/work/oldfast/result.json,,\n"
+                "demo_block,nangate45,abc123,current,current_sweep_flat,ok,5.0,500.0,0.5,10.0,4.0,{},"
+                "/orfs/flow/logs/demo/current.json,runs/designs/npu_blocks/demo_block/work/current/result.json,,\n"
+            ),
+            encoding="utf-8",
+        )
+        sweep_rel = "runs/campaigns/npu/demo/sweeps/current.json"
+        sweep_path = repo_root / sweep_rel
+        sweep_path.parent.mkdir(parents=True, exist_ok=True)
+        sweep_path.write_text(json.dumps({"tag_prefix": "current_sweep"}) + "\n", encoding="utf-8")
+
+        rows = _normalize_metrics_csv_refs(
+            repo_root=repo_root,
+            work_item=WorkItem(input_manifest={"sweeps": [sweep_rel]}),
+            metrics_csv="runs/designs/npu_blocks/demo_block/metrics.csv",
+            allow_missing=False,
+        )
+
+        assert len(rows) == 1
+        assert rows[0]["param_hash"] == "current"
+        assert rows[0]["tag"] == "current_sweep_flat"
 
 
 def test_sync_run_artifacts_defaults_to_shadow_export_path() -> None:

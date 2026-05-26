@@ -151,6 +151,30 @@ def _load_metrics_rows(path: Path) -> list[dict[str, str]]:
     return rows
 
 
+def _current_sweep_tag_prefixes(repo_root: Path, work_item: WorkItem) -> tuple[str, ...]:
+    prefixes: list[str] = []
+    input_manifest = dict(work_item.input_manifest or {})
+    for sweep_text in input_manifest.get("sweeps") or []:
+        sweep_path = _resolve_path(repo_root=repo_root, path_text=str(sweep_text))
+        if not sweep_path.exists():
+            continue
+        try:
+            sweep_doc = _load_json(sweep_path)
+        except Exception:
+            continue
+        tag_prefix = str(sweep_doc.get("tag_prefix", "")).strip()
+        if tag_prefix and tag_prefix not in prefixes:
+            prefixes.append(tag_prefix)
+    return tuple(prefixes)
+
+
+def _row_in_current_sweep_scope(row: dict[str, Any], *, tag_prefixes: tuple[str, ...]) -> bool:
+    if not tag_prefixes:
+        return True
+    tag = str(row.get("tag", "")).strip()
+    return any(tag.startswith(prefix) for prefix in tag_prefixes)
+
+
 def _work_item_make_target(work_item: WorkItem) -> str:
     for command in work_item.command_manifest or []:
         if str(command.get("name", "")).strip() != "run_block_sweep":
@@ -286,13 +310,20 @@ def _effective_evaluation_record(*, repo_root: Path, work_item: WorkItem, best_r
     }
 
 
-def _best_metrics_row(*, repo_root: Path, metrics_csv: str) -> dict[str, Any] | None:
+def _best_metrics_row(
+    *,
+    repo_root: Path,
+    metrics_csv: str,
+    tag_prefixes: tuple[str, ...] = (),
+) -> dict[str, Any] | None:
     path = _resolve_path(repo_root=repo_root, path_text=metrics_csv)
     if not path.exists():
         return None
     rows: list[dict[str, Any]] = []
     for row in _load_metrics_rows(path):
         if str(row.get("status", "")).strip() != "ok":
+            continue
+        if not _row_in_current_sweep_scope(row, tag_prefixes=tag_prefixes):
             continue
         rows.append(dict(row))
     if not rows:
@@ -386,8 +417,9 @@ def _filter_metrics_csvs_for_trial(run: Run, metrics_csvs: list[str]) -> list[st
 
 def _best_trial_row(repo_root: Path, run: Run) -> tuple[str, dict[str, Any]] | None:
     candidates: list[tuple[str, dict[str, Any]]] = []
+    tag_prefixes = _current_sweep_tag_prefixes(repo_root, run.work_item)
     for metrics_csv in _metrics_csvs_from_run(run, work_item=run.work_item):
-        best_row = _best_metrics_row(repo_root=repo_root, metrics_csv=metrics_csv)
+        best_row = _best_metrics_row(repo_root=repo_root, metrics_csv=metrics_csv, tag_prefixes=tag_prefixes)
         if best_row is None:
             continue
         candidates.append((metrics_csv, best_row))
@@ -399,12 +431,15 @@ def _best_trial_row(repo_root: Path, run: Run) -> tuple[str, dict[str, Any]] | N
 
 def _ok_trial_rows(repo_root: Path, run: Run) -> list[tuple[str, dict[str, Any]]]:
     candidates: list[tuple[str, dict[str, Any]]] = []
+    tag_prefixes = _current_sweep_tag_prefixes(repo_root, run.work_item)
     for metrics_csv in _metrics_csvs_from_run(run, work_item=run.work_item):
         metrics_path = _resolve_path(repo_root=repo_root, path_text=metrics_csv)
         if not metrics_path.exists():
             continue
         for row in _load_metrics_rows(metrics_path):
             if str(row.get("status", "")).strip() != "ok":
+                continue
+            if not _row_in_current_sweep_scope(row, tag_prefixes=tag_prefixes):
                 continue
             candidates.append((metrics_csv, dict(row)))
     return candidates
@@ -731,8 +766,9 @@ def consume_l1_result(session: Session, request: Layer1ConsumeRequest) -> Layer1
             )
         )
     else:
+        tag_prefixes = _current_sweep_tag_prefixes(repo_root, work_item)
         for metrics_csv in metrics_csvs:
-            best_row = _best_metrics_row(repo_root=repo_root, metrics_csv=metrics_csv)
+            best_row = _best_metrics_row(repo_root=repo_root, metrics_csv=metrics_csv, tag_prefixes=tag_prefixes)
             if best_row is None:
                 continue
             row_evaluation = _effective_evaluation_record(repo_root=repo_root, work_item=work_item, best_row=best_row)
