@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_npu_corrected_compute_nm64_boundary_v1",
-  "source_commit": "",
+  "source_commit": "fe40b20ef8ee49e1ed9e24389bb833e8810458b5",
   "requested_items": [
     {
       "item_id": "l1_npu_corrected_compute_frontier_nm64_v1",
