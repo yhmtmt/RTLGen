@@ -20,6 +20,7 @@ from control_plane.services.reconciliation_service import (
     ArtifactSyncRequest,
     _ensure_queue_snapshot_artifact,
     _normalize_metrics_csv_refs,
+    _normalize_metrics_rows,
     sync_run_artifacts,
 )
 from control_plane.services.worker_service import run_worker
@@ -520,6 +521,44 @@ def test_normalize_metrics_csv_refs_filters_current_sweep_tag_prefix() -> None:
         assert len(rows) == 1
         assert rows[0]["param_hash"] == "current"
         assert rows[0]["tag"] == "current_sweep_flat"
+
+
+def test_normalize_metrics_rows_filters_already_normalized_current_sweep_rows() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        sweep_rel = "runs/campaigns/npu/demo/sweeps/current.json"
+        sweep_path = repo_root / sweep_rel
+        sweep_path.parent.mkdir(parents=True, exist_ok=True)
+        sweep_path.write_text(json.dumps({"tag_prefix": "current_sweep"}) + "\n", encoding="utf-8")
+        work_item = WorkItem(input_manifest={"sweeps": [sweep_rel]})
+
+        rows = _normalize_metrics_rows(
+            repo_root=repo_root,
+            work_item=work_item,
+            queue_result={
+                "status": "ok",
+                "metrics_rows": [
+                    {
+                        "metrics_csv": "runs/designs/npu_blocks/demo_block/metrics.csv",
+                        "platform": "nangate45",
+                        "status": "ok",
+                        "param_hash": "oldfast",
+                        "tag": "old_sweep_flat",
+                    },
+                    {
+                        "metrics_csv": "runs/designs/npu_blocks/demo_block/metrics.csv",
+                        "platform": "nangate45",
+                        "status": "ok",
+                        "param_hash": "current",
+                        "tag": "current_sweep_flat",
+                    },
+                ],
+            },
+        )
+
+        assert len(rows) == 1
+        assert rows[0]["param_hash"] == "current"
 
 
 def test_sync_run_artifacts_defaults_to_shadow_export_path() -> None:
