@@ -1,0 +1,44 @@
+{
+  "proposal_id": "prop_l1_npu_corrected_compute_iso_util_v1",
+  "source_commit": "",
+  "requested_items": [
+    {
+      "item_id": "l1_npu_corrected_compute_iso_util_nm2_nm4_high46_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure corrected nm2/nm4 NPU compute blocks in a compressed floorplan targeting nm64-like utilization.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "npu_corrected_compute_iso_util",
+      "comparison_role": "utilization_stress_low_nm",
+      "paired_baseline_item_id": "l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1",
+      "depends_on_item_ids": [
+        "l1_npu_corrected_compute_frontier_nm64_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "status": "pending",
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "If nm2/nm4 delay worsens substantially at about 46% utilization, PnR flexibility is a dominant contributor to the nm64 delay penalty."
+      }
+    },
+    {
+      "item_id": "l1_npu_corrected_compute_iso_util_nm32_nm64_low29_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure corrected nm32/nm64 NPU compute blocks in an expanded floorplan targeting nm2-like utilization for nm64.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "npu_corrected_compute_iso_util",
+      "comparison_role": "utilization_relief_high_nm",
+      "paired_baseline_item_id": "l1_npu_corrected_compute_frontier_nm64_v1",
+      "depends_on_item_ids": [
+        "l1_npu_corrected_compute_frontier_nm64_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "status": "pending",
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "If nm64 delay improves near low-nm timing at about 29% utilization, PnR flexibility is a dominant contributor; otherwise centralized logic scaling remains significant."
+      }
+    }
+  ]
+}

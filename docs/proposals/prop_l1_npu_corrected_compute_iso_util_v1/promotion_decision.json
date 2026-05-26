@@ -1,0 +1,8 @@
+{
+  "proposal_id": "prop_l1_npu_corrected_compute_iso_util_v1",
+  "decision": "pending",
+  "reason": "Awaiting iso-utilization evaluations.",
+  "evidence_refs": [],
+  "next_action": "dispatch iso-utilization L1 sweeps",
+  "requires_human_approval": false
+}

@@ -1,0 +1,87 @@
+{
+  "proposal_id": "prop_l1_npu_corrected_compute_iso_util_v1",
+  "created_utc": "2026-05-26T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "npu_corrected_compute_iso_util",
+  "title": "Corrected NPU compute iso-utilization delay separation",
+  "hypothesis": "The worse delay at larger corrected NPU compute module counts is partly caused by reduced PnR flexibility from higher utilization. Measuring low-nm designs at nm64-like utilization and high-nm designs at nm2-like utilization separates utilization pressure from centralized command/control scaling.",
+  "direct_comparison": {
+    "primary_question": "How much of the nm64 delay penalty is explained by utilization rather than num_modules-dependent command distribution and writeback logic?",
+    "include": [
+      "nm2 and nm4 at a compressed floorplan targeting approximately 46% utilization for nm2",
+      "nm32 and nm64 at an expanded floorplan targeting approximately 29% utilization for nm64",
+      "flat_nomacro and hier_macro mode comparison for each point",
+      "actual measured utilization, delay, power, and area rows suitable for fitting delay(nm, utilization)"
+    ],
+    "exclude": [
+      "NoC or tiled multi-CQ implementation",
+      "new scheduler implementation",
+      "claiming final timing stability from a single seed"
+    ]
+  },
+  "expected_benefit": [
+    "prevents perf simulation from overusing optimistic nm2 timing measured at low utilization",
+    "prevents monolithic nm64 timing from unfairly penalizing decomposed/tiled architectures",
+    "enables a first-order timing model with separate local parallelism and utilization terms"
+  ],
+  "risks": [
+    "compressed nm2/nm4 floorplans may fail even if the logic is intrinsically fast",
+    "expanded nm32/nm64 floorplans may improve routing but not represent a dense tiled macro",
+    "single-seed results should guide model structure, not final signoff"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l1_npu_corrected_compute_iso_util_nm2_nm4_high46_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure corrected nm2/nm4 NPU compute blocks in a compressed floorplan targeting nm64-like utilization.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "npu_corrected_compute_iso_util",
+      "cost_class": "medium",
+      "comparison_role": "utilization_stress_low_nm",
+      "paired_baseline_item_id": "l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1",
+      "depends_on_item_ids": [
+        "l1_npu_corrected_compute_frontier_nm64_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "If nm2/nm4 delay worsens substantially at about 46% utilization, PnR flexibility is a dominant contributor to the nm64 delay penalty."
+      }
+    },
+    {
+      "item_id": "l1_npu_corrected_compute_iso_util_nm32_nm64_low29_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure corrected nm32/nm64 NPU compute blocks in an expanded floorplan targeting nm2-like utilization for nm64.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "npu_corrected_compute_iso_util",
+      "cost_class": "high",
+      "comparison_role": "utilization_relief_high_nm",
+      "paired_baseline_item_id": "l1_npu_corrected_compute_frontier_nm64_v1",
+      "depends_on_item_ids": [
+        "l1_npu_corrected_compute_frontier_nm64_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "If nm64 delay improves near low-nm timing at about 29% utilization, PnR flexibility is a dominant contributor; otherwise centralized logic scaling remains significant."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l1_npu_corrected_compute_frontier_v1/analysis_report.md",
+    "docs/proposals/prop_l1_npu_corrected_compute_nm64_boundary_v1/analysis_report.md",
+    "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+    "runs/designs/npu_blocks/npu_fp16_cpp_nm64_cmp/metrics.csv"
+  ],
+  "knowledge_refs": [
+    "runs/campaigns/npu/compute_parallelism_iso_util/sweeps/nangate45_cmp33_highutil_46pct.json",
+    "runs/campaigns/npu/compute_parallelism_iso_util/sweeps/nangate45_cmp33_lowutil_29pct.json",
+    "npu/synth/run_block_sweep.py",
+    "npu/rtlgen/gen.py"
+  ]
+}

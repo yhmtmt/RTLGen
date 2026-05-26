@@ -1,0 +1,27 @@
+{
+  "flow_params": {
+    "TAG": [
+      "npu_fp16_compute_iso_util_low29_cmp33"
+    ],
+    "FLOW_VARIANT": [
+      "compute_iso_util_low29_cmp33"
+    ],
+    "CLOCK_PERIOD": [
+      10.0
+    ],
+    "DIE_AREA": [
+      "0 0 1859 1859"
+    ],
+    "CORE_AREA": [
+      "50 50 1809 1809"
+    ],
+    "PLACE_DENSITY": [
+      0.4
+    ],
+    "SYNTH_KEEP_MODULES": [
+      "gemm_compute_array"
+    ]
+  },
+  "tag_prefix": "npu_fp16_compute_iso_util_low29",
+  "mode_compare": true
+}
