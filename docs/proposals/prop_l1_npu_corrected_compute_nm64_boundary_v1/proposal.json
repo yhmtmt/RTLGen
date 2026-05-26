@@ -1,0 +1,67 @@
+{
+  "proposal_id": "prop_l1_npu_corrected_compute_nm64_boundary_v1",
+  "created_utc": "2026-05-26T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "npu_corrected_compute_nm64_boundary",
+  "title": "Corrected NPU FP16 compute nm64 boundary",
+  "hypothesis": "The corrected nm32 dynamic-dispatch FP16 NPU point still uses only about 37% of the 1.5mm x 1.5mm macro core area, so nm64 should be measured before assuming a scheduler or memory hierarchy change is required.",
+  "direct_comparison": {
+    "primary_question": "Can the corrected current dynamic-dispatch NPU compute block close at nm64 in the same cmp33 physical envelope, and which flat or hierarchical mode is viable?",
+    "include": [
+      "full npu_top wrapper with the corrected GEMM/VEC writeback path",
+      "nm64 FP16 GEMM module count",
+      "flat_nomacro and hier_macro mode comparison using the existing cmp33 floorplan",
+      "boundary evidence if timing, placement, routing, or flow runtime fails"
+    ],
+    "exclude": [
+      "new static scheduler or NoC implementation",
+      "larger die or retuned memory hierarchy",
+      "quality-changing quantization or KV sharing assumptions"
+    ]
+  },
+  "expected_benefit": [
+    "sets the next physical compute-capacity anchor beyond corrected nm32",
+    "shows whether the current dynamic dispatcher remains a usable scaling baseline",
+    "gives the system-level Llama7B model a better measured bound for compute parallelism before memory/NoC tradeoff sweeps"
+  ],
+  "risks": [
+    "nm64 may be expensive in OpenROAD and should be recorded as boundary evidence rather than retried indefinitely",
+    "the inherited cmp33 floorplan may become the limiting factor before the compute array itself",
+    "a single seed is enough for boundary scouting but not final stability characterization"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l1_npu_corrected_compute_frontier_nm64_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure corrected NPU FP16 nm64 dynamic-dispatch boundary with cmp33 flat/hier mode comparison after the corrected nm1 through nm32 frontier.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "npu_corrected_compute_nm64_boundary",
+      "cost_class": "high",
+      "comparison_role": "boundary",
+      "paired_baseline_item_id": "l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1",
+      "depends_on_item_ids": [
+        "l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use nm64 timing, area, power, utilization, and flow status to decide whether to continue current dynamic dispatch scaling or switch to hierarchical/static scheduling."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "docs/proposals/prop_l1_npu_corrected_compute_frontier_v1/analysis_report.md",
+    "control_plane/shadow_exports/l1_promotions/l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1.json",
+    "runs/designs/npu_blocks/npu_fp16_cpp_nm32_cmp/metrics.csv"
+  ],
+  "knowledge_refs": [
+    "runs/designs/npu_blocks/npu_fp16_cpp_nm64_cmp/config_nm64.json",
+    "runs/campaigns/npu/compute_parallelism_stability/sweeps/nangate45_cmp33_mode_compare.json",
+    "npu/rtlgen/gen.py",
+    "npu/synth/run_block_sweep.py"
+  ]
+}

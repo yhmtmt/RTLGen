@@ -1,0 +1,8 @@
+{
+  "proposal_id": "prop_l1_npu_corrected_compute_nm64_boundary_v1",
+  "decision": "pending",
+  "reason": "Awaiting nm64 boundary evaluation.",
+  "evidence_refs": [],
+  "next_action": "dispatch l1_npu_corrected_compute_frontier_nm64_v1",
+  "requires_human_approval": false
+}

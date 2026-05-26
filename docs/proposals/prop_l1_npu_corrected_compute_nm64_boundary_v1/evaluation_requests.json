@@ -1,0 +1,25 @@
+{
+  "proposal_id": "prop_l1_npu_corrected_compute_nm64_boundary_v1",
+  "source_commit": "",
+  "requested_items": [
+    {
+      "item_id": "l1_npu_corrected_compute_frontier_nm64_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure corrected NPU FP16 nm64 dynamic-dispatch boundary with cmp33 flat/hier mode comparison after the corrected nm1 through nm32 frontier.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "npu_corrected_compute_nm64_boundary",
+      "comparison_role": "boundary",
+      "paired_baseline_item_id": "l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1",
+      "depends_on_item_ids": [
+        "l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "status": "pending",
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use nm64 timing, area, power, utilization, and flow status to decide whether to continue current dynamic dispatch scaling or switch to hierarchical/static scheduling."
+      }
+    }
+  ]
+}
