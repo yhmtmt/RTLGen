@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 import copy
 import csv
+import json
 from pathlib import Path
 import re
 import socket
@@ -249,14 +250,47 @@ def _load_metrics_rows(path: Path) -> list[dict[str, str]]:
     return rows
 
 
-def _normalize_metrics_csv_refs(*, repo_root: Path, metrics_csv: str, allow_missing: bool = False) -> list[dict[str, Any]]:
+def _current_sweep_tag_prefixes(repo_root: Path, work_item: WorkItem) -> tuple[str, ...]:
+    prefixes: list[str] = []
+    input_manifest = dict(work_item.input_manifest or {})
+    for sweep_text in input_manifest.get("sweeps") or []:
+        sweep_path = (repo_root / str(sweep_text)).resolve()
+        if not sweep_path.exists():
+            continue
+        try:
+            sweep_doc = json.loads(sweep_path.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        tag_prefix = str(sweep_doc.get("tag_prefix", "")).strip()
+        if tag_prefix and tag_prefix not in prefixes:
+            prefixes.append(tag_prefix)
+    return tuple(prefixes)
+
+
+def _metrics_row_in_current_sweep_scope(row: dict[str, Any], *, tag_prefixes: tuple[str, ...]) -> bool:
+    if not tag_prefixes:
+        return True
+    tag = str(row.get("tag", "")).strip()
+    return any(tag.startswith(prefix) for prefix in tag_prefixes)
+
+
+def _normalize_metrics_csv_refs(
+    *,
+    repo_root: Path,
+    work_item: WorkItem,
+    metrics_csv: str,
+    allow_missing: bool = False,
+) -> list[dict[str, Any]]:
     path = (repo_root / metrics_csv).resolve()
     if not path.exists():
         if allow_missing:
             return []
         raise ArtifactSyncError(f"metrics csv not found: {metrics_csv}")
     rows: list[dict[str, Any]] = []
+    tag_prefixes = _current_sweep_tag_prefixes(repo_root, work_item)
     for row in _load_metrics_rows(path):
+        if not _metrics_row_in_current_sweep_scope(row, tag_prefixes=tag_prefixes):
+            continue
         status = str(row.get("status", "")).strip()
         platform = str(row.get("platform", "")).strip()
         param_hash = str(row.get("param_hash", "")).strip()
@@ -327,6 +361,7 @@ def _normalize_metrics_rows(
         normalized_rows.extend(
             _normalize_metrics_csv_refs(
                 repo_root=repo_root,
+                work_item=work_item,
                 metrics_csv=metrics_csv,
                 allow_missing=(status == "fail"),
             )

@@ -283,6 +283,108 @@ def test_consume_l1_result_keeps_single_trial_metrics_without_trials_subdir() ->
             assert payload["proposals"][0]["metrics_ref"]["metrics_csv"] == metrics_rel
 
 
+def test_consume_l1_result_filters_historical_rows_by_current_sweep_tag_prefix() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        metrics_rel = "runs/designs/npu_blocks/demo_block/metrics.csv"
+        sweep_rel = "runs/campaigns/npu/demo/sweeps/current.json"
+        sweep_path = repo_root / sweep_rel
+        sweep_path.parent.mkdir(parents=True, exist_ok=True)
+        sweep_path.write_text(json.dumps({"tag_prefix": "current_sweep"}) + "\n", encoding="utf-8")
+        _write_metrics(
+            repo_root / metrics_rel,
+            [
+                {
+                    "platform": "nangate45",
+                    "status": "ok",
+                    "param_hash": "oldfast",
+                    "tag": "old_sweep_flat",
+                    "critical_path_ns": "1.0",
+                    "die_area": "100",
+                    "total_power_mw": "0.1",
+                    "result_path": "runs/designs/npu_blocks/demo_block/work/oldfast/result.json",
+                },
+                {
+                    "platform": "nangate45",
+                    "status": "ok",
+                    "param_hash": "current",
+                    "tag": "current_sweep_flat",
+                    "critical_path_ns": "5.0",
+                    "die_area": "500",
+                    "total_power_mw": "0.5",
+                    "result_path": "runs/designs/npu_blocks/demo_block/work/current/result.json",
+                },
+            ],
+        )
+
+        with Session(engine) as session:
+            task_request = TaskRequest(
+                request_key="l1_sweep:test_current_scope",
+                source="test",
+                requested_by="@tester",
+                title="current scope",
+                description="current-sweep scope",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                priority=1,
+                request_payload={"item_id": "l1_test_current_scope", "objective": "current-sweep scope"},
+                source_commit="deadbeef",
+            )
+            session.add(task_request)
+            session.flush()
+            work_item = WorkItem(
+                work_item_key="l1_sweep:l1_test_current_scope",
+                task_request_id=task_request.id,
+                item_id="l1_test_current_scope",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                platform="nangate45",
+                task_type="l1_sweep",
+                state=WorkItemState.ARTIFACT_SYNC,
+                priority=1,
+                source_mode="config",
+                input_manifest={"sweeps": [sweep_rel]},
+                command_manifest=[],
+                expected_outputs=[metrics_rel],
+                acceptance_rules=[],
+                source_commit="deadbeef",
+            )
+            session.add(work_item)
+            session.flush()
+            session.add(Run(
+                run_key="l1_test_current_scope_run_1",
+                work_item_id=work_item.id,
+                attempt=1,
+                trial_index=1,
+                seed=0,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.SUCCEEDED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="deadbeef",
+                result_summary="ok",
+                result_payload={
+                    "trial": {"trial_index": 1, "seed": 0},
+                    "queue_result": {"status": "ok", "metrics_rows": [f"{metrics_rel}:2"]},
+                },
+            ))
+            session.flush()
+
+            consume_l1_result(session, Layer1ConsumeRequest(repo_root=str(repo_root), item_id=work_item.item_id))
+
+            payload = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "l1_promotions" / f"{work_item.item_id}.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            assert payload["proposals"][0]["metrics_ref"]["param_hash"] == "current"
+            assert payload["trial_summary"]["metrics"]["critical_path_ns"]["best"] == 5.0
+
+
 def test_consume_l1_result_allows_explicit_target_path() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
