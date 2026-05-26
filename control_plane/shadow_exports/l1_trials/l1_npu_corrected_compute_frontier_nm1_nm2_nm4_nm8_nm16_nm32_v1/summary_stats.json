@@ -1,0 +1,33 @@
+{
+  "item_id": "l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1",
+  "completed_trials": 1,
+  "success_count": 1,
+  "failure_count": 0,
+  "success_rate": 1.0,
+  "metrics": {
+    "critical_path_ns": {
+      "best": 5.9136,
+      "mean": 5.9136,
+      "median": 5.9136,
+      "max": 5.9136,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "die_area": {
+      "best": 2250000.0,
+      "mean": 2250000.0,
+      "median": 2250000.0,
+      "max": 2250000.0,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "total_power_mw": {
+      "best": 0.218,
+      "mean": 0.218,
+      "median": 0.218,
+      "max": 0.218,
+      "range": 0.0,
+      "stddev": 0.0
+    }
+  }
+}
