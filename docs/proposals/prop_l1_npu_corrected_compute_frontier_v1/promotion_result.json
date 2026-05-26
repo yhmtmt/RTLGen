@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l1_npu_corrected_compute_frontier_v1",
-  "decision": "iterate",
-  "pr_number": 666,
-  "merge_commit": "9aec3826a7a1ad1d418fae1a023224155db85701",
-  "merged_utc": "2026-05-25T09:20:18.981966Z"
+  "decision": "promote",
+  "pr_number": 667,
+  "merge_commit": "74e9172a57b086c7cf6749cc58bacca5c3cdf3f3",
+  "merged_utc": "2026-05-26T00:02:06.303719Z"
 }

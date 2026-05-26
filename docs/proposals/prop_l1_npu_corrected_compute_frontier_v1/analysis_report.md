@@ -2,31 +2,28 @@
 
 ## Candidate
 - `proposal_id`: `prop_l1_npu_corrected_compute_frontier_v1`
-- `candidate_id`: `l2_npu_compute_full_path_equivalence_guard_v1`
+- `candidate_id`: `l1_npu_corrected_compute_frontier_nm1_nm2_nm4_seed3_v1`
 
 ## Evaluations Consumed
-- `l2_npu_compute_full_path_equivalence_guard_v1`
-- `l2_npu_compute_full_path_equivalence_guard_v1_run_feb36ad11106d282`
-- source commit: `b2d32a837b3da1bc43a192aecd8f7089cf972c61`
-- review: PR #666
+- `l1_npu_corrected_compute_frontier_nm1_nm2_nm4_seed3_v1`
+- `l1_npu_corrected_compute_frontier_nm1_nm2_nm4_seed3_v1_run_bff85e70b495b623`
+- source commit: `06c8844931c9ace09aaf06adbba3d20b14c545d7`
+- review: PR #667
 
 ## Baseline Comparison
-- baseline_ref: `None`
-- baseline_item_id: `None`
-- outcome: `unavailable`
-- summary: Focused comparison baseline could not be resolved from proposal baseline_refs or prior_art.
+- not applicable
 
 ## Result
-- result: `iterate`
+- result: `promote`
 - confidence level: merged accepted evidence
-- estimated optimization room: pending follow-on comparison
-- architecture conclusion robustness: staged evidence
-- summary: Focused comparison baseline could not be resolved from proposal baseline_refs or prior_art.
+- estimated optimization room: accepted at current stage
+- architecture conclusion robustness: accepted for the current proposal scope
+- summary: Physical metrics recorded from an accepted status=ok Layer 1 row.
 
 ## Failures and Caveats
-- paired baseline comparison payload was unavailable at consume time
+- no additional caveats recorded during automatic finalization
 
 ## Recommendation
-- `iterate`
-- reason: Focused comparison baseline could not be resolved from proposal baseline_refs or prior_art.
-- next_action: inspect follow-on work after l2_npu_compute_full_path_equivalence_guard_v1
+- `promote`
+- reason: Accepted Layer 1 physical metrics were merged in PR #667 for the current candidate.
+- next_action: queue l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1

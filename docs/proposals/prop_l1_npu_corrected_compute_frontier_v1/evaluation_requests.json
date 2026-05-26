@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_npu_corrected_compute_frontier_v1",
-  "source_commit": "b2d32a837b3da1bc43a192aecd8f7089cf972c61",
+  "source_commit": "06c8844931c9ace09aaf06adbba3d20b14c545d7",
   "requested_items": [
     {
       "item_id": "l2_npu_compute_full_path_equivalence_guard_v1",
@@ -35,8 +35,11 @@
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
-      "status": "ready_to_queue",
-      "notes": "Prerequisites are merged; item is ready to queue."
+      "status": "merged",
+      "notes": "Prerequisites are merged; item is ready to queue. Merged via PR #667 and merge 74e9172a57b086c7cf6749cc58bacca5c3cdf3f3 at 2026-05-26T00:02:06.303719Z.",
+      "merged_pr_number": 667,
+      "merge_commit": "74e9172a57b086c7cf6749cc58bacca5c3cdf3f3",
+      "merged_utc": "2026-05-26T00:02:06.303719Z"
     },
     {
       "item_id": "l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1",
