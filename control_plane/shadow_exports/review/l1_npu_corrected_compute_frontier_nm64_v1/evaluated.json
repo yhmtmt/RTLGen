@@ -1,0 +1,128 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/npu/compute_parallelism_stability/sweeps/nangate45_cmp33_mode_compare.json"
+      ],
+      "configs": [
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm64_cmp/config_nm64.json"
+      ],
+      "out_root": "runs/designs/npu_blocks",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && cmake -S . -B build && cmake --build build --target rtlgen",
+        "name": "build_generator"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen.py --config runs/designs/npu_blocks/npu_fp16_cpp_nm64_cmp/config_nm64.json --out runs/designs/npu_blocks/npu_fp16_cpp_nm64_cmp/verilog",
+        "name": "generate_block_rtl"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/npu_fp16_cpp_nm64_cmp --platform nangate45 --top npu_top --sweep runs/campaigns/npu/compute_parallelism_stability/sweeps/nangate45_cmp33_mode_compare.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "objective": "Measure corrected NPU FP16 nm64 dynamic-dispatch boundary with cmp33 flat/hier mode comparison after the corrected nm1 through nm32 frontier.",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains recorded rows with a status column; allow non-ok metrics such as flow_failed when the row is boundary evidence",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm64_cmp/metrics.csv"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Corrected NPU compute frontier nm64",
+  "result": {
+    "branch": "eval/l1_npu_corrected_compute_frontier_nm64_v1/s20260526t181028z",
+    "completed_utc": "2026-05-26T18:10:26.447882Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260526t181028z][host:b7c2d9c80c1c][item:l1_npu_corrected_compute_frontier_nm64_v1]",
+    "metrics_rows": [
+      {
+        "tag": "npu_fp16_compute_stability_cmp33_flat_nomacro",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "40c9c722",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm64_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm64_cmp/work/40c9c722/result.json"
+      },
+      {
+        "tag": "npu_fp16_compute_stability_cmp33_hier_macro",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "b0f7e8e4",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm64_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm64_cmp/work/b0f7e8e4/result.json"
+      }
+    ],
+    "queue_item_id": "l1_npu_corrected_compute_frontier_nm64_v1",
+    "session_id": "s20260526t181028z",
+    "status": "ok",
+    "summary": "5/5 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_npu_corrected_compute_frontier_nm64_v1/s20260526t181028z",
+    "pr_title": "eval: run corrected npu compute frontier nm64",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260526t181028z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_npu_corrected_compute_frontier_nm64_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_npu_corrected_compute_frontier_nm64_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 4,
+  "created_utc": "2026-05-26T14:29:45.699757Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "evaluation": {
+      "mode": "measurement_only",
+      "trial_policy": {
+        "seed_start": 601,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      }
+    },
+    "abstraction": {
+      "layer": "npu_corrected_compute_nm64_boundary"
+    },
+    "proposal_id": "prop_l1_npu_corrected_compute_nm64_boundary_v1",
+    "proposal_path": "docs/proposals/prop_l1_npu_corrected_compute_nm64_boundary_v1"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "fe40b20ef8ee49e1ed9e24389bb833e8810458b5",
+    "requires_daemon_restart": true
+  }
+}

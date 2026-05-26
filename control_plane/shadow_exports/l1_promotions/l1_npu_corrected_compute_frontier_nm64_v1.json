@@ -1,0 +1,95 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-05-26T18:10:27.428903Z",
+  "item_id": "l1_npu_corrected_compute_frontier_nm64_v1",
+  "run_key": "l1_npu_corrected_compute_frontier_nm64_v1_run_8133ff1f5f4b0bea",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "fe40b20ef8ee49e1ed9e24389bb833e8810458b5",
+  "objective": "Measure corrected NPU FP16 nm64 dynamic-dispatch boundary with cmp33 flat/hier mode comparison after the corrected nm1 through nm32 frontier.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/npu/compute_parallelism_stability/sweeps/nangate45_cmp33_mode_compare.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm64_cmp/config_nm64.json"
+    ],
+    "out_root": "runs/designs/npu_blocks",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 1,
+  "evaluation_record": {
+    "evaluation_mode": "measurement_only",
+    "abstraction_layer": "npu_corrected_compute_nm64_boundary",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm64_cmp/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "40c9c722",
+        "tag": "npu_fp16_compute_stability_cmp33_flat_nomacro",
+        "result_path": "/orfs/flow/reports/nangate45/npu_fp16_cpp_nm64_cmp/compute_stability_cmp33_flat_nomacro/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm64_cmp/work/40c9c722/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 6.6331,
+        "die_area": 2250000.0,
+        "total_power_mw": 3.77
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_npu_corrected_compute_frontier_nm64_v1",
+    "completed_trials": 1,
+    "success_count": 1,
+    "failure_count": 0,
+    "success_rate": 1.0,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 6.6331,
+        "mean": 6.6331,
+        "median": 6.6331,
+        "max": 6.6331,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "die_area": {
+        "best": 2250000.0,
+        "mean": 2250000.0,
+        "median": 2250000.0,
+        "max": 2250000.0,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "total_power_mw": {
+        "best": 3.77,
+        "mean": 3.77,
+        "median": 3.77,
+        "max": 3.77,
+        "range": 0.0,
+        "stddev": 0.0
+      }
+    }
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm64_cmp/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_npu_corrected_compute_frontier_nm64_v1/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_npu_corrected_compute_frontier_nm64_v1/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_npu_corrected_compute_frontier_nm64_v1/trial_table.csv"
+  }
+}
