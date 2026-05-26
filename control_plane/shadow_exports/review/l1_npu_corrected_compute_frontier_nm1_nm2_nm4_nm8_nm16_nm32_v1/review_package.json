@@ -1,8 +1,8 @@
 {
   "version": 0.1,
-  "generated_utc": "2026-05-26T12:03:42.211311Z",
-  "control_plane_source_commit": "25569a671d556632df11e7170d7da4e4b876f0e6",
-  "review_metadata_source_commit": "25569a671d556632df11e7170d7da4e4b876f0e6",
+  "generated_utc": "2026-05-26T12:38:24.729431Z",
+  "control_plane_source_commit": "130c966c82bf67f7b90224966bb7fc573745d9d2",
+  "review_metadata_source_commit": "130c966c82bf67f7b90224966bb7fc573745d9d2",
   "item_id": "l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1",
   "run_key": "l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1_run_29e8b9360873c7e7",
   "layer": "layer1",
@@ -20,102 +20,6 @@
       "identity_block": "[role:evaluator][account:control_plane][session:s20260526t120340z][host:b7c2d9c80c1c][item:l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1]",
       "metrics_rows": [
         {
-          "tag": "npu_fp16_nm1_cmp33_flat_nomacro",
-          "status": "ok",
-          "platform": "nangate45",
-          "param_hash": "362e11ef",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/362e11ef/result.json"
-        },
-        {
-          "tag": "npu_fp16_nm1_cmp33_hier_macro",
-          "status": "ok",
-          "platform": "nangate45",
-          "param_hash": "6f738885",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/6f738885/result.json"
-        },
-        {
-          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r1",
-          "status": "ok",
-          "platform": "nangate45",
-          "param_hash": "3e84d92b",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3e84d92b/result.json"
-        },
-        {
-          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r2",
-          "status": "ok",
-          "platform": "nangate45",
-          "param_hash": "13a2c990",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/13a2c990/result.json"
-        },
-        {
-          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r3",
-          "status": "ok",
-          "platform": "nangate45",
-          "param_hash": "34eeb6e5",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/34eeb6e5/result.json"
-        },
-        {
-          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r4",
-          "status": "ok",
-          "platform": "nangate45",
-          "param_hash": "439adb1e",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/439adb1e/result.json"
-        },
-        {
-          "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r5",
-          "status": "ok",
-          "platform": "nangate45",
-          "param_hash": "936b2a7b",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/936b2a7b/result.json"
-        },
-        {
-          "tag": "npu_fp16_nm1_cmp33_hier_macro_r1",
-          "status": "ok",
-          "platform": "nangate45",
-          "param_hash": "54a235ae",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/54a235ae/result.json"
-        },
-        {
-          "tag": "npu_fp16_nm1_cmp33_hier_macro_r2",
-          "status": "ok",
-          "platform": "nangate45",
-          "param_hash": "f190a078",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/f190a078/result.json"
-        },
-        {
-          "tag": "npu_fp16_nm1_cmp33_hier_macro_r3",
-          "status": "ok",
-          "platform": "nangate45",
-          "param_hash": "b874bef7",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/b874bef7/result.json"
-        },
-        {
-          "tag": "npu_fp16_nm1_cmp33_hier_macro_r4",
-          "status": "ok",
-          "platform": "nangate45",
-          "param_hash": "3a650f98",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3a650f98/result.json"
-        },
-        {
-          "tag": "npu_fp16_nm1_cmp33_hier_macro_r5",
-          "status": "ok",
-          "platform": "nangate45",
-          "param_hash": "3fa4f194",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/3fa4f194/result.json"
-        },
-        {
           "tag": "npu_fp16_compute_stability_cmp33_flat_nomacro",
           "status": "ok",
           "platform": "nangate45",
@@ -130,102 +34,6 @@
           "param_hash": "b0f7e8e4",
           "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
           "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/b0f7e8e4/result.json"
-        },
-        {
-          "tag": "npu_fp16_nm2_cmp33_flat_nomacro",
-          "status": "ok",
-          "platform": "nangate45",
-          "param_hash": "033cdfdc",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/033cdfdc/result.json"
-        },
-        {
-          "tag": "npu_fp16_nm2_cmp33_hier_macro",
-          "status": "ok",
-          "platform": "nangate45",
-          "param_hash": "c4548bca",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/c4548bca/result.json"
-        },
-        {
-          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r1",
-          "status": "ok",
-          "platform": "nangate45",
-          "param_hash": "258015dc",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/258015dc/result.json"
-        },
-        {
-          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r2",
-          "status": "ok",
-          "platform": "nangate45",
-          "param_hash": "95526f98",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/95526f98/result.json"
-        },
-        {
-          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r3",
-          "status": "ok",
-          "platform": "nangate45",
-          "param_hash": "099823db",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/099823db/result.json"
-        },
-        {
-          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r4",
-          "status": "ok",
-          "platform": "nangate45",
-          "param_hash": "b276f2e7",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/b276f2e7/result.json"
-        },
-        {
-          "tag": "npu_fp16_nm2_cmp33_flat_nomacro_r5",
-          "status": "ok",
-          "platform": "nangate45",
-          "param_hash": "f0b4f9e6",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/f0b4f9e6/result.json"
-        },
-        {
-          "tag": "npu_fp16_nm2_cmp33_hier_macro_r1",
-          "status": "ok",
-          "platform": "nangate45",
-          "param_hash": "5d0ac971",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/5d0ac971/result.json"
-        },
-        {
-          "tag": "npu_fp16_nm2_cmp33_hier_macro_r2",
-          "status": "ok",
-          "platform": "nangate45",
-          "param_hash": "a9ae3c35",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/a9ae3c35/result.json"
-        },
-        {
-          "tag": "npu_fp16_nm2_cmp33_hier_macro_r3",
-          "status": "ok",
-          "platform": "nangate45",
-          "param_hash": "c51fa4a2",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/c51fa4a2/result.json"
-        },
-        {
-          "tag": "npu_fp16_nm2_cmp33_hier_macro_r4",
-          "status": "ok",
-          "platform": "nangate45",
-          "param_hash": "98a03366",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/98a03366/result.json"
-        },
-        {
-          "tag": "npu_fp16_nm2_cmp33_hier_macro_r5",
-          "status": "ok",
-          "platform": "nangate45",
-          "param_hash": "41f8b4a8",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/41f8b4a8/result.json"
         },
         {
           "tag": "npu_fp16_compute_stability_cmp33_flat_nomacro",
@@ -244,22 +52,6 @@
           "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/b0f7e8e4/result.json"
         },
         {
-          "tag": "npu_fp16_compute_ladder_cmp33_flat_nomacro",
-          "status": "ok",
-          "platform": "nangate45",
-          "param_hash": "a87afe0a",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm4_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm4_cmp/work/a87afe0a/result.json"
-        },
-        {
-          "tag": "npu_fp16_compute_ladder_cmp33_hier_macro",
-          "status": "ok",
-          "platform": "nangate45",
-          "param_hash": "02bf217a",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm4_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm4_cmp/work/02bf217a/result.json"
-        },
-        {
           "tag": "npu_fp16_compute_stability_cmp33_flat_nomacro",
           "status": "ok",
           "platform": "nangate45",
@@ -274,22 +66,6 @@
           "param_hash": "b0f7e8e4",
           "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm4_cmp/metrics.csv",
           "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm4_cmp/work/b0f7e8e4/result.json"
-        },
-        {
-          "tag": "npu_fp16_compute_ladder_cmp33_flat_nomacro",
-          "status": "ok",
-          "platform": "nangate45",
-          "param_hash": "a87afe0a",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm8_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm8_cmp/work/a87afe0a/result.json"
-        },
-        {
-          "tag": "npu_fp16_compute_ladder_cmp33_hier_macro",
-          "status": "ok",
-          "platform": "nangate45",
-          "param_hash": "02bf217a",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm8_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm8_cmp/work/02bf217a/result.json"
         },
         {
           "tag": "npu_fp16_compute_stability_cmp33_flat_nomacro",
@@ -308,22 +84,6 @@
           "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm8_cmp/work/b0f7e8e4/result.json"
         },
         {
-          "tag": "npu_fp16_compute_ladder_cmp33_flat_nomacro",
-          "status": "ok",
-          "platform": "nangate45",
-          "param_hash": "a87afe0a",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm16_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm16_cmp/work/a87afe0a/result.json"
-        },
-        {
-          "tag": "npu_fp16_compute_ladder_cmp33_hier_macro",
-          "status": "ok",
-          "platform": "nangate45",
-          "param_hash": "02bf217a",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm16_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm16_cmp/work/02bf217a/result.json"
-        },
-        {
           "tag": "npu_fp16_compute_stability_cmp33_flat_nomacro",
           "status": "ok",
           "platform": "nangate45",
@@ -338,22 +98,6 @@
           "param_hash": "b0f7e8e4",
           "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm16_cmp/metrics.csv",
           "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm16_cmp/work/b0f7e8e4/result.json"
-        },
-        {
-          "tag": "npu_fp16_compute_ladder_cmp33_flat_nomacro",
-          "status": "ok",
-          "platform": "nangate45",
-          "param_hash": "a87afe0a",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm32_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm32_cmp/work/a87afe0a/result.json"
-        },
-        {
-          "tag": "npu_fp16_compute_ladder_cmp33_hier_macro",
-          "status": "ok",
-          "platform": "nangate45",
-          "param_hash": "02bf217a",
-          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm32_cmp/metrics.csv",
-          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm32_cmp/work/02bf217a/result.json"
         },
         {
           "tag": "npu_fp16_compute_stability_cmp33_flat_nomacro",
@@ -382,10 +126,10 @@
     "kind": "promotion_proposal",
     "path": "control_plane/shadow_exports/l1_promotions/l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1.json",
     "storage_mode": "repo",
-    "sha256": "274374af3bc8944fcc2f16d747232fc6e49a45a0cb6e88dc7d714dde08f5ab76",
+    "sha256": "4abb4ca259e8851457485ef3b4a7c97894a962f75ed9b043719f3733162dfe0f",
     "payload": {
       "version": 0.1,
-      "generated_utc": "2026-05-26T12:03:39.323767Z",
+      "generated_utc": "2026-05-26T12:38:24.213366Z",
       "item_id": "l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1",
       "run_key": "l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1_run_29e8b9360873c7e7",
       "layer": "layer1",
@@ -428,16 +172,16 @@
             "platform": "nangate45",
             "status": "ok",
             "result_kind": "physical_metrics",
-            "param_hash": "13a2c990",
-            "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r2",
-            "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm1_cmp/nm1_cmp33_flat_nomacro_r2/3_3_place_gp.json",
-            "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/13a2c990/result.json"
+            "param_hash": "40c9c722",
+            "tag": "npu_fp16_compute_stability_cmp33_flat_nomacro",
+            "result_path": "/orfs/flow/reports/nangate45/npu_fp16_cpp_nm1_cmp/compute_stability_cmp33_flat_nomacro/6_finish.rpt",
+            "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/40c9c722/result.json"
           },
           "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
           "metric_summary": {
-            "critical_path_ns": 5.557037432204143,
+            "critical_path_ns": 5.9276,
             "die_area": 2250000.0,
-            "total_power_mw": 0.193122
+            "total_power_mw": 0.31
           }
         },
         {
@@ -446,16 +190,16 @@
             "platform": "nangate45",
             "status": "ok",
             "result_kind": "physical_metrics",
-            "param_hash": "033cdfdc",
-            "tag": "npu_fp16_nm2_cmp33_flat_nomacro",
-            "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm2_cmp/nm2_cmp33_flat_nomacro/3_3_place_gp.json",
-            "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/033cdfdc/result.json"
+            "param_hash": "40c9c722",
+            "tag": "npu_fp16_compute_stability_cmp33_flat_nomacro",
+            "result_path": "/orfs/flow/reports/nangate45/npu_fp16_cpp_nm2_cmp/compute_stability_cmp33_flat_nomacro/6_finish.rpt",
+            "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/40c9c722/result.json"
           },
           "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
           "metric_summary": {
-            "critical_path_ns": 5.701286780426342,
+            "critical_path_ns": 5.9136,
             "die_area": 2250000.0,
-            "total_power_mw": 0.210414
+            "total_power_mw": 0.218
           }
         },
         {
@@ -464,16 +208,16 @@
             "platform": "nangate45",
             "status": "ok",
             "result_kind": "physical_metrics",
-            "param_hash": "a87afe0a",
-            "tag": "npu_fp16_compute_ladder_cmp33_flat_nomacro",
-            "result_path": "/orfs/flow/reports/nangate45/npu_fp16_cpp_nm4_cmp/compute_ladder_cmp33_flat_nomacro/6_finish.rpt",
-            "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm4_cmp/work/a87afe0a/result.json"
+            "param_hash": "40c9c722",
+            "tag": "npu_fp16_compute_stability_cmp33_flat_nomacro",
+            "result_path": "/orfs/flow/reports/nangate45/npu_fp16_cpp_nm4_cmp/compute_stability_cmp33_flat_nomacro/6_finish.rpt",
+            "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm4_cmp/work/40c9c722/result.json"
           },
           "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
           "metric_summary": {
-            "critical_path_ns": 2.7073,
+            "critical_path_ns": 5.9724,
             "die_area": 2250000.0,
-            "total_power_mw": 0.216
+            "total_power_mw": 0.502
           }
         },
         {
@@ -482,16 +226,16 @@
             "platform": "nangate45",
             "status": "ok",
             "result_kind": "physical_metrics",
-            "param_hash": "02bf217a",
-            "tag": "npu_fp16_compute_ladder_cmp33_hier_macro",
-            "result_path": "/orfs/flow/reports/nangate45/npu_fp16_cpp_nm8_cmp/compute_ladder_cmp33_hier_macro/6_finish.rpt",
-            "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm8_cmp/work/02bf217a/result.json"
+            "param_hash": "40c9c722",
+            "tag": "npu_fp16_compute_stability_cmp33_flat_nomacro",
+            "result_path": "/orfs/flow/reports/nangate45/npu_fp16_cpp_nm8_cmp/compute_stability_cmp33_flat_nomacro/6_finish.rpt",
+            "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm8_cmp/work/40c9c722/result.json"
           },
           "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
           "metric_summary": {
-            "critical_path_ns": 5.3293,
+            "critical_path_ns": 5.9453,
             "die_area": 2250000.0,
-            "total_power_mw": 0.235
+            "total_power_mw": 0.716
           }
         },
         {
@@ -500,16 +244,16 @@
             "platform": "nangate45",
             "status": "ok",
             "result_kind": "physical_metrics",
-            "param_hash": "a87afe0a",
-            "tag": "npu_fp16_compute_ladder_cmp33_flat_nomacro",
-            "result_path": "/orfs/flow/reports/nangate45/npu_fp16_cpp_nm16_cmp/compute_ladder_cmp33_flat_nomacro/6_finish.rpt",
-            "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm16_cmp/work/a87afe0a/result.json"
+            "param_hash": "40c9c722",
+            "tag": "npu_fp16_compute_stability_cmp33_flat_nomacro",
+            "result_path": "/orfs/flow/reports/nangate45/npu_fp16_cpp_nm16_cmp/compute_stability_cmp33_flat_nomacro/6_finish.rpt",
+            "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm16_cmp/work/40c9c722/result.json"
           },
           "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
           "metric_summary": {
-            "critical_path_ns": 5.5222,
+            "critical_path_ns": 6.1518,
             "die_area": 2250000.0,
-            "total_power_mw": 0.265
+            "total_power_mw": 1.2
           }
         },
         {
@@ -518,16 +262,16 @@
             "platform": "nangate45",
             "status": "ok",
             "result_kind": "physical_metrics",
-            "param_hash": "a87afe0a",
-            "tag": "npu_fp16_compute_ladder_cmp33_flat_nomacro",
-            "result_path": "/orfs/flow/reports/nangate45/npu_fp16_cpp_nm32_cmp/compute_ladder_cmp33_flat_nomacro/6_finish.rpt",
-            "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm32_cmp/work/a87afe0a/result.json"
+            "param_hash": "40c9c722",
+            "tag": "npu_fp16_compute_stability_cmp33_flat_nomacro",
+            "result_path": "/orfs/flow/reports/nangate45/npu_fp16_cpp_nm32_cmp/compute_stability_cmp33_flat_nomacro/6_finish.rpt",
+            "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm32_cmp/work/40c9c722/result.json"
           },
           "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
           "metric_summary": {
-            "critical_path_ns": 5.446,
+            "critical_path_ns": 6.3103,
             "die_area": 2250000.0,
-            "total_power_mw": 0.317
+            "total_power_mw": 1.95
           }
         }
       ],
@@ -539,10 +283,10 @@
         "success_rate": 1.0,
         "metrics": {
           "critical_path_ns": {
-            "best": 2.7073,
-            "mean": 2.7073,
-            "median": 2.7073,
-            "max": 2.7073,
+            "best": 5.9136,
+            "mean": 5.9136,
+            "median": 5.9136,
+            "max": 5.9136,
             "range": 0.0,
             "stddev": 0.0
           },
@@ -555,10 +299,10 @@
             "stddev": 0.0
           },
           "total_power_mw": {
-            "best": 0.216,
-            "mean": 0.216,
-            "median": 0.216,
-            "max": 0.216,
+            "best": 0.218,
+            "mean": 0.218,
+            "median": 0.218,
+            "max": 0.218,
             "range": 0.0,
             "stddev": 0.0
           }
@@ -594,7 +338,26 @@
     "proposal_id": "prop_l1_npu_corrected_compute_frontier_v1",
     "proposal_path": "docs/proposals/prop_l1_npu_corrected_compute_frontier_v1"
   },
-  "submission_history": null,
+  "submission_history": {
+    "event_count": 1,
+    "failure_count": 0,
+    "retry_request_count": 0,
+    "retry_processed_count": 0,
+    "retry_failed_count": 0,
+    "had_retry": false,
+    "events": [
+      {
+        "event_time": "2026-05-26T12:03:49.799920Z",
+        "event_type": "submission_executed",
+        "pr_url": "https://github.com/yhmtmt/RTLGen/pull/669"
+      }
+    ],
+    "final_submission": {
+      "event_time": "2026-05-26T12:03:49.799920Z",
+      "event_type": "submission_executed",
+      "pr_url": "https://github.com/yhmtmt/RTLGen/pull/669"
+    }
+  },
   "pr_payload": {
     "branch": "eval/l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1/s20260526t120340z",
     "title": "eval: run corrected npu compute frontier nm1/nm2/nm4/nm8/nm16/nm32",
@@ -604,7 +367,7 @@
       "evaluator_id": "control_plane",
       "queue_item_id": "l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1"
     },
-    "body_md": "## Summary\n- item_id: `l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1`\n- run_key: `l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1_run_29e8b9360873c7e7`\n- layer: `layer1`\n- task_type: `l1_sweep`\n- status: `ok`\n- summary: `15/15 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1/evaluated.json`\n- metrics_rows_count: `44`\n- review_artifact: `promotion_proposal` at `control_plane/shadow_exports/l1_promotions/l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1.json`\n\n## Developer Context\n- proposal_id: `prop_l1_npu_corrected_compute_frontier_v1`\n- proposal_path: `docs/proposals/prop_l1_npu_corrected_compute_frontier_v1`\n- reviewer_first_read: `docs/proposals/prop_l1_npu_corrected_compute_frontier_v1` plus `docs/developer_agent_review.md`\n- execution_source_commit: `25569a671d556632df11e7170d7da4e4b876f0e6`\n- review_metadata_source_commit: `25569a671d556632df11e7170d7da4e4b876f0e6`\n\n## Evaluation Mode\n- evaluation_mode: `measurement_only`\n- abstraction_layer: `npu_corrected_compute_frontier`\n- evaluation_summary: `Physical metrics recorded from an accepted status=ok Layer 1 row.`\n\n## Checklist\n- [ ] Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge\n- [ ] Include metrics row references for each completed design\n- [ ] Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "body_md": "## Summary\n- item_id: `l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1`\n- run_key: `l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1_run_29e8b9360873c7e7`\n- layer: `layer1`\n- task_type: `l1_sweep`\n- status: `ok`\n- summary: `15/15 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1/evaluated.json`\n- metrics_rows_count: `12`\n- review_artifact: `promotion_proposal` at `control_plane/shadow_exports/l1_promotions/l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1.json`\n\n## Developer Context\n- proposal_id: `prop_l1_npu_corrected_compute_frontier_v1`\n- proposal_path: `docs/proposals/prop_l1_npu_corrected_compute_frontier_v1`\n- reviewer_first_read: `docs/proposals/prop_l1_npu_corrected_compute_frontier_v1` plus `docs/developer_agent_review.md`\n- execution_source_commit: `25569a671d556632df11e7170d7da4e4b876f0e6`\n- review_metadata_source_commit: `130c966c82bf67f7b90224966bb7fc573745d9d2`\n\n## Evaluation Mode\n- evaluation_mode: `measurement_only`\n- abstraction_layer: `npu_corrected_compute_frontier`\n- evaluation_summary: `Physical metrics recorded from an accepted status=ok Layer 1 row.`\n\n## Submission Recovery\n- submission_failure_count: `0`\n- retry_request_count: `0`\n- final_submission_pr: `https://github.com/yhmtmt/RTLGen/pull/669`\n\n## Checklist\n- [ ] Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge\n- [ ] Include metrics row references for each completed design\n- [ ] Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
     "checklist": [
       "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
       "Include metrics row references for each completed design",

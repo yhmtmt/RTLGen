@@ -1,6 +1,6 @@
 {
   "version": 0.1,
-  "generated_utc": "2026-05-26T12:03:39.323767Z",
+  "generated_utc": "2026-05-26T12:38:24.213366Z",
   "item_id": "l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1",
   "run_key": "l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1_run_29e8b9360873c7e7",
   "layer": "layer1",
@@ -43,16 +43,16 @@
         "platform": "nangate45",
         "status": "ok",
         "result_kind": "physical_metrics",
-        "param_hash": "13a2c990",
-        "tag": "npu_fp16_nm1_cmp33_flat_nomacro_r2",
-        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm1_cmp/nm1_cmp33_flat_nomacro_r2/3_3_place_gp.json",
-        "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/13a2c990/result.json"
+        "param_hash": "40c9c722",
+        "tag": "npu_fp16_compute_stability_cmp33_flat_nomacro",
+        "result_path": "/orfs/flow/reports/nangate45/npu_fp16_cpp_nm1_cmp/compute_stability_cmp33_flat_nomacro/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/work/40c9c722/result.json"
       },
       "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
       "metric_summary": {
-        "critical_path_ns": 5.557037432204143,
+        "critical_path_ns": 5.9276,
         "die_area": 2250000.0,
-        "total_power_mw": 0.193122
+        "total_power_mw": 0.31
       }
     },
     {
@@ -61,16 +61,16 @@
         "platform": "nangate45",
         "status": "ok",
         "result_kind": "physical_metrics",
-        "param_hash": "033cdfdc",
-        "tag": "npu_fp16_nm2_cmp33_flat_nomacro",
-        "result_path": "/orfs/flow/logs/nangate45/npu_fp16_cpp_nm2_cmp/nm2_cmp33_flat_nomacro/3_3_place_gp.json",
-        "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/033cdfdc/result.json"
+        "param_hash": "40c9c722",
+        "tag": "npu_fp16_compute_stability_cmp33_flat_nomacro",
+        "result_path": "/orfs/flow/reports/nangate45/npu_fp16_cpp_nm2_cmp/compute_stability_cmp33_flat_nomacro/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/40c9c722/result.json"
       },
       "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
       "metric_summary": {
-        "critical_path_ns": 5.701286780426342,
+        "critical_path_ns": 5.9136,
         "die_area": 2250000.0,
-        "total_power_mw": 0.210414
+        "total_power_mw": 0.218
       }
     },
     {
@@ -79,16 +79,16 @@
         "platform": "nangate45",
         "status": "ok",
         "result_kind": "physical_metrics",
-        "param_hash": "a87afe0a",
-        "tag": "npu_fp16_compute_ladder_cmp33_flat_nomacro",
-        "result_path": "/orfs/flow/reports/nangate45/npu_fp16_cpp_nm4_cmp/compute_ladder_cmp33_flat_nomacro/6_finish.rpt",
-        "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm4_cmp/work/a87afe0a/result.json"
+        "param_hash": "40c9c722",
+        "tag": "npu_fp16_compute_stability_cmp33_flat_nomacro",
+        "result_path": "/orfs/flow/reports/nangate45/npu_fp16_cpp_nm4_cmp/compute_stability_cmp33_flat_nomacro/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm4_cmp/work/40c9c722/result.json"
       },
       "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
       "metric_summary": {
-        "critical_path_ns": 2.7073,
+        "critical_path_ns": 5.9724,
         "die_area": 2250000.0,
-        "total_power_mw": 0.216
+        "total_power_mw": 0.502
       }
     },
     {
@@ -97,16 +97,16 @@
         "platform": "nangate45",
         "status": "ok",
         "result_kind": "physical_metrics",
-        "param_hash": "02bf217a",
-        "tag": "npu_fp16_compute_ladder_cmp33_hier_macro",
-        "result_path": "/orfs/flow/reports/nangate45/npu_fp16_cpp_nm8_cmp/compute_ladder_cmp33_hier_macro/6_finish.rpt",
-        "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm8_cmp/work/02bf217a/result.json"
+        "param_hash": "40c9c722",
+        "tag": "npu_fp16_compute_stability_cmp33_flat_nomacro",
+        "result_path": "/orfs/flow/reports/nangate45/npu_fp16_cpp_nm8_cmp/compute_stability_cmp33_flat_nomacro/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm8_cmp/work/40c9c722/result.json"
       },
       "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
       "metric_summary": {
-        "critical_path_ns": 5.3293,
+        "critical_path_ns": 5.9453,
         "die_area": 2250000.0,
-        "total_power_mw": 0.235
+        "total_power_mw": 0.716
       }
     },
     {
@@ -115,16 +115,16 @@
         "platform": "nangate45",
         "status": "ok",
         "result_kind": "physical_metrics",
-        "param_hash": "a87afe0a",
-        "tag": "npu_fp16_compute_ladder_cmp33_flat_nomacro",
-        "result_path": "/orfs/flow/reports/nangate45/npu_fp16_cpp_nm16_cmp/compute_ladder_cmp33_flat_nomacro/6_finish.rpt",
-        "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm16_cmp/work/a87afe0a/result.json"
+        "param_hash": "40c9c722",
+        "tag": "npu_fp16_compute_stability_cmp33_flat_nomacro",
+        "result_path": "/orfs/flow/reports/nangate45/npu_fp16_cpp_nm16_cmp/compute_stability_cmp33_flat_nomacro/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm16_cmp/work/40c9c722/result.json"
       },
       "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
       "metric_summary": {
-        "critical_path_ns": 5.5222,
+        "critical_path_ns": 6.1518,
         "die_area": 2250000.0,
-        "total_power_mw": 0.265
+        "total_power_mw": 1.2
       }
     },
     {
@@ -133,16 +133,16 @@
         "platform": "nangate45",
         "status": "ok",
         "result_kind": "physical_metrics",
-        "param_hash": "a87afe0a",
-        "tag": "npu_fp16_compute_ladder_cmp33_flat_nomacro",
-        "result_path": "/orfs/flow/reports/nangate45/npu_fp16_cpp_nm32_cmp/compute_ladder_cmp33_flat_nomacro/6_finish.rpt",
-        "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm32_cmp/work/a87afe0a/result.json"
+        "param_hash": "40c9c722",
+        "tag": "npu_fp16_compute_stability_cmp33_flat_nomacro",
+        "result_path": "/orfs/flow/reports/nangate45/npu_fp16_cpp_nm32_cmp/compute_stability_cmp33_flat_nomacro/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm32_cmp/work/40c9c722/result.json"
       },
       "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
       "metric_summary": {
-        "critical_path_ns": 5.446,
+        "critical_path_ns": 6.3103,
         "die_area": 2250000.0,
-        "total_power_mw": 0.317
+        "total_power_mw": 1.95
       }
     }
   ],
@@ -154,10 +154,10 @@
     "success_rate": 1.0,
     "metrics": {
       "critical_path_ns": {
-        "best": 2.7073,
-        "mean": 2.7073,
-        "median": 2.7073,
-        "max": 2.7073,
+        "best": 5.9136,
+        "mean": 5.9136,
+        "median": 5.9136,
+        "max": 5.9136,
         "range": 0.0,
         "stddev": 0.0
       },
@@ -170,10 +170,10 @@
         "stddev": 0.0
       },
       "total_power_mw": {
-        "best": 0.216,
-        "mean": 0.216,
-        "median": 0.216,
-        "max": 0.216,
+        "best": 0.218,
+        "mean": 0.218,
+        "median": 0.218,
+        "max": 0.218,
         "range": 0.0,
         "stddev": 0.0
       }
