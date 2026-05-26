@@ -1,15 +1,15 @@
 {
   "proposal_id": "prop_l1_npu_corrected_compute_frontier_v1",
-  "candidate_id": "l1_npu_corrected_compute_frontier_nm1_nm2_nm4_seed3_v1",
+  "candidate_id": "l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1",
   "decision": "promote",
-  "reason": "Accepted Layer 1 physical metrics were merged in PR #667 for the current candidate.",
+  "reason": "Accepted Layer 1 physical metrics were merged in PR #669 for the current candidate.",
   "evidence_refs": [
-    "item:l1_npu_corrected_compute_frontier_nm1_nm2_nm4_seed3_v1",
-    "run:l1_npu_corrected_compute_frontier_nm1_nm2_nm4_seed3_v1_run_bff85e70b495b623",
-    "artifact:control_plane/shadow_exports/l1_promotions/l1_npu_corrected_compute_frontier_nm1_nm2_nm4_seed3_v1.json",
-    "pr:#667",
-    "https://github.com/yhmtmt/RTLGen/pull/667"
+    "item:l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1",
+    "run:l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1_run_29e8b9360873c7e7",
+    "artifact:control_plane/shadow_exports/l1_promotions/l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1.json",
+    "pr:#669",
+    "https://github.com/yhmtmt/RTLGen/pull/669"
   ],
-  "next_action": "queue l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1",
+  "next_action": "inspect the next dependent item",
   "requires_human_approval": false
 }

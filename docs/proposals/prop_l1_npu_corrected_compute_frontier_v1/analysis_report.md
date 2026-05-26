@@ -2,13 +2,13 @@
 
 ## Candidate
 - `proposal_id`: `prop_l1_npu_corrected_compute_frontier_v1`
-- `candidate_id`: `l1_npu_corrected_compute_frontier_nm1_nm2_nm4_seed3_v1`
+- `candidate_id`: `l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1`
 
 ## Evaluations Consumed
-- `l1_npu_corrected_compute_frontier_nm1_nm2_nm4_seed3_v1`
-- `l1_npu_corrected_compute_frontier_nm1_nm2_nm4_seed3_v1_run_bff85e70b495b623`
-- source commit: `06c8844931c9ace09aaf06adbba3d20b14c545d7`
-- review: PR #667
+- `l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1`
+- `l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1_run_29e8b9360873c7e7`
+- source commit: `25569a671d556632df11e7170d7da4e4b876f0e6`
+- review: PR #669
 
 ## Baseline Comparison
 - not applicable
@@ -25,5 +25,5 @@
 
 ## Recommendation
 - `promote`
-- reason: Accepted Layer 1 physical metrics were merged in PR #667 for the current candidate.
-- next_action: queue l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1
+- reason: Accepted Layer 1 physical metrics were merged in PR #669 for the current candidate.
+- next_action: inspect the next dependent item
