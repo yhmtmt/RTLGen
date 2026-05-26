@@ -328,7 +328,10 @@ def _normalize_metrics_rows(
     metrics_rows = queue_result.get("metrics_rows")
     if isinstance(metrics_rows, list) and metrics_rows and all(isinstance(row, dict) for row in metrics_rows):
         normalized: list[dict[str, Any]] = []
+        tag_prefixes = _current_sweep_tag_prefixes(repo_root, work_item)
         for row in metrics_rows:
+            if not _metrics_row_in_current_sweep_scope(row, tag_prefixes=tag_prefixes):
+                continue
             new_row = dict(row)
             result_path = _portable_metrics_result_path(new_row, repo_root)
             if not result_path:
