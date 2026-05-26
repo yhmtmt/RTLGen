@@ -154,6 +154,24 @@ When mapper headroom is part of the conclusion, the review should say so
 explicitly and point to the follow-on mapper intake item or proposal when one
 exists.
 
+## Boundary Metric Rule
+
+Some physical exploration jobs are intended to find the point where a design
+stops being feasible. For those jobs, a `flow_failed` or timing-failed
+`metrics.csv` row can be valid evidence rather than a bad submission.
+
+When preparing or reviewing a boundary job:
+- the objective must say that timing/flow failures are accepted as boundary
+  evidence
+- the L1 acceptance rule must allow non-ok metrics rows with a valid `status`
+  column
+- the report must distinguish a useful boundary failure from an infrastructure,
+  checkout, or validation failure
+
+Do not use relaxed boundary acceptance for ordinary winner-selection sweeps.
+Those should continue to require at least one `status=ok` row for each expected
+metrics file.
+
 ## Merge Policy
 
 Evaluation PR merge rule:

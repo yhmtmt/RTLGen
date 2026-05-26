@@ -161,7 +161,25 @@ def _classify_failure(
     }
 
 
-def _l1_metrics_acceptance_errors(*, repo_root: str, expected_outputs: list[str]) -> list[str]:
+def _l1_acceptance_allows_non_ok_metrics(work_item: WorkItem) -> bool:
+    rules = [str(rule).lower() for rule in (work_item.acceptance_rules or [])]
+    return any(
+        (
+            "allow non-ok metrics" in rule
+            or "allow flow_failed metrics" in rule
+            or "accept timing/flow failures" in rule
+            or "flow failures are boundary evidence" in rule
+        )
+        for rule in rules
+    )
+
+
+def _l1_metrics_acceptance_errors(
+    *,
+    repo_root: str,
+    expected_outputs: list[str],
+    require_ok_status: bool = True,
+) -> list[str]:
     repo_path = Path(repo_root).resolve()
     errors: list[str] = []
     for output in expected_outputs:
@@ -180,7 +198,7 @@ def _l1_metrics_acceptance_errors(*, repo_root: str, expected_outputs: list[str]
             errors.append(f"{output}: metrics.csv lacks status column")
             continue
         ok_rows = [row for row in rows if str(row.get("status", "")).strip().lower() == "ok"]
-        if not ok_rows:
+        if require_ok_status and not ok_rows:
             statuses = sorted({str(row.get("status", "")).strip() or "<blank>" for row in rows})
             errors.append(f"{output}: no status=ok rows (statuses={','.join(statuses)})")
     return errors
@@ -820,6 +838,7 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
         acceptance_errors = _l1_metrics_acceptance_errors(
             repo_root=checkout_info.work_dir,
             expected_outputs=active_expected_outputs,
+            require_ok_status=not _l1_acceptance_allows_non_ok_metrics(work_item),
         )
         if acceptance_errors:
             success = False
