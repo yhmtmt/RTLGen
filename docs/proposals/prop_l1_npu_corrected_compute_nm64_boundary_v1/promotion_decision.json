@@ -1,8 +1,15 @@
 {
   "proposal_id": "prop_l1_npu_corrected_compute_nm64_boundary_v1",
-  "decision": "pending",
-  "reason": "Awaiting nm64 boundary evaluation.",
-  "evidence_refs": [],
-  "next_action": "dispatch l1_npu_corrected_compute_frontier_nm64_v1",
-  "requires_human_approval": false
+  "decision": "promote",
+  "reason": "Accepted Layer 1 physical metrics were merged in PR #672 for the current candidate.",
+  "evidence_refs": [
+    "item:l1_npu_corrected_compute_frontier_nm64_v1",
+    "run:l1_npu_corrected_compute_frontier_nm64_v1_run_8133ff1f5f4b0bea",
+    "artifact:control_plane/shadow_exports/l1_promotions/l1_npu_corrected_compute_frontier_nm64_v1.json",
+    "pr:#672",
+    "https://github.com/yhmtmt/RTLGen/pull/672"
+  ],
+  "next_action": "inspect the next dependent item",
+  "requires_human_approval": false,
+  "candidate_id": "l1_npu_corrected_compute_frontier_nm64_v1"
 }

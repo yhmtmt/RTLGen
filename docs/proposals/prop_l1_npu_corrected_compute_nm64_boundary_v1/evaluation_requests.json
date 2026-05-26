@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_npu_corrected_compute_nm64_boundary_v1",
-  "source_commit": "",
+  "source_commit": "fe40b20ef8ee49e1ed9e24389bb833e8810458b5",
   "requested_items": [
     {
       "item_id": "l1_npu_corrected_compute_frontier_nm64_v1",
@@ -15,11 +15,15 @@
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
-      "status": "pending",
+      "status": "merged",
       "expected_result": {
         "direction": "iterate",
         "reason": "Use nm64 timing, area, power, utilization, and flow status to decide whether to continue current dynamic dispatch scaling or switch to hierarchical/static scheduling."
-      }
+      },
+      "merged_pr_number": 672,
+      "merge_commit": "e530908235765705032993f8462c3eeb58fd452e",
+      "merged_utc": "2026-05-26T22:30:53.634919Z",
+      "notes": "Merged via PR #672 and merge e530908235765705032993f8462c3eeb58fd452e at 2026-05-26T22:30:53.634919Z."
     }
   ]
 }

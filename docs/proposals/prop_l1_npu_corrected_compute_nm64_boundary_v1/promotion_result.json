@@ -1,4 +1,7 @@
 {
   "proposal_id": "prop_l1_npu_corrected_compute_nm64_boundary_v1",
-  "decision": "pending"
+  "decision": "promote",
+  "pr_number": 672,
+  "merge_commit": "e530908235765705032993f8462c3eeb58fd452e",
+  "merged_utc": "2026-05-26T22:30:53.634919Z"
 }
