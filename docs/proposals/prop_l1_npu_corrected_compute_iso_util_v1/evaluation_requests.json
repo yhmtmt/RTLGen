@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_npu_corrected_compute_iso_util_v1",
-  "source_commit": "db7669bf57e1f032f354a778b4f3b4a84d077d12",
+  "source_commit": "",
   "requested_items": [
     {
       "item_id": "l1_npu_corrected_compute_iso_util_nm2_nm4_high46_v1",
@@ -15,15 +15,11 @@
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
-      "status": "merged",
+      "status": "pending",
       "expected_result": {
         "direction": "iterate",
         "reason": "If nm2/nm4 delay worsens substantially at about 46% utilization, PnR flexibility is a dominant contributor to the nm64 delay penalty."
-      },
-      "merged_pr_number": 673,
-      "merge_commit": "213be30d5a86bb6b6d11837adcf4830832508d71",
-      "merged_utc": "2026-05-27T02:46:49.731777Z",
-      "notes": "Merged via PR #673 and merge 213be30d5a86bb6b6d11837adcf4830832508d71 at 2026-05-27T02:46:49.731777Z."
+      }
     },
     {
       "item_id": "l1_npu_corrected_compute_iso_util_nm32_nm64_low29_v1",
