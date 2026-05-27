@@ -5,22 +5,28 @@
 - `candidate_id`: `l2_decoder_attention_kv_measured_compute_partition_llama7b_v1`
 
 ## Evaluations Consumed
-- pending: `l2_decoder_attention_kv_measured_compute_partition_llama7b_v1`
-- baseline: `l2_decoder_attention_kv_measured_compute_llama7b_v1`
-- source commit: `7c44fa3d51c80e20a8b1b9c7fe7792fc0bc6c2b3`
+- `l2_decoder_attention_kv_measured_compute_partition_llama7b_v1`
+- `l2_decoder_attention_kv_measured_compute_partition_llama7b_v1_run_0eaccaaa84c87314`
+- source commit: `a8aa60dbd7f0dd0eb477d8768b3b23a1f1e1786f`
+- review: PR #678
 
 ## Baseline Comparison
-- baseline uses measured compute PPA as one monolithic compute fabric.
-- candidate adds clustered sequence-tile scheduling, local/shared SRAM shares, and NoC bandwidth/hop contention.
+- baseline_ref: `None`
+- baseline_item_id: `None`
+- outcome: `ranking_recorded`
+- summary: Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.
 
 ## Result
-- pending evaluator result.
+- result: `iterate`
+- confidence level: merged accepted evidence
+- estimated optimization room: pending follow-on comparison
+- architecture conclusion robustness: staged evidence
+- summary: Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.
 
 ## Failures and Caveats
-- This is a service/scheduling model, not detailed NoC or SRAM macro RTL/PPA.
-- QKV projection uses aggregate compute while attention tiles are statically sequence-sharded.
+- no additional caveats recorded during automatic finalization
 
 ## Recommendation
-- iterate after evaluator evidence is merged.
-- If cluster count does not materially change the frontier, queue command-routing hierarchy RTL/PPA.
-- If NoC or local/shared SRAM split changes the frontier, refine memory/NOC hierarchy first.
+- `iterate`
+- reason: Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.
+- next_action: inspect follow-on work after l2_decoder_attention_kv_measured_compute_partition_llama7b_v1
