@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_measured_compute_llama7b_v1",
-  "source_commit": "035d78f410955970b69d9875602b0d0928f8ba7d",
+  "source_commit": "f81a2e4fe77487265cc0b154b6396f1a0d69f5bf",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_kv_measured_compute_llama7b_v1",
