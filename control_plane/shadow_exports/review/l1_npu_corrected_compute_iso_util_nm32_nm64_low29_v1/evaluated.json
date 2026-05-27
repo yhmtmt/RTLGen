@@ -1,0 +1,154 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/npu/compute_parallelism_iso_util/sweeps/nangate45_cmp33_lowutil_29pct.json"
+      ],
+      "configs": [
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm32_cmp/config_nm32.json",
+        "runs/designs/npu_blocks/npu_fp16_cpp_nm64_cmp/config_nm64.json"
+      ],
+      "out_root": "runs/designs/npu_blocks",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && cmake -S . -B build && cmake --build build --target rtlgen",
+        "name": "build_generator"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen.py --config runs/designs/npu_blocks/npu_fp16_cpp_nm32_cmp/config_nm32.json --out runs/designs/npu_blocks/npu_fp16_cpp_nm32_cmp/verilog",
+        "name": "generate_block_rtl_npu_fp16_cpp_nm32_cmp"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/npu_fp16_cpp_nm32_cmp --platform nangate45 --top npu_top --sweep runs/campaigns/npu/compute_parallelism_iso_util/sweeps/nangate45_cmp33_lowutil_29pct.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep_npu_fp16_cpp_nm32_cmp"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/rtlgen/gen.py --config runs/designs/npu_blocks/npu_fp16_cpp_nm64_cmp/config_nm64.json --out runs/designs/npu_blocks/npu_fp16_cpp_nm64_cmp/verilog",
+        "name": "generate_block_rtl_npu_fp16_cpp_nm64_cmp"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 npu/synth/run_block_sweep.py --design_dir runs/designs/npu_blocks/npu_fp16_cpp_nm64_cmp --platform nangate45 --top npu_top --sweep runs/campaigns/npu/compute_parallelism_iso_util/sweeps/nangate45_cmp33_lowutil_29pct.json --out_root runs/designs/npu_blocks --skip_existing",
+        "name": "run_block_sweep_npu_fp16_cpp_nm64_cmp"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "objective": "Measure corrected nm32/nm64 NPU compute blocks in an expanded floorplan targeting nm2-like utilization for nm64.",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm32_cmp/metrics.csv",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm64_cmp/metrics.csv"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Corrected NPU compute iso-util nm32/nm64 low29",
+  "result": {
+    "branch": "eval/l1_npu_corrected_compute_iso_util_nm32_nm64_low29_v1/s20260527t081134z",
+    "completed_utc": "2026-05-27T08:11:33.222144Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260527t081134z][host:b7c2d9c80c1c][item:l1_npu_corrected_compute_iso_util_nm32_nm64_low29_v1]",
+    "metrics_rows": [
+      {
+        "tag": "npu_fp16_compute_iso_util_low29_cmp33_flat_nomacro",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "d818a1a0",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm32_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm32_cmp/work/d818a1a0/result.json"
+      },
+      {
+        "tag": "npu_fp16_compute_iso_util_low29_cmp33_hier_macro",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "3216b275",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm32_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm32_cmp/work/3216b275/result.json"
+      },
+      {
+        "tag": "npu_fp16_compute_iso_util_low29_cmp33_flat_nomacro",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "d818a1a0",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm64_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm64_cmp/work/d818a1a0/result.json"
+      },
+      {
+        "tag": "npu_fp16_compute_iso_util_low29_cmp33_hier_macro",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "3216b275",
+        "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm64_cmp/metrics.csv",
+        "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm64_cmp/work/3216b275/result.json"
+      }
+    ],
+    "queue_item_id": "l1_npu_corrected_compute_iso_util_nm32_nm64_low29_v1",
+    "session_id": "s20260527t081134z",
+    "status": "ok",
+    "summary": "7/7 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_npu_corrected_compute_iso_util_nm32_nm64_low29_v1/s20260527t081134z",
+    "pr_title": "eval: run corrected npu compute iso-util nm32/nm64 low29",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260527t081134z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_npu_corrected_compute_iso_util_nm32_nm64_low29_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_npu_corrected_compute_iso_util_nm32_nm64_low29_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 3,
+  "created_utc": "2026-05-26T23:25:29.603606Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "evaluation": {
+      "mode": "measurement_only",
+      "trial_policy": {
+        "seed_start": 801,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      }
+    },
+    "abstraction": {
+      "layer": "npu_corrected_compute_iso_util"
+    },
+    "proposal_id": "prop_l1_npu_corrected_compute_iso_util_v1",
+    "proposal_path": "docs/proposals/prop_l1_npu_corrected_compute_iso_util_v1"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "db7669bf57e1f032f354a778b4f3b4a84d077d12",
+    "requires_daemon_restart": true
+  }
+}
