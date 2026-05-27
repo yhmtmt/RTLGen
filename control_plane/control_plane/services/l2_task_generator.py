@@ -3642,6 +3642,56 @@ def _decoder_attention_kv_measured_compute_evidence(*, item_id: str) -> dict[str
     }
 
 
+def _decoder_attention_kv_measured_compute_partition_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_kv_measured_compute_partition__{item_id}.json"
+    report = f"{base}/decoder_attention_kv_measured_compute_partition__{item_id}.md"
+    measured_compute = (
+        f"{base}/decoder_attention_kv_measured_compute__"
+        "l2_decoder_attention_kv_measured_compute_llama7b_v1.json"
+    )
+    return {
+        "inputs": {
+            "attention_kv_measured_compute": measured_compute,
+            "attention_kv_partition_out": out,
+            "attention_kv_partition_report": report,
+            "attention_kv_measured_compute_partition_scope": (
+                "Quality-backed native-GQA KV8 Llama7B 131k estimate that keeps merged measured "
+                "NPU compute PPA but compares clustered sequence-sharded compute fabrics. The "
+                "sweep varies cluster count, local/shared SRAM split, NoC bandwidth, and NoC hop "
+                "penalty so the measured-compute frontier is not ranked only as one monolithic "
+                "compute fabric."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_attention_kv_measured_compute_partition",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_attention_kv_measured_compute_partition.py "
+                    "--repo-root . "
+                    "--tag-substring compute_stability_cmp33 "
+                    "--sequence-length-list 131072 "
+                    "--die-area-mm2-list 100,200,400,800,1200 "
+                    "--sram-area-fraction 0.4,0.6,0.75 "
+                    "--logic-area-fraction 0.05,0.1,0.2 "
+                    "--reserved-area-fraction 0.1 "
+                    "--usable-sram-fraction 0.7,0.85 "
+                    "--local-sram-fraction 0.1,0.25,0.5 "
+                    "--tile-tokens-list 512,1024 "
+                    "--bank-count 16,64 "
+                    "--cluster-count 1,2,4,8,16,32,64 "
+                    "--noc-bandwidth-bytes-per-cycle 8192,32768,131072 "
+                    "--noc-hops 1,2,4 "
+                    "--vector-ops-per-mac 0.125 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_attention_kv_quality_gate_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_kv_quality_gate__{item_id}.json"
@@ -5143,6 +5193,7 @@ def _build_payload(
         "decoder_attention_kv_physical_hbm_memory_noc",
         "decoder_attention_kv_physical_hbm_compute_sensitivity",
         "decoder_attention_kv_measured_compute",
+        "decoder_attention_kv_measured_compute_partition",
         "decoder_attention_kv_quality_gate",
         "decoder_attention_kv_quality_proxy",
         "decoder_attention_kv_native_gqa_proxy",
@@ -5208,6 +5259,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_kv_physical_hbm_compute_sensitivity_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_measured_compute":
             decoder_evidence = _decoder_attention_kv_measured_compute_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_kv_measured_compute_partition":
+            decoder_evidence = _decoder_attention_kv_measured_compute_partition_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_quality_gate":
             decoder_evidence = _decoder_attention_kv_quality_gate_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_quality_proxy":

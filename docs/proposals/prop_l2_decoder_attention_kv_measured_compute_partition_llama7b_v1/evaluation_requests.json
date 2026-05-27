@@ -1,0 +1,25 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_measured_compute_partition_llama7b_v1",
+  "source_commit": "a8aa60dbd7f0dd0eb477d8768b3b23a1f1e1786f",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_kv_measured_compute_partition_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run the quality-backed native-GQA KV8 131k Llama7B measured-compute model with clustered sequence-sharded compute, local/shared SRAM, and NoC contention sweeps.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_measured_compute_partition",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_measured_compute_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_measured_compute_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "If clustered partitioning keeps nm64-flat dominant, move to RTL/PPA command-routing hierarchy; if smaller clusters win or NoC dominates, refine memory/NOC hierarchy before deeper RTL."
+      },
+      "status": "pending"
+    }
+  ]
+}
