@@ -1,0 +1,8 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_measured_compute_llama7b_v1",
+  "decision": "pending",
+  "reason": "Awaiting measured-compute Llama7B substitution evaluation.",
+  "evidence_refs": [],
+  "next_action": "dispatch measured-compute substitution L2 campaign",
+  "requires_human_approval": false
+}

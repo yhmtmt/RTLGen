@@ -1,0 +1,80 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_measured_compute_llama7b_v1",
+  "created_utc": "2026-05-27T09:30:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_attention_kv_measured_compute",
+  "title": "Llama7B quality-backed KV8 measured-compute substitution",
+  "hypothesis": "When the Llama7B 131k physical-HBM memory/NoC model uses measured corrected NPU compute PPA instead of abstract MAC/cycle points, the frontier will move from optimistic HBM dominance toward a die-budgeted balance between compute replicas, SRAM allocation, and HBM service.",
+  "direct_comparison": {
+    "primary_question": "For quality-backed native-GQA KV8 at 131k context, which measured nm1..nm64 compute block and replica budget is feasible under practical die-area splits, and does the selected point remain memory-bound?",
+    "include": [
+      "llama7b_proxy at 131k tokens",
+      "native-GQA group-8 only",
+      "KV8 only",
+      "merged corrected compute PPA rows for nm1, nm2, nm4, nm8, nm16, nm32, and nm64",
+      "flat and hierarchical rows where status=ok",
+      "die sizes 100, 200, 400, 800, and 1200 mm2",
+      "SRAM area fractions 0.4, 0.6, and 0.75",
+      "logic area fractions 0.05, 0.1, and 0.2",
+      "reserved non-SRAM/non-compute area fraction 0.1",
+      "best practical HBM service from the memory/NoC frontier: 8 stacks, 16 pseudo-channels per stack, 64-bit pseudo-channels, 9000 MT/s, 0.75 efficiency"
+    ],
+    "exclude": [
+      "KV4 and MQA deployable ranking",
+      "new RTL/PPA runs",
+      "cycle-accurate NoC arbitration",
+      "SRAM macro floorplanning",
+      "claiming measured Llama task accuracy"
+    ]
+  },
+  "expected_benefit": [
+    "prevents the Llama7B architecture ranking from using physically ungrounded compute throughput",
+    "identifies whether many small measured compute blocks beat one wide block under die budgets",
+    "selects the next RTL/PPA target for hierarchical compute composition or memory hierarchy refinement"
+  ],
+  "risks": [
+    "vector throughput for attention softmax is still a ratio assumption tied to MAC throughput",
+    "NoC and SRAM are service models rather than detailed physical implementations",
+    "measured compute rows are block-level PPA and do not include full tiled-dispatch overhead"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_kv_measured_compute_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run the quality-backed native-GQA KV8 131k Llama7B physical-HBM model with measured corrected NPU compute PPA substituted for abstract MAC/cycle points.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_measured_compute",
+      "cost_class": "low",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_physical_hbm_compute_sensitivity_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_physical_hbm_compute_sensitivity_llama7b_v1",
+        "l2_decoder_attention_kv_physical_hbm_memory_noc_llama7b_v1_r2",
+        "l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1",
+        "l1_npu_corrected_compute_frontier_nm64_v1",
+        "l1_npu_corrected_compute_iso_util_nm32_nm64_low29_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "If measured compute makes the frontier compute-bound, schedule hierarchical/tiled compute and dispatcher/NoC work; if it remains HBM-bound, continue memory hierarchy/HBM service refinement."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_physical_hbm_compute_sensitivity__l2_decoder_attention_kv_physical_hbm_compute_sensitivity_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_physical_hbm_memory_noc__l2_decoder_attention_kv_physical_hbm_memory_noc_llama7b_v1_r2.json",
+    "docs/proposals/prop_l1_npu_corrected_compute_frontier_v1/promotion_result.json",
+    "docs/proposals/prop_l1_npu_corrected_compute_iso_util_v1/promotion_result.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_attention_kv_measured_compute.py",
+    "npu/eval/estimate_llm_decoder_attention_kv_physical_hbm_frontier.py",
+    "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/metrics.csv",
+    "runs/designs/npu_blocks/npu_fp16_cpp_nm64_cmp/metrics.csv"
+  ]
+}

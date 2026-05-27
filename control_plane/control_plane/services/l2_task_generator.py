@@ -3591,6 +3591,57 @@ def _decoder_attention_kv_physical_hbm_compute_sensitivity_evidence(*, item_id: 
     }
 
 
+def _decoder_attention_kv_measured_compute_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_kv_measured_compute__{item_id}.json"
+    report = f"{base}/decoder_attention_kv_measured_compute__{item_id}.md"
+    memory_noc = (
+        f"{base}/decoder_attention_kv_physical_hbm_memory_noc__"
+        "l2_decoder_attention_kv_physical_hbm_memory_noc_llama7b_v1_r2.json"
+    )
+    compute_frontier = "docs/proposals/prop_l1_npu_corrected_compute_frontier_v1/promotion_result.json"
+    iso_util = "docs/proposals/prop_l1_npu_corrected_compute_iso_util_v1/promotion_result.json"
+    return {
+        "inputs": {
+            "attention_kv_physical_hbm_memory_noc": memory_noc,
+            "corrected_compute_frontier": compute_frontier,
+            "corrected_compute_iso_util": iso_util,
+            "attention_kv_memory_out": out,
+            "attention_kv_memory_report": report,
+            "attention_kv_measured_compute_scope": (
+                "Quality-backed native-GQA KV8 Llama7B 131k estimate using merged corrected "
+                "NPU compute PPA instead of abstract MAC/cycle points. The sweep converts "
+                "measured nm1..nm64 block area, power, delay, and num_modules into die-budgeted "
+                "replica counts, then substitutes the resulting throughput and clock into the "
+                "physical-HBM memory/NoC model."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_attention_kv_measured_compute",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_attention_kv_measured_compute.py "
+                    "--repo-root . "
+                    "--tag-substring compute_stability_cmp33 "
+                    "--sequence-length-list 131072 "
+                    "--die-area-mm2-list 100,200,400,800,1200 "
+                    "--sram-area-fraction 0.4,0.6,0.75 "
+                    "--logic-area-fraction 0.05,0.1,0.2 "
+                    "--reserved-area-fraction 0.1 "
+                    "--usable-sram-fraction 0.7,0.85 "
+                    "--local-sram-fraction 0.1,0.25,0.5 "
+                    "--tile-tokens-list 512,1024 "
+                    "--bank-count 16,64 "
+                    "--vector-ops-per-mac 0.125 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_attention_kv_quality_gate_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_kv_quality_gate__{item_id}.json"
@@ -5091,6 +5142,7 @@ def _build_payload(
         "decoder_attention_kv_physical_hbm_quality_backed",
         "decoder_attention_kv_physical_hbm_memory_noc",
         "decoder_attention_kv_physical_hbm_compute_sensitivity",
+        "decoder_attention_kv_measured_compute",
         "decoder_attention_kv_quality_gate",
         "decoder_attention_kv_quality_proxy",
         "decoder_attention_kv_native_gqa_proxy",
@@ -5154,6 +5206,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_kv_physical_hbm_memory_noc_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_physical_hbm_compute_sensitivity":
             decoder_evidence = _decoder_attention_kv_physical_hbm_compute_sensitivity_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_kv_measured_compute":
+            decoder_evidence = _decoder_attention_kv_measured_compute_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_quality_gate":
             decoder_evidence = _decoder_attention_kv_quality_gate_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_quality_proxy":
