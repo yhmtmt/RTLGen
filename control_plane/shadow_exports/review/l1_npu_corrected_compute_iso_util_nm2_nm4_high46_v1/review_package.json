@@ -1,0 +1,214 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-05-27T02:42:52.424824Z",
+  "control_plane_source_commit": "db7669bf57e1f032f354a778b4f3b4a84d077d12",
+  "review_metadata_source_commit": "db7669bf57e1f032f354a778b4f3b4a84d077d12",
+  "item_id": "l1_npu_corrected_compute_iso_util_nm2_nm4_high46_v1",
+  "run_key": "l1_npu_corrected_compute_iso_util_nm2_nm4_high46_v1_run_57cb8f990a60b898",
+  "layer": "layer1",
+  "flow": "openroad",
+  "task_type": "l1_sweep",
+  "source_commit": "db7669bf57e1f032f354a778b4f3b4a84d077d12",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l1_npu_corrected_compute_iso_util_nm2_nm4_high46_v1/evaluated.json",
+    "result": {
+      "branch": "eval/l1_npu_corrected_compute_iso_util_nm2_nm4_high46_v1/s20260527t024250z",
+      "completed_utc": "2026-05-27T02:42:48.631832Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "b7c2d9c80c1c",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260527t024250z][host:b7c2d9c80c1c][item:l1_npu_corrected_compute_iso_util_nm2_nm4_high46_v1]",
+      "metrics_rows": [
+        {
+          "tag": "npu_fp16_compute_iso_util_high46_cmp33_flat_nomacro",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "c188f19f",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/c188f19f/result.json"
+        },
+        {
+          "tag": "npu_fp16_compute_iso_util_high46_cmp33_hier_macro",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "02186ff6",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/02186ff6/result.json"
+        },
+        {
+          "tag": "npu_fp16_compute_iso_util_high46_cmp33_flat_nomacro",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "c188f19f",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm4_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm4_cmp/work/c188f19f/result.json"
+        },
+        {
+          "tag": "npu_fp16_compute_iso_util_high46_cmp33_hier_macro",
+          "status": "ok",
+          "platform": "nangate45",
+          "param_hash": "02186ff6",
+          "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm4_cmp/metrics.csv",
+          "result_path": "runs/designs/npu_blocks/npu_fp16_cpp_nm4_cmp/work/02186ff6/result.json"
+        }
+      ],
+      "queue_item_id": "l1_npu_corrected_compute_iso_util_nm2_nm4_high46_v1",
+      "session_id": "s20260527t024250z",
+      "status": "ok",
+      "summary": "7/7 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "promotion_proposal",
+    "path": "control_plane/shadow_exports/l1_promotions/l1_npu_corrected_compute_iso_util_nm2_nm4_high46_v1.json",
+    "storage_mode": "repo",
+    "sha256": "7fbfbcea484407873cf1c51991365f695cd2333b6b622e56e83d98f44b19207b",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-05-27T02:42:49.813469Z",
+      "item_id": "l1_npu_corrected_compute_iso_util_nm2_nm4_high46_v1",
+      "run_key": "l1_npu_corrected_compute_iso_util_nm2_nm4_high46_v1_run_57cb8f990a60b898",
+      "layer": "layer1",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l1_sweep",
+      "source_commit": "db7669bf57e1f032f354a778b4f3b4a84d077d12",
+      "objective": "Measure corrected nm2/nm4 NPU compute blocks in a compressed floorplan targeting nm64-like utilization.",
+      "input_manifest": {
+        "sweeps": [
+          "runs/campaigns/npu/compute_parallelism_iso_util/sweeps/nangate45_cmp33_highutil_46pct.json"
+        ],
+        "configs": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json",
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm4_cmp/config_nm4.json"
+        ],
+        "out_root": "runs/designs/npu_blocks",
+        "design_dirs": [],
+        "macro_manifests": [],
+        "candidate_manifests": [],
+        "required_submodules": []
+      },
+      "proposal_count": 2,
+      "evaluation_record": {
+        "evaluation_mode": "measurement_only",
+        "abstraction_layer": "npu_corrected_compute_iso_util",
+        "result_kind": "physical_metrics",
+        "physical_metrics_present": true,
+        "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+      },
+      "proposal_assessment": null,
+      "proposals": [
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "02186ff6",
+            "tag": "npu_fp16_compute_iso_util_high46_cmp33_hier_macro",
+            "result_path": "/orfs/flow/reports/nangate45/npu_fp16_cpp_nm2_cmp/compute_iso_util_high46_cmp33_hier_macro/6_finish.rpt",
+            "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/work/02186ff6/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 6.019,
+            "die_area": 1473796.0,
+            "total_power_mw": 0.346
+          }
+        },
+        {
+          "metrics_ref": {
+            "metrics_csv": "runs/designs/npu_blocks/npu_fp16_cpp_nm4_cmp/metrics.csv",
+            "platform": "nangate45",
+            "status": "ok",
+            "result_kind": "physical_metrics",
+            "param_hash": "c188f19f",
+            "tag": "npu_fp16_compute_iso_util_high46_cmp33_flat_nomacro",
+            "result_path": "/orfs/flow/reports/nangate45/npu_fp16_cpp_nm4_cmp/compute_iso_util_high46_cmp33_flat_nomacro/6_finish.rpt",
+            "work_result_json": "runs/designs/npu_blocks/npu_fp16_cpp_nm4_cmp/work/c188f19f/result.json"
+          },
+          "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+          "metric_summary": {
+            "critical_path_ns": 6.0991,
+            "die_area": 1473796.0,
+            "total_power_mw": 0.542
+          }
+        }
+      ],
+      "trial_summary": {
+        "item_id": "l1_npu_corrected_compute_iso_util_nm2_nm4_high46_v1",
+        "completed_trials": 1,
+        "success_count": 1,
+        "failure_count": 0,
+        "success_rate": 1.0,
+        "metrics": {
+          "critical_path_ns": {
+            "best": 6.019,
+            "mean": 6.019,
+            "median": 6.019,
+            "max": 6.019,
+            "range": 0.0,
+            "stddev": 0.0
+          },
+          "die_area": {
+            "best": 1473796.0,
+            "mean": 1473796.0,
+            "median": 1473796.0,
+            "max": 1473796.0,
+            "range": 0.0,
+            "stddev": 0.0
+          },
+          "total_power_mw": {
+            "best": 0.346,
+            "mean": 0.346,
+            "median": 0.346,
+            "max": 0.346,
+            "range": 0.0,
+            "stddev": 0.0
+          }
+        }
+      },
+      "source_refs": {
+        "trial_metrics_csvs": [
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/metrics.csv",
+          "runs/designs/npu_blocks/npu_fp16_cpp_nm4_cmp/metrics.csv"
+        ],
+        "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_npu_corrected_compute_iso_util_nm2_nm4_high46_v1/summary_stats.json",
+        "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_npu_corrected_compute_iso_util_nm2_nm4_high46_v1/failure_stats.json",
+        "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_npu_corrected_compute_iso_util_nm2_nm4_high46_v1/trial_table.csv"
+      }
+    }
+  },
+  "developer_loop": {
+    "evaluation": {
+      "mode": "measurement_only",
+      "trial_policy": {
+        "seed_start": 701,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      }
+    },
+    "abstraction": {
+      "layer": "npu_corrected_compute_iso_util"
+    },
+    "proposal_id": "prop_l1_npu_corrected_compute_iso_util_v1",
+    "proposal_path": "docs/proposals/prop_l1_npu_corrected_compute_iso_util_v1"
+  },
+  "submission_history": null,
+  "pr_payload": {
+    "branch": "eval/l1_npu_corrected_compute_iso_util_nm2_nm4_high46_v1/s20260527t024250z",
+    "title": "eval: run corrected npu compute iso-util nm2/nm4 high46",
+    "body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260527t024250z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_npu_corrected_compute_iso_util_nm2_nm4_high46_v1"
+    },
+    "body_md": "## Summary\n- item_id: `l1_npu_corrected_compute_iso_util_nm2_nm4_high46_v1`\n- run_key: `l1_npu_corrected_compute_iso_util_nm2_nm4_high46_v1_run_57cb8f990a60b898`\n- layer: `layer1`\n- task_type: `l1_sweep`\n- status: `ok`\n- summary: `7/7 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l1_npu_corrected_compute_iso_util_nm2_nm4_high46_v1/evaluated.json`\n- metrics_rows_count: `4`\n- review_artifact: `promotion_proposal` at `control_plane/shadow_exports/l1_promotions/l1_npu_corrected_compute_iso_util_nm2_nm4_high46_v1.json`\n\n## Developer Context\n- proposal_id: `prop_l1_npu_corrected_compute_iso_util_v1`\n- proposal_path: `docs/proposals/prop_l1_npu_corrected_compute_iso_util_v1`\n- reviewer_first_read: `docs/proposals/prop_l1_npu_corrected_compute_iso_util_v1` plus `docs/developer_agent_review.md`\n- execution_source_commit: `db7669bf57e1f032f354a778b4f3b4a84d077d12`\n- review_metadata_source_commit: `db7669bf57e1f032f354a778b4f3b4a84d077d12`\n\n## Evaluation Mode\n- evaluation_mode: `measurement_only`\n- abstraction_layer: `npu_corrected_compute_iso_util`\n- evaluation_summary: `Physical metrics recorded from an accepted status=ok Layer 1 row.`\n\n## Checklist\n- [ ] Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge\n- [ ] Include metrics row references for each completed design\n- [ ] Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
