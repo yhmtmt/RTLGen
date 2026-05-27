@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_measured_compute_llama7b_v1",
-  "source_commit": "f81a2e4fe77487265cc0b154b6396f1a0d69f5bf",
+  "source_commit": "f81a2e4f34c1b5dfe3535e3407ae63a2ad875947",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_kv_measured_compute_llama7b_v1",
@@ -11,8 +11,6 @@
       "comparison_role": "frontier_synthesis",
       "paired_baseline_item_id": "l2_decoder_attention_kv_physical_hbm_compute_sensitivity_llama7b_v1",
       "depends_on_item_ids": [
-        "l2_decoder_attention_kv_physical_hbm_compute_sensitivity_llama7b_v1",
-        "l2_decoder_attention_kv_physical_hbm_memory_noc_llama7b_v1_r2",
         "l1_npu_corrected_compute_frontier_nm1_nm2_nm4_nm8_nm16_nm32_v1",
         "l1_npu_corrected_compute_frontier_nm64_v1",
         "l1_npu_corrected_compute_iso_util_nm32_nm64_low29_v1"
