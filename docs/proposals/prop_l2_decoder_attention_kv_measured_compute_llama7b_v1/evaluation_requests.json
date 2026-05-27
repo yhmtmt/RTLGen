@@ -17,11 +17,15 @@
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
-      "status": "pending",
+      "status": "merged",
       "expected_result": {
         "direction": "iterate",
         "reason": "If measured compute makes the frontier compute-bound, schedule hierarchical/tiled compute and dispatcher/NoC work; if it remains HBM-bound, continue memory hierarchy/HBM service refinement."
-      }
+      },
+      "merged_pr_number": 675,
+      "merge_commit": "19804f8326aed6c7217051265e1fe52ae9321688",
+      "merged_utc": "2026-05-27T12:22:28.274290Z",
+      "notes": "Merged via PR #675 and merge 19804f8326aed6c7217051265e1fe52ae9321688 at 2026-05-27T12:22:28.274290Z."
     }
   ]
 }

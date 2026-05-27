@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_measured_compute_llama7b_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "iterate",
+  "pr_number": 675,
+  "merge_commit": "19804f8326aed6c7217051265e1fe52ae9321688",
+  "merged_utc": "2026-05-27T12:22:28.274290Z"
 }
