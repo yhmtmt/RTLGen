@@ -1,15 +1,15 @@
 {
   "proposal_id": "prop_l1_npu_corrected_compute_iso_util_v1",
   "decision": "promote",
-  "reason": "Accepted Layer 1 physical metrics were merged in PR #673 for the current candidate.",
+  "reason": "Accepted Layer 1 physical metrics were merged in PR #674 for the current candidate.",
   "evidence_refs": [
-    "item:l1_npu_corrected_compute_iso_util_nm2_nm4_high46_v1",
-    "run:l1_npu_corrected_compute_iso_util_nm2_nm4_high46_v1_run_57cb8f990a60b898",
-    "artifact:control_plane/shadow_exports/l1_promotions/l1_npu_corrected_compute_iso_util_nm2_nm4_high46_v1.json",
-    "pr:#673",
-    "https://github.com/yhmtmt/RTLGen/pull/673"
+    "item:l1_npu_corrected_compute_iso_util_nm32_nm64_low29_v1",
+    "run:l1_npu_corrected_compute_iso_util_nm32_nm64_low29_v1_run_8008efe218e61f78",
+    "artifact:control_plane/shadow_exports/l1_promotions/l1_npu_corrected_compute_iso_util_nm32_nm64_low29_v1.json",
+    "pr:#674",
+    "https://github.com/yhmtmt/RTLGen/pull/674"
   ],
   "next_action": "inspect the next dependent item",
   "requires_human_approval": false,
-  "candidate_id": "l1_npu_corrected_compute_iso_util_nm2_nm4_high46_v1"
+  "candidate_id": "l1_npu_corrected_compute_iso_util_nm32_nm64_low29_v1"
 }

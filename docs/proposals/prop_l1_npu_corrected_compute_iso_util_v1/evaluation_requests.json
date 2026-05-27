@@ -38,11 +38,15 @@
       ],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
-      "status": "pending",
+      "status": "merged",
       "expected_result": {
         "direction": "iterate",
         "reason": "If nm64 delay improves near low-nm timing at about 29% utilization, PnR flexibility is a dominant contributor; otherwise centralized logic scaling remains significant."
-      }
+      },
+      "merged_pr_number": 674,
+      "merge_commit": "7cd81fe9bdc0fd38142afef2a56e5067cadf129e",
+      "merged_utc": "2026-05-27T09:14:59.674153Z",
+      "notes": "Merged via PR #674 and merge 7cd81fe9bdc0fd38142afef2a56e5067cadf129e at 2026-05-27T09:14:59.674153Z."
     }
   ]
 }
