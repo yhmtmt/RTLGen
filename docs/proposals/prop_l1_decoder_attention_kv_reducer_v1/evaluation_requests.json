@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_decoder_attention_kv_reducer_v1",
-  "source_commit": "74f960f54383a335be89a6d65ef015d9813ce648",
+  "source_commit": "6aa6df9a4e4d4ab47c39935d59ad313d160ef7ac",
   "requested_items": [
     {
       "item_id": "l1_decoder_attention_kv_reducer_smoke_v1",
@@ -33,7 +33,7 @@
     {
       "item_id": "l1_decoder_attention_kv_reducer_frontier_v1",
       "task_type": "l1_sweep",
-      "objective": "Sweep reducer partial count and lane width for the owner-cluster and cluster-tree overhead candidates.",
+      "objective": "Sweep reducer partial count and lane width for owner-cluster and cluster-tree overhead candidates after the smoke reducer measurement passed.",
       "evaluation_mode": "measurement_only",
       "abstraction_layer": "decoder_attention_kv_reducer",
       "comparison_role": "reducer_geometry_frontier",
@@ -53,7 +53,7 @@
         "direction": "measure",
         "reason": "Calibrate the reducer geometry used by owner-cluster and tree-reduction clustered attention schedules."
       },
-      "status": "ready_to_queue",
+      "status": "pending",
       "blocker": "Requires accepted smoke evidence first.",
       "notes": "Prerequisites are merged; item is ready to queue."
     }
