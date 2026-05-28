@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_decoder_attention_kv_reducer_frontier_boundary_v1",
-  "source_commit": "79b31e98ee96245c94c93faa371083d6773c2955",
+  "source_commit": "f8a70125e99cd9911ddc2dbc49e0342e81cbe87a",
   "requested_items": [
     {
       "item_id": "l1_decoder_attention_kv_reducer_frontier_boundary_v2",

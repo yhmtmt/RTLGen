@@ -1,0 +1,98 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-05-28T06:04:13.659751Z",
+  "item_id": "l1_decoder_attention_kv_reducer_frontier_boundary_v2",
+  "run_key": "l1_decoder_attention_kv_reducer_frontier_boundary_v2_run_ef59c17b1533063a",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "79b31e98ee96245c94c93faa371083d6773c2955",
+  "objective": "Measure attention KV reducer physical boundary and accept timing/flow failures as boundary evidence while preserving lightweight metrics.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/activations/attention_kv_reducer/sweeps/nangate45_macro_frontier.json"
+    ],
+    "configs": [
+      "runs/designs/activations/attention_kv_reducer_p2_l16_v16_s16_a24_wrapper/config_attention_kv_reducer_p2_l16_v16_s16_a24.json",
+      "runs/designs/activations/attention_kv_reducer_p8_l32_v16_s16_a24_wrapper/config_attention_kv_reducer_p8_l32_v16_s16_a24.json",
+      "runs/designs/activations/attention_kv_reducer_p16_l64_v16_s16_a24_wrapper/config_attention_kv_reducer_p16_l64_v16_s16_a24.json"
+    ],
+    "out_root": "runs/designs/activations",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 1,
+  "evaluation_record": {
+    "evaluation_mode": "measurement_only",
+    "abstraction_layer": "attention_kv_reducer_frontier",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/attention_kv_reducer_p2_l16_v16_s16_a24_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "e809178b",
+        "tag": "attention_kv_reducer_nangate45_macro_frontier_e0c384c0",
+        "result_path": "runs/designs/activations/attention_kv_reducer_p2_l16_v16_s16_a24_wrapper/work/e809178b/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 2.066,
+        "die_area": 25327.131025,
+        "total_power_mw": 0.0191
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_decoder_attention_kv_reducer_frontier_boundary_v2",
+    "completed_trials": 1,
+    "success_count": 1,
+    "failure_count": 0,
+    "success_rate": 1.0,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 2.066,
+        "mean": 2.066,
+        "median": 2.066,
+        "max": 2.066,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "die_area": {
+        "best": 25327.131025,
+        "mean": 25327.131025,
+        "median": 25327.131025,
+        "max": 25327.131025,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "total_power_mw": {
+        "best": 0.0191,
+        "mean": 0.0191,
+        "median": 0.0191,
+        "max": 0.0191,
+        "range": 0.0,
+        "stddev": 0.0
+      }
+    }
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/activations/attention_kv_reducer_p2_l16_v16_s16_a24_wrapper/metrics.csv",
+      "runs/designs/activations/attention_kv_reducer_p8_l32_v16_s16_a24_wrapper/metrics.csv",
+      "runs/designs/activations/attention_kv_reducer_p16_l64_v16_s16_a24_wrapper/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_kv_reducer_frontier_boundary_v2/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_kv_reducer_frontier_boundary_v2/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_kv_reducer_frontier_boundary_v2/trial_table.csv"
+  }
+}
