@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_kv_reducer_tree_v1",
+  "decision": "iterate",
+  "pr_number": 702,
+  "merge_commit": "a7ab3a3e2e1ba910f3ad3d06e4cc307187fe58b5",
+  "merged_utc": "2026-05-28T07:43:05.595186Z"
+}
