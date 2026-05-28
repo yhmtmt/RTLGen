@@ -17,3 +17,5 @@ void emitAttentionKvReducerModule(const AttentionKvReducerOperationConfig &confi
                                   const OperandDefinition &operand);
 void emitAttentionKvReducerTreeModule(const AttentionKvReducerTreeOperationConfig &config,
                                       const OperandDefinition &operand);
+void emitAttentionKvReducerFoldedModule(const AttentionKvReducerFoldedOperationConfig &config,
+                                        const OperandDefinition &operand);

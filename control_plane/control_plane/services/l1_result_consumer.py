@@ -243,6 +243,7 @@ def _inferred_l1_abstraction_layer(repo_root: Path, work_item: WorkItem) -> str:
                     "attention_kv_tile",
                     "attention_kv_reducer",
                     "attention_kv_reducer_tree",
+                    "attention_kv_reducer_folded",
                 }:
                     return "circuit_block"
     expected_outputs = [str(path_text) for path_text in (work_item.expected_outputs or [])]
