@@ -1,0 +1,25 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_kv_reducer_folded_internal_source_v1",
+  "title": "Measure folded reducer with internal producer-side source",
+  "status": "proposed",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "attention_kv_reducer_folded",
+  "motivation": "The standalone folded reducer boundary sweep shows ppc4 and some higher-utilization ppc2 points fail during physical implementation. The failure pattern is consistent with top-level pin-site pressure from exposing all producer-side partial fragments as macro IO rather than an arithmetic datapath limit.",
+  "hypothesis": "If the producer-side partial-fragment bus is flattened into the block as internal wiring, ppc4 and high-utilization ppc2 points should become physically feasible more often than the standalone wrapper. The resulting metrics should be interpreted as a producer-coupled macro proxy, not as a replacement for the standalone reducer interface contract.",
+  "expected_behavior": {
+    "functional": "The underlying folded reducer RTL is unchanged and continues exact grouped reduction over fixed partial groups.",
+    "timing_model": "Reducer latency remains partials / partials_per_cycle accepted chunks; the wrapper adds a deterministic internal source counter only for physical pin-pressure isolation.",
+    "physical_model": "Producer-side fragment pins are internal nets, while consumer-side reduced outputs and counters remain top-level macro pins."
+  },
+  "comparison_points": [
+    "attention_kv_reducer_folded_src_p8_ppc2_l16_v16_s16_a24_wrapper",
+    "attention_kv_reducer_folded_src_p8_ppc4_l16_v16_s16_a24_wrapper",
+    "attention_kv_reducer_folded_src_p16_ppc2_l16_v16_s16_a24_wrapper",
+    "attention_kv_reducer_folded_src_p16_ppc4_l16_v16_s16_a24_wrapper"
+  ],
+  "risks": [
+    "The deterministic internal source adds small counter and fanout cost, so area/power include a producer-stub overhead.",
+    "This does not prove the final producer network schedule; it only separates arithmetic feasibility from macro-boundary pin pressure."
+  ]
+}
