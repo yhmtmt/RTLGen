@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_kv_reducer_v1",
+  "candidate_id": "l1_decoder_attention_kv_reducer_smoke_v1",
+  "decision": "promote",
+  "reason": "Accepted Layer 1 physical metrics were merged in PR #690 for the current candidate.",
+  "evidence_refs": [
+    "item:l1_decoder_attention_kv_reducer_smoke_v1",
+    "run:l1_decoder_attention_kv_reducer_smoke_v1_run_401d1388998a96c4",
+    "artifact:control_plane/shadow_exports/l1_promotions/l1_decoder_attention_kv_reducer_smoke_v1.json",
+    "pr:#690",
+    "https://github.com/yhmtmt/RTLGen/pull/690"
+  ],
+  "next_action": "queue l1_decoder_attention_kv_reducer_frontier_v1",
+  "requires_human_approval": false
+}

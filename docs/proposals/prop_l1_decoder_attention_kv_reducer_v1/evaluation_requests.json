@@ -23,8 +23,12 @@
         "direction": "measure",
         "reason": "Create the first measured RTL/PPA anchor for the analytical reducer overhead in the clustered schedule model."
       },
-      "status": "pending",
-      "blocker": "Requires merged RTLGen attention_kv_reducer operation, smoke config, smoke sweep, and local RTL equivalence tests."
+      "status": "merged",
+      "blocker": "Requires merged RTLGen attention_kv_reducer operation, smoke config, smoke sweep, and local RTL equivalence tests.",
+      "merged_pr_number": 690,
+      "merge_commit": "27bdece482637581238033e0ece592ef34d2f935",
+      "merged_utc": "2026-05-28T05:20:04Z",
+      "notes": "Merged via PR #690 and merge 27bdece482637581238033e0ece592ef34d2f935 at 2026-05-28T05:20:04Z."
     },
     {
       "item_id": "l1_decoder_attention_kv_reducer_frontier_v1",
@@ -49,8 +53,9 @@
         "direction": "measure",
         "reason": "Calibrate the reducer geometry used by owner-cluster and tree-reduction clustered attention schedules."
       },
-      "status": "blocked",
-      "blocker": "Requires accepted smoke evidence first."
+      "status": "ready_to_queue",
+      "blocker": "Requires accepted smoke evidence first.",
+      "notes": "Prerequisites are merged; item is ready to queue."
     }
   ]
 }
