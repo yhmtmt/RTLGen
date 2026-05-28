@@ -147,21 +147,20 @@ def _shape_row(
     stat_payload_bytes = attention_heads * 2 * reduction_scalar_bytes
     value_payload_bytes = hidden_size * reduction_scalar_bytes
     partial_payload_bytes = stat_payload_bytes + value_payload_bytes
+    reduction_ops_per_partial = hidden_size + 2 * attention_heads
     if reduction_strategy == "centralized_tile":
         reduction_payload_bytes = tile_count * partial_payload_bytes
         local_reduce_cycles = 0
+        reduction_vector_cycles = _ceil_div(tile_count * reduction_ops_per_partial, per_cluster_vector_ops)
     else:
         reduction_payload_bytes = active_clusters * partial_payload_bytes
-        local_reduce_cycles = _ceil_div(
-            tiles_per_cluster_ceil * (hidden_size + 2 * attention_heads),
-            per_cluster_vector_ops,
+        local_reduce_cycles = _ceil_div(tiles_per_cluster_ceil * reduction_ops_per_partial, per_cluster_vector_ops)
+        reduction_vector_cycles = _ceil_div(
+            max(1, active_clusters) * reduction_ops_per_partial,
+            total_vector_ops_per_cycle,
         )
     reduction_stages, _ = _reduction_factor(reduction_strategy, active_clusters)
     reduction_noc_cycles = _ceil_div(reduction_payload_bytes, max(1.0, aggregate_noc_bw)) + reduction_stages * noc_hops * 2
-    reduction_vector_cycles = _ceil_div(
-        max(1, active_clusters) * (hidden_size + 2 * attention_heads),
-        total_vector_ops_per_cycle,
-    )
     cross_tile_reduction_cycles = local_reduce_cycles + max(reduction_noc_cycles, reduction_vector_cycles)
 
     kv_write_bytes = 2 * kv_width * kv_bytes_per_scalar
