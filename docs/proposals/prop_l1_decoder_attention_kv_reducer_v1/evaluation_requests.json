@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_decoder_attention_kv_reducer_v1",
-  "source_commit": "6aa6df9a4e4d4ab47c39935d59ad313d160ef7ac",
+  "source_commit": "af22f91a57e88891177bdf94fa83c8b0a54ab3e8",
   "requested_items": [
     {
       "item_id": "l1_decoder_attention_kv_reducer_smoke_v1",
@@ -56,6 +56,14 @@
       "status": "pending",
       "blocker": "Requires accepted smoke evidence first.",
       "notes": "Prerequisites are merged; item is ready to queue."
+    },
+    {
+      "item_id": "l1_decoder_attention_kv_reducer_frontier_boundary_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure attention KV reducer physical boundary and accept timing/flow failures as boundary evidence while preserving lightweight metrics.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "attention_kv_reducer_frontier",
+      "status": "pending"
     }
   ]
 }
