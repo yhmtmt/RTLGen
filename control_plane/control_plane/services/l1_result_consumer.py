@@ -341,6 +341,59 @@ def _best_metrics_row(
     return sorted(rows, key=_row_sort_key)[0]
 
 
+def _boundary_metrics_rows(
+    *,
+    repo_root: Path,
+    metrics_csvs: list[str],
+    tag_prefixes: tuple[str, ...],
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for metrics_csv in metrics_csvs:
+        path = _resolve_path(repo_root=repo_root, path_text=metrics_csv)
+        if not path.exists():
+            continue
+        for raw_row in _load_metrics_rows(path):
+            status = str(raw_row.get("status", "")).strip()
+            if status == "ok":
+                continue
+            if not _row_in_current_sweep_scope(raw_row, tag_prefixes=tag_prefixes):
+                continue
+            evidence: dict[str, Any] = {
+                "metrics_csv": metrics_csv,
+                "status": status,
+            }
+            for key in (
+                "design",
+                "platform",
+                "config_hash",
+                "param_hash",
+                "tag",
+                "critical_path_ns",
+                "die_area",
+                "total_power_mw",
+                "result_path",
+                "work_result_json",
+                "params_json",
+            ):
+                value = str(raw_row.get(key, "")).strip()
+                if value:
+                    evidence[key] = value
+            rows.append(evidence)
+    return rows
+
+
+def _boundary_evaluation_record(*, repo_root: Path, work_item: WorkItem, boundary_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    status_counts = Counter(str(row.get("status", "")).strip() or "unknown" for row in boundary_rows)
+    return {
+        "evaluation_mode": "measurement_only",
+        "abstraction_layer": _developer_loop_abstraction_layer(repo_root, work_item),
+        "result_kind": "boundary_evidence",
+        "physical_metrics_present": False,
+        "summary": "No status=ok Layer 1 rows were produced; non-ok metrics rows are recorded as explicit boundary evidence.",
+        "boundary_status_counts": dict(status_counts),
+    }
+
+
 def _proposal_entry(*, metrics_csv: str, best_row: dict[str, Any], evaluation_record: dict[str, Any]) -> dict[str, Any]:
     proposal: dict[str, Any] = {
         "metrics_ref": {
@@ -792,8 +845,21 @@ def consume_l1_result(session: Session, request: Layer1ConsumeRequest) -> Layer1
                 )
             )
 
+    tag_prefixes = _current_sweep_tag_prefixes(repo_root, work_item)
+    boundary_rows = _boundary_metrics_rows(
+        repo_root=repo_root,
+        metrics_csvs=metrics_csvs,
+        tag_prefixes=tag_prefixes,
+    )
     if not proposals or evaluation_record is None:
-        raise Layer1ResultConsumerError(f"no status=ok metrics rows found for work item: {work_item.item_id}")
+        if not boundary_rows:
+            raise Layer1ResultConsumerError(f"no status=ok metrics rows found for work item: {work_item.item_id}")
+        proposals = []
+        evaluation_record = _boundary_evaluation_record(
+            repo_root=repo_root,
+            work_item=work_item,
+            boundary_rows=boundary_rows,
+        )
 
     trial_paths = _trial_artifact_paths(work_item.item_id)
     source_refs = {
@@ -810,6 +876,17 @@ def consume_l1_result(session: Session, request: Layer1ConsumeRequest) -> Layer1
         source_refs=source_refs,
     )
     payload["trial_summary"] = summary_stats
+    if boundary_rows:
+        if not proposals:
+            payload["proposal_assessment"] = {
+                "outcome": "boundary_no_feasible_points",
+                "summary": "All current Layer 1 metrics rows are non-ok; this is accepted as frontier boundary evidence, not a promotable design point.",
+                "failure_row_count": len(boundary_rows),
+            }
+        payload["boundary_evidence"] = {
+            "row_count": len(boundary_rows),
+            "rows": boundary_rows,
+        }
     target_rel = request.target_path or _default_target_path(item_id=work_item.item_id)
     target_path = _resolve_path(repo_root=repo_root, path_text=target_rel)
     target_path.parent.mkdir(parents=True, exist_ok=True)
