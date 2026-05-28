@@ -210,6 +210,9 @@ set_tests_properties(test_candidate_stream_merge_fifo PROPERTIES WORKING_DIRECTO
 add_test(NAME test_attention_kv_tile COMMAND bash ${PROJECT_SOURCE_DIR}/tests/test_attention_kv_tile.sh)
 set_tests_properties(test_attention_kv_tile PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
+add_test(NAME test_attention_kv_reducer COMMAND bash ${PROJECT_SOURCE_DIR}/tests/test_attention_kv_reducer.sh)
+set_tests_properties(test_attention_kv_reducer PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
 if(RTLGEN_BUILD_FLOPOCO)
     set(FLOPOCO_STAGED_BIN ${PROJECT_SOURCE_DIR}/bin/flopoco)
     set(FLOPOCO_READY OFF)

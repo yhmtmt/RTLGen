@@ -1,0 +1,28 @@
+{
+  "version": "1.1",
+  "operands": [
+    {
+      "name": "value_fragment",
+      "dimensions": 1,
+      "bit_width": 16,
+      "signed": true,
+      "kind": "int"
+    }
+  ],
+  "operations": [
+    {
+      "type": "attention_kv_reducer",
+      "module_name": "attention_kv_reducer_p16_l64_v16_s16_a24",
+      "operand": "value_fragment",
+      "options": {
+        "lanes": 64,
+        "value_bits": 16,
+        "stat_bits": 16,
+        "partials": 16,
+        "accum_bits": 24,
+        "counter_bits": 32,
+        "signed_values": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_kv_reducer_v1",
+  "source_commit": "pending_source_merge",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_attention_kv_reducer_smoke_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure one bounded Nangate45 smoke point for a standalone attention/KV reducer block after the RTLGen operation lands.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "decoder_attention_kv_reducer",
+      "comparison_role": "measured_anchor",
+      "paired_baseline_item_id": "",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_clustered_schedule_overhead_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "config_paths": [
+        "runs/designs/activations/attention_kv_reducer_p2_l16_v16_s16_a24_wrapper/config_attention_kv_reducer_p2_l16_v16_s16_a24.json"
+      ],
+      "sweep_path": "runs/campaigns/activations/attention_kv_reducer/sweeps/nangate45_macro_smoke.json",
+      "expected_result": {
+        "direction": "measure",
+        "reason": "Create the first measured RTL/PPA anchor for the analytical reducer overhead in the clustered schedule model."
+      },
+      "status": "blocked",
+      "blocker": "Requires merged RTLGen attention_kv_reducer operation, smoke config, smoke sweep, and local RTL equivalence tests."
+    },
+    {
+      "item_id": "l1_decoder_attention_kv_reducer_frontier_v1",
+      "task_type": "l1_sweep",
+      "objective": "Sweep reducer partial count and lane width for the owner-cluster and cluster-tree overhead candidates.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "decoder_attention_kv_reducer",
+      "comparison_role": "reducer_geometry_frontier",
+      "paired_baseline_item_id": "l1_decoder_attention_kv_reducer_smoke_v1",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_kv_reducer_smoke_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "config_paths": [
+        "runs/designs/activations/attention_kv_reducer_p2_l16_v16_s16_a24_wrapper/config_attention_kv_reducer_p2_l16_v16_s16_a24.json",
+        "runs/designs/activations/attention_kv_reducer_p8_l32_v16_s16_a24_wrapper/config_attention_kv_reducer_p8_l32_v16_s16_a24.json",
+        "runs/designs/activations/attention_kv_reducer_p16_l64_v16_s16_a24_wrapper/config_attention_kv_reducer_p16_l64_v16_s16_a24.json"
+      ],
+      "sweep_path": "runs/campaigns/activations/attention_kv_reducer/sweeps/nangate45_macro_frontier.json",
+      "expected_result": {
+        "direction": "measure",
+        "reason": "Calibrate the reducer geometry used by owner-cluster and tree-reduction clustered attention schedules."
+      },
+      "status": "blocked",
+      "blocker": "Requires accepted smoke evidence first."
+    }
+  ]
+}

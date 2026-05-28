@@ -1,0 +1,111 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_kv_reducer_v1",
+  "created_utc": "2026-05-28T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "abstraction_layer": "decoder_attention_kv_reducer",
+  "title": "Decoder attention/KV cross-tile reducer measured RTL anchor",
+  "hypothesis": "The current clustered Llama7B schedule remains tile-attention dominated after analytical command and reducer overhead sweeps. Measuring a standalone cross-tile reducer will calibrate whether owner-cluster and cluster-tree reduction overheads are still small enough to preserve that frontier.",
+  "direct_comparison": {
+    "primary_question": "What are the measured Nangate45 timing, area, and power of a ready/valid cross-tile attention reducer for the owner and tree reduction geometries used by the clustered schedule model?",
+    "include": [
+      "standalone attention/KV reducer RTLGen operation",
+      "value-lane and statistic-field reduction datapath",
+      "macro-style wrapper without IO-pad assumptions",
+      "perf-sim versus RTL equivalence on reduced values and counters",
+      "smoke point before frontier sweep"
+    ],
+    "exclude": [
+      "full numerical softmax rescaling",
+      "full NoC arbitration RTL",
+      "full SRAM macro banking layout",
+      "quality impact of KV quantization",
+      "full decoder integration"
+    ],
+    "follow_on_broad_sweep": [
+      "feed accepted reducer PPA back into the clustered Llama7B schedule estimator",
+      "if reducer cost is not negligible, split owner-cluster and tree reducer models"
+    ]
+  },
+  "expected_benefit": [
+    "replaces the reducer overhead proxy with measured circuit-block evidence",
+    "calibrates whether the current 2-cluster owner and 8-cluster tree candidates remain plausible",
+    "creates a reusable reducer block for later producer-attention-ranker composition"
+  ],
+  "risks": [
+    "the first block intentionally models fixed-width reduction, not full online softmax normalization",
+    "standalone reducer PPA may shift after integration with NoC, SRAM, and command scheduling",
+    "large lane counts may require the same macro pin-density handling used by prior wide datapath blocks"
+  ],
+  "needs_mapper_change": false,
+  "required_source_work": [
+    {
+      "item_id": "item_l1_decoder_attention_kv_reducer_op_v1",
+      "objective": "Add the source artifacts needed before remote measurement: RTLGen attention_kv_reducer operation, example configs, sweep files, and local RTL equivalence tests.",
+      "status": "implemented_pending_review",
+      "must_merge_before_dispatch": true
+    }
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_attention_kv_reducer_smoke_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure one bounded Nangate45 smoke point for a standalone attention/KV reducer block after the RTLGen operation lands.",
+      "config_paths": [
+        "runs/designs/activations/attention_kv_reducer_p2_l16_v16_s16_a24_wrapper/config_attention_kv_reducer_p2_l16_v16_s16_a24.json"
+      ],
+      "sweep_path": "runs/campaigns/activations/attention_kv_reducer/sweeps/nangate45_macro_smoke.json",
+      "platform": "nangate45",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "decoder_attention_kv_reducer",
+      "comparison_role": "measured_anchor",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_clustered_schedule_overhead_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "measure",
+        "reason": "Create the first measured RTL/PPA anchor for the analytical reducer overhead in the clustered schedule model."
+      }
+    },
+    {
+      "item_id": "l1_decoder_attention_kv_reducer_frontier_v1",
+      "task_type": "l1_sweep",
+      "objective": "Sweep reducer partial count and lane width for the owner-cluster and cluster-tree overhead candidates.",
+      "config_paths": [
+        "runs/designs/activations/attention_kv_reducer_p2_l16_v16_s16_a24_wrapper/config_attention_kv_reducer_p2_l16_v16_s16_a24.json",
+        "runs/designs/activations/attention_kv_reducer_p8_l32_v16_s16_a24_wrapper/config_attention_kv_reducer_p8_l32_v16_s16_a24.json",
+        "runs/designs/activations/attention_kv_reducer_p16_l64_v16_s16_a24_wrapper/config_attention_kv_reducer_p16_l64_v16_s16_a24.json"
+      ],
+      "sweep_path": "runs/campaigns/activations/attention_kv_reducer/sweeps/nangate45_macro_frontier.json",
+      "platform": "nangate45",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "decoder_attention_kv_reducer",
+      "comparison_role": "reducer_geometry_frontier",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_kv_reducer_smoke_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "measure",
+        "reason": "Calibrate the reducer geometry used by owner-cluster and tree-reduction clustered attention schedules."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_clustered_schedule_overhead__l2_decoder_attention_kv_clustered_schedule_overhead_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "src/rtlgen/config.cpp",
+    "src/rtlgen/config.hpp",
+    "src/rtlgen/rtl_operations.cpp",
+    "scripts/generate_design.py",
+    "scripts/run_sweep.py",
+    "control_plane/control_plane/services/l1_task_generator.py",
+    "npu/eval/estimate_llm_decoder_attention_kv_clustered_schedule.py",
+    "tests/test_attention_kv_reducer.sh"
+  ]
+}

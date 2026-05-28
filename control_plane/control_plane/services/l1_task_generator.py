@@ -421,6 +421,7 @@ def _read_config_target(
             "logit_rank",
             "candidate_stream_merge_fifo",
             "attention_kv_tile",
+            "attention_kv_reducer",
         }:
             raise Layer1TaskGenerationError(f"unsupported single-operation design type in {config_path}: {op_type}")
         module_name = entry["module_name"]

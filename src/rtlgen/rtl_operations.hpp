@@ -13,3 +13,5 @@ void emitCandidateStreamMergeFifoModule(const CandidateStreamMergeFifoOperationC
                                         const OperandDefinition &operand);
 void emitAttentionKvTileModule(const AttentionKvTileOperationConfig &config,
                                const OperandDefinition &operand);
+void emitAttentionKvReducerModule(const AttentionKvReducerOperationConfig &config,
+                                  const OperandDefinition &operand);

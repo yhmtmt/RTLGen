@@ -1118,6 +1118,146 @@ void emitSoftmaxRowwiseModule(const SoftmaxRowwiseOperationConfig &config, const
     os << "endmodule\n";
 }
 
+void emitAttentionKvReducerModule(const AttentionKvReducerOperationConfig &config,
+                                  const OperandDefinition &operand) {
+    const int value_bits = config.value_bits > 0 ? config.value_bits : operand.bit_width;
+    if (config.lanes <= 0 || config.lanes > 256) {
+        throw std::runtime_error("attention_kv_reducer lanes must be in [1, 256]");
+    }
+    if (value_bits <= 0 || value_bits > 32) {
+        throw std::runtime_error("attention_kv_reducer value_bits must be in [1, 32]");
+    }
+    if (config.stat_bits <= 0 || config.stat_bits > 64) {
+        throw std::runtime_error("attention_kv_reducer stat_bits must be in [1, 64]");
+    }
+    if (config.partials <= 0 || config.partials > 1024) {
+        throw std::runtime_error("attention_kv_reducer partials must be in [1, 1024]");
+    }
+    if (config.counter_bits <= 0 || config.counter_bits > 64) {
+        throw std::runtime_error("attention_kv_reducer counter_bits must be in [1, 64]");
+    }
+
+    const int min_accum_bits = value_bits +
+        std::max(1, ceilLog2U64(static_cast<unsigned long long>(config.partials))) + 1;
+    if (config.accum_bits < min_accum_bits || config.accum_bits > 128) {
+        std::ostringstream oss;
+        oss << "attention_kv_reducer accum_bits must be in [" << min_accum_bits
+            << ", 128] for this value_bits/partials";
+        throw std::runtime_error(oss.str());
+    }
+
+    const int value_fragment_width = config.lanes * value_bits;
+    const int reduced_value_width = config.lanes * config.accum_bits;
+    const int stat_fragment_width = 2 * config.stat_bits;
+    const std::string signed_kw = config.signed_values ? "signed " : "";
+
+    std::string filename = config.module_name + ".v";
+    std::ofstream os(filename);
+    if (!os) {
+        throw std::runtime_error("Failed to open " + filename + " for writing");
+    }
+
+    os << "`timescale 1ns/1ps\n\n";
+    os << "module " << config.module_name << "(\n";
+    os << "  input  clk,\n";
+    os << "  input  rst_n,\n";
+    os << "  input  partial_valid,\n";
+    os << "  output partial_ready,\n";
+    os << "  input  partial_last,\n";
+    os << "  input  [" << (value_fragment_width - 1) << ":0] value_fragment,\n";
+    os << "  input  [" << (stat_fragment_width - 1) << ":0] stat_fragment,\n";
+    os << "  output reg reduced_valid,\n";
+    os << "  input  reduced_ready,\n";
+    os << "  output reg " << signed_kw << "[" << (reduced_value_width - 1)
+       << ":0] reduced_value_fragment,\n";
+    os << "  output reg [" << (stat_fragment_width - 1) << ":0] reduced_stat_fragment,\n";
+    os << "  output reg [" << (config.counter_bits - 1) << ":0] accepted_partial_count,\n";
+    os << "  output reg [" << (config.counter_bits - 1) << ":0] completed_group_count,\n";
+    os << "  output reg [" << (config.counter_bits - 1) << ":0] producer_stall_cycles,\n";
+    os << "  output reg [" << (config.counter_bits - 1) << ":0] cycle_count,\n";
+    os << "  output reg [" << (config.counter_bits - 1) << ":0] final_completion_cycle\n";
+    os << ");\n\n";
+    os << "  // Attention/KV cross-tile reducer primitive for clustered decoder exploration.\n";
+    os << "  // The first measured contract is exact fixed-width reduction of value lanes and\n";
+    os << "  // two per-tile statistic fields; softmax rescaling is modeled above this block.\n";
+    os << "  localparam integer LANES = " << config.lanes << ";\n";
+    os << "  localparam integer VALUE_W = " << value_bits << ";\n";
+    os << "  localparam integer STAT_W = " << config.stat_bits << ";\n";
+    os << "  localparam integer ACCUM_W = " << config.accum_bits << ";\n";
+    os << "  localparam integer COUNT_W = " << config.counter_bits << ";\n";
+    os << "  localparam integer PARTIALS = " << config.partials << ";\n\n";
+    os << "  reg " << signed_kw << "[ACCUM_W-1:0] value_accum [0:LANES-1];\n";
+    os << "  reg [STAT_W-1:0] stat0_accum;\n";
+    os << "  reg [STAT_W-1:0] stat1_accum;\n";
+    os << "  reg [COUNT_W-1:0] partial_count_in_group;\n\n";
+    os << "  wire close_group = partial_last || (partial_count_in_group == (PARTIALS - 1));\n";
+    os << "  assign partial_ready = !reduced_valid || reduced_ready;\n\n";
+    for (int lane = 0; lane < config.lanes; ++lane) {
+        os << "  wire " << signed_kw << "[VALUE_W-1:0] lane_value_" << lane
+           << " = value_fragment[(" << lane << "*VALUE_W) +: VALUE_W];\n";
+        if (config.signed_values) {
+            os << "  wire signed [ACCUM_W-1:0] lane_value_ext_" << lane
+               << " = {{(ACCUM_W-VALUE_W){lane_value_" << lane << "[VALUE_W-1]}}, lane_value_"
+               << lane << "};\n";
+        } else {
+            os << "  wire [ACCUM_W-1:0] lane_value_ext_" << lane
+               << " = {{(ACCUM_W-VALUE_W){1'b0}}, lane_value_" << lane << "};\n";
+        }
+        os << "  wire " << signed_kw << "[ACCUM_W-1:0] lane_next_" << lane
+           << " = value_accum[" << lane << "] + lane_value_ext_" << lane << ";\n";
+    }
+    os << "  wire [STAT_W-1:0] stat0_next = stat0_accum + stat_fragment[0 +: STAT_W];\n";
+    os << "  wire [STAT_W-1:0] stat1_next = stat1_accum + stat_fragment[STAT_W +: STAT_W];\n\n";
+    os << "  integer i;\n";
+    os << "  always @(posedge clk or negedge rst_n) begin\n";
+    os << "    if (!rst_n) begin\n";
+    os << "      reduced_valid <= 1'b0;\n";
+    os << "      reduced_value_fragment <= {" << reduced_value_width << "{1'b0}};\n";
+    os << "      reduced_stat_fragment <= {" << stat_fragment_width << "{1'b0}};\n";
+    os << "      accepted_partial_count <= {COUNT_W{1'b0}};\n";
+    os << "      completed_group_count <= {COUNT_W{1'b0}};\n";
+    os << "      producer_stall_cycles <= {COUNT_W{1'b0}};\n";
+    os << "      cycle_count <= {COUNT_W{1'b0}};\n";
+    os << "      final_completion_cycle <= {COUNT_W{1'b0}};\n";
+    os << "      partial_count_in_group <= {COUNT_W{1'b0}};\n";
+    os << "      stat0_accum <= {STAT_W{1'b0}};\n";
+    os << "      stat1_accum <= {STAT_W{1'b0}};\n";
+    os << "      for (i = 0; i < LANES; i = i + 1)\n";
+    os << "        value_accum[i] <= {ACCUM_W{1'b0}};\n";
+    os << "    end else begin\n";
+    os << "      cycle_count <= cycle_count + {{(COUNT_W-1){1'b0}}, 1'b1};\n\n";
+    os << "      if (reduced_valid && reduced_ready)\n";
+    os << "        reduced_valid <= 1'b0;\n\n";
+    os << "      if (partial_valid && !partial_ready)\n";
+    os << "        producer_stall_cycles <= producer_stall_cycles + {{(COUNT_W-1){1'b0}}, 1'b1};\n\n";
+    os << "      if (partial_valid && partial_ready) begin\n";
+    os << "        accepted_partial_count <= accepted_partial_count + {{(COUNT_W-1){1'b0}}, 1'b1};\n";
+    for (int lane = 0; lane < config.lanes; ++lane) {
+        os << "        value_accum[" << lane << "] <= close_group ? {ACCUM_W{1'b0}} : lane_next_"
+           << lane << ";\n";
+    }
+    os << "        stat0_accum <= close_group ? {STAT_W{1'b0}} : stat0_next;\n";
+    os << "        stat1_accum <= close_group ? {STAT_W{1'b0}} : stat1_next;\n";
+    os << "        if (close_group) begin\n";
+    for (int lane = 0; lane < config.lanes; ++lane) {
+        os << "          reduced_value_fragment[(" << lane << "*ACCUM_W) +: ACCUM_W] <= lane_next_"
+           << lane << ";\n";
+    }
+    os << "          reduced_stat_fragment[0 +: STAT_W] <= stat0_next;\n";
+    os << "          reduced_stat_fragment[STAT_W +: STAT_W] <= stat1_next;\n";
+    os << "          reduced_valid <= 1'b1;\n";
+    os << "          completed_group_count <= completed_group_count + {{(COUNT_W-1){1'b0}}, 1'b1};\n";
+    os << "          partial_count_in_group <= {COUNT_W{1'b0}};\n";
+    os << "          final_completion_cycle <= cycle_count + {{(COUNT_W-1){1'b0}}, 1'b1};\n";
+    os << "        end else begin\n";
+    os << "          partial_count_in_group <= partial_count_in_group + {{(COUNT_W-1){1'b0}}, 1'b1};\n";
+    os << "        end\n";
+    os << "      end\n";
+    os << "    end\n";
+    os << "  end\n";
+    os << "endmodule\n";
+}
+
 void emitBf16RecipNormModule(const Bf16RecipNormOperationConfig &config, const OperandDefinition &operand) {
     if (operand.bit_width != 16) {
         throw std::runtime_error("bf16_recip_norm expects a 16-bit packed bf16 operand");
