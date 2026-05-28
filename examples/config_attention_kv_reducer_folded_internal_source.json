@@ -1,0 +1,30 @@
+{
+  "version": "1.1",
+  "operands": [
+    {
+      "name": "value_fragments",
+      "dimensions": 1,
+      "bit_width": 8,
+      "signed": true,
+      "kind": "int"
+    }
+  ],
+  "operations": [
+    {
+      "type": "attention_kv_reducer_folded",
+      "module_name": "attention_kv_reducer_folded_src_p4_ppc2_l4_v8_s12_a16",
+      "operand": "value_fragments",
+      "options": {
+        "lanes": 4,
+        "value_bits": 8,
+        "stat_bits": 12,
+        "partials": 4,
+        "partials_per_cycle": 2,
+        "accum_bits": 16,
+        "counter_bits": 32,
+        "signed_values": true,
+        "wrapper_mode": "internal_source"
+      }
+    }
+  ]
+}

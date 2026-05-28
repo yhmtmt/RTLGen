@@ -321,14 +321,23 @@ def identify_design(config):
             raise ValueError("attention_kv_reducer_folded accum_bits must be positive")
         if counter_bits <= 0:
             raise ValueError("attention_kv_reducer_folded counter_bits must be positive")
+        wrapper_mode = str(options.get("wrapper_mode", "external_input"))
+        if wrapper_mode not in ("external_input", "internal_source"):
+            raise ValueError("attention_kv_reducer_folded wrapper_mode must be external_input or internal_source")
         return {
-            "kind": "attention_kv_reducer_folded",
+            "kind": "attention_kv_reducer_folded_internal_source" if wrapper_mode == "internal_source" else "attention_kv_reducer_folded",
             "module_name": module_name,
             "wrapper_name": f"{module_name}_wrapper",
             "value_width": partials_per_cycle * lanes * value_bits,
             "reduced_value_width": lanes * accum_bits,
             "stat_width": partials_per_cycle * 2 * stat_bits,
             "reduced_stat_width": 2 * stat_bits,
+            "lanes": lanes,
+            "value_bits": value_bits,
+            "stat_bits": stat_bits,
+            "partials": partials,
+            "partials_per_cycle": partials_per_cycle,
+            "accum_bits": accum_bits,
             "counter_bits": counter_bits,
             "signed_values": bool(options.get("signed_values", True)),
             "include_mg_cpa": False,
@@ -826,6 +835,111 @@ module {wrapper_name}(
   output [{counter_bits-1}:0] cycle_count,
   output [{counter_bits-1}:0] final_completion_cycle
 );
+
+  {module_name} dut (
+    .clk(clk),
+    .rst_n(rst_n),
+    .partial_valid(partial_valid),
+    .partial_ready(partial_ready),
+    .value_fragments(value_fragments),
+    .stat_fragments(stat_fragments),
+    .reduced_valid(reduced_valid),
+    .reduced_ready(reduced_ready),
+    .reduced_value_fragment(reduced_value_fragment),
+    .reduced_stat_fragment(reduced_stat_fragment),
+    .accepted_chunk_count(accepted_chunk_count),
+    .completed_group_count(completed_group_count),
+    .producer_stall_cycles(producer_stall_cycles),
+    .cycle_count(cycle_count),
+    .final_completion_cycle(final_completion_cycle)
+  );
+
+endmodule
+"""
+    elif design["kind"] == "attention_kv_reducer_folded_internal_source":
+        value_width = int(design["value_width"])
+        reduced_value_width = int(design["reduced_value_width"])
+        stat_width = int(design["stat_width"])
+        reduced_stat_width = int(design["reduced_stat_width"])
+        counter_bits = int(design["counter_bits"])
+        value_bits = int(design["value_bits"])
+        stat_bits = int(design["stat_bits"])
+        lanes = int(design["lanes"])
+        partials = int(design["partials"])
+        partials_per_cycle = int(design["partials_per_cycle"])
+        accum_bits = int(design["accum_bits"])
+        signed_kw = "signed " if design.get("signed_values", True) else ""
+
+        def counter_expr(width, salt):
+            if counter_bits >= width:
+                base = f"source_step[{width-1}:0]"
+            else:
+                base = f"{{{{{width-counter_bits}{{1'b0}}}}, source_step}}"
+            return f"({base} + {width}'d{salt % (1 << min(width, 30))})"
+
+        value_assigns = []
+        for partial in range(partials_per_cycle):
+            for lane in range(lanes):
+                base = (partial * lanes + lane) * value_bits
+                salt = (partial + 1) * 17 + lane
+                value_assigns.append(
+                    f"  assign value_fragments[{base} +: {value_bits}] = {counter_expr(value_bits, salt)};"
+                )
+
+        stat_assigns = []
+        for partial in range(partials_per_cycle):
+            base0 = partial * 2 * stat_bits
+            base1 = (partial * 2 + 1) * stat_bits
+            stat_assigns.append(
+                f"  assign stat_fragments[{base0} +: {stat_bits}] = {counter_expr(stat_bits, partial + 1)};"
+            )
+            stat_assigns.append(
+                f"  assign stat_fragments[{base1} +: {stat_bits}] = {counter_expr(stat_bits, partial + 33)};"
+            )
+
+        wrapper_content = f"""
+module {wrapper_name}(
+  input clk,
+  input rst_n,
+  output reduced_valid,
+  output {signed_kw}[{reduced_value_width-1}:0] reduced_value_fragment,
+  output [{reduced_stat_width-1}:0] reduced_stat_fragment,
+  output [{counter_bits-1}:0] accepted_chunk_count,
+  output [{counter_bits-1}:0] completed_group_count,
+  output [{counter_bits-1}:0] producer_stall_cycles,
+  output [{counter_bits-1}:0] cycle_count,
+  output [{counter_bits-1}:0] final_completion_cycle
+);
+
+  localparam integer LANES = {lanes};
+  localparam integer VALUE_W = {value_bits};
+  localparam integer STAT_W = {stat_bits};
+  localparam integer ACCUM_W = {accum_bits};
+  localparam integer PARTIALS = {partials};
+  localparam integer PARTIALS_PER_CYCLE = {partials_per_cycle};
+  localparam integer VALUE_WIDTH = {value_width};
+  localparam integer STAT_WIDTH = {stat_width};
+  localparam integer COUNT_W = {counter_bits};
+
+  wire partial_valid;
+  wire partial_ready;
+  wire reduced_ready;
+  wire [VALUE_WIDTH-1:0] value_fragments;
+  wire [STAT_WIDTH-1:0] stat_fragments;
+  reg [COUNT_W-1:0] source_step;
+
+  assign partial_valid = 1'b1;
+  assign reduced_ready = 1'b1;
+{chr(10).join(value_assigns)}
+{chr(10).join(stat_assigns)}
+
+  always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+      source_step <= {{COUNT_W{{1'b0}}}};
+    end else if (partial_ready) begin
+      source_step <= source_step + {{{{(COUNT_W-1){{1'b0}}}}, 1'b1}};
+    end
+  end
 
   {module_name} dut (
     .clk(clk),

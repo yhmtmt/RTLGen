@@ -1,0 +1,29 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_kv_reducer_folded_internal_source_v1",
+  "source_commit": "",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_attention_kv_reducer_folded_internal_source_v1",
+      "title": "Layer 1 folded reducer internal-source sweep",
+      "objective": "Measure p8/p16 folded reducers with ppc2/ppc4 when producer-side partial fragments are internal nets rather than top-level macro IO; accept status=ok and failed rows as boundary evidence.",
+      "status": "pending",
+      "blocker": "Requires internal-source wrapper/config PR to merge first.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "attention_kv_reducer_folded",
+      "configs": [
+        "runs/designs/activations/attention_kv_reducer_folded_src_p8_ppc2_l16_v16_s16_a24_wrapper/config_attention_kv_reducer_folded_src_p8_ppc2_l16_v16_s16_a24.json",
+        "runs/designs/activations/attention_kv_reducer_folded_src_p8_ppc4_l16_v16_s16_a24_wrapper/config_attention_kv_reducer_folded_src_p8_ppc4_l16_v16_s16_a24.json",
+        "runs/designs/activations/attention_kv_reducer_folded_src_p16_ppc2_l16_v16_s16_a24_wrapper/config_attention_kv_reducer_folded_src_p16_ppc2_l16_v16_s16_a24.json",
+        "runs/designs/activations/attention_kv_reducer_folded_src_p16_ppc4_l16_v16_s16_a24_wrapper/config_attention_kv_reducer_folded_src_p16_ppc4_l16_v16_s16_a24.json"
+      ],
+      "sweep": "runs/campaigns/activations/attention_kv_reducer_folded/sweeps/nangate45_macro_internal_source.json",
+      "expected_outputs": [
+        "runs/designs/activations/attention_kv_reducer_folded_src_p8_ppc2_l16_v16_s16_a24_wrapper/metrics.csv",
+        "runs/designs/activations/attention_kv_reducer_folded_src_p8_ppc4_l16_v16_s16_a24_wrapper/metrics.csv",
+        "runs/designs/activations/attention_kv_reducer_folded_src_p16_ppc2_l16_v16_s16_a24_wrapper/metrics.csv",
+        "runs/designs/activations/attention_kv_reducer_folded_src_p16_ppc4_l16_v16_s16_a24_wrapper/metrics.csv"
+      ],
+      "acceptance_notes": "Rows should be compared against the standalone folded boundary sweep to determine how much of the ppc4/high-utilization failure was macro-interface pin pressure."
+    }
+  ]
+}
