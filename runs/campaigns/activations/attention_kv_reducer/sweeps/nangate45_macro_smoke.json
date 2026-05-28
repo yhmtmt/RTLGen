@@ -1,0 +1,12 @@
+{
+  "tag_prefix": "attention_kv_reducer_nangate45_macro_smoke",
+  "flow_params": {
+    "CLOCK_PERIOD": [2.5],
+    "CORE_UTILIZATION": [60, 50],
+    "PLACE_DENSITY": [0.68],
+    "SYNTH_MEMORY_MAX_BITS": [32768],
+    "IO_PLACER_H": ["metal3 metal5"],
+    "IO_PLACER_V": ["metal4 metal6"],
+    "PLACE_PINS_ARGS": ["-min_distance 1"]
+  }
+}

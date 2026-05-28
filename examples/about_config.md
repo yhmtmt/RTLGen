@@ -423,6 +423,38 @@ perf-sim/RTL counter equivalence.
 
 See `examples/config_attention_kv_tile.json` for a minimal smoke configuration.
 
+### Attention/KV Cross-Tile Reducer Operation
+
+The `attention_kv_reducer` operation models the clustered decoder reducer that
+combines partial value fragments and per-tile statistic fields after attention
+tiles have processed different token ranges. The first RTL contract is exact
+fixed-width reduction; softmax rescaling remains in the higher-level perf model
+until a full numerical reducer is introduced.
+
+Each reducer unit is an `operations[]` entry with:
+
+- `type`: `"attention_kv_reducer"`
+- `module_name`: generated Verilog module name
+- `operand`: integer operand reference used for the default value width
+- `options`: reducer geometry and counter widths
+
+Supported options:
+
+- `lanes`: value lanes reduced per accepted partial
+- `value_bits`: signed or unsigned value-fragment lane width
+- `stat_bits`: width of each of the two statistic fields
+- `partials`: expected partial count before automatic group close
+- `accum_bits`: reduced value lane accumulator width
+- `counter_bits`: observable counter width
+- `signed_values`: signed value-lane extension when true
+
+Generated observables include `accepted_partial_count`, `completed_group_count`,
+`producer_stall_cycles`, `cycle_count`, and `final_completion_cycle` for
+perf-sim/RTL counter equivalence.
+
+See `examples/config_attention_kv_reducer.json` for a minimal smoke
+configuration.
+
 ## Vector-Op Approximation Notes (NPU Phase-2)
 
 This section documents how `vec_op` math is currently approximated.

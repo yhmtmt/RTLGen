@@ -136,6 +136,7 @@ def read_design_names(config_path: Path) -> Tuple[str, str]:
             "logit_rank",
             "candidate_stream_merge_fifo",
             "attention_kv_tile",
+            "attention_kv_reducer",
         ):
             raise ValueError(f"Unsupported single-operation design type in {config_path}: {entry['type']}")
         module_name = entry["module_name"]
