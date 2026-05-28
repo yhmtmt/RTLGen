@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_decoder_attention_kv_reducer_tree_v1",
-  "source_commit": "",
+  "source_commit": "2c159e39a100ccc443d0529e51ab0c8304bd912d",
   "requested_items": [
     {
       "item_id": "l1_decoder_attention_kv_reducer_tree_frontier_v1",
@@ -24,7 +24,7 @@
         "direction": "measure",
         "reason": "Determine whether hierarchical p2-style tree reduction can replace failed flat p8/p16 reducer points."
       },
-      "status": "blocked",
+      "status": "pending",
       "blocker": "Requires source PR for attention_kv_reducer_tree operation to merge first.",
       "notes": "Use boundary-aware acceptance so failed rows are preserved as frontier evidence."
     }
