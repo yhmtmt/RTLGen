@@ -1,11 +1,11 @@
 {
   "proposal_id": "prop_l1_decoder_attention_kv_reducer_v1",
-  "source_commit": "74f960f54383a335be89a6d65ef015d9813ce648",
+  "source_commit": "pending_source_merge",
   "requested_items": [
     {
       "item_id": "l1_decoder_attention_kv_reducer_smoke_v1",
       "task_type": "l1_sweep",
-      "objective": "Measure one bounded Nangate45 smoke point for the standalone attention/KV reducer block that calibrates clustered attention reduction overhead.",
+      "objective": "Measure one bounded Nangate45 smoke point for a standalone attention/KV reducer block after the RTLGen operation lands.",
       "evaluation_mode": "measurement_only",
       "abstraction_layer": "decoder_attention_kv_reducer",
       "comparison_role": "measured_anchor",
@@ -23,7 +23,7 @@
         "direction": "measure",
         "reason": "Create the first measured RTL/PPA anchor for the analytical reducer overhead in the clustered schedule model."
       },
-      "status": "pending",
+      "status": "blocked",
       "blocker": "Requires merged RTLGen attention_kv_reducer operation, smoke config, smoke sweep, and local RTL equivalence tests."
     },
     {

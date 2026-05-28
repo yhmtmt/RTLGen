@@ -1,0 +1,2 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_decoder_attention_kv_reducer_smoke_v1_run_401d1388998a96c4,1,1,0,succeeded,runs/designs/activations/attention_kv_reducer_p2_l16_v16_s16_a24_wrapper/metrics.csv,2.066,25327.131025,0.0191,none,,
