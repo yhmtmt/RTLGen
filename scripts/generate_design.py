@@ -298,6 +298,41 @@ def identify_design(config):
             "signed_values": bool(options.get("signed_values", True)),
             "include_mg_cpa": False,
         }
+    if op_type == "attention_kv_reducer_folded":
+        options = entry.get("options", {})
+        value_bits = int(options.get("value_bits", bit_width) or bit_width)
+        stat_bits = int(options.get("stat_bits", 16))
+        lanes = int(options.get("lanes", 16))
+        partials = int(options.get("partials", 8))
+        partials_per_cycle = int(options.get("partials_per_cycle", 2))
+        accum_bits = int(options.get("accum_bits", 32))
+        counter_bits = int(options.get("counter_bits", 32))
+        if lanes <= 0:
+            raise ValueError("attention_kv_reducer_folded lanes must be positive")
+        if value_bits <= 0:
+            raise ValueError("attention_kv_reducer_folded value_bits must be positive")
+        if stat_bits <= 0:
+            raise ValueError("attention_kv_reducer_folded stat_bits must be positive")
+        if partials <= 1:
+            raise ValueError("attention_kv_reducer_folded partials must be greater than one")
+        if partials_per_cycle <= 0 or partials_per_cycle > partials or partials % partials_per_cycle:
+            raise ValueError("attention_kv_reducer_folded partials_per_cycle must divide partials")
+        if accum_bits <= 0:
+            raise ValueError("attention_kv_reducer_folded accum_bits must be positive")
+        if counter_bits <= 0:
+            raise ValueError("attention_kv_reducer_folded counter_bits must be positive")
+        return {
+            "kind": "attention_kv_reducer_folded",
+            "module_name": module_name,
+            "wrapper_name": f"{module_name}_wrapper",
+            "value_width": partials_per_cycle * lanes * value_bits,
+            "reduced_value_width": lanes * accum_bits,
+            "stat_width": partials_per_cycle * 2 * stat_bits,
+            "reduced_stat_width": 2 * stat_bits,
+            "counter_bits": counter_bits,
+            "signed_values": bool(options.get("signed_values", True)),
+            "include_mg_cpa": False,
+        }
     raise ValueError(f"generate_design.py does not support operation type: {op_type}")
 
 
@@ -758,6 +793,52 @@ module {wrapper_name}(
     .reduced_value_fragment(reduced_value_fragment),
     .reduced_stat_fragment(reduced_stat_fragment),
     .accepted_group_count(accepted_group_count),
+    .completed_group_count(completed_group_count),
+    .producer_stall_cycles(producer_stall_cycles),
+    .cycle_count(cycle_count),
+    .final_completion_cycle(final_completion_cycle)
+  );
+
+endmodule
+"""
+    elif design["kind"] == "attention_kv_reducer_folded":
+        value_width = int(design["value_width"])
+        reduced_value_width = int(design["reduced_value_width"])
+        stat_width = int(design["stat_width"])
+        reduced_stat_width = int(design["reduced_stat_width"])
+        counter_bits = int(design["counter_bits"])
+        signed_kw = "signed " if design.get("signed_values", True) else ""
+        wrapper_content = f"""
+module {wrapper_name}(
+  input clk,
+  input rst_n,
+  input partial_valid,
+  output partial_ready,
+  input [{value_width-1}:0] value_fragments,
+  input [{stat_width-1}:0] stat_fragments,
+  output reduced_valid,
+  input reduced_ready,
+  output {signed_kw}[{reduced_value_width-1}:0] reduced_value_fragment,
+  output [{reduced_stat_width-1}:0] reduced_stat_fragment,
+  output [{counter_bits-1}:0] accepted_chunk_count,
+  output [{counter_bits-1}:0] completed_group_count,
+  output [{counter_bits-1}:0] producer_stall_cycles,
+  output [{counter_bits-1}:0] cycle_count,
+  output [{counter_bits-1}:0] final_completion_cycle
+);
+
+  {module_name} dut (
+    .clk(clk),
+    .rst_n(rst_n),
+    .partial_valid(partial_valid),
+    .partial_ready(partial_ready),
+    .value_fragments(value_fragments),
+    .stat_fragments(stat_fragments),
+    .reduced_valid(reduced_valid),
+    .reduced_ready(reduced_ready),
+    .reduced_value_fragment(reduced_value_fragment),
+    .reduced_stat_fragment(reduced_stat_fragment),
+    .accepted_chunk_count(accepted_chunk_count),
     .completed_group_count(completed_group_count),
     .producer_stall_cycles(producer_stall_cycles),
     .cycle_count(cycle_count),

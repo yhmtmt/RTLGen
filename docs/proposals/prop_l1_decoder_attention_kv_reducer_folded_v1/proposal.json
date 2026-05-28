@@ -1,0 +1,26 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_kv_reducer_folded_v1",
+  "title": "Fold attention KV reducer inputs to reduce macro pin pressure",
+  "status": "proposed",
+  "layer": "layer1",
+  "abstraction_layer": "attention_kv_reducer_folded",
+  "motivation": "Flat and registered-tree attention KV reducers reached a boundary at p8/p16. The preserved evidence does not include a detailed OpenROAD failure stage, but repeated failure at 50% and 60% utilization is consistent with macro interface/pin pressure rather than only logic depth. A folded reducer lowers input bus width by accepting a smaller number of partials per cycle.",
+  "hypothesis": "Keeping lanes fixed at l16 while reducing presented partials from p to partials_per_cycle will make p8 and p16 physically feasible, at the cost of ceil(partials / partials_per_cycle) cycles of reducer latency.",
+  "expected_behavior": {
+    "functional": "Exact signed value-lane sums and statistic sums match the full reducer over one group.",
+    "timing_model": "Reducer latency equals ceil(partials / partials_per_cycle) accepted chunks, plus output handshake effects.",
+    "physical_model": "Top-level value input width is partials_per_cycle * lanes * value_bits instead of partials * lanes * value_bits."
+  },
+  "comparison_points": [
+    "attention_kv_reducer_tree_p8_l16_v16_s16_a24_wrapper",
+    "attention_kv_reducer_tree_p16_l16_v16_s16_a24_wrapper",
+    "attention_kv_reducer_folded_p8_ppc2_l16_v16_s16_a24_wrapper",
+    "attention_kv_reducer_folded_p8_ppc4_l16_v16_s16_a24_wrapper",
+    "attention_kv_reducer_folded_p16_ppc2_l16_v16_s16_a24_wrapper",
+    "attention_kv_reducer_folded_p16_ppc4_l16_v16_s16_a24_wrapper"
+  ],
+  "risks": [
+    "If failures remain, pressure may come from output bus width or internal lane accumulators rather than only partial input pins.",
+    "The perf model must charge reducer cycles before using folded results in Llama7B schedule estimates."
+  ]
+}

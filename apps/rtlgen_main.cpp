@@ -203,7 +203,9 @@ int main(int argc, char** argv) {
               << config.attention_kv_reducer_operations.size()
               << " attention/KV reducer block(s), "
               << config.attention_kv_reducer_tree_operations.size()
-              << " attention/KV reducer tree block(s)\n";
+              << " attention/KV reducer tree block(s), "
+              << config.attention_kv_reducer_folded_operations.size()
+              << " attention/KV folded reducer block(s)\n";
 
     try {
         std::filesystem::path flopocoPath;
@@ -381,6 +383,17 @@ int main(int argc, char** argv) {
                       << ", stat_bits=" << reducer.stat_bits
                       << ", partials=" << reducer.partials << ")\n";
             emitAttentionKvReducerTreeModule(reducer, operandDef);
+        }
+
+        for (const auto &reducer : config.attention_kv_reducer_folded_operations) {
+            OperandDefinition operandDef = resolveOperand(config, reducer.operand);
+            std::cout << "[INFO] Generating attention/KV folded reducer " << reducer.module_name
+                      << " (lanes=" << reducer.lanes
+                      << ", value_bits=" << reducer.value_bits
+                      << ", stat_bits=" << reducer.stat_bits
+                      << ", partials=" << reducer.partials
+                      << ", partials_per_cycle=" << reducer.partials_per_cycle << ")\n";
+            emitAttentionKvReducerFoldedModule(reducer, operandDef);
         }
 
         for (const auto &fp : config.fp_operations) {
