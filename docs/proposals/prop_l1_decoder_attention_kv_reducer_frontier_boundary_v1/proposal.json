@@ -1,0 +1,78 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_kv_reducer_frontier_boundary_v1",
+  "created_utc": "2026-05-28T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "abstraction_layer": "attention_kv_reducer_frontier",
+  "title": "Decoder attention/KV reducer frontier boundary",
+  "hypothesis": "The standalone attention/KV reducer remains small enough for clustered Llama7B scheduling when measured over owner-cluster and tree-reduction geometries, but wide p8 and p16 points may expose the practical physical boundary.",
+  "direct_comparison": {
+    "primary_question": "Which reducer geometries produce accepted Nangate45 macro metrics, and where do timing or flow failures begin?",
+    "include": [
+      "p2/l16, p8/l32, and p16/l64 standalone reducer wrappers",
+      "macro-style placement without IO-pad assumptions",
+      "boundary rows where timing or flow failures are recorded",
+      "lightweight metrics.csv artifacts only"
+    ],
+    "exclude": [
+      "full NoC arbitration RTL",
+      "full SRAM macro banking layout",
+      "full decoder integration",
+      "quality impact of KV approximation"
+    ],
+    "follow_on_broad_sweep": [
+      "feed accepted and failed reducer frontier rows into the clustered Llama7B schedule estimator",
+      "narrow the reducer geometry if p8 or p16 cannot produce feasible physical rows"
+    ]
+  },
+  "expected_benefit": [
+    "keeps the smoke reducer promotion closed while continuing frontier measurement in a new proposal",
+    "preserves non-ok physical rows as boundary evidence instead of rejecting the whole run",
+    "calibrates reducer overhead for owner-cluster and cluster-tree attention schedules"
+  ],
+  "risks": [
+    "standalone reducer PPA may shift after NoC and SRAM integration",
+    "large reducer points may fail from pin density or routing rather than logic delay alone",
+    "failed rows must be interpreted as frontier bounds, not as usable implementation points"
+  ],
+  "needs_mapper_change": false,
+  "required_source_work": [],
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_attention_kv_reducer_frontier_boundary_v2",
+      "task_type": "l1_sweep",
+      "objective": "Measure attention KV reducer physical boundary and accept timing/flow failures as boundary evidence while preserving lightweight metrics.",
+      "config_paths": [
+        "runs/designs/activations/attention_kv_reducer_p2_l16_v16_s16_a24_wrapper/config_attention_kv_reducer_p2_l16_v16_s16_a24.json",
+        "runs/designs/activations/attention_kv_reducer_p8_l32_v16_s16_a24_wrapper/config_attention_kv_reducer_p8_l32_v16_s16_a24.json",
+        "runs/designs/activations/attention_kv_reducer_p16_l64_v16_s16_a24_wrapper/config_attention_kv_reducer_p16_l64_v16_s16_a24.json"
+      ],
+      "sweep_path": "runs/campaigns/activations/attention_kv_reducer/sweeps/nangate45_macro_frontier.json",
+      "platform": "nangate45",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "attention_kv_reducer_frontier",
+      "comparison_role": "reducer_geometry_boundary",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_kv_reducer_smoke_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "measure",
+        "reason": "Calibrate the reducer geometry boundary used by owner-cluster and tree-reduction clustered attention schedules."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "control_plane/shadow_exports/l1_promotions/l1_decoder_attention_kv_reducer_smoke_v1.json"
+  ],
+  "knowledge_refs": [
+    "docs/proposals/prop_l1_decoder_attention_kv_reducer_v1/proposal.json",
+    "runs/campaigns/activations/attention_kv_reducer/sweeps/nangate45_macro_frontier.json",
+    "scripts/run_sweep.py",
+    "control_plane/control_plane/services/l1_task_generator.py",
+    "control_plane/control_plane/workers/executor.py",
+    "npu/eval/estimate_llm_decoder_attention_kv_clustered_schedule.py"
+  ]
+}

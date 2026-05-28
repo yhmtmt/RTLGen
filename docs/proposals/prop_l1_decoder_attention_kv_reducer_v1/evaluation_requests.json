@@ -63,7 +63,8 @@
       "objective": "Measure attention KV reducer physical boundary and accept timing/flow failures as boundary evidence while preserving lightweight metrics.",
       "evaluation_mode": "measurement_only",
       "abstraction_layer": "attention_kv_reducer_frontier",
-      "status": "pending"
+      "status": "superseded",
+      "notes": "Queued under this finalized smoke proposal by mistake; replaced by prop_l1_decoder_attention_kv_reducer_frontier_boundary_v1/l1_decoder_attention_kv_reducer_frontier_boundary_v2."
     }
   ]
 }

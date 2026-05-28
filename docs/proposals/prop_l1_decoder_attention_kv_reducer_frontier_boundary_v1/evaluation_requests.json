@@ -1,0 +1,33 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_kv_reducer_frontier_boundary_v1",
+  "source_commit": "f8a70125e99cd9911ddc2dbc49e0342e81cbe87a",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_attention_kv_reducer_frontier_boundary_v2",
+      "task_type": "l1_sweep",
+      "objective": "Measure attention KV reducer physical boundary and accept timing/flow failures as boundary evidence while preserving lightweight metrics.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "attention_kv_reducer_frontier",
+      "comparison_role": "reducer_geometry_boundary",
+      "paired_baseline_item_id": "l1_decoder_attention_kv_reducer_smoke_v1",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_kv_reducer_smoke_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "config_paths": [
+        "runs/designs/activations/attention_kv_reducer_p2_l16_v16_s16_a24_wrapper/config_attention_kv_reducer_p2_l16_v16_s16_a24.json",
+        "runs/designs/activations/attention_kv_reducer_p8_l32_v16_s16_a24_wrapper/config_attention_kv_reducer_p8_l32_v16_s16_a24.json",
+        "runs/designs/activations/attention_kv_reducer_p16_l64_v16_s16_a24_wrapper/config_attention_kv_reducer_p16_l64_v16_s16_a24.json"
+      ],
+      "sweep_path": "runs/campaigns/activations/attention_kv_reducer/sweeps/nangate45_macro_frontier.json",
+      "expected_result": {
+        "direction": "measure",
+        "reason": "Calibrate the reducer geometry boundary used by owner-cluster and tree-reduction clustered attention schedules."
+      },
+      "status": "pending",
+      "blocker": "Requires accepted smoke evidence first; PR #690 has merged that evidence.",
+      "notes": "Use boundary-aware acceptance so non-ok p8/p16 rows are preserved as frontier evidence."
+    }
+  ]
+}
