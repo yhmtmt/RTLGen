@@ -59,6 +59,10 @@ def _shape_row(
     reduction_strategy: str,
     vector_ops_per_mac: float,
     reduction_scalar_bytes: int,
+    command_cycles_per_tile: int,
+    command_cycles_per_wave: int,
+    reducer_setup_cycles: int,
+    reduction_cycle_multiplier: float,
 ) -> JsonDict | None:
     if sram_area_fraction + logic_area_fraction + reserved_area_fraction > 1.0:
         return None
@@ -161,11 +165,13 @@ def _shape_row(
         )
     reduction_stages, _ = _reduction_factor(reduction_strategy, active_clusters)
     reduction_noc_cycles = _ceil_div(reduction_payload_bytes, max(1.0, aggregate_noc_bw)) + reduction_stages * noc_hops * 2
-    cross_tile_reduction_cycles = local_reduce_cycles + max(reduction_noc_cycles, reduction_vector_cycles)
+    base_cross_tile_reduction_cycles = local_reduce_cycles + max(reduction_noc_cycles, reduction_vector_cycles)
+    cross_tile_reduction_cycles = _ceil_div(base_cross_tile_reduction_cycles * reduction_cycle_multiplier, 1) + reducer_setup_cycles
+    command_dispatch_cycles = tile_count * command_cycles_per_tile + tile_waves * command_cycles_per_wave
 
     kv_write_bytes = 2 * kv_width * kv_bytes_per_scalar
     kv_write_cycles = _ceil_div(kv_write_bytes, max(1.0, min(aggregate_bank_bw, aggregate_noc_bw)))
-    layer_cycles = qkv_cycles + tile_waves * tile_service_cycles + cross_tile_reduction_cycles + kv_write_cycles
+    layer_cycles = qkv_cycles + tile_waves * tile_service_cycles + command_dispatch_cycles + cross_tile_reduction_cycles + kv_write_cycles
     total_cycles = layer_cycles * layers
     dominant = max(
         {
@@ -174,6 +180,7 @@ def _shape_row(
             "shared_path": tile_shared_path_cycles,
             "hbm": tile_hbm_cycles,
             "cross_tile_reduction": cross_tile_reduction_cycles,
+            "command_dispatch": command_dispatch_cycles,
         }.items(),
         key=lambda item: item[1],
     )[0]
@@ -245,7 +252,13 @@ def _shape_row(
         "local_reduction_cycles": local_reduce_cycles,
         "cross_tile_reduction_noc_cycles": reduction_noc_cycles,
         "cross_tile_reduction_vector_cycles": reduction_vector_cycles,
+        "base_cross_tile_reduction_cycles": base_cross_tile_reduction_cycles,
+        "reduction_cycle_multiplier": reduction_cycle_multiplier,
+        "reducer_setup_cycles": reducer_setup_cycles,
         "cross_tile_reduction_cycles": cross_tile_reduction_cycles,
+        "command_cycles_per_tile": command_cycles_per_tile,
+        "command_cycles_per_wave": command_cycles_per_wave,
+        "command_dispatch_cycles": command_dispatch_cycles,
         "kv_write_cycles": kv_write_cycles,
         "layer_cycles": layer_cycles,
         "total_cycles": total_cycles,
@@ -281,8 +294,16 @@ def build_report(
     reduction_strategy_list: list[str],
     vector_ops_per_mac: float,
     reduction_scalar_bytes: int,
+    command_cycles_per_tile_list: list[int] | None = None,
+    command_cycles_per_wave_list: list[int] | None = None,
+    reducer_setup_cycles_list: list[int] | None = None,
+    reduction_cycle_multiplier_list: list[float] | None = None,
 ) -> JsonDict:
     candidates = _load_compute_candidates(repo_root=repo_root, tag_substring=tag_substring)
+    command_cycles_per_tile_list = command_cycles_per_tile_list or [0]
+    command_cycles_per_wave_list = command_cycles_per_wave_list or [0]
+    reducer_setup_cycles_list = reducer_setup_cycles_list or [0]
+    reduction_cycle_multiplier_list = reduction_cycle_multiplier_list or [1.0]
     rows: list[JsonDict] = []
     skipped_area_budget = 0
     for sequence_length in sequence_length_list:
@@ -297,29 +318,37 @@ def build_report(
                                         for noc_bw in noc_bandwidth_bytes_per_cycle_list:
                                             for noc_hops in noc_hops_list:
                                                 for reduction_strategy in reduction_strategy_list:
-                                                    for candidate in candidates:
-                                                        row = _shape_row(
-                                                            candidate=candidate,
-                                                            die_area_mm2=die_area_mm2,
-                                                            sram_area_fraction=sram_area_fraction,
-                                                            logic_area_fraction=logic_area_fraction,
-                                                            reserved_area_fraction=reserved_area_fraction,
-                                                            sequence_length=sequence_length,
-                                                            usable_sram_fraction=usable_sram_fraction,
-                                                            local_sram_fraction=local_sram_fraction,
-                                                            tile_tokens=tile_tokens,
-                                                            bank_count=bank_count,
-                                                            cluster_count=cluster_count,
-                                                            noc_bandwidth_bytes_per_cycle=noc_bw,
-                                                            noc_hops=noc_hops,
-                                                            reduction_strategy=reduction_strategy,
-                                                            vector_ops_per_mac=vector_ops_per_mac,
-                                                            reduction_scalar_bytes=reduction_scalar_bytes,
-                                                        )
-                                                        if row is None:
-                                                            skipped_area_budget += 1
-                                                        else:
-                                                            rows.append(row)
+                                                    for command_cycles_per_tile in command_cycles_per_tile_list:
+                                                        for command_cycles_per_wave in command_cycles_per_wave_list:
+                                                            for reducer_setup_cycles in reducer_setup_cycles_list:
+                                                                for reduction_cycle_multiplier in reduction_cycle_multiplier_list:
+                                                                    for candidate in candidates:
+                                                                        row = _shape_row(
+                                                                            candidate=candidate,
+                                                                            die_area_mm2=die_area_mm2,
+                                                                            sram_area_fraction=sram_area_fraction,
+                                                                            logic_area_fraction=logic_area_fraction,
+                                                                            reserved_area_fraction=reserved_area_fraction,
+                                                                            sequence_length=sequence_length,
+                                                                            usable_sram_fraction=usable_sram_fraction,
+                                                                            local_sram_fraction=local_sram_fraction,
+                                                                            tile_tokens=tile_tokens,
+                                                                            bank_count=bank_count,
+                                                                            cluster_count=cluster_count,
+                                                                            noc_bandwidth_bytes_per_cycle=noc_bw,
+                                                                            noc_hops=noc_hops,
+                                                                            reduction_strategy=reduction_strategy,
+                                                                            vector_ops_per_mac=vector_ops_per_mac,
+                                                                            reduction_scalar_bytes=reduction_scalar_bytes,
+                                                                            command_cycles_per_tile=command_cycles_per_tile,
+                                                                            command_cycles_per_wave=command_cycles_per_wave,
+                                                                            reducer_setup_cycles=reducer_setup_cycles,
+                                                                            reduction_cycle_multiplier=reduction_cycle_multiplier,
+                                                                        )
+                                                                        if row is None:
+                                                                            skipped_area_budget += 1
+                                                                        else:
+                                                                            rows.append(row)
     if not rows:
         raise RuntimeError("no rows generated; area budget or cluster count may be infeasible")
     rows_sorted = sorted(rows, key=lambda row: row["latency_us"])
@@ -347,6 +376,10 @@ def build_report(
             "reduction_strategy_list": reduction_strategy_list,
             "vector_ops_per_mac": vector_ops_per_mac,
             "reduction_scalar_bytes": reduction_scalar_bytes,
+            "command_cycles_per_tile_list": command_cycles_per_tile_list,
+            "command_cycles_per_wave_list": command_cycles_per_wave_list,
+            "reducer_setup_cycles_list": reducer_setup_cycles_list,
+            "reduction_cycle_multiplier_list": reduction_cycle_multiplier_list,
         },
         "compute_candidates": candidates,
         "sweep_summary": {
@@ -359,6 +392,17 @@ def build_report(
         "best_by_die": _best_by(rows, ("sequence_length", "die_area_mm2")),
         "best_by_die_cluster": _best_by(rows, ("sequence_length", "die_area_mm2", "cluster_count")),
         "best_by_reduction_strategy": _best_by(rows, ("sequence_length", "die_area_mm2", "reduction_strategy")),
+        "best_by_overhead": _best_by(
+            rows,
+            (
+                "sequence_length",
+                "die_area_mm2",
+                "command_cycles_per_tile",
+                "command_cycles_per_wave",
+                "reducer_setup_cycles",
+                "reduction_cycle_multiplier",
+            ),
+        ),
         "best_by_memory_noc": sorted(
             _best_by(
                 rows,
@@ -381,6 +425,7 @@ def build_report(
             "Each tile produces softmax statistics and a partial value vector for the current token.",
             "Reduction strategies model cross-tile combination after tile service: centralized_tile sends every tile partial, owner_cluster and cluster_tree first reduce tiles locally per cluster.",
             "This is an analytic schedule model; it still does not model RTL command queues or cycle-accurate SRAM/NoC arbitration.",
+            "Optional command and reducer overhead parameters are sensitivity knobs, not measured RTL/PPA.",
         ],
     }
 
@@ -413,11 +458,32 @@ def _write_markdown(path: Path, payload: JsonDict) -> None:
             res=best["dominant_tile_resource"],
         ),
         "",
+        "## Best By Overhead",
+        "",
+        "| die | cmd/tile | cmd/wave | reducer setup | reduction x | clusters | reduction | latency us | resource |",
+        "|---:|---:|---:|---:|---:|---:|---|---:|---|",
+    ]
+    for row in payload["best_by_overhead"]:
+        lines.append(
+            "| {die} | {ct} | {cw} | {setup} | {mult} | {cluster} | {red} | {lat} | {res} |".format(
+                die=row["die_area_mm2"],
+                ct=row["command_cycles_per_tile"],
+                cw=row["command_cycles_per_wave"],
+                setup=row["reducer_setup_cycles"],
+                mult=row["reduction_cycle_multiplier"],
+                cluster=row["cluster_count"],
+                red=row["reduction_strategy"],
+                lat=row["latency_us"],
+                res=row["dominant_tile_resource"],
+            )
+        )
+    lines.extend([
+        "",
         "## Best By Die And Cluster",
         "",
         "| die | clusters | arch | replicas | reduction | tile waves | tile service | reduction cycles | latency us | resource |",
         "|---:|---:|---|---:|---|---:|---:|---:|---:|---|",
-    ]
+    ])
     for row in payload["best_by_die_cluster"]:
         lines.append(
             "| {die} | {cluster} | {arch} | {rep} | {red} | {waves} | {service} | {reduce} | {lat} | {res} |".format(
@@ -466,6 +532,10 @@ def main() -> int:
     ap.add_argument("--reduction-strategy", type=_str_list, default=["owner_cluster", "cluster_tree", "centralized_tile"])
     ap.add_argument("--vector-ops-per-mac", type=float, default=0.125)
     ap.add_argument("--reduction-scalar-bytes", type=int, default=2)
+    ap.add_argument("--command-cycles-per-tile", type=_int_list, default=[0])
+    ap.add_argument("--command-cycles-per-wave", type=_int_list, default=[0])
+    ap.add_argument("--reducer-setup-cycles", type=_int_list, default=[0])
+    ap.add_argument("--reduction-cycle-multiplier", type=_float_list, default=[1.0])
     ap.add_argument("--out", required=True)
     ap.add_argument("--out-md", required=True)
     args = ap.parse_args()
@@ -488,6 +558,10 @@ def main() -> int:
         reduction_strategy_list=args.reduction_strategy,
         vector_ops_per_mac=args.vector_ops_per_mac,
         reduction_scalar_bytes=args.reduction_scalar_bytes,
+        command_cycles_per_tile_list=args.command_cycles_per_tile,
+        command_cycles_per_wave_list=args.command_cycles_per_wave,
+        reducer_setup_cycles_list=args.reducer_setup_cycles,
+        reduction_cycle_multiplier_list=args.reduction_cycle_multiplier,
     )
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
