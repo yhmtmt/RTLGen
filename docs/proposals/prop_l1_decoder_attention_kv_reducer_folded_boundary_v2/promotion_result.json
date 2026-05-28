@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_kv_reducer_folded_boundary_v2",
+  "decision": "promote",
+  "pr_number": 708,
+  "merge_commit": "ecebcb3b243cc7b75c2591e0cb7a814f23a403c6",
+  "merged_utc": "2026-05-28T09:36:37.218376Z"
+}

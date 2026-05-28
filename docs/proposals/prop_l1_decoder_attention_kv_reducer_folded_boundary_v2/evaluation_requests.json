@@ -1,12 +1,12 @@
 {
   "proposal_id": "prop_l1_decoder_attention_kv_reducer_folded_boundary_v2",
-  "source_commit": "",
+  "source_commit": "d3095707fd1eae291a944b1f215ebe9882c5efe2",
   "requested_items": [
     {
       "item_id": "l1_decoder_attention_kv_reducer_folded_boundary_v2",
       "title": "Layer 1 attention KV folded reducer boundary sweep",
       "objective": "Locate the physical feasibility boundary for p8/p16 folded reducers by sweeping partials_per_cycle 1, 2, and 4 across 30-60% core utilization; accept both ok and failed rows as boundary evidence.",
-      "status": "blocked",
+      "status": "merged",
       "blocker": "Requires boundary config PR to merge first.",
       "evaluation_mode": "measurement_only",
       "abstraction_layer": "attention_kv_reducer_folded",
@@ -27,7 +27,11 @@
         "runs/designs/activations/attention_kv_reducer_folded_p16_ppc2_l16_v16_s16_a24_wrapper/metrics.csv",
         "runs/designs/activations/attention_kv_reducer_folded_p16_ppc4_l16_v16_s16_a24_wrapper/metrics.csv"
       ],
-      "acceptance_notes": "Boundary evidence includes existing skipped frontier rows plus newly generated ok/failed rows."
+      "acceptance_notes": "Boundary evidence includes existing skipped frontier rows plus newly generated ok/failed rows.",
+      "merged_pr_number": 708,
+      "merge_commit": "ecebcb3b243cc7b75c2591e0cb7a814f23a403c6",
+      "merged_utc": "2026-05-28T09:36:37.218376Z",
+      "notes": "Merged via PR #708 and merge ecebcb3b243cc7b75c2591e0cb7a814f23a403c6 at 2026-05-28T09:36:37.218376Z."
     }
   ]
 }
