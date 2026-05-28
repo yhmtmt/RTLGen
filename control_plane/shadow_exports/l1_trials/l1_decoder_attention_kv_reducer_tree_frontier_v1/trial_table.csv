@@ -1,0 +1,2 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_decoder_attention_kv_reducer_tree_frontier_v1_run_cb30f0208d7f1095,1,1,0,succeeded,,,,,none,,

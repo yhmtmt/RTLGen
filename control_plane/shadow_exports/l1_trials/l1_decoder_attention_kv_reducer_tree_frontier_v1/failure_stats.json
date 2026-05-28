@@ -1,0 +1,12 @@
+{
+  "item_id": "l1_decoder_attention_kv_reducer_tree_frontier_v1",
+  "completed_trials": 1,
+  "success_count": 0,
+  "failure_count": 1,
+  "by_category": {
+    "none": 1
+  },
+  "by_stage": {
+    "unknown": 1
+  }
+}
