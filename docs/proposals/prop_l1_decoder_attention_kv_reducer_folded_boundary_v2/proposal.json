@@ -23,5 +23,6 @@
   "risks": [
     "If ppc4 remains infeasible at low utilization, the limiting factor may be macro pin topology or output/accumulator structure rather than only core packing.",
     "The scheduler must charge the ppc1/ppc2/ppc4 cycle difference before using the measured PPA in Llama7B schedule estimates."
-  ]
+  ],
+  "created_utc": "2026-05-28T08:47:49.409121Z"
 }
