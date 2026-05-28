@@ -1,0 +1,33 @@
+{
+  "item_id": "l1_decoder_attention_kv_reducer_folded_internal_source_v1",
+  "completed_trials": 1,
+  "success_count": 1,
+  "failure_count": 0,
+  "success_rate": 1.0,
+  "metrics": {
+    "critical_path_ns": {
+      "best": 0.3408,
+      "mean": 0.3408,
+      "median": 0.3408,
+      "max": 0.3408,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "die_area": {
+      "best": 26814.0625,
+      "mean": 26814.0625,
+      "median": 26814.0625,
+      "max": 26814.0625,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "total_power_mw": {
+      "best": 0.00502,
+      "mean": 0.00502,
+      "median": 0.00502,
+      "max": 0.00502,
+      "range": 0.0,
+      "stddev": 0.0
+    }
+  }
+}
