@@ -2,13 +2,13 @@
 
 ## Candidate
 - `proposal_id`: `prop_l2_decoder_attention_kv_measured_compute_partition_llama7b_v1`
-- `candidate_id`: `l2_decoder_attention_kv_measured_compute_partition_llama7b_v1`
+- `candidate_id`: `l2_decoder_attention_kv_clustered_schedule_llama7b_v1_r2`
 
 ## Evaluations Consumed
-- `l2_decoder_attention_kv_measured_compute_partition_llama7b_v1`
-- `l2_decoder_attention_kv_measured_compute_partition_llama7b_v1_run_0eaccaaa84c87314`
-- source commit: `a8aa60dbd7f0dd0eb477d8768b3b23a1f1e1786f`
-- review: PR #678
+- `l2_decoder_attention_kv_clustered_schedule_llama7b_v1_r2`
+- `l2_decoder_attention_kv_clustered_schedule_llama7b_v1_r2_run_bd2778af38149615`
+- source commit: `badb82b832ece370d9a2b287b4d01a8a134ad997`
+- review: PR #684
 
 ## Baseline Comparison
 - baseline_ref: `None`
@@ -29,4 +29,4 @@
 ## Recommendation
 - `iterate`
 - reason: Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.
-- next_action: inspect follow-on work after l2_decoder_attention_kv_measured_compute_partition_llama7b_v1
+- next_action: inspect follow-on work after l2_decoder_attention_kv_clustered_schedule_llama7b_v1_r2

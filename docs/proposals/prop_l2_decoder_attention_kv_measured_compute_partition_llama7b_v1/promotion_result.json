@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_measured_compute_partition_llama7b_v1",
   "decision": "iterate",
-  "pr_number": 678,
-  "merge_commit": "c0ead960a1207d6946ce62b4b678b706f963f650",
-  "merged_utc": "2026-05-27T15:10:52.821767Z"
+  "pr_number": 684,
+  "merge_commit": "5a182a5c3b6ede968341918449598b24e8d6414e",
+  "merged_utc": "2026-05-28T04:31:51.076496Z"
 }

@@ -42,10 +42,14 @@
         "direction": "iterate",
         "reason": "If explicit corrected reduction keeps the same clustered frontier, move to measured command-routing hierarchy; if reduction changes the winner, refine the cluster/reducer architecture before RTL."
       },
-      "status": "pending",
+      "status": "merged",
       "prior_item_ids": [
         "l2_decoder_attention_kv_clustered_schedule_llama7b_v1"
-      ]
+      ],
+      "merged_pr_number": 684,
+      "merge_commit": "5a182a5c3b6ede968341918449598b24e8d6414e",
+      "merged_utc": "2026-05-28T04:31:51.076496Z",
+      "notes": "Merged via PR #684 and merge 5a182a5c3b6ede968341918449598b24e8d6414e at 2026-05-28T04:31:51.076496Z."
     }
   ]
 }
