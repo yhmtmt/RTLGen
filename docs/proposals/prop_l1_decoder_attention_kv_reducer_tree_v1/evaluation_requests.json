@@ -1,0 +1,32 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_kv_reducer_tree_v1",
+  "source_commit": "",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_attention_kv_reducer_tree_frontier_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure p8/l16 and p16/l16 registered attention KV reducer trees and accept timing/flow failures as boundary evidence.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "attention_kv_reducer_tree",
+      "comparison_role": "hierarchical_reducer_partial_tree",
+      "paired_baseline_item_id": "l1_decoder_attention_kv_reducer_frontier_boundary_v2",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_kv_reducer_frontier_boundary_v2"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "config_paths": [
+        "runs/designs/activations/attention_kv_reducer_tree_p8_l16_v16_s16_a24_wrapper/config_attention_kv_reducer_tree_p8_l16_v16_s16_a24.json",
+        "runs/designs/activations/attention_kv_reducer_tree_p16_l16_v16_s16_a24_wrapper/config_attention_kv_reducer_tree_p16_l16_v16_s16_a24.json"
+      ],
+      "sweep_path": "runs/campaigns/activations/attention_kv_reducer_tree/sweeps/nangate45_macro_frontier.json",
+      "expected_result": {
+        "direction": "measure",
+        "reason": "Determine whether hierarchical p2-style tree reduction can replace failed flat p8/p16 reducer points."
+      },
+      "status": "blocked",
+      "blocker": "Requires source PR for attention_kv_reducer_tree operation to merge first.",
+      "notes": "Use boundary-aware acceptance so failed rows are preserved as frontier evidence."
+    }
+  ]
+}

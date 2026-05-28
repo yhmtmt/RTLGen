@@ -1,0 +1,85 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_kv_reducer_tree_v1",
+  "created_utc": "2026-05-28T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit",
+  "abstraction_layer": "attention_kv_reducer_tree",
+  "title": "Hierarchical attention/KV reducer tree",
+  "hypothesis": "The flat reducer frontier showed p8/l32 and p16/l64 are not feasible as single wide blocks, while p2/l16 is feasible. A registered binary tree over the partial dimension should expose the area, power, and timing cost of hierarchical reduction before adding lane-sharding for l32/l64.",
+  "direct_comparison": {
+    "primary_question": "What are the Nangate45 PPA and latency costs for p8 and p16 registered binary reducer trees at l16?",
+    "include": [
+      "attention_kv_reducer_tree RTLGen operation",
+      "p8/l16 and p16/l16 registered binary tree wrappers",
+      "two utilization points matching the prior reducer frontier",
+      "boundary rows if either tree point fails physical implementation"
+    ],
+    "exclude": [
+      "l32/l64 lane-sharded composition",
+      "softmax rescaling and layernorm math",
+      "NoC arbitration and SRAM banking",
+      "full decoder integration"
+    ],
+    "follow_on_broad_sweep": [
+      "compose l32 and l64 from repeated l16 tree shards if p8/l16 and p16/l16 are feasible",
+      "feed measured tree latency and PPA into the clustered Llama7B schedule model"
+    ]
+  },
+  "expected_benefit": [
+    "separates partial-count hierarchy cost from lane-width pin/routing pressure",
+    "provides a physically measured alternative to the failed flat p8 and p16 reducer points",
+    "creates a reusable tree primitive for later hierarchical producer/reducer composition"
+  ],
+  "risks": [
+    "parallel tree inputs increase macro pin count and may still fail placement",
+    "l16-only results do not yet prove l32/l64 composition feasibility",
+    "standalone tree PPA may shift after integration with NoC and memory hierarchy"
+  ],
+  "needs_mapper_change": false,
+  "required_source_work": [
+    {
+      "item_id": "item_l1_decoder_attention_kv_reducer_tree_op_v1",
+      "objective": "Add RTLGen attention_kv_reducer_tree operation, example/config/sweep artifacts, and local RTL equivalence tests.",
+      "status": "implemented_pending_review",
+      "must_merge_before_dispatch": true
+    }
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_attention_kv_reducer_tree_frontier_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure p8/l16 and p16/l16 registered attention KV reducer trees and accept timing/flow failures as boundary evidence.",
+      "config_paths": [
+        "runs/designs/activations/attention_kv_reducer_tree_p8_l16_v16_s16_a24_wrapper/config_attention_kv_reducer_tree_p8_l16_v16_s16_a24.json",
+        "runs/designs/activations/attention_kv_reducer_tree_p16_l16_v16_s16_a24_wrapper/config_attention_kv_reducer_tree_p16_l16_v16_s16_a24.json"
+      ],
+      "sweep_path": "runs/campaigns/activations/attention_kv_reducer_tree/sweeps/nangate45_macro_frontier.json",
+      "platform": "nangate45",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "attention_kv_reducer_tree",
+      "comparison_role": "hierarchical_reducer_partial_tree",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_kv_reducer_frontier_boundary_v2"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "measure",
+        "reason": "Determine whether hierarchical p2-style tree reduction can replace failed flat p8/p16 reducer points."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "control_plane/shadow_exports/l1_promotions/l1_decoder_attention_kv_reducer_frontier_boundary_v2.json"
+  ],
+  "knowledge_refs": [
+    "docs/proposals/prop_l1_decoder_attention_kv_reducer_frontier_boundary_v1/proposal.json",
+    "src/rtlgen/config.cpp",
+    "src/rtlgen/config.hpp",
+    "src/rtlgen/rtl_operations.cpp",
+    "scripts/generate_design.py",
+    "scripts/run_sweep.py",
+    "tests/test_attention_kv_reducer_tree.sh"
+  ]
+}

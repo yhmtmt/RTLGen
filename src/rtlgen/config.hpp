@@ -271,6 +271,18 @@ struct AttentionKvReducerOperationConfig {
     bool signed_values{true};
 };
 
+struct AttentionKvReducerTreeOperationConfig {
+    std::string module_name;
+    std::string operand;
+    int lanes{16};
+    int value_bits{16};
+    int stat_bits{16};
+    int partials{8};
+    int accum_bits{32};
+    int counter_bits{32};
+    bool signed_values{true};
+};
+
 struct CircuitConfig {
     OperandConfig operand;
     std::vector<OperandDefinition> operands;
@@ -289,6 +301,7 @@ struct CircuitConfig {
     std::vector<CandidateStreamMergeFifoOperationConfig> candidate_stream_merge_fifo_operations;
     std::vector<AttentionKvTileOperationConfig> attention_kv_tile_operations;
     std::vector<AttentionKvReducerOperationConfig> attention_kv_reducer_operations;
+    std::vector<AttentionKvReducerTreeOperationConfig> attention_kv_reducer_tree_operations;
     std::optional<std::string> onnx_model; // Added ONNX model path
 };
 
