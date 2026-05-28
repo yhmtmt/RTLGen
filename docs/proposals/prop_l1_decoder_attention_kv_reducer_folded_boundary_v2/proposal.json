@@ -1,0 +1,27 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_kv_reducer_folded_boundary_v2",
+  "title": "Locate folded attention KV reducer physical boundary",
+  "status": "proposed",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "attention_kv_reducer_folded",
+  "motivation": "The folded reducer frontier showed ppc2 is feasible at 50% utilization for p8 and p16, but ppc2 fails at 60% and ppc4 fails at 50% and 60%. The exact feasibility boundary is still unclear.",
+  "hypothesis": "The boundary is controlled by a combination of presented partials_per_cycle and physical packing stress. ppc1 should be more robust but slower, ppc2 should have a utilization threshold between 50% and 60%, and ppc4 may require materially lower utilization or a different macro interface.",
+  "expected_behavior": {
+    "functional": "All ppc values implement exact folded reduction over a fixed group of partials.",
+    "timing_model": "Reducer latency is partials / partials_per_cycle accepted chunks.",
+    "physical_model": "Input pins scale with partials_per_cycle while accumulator/output pins remain fixed by lanes and value/stat widths."
+  },
+  "comparison_points": [
+    "attention_kv_reducer_folded_p8_ppc1_l16_v16_s16_a24_wrapper",
+    "attention_kv_reducer_folded_p8_ppc2_l16_v16_s16_a24_wrapper",
+    "attention_kv_reducer_folded_p8_ppc4_l16_v16_s16_a24_wrapper",
+    "attention_kv_reducer_folded_p16_ppc1_l16_v16_s16_a24_wrapper",
+    "attention_kv_reducer_folded_p16_ppc2_l16_v16_s16_a24_wrapper",
+    "attention_kv_reducer_folded_p16_ppc4_l16_v16_s16_a24_wrapper"
+  ],
+  "risks": [
+    "If ppc4 remains infeasible at low utilization, the limiting factor may be macro pin topology or output/accumulator structure rather than only core packing.",
+    "The scheduler must charge the ppc1/ppc2/ppc4 cycle difference before using the measured PPA in Llama7B schedule estimates."
+  ]
+}
