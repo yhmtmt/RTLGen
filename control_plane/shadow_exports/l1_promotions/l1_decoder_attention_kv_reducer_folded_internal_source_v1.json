@@ -1,0 +1,151 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-05-28T13:40:39.445558Z",
+  "item_id": "l1_decoder_attention_kv_reducer_folded_internal_source_v1",
+  "run_key": "l1_decoder_attention_kv_reducer_folded_internal_source_v1_run_90f70a28f1e4e294",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "8a4780eb5bbf73586212ff15f08d7a7419ad7e58",
+  "objective": "Measure p8/p16 folded reducers with ppc2/ppc4 when producer-side partial fragments are internal nets rather than top-level macro IO; accept timing/flow failures as boundary evidence.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/activations/attention_kv_reducer_folded/sweeps/nangate45_macro_internal_source.json"
+    ],
+    "configs": [
+      "runs/designs/activations/attention_kv_reducer_folded_src_p8_ppc2_l16_v16_s16_a24_wrapper/config_attention_kv_reducer_folded_src_p8_ppc2_l16_v16_s16_a24.json",
+      "runs/designs/activations/attention_kv_reducer_folded_src_p8_ppc4_l16_v16_s16_a24_wrapper/config_attention_kv_reducer_folded_src_p8_ppc4_l16_v16_s16_a24.json",
+      "runs/designs/activations/attention_kv_reducer_folded_src_p16_ppc2_l16_v16_s16_a24_wrapper/config_attention_kv_reducer_folded_src_p16_ppc2_l16_v16_s16_a24.json",
+      "runs/designs/activations/attention_kv_reducer_folded_src_p16_ppc4_l16_v16_s16_a24_wrapper/config_attention_kv_reducer_folded_src_p16_ppc4_l16_v16_s16_a24.json"
+    ],
+    "out_root": "runs/designs/activations",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 4,
+  "evaluation_record": {
+    "evaluation_mode": "measurement_only",
+    "abstraction_layer": "attention_kv_reducer_folded",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/attention_kv_reducer_folded_src_p8_ppc2_l16_v16_s16_a24_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "4cad8c02",
+        "tag": "attention_kv_reducer_folded_nangate45_macro_internal_source_9b3ee623",
+        "result_path": "runs/designs/activations/attention_kv_reducer_folded_src_p8_ppc2_l16_v16_s16_a24_wrapper/work/4cad8c02/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 0.3408,
+        "die_area": 26814.0625,
+        "total_power_mw": 0.00502
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/attention_kv_reducer_folded_src_p8_ppc4_l16_v16_s16_a24_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "215b6177",
+        "tag": "attention_kv_reducer_folded_nangate45_macro_internal_source_175641b8",
+        "result_path": "runs/designs/activations/attention_kv_reducer_folded_src_p8_ppc4_l16_v16_s16_a24_wrapper/work/215b6177/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 0.3564,
+        "die_area": 31559.5225,
+        "total_power_mw": 0.00529
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/attention_kv_reducer_folded_src_p16_ppc2_l16_v16_s16_a24_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "215b6177",
+        "tag": "attention_kv_reducer_folded_nangate45_macro_internal_source_175641b8",
+        "result_path": "runs/designs/activations/attention_kv_reducer_folded_src_p16_ppc2_l16_v16_s16_a24_wrapper/work/215b6177/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 0.3465,
+        "die_area": 24498.5104,
+        "total_power_mw": 0.005
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/attention_kv_reducer_folded_src_p16_ppc4_l16_v16_s16_a24_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "215b6177",
+        "tag": "attention_kv_reducer_folded_nangate45_macro_internal_source_175641b8",
+        "result_path": "runs/designs/activations/attention_kv_reducer_folded_src_p16_ppc4_l16_v16_s16_a24_wrapper/work/215b6177/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 0.3666,
+        "die_area": 30881.0329,
+        "total_power_mw": 0.00511
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_decoder_attention_kv_reducer_folded_internal_source_v1",
+    "completed_trials": 1,
+    "success_count": 1,
+    "failure_count": 0,
+    "success_rate": 1.0,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 0.3408,
+        "mean": 0.3408,
+        "median": 0.3408,
+        "max": 0.3408,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "die_area": {
+        "best": 26814.0625,
+        "mean": 26814.0625,
+        "median": 26814.0625,
+        "max": 26814.0625,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "total_power_mw": {
+        "best": 0.00502,
+        "mean": 0.00502,
+        "median": 0.00502,
+        "max": 0.00502,
+        "range": 0.0,
+        "stddev": 0.0
+      }
+    }
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/activations/attention_kv_reducer_folded_src_p8_ppc2_l16_v16_s16_a24_wrapper/metrics.csv",
+      "runs/designs/activations/attention_kv_reducer_folded_src_p8_ppc4_l16_v16_s16_a24_wrapper/metrics.csv",
+      "runs/designs/activations/attention_kv_reducer_folded_src_p16_ppc2_l16_v16_s16_a24_wrapper/metrics.csv",
+      "runs/designs/activations/attention_kv_reducer_folded_src_p16_ppc4_l16_v16_s16_a24_wrapper/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_kv_reducer_folded_internal_source_v1/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_kv_reducer_folded_internal_source_v1/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_kv_reducer_folded_internal_source_v1/trial_table.csv"
+  }
+}
