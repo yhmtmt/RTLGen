@@ -65,6 +65,7 @@ bool readConfig(const std::string& filename, CircuitConfig& config) {
         config.candidate_stream_merge_fifo_operations.clear();
         config.attention_kv_tile_operations.clear();
         config.attention_kv_reducer_operations.clear();
+        config.attention_kv_reducer_tree_operations.clear();
         config.onnx_model.reset();
 
         if (j.contains("operand")) {
@@ -556,6 +557,37 @@ bool readConfig(const std::string& filename, CircuitConfig& config) {
                         throw std::runtime_error("attention_kv_reducer counter_bits must be in [1, 64] for " + reducer.module_name);
                     }
                     config.attention_kv_reducer_operations.push_back(reducer);
+                } else if (type == "attention_kv_reducer_tree") {
+                    const json &options = entry.contains("options") ? entry["options"] : entry;
+                    AttentionKvReducerTreeOperationConfig reducer;
+                    reducer.module_name = module_name;
+                    reducer.operand = operand_name;
+                    reducer.lanes = options.value("lanes", 16);
+                    reducer.value_bits = options.value("value_bits", 16);
+                    reducer.stat_bits = options.value("stat_bits", 16);
+                    reducer.partials = options.value("partials", 8);
+                    reducer.accum_bits = options.value("accum_bits", 32);
+                    reducer.counter_bits = options.value("counter_bits", 32);
+                    reducer.signed_values = options.value("signed_values", true);
+                    if (reducer.lanes <= 0 || reducer.lanes > 256) {
+                        throw std::runtime_error("attention_kv_reducer_tree lanes must be in [1, 256] for " + reducer.module_name);
+                    }
+                    if (reducer.value_bits <= 0 || reducer.value_bits > 32) {
+                        throw std::runtime_error("attention_kv_reducer_tree value_bits must be in [1, 32] for " + reducer.module_name);
+                    }
+                    if (reducer.stat_bits <= 0 || reducer.stat_bits > 64) {
+                        throw std::runtime_error("attention_kv_reducer_tree stat_bits must be in [1, 64] for " + reducer.module_name);
+                    }
+                    if (reducer.partials <= 1 || reducer.partials > 1024 || (reducer.partials & (reducer.partials - 1)) != 0) {
+                        throw std::runtime_error("attention_kv_reducer_tree partials must be a power of two in [2, 1024] for " + reducer.module_name);
+                    }
+                    if (reducer.accum_bits < reducer.value_bits || reducer.accum_bits > 128) {
+                        throw std::runtime_error("attention_kv_reducer_tree accum_bits must be in [value_bits, 128] for " + reducer.module_name);
+                    }
+                    if (reducer.counter_bits <= 0 || reducer.counter_bits > 64) {
+                        throw std::runtime_error("attention_kv_reducer_tree counter_bits must be in [1, 64] for " + reducer.module_name);
+                    }
+                    config.attention_kv_reducer_tree_operations.push_back(reducer);
                 } else {
                     throw std::runtime_error("Unknown operation type: " + type);
                 }

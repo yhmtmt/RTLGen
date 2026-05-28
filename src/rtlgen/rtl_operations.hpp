@@ -15,3 +15,5 @@ void emitAttentionKvTileModule(const AttentionKvTileOperationConfig &config,
                                const OperandDefinition &operand);
 void emitAttentionKvReducerModule(const AttentionKvReducerOperationConfig &config,
                                   const OperandDefinition &operand);
+void emitAttentionKvReducerTreeModule(const AttentionKvReducerTreeOperationConfig &config,
+                                      const OperandDefinition &operand);

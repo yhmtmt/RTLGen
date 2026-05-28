@@ -1258,6 +1258,205 @@ void emitAttentionKvReducerModule(const AttentionKvReducerOperationConfig &confi
     os << "endmodule\n";
 }
 
+void emitAttentionKvReducerTreeModule(const AttentionKvReducerTreeOperationConfig &config,
+                                      const OperandDefinition &operand) {
+    const int value_bits = config.value_bits > 0 ? config.value_bits : operand.bit_width;
+    if (config.lanes <= 0 || config.lanes > 256) {
+        throw std::runtime_error("attention_kv_reducer_tree lanes must be in [1, 256]");
+    }
+    if (value_bits <= 0 || value_bits > 32) {
+        throw std::runtime_error("attention_kv_reducer_tree value_bits must be in [1, 32]");
+    }
+    if (config.stat_bits <= 0 || config.stat_bits > 64) {
+        throw std::runtime_error("attention_kv_reducer_tree stat_bits must be in [1, 64]");
+    }
+    if (config.partials <= 1 || config.partials > 1024 ||
+        (config.partials & (config.partials - 1)) != 0) {
+        throw std::runtime_error("attention_kv_reducer_tree partials must be a power of two in [2, 1024]");
+    }
+    if (config.counter_bits <= 0 || config.counter_bits > 64) {
+        throw std::runtime_error("attention_kv_reducer_tree counter_bits must be in [1, 64]");
+    }
+
+    const int min_accum_bits = value_bits +
+        std::max(1, ceilLog2U64(static_cast<unsigned long long>(config.partials))) + 1;
+    if (config.accum_bits < min_accum_bits || config.accum_bits > 128) {
+        std::ostringstream oss;
+        oss << "attention_kv_reducer_tree accum_bits must be in [" << min_accum_bits
+            << ", 128] for this value_bits/partials";
+        throw std::runtime_error(oss.str());
+    }
+
+    const int stages = ceilLog2U64(static_cast<unsigned long long>(config.partials));
+    const int input_value_width = config.partials * config.lanes * value_bits;
+    const int input_stat_width = config.partials * 2 * config.stat_bits;
+    const int reduced_value_width = config.lanes * config.accum_bits;
+    const int reduced_stat_width = 2 * config.stat_bits;
+    const std::string signed_kw = config.signed_values ? "signed " : "";
+
+    std::string filename = config.module_name + ".v";
+    std::ofstream os(filename);
+    if (!os) {
+        throw std::runtime_error("Failed to open " + filename + " for writing");
+    }
+
+    os << "`timescale 1ns/1ps\n\n";
+    os << "module " << config.module_name << "(\n";
+    os << "  input  clk,\n";
+    os << "  input  rst_n,\n";
+    os << "  input  partial_valid,\n";
+    os << "  output partial_ready,\n";
+    os << "  input  [" << (input_value_width - 1) << ":0] value_fragments,\n";
+    os << "  input  [" << (input_stat_width - 1) << ":0] stat_fragments,\n";
+    os << "  output reg reduced_valid,\n";
+    os << "  input  reduced_ready,\n";
+    os << "  output reg " << signed_kw << "[" << (reduced_value_width - 1)
+       << ":0] reduced_value_fragment,\n";
+    os << "  output reg [" << (reduced_stat_width - 1) << ":0] reduced_stat_fragment,\n";
+    os << "  output reg [" << (config.counter_bits - 1) << ":0] accepted_group_count,\n";
+    os << "  output reg [" << (config.counter_bits - 1) << ":0] completed_group_count,\n";
+    os << "  output reg [" << (config.counter_bits - 1) << ":0] producer_stall_cycles,\n";
+    os << "  output reg [" << (config.counter_bits - 1) << ":0] cycle_count,\n";
+    os << "  output reg [" << (config.counter_bits - 1) << ":0] final_completion_cycle\n";
+    os << ");\n\n";
+    os << "  // Registered binary tree reducer for hierarchical clustered attention exploration.\n";
+    os << "  // It reduces all partial fragments for one group in parallel through log2(PARTIALS)\n";
+    os << "  // registered pairwise stages. Softmax/layernorm math remains outside this block.\n";
+    os << "  localparam integer LANES = " << config.lanes << ";\n";
+    os << "  localparam integer VALUE_W = " << value_bits << ";\n";
+    os << "  localparam integer STAT_W = " << config.stat_bits << ";\n";
+    os << "  localparam integer ACCUM_W = " << config.accum_bits << ";\n";
+    os << "  localparam integer COUNT_W = " << config.counter_bits << ";\n";
+    os << "  localparam integer PARTIALS = " << config.partials << ";\n";
+    os << "  localparam integer STAGES = " << stages << ";\n\n";
+    os << "  assign partial_ready = !reduced_valid || reduced_ready;\n\n";
+
+    int nodes = config.partials / 2;
+    for (int stage = 0; stage < stages; ++stage) {
+        for (int node = 0; node < nodes; ++node) {
+            for (int lane = 0; lane < config.lanes; ++lane) {
+                os << "  reg " << signed_kw << "[ACCUM_W-1:0] stage" << stage
+                   << "_node" << node << "_lane" << lane << ";\n";
+            }
+            os << "  reg [STAT_W-1:0] stage" << stage << "_node" << node << "_stat0;\n";
+            os << "  reg [STAT_W-1:0] stage" << stage << "_node" << node << "_stat1;\n";
+        }
+        nodes /= 2;
+    }
+    os << "  reg [STAGES-1:0] valid_pipe;\n";
+    os << "  wire advance = !reduced_valid || reduced_ready;\n\n";
+
+    for (int partial = 0; partial < config.partials; ++partial) {
+        for (int lane = 0; lane < config.lanes; ++lane) {
+            const int base = (partial * config.lanes + lane) * value_bits;
+            os << "  wire " << signed_kw << "[VALUE_W-1:0] partial" << partial
+               << "_lane" << lane << " = value_fragments[" << base << " +: VALUE_W];\n";
+            if (config.signed_values) {
+                os << "  wire signed [ACCUM_W-1:0] partial" << partial << "_lane" << lane
+                   << "_ext = {{(ACCUM_W-VALUE_W){partial" << partial << "_lane" << lane
+                   << "[VALUE_W-1]}}, partial" << partial << "_lane" << lane << "};\n";
+            } else {
+                os << "  wire [ACCUM_W-1:0] partial" << partial << "_lane" << lane
+                   << "_ext = {{(ACCUM_W-VALUE_W){1'b0}}, partial" << partial
+                   << "_lane" << lane << "};\n";
+            }
+        }
+        os << "  wire [STAT_W-1:0] partial" << partial << "_stat0 = stat_fragments["
+           << (partial * 2 * config.stat_bits) << " +: STAT_W];\n";
+        os << "  wire [STAT_W-1:0] partial" << partial << "_stat1 = stat_fragments["
+           << ((partial * 2 + 1) * config.stat_bits) << " +: STAT_W];\n";
+    }
+    os << "\n";
+
+    os << "  always @(posedge clk or negedge rst_n) begin\n";
+    os << "    if (!rst_n) begin\n";
+    os << "      reduced_valid <= 1'b0;\n";
+    os << "      reduced_value_fragment <= {" << reduced_value_width << "{1'b0}};\n";
+    os << "      reduced_stat_fragment <= {" << reduced_stat_width << "{1'b0}};\n";
+    os << "      accepted_group_count <= {COUNT_W{1'b0}};\n";
+    os << "      completed_group_count <= {COUNT_W{1'b0}};\n";
+    os << "      producer_stall_cycles <= {COUNT_W{1'b0}};\n";
+    os << "      cycle_count <= {COUNT_W{1'b0}};\n";
+    os << "      final_completion_cycle <= {COUNT_W{1'b0}};\n";
+    os << "      valid_pipe <= {STAGES{1'b0}};\n";
+    nodes = config.partials / 2;
+    for (int stage = 0; stage < stages; ++stage) {
+        for (int node = 0; node < nodes; ++node) {
+            for (int lane = 0; lane < config.lanes; ++lane) {
+                os << "      stage" << stage << "_node" << node << "_lane" << lane
+                   << " <= {ACCUM_W{1'b0}};\n";
+            }
+            os << "      stage" << stage << "_node" << node << "_stat0 <= {STAT_W{1'b0}};\n";
+            os << "      stage" << stage << "_node" << node << "_stat1 <= {STAT_W{1'b0}};\n";
+        }
+        nodes /= 2;
+    }
+    os << "    end else begin\n";
+    os << "      cycle_count <= cycle_count + {{(COUNT_W-1){1'b0}}, 1'b1};\n";
+    os << "      if (partial_valid && !partial_ready)\n";
+    os << "        producer_stall_cycles <= producer_stall_cycles + {{(COUNT_W-1){1'b0}}, 1'b1};\n";
+    os << "      if (advance) begin\n";
+    if (stages == 1) {
+        os << "        valid_pipe <= partial_valid;\n";
+    } else {
+        os << "        valid_pipe <= {valid_pipe[STAGES-2:0], partial_valid};\n";
+    }
+    os << "        reduced_valid <= valid_pipe[STAGES-1];\n";
+    os << "        if (partial_valid)\n";
+    os << "          accepted_group_count <= accepted_group_count + {{(COUNT_W-1){1'b0}}, 1'b1};\n";
+    os << "        if (valid_pipe[STAGES-1]) begin\n";
+    for (int lane = 0; lane < config.lanes; ++lane) {
+        os << "          reduced_value_fragment[(" << lane << "*ACCUM_W) +: ACCUM_W] <= stage"
+           << (stages - 1) << "_node0_lane" << lane << ";\n";
+    }
+    os << "          reduced_stat_fragment[0 +: STAT_W] <= stage" << (stages - 1)
+       << "_node0_stat0;\n";
+    os << "          reduced_stat_fragment[STAT_W +: STAT_W] <= stage" << (stages - 1)
+       << "_node0_stat1;\n";
+    os << "          completed_group_count <= completed_group_count + {{(COUNT_W-1){1'b0}}, 1'b1};\n";
+    os << "          final_completion_cycle <= cycle_count + {{(COUNT_W-1){1'b0}}, 1'b1};\n";
+    os << "        end\n";
+
+    for (int node = 0; node < config.partials / 2; ++node) {
+        const int lhs = 2 * node;
+        const int rhs = lhs + 1;
+        for (int lane = 0; lane < config.lanes; ++lane) {
+            os << "        stage0_node" << node << "_lane" << lane << " <= partial"
+               << lhs << "_lane" << lane << "_ext + partial" << rhs << "_lane"
+               << lane << "_ext;\n";
+        }
+        os << "        stage0_node" << node << "_stat0 <= partial" << lhs
+           << "_stat0 + partial" << rhs << "_stat0;\n";
+        os << "        stage0_node" << node << "_stat1 <= partial" << lhs
+           << "_stat1 + partial" << rhs << "_stat1;\n";
+    }
+    int prev_nodes = config.partials / 2;
+    for (int stage = 1; stage < stages; ++stage) {
+        const int curr_nodes = prev_nodes / 2;
+        for (int node = 0; node < curr_nodes; ++node) {
+            const int lhs = 2 * node;
+            const int rhs = lhs + 1;
+            for (int lane = 0; lane < config.lanes; ++lane) {
+                os << "        stage" << stage << "_node" << node << "_lane" << lane
+                   << " <= stage" << (stage - 1) << "_node" << lhs << "_lane" << lane
+                   << " + stage" << (stage - 1) << "_node" << rhs << "_lane" << lane
+                   << ";\n";
+            }
+            os << "        stage" << stage << "_node" << node << "_stat0 <= stage"
+               << (stage - 1) << "_node" << lhs << "_stat0 + stage" << (stage - 1)
+               << "_node" << rhs << "_stat0;\n";
+            os << "        stage" << stage << "_node" << node << "_stat1 <= stage"
+               << (stage - 1) << "_node" << lhs << "_stat1 + stage" << (stage - 1)
+               << "_node" << rhs << "_stat1;\n";
+        }
+        prev_nodes = curr_nodes;
+    }
+    os << "      end\n";
+    os << "    end\n";
+    os << "  end\n\n";
+    os << "endmodule\n";
+}
+
 void emitBf16RecipNormModule(const Bf16RecipNormOperationConfig &config, const OperandDefinition &operand) {
     if (operand.bit_width != 16) {
         throw std::runtime_error("bf16_recip_norm expects a 16-bit packed bf16 operand");
