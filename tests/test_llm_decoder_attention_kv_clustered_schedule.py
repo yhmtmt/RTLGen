@@ -68,3 +68,4 @@ def test_clustered_schedule_exposes_centralized_tile_payload(monkeypatch) -> Non
     assert rows["centralized_tile"]["cross_tile_reduction_payload_bytes"] > rows["owner_cluster"]["cross_tile_reduction_payload_bytes"]
     assert rows["centralized_tile"]["local_reduction_cycles"] == 0
     assert rows["owner_cluster"]["local_reduction_cycles"] > 0
+    assert rows["centralized_tile"]["cross_tile_reduction_vector_cycles"] >= rows["owner_cluster"]["cross_tile_reduction_vector_cycles"]
