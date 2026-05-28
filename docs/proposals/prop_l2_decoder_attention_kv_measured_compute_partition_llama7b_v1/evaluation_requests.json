@@ -68,7 +68,11 @@
         "direction": "iterate",
         "reason": "If the frontier survives plausible command/reducer overheads, move to routed command/reducer RTL calibration; if it flips, narrow cluster/reducer architecture first."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 687,
+      "merge_commit": "0918d2670136b2e93ee5840b2c7dbc9b5b30759a",
+      "merged_utc": "2026-05-28T04:45:44.431587Z",
+      "notes": "Merged via PR #687 and merge 0918d2670136b2e93ee5840b2c7dbc9b5b30759a at 2026-05-28T04:45:44.431587Z."
     }
   ]
 }
