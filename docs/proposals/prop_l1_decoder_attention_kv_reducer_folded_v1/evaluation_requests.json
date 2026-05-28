@@ -1,12 +1,13 @@
 {
   "proposal_id": "prop_l1_decoder_attention_kv_reducer_folded_v1",
-  "source_commit": "8e473aba1c110040e3b11e1c5ec408967698ee1c",
+  "source_commit": "",
   "requested_items": [
     {
       "item_id": "l1_decoder_attention_kv_reducer_folded_frontier_v1",
       "title": "Layer 1 attention KV folded reducer frontier sweep",
-      "objective": "Measure p8/p16 folded attention KV reducers with partials_per_cycle 2 and 4 to test whether input folding resolves the reducer-tree boundary; accept both ok and failed rows as boundary evidence.",
-      "status": "pending",
+      "objective": "Measure p8/p16 folded attention KV reducers with partials_per_cycle 2 and 4 to test whether input folding resolves the reducer-tree boundary.",
+      "status": "blocked",
+      "blocker": "Requires source PR for attention_kv_reducer_folded operation to merge first.",
       "evaluation_mode": "measurement_only",
       "abstraction_layer": "attention_kv_reducer_folded",
       "configs": [
@@ -22,8 +23,7 @@
         "runs/designs/activations/attention_kv_reducer_folded_p16_ppc2_l16_v16_s16_a24_wrapper/metrics.csv",
         "runs/designs/activations/attention_kv_reducer_folded_p16_ppc4_l16_v16_s16_a24_wrapper/metrics.csv"
       ],
-      "acceptance_notes": "Accept both ok rows and failed rows as explicit boundary evidence.",
-      "task_type": "l1_sweep"
+      "acceptance_notes": "Accept both ok rows and failed rows as explicit boundary evidence."
     }
   ]
 }

@@ -1,0 +1,33 @@
+{
+  "item_id": "l1_decoder_attention_kv_reducer_folded_frontier_v1",
+  "completed_trials": 1,
+  "success_count": 1,
+  "failure_count": 0,
+  "success_rate": 1.0,
+  "metrics": {
+    "critical_path_ns": {
+      "best": 2.0658,
+      "mean": 2.0658,
+      "median": 2.0658,
+      "max": 2.0658,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "die_area": {
+      "best": 30081.4336,
+      "mean": 30081.4336,
+      "median": 30081.4336,
+      "max": 30081.4336,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "total_power_mw": {
+      "best": 0.0258,
+      "mean": 0.0258,
+      "median": 0.0258,
+      "max": 0.0258,
+      "range": 0.0,
+      "stddev": 0.0
+    }
+  }
+}

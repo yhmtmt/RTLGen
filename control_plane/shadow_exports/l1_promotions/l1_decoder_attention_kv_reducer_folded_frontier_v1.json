@@ -1,0 +1,188 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-05-28T08:31:03.467213Z",
+  "item_id": "l1_decoder_attention_kv_reducer_folded_frontier_v1",
+  "run_key": "l1_decoder_attention_kv_reducer_folded_frontier_v1_run_839d10b00d74d3da",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "8e473aba1c110040e3b11e1c5ec408967698ee1c",
+  "objective": "Measure p8/p16 folded attention KV reducers with partials_per_cycle 2 and 4 to test whether input folding resolves the reducer-tree boundary; accept both ok and failed rows as boundary evidence.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/activations/attention_kv_reducer_folded/sweeps/nangate45_macro_frontier.json"
+    ],
+    "configs": [
+      "runs/designs/activations/attention_kv_reducer_folded_p8_ppc2_l16_v16_s16_a24_wrapper/config_attention_kv_reducer_folded_p8_ppc2_l16_v16_s16_a24.json",
+      "runs/designs/activations/attention_kv_reducer_folded_p8_ppc4_l16_v16_s16_a24_wrapper/config_attention_kv_reducer_folded_p8_ppc4_l16_v16_s16_a24.json",
+      "runs/designs/activations/attention_kv_reducer_folded_p16_ppc2_l16_v16_s16_a24_wrapper/config_attention_kv_reducer_folded_p16_ppc2_l16_v16_s16_a24.json",
+      "runs/designs/activations/attention_kv_reducer_folded_p16_ppc4_l16_v16_s16_a24_wrapper/config_attention_kv_reducer_folded_p16_ppc4_l16_v16_s16_a24.json"
+    ],
+    "out_root": "runs/designs/activations",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 2,
+  "evaluation_record": {
+    "evaluation_mode": "measurement_only",
+    "abstraction_layer": "attention_kv_reducer_folded",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/attention_kv_reducer_folded_p8_ppc2_l16_v16_s16_a24_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "4c8fd158",
+        "tag": "attention_kv_reducer_folded_nangate45_macro_frontier_e0c384c0",
+        "result_path": "runs/designs/activations/attention_kv_reducer_folded_p8_ppc2_l16_v16_s16_a24_wrapper/work/4c8fd158/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 2.0658,
+        "die_area": 30081.4336,
+        "total_power_mw": 0.0258
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/attention_kv_reducer_folded_p16_ppc2_l16_v16_s16_a24_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "4c8fd158",
+        "tag": "attention_kv_reducer_folded_nangate45_macro_frontier_e0c384c0",
+        "result_path": "runs/designs/activations/attention_kv_reducer_folded_p16_ppc2_l16_v16_s16_a24_wrapper/work/4c8fd158/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 2.0664,
+        "die_area": 29056.6116,
+        "total_power_mw": 0.025
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_decoder_attention_kv_reducer_folded_frontier_v1",
+    "completed_trials": 1,
+    "success_count": 1,
+    "failure_count": 0,
+    "success_rate": 1.0,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 2.0658,
+        "mean": 2.0658,
+        "median": 2.0658,
+        "max": 2.0658,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "die_area": {
+        "best": 30081.4336,
+        "mean": 30081.4336,
+        "median": 30081.4336,
+        "max": 30081.4336,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "total_power_mw": {
+        "best": 0.0258,
+        "mean": 0.0258,
+        "median": 0.0258,
+        "max": 0.0258,
+        "range": 0.0,
+        "stddev": 0.0
+      }
+    }
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/activations/attention_kv_reducer_folded_p8_ppc2_l16_v16_s16_a24_wrapper/metrics.csv",
+      "runs/designs/activations/attention_kv_reducer_folded_p8_ppc4_l16_v16_s16_a24_wrapper/metrics.csv",
+      "runs/designs/activations/attention_kv_reducer_folded_p16_ppc2_l16_v16_s16_a24_wrapper/metrics.csv",
+      "runs/designs/activations/attention_kv_reducer_folded_p16_ppc4_l16_v16_s16_a24_wrapper/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_kv_reducer_folded_frontier_v1/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_kv_reducer_folded_frontier_v1/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_kv_reducer_folded_frontier_v1/trial_table.csv"
+  },
+  "boundary_evidence": {
+    "row_count": 6,
+    "rows": [
+      {
+        "metrics_csv": "runs/designs/activations/attention_kv_reducer_folded_p8_ppc2_l16_v16_s16_a24_wrapper/metrics.csv",
+        "status": "failed",
+        "design": "attention_kv_reducer_folded_p8_ppc2_l16_v16_s16_a24_wrapper",
+        "platform": "nangate45",
+        "config_hash": "7b476850603c",
+        "param_hash": "526416f1",
+        "tag": "attention_kv_reducer_folded_nangate45_macro_frontier_175641b8",
+        "result_path": "runs/designs/activations/attention_kv_reducer_folded_p8_ppc2_l16_v16_s16_a24_wrapper/work/526416f1/result.json",
+        "params_json": "{\"CLOCK_PERIOD\": 2.5, \"CORE_UTILIZATION\": 60, \"IO_PLACER_H\": \"metal3 metal5\", \"IO_PLACER_V\": \"metal4 metal6\", \"PLACE_DENSITY\": 0.68, \"PLACE_PINS_ARGS\": \"-min_distance 1\", \"SYNTH_MEMORY_MAX_BITS\": 32768, \"TAG\": \"attention_kv_reducer_folded_nangate45_macro_frontier_175641b8\"}"
+      },
+      {
+        "metrics_csv": "runs/designs/activations/attention_kv_reducer_folded_p8_ppc4_l16_v16_s16_a24_wrapper/metrics.csv",
+        "status": "failed",
+        "design": "attention_kv_reducer_folded_p8_ppc4_l16_v16_s16_a24_wrapper",
+        "platform": "nangate45",
+        "config_hash": "a3e6a804cbf5",
+        "param_hash": "526416f1",
+        "tag": "attention_kv_reducer_folded_nangate45_macro_frontier_175641b8",
+        "result_path": "runs/designs/activations/attention_kv_reducer_folded_p8_ppc4_l16_v16_s16_a24_wrapper/work/526416f1/result.json",
+        "params_json": "{\"CLOCK_PERIOD\": 2.5, \"CORE_UTILIZATION\": 60, \"IO_PLACER_H\": \"metal3 metal5\", \"IO_PLACER_V\": \"metal4 metal6\", \"PLACE_DENSITY\": 0.68, \"PLACE_PINS_ARGS\": \"-min_distance 1\", \"SYNTH_MEMORY_MAX_BITS\": 32768, \"TAG\": \"attention_kv_reducer_folded_nangate45_macro_frontier_175641b8\"}"
+      },
+      {
+        "metrics_csv": "runs/designs/activations/attention_kv_reducer_folded_p8_ppc4_l16_v16_s16_a24_wrapper/metrics.csv",
+        "status": "failed",
+        "design": "attention_kv_reducer_folded_p8_ppc4_l16_v16_s16_a24_wrapper",
+        "platform": "nangate45",
+        "config_hash": "a3e6a804cbf5",
+        "param_hash": "4c8fd158",
+        "tag": "attention_kv_reducer_folded_nangate45_macro_frontier_e0c384c0",
+        "result_path": "runs/designs/activations/attention_kv_reducer_folded_p8_ppc4_l16_v16_s16_a24_wrapper/work/4c8fd158/result.json",
+        "params_json": "{\"CLOCK_PERIOD\": 2.5, \"CORE_UTILIZATION\": 50, \"IO_PLACER_H\": \"metal3 metal5\", \"IO_PLACER_V\": \"metal4 metal6\", \"PLACE_DENSITY\": 0.68, \"PLACE_PINS_ARGS\": \"-min_distance 1\", \"SYNTH_MEMORY_MAX_BITS\": 32768, \"TAG\": \"attention_kv_reducer_folded_nangate45_macro_frontier_e0c384c0\"}"
+      },
+      {
+        "metrics_csv": "runs/designs/activations/attention_kv_reducer_folded_p16_ppc2_l16_v16_s16_a24_wrapper/metrics.csv",
+        "status": "failed",
+        "design": "attention_kv_reducer_folded_p16_ppc2_l16_v16_s16_a24_wrapper",
+        "platform": "nangate45",
+        "config_hash": "85f4a9b766cd",
+        "param_hash": "526416f1",
+        "tag": "attention_kv_reducer_folded_nangate45_macro_frontier_175641b8",
+        "result_path": "runs/designs/activations/attention_kv_reducer_folded_p16_ppc2_l16_v16_s16_a24_wrapper/work/526416f1/result.json",
+        "params_json": "{\"CLOCK_PERIOD\": 2.5, \"CORE_UTILIZATION\": 60, \"IO_PLACER_H\": \"metal3 metal5\", \"IO_PLACER_V\": \"metal4 metal6\", \"PLACE_DENSITY\": 0.68, \"PLACE_PINS_ARGS\": \"-min_distance 1\", \"SYNTH_MEMORY_MAX_BITS\": 32768, \"TAG\": \"attention_kv_reducer_folded_nangate45_macro_frontier_175641b8\"}"
+      },
+      {
+        "metrics_csv": "runs/designs/activations/attention_kv_reducer_folded_p16_ppc4_l16_v16_s16_a24_wrapper/metrics.csv",
+        "status": "failed",
+        "design": "attention_kv_reducer_folded_p16_ppc4_l16_v16_s16_a24_wrapper",
+        "platform": "nangate45",
+        "config_hash": "899e59ecaaa1",
+        "param_hash": "526416f1",
+        "tag": "attention_kv_reducer_folded_nangate45_macro_frontier_175641b8",
+        "result_path": "runs/designs/activations/attention_kv_reducer_folded_p16_ppc4_l16_v16_s16_a24_wrapper/work/526416f1/result.json",
+        "params_json": "{\"CLOCK_PERIOD\": 2.5, \"CORE_UTILIZATION\": 60, \"IO_PLACER_H\": \"metal3 metal5\", \"IO_PLACER_V\": \"metal4 metal6\", \"PLACE_DENSITY\": 0.68, \"PLACE_PINS_ARGS\": \"-min_distance 1\", \"SYNTH_MEMORY_MAX_BITS\": 32768, \"TAG\": \"attention_kv_reducer_folded_nangate45_macro_frontier_175641b8\"}"
+      },
+      {
+        "metrics_csv": "runs/designs/activations/attention_kv_reducer_folded_p16_ppc4_l16_v16_s16_a24_wrapper/metrics.csv",
+        "status": "failed",
+        "design": "attention_kv_reducer_folded_p16_ppc4_l16_v16_s16_a24_wrapper",
+        "platform": "nangate45",
+        "config_hash": "899e59ecaaa1",
+        "param_hash": "4c8fd158",
+        "tag": "attention_kv_reducer_folded_nangate45_macro_frontier_e0c384c0",
+        "result_path": "runs/designs/activations/attention_kv_reducer_folded_p16_ppc4_l16_v16_s16_a24_wrapper/work/4c8fd158/result.json",
+        "params_json": "{\"CLOCK_PERIOD\": 2.5, \"CORE_UTILIZATION\": 50, \"IO_PLACER_H\": \"metal3 metal5\", \"IO_PLACER_V\": \"metal4 metal6\", \"PLACE_DENSITY\": 0.68, \"PLACE_PINS_ARGS\": \"-min_distance 1\", \"SYNTH_MEMORY_MAX_BITS\": 32768, \"TAG\": \"attention_kv_reducer_folded_nangate45_macro_frontier_e0c384c0\"}"
+      }
+    ]
+  }
+}
