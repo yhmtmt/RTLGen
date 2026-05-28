@@ -1,12 +1,12 @@
 {
   "proposal_id": "prop_l1_decoder_attention_kv_reducer_folded_v1",
-  "source_commit": "",
+  "source_commit": "8e473aba1c110040e3b11e1c5ec408967698ee1c",
   "requested_items": [
     {
       "item_id": "l1_decoder_attention_kv_reducer_folded_frontier_v1",
       "title": "Layer 1 attention KV folded reducer frontier sweep",
       "objective": "Measure p8/p16 folded attention KV reducers with partials_per_cycle 2 and 4 to test whether input folding resolves the reducer-tree boundary.",
-      "status": "blocked",
+      "status": "merged",
       "blocker": "Requires source PR for attention_kv_reducer_folded operation to merge first.",
       "evaluation_mode": "measurement_only",
       "abstraction_layer": "attention_kv_reducer_folded",
@@ -23,7 +23,11 @@
         "runs/designs/activations/attention_kv_reducer_folded_p16_ppc2_l16_v16_s16_a24_wrapper/metrics.csv",
         "runs/designs/activations/attention_kv_reducer_folded_p16_ppc4_l16_v16_s16_a24_wrapper/metrics.csv"
       ],
-      "acceptance_notes": "Accept both ok rows and failed rows as explicit boundary evidence."
+      "acceptance_notes": "Accept both ok rows and failed rows as explicit boundary evidence.",
+      "merged_pr_number": 705,
+      "merge_commit": "e36e5f89b4bd923dcc884a2c04d2c17caedab926",
+      "merged_utc": "2026-05-28T08:34:49.892881Z",
+      "notes": "Merged via PR #705 and merge e36e5f89b4bd923dcc884a2c04d2c17caedab926 at 2026-05-28T08:34:49.892881Z."
     }
   ]
 }
