@@ -1,12 +1,12 @@
 {
   "proposal_id": "prop_l1_decoder_attention_kv_reducer_folded_internal_source_v1",
-  "source_commit": "",
+  "source_commit": "8a4780eb5bbf73586212ff15f08d7a7419ad7e58",
   "requested_items": [
     {
       "item_id": "l1_decoder_attention_kv_reducer_folded_internal_source_v1",
       "title": "Layer 1 folded reducer internal-source sweep",
       "objective": "Measure p8/p16 folded reducers with ppc2/ppc4 when producer-side partial fragments are internal nets rather than top-level macro IO; accept status=ok and failed rows as boundary evidence.",
-      "status": "pending",
+      "status": "merged",
       "blocker": "Requires internal-source wrapper/config PR to merge first.",
       "evaluation_mode": "measurement_only",
       "abstraction_layer": "attention_kv_reducer_folded",
@@ -23,7 +23,11 @@
         "runs/designs/activations/attention_kv_reducer_folded_src_p16_ppc2_l16_v16_s16_a24_wrapper/metrics.csv",
         "runs/designs/activations/attention_kv_reducer_folded_src_p16_ppc4_l16_v16_s16_a24_wrapper/metrics.csv"
       ],
-      "acceptance_notes": "Rows should be compared against the standalone folded boundary sweep to determine how much of the ppc4/high-utilization failure was macro-interface pin pressure."
+      "acceptance_notes": "Rows should be compared against the standalone folded boundary sweep to determine how much of the ppc4/high-utilization failure was macro-interface pin pressure.",
+      "merged_pr_number": 711,
+      "merge_commit": "10dcedcfc76c607a5fcd17ae75ce7fdb9d647d57",
+      "merged_utc": "2026-05-28T17:24:27.245539Z",
+      "notes": "Merged via PR #711 and merge 10dcedcfc76c607a5fcd17ae75ce7fdb9d647d57 at 2026-05-28T17:24:27.245539Z."
     }
   ]
 }
