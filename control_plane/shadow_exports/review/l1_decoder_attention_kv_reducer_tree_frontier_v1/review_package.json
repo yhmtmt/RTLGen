@@ -1,0 +1,204 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-05-28T07:38:51.872996Z",
+  "control_plane_source_commit": "9714b78ea0334d50d87673e99065ff596d7d9886",
+  "review_metadata_source_commit": "9714b78ea0334d50d87673e99065ff596d7d9886",
+  "item_id": "l1_decoder_attention_kv_reducer_tree_frontier_v1",
+  "run_key": "l1_decoder_attention_kv_reducer_tree_frontier_v1_run_cb30f0208d7f1095",
+  "layer": "layer1",
+  "flow": "openroad",
+  "task_type": "l1_sweep",
+  "source_commit": "2c159e39a100ccc443d0529e51ab0c8304bd912d",
+  "queue_snapshot": {
+    "path": "control_plane/shadow_exports/review/l1_decoder_attention_kv_reducer_tree_frontier_v1/evaluated.json",
+    "result": {
+      "branch": "eval/l1_decoder_attention_kv_reducer_tree_frontier_v1/s20260528t073849z",
+      "completed_utc": "2026-05-28T06:57:47.053032Z",
+      "evaluator_id": "control_plane",
+      "executor": "@control_plane",
+      "host": "b7c2d9c80c1c",
+      "identity_block": "[role:evaluator][account:control_plane][session:s20260528t073849z][host:b7c2d9c80c1c][item:l1_decoder_attention_kv_reducer_tree_frontier_v1]",
+      "metrics_rows": [
+        {
+          "tag": "attention_kv_reducer_tree_nangate45_macro_frontier_175641b8",
+          "status": "failed",
+          "platform": "nangate45",
+          "param_hash": "d64a0205",
+          "metrics_csv": "runs/designs/activations/attention_kv_reducer_tree_p8_l16_v16_s16_a24_wrapper/metrics.csv"
+        },
+        {
+          "tag": "attention_kv_reducer_tree_nangate45_macro_frontier_e0c384c0",
+          "status": "failed",
+          "platform": "nangate45",
+          "param_hash": "63079636",
+          "metrics_csv": "runs/designs/activations/attention_kv_reducer_tree_p8_l16_v16_s16_a24_wrapper/metrics.csv"
+        },
+        {
+          "tag": "attention_kv_reducer_tree_nangate45_macro_frontier_175641b8",
+          "status": "failed",
+          "platform": "nangate45",
+          "param_hash": "d64a0205",
+          "metrics_csv": "runs/designs/activations/attention_kv_reducer_tree_p16_l16_v16_s16_a24_wrapper/metrics.csv"
+        },
+        {
+          "tag": "attention_kv_reducer_tree_nangate45_macro_frontier_e0c384c0",
+          "status": "failed",
+          "platform": "nangate45",
+          "param_hash": "63079636",
+          "metrics_csv": "runs/designs/activations/attention_kv_reducer_tree_p16_l16_v16_s16_a24_wrapper/metrics.csv"
+        }
+      ],
+      "queue_item_id": "l1_decoder_attention_kv_reducer_tree_frontier_v1",
+      "session_id": "s20260528t073849z",
+      "status": "ok",
+      "summary": "4/4 commands succeeded"
+    }
+  },
+  "review_artifact": {
+    "kind": "promotion_proposal",
+    "path": "control_plane/shadow_exports/l1_promotions/l1_decoder_attention_kv_reducer_tree_frontier_v1.json",
+    "storage_mode": "repo",
+    "sha256": "3f6d39729756876fc373a006cbabfb549261f3b47bf1d5326ed77e5f759cb652",
+    "payload": {
+      "version": 0.1,
+      "generated_utc": "2026-05-28T07:38:49.122126Z",
+      "item_id": "l1_decoder_attention_kv_reducer_tree_frontier_v1",
+      "run_key": "l1_decoder_attention_kv_reducer_tree_frontier_v1_run_cb30f0208d7f1095",
+      "layer": "layer1",
+      "flow": "openroad",
+      "platform": "nangate45",
+      "task_type": "l1_sweep",
+      "source_commit": "2c159e39a100ccc443d0529e51ab0c8304bd912d",
+      "objective": "Measure p8/l16 and p16/l16 registered attention KV reducer trees and accept timing/flow failures as boundary evidence.",
+      "input_manifest": {
+        "sweeps": [
+          "runs/campaigns/activations/attention_kv_reducer_tree/sweeps/nangate45_macro_frontier.json"
+        ],
+        "configs": [
+          "runs/designs/activations/attention_kv_reducer_tree_p8_l16_v16_s16_a24_wrapper/config_attention_kv_reducer_tree_p8_l16_v16_s16_a24.json",
+          "runs/designs/activations/attention_kv_reducer_tree_p16_l16_v16_s16_a24_wrapper/config_attention_kv_reducer_tree_p16_l16_v16_s16_a24.json"
+        ],
+        "out_root": "runs/designs/activations",
+        "design_dirs": [],
+        "macro_manifests": [],
+        "candidate_manifests": [],
+        "required_submodules": []
+      },
+      "proposal_count": 0,
+      "evaluation_record": {
+        "evaluation_mode": "measurement_only",
+        "abstraction_layer": "attention_kv_reducer_tree",
+        "result_kind": "boundary_evidence",
+        "physical_metrics_present": false,
+        "summary": "No status=ok Layer 1 rows were produced; non-ok metrics rows are recorded as explicit boundary evidence.",
+        "boundary_status_counts": {
+          "failed": 4
+        }
+      },
+      "proposal_assessment": {
+        "outcome": "boundary_no_feasible_points",
+        "summary": "All current Layer 1 metrics rows are non-ok; this is accepted as frontier boundary evidence, not a promotable design point.",
+        "failure_row_count": 4
+      },
+      "proposals": [],
+      "trial_summary": {
+        "item_id": "l1_decoder_attention_kv_reducer_tree_frontier_v1",
+        "completed_trials": 1,
+        "success_count": 0,
+        "failure_count": 1,
+        "success_rate": 0.0,
+        "metrics": {}
+      },
+      "source_refs": {
+        "trial_metrics_csvs": [
+          "runs/designs/activations/attention_kv_reducer_tree_p8_l16_v16_s16_a24_wrapper/metrics.csv",
+          "runs/designs/activations/attention_kv_reducer_tree_p16_l16_v16_s16_a24_wrapper/metrics.csv"
+        ],
+        "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_kv_reducer_tree_frontier_v1/summary_stats.json",
+        "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_kv_reducer_tree_frontier_v1/failure_stats.json",
+        "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_kv_reducer_tree_frontier_v1/trial_table.csv"
+      },
+      "boundary_evidence": {
+        "row_count": 4,
+        "rows": [
+          {
+            "metrics_csv": "runs/designs/activations/attention_kv_reducer_tree_p8_l16_v16_s16_a24_wrapper/metrics.csv",
+            "status": "failed",
+            "design": "attention_kv_reducer_tree_p8_l16_v16_s16_a24_wrapper",
+            "platform": "nangate45",
+            "config_hash": "d1b5a2171a4f",
+            "param_hash": "d64a0205",
+            "tag": "attention_kv_reducer_tree_nangate45_macro_frontier_175641b8",
+            "result_path": "runs/designs/activations/attention_kv_reducer_tree_p8_l16_v16_s16_a24_wrapper/work/d64a0205/result.json",
+            "params_json": "{\"CLOCK_PERIOD\": 2.5, \"CORE_UTILIZATION\": 60, \"IO_PLACER_H\": \"metal3 metal5\", \"IO_PLACER_V\": \"metal4 metal6\", \"PLACE_DENSITY\": 0.68, \"PLACE_PINS_ARGS\": \"-min_distance 1\", \"SYNTH_MEMORY_MAX_BITS\": 32768, \"TAG\": \"attention_kv_reducer_tree_nangate45_macro_frontier_175641b8\"}"
+          },
+          {
+            "metrics_csv": "runs/designs/activations/attention_kv_reducer_tree_p8_l16_v16_s16_a24_wrapper/metrics.csv",
+            "status": "failed",
+            "design": "attention_kv_reducer_tree_p8_l16_v16_s16_a24_wrapper",
+            "platform": "nangate45",
+            "config_hash": "d1b5a2171a4f",
+            "param_hash": "63079636",
+            "tag": "attention_kv_reducer_tree_nangate45_macro_frontier_e0c384c0",
+            "result_path": "runs/designs/activations/attention_kv_reducer_tree_p8_l16_v16_s16_a24_wrapper/work/63079636/result.json",
+            "params_json": "{\"CLOCK_PERIOD\": 2.5, \"CORE_UTILIZATION\": 50, \"IO_PLACER_H\": \"metal3 metal5\", \"IO_PLACER_V\": \"metal4 metal6\", \"PLACE_DENSITY\": 0.68, \"PLACE_PINS_ARGS\": \"-min_distance 1\", \"SYNTH_MEMORY_MAX_BITS\": 32768, \"TAG\": \"attention_kv_reducer_tree_nangate45_macro_frontier_e0c384c0\"}"
+          },
+          {
+            "metrics_csv": "runs/designs/activations/attention_kv_reducer_tree_p16_l16_v16_s16_a24_wrapper/metrics.csv",
+            "status": "failed",
+            "design": "attention_kv_reducer_tree_p16_l16_v16_s16_a24_wrapper",
+            "platform": "nangate45",
+            "config_hash": "f7c64f96a362",
+            "param_hash": "d64a0205",
+            "tag": "attention_kv_reducer_tree_nangate45_macro_frontier_175641b8",
+            "result_path": "runs/designs/activations/attention_kv_reducer_tree_p16_l16_v16_s16_a24_wrapper/work/d64a0205/result.json",
+            "params_json": "{\"CLOCK_PERIOD\": 2.5, \"CORE_UTILIZATION\": 60, \"IO_PLACER_H\": \"metal3 metal5\", \"IO_PLACER_V\": \"metal4 metal6\", \"PLACE_DENSITY\": 0.68, \"PLACE_PINS_ARGS\": \"-min_distance 1\", \"SYNTH_MEMORY_MAX_BITS\": 32768, \"TAG\": \"attention_kv_reducer_tree_nangate45_macro_frontier_175641b8\"}"
+          },
+          {
+            "metrics_csv": "runs/designs/activations/attention_kv_reducer_tree_p16_l16_v16_s16_a24_wrapper/metrics.csv",
+            "status": "failed",
+            "design": "attention_kv_reducer_tree_p16_l16_v16_s16_a24_wrapper",
+            "platform": "nangate45",
+            "config_hash": "f7c64f96a362",
+            "param_hash": "63079636",
+            "tag": "attention_kv_reducer_tree_nangate45_macro_frontier_e0c384c0",
+            "result_path": "runs/designs/activations/attention_kv_reducer_tree_p16_l16_v16_s16_a24_wrapper/work/63079636/result.json",
+            "params_json": "{\"CLOCK_PERIOD\": 2.5, \"CORE_UTILIZATION\": 50, \"IO_PLACER_H\": \"metal3 metal5\", \"IO_PLACER_V\": \"metal4 metal6\", \"PLACE_DENSITY\": 0.68, \"PLACE_PINS_ARGS\": \"-min_distance 1\", \"SYNTH_MEMORY_MAX_BITS\": 32768, \"TAG\": \"attention_kv_reducer_tree_nangate45_macro_frontier_e0c384c0\"}"
+          }
+        ]
+      }
+    }
+  },
+  "developer_loop": {
+    "evaluation": {
+      "mode": "measurement_only",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      }
+    },
+    "abstraction": {
+      "layer": "attention_kv_reducer_tree"
+    },
+    "proposal_id": "prop_l1_decoder_attention_kv_reducer_tree_v1",
+    "proposal_path": "docs/proposals/prop_l1_decoder_attention_kv_reducer_tree_v1"
+  },
+  "submission_history": null,
+  "pr_payload": {
+    "branch": "eval/l1_decoder_attention_kv_reducer_tree_frontier_v1/s20260528t073849z",
+    "title": "eval: run layer 1 attention kv reducer tree frontier sweep",
+    "body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260528t073849z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_decoder_attention_kv_reducer_tree_frontier_v1"
+    },
+    "body_md": "## Summary\n- item_id: `l1_decoder_attention_kv_reducer_tree_frontier_v1`\n- run_key: `l1_decoder_attention_kv_reducer_tree_frontier_v1_run_cb30f0208d7f1095`\n- layer: `layer1`\n- task_type: `l1_sweep`\n- status: `ok`\n- summary: `4/4 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l1_decoder_attention_kv_reducer_tree_frontier_v1/evaluated.json`\n- metrics_rows_count: `4`\n- review_artifact: `promotion_proposal` at `control_plane/shadow_exports/l1_promotions/l1_decoder_attention_kv_reducer_tree_frontier_v1.json`\n\n## Developer Context\n- proposal_id: `prop_l1_decoder_attention_kv_reducer_tree_v1`\n- proposal_path: `docs/proposals/prop_l1_decoder_attention_kv_reducer_tree_v1`\n- reviewer_first_read: `docs/proposals/prop_l1_decoder_attention_kv_reducer_tree_v1` plus `docs/developer_agent_review.md`\n- execution_source_commit: `2c159e39a100ccc443d0529e51ab0c8304bd912d`\n- review_metadata_source_commit: `9714b78ea0334d50d87673e99065ff596d7d9886`\n\n## Evaluation Mode\n- evaluation_mode: `measurement_only`\n- abstraction_layer: `attention_kv_reducer_tree`\n- evaluation_summary: `No status=ok Layer 1 rows were produced; non-ok metrics rows are recorded as explicit boundary evidence.`\n\n## Focused Comparison\n- proposal_outcome: `boundary_no_feasible_points`\n- comparison_summary: `All current Layer 1 metrics rows are non-ok; this is accepted as frontier boundary evidence, not a promotable design point.`\n\n## Checklist\n- [ ] Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge\n- [ ] Include metrics row references for each completed design\n- [ ] Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ]
+  }
+}
