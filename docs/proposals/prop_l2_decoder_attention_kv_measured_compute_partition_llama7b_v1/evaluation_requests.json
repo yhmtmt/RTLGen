@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_measured_compute_partition_llama7b_v1",
-  "source_commit": "badb82b832ece370d9a2b287b4d01a8a134ad997",
+  "source_commit": "fb10bb5944bc7a07d081a9b0e7f3aa2ef59ae939",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_kv_measured_compute_partition_llama7b_v1",
@@ -26,9 +26,9 @@
       "notes": "Merged via PR #678 and merge c0ead960a1207d6946ce62b4b678b706f963f650 at 2026-05-27T15:10:52.821767Z."
     },
     {
-      "item_id": "l2_decoder_attention_kv_clustered_schedule_llama7b_v1_r2",
+      "item_id": "l2_decoder_attention_kv_clustered_schedule_llama7b_v1",
       "task_type": "l2_campaign",
-      "objective": "Rerun the quality-backed native-GQA KV8 131k Llama7B measured-compute clustered schedule model after fixing cross-tile reduction operation accounting.",
+      "objective": "Run the quality-backed native-GQA KV8 131k Llama7B measured-compute clustered schedule model with explicit cross-tile softmax/value reduction strategies.",
       "evaluation_mode": "frontier_detail",
       "abstraction_layer": "decoder_attention_kv_clustered_schedule",
       "comparison_role": "frontier_synthesis",
@@ -40,12 +40,9 @@
       "requires_materialized_refs": true,
       "expected_result": {
         "direction": "iterate",
-        "reason": "If explicit corrected reduction keeps the same clustered frontier, move to measured command-routing hierarchy; if reduction changes the winner, refine the cluster/reducer architecture before RTL."
+        "reason": "If explicit reduction keeps the same clustered frontier, move to measured command-routing hierarchy; if reduction changes the winner, refine the cluster/reducer architecture before RTL."
       },
-      "status": "pending",
-      "prior_item_ids": [
-        "l2_decoder_attention_kv_clustered_schedule_llama7b_v1"
-      ]
+      "status": "pending"
     }
   ]
 }
