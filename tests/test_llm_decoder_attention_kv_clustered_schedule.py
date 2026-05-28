@@ -39,6 +39,33 @@ def _report(monkeypatch, *, strategies):
     )
 
 
+def _report_with_overhead(monkeypatch):
+    monkeypatch.setattr(sched, "_load_compute_candidates", lambda repo_root, tag_substring: [_candidate()])
+    return sched.build_report(
+        repo_root=Path("."),
+        tag_substring="unit",
+        sequence_length_list=[2048],
+        die_area_mm2_list=[1.0],
+        sram_area_fraction_list=[0.4],
+        logic_area_fraction_list=[0.2],
+        reserved_area_fraction=0.1,
+        usable_sram_fraction_list=[0.7],
+        local_sram_fraction_list=[0.25],
+        tile_tokens_list=[512],
+        bank_count_list=[16],
+        cluster_count_list=[2],
+        noc_bandwidth_bytes_per_cycle_list=[8192.0],
+        noc_hops_list=[1],
+        reduction_strategy_list=["owner_cluster"],
+        vector_ops_per_mac=0.125,
+        reduction_scalar_bytes=2,
+        command_cycles_per_tile_list=[3],
+        command_cycles_per_wave_list=[5],
+        reducer_setup_cycles_list=[7],
+        reduction_cycle_multiplier_list=[2.0],
+    )
+
+
 def test_clustered_schedule_exposes_tile_waves_and_reduction(monkeypatch) -> None:
     report = _report(monkeypatch, strategies=["owner_cluster"])
     by_cluster = {row["cluster_count"]: row for row in report["best_by_die_cluster"]}
@@ -69,3 +96,20 @@ def test_clustered_schedule_exposes_centralized_tile_payload(monkeypatch) -> Non
     assert rows["centralized_tile"]["local_reduction_cycles"] == 0
     assert rows["owner_cluster"]["local_reduction_cycles"] > 0
     assert rows["centralized_tile"]["cross_tile_reduction_vector_cycles"] >= rows["owner_cluster"]["cross_tile_reduction_vector_cycles"]
+
+
+def test_clustered_schedule_charges_command_and_reducer_overhead(monkeypatch) -> None:
+    report = _report_with_overhead(monkeypatch)
+    row = report["best"]
+
+    assert row["command_dispatch_cycles"] == row["tile_count"] * 3 + row["tile_waves"] * 5
+    assert row["cross_tile_reduction_cycles"] == row["base_cross_tile_reduction_cycles"] * 2 + 7
+    assert row["layer_cycles"] == (
+        row["qkv_cycles"]
+        + row["tile_waves"] * row["tile_service_cycles"]
+        + row["command_dispatch_cycles"]
+        + row["cross_tile_reduction_cycles"]
+        + row["kv_write_cycles"]
+    )
+    assert report["inputs"]["command_cycles_per_tile_list"] == [3]
+    assert report["inputs"]["reduction_cycle_multiplier_list"] == [2.0]

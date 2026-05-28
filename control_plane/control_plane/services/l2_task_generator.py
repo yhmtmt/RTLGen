@@ -3744,6 +3744,62 @@ def _decoder_attention_kv_clustered_schedule_evidence(*, item_id: str) -> dict[s
     }
 
 
+def _decoder_attention_kv_clustered_schedule_overhead_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_kv_clustered_schedule_overhead__{item_id}.json"
+    report = f"{base}/decoder_attention_kv_clustered_schedule_overhead__{item_id}.md"
+    clustered_schedule = (
+        f"{base}/decoder_attention_kv_clustered_schedule__"
+        "l2_decoder_attention_kv_clustered_schedule_llama7b_v1_r2.json"
+    )
+    return {
+        "inputs": {
+            "attention_kv_clustered_schedule": clustered_schedule,
+            "attention_kv_clustered_schedule_overhead_out": out,
+            "attention_kv_clustered_schedule_overhead_report": report,
+            "attention_kv_clustered_schedule_overhead_scope": (
+                "Sensitivity pass for the quality-backed native-GQA KV8 Llama7B 131k clustered "
+                "attention schedule. Keep the measured-compute sweep space but add explicit "
+                "command-dispatch and reducer overhead knobs to test whether the current "
+                "nm64-flat/owner-cluster frontier is fragile before investing in routed command "
+                "hierarchy RTL."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_attention_kv_clustered_schedule_overhead",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_attention_kv_clustered_schedule.py "
+                    "--repo-root . "
+                    "--tag-substring compute_stability_cmp33 "
+                    "--sequence-length-list 131072 "
+                    "--die-area-mm2-list 400,800,1200 "
+                    "--sram-area-fraction 0.4 "
+                    "--logic-area-fraction 0.2 "
+                    "--reserved-area-fraction 0.1 "
+                    "--usable-sram-fraction 0.7 "
+                    "--local-sram-fraction 0.1,0.25 "
+                    "--tile-tokens-list 1024 "
+                    "--bank-count 16 "
+                    "--cluster-count 1,2,4,8,16 "
+                    "--noc-bandwidth-bytes-per-cycle 32768 "
+                    "--noc-hops 1,2 "
+                    "--reduction-strategy owner_cluster,cluster_tree,centralized_tile "
+                    "--vector-ops-per-mac 0.125 "
+                    "--reduction-scalar-bytes 2 "
+                    "--command-cycles-per-tile 0,1,4,16 "
+                    "--command-cycles-per-wave 0,8,32 "
+                    "--reducer-setup-cycles 0,32,128 "
+                    "--reduction-cycle-multiplier 1,2,4 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_attention_kv_quality_gate_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_kv_quality_gate__{item_id}.json"
@@ -5247,6 +5303,7 @@ def _build_payload(
         "decoder_attention_kv_measured_compute",
         "decoder_attention_kv_measured_compute_partition",
         "decoder_attention_kv_clustered_schedule",
+        "decoder_attention_kv_clustered_schedule_overhead",
         "decoder_attention_kv_quality_gate",
         "decoder_attention_kv_quality_proxy",
         "decoder_attention_kv_native_gqa_proxy",
@@ -5316,6 +5373,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_kv_measured_compute_partition_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_clustered_schedule":
             decoder_evidence = _decoder_attention_kv_clustered_schedule_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_kv_clustered_schedule_overhead":
+            decoder_evidence = _decoder_attention_kv_clustered_schedule_overhead_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_quality_gate":
             decoder_evidence = _decoder_attention_kv_quality_gate_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_quality_proxy":
