@@ -22,5 +22,7 @@
   "risks": [
     "If failures remain, pressure may come from output bus width or internal lane accumulators rather than only partial input pins.",
     "The perf model must charge reducer cycles before using folded results in Llama7B schedule estimates."
-  ]
+  ],
+  "created_utc": "2026-05-28T08:23:29.702707Z",
+  "kind": "circuit_block"
 }
