@@ -184,6 +184,133 @@ def test_consume_l1_result_writes_promotion_proposal() -> None:
             assert artifact.path == f"control_plane/shadow_exports/l1_promotions/{item_id}.json"
 
 
+def test_consume_l1_result_records_failure_only_boundary_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        metrics_a = "runs/designs/activations/attention_kv_reducer_tree_p8_l16_v16_s16_a24_wrapper/metrics.csv"
+        metrics_b = "runs/designs/activations/attention_kv_reducer_tree_p16_l16_v16_s16_a24_wrapper/metrics.csv"
+        _write_metrics(
+            repo_root / metrics_a,
+            [
+                {
+                    "platform": "nangate45",
+                    "status": "failed",
+                    "param_hash": "d64a0205",
+                    "tag": "attention_kv_reducer_tree_nangate45_macro_frontier_175641b8",
+                    "result_path": "runs/designs/activations/attention_kv_reducer_tree_p8_l16_v16_s16_a24_wrapper/work/d64a0205/result.json",
+                },
+                {
+                    "platform": "nangate45",
+                    "status": "failed",
+                    "param_hash": "63079636",
+                    "tag": "attention_kv_reducer_tree_nangate45_macro_frontier_e0c384c0",
+                    "result_path": "runs/designs/activations/attention_kv_reducer_tree_p8_l16_v16_s16_a24_wrapper/work/63079636/result.json",
+                },
+            ],
+        )
+        _write_metrics(
+            repo_root / metrics_b,
+            [
+                {
+                    "platform": "nangate45",
+                    "status": "failed",
+                    "param_hash": "d64a0205",
+                    "tag": "attention_kv_reducer_tree_nangate45_macro_frontier_175641b8",
+                    "result_path": "runs/designs/activations/attention_kv_reducer_tree_p16_l16_v16_s16_a24_wrapper/work/d64a0205/result.json",
+                },
+                {
+                    "platform": "nangate45",
+                    "status": "failed",
+                    "param_hash": "63079636",
+                    "tag": "attention_kv_reducer_tree_nangate45_macro_frontier_e0c384c0",
+                    "result_path": "runs/designs/activations/attention_kv_reducer_tree_p16_l16_v16_s16_a24_wrapper/work/63079636/result.json",
+                },
+            ],
+        )
+
+        with Session(engine) as session:
+            task_request = TaskRequest(
+                request_key="l1_sweep:test_boundary_failure_only",
+                source="test",
+                requested_by="@tester",
+                title="Layer1 boundary failure-only test",
+                description="boundary failure-only test",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                priority=1,
+                request_payload={
+                    "item_id": "l1_test_boundary_failure_only",
+                    "layer": "layer1",
+                    "flow": "openroad",
+                    "abstraction_layer": "circuit_block",
+                },
+                source_commit="deadbeef",
+            )
+            session.add(task_request)
+            session.flush()
+
+            work_item = WorkItem(
+                work_item_key="l1_sweep:l1_test_boundary_failure_only",
+                task_request_id=task_request.id,
+                item_id="l1_test_boundary_failure_only",
+                layer=LayerName.LAYER1,
+                flow=FlowName.OPENROAD,
+                platform="nangate45",
+                task_type="l1_sweep",
+                state=WorkItemState.ARTIFACT_SYNC,
+                priority=1,
+                source_mode="config",
+                input_manifest={"configs": [], "sweeps": []},
+                command_manifest=[],
+                expected_outputs=[metrics_a, metrics_b],
+                acceptance_rules=[
+                    "Each generated wrapper metrics.csv contains recorded rows with a status column; allow non-ok metrics such as flow_failed when the row is boundary evidence",
+                ],
+                source_commit="deadbeef",
+            )
+            session.add(work_item)
+            session.flush()
+
+            run = Run(
+                run_key="l1_test_boundary_failure_only_run_1",
+                work_item_id=work_item.id,
+                attempt=1,
+                executor_type=ExecutorType.INTERNAL_WORKER,
+                status=RunStatus.SUCCEEDED,
+                started_at=utcnow(),
+                completed_at=utcnow(),
+                checkout_commit="deadbeef",
+                result_summary="4/4 commands succeeded",
+                result_payload={"queue_result": {"metrics_rows": [metrics_a, metrics_b]}},
+            )
+            session.add(run)
+            session.commit()
+
+            result = consume_l1_result(
+                session,
+                Layer1ConsumeRequest(repo_root=str(repo_root), item_id=work_item.item_id),
+            )
+
+            assert result.proposal_count == 0
+            proposal_path = repo_root / "control_plane" / "shadow_exports" / "l1_promotions" / f"{work_item.item_id}.json"
+            payload = json.loads(proposal_path.read_text(encoding="utf-8"))
+            assert payload["proposal_count"] == 0
+            assert payload["proposals"] == []
+            assert payload["proposal_assessment"]["outcome"] == "boundary_no_feasible_points"
+            assert payload["evaluation_record"]["result_kind"] == "boundary_evidence"
+            assert payload["evaluation_record"]["boundary_status_counts"] == {"failed": 4}
+            assert payload["boundary_evidence"]["row_count"] == 4
+            assert {row["metrics_csv"] for row in payload["boundary_evidence"]["rows"]} == {metrics_a, metrics_b}
+            assert {row["param_hash"] for row in payload["boundary_evidence"]["rows"]} == {"d64a0205", "63079636"}
+
+            artifact = session.query(Artifact).filter_by(kind="promotion_proposal").one()
+            assert artifact.metadata_["proposal_count"] == 0
+
+
 def test_consume_l1_result_keeps_single_trial_metrics_without_trials_subdir() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
