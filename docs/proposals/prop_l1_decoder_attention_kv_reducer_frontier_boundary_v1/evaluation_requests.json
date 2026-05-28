@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_decoder_attention_kv_reducer_frontier_boundary_v1",
-  "source_commit": "f8a70125e99cd9911ddc2dbc49e0342e81cbe87a",
+  "source_commit": "79b31e98ee96245c94c93faa371083d6773c2955",
   "requested_items": [
     {
       "item_id": "l1_decoder_attention_kv_reducer_frontier_boundary_v2",
@@ -25,9 +25,12 @@
         "direction": "measure",
         "reason": "Calibrate the reducer geometry boundary used by owner-cluster and tree-reduction clustered attention schedules."
       },
-      "status": "pending",
+      "status": "merged",
       "blocker": "Requires accepted smoke evidence first; PR #690 has merged that evidence.",
-      "notes": "Use boundary-aware acceptance so non-ok p8/p16 rows are preserved as frontier evidence."
+      "notes": "Use boundary-aware acceptance so non-ok p8/p16 rows are preserved as frontier evidence. Merged via PR #697 and merge 0cbbb2c716236978366967d353fc0fbea43fde95 at 2026-05-28T06:13:50.688862Z.",
+      "merged_pr_number": 697,
+      "merge_commit": "0cbbb2c716236978366967d353fc0fbea43fde95",
+      "merged_utc": "2026-05-28T06:13:50.688862Z"
     }
   ]
 }

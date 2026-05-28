@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_kv_reducer_frontier_boundary_v1",
+  "candidate_id": "l1_decoder_attention_kv_reducer_frontier_boundary_v2",
+  "decision": "promote",
+  "reason": "Accepted Layer 1 physical metrics were merged in PR #697 for the current candidate.",
+  "evidence_refs": [
+    "item:l1_decoder_attention_kv_reducer_frontier_boundary_v2",
+    "run:l1_decoder_attention_kv_reducer_frontier_boundary_v2_run_ef59c17b1533063a",
+    "artifact:control_plane/shadow_exports/l1_promotions/l1_decoder_attention_kv_reducer_frontier_boundary_v2.json",
+    "pr:#697",
+    "https://github.com/yhmtmt/RTLGen/pull/697"
+  ],
+  "next_action": "inspect the next dependent item",
+  "requires_human_approval": false
+}
