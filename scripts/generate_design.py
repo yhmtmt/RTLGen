@@ -322,10 +322,18 @@ def identify_design(config):
         if counter_bits <= 0:
             raise ValueError("attention_kv_reducer_folded counter_bits must be positive")
         wrapper_mode = str(options.get("wrapper_mode", "external_input"))
-        if wrapper_mode not in ("external_input", "internal_source"):
-            raise ValueError("attention_kv_reducer_folded wrapper_mode must be external_input or internal_source")
+        if wrapper_mode not in ("external_input", "internal_source", "producer_coupled"):
+            raise ValueError(
+                "attention_kv_reducer_folded wrapper_mode must be external_input, "
+                "internal_source, or producer_coupled"
+            )
+        kind = "attention_kv_reducer_folded"
+        if wrapper_mode == "internal_source":
+            kind = "attention_kv_reducer_folded_internal_source"
+        elif wrapper_mode == "producer_coupled":
+            kind = "attention_kv_reducer_folded_producer_coupled"
         return {
-            "kind": "attention_kv_reducer_folded_internal_source" if wrapper_mode == "internal_source" else "attention_kv_reducer_folded",
+            "kind": kind,
             "module_name": module_name,
             "wrapper_name": f"{module_name}_wrapper",
             "value_width": partials_per_cycle * lanes * value_bits,
@@ -856,7 +864,7 @@ module {wrapper_name}(
 
 endmodule
 """
-    elif design["kind"] == "attention_kv_reducer_folded_internal_source":
+    elif design["kind"] in ("attention_kv_reducer_folded_internal_source", "attention_kv_reducer_folded_producer_coupled"):
         value_width = int(design["value_width"])
         reduced_value_width = int(design["reduced_value_width"])
         stat_width = int(design["stat_width"])
@@ -869,6 +877,7 @@ endmodule
         partials_per_cycle = int(design["partials_per_cycle"])
         accum_bits = int(design["accum_bits"])
         signed_kw = "signed " if design.get("signed_values", True) else ""
+        producer_coupled = design["kind"] == "attention_kv_reducer_folded_producer_coupled"
 
         def counter_expr(width, salt):
             if counter_bits >= width:
@@ -882,20 +891,87 @@ endmodule
             for lane in range(lanes):
                 base = (partial * lanes + lane) * value_bits
                 salt = (partial + 1) * 17 + lane
-                value_assigns.append(
-                    f"  assign value_fragments[{base} +: {value_bits}] = {counter_expr(value_bits, salt)};"
-                )
+                if producer_coupled:
+                    value_assigns.append(
+                        f"          producer_value_fragments[{base} +: {value_bits}] <= {counter_expr(value_bits, salt)};"
+                    )
+                else:
+                    value_assigns.append(
+                        f"  assign value_fragments[{base} +: {value_bits}] = {counter_expr(value_bits, salt)};"
+                    )
 
         stat_assigns = []
         for partial in range(partials_per_cycle):
             base0 = partial * 2 * stat_bits
             base1 = (partial * 2 + 1) * stat_bits
-            stat_assigns.append(
-                f"  assign stat_fragments[{base0} +: {stat_bits}] = {counter_expr(stat_bits, partial + 1)};"
-            )
-            stat_assigns.append(
-                f"  assign stat_fragments[{base1} +: {stat_bits}] = {counter_expr(stat_bits, partial + 33)};"
-            )
+            if producer_coupled:
+                stat_assigns.append(
+                    f"          producer_stat_fragments[{base0} +: {stat_bits}] <= {counter_expr(stat_bits, partial + 1)};"
+                )
+                stat_assigns.append(
+                    f"          producer_stat_fragments[{base1} +: {stat_bits}] <= {counter_expr(stat_bits, partial + 33)};"
+                )
+            else:
+                stat_assigns.append(
+                    f"  assign stat_fragments[{base0} +: {stat_bits}] = {counter_expr(stat_bits, partial + 1)};"
+                )
+                stat_assigns.append(
+                    f"  assign stat_fragments[{base1} +: {stat_bits}] = {counter_expr(stat_bits, partial + 33)};"
+                )
+
+        if producer_coupled:
+            producer_body = f"""
+  wire partial_valid;
+  wire partial_ready;
+  wire reduced_ready;
+  wire [VALUE_WIDTH-1:0] value_fragments;
+  wire [STAT_WIDTH-1:0] stat_fragments;
+  reg [VALUE_WIDTH-1:0] producer_value_fragments;
+  reg [STAT_WIDTH-1:0] producer_stat_fragments;
+  reg producer_valid;
+  reg [COUNT_W-1:0] source_step;
+
+  assign partial_valid = producer_valid;
+  assign value_fragments = producer_value_fragments;
+  assign stat_fragments = producer_stat_fragments;
+  assign reduced_ready = 1'b1;
+
+  always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+      source_step <= {{COUNT_W{{1'b0}}}};
+      producer_valid <= 1'b0;
+      producer_value_fragments <= {{VALUE_WIDTH{{1'b0}}}};
+      producer_stat_fragments <= {{STAT_WIDTH{{1'b0}}}};
+    end else if (!producer_valid || partial_ready) begin
+{chr(10).join(value_assigns)}
+{chr(10).join(stat_assigns)}
+      producer_valid <= 1'b1;
+      source_step <= source_step + {{{{(COUNT_W-1){{1'b0}}}}, 1'b1}};
+    end
+  end
+"""
+        else:
+            producer_body = f"""
+  wire partial_valid;
+  wire partial_ready;
+  wire reduced_ready;
+  wire [VALUE_WIDTH-1:0] value_fragments;
+  wire [STAT_WIDTH-1:0] stat_fragments;
+  reg [COUNT_W-1:0] source_step;
+
+  assign partial_valid = 1'b1;
+  assign reduced_ready = 1'b1;
+{chr(10).join(value_assigns)}
+{chr(10).join(stat_assigns)}
+
+  always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+      source_step <= {{COUNT_W{{1'b0}}}};
+    end else if (partial_ready) begin
+      source_step <= source_step + {{{{(COUNT_W-1){{1'b0}}}}, 1'b1}};
+    end
+  end
+"""
 
         wrapper_content = f"""
 module {wrapper_name}(
@@ -920,26 +996,7 @@ module {wrapper_name}(
   localparam integer VALUE_WIDTH = {value_width};
   localparam integer STAT_WIDTH = {stat_width};
   localparam integer COUNT_W = {counter_bits};
-
-  wire partial_valid;
-  wire partial_ready;
-  wire reduced_ready;
-  wire [VALUE_WIDTH-1:0] value_fragments;
-  wire [STAT_WIDTH-1:0] stat_fragments;
-  reg [COUNT_W-1:0] source_step;
-
-  assign partial_valid = 1'b1;
-  assign reduced_ready = 1'b1;
-{chr(10).join(value_assigns)}
-{chr(10).join(stat_assigns)}
-
-  always @(posedge clk or negedge rst_n) begin
-    if (!rst_n) begin
-      source_step <= {{COUNT_W{{1'b0}}}};
-    end else if (partial_ready) begin
-      source_step <= source_step + {{{{(COUNT_W-1){{1'b0}}}}, 1'b1}};
-    end
-  end
+{producer_body}
 
   {module_name} dut (
     .clk(clk),

@@ -1,0 +1,26 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_kv_reducer_folded_producer_coupled_v1",
+  "title": "Measure folded reducer with registered producer coupling",
+  "status": "proposed",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "attention_kv_reducer_folded",
+  "motivation": "The standalone folded reducer boundary sweep exposed producer-side partial fragments as top-level macro IO and ppc4 failed under pin pressure. The internal-source sweep removed those pins and showed ppc4 can be physically implemented, but its source was only a combinational counter stub. The next missing measurement is a producer-coupled proxy with registered internal handoff.",
+  "hypothesis": "A registered producer-to-reducer handoff should remain more feasible than the standalone boundary wrapper while adding realistic producer register, fanout, and ready/valid control cost relative to the pure internal-source proxy.",
+  "expected_behavior": {
+    "functional": "The folded reducer RTL remains exact and unchanged; the wrapper only supplies deterministic producer fragments through internal registered nets.",
+    "timing_model": "Reducer latency remains partials / partials_per_cycle accepted chunks, with one producer register stage feeding the reducer.",
+    "physical_model": "Producer-side fragment buses are internal registered nets, consumer-side reduced outputs and counters remain top-level macro pins, and ppc controls internal fanout plus reducer arithmetic width."
+  },
+  "comparison_points": [
+    "attention_kv_reducer_folded_prod_p8_ppc2_l16_v16_s16_a24_wrapper",
+    "attention_kv_reducer_folded_prod_p8_ppc4_l16_v16_s16_a24_wrapper",
+    "attention_kv_reducer_folded_prod_p16_ppc2_l16_v16_s16_a24_wrapper",
+    "attention_kv_reducer_folded_prod_p16_ppc4_l16_v16_s16_a24_wrapper"
+  ],
+  "risks": [
+    "The deterministic producer is still a proxy; it does not include the full attention-tile datapath or NoC scheduler.",
+    "The extra producer registers make area and power larger than the internal-source proxy, but this is intentional for a more realistic local-cluster estimate.",
+    "If ppc4 fails again, the result must separate internal routing/fanout pressure from top-level pin-site pressure observed in the standalone boundary sweep."
+  ]
+}
