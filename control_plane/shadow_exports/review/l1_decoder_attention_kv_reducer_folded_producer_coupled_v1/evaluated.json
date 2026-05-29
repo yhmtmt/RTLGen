@@ -1,0 +1,226 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/activations/attention_kv_reducer_folded/sweeps/nangate45_macro_producer_coupled.json"
+      ],
+      "configs": [
+        "runs/designs/activations/attention_kv_reducer_folded_prod_p8_ppc2_l16_v16_s16_a24_wrapper/config_attention_kv_reducer_folded_prod_p8_ppc2_l16_v16_s16_a24.json",
+        "runs/designs/activations/attention_kv_reducer_folded_prod_p8_ppc4_l16_v16_s16_a24_wrapper/config_attention_kv_reducer_folded_prod_p8_ppc4_l16_v16_s16_a24.json",
+        "runs/designs/activations/attention_kv_reducer_folded_prod_p16_ppc2_l16_v16_s16_a24_wrapper/config_attention_kv_reducer_folded_prod_p16_ppc2_l16_v16_s16_a24.json",
+        "runs/designs/activations/attention_kv_reducer_folded_prod_p16_ppc4_l16_v16_s16_a24_wrapper/config_attention_kv_reducer_folded_prod_p16_ppc4_l16_v16_s16_a24.json"
+      ],
+      "out_root": "runs/designs/activations",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && cmake -S . -B build && cmake --build build --target rtlgen",
+        "name": "build_generator"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 scripts/run_sweep.py --configs runs/designs/activations/attention_kv_reducer_folded_prod_p8_ppc2_l16_v16_s16_a24_wrapper/config_attention_kv_reducer_folded_prod_p8_ppc2_l16_v16_s16_a24.json runs/designs/activations/attention_kv_reducer_folded_prod_p8_ppc4_l16_v16_s16_a24_wrapper/config_attention_kv_reducer_folded_prod_p8_ppc4_l16_v16_s16_a24.json runs/designs/activations/attention_kv_reducer_folded_prod_p16_ppc2_l16_v16_s16_a24_wrapper/config_attention_kv_reducer_folded_prod_p16_ppc2_l16_v16_s16_a24.json runs/designs/activations/attention_kv_reducer_folded_prod_p16_ppc4_l16_v16_s16_a24_wrapper/config_attention_kv_reducer_folded_prod_p16_ppc4_l16_v16_s16_a24.json --platform nangate45 --sweep runs/campaigns/activations/attention_kv_reducer_folded/sweeps/nangate45_macro_producer_coupled.json --out_root runs/designs/activations --force_gen --skip_existing",
+        "name": "run_sweep"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "objective": "Measure p8/p16 folded reducers with ppc2/ppc4 using a registered internal producer and ready/valid handoff, then compare against standalone boundary and internal-source PPA.",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains recorded rows with a status column; allow non-ok metrics such as flow_failed when the row is boundary evidence",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/activations/attention_kv_reducer_folded_prod_p8_ppc2_l16_v16_s16_a24_wrapper/metrics.csv",
+      "runs/designs/activations/attention_kv_reducer_folded_prod_p8_ppc4_l16_v16_s16_a24_wrapper/metrics.csv",
+      "runs/designs/activations/attention_kv_reducer_folded_prod_p16_ppc2_l16_v16_s16_a24_wrapper/metrics.csv",
+      "runs/designs/activations/attention_kv_reducer_folded_prod_p16_ppc4_l16_v16_s16_a24_wrapper/metrics.csv"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Layer 1 folded reducer producer-coupled sweep",
+  "result": {
+    "branch": "eval/l1_decoder_attention_kv_reducer_folded_producer_coupled_v1/s20260529t210114z",
+    "completed_utc": "2026-05-29T21:01:12.977834Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260529t210114z][host:b7c2d9c80c1c][item:l1_decoder_attention_kv_reducer_folded_producer_coupled_v1]",
+    "metrics_rows": [
+      {
+        "tag": "attention_kv_reducer_folded_nangate45_macro_producer_coupled_5ae42d23",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "47793342",
+        "metrics_csv": "runs/designs/activations/attention_kv_reducer_folded_prod_p8_ppc2_l16_v16_s16_a24_wrapper/metrics.csv"
+      },
+      {
+        "tag": "attention_kv_reducer_folded_nangate45_macro_producer_coupled_e0c384c0",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "2e866fb2",
+        "metrics_csv": "runs/designs/activations/attention_kv_reducer_folded_prod_p8_ppc2_l16_v16_s16_a24_wrapper/metrics.csv"
+      },
+      {
+        "tag": "attention_kv_reducer_folded_nangate45_macro_producer_coupled_9b3ee623",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "a1bde72e",
+        "metrics_csv": "runs/designs/activations/attention_kv_reducer_folded_prod_p8_ppc2_l16_v16_s16_a24_wrapper/metrics.csv"
+      },
+      {
+        "tag": "attention_kv_reducer_folded_nangate45_macro_producer_coupled_175641b8",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "1a159e19",
+        "metrics_csv": "runs/designs/activations/attention_kv_reducer_folded_prod_p8_ppc2_l16_v16_s16_a24_wrapper/metrics.csv"
+      },
+      {
+        "tag": "attention_kv_reducer_folded_nangate45_macro_producer_coupled_5ae42d23",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "47793342",
+        "metrics_csv": "runs/designs/activations/attention_kv_reducer_folded_prod_p8_ppc4_l16_v16_s16_a24_wrapper/metrics.csv"
+      },
+      {
+        "tag": "attention_kv_reducer_folded_nangate45_macro_producer_coupled_e0c384c0",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "2e866fb2",
+        "metrics_csv": "runs/designs/activations/attention_kv_reducer_folded_prod_p8_ppc4_l16_v16_s16_a24_wrapper/metrics.csv"
+      },
+      {
+        "tag": "attention_kv_reducer_folded_nangate45_macro_producer_coupled_9b3ee623",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "a1bde72e",
+        "metrics_csv": "runs/designs/activations/attention_kv_reducer_folded_prod_p8_ppc4_l16_v16_s16_a24_wrapper/metrics.csv"
+      },
+      {
+        "tag": "attention_kv_reducer_folded_nangate45_macro_producer_coupled_175641b8",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "1a159e19",
+        "metrics_csv": "runs/designs/activations/attention_kv_reducer_folded_prod_p8_ppc4_l16_v16_s16_a24_wrapper/metrics.csv"
+      },
+      {
+        "tag": "attention_kv_reducer_folded_nangate45_macro_producer_coupled_5ae42d23",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "47793342",
+        "metrics_csv": "runs/designs/activations/attention_kv_reducer_folded_prod_p16_ppc2_l16_v16_s16_a24_wrapper/metrics.csv"
+      },
+      {
+        "tag": "attention_kv_reducer_folded_nangate45_macro_producer_coupled_e0c384c0",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "2e866fb2",
+        "metrics_csv": "runs/designs/activations/attention_kv_reducer_folded_prod_p16_ppc2_l16_v16_s16_a24_wrapper/metrics.csv"
+      },
+      {
+        "tag": "attention_kv_reducer_folded_nangate45_macro_producer_coupled_9b3ee623",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "a1bde72e",
+        "metrics_csv": "runs/designs/activations/attention_kv_reducer_folded_prod_p16_ppc2_l16_v16_s16_a24_wrapper/metrics.csv"
+      },
+      {
+        "tag": "attention_kv_reducer_folded_nangate45_macro_producer_coupled_175641b8",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "1a159e19",
+        "metrics_csv": "runs/designs/activations/attention_kv_reducer_folded_prod_p16_ppc2_l16_v16_s16_a24_wrapper/metrics.csv"
+      },
+      {
+        "tag": "attention_kv_reducer_folded_nangate45_macro_producer_coupled_5ae42d23",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "47793342",
+        "metrics_csv": "runs/designs/activations/attention_kv_reducer_folded_prod_p16_ppc4_l16_v16_s16_a24_wrapper/metrics.csv"
+      },
+      {
+        "tag": "attention_kv_reducer_folded_nangate45_macro_producer_coupled_e0c384c0",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "2e866fb2",
+        "metrics_csv": "runs/designs/activations/attention_kv_reducer_folded_prod_p16_ppc4_l16_v16_s16_a24_wrapper/metrics.csv"
+      },
+      {
+        "tag": "attention_kv_reducer_folded_nangate45_macro_producer_coupled_9b3ee623",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "a1bde72e",
+        "metrics_csv": "runs/designs/activations/attention_kv_reducer_folded_prod_p16_ppc4_l16_v16_s16_a24_wrapper/metrics.csv"
+      },
+      {
+        "tag": "attention_kv_reducer_folded_nangate45_macro_producer_coupled_175641b8",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "1a159e19",
+        "metrics_csv": "runs/designs/activations/attention_kv_reducer_folded_prod_p16_ppc4_l16_v16_s16_a24_wrapper/metrics.csv"
+      }
+    ],
+    "queue_item_id": "l1_decoder_attention_kv_reducer_folded_producer_coupled_v1",
+    "session_id": "s20260529t210114z",
+    "status": "ok",
+    "summary": "4/4 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_decoder_attention_kv_reducer_folded_producer_coupled_v1/s20260529t210114z",
+    "pr_title": "eval: run layer 1 folded reducer producer-coupled sweep",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260529t210114z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_decoder_attention_kv_reducer_folded_producer_coupled_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_decoder_attention_kv_reducer_folded_producer_coupled_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 1,
+  "created_utc": "2026-05-29T20:37:13.862891Z",
+  "requested_by": "control_plane",
+  "developer_loop": {
+    "evaluation": {
+      "mode": "measurement_only",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      }
+    },
+    "abstraction": {
+      "layer": "attention_kv_reducer_folded"
+    },
+    "proposal_id": "prop_l1_decoder_attention_kv_reducer_folded_producer_coupled_v1",
+    "proposal_path": "docs/proposals/prop_l1_decoder_attention_kv_reducer_folded_producer_coupled_v1"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "ab5e84aae179c0a4da2d86e5553a8cf25a0cfb4b",
+    "requires_daemon_restart": true
+  }
+}
