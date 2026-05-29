@@ -1,0 +1,2 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_decoder_attention_kv_reducer_folded_producer_coupled_v1_run_119e9ef63707579d,1,1,0,succeeded,runs/designs/activations/attention_kv_reducer_folded_prod_p8_ppc2_l16_v16_s16_a24_wrapper/metrics.csv,0.3557,30244.6881,0.00697,none,,
