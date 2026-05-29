@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_kv_reducer_folded_producer_coupled_v1",
+  "decision": "promote",
+  "pr_number": 713,
+  "merge_commit": "4400d6c35362bb0f4aeca0ff60969a370c08e11b",
+  "merged_utc": "2026-05-29T22:07:22.400425Z"
+}
