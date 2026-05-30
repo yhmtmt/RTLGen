@@ -455,6 +455,39 @@ perf-sim/RTL counter equivalence.
 See `examples/config_attention_kv_reducer.json` for a minimal smoke
 configuration.
 
+### Attention Tile Plus Folded Reducer Composition
+
+The `attention_kv_tile_reducer_folded` operation creates a Layer-1 composed
+macro from the existing attention/KV tile RTL and folded reducer RTL. The tile
+performs the measured query/key dot-product stream; a registered local handoff
+latches each emitted score and drives deterministic value/stat fragments into
+the folded reducer. This closes the local timing/control path between producer
+and reducer for physical exploration, but it is still not a full
+softmax-weighted value datapath.
+
+Supported options combine the tile fields (`head_dim`, `kv_bits`,
+`tile_lanes`, `stream_bytes_per_cycle`, `score_bits`) and folded reducer fields
+(`reducer_lanes`, `value_bits`, `stat_bits`, `partials`,
+`partials_per_cycle`, `reducer_accum_bits`, `counter_bits`).
+
+See `examples/config_attention_kv_tile_reducer_folded.json` for a smoke
+configuration.
+
+### Layer-1 Memory/NoC Primitive Operation
+
+The `l1_memory_noc_primitive` operation emits small measured interconnect
+building blocks for early memory/NoC exploration. `primitive: "fifo"` emits a
+registered flit FIFO with an internal source/sink. `primitive: "router"` emits
+a fixed-port flit crossbar/router with internal registered traffic. The
+operation is intended to provide concrete PPA anchors for local buffering and
+routing before the full clustered scheduler and SRAM hierarchy are finalized.
+
+Supported options are `primitive`, `flit_bits`, `depth`, `ports`, and
+`counter_bits`.
+
+See `examples/config_l1_memory_noc_primitive.json` for a FIFO smoke
+configuration.
+
 ## Vector-Op Approximation Notes (NPU Phase-2)
 
 This section documents how `vec_op` math is currently approximated.
