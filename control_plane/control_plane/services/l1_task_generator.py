@@ -424,6 +424,8 @@ def _read_config_target(
             "attention_kv_reducer",
             "attention_kv_reducer_tree",
             "attention_kv_reducer_folded",
+            "attention_kv_tile_reducer_folded",
+            "l1_memory_noc_primitive",
         }:
             raise Layer1TaskGenerationError(f"unsupported single-operation design type in {config_path}: {op_type}")
         module_name = entry["module_name"]
