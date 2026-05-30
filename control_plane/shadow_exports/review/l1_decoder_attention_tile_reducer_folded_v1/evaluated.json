@@ -1,0 +1,198 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/activations/attention_kv_tile_reducer_folded/sweeps/nangate45_macro_frontier.json"
+      ],
+      "configs": [
+        "runs/designs/activations/attention_kv_tile_reducer_hd64_kv4_tl16_b128_p8_ppc2_l16_v16_s16_a24_wrapper/config_attention_kv_tile_reducer_hd64_kv4_tl16_b128_p8_ppc2_l16_v16_s16_a24.json",
+        "runs/designs/activations/attention_kv_tile_reducer_hd64_kv4_tl16_b128_p8_ppc4_l16_v16_s16_a24_wrapper/config_attention_kv_tile_reducer_hd64_kv4_tl16_b128_p8_ppc4_l16_v16_s16_a24.json",
+        "runs/designs/activations/attention_kv_tile_reducer_hd128_kv4_tl32_b256_p8_ppc4_l16_v16_s16_a24_wrapper/config_attention_kv_tile_reducer_hd128_kv4_tl32_b256_p8_ppc4_l16_v16_s16_a24.json",
+        "runs/designs/activations/attention_kv_tile_reducer_hd128_kv8_tl64_b512_p16_ppc4_l16_v16_s16_a24_wrapper/config_attention_kv_tile_reducer_hd128_kv8_tl64_b512_p16_ppc4_l16_v16_s16_a24.json"
+      ],
+      "out_root": "runs/designs/activations",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && cmake -S . -B build && cmake --build build --target rtlgen",
+        "name": "build_generator"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 scripts/run_sweep.py --configs runs/designs/activations/attention_kv_tile_reducer_hd64_kv4_tl16_b128_p8_ppc2_l16_v16_s16_a24_wrapper/config_attention_kv_tile_reducer_hd64_kv4_tl16_b128_p8_ppc2_l16_v16_s16_a24.json runs/designs/activations/attention_kv_tile_reducer_hd64_kv4_tl16_b128_p8_ppc4_l16_v16_s16_a24_wrapper/config_attention_kv_tile_reducer_hd64_kv4_tl16_b128_p8_ppc4_l16_v16_s16_a24.json runs/designs/activations/attention_kv_tile_reducer_hd128_kv4_tl32_b256_p8_ppc4_l16_v16_s16_a24_wrapper/config_attention_kv_tile_reducer_hd128_kv4_tl32_b256_p8_ppc4_l16_v16_s16_a24.json runs/designs/activations/attention_kv_tile_reducer_hd128_kv8_tl64_b512_p16_ppc4_l16_v16_s16_a24_wrapper/config_attention_kv_tile_reducer_hd128_kv8_tl64_b512_p16_ppc4_l16_v16_s16_a24.json --platform nangate45 --sweep runs/campaigns/activations/attention_kv_tile_reducer_folded/sweeps/nangate45_macro_frontier.json --out_root runs/designs/activations --force_gen --skip_existing",
+        "name": "run_sweep"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "objective": "Measure concrete attention tile to folded reducer local datapath candidates for Llama7B frontier modeling.",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/activations/attention_kv_tile_reducer_hd64_kv4_tl16_b128_p8_ppc2_l16_v16_s16_a24_wrapper/metrics.csv",
+      "runs/designs/activations/attention_kv_tile_reducer_hd64_kv4_tl16_b128_p8_ppc4_l16_v16_s16_a24_wrapper/metrics.csv",
+      "runs/designs/activations/attention_kv_tile_reducer_hd128_kv4_tl32_b256_p8_ppc4_l16_v16_s16_a24_wrapper/metrics.csv",
+      "runs/designs/activations/attention_kv_tile_reducer_hd128_kv8_tl64_b512_p16_ppc4_l16_v16_s16_a24_wrapper/metrics.csv"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "L1 decoder attention tile plus folded reducer PPA",
+  "result": {
+    "branch": "eval/l1_decoder_attention_tile_reducer_folded_v1/fix-linkage-20260530",
+    "completed_utc": "2026-05-30T07:48:04.826570Z",
+    "evaluator_id": "codex",
+    "executor": "github_connector",
+    "host": "devcontainer",
+    "identity_block": "[role:evaluator][account:codex][session:fix-linkage-20260530][host:devcontainer][item:l1_decoder_attention_tile_reducer_folded_v1]",
+    "metrics_rows": [
+      {
+        "tag": "attention_kv_tile_reducer_folded_nangate45_macro_frontier_9b900945",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "1af2bba3",
+        "metrics_csv": "runs/designs/activations/attention_kv_tile_reducer_hd64_kv4_tl16_b128_p8_ppc2_l16_v16_s16_a24_wrapper/metrics.csv"
+      },
+      {
+        "tag": "attention_kv_tile_reducer_folded_nangate45_macro_frontier_d64a96fd",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "bdf52823",
+        "metrics_csv": "runs/designs/activations/attention_kv_tile_reducer_hd64_kv4_tl16_b128_p8_ppc2_l16_v16_s16_a24_wrapper/metrics.csv"
+      },
+      {
+        "tag": "attention_kv_tile_reducer_folded_nangate45_macro_frontier_5137e93f",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "ca2b2fd9",
+        "metrics_csv": "runs/designs/activations/attention_kv_tile_reducer_hd64_kv4_tl16_b128_p8_ppc2_l16_v16_s16_a24_wrapper/metrics.csv"
+      },
+      {
+        "tag": "attention_kv_tile_reducer_folded_nangate45_macro_frontier_9b900945",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "1af2bba3",
+        "metrics_csv": "runs/designs/activations/attention_kv_tile_reducer_hd64_kv4_tl16_b128_p8_ppc4_l16_v16_s16_a24_wrapper/metrics.csv"
+      },
+      {
+        "tag": "attention_kv_tile_reducer_folded_nangate45_macro_frontier_d64a96fd",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "bdf52823",
+        "metrics_csv": "runs/designs/activations/attention_kv_tile_reducer_hd64_kv4_tl16_b128_p8_ppc4_l16_v16_s16_a24_wrapper/metrics.csv"
+      },
+      {
+        "tag": "attention_kv_tile_reducer_folded_nangate45_macro_frontier_5137e93f",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "ca2b2fd9",
+        "metrics_csv": "runs/designs/activations/attention_kv_tile_reducer_hd64_kv4_tl16_b128_p8_ppc4_l16_v16_s16_a24_wrapper/metrics.csv"
+      },
+      {
+        "tag": "attention_kv_tile_reducer_folded_nangate45_macro_frontier_9b900945",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "1af2bba3",
+        "metrics_csv": "runs/designs/activations/attention_kv_tile_reducer_hd128_kv4_tl32_b256_p8_ppc4_l16_v16_s16_a24_wrapper/metrics.csv"
+      },
+      {
+        "tag": "attention_kv_tile_reducer_folded_nangate45_macro_frontier_d64a96fd",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "bdf52823",
+        "metrics_csv": "runs/designs/activations/attention_kv_tile_reducer_hd128_kv4_tl32_b256_p8_ppc4_l16_v16_s16_a24_wrapper/metrics.csv"
+      },
+      {
+        "tag": "attention_kv_tile_reducer_folded_nangate45_macro_frontier_5137e93f",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "ca2b2fd9",
+        "metrics_csv": "runs/designs/activations/attention_kv_tile_reducer_hd128_kv4_tl32_b256_p8_ppc4_l16_v16_s16_a24_wrapper/metrics.csv"
+      },
+      {
+        "tag": "attention_kv_tile_reducer_folded_nangate45_macro_frontier_9b900945",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "1af2bba3",
+        "metrics_csv": "runs/designs/activations/attention_kv_tile_reducer_hd128_kv8_tl64_b512_p16_ppc4_l16_v16_s16_a24_wrapper/metrics.csv"
+      },
+      {
+        "tag": "attention_kv_tile_reducer_folded_nangate45_macro_frontier_d64a96fd",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "bdf52823",
+        "metrics_csv": "runs/designs/activations/attention_kv_tile_reducer_hd128_kv8_tl64_b512_p16_ppc4_l16_v16_s16_a24_wrapper/metrics.csv"
+      },
+      {
+        "tag": "attention_kv_tile_reducer_folded_nangate45_macro_frontier_5137e93f",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "ca2b2fd9",
+        "metrics_csv": "runs/designs/activations/attention_kv_tile_reducer_hd128_kv8_tl64_b512_p16_ppc4_l16_v16_s16_a24_wrapper/metrics.csv"
+      }
+    ],
+    "queue_item_id": "l1_decoder_attention_tile_reducer_folded_v1",
+    "session_id": "fix-linkage-20260530",
+    "status": "ok",
+    "summary": "4/4 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_decoder_attention_tile_reducer_folded_v1/fix-linkage-20260530",
+    "pr_title": "eval: run l1 decoder attention tile plus folded reducer ppa",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "devcontainer",
+      "session_id": "fix-linkage-20260530",
+      "evaluator_id": "codex",
+      "queue_item_id": "l1_decoder_attention_tile_reducer_folded_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_decoder_attention_tile_reducer_folded_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 80,
+  "created_utc": "2026-05-30T07:17:22.601717Z",
+  "requested_by": "codex",
+  "developer_loop": {
+    "evaluation": {
+      "mode": "ppa",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      }
+    },
+    "abstraction": {
+      "layer": "architecture_block"
+    },
+    "proposal_id": "prop_l1_decoder_attention_tile_reducer_folded_v1",
+    "proposal_path": "docs/proposals/prop_l1_decoder_attention_tile_reducer_folded_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "3092a61412e191e4471b35d38f57c19ffd4e5842",
+    "requires_daemon_restart": true
+  }
+}
