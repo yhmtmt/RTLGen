@@ -1,0 +1,14 @@
+{
+  "proposal_id": "prop_l1_decoder_memory_noc_primitives_v1",
+  "source_commit": "3092a61412e191e4471b35d38f57c19ffd4e5842",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_memory_noc_primitives_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure concrete FIFO and router primitives for Llama7B local memory/NoC modeling.",
+      "evaluation_mode": "ppa",
+      "abstraction_layer": "architecture_block",
+      "status": "completed"
+    }
+  ]
+}
