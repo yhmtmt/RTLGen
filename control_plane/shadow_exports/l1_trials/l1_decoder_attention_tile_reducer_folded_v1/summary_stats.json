@@ -1,0 +1,33 @@
+{
+  "item_id": "l1_decoder_attention_tile_reducer_folded_v1",
+  "completed_trials": 1,
+  "success_count": 1,
+  "failure_count": 0,
+  "success_rate": 1.0,
+  "metrics": {
+    "critical_path_ns": {
+      "best": 0.7757,
+      "mean": 0.7757,
+      "median": 0.7757,
+      "max": 0.7757,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "die_area": {
+      "best": 40306.585225,
+      "mean": 40306.585225,
+      "median": 40306.585225,
+      "max": 40306.585225,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "total_power_mw": {
+      "best": 0.0218,
+      "mean": 0.0218,
+      "median": 0.0218,
+      "max": 0.0218,
+      "range": 0.0,
+      "stddev": 0.0
+    }
+  }
+}
