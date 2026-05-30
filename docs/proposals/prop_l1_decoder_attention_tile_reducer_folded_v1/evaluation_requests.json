@@ -1,0 +1,14 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_tile_reducer_folded_v1",
+  "source_commit": "3092a61412e191e4471b35d38f57c19ffd4e5842",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_attention_tile_reducer_folded_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure concrete attention tile to folded reducer local datapath candidates for Llama7B frontier modeling.",
+      "evaluation_mode": "ppa",
+      "abstraction_layer": "architecture_block",
+      "status": "completed"
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_tile_reducer_folded_v1",
+  "title": "Measure attention tile to folded reducer local datapath",
+  "status": "proposed",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "architecture_block",
+  "motivation": "The Llama7B decoder frontier now needs measured local attention datapath composition instead of standalone tile and reducer estimates. The immediate missing point is the timing, area, and power cost of placing the measured attention/KV tile and folded reducer behind a registered local handoff.",
+  "hypothesis": "A composed attention tile plus folded reducer macro will remain physically feasible at the current local-cluster scale, and its PPA will bound the overhead of replacing separate standalone estimates in the Llama7B architecture model.",
+  "expected_behavior": {
+    "functional": "The tile computes the measured query/key dot-product stream and the folded reducer consumes deterministic score-derived value/stat fragments through registered local nets.",
+    "timing_model": "The measured macro closes the tile score output, handoff registers, reducer input, and reducer ready/valid control in one physical block.",
+    "physical_model": "The top-level macro exposes only reduced outputs and observability counters; high-width producer-side fragment buses remain internal."
+  },
+  "comparison_points": [
+    "attention_kv_tile_reducer_hd64_kv4_tl16_b128_p8_ppc2_l16_v16_s16_a24_wrapper",
+    "attention_kv_tile_reducer_hd64_kv4_tl16_b128_p8_ppc4_l16_v16_s16_a24_wrapper",
+    "attention_kv_tile_reducer_hd128_kv4_tl32_b256_p8_ppc4_l16_v16_s16_a24_wrapper",
+    "attention_kv_tile_reducer_hd128_kv8_tl64_b512_p16_ppc4_l16_v16_s16_a24_wrapper"
+  ],
+  "risks": [
+    "The current handoff is still a score-derived proxy, not the final softmax-weighted value datapath.",
+    "This measurement does not yet include the clustered scheduler, SRAM hierarchy, or multihop NoC.",
+    "Any promoted result must be labeled as local L1 datapath evidence, not a complete Llama7B attention block."
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "proposal_id": "prop_l1_decoder_memory_noc_primitives_v1",
+  "title": "Measure L1 memory and NoC primitive PPA anchors",
+  "status": "proposed",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "architecture_block",
+  "motivation": "The Llama7B architecture model needs concrete local buffering and routing costs before larger clustered schedules can be compared. FIFO and router primitives provide the first measured anchors for local memory and NoC overhead.",
+  "hypothesis": "Small registered FIFO and fixed-port router primitives will be physically feasible and cheap enough to include explicitly in near-frontier local cluster estimates, while also exposing whether flit width starts to dominate local interconnect cost.",
+  "expected_behavior": {
+    "functional": "The primitives use deterministic internal traffic and expose counters and observed flits for synthesis-visible activity.",
+    "timing_model": "The FIFO captures local buffering cost; the router captures fixed-port flit selection and arbitration-state cost.",
+    "physical_model": "The primitives are macro-style blocks with registered internal traffic, not chip-pad IO stress tests."
+  },
+  "comparison_points": [
+    "l1_noc_fifo_w128_d16_wrapper",
+    "l1_noc_fifo_w256_d16_wrapper",
+    "l1_noc_router_p4_w128_wrapper",
+    "l1_noc_router_p4_w256_wrapper"
+  ],
+  "risks": [
+    "These primitives are not a full network scheduler.",
+    "The SRAM hierarchy is still modeled separately and must be connected before claiming complete Llama7B memory behavior.",
+    "The router traffic pattern is deterministic and only provides a PPA anchor, not workload-optimal NoC scheduling evidence."
+  ]
+}
