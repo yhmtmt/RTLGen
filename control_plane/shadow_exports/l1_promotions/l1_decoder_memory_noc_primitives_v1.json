@@ -1,0 +1,151 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-05-30T10:31:15.803854Z",
+  "item_id": "l1_decoder_memory_noc_primitives_v1",
+  "run_key": "l1_decoder_memory_noc_primitives_v1_run_2bfbafba92a23051",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "3092a61412e191e4471b35d38f57c19ffd4e5842",
+  "objective": "Measure concrete FIFO and router primitives for Llama7B local memory/NoC modeling.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/noc/l1_memory_noc_primitives/sweeps/nangate45_macro_frontier.json"
+    ],
+    "configs": [
+      "runs/designs/noc/l1_noc_fifo_w128_d16_wrapper/config_l1_noc_fifo_w128_d16.json",
+      "runs/designs/noc/l1_noc_fifo_w256_d16_wrapper/config_l1_noc_fifo_w256_d16.json",
+      "runs/designs/noc/l1_noc_router_p4_w128_wrapper/config_l1_noc_router_p4_w128.json",
+      "runs/designs/noc/l1_noc_router_p4_w256_wrapper/config_l1_noc_router_p4_w256.json"
+    ],
+    "out_root": "runs/designs/noc",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 4,
+  "evaluation_record": {
+    "evaluation_mode": "ppa",
+    "abstraction_layer": "architecture_block",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/noc/l1_noc_fifo_w128_d16_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "444485a4",
+        "tag": "l1_memory_noc_primitives_nangate45_macro_frontier_d64a96fd",
+        "result_path": "runs/designs/noc/l1_noc_fifo_w128_d16_wrapper/work/444485a4/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 0.2898,
+        "die_area": 13882.730625,
+        "total_power_mw": 0.00863
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/noc/l1_noc_fifo_w256_d16_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "e6eb27a9",
+        "tag": "l1_memory_noc_primitives_nangate45_macro_frontier_5137e93f",
+        "result_path": "runs/designs/noc/l1_noc_fifo_w256_d16_wrapper/work/e6eb27a9/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 0.29,
+        "die_area": 11779.846225,
+        "total_power_mw": 0.00869
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/noc/l1_noc_router_p4_w128_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "444485a4",
+        "tag": "l1_memory_noc_primitives_nangate45_macro_frontier_d64a96fd",
+        "result_path": "runs/designs/noc/l1_noc_router_p4_w128_wrapper/work/444485a4/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 0.2411,
+        "die_area": 3724.050625,
+        "total_power_mw": 0.00171
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/noc/l1_noc_router_p4_w256_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "e6eb27a9",
+        "tag": "l1_memory_noc_primitives_nangate45_macro_frontier_5137e93f",
+        "result_path": "runs/designs/noc/l1_noc_router_p4_w256_wrapper/work/e6eb27a9/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 0.2401,
+        "die_area": 3299.3536,
+        "total_power_mw": 0.00171
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_decoder_memory_noc_primitives_v1",
+    "completed_trials": 1,
+    "success_count": 1,
+    "failure_count": 0,
+    "success_rate": 1.0,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 0.2401,
+        "mean": 0.2401,
+        "median": 0.2401,
+        "max": 0.2401,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "die_area": {
+        "best": 3299.3536,
+        "mean": 3299.3536,
+        "median": 3299.3536,
+        "max": 3299.3536,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "total_power_mw": {
+        "best": 0.00171,
+        "mean": 0.00171,
+        "median": 0.00171,
+        "max": 0.00171,
+        "range": 0.0,
+        "stddev": 0.0
+      }
+    }
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/noc/l1_noc_fifo_w128_d16_wrapper/metrics.csv",
+      "runs/designs/noc/l1_noc_fifo_w256_d16_wrapper/metrics.csv",
+      "runs/designs/noc/l1_noc_router_p4_w128_wrapper/metrics.csv",
+      "runs/designs/noc/l1_noc_router_p4_w256_wrapper/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_memory_noc_primitives_v1/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_memory_noc_primitives_v1/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_memory_noc_primitives_v1/trial_table.csv"
+  }
+}

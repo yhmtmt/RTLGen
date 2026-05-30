@@ -1,0 +1,2 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_decoder_memory_noc_primitives_v1_run_2bfbafba92a23051,1,1,0,succeeded,runs/designs/noc/l1_noc_router_p4_w256_wrapper/metrics.csv,0.2401,3299.3536,0.00171,none,,
