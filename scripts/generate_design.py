@@ -5,6 +5,7 @@ import os
 import subprocess
 import argparse
 import shutil
+import tempfile
 from pathlib import Path
 current_file_path = os.path.dirname(os.path.abspath(__file__))
 repo_root = Path(current_file_path).resolve().parent
@@ -350,6 +351,91 @@ def identify_design(config):
             "signed_values": bool(options.get("signed_values", True)),
             "include_mg_cpa": False,
         }
+    if op_type == "attention_kv_tile_reducer_folded":
+        options = entry.get("options", {})
+        kv_bits = int(options.get("kv_bits", bit_width) or bit_width)
+        head_dim = int(options.get("head_dim", 64))
+        tile_lanes = int(options.get("tile_lanes", options.get("lanes", 16)))
+        stream_bytes_per_cycle = int(options.get("stream_bytes_per_cycle", 256))
+        score_bits = int(options.get("score_bits", options.get("tile_accum_bits", 48)))
+        value_bits = int(options.get("value_bits", 16))
+        stat_bits = int(options.get("stat_bits", 16))
+        reducer_lanes = int(options.get("reducer_lanes", 16))
+        partials = int(options.get("partials", 8))
+        partials_per_cycle = int(options.get("partials_per_cycle", 2))
+        reducer_accum_bits = int(options.get("reducer_accum_bits", 24))
+        counter_bits = int(options.get("counter_bits", 32))
+        if head_dim <= 0:
+            raise ValueError("attention_kv_tile_reducer_folded head_dim must be positive")
+        if kv_bits <= 0:
+            raise ValueError("attention_kv_tile_reducer_folded kv_bits must be positive")
+        if tile_lanes <= 0 or tile_lanes > head_dim:
+            raise ValueError("attention_kv_tile_reducer_folded tile_lanes must be in [1, head_dim]")
+        if stream_bytes_per_cycle * 8 < tile_lanes * kv_bits * 2:
+            raise ValueError("attention_kv_tile_reducer_folded stream_bytes_per_cycle cannot carry query+key lane payload")
+        if score_bits <= 0:
+            raise ValueError("attention_kv_tile_reducer_folded score_bits must be positive")
+        if value_bits <= 0 or stat_bits <= 0 or reducer_lanes <= 0:
+            raise ValueError("attention_kv_tile_reducer_folded reducer widths/lanes must be positive")
+        if partials <= 1:
+            raise ValueError("attention_kv_tile_reducer_folded partials must be greater than one")
+        if partials_per_cycle <= 0 or partials_per_cycle > partials or partials % partials_per_cycle:
+            raise ValueError("attention_kv_tile_reducer_folded partials_per_cycle must divide partials")
+        if reducer_accum_bits <= 0 or counter_bits <= 0:
+            raise ValueError("attention_kv_tile_reducer_folded accum/counter bits must be positive")
+        return {
+            "kind": "attention_kv_tile_reducer_folded",
+            "module_name": module_name,
+            "wrapper_name": f"{module_name}_wrapper",
+            "kv_bits": kv_bits,
+            "head_dim": head_dim,
+            "tile_lanes": tile_lanes,
+            "stream_bytes_per_cycle": stream_bytes_per_cycle,
+            "score_bits": score_bits,
+            "tile_fragment_width": tile_lanes * kv_bits,
+            "value_bits": value_bits,
+            "stat_bits": stat_bits,
+            "reducer_lanes": reducer_lanes,
+            "partials": partials,
+            "partials_per_cycle": partials_per_cycle,
+            "reducer_accum_bits": reducer_accum_bits,
+            "value_width": partials_per_cycle * reducer_lanes * value_bits,
+            "stat_width": partials_per_cycle * 2 * stat_bits,
+            "reduced_value_width": reducer_lanes * reducer_accum_bits,
+            "reduced_stat_width": 2 * stat_bits,
+            "counter_bits": counter_bits,
+            "signed_inputs": bool(options.get("signed_inputs", True)),
+            "signed_values": bool(options.get("signed_values", True)),
+            "include_mg_cpa": False,
+        }
+    if op_type == "l1_memory_noc_primitive":
+        options = entry.get("options", {})
+        primitive = str(options.get("primitive", "fifo"))
+        flit_bits = int(options.get("flit_bits", bit_width) or bit_width)
+        depth = int(options.get("depth", 8))
+        ports = int(options.get("ports", 4))
+        counter_bits = int(options.get("counter_bits", 32))
+        if primitive not in ("fifo", "router"):
+            raise ValueError("l1_memory_noc_primitive primitive must be fifo or router")
+        if flit_bits <= 0:
+            raise ValueError("l1_memory_noc_primitive flit_bits must be positive")
+        if depth <= 1:
+            raise ValueError("l1_memory_noc_primitive depth must be greater than one")
+        if ports <= 1:
+            raise ValueError("l1_memory_noc_primitive ports must be greater than one")
+        if counter_bits <= 0:
+            raise ValueError("l1_memory_noc_primitive counter_bits must be positive")
+        return {
+            "kind": "l1_memory_noc_primitive",
+            "module_name": module_name,
+            "wrapper_name": f"{module_name}_wrapper",
+            "primitive": primitive,
+            "flit_bits": flit_bits,
+            "depth": depth,
+            "ports": ports,
+            "counter_bits": counter_bits,
+            "include_mg_cpa": False,
+        }
     raise ValueError(f"generate_design.py does not support operation type: {op_type}")
 
 
@@ -407,11 +493,14 @@ def main():
         ld_paths = [ld_library_path, onnxruntime_lib, env.get("LD_LIBRARY_PATH", "")]
         env["LD_LIBRARY_PATH"] = ":".join([p for p in ld_paths if p])
 
-        subprocess.run([locate_rtlgen_binary(), args.config], env=env, check=True)
-        os.rename(f"{module_name}.v", os.path.join(src_dir, f"{module_name}.v"))
-        # Only multiplier (non-Yosys) emits MG_CPA.v
-        if design["include_mg_cpa"]:
-            os.rename("MG_CPA.v", os.path.join(src_dir, "MG_CPA.v"))
+        if design["kind"] in ("attention_kv_tile_reducer_folded", "l1_memory_noc_primitive"):
+            generate_direct_design(config, src_dir, design, env)
+        else:
+            subprocess.run([locate_rtlgen_binary(), args.config], env=env, check=True)
+            os.rename(f"{module_name}.v", os.path.join(src_dir, f"{module_name}.v"))
+            # Only multiplier (non-Yosys) emits MG_CPA.v
+            if design["include_mg_cpa"]:
+                os.rename("MG_CPA.v", os.path.join(src_dir, "MG_CPA.v"))
 
         # Generate Wrapper
         generate_wrapper(config, src_dir, design)
@@ -449,6 +538,425 @@ def main():
     shutil.move(platform_dir, dest_platform_dir)
 
     print(f"Moved generated platform files to {dest_platform_dir}")
+
+
+def _run_rtlgen_config(config, workdir, env):
+    config_path = Path(workdir) / "config.json"
+    config_path.write_text(json.dumps(config, indent=2), encoding="utf-8")
+    subprocess.run([locate_rtlgen_binary(), str(config_path)], cwd=workdir, env=env, check=True)
+
+
+def _slice_counter(name, width, counter_bits):
+    if counter_bits >= width:
+        return f"{name}[{width-1}:0]"
+    return f"{{{{{width-counter_bits}{{1'b0}}}}, {name}}}"
+
+
+def generate_direct_design(config, src_dir, design, env):
+    if design["kind"] == "attention_kv_tile_reducer_folded":
+        generate_attention_tile_reducer_design(config, src_dir, design, env)
+    elif design["kind"] == "l1_memory_noc_primitive":
+        generate_l1_memory_noc_design(src_dir, design)
+    else:
+        raise ValueError(f"Unsupported direct design kind: {design['kind']}")
+
+
+def generate_attention_tile_reducer_design(config, src_dir, design, env):
+    module_name = design["module_name"]
+    tile_name = f"{module_name}_tile"
+    reducer_name = f"{module_name}_reducer"
+    operand_name = config.get("operands", [{"name": "operand"}])[0].get("name", "operand")
+    signed_inputs = bool(design.get("signed_inputs", True))
+    signed_values = bool(design.get("signed_values", True))
+
+    tile_cfg = {
+        "version": config.get("version", "1.1"),
+        "operands": [{
+            "name": operand_name,
+            "dimensions": 1,
+            "bit_width": design["kv_bits"],
+            "signed": signed_inputs,
+            "kind": "int",
+        }],
+        "operations": [{
+            "type": "attention_kv_tile",
+            "module_name": tile_name,
+            "operand": operand_name,
+            "options": {
+                "head_dim": design["head_dim"],
+                "kv_bits": design["kv_bits"],
+                "lanes": design["tile_lanes"],
+                "stream_bytes_per_cycle": design["stream_bytes_per_cycle"],
+                "accum_bits": design["score_bits"],
+                "counter_bits": design["counter_bits"],
+                "signed_inputs": signed_inputs,
+            },
+        }],
+    }
+    reducer_cfg = {
+        "version": config.get("version", "1.1"),
+        "operands": [{
+            "name": "value_fragments",
+            "dimensions": 1,
+            "bit_width": design["value_bits"],
+            "signed": signed_values,
+            "kind": "int",
+        }],
+        "operations": [{
+            "type": "attention_kv_reducer_folded",
+            "module_name": reducer_name,
+            "operand": "value_fragments",
+            "options": {
+                "lanes": design["reducer_lanes"],
+                "value_bits": design["value_bits"],
+                "stat_bits": design["stat_bits"],
+                "partials": design["partials"],
+                "partials_per_cycle": design["partials_per_cycle"],
+                "accum_bits": design["reducer_accum_bits"],
+                "counter_bits": design["counter_bits"],
+                "signed_values": signed_values,
+            },
+        }],
+    }
+
+    with tempfile.TemporaryDirectory() as tmp:
+        _run_rtlgen_config(tile_cfg, tmp, env)
+        _run_rtlgen_config(reducer_cfg, tmp, env)
+        tile_text = (Path(tmp) / f"{tile_name}.v").read_text(encoding="utf-8")
+        reducer_text = (Path(tmp) / f"{reducer_name}.v").read_text(encoding="utf-8")
+
+    value_assigns = []
+    for partial in range(design["partials_per_cycle"]):
+        for lane in range(design["reducer_lanes"]):
+            base = (partial * design["reducer_lanes"] + lane) * design["value_bits"]
+            salt = (partial + 1) * 19 + lane
+            value_assigns.append(
+                f"          reducer_value_fragments[{base} +: VALUE_W] <= "
+                f"score_latched[VALUE_W-1:0] + {_slice_counter('chunk_index', design['value_bits'], design['counter_bits'])} + {salt};"
+            )
+    stat_assigns = []
+    for partial in range(design["partials_per_cycle"]):
+        base0 = partial * 2 * design["stat_bits"]
+        base1 = (partial * 2 + 1) * design["stat_bits"]
+        stat_assigns.append(
+            f"          reducer_stat_fragments[{base0} +: STAT_W] <= score_latched[STAT_W-1:0] + {partial + 1};"
+        )
+        stat_assigns.append(
+            f"          reducer_stat_fragments[{base1} +: STAT_W] <= {_slice_counter('group_index', design['stat_bits'], design['counter_bits'])} + {partial + 33};"
+        )
+
+    tile_assigns = []
+    for lane in range(design["tile_lanes"]):
+        base = lane * design["kv_bits"]
+        tile_assigns.append(
+            f"          query_fragment[{base} +: KV_W] <= {_slice_counter('tile_source_step', design['kv_bits'], design['counter_bits'])} + {lane + 1};"
+        )
+        tile_assigns.append(
+            f"          key_fragment[{base} +: KV_W] <= {_slice_counter('tile_source_step', design['kv_bits'], design['counter_bits'])} + {lane + 7};"
+        )
+
+    top = f"""
+module {module_name}(
+  input clk,
+  input rst_n,
+  output reduced_valid,
+  output signed [{design['reduced_value_width']-1}:0] reduced_value_fragment,
+  output [{design['reduced_stat_width']-1}:0] reduced_stat_fragment,
+  output [{design['counter_bits']-1}:0] tile_accepted_count,
+  output [{design['counter_bits']-1}:0] tile_byte_count,
+  output [{design['counter_bits']-1}:0] tile_stall_cycles,
+  output [{design['counter_bits']-1}:0] reducer_accepted_chunk_count,
+  output [{design['counter_bits']-1}:0] reducer_completed_group_count,
+  output [{design['counter_bits']-1}:0] reducer_stall_cycles,
+  output [{design['counter_bits']-1}:0] final_completion_cycle
+);
+
+  localparam integer KV_W = {design['kv_bits']};
+  localparam integer TILE_LANES = {design['tile_lanes']};
+  localparam integer TILE_FRAGMENT_W = {design['tile_fragment_width']};
+  localparam integer SCORE_W = {design['score_bits']};
+  localparam integer VALUE_W = {design['value_bits']};
+  localparam integer STAT_W = {design['stat_bits']};
+  localparam integer VALUE_WIDTH = {design['value_width']};
+  localparam integer STAT_WIDTH = {design['stat_width']};
+  localparam integer COUNT_W = {design['counter_bits']};
+  localparam integer TILE_FRAGMENTS_PER_SCORE = {(design['head_dim'] + design['tile_lanes'] - 1) // design['tile_lanes']};
+  localparam integer REDUCER_CHUNKS_PER_GROUP = {design['partials'] // design['partials_per_cycle']};
+
+  reg [TILE_FRAGMENT_W-1:0] query_fragment;
+  reg [TILE_FRAGMENT_W-1:0] key_fragment;
+  reg tile_valid;
+  reg [COUNT_W-1:0] tile_fragment_index;
+  reg [COUNT_W-1:0] tile_source_step;
+  wire tile_ready;
+  wire tile_last = tile_fragment_index == (TILE_FRAGMENTS_PER_SCORE-1);
+  wire score_valid;
+  wire signed [SCORE_W-1:0] score;
+  wire [COUNT_W-1:0] tile_cycle_count;
+  wire [COUNT_W-1:0] tile_final_completion_cycle;
+
+  reg score_pending;
+  wire score_ready = !score_pending;
+  reg signed [SCORE_W-1:0] score_latched;
+  reg [COUNT_W-1:0] chunk_index;
+  reg [COUNT_W-1:0] group_index;
+  reg reducer_valid;
+  reg [VALUE_WIDTH-1:0] reducer_value_fragments;
+  reg [STAT_WIDTH-1:0] reducer_stat_fragments;
+  wire reducer_ready;
+  wire [COUNT_W-1:0] reducer_cycle_count;
+  wire [COUNT_W-1:0] reducer_final_completion_cycle;
+  wire [COUNT_W-1:0] reducer_final_completion_cycle_wire = reducer_final_completion_cycle;
+
+  {tile_name} tile (
+    .clk(clk),
+    .rst_n(rst_n),
+    .tile_valid(tile_valid),
+    .tile_ready(tile_ready),
+    .tile_last(tile_last),
+    .query_fragment(query_fragment),
+    .key_fragment(key_fragment),
+    .score_valid(score_valid),
+    .score_ready(score_ready),
+    .score(score),
+    .accepted_tile_count(tile_accepted_count),
+    .accepted_byte_count(tile_byte_count),
+    .producer_stall_cycles(tile_stall_cycles),
+    .cycle_count(tile_cycle_count),
+    .final_completion_cycle(tile_final_completion_cycle)
+  );
+
+  {reducer_name} reducer (
+    .clk(clk),
+    .rst_n(rst_n),
+    .partial_valid(reducer_valid),
+    .partial_ready(reducer_ready),
+    .value_fragments(reducer_value_fragments),
+    .stat_fragments(reducer_stat_fragments),
+    .reduced_valid(reduced_valid),
+    .reduced_ready(1'b1),
+    .reduced_value_fragment(reduced_value_fragment),
+    .reduced_stat_fragment(reduced_stat_fragment),
+    .accepted_chunk_count(reducer_accepted_chunk_count),
+    .completed_group_count(reducer_completed_group_count),
+    .producer_stall_cycles(reducer_stall_cycles),
+    .cycle_count(reducer_cycle_count),
+    .final_completion_cycle(reducer_final_completion_cycle)
+  );
+
+  assign final_completion_cycle =
+      (reducer_final_completion_cycle_wire > tile_final_completion_cycle)
+          ? reducer_final_completion_cycle_wire
+          : tile_final_completion_cycle;
+
+  always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+      tile_valid <= 1'b0;
+      tile_fragment_index <= {{COUNT_W{{1'b0}}}};
+      tile_source_step <= {{COUNT_W{{1'b0}}}};
+      query_fragment <= {{TILE_FRAGMENT_W{{1'b0}}}};
+      key_fragment <= {{TILE_FRAGMENT_W{{1'b0}}}};
+      score_pending <= 1'b0;
+      score_latched <= {{SCORE_W{{1'b0}}}};
+      chunk_index <= {{COUNT_W{{1'b0}}}};
+      group_index <= {{COUNT_W{{1'b0}}}};
+      reducer_valid <= 1'b0;
+      reducer_value_fragments <= {{VALUE_WIDTH{{1'b0}}}};
+      reducer_stat_fragments <= {{STAT_WIDTH{{1'b0}}}};
+    end else begin
+      tile_valid <= 1'b1;
+      if (tile_ready) begin
+{chr(10).join(tile_assigns)}
+        tile_source_step <= tile_source_step + {{{{(COUNT_W-1){{1'b0}}}}, 1'b1}};
+        if (tile_last)
+          tile_fragment_index <= {{COUNT_W{{1'b0}}}};
+        else
+          tile_fragment_index <= tile_fragment_index + {{{{(COUNT_W-1){{1'b0}}}}, 1'b1}};
+      end
+
+      if (score_valid && score_ready) begin
+        score_latched <= score;
+        score_pending <= 1'b1;
+        chunk_index <= {{COUNT_W{{1'b0}}}};
+      end
+
+      if (score_pending && (!reducer_valid || reducer_ready)) begin
+{chr(10).join(value_assigns)}
+{chr(10).join(stat_assigns)}
+        reducer_valid <= 1'b1;
+        if (chunk_index == (REDUCER_CHUNKS_PER_GROUP-1)) begin
+          score_pending <= 1'b0;
+          chunk_index <= {{COUNT_W{{1'b0}}}};
+          group_index <= group_index + {{{{(COUNT_W-1){{1'b0}}}}, 1'b1}};
+        end else begin
+          chunk_index <= chunk_index + {{{{(COUNT_W-1){{1'b0}}}}, 1'b1}};
+        end
+      end else if (reducer_valid && reducer_ready) begin
+        reducer_valid <= 1'b0;
+      end
+    end
+  end
+endmodule
+"""
+
+    out = Path(src_dir) / f"{module_name}.v"
+    out.write_text(tile_text + "\n" + reducer_text + "\n" + top, encoding="utf-8")
+
+
+def generate_l1_memory_noc_design(src_dir, design):
+    module_name = design["module_name"]
+    if design["primitive"] == "fifo":
+        text = _emit_l1_fifo(module_name, design)
+    else:
+        text = _emit_l1_router(module_name, design)
+    Path(src_dir, f"{module_name}.v").write_text(text, encoding="utf-8")
+
+
+def _emit_l1_fifo(module_name, design):
+    header = f"""
+`timescale 1ns/1ps
+
+module {module_name}(
+  input clk,
+  input rst_n,
+  output [{design['counter_bits']-1}:0] accepted_flit_count,
+  output [{design['counter_bits']-1}:0] emitted_flit_count,
+  output [{design['counter_bits']-1}:0] max_occupancy,
+  output [{design['counter_bits']-1}:0] producer_stall_cycles,
+  output [{design['flit_bits']-1}:0] observed_flit
+);
+  localparam integer FLIT_W = {design['flit_bits']};
+  localparam integer DEPTH = {design['depth']};
+  localparam integer COUNT_W = {design['counter_bits']};
+  localparam integer PTR_W = {_ceil_log2_at_least_one(design['depth'])};
+
+  reg [FLIT_W-1:0] mem [0:DEPTH-1];
+  reg [PTR_W-1:0] wr_ptr;
+  reg [PTR_W-1:0] rd_ptr;
+  reg [COUNT_W-1:0] occupancy;
+  reg [COUNT_W-1:0] accepted_count;
+  reg [COUNT_W-1:0] emitted_count;
+  reg [COUNT_W-1:0] max_occ;
+  reg [COUNT_W-1:0] stall_count;
+  reg [COUNT_W-1:0] source_count;
+  reg [FLIT_W-1:0] observed;
+
+  wire push = occupancy != {design['counter_bits']}'d{design['depth']};
+  wire pop = occupancy != {{COUNT_W{{1'b0}}}};
+
+  assign accepted_flit_count = accepted_count;
+  assign emitted_flit_count = emitted_count;
+  assign max_occupancy = max_occ;
+  assign producer_stall_cycles = stall_count;
+  assign observed_flit = observed;
+
+  always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+      wr_ptr <= {{PTR_W{{1'b0}}}};
+      rd_ptr <= {{PTR_W{{1'b0}}}};
+      occupancy <= {{COUNT_W{{1'b0}}}};
+      accepted_count <= {{COUNT_W{{1'b0}}}};
+      emitted_count <= {{COUNT_W{{1'b0}}}};
+      max_occ <= {{COUNT_W{{1'b0}}}};
+      stall_count <= {{COUNT_W{{1'b0}}}};
+      source_count <= {{COUNT_W{{1'b0}}}};
+      observed <= {{FLIT_W{{1'b0}}}};
+    end else begin
+      if (push) begin
+        mem[wr_ptr] <= {{{{(FLIT_W-COUNT_W){{1'b0}}}}, source_count}};
+        source_count <= source_count + {{{{(COUNT_W-1){{1'b0}}}}, 1'b1}};
+        accepted_count <= accepted_count + {{{{(COUNT_W-1){{1'b0}}}}, 1'b1}};
+        if (wr_ptr == DEPTH-1)
+          wr_ptr <= {{PTR_W{{1'b0}}}};
+        else
+          wr_ptr <= wr_ptr + {{{{(PTR_W-1){{1'b0}}}}, 1'b1}};
+      end else begin
+        stall_count <= stall_count + {{{{(COUNT_W-1){{1'b0}}}}, 1'b1}};
+      end
+
+      if (pop) begin
+        observed <= mem[rd_ptr];
+        emitted_count <= emitted_count + {{{{(COUNT_W-1){{1'b0}}}}, 1'b1}};
+        if (rd_ptr == DEPTH-1)
+          rd_ptr <= {{PTR_W{{1'b0}}}};
+        else
+          rd_ptr <= rd_ptr + {{{{(PTR_W-1){{1'b0}}}}, 1'b1}};
+      end
+
+      if (push && !pop)
+        occupancy <= occupancy + {{{{(COUNT_W-1){{1'b0}}}}, 1'b1}};
+      else if (!push && pop)
+        occupancy <= occupancy - {{{{(COUNT_W-1){{1'b0}}}}, 1'b1}};
+
+      if (occupancy > max_occ)
+        max_occ <= occupancy;
+    end
+  end
+endmodule
+"""
+    return header
+
+
+def _emit_l1_router(module_name, design):
+    ports = design["ports"]
+    flit_bits = design["flit_bits"]
+    counter_bits = design["counter_bits"]
+    assigns = []
+    for outp in range(ports):
+        terms = []
+        for inp in range(ports):
+            terms.append(f"((dest_{inp} == {outp}) ? in_flit_{inp} : {{FLIT_W{{1'b0}}}})")
+        assigns.append(f"  wire [FLIT_W-1:0] out_flit_{outp} = " + " | ".join(terms) + ";")
+    observe_terms = " ^ ".join([f"out_flit_{i}" for i in range(ports)])
+    header = f"""
+`timescale 1ns/1ps
+
+module {module_name}(
+  input clk,
+  input rst_n,
+  output [{counter_bits-1}:0] routed_flit_count,
+  output [{counter_bits-1}:0] arbitration_cycle_count,
+  output [{flit_bits-1}:0] observed_flit
+);
+  localparam integer FLIT_W = {flit_bits};
+  localparam integer PORTS = {ports};
+  localparam integer COUNT_W = {counter_bits};
+  localparam integer PORT_W = {_ceil_log2_at_least_one(ports)};
+
+  reg [COUNT_W-1:0] routed_count;
+  reg [COUNT_W-1:0] cycle_count;
+  reg [FLIT_W-1:0] observed;
+"""
+    regs = "".join(
+        f"  reg [FLIT_W-1:0] in_flit_{inp};\n  reg [PORT_W-1:0] dest_{inp};\n"
+        for inp in range(ports)
+    )
+    body = f"""{regs}
+{chr(10).join(assigns)}
+
+  assign routed_flit_count = routed_count;
+  assign arbitration_cycle_count = cycle_count;
+  assign observed_flit = observed;
+
+  always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+      routed_count <= {{COUNT_W{{1'b0}}}};
+      cycle_count <= {{COUNT_W{{1'b0}}}};
+      observed <= {{FLIT_W{{1'b0}}}};
+"""
+    for inp in range(ports):
+        body += f"      in_flit_{inp} <= {{FLIT_W{{1'b0}}}};\n      dest_{inp} <= {inp % ports};\n"
+    body += "    end else begin\n      cycle_count <= cycle_count + {{(COUNT_W-1){1'b0}}, 1'b1};\n"
+    for inp in range(ports):
+        body += (
+            f"      in_flit_{inp} <= {{{{(FLIT_W-COUNT_W){{1'b0}}}}, cycle_count}} ^ {flit_bits}'d{inp + 1};\n"
+            f"      if (dest_{inp} == PORTS-1)\n"
+            f"        dest_{inp} <= {{PORT_W{{1'b0}}}};\n"
+            f"      else\n"
+            f"        dest_{inp} <= dest_{inp} + {{{{(PORT_W-1){{1'b0}}}}, 1'b1}};\n"
+        )
+    body += f"      observed <= {observe_terms};\n      routed_count <= routed_count + {counter_bits}'d{ports};\n    end\n  end\nendmodule\n"
+    return header + body
 
 def generate_wrapper(config, src_dir, design):
     module_name = design["module_name"]
@@ -1014,6 +1522,90 @@ module {wrapper_name}(
     .producer_stall_cycles(producer_stall_cycles),
     .cycle_count(cycle_count),
     .final_completion_cycle(final_completion_cycle)
+  );
+
+endmodule
+"""
+    elif design["kind"] == "attention_kv_tile_reducer_folded":
+        reduced_value_width = int(design["reduced_value_width"])
+        reduced_stat_width = int(design["reduced_stat_width"])
+        counter_bits = int(design["counter_bits"])
+        wrapper_content = f"""
+module {wrapper_name}(
+  input clk,
+  input rst_n,
+  output reduced_valid,
+  output signed [{reduced_value_width-1}:0] reduced_value_fragment,
+  output [{reduced_stat_width-1}:0] reduced_stat_fragment,
+  output [{counter_bits-1}:0] tile_accepted_count,
+  output [{counter_bits-1}:0] tile_byte_count,
+  output [{counter_bits-1}:0] tile_stall_cycles,
+  output [{counter_bits-1}:0] reducer_accepted_chunk_count,
+  output [{counter_bits-1}:0] reducer_completed_group_count,
+  output [{counter_bits-1}:0] reducer_stall_cycles,
+  output [{counter_bits-1}:0] final_completion_cycle
+);
+
+  {module_name} dut (
+    .clk(clk),
+    .rst_n(rst_n),
+    .reduced_valid(reduced_valid),
+    .reduced_value_fragment(reduced_value_fragment),
+    .reduced_stat_fragment(reduced_stat_fragment),
+    .tile_accepted_count(tile_accepted_count),
+    .tile_byte_count(tile_byte_count),
+    .tile_stall_cycles(tile_stall_cycles),
+    .reducer_accepted_chunk_count(reducer_accepted_chunk_count),
+    .reducer_completed_group_count(reducer_completed_group_count),
+    .reducer_stall_cycles(reducer_stall_cycles),
+    .final_completion_cycle(final_completion_cycle)
+  );
+
+endmodule
+"""
+    elif design["kind"] == "l1_memory_noc_primitive":
+        flit_bits = int(design["flit_bits"])
+        counter_bits = int(design["counter_bits"])
+        if design["primitive"] == "fifo":
+            wrapper_content = f"""
+module {wrapper_name}(
+  input clk,
+  input rst_n,
+  output [{counter_bits-1}:0] accepted_flit_count,
+  output [{counter_bits-1}:0] emitted_flit_count,
+  output [{counter_bits-1}:0] max_occupancy,
+  output [{counter_bits-1}:0] producer_stall_cycles,
+  output [{flit_bits-1}:0] observed_flit
+);
+
+  {module_name} dut (
+    .clk(clk),
+    .rst_n(rst_n),
+    .accepted_flit_count(accepted_flit_count),
+    .emitted_flit_count(emitted_flit_count),
+    .max_occupancy(max_occupancy),
+    .producer_stall_cycles(producer_stall_cycles),
+    .observed_flit(observed_flit)
+  );
+
+endmodule
+"""
+        else:
+            wrapper_content = f"""
+module {wrapper_name}(
+  input clk,
+  input rst_n,
+  output [{counter_bits-1}:0] routed_flit_count,
+  output [{counter_bits-1}:0] arbitration_cycle_count,
+  output [{flit_bits-1}:0] observed_flit
+);
+
+  {module_name} dut (
+    .clk(clk),
+    .rst_n(rst_n),
+    .routed_flit_count(routed_flit_count),
+    .arbitration_cycle_count(arbitration_cycle_count),
+    .observed_flit(observed_flit)
   );
 
 endmodule

@@ -1,0 +1,25 @@
+{
+  "version": "1.1",
+  "operands": [{"name": "kv_fragment", "dimensions": 1, "bit_width": 4, "signed": true, "kind": "int"}],
+  "operations": [{
+    "type": "attention_kv_tile_reducer_folded",
+    "module_name": "attention_kv_tile_reducer_hd64_kv4_tl16_b128_p8_ppc2_l16_v16_s16_a24",
+    "operand": "kv_fragment",
+    "options": {
+      "head_dim": 64,
+      "kv_bits": 4,
+      "tile_lanes": 16,
+      "stream_bytes_per_cycle": 128,
+      "score_bits": 48,
+      "reducer_lanes": 16,
+      "value_bits": 16,
+      "stat_bits": 16,
+      "partials": 8,
+      "partials_per_cycle": 2,
+      "reducer_accum_bits": 24,
+      "counter_bits": 32,
+      "signed_inputs": true,
+      "signed_values": true
+    }
+  }]
+}
