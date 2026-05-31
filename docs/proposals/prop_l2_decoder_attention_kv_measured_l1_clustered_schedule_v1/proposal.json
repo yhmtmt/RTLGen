@@ -1,0 +1,83 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_measured_l1_clustered_schedule_v1",
+  "created_utc": "2026-05-31T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_attention_kv_measured_l1_clustered_schedule",
+  "title": "Llama7B clustered attention schedule with measured L1 local costs",
+  "hypothesis": "The Llama7B 131k-context clustered attention frontier can move when each cluster is charged for measured folded attention tile/reducer datapath, FIFO, and router PPA instead of treating local datapath and interconnect logic as free.",
+  "direct_comparison": {
+    "primary_question": "For quality-backed native-GQA KV8 at 131k context, which die size, SRAM split, compute replica count, cluster count, NoC bandwidth, and reduction strategy remains best after measured per-cluster L1 local costs are subtracted from the logic budget?",
+    "include": [
+      "llama7b_proxy at 131k tokens",
+      "native-GQA group-8 only",
+      "KV8 only",
+      "merged corrected compute PPA rows selected by compute_stability_cmp33",
+      "merged folded attention tile/reducer L1 PPA from PR 719",
+      "merged L1 FIFO/router PPA from PR 720",
+      "die sizes 200, 400, 800, and 1200 mm2",
+      "SRAM area fractions 0.4 and 0.6",
+      "logic area fractions 0.1 and 0.2",
+      "cluster counts 1, 2, 4, 8, and 16",
+      "NoC bandwidth values 8192 and 32768 bytes/cycle",
+      "owner-cluster and cluster-tree reductions"
+    ],
+    "exclude": [
+      "new RTL/PPA runs",
+      "cycle-accurate NoC arbitration",
+      "SRAM macro floorplanning",
+      "full softmax-weighted value datapath closure",
+      "quality-degraded KV4 or MQA ranking"
+    ]
+  },
+  "expected_benefit": [
+    "tests whether the current clustered Llama7B frontier survives measured local datapath and NoC primitive costs",
+    "turns the L1 tile/reducer and memory/NoC primitive results into an immediate L2 architecture-ranking signal",
+    "identifies the next concrete L1 closure target: full value datapath, router hierarchy, or larger compute-cluster fabric"
+  ],
+  "risks": [
+    "the measured L1 tile/reducer profiles are local proxies rather than the complete attention datapath",
+    "FIFO/router costs are charged per cluster with simple counts and do not model routed multi-hop topology in detail",
+    "NoC contention is still represented by bandwidth and hop parameters, not cycle-accurate arbitration"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_kv_measured_l1_clustered_schedule_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run the Llama7B 131k clustered attention schedule sweep with measured L1 folded tile/reducer and FIFO/router costs charged against each cluster.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_measured_l1_clustered_schedule",
+      "cost_class": "low",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_clustered_schedule_overhead_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_clustered_schedule_overhead_llama7b_v1",
+        "l1_decoder_attention_tile_reducer_folded_v1",
+        "l1_decoder_memory_noc_primitives_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "If the same clustered frontier survives measured L1 local costs, proceed toward full L1 value-datapath closure; if the winner shifts, refine local cluster sizing or NoC hierarchy before deeper RTL."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_clustered_schedule_overhead__l2_decoder_attention_kv_clustered_schedule_overhead_llama7b_v1.json",
+    "runs/campaigns/npu/l1_measured_costs/llama7b_attention_local_costs_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_attention_kv_clustered_schedule.py",
+    "runs/designs/activations/attention_kv_tile_reducer_hd64_kv4_tl16_b128_p8_ppc2_l16_v16_s16_a24_wrapper/metrics.csv",
+    "runs/designs/activations/attention_kv_tile_reducer_hd64_kv4_tl16_b128_p8_ppc4_l16_v16_s16_a24_wrapper/metrics.csv",
+    "runs/designs/activations/attention_kv_tile_reducer_hd128_kv4_tl32_b256_p8_ppc4_l16_v16_s16_a24_wrapper/metrics.csv",
+    "runs/designs/activations/attention_kv_tile_reducer_hd128_kv8_tl64_b512_p16_ppc4_l16_v16_s16_a24_wrapper/metrics.csv",
+    "runs/designs/noc/l1_noc_fifo_w128_d16_wrapper/metrics.csv",
+    "runs/designs/noc/l1_noc_fifo_w256_d16_wrapper/metrics.csv",
+    "runs/designs/noc/l1_noc_router_p4_w128_wrapper/metrics.csv",
+    "runs/designs/noc/l1_noc_router_p4_w256_wrapper/metrics.csv"
+  ]
+}

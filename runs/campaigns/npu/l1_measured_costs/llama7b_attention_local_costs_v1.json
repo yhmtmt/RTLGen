@@ -1,0 +1,134 @@
+{
+  "version": 0.1,
+  "name": "llama7b_attention_local_costs_v1",
+  "platform": "nangate45",
+  "core_utilization": 60,
+  "source_prs": [719, 720],
+  "scope": "Per-cluster L1 proxy costs for Llama7B attention schedule modeling. Profiles include measured folded attention tile/reducer datapaths plus one FIFO and one 4-port router per cluster. They are local-area and local-clock anchors, not full softmax-weighted value datapath closure.",
+  "profiles": [
+    {
+      "name": "hd64_kv4_p8_ppc2_noc128",
+      "description": "Small hd64/kv4 folded tile reducer with 128-bit local NoC primitives.",
+      "fifo_per_cluster": 1,
+      "router_per_cluster": 1,
+      "local_datapath": {
+        "design": "attention_kv_tile_reducer_hd64_kv4_tl16_b128_p8_ppc2_l16_v16_s16_a24_wrapper",
+        "clock_ns": 0.7757,
+        "area_um2": 40306.585225,
+        "power_mw": 0.0218,
+        "metrics_csv": "runs/designs/activations/attention_kv_tile_reducer_hd64_kv4_tl16_b128_p8_ppc2_l16_v16_s16_a24_wrapper/metrics.csv"
+      },
+      "noc_fifo": {
+        "design": "l1_noc_fifo_w128_d16_wrapper",
+        "width_bits": 128,
+        "depth": 16,
+        "clock_ns": 0.2965,
+        "area_um2": 11606.830225,
+        "power_mw": 0.00862,
+        "metrics_csv": "runs/designs/noc/l1_noc_fifo_w128_d16_wrapper/metrics.csv"
+      },
+      "noc_router": {
+        "design": "l1_noc_router_p4_w128_wrapper",
+        "ports": 4,
+        "width_bits": 128,
+        "clock_ns": 0.2424,
+        "area_um2": 3123.133225,
+        "power_mw": 0.00176,
+        "metrics_csv": "runs/designs/noc/l1_noc_router_p4_w128_wrapper/metrics.csv"
+      }
+    },
+    {
+      "name": "hd64_kv4_p8_ppc4_noc128",
+      "description": "Higher parallelism hd64/kv4 folded tile reducer with 128-bit local NoC primitives.",
+      "fifo_per_cluster": 1,
+      "router_per_cluster": 1,
+      "local_datapath": {
+        "design": "attention_kv_tile_reducer_hd64_kv4_tl16_b128_p8_ppc4_l16_v16_s16_a24_wrapper",
+        "clock_ns": 0.7833,
+        "area_um2": 52918.4016,
+        "power_mw": 0.0269,
+        "metrics_csv": "runs/designs/activations/attention_kv_tile_reducer_hd64_kv4_tl16_b128_p8_ppc4_l16_v16_s16_a24_wrapper/metrics.csv"
+      },
+      "noc_fifo": {
+        "design": "l1_noc_fifo_w128_d16_wrapper",
+        "width_bits": 128,
+        "depth": 16,
+        "clock_ns": 0.2965,
+        "area_um2": 11606.830225,
+        "power_mw": 0.00862,
+        "metrics_csv": "runs/designs/noc/l1_noc_fifo_w128_d16_wrapper/metrics.csv"
+      },
+      "noc_router": {
+        "design": "l1_noc_router_p4_w128_wrapper",
+        "ports": 4,
+        "width_bits": 128,
+        "clock_ns": 0.2424,
+        "area_um2": 3123.133225,
+        "power_mw": 0.00176,
+        "metrics_csv": "runs/designs/noc/l1_noc_router_p4_w128_wrapper/metrics.csv"
+      }
+    },
+    {
+      "name": "hd128_kv4_p8_ppc4_noc256",
+      "description": "hd128/kv4 folded tile reducer with 256-bit local NoC primitives.",
+      "fifo_per_cluster": 1,
+      "router_per_cluster": 1,
+      "local_datapath": {
+        "design": "attention_kv_tile_reducer_hd128_kv4_tl32_b256_p8_ppc4_l16_v16_s16_a24_wrapper",
+        "clock_ns": 0.8686,
+        "area_um2": 56846.480625,
+        "power_mw": 0.0267,
+        "metrics_csv": "runs/designs/activations/attention_kv_tile_reducer_hd128_kv4_tl32_b256_p8_ppc4_l16_v16_s16_a24_wrapper/metrics.csv"
+      },
+      "noc_fifo": {
+        "design": "l1_noc_fifo_w256_d16_wrapper",
+        "width_bits": 256,
+        "depth": 16,
+        "clock_ns": 0.29,
+        "area_um2": 11779.846225,
+        "power_mw": 0.00869,
+        "metrics_csv": "runs/designs/noc/l1_noc_fifo_w256_d16_wrapper/metrics.csv"
+      },
+      "noc_router": {
+        "design": "l1_noc_router_p4_w256_wrapper",
+        "ports": 4,
+        "width_bits": 256,
+        "clock_ns": 0.2401,
+        "area_um2": 3299.3536,
+        "power_mw": 0.00171,
+        "metrics_csv": "runs/designs/noc/l1_noc_router_p4_w256_wrapper/metrics.csv"
+      }
+    },
+    {
+      "name": "hd128_kv8_p16_ppc4_noc256",
+      "description": "Larger hd128/kv8 folded tile reducer with 256-bit local NoC primitives.",
+      "fifo_per_cluster": 1,
+      "router_per_cluster": 1,
+      "local_datapath": {
+        "design": "attention_kv_tile_reducer_hd128_kv8_tl64_b512_p16_ppc4_l16_v16_s16_a24_wrapper",
+        "clock_ns": 0.8687,
+        "area_um2": 102240.0625,
+        "power_mw": 0.0305,
+        "metrics_csv": "runs/designs/activations/attention_kv_tile_reducer_hd128_kv8_tl64_b512_p16_ppc4_l16_v16_s16_a24_wrapper/metrics.csv"
+      },
+      "noc_fifo": {
+        "design": "l1_noc_fifo_w256_d16_wrapper",
+        "width_bits": 256,
+        "depth": 16,
+        "clock_ns": 0.29,
+        "area_um2": 11779.846225,
+        "power_mw": 0.00869,
+        "metrics_csv": "runs/designs/noc/l1_noc_fifo_w256_d16_wrapper/metrics.csv"
+      },
+      "noc_router": {
+        "design": "l1_noc_router_p4_w256_wrapper",
+        "ports": 4,
+        "width_bits": 256,
+        "clock_ns": 0.2401,
+        "area_um2": 3299.3536,
+        "power_mw": 0.00171,
+        "metrics_csv": "runs/designs/noc/l1_noc_router_p4_w256_wrapper/metrics.csv"
+      }
+    }
+  ]
+}
