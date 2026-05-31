@@ -1,0 +1,154 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/activations/attention_kv_full_value_tile/sweeps/nangate45_macro_frontier.json"
+      ],
+      "configs": [
+        "runs/designs/activations/attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc2_w24_a40_wrapper/config_attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc2_w24_a40.json",
+        "runs/designs/activations/attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc4_w24_a40_wrapper/config_attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc4_w24_a40.json",
+        "runs/designs/activations/attention_kv_full_value_hd128_kv8_tl32_b256_p16_ppc4_w24_a40_wrapper/config_attention_kv_full_value_hd128_kv8_tl32_b256_p16_ppc4_w24_a40.json"
+      ],
+      "out_root": "runs/designs/activations",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && cmake -S . -B build && cmake --build build --target rtlgen",
+        "name": "build_generator"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 scripts/run_sweep.py --configs runs/designs/activations/attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc2_w24_a40_wrapper/config_attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc2_w24_a40.json runs/designs/activations/attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc4_w24_a40_wrapper/config_attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc4_w24_a40.json runs/designs/activations/attention_kv_full_value_hd128_kv8_tl32_b256_p16_ppc4_w24_a40_wrapper/config_attention_kv_full_value_hd128_kv8_tl32_b256_p16_ppc4_w24_a40.json --platform nangate45 --sweep runs/campaigns/activations/attention_kv_full_value_tile/sweeps/nangate45_macro_frontier.json --out_root runs/designs/activations --force_gen --skip_existing",
+        "name": "run_sweep"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "objective": "Measure Nangate45 macro PPA for full local attention tile datapaths with explicit softmax-weighted value products and folded value reduction.",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/activations/attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc2_w24_a40_wrapper/metrics.csv",
+      "runs/designs/activations/attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc4_w24_a40_wrapper/metrics.csv",
+      "runs/designs/activations/attention_kv_full_value_hd128_kv8_tl32_b256_p16_ppc4_w24_a40_wrapper/metrics.csv"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Full value-path Llama attention tile PPA",
+  "result": {
+    "branch": "eval/l1_decoder_attention_full_value_tile_v1/s20260531t142755z",
+    "completed_utc": "2026-05-31T13:43:44.520351Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "501d2c8ffdc6",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260531t142755z][host:501d2c8ffdc6][item:l1_decoder_attention_full_value_tile_v1]",
+    "metrics_rows": [
+      {
+        "tag": "attention_kv_full_value_tile_nangate45_macro_frontier_d64a96fd",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "07beada1",
+        "metrics_csv": "runs/designs/activations/attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc2_w24_a40_wrapper/metrics.csv"
+      },
+      {
+        "tag": "attention_kv_full_value_tile_nangate45_macro_frontier_5137e93f",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "014c101f",
+        "metrics_csv": "runs/designs/activations/attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc2_w24_a40_wrapper/metrics.csv"
+      },
+      {
+        "tag": "attention_kv_full_value_tile_nangate45_macro_frontier_d64a96fd",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "07beada1",
+        "metrics_csv": "runs/designs/activations/attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc4_w24_a40_wrapper/metrics.csv"
+      },
+      {
+        "tag": "attention_kv_full_value_tile_nangate45_macro_frontier_5137e93f",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "014c101f",
+        "metrics_csv": "runs/designs/activations/attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc4_w24_a40_wrapper/metrics.csv"
+      },
+      {
+        "tag": "attention_kv_full_value_tile_nangate45_macro_frontier_d64a96fd",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "07beada1",
+        "metrics_csv": "runs/designs/activations/attention_kv_full_value_hd128_kv8_tl32_b256_p16_ppc4_w24_a40_wrapper/metrics.csv"
+      },
+      {
+        "tag": "attention_kv_full_value_tile_nangate45_macro_frontier_5137e93f",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "014c101f",
+        "metrics_csv": "runs/designs/activations/attention_kv_full_value_hd128_kv8_tl32_b256_p16_ppc4_w24_a40_wrapper/metrics.csv"
+      }
+    ],
+    "queue_item_id": "l1_decoder_attention_full_value_tile_v1",
+    "session_id": "s20260531t142755z",
+    "status": "ok",
+    "summary": "4/4 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_decoder_attention_full_value_tile_v1/s20260531t142755z",
+    "pr_title": "eval: run full value-path llama attention tile ppa",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "501d2c8ffdc6",
+      "session_id": "s20260531t142755z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_decoder_attention_full_value_tile_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_decoder_attention_full_value_tile_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 85,
+  "created_utc": "2026-05-31T12:17:27.373046Z",
+  "requested_by": "developer_agent",
+  "developer_loop": {
+    "evaluation": {
+      "mode": "ppa",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      }
+    },
+    "abstraction": {
+      "layer": "architecture_block"
+    },
+    "proposal_id": "prop_l1_decoder_attention_full_value_tile_v1",
+    "proposal_path": "docs/proposals/prop_l1_decoder_attention_full_value_tile_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "f7bea3786e921f003b7d6ffff340dc2edc75fee3",
+    "requires_daemon_restart": true
+  }
+}
