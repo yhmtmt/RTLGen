@@ -113,3 +113,61 @@ def test_clustered_schedule_charges_command_and_reducer_overhead(monkeypatch) ->
     )
     assert report["inputs"]["command_cycles_per_tile_list"] == [3]
     assert report["inputs"]["reduction_cycle_multiplier_list"] == [2.0]
+
+
+def test_clustered_schedule_charges_measured_l1_profile(monkeypatch) -> None:
+    monkeypatch.setattr(sched, "_load_compute_candidates", lambda repo_root, tag_substring: [_candidate()])
+    report = sched.build_report(
+        repo_root=Path("."),
+        tag_substring="unit",
+        sequence_length_list=[2048],
+        die_area_mm2_list=[1.0],
+        sram_area_fraction_list=[0.4],
+        logic_area_fraction_list=[0.2],
+        reserved_area_fraction=0.1,
+        usable_sram_fraction_list=[0.7],
+        local_sram_fraction_list=[0.25],
+        tile_tokens_list=[512],
+        bank_count_list=[16],
+        cluster_count_list=[2],
+        noc_bandwidth_bytes_per_cycle_list=[8192.0],
+        noc_hops_list=[1],
+        reduction_strategy_list=["owner_cluster"],
+        vector_ops_per_mac=0.125,
+        reduction_scalar_bytes=2,
+        measured_l1_profiles=[
+            {
+                "name": "unit_l1",
+                "fifo_per_cluster": 1,
+                "router_per_cluster": 2,
+                "local_datapath": {
+                    "clock_ns": 3.0,
+                    "area_um2": 10000.0,
+                    "power_mw": 0.5,
+                    "metrics_csv": "local.csv",
+                },
+                "noc_fifo": {
+                    "clock_ns": 1.0,
+                    "area_um2": 1000.0,
+                    "power_mw": 0.1,
+                    "metrics_csv": "fifo.csv",
+                },
+                "noc_router": {
+                    "clock_ns": 0.5,
+                    "area_um2": 500.0,
+                    "power_mw": 0.05,
+                    "metrics_csv": "router.csv",
+                },
+            }
+        ],
+    )
+    row = report["best"]
+
+    assert row["measured_l1_profile"] == "unit_l1"
+    assert row["measured_l1_overhead_area_um2"] == 24000.0
+    assert row["measured_l1_overhead_power_mw"] == 1.4
+    assert row["clock_ns"] == 3.0
+    assert row["compute_replica_count"] == 176
+    assert row["logic_area_used_um2"] == 200000.0
+    assert row["local_datapath_metrics_csv"] == "local.csv"
+    assert report["best_by_measured_l1_profile"][0]["measured_l1_profile"] == "unit_l1"

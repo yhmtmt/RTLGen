@@ -31,6 +31,114 @@ from npu.eval.estimate_llm_decoder_attention_kv_physical_hbm_frontier import (  
 JsonDict = dict[str, Any]
 
 
+def _profile_list(value: str) -> list[str]:
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
+def _metric(profile: JsonDict, component: str, key: str, default: float = 0.0) -> float:
+    raw = profile.get(component, {})
+    if not isinstance(raw, dict):
+        return default
+    value = raw.get(key, default)
+    return float(value)
+
+
+def _path_metric(profile: JsonDict, component: str) -> str:
+    raw = profile.get(component, {})
+    if not isinstance(raw, dict):
+        return ""
+    return str(raw.get("metrics_csv", ""))
+
+
+def _measured_l1_overhead(profile: JsonDict | None, cluster_count: int) -> JsonDict:
+    if profile is None:
+        return {
+            "profile": "analytic_unmeasured",
+            "area_um2": 0.0,
+            "power_mw": 0.0,
+            "clock_ns": 0.0,
+            "local_datapath_area_um2": 0.0,
+            "local_datapath_power_mw": 0.0,
+            "local_datapath_clock_ns": 0.0,
+            "noc_fifo_area_um2": 0.0,
+            "noc_fifo_power_mw": 0.0,
+            "noc_fifo_clock_ns": 0.0,
+            "noc_router_area_um2": 0.0,
+            "noc_router_power_mw": 0.0,
+            "noc_router_clock_ns": 0.0,
+            "fifo_per_cluster": 0,
+            "router_per_cluster": 0,
+            "local_datapath_metrics_csv": "",
+            "noc_fifo_metrics_csv": "",
+            "noc_router_metrics_csv": "",
+        }
+    fifo_per_cluster = int(profile.get("fifo_per_cluster", 1))
+    router_per_cluster = int(profile.get("router_per_cluster", 1))
+    local_area = _metric(profile, "local_datapath", "area_um2")
+    local_power = _metric(profile, "local_datapath", "power_mw")
+    local_clock = _metric(profile, "local_datapath", "clock_ns")
+    fifo_area = _metric(profile, "noc_fifo", "area_um2")
+    fifo_power = _metric(profile, "noc_fifo", "power_mw")
+    fifo_clock = _metric(profile, "noc_fifo", "clock_ns")
+    router_area = _metric(profile, "noc_router", "area_um2")
+    router_power = _metric(profile, "noc_router", "power_mw")
+    router_clock = _metric(profile, "noc_router", "clock_ns")
+    per_cluster_area = local_area + fifo_per_cluster * fifo_area + router_per_cluster * router_area
+    per_cluster_power = local_power + fifo_per_cluster * fifo_power + router_per_cluster * router_power
+    return {
+        "profile": str(profile["name"]),
+        "area_um2": cluster_count * per_cluster_area,
+        "power_mw": cluster_count * per_cluster_power,
+        "clock_ns": max(local_clock, fifo_clock, router_clock),
+        "local_datapath_area_um2": local_area,
+        "local_datapath_power_mw": local_power,
+        "local_datapath_clock_ns": local_clock,
+        "noc_fifo_area_um2": fifo_area,
+        "noc_fifo_power_mw": fifo_power,
+        "noc_fifo_clock_ns": fifo_clock,
+        "noc_router_area_um2": router_area,
+        "noc_router_power_mw": router_power,
+        "noc_router_clock_ns": router_clock,
+        "fifo_per_cluster": fifo_per_cluster,
+        "router_per_cluster": router_per_cluster,
+        "local_datapath_metrics_csv": _path_metric(profile, "local_datapath"),
+        "noc_fifo_metrics_csv": _path_metric(profile, "noc_fifo"),
+        "noc_router_metrics_csv": _path_metric(profile, "noc_router"),
+    }
+
+
+def _load_measured_l1_profiles(
+    *,
+    repo_root: Path,
+    costs_path: Path | None,
+    profile_names: list[str] | None,
+) -> list[JsonDict | None]:
+    if costs_path is None:
+        return [None]
+    resolved = costs_path if costs_path.is_absolute() else repo_root / costs_path
+    payload = json.loads(resolved.read_text(encoding="utf-8"))
+    raw_profiles = payload.get("profiles", [])
+    if isinstance(raw_profiles, dict):
+        profiles = list(raw_profiles.values())
+    elif isinstance(raw_profiles, list):
+        profiles = raw_profiles
+    else:
+        raise ValueError(f"measured L1 cost profile file has invalid profiles field: {resolved}")
+    names = set(profile_names or [])
+    if "all" in names:
+        names = set()
+    selected: list[JsonDict | None] = []
+    for profile in profiles:
+        if not isinstance(profile, dict) or not profile.get("name"):
+            raise ValueError(f"measured L1 cost profile lacks a name: {resolved}")
+        if names and str(profile["name"]) not in names:
+            continue
+        selected.append(profile)
+    if not selected:
+        raise ValueError(f"no measured L1 cost profiles selected from {resolved}")
+    return selected
+
+
 def _reduction_factor(strategy: str, active_clusters: int) -> tuple[int, int]:
     if strategy == "centralized_tile":
         return 0, active_clusters
@@ -63,11 +171,14 @@ def _shape_row(
     command_cycles_per_wave: int,
     reducer_setup_cycles: int,
     reduction_cycle_multiplier: float,
+    measured_l1_profile: JsonDict | None,
 ) -> JsonDict | None:
     if sram_area_fraction + logic_area_fraction + reserved_area_fraction > 1.0:
         return None
     compute_budget_um2 = die_area_mm2 * 1_000_000.0 * logic_area_fraction
-    replica_count = int(compute_budget_um2 // float(candidate["block_area_um2"]))
+    measured_l1 = _measured_l1_overhead(measured_l1_profile, cluster_count)
+    available_compute_budget_um2 = compute_budget_um2 - float(measured_l1["area_um2"])
+    replica_count = int(available_compute_budget_um2 // float(candidate["block_area_um2"]))
     if replica_count < 1 or cluster_count > replica_count:
         return None
 
@@ -104,7 +215,7 @@ def _shape_row(
     per_cluster_macs = max(1, replicas_per_cluster_floor * block_macs_per_cycle)
     per_cluster_vector_ops = max(1, int(math.ceil(per_cluster_macs * vector_ops_per_mac)))
 
-    clock_ns = float(candidate["block_clock_ns"])
+    clock_ns = max(float(candidate["block_clock_ns"]), float(measured_l1["clock_ns"]))
     raw_hbm_bw = _physical_hbm_bytes_per_cycle(
         stack_count=8,
         pseudo_channels_per_stack=16,
@@ -228,8 +339,33 @@ def _shape_row(
         "compute_logic_area_fraction": logic_area_fraction,
         "reserved_area_fraction": reserved_area_fraction,
         "compute_budget_um2": round(compute_budget_um2, 6),
+        "compute_array_budget_after_measured_l1_um2": round(available_compute_budget_um2, 6),
         "compute_area_um2": round(replica_count * float(candidate["block_area_um2"]), 6),
         "compute_power_mw": round(replica_count * float(candidate["block_power_mw"]), 6),
+        "measured_l1_profile": measured_l1["profile"],
+        "measured_l1_overhead_area_um2": round(float(measured_l1["area_um2"]), 6),
+        "measured_l1_overhead_power_mw": round(float(measured_l1["power_mw"]), 6),
+        "measured_l1_overhead_clock_ns": round(float(measured_l1["clock_ns"]), 6),
+        "logic_area_used_um2": round(replica_count * float(candidate["block_area_um2"]) + float(measured_l1["area_um2"]), 6),
+        "logic_area_slack_um2": round(
+            compute_budget_um2 - replica_count * float(candidate["block_area_um2"]) - float(measured_l1["area_um2"]),
+            6,
+        ),
+        "logic_power_mw": round(replica_count * float(candidate["block_power_mw"]) + float(measured_l1["power_mw"]), 6),
+        "local_datapath_area_um2": round(float(measured_l1["local_datapath_area_um2"]), 6),
+        "local_datapath_power_mw": round(float(measured_l1["local_datapath_power_mw"]), 6),
+        "local_datapath_clock_ns": round(float(measured_l1["local_datapath_clock_ns"]), 6),
+        "local_datapath_metrics_csv": measured_l1["local_datapath_metrics_csv"],
+        "noc_fifo_area_um2": round(float(measured_l1["noc_fifo_area_um2"]), 6),
+        "noc_fifo_power_mw": round(float(measured_l1["noc_fifo_power_mw"]), 6),
+        "noc_fifo_clock_ns": round(float(measured_l1["noc_fifo_clock_ns"]), 6),
+        "noc_fifo_per_cluster": measured_l1["fifo_per_cluster"],
+        "noc_fifo_metrics_csv": measured_l1["noc_fifo_metrics_csv"],
+        "noc_router_area_um2": round(float(measured_l1["noc_router_area_um2"]), 6),
+        "noc_router_power_mw": round(float(measured_l1["noc_router_power_mw"]), 6),
+        "noc_router_clock_ns": round(float(measured_l1["noc_router_clock_ns"]), 6),
+        "noc_router_per_cluster": measured_l1["router_per_cluster"],
+        "noc_router_metrics_csv": measured_l1["noc_router_metrics_csv"],
         "macs_per_cycle": total_macs_per_cycle,
         "vector_ops_per_cycle": total_vector_ops_per_cycle,
         "per_cluster_macs_per_cycle": per_cluster_macs,
@@ -298,8 +434,16 @@ def build_report(
     command_cycles_per_wave_list: list[int] | None = None,
     reducer_setup_cycles_list: list[int] | None = None,
     reduction_cycle_multiplier_list: list[float] | None = None,
+    measured_l1_costs_path: Path | None = None,
+    measured_l1_profile_list: list[str] | None = None,
+    measured_l1_profiles: list[JsonDict | None] | None = None,
 ) -> JsonDict:
     candidates = _load_compute_candidates(repo_root=repo_root, tag_substring=tag_substring)
+    measured_l1_profiles = measured_l1_profiles or _load_measured_l1_profiles(
+        repo_root=repo_root,
+        costs_path=measured_l1_costs_path,
+        profile_names=measured_l1_profile_list,
+    )
     command_cycles_per_tile_list = command_cycles_per_tile_list or [0]
     command_cycles_per_wave_list = command_cycles_per_wave_list or [0]
     reducer_setup_cycles_list = reducer_setup_cycles_list or [0]
@@ -322,33 +466,35 @@ def build_report(
                                                         for command_cycles_per_wave in command_cycles_per_wave_list:
                                                             for reducer_setup_cycles in reducer_setup_cycles_list:
                                                                 for reduction_cycle_multiplier in reduction_cycle_multiplier_list:
-                                                                    for candidate in candidates:
-                                                                        row = _shape_row(
-                                                                            candidate=candidate,
-                                                                            die_area_mm2=die_area_mm2,
-                                                                            sram_area_fraction=sram_area_fraction,
-                                                                            logic_area_fraction=logic_area_fraction,
-                                                                            reserved_area_fraction=reserved_area_fraction,
-                                                                            sequence_length=sequence_length,
-                                                                            usable_sram_fraction=usable_sram_fraction,
-                                                                            local_sram_fraction=local_sram_fraction,
-                                                                            tile_tokens=tile_tokens,
-                                                                            bank_count=bank_count,
-                                                                            cluster_count=cluster_count,
-                                                                            noc_bandwidth_bytes_per_cycle=noc_bw,
-                                                                            noc_hops=noc_hops,
-                                                                            reduction_strategy=reduction_strategy,
-                                                                            vector_ops_per_mac=vector_ops_per_mac,
-                                                                            reduction_scalar_bytes=reduction_scalar_bytes,
-                                                                            command_cycles_per_tile=command_cycles_per_tile,
-                                                                            command_cycles_per_wave=command_cycles_per_wave,
-                                                                            reducer_setup_cycles=reducer_setup_cycles,
-                                                                            reduction_cycle_multiplier=reduction_cycle_multiplier,
-                                                                        )
-                                                                        if row is None:
-                                                                            skipped_area_budget += 1
-                                                                        else:
-                                                                            rows.append(row)
+                                                                    for measured_l1_profile in measured_l1_profiles:
+                                                                        for candidate in candidates:
+                                                                            row = _shape_row(
+                                                                                candidate=candidate,
+                                                                                die_area_mm2=die_area_mm2,
+                                                                                sram_area_fraction=sram_area_fraction,
+                                                                                logic_area_fraction=logic_area_fraction,
+                                                                                reserved_area_fraction=reserved_area_fraction,
+                                                                                sequence_length=sequence_length,
+                                                                                usable_sram_fraction=usable_sram_fraction,
+                                                                                local_sram_fraction=local_sram_fraction,
+                                                                                tile_tokens=tile_tokens,
+                                                                                bank_count=bank_count,
+                                                                                cluster_count=cluster_count,
+                                                                                noc_bandwidth_bytes_per_cycle=noc_bw,
+                                                                                noc_hops=noc_hops,
+                                                                                reduction_strategy=reduction_strategy,
+                                                                                vector_ops_per_mac=vector_ops_per_mac,
+                                                                                reduction_scalar_bytes=reduction_scalar_bytes,
+                                                                                command_cycles_per_tile=command_cycles_per_tile,
+                                                                                command_cycles_per_wave=command_cycles_per_wave,
+                                                                                reducer_setup_cycles=reducer_setup_cycles,
+                                                                                reduction_cycle_multiplier=reduction_cycle_multiplier,
+                                                                                measured_l1_profile=measured_l1_profile,
+                                                                            )
+                                                                            if row is None:
+                                                                                skipped_area_budget += 1
+                                                                            else:
+                                                                                rows.append(row)
     if not rows:
         raise RuntimeError("no rows generated; area budget or cluster count may be infeasible")
     rows_sorted = sorted(rows, key=lambda row: row["latency_us"])
@@ -380,7 +526,10 @@ def build_report(
             "command_cycles_per_wave_list": command_cycles_per_wave_list,
             "reducer_setup_cycles_list": reducer_setup_cycles_list,
             "reduction_cycle_multiplier_list": reduction_cycle_multiplier_list,
+            "measured_l1_costs_path": str(measured_l1_costs_path or ""),
+            "measured_l1_profile_list": measured_l1_profile_list or [],
         },
+        "measured_l1_profiles": [profile for profile in measured_l1_profiles if profile is not None],
         "compute_candidates": candidates,
         "sweep_summary": {
             "generated_row_count": len(rows),
@@ -403,6 +552,7 @@ def build_report(
                 "reduction_cycle_multiplier",
             ),
         ),
+        "best_by_measured_l1_profile": _best_by(rows, ("sequence_length", "die_area_mm2", "measured_l1_profile")),
         "best_by_memory_noc": sorted(
             _best_by(
                 rows,
@@ -426,6 +576,9 @@ def build_report(
             "Reduction strategies model cross-tile combination after tile service: centralized_tile sends every tile partial, owner_cluster and cluster_tree first reduce tiles locally per cluster.",
             "This is an analytic schedule model; it still does not model RTL command queues or cycle-accurate SRAM/NoC arbitration.",
             "Optional command and reducer overhead parameters are sensitivity knobs, not measured RTL/PPA.",
+            "When measured L1 cost profiles are provided, their per-cluster tile/reducer, FIFO, and router area is subtracted from the logic budget before compute replicas are allocated.",
+            "Measured L1 profile clock is combined by max() with measured compute-array clock; this is a conservative local macro proxy, not a full routed SoC timing closure.",
+            "Measured L1 tile/reducer profiles cover QK/stat/local partial reduction structure and memory/NoC primitives; the full softmax-weighted value datapath still needs a later L1 closure run.",
         ],
     }
 
@@ -441,13 +594,14 @@ def _write_markdown(path: Path, payload: JsonDict) -> None:
         "",
         "## Best",
         "",
-        "| seq | die | SRAM | logic | arch | replicas | clusters | reduction | tile | clock ns | latency us | resource |",
-        "|---:|---:|---:|---:|---|---:|---:|---|---:|---:|---:|---|",
-        "| {seq} | {die} | {sram} | {logic} | {arch} | {rep} | {cluster} | {red} | {tile} | {clk} | {lat} | {res} |".format(
+        "| seq | die | SRAM | logic | L1 profile | arch | replicas | clusters | reduction | tile | clock ns | latency us | resource |",
+        "|---:|---:|---:|---:|---|---|---:|---:|---|---:|---:|---:|---|",
+        "| {seq} | {die} | {sram} | {logic} | {l1} | {arch} | {rep} | {cluster} | {red} | {tile} | {clk} | {lat} | {res} |".format(
             seq=best["sequence_length"],
             die=best["die_area_mm2"],
             sram=best["sram_area_fraction"],
             logic=best["compute_logic_area_fraction"],
+            l1=best["measured_l1_profile"],
             arch=best["compute_arch"],
             rep=best["compute_replica_count"],
             cluster=best["cluster_count"],
@@ -471,6 +625,26 @@ def _write_markdown(path: Path, payload: JsonDict) -> None:
                 cw=row["command_cycles_per_wave"],
                 setup=row["reducer_setup_cycles"],
                 mult=row["reduction_cycle_multiplier"],
+                cluster=row["cluster_count"],
+                red=row["reduction_strategy"],
+                lat=row["latency_us"],
+                res=row["dominant_tile_resource"],
+            )
+        )
+    lines.extend([
+        "",
+        "## Best By Measured L1 Profile",
+        "",
+        "| die | L1 profile | logic used um2 | replicas | clusters | reduction | latency us | resource |",
+        "|---:|---|---:|---:|---:|---|---:|---|",
+    ])
+    for row in payload["best_by_measured_l1_profile"]:
+        lines.append(
+            "| {die} | {l1} | {used} | {rep} | {cluster} | {red} | {lat} | {res} |".format(
+                die=row["die_area_mm2"],
+                l1=row["measured_l1_profile"],
+                used=row["logic_area_used_um2"],
+                rep=row["compute_replica_count"],
                 cluster=row["cluster_count"],
                 red=row["reduction_strategy"],
                 lat=row["latency_us"],
@@ -536,6 +710,8 @@ def main() -> int:
     ap.add_argument("--command-cycles-per-wave", type=_int_list, default=[0])
     ap.add_argument("--reducer-setup-cycles", type=_int_list, default=[0])
     ap.add_argument("--reduction-cycle-multiplier", type=_float_list, default=[1.0])
+    ap.add_argument("--measured-l1-costs", default="")
+    ap.add_argument("--measured-l1-profile", type=_profile_list, default=["all"])
     ap.add_argument("--out", required=True)
     ap.add_argument("--out-md", required=True)
     args = ap.parse_args()
@@ -562,6 +738,8 @@ def main() -> int:
         command_cycles_per_wave_list=args.command_cycles_per_wave,
         reducer_setup_cycles_list=args.reducer_setup_cycles,
         reduction_cycle_multiplier_list=args.reduction_cycle_multiplier,
+        measured_l1_costs_path=Path(args.measured_l1_costs) if args.measured_l1_costs else None,
+        measured_l1_profile_list=args.measured_l1_profile,
     )
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
