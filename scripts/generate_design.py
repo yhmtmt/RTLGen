@@ -351,14 +351,17 @@ def identify_design(config):
             "signed_values": bool(options.get("signed_values", True)),
             "include_mg_cpa": False,
         }
-    if op_type == "attention_kv_tile_reducer_folded":
+    if op_type in {"attention_kv_tile_reducer_folded", "attention_kv_full_value_tile"}:
         options = entry.get("options", {})
         kv_bits = int(options.get("kv_bits", bit_width) or bit_width)
         head_dim = int(options.get("head_dim", 64))
         tile_lanes = int(options.get("tile_lanes", options.get("lanes", 16)))
         stream_bytes_per_cycle = int(options.get("stream_bytes_per_cycle", 256))
         score_bits = int(options.get("score_bits", options.get("tile_accum_bits", 48)))
-        value_bits = int(options.get("value_bits", 16))
+        raw_value_bits = int(options.get("value_bits", 16))
+        softmax_weight_bits = int(options.get("softmax_weight_bits", min(score_bits, 16)))
+        weighted_value_bits = int(options.get("weighted_value_bits", raw_value_bits))
+        reducer_value_bits = weighted_value_bits if op_type == "attention_kv_full_value_tile" else raw_value_bits
         stat_bits = int(options.get("stat_bits", 16))
         reducer_lanes = int(options.get("reducer_lanes", 16))
         partials = int(options.get("partials", 8))
@@ -366,25 +369,31 @@ def identify_design(config):
         reducer_accum_bits = int(options.get("reducer_accum_bits", 24))
         counter_bits = int(options.get("counter_bits", 32))
         if head_dim <= 0:
-            raise ValueError("attention_kv_tile_reducer_folded head_dim must be positive")
+            raise ValueError(f"{op_type} head_dim must be positive")
         if kv_bits <= 0:
-            raise ValueError("attention_kv_tile_reducer_folded kv_bits must be positive")
+            raise ValueError(f"{op_type} kv_bits must be positive")
         if tile_lanes <= 0 or tile_lanes > head_dim:
-            raise ValueError("attention_kv_tile_reducer_folded tile_lanes must be in [1, head_dim]")
+            raise ValueError(f"{op_type} tile_lanes must be in [1, head_dim]")
         if stream_bytes_per_cycle * 8 < tile_lanes * kv_bits * 2:
-            raise ValueError("attention_kv_tile_reducer_folded stream_bytes_per_cycle cannot carry query+key lane payload")
+            raise ValueError(f"{op_type} stream_bytes_per_cycle cannot carry query+key lane payload")
         if score_bits <= 0:
-            raise ValueError("attention_kv_tile_reducer_folded score_bits must be positive")
-        if value_bits <= 0 or stat_bits <= 0 or reducer_lanes <= 0:
-            raise ValueError("attention_kv_tile_reducer_folded reducer widths/lanes must be positive")
+            raise ValueError(f"{op_type} score_bits must be positive")
+        if raw_value_bits <= 0 or weighted_value_bits <= 0 or softmax_weight_bits <= 0:
+            raise ValueError(f"{op_type} value/weight widths must be positive")
+        if softmax_weight_bits > score_bits:
+            raise ValueError(f"{op_type} softmax_weight_bits cannot exceed score_bits")
+        if weighted_value_bits > raw_value_bits + softmax_weight_bits:
+            raise ValueError(f"{op_type} weighted_value_bits cannot exceed value*weight product width")
+        if stat_bits <= 0 or reducer_lanes <= 0:
+            raise ValueError(f"{op_type} reducer widths/lanes must be positive")
         if partials <= 1:
-            raise ValueError("attention_kv_tile_reducer_folded partials must be greater than one")
+            raise ValueError(f"{op_type} partials must be greater than one")
         if partials_per_cycle <= 0 or partials_per_cycle > partials or partials % partials_per_cycle:
-            raise ValueError("attention_kv_tile_reducer_folded partials_per_cycle must divide partials")
+            raise ValueError(f"{op_type} partials_per_cycle must divide partials")
         if reducer_accum_bits <= 0 or counter_bits <= 0:
-            raise ValueError("attention_kv_tile_reducer_folded accum/counter bits must be positive")
+            raise ValueError(f"{op_type} accum/counter bits must be positive")
         return {
-            "kind": "attention_kv_tile_reducer_folded",
+            "kind": op_type,
             "module_name": module_name,
             "wrapper_name": f"{module_name}_wrapper",
             "kv_bits": kv_bits,
@@ -393,13 +402,16 @@ def identify_design(config):
             "stream_bytes_per_cycle": stream_bytes_per_cycle,
             "score_bits": score_bits,
             "tile_fragment_width": tile_lanes * kv_bits,
-            "value_bits": value_bits,
+            "raw_value_bits": raw_value_bits,
+            "softmax_weight_bits": softmax_weight_bits,
+            "weighted_value_bits": weighted_value_bits,
+            "value_bits": reducer_value_bits,
             "stat_bits": stat_bits,
             "reducer_lanes": reducer_lanes,
             "partials": partials,
             "partials_per_cycle": partials_per_cycle,
             "reducer_accum_bits": reducer_accum_bits,
-            "value_width": partials_per_cycle * reducer_lanes * value_bits,
+            "value_width": partials_per_cycle * reducer_lanes * reducer_value_bits,
             "stat_width": partials_per_cycle * 2 * stat_bits,
             "reduced_value_width": reducer_lanes * reducer_accum_bits,
             "reduced_stat_width": 2 * stat_bits,
@@ -493,7 +505,7 @@ def main():
         ld_paths = [ld_library_path, onnxruntime_lib, env.get("LD_LIBRARY_PATH", "")]
         env["LD_LIBRARY_PATH"] = ":".join([p for p in ld_paths if p])
 
-        if design["kind"] in ("attention_kv_tile_reducer_folded", "l1_memory_noc_primitive"):
+        if design["kind"] in ("attention_kv_tile_reducer_folded", "attention_kv_full_value_tile", "l1_memory_noc_primitive"):
             generate_direct_design(config, src_dir, design, env)
         else:
             subprocess.run([locate_rtlgen_binary(), args.config], env=env, check=True)
@@ -553,7 +565,7 @@ def _slice_counter(name, width, counter_bits):
 
 
 def generate_direct_design(config, src_dir, design, env):
-    if design["kind"] == "attention_kv_tile_reducer_folded":
+    if design["kind"] in ("attention_kv_tile_reducer_folded", "attention_kv_full_value_tile"):
         generate_attention_tile_reducer_design(config, src_dir, design, env)
     elif design["kind"] == "l1_memory_noc_primitive":
         generate_l1_memory_noc_design(src_dir, design)
@@ -568,6 +580,7 @@ def generate_attention_tile_reducer_design(config, src_dir, design, env):
     operand_name = config.get("operands", [{"name": "operand"}])[0].get("name", "operand")
     signed_inputs = bool(design.get("signed_inputs", True))
     signed_values = bool(design.get("signed_values", True))
+    full_value_path = design["kind"] == "attention_kv_full_value_tile"
 
     tile_cfg = {
         "version": config.get("version", "1.1"),
@@ -625,15 +638,28 @@ def generate_attention_tile_reducer_design(config, src_dir, design, env):
         tile_text = (Path(tmp) / f"{tile_name}.v").read_text(encoding="utf-8")
         reducer_text = (Path(tmp) / f"{reducer_name}.v").read_text(encoding="utf-8")
 
+    value_product_w = int(design["softmax_weight_bits"]) + int(design["raw_value_bits"])
+    product_wires = []
     value_assigns = []
     for partial in range(design["partials_per_cycle"]):
         for lane in range(design["reducer_lanes"]):
             base = (partial * design["reducer_lanes"] + lane) * design["value_bits"]
             salt = (partial + 1) * 19 + lane
-            value_assigns.append(
-                f"          reducer_value_fragments[{base} +: VALUE_W] <= "
-                f"score_latched[VALUE_W-1:0] + {_slice_counter('chunk_index', design['value_bits'], design['counter_bits'])} + {salt};"
-            )
+            if full_value_path:
+                wire_name = f"weighted_value_p{partial}_l{lane}"
+                product_wires.append(
+                    f"  wire signed [PRODUCT_W-1:0] {wire_name} = "
+                    f"$signed(score_latched[WEIGHT_W-1:0]) * "
+                    f"$signed({_slice_counter('value_source_count', design['raw_value_bits'], design['counter_bits'])} + {design['raw_value_bits']}'sd{salt});"
+                )
+                value_assigns.append(
+                    f"          reducer_value_fragments[{base} +: VALUE_W] <= {wire_name}[VALUE_W-1:0];"
+                )
+            else:
+                value_assigns.append(
+                    f"          reducer_value_fragments[{base} +: VALUE_W] <= "
+                    f"score_latched[VALUE_W-1:0] + {_slice_counter('chunk_index', design['value_bits'], design['counter_bits'])} + {salt};"
+                )
     stat_assigns = []
     for partial in range(design["partials_per_cycle"]):
         base0 = partial * 2 * design["stat_bits"]
@@ -676,6 +702,9 @@ module {module_name}(
   localparam integer TILE_FRAGMENT_W = {design['tile_fragment_width']};
   localparam integer SCORE_W = {design['score_bits']};
   localparam integer VALUE_W = {design['value_bits']};
+  localparam integer RAW_VALUE_W = {design['raw_value_bits']};
+  localparam integer WEIGHT_W = {design['softmax_weight_bits']};
+  localparam integer PRODUCT_W = {value_product_w};
   localparam integer STAT_W = {design['stat_bits']};
   localparam integer VALUE_WIDTH = {design['value_width']};
   localparam integer STAT_WIDTH = {design['stat_width']};
@@ -700,6 +729,7 @@ module {module_name}(
   reg signed [SCORE_W-1:0] score_latched;
   reg [COUNT_W-1:0] chunk_index;
   reg [COUNT_W-1:0] group_index;
+  reg [COUNT_W-1:0] value_source_count;
   reg reducer_valid;
   reg [VALUE_WIDTH-1:0] reducer_value_fragments;
   reg [STAT_WIDTH-1:0] reducer_stat_fragments;
@@ -707,6 +737,8 @@ module {module_name}(
   wire [COUNT_W-1:0] reducer_cycle_count;
   wire [COUNT_W-1:0] reducer_final_completion_cycle;
   wire [COUNT_W-1:0] reducer_final_completion_cycle_wire = reducer_final_completion_cycle;
+
+{chr(10).join(product_wires)}
 
   {tile_name} tile (
     .clk(clk),
@@ -760,6 +792,7 @@ module {module_name}(
       score_latched <= {{SCORE_W{{1'b0}}}};
       chunk_index <= {{COUNT_W{{1'b0}}}};
       group_index <= {{COUNT_W{{1'b0}}}};
+      value_source_count <= {{COUNT_W{{1'b0}}}};
       reducer_valid <= 1'b0;
       reducer_value_fragments <= {{VALUE_WIDTH{{1'b0}}}};
       reducer_stat_fragments <= {{STAT_WIDTH{{1'b0}}}};
@@ -791,6 +824,7 @@ module {module_name}(
         end else begin
           chunk_index <= chunk_index + {{{{(COUNT_W-1){{1'b0}}}}, 1'b1}};
         end
+        value_source_count <= value_source_count + {{{{(COUNT_W-1){{1'b0}}}}, 1'b1}};
       end else if (reducer_valid && reducer_ready) begin
         reducer_valid <= 1'b0;
       end
@@ -1526,7 +1560,7 @@ module {wrapper_name}(
 
 endmodule
 """
-    elif design["kind"] == "attention_kv_tile_reducer_folded":
+    elif design["kind"] in ("attention_kv_tile_reducer_folded", "attention_kv_full_value_tile"):
         reduced_value_width = int(design["reduced_value_width"])
         reduced_stat_width = int(design["reduced_stat_width"])
         counter_bits = int(design["counter_bits"])

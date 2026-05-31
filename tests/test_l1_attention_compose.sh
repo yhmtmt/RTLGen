@@ -23,6 +23,23 @@ python3 "$ROOT/scripts/run_sweep.py" \
   --dry_run
 
 python3 "$ROOT/scripts/generate_design.py" \
+  "$ROOT/examples/config_attention_kv_full_value_tile.json" \
+  nangate45 \
+  --force_gen True
+
+iverilog -g2012 \
+  -s attention_kv_full_value_hd8_kv4_tl4_b16_p4_ppc2_w16_a24_wrapper \
+  -t null \
+  /orfs/flow/designs/src/attention_kv_full_value_hd8_kv4_tl4_b16_p4_ppc2_w16_a24_wrapper/*.v
+
+python3 "$ROOT/scripts/run_sweep.py" \
+  --configs "$ROOT/examples/config_attention_kv_full_value_tile.json" \
+  --platform nangate45 \
+  --sweep "$ROOT/runs/campaigns/activations/attention_kv_full_value_tile/sweeps/nangate45_macro_frontier.json" \
+  --out_root "$TMP/runs" \
+  --dry_run
+
+python3 "$ROOT/scripts/generate_design.py" \
   "$ROOT/examples/config_l1_memory_noc_primitive.json" \
   nangate45 \
   --force_gen True
