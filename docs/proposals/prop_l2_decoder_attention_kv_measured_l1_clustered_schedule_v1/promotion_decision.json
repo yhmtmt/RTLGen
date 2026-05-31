@@ -1,12 +1,14 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_measured_l1_clustered_schedule_v1",
-  "candidate_id": "",
+  "candidate_id": "l2_decoder_attention_kv_measured_l1_clustered_schedule_v1",
   "decision": "iterate",
-  "reason": "Replace with the actual decision rationale.",
+  "reason": "Measured per-cluster L1 tile/reducer and FIFO/router costs do not overturn the current clustered Llama7B frontier; the best sampled point remains nm64_flat with the smallest local L1 profile, so the next risk is full value-datapath and NoC/SRAM closure rather than this local-cost proxy.",
   "evidence_refs": [
-    "item:example",
-    "run:example"
+    "item:l2_decoder_attention_kv_measured_l1_clustered_schedule_v1",
+    "run:l2_decoder_attention_kv_measured_l1_clustered_schedule_v1_run_13be6b847e98c296",
+    "pr:722",
+    "artifact:runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_measured_l1_clustered_schedule__l2_decoder_attention_kv_measured_l1_clustered_schedule_v1.json"
   ],
-  "next_action": "Describe the next action.",
-  "requires_human_approval": true
+  "next_action": "Plan and run the next closure step for the full softmax-weighted value datapath and then refine NoC/SRAM cluster-memory scheduling.",
+  "requires_human_approval": false
 }

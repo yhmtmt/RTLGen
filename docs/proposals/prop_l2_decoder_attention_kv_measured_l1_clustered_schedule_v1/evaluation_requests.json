@@ -21,7 +21,11 @@
         "direction": "iterate",
         "reason": "Use measured L1 local costs to decide whether the clustered frontier survives before full value-datapath closure."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 722,
+      "merge_commit": "30825fe1fd17bf9a2b84f00f7c90917cd38786f0",
+      "merged_utc": "2026-05-31T11:10:00Z",
+      "notes": "Merged via PR #722. The rebuilt local DB did not contain the older L2 baseline work item, so the dispatched dependency gate used the two merged L1 input items and retained the L2 overhead result as paired baseline metadata."
     }
   ]
 }
