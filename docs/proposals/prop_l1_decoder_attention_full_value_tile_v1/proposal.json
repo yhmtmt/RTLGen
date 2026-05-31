@@ -1,0 +1,69 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_full_value_tile_v1",
+  "created_utc": "2026-05-31T11:20:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "ppa",
+  "abstraction_layer": "architecture_block",
+  "title": "Full value-path Llama attention tile PPA",
+  "hypothesis": "The measured folded tile/reducer proxy is missing the softmax-weighted value accumulation datapath; adding explicit score-weight by value products and wider value accumulation may materially change the local tile PPA used by the Llama7B clustered schedule model.",
+  "direct_comparison": {
+    "primary_question": "What is the Nangate45 macro PPA of a local attention tile that includes QK score generation, online partial-stat emission, softmax-weighted value products, and folded partial-value reduction?",
+    "include": [
+      "native KV8 operand width",
+      "hd64 area-conservative p8 ppc2 point",
+      "hd64 throughput-oriented p8 ppc4 point",
+      "hd128 wider sanity point with p16 ppc4",
+      "core utilization 50 and 60",
+      "macro-style wrapper without IO-pad assumptions"
+    ],
+    "exclude": [
+      "new L2 schedule sweep",
+      "cycle-accurate SRAM or NoC arbitration",
+      "model-quality changes such as MQA or KV4",
+      "large cluster-array integration"
+    ]
+  },
+  "expected_benefit": [
+    "closes the largest remaining local datapath abstraction in the measured-L1 Llama7B schedule model",
+    "tests whether weighted value accumulation is a small correction or a frontier-changing PPA term",
+    "provides updated local-cost anchors for the next L2 measured-cost schedule rerun"
+  ],
+  "risks": [
+    "the generated full-value tile still uses deterministic internal stimulus rather than a full memory-fed tile interface",
+    "softmax weight generation itself is approximated by score slices; the job measures value product/accumulation structure, not a complete softmax exponent pipeline",
+    "the wider point may hit routing or synthesis runtime limits"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_attention_full_value_tile_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure Nangate45 macro PPA for full local attention tile datapaths with explicit softmax-weighted value products and folded value reduction.",
+      "evaluation_mode": "ppa",
+      "abstraction_layer": "architecture_block",
+      "cost_class": "medium",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l1_decoder_attention_tile_reducer_folded_v1",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_tile_reducer_folded_v1",
+        "l2_decoder_attention_kv_measured_l1_clustered_schedule_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "If full value-path PPA stays near the folded proxy, rerun L2 with the corrected profile; if it grows sharply, narrow the local tile architecture before NoC/SRAM hierarchy work."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/campaigns/npu/l1_measured_costs/llama7b_attention_local_costs_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_measured_l1_clustered_schedule__l2_decoder_attention_kv_measured_l1_clustered_schedule_v1.json"
+  ],
+  "knowledge_refs": [
+    "scripts/generate_design.py",
+    "runs/designs/activations/attention_kv_tile_reducer_hd64_kv4_tl16_b128_p8_ppc2_l16_v16_s16_a24_wrapper/metrics.csv",
+    "runs/designs/activations/attention_kv_tile_reducer_hd64_kv4_tl16_b128_p8_ppc4_l16_v16_s16_a24_wrapper/metrics.csv"
+  ]
+}

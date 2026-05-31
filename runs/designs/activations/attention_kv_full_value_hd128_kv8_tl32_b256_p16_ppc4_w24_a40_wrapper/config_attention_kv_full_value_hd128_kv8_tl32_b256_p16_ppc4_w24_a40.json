@@ -1,0 +1,27 @@
+{
+  "version": "1.1",
+  "operands": [{"name": "kv_fragment", "dimensions": 1, "bit_width": 8, "signed": true, "kind": "int"}],
+  "operations": [{
+    "type": "attention_kv_full_value_tile",
+    "module_name": "attention_kv_full_value_hd128_kv8_tl32_b256_p16_ppc4_w24_a40",
+    "operand": "kv_fragment",
+    "options": {
+      "head_dim": 128,
+      "kv_bits": 8,
+      "tile_lanes": 32,
+      "stream_bytes_per_cycle": 256,
+      "score_bits": 48,
+      "value_bits": 16,
+      "softmax_weight_bits": 16,
+      "weighted_value_bits": 24,
+      "reducer_lanes": 16,
+      "stat_bits": 16,
+      "partials": 16,
+      "partials_per_cycle": 4,
+      "reducer_accum_bits": 40,
+      "counter_bits": 32,
+      "signed_inputs": true,
+      "signed_values": true
+    }
+  }]
+}
