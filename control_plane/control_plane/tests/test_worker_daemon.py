@@ -30,6 +30,7 @@ from control_plane.workers.executor import (
     _active_command_manifest,
     _active_expected_outputs,
     _next_trial_index,
+    _sync_completion_artifacts_to_repo,
 )
 
 
@@ -504,6 +505,35 @@ def test_worker_daemon_syncs_expected_outputs_before_immediate_completion() -> N
         assert process_completed.call_count == 1
         assert (repo_root / "control_plane" / "shadow_exports" / "review" / "daemon_item_sync_before_completion" / "evaluated.json").exists()
         assert (repo_root / "control_plane" / "shadow_exports" / "frozen_review" / "daemon_item_sync_before_completion" / "run_001" / "evidence.json").exists()
+
+
+def test_sync_completion_artifacts_accepts_absolute_checkout_target_path() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        checkout_root = Path(td) / "checkout"
+        repo_root = Path(td) / "repo"
+        checkout_root.mkdir()
+        repo_root.mkdir()
+
+        item_id = "daemon_item_absolute_promotion"
+        promotion_path = (
+            checkout_root
+            / "control_plane"
+            / "shadow_exports"
+            / "l1_promotions"
+            / f"{item_id}.json"
+        )
+        promotion_path.parent.mkdir(parents=True, exist_ok=True)
+        promotion_path.write_text('{"proposal": true}\n', encoding="utf-8")
+
+        _sync_completion_artifacts_to_repo(
+            checkout_root=str(checkout_root),
+            repo_root=str(repo_root),
+            item_id=item_id,
+            target_path=str(promotion_path),
+        )
+
+        copied = repo_root / "control_plane" / "shadow_exports" / "l1_promotions" / f"{item_id}.json"
+        assert copied.read_text(encoding="utf-8") == '{"proposal": true}\n'
 
 
 def test_worker_daemon_immediately_processes_completion_for_supported_items() -> None:
