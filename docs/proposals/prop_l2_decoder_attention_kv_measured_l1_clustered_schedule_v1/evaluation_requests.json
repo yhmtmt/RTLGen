@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_measured_l1_clustered_schedule_v1",
-  "source_commit": "93a3e3b58a9950470927bfca947a85fee48ffefe",
+  "source_commit": "0a1e86e0bce5672d52eb4b831971c0858bc84fab",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_kv_measured_l1_clustered_schedule_v1",
@@ -12,7 +12,6 @@
       "comparison_role": "frontier_synthesis",
       "paired_baseline_item_id": "l2_decoder_attention_kv_clustered_schedule_overhead_llama7b_v1",
       "depends_on_item_ids": [
-        "l2_decoder_attention_kv_clustered_schedule_overhead_llama7b_v1",
         "l1_decoder_attention_tile_reducer_folded_v1",
         "l1_decoder_memory_noc_primitives_v1"
       ],
@@ -20,8 +19,9 @@
       "requires_materialized_refs": true,
       "expected_result": {
         "direction": "iterate",
-        "reason": "If the same clustered frontier survives measured L1 local costs, proceed toward full L1 value-datapath closure; if the winner shifts, refine local cluster sizing or NoC hierarchy before deeper RTL."
-      }
+        "reason": "Use measured L1 local costs to decide whether the clustered frontier survives before full value-datapath closure."
+      },
+      "status": "pending"
     }
   ]
 }
