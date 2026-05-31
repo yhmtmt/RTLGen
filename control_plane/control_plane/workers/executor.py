@@ -440,6 +440,17 @@ def _sync_completion_artifacts_to_repo(
     if source_root == target_root:
         return
 
+    def _source_relative(path_text: str) -> str | None:
+        path = Path(str(path_text).strip())
+        if not str(path):
+            return None
+        if not path.is_absolute():
+            return str(path)
+        try:
+            return str(path.resolve().relative_to(source_root))
+        except ValueError:
+            return None
+
     def _copy_file(rel_path: str) -> None:
         source_path = (source_root / rel_path).resolve()
         if not source_path.exists() or not source_path.is_file():
@@ -461,7 +472,9 @@ def _sync_completion_artifacts_to_repo(
             _copy_file(rel_path)
 
     if target_path:
-        _copy_file(str(target_path))
+        rel_target_path = _source_relative(str(target_path))
+        if rel_target_path:
+            _copy_file(rel_target_path)
     _copy_tree(f'control_plane/shadow_exports/review/{item_id}')
     _copy_tree(f'control_plane/shadow_exports/frozen_review/{item_id}')
     _copy_tree(f'control_plane/shadow_exports/l1_trials/{item_id}')
