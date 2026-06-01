@@ -1,0 +1,30 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1",
+  "source_commit": "033e6bae8f8f8dbe24b30c26cd2636cdc348fcf6",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1",
+      "task_type": "l2_campaign",
+      "objective": "Rerun the Llama7B 131k clustered attention schedule using full-value measured L1 tile costs instead of folded proxy costs.",
+      "evaluation_mode": "paired_comparison",
+      "abstraction_layer": "decoder_attention_kv_full_value_l1_clustered_schedule",
+      "comparison_role": "candidate",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_measured_l1_clustered_schedule_v1",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_full_value_tile_v1",
+        "l2_decoder_attention_kv_measured_l1_clustered_schedule_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": false,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use the full-value measured-L1 schedule frontier to choose the next concrete attention memory/NoC integration point."
+      },
+      "status": "merged",
+      "merged_pr_number": 731,
+      "merge_commit": "d7003d23c3e5a4eb7761411b6cae7f1c4c33280f",
+      "merged_utc": "2026-06-01T13:59:11.665710Z",
+      "notes": "Merged via PR #731 and merge d7003d23c3e5a4eb7761411b6cae7f1c4c33280f at 2026-06-01T13:59:11.665710Z."
+    }
+  ]
+}

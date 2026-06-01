@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1",
+  "candidate_id": "l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1",
+  "decision": "iterate",
+  "reason": "Full-value L1 costs preserve the 1200 mm2/nm64_flat/8-cluster cluster_tree frontier, but add a small latency regression: 15133.019664 -> 15134.080960 us (+1.061296 us, +0.0070%). Measured L1 overhead rises 440292.3894 -> 1233170.5734 um2 and compute replicas drop 265 -> 264.",
+  "evidence_refs": [
+    "item:l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1",
+    "run:l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1_run_16edc0bc7856eeb0",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1.json",
+    "pr:#731",
+    "https://github.com/yhmtmt/RTLGen/pull/731"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1",
+  "requires_human_approval": false
+}
