@@ -1,0 +1,132 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-05-31T14:27:55.779183Z",
+  "item_id": "l1_decoder_attention_full_value_tile_v1",
+  "run_key": "l1_decoder_attention_full_value_tile_v1_run_b1fe84fab136489a",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "f7bea3786e921f003b7d6ffff340dc2edc75fee3",
+  "objective": "Measure Nangate45 macro PPA for full local attention tile datapaths with explicit softmax-weighted value products and folded value reduction.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/activations/attention_kv_full_value_tile/sweeps/nangate45_macro_frontier.json"
+    ],
+    "configs": [
+      "runs/designs/activations/attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc2_w24_a40_wrapper/config_attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc2_w24_a40.json",
+      "runs/designs/activations/attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc4_w24_a40_wrapper/config_attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc4_w24_a40.json",
+      "runs/designs/activations/attention_kv_full_value_hd128_kv8_tl32_b256_p16_ppc4_w24_a40_wrapper/config_attention_kv_full_value_hd128_kv8_tl32_b256_p16_ppc4_w24_a40.json"
+    ],
+    "out_root": "runs/designs/activations",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 3,
+  "evaluation_record": {
+    "evaluation_mode": "ppa",
+    "abstraction_layer": "architecture_block",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc2_w24_a40_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "014c101f",
+        "tag": "attention_kv_full_value_tile_nangate45_macro_frontier_5137e93f",
+        "result_path": "runs/designs/activations/attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc2_w24_a40_wrapper/work/014c101f/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 0.8235,
+        "die_area": 139416.358225,
+        "total_power_mw": 0.0341
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc4_w24_a40_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "07beada1",
+        "tag": "attention_kv_full_value_tile_nangate45_macro_frontier_d64a96fd",
+        "result_path": "runs/designs/activations/attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc4_w24_a40_wrapper/work/07beada1/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 0.8583,
+        "die_area": 267180.441025,
+        "total_power_mw": 0.0448
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/activations/attention_kv_full_value_hd128_kv8_tl32_b256_p16_ppc4_w24_a40_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "014c101f",
+        "tag": "attention_kv_full_value_tile_nangate45_macro_frontier_5137e93f",
+        "result_path": "runs/designs/activations/attention_kv_full_value_hd128_kv8_tl32_b256_p16_ppc4_w24_a40_wrapper/work/014c101f/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 0.864,
+        "die_area": 238241.61,
+        "total_power_mw": 0.0454
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_decoder_attention_full_value_tile_v1",
+    "completed_trials": 1,
+    "success_count": 1,
+    "failure_count": 0,
+    "success_rate": 1.0,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 0.8235,
+        "mean": 0.8235,
+        "median": 0.8235,
+        "max": 0.8235,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "die_area": {
+        "best": 139416.358225,
+        "mean": 139416.358225,
+        "median": 139416.358225,
+        "max": 139416.358225,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "total_power_mw": {
+        "best": 0.0341,
+        "mean": 0.0341,
+        "median": 0.0341,
+        "max": 0.0341,
+        "range": 0.0,
+        "stddev": 0.0
+      }
+    }
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/activations/attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc2_w24_a40_wrapper/metrics.csv",
+      "runs/designs/activations/attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc4_w24_a40_wrapper/metrics.csv",
+      "runs/designs/activations/attention_kv_full_value_hd128_kv8_tl32_b256_p16_ppc4_w24_a40_wrapper/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_full_value_tile_v1/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_full_value_tile_v1/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_attention_full_value_tile_v1/trial_table.csv"
+  }
+}
