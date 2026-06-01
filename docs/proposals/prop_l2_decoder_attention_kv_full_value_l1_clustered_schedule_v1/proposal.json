@@ -1,0 +1,69 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1",
+  "created_utc": "2026-06-01T09:45:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_attention_kv_full_value_l1_clustered_schedule",
+  "title": "Llama7B clustered attention schedule with full-value measured L1 tile costs",
+  "hypothesis": "Replacing the folded local L1 attention proxy with the measured full-value value-datapath tile costs will change the feasible cluster-count and die-size frontier, especially where local cluster logic area competes with SRAM capacity.",
+  "direct_comparison": {
+    "primary_question": "Does the L2 Llama7B 131k clustered attention frontier selected with folded L1 proxy costs hold after charging the measured full-value L1 tile datapath PPA?",
+    "include": [
+      "native GQA KV8 Llama7B at 131072 context length",
+      "measured full-value L1 tile profiles from the L1 closure run",
+      "200, 400, 800, and 1200 mm2 die area points",
+      "SRAM fractions 0.4 and 0.6",
+      "logic fractions 0.1 and 0.2",
+      "cluster counts 1, 2, 4, 8, and 16",
+      "NoC bandwidth and hop sensitivity matching the folded measured-L1 schedule run"
+    ],
+    "exclude": [
+      "cycle-accurate SRAM macro timing",
+      "cycle-accurate NoC arbitration",
+      "full softmax-weight generation RTL",
+      "model quality or retraining recovery"
+    ]
+  },
+  "expected_benefit": [
+    "revises the current Llama7B attention frontier using less abstract local tile PPA",
+    "quantifies whether the folded-proxy winner was optimistic on local logic area",
+    "selects the next integrated L1/L2 attention measurement point"
+  ],
+  "risks": [
+    "full-value tile profiles still abstract softmax-weight generation",
+    "the clustered schedule model charges local area and clock but not routed SRAM macros",
+    "NoC contention remains bandwidth/hop based rather than cycle accurate"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1",
+      "task_type": "l2_campaign",
+      "objective": "Rerun the Llama7B 131k clustered attention schedule using full-value measured L1 tile costs instead of folded proxy costs.",
+      "evaluation_mode": "paired_comparison",
+      "abstraction_layer": "decoder_attention_kv_full_value_l1_clustered_schedule",
+      "cost_class": "low",
+      "comparison_role": "candidate",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_measured_l1_clustered_schedule_v1",
+      "depends_on_item_ids": [
+        "l1_decoder_attention_full_value_tile_v1",
+        "l2_decoder_attention_kv_measured_l1_clustered_schedule_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use the full-value measured-L1 schedule frontier to choose the next concrete attention memory/NoC integration point."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_measured_l1_clustered_schedule__l2_decoder_attention_kv_measured_l1_clustered_schedule_v1.json"
+  ],
+  "knowledge_refs": [
+    "runs/campaigns/npu/l1_measured_costs/llama7b_attention_local_costs_full_value_v1.json",
+    "npu/eval/estimate_llm_decoder_attention_kv_clustered_schedule.py",
+    "control_plane/control_plane/services/l2_task_generator.py"
+  ]
+}
