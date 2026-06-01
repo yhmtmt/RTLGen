@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_full_value_tile_v1",
+  "decision": "promote",
+  "pr_number": 728,
+  "merge_commit": "3eff9dc8e705712a848896d3f8bc4334a2ab947d",
+  "merged_utc": "2026-06-01T09:19:41.441426Z"
+}

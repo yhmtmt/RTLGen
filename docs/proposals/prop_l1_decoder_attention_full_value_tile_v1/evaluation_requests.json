@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l1_decoder_attention_full_value_tile_v1",
-  "source_commit": "pending_source_pr_merge",
+  "source_commit": "f7bea3786e921f003b7d6ffff340dc2edc75fee3",
   "requested_items": [
     {
       "item_id": "l1_decoder_attention_full_value_tile_v1",
@@ -20,7 +20,12 @@
       "expected_result": {
         "direction": "iterate",
         "reason": "If full value-path PPA stays near the folded proxy, rerun L2 with the corrected profile; if it grows sharply, narrow the local tile architecture before NoC/SRAM hierarchy work."
-      }
+      },
+      "status": "merged",
+      "merged_pr_number": 728,
+      "merge_commit": "3eff9dc8e705712a848896d3f8bc4334a2ab947d",
+      "merged_utc": "2026-06-01T09:19:41.441426Z",
+      "notes": "Merged via PR #728 and merge 3eff9dc8e705712a848896d3f8bc4334a2ab947d at 2026-06-01T09:19:41.441426Z."
     }
   ]
 }
