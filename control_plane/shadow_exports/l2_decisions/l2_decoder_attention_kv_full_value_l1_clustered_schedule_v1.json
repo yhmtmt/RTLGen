@@ -1,0 +1,158 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-06-01T09:41:17.763375Z",
+  "item_id": "l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1",
+  "run_key": "l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1_run_16edc0bc7856eeb0",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "033e6bae8f8f8dbe24b30c26cd2636cdc348fcf6",
+  "review_metadata_source_commit": "033e6bae8f8f8dbe24b30c26cd2636cdc348fcf6",
+  "objective": "Rerun the Llama7B 131k clustered attention schedule using full-value measured L1 tile costs instead of folded proxy costs.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+    ],
+    "design_dirs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+    ],
+    "macro_manifests": [
+      "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+      "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+    ],
+    "decoder_contract": {
+      "attention_kv_full_value_l1_costs": "runs/campaigns/npu/l1_measured_costs/llama7b_attention_local_costs_full_value_v1.json",
+      "attention_kv_clustered_schedule_overhead": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_clustered_schedule_overhead__l2_decoder_attention_kv_clustered_schedule_overhead_llama7b_v1.json",
+      "attention_kv_full_value_l1_clustered_schedule_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_full_value_l1_clustered_schedule__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1.json",
+      "attention_kv_full_value_l1_clustered_schedule_scope": "Quality-backed native-GQA KV8 Llama7B 131k estimate that keeps measured compute-array PPA, explicit clustered reduction, and overhead sensitivity, then replaces the folded local cluster datapath proxy with the measured full-value attention tile datapaths from the L1 closure run. This remains an L2 schedule model: it charges area, power, and clock for the full-value L1 anchors plus FIFO/router PPA, but does not yet model cycle-accurate SRAM, NoC arbitration, or full softmax-weight generation.",
+      "attention_kv_full_value_l1_clustered_schedule_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_full_value_l1_clustered_schedule__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1.md"
+    },
+    "generated_campaign": {
+      "path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1.json",
+      "outputs": {
+        "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1/report.md",
+        "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1/results.csv",
+        "campaign_dir": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1"
+      },
+      "clean_outputs": true,
+      "base_campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1.json"
+    },
+    "candidate_manifests": [
+      "runs/candidates/nangate45/module_candidates.json"
+    ]
+  },
+  "recommendation": {
+    "arch_id": "fp16_nm1",
+    "macro_mode": "flat_nomacro",
+    "objective_rank": 1,
+    "objective_score": "0.0",
+    "latency_ms_mean": 0.028907999999999996,
+    "energy_mj_mean": 5.582770776e-06,
+    "critical_path_ns_mean": 5.557037432204143,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.193122,
+    "flow_elapsed_s_mean": 848.418
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1",
+    "title": "Llama7B clustered attention schedule with full-value measured L1 tile costs",
+    "primary_question": "Does the L2 Llama7B 131k clustered attention frontier selected with folded L1 proxy costs hold after charging the measured full-value L1 tile datapath PPA?",
+    "evaluation_mode": "paired_comparison",
+    "comparison_role": "candidate",
+    "abstraction_layer": "decoder_attention_kv_full_value_l1_clustered_schedule",
+    "expected_direction": "iterate",
+    "expected_reason": "Use the full-value measured-L1 schedule frontier to choose the next concrete attention memory/NoC integration point.",
+    "summary": "Full-value L1 costs preserve the 1200 mm2/nm64_flat/8-cluster cluster_tree frontier, but add a small latency regression: 15133.019664 -> 15134.080960 us (+1.061296 us, +0.0070%). Measured L1 overhead rises 440292.3894 -> 1233170.5734 um2 and compute replicas drop 265 -> 264.",
+    "baseline_ref": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_measured_l1_clustered_schedule_v1__l2_decoder_attention_kv_measured_l1_clustered_schedule_v1",
+    "baseline_item_id": "l2_decoder_attention_kv_measured_l1_clustered_schedule_v1",
+    "outcome": "small_latency_regression_frontier_preserved",
+    "expectation_status": "unspecified",
+    "schedule_comparison": {
+      "baseline_item_id": "l2_decoder_attention_kv_measured_l1_clustered_schedule_v1",
+      "baseline_profile": "hd64_kv4_p8_ppc2_noc128",
+      "candidate_profile": "hd64_kv8_full_value_p8_ppc2_noc128",
+      "baseline_latency_us": 15133.019664,
+      "candidate_latency_us": 15134.08096,
+      "latency_delta_us": 1.0612959999998566,
+      "latency_delta_pct": 0.0070131145241592325,
+      "baseline_measured_l1_overhead_area_um2": 440292.3894,
+      "candidate_measured_l1_overhead_area_um2": 1233170.5734,
+      "measured_l1_overhead_area_delta_um2": 792878.1840000001,
+      "baseline_compute_replica_count": 265,
+      "candidate_compute_replica_count": 264,
+      "baseline_cluster_count": 8,
+      "candidate_cluster_count": 8,
+      "baseline_reduction_strategy": "cluster_tree",
+      "candidate_reduction_strategy": "cluster_tree",
+      "candidate_logic_area_slack_um2": 605829.4266,
+      "candidate_dominant_tile_resource": "tile_attention"
+    },
+    "matched_row_count": 0
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1",
+    "title": "Llama7B clustered attention schedule with full-value measured L1 tile costs",
+    "kind": "architecture",
+    "primary_question": "Does the L2 Llama7B 131k clustered attention frontier selected with folded L1 proxy costs hold after charging the measured full-value L1 tile datapath PPA?",
+    "evaluation_mode": "paired_comparison",
+    "comparison_role": "candidate",
+    "outcome": "small_latency_regression_frontier_preserved",
+    "summary": "Full-value L1 costs preserve the 1200 mm2/nm64_flat/8-cluster cluster_tree frontier, but add a small latency regression: 15133.019664 -> 15134.080960 us (+1.061296 us, +0.0070%). Measured L1 overhead rises 440292.3894 -> 1233170.5734 um2 and compute replicas drop 265 -> 264.",
+    "baseline_ref": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_measured_l1_clustered_schedule_v1__l2_decoder_attention_kv_measured_l1_clustered_schedule_v1",
+    "baseline_item_id": "l2_decoder_attention_kv_measured_l1_clustered_schedule_v1",
+    "matched_row_count": 0,
+    "schedule_comparison": {
+      "baseline_item_id": "l2_decoder_attention_kv_measured_l1_clustered_schedule_v1",
+      "baseline_profile": "hd64_kv4_p8_ppc2_noc128",
+      "candidate_profile": "hd64_kv8_full_value_p8_ppc2_noc128",
+      "baseline_latency_us": 15133.019664,
+      "candidate_latency_us": 15134.08096,
+      "latency_delta_us": 1.0612959999998566,
+      "latency_delta_pct": 0.0070131145241592325,
+      "baseline_measured_l1_overhead_area_um2": 440292.3894,
+      "candidate_measured_l1_overhead_area_um2": 1233170.5734,
+      "measured_l1_overhead_area_delta_um2": 792878.1840000001,
+      "baseline_compute_replica_count": 265,
+      "candidate_compute_replica_count": 264,
+      "baseline_cluster_count": 8,
+      "candidate_cluster_count": 8,
+      "baseline_reduction_strategy": "cluster_tree",
+      "candidate_reduction_strategy": "cluster_tree",
+      "candidate_logic_area_slack_um2": 605829.4266,
+      "candidate_dominant_tile_resource": "tile_attention"
+    }
+  },
+  "source_refs": {
+    "best_point_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1/best_point.json",
+    "summary_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1/summary.csv",
+    "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1/results.csv",
+    "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1/report.md",
+    "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+    "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+    "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1/artifacts/perf/fp16_nm1/mlp1/trace.json",
+    "focused_model_artifacts": [
+      {
+        "model_id": "mlp1",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1/artifacts/perf/fp16_nm1/mlp1/trace.json"
+      },
+      {
+        "model_id": "mlp2",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1/artifacts/mapper/fp16_nm1/mlp2/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1/artifacts/mapper/fp16_nm1/mlp2/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1/artifacts/perf/fp16_nm1/mlp2/trace.json"
+      }
+    ],
+    "baseline_summary_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_measured_l1_clustered_schedule_v1__l2_decoder_attention_kv_measured_l1_clustered_schedule_v1/summary.csv",
+    "baseline_report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_measured_l1_clustered_schedule_v1__l2_decoder_attention_kv_measured_l1_clustered_schedule_v1/report.md"
+  }
+}
