@@ -51,7 +51,7 @@
         "l2_decoder_attention_kv_measured_l1_clustered_schedule_v1"
       ],
       "requires_merged_inputs": true,
-      "requires_materialized_refs": true,
+      "requires_materialized_refs": false,
       "expected_result": {
         "direction": "iterate",
         "reason": "Use the full-value measured-L1 schedule frontier to choose the next concrete attention memory/NoC integration point."
