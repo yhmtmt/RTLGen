@@ -70,11 +70,32 @@
     "abstraction_layer": "decoder_attention_kv_full_value_l1_clustered_schedule",
     "expected_direction": "iterate",
     "expected_reason": "Use the full-value measured-L1 schedule frontier to choose the next concrete attention memory/NoC integration point.",
-    "summary": "Focused comparison matched the baseline with no measurable latency or energy delta.",
+    "summary": "Full-value L1 costs preserve the 1200 mm2/nm64_flat/8-cluster cluster_tree frontier, but add a small latency regression: 15133.019664 -> 15134.080960 us (+1.061296 us, +0.0070%). Measured L1 overhead rises 440292.3894 -> 1233170.5734 um2 and compute replicas drop 265 -> 264.",
     "baseline_ref": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_measured_l1_clustered_schedule_v1__l2_decoder_attention_kv_measured_l1_clustered_schedule_v1",
     "baseline_item_id": "l2_decoder_attention_kv_measured_l1_clustered_schedule_v1",
-    "outcome": "no_measurable_change",
-    "expectation_status": "unspecified"
+    "outcome": "small_latency_regression_frontier_preserved",
+    "expectation_status": "unspecified",
+    "schedule_comparison": {
+      "baseline_item_id": "l2_decoder_attention_kv_measured_l1_clustered_schedule_v1",
+      "baseline_profile": "hd64_kv4_p8_ppc2_noc128",
+      "candidate_profile": "hd64_kv8_full_value_p8_ppc2_noc128",
+      "baseline_latency_us": 15133.019664,
+      "candidate_latency_us": 15134.08096,
+      "latency_delta_us": 1.0612959999998566,
+      "latency_delta_pct": 0.0070131145241592325,
+      "baseline_measured_l1_overhead_area_um2": 440292.3894,
+      "candidate_measured_l1_overhead_area_um2": 1233170.5734,
+      "measured_l1_overhead_area_delta_um2": 792878.1840000001,
+      "baseline_compute_replica_count": 265,
+      "candidate_compute_replica_count": 264,
+      "baseline_cluster_count": 8,
+      "candidate_cluster_count": 8,
+      "baseline_reduction_strategy": "cluster_tree",
+      "candidate_reduction_strategy": "cluster_tree",
+      "candidate_logic_area_slack_um2": 605829.4266,
+      "candidate_dominant_tile_resource": "tile_attention"
+    },
+    "matched_row_count": 0
   },
   "proposal_assessment": {
     "proposal_id": "prop_l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1",
@@ -83,469 +104,31 @@
     "primary_question": "Does the L2 Llama7B 131k clustered attention frontier selected with folded L1 proxy costs hold after charging the measured full-value L1 tile datapath PPA?",
     "evaluation_mode": "paired_comparison",
     "comparison_role": "candidate",
-    "outcome": "no_measurable_change",
-    "summary": "Focused comparison matched the baseline with no measurable latency or energy delta.",
+    "outcome": "small_latency_regression_frontier_preserved",
+    "summary": "Full-value L1 costs preserve the 1200 mm2/nm64_flat/8-cluster cluster_tree frontier, but add a small latency regression: 15133.019664 -> 15134.080960 us (+1.061296 us, +0.0070%). Measured L1 overhead rises 440292.3894 -> 1233170.5734 um2 and compute replicas drop 265 -> 264.",
     "baseline_ref": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_measured_l1_clustered_schedule_v1__l2_decoder_attention_kv_measured_l1_clustered_schedule_v1",
     "baseline_item_id": "l2_decoder_attention_kv_measured_l1_clustered_schedule_v1",
-    "matched_row_count": 12,
-    "matched_rows": [
-      {
-        "scope": "model",
-        "arch_id": "fp16_nm1",
-        "macro_mode": "flat_nomacro",
-        "model_id": "mlp1",
-        "metrics": {
-          "latency_ms_mean": {
-            "baseline": 0.004282,
-            "candidate": 0.004282,
-            "delta": 0.0
-          },
-          "energy_mj_mean": {
-            "baseline": 8.26948404e-07,
-            "candidate": 8.26948404e-07,
-            "delta": 0.0
-          },
-          "critical_path_ns_mean": {
-            "baseline": 5.557037432204143,
-            "candidate": 5.557037432204143,
-            "delta": 0.0
-          },
-          "total_power_mw_mean": {
-            "baseline": 0.193122,
-            "candidate": 0.193122,
-            "delta": 0.0
-          },
-          "flow_elapsed_s_mean": {
-            "baseline": 848.418,
-            "candidate": 848.418,
-            "delta": 0.0
-          },
-          "throughput_infer_per_s_mean": {
-            "baseline": 233535.7309668379,
-            "candidate": 233535.7309668379,
-            "delta": 0.0
-          }
-        }
-      },
-      {
-        "scope": "model",
-        "arch_id": "fp16_nm1",
-        "macro_mode": "flat_nomacro",
-        "model_id": "mlp2",
-        "metrics": {
-          "latency_ms_mean": {
-            "baseline": 0.05353399999999999,
-            "candidate": 0.05353399999999999,
-            "delta": 0.0
-          },
-          "energy_mj_mean": {
-            "baseline": 1.0338593148e-05,
-            "candidate": 1.0338593148e-05,
-            "delta": 0.0
-          },
-          "critical_path_ns_mean": {
-            "baseline": 5.557037432204143,
-            "candidate": 5.557037432204143,
-            "delta": 0.0
-          },
-          "total_power_mw_mean": {
-            "baseline": 0.193122,
-            "candidate": 0.193122,
-            "delta": 0.0
-          },
-          "flow_elapsed_s_mean": {
-            "baseline": 848.418,
-            "candidate": 848.418,
-            "delta": 0.0
-          },
-          "throughput_infer_per_s_mean": {
-            "baseline": 18679.717562670452,
-            "candidate": 18679.717562670452,
-            "delta": 0.0
-          }
-        }
-      },
-      {
-        "scope": "model",
-        "arch_id": "fp16_nm1",
-        "macro_mode": "hier_macro",
-        "model_id": "mlp1",
-        "metrics": {
-          "latency_ms_mean": {
-            "baseline": 0.004282,
-            "candidate": 0.004282,
-            "delta": 0.0
-          },
-          "energy_mj_mean": {
-            "baseline": 8.45442362e-07,
-            "candidate": 8.45442362e-07,
-            "delta": 0.0
-          },
-          "critical_path_ns_mean": {
-            "baseline": 5.774905724664045,
-            "candidate": 5.774905724664045,
-            "delta": 0.0
-          },
-          "total_power_mw_mean": {
-            "baseline": 0.197441,
-            "candidate": 0.197441,
-            "delta": 0.0
-          },
-          "flow_elapsed_s_mean": {
-            "baseline": 978.894,
-            "candidate": 978.894,
-            "delta": 0.0
-          },
-          "throughput_infer_per_s_mean": {
-            "baseline": 233535.7309668379,
-            "candidate": 233535.7309668379,
-            "delta": 0.0
-          }
-        }
-      },
-      {
-        "scope": "model",
-        "arch_id": "fp16_nm1",
-        "macro_mode": "hier_macro",
-        "model_id": "mlp2",
-        "metrics": {
-          "latency_ms_mean": {
-            "baseline": 0.05353399999999999,
-            "candidate": 0.05353399999999999,
-            "delta": 0.0
-          },
-          "energy_mj_mean": {
-            "baseline": 1.0569806494000001e-05,
-            "candidate": 1.0569806494000001e-05,
-            "delta": 0.0
-          },
-          "critical_path_ns_mean": {
-            "baseline": 5.774905724664045,
-            "candidate": 5.774905724664045,
-            "delta": 0.0
-          },
-          "total_power_mw_mean": {
-            "baseline": 0.197441,
-            "candidate": 0.197441,
-            "delta": 0.0
-          },
-          "flow_elapsed_s_mean": {
-            "baseline": 978.894,
-            "candidate": 978.894,
-            "delta": 0.0
-          },
-          "throughput_infer_per_s_mean": {
-            "baseline": 18679.717562670452,
-            "candidate": 18679.717562670452,
-            "delta": 0.0
-          }
-        }
-      },
-      {
-        "scope": "model",
-        "arch_id": "fp16_nm2",
-        "macro_mode": "flat_nomacro",
-        "model_id": "mlp1",
-        "metrics": {
-          "latency_ms_mean": {
-            "baseline": 0.007330000000000001,
-            "candidate": 0.007330000000000001,
-            "delta": 0.0
-          },
-          "energy_mj_mean": {
-            "baseline": 1.54233462e-06,
-            "candidate": 1.54233462e-06,
-            "delta": 0.0
-          },
-          "critical_path_ns_mean": {
-            "baseline": 5.701286780426342,
-            "candidate": 5.701286780426342,
-            "delta": 0.0
-          },
-          "total_power_mw_mean": {
-            "baseline": 0.21041400000000002,
-            "candidate": 0.21041400000000002,
-            "delta": 0.0
-          },
-          "flow_elapsed_s_mean": {
-            "baseline": 829.814,
-            "candidate": 829.814,
-            "delta": 0.0
-          },
-          "throughput_infer_per_s_mean": {
-            "baseline": 136425.64802182812,
-            "candidate": 136425.64802182812,
-            "delta": 0.0
-          }
-        }
-      },
-      {
-        "scope": "model",
-        "arch_id": "fp16_nm2",
-        "macro_mode": "flat_nomacro",
-        "model_id": "mlp2",
-        "metrics": {
-          "latency_ms_mean": {
-            "baseline": 0.08730199999999999,
-            "candidate": 0.08730199999999999,
-            "delta": 0.0
-          },
-          "energy_mj_mean": {
-            "baseline": 1.8369563028000002e-05,
-            "candidate": 1.8369563028000002e-05,
-            "delta": 0.0
-          },
-          "critical_path_ns_mean": {
-            "baseline": 5.701286780426342,
-            "candidate": 5.701286780426342,
-            "delta": 0.0
-          },
-          "total_power_mw_mean": {
-            "baseline": 0.21041400000000002,
-            "candidate": 0.21041400000000002,
-            "delta": 0.0
-          },
-          "flow_elapsed_s_mean": {
-            "baseline": 829.814,
-            "candidate": 829.814,
-            "delta": 0.0
-          },
-          "throughput_infer_per_s_mean": {
-            "baseline": 11454.4913060411,
-            "candidate": 11454.4913060411,
-            "delta": 0.0
-          }
-        }
-      },
-      {
-        "scope": "model",
-        "arch_id": "fp16_nm2",
-        "macro_mode": "hier_macro",
-        "model_id": "mlp1",
-        "metrics": {
-          "latency_ms_mean": {
-            "baseline": 0.007330000000000001,
-            "candidate": 0.007330000000000001,
-            "delta": 0.0
-          },
-          "energy_mj_mean": {
-            "baseline": 1.5599339500000002e-06,
-            "candidate": 1.5599339500000002e-06,
-            "delta": 0.0
-          },
-          "critical_path_ns_mean": {
-            "baseline": 5.740890641774165,
-            "candidate": 5.740890641774165,
-            "delta": 0.0
-          },
-          "total_power_mw_mean": {
-            "baseline": 0.21281500000000003,
-            "candidate": 0.21281500000000003,
-            "delta": 0.0
-          },
-          "flow_elapsed_s_mean": {
-            "baseline": 981.7819999999999,
-            "candidate": 981.7819999999999,
-            "delta": 0.0
-          },
-          "throughput_infer_per_s_mean": {
-            "baseline": 136425.64802182812,
-            "candidate": 136425.64802182812,
-            "delta": 0.0
-          }
-        }
-      },
-      {
-        "scope": "model",
-        "arch_id": "fp16_nm2",
-        "macro_mode": "hier_macro",
-        "model_id": "mlp2",
-        "metrics": {
-          "latency_ms_mean": {
-            "baseline": 0.08730199999999999,
-            "candidate": 0.08730199999999999,
-            "delta": 0.0
-          },
-          "energy_mj_mean": {
-            "baseline": 1.857917513e-05,
-            "candidate": 1.857917513e-05,
-            "delta": 0.0
-          },
-          "critical_path_ns_mean": {
-            "baseline": 5.740890641774165,
-            "candidate": 5.740890641774165,
-            "delta": 0.0
-          },
-          "total_power_mw_mean": {
-            "baseline": 0.21281500000000003,
-            "candidate": 0.21281500000000003,
-            "delta": 0.0
-          },
-          "flow_elapsed_s_mean": {
-            "baseline": 981.7819999999999,
-            "candidate": 981.7819999999999,
-            "delta": 0.0
-          },
-          "throughput_infer_per_s_mean": {
-            "baseline": 11454.4913060411,
-            "candidate": 11454.4913060411,
-            "delta": 0.0
-          }
-        }
-      },
-      {
-        "scope": "aggregate",
-        "arch_id": "fp16_nm1",
-        "macro_mode": "flat_nomacro",
-        "model_id": null,
-        "metrics": {
-          "latency_ms_mean": {
-            "baseline": 0.028907999999999996,
-            "candidate": 0.028907999999999996,
-            "delta": 0.0
-          },
-          "energy_mj_mean": {
-            "baseline": 5.582770776e-06,
-            "candidate": 5.582770776e-06,
-            "delta": 0.0
-          },
-          "critical_path_ns_mean": {
-            "baseline": 5.557037432204143,
-            "candidate": 5.557037432204143,
-            "delta": 0.0
-          },
-          "total_power_mw_mean": {
-            "baseline": 0.193122,
-            "candidate": 0.193122,
-            "delta": 0.0
-          },
-          "flow_elapsed_s_mean": {
-            "baseline": 848.418,
-            "candidate": 848.418,
-            "delta": 0.0
-          },
-          "throughput_infer_per_s_mean": {
-            "baseline": 126107.72426475417,
-            "candidate": 126107.72426475417,
-            "delta": 0.0
-          }
-        }
-      },
-      {
-        "scope": "aggregate",
-        "arch_id": "fp16_nm1",
-        "macro_mode": "hier_macro",
-        "model_id": null,
-        "metrics": {
-          "latency_ms_mean": {
-            "baseline": 0.028907999999999996,
-            "candidate": 0.028907999999999996,
-            "delta": 0.0
-          },
-          "energy_mj_mean": {
-            "baseline": 5.707624428e-06,
-            "candidate": 5.707624428e-06,
-            "delta": 0.0
-          },
-          "critical_path_ns_mean": {
-            "baseline": 5.774905724664045,
-            "candidate": 5.774905724664045,
-            "delta": 0.0
-          },
-          "total_power_mw_mean": {
-            "baseline": 0.197441,
-            "candidate": 0.197441,
-            "delta": 0.0
-          },
-          "flow_elapsed_s_mean": {
-            "baseline": 978.894,
-            "candidate": 978.894,
-            "delta": 0.0
-          },
-          "throughput_infer_per_s_mean": {
-            "baseline": 126107.72426475417,
-            "candidate": 126107.72426475417,
-            "delta": 0.0
-          }
-        }
-      },
-      {
-        "scope": "aggregate",
-        "arch_id": "fp16_nm2",
-        "macro_mode": "flat_nomacro",
-        "model_id": null,
-        "metrics": {
-          "latency_ms_mean": {
-            "baseline": 0.047316,
-            "candidate": 0.047316,
-            "delta": 0.0
-          },
-          "energy_mj_mean": {
-            "baseline": 9.955948824e-06,
-            "candidate": 9.955948824e-06,
-            "delta": 0.0
-          },
-          "critical_path_ns_mean": {
-            "baseline": 5.701286780426342,
-            "candidate": 5.701286780426342,
-            "delta": 0.0
-          },
-          "total_power_mw_mean": {
-            "baseline": 0.21041400000000002,
-            "candidate": 0.21041400000000002,
-            "delta": 0.0
-          },
-          "flow_elapsed_s_mean": {
-            "baseline": 829.814,
-            "candidate": 829.814,
-            "delta": 0.0
-          },
-          "throughput_infer_per_s_mean": {
-            "baseline": 73940.06966393461,
-            "candidate": 73940.06966393461,
-            "delta": 0.0
-          }
-        }
-      },
-      {
-        "scope": "aggregate",
-        "arch_id": "fp16_nm2",
-        "macro_mode": "hier_macro",
-        "model_id": null,
-        "metrics": {
-          "latency_ms_mean": {
-            "baseline": 0.047316,
-            "candidate": 0.047316,
-            "delta": 0.0
-          },
-          "energy_mj_mean": {
-            "baseline": 1.0069554539999999e-05,
-            "candidate": 1.0069554539999999e-05,
-            "delta": 0.0
-          },
-          "critical_path_ns_mean": {
-            "baseline": 5.740890641774165,
-            "candidate": 5.740890641774165,
-            "delta": 0.0
-          },
-          "total_power_mw_mean": {
-            "baseline": 0.21281500000000003,
-            "candidate": 0.21281500000000003,
-            "delta": 0.0
-          },
-          "flow_elapsed_s_mean": {
-            "baseline": 981.7819999999999,
-            "candidate": 981.7819999999999,
-            "delta": 0.0
-          },
-          "throughput_infer_per_s_mean": {
-            "baseline": 73940.06966393461,
-            "candidate": 73940.06966393461,
-            "delta": 0.0
-          }
-        }
-      }
-    ]
+    "matched_row_count": 0,
+    "schedule_comparison": {
+      "baseline_item_id": "l2_decoder_attention_kv_measured_l1_clustered_schedule_v1",
+      "baseline_profile": "hd64_kv4_p8_ppc2_noc128",
+      "candidate_profile": "hd64_kv8_full_value_p8_ppc2_noc128",
+      "baseline_latency_us": 15133.019664,
+      "candidate_latency_us": 15134.08096,
+      "latency_delta_us": 1.0612959999998566,
+      "latency_delta_pct": 0.0070131145241592325,
+      "baseline_measured_l1_overhead_area_um2": 440292.3894,
+      "candidate_measured_l1_overhead_area_um2": 1233170.5734,
+      "measured_l1_overhead_area_delta_um2": 792878.1840000001,
+      "baseline_compute_replica_count": 265,
+      "candidate_compute_replica_count": 264,
+      "baseline_cluster_count": 8,
+      "candidate_cluster_count": 8,
+      "baseline_reduction_strategy": "cluster_tree",
+      "candidate_reduction_strategy": "cluster_tree",
+      "candidate_logic_area_slack_um2": 605829.4266,
+      "candidate_dominant_tile_resource": "tile_attention"
+    }
   },
   "source_refs": {
     "best_point_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1/best_point.json",
