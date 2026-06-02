@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_noc_profile_v1",
+  "decision": "iterate",
+  "pr_number": 736,
+  "merge_commit": "0aac4d5f077ab12802dfefd14d0f26a963231c4f",
+  "merged_utc": "2026-06-02T11:49:24.559382Z"
+}

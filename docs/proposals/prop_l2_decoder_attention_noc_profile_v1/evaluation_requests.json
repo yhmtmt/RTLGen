@@ -1,0 +1,26 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_noc_profile_v1",
+  "source_commit": "254c9db5558254c93ed9e4983b3206693123c766",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_noc_profile_v1",
+      "task_type": "l2_campaign",
+      "objective": "Quantify selected Llama7B attention NoC payloads, flits, and service-cycle bounds.",
+      "evaluation_mode": "profile_measurement",
+      "abstraction_layer": "decoder_attention_noc_profile",
+      "comparison_role": "abstraction_closure",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1",
+        "l1_decoder_memory_noc_primitives_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "status": "merged",
+      "merged_pr_number": 736,
+      "merge_commit": "0aac4d5f077ab12802dfefd14d0f26a963231c4f",
+      "merged_utc": "2026-06-02T11:49:24.559382Z",
+      "notes": "Merged via PR #736 and merge 0aac4d5f077ab12802dfefd14d0f26a963231c4f at 2026-06-02T11:49:24.559382Z."
+    }
+  ]
+}
