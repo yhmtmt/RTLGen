@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_sram_profile_v1",
+  "candidate_id": "l2_decoder_attention_sram_profile_v1",
+  "decision": "iterate",
+  "reason": "Focused comparison matched the baseline with no measurable latency or energy delta.",
+  "evidence_refs": [
+    "item:l2_decoder_attention_sram_profile_v1",
+    "run:l2_decoder_attention_sram_profile_v1_run_5a3105e14ee03a6b",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_sram_profile_v1.json",
+    "pr:#735",
+    "https://github.com/yhmtmt/RTLGen/pull/735"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_attention_sram_profile_v1",
+  "requires_human_approval": false
+}

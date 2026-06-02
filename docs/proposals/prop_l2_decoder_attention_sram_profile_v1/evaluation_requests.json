@@ -1,0 +1,25 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_sram_profile_v1",
+  "source_commit": "867fe269bc15d2608f2781c43d1191f6e7e82336",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_sram_profile_v1",
+      "task_type": "l2_campaign",
+      "objective": "Measure tile-local SRAM quantities and CACTI metrics for the selected Llama7B attention frontier.",
+      "evaluation_mode": "profile_measurement",
+      "abstraction_layer": "decoder_attention_sram_profile",
+      "comparison_role": "abstraction_closure",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "status": "merged",
+      "merged_pr_number": 735,
+      "merge_commit": "dc2a52cc82d9879b7e8c4d00f509c7c1ee7b449d",
+      "merged_utc": "2026-06-02T11:49:19.195905Z",
+      "notes": "Merged via PR #735 and merge dc2a52cc82d9879b7e8c4d00f509c7c1ee7b449d at 2026-06-02T11:49:19.195905Z."
+    }
+  ]
+}

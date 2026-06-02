@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_sram_profile_v1",
+  "decision": "iterate",
+  "pr_number": 735,
+  "merge_commit": "dc2a52cc82d9879b7e8c4d00f509c7c1ee7b449d",
+  "merged_utc": "2026-06-02T11:49:19.195905Z"
+}
