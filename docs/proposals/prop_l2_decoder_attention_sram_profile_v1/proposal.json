@@ -1,0 +1,66 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_sram_profile_v1",
+  "created_utc": "2026-06-02T05:35:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_attention_sram_profile",
+  "title": "Llama7B attention tile-local SRAM profile",
+  "hypothesis": "The selected Llama7B 131k clustered-attention frontier should charge tile-local SRAM access time, energy, and area using measured SRAM macro estimates rather than ideal local/shared buffer assumptions.",
+  "direct_comparison": {
+    "primary_question": "What are the concrete tile-local SRAM quantities and CACTI-backed access metrics for score buffering, softmax weights, staged K/V reads, partial values, and result writeback at the selected 512-token Llama7B attention tile?",
+    "include": [
+      "Llama7B proxy hidden size 4096, 32 attention heads, 4 KV heads, and 512-token tiles",
+      "score and softmax-weight buffers at 16 bits per head per tile token",
+      "K/V tile read staging at KV8 for the selected KV sharing",
+      "partial-value and result writeback buffers for the full 4096-wide token output",
+      "CACTI-backed SRAM access time, area, read energy, and write energy where CACTI is available"
+    ],
+    "exclude": [
+      "full 131k-token KV-cache residency allocation",
+      "HBM controller service",
+      "cycle-accurate NoC arbitration",
+      "placed SRAM compiler macro floorplanning"
+    ]
+  },
+  "expected_benefit": [
+    "turns the tile-local SRAM abstraction into explicit bytes and measured access metrics",
+    "provides a measured-cost input for the integrated full-value plus softmax clustered schedule",
+    "keeps the remaining KV-capacity and NoC-contention abstractions separate and auditable"
+  ],
+  "risks": [
+    "CACTI estimates are not a replacement for foundry SRAM compiler macros",
+    "tile-local SRAM is only one part of the memory hierarchy; whole-KV cache placement remains an L2 architecture decision",
+    "the chosen 256-bit SRAM bank width is a profile target, not proof of final physical banking"
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_sram_profile_v1",
+      "task_type": "l2_campaign",
+      "objective": "Measure the Llama7B attention tile-local SRAM profile and publish logical buffer quantities plus CACTI SRAM metrics.",
+      "evaluation_mode": "profile_measurement",
+      "abstraction_layer": "decoder_attention_sram_profile",
+      "cost_class": "low",
+      "comparison_role": "abstraction_closure",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "close_abstraction",
+        "reason": "Use the measured SRAM profile to replace ideal tile-local SRAM access/energy inputs in the final Llama7B attention schedule closure."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_full_value_l1_clustered_schedule__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1.json"
+  ],
+  "knowledge_refs": [
+    "docs/architecture/llama7b_attention_abstraction_closure_plan.md",
+    "npu/eval/measure_llm_decoder_attention_sram_profile.py",
+    "npu/synth/sram_ppa.py",
+    "npu/synth/aggregate_sram_metrics.py"
+  ]
+}

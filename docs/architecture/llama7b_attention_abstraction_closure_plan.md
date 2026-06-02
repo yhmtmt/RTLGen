@@ -27,8 +27,9 @@ than free or heuristic assumptions.
 2. SRAM timing and energy
    - Scope: tile-local score/value buffering, KV tile reads, partial-value
      buffering, and result writeback.
-   - First measurement: SRAM primitive/profile sweep at the tile-buffer widths
-     used by the selected frontier.
+   - First measurement: `l2_decoder_attention_sram_profile_v1`, which records
+     the selected 512-token tile-local buffer bytes and CACTI-backed SRAM
+     access time, area, read energy, and write energy.
    - First L2 consumer: replace ideal local/shared SRAM access latency and
      energy with measured bandwidth, access-time, and capacity profiles.
 
