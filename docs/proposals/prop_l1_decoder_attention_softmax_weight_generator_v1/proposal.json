@@ -1,0 +1,59 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_softmax_weight_generator_v1",
+  "created_utc": "2026-06-02T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "decoder_attention_softmax_weight_generator",
+  "title": "Decoder attention softmax weight generator PPA sweep",
+  "hypothesis": "Measured softmax weight generation cost is small enough relative to the nm64 compute-array budget that the current Llama7B full-value attention frontier remains stable, but the q12 PWL variant may expose a non-negligible area or power penalty versus the q8 reciprocal-normalized path.",
+  "direct_comparison": {
+    "primary_question": "What area, power, and timing should the L2 Llama7B attention schedule charge for score-to-weight softmax generation?",
+    "include": [
+      "q8 shift-exp reciprocal-normalized rowwise softmax with reciprocal widths 10, 12, 14, and 16",
+      "q12 PWL-exp reciprocal-normalized rowwise softmax with reciprocal widths 10, 12, 14, and 16",
+      "Nangate45 macro-style high-utilization sweep points at core utilization 50 and 60",
+      "fresh attention-named design paths to avoid reusing terminal-softmax metrics silently"
+    ],
+    "exclude": [
+      "model quality or retraining recovery",
+      "cycle-accurate SRAM buffering around the softmax block",
+      "cycle-accurate NoC arbitration",
+      "full integrated attention-tile RTL"
+    ]
+  },
+  "expected_benefit": [
+    "turns the softmax-weight-generation abstraction into measured PPA inputs",
+    "brackets the cost difference between q8 integer and q12 PWL softmax paths",
+    "provides the required profile inputs for the next L2 full-value attention rerun"
+  ],
+  "risks": [
+    "row_elems=8 is a lane-level generator contract and must be scaled carefully into the tile-level L2 model",
+    "the PWL blocks may close with large critical paths and need later pipelining before integration",
+    "quality impact is not measured in this L1 PPA job"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "item_id": "l1_decoder_attention_softmax_weight_generator_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure attention-named q8 and q12 rowwise softmax weight-generator PPA variants for the Llama7B attention schedule.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "decoder_attention_softmax_weight_generator",
+      "cost_class": "medium",
+      "expected_result": {
+        "direction": "iterate",
+        "reason": "Use the selected measured softmax profile to rerun the L2 full-value clustered attention schedule."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/designs/activations/softmax_rowwise_int8_r8_acc24_recip_q10_wrapper/metrics.csv",
+    "runs/designs/activations/softmax_rowwise_q12_pwl_r8_acc28_recip_q12_bucket8_wrapper/metrics.csv"
+  ],
+  "knowledge_refs": [
+    "docs/architecture/llama7b_attention_abstraction_closure_plan.md",
+    "runs/designs/activations/sweeps/nangate45_attention_softmax_weight_generator_v1.json",
+    "npu/eval/estimate_llm_decoder_attention_kv_clustered_schedule.py"
+  ]
+}
