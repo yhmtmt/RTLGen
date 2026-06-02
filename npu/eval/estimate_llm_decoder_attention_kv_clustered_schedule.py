@@ -578,7 +578,7 @@ def build_report(
             "Optional command and reducer overhead parameters are sensitivity knobs, not measured RTL/PPA.",
             "When measured L1 cost profiles are provided, their per-cluster tile/reducer, FIFO, and router area is subtracted from the logic budget before compute replicas are allocated.",
             "Measured L1 profile clock is combined by max() with measured compute-array clock; this is a conservative local macro proxy, not a full routed SoC timing closure.",
-            "Measured L1 tile/reducer profiles cover QK/stat/local partial reduction structure and memory/NoC primitives; the full softmax-weighted value datapath still needs a later L1 closure run.",
+            "Measured L1 profiles charge the local tile/value datapath and memory/NoC primitives listed in the selected cost file; softmax-weight generation, SRAM timing, and cycle-accurate NoC arbitration are only charged after separate measured profiles are provided.",
         ],
     }
 

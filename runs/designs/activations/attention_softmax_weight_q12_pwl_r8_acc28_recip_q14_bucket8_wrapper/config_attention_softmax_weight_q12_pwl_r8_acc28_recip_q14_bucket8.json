@@ -1,0 +1,29 @@
+{
+  "version": "1.1",
+  "operands": [
+    {
+      "name": "scores",
+      "dimensions": 1,
+      "bit_width": 12,
+      "signed": true
+    }
+  ],
+  "operations": [
+    {
+      "type": "softmax_rowwise",
+      "module_name": "attention_softmax_weight_q12_pwl_r8_acc28_recip_q14_bucket8",
+      "operand": "scores",
+      "options": {
+        "impl": "pwl_exp",
+        "row_elems": 8,
+        "input_frac_bits": 8,
+        "weight_bits": 12,
+        "accum_bits": 28,
+        "output_scale": 4095,
+        "normalization_mode": "reciprocal_quantized",
+        "reciprocal_bits": 14,
+        "reciprocal_lut_bucket_shift": 8
+      }
+    }
+  ]
+}
