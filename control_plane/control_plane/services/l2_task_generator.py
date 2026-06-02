@@ -3923,6 +3923,45 @@ def _decoder_attention_kv_full_value_l1_clustered_schedule_evidence(*, item_id: 
     }
 
 
+def _decoder_attention_sram_profile_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_sram_profile__{item_id}.json"
+    report = f"{base}/decoder_attention_sram_profile__{item_id}.md"
+    arch = f"runs/designs/sram/llama7b_attention_tile_buffers_v1/arch.yml"
+    sram_metrics = "runs/designs/sram/llama7b_attention_tile_buffers_v1/sram_metrics.json"
+    sram_summary = "runs/designs/sram/llama7b_attention_tile_buffers_v1/sram_metrics_summary.json"
+    return {
+        "inputs": {
+            "attention_sram_profile_out": out,
+            "attention_sram_profile_report": report,
+            "attention_sram_profile_arch": arch,
+            "attention_sram_metrics_json": sram_metrics,
+            "attention_sram_metrics_summary_json": sram_summary,
+            "attention_sram_profile_scope": (
+                "Measure the selected Llama7B 131k tile-local attention SRAM quantities for "
+                "score buffering, softmax weights, staged K/V reads, partial-value buffering, "
+                "and result writeback. This closes tile-local SRAM access/energy inputs for "
+                "the clustered schedule; full KV-cache capacity placement and NoC contention "
+                "remain separate closure items."
+            ),
+        },
+        "commands": [
+            {
+                "name": "measure_decoder_attention_sram_profile",
+                "run": (
+                    "python3 npu/eval/measure_llm_decoder_attention_sram_profile.py "
+                    f"--out {out} "
+                    f"--report {report} "
+                    f"--arch-out {arch} "
+                    "--sram-id llama7b_attention_tile_buffers_v1 "
+                    "--run-cacti"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report, arch, sram_metrics, sram_summary],
+    }
+
+
 def _decoder_attention_kv_quality_gate_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_kv_quality_gate__{item_id}.json"
@@ -5429,6 +5468,7 @@ def _build_payload(
         "decoder_attention_kv_clustered_schedule_overhead",
         "decoder_attention_kv_measured_l1_clustered_schedule",
         "decoder_attention_kv_full_value_l1_clustered_schedule",
+        "decoder_attention_sram_profile",
         "decoder_attention_kv_quality_gate",
         "decoder_attention_kv_quality_proxy",
         "decoder_attention_kv_native_gqa_proxy",
@@ -5504,6 +5544,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_kv_measured_l1_clustered_schedule_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_full_value_l1_clustered_schedule":
             decoder_evidence = _decoder_attention_kv_full_value_l1_clustered_schedule_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_sram_profile":
+            decoder_evidence = _decoder_attention_sram_profile_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_quality_gate":
             decoder_evidence = _decoder_attention_kv_quality_gate_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_quality_proxy":
