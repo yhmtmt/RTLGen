@@ -1,0 +1,21 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_softmax_weight_generator_v1",
+  "source_commit": "7d8c29d4b879f13ccf0f6f839c92d2d67cefbac1",
+  "requested_items": [
+    {
+      "item_id": "l1_decoder_attention_softmax_weight_generator_v1_r2",
+      "task_type": "l1_sweep",
+      "objective": "Retry the attention softmax weight-generator PPA sweep and preserve q12 PWL high-reciprocal failed rows as boundary evidence.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "decoder_attention_softmax_weight_generator",
+      "status": "merged",
+      "prior_item_ids": [
+        "l1_decoder_attention_softmax_weight_generator_v1"
+      ],
+      "merged_pr_number": 739,
+      "merge_commit": "ac59c30da04560ebc2b00a85a256fe64b30b78ff",
+      "merged_utc": "2026-06-02T23:56:06.432541Z",
+      "notes": "Merged via PR #739 and merge ac59c30da04560ebc2b00a85a256fe64b30b78ff at 2026-06-02T23:56:06.432541Z."
+    }
+  ]
+}

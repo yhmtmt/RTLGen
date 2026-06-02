@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_softmax_weight_generator_v1",
+  "decision": "promote",
+  "pr_number": 739,
+  "merge_commit": "ac59c30da04560ebc2b00a85a256fe64b30b78ff",
+  "merged_utc": "2026-06-02T23:56:06.432541Z"
+}
