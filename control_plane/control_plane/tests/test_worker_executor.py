@@ -392,6 +392,81 @@ def test_l1_worker_fails_when_expected_metrics_have_no_ok_rows() -> None:
             ]
 
 
+def test_l1_measurement_only_accepts_mixed_ok_and_failed_metrics_as_boundary_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        init_git_repo(repo_root)
+        db_path = Path(td) / "cp.db"
+        engine = create_engine(f"sqlite+pysqlite:///{db_path}", future=True)
+        create_all(engine)
+        item_id = "item_l1_mixed_measurement_metrics"
+        ok_metrics_rel = f"runs/campaigns/{item_id}/ok_metrics.csv"
+        failed_metrics_rel = f"runs/campaigns/{item_id}/failed_metrics.csv"
+        with Session(engine) as session:
+            seed_ready_work_item(session, item_id=item_id, repo_root=repo_root, failing=False)
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            work_item.task_type = "l1_sweep"
+            work_item.layer = "layer1"
+            work_item.assigned_machine_key = "worker-1"
+            work_item.task_request.request_payload = {
+                "developer_loop": {"evaluation": {"mode": "measurement_only"}}
+            }
+            work_item.command_manifest = [
+                {
+                    "name": "write_mixed_metrics",
+                    "run": (
+                        "python3 -c \"from pathlib import Path; "
+                        f"ok=Path('{ok_metrics_rel}'); failed=Path('{failed_metrics_rel}'); "
+                        "ok.parent.mkdir(parents=True, exist_ok=True); "
+                        "ok.write_text('design,status,critical_path_ns\\nok_unit,ok,1.0\\n', encoding='utf-8'); "
+                        "failed.write_text('design,status,critical_path_ns\\nfailed_unit,failed,\\n', encoding='utf-8')\""
+                    ),
+                }
+            ]
+            work_item.expected_outputs = [ok_metrics_rel, failed_metrics_rel]
+            session.commit()
+
+        session_factory = build_session_factory(engine)
+        results = run_worker(
+            session_factory,
+            config=WorkerConfig(
+                repo_root=str(repo_root),
+                machine_key="worker-1",
+                capabilities={"platform": "nangate45", "flow": "openroad"},
+                capability_filter={"platform": "nangate45", "flow": "openroad"},
+                enforce_source_commit=False,
+                lease_seconds=60,
+                heartbeat_seconds=1,
+                max_retry_attempts=1,
+            ),
+            max_items=1,
+        )
+
+        assert len(results) == 1
+        assert results[0].status == "succeeded"
+
+        with Session(engine) as session:
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            run = session.query(Run).filter_by(run_key=results[0].run_key).one()
+            event = session.query(RunEvent).filter_by(run_id=run.id, event_type="acceptance_warnings").one()
+            warning = f"partial_success_boundary_evidence={failed_metrics_rel}: no status=ok rows (statuses=failed)"
+            assert work_item.state == WorkItemState.ARTIFACT_SYNC
+            assert run.status == RunStatus.SUCCEEDED
+            assert run.result_payload["queue_result"]["status"] == "ok"
+            assert run.result_payload["queue_result"]["metrics_rows"] == [
+                f"{ok_metrics_rel}:2",
+                f"{failed_metrics_rel}:2",
+            ]
+            assert run.result_payload["acceptance_warnings"] == [warning]
+            assert warning in run.result_payload["queue_result"]["notes"]
+            assert event.event_payload == {
+                "warnings": [warning],
+                "ok_file_count": 1,
+                "non_ok_file_count": 1,
+            }
+
+
 def test_l1_worker_allows_non_ok_metrics_for_boundary_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
