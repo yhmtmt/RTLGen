@@ -36,10 +36,13 @@ than free or heuristic assumptions.
 3. NoC arbitration and contention
    - Scope: per-cluster local router/fifo cost is already measured, but current
      schedule still uses bandwidth divided by hop count for contention.
-   - First measurement: routed multi-source arbitration microbenchmarks for the
-     selected 128-bit and 256-bit local paths.
-   - First L2 consumer: replace the bandwidth/hop proxy with measured effective
-     payload/cycle and arbitration latency under producer/reducer traffic mixes.
+   - First measurement: `l2_decoder_attention_noc_profile_v1`, which records
+     selected shared-tile, cross-tile reduction, and KV-write traffic bytes,
+     flits, and service-cycle bounds for the measured 128-bit and 256-bit
+     FIFO/router primitive anchors.
+   - First L2 consumer: replace hidden bandwidth/hop proxy terms with explicit
+     payload/cycle and arbitration-latency bounds under the selected
+     producer/reducer traffic mix.
 
 4. Integrated schedule closure
    - Scope: rerun the Llama7B attention schedule with measured compute,

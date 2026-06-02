@@ -1,0 +1,68 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_noc_profile_v1",
+  "created_utc": "2026-06-02T05:50:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "abstraction_layer": "decoder_attention_noc_profile",
+  "title": "Llama7B attention NoC traffic profile",
+  "hypothesis": "The selected Llama7B 131k clustered-attention schedule should expose shared-tile, cross-tile reduction, and KV-write NoC service quantities rather than hiding them behind a bandwidth divided by hop-count proxy.",
+  "direct_comparison": {
+    "primary_question": "For the selected 512-token, 8-cluster Llama7B attention frontier, what NoC payload bytes, flits, and service-cycle bounds apply under 128/256-bit paths, hop counts, virtual channels, and arbitration efficiencies?",
+    "include": [
+      "selected Llama7B proxy hidden size 4096, 32 attention heads, 4 KV heads, and 512-token tiles",
+      "shared tile payload derived from the current best shared-byte fraction",
+      "cross-tile reduction payload for cluster-tree/owner-cluster style partial reductions",
+      "KV writeback payload",
+      "128-bit and 256-bit measured FIFO/router primitive references",
+      "hop, virtual-channel, and arbitration-efficiency service bounds"
+    ],
+    "exclude": [
+      "cycle-accurate routed NoC RTL simulation",
+      "adaptive routing and topology floorplan",
+      "wire delay extraction",
+      "SRAM capacity placement decisions"
+    ]
+  },
+  "expected_benefit": [
+    "turns NoC traffic and service assumptions into explicit rows consumed by the final schedule closure",
+    "keeps measured router/FIFO PPA references attached to the service profile",
+    "bounds the sensitivity of the selected frontier to NoC arbitration efficiency and hop count"
+  ],
+  "risks": [
+    "effective payload/cycle remains a bounded service model, not full NoC RTL",
+    "the shared-byte fraction comes from the current selected frontier and must be regenerated if the memory frontier moves",
+    "wire delay and physical topology can still change final NoC timing"
+  ],
+  "required_evaluations": [
+    {
+      "item_id": "l2_decoder_attention_noc_profile_v1",
+      "task_type": "l2_campaign",
+      "objective": "Quantify selected Llama7B attention NoC traffic payloads, flits, and service-cycle bounds using measured FIFO/router primitive references.",
+      "evaluation_mode": "profile_measurement",
+      "abstraction_layer": "decoder_attention_noc_profile",
+      "cost_class": "low",
+      "comparison_role": "abstraction_closure",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1",
+        "l1_decoder_memory_noc_primitives_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "close_abstraction",
+        "reason": "Use the measured NoC traffic profile to replace hidden bandwidth/hop proxy terms in the final Llama7B attention schedule closure."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_full_value_l1_clustered_schedule__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1.json",
+    "control_plane/shadow_exports/l1_promotions/l1_decoder_memory_noc_primitives_v1.json"
+  ],
+  "knowledge_refs": [
+    "docs/architecture/llama7b_attention_abstraction_closure_plan.md",
+    "npu/eval/measure_llm_decoder_attention_noc_profile.py",
+    "npu/eval/estimate_llm_decoder_attention_kv_clustered_schedule.py"
+  ]
+}

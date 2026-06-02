@@ -4992,3 +4992,41 @@ def test_generate_l2_campaign_task_adds_attention_sram_profile_evidence() -> Non
                 for output in expected_outputs
             )
             assert "runs/designs/sram/llama7b_attention_tile_buffers_v1/sram_metrics.json" in expected_outputs
+
+
+def test_generate_l2_campaign_task_adds_attention_noc_profile_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_noc_profile_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_noc_profile",
+                    evaluation_mode="profile_measurement",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            commands = work_item.task_request.request_payload["task"]["commands"]
+            command_names = [command["name"] for command in commands]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+            expected_outputs = work_item.task_request.request_payload["task"]["expected_outputs"]
+
+            assert "measure_decoder_attention_noc_profile" in command_names
+            assert "attention_noc_primitive_profile" in decoder_inputs
+            assert work_item.task_request.request_payload["task"]["inputs"]["decoder_contract"] == decoder_inputs
+            assert any(
+                output.endswith("decoder_attention_noc_profile__l2_decoder_attention_noc_profile_v1.json")
+                for output in expected_outputs
+            )

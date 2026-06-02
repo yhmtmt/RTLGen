@@ -3962,6 +3962,39 @@ def _decoder_attention_sram_profile_evidence(*, item_id: str) -> dict[str, Any]:
     }
 
 
+def _decoder_attention_noc_profile_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_noc_profile__{item_id}.json"
+    report = f"{base}/decoder_attention_noc_profile__{item_id}.md"
+    primitive_profile = "control_plane/shadow_exports/l1_promotions/l1_decoder_memory_noc_primitives_v1.json"
+    return {
+        "inputs": {
+            "attention_noc_profile_out": out,
+            "attention_noc_profile_report": report,
+            "attention_noc_primitive_profile": primitive_profile,
+            "attention_noc_profile_scope": (
+                "Quantify selected Llama7B attention NoC traffic for shared tile reads, "
+                "cross-tile reduction, and KV writeback using measured FIFO/router PPA "
+                "anchors plus explicit flit width, hop, virtual-channel, and arbitration "
+                "efficiency bounds. This closes the hidden bandwidth/hop proxy terms for "
+                "the final schedule, while leaving full routed NoC RTL as a named residual."
+            ),
+        },
+        "commands": [
+            {
+                "name": "measure_decoder_attention_noc_profile",
+                "run": (
+                    "python3 npu/eval/measure_llm_decoder_attention_noc_profile.py "
+                    "--repo-root . "
+                    f"--out {out} "
+                    f"--report {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_attention_kv_quality_gate_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_kv_quality_gate__{item_id}.json"
@@ -5469,6 +5502,7 @@ def _build_payload(
         "decoder_attention_kv_measured_l1_clustered_schedule",
         "decoder_attention_kv_full_value_l1_clustered_schedule",
         "decoder_attention_sram_profile",
+        "decoder_attention_noc_profile",
         "decoder_attention_kv_quality_gate",
         "decoder_attention_kv_quality_proxy",
         "decoder_attention_kv_native_gqa_proxy",
@@ -5546,6 +5580,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_kv_full_value_l1_clustered_schedule_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_sram_profile":
             decoder_evidence = _decoder_attention_sram_profile_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_noc_profile":
+            decoder_evidence = _decoder_attention_noc_profile_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_quality_gate":
             decoder_evidence = _decoder_attention_kv_quality_gate_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_quality_proxy":
