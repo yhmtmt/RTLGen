@@ -1,0 +1,103 @@
+{
+  "buffers": [
+    {
+      "access_role": "read_write",
+      "banks": 1,
+      "depth": 1024,
+      "logical_bytes": 32768,
+      "name": "score_tile_buffer",
+      "scope": "tile-local score buffering before softmax",
+      "width_bits": 256,
+      "word_bits": 512
+    },
+    {
+      "access_role": "read_write",
+      "banks": 1,
+      "depth": 1024,
+      "logical_bytes": 32768,
+      "name": "softmax_weight_buffer",
+      "scope": "normalized softmax weights consumed by value accumulation",
+      "width_bits": 256,
+      "word_bits": 512
+    },
+    {
+      "access_role": "read",
+      "banks": 1,
+      "depth": 16384,
+      "logical_bytes": 524288,
+      "name": "kv_tile_read_buffer",
+      "scope": "tile-local K and V read staging for the selected KV sharing",
+      "width_bits": 256,
+      "word_bits": 256
+    },
+    {
+      "access_role": "read_write",
+      "banks": 1,
+      "depth": 512,
+      "logical_bytes": 16384,
+      "name": "partial_value_buffer",
+      "scope": "per-head partial value vector before cross-tile reduction",
+      "width_bits": 256,
+      "word_bits": 256
+    },
+    {
+      "access_role": "write",
+      "banks": 1,
+      "depth": 256,
+      "logical_bytes": 8192,
+      "name": "result_writeback_buffer",
+      "scope": "final attention output writeback staging",
+      "width_bits": 256,
+      "word_bits": 256
+    },
+    {
+      "access_role": "read_write",
+      "banks": 1,
+      "depth": 8,
+      "logical_bytes": 256,
+      "name": "softmax_stats_buffer",
+      "scope": "per-head max and sum statistics for stable normalization",
+      "width_bits": 256,
+      "word_bits": 256
+    }
+  ],
+  "model": "llama7b_proxy",
+  "parameters": {
+    "accumulator_bits": 32,
+    "attention_heads": 32,
+    "head_dim": 128,
+    "hidden_size": 4096,
+    "kv_bits": 8,
+    "kv_heads": 4,
+    "max_bank_width_bits": 256,
+    "output_bits": 16,
+    "score_bits": 16,
+    "sequence_length": 131072,
+    "softmax_weight_bits": 16,
+    "tile_tokens": 512
+  },
+  "profile": "decoder_attention_sram_profile",
+  "remaining_abstractions": [
+    "CACTI SRAM estimates are macro-level access/energy estimates, not placed SRAM compiler macros.",
+    "The full KV cache capacity and HBM service are not included in this tile-local profile.",
+    "NoC arbitration and contention are measured by a separate closure item."
+  ],
+  "sram_metrics_json": "runs/designs/sram/llama7b_attention_tile_buffers_v1/sram_metrics.json",
+  "sram_metrics_summary": {
+    "estimated_count": 5,
+    "instance_count": 6,
+    "max_access_time_ns": 1.4124,
+    "missing_instances": [
+      "softmax_stats_buffer"
+    ],
+    "total_area_um2": 2487735.8073090003,
+    "total_read_energy_pj": 374.6457,
+    "total_write_energy_pj": 572.2861999999999
+  },
+  "totals": {
+    "allocated_sram_bytes": 614656,
+    "capacity_overhead": 1.0,
+    "logical_buffer_bytes": 614656
+  },
+  "version": 1
+}

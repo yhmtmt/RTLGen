@@ -1,0 +1,257 @@
+{
+  "arch": "runs/designs/sram/llama7b_attention_tile_buffers_v1/arch.yml",
+  "id": "llama7b_attention_tile_buffers_v1",
+  "schema_version": "0.2-draft",
+  "source": "cacti",
+  "instances": [
+    {
+      "instance": {
+        "name": "score_tile_buffer",
+        "pdk": "nangate45",
+        "tech_node_nm": 45,
+        "port": "1r1w",
+        "depth": 1024,
+        "width": 256,
+        "banks": 1,
+        "read_latency": 1,
+        "byte_en": true,
+        "size_bytes": 32768,
+        "word_size_bytes": 32,
+        "block_size_bytes": 64,
+        "bus_width_bits": 512,
+        "read_ports": 1,
+        "write_ports": 1,
+        "rw_ports": 0,
+        "cacti_read_ports": 0,
+        "cacti_write_ports": 0,
+        "cacti_rw_ports": 1,
+        "cacti_port_model": "1rw",
+        "cacti_port_note": "CACTI modeled as 1RW; 1R1W not supported in this config."
+      },
+      "estimated": true,
+      "metrics": {
+        "raw": {
+          "access_time_ns": 0.418486,
+          "read_energy_nj": 0.0366941,
+          "write_energy_nj": 0.0918541,
+          "area_mm2": 0.13212571667400003
+        },
+        "area_um2": 132125.71667400002,
+        "access_time_ns": 0.418486,
+        "read_energy_pj": 36.6941,
+        "write_energy_pj": 91.85409999999999
+      },
+      "artifacts": {
+        "cacti_cfg": "runs/designs/sram/llama7b_attention_tile_buffers_v1/score_tile_buffer.cacti.in.cfg",
+        "cacti_stdout": "runs/designs/sram/llama7b_attention_tile_buffers_v1/score_tile_buffer.cacti.stdout",
+        "cacti_stderr": "runs/designs/sram/llama7b_attention_tile_buffers_v1/score_tile_buffer.cacti.stderr"
+      }
+    },
+    {
+      "instance": {
+        "name": "softmax_weight_buffer",
+        "pdk": "nangate45",
+        "tech_node_nm": 45,
+        "port": "1r1w",
+        "depth": 1024,
+        "width": 256,
+        "banks": 1,
+        "read_latency": 1,
+        "byte_en": true,
+        "size_bytes": 32768,
+        "word_size_bytes": 32,
+        "block_size_bytes": 64,
+        "bus_width_bits": 512,
+        "read_ports": 1,
+        "write_ports": 1,
+        "rw_ports": 0,
+        "cacti_read_ports": 0,
+        "cacti_write_ports": 0,
+        "cacti_rw_ports": 1,
+        "cacti_port_model": "1rw",
+        "cacti_port_note": "CACTI modeled as 1RW; 1R1W not supported in this config."
+      },
+      "estimated": true,
+      "metrics": {
+        "raw": {
+          "access_time_ns": 0.418486,
+          "read_energy_nj": 0.0366941,
+          "write_energy_nj": 0.0918541,
+          "area_mm2": 0.13212571667400003
+        },
+        "area_um2": 132125.71667400002,
+        "access_time_ns": 0.418486,
+        "read_energy_pj": 36.6941,
+        "write_energy_pj": 91.85409999999999
+      },
+      "artifacts": {
+        "cacti_cfg": "runs/designs/sram/llama7b_attention_tile_buffers_v1/softmax_weight_buffer.cacti.in.cfg",
+        "cacti_stdout": "runs/designs/sram/llama7b_attention_tile_buffers_v1/softmax_weight_buffer.cacti.stdout",
+        "cacti_stderr": "runs/designs/sram/llama7b_attention_tile_buffers_v1/softmax_weight_buffer.cacti.stderr"
+      }
+    },
+    {
+      "instance": {
+        "name": "kv_tile_read_buffer",
+        "pdk": "nangate45",
+        "tech_node_nm": 45,
+        "port": "1r1w",
+        "depth": 16384,
+        "width": 256,
+        "banks": 1,
+        "read_latency": 1,
+        "byte_en": true,
+        "size_bytes": 524288,
+        "word_size_bytes": 32,
+        "block_size_bytes": 64,
+        "bus_width_bits": 512,
+        "read_ports": 1,
+        "write_ports": 1,
+        "rw_ports": 0,
+        "cacti_read_ports": 0,
+        "cacti_write_ports": 0,
+        "cacti_rw_ports": 1,
+        "cacti_port_model": "1rw",
+        "cacti_port_note": "CACTI modeled as 1RW; 1R1W not supported in this config."
+      },
+      "estimated": true,
+      "metrics": {
+        "raw": {
+          "access_time_ns": 1.4124,
+          "read_energy_nj": 0.241555,
+          "write_energy_nj": 0.288401,
+          "area_mm2": 2.0824030404
+        },
+        "area_um2": 2082403.0404,
+        "access_time_ns": 1.4124,
+        "read_energy_pj": 241.55499999999998,
+        "write_energy_pj": 288.401
+      },
+      "artifacts": {
+        "cacti_cfg": "runs/designs/sram/llama7b_attention_tile_buffers_v1/kv_tile_read_buffer.cacti.in.cfg",
+        "cacti_stdout": "runs/designs/sram/llama7b_attention_tile_buffers_v1/kv_tile_read_buffer.cacti.stdout",
+        "cacti_stderr": "runs/designs/sram/llama7b_attention_tile_buffers_v1/kv_tile_read_buffer.cacti.stderr"
+      }
+    },
+    {
+      "instance": {
+        "name": "partial_value_buffer",
+        "pdk": "nangate45",
+        "tech_node_nm": 45,
+        "port": "1r1w",
+        "depth": 512,
+        "width": 256,
+        "banks": 1,
+        "read_latency": 1,
+        "byte_en": true,
+        "size_bytes": 16384,
+        "word_size_bytes": 32,
+        "block_size_bytes": 64,
+        "bus_width_bits": 512,
+        "read_ports": 1,
+        "write_ports": 1,
+        "rw_ports": 0,
+        "cacti_read_ports": 0,
+        "cacti_write_ports": 0,
+        "cacti_rw_ports": 1,
+        "cacti_port_model": "1rw",
+        "cacti_port_note": "CACTI modeled as 1RW; 1R1W not supported in this config."
+      },
+      "estimated": true,
+      "metrics": {
+        "raw": {
+          "access_time_ns": 0.335163,
+          "read_energy_nj": 0.0311724,
+          "write_energy_nj": 0.0583942,
+          "area_mm2": 0.082886265
+        },
+        "area_um2": 82886.265,
+        "access_time_ns": 0.335163,
+        "read_energy_pj": 31.1724,
+        "write_energy_pj": 58.3942
+      },
+      "artifacts": {
+        "cacti_cfg": "runs/designs/sram/llama7b_attention_tile_buffers_v1/partial_value_buffer.cacti.in.cfg",
+        "cacti_stdout": "runs/designs/sram/llama7b_attention_tile_buffers_v1/partial_value_buffer.cacti.stdout",
+        "cacti_stderr": "runs/designs/sram/llama7b_attention_tile_buffers_v1/partial_value_buffer.cacti.stderr"
+      }
+    },
+    {
+      "instance": {
+        "name": "result_writeback_buffer",
+        "pdk": "nangate45",
+        "tech_node_nm": 45,
+        "port": "1r1w",
+        "depth": 256,
+        "width": 256,
+        "banks": 1,
+        "read_latency": 1,
+        "byte_en": true,
+        "size_bytes": 8192,
+        "word_size_bytes": 32,
+        "block_size_bytes": 64,
+        "bus_width_bits": 512,
+        "read_ports": 1,
+        "write_ports": 1,
+        "rw_ports": 0,
+        "cacti_read_ports": 0,
+        "cacti_write_ports": 0,
+        "cacti_rw_ports": 1,
+        "cacti_port_model": "1rw",
+        "cacti_port_note": "CACTI modeled as 1RW; 1R1W not supported in this config."
+      },
+      "estimated": true,
+      "metrics": {
+        "raw": {
+          "access_time_ns": 0.282359,
+          "read_energy_nj": 0.0285301,
+          "write_energy_nj": 0.0417828,
+          "area_mm2": 0.058195068561000006
+        },
+        "area_um2": 58195.06856100001,
+        "access_time_ns": 0.282359,
+        "read_energy_pj": 28.5301,
+        "write_energy_pj": 41.7828
+      },
+      "artifacts": {
+        "cacti_cfg": "runs/designs/sram/llama7b_attention_tile_buffers_v1/result_writeback_buffer.cacti.in.cfg",
+        "cacti_stdout": "runs/designs/sram/llama7b_attention_tile_buffers_v1/result_writeback_buffer.cacti.stdout",
+        "cacti_stderr": "runs/designs/sram/llama7b_attention_tile_buffers_v1/result_writeback_buffer.cacti.stderr"
+      }
+    },
+    {
+      "instance": {
+        "name": "softmax_stats_buffer",
+        "pdk": "nangate45",
+        "tech_node_nm": 45,
+        "port": "1r1w",
+        "depth": 8,
+        "width": 256,
+        "banks": 1,
+        "read_latency": 1,
+        "byte_en": true,
+        "size_bytes": 256,
+        "word_size_bytes": 32,
+        "block_size_bytes": 64,
+        "bus_width_bits": 512,
+        "read_ports": 1,
+        "write_ports": 1,
+        "rw_ports": 0,
+        "cacti_read_ports": 0,
+        "cacti_write_ports": 0,
+        "cacti_rw_ports": 1,
+        "cacti_port_model": "1rw",
+        "cacti_port_note": "CACTI modeled as 1RW; 1R1W not supported in this config."
+      },
+      "estimated": false,
+      "metrics": {
+        "raw": {}
+      },
+      "artifacts": {
+        "cacti_cfg": "runs/designs/sram/llama7b_attention_tile_buffers_v1/softmax_stats_buffer.cacti.in.cfg",
+        "cacti_stdout": "runs/designs/sram/llama7b_attention_tile_buffers_v1/softmax_stats_buffer.cacti.stdout",
+        "cacti_stderr": "runs/designs/sram/llama7b_attention_tile_buffers_v1/softmax_stats_buffer.cacti.stderr"
+      }
+    }
+  ]
+}

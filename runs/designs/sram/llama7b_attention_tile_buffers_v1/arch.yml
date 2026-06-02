@@ -1,0 +1,36 @@
+schema_version: 0.2-draft
+platform:
+  target_pdk: nangate45
+  tech_node_nm: 45
+memory:
+  instances:
+  - name: score_tile_buffer
+    depth: 1024
+    width: 256
+    banks: 1
+    port: 1r1w
+  - name: softmax_weight_buffer
+    depth: 1024
+    width: 256
+    banks: 1
+    port: 1r1w
+  - name: kv_tile_read_buffer
+    depth: 16384
+    width: 256
+    banks: 1
+    port: 1r1w
+  - name: partial_value_buffer
+    depth: 512
+    width: 256
+    banks: 1
+    port: 1r1w
+  - name: result_writeback_buffer
+    depth: 256
+    width: 256
+    banks: 1
+    port: 1r1w
+  - name: softmax_stats_buffer
+    depth: 8
+    width: 256
+    banks: 1
+    port: 1r1w

@@ -1,0 +1,576 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-06-02T11:19:39.252451Z",
+  "item_id": "l2_decoder_attention_sram_profile_v1",
+  "run_key": "l2_decoder_attention_sram_profile_v1_run_5a3105e14ee03a6b",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "867fe269bc15d2608f2781c43d1191f6e7e82336",
+  "review_metadata_source_commit": "867fe269bc15d2608f2781c43d1191f6e7e82336",
+  "objective": "Measure tile-local SRAM quantities and CACTI metrics for the selected Llama7B attention frontier.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+    ],
+    "design_dirs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+    ],
+    "macro_manifests": [
+      "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+      "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+    ],
+    "decoder_contract": {
+      "attention_sram_profile_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_sram_profile__l2_decoder_attention_sram_profile_v1.json",
+      "attention_sram_metrics_json": "runs/designs/sram/llama7b_attention_tile_buffers_v1/sram_metrics.json",
+      "attention_sram_profile_arch": "runs/designs/sram/llama7b_attention_tile_buffers_v1/arch.yml",
+      "attention_sram_profile_scope": "Measure the selected Llama7B 131k tile-local attention SRAM quantities for score buffering, softmax weights, staged K/V reads, partial-value buffering, and result writeback. This closes tile-local SRAM access/energy inputs for the clustered schedule; full KV-cache capacity placement and NoC contention remain separate closure items.",
+      "attention_sram_profile_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_sram_profile__l2_decoder_attention_sram_profile_v1.md",
+      "attention_sram_metrics_summary_json": "runs/designs/sram/llama7b_attention_tile_buffers_v1/sram_metrics_summary.json"
+    },
+    "generated_campaign": {
+      "path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign__l2_decoder_attention_sram_profile_v1.json",
+      "outputs": {
+        "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_sram_profile_v1/report.md",
+        "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_sram_profile_v1/results.csv",
+        "campaign_dir": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_sram_profile_v1"
+      },
+      "clean_outputs": true,
+      "base_campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json"
+    },
+    "candidate_manifests": [
+      "runs/candidates/nangate45/module_candidates.json"
+    ]
+  },
+  "recommendation": {
+    "arch_id": "fp16_nm1",
+    "macro_mode": "flat_nomacro",
+    "objective_rank": 1,
+    "objective_score": "0.0",
+    "latency_ms_mean": 0.028907999999999996,
+    "energy_mj_mean": 5.582770776e-06,
+    "critical_path_ns_mean": 5.557037432204143,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.193122,
+    "flow_elapsed_s_mean": 848.418
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_attention_sram_profile_v1",
+    "title": "Llama7B attention tile-local SRAM profile",
+    "primary_question": "What are the concrete tile-local SRAM quantities and CACTI-backed access metrics for score buffering, softmax weights, staged K/V reads, partial values, and result writeback at the selected 512-token Llama7B attention tile?",
+    "evaluation_mode": "profile_measurement",
+    "comparison_role": "abstraction_closure",
+    "abstraction_layer": "decoder_attention_sram_profile",
+    "expected_direction": "unknown",
+    "expected_reason": "",
+    "summary": "Focused comparison matched the baseline with no measurable latency or energy delta.",
+    "baseline_ref": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1",
+    "baseline_item_id": "l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1",
+    "outcome": "no_measurable_change",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_attention_sram_profile_v1",
+    "title": "Llama7B attention tile-local SRAM profile",
+    "kind": "architecture",
+    "primary_question": "What are the concrete tile-local SRAM quantities and CACTI-backed access metrics for score buffering, softmax weights, staged K/V reads, partial values, and result writeback at the selected 512-token Llama7B attention tile?",
+    "evaluation_mode": "profile_measurement",
+    "comparison_role": "abstraction_closure",
+    "outcome": "no_measurable_change",
+    "summary": "Focused comparison matched the baseline with no measurable latency or energy delta.",
+    "baseline_ref": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1",
+    "baseline_item_id": "l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1",
+    "matched_row_count": 12,
+    "matched_rows": [
+      {
+        "scope": "model",
+        "arch_id": "fp16_nm1",
+        "macro_mode": "flat_nomacro",
+        "model_id": "mlp1",
+        "metrics": {
+          "latency_ms_mean": {
+            "baseline": 0.004282,
+            "candidate": 0.004282,
+            "delta": 0.0
+          },
+          "energy_mj_mean": {
+            "baseline": 8.26948404e-07,
+            "candidate": 8.26948404e-07,
+            "delta": 0.0
+          },
+          "critical_path_ns_mean": {
+            "baseline": 5.557037432204143,
+            "candidate": 5.557037432204143,
+            "delta": 0.0
+          },
+          "total_power_mw_mean": {
+            "baseline": 0.193122,
+            "candidate": 0.193122,
+            "delta": 0.0
+          },
+          "flow_elapsed_s_mean": {
+            "baseline": 848.418,
+            "candidate": 848.418,
+            "delta": 0.0
+          },
+          "throughput_infer_per_s_mean": {
+            "baseline": 233535.7309668379,
+            "candidate": 233535.7309668379,
+            "delta": 0.0
+          }
+        }
+      },
+      {
+        "scope": "model",
+        "arch_id": "fp16_nm1",
+        "macro_mode": "flat_nomacro",
+        "model_id": "mlp2",
+        "metrics": {
+          "latency_ms_mean": {
+            "baseline": 0.05353399999999999,
+            "candidate": 0.05353399999999999,
+            "delta": 0.0
+          },
+          "energy_mj_mean": {
+            "baseline": 1.0338593148e-05,
+            "candidate": 1.0338593148e-05,
+            "delta": 0.0
+          },
+          "critical_path_ns_mean": {
+            "baseline": 5.557037432204143,
+            "candidate": 5.557037432204143,
+            "delta": 0.0
+          },
+          "total_power_mw_mean": {
+            "baseline": 0.193122,
+            "candidate": 0.193122,
+            "delta": 0.0
+          },
+          "flow_elapsed_s_mean": {
+            "baseline": 848.418,
+            "candidate": 848.418,
+            "delta": 0.0
+          },
+          "throughput_infer_per_s_mean": {
+            "baseline": 18679.717562670452,
+            "candidate": 18679.717562670452,
+            "delta": 0.0
+          }
+        }
+      },
+      {
+        "scope": "model",
+        "arch_id": "fp16_nm1",
+        "macro_mode": "hier_macro",
+        "model_id": "mlp1",
+        "metrics": {
+          "latency_ms_mean": {
+            "baseline": 0.004282,
+            "candidate": 0.004282,
+            "delta": 0.0
+          },
+          "energy_mj_mean": {
+            "baseline": 8.45442362e-07,
+            "candidate": 8.45442362e-07,
+            "delta": 0.0
+          },
+          "critical_path_ns_mean": {
+            "baseline": 5.774905724664045,
+            "candidate": 5.774905724664045,
+            "delta": 0.0
+          },
+          "total_power_mw_mean": {
+            "baseline": 0.197441,
+            "candidate": 0.197441,
+            "delta": 0.0
+          },
+          "flow_elapsed_s_mean": {
+            "baseline": 978.894,
+            "candidate": 978.894,
+            "delta": 0.0
+          },
+          "throughput_infer_per_s_mean": {
+            "baseline": 233535.7309668379,
+            "candidate": 233535.7309668379,
+            "delta": 0.0
+          }
+        }
+      },
+      {
+        "scope": "model",
+        "arch_id": "fp16_nm1",
+        "macro_mode": "hier_macro",
+        "model_id": "mlp2",
+        "metrics": {
+          "latency_ms_mean": {
+            "baseline": 0.05353399999999999,
+            "candidate": 0.05353399999999999,
+            "delta": 0.0
+          },
+          "energy_mj_mean": {
+            "baseline": 1.0569806494000001e-05,
+            "candidate": 1.0569806494000001e-05,
+            "delta": 0.0
+          },
+          "critical_path_ns_mean": {
+            "baseline": 5.774905724664045,
+            "candidate": 5.774905724664045,
+            "delta": 0.0
+          },
+          "total_power_mw_mean": {
+            "baseline": 0.197441,
+            "candidate": 0.197441,
+            "delta": 0.0
+          },
+          "flow_elapsed_s_mean": {
+            "baseline": 978.894,
+            "candidate": 978.894,
+            "delta": 0.0
+          },
+          "throughput_infer_per_s_mean": {
+            "baseline": 18679.717562670452,
+            "candidate": 18679.717562670452,
+            "delta": 0.0
+          }
+        }
+      },
+      {
+        "scope": "model",
+        "arch_id": "fp16_nm2",
+        "macro_mode": "flat_nomacro",
+        "model_id": "mlp1",
+        "metrics": {
+          "latency_ms_mean": {
+            "baseline": 0.007330000000000001,
+            "candidate": 0.007330000000000001,
+            "delta": 0.0
+          },
+          "energy_mj_mean": {
+            "baseline": 1.54233462e-06,
+            "candidate": 1.54233462e-06,
+            "delta": 0.0
+          },
+          "critical_path_ns_mean": {
+            "baseline": 5.701286780426342,
+            "candidate": 5.701286780426342,
+            "delta": 0.0
+          },
+          "total_power_mw_mean": {
+            "baseline": 0.21041400000000002,
+            "candidate": 0.21041400000000002,
+            "delta": 0.0
+          },
+          "flow_elapsed_s_mean": {
+            "baseline": 829.814,
+            "candidate": 829.814,
+            "delta": 0.0
+          },
+          "throughput_infer_per_s_mean": {
+            "baseline": 136425.64802182812,
+            "candidate": 136425.64802182812,
+            "delta": 0.0
+          }
+        }
+      },
+      {
+        "scope": "model",
+        "arch_id": "fp16_nm2",
+        "macro_mode": "flat_nomacro",
+        "model_id": "mlp2",
+        "metrics": {
+          "latency_ms_mean": {
+            "baseline": 0.08730199999999999,
+            "candidate": 0.08730199999999999,
+            "delta": 0.0
+          },
+          "energy_mj_mean": {
+            "baseline": 1.8369563028000002e-05,
+            "candidate": 1.8369563028000002e-05,
+            "delta": 0.0
+          },
+          "critical_path_ns_mean": {
+            "baseline": 5.701286780426342,
+            "candidate": 5.701286780426342,
+            "delta": 0.0
+          },
+          "total_power_mw_mean": {
+            "baseline": 0.21041400000000002,
+            "candidate": 0.21041400000000002,
+            "delta": 0.0
+          },
+          "flow_elapsed_s_mean": {
+            "baseline": 829.814,
+            "candidate": 829.814,
+            "delta": 0.0
+          },
+          "throughput_infer_per_s_mean": {
+            "baseline": 11454.4913060411,
+            "candidate": 11454.4913060411,
+            "delta": 0.0
+          }
+        }
+      },
+      {
+        "scope": "model",
+        "arch_id": "fp16_nm2",
+        "macro_mode": "hier_macro",
+        "model_id": "mlp1",
+        "metrics": {
+          "latency_ms_mean": {
+            "baseline": 0.007330000000000001,
+            "candidate": 0.007330000000000001,
+            "delta": 0.0
+          },
+          "energy_mj_mean": {
+            "baseline": 1.5599339500000002e-06,
+            "candidate": 1.5599339500000002e-06,
+            "delta": 0.0
+          },
+          "critical_path_ns_mean": {
+            "baseline": 5.740890641774165,
+            "candidate": 5.740890641774165,
+            "delta": 0.0
+          },
+          "total_power_mw_mean": {
+            "baseline": 0.21281500000000003,
+            "candidate": 0.21281500000000003,
+            "delta": 0.0
+          },
+          "flow_elapsed_s_mean": {
+            "baseline": 981.7819999999999,
+            "candidate": 981.7819999999999,
+            "delta": 0.0
+          },
+          "throughput_infer_per_s_mean": {
+            "baseline": 136425.64802182812,
+            "candidate": 136425.64802182812,
+            "delta": 0.0
+          }
+        }
+      },
+      {
+        "scope": "model",
+        "arch_id": "fp16_nm2",
+        "macro_mode": "hier_macro",
+        "model_id": "mlp2",
+        "metrics": {
+          "latency_ms_mean": {
+            "baseline": 0.08730199999999999,
+            "candidate": 0.08730199999999999,
+            "delta": 0.0
+          },
+          "energy_mj_mean": {
+            "baseline": 1.857917513e-05,
+            "candidate": 1.857917513e-05,
+            "delta": 0.0
+          },
+          "critical_path_ns_mean": {
+            "baseline": 5.740890641774165,
+            "candidate": 5.740890641774165,
+            "delta": 0.0
+          },
+          "total_power_mw_mean": {
+            "baseline": 0.21281500000000003,
+            "candidate": 0.21281500000000003,
+            "delta": 0.0
+          },
+          "flow_elapsed_s_mean": {
+            "baseline": 981.7819999999999,
+            "candidate": 981.7819999999999,
+            "delta": 0.0
+          },
+          "throughput_infer_per_s_mean": {
+            "baseline": 11454.4913060411,
+            "candidate": 11454.4913060411,
+            "delta": 0.0
+          }
+        }
+      },
+      {
+        "scope": "aggregate",
+        "arch_id": "fp16_nm1",
+        "macro_mode": "flat_nomacro",
+        "model_id": null,
+        "metrics": {
+          "latency_ms_mean": {
+            "baseline": 0.028907999999999996,
+            "candidate": 0.028907999999999996,
+            "delta": 0.0
+          },
+          "energy_mj_mean": {
+            "baseline": 5.582770776e-06,
+            "candidate": 5.582770776e-06,
+            "delta": 0.0
+          },
+          "critical_path_ns_mean": {
+            "baseline": 5.557037432204143,
+            "candidate": 5.557037432204143,
+            "delta": 0.0
+          },
+          "total_power_mw_mean": {
+            "baseline": 0.193122,
+            "candidate": 0.193122,
+            "delta": 0.0
+          },
+          "flow_elapsed_s_mean": {
+            "baseline": 848.418,
+            "candidate": 848.418,
+            "delta": 0.0
+          },
+          "throughput_infer_per_s_mean": {
+            "baseline": 126107.72426475417,
+            "candidate": 126107.72426475417,
+            "delta": 0.0
+          }
+        }
+      },
+      {
+        "scope": "aggregate",
+        "arch_id": "fp16_nm1",
+        "macro_mode": "hier_macro",
+        "model_id": null,
+        "metrics": {
+          "latency_ms_mean": {
+            "baseline": 0.028907999999999996,
+            "candidate": 0.028907999999999996,
+            "delta": 0.0
+          },
+          "energy_mj_mean": {
+            "baseline": 5.707624428e-06,
+            "candidate": 5.707624428e-06,
+            "delta": 0.0
+          },
+          "critical_path_ns_mean": {
+            "baseline": 5.774905724664045,
+            "candidate": 5.774905724664045,
+            "delta": 0.0
+          },
+          "total_power_mw_mean": {
+            "baseline": 0.197441,
+            "candidate": 0.197441,
+            "delta": 0.0
+          },
+          "flow_elapsed_s_mean": {
+            "baseline": 978.894,
+            "candidate": 978.894,
+            "delta": 0.0
+          },
+          "throughput_infer_per_s_mean": {
+            "baseline": 126107.72426475417,
+            "candidate": 126107.72426475417,
+            "delta": 0.0
+          }
+        }
+      },
+      {
+        "scope": "aggregate",
+        "arch_id": "fp16_nm2",
+        "macro_mode": "flat_nomacro",
+        "model_id": null,
+        "metrics": {
+          "latency_ms_mean": {
+            "baseline": 0.047316,
+            "candidate": 0.047316,
+            "delta": 0.0
+          },
+          "energy_mj_mean": {
+            "baseline": 9.955948824e-06,
+            "candidate": 9.955948824e-06,
+            "delta": 0.0
+          },
+          "critical_path_ns_mean": {
+            "baseline": 5.701286780426342,
+            "candidate": 5.701286780426342,
+            "delta": 0.0
+          },
+          "total_power_mw_mean": {
+            "baseline": 0.21041400000000002,
+            "candidate": 0.21041400000000002,
+            "delta": 0.0
+          },
+          "flow_elapsed_s_mean": {
+            "baseline": 829.814,
+            "candidate": 829.814,
+            "delta": 0.0
+          },
+          "throughput_infer_per_s_mean": {
+            "baseline": 73940.06966393461,
+            "candidate": 73940.06966393461,
+            "delta": 0.0
+          }
+        }
+      },
+      {
+        "scope": "aggregate",
+        "arch_id": "fp16_nm2",
+        "macro_mode": "hier_macro",
+        "model_id": null,
+        "metrics": {
+          "latency_ms_mean": {
+            "baseline": 0.047316,
+            "candidate": 0.047316,
+            "delta": 0.0
+          },
+          "energy_mj_mean": {
+            "baseline": 1.0069554539999999e-05,
+            "candidate": 1.0069554539999999e-05,
+            "delta": 0.0
+          },
+          "critical_path_ns_mean": {
+            "baseline": 5.740890641774165,
+            "candidate": 5.740890641774165,
+            "delta": 0.0
+          },
+          "total_power_mw_mean": {
+            "baseline": 0.21281500000000003,
+            "candidate": 0.21281500000000003,
+            "delta": 0.0
+          },
+          "flow_elapsed_s_mean": {
+            "baseline": 981.7819999999999,
+            "candidate": 981.7819999999999,
+            "delta": 0.0
+          },
+          "throughput_infer_per_s_mean": {
+            "baseline": 73940.06966393461,
+            "candidate": 73940.06966393461,
+            "delta": 0.0
+          }
+        }
+      }
+    ]
+  },
+  "source_refs": {
+    "best_point_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_sram_profile_v1/best_point.json",
+    "summary_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_sram_profile_v1/summary.csv",
+    "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_sram_profile_v1/results.csv",
+    "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_sram_profile_v1/report.md",
+    "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_sram_profile_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+    "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_sram_profile_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+    "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_sram_profile_v1/artifacts/perf/fp16_nm1/mlp1/trace.json",
+    "focused_model_artifacts": [
+      {
+        "model_id": "mlp1",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_sram_profile_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_sram_profile_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_sram_profile_v1/artifacts/perf/fp16_nm1/mlp1/trace.json"
+      },
+      {
+        "model_id": "mlp2",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_sram_profile_v1/artifacts/mapper/fp16_nm1/mlp2/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_sram_profile_v1/artifacts/mapper/fp16_nm1/mlp2/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_sram_profile_v1/artifacts/perf/fp16_nm1/mlp2/trace.json"
+      }
+    ],
+    "baseline_summary_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1/summary.csv",
+    "baseline_report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1/report.md"
+  }
+}
