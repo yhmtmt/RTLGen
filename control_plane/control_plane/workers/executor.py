@@ -174,14 +174,50 @@ def _l1_acceptance_allows_non_ok_metrics(work_item: WorkItem) -> bool:
     )
 
 
+def _work_item_evaluation_mode(work_item: WorkItem) -> str:
+    payload = getattr(work_item.task_request, "request_payload", None)
+    if not isinstance(payload, dict):
+        return ""
+    evaluation = (payload.get("developer_loop") or {}).get("evaluation") or {}
+    if not isinstance(evaluation, dict):
+        return ""
+    return str(evaluation.get("mode", "")).strip()
+
+
+@dataclass(frozen=True)
+class L1MetricsAcceptance:
+    errors: list[str]
+    warnings: list[str]
+    ok_file_count: int
+    non_ok_file_count: int
+
+
 def _l1_metrics_acceptance_errors(
     *,
     repo_root: str,
     expected_outputs: list[str],
     require_ok_status: bool = True,
 ) -> list[str]:
+    return _l1_metrics_acceptance(
+        repo_root=repo_root,
+        expected_outputs=expected_outputs,
+        require_ok_status=require_ok_status,
+        allow_measurement_partial_success=False,
+    ).errors
+
+
+def _l1_metrics_acceptance(
+    *,
+    repo_root: str,
+    expected_outputs: list[str],
+    require_ok_status: bool = True,
+    allow_measurement_partial_success: bool = False,
+) -> L1MetricsAcceptance:
     repo_path = Path(repo_root).resolve()
     errors: list[str] = []
+    warnings: list[str] = []
+    ok_file_count = 0
+    non_ok_file_count = 0
     for output in expected_outputs:
         if not str(output).endswith("metrics.csv"):
             continue
@@ -198,10 +234,32 @@ def _l1_metrics_acceptance_errors(
             errors.append(f"{output}: metrics.csv lacks status column")
             continue
         ok_rows = [row for row in rows if str(row.get("status", "")).strip().lower() == "ok"]
+        if ok_rows:
+            ok_file_count += 1
+        else:
+            non_ok_file_count += 1
         if require_ok_status and not ok_rows:
             statuses = sorted({str(row.get("status", "")).strip() or "<blank>" for row in rows})
             errors.append(f"{output}: no status=ok rows (statuses={','.join(statuses)})")
-    return errors
+    if (
+        allow_measurement_partial_success
+        and ok_file_count > 0
+        and non_ok_file_count > 0
+        and errors
+        and all("no status=ok rows" in error for error in errors)
+    ):
+        warnings = [f"partial_success_boundary_evidence={error}" for error in errors]
+        errors = []
+    return L1MetricsAcceptance(
+        errors=errors,
+        warnings=warnings,
+        ok_file_count=ok_file_count,
+        non_ok_file_count=non_ok_file_count,
+    )
+
+
+def _l1_allows_measurement_partial_success(evaluation_mode: str) -> bool:
+    return evaluation_mode == "measurement_only"
 
 
 def _load_work_item(session: Session, work_item_id: str) -> WorkItem:
@@ -697,6 +755,7 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
         attempt = _next_attempt(session, work_item.id)
         trial_index = _next_trial_index(session, work_item)
         seed = _trial_policy(work_item)["seed_start"] + trial_index - 1
+        evaluation_mode = _work_item_evaluation_mode(work_item)
         run_key = f"{work_item.item_id}_{make_id('run')}"
 
     checkout_error: str | None = None
@@ -847,12 +906,16 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
     if not command_results and not work_item.command_manifest:
         success = True
     acceptance_errors: list[str] = []
+    acceptance_warnings: list[str] = []
     if success and str(work_item.task_type) == "l1_sweep":
-        acceptance_errors = _l1_metrics_acceptance_errors(
+        acceptance = _l1_metrics_acceptance(
             repo_root=checkout_info.work_dir,
             expected_outputs=active_expected_outputs,
             require_ok_status=not _l1_acceptance_allows_non_ok_metrics(work_item),
+            allow_measurement_partial_success=_l1_allows_measurement_partial_success(evaluation_mode),
         )
+        acceptance_errors = acceptance.errors
+        acceptance_warnings = acceptance.warnings
         if acceptance_errors:
             success = False
             with session_factory() as session:
@@ -861,6 +924,18 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
                     run_key=run_key,
                     event_type="acceptance_failed",
                     event_payload={"errors": acceptance_errors},
+                )
+        elif acceptance_warnings:
+            with session_factory() as session:
+                append_run_event(
+                    session,
+                    run_key=run_key,
+                    event_type="acceptance_warnings",
+                    event_payload={
+                        "warnings": acceptance_warnings,
+                        "ok_file_count": acceptance.ok_file_count,
+                        "non_ok_file_count": acceptance.non_ok_file_count,
+                    },
                 )
 
     artifacts = collect_expected_output_artifacts(
@@ -919,6 +994,8 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
         result_payload["worker_error"] = worker_error
     if acceptance_errors:
         result_payload["acceptance_errors"] = acceptance_errors
+    if acceptance_warnings:
+        result_payload["acceptance_warnings"] = acceptance_warnings
     failure = _classify_failure(
         command_results=command_results,
         worker_error=worker_error,
@@ -948,6 +1025,8 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
             notes.append(f"worker_error={worker_error}")
         for error in acceptance_errors:
             notes.append(f"acceptance_error={error}")
+        for warning in acceptance_warnings:
+            notes.append(warning)
         if failure["requeue"]:
             notes.append(
                 f"retry_scheduled=attempt_{failure['attempt'] + 1}_of_{failure['max_retry_attempts']}"
@@ -957,6 +1036,11 @@ def execute_one_work_item(session_factory: sessionmaker, *, config: WorkerConfig
             "metrics_rows": queue_result.metrics_rows,
             "notes": notes,
         }
+    elif acceptance_warnings:
+        result_payload["queue_result"]["notes"] = [
+            *result_payload["queue_result"]["notes"],
+            *acceptance_warnings,
+        ]
 
     with session_factory() as session:
         if failure["requeue"]:
