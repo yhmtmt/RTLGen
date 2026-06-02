@@ -1,0 +1,11 @@
+{
+  "estimated_count": 5,
+  "instance_count": 6,
+  "max_access_time_ns": 1.4124,
+  "missing_instances": [
+    "softmax_stats_buffer"
+  ],
+  "total_area_um2": 2487735.8073090003,
+  "total_read_energy_pj": 374.6457,
+  "total_write_energy_pj": 572.2861999999999
+}
