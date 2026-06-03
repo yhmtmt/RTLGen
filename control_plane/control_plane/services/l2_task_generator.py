@@ -3641,6 +3641,60 @@ def _decoder_attention_kv_compute_floor_gap_evidence(*, item_id: str) -> dict[st
     }
 
 
+def _decoder_attention_kv_compute_ceiling_envelope_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_kv_compute_ceiling_envelope__{item_id}.json"
+    report = f"{base}/decoder_attention_kv_compute_ceiling_envelope__{item_id}.md"
+    compute_sensitivity = (
+        f"{base}/decoder_attention_kv_physical_hbm_compute_sensitivity__"
+        "l2_decoder_attention_kv_physical_hbm_compute_sensitivity_llama7b_v2.json"
+    )
+    measured_compute = (
+        f"{base}/decoder_attention_kv_measured_compute__"
+        "l2_decoder_attention_kv_measured_compute_llama7b_v1.json"
+    )
+    internal_measurements = "runs/design_registry/internal_measurements.jsonl"
+    external_measurements = "runs/design_registry/external_measurements.jsonl"
+    comparison_claims = "runs/design_registry/comparison_claims.jsonl"
+    return {
+        "inputs": {
+            "attention_kv_physical_hbm_compute_sensitivity": compute_sensitivity,
+            "attention_kv_measured_compute": measured_compute,
+            "design_registry_internal_measurements": internal_measurements,
+            "design_registry_external_measurements": external_measurements,
+            "design_registry_comparison_claims": comparison_claims,
+            "attention_kv_compute_ceiling_envelope_out": out,
+            "attention_kv_compute_ceiling_envelope_report": report,
+            "attention_kv_compute_ceiling_envelope_scope": (
+                "Recompute the Llama7B attention/KV frontier under physical compute-density "
+                "ceilings derived from measured RTLGen PPA and explicit optimistic external "
+                "reference envelopes. Require registry evidence citations for internal "
+                "baselines and third-party calibration references."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_attention_kv_compute_ceiling_envelope",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_attention_kv_compute_ceiling_envelope.py "
+                    f"--compute-sensitivity {compute_sensitivity} "
+                    f"--measured-compute {measured_compute} "
+                    f"--internal-measurements {internal_measurements} "
+                    f"--external-measurements {external_measurements} "
+                    f"--comparison-claims {comparison_claims} "
+                    "--density-envelope-macs-per-cycle-per-mm2-list 150,300 "
+                    "--die-area-mm2-list 400,800,1200 "
+                    "--logic-area-fraction-list 0.2,0.4,0.6 "
+                    "--vector-ops-per-mac 0.125 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_attention_kv_measured_compute_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_kv_measured_compute__{item_id}.json"
@@ -5614,6 +5668,7 @@ def _build_payload(
         "decoder_attention_kv_physical_hbm_memory_noc",
         "decoder_attention_kv_physical_hbm_compute_sensitivity",
         "decoder_attention_kv_compute_floor_gap",
+        "decoder_attention_kv_compute_ceiling_envelope",
         "decoder_attention_kv_measured_compute",
         "decoder_attention_kv_measured_compute_partition",
         "decoder_attention_kv_clustered_schedule",
@@ -5688,6 +5743,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_kv_physical_hbm_compute_sensitivity_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_compute_floor_gap":
             decoder_evidence = _decoder_attention_kv_compute_floor_gap_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_kv_compute_ceiling_envelope":
+            decoder_evidence = _decoder_attention_kv_compute_ceiling_envelope_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_measured_compute":
             decoder_evidence = _decoder_attention_kv_measured_compute_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_measured_compute_partition":
