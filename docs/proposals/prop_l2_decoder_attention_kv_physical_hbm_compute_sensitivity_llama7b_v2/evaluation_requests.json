@@ -1,0 +1,25 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_physical_hbm_compute_sensitivity_llama7b_v2",
+  "source_commit": "1454629818ddaffb32375c31115845dd85390350",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_kv_physical_hbm_compute_sensitivity_llama7b_v2",
+      "task_type": "l2_campaign",
+      "objective": "Find the smallest compute throughput that remains memory/interconnect-bound for Llama7B 131k native-GQA KV8 under the practical high-SRAM HBM/NoC region, using the merged all-measured local L1 baseline and physical HBM memory/NoC frontier as inputs.",
+      "evaluation_mode": "broad_ranking",
+      "abstraction_layer": "decoder_attention_kv_physical_hbm_compute_sensitivity",
+      "comparison_role": "ranking",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_all_measured_l1_clustered_schedule_v1_r4",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_all_measured_l1_clustered_schedule_v1_r4"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "quantify_compute_memory_boundary",
+        "reason": "This pass should show whether increasing compute beyond the current measured local baseline matters once SRAM capacity, HBM service, and local/global NoC bounds dominate the Llama7B 131k attention schedule."
+      },
+      "status": "pending"
+    }
+  ]
+}
