@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import json
 
 
 def _resolve_path(repo_root: Path, path_text: str) -> Path:
@@ -90,6 +91,41 @@ def resolve_proposal_file(repo_root: Path, proposal_path: str | None = None, pro
     if proposal_dir is None:
         return None
     return proposal_dir / 'proposal.json'
+
+
+def proposal_placeholder_reason(proposal_json: Path) -> str | None:
+    try:
+        payload = json.loads(proposal_json.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    if not isinstance(payload, dict):
+        return None
+
+    title = str(payload.get("title", "")).strip()
+    hypothesis = str(payload.get("hypothesis", "")).strip()
+    direct_comparison = payload.get("direct_comparison")
+    primary_question = ""
+    include_values: list[str] = []
+    exclude_values: list[str] = []
+    if isinstance(direct_comparison, dict):
+        primary_question = str(direct_comparison.get("primary_question", "")).strip()
+        include_values = [str(value).strip() for value in direct_comparison.get("include", []) if str(value).strip()]
+        exclude_values = [str(value).strip() for value in direct_comparison.get("exclude", []) if str(value).strip()]
+    expected_benefit = [str(value).strip() for value in payload.get("expected_benefit", []) if str(value).strip()]
+    risks = [str(value).strip() for value in payload.get("risks", []) if str(value).strip()]
+
+    placeholders = {
+        title == "Example proposal title",
+        hypothesis == "Replace this with a bounded engineering hypothesis.",
+        primary_question == "What focused comparison directly tests this proposal?",
+        any(value.startswith("describe ") for value in include_values),
+        any(value.startswith("describe ") for value in exclude_values),
+        any(value.startswith("describe ") for value in expected_benefit),
+        any(value.startswith("describe ") for value in risks),
+    }
+    if any(placeholders):
+        return "developer_loop proposal is still a template placeholder"
+    return None
 
 
 def canonicalize_proposal_path(repo_root: Path, proposal_path: str | None = None, proposal_id: str | None = None) -> str | None:
