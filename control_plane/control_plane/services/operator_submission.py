@@ -314,6 +314,7 @@ def _materialize_inline_run_artifacts(
 ) -> list[str]:
     requested_paths = {str(path).strip() for path in paths or [] if str(path).strip()}
     materialized: list[str] = []
+    sha_mismatch_paths: list[str] = []
     artifacts = session.query(Artifact).filter(Artifact.run_id == run.id).all()
     for artifact in artifacts:
         rel_path = str(artifact.path or "").strip()
@@ -329,7 +330,7 @@ def _materialize_inline_run_artifacts(
         if artifact.sha256:
             digest = hashlib.sha256(inline_text.encode("utf-8")).hexdigest()
             if digest != artifact.sha256:
-                continue
+                sha_mismatch_paths.append(rel_path)
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(inline_text, encoding="utf-8")
         try:
@@ -345,6 +346,7 @@ def _materialize_inline_run_artifacts(
                 event_payload={
                     "count": len(materialized),
                     "paths": materialized,
+                    "sha_mismatch_paths": sha_mismatch_paths,
                 },
             )
         )

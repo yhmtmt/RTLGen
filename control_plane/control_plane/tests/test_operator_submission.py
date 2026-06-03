@@ -996,7 +996,7 @@ def test_operate_submission_materializes_inline_artifacts_before_rebuilding_revi
                     kind="expected_output",
                     storage_mode=ArtifactStorageMode.REPO,
                     path=metrics_rel,
-                    sha256=None,
+                    sha256="0" * 64,
                     metadata_={"inline_utf8": metrics_text},
                 )
             )
@@ -1034,6 +1034,7 @@ def test_operate_submission_materializes_inline_artifacts_before_rebuilding_revi
             assert review_path.exists()
             event = session.query(RunEvent).filter_by(run_id=run.id, event_type="inline_artifacts_materialized").one()
             assert event.event_payload["paths"] == [metrics_rel]
+            assert event.event_payload["sha_mismatch_paths"] == [metrics_rel]
 
 
 def test_operate_submission_force_rematerializes_existing_l1_review_artifact() -> None:
