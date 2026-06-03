@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_compute_ceiling_envelope_llama7b_v1",
-  "source_commit": "fc78d52c810b29f0bf120c54e553803821ce677f",
+  "source_commit": "4f777beadc88002831f92432887be2a398ed1e64",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_kv_compute_ceiling_envelope_llama7b_v1",
@@ -19,8 +19,11 @@
         "direction": "bound_compute_frontier",
         "reason": "The job should identify whether measured, optimistic, or aggressive 45nm compute-density assumptions can reach the HBM-bound floor."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 758,
+      "merge_commit": "163f7bb5ca93d927b613a57cf220c8435d393682",
+      "merged_utc": "2026-06-03T10:42:44Z",
+      "notes": "Merged via PR #758 and merge 163f7bb5ca93d927b613a57cf220c8435d393682 at 2026-06-03T10:42:44Z."
     }
   ]
 }
-
