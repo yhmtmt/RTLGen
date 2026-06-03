@@ -18,7 +18,7 @@ from control_plane.models.enums import ArtifactStorageMode
 from control_plane.models.run_events import RunEvent
 from control_plane.models.runs import Run
 from control_plane.models.work_items import WorkItem
-from control_plane.services.docs_paths import resolve_proposal_file
+from control_plane.services.docs_paths import proposal_placeholder_reason, resolve_proposal_file
 from control_plane.services.review_publisher import ReviewPublishRequest, publish_review_package
 from control_plane.workers.artifact_stage import collect_linked_results_artifacts
 
@@ -128,6 +128,9 @@ def _collect_proposal_files(*, repo_root: Path, package_payload: dict[str, Any],
         if proposal_id or proposal_path:
             raise SubmissionPrepareError("developer_loop proposal linkage does not resolve to a proposal")
         return
+    placeholder_reason = proposal_placeholder_reason(proposal_file)
+    if placeholder_reason is not None:
+        raise SubmissionPrepareError(placeholder_reason)
     proposal_dir = proposal_file.parent
     for candidate in sorted(path for path in proposal_dir.rglob("*") if path.is_file()):
         try:

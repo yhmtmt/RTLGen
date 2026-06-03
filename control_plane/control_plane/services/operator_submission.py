@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+import hashlib
 import json
 from pathlib import Path
 import re
 import subprocess
-from typing import Any, Optional
+from typing import Any, Iterable, Optional
 
 from sqlalchemy.orm import Session
 
@@ -35,7 +36,7 @@ from control_plane.services.review_publisher import (
 )
 from control_plane.services.submission_bridge import SubmissionPrepareError, SubmissionPrepareRequest, prepare_submission_branch
 from control_plane.services.submission_executor import SubmissionExecuteError, SubmissionExecuteRequest, execute_submission
-from control_plane.services.docs_paths import resolve_proposal_file
+from control_plane.services.docs_paths import proposal_placeholder_reason, resolve_proposal_file
 
 
 class OperatorSubmissionError(RuntimeError):
@@ -289,6 +290,68 @@ def _review_artifact_exists_on_disk(*, repo_root: Path, artifact: Artifact | Non
     return path.exists() and path.is_file()
 
 
+def _repo_artifact_path(repo_root: Path, path_text: str) -> Path | None:
+    path_text = str(path_text or "").strip()
+    if not path_text:
+        return None
+    candidate = Path(path_text)
+    if not candidate.is_absolute():
+        candidate = repo_root / candidate
+    try:
+        resolved = candidate.resolve()
+        resolved.relative_to(repo_root.resolve())
+    except ValueError:
+        return None
+    return resolved
+
+
+def _materialize_inline_run_artifacts(
+    session: Session,
+    *,
+    repo_root: Path,
+    run: Run,
+    paths: Iterable[str] | None = None,
+) -> list[str]:
+    requested_paths = {str(path).strip() for path in paths or [] if str(path).strip()}
+    materialized: list[str] = []
+    artifacts = session.query(Artifact).filter(Artifact.run_id == run.id).all()
+    for artifact in artifacts:
+        rel_path = str(artifact.path or "").strip()
+        if requested_paths and rel_path not in requested_paths:
+            continue
+        metadata = artifact.metadata_ if isinstance(artifact.metadata_, dict) else {}
+        inline_text = metadata.get("inline_utf8")
+        if not isinstance(inline_text, str):
+            continue
+        target = _repo_artifact_path(repo_root, rel_path)
+        if target is None or target.exists():
+            continue
+        if artifact.sha256:
+            digest = hashlib.sha256(inline_text.encode("utf-8")).hexdigest()
+            if digest != artifact.sha256:
+                continue
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(inline_text, encoding="utf-8")
+        try:
+            materialized.append(str(target.relative_to(repo_root)))
+        except ValueError:
+            materialized.append(str(target))
+    if materialized:
+        session.add(
+            RunEvent(
+                run_id=run.id,
+                event_time=utcnow(),
+                event_type="inline_artifacts_materialized",
+                event_payload={
+                    "count": len(materialized),
+                    "paths": materialized,
+                },
+            )
+        )
+        session.commit()
+    return materialized
+
+
 def _latest_submission_failure_reason(session: Session, *, run_id: str) -> str | None:
     event = (
         session.query(RunEvent)
@@ -318,6 +381,9 @@ def _proposal_linkage_reason(*, repo_root: Path, work_item: WorkItem) -> str | N
     proposal_json = resolve_proposal_file(repo_root, proposal_path=proposal_path, proposal_id=proposal_id)
     if proposal_json is None or not proposal_json.exists():
         return "developer_loop proposal linkage does not resolve to a proposal"
+    placeholder_reason = proposal_placeholder_reason(proposal_json)
+    if placeholder_reason is not None:
+        return placeholder_reason
     return None
 
 
@@ -444,6 +510,7 @@ def _ensure_review_artifact_materialized(
     run: Run,
     force: bool = False,
 ) -> None:
+    _materialize_inline_run_artifacts(session, repo_root=repo_root, run=run)
     required_kind = _required_review_artifact_kind(work_item.task_type)
     artifact = _review_artifact(session, run_id=run.id, kind=required_kind)
     if not force and artifact is not None and _review_artifact_exists_on_disk(repo_root=repo_root, artifact=artifact):

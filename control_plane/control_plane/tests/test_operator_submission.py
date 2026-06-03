@@ -15,8 +15,17 @@ from sqlalchemy.orm import Session
 from control_plane.clock import utcnow
 from control_plane.db import create_all
 from control_plane.models.artifacts import Artifact
-from control_plane.models.enums import ExecutorType, FlowName, GitHubLinkState, LayerName, RunStatus, WorkItemState
+from control_plane.models.enums import (
+    ArtifactStorageMode,
+    ExecutorType,
+    FlowName,
+    GitHubLinkState,
+    LayerName,
+    RunStatus,
+    WorkItemState,
+)
 from control_plane.models.github_links import GitHubLink
+from control_plane.models.run_events import RunEvent
 from control_plane.models.runs import Run
 from control_plane.models.task_requests import TaskRequest
 from control_plane.models.work_items import WorkItem
@@ -338,6 +347,10 @@ def _make_fake_bin(fake_bin: Path, log_path: Path) -> None:
         "    branch=argv[4]\n"
         "    print(json.dumps({'number':321,'url':'https://github.com/yhmtmt/RTLGen/pull/321','headRefName':branch,'baseRefName':'master'}))\n"
         "    sys.exit(0)\n"
+        "if len(argv) >= 4 and argv[0] == 'api' and argv[1].startswith('repos/yhmtmt/RTLGen/pulls/') and argv[2:4] == ['-X','PATCH']:\n"
+        "    number=int(argv[1].rsplit('/', 1)[1])\n"
+        "    print(json.dumps({'number':number,'html_url':f'https://github.com/yhmtmt/RTLGen/pull/{number}'}))\n"
+        "    sys.exit(0)\n"
         "sys.exit(1)\n",
     )
     os.chmod(fake_bin / "git", 0o755)
@@ -448,6 +461,31 @@ def test_assess_submission_eligibility_rejects_orphan_l1_review_item() -> None:
             assert eligibility.reason == "missing developer_loop proposal linkage"
 
 
+def test_assess_submission_eligibility_rejects_template_proposal_linkage() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, run_key = _seed_l1_reviewable(session, repo_root)
+            proposal_json = repo_root / "docs" / "proposals" / "prop_l1_operate_demo" / "proposal.json"
+            payload = json.loads(proposal_json.read_text(encoding="utf-8"))
+            payload["title"] = "Example proposal title"
+            payload["hypothesis"] = "Replace this with a bounded engineering hypothesis."
+            proposal_json.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            eligibility = assess_submission_eligibility(
+                session,
+                work_item=work_item,
+                run=session.query(Run).filter_by(run_key=run_key).one(),
+                repo_root=repo_root,
+            )
+            assert eligibility.eligible is False
+            assert eligibility.reason == "developer_loop proposal is still a template placeholder"
 
 
 def test_operate_submission_rebuilds_when_saved_manifest_files_are_missing() -> None:
@@ -934,6 +972,68 @@ def test_operate_submission_rebuilds_missing_l1_review_file_before_submission() 
             assert artifact_path.exists()
             payload = json.loads(artifact_path.read_text(encoding="utf-8"))
             assert payload["item_id"] == item_id
+
+
+def test_operate_submission_materializes_inline_artifacts_before_rebuilding_review_file() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        _init_repo(repo_root)
+
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+        with Session(engine) as session:
+            item_id, run_key = _seed_l1_reviewable(session, repo_root)
+            run = session.query(Run).filter_by(run_key=run_key).one()
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            metrics_rel = next(path for path in work_item.expected_outputs if str(path).endswith("metrics.csv"))
+            metrics_path = repo_root / metrics_rel
+            metrics_text = metrics_path.read_text(encoding="utf-8")
+            metrics_path.unlink()
+            session.add(
+                Artifact(
+                    run_id=run.id,
+                    kind="expected_output",
+                    storage_mode=ArtifactStorageMode.REPO,
+                    path=metrics_rel,
+                    sha256=None,
+                    metadata_={"inline_utf8": metrics_text},
+                )
+            )
+
+            review_artifact = session.query(Artifact).filter_by(run_id=run.id, kind="promotion_proposal").one()
+            review_path = repo_root / review_artifact.path
+            review_path.unlink()
+            session.commit()
+            assert not metrics_path.exists()
+            assert not review_path.exists()
+
+            fake_bin = repo_root / "fake_bin"
+            log_path = repo_root / "fake_cmds.log"
+            _make_fake_bin(fake_bin, log_path)
+            old_path = os.environ.get("PATH", "")
+            os.environ["PATH"] = f"{fake_bin}:{old_path}"
+            try:
+                result = operate_submission(
+                    session,
+                    OperatorSubmissionRequest(
+                        repo_root=str(repo_root),
+                        repo="yhmtmt/RTLGen",
+                        item_id=item_id,
+                        evaluator_id="cpbot",
+                        session_id="s20260310t090200z",
+                        host="cp-host",
+                        worktree_root=str(repo_root / "tmp_submit"),
+                    ),
+                )
+            finally:
+                os.environ["PATH"] = old_path
+
+            assert result.pr_number == 321
+            assert metrics_path.read_text(encoding="utf-8") == metrics_text
+            assert review_path.exists()
+            event = session.query(RunEvent).filter_by(run_id=run.id, event_type="inline_artifacts_materialized").one()
+            assert event.event_payload["paths"] == [metrics_rel]
 
 
 def test_operate_submission_force_rematerializes_existing_l1_review_artifact() -> None:
