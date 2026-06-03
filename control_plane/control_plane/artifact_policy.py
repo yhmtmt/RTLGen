@@ -34,6 +34,7 @@ _ALLOWED_DATASET_PREFIXES = {
     "decoder_attention_kv_physical_hbm_memory_noc__",
     "decoder_attention_kv_physical_hbm_compute_sensitivity__",
     "decoder_attention_kv_compute_floor_gap__",
+    "decoder_attention_kv_compute_ceiling_envelope__",
     "decoder_attention_kv_quality_gate__",
     "decoder_attention_kv_quality_proxy__",
     "decoder_attention_kv_native_gqa_proxy__",
