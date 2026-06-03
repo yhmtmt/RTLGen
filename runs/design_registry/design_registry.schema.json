@@ -1,0 +1,317 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rtlgen/runs/design_registry/design_registry.schema.json",
+  "title": "RTLGen Design Evidence Registry",
+  "description": "Schema for JSONL records under runs/design_registry.",
+  "$defs": {
+    "source_ref": {
+      "type": "object",
+      "required": ["source_id", "url", "source_type", "reliability"],
+      "properties": {
+        "source_id": { "type": "string", "minLength": 1 },
+        "url": { "type": "string", "minLength": 1 },
+        "source_type": {
+          "type": "string",
+          "enum": [
+            "primary_publication",
+            "vendor_publication",
+            "benchmark_database",
+            "rtlgen_artifact",
+            "rtlgen_pr",
+            "rtlgen_issue",
+            "derived_report"
+          ]
+        },
+        "reliability": {
+          "type": "string",
+          "enum": ["high", "medium", "low"]
+        },
+        "notes": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "technology": {
+      "type": "object",
+      "required": ["node_nm"],
+      "properties": {
+        "node_nm": { "type": ["number", "null"] },
+        "process_label": { "type": "string" },
+        "voltage_v": { "type": ["number", "null"] },
+        "platform": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "design_class": {
+      "type": "object",
+      "required": ["scope", "compute_category", "target_workload", "precision"],
+      "properties": {
+        "scope": {
+          "type": "string",
+          "enum": [
+            "primitive_arithmetic",
+            "compute_tile_or_array",
+            "vector_or_reduction_unit",
+            "complete_npu_accelerator",
+            "gpu_or_general_matrix_engine",
+            "memory_or_noc_system",
+            "full_system_product"
+          ]
+        },
+        "compute_category": { "type": "string", "minLength": 1 },
+        "target_workload": { "type": "string", "minLength": 1 },
+        "precision": { "type": "string", "minLength": 1 },
+        "dataflow": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "comparability": {
+      "type": "object",
+      "required": ["class", "reason"],
+      "properties": {
+        "class": {
+          "type": "string",
+          "enum": [
+            "direct_comparable",
+            "same_function_different_precision",
+            "same_compute_class_different_workload",
+            "system_context_only",
+            "trend_reference_only",
+            "not_comparable"
+          ]
+        },
+        "reason": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "oneOf": [
+    {
+      "title": "Internal Design",
+      "type": "object",
+      "required": [
+        "record_type",
+        "design_id",
+        "name",
+        "technology",
+        "design_class",
+        "implementation_level",
+        "source_refs"
+      ],
+      "properties": {
+        "record_type": { "const": "internal_design" },
+        "design_id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "family": { "type": "string", "minLength": 1 },
+        "role": { "type": "string", "minLength": 1 },
+        "technology": { "$ref": "#/$defs/technology" },
+        "design_class": { "$ref": "#/$defs/design_class" },
+        "implementation_level": {
+          "type": "string",
+          "enum": ["rtl_embodied", "macro_wrapped", "analytic_only", "deprecated"]
+        },
+        "params": { "type": "object" },
+        "interface": { "type": "object" },
+        "source_refs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/source_ref" }
+        },
+        "notes": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    {
+      "title": "Internal Measurement",
+      "type": "object",
+      "required": [
+        "record_type",
+        "measurement_id",
+        "design_id",
+        "status",
+        "source_commit",
+        "artifacts",
+        "physical",
+        "derived"
+      ],
+      "properties": {
+        "record_type": { "const": "internal_measurement" },
+        "measurement_id": { "type": "string", "minLength": 1 },
+        "design_id": { "type": "string", "minLength": 1 },
+        "status": {
+          "type": "string",
+          "enum": ["valid", "invalid", "superseded", "needs_rerun", "failed"]
+        },
+        "source_commit": { "type": "string", "minLength": 7 },
+        "item_id": { "type": "string" },
+        "run_key": { "type": "string" },
+        "pr_number": { "type": ["integer", "null"] },
+        "platform": { "type": "string" },
+        "flow": { "type": "string" },
+        "macro_mode": { "type": "string" },
+        "constraints": { "type": "object" },
+        "artifacts": { "type": "object" },
+        "physical": { "type": "object" },
+        "performance": { "type": "object" },
+        "derived": { "type": "object" },
+        "comparability": { "$ref": "#/$defs/comparability" },
+        "notes": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    {
+      "title": "External Design",
+      "type": "object",
+      "required": [
+        "record_type",
+        "external_design_id",
+        "name",
+        "origin",
+        "publication_year",
+        "source_refs",
+        "technology",
+        "design_class",
+        "area_scope"
+      ],
+      "properties": {
+        "record_type": { "const": "external_design" },
+        "external_design_id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "origin": {
+          "type": "string",
+          "enum": ["academic", "commercial", "open_source", "vendor"]
+        },
+        "publication_year": { "type": "integer", "minimum": 1980 },
+        "source_refs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/source_ref" }
+        },
+        "technology": { "$ref": "#/$defs/technology" },
+        "design_class": { "$ref": "#/$defs/design_class" },
+        "area_scope": { "type": "object" },
+        "notes": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    {
+      "title": "External Measurement",
+      "type": "object",
+      "required": [
+        "record_type",
+        "measurement_id",
+        "external_design_id",
+        "metric_origin",
+        "published",
+        "derived",
+        "normalization",
+        "comparability"
+      ],
+      "properties": {
+        "record_type": { "const": "external_measurement" },
+        "measurement_id": { "type": "string", "minLength": 1 },
+        "external_design_id": { "type": "string", "minLength": 1 },
+        "metric_origin": {
+          "type": "string",
+          "enum": [
+            "published_measured_silicon",
+            "published_post_layout",
+            "published_post_synthesis",
+            "published_simulated",
+            "derived_from_published"
+          ]
+        },
+        "published": { "type": "object" },
+        "derived": { "type": "object" },
+        "normalization": { "type": "object" },
+        "comparability": { "$ref": "#/$defs/comparability" },
+        "notes": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    {
+      "title": "Comparison Claim",
+      "type": "object",
+      "required": [
+        "record_type",
+        "claim_id",
+        "claim_type",
+        "status",
+        "confidence",
+        "internal_measurements",
+        "external_measurements",
+        "conclusion"
+      ],
+      "properties": {
+        "record_type": { "const": "comparison_claim" },
+        "claim_id": { "type": "string", "minLength": 1 },
+        "claim_type": { "type": "string", "minLength": 1 },
+        "status": {
+          "type": "string",
+          "enum": ["active", "superseded", "invalidated"]
+        },
+        "confidence": {
+          "type": "string",
+          "enum": [
+            "measured",
+            "measured_with_caveat",
+            "analytic_projection",
+            "trend_only"
+          ]
+        },
+        "internal_measurements": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "external_measurements": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "required_comparability": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "conclusion": { "type": "string", "minLength": 1 },
+        "diagnostic_use": { "type": "string" },
+        "source_refs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/source_ref" }
+        },
+        "notes": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    {
+      "title": "Validity Note",
+      "type": "object",
+      "required": [
+        "record_type",
+        "validity_id",
+        "status",
+        "affected_records",
+        "reason"
+      ],
+      "properties": {
+        "record_type": { "const": "validity_note" },
+        "validity_id": { "type": "string", "minLength": 1 },
+        "status": {
+          "type": "string",
+          "enum": ["invalidates", "supersedes", "caveat", "requires_rerun"]
+        },
+        "affected_records": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "reason": { "type": "string", "minLength": 1 },
+        "replacement_records": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "source_refs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/source_ref" }
+        },
+        "notes": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  ]
+}
+
