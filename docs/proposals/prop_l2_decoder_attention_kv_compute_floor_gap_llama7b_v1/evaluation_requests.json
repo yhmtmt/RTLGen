@@ -1,0 +1,25 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_compute_floor_gap_llama7b_v1",
+  "source_commit": "36f8bae95d3df28a19037d3b8ad1fb934d8acf68",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_kv_compute_floor_gap_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Quantify how far merged measured NPU compute PPA is from the Llama7B 131k HBM-bound compute floor before requesting deeper SRAM/NoC arbitration simulation.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_compute_floor_gap",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_physical_hbm_compute_sensitivity_llama7b_v2",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_physical_hbm_compute_sensitivity_llama7b_v2"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "quantify_compute_gap",
+        "reason": "The job should report the MAC/cycle and MAC/cycle/mm2 multiplier needed for measured compute blocks to reach the HBM-bound attention floor."
+      },
+      "status": "pending"
+    }
+  ]
+}
