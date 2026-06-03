@@ -1,8 +1,8 @@
 {
   "proposal_id": "prop_l1_npu_dense_gemm_tile_v1",
   "candidate_id": "l1_npu_dense_gemm_tile_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "promote",
+  "pr_number": 760,
+  "merge_commit": "b36cee33fc43bf5d9a58a73b19c87f5cd778415f",
+  "merged_utc": "2026-06-03T13:39:12.864573Z"
 }
