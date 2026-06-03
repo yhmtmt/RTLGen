@@ -1,0 +1,2 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_npu_dense_gemm_tile_v1_run_c4388265f4a94642,1,1,0,succeeded,runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_4x4_k1_p1/metrics.csv,5.0416,1440000.0,1.08,none,,

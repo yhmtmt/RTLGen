@@ -1,0 +1,115 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-06-03T12:14:22.938695Z",
+  "item_id": "l1_npu_dense_gemm_tile_v1",
+  "run_key": "l1_npu_dense_gemm_tile_v1_run_c4388265f4a94642",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "bd380995d64fdf1bf7f63034c7de280f700085ac",
+  "objective": "Measure dense FP16 GEMM tile PPA for 4x4 and 8x8 arrays, preserving hierarchy and recording MAC/cycle/mm2-ready metrics.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/npu/dense_gemm_tile_v1/sweeps/nangate45_dense_tile_hier.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_4x4_k1_p1/config.json",
+      "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_8x8_k1_p1/config.json"
+    ],
+    "out_root": "runs/designs/npu_blocks",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 2,
+  "evaluation_record": {
+    "evaluation_mode": "measurement_only",
+    "abstraction_layer": "architecture_block",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_4x4_k1_p1/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "90e3a0a3",
+        "tag": "npu_dense_gemm_tile_v1_hier",
+        "result_path": "/orfs/flow/reports/nangate45/npu_dense_gemm_tile_fp16_4x4_k1_p1/dense_gemm_tile_v1_hier/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_4x4_k1_p1/work/90e3a0a3/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 5.0416,
+        "die_area": 1440000.0,
+        "total_power_mw": 1.08
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_8x8_k1_p1/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "90e3a0a3",
+        "tag": "npu_dense_gemm_tile_v1_hier",
+        "result_path": "/orfs/flow/reports/nangate45/npu_dense_gemm_tile_fp16_8x8_k1_p1/dense_gemm_tile_v1_hier/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_8x8_k1_p1/work/90e3a0a3/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 5.6413,
+        "die_area": 1440000.0,
+        "total_power_mw": 4.64
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_npu_dense_gemm_tile_v1",
+    "completed_trials": 1,
+    "success_count": 1,
+    "failure_count": 0,
+    "success_rate": 1.0,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 5.0416,
+        "mean": 5.0416,
+        "median": 5.0416,
+        "max": 5.0416,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "die_area": {
+        "best": 1440000.0,
+        "mean": 1440000.0,
+        "median": 1440000.0,
+        "max": 1440000.0,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "total_power_mw": {
+        "best": 1.08,
+        "mean": 1.08,
+        "median": 1.08,
+        "max": 1.08,
+        "range": 0.0,
+        "stddev": 0.0
+      }
+    }
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_4x4_k1_p1/metrics.csv",
+      "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_8x8_k1_p1/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_npu_dense_gemm_tile_v1/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_npu_dense_gemm_tile_v1/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_npu_dense_gemm_tile_v1/trial_table.csv"
+  }
+}
