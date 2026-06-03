@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_compute_floor_gap_llama7b_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "iterate",
+  "pr_number": 753,
+  "merge_commit": "73ea9f0584c7587e8d9095bd12410f1d32d69c17",
+  "merged_utc": "2026-06-03T07:18:01Z"
 }

@@ -19,7 +19,11 @@
         "direction": "quantify_compute_gap",
         "reason": "The job should report the MAC/cycle and MAC/cycle/mm2 multiplier needed for measured compute blocks to reach the HBM-bound attention floor."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 753,
+      "merge_commit": "73ea9f0584c7587e8d9095bd12410f1d32d69c17",
+      "merged_utc": "2026-06-03T07:18:01Z",
+      "notes": "Merged via PR #753 and merge 73ea9f0584c7587e8d9095bd12410f1d32d69c17 at 2026-06-03T07:18:01Z."
     }
   ]
 }
