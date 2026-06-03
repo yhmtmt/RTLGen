@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_all_measured_l1_clustered_schedule_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "iterate",
+  "pr_number": 746,
+  "merge_commit": "cc90a7188367a5c3ab6574910fb1c66545c7c2af",
+  "merged_utc": "2026-06-03T04:17:04Z"
 }

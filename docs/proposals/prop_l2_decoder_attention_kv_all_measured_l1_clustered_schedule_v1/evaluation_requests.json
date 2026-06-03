@@ -17,11 +17,15 @@
         "direction": "quantify_frontier_shift",
         "reason": "This retry should complete without materializing millions of rows and should show whether measured softmax generator cost changes the full-value L1 clustered frontier."
       },
-      "status": "pending",
+      "status": "merged",
       "prior_item_ids": [
         "l2_decoder_attention_kv_all_measured_l1_clustered_schedule_v1_r2",
         "l2_decoder_attention_kv_all_measured_l1_clustered_schedule_v1_r3"
-      ]
+      ],
+      "merged_pr_number": 746,
+      "merge_commit": "cc90a7188367a5c3ab6574910fb1c66545c7c2af",
+      "merged_utc": "2026-06-03T04:17:04Z",
+      "notes": "Merged via PR #746 and merge cc90a7188367a5c3ab6574910fb1c66545c7c2af at 2026-06-03T04:17:04Z."
     }
   ]
 }
