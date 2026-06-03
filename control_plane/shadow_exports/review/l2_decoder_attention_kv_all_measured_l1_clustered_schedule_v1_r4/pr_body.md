@@ -22,14 +22,14 @@
 - comparison_role: `ranking`
 - expected_direction: `quantify_frontier_shift`
 - expected_reason: `This retry should complete without materializing millions of rows and should show whether measured softmax generator cost changes the full-value L1 clustered frontier.`
-- expectation_status: `unspecified`
-- evaluation_summary: `Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.`
+- expectation_status: `met_with_caveats`
+- evaluation_summary: `All-measured local L1 ranking evidence was recorded; the current best remains fp16_nm1 flat_nomacro, with SRAM/global-NoC service still analytic.`
 
 ## Focused Comparison
-- primary_question: `What focused comparison directly tests this proposal?`
+- primary_question: `Does the all-measured L1 cost stack change the Llama7B 131k native-GQA KV8 clustered attention frontier relative to the prior full-value clustered schedule?`
 - comparison_role: `ranking`
-- proposal_outcome: `ranking_recorded`
-- comparison_summary: `Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.`
+- proposal_outcome: `iterate_baseline_recorded`
+- comparison_summary: `All-measured local L1 ranking evidence was recorded; the current best remains fp16_nm1 flat_nomacro, with SRAM/global-NoC service still analytic.`
 - baseline_ref: `None`
 - baseline_item_id: `None`
 

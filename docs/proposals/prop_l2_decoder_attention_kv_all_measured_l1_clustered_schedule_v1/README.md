@@ -1,18 +1,14 @@
-# Proposal Template
+# All-Measured Llama7B Attention L2 Schedule
 
-Canonical template location for new proposal workspaces.
+This proposal records the L2 schedule retry that replaces the remaining local
+L1 attention cost abstractions with measured or promoted costs:
 
-The template file set mirrors the proposal artifact contract used by the
-current developer loop:
+- measured `fp16_nm1` and `fp16_nm2` compute-array PPA
+- full-value attention tile datapath costs
+- exact-int softmax weight generator costs
+- FIFO/router local NoC anchor costs
 
-- `proposal.json`
-- `design_brief.md`
-- `implementation_summary.md`
-- `evaluation_gate.md`
-- `evaluation_requests.json`
-- `quality_gate.md`
-- `analysis_report.md`
-- `promotion_decision.json`
-- `promotion_result.json`
+The target workload is the Llama7B 131k native-GQA KV8 clustered attention
+schedule. SRAM capacity/service and global NoC arbitration remain analytic L2
+service terms and are tracked as residual assumptions.
 
-This is the only supported proposal template for new work. The legacy template path exists only as a compatibility symlink.
