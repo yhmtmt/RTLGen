@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import heapq
 import json
 import math
 import sys
@@ -15,7 +16,6 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from npu.eval.estimate_llm_decoder_attention_kv_measured_compute import (  # noqa: E402
-    _best_by,
     _float_list,
     _int_list,
     _load_compute_candidates,
@@ -161,6 +161,17 @@ def _load_measured_l1_profiles(
     if not selected:
         raise ValueError(f"no measured L1 cost profiles selected from {resolved}")
     return selected
+
+
+def _update_best_by(best: dict[tuple[Any, ...], JsonDict], keys: tuple[str, ...], row: JsonDict) -> None:
+    key = tuple(row[name] for name in keys)
+    current = best.get(key)
+    if current is None or row["latency_us"] < current["latency_us"]:
+        best[key] = row
+
+
+def _best_by_values(best: dict[tuple[Any, ...], JsonDict], keys: tuple[str, ...]) -> list[JsonDict]:
+    return sorted(best.values(), key=lambda row: tuple(row[name] for name in keys) + (row["latency_us"],))
 
 
 def _reduction_factor(strategy: str, active_clusters: int) -> tuple[int, int]:
@@ -477,8 +488,18 @@ def build_report(
     command_cycles_per_wave_list = command_cycles_per_wave_list or [0]
     reducer_setup_cycles_list = reducer_setup_cycles_list or [0]
     reduction_cycle_multiplier_list = reduction_cycle_multiplier_list or [1.0]
-    rows: list[JsonDict] = []
+    best: JsonDict | None = None
+    top_rows_heap: list[tuple[float, int, JsonDict]] = []
+    heap_counter = 0
+    generated_row_count = 0
     skipped_area_budget = 0
+    dominance: dict[str, int] = {}
+    best_by_die: dict[tuple[Any, ...], JsonDict] = {}
+    best_by_die_cluster: dict[tuple[Any, ...], JsonDict] = {}
+    best_by_reduction_strategy: dict[tuple[Any, ...], JsonDict] = {}
+    best_by_overhead: dict[tuple[Any, ...], JsonDict] = {}
+    best_by_measured_l1_profile: dict[tuple[Any, ...], JsonDict] = {}
+    best_by_memory_noc: dict[tuple[Any, ...], JsonDict] = {}
     for sequence_length in sequence_length_list:
         for die_area_mm2 in die_area_mm2_list:
             for sram_area_fraction in sram_area_fraction_list:
@@ -523,14 +544,62 @@ def build_report(
                                                                             if row is None:
                                                                                 skipped_area_budget += 1
                                                                             else:
-                                                                                rows.append(row)
-    if not rows:
+                                                                                generated_row_count += 1
+                                                                                resource = str(row["dominant_tile_resource"])
+                                                                                dominance[resource] = dominance.get(resource, 0) + 1
+                                                                                if best is None or row["latency_us"] < best["latency_us"]:
+                                                                                    best = row
+                                                                                heap_entry = (-float(row["latency_us"]), heap_counter, row)
+                                                                                heap_counter += 1
+                                                                                if len(top_rows_heap) < 50:
+                                                                                    heapq.heappush(top_rows_heap, heap_entry)
+                                                                                elif heap_entry[0] > top_rows_heap[0][0]:
+                                                                                    heapq.heapreplace(top_rows_heap, heap_entry)
+                                                                                _update_best_by(best_by_die, ("sequence_length", "die_area_mm2"), row)
+                                                                                _update_best_by(
+                                                                                    best_by_die_cluster,
+                                                                                    ("sequence_length", "die_area_mm2", "cluster_count"),
+                                                                                    row,
+                                                                                )
+                                                                                _update_best_by(
+                                                                                    best_by_reduction_strategy,
+                                                                                    ("sequence_length", "die_area_mm2", "reduction_strategy"),
+                                                                                    row,
+                                                                                )
+                                                                                _update_best_by(
+                                                                                    best_by_overhead,
+                                                                                    (
+                                                                                        "sequence_length",
+                                                                                        "die_area_mm2",
+                                                                                        "command_cycles_per_tile",
+                                                                                        "command_cycles_per_wave",
+                                                                                        "reducer_setup_cycles",
+                                                                                        "reduction_cycle_multiplier",
+                                                                                    ),
+                                                                                    row,
+                                                                                )
+                                                                                _update_best_by(
+                                                                                    best_by_measured_l1_profile,
+                                                                                    ("sequence_length", "die_area_mm2", "measured_l1_profile"),
+                                                                                    row,
+                                                                                )
+                                                                                _update_best_by(
+                                                                                    best_by_memory_noc,
+                                                                                    (
+                                                                                        "sequence_length",
+                                                                                        "die_area_mm2",
+                                                                                        "sram_area_fraction",
+                                                                                        "local_sram_fraction",
+                                                                                        "bank_count",
+                                                                                        "noc_bandwidth_bytes_per_cycle",
+                                                                                        "noc_hops",
+                                                                                        "reduction_strategy",
+                                                                                    ),
+                                                                                    row,
+                                                                                )
+    if best is None:
         raise RuntimeError("no rows generated; area budget or cluster count may be infeasible")
-    rows_sorted = sorted(rows, key=lambda row: row["latency_us"])
-    dominance: dict[str, int] = {}
-    for row in rows:
-        key = str(row["dominant_tile_resource"])
-        dominance[key] = dominance.get(key, 0) + 1
+    top_rows = [entry[2] for entry in sorted(top_rows_heap, key=lambda entry: (entry[2]["latency_us"], entry[1]))]
     return {
         "version": 0.1,
         "model": "llm_decoder_attention_kv_clustered_schedule_llama7b_v1",
@@ -561,17 +630,30 @@ def build_report(
         "measured_l1_profiles": [profile for profile in measured_l1_profiles if profile is not None],
         "compute_candidates": candidates,
         "sweep_summary": {
-            "generated_row_count": len(rows),
+            "generated_row_count": generated_row_count,
             "skipped_area_budget_count": skipped_area_budget,
             "dominant_tile_resource_counts": dict(sorted(dominance.items())),
+            "retained_row_count": (
+                1
+                + len(top_rows_heap)
+                + len(best_by_die)
+                + len(best_by_die_cluster)
+                + len(best_by_reduction_strategy)
+                + len(best_by_overhead)
+                + len(best_by_measured_l1_profile)
+                + len(best_by_memory_noc)
+            ),
         },
-        "best": rows_sorted[0],
-        "top_rows": rows_sorted[:50],
-        "best_by_die": _best_by(rows, ("sequence_length", "die_area_mm2")),
-        "best_by_die_cluster": _best_by(rows, ("sequence_length", "die_area_mm2", "cluster_count")),
-        "best_by_reduction_strategy": _best_by(rows, ("sequence_length", "die_area_mm2", "reduction_strategy")),
-        "best_by_overhead": _best_by(
-            rows,
+        "best": best,
+        "top_rows": top_rows,
+        "best_by_die": _best_by_values(best_by_die, ("sequence_length", "die_area_mm2")),
+        "best_by_die_cluster": _best_by_values(best_by_die_cluster, ("sequence_length", "die_area_mm2", "cluster_count")),
+        "best_by_reduction_strategy": _best_by_values(
+            best_by_reduction_strategy,
+            ("sequence_length", "die_area_mm2", "reduction_strategy"),
+        ),
+        "best_by_overhead": _best_by_values(
+            best_by_overhead,
             (
                 "sequence_length",
                 "die_area_mm2",
@@ -581,21 +663,12 @@ def build_report(
                 "reduction_cycle_multiplier",
             ),
         ),
-        "best_by_measured_l1_profile": _best_by(rows, ("sequence_length", "die_area_mm2", "measured_l1_profile")),
+        "best_by_measured_l1_profile": _best_by_values(
+            best_by_measured_l1_profile,
+            ("sequence_length", "die_area_mm2", "measured_l1_profile"),
+        ),
         "best_by_memory_noc": sorted(
-            _best_by(
-                rows,
-                (
-                    "sequence_length",
-                    "die_area_mm2",
-                    "sram_area_fraction",
-                    "local_sram_fraction",
-                    "bank_count",
-                    "noc_bandwidth_bytes_per_cycle",
-                    "noc_hops",
-                    "reduction_strategy",
-                ),
-            ),
+            best_by_memory_noc.values(),
             key=lambda row: row["latency_us"],
         )[:200],
         "assumptions": [
