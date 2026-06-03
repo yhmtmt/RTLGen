@@ -3923,6 +3923,74 @@ def _decoder_attention_kv_full_value_l1_clustered_schedule_evidence(*, item_id: 
     }
 
 
+def _decoder_attention_kv_all_measured_l1_clustered_schedule_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_kv_all_measured_l1_clustered_schedule__{item_id}.json"
+    report = f"{base}/decoder_attention_kv_all_measured_l1_clustered_schedule__{item_id}.md"
+    clustered_schedule = (
+        f"{base}/decoder_attention_kv_clustered_schedule_overhead__"
+        "l2_decoder_attention_kv_clustered_schedule_overhead_llama7b_v1.json"
+    )
+    full_value_costs = "runs/campaigns/npu/l1_measured_costs/llama7b_attention_local_costs_full_value_v1.json"
+    all_measured_costs = "runs/campaigns/npu/l1_measured_costs/llama7b_attention_local_costs_all_measured_v1.json"
+    softmax_promotion = "control_plane/shadow_exports/l1_promotions/l1_decoder_attention_softmax_weight_generator_v1_r2.json"
+    sram_profile = f"{base}/decoder_attention_sram_profile__l2_decoder_attention_sram_profile_v1.json"
+    noc_profile = f"{base}/decoder_attention_noc_profile__l2_decoder_attention_noc_profile_v1.json"
+    return {
+        "inputs": {
+            "attention_kv_clustered_schedule_overhead": clustered_schedule,
+            "attention_kv_full_value_l1_costs": full_value_costs,
+            "attention_kv_all_measured_l1_costs": all_measured_costs,
+            "attention_softmax_weight_generator_promotion": softmax_promotion,
+            "attention_sram_profile": sram_profile,
+            "attention_noc_profile": noc_profile,
+            "attention_kv_all_measured_l1_clustered_schedule_out": out,
+            "attention_kv_all_measured_l1_clustered_schedule_report": report,
+            "attention_kv_all_measured_l1_clustered_schedule_scope": (
+                "Llama7B 131k native-GQA KV8 schedule ranking using measured compute-array PPA, "
+                "full-value attention tile datapaths, exact-int softmax-weight generator PPA, "
+                "and measured FIFO/router local NoC anchors. SRAM capacity/service and global "
+                "NoC arbitration remain analytic L2 service terms, with the merged SRAM/NoC "
+                "profile outputs recorded as calibration references."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_attention_kv_all_measured_l1_clustered_schedule",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_attention_kv_clustered_schedule.py "
+                    "--repo-root . "
+                    "--tag-substring compute_stability_cmp33 "
+                    "--sequence-length-list 131072 "
+                    "--die-area-mm2-list 200,400,800,1200 "
+                    "--sram-area-fraction 0.4,0.6 "
+                    "--logic-area-fraction 0.1,0.2 "
+                    "--reserved-area-fraction 0.1 "
+                    "--usable-sram-fraction 0.7 "
+                    "--local-sram-fraction 0.1,0.25 "
+                    "--tile-tokens-list 512 "
+                    "--bank-count 16,64 "
+                    "--cluster-count 1,2,4,8,16 "
+                    "--noc-bandwidth-bytes-per-cycle 8192,32768 "
+                    "--noc-hops 1,2,4 "
+                    "--reduction-strategy owner_cluster,cluster_tree "
+                    "--vector-ops-per-mac 0.125 "
+                    "--reduction-scalar-bytes 2 "
+                    "--command-cycles-per-tile 0,4 "
+                    "--command-cycles-per-wave 0,16 "
+                    "--reducer-setup-cycles 0,64 "
+                    "--reduction-cycle-multiplier 1,2 "
+                    f"--measured-l1-costs {all_measured_costs} "
+                    "--measured-l1-profile all "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_attention_sram_profile_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_sram_profile__{item_id}.json"
@@ -5501,6 +5569,7 @@ def _build_payload(
         "decoder_attention_kv_clustered_schedule_overhead",
         "decoder_attention_kv_measured_l1_clustered_schedule",
         "decoder_attention_kv_full_value_l1_clustered_schedule",
+        "decoder_attention_kv_all_measured_l1_clustered_schedule",
         "decoder_attention_sram_profile",
         "decoder_attention_noc_profile",
         "decoder_attention_kv_quality_gate",
@@ -5578,6 +5647,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_kv_measured_l1_clustered_schedule_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_full_value_l1_clustered_schedule":
             decoder_evidence = _decoder_attention_kv_full_value_l1_clustered_schedule_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_kv_all_measured_l1_clustered_schedule":
+            decoder_evidence = _decoder_attention_kv_all_measured_l1_clustered_schedule_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_sram_profile":
             decoder_evidence = _decoder_attention_sram_profile_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_noc_profile":
