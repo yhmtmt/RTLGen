@@ -1,0 +1,65 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_all_measured_l1_clustered_schedule_v1",
+  "created_utc": "2026-06-03T03:17:10.149213Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "All-measured Llama7B attention L2 clustered schedule",
+  "hypothesis": "Replacing the remaining local L1 attention abstractions with measured compute, full-value tile, exact softmax generator, and local NoC costs will show whether the prior full-value clustered frontier still favors fp16_nm1 or shifts once the local datapath stack is measured.",
+  "direct_comparison": {
+    "primary_question": "Does the all-measured L1 cost stack change the Llama7B 131k native-GQA KV8 clustered attention frontier relative to the prior full-value clustered schedule?",
+    "include": [
+      "fp16_nm1 and fp16_nm2 compute-array anchors",
+      "flat_nomacro and hier_macro packaging modes",
+      "measured compute PPA, full-value attention tile datapaths, exact-int softmax weight generator PPA, and FIFO/router local NoC anchors",
+      "Llama7B 131k native-GQA KV8 clustered attention schedule ranking"
+    ],
+    "exclude": [
+      "new SRAM macro layouts",
+      "global NoC arbitration RTL",
+      "quality-impacting KV or softmax approximations",
+      "wider nm and cluster-count sweeps beyond the measured nm1/nm2 anchors"
+    ],
+    "follow_on_broad_sweep": [
+      "sweep larger compute parallelism after the local all-measured baseline is stable",
+      "replace analytic SRAM and global NoC terms with physically constrained measured blocks"
+    ]
+  },
+  "expected_benefit": [
+    "reduce the number of abstracted datapath components in the Llama7B frontier estimate",
+    "quantify whether exact softmax generator and local NoC costs materially change the current frontier ranking",
+    "record the residual SRAM/global-NoC assumptions explicitly before larger die-size exploration"
+  ],
+  "risks": [
+    "SRAM service and global NoC arbitration remain analytic and can dominate long-context Llama7B behavior",
+    "the campaign harness still uses the MLP smoke reuse path for compute scheduling artifacts",
+    "only nm1 and nm2 measured compute anchors are ranked in this retry"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "broad_ranking",
+      "objective": "latency_energy",
+      "cost_class": "medium",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "quantify_frontier_shift",
+        "reason": "This retry should complete without retaining millions of estimator rows and should show whether measured softmax generator and local NoC costs change the full-value clustered frontier."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "item:l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1",
+    "runs/campaigns/npu/l1_measured_costs/llama7b_attention_local_costs_full_value_v1.json",
+    "runs/campaigns/npu/l1_measured_costs/llama7b_attention_local_costs_all_measured_v1.json"
+  ],
+  "knowledge_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_noc_profile__l2_decoder_attention_noc_profile_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_sram_profile__l2_decoder_attention_sram_profile_v1.json",
+    "control_plane/shadow_exports/l1_promotions/l1_decoder_attention_softmax_weight_generator_v1_r2.json"
+  ]
+}
+

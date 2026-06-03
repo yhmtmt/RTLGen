@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_all_measured_l1_clustered_schedule_v1",
+  "candidate_id": "l2_decoder_attention_kv_all_measured_l1_clustered_schedule_v1_r4",
+  "decision": "iterate",
+  "reason": "The run records a useful all-measured local L1 baseline and keeps fp16_nm1 flat_nomacro as the best current point, but SRAM service and global NoC arbitration remain analytic and must be physically constrained before promotion.",
+  "evidence_refs": [
+    "item:l2_decoder_attention_kv_all_measured_l1_clustered_schedule_v1_r4",
+    "run:l2_decoder_attention_kv_all_measured_l1_clustered_schedule_v1_r4_run_8c98027c0b8f2e42",
+    "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1__l2_decoder_attention_kv_all_measured_l1_clustered_schedule_v1_r4/best_point.json",
+    "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1__l2_decoder_attention_kv_all_measured_l1_clustered_schedule_v1_r4/summary.csv"
+  ],
+  "next_action": "Use this all-measured local baseline to plan physically constrained SRAM/global-NoC and larger-parallelism Llama7B frontier jobs.",
+  "requires_human_approval": true
+}
+

@@ -1,0 +1,27 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_all_measured_l1_clustered_schedule_v1",
+  "source_commit": "9d811c441c132b740a1de93b7bf203135dba392b",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_kv_all_measured_l1_clustered_schedule_v1_r4",
+      "task_type": "l2_campaign",
+      "objective": "Retry the all-measured Llama7B 131k native-GQA KV8 clustered attention schedule after streaming estimator aggregation fixed the v1_r2 memory/SIGKILL failure; rank measured compute, full-value attention tile, exact-int softmax weight generator, and FIFO/router local NoC anchors while reporting remaining SRAM/global-NoC analytic assumptions.",
+      "evaluation_mode": "broad_ranking",
+      "abstraction_layer": "decoder_attention_kv_all_measured_l1_clustered_schedule",
+      "comparison_role": "ranking",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_full_value_l1_clustered_schedule_v1",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "quantify_frontier_shift",
+        "reason": "This retry should complete without materializing millions of rows and should show whether measured softmax generator cost changes the full-value L1 clustered frontier."
+      },
+      "status": "pending",
+      "prior_item_ids": [
+        "l2_decoder_attention_kv_all_measured_l1_clustered_schedule_v1_r2",
+        "l2_decoder_attention_kv_all_measured_l1_clustered_schedule_v1_r3"
+      ]
+    }
+  ]
+}
