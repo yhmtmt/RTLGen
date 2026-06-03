@@ -19,7 +19,11 @@
         "direction": "quantify_compute_memory_boundary",
         "reason": "This pass should show whether increasing compute beyond the current measured local baseline matters once SRAM capacity, HBM service, and local/global NoC bounds dominate the Llama7B 131k attention schedule."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 750,
+      "merge_commit": "22fa61daf7c12bfb9fca06a528ef9a98b0fa9137",
+      "merged_utc": "2026-06-03T06:56:30Z",
+      "notes": "Merged via PR #750 and merge 22fa61daf7c12bfb9fca06a528ef9a98b0fa9137 at 2026-06-03T06:56:30Z."
     }
   ]
 }
