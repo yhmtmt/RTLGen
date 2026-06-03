@@ -235,6 +235,7 @@ def test_finalize_after_merge_refreshes_central_runs_index() -> None:
                 "with out.open('w', newline='', encoding='utf-8') as handle:\n"
                 "    writer = csv.DictWriter(handle, fieldnames=[\n"
                 "        'circuit_type','design','platform','status','critical_path_ns','die_area','total_power_mw',\n"
+                "        'instance_area_um2','stdcell_area_um2','stdcell_count','core_area_um2','utilization_pct',\n"
                 "        'config_hash','param_hash','tag','result_path','params_json','metrics_path','design_path',\n"
                 "        'sram_area_um2','sram_read_energy_pj','sram_write_energy_pj','sram_max_access_time_ns'])\n"
                 "    writer.writeheader()\n"
@@ -246,6 +247,11 @@ def test_finalize_after_merge_refreshes_central_runs_index() -> None:
                 "        'critical_path_ns': '1.0',\n"
                 "        'die_area': '2.0',\n"
                 "        'total_power_mw': '3.0',\n"
+                "        'instance_area_um2': '4.0',\n"
+                "        'stdcell_area_um2': '5.0',\n"
+                "        'stdcell_count': '6',\n"
+                "        'core_area_um2': '7.0',\n"
+                "        'utilization_pct': '8.0',\n"
                 "        'config_hash': 'cfg1',\n"
                 "        'param_hash': 'hash1',\n"
                 "        'tag': 'tag1',\n"
@@ -375,8 +381,15 @@ def test_finalize_after_merge_refreshes_central_runs_index() -> None:
             index_rows = session.query(RunIndexRow).order_by(RunIndexRow.index_order.asc()).all()
             assert len(index_rows) == 1
             assert index_rows[0].design == "demo_wrapper"
+            assert index_rows[0].instance_area_um2 == "4.0"
+            assert index_rows[0].stdcell_area_um2 == "5.0"
+            assert index_rows[0].stdcell_count == "6"
+            assert index_rows[0].core_area_um2 == "7.0"
+            assert index_rows[0].utilization_pct == "8.0"
             exported = (repo_root / "runs" / "index.csv").read_text(encoding="utf-8")
             assert "demo_wrapper" in exported
+            assert "instance_area_um2,stdcell_area_um2,stdcell_count,core_area_um2,utilization_pct" in exported
+            assert "4.0,5.0,6,7.0,8.0" in exported
 
 
 
