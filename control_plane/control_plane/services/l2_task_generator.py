@@ -3591,6 +3591,56 @@ def _decoder_attention_kv_physical_hbm_compute_sensitivity_evidence(*, item_id: 
     }
 
 
+def _decoder_attention_kv_compute_floor_gap_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_kv_compute_floor_gap__{item_id}.json"
+    report = f"{base}/decoder_attention_kv_compute_floor_gap__{item_id}.md"
+    compute_sensitivity = (
+        f"{base}/decoder_attention_kv_physical_hbm_compute_sensitivity__"
+        "l2_decoder_attention_kv_physical_hbm_compute_sensitivity_llama7b_v2.json"
+    )
+    measured_compute = (
+        f"{base}/decoder_attention_kv_measured_compute__"
+        "l2_decoder_attention_kv_measured_compute_llama7b_v1.json"
+    )
+    measured_partition = (
+        f"{base}/decoder_attention_kv_measured_compute_partition__"
+        "l2_decoder_attention_kv_measured_compute_partition_llama7b_v1.json"
+    )
+    return {
+        "inputs": {
+            "attention_kv_physical_hbm_compute_sensitivity": compute_sensitivity,
+            "attention_kv_measured_compute": measured_compute,
+            "attention_kv_measured_compute_partition": measured_partition,
+            "attention_kv_compute_floor_gap_out": out,
+            "attention_kv_compute_floor_gap_report": report,
+            "attention_kv_compute_floor_gap_scope": (
+                "Compare the merged Llama7B 131k HBM-bound compute floor against merged "
+                "measured NPU compute PPA and clustered measured-compute partition results. "
+                "Quantify the MAC/cycle and MAC/cycle/mm2 gap before requesting deeper "
+                "SRAM/NoC arbitration simulation."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_attention_kv_compute_floor_gap",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_attention_kv_compute_floor_gap.py "
+                    f"--compute-sensitivity {compute_sensitivity} "
+                    f"--measured-compute {measured_compute} "
+                    f"--measured-partition {measured_partition} "
+                    "--target-macs-per-cycle-list 131072,262144,524288 "
+                    "--die-area-mm2-list 400,800,1200 "
+                    "--logic-area-fraction-list 0.2,0.4,0.6 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_attention_kv_measured_compute_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_kv_measured_compute__{item_id}.json"
@@ -5563,6 +5613,7 @@ def _build_payload(
         "decoder_attention_kv_physical_hbm_quality_backed",
         "decoder_attention_kv_physical_hbm_memory_noc",
         "decoder_attention_kv_physical_hbm_compute_sensitivity",
+        "decoder_attention_kv_compute_floor_gap",
         "decoder_attention_kv_measured_compute",
         "decoder_attention_kv_measured_compute_partition",
         "decoder_attention_kv_clustered_schedule",
@@ -5635,6 +5686,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_kv_physical_hbm_memory_noc_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_physical_hbm_compute_sensitivity":
             decoder_evidence = _decoder_attention_kv_physical_hbm_compute_sensitivity_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_kv_compute_floor_gap":
+            decoder_evidence = _decoder_attention_kv_compute_floor_gap_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_measured_compute":
             decoder_evidence = _decoder_attention_kv_measured_compute_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_measured_compute_partition":
