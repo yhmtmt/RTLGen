@@ -363,6 +363,54 @@ def _write_example_block_repo(
     )
 
 
+def _write_example_dense_gemm_tile_repo(repo_root: Path) -> tuple[str, str]:
+    design_dir = repo_root / "runs" / "designs" / "npu_blocks" / "npu_dense_gemm_tile_fp16_4x4_k1_p1"
+    design_dir.mkdir(parents=True, exist_ok=True)
+    config_path = design_dir / "config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "version": "0.1",
+                "top_name": "dense_gemm_tile_fp16_4x4_k1_p1",
+                "dense_gemm_tile": {
+                    "module_name": "dense_gemm_tile_fp16_4x4_k1_p1",
+                    "precision": "fp16",
+                    "array_m": 4,
+                    "array_n": 4,
+                    "k_unroll": 1,
+                    "pipeline_stages": 1,
+                },
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    sweep_path = repo_root / "runs" / "campaigns" / "npu" / "dense_gemm_tile_v1" / "sweeps" / "nangate45_dense_tile_hier.json"
+    sweep_path.parent.mkdir(parents=True, exist_ok=True)
+    sweep_path.write_text(
+        json.dumps(
+            {
+                "flow_params": {
+                    "CLOCK_PERIOD": [10.0],
+                    "DIE_AREA": ["0 0 1200 1200"],
+                    "CORE_AREA": ["50 50 1150 1150"],
+                    "SYNTH_HIERARCHICAL": [1],
+                    "SYNTH_KEEP_MODULES": ["dense_gemm_tile_fp16_4x4_k1_p1 gemm_mac_fp16_ieee"],
+                },
+                "tag_prefix": "npu_dense_gemm_tile_v1",
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return (
+        str(config_path.relative_to(repo_root)),
+        str(sweep_path.relative_to(repo_root)),
+    )
+
+
 
 def test_generate_l1_sweep_task_creates_ready_work_item() -> None:
     with tempfile.TemporaryDirectory() as td:
@@ -981,6 +1029,59 @@ def test_generate_l1_sweep_task_supports_integrated_npu_block_configs() -> None:
                 "--skip_existing"
             )
             assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {"layer": "architecture_block"}
+
+
+def test_generate_l1_sweep_task_supports_dense_gemm_tile_configs() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        config_path, sweep_path = _write_example_dense_gemm_tile_repo(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l1_sweep_task(
+                session,
+                Layer1SweepGenerateRequest(
+                    repo_root=str(repo_root),
+                    sweep_path=sweep_path,
+                    config_paths=[config_path],
+                    platform="nangate45",
+                    out_root="runs/designs/npu_blocks",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="architecture_block",
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            assert result.status == "applied"
+            assert [command["name"] for command in work_item.command_manifest] == [
+                "build_generator",
+                "generate_dense_gemm_tile_rtl",
+                "check_dense_gemm_tile_guard",
+                "run_block_sweep",
+                "build_runs_index",
+                "validate",
+            ]
+            assert work_item.command_manifest[1]["run"] == (
+                "export PATH=/oss-cad-suite/bin:$PATH && "
+                "python3 npu/rtlgen/gen_dense_gemm_tile.py "
+                "--config runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_4x4_k1_p1/config.json "
+                "--out runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_4x4_k1_p1/verilog"
+            )
+            assert work_item.command_manifest[2]["run"] == (
+                "python3 npu/eval/check_dense_gemm_tile_guard.py "
+                "--design-dir runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_4x4_k1_p1"
+            )
+            assert "--top dense_gemm_tile_fp16_4x4_k1_p1" in work_item.command_manifest[3]["run"]
+            assert work_item.expected_outputs == [
+                "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_4x4_k1_p1/metrics.csv"
+            ]
+            assert work_item.task_request.request_payload["developer_loop"]["abstraction"] == {
+                "layer": "architecture_block"
+            }
 
 
 def test_generate_l1_sweep_task_emits_commands_for_each_integrated_block_config() -> None:
