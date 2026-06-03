@@ -1,0 +1,71 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_compute_ceiling_envelope_llama7b_v1",
+  "created_utc": "2026-06-03T10:35:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Llama7B attention/KV compute ceiling envelope",
+  "hypothesis": "Under realistic 45nm compute-density ceilings, the current Llama7B 131k attention/KV frontier only reaches the HBM-bound floor for aggressive custom-array density assumptions and large logic budgets.",
+  "direct_comparison": {
+    "primary_question": "Which die size, logic fraction, and compute-density envelope can plausibly reach the 131072 MAC/cycle HBM-bound floor?",
+    "include": [
+      "Merged Llama7B physical-HBM compute-sensitivity artifact",
+      "Merged measured RTLGen compute artifact",
+      "Design evidence registry internal measurement records",
+      "Design evidence registry external calibration records",
+      "Density envelopes at 150 and 300 MAC/cycle/mm2 in addition to measured RTLGen density"
+    ],
+    "exclude": [
+      "New RTL or PnR",
+      "New quality-changing KV approximation",
+      "Detailed global NoC arbitration",
+      "HBM PHY/controller timing"
+    ],
+    "follow_on_broad_sweep": [
+      "If only aggressive density reaches the floor, define a dense compute-tile RTL experiment",
+      "If measured density reaches the floor, deepen SRAM/NoC scheduling and arbitration",
+      "If no plausible density reaches the floor, revise the 45nm Llama7B objective or context target"
+    ]
+  },
+  "expected_benefit": [
+    "Prevents over-interpreting abstract HBM-dominant points that require unrealistic compute area",
+    "Adds explicit registry citations to frontier reports",
+    "Connects RTLGen measured blocks with academic and commercial calibration references"
+  ],
+  "risks": [
+    "External references are calibration evidence, not direct ranking baselines",
+    "Ideal node scaling is optimistic and does not include routing, SRAM, timing, or voltage effects",
+    "The result is an analytic planning gate, not a routed full-chip implementation"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "objective": "Bound the Llama7B attention/KV frontier under measured and optimistic compute-density ceilings with explicit design-registry citations.",
+      "cost_class": "low",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_compute_floor_gap_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "bound_compute_frontier",
+        "reason": "The job should identify whether measured, optimistic, or aggressive 45nm compute-density assumptions can reach the HBM-bound floor."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/design_registry/internal_measurements.jsonl",
+    "runs/design_registry/external_measurements.jsonl",
+    "runs/design_registry/comparison_claims.jsonl",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_physical_hbm_compute_sensitivity__l2_decoder_attention_kv_physical_hbm_compute_sensitivity_llama7b_v2.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_measured_compute__l2_decoder_attention_kv_measured_compute_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "pr:754",
+    "pr:756",
+    "discussion:2026-06-03 compare RTLGen compute density against embodied and third-party reference designs"
+  ]
+}
+
