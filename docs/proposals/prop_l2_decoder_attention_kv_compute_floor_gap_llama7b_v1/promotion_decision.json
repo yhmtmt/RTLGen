@@ -1,0 +1,13 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_compute_floor_gap_llama7b_v1",
+  "candidate_id": "l2_decoder_attention_kv_compute_floor_gap_llama7b_v1",
+  "decision": "iterate",
+  "reason": "The measured nm-style compute blocks are 7.70x to 23.27x below the first Llama7B 131k HBM-bound compute floor across 1200 to 400 mm2 dies, so compute architecture density remains the immediate blocker.",
+  "evidence_refs": [
+    "item:l2_decoder_attention_kv_compute_floor_gap_llama7b_v1",
+    "run:l2_decoder_attention_kv_compute_floor_gap_llama7b_v1_run_7a9e3e4183791924",
+    "artifact:runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_compute_floor_gap__l2_decoder_attention_kv_compute_floor_gap_llama7b_v1.json"
+  ],
+  "next_action": "Define a denser clustered compute architecture target near 131072 MAC/cycle before investing in detailed global SRAM/NoC arbitration simulation.",
+  "requires_human_approval": true
+}

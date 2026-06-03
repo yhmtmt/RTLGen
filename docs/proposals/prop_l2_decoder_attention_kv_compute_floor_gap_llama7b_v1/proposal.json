@@ -1,0 +1,66 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_compute_floor_gap_llama7b_v1",
+  "created_utc": "2026-06-03T07:12:45.503804Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Llama7B attention/KV compute floor gap",
+  "hypothesis": "The merged measured NPU compute PPA remains well below the Llama7B 131k native-GQA KV8 HBM-bound compute floor; if true, deeper SRAM/NoC arbitration simulation should wait until a denser compute architecture is identified.",
+  "direct_comparison": {
+    "primary_question": "How far is the current measured NPU compute density from the first HBM-bound Llama7B 131k attention/KV compute floor?",
+    "include": [
+      "Merged physical HBM compute-sensitivity result for Llama7B 131k native-GQA KV8",
+      "Merged measured-compute and measured-compute-partition reports",
+      "Target compute points 131072, 262144, and 524288 MAC/cycle",
+      "Die areas 400, 800, and 1200 mm2",
+      "Logic area fractions 0.2, 0.4, and 0.6"
+    ],
+    "exclude": [
+      "New RTL or PnR",
+      "Full routed NoC arbitration",
+      "HBM controller timing",
+      "Quality-changing KV approximations"
+    ],
+    "follow_on_broad_sweep": [
+      "If the measured density reaches the floor, run deeper SRAM/NoC arbitration sensitivity",
+      "If the measured density is below the floor, define a denser clustered compute RTL target first"
+    ]
+  },
+  "expected_benefit": [
+    "Prevents spending effort on detailed NoC simulation while the design is still compute-bound by a large margin",
+    "Quantifies the required MAC/cycle/mm2 multiplier for the next compute architecture",
+    "Connects the abstract HBM-bound floor to measured compute PPA evidence"
+  ],
+  "risks": [
+    "The floor comes from an analytic physical-HBM planning model",
+    "Measured compute density is based on existing nm-style blocks and may not represent a purpose-built dense array",
+    "The result is a planning gate, not a final architecture decision"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "objective": "Quantify how far merged measured NPU compute PPA is from the Llama7B 131k HBM-bound compute floor before requesting deeper SRAM/NoC arbitration simulation.",
+      "cost_class": "low",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_physical_hbm_compute_sensitivity_llama7b_v2"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "quantify_compute_gap",
+        "reason": "The job should report the MAC/cycle and MAC/cycle/mm2 multiplier needed for measured compute blocks to reach the HBM-bound attention floor."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_physical_hbm_compute_sensitivity__l2_decoder_attention_kv_physical_hbm_compute_sensitivity_llama7b_v2.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_measured_compute__l2_decoder_attention_kv_measured_compute_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_measured_compute_partition__l2_decoder_attention_kv_measured_compute_partition_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "discussion:2026-06-03 compute floor must be physically plausible before detailed memory/NoC simulation",
+    "pr:750"
+  ]
+}
