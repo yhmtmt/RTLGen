@@ -1,0 +1,14 @@
+{
+  "proposal_id": "prop_l1_npu_dense_gemm_tile_v1",
+  "source_commit": "",
+  "requested_items": [
+    {
+      "item_id": "l1_npu_dense_gemm_tile_v1",
+      "task_type": "l1_sweep",
+      "objective": "Measure dense FP16 GEMM tile PPA for 4x4 and 8x8 arrays, preserving hierarchy and recording MAC/cycle/mm2-ready metrics.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "architecture_block",
+      "status": "pending"
+    }
+  ]
+}

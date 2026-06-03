@@ -1,0 +1,58 @@
+{
+  "proposal_id": "prop_l1_npu_dense_gemm_tile_v1",
+  "created_utc": "2026-06-03T10:55:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "title": "Dense FP16 GEMM tile V1",
+  "abstraction_layer": "architecture_block",
+  "hypothesis": "A narrow-control dense FP16 GEMM tile that removes dynamic-dispatch and vector-tail overhead can exceed the corrected nm64_flat density of 70.94 MAC/cycle/mm2, and may indicate whether 150 MAC/cycle/mm2 is plausible on Nangate45.",
+  "direct_comparison": {
+    "primary_question": "Can a regular exact-FP16 MAC tile improve MAC/cycle/mm2 relative to the corrected nm64_flat compute block?",
+    "include": [
+      "4x4 k1 exact-FP16 dense tile",
+      "8x8 k1 exact-FP16 dense tile",
+      "Hierarchy-preserving Nangate45 PPA sweep",
+      "Structural guard that all MAC outputs fold into the visible result hash",
+      "Comparison against registry record rtlgen_npu_fp16_nm64_flat_cmp33_nangate45"
+    ],
+    "exclude": [
+      "Softmax, normalization, reducer, or vector-tail replication",
+      "Large 16x16+ arrays before first boundary evidence",
+      "Quality-changing precision approximation"
+    ]
+  },
+  "expected_benefit": [
+    "Separates MAC-array density from dynamic command distribution overhead",
+    "Provides a measured direction for the 150-300 MAC/cycle/mm2 compute-density envelope",
+    "Avoids wide external IO by using a narrow self-stimulating PPA harness"
+  ],
+  "risks": [
+    "The wrapper is a macro-style PPA harness, not a complete NPU block",
+    "The exact FP16 MAC primitive may itself dominate area and limit density",
+    "Pipeline stage 1 registers inputs but does not retime inside the generated MAC primitive"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "task_type": "l1_sweep",
+      "evaluation_mode": "measurement_only",
+      "objective": "Measure dense FP16 GEMM tile PPA for 4x4 and 8x8 arrays, preserving hierarchy and recording MAC/cycle/mm2-ready metrics.",
+      "cost_class": "medium",
+      "expected_result": {
+        "direction": "measure_dense_compute_density",
+        "reason": "The job should determine whether removing dynamic dispatcher/vector-tail overhead improves compute density toward the 150 MAC/cycle/mm2 planning threshold."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/design_registry/internal_measurements.jsonl",
+    "runs/design_registry/comparison_claims.jsonl",
+    "runs/designs/npu_blocks/npu_fp16_cpp_nm64_cmp/metrics.csv"
+  ],
+  "knowledge_refs": [
+    "pr:754",
+    "pr:758",
+    "discussion:2026-06-03 dense compute tile should be tested before deeper NoC/SRAM modeling"
+  ]
+}
