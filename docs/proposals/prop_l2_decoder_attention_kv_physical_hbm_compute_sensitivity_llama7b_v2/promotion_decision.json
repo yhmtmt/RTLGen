@@ -1,0 +1,13 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_physical_hbm_compute_sensitivity_llama7b_v2",
+  "candidate_id": "l2_decoder_attention_kv_physical_hbm_compute_sensitivity_llama7b_v2",
+  "decision": "iterate",
+  "reason": "The evaluation quantifies the compute floor for the Llama7B 131k native-GQA KV8 planning model, but the winning throughput points are still analytic proxies rather than concrete clustered RTL/PPA implementations.",
+  "evidence_refs": [
+    "item:l2_decoder_attention_kv_physical_hbm_compute_sensitivity_llama7b_v2",
+    "run:l2_decoder_attention_kv_physical_hbm_compute_sensitivity_llama7b_v2_run_ff3db632b8d9c8c8",
+    "artifact:runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_physical_hbm_compute_sensitivity__l2_decoder_attention_kv_physical_hbm_compute_sensitivity_llama7b_v2.json"
+  ],
+  "next_action": "Evaluate concrete clustered compute structures near the 131072 to 524288 MAC/cycle boundary, then sweep NoC bandwidth/hops and SRAM/HBM balance using those measured points.",
+  "requires_human_approval": true
+}

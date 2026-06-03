@@ -1,0 +1,68 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_physical_hbm_compute_sensitivity_llama7b_v2",
+  "created_utc": "2026-06-03T06:46:51.101046Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Llama7B physical HBM compute sensitivity",
+  "hypothesis": "With merged all-measured local L1 costs and the physical high-SRAM HBM/NoC region, Llama7B 131k native-GQA KV8 decode attention becomes memory/interconnect-bound only above a finite compute-throughput boundary; identifying that boundary prevents over-crediting small local compute arrays and guides the next memory/logic balance.",
+  "direct_comparison": {
+    "primary_question": "What is the smallest compute throughput that preserves the practical Llama7B 131k native-GQA KV8 attention frontier under the high-SRAM physical HBM/NoC region?",
+    "include": [
+      "Llama7B proxy decode attention with sequence length 131072, hidden size 4096, 32 layers, native GQA8 KV8",
+      "Die areas 400, 800, and 1200 mm2",
+      "HBM configuration: 8 stacks, 16 pseudo-channels per stack, 64-bit pseudo-channel width, 9000 MT/s, 0.75 effective bandwidth efficiency",
+      "Tile sizes 512 and 1024 tokens",
+      "SRAM area fraction 0.75, usable SRAM fractions 0.70 and 0.85, local SRAM fractions 0.10, 0.25, and 0.50",
+      "Bank counts 16 and 64 with 32768 B/cycle NoC bandwidth and one modeled NoC hop",
+      "Compute sweep from 32768 to 524288 MAC/cycle and 8192 to 65536 vector ops/cycle"
+    ],
+    "exclude": [
+      "New RTL or PnR for larger global compute arrays",
+      "Approximate KV formats such as KV4 or MQA quality-changing variants",
+      "Full routed global NoC RTL and HBM controller timing",
+      "Training or QAT recovery for the Llama7B model itself"
+    ],
+    "follow_on_broad_sweep": [
+      "Add physically sized compute-array candidates near the boundary",
+      "Sweep global NoC hop count and bandwidth once the compute floor is known",
+      "Revisit SRAM/HBM tradeoffs for larger die sizes using the boundary compute points"
+    ]
+  },
+  "expected_benefit": [
+    "Converts the broad more-compute assumption into a measured boundary for the Llama7B 131k frontier model",
+    "Separates compute-bound small-array points from memory/interconnect-bound high-SRAM points",
+    "Guides whether the next expensive PPA runs should target compute scaling, NoC structure, or SRAM/HBM balance"
+  ],
+  "risks": [
+    "HBM and NoC behavior are analytic planning models, not full controller or routed NoC implementations",
+    "MAC/cycle and vector-op/cycle are throughput proxies until mapped to concrete clustered RTL",
+    "The quality assumption remains native GQA8 KV8; approximation recovery is not measured for full Llama7B training",
+    "The local L1 measured baseline is reused, so global command distribution and large-array timing are still estimated"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "broad_ranking",
+      "objective": "Find the smallest compute throughput that remains memory/interconnect-bound for Llama7B 131k native-GQA KV8 under the practical high-SRAM HBM/NoC region, using the merged all-measured local L1 baseline and physical HBM memory/NoC frontier as inputs.",
+      "cost_class": "medium",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_all_measured_l1_clustered_schedule_v1_r4"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "quantify_compute_memory_boundary",
+        "reason": "The result should show where compute throughput stops dominating and HBM/SRAM/NoC service becomes the limiting resource for the 131k Llama7B attention schedule."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_all_measured_l1_clustered_schedule__l2_decoder_attention_kv_all_measured_l1_clustered_schedule_v1_r4.json"
+  ],
+  "knowledge_refs": [
+    "discussion:2026-06-03 compute throughput must be interpreted under practical physical constraints",
+    "discussion:2026-06-03 memory/logic balance for Llama7B 131k should be evaluated before committing to larger RTL arrays"
+  ]
+}
