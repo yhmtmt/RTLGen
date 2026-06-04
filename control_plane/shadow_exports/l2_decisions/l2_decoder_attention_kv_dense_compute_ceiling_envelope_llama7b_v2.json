@@ -1,0 +1,117 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-06-04T01:38:01.567685Z",
+  "item_id": "l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2",
+  "run_key": "l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2_run_b77ee0ffedd30350",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "8d24df3d504c9c423f955974e05d419249da6a43",
+  "review_metadata_source_commit": "8d24df3d504c9c423f955974e05d419249da6a43",
+  "objective": "Rerun the Llama7B attention/KV compute ceiling envelope using the registered dense FP16 GEMM tile density as the measured RTLGen best.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+    ],
+    "design_dirs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+    ],
+    "macro_manifests": [
+      "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+      "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+    ],
+    "decoder_contract": {
+      "attention_kv_measured_compute": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_measured_compute__l2_decoder_attention_kv_measured_compute_llama7b_v1.json",
+      "design_registry_comparison_claims": "runs/design_registry/comparison_claims.jsonl",
+      "design_registry_external_measurements": "runs/design_registry/external_measurements.jsonl",
+      "design_registry_internal_measurements": "runs/design_registry/internal_measurements.jsonl",
+      "attention_kv_compute_ceiling_envelope_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_compute_ceiling_envelope__l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2.json",
+      "attention_kv_compute_ceiling_envelope_scope": "Recompute the Llama7B attention/KV frontier under physical compute-density ceilings derived from measured RTLGen PPA and explicit optimistic external reference envelopes. Require registry evidence citations for internal baselines and third-party calibration references.",
+      "attention_kv_compute_ceiling_envelope_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_compute_ceiling_envelope__l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2.md",
+      "attention_kv_physical_hbm_compute_sensitivity": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_physical_hbm_compute_sensitivity__l2_decoder_attention_kv_physical_hbm_compute_sensitivity_llama7b_v2.json"
+    },
+    "generated_campaign": {
+      "path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign__l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2.json",
+      "outputs": {
+        "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2/report.md",
+        "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2/results.csv",
+        "campaign_dir": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2"
+      },
+      "clean_outputs": true,
+      "base_campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json"
+    },
+    "candidate_manifests": [
+      "runs/candidates/nangate45/module_candidates.json"
+    ]
+  },
+  "recommendation": {
+    "arch_id": "fp16_nm1",
+    "macro_mode": "flat_nomacro",
+    "objective_rank": 1,
+    "objective_score": "0.0",
+    "latency_ms_mean": 0.028907999999999996,
+    "energy_mj_mean": 5.582770776e-06,
+    "critical_path_ns_mean": 5.557037432204143,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.193122,
+    "flow_elapsed_s_mean": 848.418
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2",
+    "title": "Llama7B dense compute ceiling envelope V2",
+    "primary_question": "Does the registered dense GEMM tile density make the Llama7B 131072 MAC/cycle HBM-bound floor physically plausible under the current die-size and logic-fraction envelope?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "frontier_synthesis",
+    "abstraction_layer": "decoder_attention_kv_compute_ceiling_envelope",
+    "expected_direction": "update_compute_frontier_with_dense_measurement",
+    "expected_reason": "The job should show which die and logic budgets become feasible when the dense 8x8 tile replaces nm64_flat as measured best compute density.",
+    "summary": "Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
+    "outcome": "ranking_recorded",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2",
+    "title": "Llama7B dense compute ceiling envelope V2",
+    "kind": "architecture",
+    "primary_question": "Does the registered dense GEMM tile density make the Llama7B 131072 MAC/cycle HBM-bound floor physically plausible under the current die-size and logic-fraction envelope?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "frontier_synthesis",
+    "outcome": "ranking_recorded",
+    "summary": "Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": []
+  },
+  "source_refs": {
+    "best_point_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2/best_point.json",
+    "summary_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2/summary.csv",
+    "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2/results.csv",
+    "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2/report.md",
+    "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+    "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+    "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2/artifacts/perf/fp16_nm1/mlp1/trace.json",
+    "focused_model_artifacts": [
+      {
+        "model_id": "mlp1",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2/artifacts/perf/fp16_nm1/mlp1/trace.json"
+      },
+      {
+        "model_id": "mlp2",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2/artifacts/mapper/fp16_nm1/mlp2/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2/artifacts/mapper/fp16_nm1/mlp2/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2/artifacts/perf/fp16_nm1/mlp2/trace.json"
+      }
+    ]
+  }
+}
