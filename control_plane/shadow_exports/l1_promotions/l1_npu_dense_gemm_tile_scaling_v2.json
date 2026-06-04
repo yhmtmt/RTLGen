@@ -1,0 +1,135 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-06-04T10:07:51.446472Z",
+  "item_id": "l1_npu_dense_gemm_tile_scaling_v2",
+  "run_key": "l1_npu_dense_gemm_tile_scaling_v2_run_cbf35df8e358c32f",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "a5e5b753eea4a50328acceaa1d73ba8b65495dcc",
+  "objective": "Measure dense FP16 GEMM tile scaling PPA for 8x16, 16x8, and 16x16 p2 arrays with hierarchy preserved.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/npu/dense_gemm_tile_v2/sweeps/nangate45_dense_tile_scale_hier.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_8x16_k1_p1/config.json",
+      "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_16x8_k1_p1/config.json",
+      "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_16x16_k1_p2/config.json"
+    ],
+    "out_root": "runs/designs/npu_blocks",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 3,
+  "evaluation_record": {
+    "evaluation_mode": "measurement_only",
+    "abstraction_layer": "architecture_block",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_8x16_k1_p1/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "498124b7",
+        "tag": "npu_dense_gemm_tile_v2_scale_hier",
+        "result_path": "/orfs/flow/reports/nangate45/npu_dense_gemm_tile_fp16_8x16_k1_p1/dense_gemm_tile_v2_scale_hier/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_8x16_k1_p1/work/498124b7/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 6.1452,
+        "die_area": 2560000.0,
+        "total_power_mw": 8.87
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_16x8_k1_p1/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "aed31ef8",
+        "tag": "npu_dense_gemm_tile_v2_scale_hier",
+        "result_path": "/orfs/flow/reports/nangate45/npu_dense_gemm_tile_fp16_16x8_k1_p1/dense_gemm_tile_v2_scale_hier/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_16x8_k1_p1/work/aed31ef8/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 5.9811,
+        "die_area": 2560000.0,
+        "total_power_mw": 9.5
+      }
+    },
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_16x16_k1_p2/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "aed31ef8",
+        "tag": "npu_dense_gemm_tile_v2_scale_hier",
+        "result_path": "/orfs/flow/reports/nangate45/npu_dense_gemm_tile_fp16_16x16_k1_p2/dense_gemm_tile_v2_scale_hier/6_finish.rpt",
+        "work_result_json": "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_16x16_k1_p2/work/aed31ef8/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 6.0791,
+        "die_area": 2560000.0,
+        "total_power_mw": 18.5
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_npu_dense_gemm_tile_scaling_v2",
+    "completed_trials": 1,
+    "success_count": 1,
+    "failure_count": 0,
+    "success_rate": 1.0,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 5.9811,
+        "mean": 5.9811,
+        "median": 5.9811,
+        "max": 5.9811,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "die_area": {
+        "best": 2560000.0,
+        "mean": 2560000.0,
+        "median": 2560000.0,
+        "max": 2560000.0,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "total_power_mw": {
+        "best": 9.5,
+        "mean": 9.5,
+        "median": 9.5,
+        "max": 9.5,
+        "range": 0.0,
+        "stddev": 0.0
+      }
+    }
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_8x16_k1_p1/metrics.csv",
+      "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_16x8_k1_p1/metrics.csv",
+      "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_16x16_k1_p2/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_npu_dense_gemm_tile_scaling_v2/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_npu_dense_gemm_tile_scaling_v2/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_npu_dense_gemm_tile_scaling_v2/trial_table.csv"
+  }
+}
