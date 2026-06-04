@@ -1,8 +1,8 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2",
   "candidate_id": "l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "iterate",
+  "pr_number": 762,
+  "merge_commit": "16c6a70b27da1e4253f63833b3f6a3c9acb298d2",
+  "merged_utc": "2026-06-04T01:41:13.450147Z"
 }

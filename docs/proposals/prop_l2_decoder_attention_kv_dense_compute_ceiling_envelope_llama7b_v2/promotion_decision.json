@@ -1,9 +1,15 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2",
   "candidate_id": "l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2",
-  "decision": "pending",
-  "reason": "Awaiting evaluator result.",
-  "evidence_refs": [],
-  "next_action": "run l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2",
+  "decision": "iterate",
+  "reason": "Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
+  "evidence_refs": [
+    "item:l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2",
+    "run:l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2_run_b77ee0ffedd30350",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2.json",
+    "pr:#762",
+    "https://github.com/yhmtmt/RTLGen/pull/762"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2",
   "requires_human_approval": false
 }

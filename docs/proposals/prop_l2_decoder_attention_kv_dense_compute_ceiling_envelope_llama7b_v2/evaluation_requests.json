@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2",
-  "source_commit": "",
+  "source_commit": "8d24df3d504c9c423f955974e05d419249da6a43",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2",
@@ -20,7 +20,11 @@
         "direction": "update_compute_frontier_with_dense_measurement",
         "reason": "The job should show which die and logic budgets become feasible when the dense 8x8 tile replaces nm64_flat as measured best compute density."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 762,
+      "merge_commit": "16c6a70b27da1e4253f63833b3f6a3c9acb298d2",
+      "merged_utc": "2026-06-04T01:41:13.450147Z",
+      "notes": "Merged via PR #762 and merge 16c6a70b27da1e4253f63833b3f6a3c9acb298d2 at 2026-06-04T01:41:13.450147Z."
     }
   ]
 }
