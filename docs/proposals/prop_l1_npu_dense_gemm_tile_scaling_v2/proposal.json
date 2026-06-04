@@ -1,0 +1,59 @@
+{
+  "proposal_id": "prop_l1_npu_dense_gemm_tile_scaling_v2",
+  "created_utc": "2026-06-04T01:45:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "title": "Dense FP16 GEMM tile scaling V2",
+  "abstraction_layer": "architecture_block",
+  "hypothesis": "The measured dense FP16 8x8 tile density of about 270 MAC/cycle/mm2 can hold within useful bounds at 128 MAC/cycle, while the 256-MAC 16x16 p2 point exposes the first scaling or PnR boundary.",
+  "direct_comparison": {
+    "primary_question": "Does dense FP16 GEMM tile compute density remain near the 8x8 result when scaled to 128 and 256 MAC/cycle?",
+    "include": [
+      "8x16 k1 p1 exact-FP16 dense tile",
+      "16x8 k1 p1 exact-FP16 dense tile",
+      "16x16 k1 p2 exact-FP16 dense tile",
+      "Hierarchy-preserving Nangate45 PPA sweep",
+      "Structural guard that all MAC outputs fold into the visible result hash",
+      "Comparison against registered 8x8 dense tile density"
+    ],
+    "exclude": [
+      "Softmax, normalization, reducer, CQ, DMA, or vector-tail replication",
+      "Producer, SRAM, or NoC integration",
+      "Quality-changing precision approximation"
+    ]
+  },
+  "expected_benefit": [
+    "Tests whether the 8x8 dense compute-density result is scalable",
+    "Provides a physical bound for the number and area of dense compute macros needed by Llama7B",
+    "Separates aspect-ratio effects from total MAC-count scaling"
+  ],
+  "risks": [
+    "16x16 may expose synthesis or PnR runtime boundaries",
+    "The wrapper remains a macro-style PPA harness rather than a complete NPU block",
+    "Pipeline stage 2 registers MAC outputs but does not retime inside the exact FP16 MAC primitive"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "task_type": "l1_sweep",
+      "evaluation_mode": "measurement_only",
+      "objective": "Measure dense FP16 GEMM tile scaling PPA for 8x16, 16x8, and 16x16 p2 arrays with hierarchy preserved.",
+      "cost_class": "medium",
+      "expected_result": {
+        "direction": "measure_dense_tile_scaling",
+        "reason": "The job should determine whether the 8x8 density can be used for larger dense compute macro planning."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/design_registry/internal_measurements.jsonl",
+    "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_8x8_k1_p1/metrics.csv"
+  ],
+  "knowledge_refs": [
+    "pr:760",
+    "pr:761",
+    "pr:762",
+    "claim:rtlgen_dense_gemm_tile_improves_compute_density_v1"
+  ]
+}
