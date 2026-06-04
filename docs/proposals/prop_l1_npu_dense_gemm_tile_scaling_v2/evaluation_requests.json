@@ -1,0 +1,14 @@
+{
+  "proposal_id": "prop_l1_npu_dense_gemm_tile_scaling_v2",
+  "source_commit": "",
+  "requested_items": [
+    {
+      "item_id": "l1_npu_dense_gemm_tile_scaling_v2",
+      "task_type": "l1_sweep",
+      "objective": "Measure dense FP16 GEMM tile scaling PPA for 8x16, 16x8, and 16x16 p2 arrays with hierarchy preserved.",
+      "evaluation_mode": "measurement_only",
+      "abstraction_layer": "architecture_block",
+      "status": "pending"
+    }
+  ]
+}
