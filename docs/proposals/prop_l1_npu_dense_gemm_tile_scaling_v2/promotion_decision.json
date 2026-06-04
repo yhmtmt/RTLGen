@@ -1,9 +1,15 @@
 {
   "proposal_id": "prop_l1_npu_dense_gemm_tile_scaling_v2",
   "candidate_id": "l1_npu_dense_gemm_tile_scaling_v2",
-  "decision": "pending",
-  "reason": "Awaiting evaluator result.",
-  "evidence_refs": [],
-  "next_action": "run l1_npu_dense_gemm_tile_scaling_v2",
+  "decision": "promote",
+  "reason": "Accepted Layer 1 physical metrics were merged in PR #764 for the current candidate.",
+  "evidence_refs": [
+    "item:l1_npu_dense_gemm_tile_scaling_v2",
+    "run:l1_npu_dense_gemm_tile_scaling_v2_run_cbf35df8e358c32f",
+    "artifact:control_plane/shadow_exports/l1_promotions/l1_npu_dense_gemm_tile_scaling_v2.json",
+    "pr:#764",
+    "https://github.com/yhmtmt/RTLGen/pull/764"
+  ],
+  "next_action": "inspect the next dependent item",
   "requires_human_approval": false
 }
