@@ -1,0 +1,26 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2",
+  "source_commit": "",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2",
+      "task_type": "l2_campaign",
+      "objective": "Rerun the Llama7B attention/KV compute ceiling envelope using the registered dense FP16 GEMM tile density as the measured RTLGen best.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_compute_ceiling_envelope",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_compute_ceiling_envelope_llama7b_v1",
+      "depends_on_item_ids": [
+        "l1_npu_dense_gemm_tile_v1",
+        "l2_decoder_attention_kv_compute_ceiling_envelope_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "update_compute_frontier_with_dense_measurement",
+        "reason": "The job should show which die and logic budgets become feasible when the dense 8x8 tile replaces nm64_flat as measured best compute density."
+      },
+      "status": "pending"
+    }
+  ]
+}

@@ -66,27 +66,80 @@ def _best_rows_by_die(compute_sensitivity: JsonDict) -> dict[float, list[JsonDic
     return rows_by_die
 
 
-def _best_density(measured_compute: JsonDict) -> JsonDict:
-    best: JsonDict | None = None
+def _legacy_measured_density_rows(measured_compute: JsonDict) -> list[JsonDict]:
+    rows: list[JsonDict] = []
     for candidate in measured_compute.get("compute_candidates", []):
         area_mm2 = float(candidate["block_area_um2"]) / 1_000_000.0
         macs = int(candidate["block_macs_per_cycle"])
         clock_ns = float(candidate["block_clock_ns"])
         if area_mm2 <= 0.0 or clock_ns <= 0.0:
             continue
-        row = {
-            "source": "rtlgen_measured",
-            "label": candidate["compute_arch"],
-            "macs_per_cycle_per_mm2": macs / area_mm2,
-            "macs_per_second_per_mm2": macs / (clock_ns * 1e-9) / area_mm2,
-            "block_macs_per_cycle": macs,
-            "block_area_mm2": area_mm2,
-            "block_clock_ns": clock_ns,
-            "block_power_mw": float(candidate["block_power_mw"]),
-            "metrics_csv": candidate.get("metrics_csv", ""),
-            "metrics_tag": candidate.get("metrics_tag", ""),
-            "metrics_param_hash": candidate.get("metrics_param_hash", ""),
-        }
+        rows.append(
+            {
+                "source": "rtlgen_measured",
+                "source_kind": "legacy_measured_compute_artifact",
+                "label": candidate["compute_arch"],
+                "source_measurement_id": "rtlgen_npu_fp16_nm64_flat_cmp33_nangate45",
+                "macs_per_cycle_per_mm2": macs / area_mm2,
+                "macs_per_second_per_mm2": macs / (clock_ns * 1e-9) / area_mm2,
+                "block_macs_per_cycle": macs,
+                "block_area_mm2": area_mm2,
+                "block_clock_ns": clock_ns,
+                "block_power_mw": float(candidate["block_power_mw"]),
+                "metrics_csv": candidate.get("metrics_csv", ""),
+                "metrics_tag": candidate.get("metrics_tag", ""),
+                "metrics_param_hash": candidate.get("metrics_param_hash", ""),
+            }
+        )
+    return rows
+
+
+def _registry_measured_density_rows(internal_measurements: list[JsonDict]) -> list[JsonDict]:
+    rows: list[JsonDict] = []
+    for record in internal_measurements:
+        if str(record.get("status", "")).strip() != "valid":
+            continue
+        derived = record.get("derived", {})
+        performance = record.get("performance", {})
+        physical = record.get("physical", {})
+        density = derived.get("macs_per_cycle_per_mm2")
+        macs = performance.get("macs_per_cycle")
+        area_mm2 = physical.get("block_area_mm2")
+        clock_ns = physical.get("critical_path_ns")
+        if density is None or macs is None or area_mm2 is None or clock_ns is None:
+            continue
+        density = float(density)
+        macs = int(macs)
+        area_mm2 = float(area_mm2)
+        clock_ns = float(clock_ns)
+        if density <= 0.0 or macs <= 0 or area_mm2 <= 0.0 or clock_ns <= 0.0:
+            continue
+        rows.append(
+            {
+                "source": "rtlgen_measured",
+                "source_kind": "design_registry_internal_measurement",
+                "label": record["measurement_id"],
+                "source_measurement_id": record["measurement_id"],
+                "design_id": record.get("design_id", ""),
+                "macs_per_cycle_per_mm2": density,
+                "macs_per_second_per_mm2": float(derived.get("macs_per_second_per_mm2", macs / (clock_ns * 1e-9) / area_mm2)),
+                "block_macs_per_cycle": macs,
+                "block_area_mm2": area_mm2,
+                "block_clock_ns": clock_ns,
+                "block_power_mw": float(physical.get("total_power_mw", 0.0)),
+                "metrics_csv": record.get("artifacts", {}).get("metrics_csv", ""),
+                "metrics_tag": record.get("constraints", {}).get("tag", ""),
+                "metrics_param_hash": record.get("constraints", {}).get("param_hash", ""),
+            }
+        )
+    return rows
+
+
+def _best_density(measured_compute: JsonDict, internal_measurements: list[JsonDict]) -> JsonDict:
+    candidates = _legacy_measured_density_rows(measured_compute)
+    candidates.extend(_registry_measured_density_rows(internal_measurements))
+    best: JsonDict | None = None
+    for row in candidates:
         if best is None or (
             float(row["macs_per_cycle_per_mm2"]),
             -float(row["block_clock_ns"]),
@@ -148,14 +201,16 @@ def build_report(
 ) -> JsonDict:
     floors_by_die = _best_hbm_floor_by_die(compute_sensitivity)
     rows_by_die = _best_rows_by_die(compute_sensitivity)
-    measured_best = _best_density(measured_compute)
+    measured_best = _best_density(measured_compute, internal_measurements)
     external_density = _external_density_rows(external_measurements)
     required_internal_measurements = {
         "rtlgen_npu_fp16_nm64_flat_cmp33_nangate45",
+        "rtlgen_npu_dense_gemm_tile_fp16_8x8_k1_p1_nangate45",
         "rtlgen_llama7b_attention_kv_compute_floor_gap_v1",
     }
     required_comparison_claims = {
         "rtlgen_llama7b_compute_density_gap_vs_external_refs_v1",
+        "rtlgen_dense_gemm_tile_improves_compute_density_v1",
     }
     found_internal_measurements = {
         record["measurement_id"]
@@ -180,7 +235,7 @@ def build_report(
         {
             "label": "rtlgen_measured_best",
             "macs_per_cycle_per_mm2": measured_best["macs_per_cycle_per_mm2"],
-            "source_measurement_id": "rtlgen_npu_fp16_nm64_flat_cmp33_nangate45",
+            "source_measurement_id": measured_best["source_measurement_id"],
             "comparability_class": "direct_comparable",
         }
     ]
@@ -256,6 +311,7 @@ def build_report(
         "summary": {
             "measured_best_density_macs_per_cycle_per_mm2": measured_best["macs_per_cycle_per_mm2"],
             "measured_best_density_label": measured_best["label"],
+            "measured_best_density_source_measurement_id": measured_best["source_measurement_id"],
             "hbm_floor_reachable_row_count": len(reachable),
             "best_latency_under_any_envelope_us": (
                 float(best_latency["selected_latency_us"]) if best_latency else None
@@ -288,6 +344,7 @@ def _write_markdown(path: Path, payload: JsonDict) -> None:
         f"- model: `{payload['model']}`",
         f"- measured_best_density: `{_fmt(summary['measured_best_density_macs_per_cycle_per_mm2'])}` MAC/cycle/mm2",
         f"- measured_best_density_label: `{summary['measured_best_density_label']}`",
+        f"- measured_best_density_source: `{summary['measured_best_density_source_measurement_id']}`",
         f"- hbm_floor_reachable_row_count: `{summary['hbm_floor_reachable_row_count']}`",
         f"- best_latency_under_any_envelope_us: `{_fmt(summary['best_latency_under_any_envelope_us'])}`",
         "",
