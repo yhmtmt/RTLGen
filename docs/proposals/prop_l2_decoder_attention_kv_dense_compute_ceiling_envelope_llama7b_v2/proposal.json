@@ -1,0 +1,70 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2",
+  "created_utc": "2026-06-04T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Llama7B dense compute ceiling envelope V2",
+  "hypothesis": "The measured dense FP16 GEMM 8x8 tile density of about 270 MAC/cycle/mm2 changes the Llama7B attention/KV frontier enough that the 131072 MAC/cycle HBM-bound floor may become reachable for large die and high logic-area budgets.",
+  "direct_comparison": {
+    "primary_question": "Does the registered dense GEMM tile density make the Llama7B 131072 MAC/cycle HBM-bound floor physically plausible under the current die-size and logic-fraction envelope?",
+    "include": [
+      "Registered dense FP16 GEMM tile measurements from PR #760",
+      "Updated design-registry comparison claim for dense tile versus nm64_flat",
+      "Merged Llama7B physical-HBM compute-sensitivity artifact",
+      "Measured best density selected from internal registry records",
+      "Existing 150 and 300 MAC/cycle/mm2 analytic envelopes for continuity"
+    ],
+    "exclude": [
+      "New RTL or PnR",
+      "Detailed global NoC arbitration",
+      "SRAM bank placement or HBM PHY/controller timing",
+      "Quality-changing precision or KV approximation"
+    ],
+    "follow_on_broad_sweep": [
+      "If measured dense density reaches or nearly reaches the floor, plan dense tile scaling and producer/memory coupling",
+      "If only the 300 envelope reaches the floor, measure larger/pipelined dense tile variants before detailed NoC work",
+      "If measured dense density remains far short, revise die/context assumptions or precision strategy"
+    ]
+  },
+  "expected_benefit": [
+    "Converts dense-tile PPA evidence into a Llama7B frontier decision",
+    "Keeps measured internal density distinct from analytic 150/300 envelopes",
+    "Provides a measured basis for deciding whether to scale dense compute macros"
+  ],
+  "risks": [
+    "Dense 8x8 is still a macro-style PPA harness and not a full NPU datapath",
+    "The density may not hold at larger tile sizes or when connected to SRAM/NoC",
+    "The result is an analytic planning gate, not a routed full-chip implementation"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "objective": "Rerun the Llama7B attention/KV compute ceiling envelope using the registered dense FP16 GEMM tile density as the measured RTLGen best.",
+      "cost_class": "low",
+      "depends_on_item_ids": [
+        "l1_npu_dense_gemm_tile_v1",
+        "l2_decoder_attention_kv_compute_ceiling_envelope_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "update_compute_frontier_with_dense_measurement",
+        "reason": "The job should show which die and logic budgets become feasible when the dense 8x8 tile replaces nm64_flat as measured best compute density."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/design_registry/internal_measurements.jsonl",
+    "runs/design_registry/comparison_claims.jsonl",
+    "runs/designs/npu_blocks/npu_dense_gemm_tile_fp16_8x8_k1_p1/metrics.csv",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_physical_hbm_compute_sensitivity__l2_decoder_attention_kv_physical_hbm_compute_sensitivity_llama7b_v2.json"
+  ],
+  "knowledge_refs": [
+    "pr:760",
+    "claim:rtlgen_dense_gemm_tile_improves_compute_density_v1",
+    "measurement:rtlgen_npu_dense_gemm_tile_fp16_8x8_k1_p1_nangate45"
+  ]
+}
