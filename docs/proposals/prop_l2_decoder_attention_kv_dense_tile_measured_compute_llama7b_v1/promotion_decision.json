@@ -2,10 +2,14 @@
   "proposal_id": "prop_l2_decoder_attention_kv_dense_tile_measured_compute_llama7b_v1",
   "candidate_id": "l2_decoder_attention_kv_dense_tile_measured_compute_llama7b_v1",
   "decision": "iterate",
-  "reason": "Pending evaluator result.",
+  "reason": "Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
   "evidence_refs": [
-    "item:l2_decoder_attention_kv_dense_tile_measured_compute_llama7b_v1"
+    "item:l2_decoder_attention_kv_dense_tile_measured_compute_llama7b_v1",
+    "run:l2_decoder_attention_kv_dense_tile_measured_compute_llama7b_v1_run_e388a4bf91d95b36",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_kv_dense_tile_measured_compute_llama7b_v1.json",
+    "pr:#769",
+    "https://github.com/yhmtmt/RTLGen/pull/769"
   ],
-  "next_action": "Run the requested L2 frontier-detail job and compare the selected dense tile anchor against the older measured-compute baseline.",
-  "requires_human_approval": true
+  "next_action": "inspect follow-on work after l2_decoder_attention_kv_dense_tile_measured_compute_llama7b_v1",
+  "requires_human_approval": false
 }

@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_dense_tile_measured_compute_llama7b_v1",
-  "source_commit": "31c9f2111ce18cebf1afddf7004e418aada7a8fb",
+  "source_commit": "494cc58c41cdaa3060bb7104f65d0bf88b01d940",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_kv_dense_tile_measured_compute_llama7b_v1",
@@ -20,7 +20,11 @@
         "direction": "select_dense_tile_compute_anchor",
         "reason": "The job should identify the dense tile shape and die/logic budget frontier after substituting PR #764 measured dense tile PPA into the Llama7B 131k physical-HBM model."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 769,
+      "merge_commit": "506fd5b2bb4b99ffdd10632e9f3c21b9e8e73aea",
+      "merged_utc": "2026-06-05T13:09:31.893784Z",
+      "notes": "Merged via PR #769 and merge 506fd5b2bb4b99ffdd10632e9f3c21b9e8e73aea at 2026-06-05T13:09:31.893784Z."
     }
   ]
 }
