@@ -370,6 +370,7 @@ def _shape_row(
         "replicas_per_cluster_floor": replicas_per_cluster_floor,
         "replicas_per_cluster_ceil": replicas_per_cluster_ceil,
         "compute_arch": candidate["compute_arch"],
+        "compute_source": candidate.get("compute_source", "legacy_npu_block"),
         "compute_replica_count": replica_count,
         "compute_logic_area_fraction": logic_area_fraction,
         "reserved_area_fraction": reserved_area_fraction,
@@ -447,6 +448,10 @@ def _shape_row(
         "metrics_csv": candidate["metrics_csv"],
         "metrics_tag": candidate["metrics_tag"],
         "metrics_param_hash": candidate["metrics_param_hash"],
+        "dense_array_m": candidate.get("dense_array_m"),
+        "dense_array_n": candidate.get("dense_array_n"),
+        "dense_k_unroll": candidate.get("dense_k_unroll"),
+        "dense_pipeline_stages": candidate.get("dense_pipeline_stages"),
         "vector_ops_per_mac_assumption": vector_ops_per_mac,
     }
 
@@ -455,6 +460,7 @@ def build_report(
     *,
     repo_root: Path,
     tag_substring: str,
+    compute_source: str,
     sequence_length_list: list[int],
     die_area_mm2_list: list[float],
     sram_area_fraction_list: list[float],
@@ -478,7 +484,11 @@ def build_report(
     measured_l1_profile_list: list[str] | None = None,
     measured_l1_profiles: list[JsonDict | None] | None = None,
 ) -> JsonDict:
-    candidates = _load_compute_candidates(repo_root=repo_root, tag_substring=tag_substring)
+    candidates = _load_compute_candidates(
+        repo_root=repo_root,
+        tag_substring=tag_substring,
+        compute_source=compute_source,
+    )
     measured_l1_profiles = measured_l1_profiles or _load_measured_l1_profiles(
         repo_root=repo_root,
         costs_path=measured_l1_costs_path,
@@ -605,6 +615,7 @@ def build_report(
         "model": "llm_decoder_attention_kv_clustered_schedule_llama7b_v1",
         "inputs": {
             "tag_substring": tag_substring,
+            "compute_source": compute_source,
             "sequence_length_list": sequence_length_list,
             "die_area_mm2_list": die_area_mm2_list,
             "sram_area_fraction_list": sram_area_fraction_list,
@@ -793,6 +804,11 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--repo-root", default=".")
     ap.add_argument("--tag-substring", default="compute_stability_cmp33")
+    ap.add_argument(
+        "--compute-source",
+        choices=["legacy_npu_block", "dense_gemm_tile", "all"],
+        default="legacy_npu_block",
+    )
     ap.add_argument("--sequence-length-list", type=_int_list, default=[131072])
     ap.add_argument("--die-area-mm2-list", type=_float_list, default=[100, 200, 400, 800, 1200])
     ap.add_argument("--sram-area-fraction", type=_float_list, default=[0.4, 0.6, 0.75])
@@ -821,6 +837,7 @@ def main() -> int:
     payload = build_report(
         repo_root=Path(args.repo_root),
         tag_substring=args.tag_substring,
+        compute_source=args.compute_source,
         sequence_length_list=args.sequence_length_list,
         die_area_mm2_list=args.die_area_mm2_list,
         sram_area_fraction_list=args.sram_area_fraction,
