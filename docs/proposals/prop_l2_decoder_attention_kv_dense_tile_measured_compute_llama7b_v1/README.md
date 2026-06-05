@@ -10,5 +10,9 @@ and which die/logic budget reaches the practical HBM floor.
 The job consumes existing merged evidence only:
 
 - `l1_npu_dense_gemm_tile_scaling_v2`
-- `l2_decoder_attention_kv_physical_hbm_memory_noc_llama7b_v1_r2`
 - `l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2`
+
+It also reads the materialized physical-HBM memory/NoC JSON already present in
+`runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/`; that artifact is not
+listed as a DB dependency because clean control-plane DBs may not retain the
+older work item row.

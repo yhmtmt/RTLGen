@@ -24,8 +24,10 @@ Direct comparison set: consume the merged dense tile metrics from
 Evaluation mode: `frontier_detail`. The result is expected to select a measured
 dense tile compute anchor, not prove final full-system closure.
 
-Dependency order: this item requires merged dense tile metrics, the physical
-HBM memory/NoC baseline, and the dense compute ceiling envelope.
+Dependency order: this item requires merged dense tile metrics and the dense
+compute ceiling envelope as DB-tracked dependencies. The physical HBM
+memory/NoC baseline is consumed as a materialized repo JSON input because clean
+control-plane DBs may not retain the older work item row.
 
 Excluded first-stage comparisons: no new dense RTL/PPA points, no KV4/MQA
 quality-risky modes, and no detailed NoC/SRAM arbitration simulation.
