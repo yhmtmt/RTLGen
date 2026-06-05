@@ -1,0 +1,65 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1",
+  "created_utc": "2026-06-05T13:20:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Llama7B dense tile all-measured clustered schedule",
+  "hypothesis": "Measured dense FP16 GEMM tile PPA should improve the Llama7B 131k clustered schedule frontier versus the older nm-count compute blocks, but the result must be checked with measured local attention, softmax, FIFO, and router overhead charged before using it as the current frontier.",
+  "direct_comparison": {
+    "primary_question": "When dense tile PPA from l1_npu_dense_gemm_tile_scaling_v2 is used inside the all-measured L1 clustered schedule model, which die/SRAM/logic/cluster point is selected and what abstraction remains?",
+    "include": [
+      "dense_gemm_8x16_k1_p1, dense_gemm_16x8_k1_p1, and dense_gemm_16x16_k1_p2 metrics from the dense tile scaling result",
+      "die areas 200, 400, 800, and 1200 mm2",
+      "SRAM fractions 0.4 and 0.6",
+      "logic fractions 0.1, 0.2, and 0.4",
+      "cluster counts 1, 2, 4, 8, and 16 with owner-cluster and cluster-tree reduction"
+    ],
+    "exclude": [
+      "new dense tile RTL/PPA points",
+      "cycle-accurate SRAM arbitration",
+      "full routed global NoC simulation",
+      "KV4, MQA, or other quality-unbacked KV reductions"
+    ],
+    "follow_on_broad_sweep": [
+      "replace analytic SRAM/global NoC service with a more detailed memory and communication simulator for the selected frontier candidates"
+    ]
+  },
+  "expected_benefit": [
+    "close the mismatch between the dense tile compute result and the clustered schedule frontier",
+    "show whether measured dense compute still reaches the practical HBM/memory frontier after measured L1 overhead is charged",
+    "produce a ranked candidate list for the next detailed SRAM/global NoC simulation job"
+  ],
+  "risks": [
+    "replica scaling still assumes dense tiles can be composed without extra global command-distribution overhead beyond the analytic command knobs",
+    "SRAM service and global NoC arbitration remain L2 model terms",
+    "vector throughput remains tied to MAC throughput by vector_ops_per_mac rather than separately measured for dense tile arrays"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "objective": "dense_tile_all_measured_l1_clustered_schedule",
+      "cost_class": "medium",
+      "depends_on_item_ids": [
+        "l1_npu_dense_gemm_tile_scaling_v2",
+        "l2_decoder_attention_kv_dense_tile_measured_compute_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "select_dense_tile_clustered_frontier",
+        "reason": "The result should identify the best dense tile compute source and clustered schedule point after charging measured L1 local datapath, softmax, FIFO, and router overhead."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_dense_tile_measured_compute__l2_decoder_attention_kv_dense_tile_measured_compute_llama7b_v1.json",
+    "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_kv_all_measured_l1_clustered_schedule_v1_r4.json"
+  ],
+  "knowledge_refs": [
+    "docs/proposals/prop_l1_npu_dense_gemm_tile_scaling_v2/analysis_report.md",
+    "docs/proposals/prop_l2_decoder_attention_kv_dense_tile_measured_compute_llama7b_v1/analysis_report.md"
+  ]
+}
