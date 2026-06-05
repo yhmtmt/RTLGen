@@ -3746,6 +3746,61 @@ def _decoder_attention_kv_measured_compute_evidence(*, item_id: str) -> dict[str
     }
 
 
+def _decoder_attention_kv_dense_tile_measured_compute_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_kv_dense_tile_measured_compute__{item_id}.json"
+    report = f"{base}/decoder_attention_kv_dense_tile_measured_compute__{item_id}.md"
+    memory_noc = (
+        f"{base}/decoder_attention_kv_physical_hbm_memory_noc__"
+        "l2_decoder_attention_kv_physical_hbm_memory_noc_llama7b_v1_r2.json"
+    )
+    dense_scaling = "docs/proposals/prop_l1_npu_dense_gemm_tile_scaling_v2/promotion_result.json"
+    dense_envelope = (
+        f"{base}/decoder_attention_kv_compute_ceiling_envelope__"
+        "l2_decoder_attention_kv_dense_compute_ceiling_envelope_llama7b_v2.json"
+    )
+    return {
+        "inputs": {
+            "attention_kv_physical_hbm_memory_noc": memory_noc,
+            "dense_gemm_tile_scaling": dense_scaling,
+            "attention_kv_dense_compute_ceiling_envelope": dense_envelope,
+            "attention_kv_dense_tile_measured_compute_out": out,
+            "attention_kv_dense_tile_measured_compute_report": report,
+            "attention_kv_dense_tile_measured_compute_scope": (
+                "Quality-backed native-GQA KV8 Llama7B 131k estimate using merged dense FP16 "
+                "GEMM tile PPA instead of the older nm-count compute blocks. The sweep converts "
+                "measured 8x16, 16x8, and 16x16 dense tile area, power, delay, and MAC/cycle "
+                "into die-budgeted replica counts, then substitutes the resulting throughput "
+                "and clock into the physical-HBM memory/NoC model."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_attention_kv_dense_tile_measured_compute",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_attention_kv_measured_compute.py "
+                    "--repo-root . "
+                    "--compute-source dense_gemm_tile "
+                    "--tag-substring npu_dense_gemm_tile_v2_scale_hier "
+                    "--sequence-length-list 131072 "
+                    "--die-area-mm2-list 100,200,400,800,1200 "
+                    "--sram-area-fraction 0.4,0.6,0.75 "
+                    "--logic-area-fraction 0.05,0.1,0.2,0.4,0.6 "
+                    "--reserved-area-fraction 0.1 "
+                    "--usable-sram-fraction 0.7,0.85 "
+                    "--local-sram-fraction 0.1,0.25,0.5 "
+                    "--tile-tokens-list 512,1024 "
+                    "--bank-count 16,64 "
+                    "--vector-ops-per-mac 0.125 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_attention_kv_measured_compute_partition_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_kv_measured_compute_partition__{item_id}.json"
@@ -5670,6 +5725,7 @@ def _build_payload(
         "decoder_attention_kv_compute_floor_gap",
         "decoder_attention_kv_compute_ceiling_envelope",
         "decoder_attention_kv_measured_compute",
+        "decoder_attention_kv_dense_tile_measured_compute",
         "decoder_attention_kv_measured_compute_partition",
         "decoder_attention_kv_clustered_schedule",
         "decoder_attention_kv_clustered_schedule_overhead",
@@ -5747,6 +5803,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_kv_compute_ceiling_envelope_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_measured_compute":
             decoder_evidence = _decoder_attention_kv_measured_compute_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_kv_dense_tile_measured_compute":
+            decoder_evidence = _decoder_attention_kv_dense_tile_measured_compute_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_measured_compute_partition":
             decoder_evidence = _decoder_attention_kv_measured_compute_partition_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_clustered_schedule":
