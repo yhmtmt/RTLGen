@@ -22,8 +22,6 @@ JsonDict = dict[str, Any]
 
 
 _NM_RE = re.compile(r"_nm(\d+)_")
-
-
 def _float_list(value: str) -> list[float]:
     items = [float(item.strip()) for item in value.split(",") if item.strip()]
     if not items:
@@ -57,7 +55,7 @@ def _load_num_modules(config_path: Path) -> tuple[int, int, int]:
     )
 
 
-def _load_compute_candidates(*, repo_root: Path, tag_substring: str) -> list[JsonDict]:
+def _load_legacy_npu_compute_candidates(*, repo_root: Path, tag_substring: str) -> list[JsonDict]:
     candidates: list[JsonDict] = []
     for metrics_path in sorted((repo_root / "runs/designs/npu_blocks").glob("npu_fp16_cpp_nm*_cmp/metrics.csv")):
         match = _NM_RE.search(str(metrics_path))
@@ -91,10 +89,80 @@ def _load_compute_candidates(*, repo_root: Path, tag_substring: str) -> list[Jso
                         "metrics_csv": str(metrics_path.relative_to(repo_root)),
                         "metrics_tag": tag,
                         "metrics_param_hash": row.get("param_hash", ""),
+                        "compute_source": "legacy_npu_block",
                     }
                 )
+    return candidates
+
+
+def _load_dense_tile_shape(config_path: Path) -> tuple[int, int, int, int]:
+    payload = json.loads(config_path.read_text(encoding="utf-8"))
+    tile = payload.get("dense_gemm_tile") or {}
+    return (
+        int(tile.get("array_m", 1)),
+        int(tile.get("array_n", 1)),
+        int(tile.get("k_unroll", 1)),
+        int(tile.get("pipeline_stages", 1)),
+    )
+
+
+def _load_dense_gemm_tile_candidates(*, repo_root: Path, tag_substring: str) -> list[JsonDict]:
+    candidates: list[JsonDict] = []
+    for metrics_path in sorted((repo_root / "runs/designs/npu_blocks").glob("npu_dense_gemm_tile_fp16_*/metrics.csv")):
+        config_path = metrics_path.parent / "config.json"
+        if not config_path.exists():
+            continue
+        array_m, array_n, k_unroll, pipeline_stages = _load_dense_tile_shape(config_path)
+        block_macs_per_cycle = array_m * array_n * k_unroll
+        with metrics_path.open(newline="", encoding="utf-8") as f:
+            for row in csv.DictReader(f):
+                tag = str(row.get("tag", ""))
+                if tag_substring and tag_substring not in tag:
+                    continue
+                if str(row.get("status", "")).strip() != "ok":
+                    continue
+                delay_ns = float(row["critical_path_ns"])
+                instance_area_um2 = float(row["instance_area_um2"])
+                total_power_mw = float(row["total_power_mw"])
+                candidates.append(
+                    {
+                        "compute_arch": (
+                            f"dense_gemm_{array_m}x{array_n}_k{k_unroll}_p{pipeline_stages}"
+                        ),
+                        "num_modules": 1,
+                        "lanes_per_module": block_macs_per_cycle,
+                        "block_macs_per_cycle": block_macs_per_cycle,
+                        "block_vec_lanes": 0,
+                        "block_clock_ns": delay_ns,
+                        "block_area_um2": instance_area_um2,
+                        "block_power_mw": total_power_mw,
+                        "metrics_csv": str(metrics_path.relative_to(repo_root)),
+                        "metrics_tag": tag,
+                        "metrics_param_hash": row.get("param_hash", ""),
+                        "compute_source": "dense_gemm_tile",
+                        "dense_array_m": array_m,
+                        "dense_array_n": array_n,
+                        "dense_k_unroll": k_unroll,
+                        "dense_pipeline_stages": pipeline_stages,
+                    }
+                )
+    return candidates
+
+
+def _load_compute_candidates(*, repo_root: Path, tag_substring: str, compute_source: str) -> list[JsonDict]:
+    source = compute_source.strip()
+    candidates: list[JsonDict] = []
+    if source in {"legacy_npu_block", "all"}:
+        candidates.extend(_load_legacy_npu_compute_candidates(repo_root=repo_root, tag_substring=tag_substring))
+    if source in {"dense_gemm_tile", "all"}:
+        candidates.extend(_load_dense_gemm_tile_candidates(repo_root=repo_root, tag_substring=tag_substring))
+    if source not in {"legacy_npu_block", "dense_gemm_tile", "all"}:
+        raise RuntimeError(f"unsupported compute source: {compute_source!r}")
     if not candidates:
-        raise RuntimeError(f"no measured compute candidates found with tag substring {tag_substring!r}")
+        raise RuntimeError(
+            f"no measured compute candidates found with source {compute_source!r} "
+            f"and tag substring {tag_substring!r}"
+        )
     return candidates
 
 
@@ -191,6 +259,7 @@ def build_report(
     *,
     repo_root: Path,
     tag_substring: str,
+    compute_source: str,
     sequence_length_list: list[int],
     die_area_mm2_list: list[float],
     sram_area_fraction_list: list[float],
@@ -202,7 +271,11 @@ def build_report(
     bank_count_list: list[int],
     vector_ops_per_mac: float,
 ) -> JsonDict:
-    candidates = _load_compute_candidates(repo_root=repo_root, tag_substring=tag_substring)
+    candidates = _load_compute_candidates(
+        repo_root=repo_root,
+        tag_substring=tag_substring,
+        compute_source=compute_source,
+    )
     rows: list[JsonDict] = []
     skipped_area_budget = 0
     for sequence_length in sequence_length_list:
@@ -243,6 +316,7 @@ def build_report(
         "model": "llm_decoder_attention_kv_measured_compute_llama7b_v1",
         "inputs": {
             "tag_substring": tag_substring,
+            "compute_source": compute_source,
             "sequence_length_list": sequence_length_list,
             "die_area_mm2_list": die_area_mm2_list,
             "sram_area_fraction_list": sram_area_fraction_list,
@@ -274,7 +348,7 @@ def build_report(
         ),
         "best_by_compute_arch": _best_by(rows, ("sequence_length", "die_area_mm2", "compute_arch")),
         "assumptions": [
-            "Compute throughput is derived from merged NPU block PPA: replica_count * measured block num_modules.",
+            "Compute throughput is derived from merged compute PPA: replica_count * measured block MACs/cycle.",
             "Block clock period is the measured critical path for the selected PPA row; HBM service remains derived from physical MT/s.",
             "Only quality-backed native-GQA KV8 is ranked here; KV4/MQA remain excluded from deployable candidates.",
             "Compute area is constrained by an explicit die-area fraction after SRAM and reserved non-SRAM/non-compute area.",
@@ -367,6 +441,11 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--repo-root", default=".")
     ap.add_argument("--tag-substring", default="compute_stability_cmp33")
+    ap.add_argument(
+        "--compute-source",
+        choices=["legacy_npu_block", "dense_gemm_tile", "all"],
+        default="legacy_npu_block",
+    )
     ap.add_argument("--sequence-length-list", type=_int_list, default=[131072])
     ap.add_argument("--die-area-mm2-list", type=_float_list, default=[100, 200, 400, 800, 1200])
     ap.add_argument("--sram-area-fraction", type=_float_list, default=[0.4, 0.6, 0.75])
@@ -384,6 +463,7 @@ def main() -> int:
     payload = build_report(
         repo_root=Path(args.repo_root),
         tag_substring=args.tag_substring,
+        compute_source=args.compute_source,
         sequence_length_list=args.sequence_length_list,
         die_area_mm2_list=args.die_area_mm2_list,
         sram_area_fraction_list=args.sram_area_fraction,
