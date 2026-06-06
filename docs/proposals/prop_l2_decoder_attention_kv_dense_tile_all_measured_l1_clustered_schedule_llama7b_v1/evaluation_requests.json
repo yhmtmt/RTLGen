@@ -19,7 +19,8 @@
       "expected_result": {
         "direction": "select_dense_tile_clustered_frontier",
         "reason": "The job should identify the best dense tile compute source and clustered schedule point after measured L1 local datapath, softmax, FIFO, and router overhead is charged."
-      }
+      },
+      "status": "pending"
     }
   ]
 }
