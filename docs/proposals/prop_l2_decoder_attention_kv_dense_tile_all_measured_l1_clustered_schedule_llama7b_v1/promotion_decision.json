@@ -1,12 +1,14 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1",
-  "candidate_id": "",
+  "candidate_id": "l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1",
   "decision": "iterate",
-  "reason": "Replace with the actual decision rationale.",
+  "reason": "The measured dense_gemm_16x8_k1_p1 tile remains the selected compute anchor after measured local datapath, softmax, FIFO, and router overhead are charged. The 1200 mm2 / 40% logic point reaches 132480 MAC/cycle and 1758.156307 us, but cross-tile reduction and analytic SRAM/global NoC service are now the relevant residual abstractions.",
   "evidence_refs": [
-    "item:example",
-    "run:example"
+    "item:l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1",
+    "run:l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1_run_201267453c414daa",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1.md"
   ],
-  "next_action": "Describe the next action.",
-  "requires_human_approval": true
+  "next_action": "Evaluate detailed SRAM/global NoC and cross-tile reduction scheduling for the selected dense-tile frontier candidates.",
+  "requires_human_approval": false
 }

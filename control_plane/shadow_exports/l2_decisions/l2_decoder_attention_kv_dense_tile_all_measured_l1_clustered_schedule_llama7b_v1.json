@@ -1,118 +1,117 @@
 {
-  "version": 0.1,
-  "generated_utc": "2026-06-06T10:06:57.106832Z",
-  "item_id": "l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1",
-  "run_key": "l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1_run_201267453c414daa",
-  "layer": "layer2",
+  "evaluation_record": {
+    "abstraction_layer": "decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule",
+    "comparison_role": "frontier_synthesis",
+    "evaluation_mode": "frontier_detail",
+    "expectation_status": "unspecified",
+    "expected_direction": "select_dense_tile_clustered_frontier",
+    "expected_reason": "The job should identify the best dense tile compute source and clustered schedule point after measured L1 local datapath, softmax, FIFO, and router overhead is charged.",
+    "outcome": "ranking_recorded",
+    "primary_question": "When dense tile PPA from l1_npu_dense_gemm_tile_scaling_v2 is used inside the all-measured L1 clustered schedule model, which die/SRAM/logic/cluster point is selected and what abstraction remains?",
+    "proposal_id": "prop_l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1",
+    "summary": "Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
+    "title": "Llama7B dense tile all-measured clustered schedule"
+  },
   "flow": "openroad",
-  "platform": "nangate45",
-  "task_type": "l2_campaign",
-  "source_commit": "af5a94ebaf7a7b435c4cf99a328d33d02bdb4e2b",
-  "review_metadata_source_commit": "5d53cf10bcf6bddf233b50cd0d024638a48ef4af",
-  "objective": "Run the quality-backed native-GQA KV8 Llama7B 131k clustered schedule using measured dense GEMM tile PPA and measured all-L1 local datapath/NoC anchors.",
+  "generated_utc": "2026-06-06T10:06:57.106832Z",
   "input_manifest": {
-    "sweeps": [
-      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
-      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+    "candidate_manifests": [
+      "runs/candidates/nangate45/module_candidates.json"
     ],
     "configs": [
       "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
       "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
     ],
+    "decoder_contract": {
+      "attention_kv_all_measured_l1_costs": "runs/campaigns/npu/l1_measured_costs/llama7b_attention_local_costs_all_measured_v1.json",
+      "attention_kv_dense_tile_all_measured_l1_clustered_schedule_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1.json",
+      "attention_kv_dense_tile_all_measured_l1_clustered_schedule_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1.md",
+      "attention_kv_dense_tile_all_measured_l1_clustered_schedule_scope": "Llama7B 131k native-GQA KV8 schedule ranking using measured dense GEMM tile compute PPA, full-value attention tile datapaths, exact-int softmax-weight generator PPA, and measured FIFO/router local NoC anchors. SRAM capacity/service and global NoC arbitration remain analytic L2 service terms, with the merged SRAM/NoC profile outputs recorded as calibration references.",
+      "attention_kv_dense_tile_measured_compute": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_dense_tile_measured_compute__l2_decoder_attention_kv_dense_tile_measured_compute_llama7b_v1.json",
+      "attention_kv_full_value_l1_costs": "runs/campaigns/npu/l1_measured_costs/llama7b_attention_local_costs_full_value_v1.json",
+      "attention_noc_profile": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_noc_profile__l2_decoder_attention_noc_profile_v1.json",
+      "attention_softmax_weight_generator_promotion": "control_plane/shadow_exports/l1_promotions/l1_decoder_attention_softmax_weight_generator_v1_r2.json",
+      "attention_sram_profile": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_sram_profile__l2_decoder_attention_sram_profile_v1.json"
+    },
     "design_dirs": [
       "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
       "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
     ],
+    "generated_campaign": {
+      "base_campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json",
+      "clean_outputs": true,
+      "outputs": {
+        "campaign_dir": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1",
+        "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1/report.md",
+        "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1/results.csv"
+      },
+      "path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1.json"
+    },
     "macro_manifests": [
       "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
       "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
     ],
-    "decoder_contract": {
-      "attention_noc_profile": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_noc_profile__l2_decoder_attention_noc_profile_v1.json",
-      "attention_sram_profile": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_sram_profile__l2_decoder_attention_sram_profile_v1.json",
-      "attention_kv_full_value_l1_costs": "runs/campaigns/npu/l1_measured_costs/llama7b_attention_local_costs_full_value_v1.json",
-      "attention_kv_all_measured_l1_costs": "runs/campaigns/npu/l1_measured_costs/llama7b_attention_local_costs_all_measured_v1.json",
-      "attention_kv_dense_tile_measured_compute": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_dense_tile_measured_compute__l2_decoder_attention_kv_dense_tile_measured_compute_llama7b_v1.json",
-      "attention_softmax_weight_generator_promotion": "control_plane/shadow_exports/l1_promotions/l1_decoder_attention_softmax_weight_generator_v1_r2.json",
-      "attention_kv_dense_tile_all_measured_l1_clustered_schedule_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1.json",
-      "attention_kv_dense_tile_all_measured_l1_clustered_schedule_scope": "Llama7B 131k native-GQA KV8 schedule ranking using measured dense GEMM tile compute PPA, full-value attention tile datapaths, exact-int softmax-weight generator PPA, and measured FIFO/router local NoC anchors. SRAM capacity/service and global NoC arbitration remain analytic L2 service terms, with the merged SRAM/NoC profile outputs recorded as calibration references.",
-      "attention_kv_dense_tile_all_measured_l1_clustered_schedule_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1.md"
-    },
-    "generated_campaign": {
-      "path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1.json",
-      "outputs": {
-        "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1/report.md",
-        "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1/results.csv",
-        "campaign_dir": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1"
-      },
-      "clean_outputs": true,
-      "base_campaign_path": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse/campaign.json"
-    },
-    "candidate_manifests": [
-      "runs/candidates/nangate45/module_candidates.json"
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
     ]
+  },
+  "item_id": "l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1",
+  "layer": "layer2",
+  "objective": "Run the quality-backed native-GQA KV8 Llama7B 131k clustered schedule using measured dense GEMM tile PPA and measured all-L1 local datapath/NoC anchors.",
+  "objective_profiles": [],
+  "platform": "nangate45",
+  "proposal_assessment": {
+    "baseline_item_id": null,
+    "baseline_ref": null,
+    "comparison_role": "frontier_synthesis",
+    "evaluation_mode": "frontier_detail",
+    "kind": "architecture",
+    "matched_row_count": 0,
+    "matched_rows": [],
+    "outcome": "ranking_recorded",
+    "primary_question": "When dense tile PPA from l1_npu_dense_gemm_tile_scaling_v2 is used inside the all-measured L1 clustered schedule model, which die/SRAM/logic/cluster point is selected and what abstraction remains?",
+    "proposal_id": "prop_l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1",
+    "summary": "Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
+    "title": "Llama7B dense tile all-measured clustered schedule"
   },
   "recommendation": {
     "arch_id": "fp16_nm1",
+    "critical_path_ns_mean": 5.557037432204143,
+    "die_area_um2_mean": 2250000.0,
+    "energy_mj_mean": 5.582770776e-06,
+    "flow_elapsed_s_mean": 848.418,
+    "latency_ms_mean": 0.028907999999999996,
     "macro_mode": "flat_nomacro",
     "objective_rank": 1,
     "objective_score": "0.0",
-    "latency_ms_mean": 0.028907999999999996,
-    "energy_mj_mean": 5.582770776e-06,
-    "critical_path_ns_mean": 5.557037432204143,
-    "die_area_um2_mean": 2250000.0,
-    "total_power_mw_mean": 0.193122,
-    "flow_elapsed_s_mean": 848.418
+    "total_power_mw_mean": 0.193122
   },
-  "objective_profiles": [],
-  "evaluation_record": {
-    "proposal_id": "prop_l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1",
-    "title": "Llama7B dense tile all-measured clustered schedule",
-    "primary_question": "When dense tile PPA from l1_npu_dense_gemm_tile_scaling_v2 is used inside the all-measured L1 clustered schedule model, which die/SRAM/logic/cluster point is selected and what abstraction remains?",
-    "evaluation_mode": "frontier_detail",
-    "comparison_role": "frontier_synthesis",
-    "abstraction_layer": "decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule",
-    "expected_direction": "select_dense_tile_clustered_frontier",
-    "expected_reason": "The job should identify the best dense tile compute source and clustered schedule point after measured L1 local datapath, softmax, FIFO, and router overhead is charged.",
-    "summary": "Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
-    "outcome": "ranking_recorded",
-    "expectation_status": "unspecified"
-  },
-  "proposal_assessment": {
-    "proposal_id": "prop_l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1",
-    "title": "Llama7B dense tile all-measured clustered schedule",
-    "kind": "architecture",
-    "primary_question": "When dense tile PPA from l1_npu_dense_gemm_tile_scaling_v2 is used inside the all-measured L1 clustered schedule model, which die/SRAM/logic/cluster point is selected and what abstraction remains?",
-    "evaluation_mode": "frontier_detail",
-    "comparison_role": "frontier_synthesis",
-    "outcome": "ranking_recorded",
-    "summary": "Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
-    "baseline_ref": null,
-    "baseline_item_id": null,
-    "matched_row_count": 0,
-    "matched_rows": []
-  },
+  "review_metadata_source_commit": "5d53cf10bcf6bddf233b50cd0d024638a48ef4af",
+  "run_key": "l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1_run_201267453c414daa",
+  "source_commit": "af5a94ebaf7a7b435c4cf99a328d33d02bdb4e2b",
   "source_refs": {
     "best_point_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1/best_point.json",
-    "summary_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1/summary.csv",
-    "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1/results.csv",
-    "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1/report.md",
-    "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
-    "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+    "dense_clustered_schedule_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1.json",
+    "dense_clustered_schedule_report_md": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1.md",
     "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1/artifacts/perf/fp16_nm1/mlp1/trace.json",
+    "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
     "focused_model_artifacts": [
       {
         "model_id": "mlp1",
-        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
-        "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
-        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1/artifacts/perf/fp16_nm1/mlp1/trace.json"
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1/artifacts/perf/fp16_nm1/mlp1/trace.json",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml"
       },
       {
         "model_id": "mlp2",
-        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1/artifacts/mapper/fp16_nm1/mlp2/schedule.yml",
-        "descriptors_bin": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1/artifacts/mapper/fp16_nm1/mlp2/descriptors.bin",
-        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1/artifacts/perf/fp16_nm1/mlp2/trace.json"
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1/artifacts/perf/fp16_nm1/mlp2/trace.json",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1/artifacts/mapper/fp16_nm1/mlp2/schedule.yml"
       }
-    ]
-  }
+    ],
+    "report_md": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1/report.md",
+    "results_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1/results.csv",
+    "summary_csv": "runs/campaigns/npu/e2e_eval_mlp_smoke_v1_reuse__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1/summary.csv"
+  },
+  "task_type": "l2_campaign",
+  "version": 0.1
 }
