@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "iterate",
+  "pr_number": 773,
+  "merge_commit": "a02055537324b872f9a1f75f22d1bd160b00f191",
+  "merged_utc": "2026-06-06T13:03:51.138192Z"
 }

@@ -20,7 +20,11 @@
         "direction": "select_dense_tile_clustered_frontier",
         "reason": "The job should identify the best dense tile compute source and clustered schedule point after measured L1 local datapath, softmax, FIFO, and router overhead is charged."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 773,
+      "merge_commit": "a02055537324b872f9a1f75f22d1bd160b00f191",
+      "merged_utc": "2026-06-06T13:03:51.138192Z",
+      "notes": "Merged via PR #773 and merge a02055537324b872f9a1f75f22d1bd160b00f191 at 2026-06-06T13:03:51.138192Z."
     }
   ]
 }
