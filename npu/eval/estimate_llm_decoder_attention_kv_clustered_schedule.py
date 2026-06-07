@@ -35,6 +35,10 @@ def _profile_list(value: str) -> list[str]:
     return [item.strip() for item in value.split(",") if item.strip()]
 
 
+def _optional_str_list(value: str) -> list[str]:
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
 def _metric(profile: JsonDict, component: str, key: str, default: float = 0.0) -> float:
     raw = profile.get(component, {})
     if not isinstance(raw, dict):
@@ -461,6 +465,7 @@ def build_report(
     repo_root: Path,
     tag_substring: str,
     compute_source: str,
+    compute_arch_list: list[str] | None,
     sequence_length_list: list[int],
     die_area_mm2_list: list[float],
     sram_area_fraction_list: list[float],
@@ -489,6 +494,11 @@ def build_report(
         tag_substring=tag_substring,
         compute_source=compute_source,
     )
+    if compute_arch_list:
+        allowed_arches = set(compute_arch_list)
+        candidates = [candidate for candidate in candidates if str(candidate["compute_arch"]) in allowed_arches]
+        if not candidates:
+            raise RuntimeError(f"no measured compute candidates matched compute_arch_list={sorted(allowed_arches)}")
     measured_l1_profiles = measured_l1_profiles or _load_measured_l1_profiles(
         repo_root=repo_root,
         costs_path=measured_l1_costs_path,
@@ -616,6 +626,7 @@ def build_report(
         "inputs": {
             "tag_substring": tag_substring,
             "compute_source": compute_source,
+            "compute_arch_list": compute_arch_list or [],
             "sequence_length_list": sequence_length_list,
             "die_area_mm2_list": die_area_mm2_list,
             "sram_area_fraction_list": sram_area_fraction_list,
@@ -809,6 +820,7 @@ def main() -> int:
         choices=["legacy_npu_block", "dense_gemm_tile", "all"],
         default="legacy_npu_block",
     )
+    ap.add_argument("--compute-arch-list", type=_optional_str_list, default=[])
     ap.add_argument("--sequence-length-list", type=_int_list, default=[131072])
     ap.add_argument("--die-area-mm2-list", type=_float_list, default=[100, 200, 400, 800, 1200])
     ap.add_argument("--sram-area-fraction", type=_float_list, default=[0.4, 0.6, 0.75])
@@ -838,6 +850,7 @@ def main() -> int:
         repo_root=Path(args.repo_root),
         tag_substring=args.tag_substring,
         compute_source=args.compute_source,
+        compute_arch_list=args.compute_arch_list,
         sequence_length_list=args.sequence_length_list,
         die_area_mm2_list=args.die_area_mm2_list,
         sram_area_fraction_list=args.sram_area_fraction,
