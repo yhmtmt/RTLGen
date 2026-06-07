@@ -4222,6 +4222,76 @@ def _decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_evidence
     }
 
 
+def _decoder_attention_kv_dense_tile_reduction_noc_frontier_evidence(
+    *,
+    item_id: str,
+) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_kv_dense_tile_reduction_noc_frontier__{item_id}.json"
+    report = f"{base}/decoder_attention_kv_dense_tile_reduction_noc_frontier__{item_id}.md"
+    dense_clustered = (
+        f"{base}/decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule__"
+        "l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1.json"
+    )
+    all_measured_costs = "runs/campaigns/npu/l1_measured_costs/llama7b_attention_local_costs_all_measured_v1.json"
+    sram_profile = f"{base}/decoder_attention_sram_profile__l2_decoder_attention_sram_profile_v1.json"
+    noc_profile = f"{base}/decoder_attention_noc_profile__l2_decoder_attention_noc_profile_v1.json"
+    return {
+        "inputs": {
+            "attention_kv_dense_tile_all_measured_l1_clustered_schedule": dense_clustered,
+            "attention_kv_all_measured_l1_costs": all_measured_costs,
+            "attention_sram_profile": sram_profile,
+            "attention_noc_profile": noc_profile,
+            "attention_kv_dense_tile_reduction_noc_frontier_out": out,
+            "attention_kv_dense_tile_reduction_noc_frontier_report": report,
+            "attention_kv_dense_tile_reduction_noc_frontier_scope": (
+                "Focused Llama7B 131k native-GQA KV8 frontier around the selected "
+                "dense_gemm_16x8_k1_p1 compute anchor. The sweep spends its row budget on "
+                "local/shared SRAM placement, NoC bandwidth and hop sensitivity, cluster "
+                "count, command overhead, and cross-tile reduction overhead to identify "
+                "whether the next detailed closure should prioritize global NoC, reduction "
+                "hierarchy, or SRAM placement."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_attention_kv_dense_tile_reduction_noc_frontier",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_attention_kv_clustered_schedule.py "
+                    "--repo-root . "
+                    "--compute-source dense_gemm_tile "
+                    "--compute-arch-list dense_gemm_16x8_k1_p1 "
+                    "--tag-substring npu_dense_gemm_tile_v2_scale_hier "
+                    "--sequence-length-list 131072 "
+                    "--die-area-mm2-list 800,1200 "
+                    "--sram-area-fraction 0.35,0.4,0.5,0.6 "
+                    "--logic-area-fraction 0.3,0.4,0.5 "
+                    "--reserved-area-fraction 0.1 "
+                    "--usable-sram-fraction 0.7 "
+                    "--local-sram-fraction 0.05,0.1,0.25,0.5 "
+                    "--tile-tokens-list 512,1024 "
+                    "--bank-count 16,64,128 "
+                    "--cluster-count 1,2,4,8,16,32 "
+                    "--noc-bandwidth-bytes-per-cycle 4096,8192,16384,32768,65536 "
+                    "--noc-hops 1,2,4,8 "
+                    "--reduction-strategy centralized_tile,owner_cluster,cluster_tree "
+                    "--vector-ops-per-mac 0.125 "
+                    "--reduction-scalar-bytes 2 "
+                    "--command-cycles-per-tile 0,4,16 "
+                    "--command-cycles-per-wave 0,16,64 "
+                    "--reducer-setup-cycles 0,64,256 "
+                    "--reduction-cycle-multiplier 1,2,4 "
+                    f"--measured-l1-costs {all_measured_costs} "
+                    "--measured-l1-profile hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q10 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_attention_sram_profile_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_sram_profile__{item_id}.json"
@@ -5805,6 +5875,7 @@ def _build_payload(
         "decoder_attention_kv_full_value_l1_clustered_schedule",
         "decoder_attention_kv_all_measured_l1_clustered_schedule",
         "decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule",
+        "decoder_attention_kv_dense_tile_reduction_noc_frontier",
         "decoder_attention_sram_profile",
         "decoder_attention_noc_profile",
         "decoder_attention_kv_quality_gate",
@@ -5894,6 +5965,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_evidence(
                 item_id=item_id,
             )
+        elif abstraction_layer_name == "decoder_attention_kv_dense_tile_reduction_noc_frontier":
+            decoder_evidence = _decoder_attention_kv_dense_tile_reduction_noc_frontier_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_sram_profile":
             decoder_evidence = _decoder_attention_sram_profile_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_noc_profile":
