@@ -1,0 +1,64 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_dense_tile_reduction_noc_frontier_llama7b_v1",
+  "created_utc": "2026-06-07T09:26:30Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Llama7B dense tile reduction/NoC frontier",
+  "hypothesis": "With dense_gemm_16x8_k1_p1 fixed as the measured compute anchor, the Llama7B 131k frontier should be governed by cross-tile reduction, global NoC bandwidth/hops, and SRAM placement rather than by raw GEMM tile PPA alone.",
+  "direct_comparison": {
+    "primary_question": "For the selected dense tile compute anchor, which local/shared SRAM, cluster count, NoC bandwidth/hop, and reduction-overhead points remain on the Llama7B frontier?",
+    "include": [
+      "dense_gemm_16x8_k1_p1 only",
+      "die areas 800 and 1200 mm2",
+      "SRAM fractions 0.35, 0.4, 0.5, and 0.6",
+      "logic fractions 0.3, 0.4, and 0.5",
+      "cluster counts 1, 2, 4, 8, 16, and 32",
+      "NoC bandwidth 4096 through 65536 bytes/cycle and hop counts 1, 2, 4, and 8",
+      "centralized, owner-cluster, and cluster-tree reduction"
+    ],
+    "exclude": [
+      "new dense tile RTL/PPA points",
+      "full routed global NoC RTL",
+      "quality-unbacked KV reductions such as KV4 or MQA",
+      "changing the measured local L1 profile family during this focused pass"
+    ],
+    "follow_on_broad_sweep": [
+      "build or calibrate a more detailed SRAM/global NoC simulator around the winning region"
+    ]
+  },
+  "expected_benefit": [
+    "classify whether the current frontier is compute-bound, reduction-bound, shared-SRAM/NoC-bound, or HBM-sensitive",
+    "identify the memory/NoC architecture region worth embodying next",
+    "avoid spending synthesis budget on more dense compute until the communication limiter is clearer"
+  ],
+  "risks": [
+    "global SRAM/NoC arbitration is still analytic rather than cycle-accurate",
+    "command and reduction overhead knobs are sensitivity terms, not measured routed hierarchy PPA",
+    "filtering to one measured L1 profile may hide profile-family sensitivity"
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "objective": "dense_tile_reduction_noc_frontier",
+      "cost_class": "medium",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "classify_reduction_noc_frontier",
+        "reason": "The result should rank dense_gemm_16x8_k1_p1 schedule points by SRAM placement, NoC bandwidth/hops, cluster count, and reduction overhead so the next embodied memory/NoC design target is clear."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "docs/proposals/prop_l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1/analysis_report.md"
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_dense_tile_reduction_noc_frontier_llama7b_v1",
+  "source_commit": "2c2e214de790173211b28d715e8a099e03f49cf8",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_kv_dense_tile_reduction_noc_frontier_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Run a focused Llama7B 131k reduction/NoC/SRAM frontier sweep around dense_gemm_16x8_k1_p1 after the all-measured dense clustered result.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_dense_tile_reduction_noc_frontier",
+      "comparison_role": "frontier_synthesis",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "classify_reduction_noc_frontier",
+        "reason": "The result should rank dense_gemm_16x8_k1_p1 schedule points by SRAM placement, NoC bandwidth/hops, cluster count, and reduction overhead so the next embodied memory/NoC design target is clear."
+      }
+    }
+  ]
+}
