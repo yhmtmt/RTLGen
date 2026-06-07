@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_dense_tile_reduction_noc_frontier_llama7b_v1",
+  "decision": "iterate",
+  "pr_number": 776,
+  "merge_commit": "44d3354199ea48efb90a72a765b9ff81975ddf7d",
+  "merged_utc": "2026-06-07T10:33:28.140754Z"
+}
