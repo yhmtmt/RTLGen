@@ -4402,6 +4402,56 @@ def _decoder_attention_kv_dense_tile_topology_derived_schedule_evidence(
     }
 
 
+def _decoder_attention_kv_sram_noc_constrained_schedule_evidence(
+    *,
+    item_id: str,
+) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_kv_sram_noc_constrained_schedule__{item_id}.json"
+    report = f"{base}/decoder_attention_kv_sram_noc_constrained_schedule__{item_id}.md"
+    topology_derived = (
+        f"{base}/decoder_attention_kv_dense_tile_topology_derived_schedule__"
+        "l2_decoder_attention_kv_dense_tile_topology_derived_schedule_llama7b_v1.json"
+    )
+    sram_profile = f"{base}/decoder_attention_sram_profile__l2_decoder_attention_sram_profile_v1.json"
+    return {
+        "inputs": {
+            "attention_kv_dense_tile_topology_derived_schedule": topology_derived,
+            "attention_sram_profile": sram_profile,
+            "attention_kv_sram_noc_constrained_schedule_out": out,
+            "attention_kv_sram_noc_constrained_schedule_report": report,
+            "attention_kv_sram_noc_constrained_schedule_scope": (
+                "Apply practical local SRAM tile-buffer capacity, 256-bit SRAM-bank read service, "
+                "and endpoint injection/ejection caps to retained Llama7B topology-derived dense-tile "
+                "schedule frontier rows. This corrects the optimistic abstract SRAM-bank bandwidth "
+                "without reintroducing independent NoC bandwidth/hop sweeps."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_attention_kv_sram_noc_constrained_schedule",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_attention_kv_sram_noc_constrained_schedule.py "
+                    "--repo-root . "
+                    f"--topology-derived-json {topology_derived} "
+                    f"--sram-profile-json {sram_profile} "
+                    "--frontier-row-limit 256 "
+                    "--sram-bank-port-bytes-per-cycle 32 "
+                    "--sram-read-ports-per-bank 1 "
+                    "--sram-bank-efficiency 0.70,0.85 "
+                    "--endpoint-port-bytes-per-cycle 32,64,128 "
+                    "--endpoint-ports-per-cluster 1,2 "
+                    "--endpoint-efficiency 0.70,0.85 "
+                    "--local-buffer-multiplier 1,2 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_attention_sram_profile_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_sram_profile__{item_id}.json"
@@ -5988,6 +6038,7 @@ def _build_payload(
         "decoder_attention_kv_dense_tile_reduction_noc_frontier",
         "decoder_attention_kv_dense_tile_topology_scheduler_pairs",
         "decoder_attention_kv_dense_tile_topology_derived_schedule",
+        "decoder_attention_kv_sram_noc_constrained_schedule",
         "decoder_attention_sram_profile",
         "decoder_attention_noc_profile",
         "decoder_attention_kv_quality_gate",
@@ -6083,6 +6134,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_kv_dense_tile_topology_scheduler_pairs_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_dense_tile_topology_derived_schedule":
             decoder_evidence = _decoder_attention_kv_dense_tile_topology_derived_schedule_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_kv_sram_noc_constrained_schedule":
+            decoder_evidence = _decoder_attention_kv_sram_noc_constrained_schedule_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_sram_profile":
             decoder_evidence = _decoder_attention_sram_profile_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_noc_profile":
