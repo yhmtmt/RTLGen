@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_dense_tile_topology_derived_schedule_llama7b_v1",
-  "source_commit": "",
+  "source_commit": "4c33f9731b42bd28d2490c6bc828fdd34f5f927f",
   "source_commit_note": "Dispatch should use the proposal merge commit so the evaluator sees this proposal artifact; implementation requires at least 650081546b870d025144cc530425e9847d4d30f0.",
   "requested_items": [
     {
@@ -20,7 +20,11 @@
         "direction": "revise_dense_tile_scheduler_frontier_with_topology_service",
         "reason": "The result should provide the Llama7B dense-tile scheduler frontier under valid topology-derived NoC service rows."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 784,
+      "merge_commit": "d03b997239bde1cccc2f4bb470ebef24b1b84839",
+      "merged_utc": "2026-06-08T14:04:53Z",
+      "notes": "Merged via PR #784 and merge d03b997239bde1cccc2f4bb470ebef24b1b84839 at 2026-06-08T14:04:53Z."
     }
   ]
 }
