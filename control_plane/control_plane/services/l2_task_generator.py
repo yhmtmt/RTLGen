@@ -4292,6 +4292,56 @@ def _decoder_attention_kv_dense_tile_reduction_noc_frontier_evidence(
     }
 
 
+def _decoder_attention_kv_dense_tile_topology_scheduler_pairs_evidence(
+    *,
+    item_id: str,
+) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_kv_dense_tile_topology_scheduler_pairs__{item_id}.json"
+    report = f"{base}/decoder_attention_kv_dense_tile_topology_scheduler_pairs__{item_id}.md"
+    reduction_noc_frontier = (
+        f"{base}/decoder_attention_kv_dense_tile_reduction_noc_frontier__"
+        "l2_decoder_attention_kv_dense_tile_reduction_noc_frontier_llama7b_v1.json"
+    )
+    return {
+        "inputs": {
+            "attention_kv_dense_tile_reduction_noc_frontier": reduction_noc_frontier,
+            "attention_kv_dense_tile_topology_scheduler_pairs_out": out,
+            "attention_kv_dense_tile_topology_scheduler_pairs_report": report,
+            "attention_kv_dense_tile_topology_scheduler_pairs_scope": (
+                "Validate logically compatible NoC topology, scheduler, reducer, bank-placement, "
+                "link-width, and virtual-channel pairs for the Llama7B dense-tile attention "
+                "frontier. This replaces independent bandwidth/hop/reduction sweeps with "
+                "topology-derived service envelopes and explicit invalid-pair reasons before "
+                "the next scheduler/performance run."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_attention_kv_dense_tile_topology_scheduler_pairs",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_attention_kv_topology_scheduler_pairs.py "
+                    "--repo-root . "
+                    f"--frontier-json {reduction_noc_frontier} "
+                    "--cluster-count-list 4,8,16 "
+                    "--topology-list cluster_tree,mesh2d,ring,crossbar "
+                    "--scheduler-policy-list static_wave,locality_aware,bank_aware_prefetch,"
+                    "tree_reduction_aware,double_buffered_overlap "
+                    "--reduction-strategy-list centralized_tile,owner_cluster,cluster_tree "
+                    "--bank-placement-list per_cluster_local,grouped_shared,distributed_shared "
+                    "--bank-count-list 16,64,128 "
+                    "--link-width-bits-list 256,512,1024,2048 "
+                    "--virtual-channel-list 1,2,4 "
+                    "--local-sram-fraction-list 0.05,0.1,0.25 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_attention_sram_profile_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_sram_profile__{item_id}.json"
@@ -5876,6 +5926,7 @@ def _build_payload(
         "decoder_attention_kv_all_measured_l1_clustered_schedule",
         "decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule",
         "decoder_attention_kv_dense_tile_reduction_noc_frontier",
+        "decoder_attention_kv_dense_tile_topology_scheduler_pairs",
         "decoder_attention_sram_profile",
         "decoder_attention_noc_profile",
         "decoder_attention_kv_quality_gate",
@@ -5967,6 +6018,8 @@ def _build_payload(
             )
         elif abstraction_layer_name == "decoder_attention_kv_dense_tile_reduction_noc_frontier":
             decoder_evidence = _decoder_attention_kv_dense_tile_reduction_noc_frontier_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_kv_dense_tile_topology_scheduler_pairs":
+            decoder_evidence = _decoder_attention_kv_dense_tile_topology_scheduler_pairs_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_sram_profile":
             decoder_evidence = _decoder_attention_sram_profile_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_noc_profile":
