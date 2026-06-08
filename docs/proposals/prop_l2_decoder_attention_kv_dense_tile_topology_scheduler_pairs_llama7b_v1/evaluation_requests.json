@@ -1,0 +1,26 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_dense_tile_topology_scheduler_pairs_llama7b_v1",
+  "source_commit": "",
+  "source_commit_note": "Dispatch should use the proposal merge commit so the evaluator sees this proposal artifact; implementation requires at least c93db2ccf9c8e92a2d1fe6a1ac5a85dc5e61181c.",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_kv_dense_tile_topology_scheduler_pairs_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Validate logically compatible NoC topology/scheduler/reducer/bank-placement pairs for the Llama7B dense-tile attention frontier.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_dense_tile_topology_scheduler_pairs",
+      "comparison_role": "frontier_filter",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_dense_tile_reduction_noc_frontier_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_dense_tile_reduction_noc_frontier_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "filter_topology_scheduler_pairs",
+        "reason": "The result should produce a valid-pair matrix and derived topology service envelopes so the next Llama7B scheduler run does not rank logically impossible NoC assumptions."
+      },
+      "status": "pending"
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_dense_tile_topology_scheduler_pairs_llama7b_v1",
+  "created_utc": "2026-06-08T13:17:31Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Llama7B dense tile topology/scheduler pairs",
+  "hypothesis": "The Llama7B dense-tile attention frontier should be filtered through logically valid NoC topology, scheduler, reducer, bank-placement, link-width, and virtual-channel pairs before latency is ranked. The previous abstract 65kB/cycle one-hop NoC service is expected to be far above simple mesh/tree/ring service envelopes and should not be swept independently.",
+  "direct_comparison": {
+    "primary_question": "Which NoC topology/scheduler/reducer/bank-placement pairs are logically valid for the dense_gemm_16x8_k1_p1 Llama7B attention frontier, and how far are their derived service envelopes from the previous abstract NoC service point?",
+    "include": [
+      "cluster counts 4, 8, and 16",
+      "topologies cluster_tree, mesh2d, ring, and crossbar",
+      "scheduler policies static_wave, locality_aware, bank_aware_prefetch, tree_reduction_aware, and double_buffered_overlap",
+      "reduction strategies centralized_tile, owner_cluster, and cluster_tree",
+      "bank placements per_cluster_local, grouped_shared, and distributed_shared",
+      "bank counts 16, 64, and 128",
+      "link widths 256, 512, 1024, and 2048 bits",
+      "virtual channels 1, 2, and 4"
+    ],
+    "exclude": [
+      "cycle-accurate routed NoC RTL",
+      "new SRAM macro PPA",
+      "new dense GEMM tile PPA",
+      "quality-affecting KV-sharing or precision changes"
+    ],
+    "follow_on_broad_sweep": [
+      "rerun the clustered Llama7B scheduler using only valid topology-derived service rows",
+      "embody the winning topology family in a more detailed NoC/SRAM model"
+    ]
+  },
+  "expected_benefit": [
+    "prevent impossible topology/scheduler/reducer combinations from entering the frontier ranking",
+    "quantify how optimistic the prior independent NoC bandwidth/hop sweep was",
+    "select the next physically meaningful scheduler/performance points"
+  ],
+  "risks": [
+    "service envelopes are analytic and still not routed NoC RTL",
+    "area cost is a proxy rather than measured fabric PPA",
+    "validity rules may need revision after a concrete NoC implementation is introduced"
+  ],
+  "needs_mapper_change": false,
+  "implementation_min_commit": "c93db2ccf9c8e92a2d1fe6a1ac5a85dc5e61181c",
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "objective": "dense_tile_topology_scheduler_pairs",
+      "cost_class": "small",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_dense_tile_reduction_noc_frontier_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "filter_topology_scheduler_pairs",
+        "reason": "The result should produce a valid-pair matrix and derived topology service envelopes so the next Llama7B scheduler run does not rank logically impossible NoC assumptions."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_dense_tile_reduction_noc_frontier__l2_decoder_attention_kv_dense_tile_reduction_noc_frontier_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "docs/proposals/prop_l2_decoder_attention_kv_dense_tile_reduction_noc_frontier_llama7b_v1/analysis_report.md",
+    "npu/eval/estimate_llm_decoder_attention_kv_topology_scheduler_pairs.py"
+  ]
+}
