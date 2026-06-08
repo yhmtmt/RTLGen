@@ -1,0 +1,26 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_sram_noc_constrained_schedule_llama7b_v1",
+  "source_commit": "3a04282a22036915b9ad193ee2351dd2cf19dc64",
+  "source_commit_note": "Dispatch should use the proposal merge commit so the evaluator sees this proposal artifact; implementation requires at least 3a04282a22036915b9ad193ee2351dd2cf19dc64.",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_kv_sram_noc_constrained_schedule_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Apply practical SRAM-bank, local-buffer, and endpoint NoC service caps to the retained Llama7B topology-derived dense-tile scheduler frontier.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_sram_noc_constrained_schedule",
+      "comparison_role": "frontier_revision",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_dense_tile_topology_derived_schedule_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_dense_tile_topology_derived_schedule_llama7b_v1",
+        "l2_decoder_attention_sram_profile_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "revise_dense_tile_scheduler_frontier_with_practical_sram_noc_caps",
+        "reason": "The result should report slowdown versus topology-derived scheduling and identify whether topology, SRAM-bank service, or endpoint service caps the retained frontier."
+      }
+    }
+  ]
+}
