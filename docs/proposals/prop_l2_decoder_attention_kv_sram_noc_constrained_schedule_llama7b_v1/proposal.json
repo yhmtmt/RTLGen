@@ -1,0 +1,70 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_sram_noc_constrained_schedule_llama7b_v1",
+  "created_utc": "2026-06-08T22:00:46Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Llama7B SRAM/NoC constrained dense tile scheduler frontier",
+  "hypothesis": "When retained topology-derived Llama7B dense-tile schedule rows are capped by practical 256-bit SRAM-bank service, local tile-buffer capacity, and endpoint injection/ejection service, the previous topology-derived frontier will slow down and reveal whether SRAM banks or NoC endpoints dominate before a detailed NoC/SRAM simulator is built.",
+  "direct_comparison": {
+    "primary_question": "What is the revised Llama7B 131k dense-tile latency frontier after applying practical SRAM-bank and endpoint NoC service caps to the topology-derived schedule?",
+    "include": [
+      "merged topology-derived schedule l2_decoder_attention_kv_dense_tile_topology_derived_schedule_llama7b_v1",
+      "measured SRAM tile-buffer profile l2_decoder_attention_sram_profile_v1",
+      "256-bit SRAM-bank read service default",
+      "endpoint port width and endpoint port count sensitivity",
+      "local tile-buffer capacity multiplier sensitivity",
+      "slowdown versus topology-derived schedule"
+    ],
+    "exclude": [
+      "independent abstract NoC bandwidth/hop sweeps",
+      "cycle-accurate routed NoC RTL",
+      "new dense GEMM tile PPA",
+      "new SRAM compiler or placed SRAM macro floorplan",
+      "quality-affecting KV sharing or precision changes"
+    ],
+    "follow_on_broad_sweep": [
+      "expand from retained frontier rows to a full scheduler re-search if cap sensitivity changes ranking materially",
+      "construct a detailed SRAM/NoC simulator for the best topology family",
+      "embody per-cluster SRAM ports, routers, injection queues, and static/dynamic scheduler interfaces"
+    ]
+  },
+  "expected_benefit": [
+    "replace the optimistic active_banks * 2048 B/cycle SRAM service abstraction with a measured-width bank-port cap",
+    "identify whether SRAM-bank service or endpoint NoC service is the immediate limiter",
+    "select the next concrete NoC/SRAM modeling target for the Llama7B architecture goal"
+  ],
+  "risks": [
+    "the first pass uses retained frontier rows rather than the full 746k generated topology-derived schedule space",
+    "SRAM arbitration remains an analytic cap, not a cycle-accurate bank scheduler",
+    "endpoint caps are parametric until router/injection queue RTL is embodied"
+  ],
+  "needs_mapper_change": false,
+  "implementation_min_commit": "3a04282a22036915b9ad193ee2351dd2cf19dc64",
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "objective": "sram_noc_constrained_dense_tile_schedule",
+      "cost_class": "small",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_dense_tile_topology_derived_schedule_llama7b_v1",
+        "l2_decoder_attention_sram_profile_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "revise_dense_tile_scheduler_frontier_with_practical_sram_noc_caps",
+        "reason": "The result should show the Llama7B dense-tile frontier after practical SRAM-bank and endpoint NoC service caps are applied."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_dense_tile_topology_derived_schedule__l2_decoder_attention_kv_dense_tile_topology_derived_schedule_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_sram_profile__l2_decoder_attention_sram_profile_v1.json"
+  ],
+  "knowledge_refs": [
+    "docs/proposals/prop_l2_decoder_attention_kv_dense_tile_topology_derived_schedule_llama7b_v1/analysis_report.md",
+    "npu/eval/estimate_llm_decoder_attention_kv_sram_noc_constrained_schedule.py"
+  ]
+}
