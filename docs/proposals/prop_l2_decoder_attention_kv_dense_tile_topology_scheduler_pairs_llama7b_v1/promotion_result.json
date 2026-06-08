@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_dense_tile_topology_scheduler_pairs_llama7b_v1",
+  "decision": "iterate",
+  "pr_number": 781,
+  "merge_commit": "711fe881",
+  "merged_utc": "2026-06-08T13:33:20.439727Z"
+}
