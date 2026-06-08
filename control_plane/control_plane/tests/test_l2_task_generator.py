@@ -5292,3 +5292,51 @@ def test_generate_l2_campaign_task_adds_dense_tile_reduction_noc_frontier_eviden
                 )
                 for output in expected_outputs
             )
+
+
+def test_generate_l2_campaign_task_adds_dense_tile_topology_scheduler_pairs_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_kv_dense_tile_topology_scheduler_pairs_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_kv_dense_tile_topology_scheduler_pairs",
+                    evaluation_mode="frontier_detail",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            commands = work_item.task_request.request_payload["task"]["commands"]
+            command_names = [command["name"] for command in commands]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+            expected_outputs = work_item.task_request.request_payload["task"]["expected_outputs"]
+
+            assert "estimate_decoder_attention_kv_dense_tile_topology_scheduler_pairs" in command_names
+            assert "attention_kv_dense_tile_reduction_noc_frontier" in decoder_inputs
+            assert "attention_kv_dense_tile_topology_scheduler_pairs_out" in decoder_inputs
+            assert "estimate_llm_decoder_attention_kv_topology_scheduler_pairs.py" in commands[0]["run"]
+            assert "--topology-list cluster_tree,mesh2d,ring,crossbar" in commands[0]["run"]
+            assert "--scheduler-policy-list static_wave,locality_aware" in commands[0]["run"]
+            assert "--link-width-bits-list 256,512,1024,2048" in commands[0]["run"]
+            assert "l2_decoder_attention_kv_dense_tile_reduction_noc_frontier_llama7b_v1.json" in commands[0]["run"]
+            assert work_item.task_request.request_payload["task"]["inputs"]["decoder_contract"] == decoder_inputs
+            assert any(
+                output.endswith(
+                    "decoder_attention_kv_dense_tile_topology_scheduler_pairs__"
+                    "l2_decoder_attention_kv_dense_tile_topology_scheduler_pairs_llama7b_v1.json"
+                )
+                for output in expected_outputs
+            )
