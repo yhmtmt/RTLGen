@@ -277,6 +277,28 @@ def _traffic_quantities(args: argparse.Namespace, frontier_best: JsonDict) -> Js
     }
 
 
+def _bounded_valid_rows(rows: list[JsonDict], *, limit: int) -> list[JsonDict]:
+    if limit <= 0:
+        return []
+    ordered = sorted(
+        rows,
+        key=lambda row: (
+            row["proxy_score"],
+            row["proxy_service_cycles"],
+            row["topology_area_proxy"],
+            row["cluster_count"],
+            row["link_width_bits"],
+        ),
+    )
+    return ordered[:limit]
+
+
+def _bounded_invalid_rows(rows: list[JsonDict], *, limit: int) -> list[JsonDict]:
+    if limit <= 0:
+        return []
+    return rows[:limit]
+
+
 def build_pairs(args: argparse.Namespace) -> JsonDict:
     frontier_best = _load_frontier(args.frontier_json)
     traffic = _traffic_quantities(args, frontier_best)
@@ -388,8 +410,10 @@ def build_pairs(args: argparse.Namespace) -> JsonDict:
         matrix[f"{row['topology']}:{row['scheduler_policy']}"]["valid"] += 1
     for row in invalid_rows:
         matrix[f"{row['topology']}:{row['scheduler_policy']}"]["invalid"] += 1
+    stored_valid = _bounded_valid_rows(valid_rows, limit=args.max_stored_valid_pairs)
+    stored_invalid = _bounded_invalid_rows(invalid_rows, limit=args.max_stored_invalid_pairs)
 
-    return {
+    payload = {
         "version": 1,
         "model": "llama7b_proxy",
         "profile": "decoder_attention_kv_dense_tile_topology_scheduler_pairs",
@@ -408,6 +432,17 @@ def build_pairs(args: argparse.Namespace) -> JsonDict:
             "router_latency_cycles_per_hop": args.router_latency_cycles_per_hop,
             "area_proxy_cycle_weight": args.area_proxy_cycle_weight,
         },
+        "storage": {
+            "store_all_pairs": args.store_all_pairs,
+            "stored_valid_pair_count": len(valid_rows) if args.store_all_pairs else len(stored_valid),
+            "stored_invalid_pair_count": len(invalid_rows) if args.store_all_pairs else len(stored_invalid),
+            "valid_pairs_truncated": not args.store_all_pairs and len(stored_valid) < len(valid_rows),
+            "invalid_pairs_truncated": not args.store_all_pairs and len(stored_invalid) < len(invalid_rows),
+            "note": (
+                "Counts and validity matrices are complete. Row-level storage is bounded by default "
+                "to keep evaluator artifacts reviewable; rerun with --store-all-pairs for exhaustive dumps."
+            ),
+        },
         "summary": {
             "valid_pair_count": len(valid_rows),
             "invalid_pair_count": len(invalid_rows),
@@ -415,14 +450,18 @@ def build_pairs(args: argparse.Namespace) -> JsonDict:
             "validity_matrix": dict(sorted(matrix.items())),
         },
         "best_valid_pairs": best_rows,
-        "valid_pairs": valid_rows,
-        "invalid_pairs": invalid_rows,
+        "valid_service_envelopes": stored_valid,
+        "invalid_pair_examples": stored_invalid,
         "remaining_abstractions": [
             "This pass validates topology/scheduler/reducer/bank-placement compatibility and derives service envelopes from link widths.",
             "It does not perform cycle-accurate NoC routing, SRAM banking simulation, or RTL physical closure of the chosen fabric.",
             "Valid rows should feed the next clustered schedule run instead of sweeping independent noc_bandwidth/noc_hops/reduction knobs.",
         ],
     }
+    if args.store_all_pairs:
+        payload["valid_pairs"] = valid_rows
+        payload["invalid_pairs"] = invalid_rows
+    return payload
 
 
 def write_report(payload: JsonDict, report: Path) -> None:
@@ -433,6 +472,8 @@ def write_report(payload: JsonDict, report: Path) -> None:
         "",
         f"- valid pairs: `{payload['summary']['valid_pair_count']}`",
         f"- invalid pairs: `{payload['summary']['invalid_pair_count']}`",
+        f"- stored valid row examples: `{payload['storage']['stored_valid_pair_count']}`",
+        f"- stored invalid row examples: `{payload['storage']['stored_invalid_pair_count']}`",
         f"- previous frontier NoC service: `{payload['traffic_quantities']['previous_noc_bandwidth_bytes_per_cycle']}` B/cycle, "
         f"`{payload['traffic_quantities']['previous_noc_hops']}` hop",
         "",
@@ -522,6 +563,9 @@ def main() -> int:
     parser.add_argument("--router-latency-cycles-per-hop", type=int, default=2)
     parser.add_argument("--area-proxy-cycle-weight", type=float, default=0.05)
     parser.add_argument("--top-k", type=int, default=24)
+    parser.add_argument("--max-stored-valid-pairs", type=int, default=512)
+    parser.add_argument("--max-stored-invalid-pairs", type=int, default=256)
+    parser.add_argument("--store-all-pairs", action="store_true")
     args = parser.parse_args()
 
     allowed_topologies = {"local_only", "cluster_tree", "mesh2d", "ring", "crossbar"}
