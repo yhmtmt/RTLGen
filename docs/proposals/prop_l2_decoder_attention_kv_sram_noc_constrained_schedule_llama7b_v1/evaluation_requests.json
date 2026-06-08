@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_sram_noc_constrained_schedule_llama7b_v1",
-  "source_commit": "ae6ec94916854459b672f613c64a17ee81500402",
+  "source_commit": "c1c4a8a0ad135928548518554082c98e67595c77",
   "source_commit_note": "Dispatch should use the proposal merge commit so the evaluator sees this proposal artifact; implementation requires at least 3a04282a22036915b9ad193ee2351dd2cf19dc64.",
   "requested_items": [
     {
@@ -43,7 +43,11 @@
         "direction": "revise_dense_tile_scheduler_frontier_with_practical_sram_noc_caps",
         "reason": "The result should report slowdown versus topology-derived scheduling and identify whether topology, SRAM-bank service, or endpoint service caps the retained frontier."
       },
-      "notes": "Retry using updated control-plane generator from the proposal merge commit."
+      "notes": "Retry using updated control-plane generator from the proposal merge commit. Merged via PR #789 and merge 368da8cb7ccb33ef3b258ec3f29bb5bdfbeda880 at 2026-06-08T22:10:43.975603Z.",
+      "status": "merged",
+      "merged_pr_number": 789,
+      "merge_commit": "368da8cb7ccb33ef3b258ec3f29bb5bdfbeda880",
+      "merged_utc": "2026-06-08T22:10:43.975603Z"
     }
   ]
 }
