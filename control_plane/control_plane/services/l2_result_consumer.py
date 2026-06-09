@@ -443,6 +443,7 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
     ("producer_softmax_event_ablation_out", "producer_softmax_event_ablation_report"),
     ("attention_kv_memory_out", "attention_kv_memory_report"),
     ("attention_local_sram_capacity_out", "attention_local_sram_capacity_report"),
+    ("attention_kv_measured_sram_rebalance_out", "attention_kv_measured_sram_rebalance_report"),
 )
 
 
@@ -505,6 +506,9 @@ def _decoder_quality_brief(evidence_payload: dict[str, Any]) -> dict[str, Any]:
         "per_cluster_sram_metrics_summary",
         "all_cluster_sram_metrics_summary",
         "remaining_abstractions",
+        "best",
+        "sweep_summary",
+        "assumptions",
     ):
         if key in evidence_payload:
             brief[key] = evidence_payload[key]
@@ -512,6 +516,27 @@ def _decoder_quality_brief(evidence_payload: dict[str, Any]) -> dict[str, Any]:
 
 
 def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, Any]) -> tuple[str, str]:
+    model = str(evidence_payload.get("model", "")).strip()
+    if model == "llm_decoder_attention_kv_measured_sram_rebalance_llama7b_v1":
+        best = evidence_payload.get("best")
+        best_dict = dict(best) if isinstance(best, dict) else {}
+        outcome = "measured_sram_rebalance_recorded"
+        parts = [
+            f"Decoder measured-SRAM rebalance evidence recorded from {evidence_ref}: decision={outcome}",
+        ]
+        for key in (
+            "latency_us",
+            "hbm_byte_share",
+            "measured_shared_sram_capacity_mib",
+            "local_capacity_bytes_per_cluster",
+            "abstract_local_capacity_bytes_per_cluster_replaced",
+            "dominant_tile_resource",
+        ):
+            if key in best_dict:
+                parts.append(f"{key}={best_dict.get(key)}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
     profile = str(evidence_payload.get("profile", "")).strip()
     if profile == "decoder_attention_local_sram_capacity":
         budget_check = evidence_payload.get("budget_check")

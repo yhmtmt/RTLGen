@@ -1,0 +1,70 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_measured_sram_rebalance_v1",
+  "created_utc": "2026-06-09T12:15:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Measured SRAM rebalance for Llama7B attention endpoint frontier",
+  "hypothesis": "The current Llama7B endpoint frontier changes materially when the abstract local/shared SRAM capacity model is replaced by CACTI-derived tile-local SRAM area and packed shared-SRAM capacity under the selected die SRAM budget.",
+  "direct_comparison": {
+    "primary_question": "What is the best endpoint service schedule after replacing abstract local/shared SRAM capacity with measured SRAM capacity under the same SRAM area budget?",
+    "include": [
+      "Use l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1 as the source schedule frontier.",
+      "Use l2_decoder_attention_kv_endpoint_router_sram_composition_llama7b_v1 for measured tile-local SRAM area and required tile-local capacity.",
+      "Use l2_decoder_attention_local_sram_capacity_llama7b_v1 for CACTI SRAM macro density and access references.",
+      "Replace the abstract per-cluster local capacity pool with measured tile-local buffer capacity.",
+      "Pack the remaining SRAM area budget into shared SRAM macro chunks and recompute endpoint service timing."
+    ],
+    "exclude": [
+      "Do not change the inherited HBM/DRAM bandwidth model in this item.",
+      "Do not claim routed SRAM compiler floorplan closure from CACTI macro estimates.",
+      "Do not replace the pending wide router/FIFO L1 PPA closure item.",
+      "Do not change model quality assumptions for GQA/MQA in this item."
+    ],
+    "follow_on_broad_sweep": [
+      "If the best row becomes HBM dominated, plan the HBM/DRAM item separately.",
+      "If the best row stays NoC/shared-SRAM dominated, plan tighter router/FIFO width and SRAM bank PPA.",
+      "Use the measured SRAM-capacity frontier as the next architecture baseline."
+    ]
+  },
+  "expected_benefit": [
+    "Removes the largest optimistic SRAM capacity abstraction exposed by the local capacity profile.",
+    "Separates required tile-local buffering from an unrealistically large local-capacity pool.",
+    "Shows whether the frontier shifts toward HBM, compute, or on-chip shared path under practical SRAM area."
+  ],
+  "risks": [
+    "Shared SRAM packing is still macro-level CACTI evidence, not a routed SRAM floorplan.",
+    "The HBM/DRAM service model is inherited and remains abstract.",
+    "The source schedule may include quality-sensitive KV sharing settings; this item records but does not resolve quality impact."
+  ],
+  "needs_mapper_change": true,
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "objective": "measured_sram_rebalanced_endpoint_schedule",
+      "cost_class": "small",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1",
+        "l2_decoder_attention_kv_endpoint_router_sram_composition_llama7b_v1",
+        "l2_decoder_attention_local_sram_capacity_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_measured_sram_rebalanced_frontier",
+        "reason": "The result should report best latency, HBM byte share, packed shared-SRAM capacity, and the replaced abstract local capacity."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_full_onchip_service_schedule__l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_router_sram_composition__l2_decoder_attention_kv_endpoint_router_sram_composition_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_local_sram_capacity__l2_decoder_attention_local_sram_capacity_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_attention_kv_measured_sram_rebalance.py",
+    "npu/eval/estimate_llm_decoder_attention_kv_onchip_service_schedule.py",
+    "npu/eval/measure_llm_decoder_attention_local_sram_capacity.py"
+  ]
+}

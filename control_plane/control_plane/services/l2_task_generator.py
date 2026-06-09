@@ -5019,6 +5019,55 @@ def _decoder_attention_local_sram_capacity_evidence(*, item_id: str) -> dict[str
     }
 
 
+def _decoder_attention_kv_measured_sram_rebalance_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_kv_measured_sram_rebalance__{item_id}.json"
+    report = f"{base}/decoder_attention_kv_measured_sram_rebalance__{item_id}.md"
+    endpoint_schedule = (
+        f"{base}/decoder_attention_kv_endpoint_full_onchip_service_schedule__"
+        "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1.json"
+    )
+    composition = (
+        f"{base}/decoder_attention_kv_endpoint_router_sram_composition__"
+        "l2_decoder_attention_kv_endpoint_router_sram_composition_llama7b_v1.json"
+    )
+    local_capacity = (
+        f"{base}/decoder_attention_local_sram_capacity__"
+        "l2_decoder_attention_local_sram_capacity_llama7b_v1.json"
+    )
+    return {
+        "inputs": {
+            "attention_kv_endpoint_full_onchip_service_schedule": endpoint_schedule,
+            "attention_kv_endpoint_router_sram_composition": composition,
+            "attention_local_sram_capacity": local_capacity,
+            "attention_kv_measured_sram_rebalance_out": out,
+            "attention_kv_measured_sram_rebalance_report": report,
+            "attention_kv_measured_sram_rebalance_scope": (
+                "Replace the abstract local/shared SRAM capacity fields in the selected "
+                "Llama7B endpoint service frontier with measured tile-local SRAM area and "
+                "CACTI packed shared-SRAM capacity under the same die SRAM budget. HBM/DRAM "
+                "bandwidth and compute PPA remain inherited from the source frontier."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_attention_kv_measured_sram_rebalance",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_attention_kv_measured_sram_rebalance.py "
+                    "--repo-root . "
+                    f"--endpoint-schedule-json {endpoint_schedule} "
+                    f"--composition-json {composition} "
+                    f"--local-sram-capacity-json {local_capacity} "
+                    "--frontier-row-limit 64 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_attention_noc_profile_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_noc_profile__{item_id}.json"
@@ -6578,6 +6627,7 @@ def _build_payload(
         "decoder_attention_kv_endpoint_router_sram_composition",
         "decoder_attention_sram_profile",
         "decoder_attention_local_sram_capacity",
+        "decoder_attention_kv_measured_sram_rebalance",
         "decoder_attention_noc_profile",
         "decoder_attention_kv_quality_gate",
         "decoder_attention_kv_quality_proxy",
@@ -6712,6 +6762,8 @@ def _build_payload(
             decoder_evidence = _decoder_attention_sram_profile_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_local_sram_capacity":
             decoder_evidence = _decoder_attention_local_sram_capacity_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_kv_measured_sram_rebalance":
+            decoder_evidence = _decoder_attention_kv_measured_sram_rebalance_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_noc_profile":
             decoder_evidence = _decoder_attention_noc_profile_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_quality_gate":
