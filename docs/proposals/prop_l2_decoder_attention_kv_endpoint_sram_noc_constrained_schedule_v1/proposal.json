@@ -1,0 +1,65 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_endpoint_sram_noc_constrained_schedule_v1",
+  "created_utc": "2026-06-09T03:40:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Endpoint SRAM/NoC constrained Llama7B attention schedule",
+  "hypothesis": "Applying practical SRAM-bank service, local tile-buffer capacity, and endpoint injection/ejection caps to the endpoint-measured topology-derived Llama7B dense-tile schedule will quantify the next on-chip service bottleneck without changing HBM/DRAM assumptions.",
+  "direct_comparison": {
+    "primary_question": "How does the endpoint-measured Llama7B topology-derived dense-tile schedule move after practical SRAM-bank and endpoint service caps are applied?",
+    "include": [
+      "Use the endpoint topology-derived schedule merged from l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_llama7b_v1_r3.",
+      "Use the measured SRAM tile-buffer profile l2_decoder_attention_sram_profile_v1.",
+      "Sweep practical endpoint port width/count, endpoint efficiency, SRAM bank efficiency, and local buffer multiplier.",
+      "Report slowdown versus the endpoint topology-derived schedule and the limiting cap source."
+    ],
+    "exclude": [
+      "Do not change HBM/DRAM bandwidth, frequency, or service policy.",
+      "Do not introduce new KV sharing or precision/quality changes.",
+      "Do not run new physical closure in this L2 scheduler item.",
+      "Do not reintroduce independent abstract NoC bandwidth or hop sweeps."
+    ],
+    "follow_on_broad_sweep": [
+      "If endpoint or SRAM-bank service dominates, promote a detailed SRAM/endpoint arbitration model for the best topology family.",
+      "After on-chip service is consistent, revisit HBM/DRAM only as a separate scoped item."
+    ]
+  },
+  "expected_benefit": [
+    "Close the remaining optimistic SRAM-bank bandwidth assumption on the endpoint-measured schedule.",
+    "Identify whether topology aggregate service, endpoint injection/ejection, or SRAM-bank read service is the immediate limiter.",
+    "Provide a better frontier input for the next detailed NoC/SRAM scheduler model."
+  ],
+  "risks": [
+    "This remains analytic service-envelope evidence, not cycle-accurate SRAM arbitration.",
+    "The estimator retains frontier rows from the topology-derived schedule rather than fully re-searching all 746k topology-derived rows.",
+    "Endpoint caps are parametric until endpoint queues and arbitration are embodied in RTL."
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "objective": "endpoint_sram_noc_constrained_dense_tile_schedule",
+      "cost_class": "small",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_llama7b_v1_r3",
+        "l2_decoder_attention_sram_profile_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "revise_endpoint_topology_schedule_with_practical_sram_endpoint_caps",
+        "reason": "The result should report endpoint topology-derived slowdown and identify the practical cap source for retained Llama7B dense-tile frontier rows."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule__l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_llama7b_v1_r3.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_sram_profile__l2_decoder_attention_sram_profile_v1.json"
+  ],
+  "knowledge_refs": [
+    "docs/proposals/prop_l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_v1/analysis_report.md",
+    "npu/eval/estimate_llm_decoder_attention_kv_sram_noc_constrained_schedule.py"
+  ]
+}

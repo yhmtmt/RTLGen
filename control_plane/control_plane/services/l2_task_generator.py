@@ -4588,34 +4588,79 @@ def _decoder_attention_kv_sram_noc_constrained_schedule_evidence(
     *,
     item_id: str,
 ) -> dict[str, Any]:
-    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
-    out = f"{base}/decoder_attention_kv_sram_noc_constrained_schedule__{item_id}.json"
-    report = f"{base}/decoder_attention_kv_sram_noc_constrained_schedule__{item_id}.md"
-    topology_derived = (
-        f"{base}/decoder_attention_kv_dense_tile_topology_derived_schedule__"
-        "l2_decoder_attention_kv_dense_tile_topology_derived_schedule_llama7b_v1.json"
+    return _decoder_attention_kv_sram_noc_constrained_schedule_evidence_for_source(
+        item_id=item_id,
+        output_prefix="decoder_attention_kv_sram_noc_constrained_schedule",
+        output_key_prefix="attention_kv_sram_noc_constrained_schedule",
+        topology_input_key="attention_kv_dense_tile_topology_derived_schedule",
+        topology_input_ref=(
+            "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+            "decoder_attention_kv_dense_tile_topology_derived_schedule__"
+            "l2_decoder_attention_kv_dense_tile_topology_derived_schedule_llama7b_v1.json"
+        ),
+        scope=(
+            "Apply practical local SRAM tile-buffer capacity, 256-bit SRAM-bank read service, "
+            "and endpoint injection/ejection caps to retained Llama7B topology-derived dense-tile "
+            "schedule frontier rows. This corrects the optimistic abstract SRAM-bank bandwidth "
+            "without reintroducing independent NoC bandwidth/hop sweeps."
+        ),
+        command_name="estimate_decoder_attention_kv_sram_noc_constrained_schedule",
     )
+
+
+def _decoder_attention_kv_endpoint_sram_noc_constrained_schedule_evidence(
+    *,
+    item_id: str,
+) -> dict[str, Any]:
+    return _decoder_attention_kv_sram_noc_constrained_schedule_evidence_for_source(
+        item_id=item_id,
+        output_prefix="decoder_attention_kv_endpoint_sram_noc_constrained_schedule",
+        output_key_prefix="attention_kv_endpoint_sram_noc_constrained_schedule",
+        topology_input_key="attention_kv_dense_tile_endpoint_topology_derived_schedule",
+        topology_input_ref=(
+            "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+            "decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule__"
+            "l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_llama7b_v1_r3.json"
+        ),
+        scope=(
+            "Apply practical local SRAM tile-buffer capacity, 256-bit SRAM-bank read service, "
+            "and endpoint injection/ejection caps to retained endpoint-measured Llama7B "
+            "topology-derived dense-tile schedule frontier rows. This keeps endpoint, FIFO/router, "
+            "softmax, and local datapath PPA measured while adding practical SRAM/endpoint service caps."
+        ),
+        command_name="estimate_decoder_attention_kv_endpoint_sram_noc_constrained_schedule",
+    )
+
+
+def _decoder_attention_kv_sram_noc_constrained_schedule_evidence_for_source(
+    *,
+    item_id: str,
+    output_prefix: str,
+    output_key_prefix: str,
+    topology_input_key: str,
+    topology_input_ref: str,
+    scope: str,
+    command_name: str,
+) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/{output_prefix}__{item_id}.json"
+    report = f"{base}/{output_prefix}__{item_id}.md"
     sram_profile = f"{base}/decoder_attention_sram_profile__l2_decoder_attention_sram_profile_v1.json"
     return {
         "inputs": {
-            "attention_kv_dense_tile_topology_derived_schedule": topology_derived,
+            topology_input_key: topology_input_ref,
             "attention_sram_profile": sram_profile,
-            "attention_kv_sram_noc_constrained_schedule_out": out,
-            "attention_kv_sram_noc_constrained_schedule_report": report,
-            "attention_kv_sram_noc_constrained_schedule_scope": (
-                "Apply practical local SRAM tile-buffer capacity, 256-bit SRAM-bank read service, "
-                "and endpoint injection/ejection caps to retained Llama7B topology-derived dense-tile "
-                "schedule frontier rows. This corrects the optimistic abstract SRAM-bank bandwidth "
-                "without reintroducing independent NoC bandwidth/hop sweeps."
-            ),
+            f"{output_key_prefix}_out": out,
+            f"{output_key_prefix}_report": report,
+            f"{output_key_prefix}_scope": scope,
         },
         "commands": [
             {
-                "name": "estimate_decoder_attention_kv_sram_noc_constrained_schedule",
+                "name": command_name,
                 "run": (
                     "python3 npu/eval/estimate_llm_decoder_attention_kv_sram_noc_constrained_schedule.py "
                     "--repo-root . "
-                    f"--topology-derived-json {topology_derived} "
+                    f"--topology-derived-json {topology_input_ref} "
                     f"--sram-profile-json {sram_profile} "
                     "--frontier-row-limit 256 "
                     "--sram-bank-port-bytes-per-cycle 32 "
@@ -6271,6 +6316,7 @@ def _build_payload(
         "decoder_attention_kv_dense_tile_topology_derived_schedule",
         "decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule",
         "decoder_attention_kv_sram_noc_constrained_schedule",
+        "decoder_attention_kv_endpoint_sram_noc_constrained_schedule",
         "decoder_attention_kv_onchip_service_schedule",
         "decoder_attention_sram_profile",
         "decoder_attention_noc_profile",
@@ -6381,6 +6427,10 @@ def _build_payload(
             )
         elif abstraction_layer_name == "decoder_attention_kv_sram_noc_constrained_schedule":
             decoder_evidence = _decoder_attention_kv_sram_noc_constrained_schedule_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_kv_endpoint_sram_noc_constrained_schedule":
+            decoder_evidence = _decoder_attention_kv_endpoint_sram_noc_constrained_schedule_evidence(
+                item_id=item_id,
+            )
         elif abstraction_layer_name == "decoder_attention_kv_onchip_service_schedule":
             decoder_evidence = _decoder_attention_kv_onchip_service_schedule_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_sram_profile":
