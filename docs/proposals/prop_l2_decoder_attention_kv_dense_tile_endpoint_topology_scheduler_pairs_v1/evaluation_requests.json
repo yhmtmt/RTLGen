@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_dense_tile_endpoint_topology_scheduler_pairs_v1",
-  "source_commit": "b11120e2809c12e9cce67a23fc23130a68fd085d",
+  "source_commit": "e7bfa4319ac143f60db3761a2bd1dd88a3f8744a",
   "requested_items": [
     {
       "item_id": "l2_decoder_attention_kv_dense_tile_endpoint_topology_scheduler_pairs_llama7b_v1",
@@ -17,7 +17,11 @@
         "direction": "valid_pairs_should_bound_independent_noc_sweep",
         "reason": "The job should replace independent NoC bandwidth/hop assumptions with explicit valid topology/scheduler/service rows."
       },
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 802,
+      "merge_commit": "58b458325d9aaa7d69de302619e696f9a84204f6",
+      "merged_utc": "2026-06-09T03:25:43.188562Z",
+      "notes": "Merged via PR #802 and merge 58b458325d9aaa7d69de302619e696f9a84204f6 at 2026-06-09T03:25:43.188562Z."
     }
   ]
 }

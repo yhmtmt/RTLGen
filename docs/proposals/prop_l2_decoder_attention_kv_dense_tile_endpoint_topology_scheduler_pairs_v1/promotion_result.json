@@ -1,7 +1,7 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_dense_tile_endpoint_topology_scheduler_pairs_v1",
-  "decision": "pending",
-  "pr_number": null,
-  "merge_commit": "",
-  "merged_utc": ""
+  "decision": "iterate",
+  "pr_number": 802,
+  "merge_commit": "58b458325d9aaa7d69de302619e696f9a84204f6",
+  "merged_utc": "2026-06-09T03:25:43.188562Z"
 }

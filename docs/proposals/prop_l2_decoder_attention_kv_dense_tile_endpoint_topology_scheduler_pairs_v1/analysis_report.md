@@ -1,31 +1,32 @@
 # Analysis Report
 
 ## Candidate
-- `proposal_id`: `prop_example_v1`
-- `candidate_id`: `cand_example_v1_r1`
+- `proposal_id`: `prop_l2_decoder_attention_kv_dense_tile_endpoint_topology_scheduler_pairs_v1`
+- `candidate_id`: `l2_decoder_attention_kv_dense_tile_endpoint_topology_scheduler_pairs_llama7b_v1`
 
 ## Evaluations Consumed
-- work item ids
-- run keys
-- source commit
+- `l2_decoder_attention_kv_dense_tile_endpoint_topology_scheduler_pairs_llama7b_v1`
+- `l2_decoder_attention_kv_dense_tile_endpoint_topology_scheduler_pairs_llama7b_v1_run_c2a3052f6fb28c40`
+- source commit: `e7bfa4319ac143f60db3761a2bd1dd88a3f8744a`
+- review: PR #802
 
 ## Baseline Comparison
-- baseline used
-- key deltas
+- baseline_ref: `None`
+- baseline_item_id: `None`
+- outcome: `ranking_recorded`
+- summary: Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.
 
 ## Result
-- win / loss / mixed
-- confidence level
-- estimated mapper optimization room
-- whether the architecture conclusion is robust to plausible schedule changes
+- result: `iterate`
+- confidence level: merged accepted evidence
+- estimated optimization room: pending follow-on comparison
+- architecture conclusion robustness: staged evidence
+- summary: Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.
 
 ## Failures and Caveats
-- flow failures
-- validation anomalies
-- mapper limitations
+- no additional caveats recorded during automatic finalization
 
 ## Recommendation
-- reject / iterate / promote
-- short reason
-- follow-on mapper item or proposal when mapper limitations are the main reason
-  to iterate
+- `iterate`
+- reason: Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.
+- next_action: inspect follow-on work after l2_decoder_attention_kv_dense_tile_endpoint_topology_scheduler_pairs_llama7b_v1
