@@ -1,0 +1,129 @@
+{
+  "flow": "openroad",
+  "task": {
+    "inputs": {
+      "sweeps": [
+        "runs/campaigns/noc/l1_memory_noc_primitives/sweeps/nangate45_macro_frontier.json"
+      ],
+      "configs": [
+        "examples/config_l1_onchip_service_endpoint.json"
+      ],
+      "out_root": "runs/designs/noc",
+      "design_dirs": [],
+      "macro_manifests": [],
+      "candidate_manifests": [],
+      "required_submodules": []
+    },
+    "commands": [
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && cmake -S . -B build && cmake --build build --target rtlgen",
+        "name": "build_generator"
+      },
+      {
+        "run": "export PATH=/oss-cad-suite/bin:$PATH && python3 scripts/run_sweep.py --configs examples/config_l1_onchip_service_endpoint.json --platform nangate45 --sweep runs/campaigns/noc/l1_memory_noc_primitives/sweeps/nangate45_macro_frontier.json --out_root runs/designs/noc --force_gen --skip_existing",
+        "name": "run_sweep"
+      },
+      {
+        "run": "python3 scripts/build_runs_index.py",
+        "name": "build_runs_index"
+      },
+      {
+        "run": "python3 scripts/validate_runs.py --skip_eval_queue",
+        "name": "validate"
+      }
+    ],
+    "objective": "Measure the concrete ready/valid on-chip service endpoint primitive with finite endpoint and per-bank queues so Llama7B attention scheduling can replace the analytic endpoint-service cost.",
+    "acceptance": [
+      "Each generated wrapper metrics.csv contains at least one status=ok row for the queued sweep",
+      "Committed outputs stay lightweight (metrics.csv only; runs/index.csv is exported centrally after merge)",
+      "python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue pass"
+    ],
+    "source_mode": "config",
+    "expected_outputs": [
+      "runs/designs/noc/l1_onchip_endpoint_w128_b4_eq8_bq4_wrapper/metrics.csv"
+    ]
+  },
+  "layer": "layer1",
+  "state": "evaluated",
+  "title": "Measure on-chip endpoint SRAM/NoC service primitive",
+  "result": {
+    "branch": "eval/l1_decoder_memory_noc_endpoint_v1/s20260609t014218z",
+    "completed_utc": "2026-06-09T01:42:16.406866Z",
+    "evaluator_id": "control_plane",
+    "executor": "@control_plane",
+    "host": "b7c2d9c80c1c",
+    "identity_block": "[role:evaluator][account:control_plane][session:s20260609t014218z][host:b7c2d9c80c1c][item:l1_decoder_memory_noc_endpoint_v1]",
+    "metrics_rows": [
+      {
+        "tag": "l1_memory_noc_primitives_nangate45_macro_frontier_9b900945",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "9455a154",
+        "metrics_csv": "runs/designs/noc/l1_onchip_endpoint_w128_b4_eq8_bq4_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_memory_noc_primitives_nangate45_macro_frontier_d64a96fd",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "444485a4",
+        "metrics_csv": "runs/designs/noc/l1_onchip_endpoint_w128_b4_eq8_bq4_wrapper/metrics.csv"
+      },
+      {
+        "tag": "l1_memory_noc_primitives_nangate45_macro_frontier_5137e93f",
+        "status": "ok",
+        "platform": "nangate45",
+        "param_hash": "e6eb27a9",
+        "metrics_csv": "runs/designs/noc/l1_onchip_endpoint_w128_b4_eq8_bq4_wrapper/metrics.csv"
+      }
+    ],
+    "queue_item_id": "l1_decoder_memory_noc_endpoint_v1",
+    "session_id": "s20260609t014218z",
+    "status": "ok",
+    "summary": "4/4 commands succeeded"
+  },
+  "handoff": {
+    "branch": "eval/l1_decoder_memory_noc_endpoint_v1/s20260609t014218z",
+    "pr_title": "eval: run measure on-chip endpoint sram/noc service primitive",
+    "checklist": [
+      "Commit only lightweight metrics; shared runs/index.csv is exported centrally after merge",
+      "Include metrics row references for each completed design",
+      "Run python3 scripts/build_runs_index.py and python3 scripts/validate_runs.py --skip_eval_queue before pushing"
+    ],
+    "pr_body_fields": {
+      "host": "b7c2d9c80c1c",
+      "session_id": "s20260609t014218z",
+      "evaluator_id": "control_plane",
+      "queue_item_id": "l1_decoder_memory_noc_endpoint_v1"
+    },
+    "identity_block_format": "[role:evaluator][account:<evaluator_id>][session:<session_id>][host:<host>][item:<queue_item_id>]"
+  },
+  "item_id": "l1_decoder_memory_noc_endpoint_v1",
+  "version": 0.1,
+  "platform": "nangate45",
+  "priority": 2,
+  "created_utc": "2026-06-09T01:39:17.831947Z",
+  "requested_by": "codex",
+  "developer_loop": {
+    "evaluation": {
+      "mode": "measurement_only",
+      "trial_policy": {
+        "seed_start": 0,
+        "trial_count": 1,
+        "stop_after_failures": 1
+      }
+    },
+    "abstraction": {
+      "layer": "architecture_block"
+    },
+    "proposal_id": "prop_l1_decoder_memory_noc_primitives_v1",
+    "proposal_path": "docs/proposals/prop_l1_decoder_memory_noc_primitives_v1/proposal.json"
+  },
+  "source_requirement": {
+    "repo": "",
+    "reason": "evaluator runtime must contain the queued job source commit",
+    "version": 1,
+    "required_ref": "origin/master",
+    "required_sha": "fa7f6b95dd10922d4f5eb7433c6f262f59e6a21c",
+    "requires_daemon_restart": true
+  }
+}

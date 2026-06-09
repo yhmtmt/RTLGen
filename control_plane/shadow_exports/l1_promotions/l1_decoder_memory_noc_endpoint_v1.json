@@ -1,0 +1,94 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-06-09T01:42:17.308103Z",
+  "item_id": "l1_decoder_memory_noc_endpoint_v1",
+  "run_key": "l1_decoder_memory_noc_endpoint_v1_run_d346714b6b87e385",
+  "layer": "layer1",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l1_sweep",
+  "source_commit": "fa7f6b95dd10922d4f5eb7433c6f262f59e6a21c",
+  "objective": "Measure the concrete ready/valid on-chip service endpoint primitive with finite endpoint and per-bank queues so Llama7B attention scheduling can replace the analytic endpoint-service cost.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/campaigns/noc/l1_memory_noc_primitives/sweeps/nangate45_macro_frontier.json"
+    ],
+    "configs": [
+      "examples/config_l1_onchip_service_endpoint.json"
+    ],
+    "out_root": "runs/designs/noc",
+    "design_dirs": [],
+    "macro_manifests": [],
+    "candidate_manifests": [],
+    "required_submodules": []
+  },
+  "proposal_count": 1,
+  "evaluation_record": {
+    "evaluation_mode": "measurement_only",
+    "abstraction_layer": "architecture_block",
+    "result_kind": "physical_metrics",
+    "physical_metrics_present": true,
+    "summary": "Physical metrics recorded from an accepted status=ok Layer 1 row."
+  },
+  "proposal_assessment": null,
+  "proposals": [
+    {
+      "metrics_ref": {
+        "metrics_csv": "runs/designs/noc/l1_onchip_endpoint_w128_b4_eq8_bq4_wrapper/metrics.csv",
+        "platform": "nangate45",
+        "status": "ok",
+        "result_kind": "physical_metrics",
+        "param_hash": "444485a4",
+        "tag": "l1_memory_noc_primitives_nangate45_macro_frontier_d64a96fd",
+        "result_path": "runs/designs/noc/l1_onchip_endpoint_w128_b4_eq8_bq4_wrapper/work/444485a4/result.json"
+      },
+      "selection_reason": "lowest critical_path_ns, then die_area, then total_power_mw among status=ok rows",
+      "metric_summary": {
+        "critical_path_ns": 0.7162,
+        "die_area": 15293.032225,
+        "total_power_mw": 0.00983
+      }
+    }
+  ],
+  "trial_summary": {
+    "item_id": "l1_decoder_memory_noc_endpoint_v1",
+    "completed_trials": 1,
+    "success_count": 1,
+    "failure_count": 0,
+    "success_rate": 1.0,
+    "metrics": {
+      "critical_path_ns": {
+        "best": 0.7162,
+        "mean": 0.7162,
+        "median": 0.7162,
+        "max": 0.7162,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "die_area": {
+        "best": 15293.032225,
+        "mean": 15293.032225,
+        "median": 15293.032225,
+        "max": 15293.032225,
+        "range": 0.0,
+        "stddev": 0.0
+      },
+      "total_power_mw": {
+        "best": 0.00983,
+        "mean": 0.00983,
+        "median": 0.00983,
+        "max": 0.00983,
+        "range": 0.0,
+        "stddev": 0.0
+      }
+    }
+  },
+  "source_refs": {
+    "trial_metrics_csvs": [
+      "runs/designs/noc/l1_onchip_endpoint_w128_b4_eq8_bq4_wrapper/metrics.csv"
+    ],
+    "summary_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_memory_noc_endpoint_v1/summary_stats.json",
+    "failure_stats_json": "control_plane/shadow_exports/l1_trials/l1_decoder_memory_noc_endpoint_v1/failure_stats.json",
+    "trial_table_csv": "control_plane/shadow_exports/l1_trials/l1_decoder_memory_noc_endpoint_v1/trial_table.csv"
+  }
+}

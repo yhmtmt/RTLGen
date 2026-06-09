@@ -1,0 +1,2 @@
+run_key,attempt,trial_index,seed,status,metrics_csv,critical_path_ns,die_area,total_power_mw,failure_category,failure_stage,failure_signature
+l1_decoder_memory_noc_endpoint_v1_run_d346714b6b87e385,1,1,0,succeeded,runs/designs/noc/l1_onchip_endpoint_w128_b4_eq8_bq4_wrapper/metrics.csv,0.7162,15293.032225,0.00983,none,,
