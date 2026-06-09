@@ -1,0 +1,28 @@
+{
+  "proposal_id": "prop_l1_decoder_attention_endpoint_router_wide_ppa_v1",
+  "title": "Measure wide endpoint/router/FIFO PPA anchors for Llama7B attention frontier",
+  "status": "proposed",
+  "layer": "layer1",
+  "kind": "circuit_block",
+  "abstraction_layer": "architecture_block",
+  "motivation": "The current Llama7B endpoint/router/SRAM composition audit found that the selected frontier uses a 1024-bit endpoint packet and 2048-bit link, while existing PPA anchors are only 128-bit endpoint/router/FIFO wrappers. Wide primitive PPA is required before the on-chip service result can be treated as physically backed rather than lane-scaled.",
+  "hypothesis": "The 1024-bit endpoint and 2048-bit router/FIFO primitives will remain physically feasible as hierarchy-preserved macro-style blocks, but their area and timing may be materially worse than linear scaling from the 128-bit anchors.",
+  "expected_behavior": {
+    "functional": "The generated primitives expose synthesis-visible counters and deterministic activity.",
+    "timing_model": "The endpoint measures finite queue and bank-queue width cost; the router/FIFO measure wide flit datapath and buffering cost.",
+    "physical_model": "The sweep uses macro-style L1 wrappers with hierarchy preserved and avoids chip-level pad assumptions."
+  },
+  "comparison_points": [
+    "l1_onchip_endpoint_w1024_b4_eq16_bq16_wrapper",
+    "l1_noc_router_p4_w2048_wrapper",
+    "l1_noc_fifo_w2048_d16_wrapper"
+  ],
+  "upstream_evidence": [
+    "l2_decoder_attention_kv_endpoint_router_sram_composition_llama7b_v1"
+  ],
+  "risks": [
+    "Wide endpoint/FIFO memories may synthesize as large register arrays unless memory inference is effective.",
+    "The 2048-bit router is still a primitive PPA anchor, not a full routed mesh implementation.",
+    "This does not close the full local SRAM capacity pool; that remains a separate SRAM macro profile item."
+  ]
+}

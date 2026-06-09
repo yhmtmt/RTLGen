@@ -1,0 +1,26 @@
+{
+  "version": "1.1",
+  "operands": [
+    {
+      "name": "flit",
+      "dimensions": 1,
+      "bit_width": 2048,
+      "signed": false,
+      "kind": "int"
+    }
+  ],
+  "operations": [
+    {
+      "type": "l1_memory_noc_primitive",
+      "module_name": "l1_noc_fifo_w2048_d16",
+      "operand": "flit",
+      "options": {
+        "primitive": "fifo",
+        "flit_bits": 2048,
+        "depth": 16,
+        "ports": 4,
+        "counter_bits": 32
+      }
+    }
+  ]
+}
