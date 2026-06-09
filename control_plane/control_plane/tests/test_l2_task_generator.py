@@ -5289,6 +5289,7 @@ def test_generate_l2_campaign_task_adds_dense_tile_endpoint_measured_l1_attentio
                 )
                 for output in expected_outputs
             )
+            assert work_item.expected_outputs == expected_outputs
 
 
 def test_generate_l2_campaign_task_adds_dense_tile_reduction_noc_frontier_evidence() -> None:

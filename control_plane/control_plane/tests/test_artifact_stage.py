@@ -102,3 +102,33 @@ def test_collect_expected_output_artifacts_includes_attention_kv_dataset(tmp_pat
     assert all(artifact.kind == "expected_output" for artifact in artifacts)
     assert all(artifact.metadata["transport_policy"] == "inline_text_evidence" for artifact in artifacts)
     assert all("inline_utf8" in artifact.metadata for artifact in artifacts)
+
+
+def test_collect_expected_output_artifacts_includes_large_attention_schedule_dataset(tmp_path: Path) -> None:
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    json_rel = (
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+        "decoder_attention_kv_dense_tile_endpoint_measured_l1_clustered_schedule__"
+        "l2_decoder_attention_kv_dense_tile_endpoint_measured_l1_clustered_schedule_llama7b_v1.json"
+    )
+    report_rel = (
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+        "decoder_attention_kv_dense_tile_endpoint_measured_l1_clustered_schedule__"
+        "l2_decoder_attention_kv_dense_tile_endpoint_measured_l1_clustered_schedule_llama7b_v1.md"
+    )
+    json_path = repo_root / json_rel
+    json_path.parent.mkdir(parents=True, exist_ok=True)
+    json_path.write_text('{"rows":"' + ("x" * (1024 * 1024 + 1)) + '"}\n', encoding="utf-8")
+    (repo_root / report_rel).write_text("# endpoint schedule\n", encoding="utf-8")
+
+    artifacts = collect_expected_output_artifacts(
+        repo_root=str(repo_root),
+        expected_outputs=[json_rel, report_rel],
+    )
+
+    assert [artifact.path for artifact in artifacts] == [json_rel, report_rel]
+    assert artifacts[0].kind == "expected_output"
+    assert artifacts[0].metadata["transport_policy"] == "inline_text_evidence"
+    assert "inline_utf8" not in artifacts[0].metadata
+    assert artifacts[1].metadata["inline_utf8"] == "# endpoint schedule\n"
