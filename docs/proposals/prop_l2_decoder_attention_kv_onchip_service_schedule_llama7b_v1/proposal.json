@@ -1,0 +1,68 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_onchip_service_schedule_llama7b_v1",
+  "created_utc": "2026-06-09T00:52:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Llama7B on-chip SRAM/NoC service scheduler frontier",
+  "hypothesis": "When the retained Llama7B SRAM/NoC-constrained dense-tile rows are refined with explicit SRAM bank arbitration, endpoint queues, router hop latency, packet payload, and schedule policy, the shared-path frontier will show which on-chip service mechanism should be embodied next. HBM/DRAM service should remain unchanged in this job.",
+  "direct_comparison": {
+    "primary_question": "How does the Llama7B dense-tile frontier move when SRAM bank arbitration, endpoint queues, router latency, packet payload, and on-chip scheduling policy are modeled explicitly, excluding HBM/DRAM changes?",
+    "include": [
+      "merged SRAM/NoC constrained frontier l2_decoder_attention_kv_sram_noc_constrained_schedule_llama7b_v1_r2",
+      "SRAM bank arbitration policies: round_robin, locality_first, age_based",
+      "endpoint and bank queue depth sensitivity",
+      "router latency per hop sensitivity",
+      "packet payload sensitivity",
+      "static_wave, staggered_wave, and prefetch_overlap schedule policies",
+      "slowdown versus SRAM/NoC constrained cap result and topology-derived result"
+    ],
+    "exclude": [
+      "HBM/DRAM bandwidth, controller, refresh, or off-chip scheduling changes",
+      "new dense GEMM tile PPA",
+      "new SRAM compiler or placed SRAM macro floorplan",
+      "quality-affecting KV sharing or precision changes"
+    ],
+    "follow_on_broad_sweep": [
+      "embody the selected SRAM bank arbiter and endpoint queue as RTL",
+      "construct a routed NoC/link simulator or RTL fabric for the best topology family",
+      "add ready/valid backpressure equivalence between the scheduler model and RTL"
+    ]
+  },
+  "expected_benefit": [
+    "separate SRAM bank arbitration effects from endpoint queue and router latency effects",
+    "identify whether prefetch/staggering can recover shared-path latency without touching HBM",
+    "select the next concrete on-chip service block to embody"
+  ],
+  "risks": [
+    "the model is still a service simulator, not router or SRAM arbiter RTL",
+    "the run refines retained frontier rows instead of fully re-searching every topology-derived row",
+    "prefetch overlap is analytic until a producer/consumer command stream is generated"
+  ],
+  "needs_mapper_change": false,
+  "implementation_min_commit": "2a03f9f8ad8bda90315946c41ac2b1e7d1d8bc33",
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "objective": "onchip_service_dense_tile_schedule",
+      "cost_class": "small",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_sram_noc_constrained_schedule_llama7b_v1_r2"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "refine_dense_tile_scheduler_frontier_with_onchip_service_policies",
+        "reason": "The result should report the Llama7B dense-tile frontier under explicit on-chip service policy parameters while leaving HBM/DRAM assumptions unchanged."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_sram_noc_constrained_schedule__l2_decoder_attention_kv_sram_noc_constrained_schedule_llama7b_v1_r2.json"
+  ],
+  "knowledge_refs": [
+    "docs/proposals/prop_l2_decoder_attention_kv_sram_noc_constrained_schedule_llama7b_v1/analysis_report.md",
+    "npu/eval/estimate_llm_decoder_attention_kv_onchip_service_schedule.py"
+  ]
+}
