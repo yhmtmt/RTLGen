@@ -10,13 +10,14 @@ import math
 import sys
 from collections import Counter
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from npu.eval import estimate_llm_decoder_attention_kv_clustered_schedule as clustered  # noqa: E402
+from npu.eval import estimate_llm_decoder_attention_kv_topology_derived_schedule as topology_derived  # noqa: E402
 
 
 JsonDict = dict[str, Any]
@@ -34,6 +35,21 @@ def _int_list(value: str) -> list[int]:
     if not items or any(item <= 0 for item in items):
         raise argparse.ArgumentTypeError("expected comma-separated positive integers")
     return items
+
+
+def _nonnegative_int_list(value: str) -> list[int]:
+    items = [int(item.strip()) for item in value.split(",") if item.strip()]
+    if not items or any(item < 0 for item in items):
+        raise argparse.ArgumentTypeError("expected comma-separated nonnegative integers")
+    return items
+
+
+def _optional_str_list(value: str) -> list[str]:
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
+def _profile_list(value: str) -> list[str]:
+    return [item.strip() for item in value.split(",") if item.strip()]
 
 
 def _load_json(path: Path) -> JsonDict:
@@ -306,15 +322,116 @@ def _update_best(target: dict[tuple[Any, ...], JsonDict], keys: tuple[str, ...],
         target[key] = row
 
 
+def _iter_generated_topology_rows(
+    args: argparse.Namespace,
+    *,
+    repo_root: Path,
+    stats: dict[str, Any],
+) -> Iterable[JsonDict]:
+    topology_payload = _load_json(repo_root / args.topology_pairs_json)
+    topology_rows = topology_derived._topology_service_rows(topology_payload, limit=args.topology_row_limit)
+    candidates = clustered._load_compute_candidates(
+        repo_root=repo_root,
+        tag_substring=args.tag_substring,
+        compute_source=args.compute_source,
+    )
+    if args.compute_arch_list:
+        allowed = set(args.compute_arch_list)
+        candidates = [candidate for candidate in candidates if str(candidate["compute_arch"]) in allowed]
+    if not candidates:
+        raise RuntimeError("no measured compute candidates matched")
+    measured_l1_profiles = clustered._load_measured_l1_profiles(
+        repo_root=repo_root,
+        costs_path=repo_root / args.measured_l1_costs if args.measured_l1_costs else None,
+        profile_names=args.measured_l1_profile,
+    )
+
+    stats.update(
+        {
+            "source_mode": "full_topology_regeneration",
+            "source_model": "llm_decoder_attention_kv_topology_derived_schedule_llama7b_v1",
+            "topology_pairs_summary": topology_payload.get("summary", {}),
+            "topology_service_rows_used": len(topology_rows),
+            "topology_generated_row_count": 0,
+            "topology_skipped_area_budget_count": 0,
+        }
+    )
+    for service in topology_rows:
+        cluster_count = int(service["cluster_count"])
+        bank_count = int(service["bank_count"])
+        local_sram_fraction = float(service["local_sram_fraction"])
+        reduction_strategy = str(service["reduction_strategy"])
+        noc_bw = topology_derived._equivalent_raw_noc_bandwidth(service)
+        noc_hops = max(1, int(service["worst_hops"]))
+        for sequence_length in args.sequence_length_list:
+            for die_area_mm2 in args.die_area_mm2_list:
+                for sram_area_fraction in args.sram_area_fraction:
+                    for logic_area_fraction in args.logic_area_fraction:
+                        for usable_sram_fraction in args.usable_sram_fraction:
+                            for tile_tokens in args.tile_tokens_list:
+                                for command_cycles_per_tile in args.command_cycles_per_tile:
+                                    for command_cycles_per_wave in args.command_cycles_per_wave:
+                                        for reducer_setup_cycles in args.reducer_setup_cycles:
+                                            for reduction_cycle_multiplier in args.reduction_cycle_multiplier:
+                                                for measured_l1_profile in measured_l1_profiles:
+                                                    for candidate in candidates:
+                                                        row = clustered._shape_row(
+                                                            candidate=candidate,
+                                                            die_area_mm2=die_area_mm2,
+                                                            sram_area_fraction=sram_area_fraction,
+                                                            logic_area_fraction=logic_area_fraction,
+                                                            reserved_area_fraction=args.reserved_area_fraction,
+                                                            sequence_length=sequence_length,
+                                                            usable_sram_fraction=usable_sram_fraction,
+                                                            local_sram_fraction=local_sram_fraction,
+                                                            tile_tokens=tile_tokens,
+                                                            bank_count=bank_count,
+                                                            cluster_count=cluster_count,
+                                                            noc_bandwidth_bytes_per_cycle=noc_bw,
+                                                            noc_hops=noc_hops,
+                                                            reduction_strategy=reduction_strategy,
+                                                            vector_ops_per_mac=args.vector_ops_per_mac,
+                                                            reduction_scalar_bytes=args.reduction_scalar_bytes,
+                                                            command_cycles_per_tile=command_cycles_per_tile,
+                                                            command_cycles_per_wave=command_cycles_per_wave,
+                                                            reducer_setup_cycles=reducer_setup_cycles,
+                                                            reduction_cycle_multiplier=reduction_cycle_multiplier,
+                                                            measured_l1_profile=measured_l1_profile,
+                                                        )
+                                                        if row is None:
+                                                            stats["topology_skipped_area_budget_count"] += 1
+                                                            continue
+                                                        stats["topology_generated_row_count"] += 1
+                                                        yield topology_derived._annotate_topology(row, service)
+
+
+def _source_rows(args: argparse.Namespace, *, repo_root: Path, stats: dict[str, Any]) -> Iterable[JsonDict]:
+    if args.topology_pairs_json:
+        yield from _iter_generated_topology_rows(args, repo_root=repo_root, stats=stats)
+        return
+    if not args.topology_derived_json:
+        raise RuntimeError("one of --topology-derived-json or --topology-pairs-json is required")
+    source_payload = _load_json(repo_root / args.topology_derived_json)
+    rows = _dedupe_rows(source_payload, limit=args.frontier_row_limit)
+    stats.update(
+        {
+            "source_mode": "retained_topology_rows",
+            "source_model": source_payload.get("model"),
+            "retained_source_row_count": len(rows),
+        }
+    )
+    yield from rows
+
+
 def build_report(args: argparse.Namespace) -> JsonDict:
     repo_root = args.repo_root
-    source_payload = _load_json(repo_root / args.topology_derived_json)
     sram_caps = _sram_profile_caps(_load_json(repo_root / args.sram_profile_json))
-    source_rows = _dedupe_rows(source_payload, limit=args.frontier_row_limit)
+    source_stats: dict[str, Any] = {}
 
     best: JsonDict | None = None
     top_heap: list[tuple[float, int, JsonDict]] = []
     heap_counter = 0
+    source_rows_used = 0
     generated = 0
     infeasible = Counter()
     dominance = Counter()
@@ -323,7 +440,8 @@ def build_report(args: argparse.Namespace) -> JsonDict:
     best_by_endpoint: dict[tuple[Any, ...], JsonDict] = {}
     best_by_die: dict[tuple[Any, ...], JsonDict] = {}
 
-    for row in source_rows:
+    for row in _source_rows(args, repo_root=repo_root, stats=source_stats):
+        source_rows_used += 1
         for local_buffer_multiplier in args.local_buffer_multiplier:
             for sram_bank_efficiency in args.sram_bank_efficiency:
                 for endpoint_port_bytes_per_cycle in args.endpoint_port_bytes_per_cycle:
@@ -372,11 +490,25 @@ def build_report(args: argparse.Namespace) -> JsonDict:
     return {
         "version": 1,
         "model": "llm_decoder_attention_kv_sram_noc_constrained_schedule_llama7b_v1",
-        "topology_derived_json": str(args.topology_derived_json),
+        "topology_derived_json": str(args.topology_derived_json or ""),
+        "topology_pairs_json": str(args.topology_pairs_json or ""),
         "sram_profile_json": str(args.sram_profile_json),
-        "source_model": source_payload.get("model"),
+        "source_model": source_stats.get("source_model"),
         "inputs": {
             "frontier_row_limit": args.frontier_row_limit,
+            "topology_row_limit": args.topology_row_limit,
+            "sequence_length_list": args.sequence_length_list,
+            "die_area_mm2_list": args.die_area_mm2_list,
+            "sram_area_fraction": args.sram_area_fraction,
+            "logic_area_fraction": args.logic_area_fraction,
+            "reserved_area_fraction": args.reserved_area_fraction,
+            "usable_sram_fraction": args.usable_sram_fraction,
+            "tile_tokens_list": args.tile_tokens_list,
+            "compute_source": args.compute_source,
+            "compute_arch_list": args.compute_arch_list,
+            "tag_substring": args.tag_substring,
+            "measured_l1_costs": str(args.measured_l1_costs),
+            "measured_l1_profile": args.measured_l1_profile,
             "sram_bank_port_bytes_per_cycle": args.sram_bank_port_bytes_per_cycle,
             "sram_read_ports_per_bank": args.sram_read_ports_per_bank,
             "sram_bank_efficiency": args.sram_bank_efficiency,
@@ -387,8 +519,9 @@ def build_report(args: argparse.Namespace) -> JsonDict:
         },
         "sram_caps": sram_caps,
         "sweep_summary": {
-            "source_rows_used": len(source_rows),
+            "source_rows_used": source_rows_used,
             "generated_row_count": generated,
+            **source_stats,
             "infeasible_counts": dict(sorted(infeasible.items())),
             "dominant_tile_resource_counts": dict(sorted(dominance.items())),
             "practical_noc_cap_source_counts": dict(sorted(cap_sources.items())),
@@ -399,7 +532,11 @@ def build_report(args: argparse.Namespace) -> JsonDict:
         "best_by_endpoint": sorted(best_by_endpoint.values(), key=lambda row: row["latency_us"])[:100],
         "best_by_die": sorted(best_by_die.values(), key=lambda row: (row["sequence_length"], row["die_area_mm2"])),
         "assumptions": [
-            "Input rows are retained frontier rows from the topology-derived scheduler, not a full re-search of all generated rows.",
+            (
+                "Input rows are regenerated from the topology/scheduler pair matrix before practical SRAM/NoC caps are applied."
+                if args.topology_pairs_json
+                else "Input rows are retained frontier rows from the topology-derived scheduler, not a full re-search of all generated rows."
+            ),
             "SRAM bank service is capped by measured 256-bit tile-buffer bank width unless overridden by the CLI.",
             "NoC service is capped by the minimum of topology aggregate payload service, endpoint injection/ejection service, and practical SRAM bank read service.",
             "Local tile-buffer capacity is required per cluster; full KV-cache residency remains the higher-level HBM/SRAM capacity model from the source schedule.",
@@ -464,9 +601,29 @@ def write_markdown(path: Path, payload: JsonDict) -> None:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--repo-root", type=Path, default=Path("."))
-    ap.add_argument("--topology-derived-json", required=True, type=Path)
+    ap.add_argument("--topology-derived-json", type=Path)
+    ap.add_argument("--topology-pairs-json", type=Path)
     ap.add_argument("--sram-profile-json", required=True, type=Path)
     ap.add_argument("--frontier-row-limit", type=int, default=256)
+    ap.add_argument("--tag-substring", default="npu_dense_gemm_tile_v2_scale_hier")
+    ap.add_argument("--compute-source", choices=["legacy_npu_block", "dense_gemm_tile", "all"], default="dense_gemm_tile")
+    ap.add_argument("--compute-arch-list", type=_optional_str_list, default=["dense_gemm_16x8_k1_p1"])
+    ap.add_argument("--sequence-length-list", type=_int_list, default=[131072])
+    ap.add_argument("--die-area-mm2-list", type=_float_list, default=[800, 1200])
+    ap.add_argument("--sram-area-fraction", type=_float_list, default=[0.35, 0.4, 0.5, 0.6])
+    ap.add_argument("--logic-area-fraction", type=_float_list, default=[0.3, 0.4, 0.5])
+    ap.add_argument("--reserved-area-fraction", type=float, default=0.1)
+    ap.add_argument("--usable-sram-fraction", type=_float_list, default=[0.7])
+    ap.add_argument("--tile-tokens-list", type=_int_list, default=[512, 1024])
+    ap.add_argument("--topology-row-limit", type=int, default=128)
+    ap.add_argument("--vector-ops-per-mac", type=float, default=0.125)
+    ap.add_argument("--reduction-scalar-bytes", type=int, default=2)
+    ap.add_argument("--command-cycles-per-tile", type=_nonnegative_int_list, default=[0, 4, 16])
+    ap.add_argument("--command-cycles-per-wave", type=_nonnegative_int_list, default=[0, 16, 64])
+    ap.add_argument("--reducer-setup-cycles", type=_nonnegative_int_list, default=[0, 64, 256])
+    ap.add_argument("--reduction-cycle-multiplier", type=_float_list, default=[1.0, 2.0, 4.0])
+    ap.add_argument("--measured-l1-costs", default="")
+    ap.add_argument("--measured-l1-profile", type=_profile_list, default=["hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q10"])
     ap.add_argument("--sram-bank-port-bytes-per-cycle", type=float, default=32.0)
     ap.add_argument("--sram-read-ports-per-bank", type=int, default=1)
     ap.add_argument("--sram-bank-efficiency", type=_float_list, default=[0.70, 0.85])
@@ -478,6 +635,8 @@ def main() -> int:
     ap.add_argument("--out", required=True, type=Path)
     ap.add_argument("--out-md", required=True, type=Path)
     args = ap.parse_args()
+    if not args.topology_derived_json and not args.topology_pairs_json:
+        ap.error("one of --topology-derived-json or --topology-pairs-json is required")
 
     payload = build_report(args)
     args.out.parent.mkdir(parents=True, exist_ok=True)

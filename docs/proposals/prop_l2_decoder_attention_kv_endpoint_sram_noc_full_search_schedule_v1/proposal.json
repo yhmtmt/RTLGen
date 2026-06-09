@@ -1,0 +1,69 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_endpoint_sram_noc_full_search_schedule_v1",
+  "created_utc": "2026-06-09T06:25:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Endpoint SRAM/NoC full-search Llama7B attention schedule",
+  "hypothesis": "Applying practical SRAM-bank service, local tile-buffer capacity, and endpoint injection/ejection caps during full regeneration of the endpoint topology-derived Llama7B dense-tile schedule may change the selected topology/scheduler point compared with retained-frontier postprocessing.",
+  "direct_comparison": {
+    "primary_question": "Does cap-aware full regeneration select a different best Llama7B endpoint topology/scheduler point than retained-frontier SRAM/NoC postprocessing?",
+    "include": [
+      "Use the endpoint topology/scheduler pair matrix merged from l2_decoder_attention_kv_dense_tile_endpoint_topology_scheduler_pairs_llama7b_v1.",
+      "Use the measured SRAM tile-buffer profile l2_decoder_attention_sram_profile_v1.",
+      "Regenerate endpoint topology-derived schedule rows over the same Llama7B sweep as the endpoint topology-derived item.",
+      "Apply practical endpoint port width/count, endpoint efficiency, SRAM bank efficiency, and local buffer multiplier before ranking.",
+      "Report the best cap-aware row and compare its topology, scheduler, service cap source, and latency with the retained-frontier cap result."
+    ],
+    "exclude": [
+      "Do not change HBM/DRAM bandwidth, frequency, or service policy.",
+      "Do not introduce new KV sharing or precision/quality changes.",
+      "Do not run new physical closure in this L2 scheduler item.",
+      "Do not reintroduce independent abstract NoC bandwidth or hop sweeps."
+    ],
+    "follow_on_broad_sweep": [
+      "If the selected topology changes, use the cap-aware result as the next Llama7B frontier baseline.",
+      "If endpoint or SRAM-bank service remains dominant, promote a detailed SRAM/endpoint arbitration and buffering model for that topology family.",
+      "After on-chip service is consistent, revisit HBM/DRAM only as a separate scoped item."
+    ]
+  },
+  "expected_benefit": [
+    "Remove retained-frontier bias from the practical SRAM/endpoint constrained ranking.",
+    "Identify whether topology service, endpoint injection/ejection, or SRAM-bank read service controls the cap-aware full search.",
+    "Provide a firmer Llama7B frontier input for the detailed SRAM/NoC scheduler model."
+  ],
+  "risks": [
+    "This remains analytic service-envelope evidence, not cycle-accurate SRAM arbitration.",
+    "The full regeneration expands many rows and can be slower than retained-frontier postprocessing.",
+    "Endpoint caps are parametric until endpoint queues and arbitration are embodied in RTL."
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "objective": "endpoint_sram_noc_full_search_dense_tile_schedule",
+      "cost_class": "medium",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_dense_tile_endpoint_topology_scheduler_pairs_llama7b_v1",
+        "l2_decoder_attention_sram_profile_v1",
+        "l2_decoder_attention_kv_endpoint_sram_noc_constrained_schedule_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "cap_aware_full_search_over_endpoint_topology_schedule",
+        "reason": "The result should report whether the best cap-aware full-search row differs from the retained-frontier SRAM/NoC constrained row."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_dense_tile_endpoint_topology_scheduler_pairs__l2_decoder_attention_kv_dense_tile_endpoint_topology_scheduler_pairs_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_sram_profile__l2_decoder_attention_sram_profile_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_sram_noc_constrained_schedule__l2_decoder_attention_kv_endpoint_sram_noc_constrained_schedule_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "docs/proposals/prop_l2_decoder_attention_kv_endpoint_sram_noc_constrained_schedule_v1/analysis_report.md",
+    "npu/eval/estimate_llm_decoder_attention_kv_sram_noc_constrained_schedule.py"
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_endpoint_sram_noc_full_search_schedule_v1",
+  "source_commit": "TBD_AFTER_MERGE",
+  "source_commit_note": "Dispatch should use the merge commit for the proposal implementation so the evaluator has the full-search generator hook and CLI.",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_kv_endpoint_sram_noc_full_search_schedule_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Regenerate endpoint-measured Llama7B topology-derived dense-tile schedule rows and apply practical SRAM-bank, local-buffer, and endpoint service caps before ranking.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_endpoint_sram_noc_full_search_schedule",
+      "comparison_role": "frontier_revision",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_endpoint_sram_noc_constrained_schedule_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_dense_tile_endpoint_topology_scheduler_pairs_llama7b_v1",
+        "l2_decoder_attention_sram_profile_v1",
+        "l2_decoder_attention_kv_endpoint_sram_noc_constrained_schedule_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "cap_aware_full_search_over_endpoint_topology_schedule",
+        "reason": "The result should show whether practical SRAM-bank and endpoint caps change the best topology/scheduler point compared with retained-frontier cap postprocessing."
+      }
+    }
+  ]
+}
+
