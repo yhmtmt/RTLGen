@@ -23,19 +23,18 @@
 - expected_direction: `measure_selected_local_sram_capacity_macro_profile`
 - expected_reason: `The result should report per-cluster and all-cluster SRAM area/access/energy and budget fit.`
 - expectation_status: `unspecified`
-- evaluation_summary: `Focused comparison improved latency and/or energy without regressing matched rows.`
+- evaluation_summary: `Decoder local SRAM capacity evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_local_sram_capacity__l2_decoder_attention_local_sram_capacity_llama7b_v1.json: decision=local_sram_capacity_budget_failed; fits_sram_budget=False; total_area_um2=1306824061.5888963; sram_budget_area_um2=280000000.0; area_fraction_of_sram_budget=4.667229.`
 
-## Focused Comparison
+## Focused Evidence
 - primary_question: `How much area and access time does the selected local SRAM capacity pool require when represented as concrete SRAM macro chunks?`
 - comparison_role: `frontier_closure`
-- proposal_outcome: `improved`
-- comparison_summary: `Focused comparison improved latency and/or energy without regressing matched rows.`
-- baseline_ref: `runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1`
-- baseline_item_id: `l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1`
-- latency_delta fp16_nm1/flat_nomacro/None: `0.144262` -> `0.004282` ms
-- energy_delta fp16_nm1/flat_nomacro/None: `2.7860165964e-05` -> `8.26948404e-07` mJ
-- latency_delta fp16_nm1/hier_macro/None: `0.144262` -> `0.004282` ms
-- energy_delta fp16_nm1/hier_macro/None: `2.8483233542000004e-05` -> `8.45442362e-07` mJ
+- proposal_outcome: `local_sram_capacity_budget_failed`
+- comparison_summary: `Decoder local SRAM capacity evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_local_sram_capacity__l2_decoder_attention_local_sram_capacity_llama7b_v1.json: decision=local_sram_capacity_budget_failed; fits_sram_budget=False; total_area_um2=1306824061.5888963; sram_budget_area_um2=280000000.0; area_fraction_of_sram_budget=4.667229.`
+- decoder_evidence_ref: `runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_local_sram_capacity__l2_decoder_attention_local_sram_capacity_llama7b_v1.json`
+- fits_sram_budget: `False`
+- total_area_um2: `1306824061.5888963`
+- sram_budget_area_um2: `280000000.0`
+- area_fraction_of_sram_budget: `4.667229`
 
 ## Checklist
 - [ ] Commit lightweight campaign artifacts only

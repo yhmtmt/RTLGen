@@ -222,7 +222,7 @@
     "kind": "decision_proposal",
     "path": "control_plane/shadow_exports/l2_decisions/l2_decoder_attention_local_sram_capacity_llama7b_v1.json",
     "storage_mode": "repo",
-    "sha256": "88147adeae2366bdd22040fa2d66608f35fa3fb6d99e586618810c486eec5b3c",
+    "sha256": "3ac339b0581ee972cef9b438d833732906d0bfedca14b26a98d526ef41ababb3",
     "payload": {
       "version": 0.1,
       "generated_utc": "2026-06-09T11:58:35.594527Z",
@@ -297,10 +297,10 @@
         "abstraction_layer": "decoder_attention_local_sram_capacity",
         "expected_direction": "measure_selected_local_sram_capacity_macro_profile",
         "expected_reason": "The result should report per-cluster and all-cluster SRAM area/access/energy and budget fit.",
-        "summary": "Focused comparison improved latency and/or energy without regressing matched rows.",
-        "baseline_ref": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1",
-        "baseline_item_id": "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1",
-        "outcome": "improved",
+        "summary": "Decoder local SRAM capacity evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_local_sram_capacity__l2_decoder_attention_local_sram_capacity_llama7b_v1.json: decision=local_sram_capacity_budget_failed; fits_sram_budget=False; total_area_um2=1306824061.5888963; sram_budget_area_um2=280000000.0; area_fraction_of_sram_budget=4.667229. ",
+        "baseline_ref": null,
+        "baseline_item_id": null,
+        "outcome": "local_sram_capacity_budget_failed",
         "expectation_status": "unspecified"
       },
       "proposal_assessment": {
@@ -310,165 +310,70 @@
         "primary_question": "How much area and access time does the selected local SRAM capacity pool require when represented as concrete SRAM macro chunks?",
         "evaluation_mode": "profile_measurement",
         "comparison_role": "frontier_closure",
-        "outcome": "improved",
-        "summary": "Focused comparison improved latency and/or energy without regressing matched rows.",
-        "baseline_ref": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1",
-        "baseline_item_id": "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1",
-        "matched_row_count": 4,
-        "matched_rows": [
-          {
-            "scope": "aggregate",
-            "arch_id": "fp16_nm1",
-            "macro_mode": "flat_nomacro",
-            "model_id": null,
-            "metrics": {
-              "latency_ms_mean": {
-                "baseline": 0.144262,
-                "candidate": 0.004282,
-                "delta": -0.13998
-              },
-              "energy_mj_mean": {
-                "baseline": 2.7860165964e-05,
-                "candidate": 8.26948404e-07,
-                "delta": -2.703321756e-05
-              },
-              "critical_path_ns_mean": {
-                "baseline": 5.557037432204143,
-                "candidate": 5.557037432204143,
-                "delta": 0.0
-              },
-              "total_power_mw_mean": {
-                "baseline": 0.193122,
-                "candidate": 0.193122,
-                "delta": 0.0
-              },
-              "flow_elapsed_s_mean": {
-                "baseline": 844.5733333333334,
-                "candidate": 848.418,
-                "delta": 3.844666666666626
-              },
-              "throughput_infer_per_s_mean": {
-                "baseline": 8421.072384503364,
-                "candidate": 233535.7309668379,
-                "delta": 225114.65858233452
-              }
-            }
+        "outcome": "local_sram_capacity_budget_failed",
+        "summary": "Decoder local SRAM capacity evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_local_sram_capacity__l2_decoder_attention_local_sram_capacity_llama7b_v1.json: decision=local_sram_capacity_budget_failed; fits_sram_budget=False; total_area_um2=1306824061.5888963; sram_budget_area_um2=280000000.0; area_fraction_of_sram_budget=4.667229. ",
+        "baseline_ref": null,
+        "baseline_item_id": null,
+        "matched_row_count": 0,
+        "matched_rows": [],
+        "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_local_sram_capacity__l2_decoder_attention_local_sram_capacity_llama7b_v1.json",
+        "decoder_quality": {
+          "profile": "decoder_attention_local_sram_capacity",
+          "selected_frontier": {
+            "active_clusters": 16,
+            "bank_count": 64,
+            "cluster_count": 16,
+            "die_area_mm2": 800.0,
+            "latency_us": 3222.903773,
+            "local_capacity_bytes_per_cluster": 19140624,
+            "local_capacity_mib_total": 292.062759,
+            "local_sram_fraction": 0.25,
+            "sram_area_fraction": 0.35
           },
-          {
-            "scope": "aggregate",
-            "arch_id": "fp16_nm1",
-            "macro_mode": "hier_macro",
-            "model_id": null,
-            "metrics": {
-              "latency_ms_mean": {
-                "baseline": 0.144262,
-                "candidate": 0.004282,
-                "delta": -0.13998
-              },
-              "energy_mj_mean": {
-                "baseline": 2.8483233542000004e-05,
-                "candidate": 8.45442362e-07,
-                "delta": -2.7637791180000004e-05
-              },
-              "critical_path_ns_mean": {
-                "baseline": 5.774905724664045,
-                "candidate": 5.774905724664045,
-                "delta": 0.0
-              },
-              "total_power_mw_mean": {
-                "baseline": 0.197441,
-                "candidate": 0.197441,
-                "delta": 0.0
-              },
-              "flow_elapsed_s_mean": {
-                "baseline": 976.8733333333333,
-                "candidate": 978.894,
-                "delta": 2.0206666666666706
-              },
-              "throughput_infer_per_s_mean": {
-                "baseline": 8421.072384503364,
-                "candidate": 233535.7309668379,
-                "delta": 225114.65858233452
-              }
-            }
+          "chunking": {
+            "allocated_bytes_all_clusters": 306446336,
+            "allocated_bytes_per_cluster": 19152896,
+            "capacity_overhead": 1.000641,
+            "chunk_count_per_cluster": 4,
+            "chunks_bytes": [
+              16777216,
+              2097152,
+              262144,
+              16384
+            ],
+            "max_chunk_bytes": 16777216,
+            "min_chunk_bytes": 16384,
+            "width_bits": 1024,
+            "word_bytes": 128
           },
-          {
-            "scope": "aggregate",
-            "arch_id": "fp16_nm2",
-            "macro_mode": "flat_nomacro",
-            "model_id": null,
-            "metrics": {
-              "latency_ms_mean": {
-                "baseline": 0.144262,
-                "candidate": 0.007330000000000001,
-                "delta": -0.136932
-              },
-              "energy_mj_mean": {
-                "baseline": 3.0354744468e-05,
-                "candidate": 1.54233462e-06,
-                "delta": -2.8812409848e-05
-              },
-              "critical_path_ns_mean": {
-                "baseline": 5.701286780426341,
-                "candidate": 5.701286780426342,
-                "delta": 8.881784197001252e-16
-              },
-              "total_power_mw_mean": {
-                "baseline": 0.210414,
-                "candidate": 0.21041400000000002,
-                "delta": 2.7755575615628914e-17
-              },
-              "flow_elapsed_s_mean": {
-                "baseline": 828.3466666666667,
-                "candidate": 829.814,
-                "delta": 1.467333333333272
-              },
-              "throughput_infer_per_s_mean": {
-                "baseline": 8421.072384503364,
-                "candidate": 136425.64802182812,
-                "delta": 128004.57563732476
-              }
-            }
+          "budget_check": {
+            "area_fraction_of_sram_budget": 4.667229,
+            "fits_sram_budget": false,
+            "sram_budget_area_um2": 280000000.0,
+            "total_area_um2": 1306824061.5888963
           },
-          {
-            "scope": "aggregate",
-            "arch_id": "fp16_nm2",
-            "macro_mode": "hier_macro",
-            "model_id": null,
-            "metrics": {
-              "latency_ms_mean": {
-                "baseline": 0.144262,
-                "candidate": 0.007330000000000001,
-                "delta": -0.136932
-              },
-              "energy_mj_mean": {
-                "baseline": 3.0701117530000004e-05,
-                "candidate": 1.5599339500000002e-06,
-                "delta": -2.9141183580000005e-05
-              },
-              "critical_path_ns_mean": {
-                "baseline": 5.740890641774165,
-                "candidate": 5.740890641774165,
-                "delta": 0.0
-              },
-              "total_power_mw_mean": {
-                "baseline": 0.212815,
-                "candidate": 0.21281500000000003,
-                "delta": 2.7755575615628914e-17
-              },
-              "flow_elapsed_s_mean": {
-                "baseline": 984.32,
-                "candidate": 981.7819999999999,
-                "delta": -2.5380000000001246
-              },
-              "throughput_infer_per_s_mean": {
-                "baseline": 8421.072384503364,
-                "candidate": 136425.64802182812,
-                "delta": 128004.57563732476
-              }
-            }
-          }
-        ]
+          "per_cluster_sram_metrics_summary": {
+            "estimated_count": 4,
+            "instance_count": 4,
+            "max_access_time_ns": 6.39009,
+            "missing_instances": [],
+            "total_area_um2": 81676503.84930602,
+            "total_read_energy_pj": 4681.466,
+            "total_write_energy_pj": 6233.012
+          },
+          "all_cluster_sram_metrics_summary": {
+            "active_clusters": 16,
+            "max_access_time_ns": 6.39009,
+            "total_area_um2": 1306824061.5888963,
+            "total_read_energy_pj": 74903.456,
+            "total_write_energy_pj": 99728.192
+          },
+          "remaining_abstractions": [
+            "CACTI estimates are macro-level SRAM access/energy estimates, not a placed SRAM compiler floorplan.",
+            "The profile models local-capacity SRAM chunks only; HBM/DRAM service remains separate.",
+            "NoC arbitration and endpoint/router PPA are measured by separate closure items."
+          ]
+        }
       },
       "source_refs": {
         "best_point_json": "runs/campaigns/npu/e2e_eval_v0__l2_decoder_attention_local_sram_capacity_llama7b_v1/best_point.json",
@@ -486,8 +391,11 @@
             "perf_trace_json": "runs/campaigns/npu/e2e_eval_v0__l2_decoder_attention_local_sram_capacity_llama7b_v1/artifacts/perf/fp16_nm1/mlp1/trace.json"
           }
         ],
-        "baseline_summary_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1/summary.csv",
-        "baseline_report_md": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1/report.md"
+        "decoder_attention_local_sram_capacity_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_local_sram_capacity__l2_decoder_attention_local_sram_capacity_llama7b_v1.json",
+        "decoder_attention_local_sram_capacity_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_local_sram_capacity__l2_decoder_attention_local_sram_capacity_llama7b_v1.md",
+        "decoder_attention_local_sram_capacity_arch": "runs/designs/sram/llama7b_attention_local_capacity_v1/arch.yml",
+        "decoder_attention_local_sram_capacity_metrics_json": "runs/designs/sram/llama7b_attention_local_capacity_v1/sram_metrics.json",
+        "decoder_attention_local_sram_capacity_summary_json": "runs/designs/sram/llama7b_attention_local_capacity_v1/sram_metrics_summary.json"
       }
     }
   },
@@ -524,7 +432,7 @@
       "evaluator_id": "control_plane",
       "queue_item_id": "l2_decoder_attention_local_sram_capacity_llama7b_v1"
     },
-    "body_md": "## Summary\n- item_id: `l2_decoder_attention_local_sram_capacity_llama7b_v1`\n- run_key: `l2_decoder_attention_local_sram_capacity_llama7b_v1_run_2d4c172783f15d4e`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `6/6 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_decoder_attention_local_sram_capacity_llama7b_v1/evaluated.json`\n- metrics_rows_count: `24`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_decoder_attention_local_sram_capacity_llama7b_v1.json`\n\n## Developer Context\n- proposal_id: `prop_l2_decoder_attention_local_sram_capacity_v1`\n- proposal_path: `docs/proposals/prop_l2_decoder_attention_local_sram_capacity_v1/proposal.json`\n- reviewer_first_read: `docs/proposals/prop_l2_decoder_attention_local_sram_capacity_v1/proposal.json` plus `docs/developer_agent_review.md`\n- execution_source_commit: `e51e229abbb25947df144d019d8e545e6d85bf05`\n- review_metadata_source_commit: `e51e229abbb25947df144d019d8e545e6d85bf05`\n\n## Evaluation Mode\n- evaluation_mode: `profile_measurement`\n- abstraction_layer: `decoder_attention_local_sram_capacity`\n- comparison_role: `frontier_closure`\n- expected_direction: `measure_selected_local_sram_capacity_macro_profile`\n- expected_reason: `The result should report per-cluster and all-cluster SRAM area/access/energy and budget fit.`\n- expectation_status: `unspecified`\n- evaluation_summary: `Focused comparison improved latency and/or energy without regressing matched rows.`\n\n## Focused Comparison\n- primary_question: `How much area and access time does the selected local SRAM capacity pool require when represented as concrete SRAM macro chunks?`\n- comparison_role: `frontier_closure`\n- proposal_outcome: `improved`\n- comparison_summary: `Focused comparison improved latency and/or energy without regressing matched rows.`\n- baseline_ref: `runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1`\n- baseline_item_id: `l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1`\n- latency_delta fp16_nm1/flat_nomacro/None: `0.144262` -> `0.004282` ms\n- energy_delta fp16_nm1/flat_nomacro/None: `2.7860165964e-05` -> `8.26948404e-07` mJ\n- latency_delta fp16_nm1/hier_macro/None: `0.144262` -> `0.004282` ms\n- energy_delta fp16_nm1/hier_macro/None: `2.8483233542000004e-05` -> `8.45442362e-07` mJ\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
+    "body_md": "## Summary\n- item_id: `l2_decoder_attention_local_sram_capacity_llama7b_v1`\n- run_key: `l2_decoder_attention_local_sram_capacity_llama7b_v1_run_2d4c172783f15d4e`\n- layer: `layer2`\n- task_type: `l2_campaign`\n- status: `ok`\n- summary: `6/6 commands succeeded`\n- queue_snapshot: `control_plane/shadow_exports/review/l2_decoder_attention_local_sram_capacity_llama7b_v1/evaluated.json`\n- metrics_rows_count: `24`\n- review_artifact: `decision_proposal` at `control_plane/shadow_exports/l2_decisions/l2_decoder_attention_local_sram_capacity_llama7b_v1.json`\n\n## Developer Context\n- proposal_id: `prop_l2_decoder_attention_local_sram_capacity_v1`\n- proposal_path: `docs/proposals/prop_l2_decoder_attention_local_sram_capacity_v1/proposal.json`\n- reviewer_first_read: `docs/proposals/prop_l2_decoder_attention_local_sram_capacity_v1/proposal.json` plus `docs/developer_agent_review.md`\n- execution_source_commit: `e51e229abbb25947df144d019d8e545e6d85bf05`\n- review_metadata_source_commit: `e51e229abbb25947df144d019d8e545e6d85bf05`\n\n## Evaluation Mode\n- evaluation_mode: `profile_measurement`\n- abstraction_layer: `decoder_attention_local_sram_capacity`\n- comparison_role: `frontier_closure`\n- expected_direction: `measure_selected_local_sram_capacity_macro_profile`\n- expected_reason: `The result should report per-cluster and all-cluster SRAM area/access/energy and budget fit.`\n- expectation_status: `unspecified`\n- evaluation_summary: `Decoder local SRAM capacity evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_local_sram_capacity__l2_decoder_attention_local_sram_capacity_llama7b_v1.json: decision=local_sram_capacity_budget_failed; fits_sram_budget=False; total_area_um2=1306824061.5888963; sram_budget_area_um2=280000000.0; area_fraction_of_sram_budget=4.667229.`\n\n## Focused Evidence\n- primary_question: `How much area and access time does the selected local SRAM capacity pool require when represented as concrete SRAM macro chunks?`\n- comparison_role: `frontier_closure`\n- proposal_outcome: `local_sram_capacity_budget_failed`\n- comparison_summary: `Decoder local SRAM capacity evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_local_sram_capacity__l2_decoder_attention_local_sram_capacity_llama7b_v1.json: decision=local_sram_capacity_budget_failed; fits_sram_budget=False; total_area_um2=1306824061.5888963; sram_budget_area_um2=280000000.0; area_fraction_of_sram_budget=4.667229.`\n- decoder_evidence_ref: `runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_local_sram_capacity__l2_decoder_attention_local_sram_capacity_llama7b_v1.json`\n- fits_sram_budget: `False`\n- total_area_um2: `1306824061.5888963`\n- sram_budget_area_um2: `280000000.0`\n- area_fraction_of_sram_budget: `4.667229`\n\n## Checklist\n- [ ] Commit lightweight campaign artifacts only\n- [ ] Include metrics row references in result.metrics_rows\n- [ ] Keep committed result_path fields repo-portable\n- [ ] Run python3 scripts/validate_runs.py --skip_eval_queue before pushing\n",
     "checklist": [
       "Commit lightweight campaign artifacts only",
       "Include metrics row references in result.metrics_rows",
