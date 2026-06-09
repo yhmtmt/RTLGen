@@ -4413,6 +4413,55 @@ def _decoder_attention_kv_dense_tile_topology_scheduler_pairs_evidence(
     }
 
 
+def _decoder_attention_kv_dense_tile_endpoint_topology_scheduler_pairs_evidence(
+    *,
+    item_id: str,
+) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_kv_dense_tile_endpoint_topology_scheduler_pairs__{item_id}.json"
+    report = f"{base}/decoder_attention_kv_dense_tile_endpoint_topology_scheduler_pairs__{item_id}.md"
+    endpoint_frontier = (
+        f"{base}/decoder_attention_kv_dense_tile_endpoint_measured_l1_clustered_schedule__"
+        "l2_decoder_attention_kv_dense_tile_endpoint_measured_l1_clustered_schedule_llama7b_v1.json"
+    )
+    return {
+        "inputs": {
+            "attention_kv_dense_tile_endpoint_measured_l1_clustered_schedule": endpoint_frontier,
+            "attention_kv_dense_tile_endpoint_topology_scheduler_pairs_out": out,
+            "attention_kv_dense_tile_endpoint_topology_scheduler_pairs_report": report,
+            "attention_kv_dense_tile_endpoint_topology_scheduler_pairs_scope": (
+                "Validate logically compatible NoC topology, scheduler, reducer, bank-placement, "
+                "link-width, and virtual-channel pairs against the endpoint-measured dense-tile "
+                "Llama7B attention schedule. This uses the endpoint-inclusive frontier as the "
+                "traffic/service target before the next topology-derived scheduler run."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_attention_kv_dense_tile_endpoint_topology_scheduler_pairs",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_attention_kv_topology_scheduler_pairs.py "
+                    "--repo-root . "
+                    f"--frontier-json {endpoint_frontier} "
+                    "--cluster-count-list 1,2,4,8,16 "
+                    "--topology-list local_only,cluster_tree,mesh2d,ring,crossbar "
+                    "--scheduler-policy-list static_wave,locality_aware,bank_aware_prefetch,"
+                    "tree_reduction_aware,double_buffered_overlap "
+                    "--reduction-strategy-list centralized_tile,owner_cluster,cluster_tree "
+                    "--bank-placement-list per_cluster_local,grouped_shared,distributed_shared "
+                    "--bank-count-list 16,64,128 "
+                    "--link-width-bits-list 256,512,1024,2048 "
+                    "--virtual-channel-list 1,2,4 "
+                    "--local-sram-fraction-list 0.05,0.1,0.25 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_attention_kv_dense_tile_topology_derived_schedule_evidence(
     *,
     item_id: str,
@@ -4463,6 +4512,68 @@ def _decoder_attention_kv_dense_tile_topology_derived_schedule_evidence(
                     "--reducer-setup-cycles 0,64,256 "
                     "--reduction-cycle-multiplier 1,2,4 "
                     f"--measured-l1-costs {all_measured_costs} "
+                    "--measured-l1-profile hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q10 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
+def _decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_evidence(
+    *,
+    item_id: str,
+) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule__{item_id}.json"
+    report = f"{base}/decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule__{item_id}.md"
+    endpoint_topology_pairs = (
+        f"{base}/decoder_attention_kv_dense_tile_endpoint_topology_scheduler_pairs__"
+        "l2_decoder_attention_kv_dense_tile_endpoint_topology_scheduler_pairs_llama7b_v1.json"
+    )
+    endpoint_measured_costs = (
+        "runs/campaigns/npu/l1_measured_costs/llama7b_attention_local_costs_all_measured_endpoint_v1.json"
+    )
+    return {
+        "inputs": {
+            "attention_kv_dense_tile_endpoint_topology_scheduler_pairs": endpoint_topology_pairs,
+            "attention_kv_endpoint_measured_l1_costs": endpoint_measured_costs,
+            "attention_kv_dense_tile_endpoint_topology_derived_schedule_out": out,
+            "attention_kv_dense_tile_endpoint_topology_derived_schedule_report": report,
+            "attention_kv_dense_tile_endpoint_topology_derived_schedule_scope": (
+                "Rerun the endpoint-measured Llama7B dense-tile clustered schedule using only "
+                "topology-derived NoC service rows from the endpoint topology/scheduler matrix. "
+                "This keeps endpoint, FIFO/router, softmax, and local attention datapath PPA "
+                "measured while replacing independent abstract NoC bandwidth/hops."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_attention_kv_topology_derived_schedule.py "
+                    "--repo-root . "
+                    f"--topology-pairs-json {endpoint_topology_pairs} "
+                    "--compute-source dense_gemm_tile "
+                    "--compute-arch-list dense_gemm_16x8_k1_p1 "
+                    "--tag-substring npu_dense_gemm_tile_v2_scale_hier "
+                    "--sequence-length-list 131072 "
+                    "--die-area-mm2-list 800,1200 "
+                    "--sram-area-fraction 0.35,0.4,0.5,0.6 "
+                    "--logic-area-fraction 0.3,0.4,0.5 "
+                    "--reserved-area-fraction 0.1 "
+                    "--usable-sram-fraction 0.7 "
+                    "--tile-tokens-list 512,1024 "
+                    "--topology-row-limit 128 "
+                    "--vector-ops-per-mac 0.125 "
+                    "--reduction-scalar-bytes 2 "
+                    "--command-cycles-per-tile 0,4,16 "
+                    "--command-cycles-per-wave 0,16,64 "
+                    "--reducer-setup-cycles 0,64,256 "
+                    "--reduction-cycle-multiplier 1,2,4 "
+                    f"--measured-l1-costs {endpoint_measured_costs} "
                     "--measured-l1-profile hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q10 "
                     f"--out {out} "
                     f"--out-md {report}"
@@ -6156,7 +6267,9 @@ def _build_payload(
         "decoder_attention_kv_dense_tile_endpoint_measured_l1_clustered_schedule",
         "decoder_attention_kv_dense_tile_reduction_noc_frontier",
         "decoder_attention_kv_dense_tile_topology_scheduler_pairs",
+        "decoder_attention_kv_dense_tile_endpoint_topology_scheduler_pairs",
         "decoder_attention_kv_dense_tile_topology_derived_schedule",
+        "decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule",
         "decoder_attention_kv_sram_noc_constrained_schedule",
         "decoder_attention_kv_onchip_service_schedule",
         "decoder_attention_sram_profile",
@@ -6256,8 +6369,16 @@ def _build_payload(
             decoder_evidence = _decoder_attention_kv_dense_tile_reduction_noc_frontier_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_dense_tile_topology_scheduler_pairs":
             decoder_evidence = _decoder_attention_kv_dense_tile_topology_scheduler_pairs_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_kv_dense_tile_endpoint_topology_scheduler_pairs":
+            decoder_evidence = _decoder_attention_kv_dense_tile_endpoint_topology_scheduler_pairs_evidence(
+                item_id=item_id,
+            )
         elif abstraction_layer_name == "decoder_attention_kv_dense_tile_topology_derived_schedule":
             decoder_evidence = _decoder_attention_kv_dense_tile_topology_derived_schedule_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule":
+            decoder_evidence = _decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_evidence(
+                item_id=item_id,
+            )
         elif abstraction_layer_name == "decoder_attention_kv_sram_noc_constrained_schedule":
             decoder_evidence = _decoder_attention_kv_sram_noc_constrained_schedule_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_onchip_service_schedule":
