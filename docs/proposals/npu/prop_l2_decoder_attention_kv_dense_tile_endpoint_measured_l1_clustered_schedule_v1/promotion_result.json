@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_dense_tile_endpoint_measured_l1_clustered_schedule_v1",
+  "decision": "pending",
+  "pr_number": null,
+  "merge_commit": "",
+  "merged_utc": ""
+}

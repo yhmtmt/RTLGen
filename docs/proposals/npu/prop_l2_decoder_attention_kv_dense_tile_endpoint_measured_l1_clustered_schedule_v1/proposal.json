@@ -1,0 +1,59 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_dense_tile_endpoint_measured_l1_clustered_schedule_v1",
+  "created_utc": "2026-06-09T02:16:36.358061Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Endpoint-measured dense-tile Llama7B schedule",
+  "hypothesis": "Charging the measured on-chip endpoint service primitive alongside dense GEMM tile compute, full-value attention datapaths, softmax weight generation, and local FIFO/router PPA should slightly reduce available compute area without changing the dominant Llama7B 131k attention frontier ranking. The result bounds the remaining abstraction to SRAM capacity/service, HBM/DRAM service, and global NoC arbitration.",
+  "direct_comparison": {
+    "primary_question": "Does adding one measured on-chip endpoint service block per cluster materially change the dense-tile all-measured Llama7B 131k schedule frontier?",
+    "include": [
+      "Compare against the merged dense-tile all-measured L1 schedule that charged dense GEMM tile compute, full-value attention datapaths, softmax weight generation, FIFO, and router PPA.",
+      "Use the measured endpoint primitive from PR #795 at the best timing row: 0.7162 ns, 15293.032225 um2, 0.00983 mW.",
+      "Keep HBM/DRAM service, global NoC arbitration, and SRAM service analytic so the only added measured component is the endpoint service primitive."
+    ],
+    "exclude": [
+      "Do not change HBM/DRAM modeling in this item.",
+      "Do not run additional physical closure; this is an L2 schedule revision using merged L1/PPA anchors.",
+      "Do not introduce new quality-impacting attention approximations."
+    ],
+    "follow_on_broad_sweep": [
+      "After endpoint charging is merged, refine SRAM bank/service and global NoC arbitration with physically plausible bandwidth and scheduler assumptions."
+    ]
+  },
+  "expected_benefit": [
+    "Close one remaining local L1 abstraction in the Llama7B attention schedule cost model.",
+    "Produce a directly comparable endpoint-inclusive frontier against the existing dense-tile all-measured L1 schedule.",
+    "Expose endpoint area, power, and clock fields in the schedule output for later cost breakdowns."
+  ],
+  "risks": [
+    "The endpoint primitive is still a local service block; it does not by itself validate global NoC arbitration or SRAM bank scheduling.",
+    "If endpoint area changes frontier selection only marginally, the next bottleneck remains memory/NoC modeling rather than local endpoint PPA."
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "objective": "Run the dense-tile endpoint-measured L1 clustered Llama7B schedule and submit the generated artifacts.",
+      "cost_class": "low",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "endpoint_charge_should_not_invert_frontier_unless_compute_area_is_tight",
+        "reason": "The measured endpoint is much smaller than the measured attention datapath and softmax generator, so it should mostly reduce compute slack while preserving the main frontier ordering."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule__l2_decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_llama7b_v1.json",
+    "runs/campaigns/npu/l1_measured_costs/llama7b_attention_local_costs_all_measured_v1.json",
+    "runs/campaigns/npu/l1_measured_costs/llama7b_attention_local_costs_all_measured_endpoint_v1.json"
+  ],
+  "knowledge_refs": [
+    "PR #795 endpoint PPA result",
+    "PR #796 endpoint-inclusive L1 cost bundle and L2 abstraction"
+  ]
+}
