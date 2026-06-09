@@ -213,6 +213,9 @@ set_tests_properties(test_attention_kv_tile PROPERTIES WORKING_DIRECTORY ${PROJE
 add_test(NAME test_attention_kv_reducer COMMAND bash ${PROJECT_SOURCE_DIR}/tests/test_attention_kv_reducer.sh)
 set_tests_properties(test_attention_kv_reducer PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
+add_test(NAME test_onchip_service_endpoint COMMAND bash ${PROJECT_SOURCE_DIR}/tests/test_onchip_service_endpoint.sh)
+set_tests_properties(test_onchip_service_endpoint PROPERTIES WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
 if(RTLGEN_BUILD_FLOPOCO)
     set(FLOPOCO_STAGED_BIN ${PROJECT_SOURCE_DIR}/bin/flopoco)
     set(FLOPOCO_READY OFF)
