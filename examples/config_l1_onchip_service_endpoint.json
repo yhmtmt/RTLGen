@@ -1,0 +1,29 @@
+{
+  "version": "1.1",
+  "operands": [
+    {
+      "name": "flit",
+      "dimensions": 1,
+      "bit_width": 128,
+      "signed": false,
+      "kind": "int"
+    }
+  ],
+  "operations": [
+    {
+      "type": "l1_memory_noc_primitive",
+      "module_name": "l1_onchip_endpoint_w128_b4_eq8_bq4",
+      "operand": "flit",
+      "options": {
+        "primitive": "endpoint",
+        "flit_bits": 128,
+        "banks": 4,
+        "endpoint_depth": 8,
+        "bank_queue_depth": 4,
+        "depth": 4,
+        "ports": 4,
+        "counter_bits": 32
+      }
+    }
+  ]
+}

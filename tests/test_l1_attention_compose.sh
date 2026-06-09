@@ -65,3 +65,20 @@ python3 "$ROOT/scripts/run_sweep.py" \
   --sweep "$ROOT/runs/campaigns/noc/l1_memory_noc_primitives/sweeps/nangate45_macro_frontier.json" \
   --out_root "$TMP/runs" \
   --dry_run
+
+python3 "$ROOT/scripts/generate_design.py" \
+  "$ROOT/examples/config_l1_onchip_service_endpoint.json" \
+  nangate45 \
+  --force_gen True
+
+iverilog -g2012 \
+  -s l1_onchip_endpoint_w128_b4_eq8_bq4_wrapper \
+  -t null \
+  /orfs/flow/designs/src/l1_onchip_endpoint_w128_b4_eq8_bq4_wrapper/*.v
+
+python3 "$ROOT/scripts/run_sweep.py" \
+  --configs "$ROOT/examples/config_l1_onchip_service_endpoint.json" \
+  --platform nangate45 \
+  --sweep "$ROOT/runs/campaigns/noc/l1_memory_noc_primitives/sweeps/nangate45_macro_frontier.json" \
+  --out_root "$TMP/runs" \
+  --dry_run

@@ -478,15 +478,18 @@ configuration.
 The `l1_memory_noc_primitive` operation emits small measured interconnect
 building blocks for early memory/NoC exploration. `primitive: "fifo"` emits a
 registered flit FIFO with an internal source/sink. `primitive: "router"` emits
-a fixed-port flit crossbar/router with internal registered traffic. The
-operation is intended to provide concrete PPA anchors for local buffering and
-routing before the full clustered scheduler and SRAM hierarchy are finalized.
+a fixed-port flit crossbar/router with internal registered traffic.
+`primitive: "endpoint"` emits a ready/valid on-chip service endpoint with
+finite endpoint buffering, finite per-bank queues, locality-first bank
+draining, and synthetic producer/consumer backpressure.
 
-Supported options are `primitive`, `flit_bits`, `depth`, `ports`, and
-`counter_bits`.
+Supported common options are `primitive`, `flit_bits`, `depth`, `ports`, and
+`counter_bits`. Endpoint-specific options are `banks`, `endpoint_depth`, and
+`bank_queue_depth`.
 
 See `examples/config_l1_memory_noc_primitive.json` for a FIFO smoke
-configuration.
+configuration and `examples/config_l1_onchip_service_endpoint.json` for an
+endpoint smoke configuration.
 
 ## Vector-Op Approximation Notes (NPU Phase-2)
 

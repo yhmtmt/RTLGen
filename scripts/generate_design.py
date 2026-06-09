@@ -426,15 +426,24 @@ def identify_design(config):
         flit_bits = int(options.get("flit_bits", bit_width) or bit_width)
         depth = int(options.get("depth", 8))
         ports = int(options.get("ports", 4))
+        banks = int(options.get("banks", ports))
+        endpoint_depth = int(options.get("endpoint_depth", max(depth, banks * depth)))
+        bank_queue_depth = int(options.get("bank_queue_depth", depth))
         counter_bits = int(options.get("counter_bits", 32))
-        if primitive not in ("fifo", "router"):
-            raise ValueError("l1_memory_noc_primitive primitive must be fifo or router")
+        if primitive not in ("fifo", "router", "endpoint"):
+            raise ValueError("l1_memory_noc_primitive primitive must be fifo, router, or endpoint")
         if flit_bits <= 0:
             raise ValueError("l1_memory_noc_primitive flit_bits must be positive")
         if depth <= 1:
             raise ValueError("l1_memory_noc_primitive depth must be greater than one")
         if ports <= 1:
             raise ValueError("l1_memory_noc_primitive ports must be greater than one")
+        if banks <= 1:
+            raise ValueError("l1_memory_noc_primitive banks must be greater than one")
+        if endpoint_depth <= 1:
+            raise ValueError("l1_memory_noc_primitive endpoint_depth must be greater than one")
+        if bank_queue_depth <= 1:
+            raise ValueError("l1_memory_noc_primitive bank_queue_depth must be greater than one")
         if counter_bits <= 0:
             raise ValueError("l1_memory_noc_primitive counter_bits must be positive")
         return {
@@ -445,6 +454,9 @@ def identify_design(config):
             "flit_bits": flit_bits,
             "depth": depth,
             "ports": ports,
+            "banks": banks,
+            "endpoint_depth": endpoint_depth,
+            "bank_queue_depth": bank_queue_depth,
             "counter_bits": counter_bits,
             "include_mg_cpa": False,
         }
@@ -841,8 +853,10 @@ def generate_l1_memory_noc_design(src_dir, design):
     module_name = design["module_name"]
     if design["primitive"] == "fifo":
         text = _emit_l1_fifo(module_name, design)
-    else:
+    elif design["primitive"] == "router":
         text = _emit_l1_router(module_name, design)
+    else:
+        text = _emit_l1_endpoint(module_name, design)
     Path(src_dir, f"{module_name}.v").write_text(text, encoding="utf-8")
 
 
@@ -991,6 +1005,119 @@ module {module_name}(
         )
     body += f"      observed <= {observe_terms};\n      routed_count <= routed_count + {counter_bits}'d{ports};\n    end\n  end\nendmodule\n"
     return header + body
+
+
+def _emit_l1_endpoint(module_name, design):
+    flit_bits = design["flit_bits"]
+    banks = design["banks"]
+    endpoint_depth = design["endpoint_depth"]
+    bank_queue_depth = design["bank_queue_depth"]
+    counter_bits = design["counter_bits"]
+    bank_sel_bits = _ceil_log2_at_least_one(banks)
+    endpoint_rtl = (repo_root / "npu" / "sim" / "rtl" / "onchip_service_endpoint.sv").read_text(encoding="utf-8")
+    top = f"""
+
+module {module_name}(
+  input clk,
+  input rst_n,
+  output [{counter_bits-1}:0] accepted_beat_count,
+  output [{counter_bits-1}:0] emitted_beat_count,
+  output [{counter_bits-1}:0] producer_stall_cycles,
+  output [{counter_bits-1}:0] consumer_stall_cycles,
+  output [{counter_bits-1}:0] endpoint_max_occupancy,
+  output [{counter_bits-1}:0] bank_max_occupancy,
+  output [{counter_bits-1}:0] final_completion_cycle,
+  output [{flit_bits-1}:0] observed_flit
+);
+  localparam integer FLIT_W = {flit_bits};
+  localparam integer BANKS = {banks};
+  localparam integer BANK_SEL_W = {bank_sel_bits};
+  localparam integer COUNT_W = {counter_bits};
+
+  reg in_valid;
+  wire in_ready;
+  reg [BANK_SEL_W-1:0] in_bank;
+  reg in_last;
+  reg [FLIT_W-1:0] in_data;
+  wire out_valid;
+  reg out_ready;
+  wire [BANK_SEL_W-1:0] out_bank;
+  wire out_last;
+  wire [FLIT_W-1:0] out_data;
+  wire [COUNT_W-1:0] cycle_count;
+
+  reg [COUNT_W-1:0] source_count;
+  reg [BANK_SEL_W-1:0] source_bank;
+  reg [1:0] sink_phase;
+  reg [FLIT_W-1:0] observed;
+  wire [COUNT_W-1:0] next_source_count = source_count + {{{{(COUNT_W-1){{1'b0}}}}, 1'b1}};
+  wire [BANK_SEL_W-1:0] next_source_bank =
+      (source_bank == BANKS-1) ? {{BANK_SEL_W{{1'b0}}}} : source_bank + {{{{(BANK_SEL_W-1){{1'b0}}}}, 1'b1}};
+
+  assign observed_flit = observed ^ {{{{(FLIT_W-BANK_SEL_W){{1'b0}}}}, out_bank}};
+
+  onchip_service_endpoint #(
+    .DATA_W(FLIT_W),
+    .BANKS(BANKS),
+    .BANK_SEL_W(BANK_SEL_W),
+    .BANK_QUEUE_DEPTH({bank_queue_depth}),
+    .ENDPOINT_QUEUE_DEPTH({endpoint_depth}),
+    .COUNTER_W(COUNT_W)
+  ) endpoint (
+    .clk(clk),
+    .rst_n(rst_n),
+    .in_valid(in_valid),
+    .in_ready(in_ready),
+    .in_bank(in_bank),
+    .in_last(in_last),
+    .in_data(in_data),
+    .out_valid(out_valid),
+    .out_ready(out_ready),
+    .out_bank(out_bank),
+    .out_last(out_last),
+    .out_data(out_data),
+    .accepted_beat_count(accepted_beat_count),
+    .emitted_beat_count(emitted_beat_count),
+    .producer_stall_cycles(producer_stall_cycles),
+    .consumer_stall_cycles(consumer_stall_cycles),
+    .endpoint_max_occupancy(endpoint_max_occupancy),
+    .bank_max_occupancy(bank_max_occupancy),
+    .cycle_count(cycle_count),
+    .final_completion_cycle(final_completion_cycle)
+  );
+
+  always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+      in_valid <= 1'b0;
+      in_bank <= {{BANK_SEL_W{{1'b0}}}};
+      in_last <= 1'b0;
+      in_data <= {{FLIT_W{{1'b0}}}};
+      out_ready <= 1'b0;
+      source_count <= {{COUNT_W{{1'b0}}}};
+      source_bank <= {{BANK_SEL_W{{1'b0}}}};
+      sink_phase <= 2'b00;
+      observed <= {{FLIT_W{{1'b0}}}};
+    end else begin
+      sink_phase <= sink_phase + 2'b01;
+      out_ready <= sink_phase != 2'b00;
+      in_valid <= 1'b1;
+
+      if (in_valid && in_ready) begin
+        source_count <= next_source_count;
+        source_bank <= next_source_bank;
+        in_data <= {{{{(FLIT_W-COUNT_W){{1'b0}}}}, next_source_count}} ^ {{{{(FLIT_W-BANK_SEL_W){{1'b0}}}}, next_source_bank}};
+        in_last <= next_source_count[7:0] == 8'hff;
+        in_bank <= next_source_bank;
+      end
+
+      if (out_valid && out_ready) begin
+        observed <= out_data;
+      end
+    end
+  end
+endmodule
+"""
+    return endpoint_rtl + top
 
 def generate_wrapper(config, src_dir, design):
     module_name = design["module_name"]
@@ -1624,7 +1751,7 @@ module {wrapper_name}(
 
 endmodule
 """
-        else:
+        elif design["primitive"] == "router":
             wrapper_content = f"""
 module {wrapper_name}(
   input clk,
@@ -1639,6 +1766,36 @@ module {wrapper_name}(
     .rst_n(rst_n),
     .routed_flit_count(routed_flit_count),
     .arbitration_cycle_count(arbitration_cycle_count),
+    .observed_flit(observed_flit)
+  );
+
+endmodule
+"""
+        else:
+            wrapper_content = f"""
+module {wrapper_name}(
+  input clk,
+  input rst_n,
+  output [{counter_bits-1}:0] accepted_beat_count,
+  output [{counter_bits-1}:0] emitted_beat_count,
+  output [{counter_bits-1}:0] producer_stall_cycles,
+  output [{counter_bits-1}:0] consumer_stall_cycles,
+  output [{counter_bits-1}:0] endpoint_max_occupancy,
+  output [{counter_bits-1}:0] bank_max_occupancy,
+  output [{counter_bits-1}:0] final_completion_cycle,
+  output [{flit_bits-1}:0] observed_flit
+);
+
+  {module_name} dut (
+    .clk(clk),
+    .rst_n(rst_n),
+    .accepted_beat_count(accepted_beat_count),
+    .emitted_beat_count(emitted_beat_count),
+    .producer_stall_cycles(producer_stall_cycles),
+    .consumer_stall_cycles(consumer_stall_cycles),
+    .endpoint_max_occupancy(endpoint_max_occupancy),
+    .bank_max_occupancy(bank_max_occupancy),
+    .final_completion_cycle(final_completion_cycle),
     .observed_flit(observed_flit)
   );
 
