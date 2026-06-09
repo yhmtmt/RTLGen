@@ -4799,6 +4799,53 @@ def _decoder_attention_kv_onchip_service_schedule_evidence(
     }
 
 
+def _decoder_attention_kv_endpoint_full_onchip_service_schedule_evidence(
+    *,
+    item_id: str,
+) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_kv_endpoint_full_onchip_service_schedule__{item_id}.json"
+    report = f"{base}/decoder_attention_kv_endpoint_full_onchip_service_schedule__{item_id}.md"
+    endpoint_full_search = (
+        f"{base}/decoder_attention_kv_endpoint_sram_noc_full_search_schedule__"
+        "l2_decoder_attention_kv_endpoint_sram_noc_full_search_schedule_llama7b_v1.json"
+    )
+    return {
+        "inputs": {
+            "attention_kv_endpoint_sram_noc_full_search_schedule": endpoint_full_search,
+            "attention_kv_endpoint_full_onchip_service_schedule_out": out,
+            "attention_kv_endpoint_full_onchip_service_schedule_report": report,
+            "attention_kv_endpoint_full_onchip_service_schedule_scope": (
+                "Refine the cap-aware endpoint full-search Llama7B frontier with explicit "
+                "on-chip service policy parameters: SRAM bank arbitration, endpoint queue depth, "
+                "bank queue depth, packet payload, router hop latency, schedule staggering, and "
+                "prefetch overlap. HBM/DRAM service is intentionally inherited unchanged."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_attention_kv_endpoint_full_onchip_service_schedule",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_attention_kv_onchip_service_schedule.py "
+                    "--repo-root . "
+                    f"--sram-noc-constrained-json {endpoint_full_search} "
+                    "--frontier-row-limit 128 "
+                    "--schedule-policy static_wave,staggered_wave,prefetch_overlap "
+                    "--bank-arbiter-policy round_robin,locality_first,age_based "
+                    "--endpoint-queue-depth-bytes 2048,8192,32768 "
+                    "--bank-queue-depth-bytes 2048,8192,32768 "
+                    "--router-latency-cycles-per-hop 1,2 "
+                    "--packet-payload-bytes 32,64,128 "
+                    "--prefetch-overlap-fraction 0,0.25,0.5 "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_attention_sram_profile_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_sram_profile__{item_id}.json"
@@ -6392,6 +6439,7 @@ def _build_payload(
         "decoder_attention_kv_endpoint_sram_noc_constrained_schedule",
         "decoder_attention_kv_endpoint_sram_noc_full_search_schedule",
         "decoder_attention_kv_onchip_service_schedule",
+        "decoder_attention_kv_endpoint_full_onchip_service_schedule",
         "decoder_attention_sram_profile",
         "decoder_attention_noc_profile",
         "decoder_attention_kv_quality_gate",
@@ -6511,6 +6559,10 @@ def _build_payload(
             )
         elif abstraction_layer_name == "decoder_attention_kv_onchip_service_schedule":
             decoder_evidence = _decoder_attention_kv_onchip_service_schedule_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_kv_endpoint_full_onchip_service_schedule":
+            decoder_evidence = _decoder_attention_kv_endpoint_full_onchip_service_schedule_evidence(
+                item_id=item_id,
+            )
         elif abstraction_layer_name == "decoder_attention_sram_profile":
             decoder_evidence = _decoder_attention_sram_profile_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_noc_profile":
