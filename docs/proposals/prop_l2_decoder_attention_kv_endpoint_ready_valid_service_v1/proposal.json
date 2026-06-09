@@ -1,0 +1,65 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_endpoint_ready_valid_service_v1",
+  "created_utc": "2026-06-09T08:35:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Endpoint ready-valid service probe for Llama7B frontier",
+  "hypothesis": "The selected endpoint full on-chip service frontier can be mapped to a concrete ready/valid endpoint RTL configuration with finite endpoint and bank queues, producer/consumer backpressure, and locality-first bank drain.",
+  "direct_comparison": {
+    "primary_question": "Does the current least-abstract Llama7B endpoint service point have a concrete ready/valid endpoint implementation for the selected packet and queue sizing?",
+    "include": [
+      "Use l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1 as the source frontier.",
+      "Derive DATA_W from packet_payload_bytes and queue depths from endpoint_queue_depth_bytes and bank_queue_depth_bytes.",
+      "Run onchip_service_endpoint.sv with finite endpoint and bank queues.",
+      "Report accepted/emitted beats, producer stalls, consumer stalls, occupancy maxima, and final completion cycle."
+    ],
+    "exclude": [
+      "Do not change HBM/DRAM bandwidth, frequency, or service policy.",
+      "Do not run a new Llama7B architecture search.",
+      "Do not claim full router or SRAM macro RTL equivalence from this endpoint-only probe.",
+      "Do not reintroduce abstract NoC bandwidth sweeps."
+    ],
+    "follow_on_broad_sweep": [
+      "If the endpoint probe passes, use the endpoint service point as the current least-abstract on-chip frontier.",
+      "The next abstraction reductions are concrete router/SRAM composition and then HBM/DRAM service modeling.",
+      "If the probe fails, revise the endpoint queue policy before further scheduler search."
+    ]
+  },
+  "expected_benefit": [
+    "Tie the current best endpoint service policy to concrete RTL ready/valid behavior.",
+    "Validate that finite endpoint and bank queues create measurable backpressure instead of remaining purely analytic.",
+    "Keep HBM/DRAM out of scope while reducing the on-chip endpoint abstraction."
+  ],
+  "risks": [
+    "The probe covers endpoint buffering and bank queue behavior, not complete NoC router routing.",
+    "It does not include SRAM macro timing or physical closure for the derived 1024-bit endpoint datapath.",
+    "The traffic pattern is a focused stress probe rather than a full Llama7B trace replay."
+  ],
+  "needs_mapper_change": true,
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "objective": "endpoint_ready_valid_service_probe",
+      "cost_class": "small",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "validate_selected_endpoint_service_policy_with_ready_valid_rtl",
+        "reason": "The result should pass the endpoint ready/valid probe and report concrete derived RTL parameters."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_full_onchip_service_schedule__l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/sim/rtl/onchip_service_endpoint.sv",
+    "tests/test_onchip_service_endpoint.sh",
+    "npu/eval/probe_llm_decoder_attention_endpoint_ready_valid.py"
+  ]
+}

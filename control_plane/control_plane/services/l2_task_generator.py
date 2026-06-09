@@ -4846,6 +4846,45 @@ def _decoder_attention_kv_endpoint_full_onchip_service_schedule_evidence(
     }
 
 
+def _decoder_attention_kv_endpoint_ready_valid_service_evidence(
+    *,
+    item_id: str,
+) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_kv_endpoint_ready_valid_service__{item_id}.json"
+    report = f"{base}/decoder_attention_kv_endpoint_ready_valid_service__{item_id}.md"
+    endpoint_onchip = (
+        f"{base}/decoder_attention_kv_endpoint_full_onchip_service_schedule__"
+        "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1.json"
+    )
+    return {
+        "inputs": {
+            "attention_kv_endpoint_full_onchip_service_schedule": endpoint_onchip,
+            "attention_kv_endpoint_ready_valid_service_out": out,
+            "attention_kv_endpoint_ready_valid_service_report": report,
+            "attention_kv_endpoint_ready_valid_service_scope": (
+                "Derive the concrete onchip_service_endpoint RTL parameters from the selected "
+                "endpoint full on-chip service frontier and run a ready/valid finite-queue probe. "
+                "This covers endpoint buffering, bank queue sizing, producer/consumer backpressure, "
+                "and locality-first bank drain, while HBM/DRAM service remains inherited unchanged."
+            ),
+        },
+        "commands": [
+            {
+                "name": "probe_decoder_attention_kv_endpoint_ready_valid_service",
+                "run": (
+                    "python3 npu/eval/probe_llm_decoder_attention_endpoint_ready_valid.py "
+                    "--repo-root . "
+                    f"--onchip-service-json {endpoint_onchip} "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_attention_sram_profile_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_sram_profile__{item_id}.json"
@@ -6440,6 +6479,7 @@ def _build_payload(
         "decoder_attention_kv_endpoint_sram_noc_full_search_schedule",
         "decoder_attention_kv_onchip_service_schedule",
         "decoder_attention_kv_endpoint_full_onchip_service_schedule",
+        "decoder_attention_kv_endpoint_ready_valid_service",
         "decoder_attention_sram_profile",
         "decoder_attention_noc_profile",
         "decoder_attention_kv_quality_gate",
@@ -6561,6 +6601,10 @@ def _build_payload(
             decoder_evidence = _decoder_attention_kv_onchip_service_schedule_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_endpoint_full_onchip_service_schedule":
             decoder_evidence = _decoder_attention_kv_endpoint_full_onchip_service_schedule_evidence(
+                item_id=item_id,
+            )
+        elif abstraction_layer_name == "decoder_attention_kv_endpoint_ready_valid_service":
+            decoder_evidence = _decoder_attention_kv_endpoint_ready_valid_service_evidence(
                 item_id=item_id,
             )
         elif abstraction_layer_name == "decoder_attention_sram_profile":
