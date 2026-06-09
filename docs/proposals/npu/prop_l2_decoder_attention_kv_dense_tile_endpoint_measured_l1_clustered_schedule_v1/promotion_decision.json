@@ -1,0 +1,12 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_dense_tile_endpoint_measured_l1_clustered_schedule_v1",
+  "candidate_id": "",
+  "decision": "iterate",
+  "reason": "Replace with the actual decision rationale.",
+  "evidence_refs": [
+    "item:example",
+    "run:example"
+  ],
+  "next_action": "Describe the next action.",
+  "requires_human_approval": true
+}
