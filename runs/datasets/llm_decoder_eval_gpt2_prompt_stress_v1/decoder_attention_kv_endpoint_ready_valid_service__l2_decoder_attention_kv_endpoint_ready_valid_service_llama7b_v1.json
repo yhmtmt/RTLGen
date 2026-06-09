@@ -1,0 +1,59 @@
+{
+  "decision": "ready_valid_endpoint_policy_passed",
+  "derived_rtl_parameters": {
+    "bank_count": 64,
+    "bank_queue_depth": 16,
+    "bank_queue_depth_bytes": 2048,
+    "bank_sel_w": 2,
+    "banks": 4,
+    "cluster_count": 16,
+    "counter_w": 32,
+    "data_w": 1024,
+    "endpoint_queue_depth": 16,
+    "endpoint_queue_depth_bytes": 2048,
+    "packet_payload_bytes": 128
+  },
+  "limitations": [
+    "Ready/valid endpoint queue behavior is validated, but full router and SRAM macro RTL are not included.",
+    "HBM/DRAM service remains inherited from the source endpoint service schedule."
+  ],
+  "model": "llm_decoder_attention_endpoint_ready_valid_service_probe_v1",
+  "rtl_probe": {
+    "compile_command": "/oss-cad-suite/bin/iverilog -g2012 -s endpoint_ready_valid_policy_tb -o /tmp/tmpxdln44xg/sim.out /tmp/rtlcp-worktree-9h81zlz5/repo/npu/sim/rtl/onchip_service_endpoint.sv /tmp/tmpxdln44xg/endpoint_ready_valid_policy_tb.v",
+    "passed": true,
+    "stdout_tail": "OUT index=8 bank=1 data=13 last=0 cycle=26\nOUT index=9 bank=2 data=2 last=0 cycle=27\nOUT index=10 bank=2 data=6 last=0 cycle=28\nOUT index=11 bank=2 data=10 last=0 cycle=29\nOUT index=12 bank=2 data=14 last=0 cycle=30\nOUT index=13 bank=3 data=3 last=0 cycle=31\nOUT index=14 bank=3 data=7 last=0 cycle=32\nOUT index=15 bank=3 data=11 last=0 cycle=33\nOUT index=16 bank=3 data=15 last=0 cycle=34\nSUMMARY accepted=17 emitted=17 producer_stalls=2 consumer_stalls=16 endpoint_max=16 bank_max=4 final_cycle=22 data_w=1024 banks=4 endpoint_depth=16 bank_depth=16\nPASS endpoint_ready_valid_policy\n/tmp/tmpxdln44xg/endpoint_ready_valid_policy_tb.v:185: $finish called at 400000 (1ps)",
+    "summary": {
+      "accepted": 17,
+      "bank_depth": 16,
+      "bank_max": 4,
+      "banks": 4,
+      "consumer_stalls": 16,
+      "data_w": 1024,
+      "emitted": 17,
+      "endpoint_depth": 16,
+      "endpoint_max": 16,
+      "final_cycle": 22,
+      "producer_stalls": 2
+    }
+  },
+  "source_best": {
+    "bank_arbiter_policy": "locality_first",
+    "bank_count": 64,
+    "bank_queue_depth_bytes": 2048,
+    "cluster_count": 16,
+    "compute_replica_count": 856,
+    "dominant_tile_resource": "shared_path",
+    "endpoint_queue_depth_bytes": 2048,
+    "latency_us": 3222.903773,
+    "local_sram_fraction": 0.25,
+    "packet_payload_bytes": 128,
+    "reduction_strategy": "cluster_tree",
+    "schedule_policy": "prefetch_overlap",
+    "scheduler_policy": "locality_aware",
+    "tile_tokens": 1024,
+    "topology": "mesh2d"
+  },
+  "source_onchip_service_json": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_full_onchip_service_schedule__l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1.json",
+  "source_row_rank": 1,
+  "version": 1
+}
