@@ -991,6 +991,127 @@ def test_consume_l2_result_frontier_attention_kv_uses_decoder_evidence() -> None
             assert decision_payload["source_refs"]["decoder_attention_kv_memory_report"] == report_rel
 
 
+def test_consume_l2_result_frontier_attention_local_sram_capacity_uses_decoder_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            proposal_dir = repo_root / "docs" / "proposals" / "prop_l2_attention_local_sram_capacity_v1"
+            _write(
+                proposal_dir / "proposal.json",
+                json.dumps(
+                    {
+                        "proposal_id": "prop_l2_attention_local_sram_capacity_v1",
+                        "kind": "architecture",
+                        "title": "Attention local SRAM capacity",
+                        "direct_comparison": {
+                            "primary_question": "Does selected local SRAM capacity fit the SRAM area budget?"
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            evidence_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_local_sram_capacity__l2_attention_local_sram_capacity_v1.json"
+            )
+            report_rel = (
+                "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+                "decoder_attention_local_sram_capacity__l2_attention_local_sram_capacity_v1.md"
+            )
+            arch_rel = "runs/designs/sram/llama7b_attention_local_capacity_v1/arch.yml"
+            metrics_rel = "runs/designs/sram/llama7b_attention_local_capacity_v1/sram_metrics.json"
+            summary_rel = "runs/designs/sram/llama7b_attention_local_capacity_v1/sram_metrics_summary.json"
+            _write(
+                repo_root / evidence_rel,
+                json.dumps(
+                    {
+                        "version": 1,
+                        "profile": "decoder_attention_local_sram_capacity",
+                        "budget_check": {
+                            "fits_sram_budget": False,
+                            "total_area_um2": 1306824061.5888963,
+                            "sram_budget_area_um2": 280000000.0,
+                            "area_fraction_of_sram_budget": 4.667229,
+                        },
+                        "selected_frontier": {
+                            "active_clusters": 16,
+                            "local_capacity_bytes_per_cluster": 19140624,
+                        },
+                    },
+                    indent=2,
+                )
+                + "\n",
+            )
+            _write(repo_root / report_rel, "# local sram capacity\n")
+            _write(repo_root / arch_rel, "schema_version: 0.2-draft\n")
+            _write(repo_root / metrics_rel, "{}\n")
+            _write(repo_root / summary_rel, "{}\n")
+            item_id = _seed_campaign_work_item(
+                session,
+                repo_root,
+                item_id="l2_attention_local_sram_capacity",
+                campaign_dir_rel="runs/campaigns/npu/attention_local_sram_capacity_campaign",
+                summary_rows=(
+                    "scope,arch_id,macro_mode,objective_rank,latency_ms_mean,energy_mj_mean,critical_path_ns_mean,total_power_mw_mean,flow_elapsed_s_mean,throughput_infer_per_s_mean\n"
+                    "aggregate,fp16_nm1_demo,flat_nomacro,1,0.4,0.15,5.5,0.18,1000,1.0\n"
+                ),
+                proposal_path="docs/proposals/prop_l2_attention_local_sram_capacity_v1",
+                comparison={"role": "frontier_closure"},
+            )
+            work_item = session.query(WorkItem).filter_by(item_id=item_id).one()
+            payload = copy.deepcopy(work_item.task_request.request_payload or {})
+            payload["developer_loop"]["evaluation"] = {
+                "mode": "profile_measurement",
+                "expected_direction": "measure_selected_local_sram_capacity_macro_profile",
+                "expected_reason": "Report whether the selected local SRAM capacity fits the budget.",
+            }
+            payload["developer_loop"]["abstraction"] = {
+                "layer": "decoder_attention_local_sram_capacity",
+            }
+            work_item.task_request.request_payload = payload
+            work_item.input_manifest = {
+                "decoder_contract": {
+                    "attention_local_sram_capacity_out": evidence_rel,
+                    "attention_local_sram_capacity_report": report_rel,
+                    "attention_local_sram_capacity_arch": arch_rel,
+                    "attention_local_sram_capacity_metrics_json": metrics_rel,
+                    "attention_local_sram_capacity_summary_json": summary_rel,
+                }
+            }
+            work_item.expected_outputs = [
+                *(work_item.expected_outputs or []),
+                evidence_rel,
+                report_rel,
+                arch_rel,
+                metrics_rel,
+                summary_rel,
+            ]
+            session.commit()
+
+            consume_l2_result(session, Layer2ConsumeRequest(repo_root=str(repo_root), item_id=item_id))
+
+            decision_payload = json.loads(
+                (repo_root / "control_plane" / "shadow_exports" / "l2_decisions" / f"{item_id}.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            assessment = decision_payload["proposal_assessment"]
+            assert assessment["outcome"] == "local_sram_capacity_budget_failed"
+            assert assessment["decoder_evidence_ref"] == evidence_rel
+            assert assessment["decoder_quality"]["budget_check"]["area_fraction_of_sram_budget"] == 4.667229
+            assert decision_payload["evaluation_record"]["abstraction_layer"] == "decoder_attention_local_sram_capacity"
+            assert decision_payload["source_refs"]["decoder_attention_local_sram_capacity_out"] == evidence_rel
+            assert decision_payload["source_refs"]["decoder_attention_local_sram_capacity_report"] == report_rel
+            assert decision_payload["source_refs"]["decoder_attention_local_sram_capacity_arch"] == arch_rel
+            assert decision_payload["source_refs"]["decoder_attention_local_sram_capacity_metrics_json"] == metrics_rel
+            assert decision_payload["source_refs"]["decoder_attention_local_sram_capacity_summary_json"] == summary_rel
+
+
 def test_consume_l2_result_frontier_synthesis_prefers_synthesis_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
