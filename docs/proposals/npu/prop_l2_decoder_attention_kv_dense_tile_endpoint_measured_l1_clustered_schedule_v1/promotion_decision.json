@@ -1,12 +1,15 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_dense_tile_endpoint_measured_l1_clustered_schedule_v1",
-  "candidate_id": "",
+  "candidate_id": "l2_decoder_attention_kv_dense_tile_endpoint_measured_l1_clustered_schedule_llama7b_v1",
   "decision": "iterate",
-  "reason": "Replace with the actual decision rationale.",
+  "reason": "Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
   "evidence_refs": [
-    "item:example",
-    "run:example"
+    "item:l2_decoder_attention_kv_dense_tile_endpoint_measured_l1_clustered_schedule_llama7b_v1",
+    "run:l2_decoder_attention_kv_dense_tile_endpoint_measured_l1_clustered_schedule_llama7b_v1_run_d756569e0753efd0",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_kv_dense_tile_endpoint_measured_l1_clustered_schedule_llama7b_v1.json",
+    "pr:#799",
+    "https://github.com/yhmtmt/RTLGen/pull/799"
   ],
-  "next_action": "Describe the next action.",
-  "requires_human_approval": true
+  "next_action": "inspect follow-on work after l2_decoder_attention_kv_dense_tile_endpoint_measured_l1_clustered_schedule_llama7b_v1",
+  "requires_human_approval": false
 }

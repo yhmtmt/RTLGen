@@ -13,7 +13,11 @@
       "depends_on_item_ids": [],
       "requires_merged_inputs": true,
       "requires_materialized_refs": true,
-      "status": "pending"
+      "status": "merged",
+      "merged_pr_number": 799,
+      "merge_commit": "4ca87046e164c2767f56c04a2a95931937da9139",
+      "merged_utc": "2026-06-09T02:28:19.328958Z",
+      "notes": "Merged via PR #799 and merge 4ca87046e164c2767f56c04a2a95931937da9139 at 2026-06-09T02:28:19.328958Z."
     }
   ]
 }
