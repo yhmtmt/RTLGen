@@ -1,0 +1,120 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-06-09T03:33:01.591746Z",
+  "item_id": "l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_llama7b_v1_r3",
+  "run_key": "l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_llama7b_v1_r3_run_1d3210b0b6381e1f",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "ed34e8ae8b844b444ee8f08fbcfecf8947f493af",
+  "review_metadata_source_commit": "ed34e8ae8b844b444ee8f08fbcfecf8947f493af",
+  "objective": "LLM-oriented attention-tail stress campaign for larger sequence lengths and more repeated non-terminal Softmax paths.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+    ],
+    "design_dirs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+    ],
+    "macro_manifests": [
+      "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+      "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+    ],
+    "decoder_contract": {
+      "attention_kv_endpoint_measured_l1_costs": "runs/campaigns/npu/l1_measured_costs/llama7b_attention_local_costs_all_measured_endpoint_v1.json",
+      "attention_kv_dense_tile_endpoint_topology_scheduler_pairs": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_dense_tile_endpoint_topology_scheduler_pairs__l2_decoder_attention_kv_dense_tile_endpoint_topology_scheduler_pairs_llama7b_v1.json",
+      "attention_kv_dense_tile_endpoint_topology_derived_schedule_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule__l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_llama7b_v1_r3.json",
+      "attention_kv_dense_tile_endpoint_topology_derived_schedule_scope": "Rerun the endpoint-measured Llama7B dense-tile clustered schedule using only topology-derived NoC service rows from the endpoint topology/scheduler matrix. This keeps endpoint, FIFO/router, softmax, and local attention datapath PPA measured while replacing independent abstract NoC bandwidth/hops.",
+      "attention_kv_dense_tile_endpoint_topology_derived_schedule_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule__l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_llama7b_v1_r3.md"
+    },
+    "generated_campaign": {
+      "path": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/campaign__l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_llama7b_v1_r3.json",
+      "outputs": {
+        "report_md": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_llama7b_v1_r3/report.md",
+        "results_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_llama7b_v1_r3/results.csv",
+        "campaign_dir": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_llama7b_v1_r3"
+      },
+      "clean_outputs": true,
+      "base_campaign_path": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1/campaign.json"
+    },
+    "candidate_manifests": [
+      "runs/candidates/nangate45/module_candidates.json"
+    ]
+  },
+  "recommendation": {
+    "arch_id": "fp16_nm1",
+    "macro_mode": "flat_nomacro",
+    "objective_rank": 1,
+    "objective_score": "0.0",
+    "latency_ms_mean": 0.144262,
+    "energy_mj_mean": 2.7860165964e-05,
+    "critical_path_ns_mean": 5.557037432204143,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.193122,
+    "flow_elapsed_s_mean": 844.5733333333334
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_v1",
+    "title": "Endpoint-measured topology-derived attention schedule",
+    "primary_question": "How does the endpoint-measured Llama7B dense-tile schedule move when NoC service is restricted to valid endpoint topology/scheduler pairs?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "frontier_revision",
+    "abstraction_layer": "decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule",
+    "expected_direction": "unknown",
+    "expected_reason": "",
+    "summary": "Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
+    "outcome": "ranking_recorded",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_v1",
+    "title": "Endpoint-measured topology-derived attention schedule",
+    "kind": "architecture",
+    "primary_question": "How does the endpoint-measured Llama7B dense-tile schedule move when NoC service is restricted to valid endpoint topology/scheduler pairs?",
+    "evaluation_mode": "frontier_detail",
+    "comparison_role": "frontier_revision",
+    "outcome": "ranking_recorded",
+    "summary": "Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": []
+  },
+  "source_refs": {
+    "best_point_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_llama7b_v1_r3/best_point.json",
+    "summary_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_llama7b_v1_r3/summary.csv",
+    "results_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_llama7b_v1_r3/results.csv",
+    "report_md": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_llama7b_v1_r3/report.md",
+    "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_llama7b_v1_r3/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/schedule.yml",
+    "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_llama7b_v1_r3/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/descriptors.bin",
+    "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_llama7b_v1_r3/artifacts/perf/fp16_nm1/tail_attn4_s256_h64/trace.json",
+    "focused_model_artifacts": [
+      {
+        "model_id": "tail_attn4_s256_h64",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_llama7b_v1_r3/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_llama7b_v1_r3/artifacts/mapper/fp16_nm1/tail_attn4_s256_h64/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_llama7b_v1_r3/artifacts/perf/fp16_nm1/tail_attn4_s256_h64/trace.json"
+      },
+      {
+        "model_id": "tail_attn6_s128_h64",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_llama7b_v1_r3/artifacts/mapper/fp16_nm1/tail_attn6_s128_h64/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_llama7b_v1_r3/artifacts/mapper/fp16_nm1/tail_attn6_s128_h64/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_llama7b_v1_r3/artifacts/perf/fp16_nm1/tail_attn6_s128_h64/trace.json"
+      },
+      {
+        "model_id": "tail_attn6_s256_h64",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_llama7b_v1_r3/artifacts/mapper/fp16_nm1/tail_attn6_s256_h64/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_llama7b_v1_r3/artifacts/mapper/fp16_nm1/tail_attn6_s256_h64/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_llama7b_v1_r3/artifacts/perf/fp16_nm1/tail_attn6_s256_h64/trace.json"
+      }
+    ]
+  }
+}
