@@ -1,9 +1,9 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_v1",
-  "source_commit": "b11120e2809c12e9cce67a23fc23130a68fd085d",
+  "source_commit": "ed34e8ae8b844b444ee8f08fbcfecf8947f493af",
   "requested_items": [
     {
-      "item_id": "l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_llama7b_v1",
+      "item_id": "l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_llama7b_v1_r3",
       "task_type": "l2_campaign",
       "objective": "Rerun the endpoint-measured dense-tile Llama7B schedule with topology-derived NoC service envelopes.",
       "evaluation_mode": "frontier_detail",
@@ -17,7 +17,14 @@
         "direction": "topology_constraints_should_reduce_optimistic_cross_tile_service",
         "reason": "The result should quantify the cost of replacing abstract NoC bandwidth/hops with valid topology-derived service rows."
       },
-      "status": "pending"
+      "status": "merged",
+      "prior_item_ids": [
+        "l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_llama7b_v1"
+      ],
+      "merged_pr_number": 805,
+      "merge_commit": "3c4e4a347c030ff9e1f57fb326ec1eedfdd4a611",
+      "merged_utc": "2026-06-09T03:35:25.789383Z",
+      "notes": "Merged via PR #805 and merge 3c4e4a347c030ff9e1f57fb326ec1eedfdd4a611 at 2026-06-09T03:35:25.789383Z."
     }
   ]
 }
