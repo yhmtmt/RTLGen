@@ -1,0 +1,33 @@
+{
+  "item_id": "l1_decoder_memory_noc_endpoint_v1",
+  "completed_trials": 1,
+  "success_count": 1,
+  "failure_count": 0,
+  "success_rate": 1.0,
+  "metrics": {
+    "critical_path_ns": {
+      "best": 0.7162,
+      "mean": 0.7162,
+      "median": 0.7162,
+      "max": 0.7162,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "die_area": {
+      "best": 15293.032225,
+      "mean": 15293.032225,
+      "median": 15293.032225,
+      "max": 15293.032225,
+      "range": 0.0,
+      "stddev": 0.0
+    },
+    "total_power_mw": {
+      "best": 0.00983,
+      "mean": 0.00983,
+      "median": 0.00983,
+      "max": 0.00983,
+      "range": 0.0,
+      "stddev": 0.0
+    }
+  }
+}
