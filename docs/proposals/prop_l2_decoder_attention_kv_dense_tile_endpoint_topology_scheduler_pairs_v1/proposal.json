@@ -1,0 +1,56 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_dense_tile_endpoint_topology_scheduler_pairs_v1",
+  "created_utc": "2026-06-09T03:20:42.196188Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Endpoint-measured attention topology scheduler pairs",
+  "hypothesis": "Using the endpoint-measured dense-tile Llama7B attention schedule as the traffic target will identify logically valid topology, scheduler, bank-placement, and reduction pairs before replacing abstract NoC bandwidth and hop sweeps.",
+  "direct_comparison": {
+    "primary_question": "Which topology/scheduler pairs are logically valid for the endpoint-measured Llama7B dense-tile attention frontier?",
+    "include": [
+      "Use the endpoint-measured dense-tile Llama7B attention schedule merged in PR #799.",
+      "Keep HBM/DRAM service out of scope; this item is limited to on-chip topology, reduction, SRAM placement, and scheduler assumptions.",
+      "Retain measured endpoint, FIFO/router, softmax, and local attention datapath PPA anchors."
+    ],
+    "exclude": [
+      "Do not change HBM/DRAM bandwidth or service modeling.",
+      "Do not introduce new quality-impacting attention approximations.",
+      "Do not run additional physical closure in this L2 item."
+    ],
+    "follow_on_broad_sweep": [
+      "Use the resulting endpoint topology-derived schedule as the input to practical SRAM/endpoint service caps."
+    ]
+  },
+  "expected_benefit": [
+    "Close the independent abstract NoC bandwidth/hop assumption for the endpoint-measured Llama7B attention path.",
+    "Show whether cross-tile reduction remains the dominant on-chip bottleneck under valid topology/scheduler constraints."
+  ],
+  "risks": [
+    "The topology model is still an analytic service envelope, not routed global NoC RTL/PPA.",
+    "The result can shift again when practical SRAM bank arbitration and endpoint queue capacity are applied."
+  ],
+  "needs_mapper_change": false,
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "objective": "Enumerate endpoint-measured topology/scheduler service envelopes for the Llama7B dense-tile attention frontier.",
+      "cost_class": "low",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "valid_pairs_should_bound_independent_noc_sweep",
+        "reason": "The job should replace independent NoC bandwidth/hop assumptions with explicit valid topology/scheduler/service rows."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_dense_tile_endpoint_measured_l1_clustered_schedule__l2_decoder_attention_kv_dense_tile_endpoint_measured_l1_clustered_schedule_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "PR #799 endpoint-measured Llama7B dense-tile schedule",
+    "PR #800 decoder attention artifact transport fix"
+  ]
+}

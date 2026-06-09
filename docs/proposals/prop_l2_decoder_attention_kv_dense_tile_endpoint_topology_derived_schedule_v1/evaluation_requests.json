@@ -1,0 +1,23 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_v1",
+  "source_commit": "b11120e2809c12e9cce67a23fc23130a68fd085d",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Rerun the endpoint-measured dense-tile Llama7B schedule with topology-derived NoC service envelopes.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_dense_tile_endpoint_topology_derived_schedule",
+      "comparison_role": "frontier_revision",
+      "paired_baseline_item_id": "",
+      "depends_on_item_ids": [],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "topology_constraints_should_reduce_optimistic_cross_tile_service",
+        "reason": "The result should quantify the cost of replacing abstract NoC bandwidth/hops with valid topology-derived service rows."
+      },
+      "status": "pending"
+    }
+  ]
+}
