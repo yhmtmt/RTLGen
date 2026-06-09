@@ -1,0 +1,474 @@
+{
+  "version": 0.1,
+  "name": "llama7b_attention_local_costs_all_measured_endpoint_v1",
+  "platform": "nangate45",
+  "core_utilization": 60,
+  "source_prs": [
+    720,
+    728,
+    739,
+    795
+  ],
+  "scope": "Per-cluster L1 costs for Llama7B attention schedule modeling with measured full-value attention tile datapaths, one FIFO, one 4-port router, one on-chip endpoint service block, and one exact-int softmax weight generator per cluster. These are local-area, local-power, and local-clock anchors for L2 scheduling; SRAM capacity/service, DRAM/HBM service, and global NoC arbitration remain analytic L2 terms.",
+  "profiles": [
+    {
+      "name": "hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q10",
+      "description": "Area-conservative hd64/kv8 full-value attention tile with 128-bit local NoC primitives and exact-int q10 reciprocal softmax weights plus one measured 128-bit on-chip endpoint service block.",
+      "fifo_per_cluster": 1,
+      "router_per_cluster": 1,
+      "softmax_weight_generator_per_cluster": 1,
+      "local_datapath": {
+        "design": "attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc2_w24_a40_wrapper",
+        "clock_ns": 0.8235,
+        "area_um2": 139416.358225,
+        "power_mw": 0.0341,
+        "metrics_csv": "runs/designs/activations/attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc2_w24_a40_wrapper/metrics.csv"
+      },
+      "softmax_weight_generator": {
+        "design": "attention_softmax_weight_int8_r8_acc24_recip_q10_wrapper",
+        "clock_ns": 5.5948,
+        "area_um2": 39776.3136,
+        "power_mw": 0.00479,
+        "metrics_csv": "runs/designs/activations/attention_softmax_weight_int8_r8_acc24_recip_q10_wrapper/metrics.csv"
+      },
+      "noc_fifo": {
+        "design": "l1_noc_fifo_w128_d16_wrapper",
+        "width_bits": 128,
+        "depth": 16,
+        "clock_ns": 0.2965,
+        "area_um2": 11606.830225,
+        "power_mw": 0.00862,
+        "metrics_csv": "runs/designs/noc/l1_noc_fifo_w128_d16_wrapper/metrics.csv"
+      },
+      "noc_router": {
+        "design": "l1_noc_router_p4_w128_wrapper",
+        "ports": 4,
+        "width_bits": 128,
+        "clock_ns": 0.2424,
+        "area_um2": 3123.133225,
+        "power_mw": 0.00176,
+        "metrics_csv": "runs/designs/noc/l1_noc_router_p4_w128_wrapper/metrics.csv"
+      },
+      "endpoint_per_cluster": 1,
+      "onchip_endpoint": {
+        "design": "l1_onchip_endpoint_w128_b4_eq8_bq4_wrapper",
+        "width_bits": 128,
+        "banks": 4,
+        "endpoint_depth": 8,
+        "bank_queue_depth": 4,
+        "clock_ns": 0.7162,
+        "area_um2": 15293.032225,
+        "power_mw": 0.00983,
+        "metrics_csv": "runs/designs/noc/l1_onchip_endpoint_w128_b4_eq8_bq4_wrapper/metrics.csv"
+      }
+    },
+    {
+      "name": "hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q12",
+      "description": "Area-conservative hd64/kv8 full-value attention tile with 128-bit local NoC primitives and exact-int q12 reciprocal softmax weights plus one measured 128-bit on-chip endpoint service block.",
+      "fifo_per_cluster": 1,
+      "router_per_cluster": 1,
+      "softmax_weight_generator_per_cluster": 1,
+      "local_datapath": {
+        "design": "attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc2_w24_a40_wrapper",
+        "clock_ns": 0.8235,
+        "area_um2": 139416.358225,
+        "power_mw": 0.0341,
+        "metrics_csv": "runs/designs/activations/attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc2_w24_a40_wrapper/metrics.csv"
+      },
+      "softmax_weight_generator": {
+        "design": "attention_softmax_weight_int8_r8_acc24_recip_q12_wrapper",
+        "clock_ns": 5.746,
+        "area_um2": 43505.6164,
+        "power_mw": 0.0139,
+        "metrics_csv": "runs/designs/activations/attention_softmax_weight_int8_r8_acc24_recip_q12_wrapper/metrics.csv"
+      },
+      "noc_fifo": {
+        "design": "l1_noc_fifo_w128_d16_wrapper",
+        "width_bits": 128,
+        "depth": 16,
+        "clock_ns": 0.2965,
+        "area_um2": 11606.830225,
+        "power_mw": 0.00862,
+        "metrics_csv": "runs/designs/noc/l1_noc_fifo_w128_d16_wrapper/metrics.csv"
+      },
+      "noc_router": {
+        "design": "l1_noc_router_p4_w128_wrapper",
+        "ports": 4,
+        "width_bits": 128,
+        "clock_ns": 0.2424,
+        "area_um2": 3123.133225,
+        "power_mw": 0.00176,
+        "metrics_csv": "runs/designs/noc/l1_noc_router_p4_w128_wrapper/metrics.csv"
+      },
+      "endpoint_per_cluster": 1,
+      "onchip_endpoint": {
+        "design": "l1_onchip_endpoint_w128_b4_eq8_bq4_wrapper",
+        "width_bits": 128,
+        "banks": 4,
+        "endpoint_depth": 8,
+        "bank_queue_depth": 4,
+        "clock_ns": 0.7162,
+        "area_um2": 15293.032225,
+        "power_mw": 0.00983,
+        "metrics_csv": "runs/designs/noc/l1_onchip_endpoint_w128_b4_eq8_bq4_wrapper/metrics.csv"
+      }
+    },
+    {
+      "name": "hd64_kv8_full_value_p8_ppc2_noc128_softmax_int8_q16",
+      "description": "Area-conservative hd64/kv8 full-value attention tile with 128-bit local NoC primitives and exact-int q16 reciprocal softmax weights plus one measured 128-bit on-chip endpoint service block.",
+      "fifo_per_cluster": 1,
+      "router_per_cluster": 1,
+      "softmax_weight_generator_per_cluster": 1,
+      "local_datapath": {
+        "design": "attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc2_w24_a40_wrapper",
+        "clock_ns": 0.8235,
+        "area_um2": 139416.358225,
+        "power_mw": 0.0341,
+        "metrics_csv": "runs/designs/activations/attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc2_w24_a40_wrapper/metrics.csv"
+      },
+      "softmax_weight_generator": {
+        "design": "attention_softmax_weight_int8_r8_acc24_recip_q16_wrapper",
+        "clock_ns": 5.7951,
+        "area_um2": 45315.765625,
+        "power_mw": 0.0319,
+        "metrics_csv": "runs/designs/activations/attention_softmax_weight_int8_r8_acc24_recip_q16_wrapper/metrics.csv"
+      },
+      "noc_fifo": {
+        "design": "l1_noc_fifo_w128_d16_wrapper",
+        "width_bits": 128,
+        "depth": 16,
+        "clock_ns": 0.2965,
+        "area_um2": 11606.830225,
+        "power_mw": 0.00862,
+        "metrics_csv": "runs/designs/noc/l1_noc_fifo_w128_d16_wrapper/metrics.csv"
+      },
+      "noc_router": {
+        "design": "l1_noc_router_p4_w128_wrapper",
+        "ports": 4,
+        "width_bits": 128,
+        "clock_ns": 0.2424,
+        "area_um2": 3123.133225,
+        "power_mw": 0.00176,
+        "metrics_csv": "runs/designs/noc/l1_noc_router_p4_w128_wrapper/metrics.csv"
+      },
+      "endpoint_per_cluster": 1,
+      "onchip_endpoint": {
+        "design": "l1_onchip_endpoint_w128_b4_eq8_bq4_wrapper",
+        "width_bits": 128,
+        "banks": 4,
+        "endpoint_depth": 8,
+        "bank_queue_depth": 4,
+        "clock_ns": 0.7162,
+        "area_um2": 15293.032225,
+        "power_mw": 0.00983,
+        "metrics_csv": "runs/designs/noc/l1_onchip_endpoint_w128_b4_eq8_bq4_wrapper/metrics.csv"
+      }
+    },
+    {
+      "name": "hd64_kv8_full_value_p8_ppc4_noc128_softmax_int8_q10",
+      "description": "Higher-throughput hd64/kv8 full-value attention tile with 128-bit local NoC primitives and exact-int q10 reciprocal softmax weights plus one measured 128-bit on-chip endpoint service block.",
+      "fifo_per_cluster": 1,
+      "router_per_cluster": 1,
+      "softmax_weight_generator_per_cluster": 1,
+      "local_datapath": {
+        "design": "attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc4_w24_a40_wrapper",
+        "clock_ns": 0.8662,
+        "area_um2": 222812.3209,
+        "power_mw": 0.0446,
+        "metrics_csv": "runs/designs/activations/attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc4_w24_a40_wrapper/metrics.csv"
+      },
+      "softmax_weight_generator": {
+        "design": "attention_softmax_weight_int8_r8_acc24_recip_q10_wrapper",
+        "clock_ns": 5.5948,
+        "area_um2": 39776.3136,
+        "power_mw": 0.00479,
+        "metrics_csv": "runs/designs/activations/attention_softmax_weight_int8_r8_acc24_recip_q10_wrapper/metrics.csv"
+      },
+      "noc_fifo": {
+        "design": "l1_noc_fifo_w128_d16_wrapper",
+        "width_bits": 128,
+        "depth": 16,
+        "clock_ns": 0.2965,
+        "area_um2": 11606.830225,
+        "power_mw": 0.00862,
+        "metrics_csv": "runs/designs/noc/l1_noc_fifo_w128_d16_wrapper/metrics.csv"
+      },
+      "noc_router": {
+        "design": "l1_noc_router_p4_w128_wrapper",
+        "ports": 4,
+        "width_bits": 128,
+        "clock_ns": 0.2424,
+        "area_um2": 3123.133225,
+        "power_mw": 0.00176,
+        "metrics_csv": "runs/designs/noc/l1_noc_router_p4_w128_wrapper/metrics.csv"
+      },
+      "endpoint_per_cluster": 1,
+      "onchip_endpoint": {
+        "design": "l1_onchip_endpoint_w128_b4_eq8_bq4_wrapper",
+        "width_bits": 128,
+        "banks": 4,
+        "endpoint_depth": 8,
+        "bank_queue_depth": 4,
+        "clock_ns": 0.7162,
+        "area_um2": 15293.032225,
+        "power_mw": 0.00983,
+        "metrics_csv": "runs/designs/noc/l1_onchip_endpoint_w128_b4_eq8_bq4_wrapper/metrics.csv"
+      }
+    },
+    {
+      "name": "hd64_kv8_full_value_p8_ppc4_noc128_softmax_int8_q12",
+      "description": "Higher-throughput hd64/kv8 full-value attention tile with 128-bit local NoC primitives and exact-int q12 reciprocal softmax weights plus one measured 128-bit on-chip endpoint service block.",
+      "fifo_per_cluster": 1,
+      "router_per_cluster": 1,
+      "softmax_weight_generator_per_cluster": 1,
+      "local_datapath": {
+        "design": "attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc4_w24_a40_wrapper",
+        "clock_ns": 0.8662,
+        "area_um2": 222812.3209,
+        "power_mw": 0.0446,
+        "metrics_csv": "runs/designs/activations/attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc4_w24_a40_wrapper/metrics.csv"
+      },
+      "softmax_weight_generator": {
+        "design": "attention_softmax_weight_int8_r8_acc24_recip_q12_wrapper",
+        "clock_ns": 5.746,
+        "area_um2": 43505.6164,
+        "power_mw": 0.0139,
+        "metrics_csv": "runs/designs/activations/attention_softmax_weight_int8_r8_acc24_recip_q12_wrapper/metrics.csv"
+      },
+      "noc_fifo": {
+        "design": "l1_noc_fifo_w128_d16_wrapper",
+        "width_bits": 128,
+        "depth": 16,
+        "clock_ns": 0.2965,
+        "area_um2": 11606.830225,
+        "power_mw": 0.00862,
+        "metrics_csv": "runs/designs/noc/l1_noc_fifo_w128_d16_wrapper/metrics.csv"
+      },
+      "noc_router": {
+        "design": "l1_noc_router_p4_w128_wrapper",
+        "ports": 4,
+        "width_bits": 128,
+        "clock_ns": 0.2424,
+        "area_um2": 3123.133225,
+        "power_mw": 0.00176,
+        "metrics_csv": "runs/designs/noc/l1_noc_router_p4_w128_wrapper/metrics.csv"
+      },
+      "endpoint_per_cluster": 1,
+      "onchip_endpoint": {
+        "design": "l1_onchip_endpoint_w128_b4_eq8_bq4_wrapper",
+        "width_bits": 128,
+        "banks": 4,
+        "endpoint_depth": 8,
+        "bank_queue_depth": 4,
+        "clock_ns": 0.7162,
+        "area_um2": 15293.032225,
+        "power_mw": 0.00983,
+        "metrics_csv": "runs/designs/noc/l1_onchip_endpoint_w128_b4_eq8_bq4_wrapper/metrics.csv"
+      }
+    },
+    {
+      "name": "hd64_kv8_full_value_p8_ppc4_noc128_softmax_int8_q16",
+      "description": "Higher-throughput hd64/kv8 full-value attention tile with 128-bit local NoC primitives and exact-int q16 reciprocal softmax weights plus one measured 128-bit on-chip endpoint service block.",
+      "fifo_per_cluster": 1,
+      "router_per_cluster": 1,
+      "softmax_weight_generator_per_cluster": 1,
+      "local_datapath": {
+        "design": "attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc4_w24_a40_wrapper",
+        "clock_ns": 0.8662,
+        "area_um2": 222812.3209,
+        "power_mw": 0.0446,
+        "metrics_csv": "runs/designs/activations/attention_kv_full_value_hd64_kv8_tl16_b128_p8_ppc4_w24_a40_wrapper/metrics.csv"
+      },
+      "softmax_weight_generator": {
+        "design": "attention_softmax_weight_int8_r8_acc24_recip_q16_wrapper",
+        "clock_ns": 5.7951,
+        "area_um2": 45315.765625,
+        "power_mw": 0.0319,
+        "metrics_csv": "runs/designs/activations/attention_softmax_weight_int8_r8_acc24_recip_q16_wrapper/metrics.csv"
+      },
+      "noc_fifo": {
+        "design": "l1_noc_fifo_w128_d16_wrapper",
+        "width_bits": 128,
+        "depth": 16,
+        "clock_ns": 0.2965,
+        "area_um2": 11606.830225,
+        "power_mw": 0.00862,
+        "metrics_csv": "runs/designs/noc/l1_noc_fifo_w128_d16_wrapper/metrics.csv"
+      },
+      "noc_router": {
+        "design": "l1_noc_router_p4_w128_wrapper",
+        "ports": 4,
+        "width_bits": 128,
+        "clock_ns": 0.2424,
+        "area_um2": 3123.133225,
+        "power_mw": 0.00176,
+        "metrics_csv": "runs/designs/noc/l1_noc_router_p4_w128_wrapper/metrics.csv"
+      },
+      "endpoint_per_cluster": 1,
+      "onchip_endpoint": {
+        "design": "l1_onchip_endpoint_w128_b4_eq8_bq4_wrapper",
+        "width_bits": 128,
+        "banks": 4,
+        "endpoint_depth": 8,
+        "bank_queue_depth": 4,
+        "clock_ns": 0.7162,
+        "area_um2": 15293.032225,
+        "power_mw": 0.00983,
+        "metrics_csv": "runs/designs/noc/l1_onchip_endpoint_w128_b4_eq8_bq4_wrapper/metrics.csv"
+      }
+    },
+    {
+      "name": "hd128_kv8_full_value_p16_ppc4_noc256_softmax_int8_q10",
+      "description": "Larger hd128/kv8 full-value attention tile with 256-bit local NoC primitives and exact-int q10 reciprocal softmax weights plus one measured 128-bit on-chip endpoint service block.",
+      "fifo_per_cluster": 1,
+      "router_per_cluster": 1,
+      "softmax_weight_generator_per_cluster": 1,
+      "local_datapath": {
+        "design": "attention_kv_full_value_hd128_kv8_tl32_b256_p16_ppc4_w24_a40_wrapper",
+        "clock_ns": 0.864,
+        "area_um2": 238241.61,
+        "power_mw": 0.0454,
+        "metrics_csv": "runs/designs/activations/attention_kv_full_value_hd128_kv8_tl32_b256_p16_ppc4_w24_a40_wrapper/metrics.csv"
+      },
+      "softmax_weight_generator": {
+        "design": "attention_softmax_weight_int8_r8_acc24_recip_q10_wrapper",
+        "clock_ns": 5.5948,
+        "area_um2": 39776.3136,
+        "power_mw": 0.00479,
+        "metrics_csv": "runs/designs/activations/attention_softmax_weight_int8_r8_acc24_recip_q10_wrapper/metrics.csv"
+      },
+      "noc_fifo": {
+        "design": "l1_noc_fifo_w256_d16_wrapper",
+        "width_bits": 256,
+        "depth": 16,
+        "clock_ns": 0.29,
+        "area_um2": 11779.846225,
+        "power_mw": 0.00869,
+        "metrics_csv": "runs/designs/noc/l1_noc_fifo_w256_d16_wrapper/metrics.csv"
+      },
+      "noc_router": {
+        "design": "l1_noc_router_p4_w256_wrapper",
+        "ports": 4,
+        "width_bits": 256,
+        "clock_ns": 0.2401,
+        "area_um2": 3299.3536,
+        "power_mw": 0.00171,
+        "metrics_csv": "runs/designs/noc/l1_noc_router_p4_w256_wrapper/metrics.csv"
+      },
+      "endpoint_per_cluster": 1,
+      "onchip_endpoint": {
+        "design": "l1_onchip_endpoint_w128_b4_eq8_bq4_wrapper",
+        "width_bits": 128,
+        "banks": 4,
+        "endpoint_depth": 8,
+        "bank_queue_depth": 4,
+        "clock_ns": 0.7162,
+        "area_um2": 15293.032225,
+        "power_mw": 0.00983,
+        "metrics_csv": "runs/designs/noc/l1_onchip_endpoint_w128_b4_eq8_bq4_wrapper/metrics.csv"
+      }
+    },
+    {
+      "name": "hd128_kv8_full_value_p16_ppc4_noc256_softmax_int8_q12",
+      "description": "Larger hd128/kv8 full-value attention tile with 256-bit local NoC primitives and exact-int q12 reciprocal softmax weights plus one measured 128-bit on-chip endpoint service block.",
+      "fifo_per_cluster": 1,
+      "router_per_cluster": 1,
+      "softmax_weight_generator_per_cluster": 1,
+      "local_datapath": {
+        "design": "attention_kv_full_value_hd128_kv8_tl32_b256_p16_ppc4_w24_a40_wrapper",
+        "clock_ns": 0.864,
+        "area_um2": 238241.61,
+        "power_mw": 0.0454,
+        "metrics_csv": "runs/designs/activations/attention_kv_full_value_hd128_kv8_tl32_b256_p16_ppc4_w24_a40_wrapper/metrics.csv"
+      },
+      "softmax_weight_generator": {
+        "design": "attention_softmax_weight_int8_r8_acc24_recip_q12_wrapper",
+        "clock_ns": 5.746,
+        "area_um2": 43505.6164,
+        "power_mw": 0.0139,
+        "metrics_csv": "runs/designs/activations/attention_softmax_weight_int8_r8_acc24_recip_q12_wrapper/metrics.csv"
+      },
+      "noc_fifo": {
+        "design": "l1_noc_fifo_w256_d16_wrapper",
+        "width_bits": 256,
+        "depth": 16,
+        "clock_ns": 0.29,
+        "area_um2": 11779.846225,
+        "power_mw": 0.00869,
+        "metrics_csv": "runs/designs/noc/l1_noc_fifo_w256_d16_wrapper/metrics.csv"
+      },
+      "noc_router": {
+        "design": "l1_noc_router_p4_w256_wrapper",
+        "ports": 4,
+        "width_bits": 256,
+        "clock_ns": 0.2401,
+        "area_um2": 3299.3536,
+        "power_mw": 0.00171,
+        "metrics_csv": "runs/designs/noc/l1_noc_router_p4_w256_wrapper/metrics.csv"
+      },
+      "endpoint_per_cluster": 1,
+      "onchip_endpoint": {
+        "design": "l1_onchip_endpoint_w128_b4_eq8_bq4_wrapper",
+        "width_bits": 128,
+        "banks": 4,
+        "endpoint_depth": 8,
+        "bank_queue_depth": 4,
+        "clock_ns": 0.7162,
+        "area_um2": 15293.032225,
+        "power_mw": 0.00983,
+        "metrics_csv": "runs/designs/noc/l1_onchip_endpoint_w128_b4_eq8_bq4_wrapper/metrics.csv"
+      }
+    },
+    {
+      "name": "hd128_kv8_full_value_p16_ppc4_noc256_softmax_int8_q16",
+      "description": "Larger hd128/kv8 full-value attention tile with 256-bit local NoC primitives and exact-int q16 reciprocal softmax weights plus one measured 128-bit on-chip endpoint service block.",
+      "fifo_per_cluster": 1,
+      "router_per_cluster": 1,
+      "softmax_weight_generator_per_cluster": 1,
+      "local_datapath": {
+        "design": "attention_kv_full_value_hd128_kv8_tl32_b256_p16_ppc4_w24_a40_wrapper",
+        "clock_ns": 0.864,
+        "area_um2": 238241.61,
+        "power_mw": 0.0454,
+        "metrics_csv": "runs/designs/activations/attention_kv_full_value_hd128_kv8_tl32_b256_p16_ppc4_w24_a40_wrapper/metrics.csv"
+      },
+      "softmax_weight_generator": {
+        "design": "attention_softmax_weight_int8_r8_acc24_recip_q16_wrapper",
+        "clock_ns": 5.7951,
+        "area_um2": 45315.765625,
+        "power_mw": 0.0319,
+        "metrics_csv": "runs/designs/activations/attention_softmax_weight_int8_r8_acc24_recip_q16_wrapper/metrics.csv"
+      },
+      "noc_fifo": {
+        "design": "l1_noc_fifo_w256_d16_wrapper",
+        "width_bits": 256,
+        "depth": 16,
+        "clock_ns": 0.29,
+        "area_um2": 11779.846225,
+        "power_mw": 0.00869,
+        "metrics_csv": "runs/designs/noc/l1_noc_fifo_w256_d16_wrapper/metrics.csv"
+      },
+      "noc_router": {
+        "design": "l1_noc_router_p4_w256_wrapper",
+        "ports": 4,
+        "width_bits": 256,
+        "clock_ns": 0.2401,
+        "area_um2": 3299.3536,
+        "power_mw": 0.00171,
+        "metrics_csv": "runs/designs/noc/l1_noc_router_p4_w256_wrapper/metrics.csv"
+      },
+      "endpoint_per_cluster": 1,
+      "onchip_endpoint": {
+        "design": "l1_onchip_endpoint_w128_b4_eq8_bq4_wrapper",
+        "width_bits": 128,
+        "banks": 4,
+        "endpoint_depth": 8,
+        "bank_queue_depth": 4,
+        "clock_ns": 0.7162,
+        "area_um2": 15293.032225,
+        "power_mw": 0.00983,
+        "metrics_csv": "runs/designs/noc/l1_onchip_endpoint_w128_b4_eq8_bq4_wrapper/metrics.csv"
+      }
+    }
+  ]
+}
