@@ -1,0 +1,70 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_endpoint_router_sram_composition_v1",
+  "created_utc": "2026-06-09T08:25:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Endpoint router SRAM composition audit for Llama7B frontier",
+  "hypothesis": "The selected endpoint full on-chip Llama7B frontier still has concrete on-chip composition gaps caused by endpoint width, router/FIFO lane replication, and local SRAM capacity assumptions; quantifying them will identify the next physical PPA points needed before the result can be treated as closed.",
+  "direct_comparison": {
+    "primary_question": "Which endpoint/router/SRAM parts of the current Llama7B frontier are physically backed, lane-scaled, or still abstract?",
+    "include": [
+      "Use l2_decoder_attention_kv_endpoint_ready_valid_service_llama7b_v1 as the endpoint behavior source.",
+      "Use l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1 as the selected architecture source.",
+      "Use llama7b_attention_tile_buffers_v1 SRAM CACTI metrics for tile-local buffer evidence.",
+      "Compare selected packet and link widths against measured endpoint, router, and FIFO PPA widths.",
+      "Report exact follow-on L1 PPA points required for closure."
+    ],
+    "exclude": [
+      "Do not change HBM/DRAM bandwidth, frequency, or service policy.",
+      "Do not run a new architecture sweep.",
+      "Do not silently treat lane-scaled narrow-router PPA as physically equivalent to a wide-link router.",
+      "Do not claim full local SRAM capacity closure from tile-local buffer metrics alone."
+    ],
+    "follow_on_broad_sweep": [
+      "Measure the required endpoint/router/FIFO/local SRAM PPA points if the audit finds gaps.",
+      "Feed measured wide-link and local-capacity values back into the Llama7B service model.",
+      "Keep HBM/DRAM as a later separate item."
+    ]
+  },
+  "expected_benefit": [
+    "Prevents the dashboard from treating lane-scaled narrow primitives as fully concrete.",
+    "Identifies whether the current best point is robust after accounting for measured endpoint/router/SRAM evidence.",
+    "Creates a clear path to close the remaining on-chip abstractions before HBM/DRAM modeling."
+  ],
+  "risks": [
+    "This is an audit and scaled composition estimate, not a new placed wide-router or SRAM-capacity macro measurement.",
+    "The result may downgrade the current frontier confidence rather than improve latency.",
+    "Full NoC route scheduling is still outside this audit."
+  ],
+  "needs_mapper_change": true,
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "objective": "endpoint_router_sram_composition_audit",
+      "cost_class": "small",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_endpoint_ready_valid_service_llama7b_v1",
+        "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "quantify_onchip_endpoint_router_sram_composition_gaps",
+        "reason": "The result should report closure flags, lane replication quantities, SRAM coverage, and exact follow-on PPA points without changing HBM/DRAM assumptions."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_ready_valid_service__l2_decoder_attention_kv_endpoint_ready_valid_service_llama7b_v1.json",
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_full_onchip_service_schedule__l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1.json",
+    "runs/designs/sram/llama7b_attention_tile_buffers_v1/sram_metrics_summary.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/audit_llm_decoder_attention_endpoint_router_sram_composition.py",
+    "runs/designs/noc/l1_noc_router_p4_w128_wrapper/metrics.csv",
+    "runs/designs/noc/l1_noc_fifo_w128_d16_wrapper/metrics.csv",
+    "runs/designs/noc/l1_onchip_endpoint_w128_b4_eq8_bq4_wrapper/metrics.csv"
+  ]
+}
