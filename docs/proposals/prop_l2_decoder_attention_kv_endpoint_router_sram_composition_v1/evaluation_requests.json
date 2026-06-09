@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_endpoint_router_sram_composition_v1",
-  "source_commit": null,
+  "source_commit": "e48f72f591877a376d9d84ae381df12a105baeed",
   "source_commit_note": "Dispatch should use the merge commit for the proposal implementation so the evaluator has the endpoint/router/SRAM composition audit generator hook.",
   "requested_items": [
     {
@@ -20,7 +20,12 @@
       "expected_result": {
         "direction": "quantify_onchip_endpoint_router_sram_composition_gaps",
         "reason": "The result should identify whether endpoint PPA width, router width, FIFO width, and SRAM capacity are closed or require follow-on PPA."
-      }
+      },
+      "status": "merged",
+      "merged_pr_number": 815,
+      "merge_commit": "08f728f3a3eb3467d34b00e2035dc69f1cfe8a68",
+      "merged_utc": "2026-06-09T08:55:29.823829Z",
+      "notes": "Merged via PR #815 and merge 08f728f3a3eb3467d34b00e2035dc69f1cfe8a68 at 2026-06-09T08:55:29.823829Z."
     }
   ]
 }
