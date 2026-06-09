@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_endpoint_ready_valid_service_v1",
+  "decision": "iterate",
+  "pr_number": 813,
+  "merge_commit": "8cf5c6e1c1d4214c2f0625963e6220ed545da45d",
+  "merged_utc": "2026-06-09T08:17:27.945159Z"
+}

@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_endpoint_ready_valid_service_v1",
-  "source_commit": null,
+  "source_commit": "4d2610ebb9bb345bdb43770b40ae5c9a1f56b441",
   "source_commit_note": "Dispatch should use the merge commit for the proposal implementation so the evaluator has the endpoint ready-valid generator hook.",
   "requested_items": [
     {
@@ -19,7 +19,12 @@
       "expected_result": {
         "direction": "validate_selected_endpoint_service_policy_with_ready_valid_rtl",
         "reason": "The result should report derived DATA_W, BANKS, endpoint queue depth, bank queue depth, backpressure counters, occupancy maxima, and pass/fail decision."
-      }
+      },
+      "status": "merged",
+      "merged_pr_number": 813,
+      "merge_commit": "8cf5c6e1c1d4214c2f0625963e6220ed545da45d",
+      "merged_utc": "2026-06-09T08:17:27.945159Z",
+      "notes": "Merged via PR #813 and merge 8cf5c6e1c1d4214c2f0625963e6220ed545da45d at 2026-06-09T08:17:27.945159Z."
     }
   ]
 }
