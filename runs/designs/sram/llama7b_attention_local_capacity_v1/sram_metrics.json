@@ -1,0 +1,180 @@
+{
+  "arch": "runs/designs/sram/llama7b_attention_local_capacity_v1/arch.yml",
+  "id": "llama7b_attention_local_capacity_v1",
+  "schema_version": "0.2-draft",
+  "source": "cacti",
+  "instances": [
+    {
+      "instance": {
+        "name": "local_capacity_chunk_00_16384kib",
+        "pdk": "nangate45",
+        "tech_node_nm": 45,
+        "port": "1r1w",
+        "depth": 131072,
+        "width": 1024,
+        "banks": 1,
+        "read_latency": 1,
+        "byte_en": true,
+        "size_bytes": 16777216,
+        "word_size_bytes": 128,
+        "block_size_bytes": 128,
+        "bus_width_bits": 1024,
+        "read_ports": 1,
+        "write_ports": 1,
+        "rw_ports": 0,
+        "cacti_read_ports": 0,
+        "cacti_write_ports": 0,
+        "cacti_rw_ports": 1,
+        "cacti_port_model": "1rw",
+        "cacti_port_note": "CACTI modeled as 1RW; 1R1W not supported in this config."
+      },
+      "estimated": true,
+      "metrics": {
+        "raw": {
+          "access_time_ns": 6.39009,
+          "read_energy_nj": 3.40382,
+          "write_energy_nj": 4.12684,
+          "area_mm2": 71.28225300800001
+        },
+        "area_um2": 71282253.00800002,
+        "access_time_ns": 6.39009,
+        "read_energy_pj": 3403.82,
+        "write_energy_pj": 4126.839999999999
+      },
+      "artifacts": {
+        "cacti_cfg": "runs/designs/sram/llama7b_attention_local_capacity_v1/local_capacity_chunk_00_16384kib.cacti.in.cfg",
+        "cacti_stdout": "runs/designs/sram/llama7b_attention_local_capacity_v1/local_capacity_chunk_00_16384kib.cacti.stdout",
+        "cacti_stderr": "runs/designs/sram/llama7b_attention_local_capacity_v1/local_capacity_chunk_00_16384kib.cacti.stderr"
+      }
+    },
+    {
+      "instance": {
+        "name": "local_capacity_chunk_01_2048kib",
+        "pdk": "nangate45",
+        "tech_node_nm": 45,
+        "port": "1r1w",
+        "depth": 16384,
+        "width": 1024,
+        "banks": 1,
+        "read_latency": 1,
+        "byte_en": true,
+        "size_bytes": 2097152,
+        "word_size_bytes": 128,
+        "block_size_bytes": 128,
+        "bus_width_bits": 1024,
+        "read_ports": 1,
+        "write_ports": 1,
+        "rw_ports": 0,
+        "cacti_read_ports": 0,
+        "cacti_write_ports": 0,
+        "cacti_rw_ports": 1,
+        "cacti_port_model": "1rw",
+        "cacti_port_note": "CACTI modeled as 1RW; 1R1W not supported in this config."
+      },
+      "estimated": true,
+      "metrics": {
+        "raw": {
+          "access_time_ns": 2.80412,
+          "read_energy_nj": 1.00104,
+          "write_energy_nj": 1.36125,
+          "area_mm2": 9.3389998472
+        },
+        "area_um2": 9338999.8472,
+        "access_time_ns": 2.80412,
+        "read_energy_pj": 1001.04,
+        "write_energy_pj": 1361.25
+      },
+      "artifacts": {
+        "cacti_cfg": "runs/designs/sram/llama7b_attention_local_capacity_v1/local_capacity_chunk_01_2048kib.cacti.in.cfg",
+        "cacti_stdout": "runs/designs/sram/llama7b_attention_local_capacity_v1/local_capacity_chunk_01_2048kib.cacti.stdout",
+        "cacti_stderr": "runs/designs/sram/llama7b_attention_local_capacity_v1/local_capacity_chunk_01_2048kib.cacti.stderr"
+      }
+    },
+    {
+      "instance": {
+        "name": "local_capacity_chunk_02_256kib",
+        "pdk": "nangate45",
+        "tech_node_nm": 45,
+        "port": "1r1w",
+        "depth": 2048,
+        "width": 1024,
+        "banks": 1,
+        "read_latency": 1,
+        "byte_en": true,
+        "size_bytes": 262144,
+        "word_size_bytes": 128,
+        "block_size_bytes": 128,
+        "bus_width_bits": 1024,
+        "read_ports": 1,
+        "write_ports": 1,
+        "rw_ports": 0,
+        "cacti_read_ports": 0,
+        "cacti_write_ports": 0,
+        "cacti_rw_ports": 1,
+        "cacti_port_model": "1rw",
+        "cacti_port_note": "CACTI modeled as 1RW; 1R1W not supported in this config."
+      },
+      "estimated": true,
+      "metrics": {
+        "raw": {
+          "access_time_ns": 1.22148,
+          "read_energy_nj": 0.177523,
+          "write_energy_nj": 0.6231,
+          "area_mm2": 0.8825957238800001
+        },
+        "area_um2": 882595.7238800001,
+        "access_time_ns": 1.22148,
+        "read_energy_pj": 177.523,
+        "write_energy_pj": 623.1
+      },
+      "artifacts": {
+        "cacti_cfg": "runs/designs/sram/llama7b_attention_local_capacity_v1/local_capacity_chunk_02_256kib.cacti.in.cfg",
+        "cacti_stdout": "runs/designs/sram/llama7b_attention_local_capacity_v1/local_capacity_chunk_02_256kib.cacti.stdout",
+        "cacti_stderr": "runs/designs/sram/llama7b_attention_local_capacity_v1/local_capacity_chunk_02_256kib.cacti.stderr"
+      }
+    },
+    {
+      "instance": {
+        "name": "local_capacity_chunk_03_16kib",
+        "pdk": "nangate45",
+        "tech_node_nm": 45,
+        "port": "1r1w",
+        "depth": 128,
+        "width": 1024,
+        "banks": 1,
+        "read_latency": 1,
+        "byte_en": true,
+        "size_bytes": 16384,
+        "word_size_bytes": 128,
+        "block_size_bytes": 128,
+        "bus_width_bits": 1024,
+        "read_ports": 1,
+        "write_ports": 1,
+        "rw_ports": 0,
+        "cacti_read_ports": 0,
+        "cacti_write_ports": 0,
+        "cacti_rw_ports": 1,
+        "cacti_port_model": "1rw",
+        "cacti_port_note": "CACTI modeled as 1RW; 1R1W not supported in this config."
+      },
+      "estimated": true,
+      "metrics": {
+        "raw": {
+          "access_time_ns": 0.389435,
+          "read_energy_nj": 0.099083,
+          "write_energy_nj": 0.121822,
+          "area_mm2": 0.172655270226
+        },
+        "area_um2": 172655.270226,
+        "access_time_ns": 0.389435,
+        "read_energy_pj": 99.083,
+        "write_energy_pj": 121.822
+      },
+      "artifacts": {
+        "cacti_cfg": "runs/designs/sram/llama7b_attention_local_capacity_v1/local_capacity_chunk_03_16kib.cacti.in.cfg",
+        "cacti_stdout": "runs/designs/sram/llama7b_attention_local_capacity_v1/local_capacity_chunk_03_16kib.cacti.stdout",
+        "cacti_stderr": "runs/designs/sram/llama7b_attention_local_capacity_v1/local_capacity_chunk_03_16kib.cacti.stderr"
+      }
+    }
+  ]
+}

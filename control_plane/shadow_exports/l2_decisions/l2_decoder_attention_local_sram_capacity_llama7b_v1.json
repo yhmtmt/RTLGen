@@ -1,0 +1,175 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-06-09T11:58:35.594527Z",
+  "item_id": "l2_decoder_attention_local_sram_capacity_llama7b_v1",
+  "run_key": "l2_decoder_attention_local_sram_capacity_llama7b_v1_run_2d4c172783f15d4e",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "e51e229abbb25947df144d019d8e545e6d85bf05",
+  "review_metadata_source_commit": "e51e229abbb25947df144d019d8e545e6d85bf05",
+  "objective": "Measure chunked local SRAM capacity macro profile for the selected Llama7B endpoint service frontier.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+    ],
+    "design_dirs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+    ],
+    "macro_manifests": [
+      "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+      "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+    ],
+    "decoder_contract": {
+      "attention_local_sram_capacity_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_local_sram_capacity__l2_decoder_attention_local_sram_capacity_llama7b_v1.json",
+      "attention_local_sram_capacity_arch": "runs/designs/sram/llama7b_attention_local_capacity_v1/arch.yml",
+      "attention_local_sram_capacity_scope": "Measure a chunked CACTI SRAM profile for the selected per-cluster local capacity in the Llama7B endpoint full on-chip frontier. This closes local capacity area/access estimates; HBM/DRAM and endpoint/router PPA remain separate.",
+      "attention_local_sram_capacity_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_local_sram_capacity__l2_decoder_attention_local_sram_capacity_llama7b_v1.md",
+      "attention_local_sram_capacity_metrics_json": "runs/designs/sram/llama7b_attention_local_capacity_v1/sram_metrics.json",
+      "attention_local_sram_capacity_summary_json": "runs/designs/sram/llama7b_attention_local_capacity_v1/sram_metrics_summary.json",
+      "attention_kv_endpoint_full_onchip_service_schedule": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_full_onchip_service_schedule__l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1.json"
+    },
+    "generated_campaign": {
+      "path": "npu/eval/examples/minimal_campaign__l2_decoder_attention_local_sram_capacity_llama7b_v1.json",
+      "outputs": {
+        "report_md": "runs/campaigns/npu/e2e_eval_v0__l2_decoder_attention_local_sram_capacity_llama7b_v1/report.md",
+        "results_csv": "runs/campaigns/npu/e2e_eval_v0__l2_decoder_attention_local_sram_capacity_llama7b_v1/results.csv",
+        "campaign_dir": "runs/campaigns/npu/e2e_eval_v0__l2_decoder_attention_local_sram_capacity_llama7b_v1"
+      },
+      "clean_outputs": true,
+      "base_campaign_path": "npu/eval/examples/minimal_campaign.json"
+    },
+    "candidate_manifests": [
+      "runs/candidates/nangate45/module_candidates.json"
+    ]
+  },
+  "recommendation": {
+    "arch_id": "fp16_nm1",
+    "macro_mode": "flat_nomacro",
+    "objective_rank": 1,
+    "objective_score": "0.0",
+    "latency_ms_mean": 0.004282,
+    "energy_mj_mean": 8.26948404e-07,
+    "critical_path_ns_mean": 5.557037432204143,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.193122,
+    "flow_elapsed_s_mean": 848.418
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_attention_local_sram_capacity_v1",
+    "title": "Local SRAM capacity profile for Llama7B attention frontier",
+    "primary_question": "How much area and access time does the selected local SRAM capacity pool require when represented as concrete SRAM macro chunks?",
+    "evaluation_mode": "profile_measurement",
+    "comparison_role": "frontier_closure",
+    "abstraction_layer": "decoder_attention_local_sram_capacity",
+    "expected_direction": "measure_selected_local_sram_capacity_macro_profile",
+    "expected_reason": "The result should report per-cluster and all-cluster SRAM area/access/energy and budget fit.",
+    "summary": "Decoder local SRAM capacity evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_local_sram_capacity__l2_decoder_attention_local_sram_capacity_llama7b_v1.json: decision=local_sram_capacity_budget_failed; fits_sram_budget=False; total_area_um2=1306824061.5888963; sram_budget_area_um2=280000000.0; area_fraction_of_sram_budget=4.667229. ",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "outcome": "local_sram_capacity_budget_failed",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_attention_local_sram_capacity_v1",
+    "title": "Local SRAM capacity profile for Llama7B attention frontier",
+    "kind": "architecture",
+    "primary_question": "How much area and access time does the selected local SRAM capacity pool require when represented as concrete SRAM macro chunks?",
+    "evaluation_mode": "profile_measurement",
+    "comparison_role": "frontier_closure",
+    "outcome": "local_sram_capacity_budget_failed",
+    "summary": "Decoder local SRAM capacity evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_local_sram_capacity__l2_decoder_attention_local_sram_capacity_llama7b_v1.json: decision=local_sram_capacity_budget_failed; fits_sram_budget=False; total_area_um2=1306824061.5888963; sram_budget_area_um2=280000000.0; area_fraction_of_sram_budget=4.667229. ",
+    "baseline_ref": null,
+    "baseline_item_id": null,
+    "matched_row_count": 0,
+    "matched_rows": [],
+    "decoder_evidence_ref": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_local_sram_capacity__l2_decoder_attention_local_sram_capacity_llama7b_v1.json",
+    "decoder_quality": {
+      "profile": "decoder_attention_local_sram_capacity",
+      "selected_frontier": {
+        "active_clusters": 16,
+        "bank_count": 64,
+        "cluster_count": 16,
+        "die_area_mm2": 800.0,
+        "latency_us": 3222.903773,
+        "local_capacity_bytes_per_cluster": 19140624,
+        "local_capacity_mib_total": 292.062759,
+        "local_sram_fraction": 0.25,
+        "sram_area_fraction": 0.35
+      },
+      "chunking": {
+        "allocated_bytes_all_clusters": 306446336,
+        "allocated_bytes_per_cluster": 19152896,
+        "capacity_overhead": 1.000641,
+        "chunk_count_per_cluster": 4,
+        "chunks_bytes": [
+          16777216,
+          2097152,
+          262144,
+          16384
+        ],
+        "max_chunk_bytes": 16777216,
+        "min_chunk_bytes": 16384,
+        "width_bits": 1024,
+        "word_bytes": 128
+      },
+      "budget_check": {
+        "area_fraction_of_sram_budget": 4.667229,
+        "fits_sram_budget": false,
+        "sram_budget_area_um2": 280000000.0,
+        "total_area_um2": 1306824061.5888963
+      },
+      "per_cluster_sram_metrics_summary": {
+        "estimated_count": 4,
+        "instance_count": 4,
+        "max_access_time_ns": 6.39009,
+        "missing_instances": [],
+        "total_area_um2": 81676503.84930602,
+        "total_read_energy_pj": 4681.466,
+        "total_write_energy_pj": 6233.012
+      },
+      "all_cluster_sram_metrics_summary": {
+        "active_clusters": 16,
+        "max_access_time_ns": 6.39009,
+        "total_area_um2": 1306824061.5888963,
+        "total_read_energy_pj": 74903.456,
+        "total_write_energy_pj": 99728.192
+      },
+      "remaining_abstractions": [
+        "CACTI estimates are macro-level SRAM access/energy estimates, not a placed SRAM compiler floorplan.",
+        "The profile models local-capacity SRAM chunks only; HBM/DRAM service remains separate.",
+        "NoC arbitration and endpoint/router PPA are measured by separate closure items."
+      ]
+    }
+  },
+  "source_refs": {
+    "best_point_json": "runs/campaigns/npu/e2e_eval_v0__l2_decoder_attention_local_sram_capacity_llama7b_v1/best_point.json",
+    "summary_csv": "runs/campaigns/npu/e2e_eval_v0__l2_decoder_attention_local_sram_capacity_llama7b_v1/summary.csv",
+    "results_csv": "runs/campaigns/npu/e2e_eval_v0__l2_decoder_attention_local_sram_capacity_llama7b_v1/results.csv",
+    "report_md": "runs/campaigns/npu/e2e_eval_v0__l2_decoder_attention_local_sram_capacity_llama7b_v1/report.md",
+    "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_v0__l2_decoder_attention_local_sram_capacity_llama7b_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+    "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_v0__l2_decoder_attention_local_sram_capacity_llama7b_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+    "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_v0__l2_decoder_attention_local_sram_capacity_llama7b_v1/artifacts/perf/fp16_nm1/mlp1/trace.json",
+    "focused_model_artifacts": [
+      {
+        "model_id": "mlp1",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_v0__l2_decoder_attention_local_sram_capacity_llama7b_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_v0__l2_decoder_attention_local_sram_capacity_llama7b_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_v0__l2_decoder_attention_local_sram_capacity_llama7b_v1/artifacts/perf/fp16_nm1/mlp1/trace.json"
+      }
+    ],
+    "decoder_attention_local_sram_capacity_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_local_sram_capacity__l2_decoder_attention_local_sram_capacity_llama7b_v1.json",
+    "decoder_attention_local_sram_capacity_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_local_sram_capacity__l2_decoder_attention_local_sram_capacity_llama7b_v1.md",
+    "decoder_attention_local_sram_capacity_arch": "runs/designs/sram/llama7b_attention_local_capacity_v1/arch.yml",
+    "decoder_attention_local_sram_capacity_metrics_json": "runs/designs/sram/llama7b_attention_local_capacity_v1/sram_metrics.json",
+    "decoder_attention_local_sram_capacity_summary_json": "runs/designs/sram/llama7b_attention_local_capacity_v1/sram_metrics_summary.json"
+  }
+}
