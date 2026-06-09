@@ -442,6 +442,7 @@ _DECODER_EVIDENCE_OUTPUT_KEYS: tuple[tuple[str, str], ...] = (
     ("producer_cq_ablation_out", "producer_cq_ablation_report"),
     ("producer_softmax_event_ablation_out", "producer_softmax_event_ablation_report"),
     ("attention_kv_memory_out", "attention_kv_memory_report"),
+    ("attention_local_sram_capacity_out", "attention_local_sram_capacity_report"),
 )
 
 
@@ -473,6 +474,12 @@ def _decoder_evidence_paths(
         report_rel = str(decoder_contract.get(report_key, "")).strip()
         if report_rel and _resolve_path(repo_root=repo_root, path_text=report_rel).exists():
             source_refs[_decoder_source_ref_key(report_key)] = report_rel
+        evidence_prefix = out_key[: -len("_out")] if out_key.endswith("_out") else out_key
+        for suffix in ("arch", "metrics_json", "summary_json"):
+            aux_key = f"{evidence_prefix}_{suffix}"
+            aux_rel = str(decoder_contract.get(aux_key, "")).strip()
+            if aux_rel and _resolve_path(repo_root=repo_root, path_text=aux_rel).exists():
+                source_refs[_decoder_source_ref_key(aux_key)] = aux_rel
         return out_rel, source_refs
     return None, source_refs
 
@@ -491,6 +498,13 @@ def _decoder_quality_brief(evidence_payload: dict[str, Any]) -> dict[str, Any]:
         "template_summaries",
         "sample_count",
         "source_sweep",
+        "profile",
+        "selected_frontier",
+        "chunking",
+        "budget_check",
+        "per_cluster_sram_metrics_summary",
+        "all_cluster_sram_metrics_summary",
+        "remaining_abstractions",
     ):
         if key in evidence_payload:
             brief[key] = evidence_payload[key]
@@ -498,6 +512,27 @@ def _decoder_quality_brief(evidence_payload: dict[str, Any]) -> dict[str, Any]:
 
 
 def _decoder_evidence_summary(*, evidence_ref: str, evidence_payload: dict[str, Any]) -> tuple[str, str]:
+    profile = str(evidence_payload.get("profile", "")).strip()
+    if profile == "decoder_attention_local_sram_capacity":
+        budget_check = evidence_payload.get("budget_check")
+        budget = dict(budget_check) if isinstance(budget_check, dict) else {}
+        fits_budget = bool(budget.get("fits_sram_budget"))
+        outcome = "local_sram_capacity_budget_passed" if fits_budget else "local_sram_capacity_budget_failed"
+        total_area_um2 = budget.get("total_area_um2")
+        budget_area_um2 = budget.get("sram_budget_area_um2")
+        area_fraction = budget.get("area_fraction_of_sram_budget")
+        parts = [
+            f"Decoder local SRAM capacity evidence recorded from {evidence_ref}: decision={outcome}",
+            f"fits_sram_budget={fits_budget}",
+        ]
+        if total_area_um2 is not None and budget_area_um2 is not None:
+            parts.append(f"total_area_um2={total_area_um2}")
+            parts.append(f"sram_budget_area_um2={budget_area_um2}")
+        if area_fraction is not None:
+            parts.append(f"area_fraction_of_sram_budget={area_fraction}")
+        summary = "; ".join(parts)
+        return outcome, summary if summary.endswith(".") else summary + "."
+
     diagnosis = evidence_payload.get("diagnosis")
     diagnosis_dict = dict(diagnosis) if isinstance(diagnosis, dict) else {}
     decision = str(diagnosis_dict.get("decision", "")).strip() or "decoder_evidence_recorded"
