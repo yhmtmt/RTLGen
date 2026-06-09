@@ -4885,6 +4885,57 @@ def _decoder_attention_kv_endpoint_ready_valid_service_evidence(
     }
 
 
+def _decoder_attention_kv_endpoint_router_sram_composition_evidence(
+    *,
+    item_id: str,
+) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_kv_endpoint_router_sram_composition__{item_id}.json"
+    report = f"{base}/decoder_attention_kv_endpoint_router_sram_composition__{item_id}.md"
+    endpoint_ready_valid = (
+        f"{base}/decoder_attention_kv_endpoint_ready_valid_service__"
+        "l2_decoder_attention_kv_endpoint_ready_valid_service_llama7b_v1.json"
+    )
+    endpoint_onchip = (
+        f"{base}/decoder_attention_kv_endpoint_full_onchip_service_schedule__"
+        "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1.json"
+    )
+    sram_summary = "runs/designs/sram/llama7b_attention_tile_buffers_v1/sram_metrics_summary.json"
+    sram_metrics = "runs/designs/sram/llama7b_attention_tile_buffers_v1/sram_metrics.json"
+    return {
+        "inputs": {
+            "attention_kv_endpoint_ready_valid_service": endpoint_ready_valid,
+            "attention_kv_endpoint_full_onchip_service_schedule": endpoint_onchip,
+            "attention_kv_tile_sram_metrics_summary": sram_summary,
+            "attention_kv_tile_sram_metrics": sram_metrics,
+            "attention_kv_endpoint_router_sram_composition_out": out,
+            "attention_kv_endpoint_router_sram_composition_report": report,
+            "attention_kv_endpoint_router_sram_composition_scope": (
+                "Audit the selected endpoint service frontier against concrete endpoint, router, FIFO, "
+                "and SRAM evidence. Quantify width/lane replication gaps and identify the exact L1 PPA "
+                "points needed before treating the on-chip endpoint/router/SRAM composition as closed. "
+                "HBM/DRAM service remains inherited unchanged."
+            ),
+        },
+        "commands": [
+            {
+                "name": "audit_decoder_attention_kv_endpoint_router_sram_composition",
+                "run": (
+                    "python3 npu/eval/audit_llm_decoder_attention_endpoint_router_sram_composition.py "
+                    "--repo-root . "
+                    f"--endpoint-ready-valid-json {endpoint_ready_valid} "
+                    f"--endpoint-onchip-json {endpoint_onchip} "
+                    f"--sram-summary-json {sram_summary} "
+                    f"--sram-metrics-json {sram_metrics} "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_attention_sram_profile_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_sram_profile__{item_id}.json"
@@ -6480,6 +6531,7 @@ def _build_payload(
         "decoder_attention_kv_onchip_service_schedule",
         "decoder_attention_kv_endpoint_full_onchip_service_schedule",
         "decoder_attention_kv_endpoint_ready_valid_service",
+        "decoder_attention_kv_endpoint_router_sram_composition",
         "decoder_attention_sram_profile",
         "decoder_attention_noc_profile",
         "decoder_attention_kv_quality_gate",
@@ -6605,6 +6657,10 @@ def _build_payload(
             )
         elif abstraction_layer_name == "decoder_attention_kv_endpoint_ready_valid_service":
             decoder_evidence = _decoder_attention_kv_endpoint_ready_valid_service_evidence(
+                item_id=item_id,
+            )
+        elif abstraction_layer_name == "decoder_attention_kv_endpoint_router_sram_composition":
+            decoder_evidence = _decoder_attention_kv_endpoint_router_sram_composition_evidence(
                 item_id=item_id,
             )
         elif abstraction_layer_name == "decoder_attention_sram_profile":
