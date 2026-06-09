@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_v1",
+  "decision": "iterate",
+  "pr_number": 811,
+  "merge_commit": "a0694e05e8e1a30056ec8f834f3dff3f098de925",
+  "merged_utc": "2026-06-09T08:06:44.327435Z"
+}

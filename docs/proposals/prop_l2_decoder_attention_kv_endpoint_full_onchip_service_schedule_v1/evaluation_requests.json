@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_v1",
-  "source_commit": "TBD_AFTER_MERGE",
+  "source_commit": "4e2d585544b8b9ad7335950f741e23704e94dff4",
   "source_commit_note": "Dispatch should use the merge commit for the proposal implementation so the evaluator has the endpoint-full on-chip service generator hook.",
   "requested_items": [
     {
@@ -19,8 +19,12 @@
       "expected_result": {
         "direction": "refine_endpoint_full_search_frontier_with_explicit_onchip_service_policies",
         "reason": "The result should identify the best explicit on-chip service policy and report movement versus the endpoint SRAM/NoC full-search cap-aware frontier without changing HBM/DRAM assumptions."
-      }
+      },
+      "status": "merged",
+      "merged_pr_number": 811,
+      "merge_commit": "a0694e05e8e1a30056ec8f834f3dff3f098de925",
+      "merged_utc": "2026-06-09T08:06:44.327435Z",
+      "notes": "Merged via PR #811 and merge a0694e05e8e1a30056ec8f834f3dff3f098de925 at 2026-06-09T08:06:44.327435Z."
     }
   ]
 }
-
