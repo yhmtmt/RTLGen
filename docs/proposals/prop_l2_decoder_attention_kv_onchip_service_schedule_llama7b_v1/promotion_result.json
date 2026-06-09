@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_onchip_service_schedule_llama7b_v1",
+  "decision": "iterate",
+  "pr_number": 792,
+  "merge_commit": "9285704e31cd0db23e0d8c5d78268709f29a9660",
+  "merged_utc": "2026-06-09T00:58:02Z"
+}

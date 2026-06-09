@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_onchip_service_schedule_llama7b_v1",
-  "source_commit": "2a03f9f8ad8bda90315946c41ac2b1e7d1d8bc33",
+  "source_commit": "04c0f002707e1c7453a396fd4073f5a2c7bc788e",
   "source_commit_note": "Dispatch should use the proposal merge commit so the evaluator sees this proposal artifact; implementation requires at least 2a03f9f8ad8bda90315946c41ac2b1e7d1d8bc33.",
   "requested_items": [
     {
@@ -19,7 +19,12 @@
       "expected_result": {
         "direction": "refine_dense_tile_scheduler_frontier_with_onchip_service_policies",
         "reason": "The result should identify the best on-chip schedule/bank/queue/router policy and report slowdown versus the SRAM/NoC cap result without changing HBM/DRAM assumptions."
-      }
+      },
+      "status": "merged",
+      "merged_pr_number": 792,
+      "merge_commit": "9285704e31cd0db23e0d8c5d78268709f29a9660",
+      "merged_utc": "2026-06-09T00:58:02Z",
+      "notes": "Merged via PR #792 and merge 9285704e31cd0db23e0d8c5d78268709f29a9660 at 2026-06-09T00:58:02Z."
     }
   ]
 }
