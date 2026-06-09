@@ -4975,6 +4975,50 @@ def _decoder_attention_sram_profile_evidence(*, item_id: str) -> dict[str, Any]:
     }
 
 
+def _decoder_attention_local_sram_capacity_evidence(*, item_id: str) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_local_sram_capacity__{item_id}.json"
+    report = f"{base}/decoder_attention_local_sram_capacity__{item_id}.md"
+    arch = "runs/designs/sram/llama7b_attention_local_capacity_v1/arch.yml"
+    sram_metrics = "runs/designs/sram/llama7b_attention_local_capacity_v1/sram_metrics.json"
+    sram_summary = "runs/designs/sram/llama7b_attention_local_capacity_v1/sram_metrics_summary.json"
+    source = (
+        f"{base}/decoder_attention_kv_endpoint_full_onchip_service_schedule__"
+        "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1.json"
+    )
+    return {
+        "inputs": {
+            "attention_kv_endpoint_full_onchip_service_schedule": source,
+            "attention_local_sram_capacity_out": out,
+            "attention_local_sram_capacity_report": report,
+            "attention_local_sram_capacity_arch": arch,
+            "attention_local_sram_capacity_metrics_json": sram_metrics,
+            "attention_local_sram_capacity_summary_json": sram_summary,
+            "attention_local_sram_capacity_scope": (
+                "Measure a chunked CACTI SRAM profile for the selected per-cluster local "
+                "capacity in the Llama7B endpoint full on-chip frontier. This closes local "
+                "capacity area/access estimates; HBM/DRAM and endpoint/router PPA remain separate."
+            ),
+        },
+        "commands": [
+            {
+                "name": "measure_decoder_attention_local_sram_capacity",
+                "run": (
+                    "python3 npu/eval/measure_llm_decoder_attention_local_sram_capacity.py "
+                    f"--source-json {source} "
+                    f"--out {out} "
+                    f"--report {report} "
+                    f"--arch-out {arch} "
+                    "--sram-id llama7b_attention_local_capacity_v1 "
+                    "--width-bits 1024 "
+                    "--run-cacti"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report, arch, sram_metrics, sram_summary],
+    }
+
+
 def _decoder_attention_noc_profile_evidence(*, item_id: str) -> dict[str, Any]:
     base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
     out = f"{base}/decoder_attention_noc_profile__{item_id}.json"
@@ -6533,6 +6577,7 @@ def _build_payload(
         "decoder_attention_kv_endpoint_ready_valid_service",
         "decoder_attention_kv_endpoint_router_sram_composition",
         "decoder_attention_sram_profile",
+        "decoder_attention_local_sram_capacity",
         "decoder_attention_noc_profile",
         "decoder_attention_kv_quality_gate",
         "decoder_attention_kv_quality_proxy",
@@ -6665,6 +6710,8 @@ def _build_payload(
             )
         elif abstraction_layer_name == "decoder_attention_sram_profile":
             decoder_evidence = _decoder_attention_sram_profile_evidence(item_id=item_id)
+        elif abstraction_layer_name == "decoder_attention_local_sram_capacity":
+            decoder_evidence = _decoder_attention_local_sram_capacity_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_noc_profile":
             decoder_evidence = _decoder_attention_noc_profile_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_quality_gate":

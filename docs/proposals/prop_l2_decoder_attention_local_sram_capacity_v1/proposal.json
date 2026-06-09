@@ -1,0 +1,64 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_local_sram_capacity_v1",
+  "created_utc": "2026-06-09T12:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "Local SRAM capacity profile for Llama7B attention frontier",
+  "hypothesis": "The selected per-cluster local SRAM capacity from the Llama7B endpoint full on-chip frontier can be represented by a small set of chunked SRAM macros whose CACTI area fits the selected SRAM area budget.",
+  "direct_comparison": {
+    "primary_question": "How much area and access time does the selected local SRAM capacity pool require when represented as concrete SRAM macro chunks?",
+    "include": [
+      "Use l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1 as the source frontier.",
+      "Use selected local_capacity_bytes_per_cluster and active_clusters.",
+      "Generate power-of-two SRAM capacity chunks at 1024-bit word width.",
+      "Run CACTI and report per-cluster and all-cluster area, energy, and access time."
+    ],
+    "exclude": [
+      "Do not change HBM/DRAM bandwidth or service policy.",
+      "Do not model endpoint/router/FIFO PPA in this item.",
+      "Do not run a new architecture sweep.",
+      "Do not claim SRAM floorplan closure from CACTI macro estimates alone."
+    ],
+    "follow_on_broad_sweep": [
+      "Feed the measured local-capacity area and access time back into the Llama7B endpoint service model.",
+      "Combine with the wide endpoint/router/FIFO L1 PPA results once available.",
+      "Keep HBM/DRAM as a later separate item."
+    ]
+  },
+  "expected_benefit": [
+    "Closes the largest remaining local SRAM capacity abstraction identified by the composition audit.",
+    "Separates tile-local buffer SRAM evidence from full local-capacity pool evidence.",
+    "Provides area budget pressure for the selected local_sram_fraction."
+  ],
+  "risks": [
+    "CACTI estimates are not placed SRAM compiler macros.",
+    "Chunking policy affects capacity overhead and access estimates.",
+    "The result does not include NoC or HBM service."
+  ],
+  "needs_mapper_change": true,
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "profile_measurement",
+      "objective": "local_sram_capacity_profile",
+      "cost_class": "small",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "measure_selected_local_sram_capacity_macro_profile",
+        "reason": "The result should report chunked SRAM capacity, CACTI metrics, and whether the all-cluster local capacity fits the selected SRAM area budget."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_full_onchip_service_schedule__l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/measure_llm_decoder_attention_local_sram_capacity.py",
+    "npu/synth/sram_ppa.py"
+  ]
+}

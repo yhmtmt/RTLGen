@@ -1,0 +1,25 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_local_sram_capacity_v1",
+  "source_commit": null,
+  "source_commit_note": "Dispatch should use the merge commit containing the local SRAM capacity profile generator hook.",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_local_sram_capacity_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Measure chunked local SRAM capacity macro profile for the selected Llama7B endpoint service frontier.",
+      "evaluation_mode": "profile_measurement",
+      "abstraction_layer": "decoder_attention_local_sram_capacity",
+      "comparison_role": "frontier_closure",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "measure_selected_local_sram_capacity_macro_profile",
+        "reason": "The result should report per-cluster and all-cluster SRAM area/access/energy and budget fit."
+      }
+    }
+  ]
+}
