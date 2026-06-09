@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_measured_sram_rebalance_v1",
-  "source_commit": "TBD_AFTER_MERGE",
+  "source_commit": "a290ca9774bfdf35624cc90c3cb1a39fa6adb396",
   "source_commit_note": "Dispatch should use the merge commit containing the measured SRAM rebalance estimator and generator hook.",
   "requested_items": [
     {
@@ -22,7 +22,11 @@
         "direction": "record_measured_sram_rebalanced_frontier",
         "reason": "The result should report best latency, HBM byte share, packed shared-SRAM capacity, and the replaced abstract local capacity."
       },
-      "status": "proposed"
+      "status": "merged",
+      "merged_pr_number": 822,
+      "merge_commit": "fd6d46d259ee64be64a1e0aef0cd8cdc3b8c9d46",
+      "merged_utc": "2026-06-09T12:19:50.600067Z",
+      "notes": "Merged via PR #822 and merge fd6d46d259ee64be64a1e0aef0cd8cdc3b8c9d46 at 2026-06-09T12:19:50.600067Z."
     }
   ]
 }

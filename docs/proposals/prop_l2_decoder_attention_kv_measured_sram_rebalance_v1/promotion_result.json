@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_measured_sram_rebalance_v1",
+  "decision": "iterate",
+  "pr_number": 822,
+  "merge_commit": "fd6d46d259ee64be64a1e0aef0cd8cdc3b8c9d46",
+  "merged_utc": "2026-06-09T12:19:50.600067Z"
+}

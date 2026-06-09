@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_measured_sram_rebalance_v1",
+  "candidate_id": "l2_decoder_attention_kv_measured_sram_rebalance_llama7b_v1",
+  "decision": "iterate",
+  "reason": "Decoder measured-SRAM rebalance evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_measured_sram_rebalance__l2_decoder_attention_kv_measured_sram_rebalance_llama7b_v1.json: decision=measured_sram_rebalance_recorded; latency_us=2138.84136; hbm_byte_share=0.983398438; measured_shared_sram_capacity_mib=68.0; local_capacity_bytes_per_cluster=614656; abstract_local_capacity_bytes_per_cluster_replaced=19140624; dominant_tile_resource=tile_attention.",
+  "evidence_refs": [
+    "item:l2_decoder_attention_kv_measured_sram_rebalance_llama7b_v1",
+    "run:l2_decoder_attention_kv_measured_sram_rebalance_llama7b_v1_run_0d0bc78d4130c008",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_kv_measured_sram_rebalance_llama7b_v1.json",
+    "pr:#822",
+    "https://github.com/yhmtmt/RTLGen/pull/822"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_attention_kv_measured_sram_rebalance_llama7b_v1",
+  "requires_human_approval": false
+}
