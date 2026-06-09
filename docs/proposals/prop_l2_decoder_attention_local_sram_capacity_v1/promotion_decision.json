@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_local_sram_capacity_v1",
+  "candidate_id": "l2_decoder_attention_local_sram_capacity_llama7b_v1",
+  "decision": "iterate",
+  "reason": "Decoder local SRAM capacity evidence recorded from runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_local_sram_capacity__l2_decoder_attention_local_sram_capacity_llama7b_v1.json: decision=local_sram_capacity_budget_failed; fits_sram_budget=False; total_area_um2=1306824061.5888963; sram_budget_area_um2=280000000.0; area_fraction_of_sram_budget=4.667229.",
+  "evidence_refs": [
+    "item:l2_decoder_attention_local_sram_capacity_llama7b_v1",
+    "run:l2_decoder_attention_local_sram_capacity_llama7b_v1_run_2d4c172783f15d4e",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_local_sram_capacity_llama7b_v1.json",
+    "pr:#819",
+    "https://github.com/yhmtmt/RTLGen/pull/819"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_attention_local_sram_capacity_llama7b_v1",
+  "requires_human_approval": false
+}

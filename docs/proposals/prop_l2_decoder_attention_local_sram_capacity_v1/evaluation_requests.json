@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_local_sram_capacity_v1",
-  "source_commit": null,
+  "source_commit": "e51e229abbb25947df144d019d8e545e6d85bf05",
   "source_commit_note": "Dispatch should use the merge commit containing the local SRAM capacity profile generator hook.",
   "requested_items": [
     {
@@ -19,7 +19,12 @@
       "expected_result": {
         "direction": "measure_selected_local_sram_capacity_macro_profile",
         "reason": "The result should report per-cluster and all-cluster SRAM area/access/energy and budget fit."
-      }
+      },
+      "status": "merged",
+      "merged_pr_number": 819,
+      "merge_commit": "60317ded9aa88f977268137c57e6eeb02ed34c52",
+      "merged_utc": "2026-06-09T12:08:01.918781Z",
+      "notes": "Merged via PR #819 and merge 60317ded9aa88f977268137c57e6eeb02ed34c52 at 2026-06-09T12:08:01.918781Z."
     }
   ]
 }

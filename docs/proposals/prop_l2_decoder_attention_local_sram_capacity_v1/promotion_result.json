@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_local_sram_capacity_v1",
+  "decision": "iterate",
+  "pr_number": 819,
+  "merge_commit": "60317ded9aa88f977268137c57e6eeb02ed34c52",
+  "merged_utc": "2026-06-09T12:08:01.918781Z"
+}
