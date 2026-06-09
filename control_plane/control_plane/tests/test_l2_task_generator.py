@@ -5635,6 +5635,63 @@ def test_generate_l2_campaign_task_adds_endpoint_sram_noc_constrained_schedule_e
             )
 
 
+def test_generate_l2_campaign_task_adds_endpoint_sram_noc_full_search_schedule_evidence() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        repo_root = Path(td) / "repo"
+        repo_root.mkdir()
+        campaign_path = _write_campaign(repo_root)
+        source_commit = _init_git_repo(repo_root)
+        engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+        create_all(engine)
+
+        with Session(engine) as session:
+            result = generate_l2_campaign_task(
+                session,
+                Layer2CampaignGenerateRequest(
+                    repo_root=str(repo_root),
+                    campaign_path=campaign_path,
+                    item_id="l2_decoder_attention_kv_endpoint_sram_noc_full_search_schedule_llama7b_v1",
+                    requested_by="@tester",
+                    source_commit=source_commit,
+                    abstraction_layer="decoder_attention_kv_endpoint_sram_noc_full_search_schedule",
+                    evaluation_mode="frontier_detail",
+                    run_physical=False,
+                ),
+            )
+
+            work_item = session.query(WorkItem).filter_by(item_id=result.item_id).one()
+            commands = work_item.task_request.request_payload["task"]["commands"]
+            command_names = [command["name"] for command in commands]
+            decoder_inputs = work_item.input_manifest["decoder_contract"]
+            expected_outputs = work_item.task_request.request_payload["task"]["expected_outputs"]
+            run = commands[0]["run"]
+
+            assert "estimate_decoder_attention_kv_endpoint_sram_noc_full_search_schedule" in command_names
+            assert "attention_kv_dense_tile_endpoint_topology_scheduler_pairs" in decoder_inputs
+            assert "attention_kv_endpoint_measured_l1_costs" in decoder_inputs
+            assert "attention_sram_profile" in decoder_inputs
+            assert "attention_kv_endpoint_sram_noc_full_search_schedule_out" in decoder_inputs
+            assert "estimate_llm_decoder_attention_kv_sram_noc_constrained_schedule.py" in run
+            assert "--topology-pairs-json" in run
+            assert "--topology-derived-json" not in run
+            assert "l2_decoder_attention_kv_dense_tile_endpoint_topology_scheduler_pairs_llama7b_v1.json" in run
+            assert "llama7b_attention_local_costs_all_measured_endpoint_v1.json" in run
+            assert "--sram-bank-port-bytes-per-cycle 32" in run
+            assert "--endpoint-port-bytes-per-cycle 32,64,128" in run
+            assert "--topology-row-limit 128" in run
+            assert "--noc-bandwidth-bytes-per-cycle" not in run
+            assert "--noc-hops" not in run
+            assert work_item.task_request.request_payload["task"]["inputs"]["decoder_contract"] == decoder_inputs
+            assert work_item.expected_outputs == expected_outputs
+            assert any(
+                output.endswith(
+                    "decoder_attention_kv_endpoint_sram_noc_full_search_schedule__"
+                    "l2_decoder_attention_kv_endpoint_sram_noc_full_search_schedule_llama7b_v1.json"
+                )
+                for output in expected_outputs
+            )
+
+
 def test_generate_l2_campaign_task_adds_onchip_service_schedule_evidence() -> None:
     with tempfile.TemporaryDirectory() as td:
         repo_root = Path(td) / "repo"
