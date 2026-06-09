@@ -1,0 +1,61 @@
+{
+  "all_cluster_sram_metrics_summary": {
+    "active_clusters": 16,
+    "max_access_time_ns": 6.39009,
+    "total_area_um2": 1306824061.5888963,
+    "total_read_energy_pj": 74903.456,
+    "total_write_energy_pj": 99728.192
+  },
+  "budget_check": {
+    "area_fraction_of_sram_budget": 4.667229,
+    "fits_sram_budget": false,
+    "sram_budget_area_um2": 280000000.0,
+    "total_area_um2": 1306824061.5888963
+  },
+  "chunking": {
+    "allocated_bytes_all_clusters": 306446336,
+    "allocated_bytes_per_cluster": 19152896,
+    "capacity_overhead": 1.000641,
+    "chunk_count_per_cluster": 4,
+    "chunks_bytes": [
+      16777216,
+      2097152,
+      262144,
+      16384
+    ],
+    "max_chunk_bytes": 16777216,
+    "min_chunk_bytes": 16384,
+    "width_bits": 1024,
+    "word_bytes": 128
+  },
+  "model": "llama7b_proxy",
+  "per_cluster_sram_metrics_summary": {
+    "estimated_count": 4,
+    "instance_count": 4,
+    "max_access_time_ns": 6.39009,
+    "missing_instances": [],
+    "total_area_um2": 81676503.84930602,
+    "total_read_energy_pj": 4681.466,
+    "total_write_energy_pj": 6233.012
+  },
+  "profile": "decoder_attention_local_sram_capacity",
+  "remaining_abstractions": [
+    "CACTI estimates are macro-level SRAM access/energy estimates, not a placed SRAM compiler floorplan.",
+    "The profile models local-capacity SRAM chunks only; HBM/DRAM service remains separate.",
+    "NoC arbitration and endpoint/router PPA are measured by separate closure items."
+  ],
+  "selected_frontier": {
+    "active_clusters": 16,
+    "bank_count": 64,
+    "cluster_count": 16,
+    "die_area_mm2": 800.0,
+    "latency_us": 3222.903773,
+    "local_capacity_bytes_per_cluster": 19140624,
+    "local_capacity_mib_total": 292.062759,
+    "local_sram_fraction": 0.25,
+    "sram_area_fraction": 0.35
+  },
+  "source_item": "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1",
+  "sram_metrics_json": "runs/designs/sram/llama7b_attention_local_capacity_v1/sram_metrics.json",
+  "version": 1
+}

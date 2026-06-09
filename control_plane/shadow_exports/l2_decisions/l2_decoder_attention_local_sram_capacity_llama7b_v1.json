@@ -1,0 +1,267 @@
+{
+  "version": 0.1,
+  "generated_utc": "2026-06-09T11:58:35.594527Z",
+  "item_id": "l2_decoder_attention_local_sram_capacity_llama7b_v1",
+  "run_key": "l2_decoder_attention_local_sram_capacity_llama7b_v1_run_2d4c172783f15d4e",
+  "layer": "layer2",
+  "flow": "openroad",
+  "platform": "nangate45",
+  "task_type": "l2_campaign",
+  "source_commit": "e51e229abbb25947df144d019d8e545e6d85bf05",
+  "review_metadata_source_commit": "e51e229abbb25947df144d019d8e545e6d85bf05",
+  "objective": "Measure chunked local SRAM capacity macro profile for the selected Llama7B endpoint service frontier.",
+  "input_manifest": {
+    "sweeps": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/sweep_compare_33.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/sweep_compare_33.json"
+    ],
+    "configs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp/config_nm1.json",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp/config_nm2.json"
+    ],
+    "design_dirs": [
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm1_cmp",
+      "runs/designs/npu_blocks/npu_fp16_cpp_nm2_cmp"
+    ],
+    "macro_manifests": [
+      "runs/designs/npu_macros/gemm_compute_array_fp16_nm1_c250/macro_manifest.json",
+      "runs/designs/npu_macros/gemm_compute_array_fp16_2slot_c300/macro_manifest.json"
+    ],
+    "decoder_contract": {
+      "attention_local_sram_capacity_out": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_local_sram_capacity__l2_decoder_attention_local_sram_capacity_llama7b_v1.json",
+      "attention_local_sram_capacity_arch": "runs/designs/sram/llama7b_attention_local_capacity_v1/arch.yml",
+      "attention_local_sram_capacity_scope": "Measure a chunked CACTI SRAM profile for the selected per-cluster local capacity in the Llama7B endpoint full on-chip frontier. This closes local capacity area/access estimates; HBM/DRAM and endpoint/router PPA remain separate.",
+      "attention_local_sram_capacity_report": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_local_sram_capacity__l2_decoder_attention_local_sram_capacity_llama7b_v1.md",
+      "attention_local_sram_capacity_metrics_json": "runs/designs/sram/llama7b_attention_local_capacity_v1/sram_metrics.json",
+      "attention_local_sram_capacity_summary_json": "runs/designs/sram/llama7b_attention_local_capacity_v1/sram_metrics_summary.json",
+      "attention_kv_endpoint_full_onchip_service_schedule": "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_endpoint_full_onchip_service_schedule__l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1.json"
+    },
+    "generated_campaign": {
+      "path": "npu/eval/examples/minimal_campaign__l2_decoder_attention_local_sram_capacity_llama7b_v1.json",
+      "outputs": {
+        "report_md": "runs/campaigns/npu/e2e_eval_v0__l2_decoder_attention_local_sram_capacity_llama7b_v1/report.md",
+        "results_csv": "runs/campaigns/npu/e2e_eval_v0__l2_decoder_attention_local_sram_capacity_llama7b_v1/results.csv",
+        "campaign_dir": "runs/campaigns/npu/e2e_eval_v0__l2_decoder_attention_local_sram_capacity_llama7b_v1"
+      },
+      "clean_outputs": true,
+      "base_campaign_path": "npu/eval/examples/minimal_campaign.json"
+    },
+    "candidate_manifests": [
+      "runs/candidates/nangate45/module_candidates.json"
+    ]
+  },
+  "recommendation": {
+    "arch_id": "fp16_nm1",
+    "macro_mode": "flat_nomacro",
+    "objective_rank": 1,
+    "objective_score": "0.0",
+    "latency_ms_mean": 0.004282,
+    "energy_mj_mean": 8.26948404e-07,
+    "critical_path_ns_mean": 5.557037432204143,
+    "die_area_um2_mean": 2250000.0,
+    "total_power_mw_mean": 0.193122,
+    "flow_elapsed_s_mean": 848.418
+  },
+  "objective_profiles": [],
+  "evaluation_record": {
+    "proposal_id": "prop_l2_decoder_attention_local_sram_capacity_v1",
+    "title": "Local SRAM capacity profile for Llama7B attention frontier",
+    "primary_question": "How much area and access time does the selected local SRAM capacity pool require when represented as concrete SRAM macro chunks?",
+    "evaluation_mode": "profile_measurement",
+    "comparison_role": "frontier_closure",
+    "abstraction_layer": "decoder_attention_local_sram_capacity",
+    "expected_direction": "measure_selected_local_sram_capacity_macro_profile",
+    "expected_reason": "The result should report per-cluster and all-cluster SRAM area/access/energy and budget fit.",
+    "summary": "Focused comparison improved latency and/or energy without regressing matched rows.",
+    "baseline_ref": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1",
+    "baseline_item_id": "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1",
+    "outcome": "improved",
+    "expectation_status": "unspecified"
+  },
+  "proposal_assessment": {
+    "proposal_id": "prop_l2_decoder_attention_local_sram_capacity_v1",
+    "title": "Local SRAM capacity profile for Llama7B attention frontier",
+    "kind": "architecture",
+    "primary_question": "How much area and access time does the selected local SRAM capacity pool require when represented as concrete SRAM macro chunks?",
+    "evaluation_mode": "profile_measurement",
+    "comparison_role": "frontier_closure",
+    "outcome": "improved",
+    "summary": "Focused comparison improved latency and/or energy without regressing matched rows.",
+    "baseline_ref": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1",
+    "baseline_item_id": "l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1",
+    "matched_row_count": 4,
+    "matched_rows": [
+      {
+        "scope": "aggregate",
+        "arch_id": "fp16_nm1",
+        "macro_mode": "flat_nomacro",
+        "model_id": null,
+        "metrics": {
+          "latency_ms_mean": {
+            "baseline": 0.144262,
+            "candidate": 0.004282,
+            "delta": -0.13998
+          },
+          "energy_mj_mean": {
+            "baseline": 2.7860165964e-05,
+            "candidate": 8.26948404e-07,
+            "delta": -2.703321756e-05
+          },
+          "critical_path_ns_mean": {
+            "baseline": 5.557037432204143,
+            "candidate": 5.557037432204143,
+            "delta": 0.0
+          },
+          "total_power_mw_mean": {
+            "baseline": 0.193122,
+            "candidate": 0.193122,
+            "delta": 0.0
+          },
+          "flow_elapsed_s_mean": {
+            "baseline": 844.5733333333334,
+            "candidate": 848.418,
+            "delta": 3.844666666666626
+          },
+          "throughput_infer_per_s_mean": {
+            "baseline": 8421.072384503364,
+            "candidate": 233535.7309668379,
+            "delta": 225114.65858233452
+          }
+        }
+      },
+      {
+        "scope": "aggregate",
+        "arch_id": "fp16_nm1",
+        "macro_mode": "hier_macro",
+        "model_id": null,
+        "metrics": {
+          "latency_ms_mean": {
+            "baseline": 0.144262,
+            "candidate": 0.004282,
+            "delta": -0.13998
+          },
+          "energy_mj_mean": {
+            "baseline": 2.8483233542000004e-05,
+            "candidate": 8.45442362e-07,
+            "delta": -2.7637791180000004e-05
+          },
+          "critical_path_ns_mean": {
+            "baseline": 5.774905724664045,
+            "candidate": 5.774905724664045,
+            "delta": 0.0
+          },
+          "total_power_mw_mean": {
+            "baseline": 0.197441,
+            "candidate": 0.197441,
+            "delta": 0.0
+          },
+          "flow_elapsed_s_mean": {
+            "baseline": 976.8733333333333,
+            "candidate": 978.894,
+            "delta": 2.0206666666666706
+          },
+          "throughput_infer_per_s_mean": {
+            "baseline": 8421.072384503364,
+            "candidate": 233535.7309668379,
+            "delta": 225114.65858233452
+          }
+        }
+      },
+      {
+        "scope": "aggregate",
+        "arch_id": "fp16_nm2",
+        "macro_mode": "flat_nomacro",
+        "model_id": null,
+        "metrics": {
+          "latency_ms_mean": {
+            "baseline": 0.144262,
+            "candidate": 0.007330000000000001,
+            "delta": -0.136932
+          },
+          "energy_mj_mean": {
+            "baseline": 3.0354744468e-05,
+            "candidate": 1.54233462e-06,
+            "delta": -2.8812409848e-05
+          },
+          "critical_path_ns_mean": {
+            "baseline": 5.701286780426341,
+            "candidate": 5.701286780426342,
+            "delta": 8.881784197001252e-16
+          },
+          "total_power_mw_mean": {
+            "baseline": 0.210414,
+            "candidate": 0.21041400000000002,
+            "delta": 2.7755575615628914e-17
+          },
+          "flow_elapsed_s_mean": {
+            "baseline": 828.3466666666667,
+            "candidate": 829.814,
+            "delta": 1.467333333333272
+          },
+          "throughput_infer_per_s_mean": {
+            "baseline": 8421.072384503364,
+            "candidate": 136425.64802182812,
+            "delta": 128004.57563732476
+          }
+        }
+      },
+      {
+        "scope": "aggregate",
+        "arch_id": "fp16_nm2",
+        "macro_mode": "hier_macro",
+        "model_id": null,
+        "metrics": {
+          "latency_ms_mean": {
+            "baseline": 0.144262,
+            "candidate": 0.007330000000000001,
+            "delta": -0.136932
+          },
+          "energy_mj_mean": {
+            "baseline": 3.0701117530000004e-05,
+            "candidate": 1.5599339500000002e-06,
+            "delta": -2.9141183580000005e-05
+          },
+          "critical_path_ns_mean": {
+            "baseline": 5.740890641774165,
+            "candidate": 5.740890641774165,
+            "delta": 0.0
+          },
+          "total_power_mw_mean": {
+            "baseline": 0.212815,
+            "candidate": 0.21281500000000003,
+            "delta": 2.7755575615628914e-17
+          },
+          "flow_elapsed_s_mean": {
+            "baseline": 984.32,
+            "candidate": 981.7819999999999,
+            "delta": -2.5380000000001246
+          },
+          "throughput_infer_per_s_mean": {
+            "baseline": 8421.072384503364,
+            "candidate": 136425.64802182812,
+            "delta": 128004.57563732476
+          }
+        }
+      }
+    ]
+  },
+  "source_refs": {
+    "best_point_json": "runs/campaigns/npu/e2e_eval_v0__l2_decoder_attention_local_sram_capacity_llama7b_v1/best_point.json",
+    "summary_csv": "runs/campaigns/npu/e2e_eval_v0__l2_decoder_attention_local_sram_capacity_llama7b_v1/summary.csv",
+    "results_csv": "runs/campaigns/npu/e2e_eval_v0__l2_decoder_attention_local_sram_capacity_llama7b_v1/results.csv",
+    "report_md": "runs/campaigns/npu/e2e_eval_v0__l2_decoder_attention_local_sram_capacity_llama7b_v1/report.md",
+    "focused_candidate_schedule_yml": "runs/campaigns/npu/e2e_eval_v0__l2_decoder_attention_local_sram_capacity_llama7b_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+    "focused_candidate_descriptors_bin": "runs/campaigns/npu/e2e_eval_v0__l2_decoder_attention_local_sram_capacity_llama7b_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+    "focused_candidate_perf_trace_json": "runs/campaigns/npu/e2e_eval_v0__l2_decoder_attention_local_sram_capacity_llama7b_v1/artifacts/perf/fp16_nm1/mlp1/trace.json",
+    "focused_model_artifacts": [
+      {
+        "model_id": "mlp1",
+        "schedule_yml": "runs/campaigns/npu/e2e_eval_v0__l2_decoder_attention_local_sram_capacity_llama7b_v1/artifacts/mapper/fp16_nm1/mlp1/schedule.yml",
+        "descriptors_bin": "runs/campaigns/npu/e2e_eval_v0__l2_decoder_attention_local_sram_capacity_llama7b_v1/artifacts/mapper/fp16_nm1/mlp1/descriptors.bin",
+        "perf_trace_json": "runs/campaigns/npu/e2e_eval_v0__l2_decoder_attention_local_sram_capacity_llama7b_v1/artifacts/perf/fp16_nm1/mlp1/trace.json"
+      }
+    ],
+    "baseline_summary_csv": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1/summary.csv",
+    "baseline_report_md": "runs/campaigns/npu/e2e_eval_llm_attention_tail_stress_v1__l2_decoder_attention_kv_endpoint_full_onchip_service_schedule_llama7b_v1/report.md"
+  }
+}
