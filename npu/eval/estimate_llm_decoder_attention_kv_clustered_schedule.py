@@ -70,19 +70,25 @@ def _measured_l1_overhead(profile: JsonDict | None, cluster_count: int) -> JsonD
             "noc_router_area_um2": 0.0,
             "noc_router_power_mw": 0.0,
             "noc_router_clock_ns": 0.0,
+            "onchip_endpoint_area_um2": 0.0,
+            "onchip_endpoint_power_mw": 0.0,
+            "onchip_endpoint_clock_ns": 0.0,
             "softmax_weight_generator_area_um2": 0.0,
             "softmax_weight_generator_power_mw": 0.0,
             "softmax_weight_generator_clock_ns": 0.0,
             "fifo_per_cluster": 0,
             "router_per_cluster": 0,
+            "endpoint_per_cluster": 0,
             "softmax_weight_generator_per_cluster": 0,
             "local_datapath_metrics_csv": "",
             "noc_fifo_metrics_csv": "",
             "noc_router_metrics_csv": "",
+            "onchip_endpoint_metrics_csv": "",
             "softmax_weight_generator_metrics_csv": "",
         }
     fifo_per_cluster = int(profile.get("fifo_per_cluster", 1))
     router_per_cluster = int(profile.get("router_per_cluster", 1))
+    endpoint_per_cluster = int(profile.get("endpoint_per_cluster", profile.get("onchip_endpoint_per_cluster", 0)))
     softmax_per_cluster = int(profile.get("softmax_weight_generator_per_cluster", 0))
     local_area = _metric(profile, "local_datapath", "area_um2")
     local_power = _metric(profile, "local_datapath", "power_mw")
@@ -93,6 +99,9 @@ def _measured_l1_overhead(profile: JsonDict | None, cluster_count: int) -> JsonD
     router_area = _metric(profile, "noc_router", "area_um2")
     router_power = _metric(profile, "noc_router", "power_mw")
     router_clock = _metric(profile, "noc_router", "clock_ns")
+    endpoint_area = _metric(profile, "onchip_endpoint", "area_um2")
+    endpoint_power = _metric(profile, "onchip_endpoint", "power_mw")
+    endpoint_clock = _metric(profile, "onchip_endpoint", "clock_ns")
     softmax_area = _metric(profile, "softmax_weight_generator", "area_um2")
     softmax_power = _metric(profile, "softmax_weight_generator", "power_mw")
     softmax_clock = _metric(profile, "softmax_weight_generator", "clock_ns")
@@ -100,19 +109,21 @@ def _measured_l1_overhead(profile: JsonDict | None, cluster_count: int) -> JsonD
         local_area
         + fifo_per_cluster * fifo_area
         + router_per_cluster * router_area
+        + endpoint_per_cluster * endpoint_area
         + softmax_per_cluster * softmax_area
     )
     per_cluster_power = (
         local_power
         + fifo_per_cluster * fifo_power
         + router_per_cluster * router_power
+        + endpoint_per_cluster * endpoint_power
         + softmax_per_cluster * softmax_power
     )
     return {
         "profile": str(profile["name"]),
         "area_um2": cluster_count * per_cluster_area,
         "power_mw": cluster_count * per_cluster_power,
-        "clock_ns": max(local_clock, fifo_clock, router_clock, softmax_clock),
+        "clock_ns": max(local_clock, fifo_clock, router_clock, endpoint_clock, softmax_clock),
         "local_datapath_area_um2": local_area,
         "local_datapath_power_mw": local_power,
         "local_datapath_clock_ns": local_clock,
@@ -122,15 +133,20 @@ def _measured_l1_overhead(profile: JsonDict | None, cluster_count: int) -> JsonD
         "noc_router_area_um2": router_area,
         "noc_router_power_mw": router_power,
         "noc_router_clock_ns": router_clock,
+        "onchip_endpoint_area_um2": endpoint_area,
+        "onchip_endpoint_power_mw": endpoint_power,
+        "onchip_endpoint_clock_ns": endpoint_clock,
         "softmax_weight_generator_area_um2": softmax_area,
         "softmax_weight_generator_power_mw": softmax_power,
         "softmax_weight_generator_clock_ns": softmax_clock,
         "fifo_per_cluster": fifo_per_cluster,
         "router_per_cluster": router_per_cluster,
+        "endpoint_per_cluster": endpoint_per_cluster,
         "softmax_weight_generator_per_cluster": softmax_per_cluster,
         "local_datapath_metrics_csv": _path_metric(profile, "local_datapath"),
         "noc_fifo_metrics_csv": _path_metric(profile, "noc_fifo"),
         "noc_router_metrics_csv": _path_metric(profile, "noc_router"),
+        "onchip_endpoint_metrics_csv": _path_metric(profile, "onchip_endpoint"),
         "softmax_weight_generator_metrics_csv": _path_metric(profile, "softmax_weight_generator"),
     }
 
@@ -406,6 +422,11 @@ def _shape_row(
         "noc_router_clock_ns": round(float(measured_l1["noc_router_clock_ns"]), 6),
         "noc_router_per_cluster": measured_l1["router_per_cluster"],
         "noc_router_metrics_csv": measured_l1["noc_router_metrics_csv"],
+        "onchip_endpoint_area_um2": round(float(measured_l1["onchip_endpoint_area_um2"]), 6),
+        "onchip_endpoint_power_mw": round(float(measured_l1["onchip_endpoint_power_mw"]), 6),
+        "onchip_endpoint_clock_ns": round(float(measured_l1["onchip_endpoint_clock_ns"]), 6),
+        "onchip_endpoint_per_cluster": measured_l1["endpoint_per_cluster"],
+        "onchip_endpoint_metrics_csv": measured_l1["onchip_endpoint_metrics_csv"],
         "softmax_weight_generator_area_um2": round(float(measured_l1["softmax_weight_generator_area_um2"]), 6),
         "softmax_weight_generator_power_mw": round(float(measured_l1["softmax_weight_generator_power_mw"]), 6),
         "softmax_weight_generator_clock_ns": round(float(measured_l1["softmax_weight_generator_clock_ns"]), 6),
@@ -700,9 +721,9 @@ def build_report(
             "Reduction strategies model cross-tile combination after tile service: centralized_tile sends every tile partial, owner_cluster and cluster_tree first reduce tiles locally per cluster.",
             "This is an analytic schedule model; it still does not model RTL command queues or cycle-accurate SRAM/NoC arbitration.",
             "Optional command and reducer overhead parameters are sensitivity knobs, not measured RTL/PPA.",
-            "When measured L1 cost profiles are provided, their per-cluster tile/reducer, FIFO, and router area is subtracted from the logic budget before compute replicas are allocated.",
+            "When measured L1 cost profiles are provided, their per-cluster tile/reducer, FIFO, router, and endpoint area is subtracted from the logic budget before compute replicas are allocated.",
             "Measured L1 profile clock is combined by max() with measured compute-array clock; this is a conservative local macro proxy, not a full routed SoC timing closure.",
-            "Measured L1 profiles charge the local tile/value datapath, optional softmax-weight generator, and memory/NoC primitives listed in the selected cost file; cycle-accurate SRAM/NoC arbitration remains an analytic service model.",
+            "Measured L1 profiles charge the local tile/value datapath, optional softmax-weight generator, and memory/NoC/endpoint primitives listed in the selected cost file; cycle-accurate SRAM/NoC arbitration remains an analytic service model.",
         ],
     }
 

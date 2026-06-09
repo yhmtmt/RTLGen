@@ -4222,6 +4222,77 @@ def _decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_evidence
     }
 
 
+def _decoder_attention_kv_dense_tile_endpoint_measured_l1_clustered_schedule_evidence(
+    *,
+    item_id: str,
+) -> dict[str, Any]:
+    base = "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1"
+    out = f"{base}/decoder_attention_kv_dense_tile_endpoint_measured_l1_clustered_schedule__{item_id}.json"
+    report = f"{base}/decoder_attention_kv_dense_tile_endpoint_measured_l1_clustered_schedule__{item_id}.md"
+    dense_compute = (
+        f"{base}/decoder_attention_kv_dense_tile_measured_compute__"
+        "l2_decoder_attention_kv_dense_tile_measured_compute_llama7b_v1.json"
+    )
+    endpoint_measured_costs = (
+        "runs/campaigns/npu/l1_measured_costs/llama7b_attention_local_costs_all_measured_endpoint_v1.json"
+    )
+    sram_profile = f"{base}/decoder_attention_sram_profile__l2_decoder_attention_sram_profile_v1.json"
+    noc_profile = f"{base}/decoder_attention_noc_profile__l2_decoder_attention_noc_profile_v1.json"
+    return {
+        "inputs": {
+            "attention_kv_dense_tile_measured_compute": dense_compute,
+            "attention_kv_endpoint_measured_l1_costs": endpoint_measured_costs,
+            "attention_sram_profile": sram_profile,
+            "attention_noc_profile": noc_profile,
+            "attention_kv_dense_tile_endpoint_measured_l1_clustered_schedule_out": out,
+            "attention_kv_dense_tile_endpoint_measured_l1_clustered_schedule_report": report,
+            "attention_kv_dense_tile_endpoint_measured_l1_clustered_schedule_scope": (
+                "Llama7B 131k native-GQA KV8 schedule ranking using measured dense GEMM tile "
+                "compute PPA, full-value attention tile datapaths, exact-int softmax-weight "
+                "generator PPA, measured FIFO/router local NoC anchors, and one measured on-chip "
+                "endpoint service block per cluster. SRAM capacity/service, HBM/DRAM service, "
+                "and global NoC arbitration remain analytic L2 service terms, with the merged "
+                "SRAM/NoC profile outputs recorded as calibration references."
+            ),
+        },
+        "commands": [
+            {
+                "name": "estimate_decoder_attention_kv_dense_tile_endpoint_measured_l1_clustered_schedule",
+                "run": (
+                    "python3 npu/eval/estimate_llm_decoder_attention_kv_clustered_schedule.py "
+                    "--repo-root . "
+                    "--compute-source dense_gemm_tile "
+                    "--tag-substring npu_dense_gemm_tile_v2_scale_hier "
+                    "--sequence-length-list 131072 "
+                    "--die-area-mm2-list 200,400,800,1200 "
+                    "--sram-area-fraction 0.4,0.6 "
+                    "--logic-area-fraction 0.1,0.2,0.4 "
+                    "--reserved-area-fraction 0.1 "
+                    "--usable-sram-fraction 0.7 "
+                    "--local-sram-fraction 0.1,0.25 "
+                    "--tile-tokens-list 512 "
+                    "--bank-count 16,64 "
+                    "--cluster-count 1,2,4,8,16 "
+                    "--noc-bandwidth-bytes-per-cycle 8192,32768 "
+                    "--noc-hops 1,2,4 "
+                    "--reduction-strategy owner_cluster,cluster_tree "
+                    "--vector-ops-per-mac 0.125 "
+                    "--reduction-scalar-bytes 2 "
+                    "--command-cycles-per-tile 0,4 "
+                    "--command-cycles-per-wave 0,16 "
+                    "--reducer-setup-cycles 0,64 "
+                    "--reduction-cycle-multiplier 1,2 "
+                    f"--measured-l1-costs {endpoint_measured_costs} "
+                    "--measured-l1-profile all "
+                    f"--out {out} "
+                    f"--out-md {report}"
+                ),
+            },
+        ],
+        "expected_outputs": [out, report],
+    }
+
+
 def _decoder_attention_kv_dense_tile_reduction_noc_frontier_evidence(
     *,
     item_id: str,
@@ -6082,6 +6153,7 @@ def _build_payload(
         "decoder_attention_kv_full_value_l1_clustered_schedule",
         "decoder_attention_kv_all_measured_l1_clustered_schedule",
         "decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule",
+        "decoder_attention_kv_dense_tile_endpoint_measured_l1_clustered_schedule",
         "decoder_attention_kv_dense_tile_reduction_noc_frontier",
         "decoder_attention_kv_dense_tile_topology_scheduler_pairs",
         "decoder_attention_kv_dense_tile_topology_derived_schedule",
@@ -6174,6 +6246,10 @@ def _build_payload(
             decoder_evidence = _decoder_attention_kv_all_measured_l1_clustered_schedule_evidence(item_id=item_id)
         elif abstraction_layer_name == "decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule":
             decoder_evidence = _decoder_attention_kv_dense_tile_all_measured_l1_clustered_schedule_evidence(
+                item_id=item_id,
+            )
+        elif abstraction_layer_name == "decoder_attention_kv_dense_tile_endpoint_measured_l1_clustered_schedule":
+            decoder_evidence = _decoder_attention_kv_dense_tile_endpoint_measured_l1_clustered_schedule_evidence(
                 item_id=item_id,
             )
         elif abstraction_layer_name == "decoder_attention_kv_dense_tile_reduction_noc_frontier":

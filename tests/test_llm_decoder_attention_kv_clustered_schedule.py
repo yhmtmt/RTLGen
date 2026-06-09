@@ -17,10 +17,12 @@ def _candidate():
 
 
 def _report(monkeypatch, *, strategies):
-    monkeypatch.setattr(sched, "_load_compute_candidates", lambda repo_root, tag_substring: [_candidate()])
+    monkeypatch.setattr(sched, "_load_compute_candidates", lambda **kwargs: [_candidate()])
     return sched.build_report(
         repo_root=Path("."),
         tag_substring="unit",
+        compute_source="legacy_npu_block",
+        compute_arch_list=None,
         sequence_length_list=[2048],
         die_area_mm2_list=[1.0],
         sram_area_fraction_list=[0.4],
@@ -40,10 +42,12 @@ def _report(monkeypatch, *, strategies):
 
 
 def _report_with_overhead(monkeypatch):
-    monkeypatch.setattr(sched, "_load_compute_candidates", lambda repo_root, tag_substring: [_candidate()])
+    monkeypatch.setattr(sched, "_load_compute_candidates", lambda **kwargs: [_candidate()])
     return sched.build_report(
         repo_root=Path("."),
         tag_substring="unit",
+        compute_source="legacy_npu_block",
+        compute_arch_list=None,
         sequence_length_list=[2048],
         die_area_mm2_list=[1.0],
         sram_area_fraction_list=[0.4],
@@ -116,10 +120,12 @@ def test_clustered_schedule_charges_command_and_reducer_overhead(monkeypatch) ->
 
 
 def test_clustered_schedule_charges_measured_l1_profile(monkeypatch) -> None:
-    monkeypatch.setattr(sched, "_load_compute_candidates", lambda repo_root, tag_substring: [_candidate()])
+    monkeypatch.setattr(sched, "_load_compute_candidates", lambda **kwargs: [_candidate()])
     report = sched.build_report(
         repo_root=Path("."),
         tag_substring="unit",
+        compute_source="legacy_npu_block",
+        compute_arch_list=None,
         sequence_length_list=[2048],
         die_area_mm2_list=[1.0],
         sram_area_fraction_list=[0.4],
@@ -140,6 +146,7 @@ def test_clustered_schedule_charges_measured_l1_profile(monkeypatch) -> None:
                 "name": "unit_l1",
                 "fifo_per_cluster": 1,
                 "router_per_cluster": 2,
+                "endpoint_per_cluster": 1,
                 "local_datapath": {
                     "clock_ns": 3.0,
                     "area_um2": 10000.0,
@@ -158,16 +165,24 @@ def test_clustered_schedule_charges_measured_l1_profile(monkeypatch) -> None:
                     "power_mw": 0.05,
                     "metrics_csv": "router.csv",
                 },
+                "onchip_endpoint": {
+                    "clock_ns": 2.0,
+                    "area_um2": 2000.0,
+                    "power_mw": 0.2,
+                    "metrics_csv": "endpoint.csv",
+                },
             }
         ],
     )
     row = report["best"]
 
     assert row["measured_l1_profile"] == "unit_l1"
-    assert row["measured_l1_overhead_area_um2"] == 24000.0
-    assert row["measured_l1_overhead_power_mw"] == 1.4
+    assert row["measured_l1_overhead_area_um2"] == 28000.0
+    assert row["measured_l1_overhead_power_mw"] == 1.8
     assert row["clock_ns"] == 3.0
-    assert row["compute_replica_count"] == 176
+    assert row["compute_replica_count"] == 172
     assert row["logic_area_used_um2"] == 200000.0
     assert row["local_datapath_metrics_csv"] == "local.csv"
+    assert row["onchip_endpoint_per_cluster"] == 1
+    assert row["onchip_endpoint_metrics_csv"] == "endpoint.csv"
     assert report["best_by_measured_l1_profile"][0]["measured_l1_profile"] == "unit_l1"
