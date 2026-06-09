@@ -1,0 +1,15 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_endpoint_sram_noc_constrained_schedule_v1",
+  "candidate_id": "l2_decoder_attention_kv_endpoint_sram_noc_constrained_schedule_llama7b_v1",
+  "decision": "iterate",
+  "reason": "Ranking/frontier evidence was recorded for this proposal; focused baseline comparison is not required for this evaluation mode.",
+  "evidence_refs": [
+    "item:l2_decoder_attention_kv_endpoint_sram_noc_constrained_schedule_llama7b_v1",
+    "run:l2_decoder_attention_kv_endpoint_sram_noc_constrained_schedule_llama7b_v1_run_b83192f32e7aa9d4",
+    "artifact:control_plane/shadow_exports/l2_decisions/l2_decoder_attention_kv_endpoint_sram_noc_constrained_schedule_llama7b_v1.json",
+    "pr:#807",
+    "https://github.com/yhmtmt/RTLGen/pull/807"
+  ],
+  "next_action": "inspect follow-on work after l2_decoder_attention_kv_endpoint_sram_noc_constrained_schedule_llama7b_v1",
+  "requires_human_approval": false
+}

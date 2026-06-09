@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_endpoint_sram_noc_constrained_schedule_v1",
+  "decision": "iterate",
+  "pr_number": 807,
+  "merge_commit": "2658b67308e015be38163945bfda433971ebbb1b",
+  "merged_utc": "2026-06-09T05:47:33.979809Z"
+}

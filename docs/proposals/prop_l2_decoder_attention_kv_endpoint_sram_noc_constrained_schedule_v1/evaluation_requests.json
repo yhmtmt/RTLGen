@@ -1,6 +1,6 @@
 {
   "proposal_id": "prop_l2_decoder_attention_kv_endpoint_sram_noc_constrained_schedule_v1",
-  "source_commit": "",
+  "source_commit": "cb3aed121fd4ae5eefc9f85cd0207589e3491698",
   "source_commit_note": "Dispatch should use the merge commit for the proposal implementation so the evaluator has the endpoint SRAM/NoC generator hook.",
   "requested_items": [
     {
@@ -20,7 +20,12 @@
       "expected_result": {
         "direction": "revise_endpoint_topology_schedule_with_practical_sram_endpoint_caps",
         "reason": "The result should report endpoint topology-derived slowdown and identify whether topology, endpoint, or SRAM-bank service caps the retained frontier."
-      }
+      },
+      "status": "merged",
+      "merged_pr_number": 807,
+      "merge_commit": "2658b67308e015be38163945bfda433971ebbb1b",
+      "merged_utc": "2026-06-09T05:47:33.979809Z",
+      "notes": "Merged via PR #807 and merge 2658b67308e015be38163945bfda433971ebbb1b at 2026-06-09T05:47:33.979809Z."
     }
   ]
 }
