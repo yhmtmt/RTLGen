@@ -1,0 +1,7 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_endpoint_sram_noc_full_search_schedule_v1",
+  "decision": "iterate",
+  "pr_number": 809,
+  "merge_commit": "aca9cb5e2f071cc1b0cd1dccab8ec813c272ad74",
+  "merged_utc": "2026-06-09T06:45:42.789384Z"
+}
