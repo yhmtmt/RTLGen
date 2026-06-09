@@ -92,3 +92,16 @@ def test_transportable_expected_output_allows_compact_attention_kv_dataset() -> 
         "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
         "decoder_attention_kv_model_native_recovery__l2_decoder_attention_kv_model_native_recovery_tinyllama_v1.json"
     )
+    assert is_transportable_expected_output(
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+        "decoder_attention_kv_dense_tile_endpoint_measured_l1_clustered_schedule__"
+        "l2_decoder_attention_kv_dense_tile_endpoint_measured_l1_clustered_schedule_llama7b_v1.json"
+    )
+    assert is_transportable_expected_output(
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+        "decoder_attention_sram_profile__l2_decoder_attention_sram_profile_v1.json"
+    )
+    assert is_transportable_expected_output(
+        "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/"
+        "decoder_attention_noc_profile__l2_decoder_attention_noc_profile_v1.md"
+    )

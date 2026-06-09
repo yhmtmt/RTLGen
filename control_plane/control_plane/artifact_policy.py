@@ -24,23 +24,9 @@ _ALLOWED_RUNS_SUFFIXES = {
 }
 
 _ALLOWED_DATASET_PREFIXES = {
-    "decoder_attention_kv_memory__",
-    "decoder_attention_kv_capacity_noc__",
-    "decoder_attention_kv_noc_scheduler__",
-    "decoder_attention_kv_spill_scheduler__",
-    "decoder_attention_kv_hbm_controller__",
-    "decoder_attention_kv_physical_hbm_frontier__",
-    "decoder_attention_kv_physical_hbm_quality_backed__",
-    "decoder_attention_kv_physical_hbm_memory_noc__",
-    "decoder_attention_kv_physical_hbm_compute_sensitivity__",
-    "decoder_attention_kv_compute_floor_gap__",
-    "decoder_attention_kv_compute_ceiling_envelope__",
-    "decoder_attention_kv_quality_gate__",
-    "decoder_attention_kv_quality_proxy__",
-    "decoder_attention_kv_native_gqa_proxy__",
-    "decoder_attention_kv_trace_calibration__",
-    "decoder_attention_kv_model_native_quality__",
-    "decoder_attention_kv_model_native_recovery__",
+    "decoder_attention_kv_",
+    "decoder_attention_noc_profile__",
+    "decoder_attention_sram_profile__",
 }
 
 _ALLOWED_DATASET_SUFFIXES = {".json", ".md"}
