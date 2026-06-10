@@ -1,0 +1,25 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_hbm_closed_onchip_schedule_v1",
+  "source_commit": null,
+  "source_commit_note": "Dispatch should use the merge commit containing the HBM-closed on-chip schedule estimator and generator hook.",
+  "requested_items": [
+    {
+      "item_id": "l2_decoder_attention_kv_hbm_closed_onchip_schedule_llama7b_v1",
+      "task_type": "l2_campaign",
+      "objective": "Re-sweep explicit SRAM/NoC service scheduling on top of the measured-HBM Llama7B attention frontier.",
+      "evaluation_mode": "frontier_detail",
+      "abstraction_layer": "decoder_attention_kv_hbm_closed_onchip_schedule",
+      "comparison_role": "frontier_closure",
+      "paired_baseline_item_id": "l2_decoder_attention_kv_measured_hbm_service_llama7b_v1",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_measured_hbm_service_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_hbm_closed_onchip_schedule_frontier",
+        "reason": "The result should report best latency, slowdown versus the measured-HBM source, dominant resource, queue/router schedule parameters, HBM cycles, attention cycles, and shared-service cycles."
+      }
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "proposal_id": "prop_l2_decoder_attention_kv_hbm_closed_onchip_schedule_v1",
+  "created_utc": "2026-06-10T00:00:00Z",
+  "created_by": "developer_agent",
+  "layer": "layer2",
+  "kind": "architecture",
+  "title": "HBM-closed on-chip schedule closure for Llama7B attention frontier",
+  "hypothesis": "The current measured-HBM Llama7B attention frontier remains stable, or exposes a new NoC/SRAM bottleneck, when on-chip service policy knobs are re-swept instead of inherited from the older measured-SRAM frontier.",
+  "direct_comparison": {
+    "primary_question": "Does reoptimizing explicit SRAM/NoC service on top of the measured-HBM frontier change latency or the dominant resource?",
+    "include": [
+      "Use l2_decoder_attention_kv_measured_hbm_service_llama7b_v1 as the source frontier.",
+      "Re-sweep schedule policy, bank arbitration, endpoint queue depth, bank queue depth, router hop latency, packet payload, and prefetch overlap.",
+      "Keep HBM controller service cycles, compute PPA, measured SRAM capacity, endpoint/router/FIFO primitive PPA, and KV quality assumptions inherited.",
+      "Report best latency, slowdown versus the HBM-closed source row, dominant resource, queue penalties, and shared-service cycles."
+    ],
+    "exclude": [
+      "Do not generate or PPA a full NoC RTL implementation in this item.",
+      "Do not change HBM channel/burst/row parameters in this item.",
+      "Do not change SRAM packing, compute replica count, or KV sharing quality assumptions.",
+      "Do not resolve the wide endpoint router/fifo PPA boundary item."
+    ],
+    "follow_on_broad_sweep": [
+      "If NoC/SRAM service becomes dominant, split into concrete endpoint/router topology RTL and scheduler jobs.",
+      "If tile compute remains dominant, move to compute density or full-chip scheduling under the measured-memory frontier.",
+      "If HBM and NoC are both close to the tile-compute cycles, prioritize an integrated whole-layer schedule model."
+    ]
+  },
+  "expected_benefit": [
+    "Removes inheritance bias from the measured-HBM frontier's on-chip schedule knobs.",
+    "Identifies whether endpoint queue depth, packet payload, or router hop latency materially changes the selected point.",
+    "Clarifies whether the next frontier item should target NoC RTL, compute density, or integrated scheduling."
+  ],
+  "risks": [
+    "This remains an analytic on-chip service simulator, not a routed NoC implementation.",
+    "The search can choose optimistic queue/schedule combinations that still need ready/valid and RTL validation.",
+    "Area and power of larger queues are inherited from coarse primitive estimates rather than remeasured per selected setting."
+  ],
+  "needs_mapper_change": true,
+  "required_evaluations": [
+    {
+      "task_type": "l2_campaign",
+      "evaluation_mode": "frontier_detail",
+      "objective": "hbm_closed_onchip_schedule_frontier",
+      "cost_class": "small",
+      "depends_on_item_ids": [
+        "l2_decoder_attention_kv_measured_hbm_service_llama7b_v1"
+      ],
+      "requires_merged_inputs": true,
+      "requires_materialized_refs": true,
+      "expected_result": {
+        "direction": "record_hbm_closed_onchip_schedule_frontier",
+        "reason": "The result should report best latency, slowdown versus the measured-HBM source, dominant resource, queue/router schedule parameters, HBM cycles, attention cycles, and shared-service cycles."
+      }
+    }
+  ],
+  "baseline_refs": [
+    "runs/datasets/llm_decoder_eval_gpt2_prompt_stress_v1/decoder_attention_kv_measured_hbm_service__l2_decoder_attention_kv_measured_hbm_service_llama7b_v1.json"
+  ],
+  "knowledge_refs": [
+    "npu/eval/estimate_llm_decoder_attention_kv_hbm_closed_onchip_schedule.py",
+    "npu/eval/estimate_llm_decoder_attention_kv_measured_hbm_service.py",
+    "npu/eval/estimate_llm_decoder_attention_kv_onchip_service_schedule.py"
+  ]
+}
